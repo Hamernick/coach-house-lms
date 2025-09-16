@@ -1,0 +1,28 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist-snapshots",
+    "module": "CommonJS",
+    "target": "ES2019",
+    "moduleResolution": "node",
+    "jsx": "react-jsx",
+    "noEmit": false,
+    "rootDir": ".",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "types": [
+      "node"
+    ],
+    "isolatedModules": false
+  },
+  "include": [
+    "scripts/generate-snapshots.ts",
+    "src/stories/**/*.ts",
+    "src/stories/**/*.tsx",
+    "scripts/register-alias.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist-snapshots"
+  ]
+}

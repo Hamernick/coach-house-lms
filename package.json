@@ -6,7 +6,12 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "snapshots:build": "tsc -p tsconfig.snapshots.json",
+    "snapshots:verify": "npm run snapshots:build && node -r ./dist-snapshots/scripts/register-alias.js dist-snapshots/scripts/generate-snapshots.js",
+    "snapshots:update": "npm run snapshots:build && node -r ./dist-snapshots/scripts/register-alias.js dist-snapshots/scripts/generate-snapshots.js --update",
+    "test:snapshots": "npm run snapshots:verify",
+    "test": "npm run test:snapshots"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

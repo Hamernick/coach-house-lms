@@ -1,13 +1,24 @@
-export default function LoginPage() {
+import { AuthCard } from "@/components/auth/auth-card"
+import { LoginForm } from "@/components/auth/login-form"
+
+type SearchParams = Record<string, string | string[] | undefined>
+
+type LoginPageProps = {
+  searchParams?: Promise<SearchParams>
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const resolved = searchParams ? await searchParams : {}
+
+  const redirect = typeof resolved.redirect === "string" ? resolved.redirect : undefined
+  const error = typeof resolved.error === "string" ? resolved.error : null
+
   return (
-    <div className="flex min-h-screen items-center justify-center px-6 py-16">
-      <div className="max-w-md space-y-4 text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">Sign in</h1>
-        <p className="text-muted-foreground">
-          Authentication flows will arrive in later steps. This placeholder keeps the
-          route group wired and ready.
-        </p>
-      </div>
-    </div>
+    <AuthCard
+      title="Sign in"
+      description="Access your courses and continue where you left off."
+    >
+      <LoginForm redirectTo={redirect} initialError={error} />
+    </AuthCard>
   )
 }

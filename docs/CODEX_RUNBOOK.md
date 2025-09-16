@@ -33,10 +33,15 @@ feat(step {id}): {title}
 
 ## Steps
 
-* [ ] **S00** — Baseline & repo
+* [x] **S00** — Baseline & repo
 
   * Init Next.js (App Router, TS), Tailwind, shadcn; route groups `(public)|(auth)|(dashboard)`; base lint/format/prettier; `src/lib`, `src/components` skeletons. Add `docs/AGENTS.md` from v4.
   * **Accept**: `pnpm build` passes; folders present; sample page per group.
+  * **Changelog**:
+    * Route groups now live under `(public)`, `(auth)`, and `(dashboard)` with placeholder pages.
+    * Docs migrated into `docs/` with Prettier config and offline-safe font setup.
+    * `npm run build` succeeds (pnpm unavailable in sandbox).
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/1
 * [ ] **S01** — Design system
 
   * Install shadcn/ui, config tokens, dark/light, typography; basic components: Button, Card, Input, Table, Skeleton, Breadcrumb.

@@ -72,10 +72,15 @@ feat(step {id}): {title}
     * Seeded sample curriculum data and published Supabase typings plus RLS verification script.
     * Wired `npm run test:rls` to exercise policies (skips when Supabase credentials are absent).
   * PR: https://github.com/Hamernick/coach-house-lms/pull/4
-* [ ] **S04** — Auth flows
+* [x] **S04** — Auth flows
 
   * Signup/verify/signin/reset; guards; route middleware.
   * **Accept**: e2e happy paths; screenshots.
+  * **Changelog**:
+    * Implemented Supabase email/password flows (sign in, sign up, password reset/update) with server-side callbacks.
+    * Added shared auth UI, protected route middleware, and sign-out control for the dashboard shell.
+    * Linked verification/reset redirects through `/auth/callback` and surfaced helpful form states.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/5
 * [ ] **S05** — Shell & navigation
 
   * Sidebar/header shell; breadcrumbs; skeletons; empty states.

@@ -140,7 +140,7 @@
 
 ## 15) CI/CD & environments
 
-* Separate **dev/staging/prod** (Supabase; Stripe test/live).
+* Only 1 environment to increase velocity **prod** (Supabase; Stripe test/live).
 * Migrations versioned & reversible; seed scripts/fixtures.
 * GitHub Actions on PRs: typecheck · lint · build; preview deploys.
 * Feature flags for risky changes.

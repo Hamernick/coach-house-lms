@@ -110,7 +110,7 @@ supabase db push   # or run SQL files in migrations/
 
 ## License
 
-MIT (or your choice).
+MIT
 
 ---
 

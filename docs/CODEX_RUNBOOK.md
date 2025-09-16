@@ -81,10 +81,15 @@ feat(step {id}): {title}
     * Added shared auth UI, protected route middleware, and sign-out control for the dashboard shell.
     * Linked verification/reset redirects through `/auth/callback` and surfaced helpful form states.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/5
-* [ ] **S05** — Shell & navigation
+* [x] **S05** — Shell & navigation
 
   * Sidebar/header shell; breadcrumbs; skeletons; empty states.
   * **Accept**: `/dashboard` loads with skeletons; a11y landmarks.
+  * **Changelog**:
+    * Added shared dashboard layout with persistent sidebar/header landmarks and breadcrumb support.
+    * Refreshed navigation links, resources, and support actions; includes sign-out in header.
+    * Introduced Suspense-driven skeletons and empty states for analytics, charts, and announcements.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/6
 * [ ] **S06** — Pricing page
 
   * Public `/pricing` with plans pulled from Stripe (test keys placeholder).

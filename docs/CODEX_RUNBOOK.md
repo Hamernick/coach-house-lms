@@ -55,10 +55,15 @@ feat(step {id}): {title}
 
   * SSR cookie wiring; typed client in `src/lib/supabase`; envs; helper hooks.
   * **Accept**: server and client examples reading user session.
-* [ ] **S03** — DB schema & RLS (migrations)
+* [x] **S03** — DB schema & RLS (migrations)
 
   * Create tables per AGENTS §4; indexes; uniques; RLS policies; profiles with roles.
   * **Accept**: migration up/down; RLS tests; seed script.
+  * **Changelog**:
+    * Added canonical migrations with triggers, enums, and RLS policies for profiles, classes, modules, enrollments, module progress, and subscriptions.
+    * Seeded sample curriculum data and published Supabase typings plus RLS verification script.
+    * Wired `npm run test:rls` to exercise policies (skips when Supabase credentials are absent).
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/4
 * [ ] **S04** — Auth flows
 
   * Signup/verify/signin/reset; guards; route middleware.

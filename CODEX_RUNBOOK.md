@@ -69,7 +69,7 @@ feat(step {id}): {title}
 
   * Verify signature; store `event_id`; sync subscription lifecycle.
   * **Accept**: replay safe; logs; tests for states.
-* [ ] **S09** — Billing management
+* [ ] **S09** — Billing management - We're going to placeholder this. We don't have stripe set up yet so we'll set this up so our flows are created/demonstrated but we'll set it up with functionality later. 
 
   * Stripe Customer Portal link; invoices; cancel/resubscribe.
   * **Accept**: portal opens; state reflects after return.
@@ -111,7 +111,7 @@ feat(step {id}): {title}
   * **Accept**: per‑user locale switch; snapshots updated.
 * [ ] **S19** — CI/CD & environments
 
-  * GitHub Actions: typecheck/lint/build/test/a11y; preview deploy; dev/staging/prod envs wired.
+  * GitHub Actions: typecheck/lint/build/test/a11y; preview deploy; prod envs wired.
   * **Accept**: PR status checks green; preview URL posted.
 * [ ] **S20** — Acceptance tests
 

@@ -60,10 +60,18 @@ feat(step {id}): {title}
     * Dashboard now fetches the session server-side and hydrates a `SessionPreview` client widget.
     * Documented required Supabase env vars in `.env.example`.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/3
-* [ ] **S03** — DB schema & RLS (migrations)
-
+* [x] **S03** — DB schema & RLS (migrations)
+  * **Changelog**:
+    * Schema + migrations (profiles, classes, modules, enrollments, module_progress, subscriptions), indexes, RLS.
+    * Seeds + RLS test script; generated DB types; npm scripts.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/4
   * Create tables per AGENTS §4; indexes; uniques; RLS policies; profiles with roles.
   * **Accept**: migration up/down; RLS tests; seed script.
+  * **Changelog**:
+    * Added canonical migrations with triggers, enums, and RLS policies for profiles, classes, modules, enrollments, module progress, and subscriptions.
+    * Seeded sample curriculum data and published Supabase typings plus RLS verification script.
+    * Wired `npm run test:rls` to exercise policies (skips when Supabase credentials are absent).
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/4
 * [ ] **S04** — Auth flows
 
   * Signup/verify/signin/reset; guards; route middleware.

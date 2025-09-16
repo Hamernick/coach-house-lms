@@ -42,10 +42,15 @@ feat(step {id}): {title}
     * Docs migrated into `docs/` with Prettier config and offline-safe font setup.
     * `npm run build` succeeds (pnpm unavailable in sandbox).
   * PR: https://github.com/Hamernick/coach-house-lms/pull/1
-* [ ] **S01** — Design system
+* [x] **S01** — Design system
 
   * Install shadcn/ui, config tokens, dark/light, typography; basic components: Button, Card, Input, Table, Skeleton, Breadcrumb.
   * **Accept**: components render; stories/snapshots added.
+  * **Changelog**:
+    * Added design system stories for Button, Card, Input, Table, Skeleton, and Breadcrumb.
+    * Introduced a TypeScript snapshot runner with a JSON baseline under `tests/snapshots`.
+    * Exposed snapshot verify/update scripts via `npm test`.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/2
 * [ ] **S02** — Supabase client & SSR auth
 
   * SSR cookie wiring; typed client in `src/lib/supabase`; envs; helper hooks.

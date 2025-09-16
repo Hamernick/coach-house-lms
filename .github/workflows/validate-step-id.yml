@@ -1,0 +1,13 @@
+name: validate-step-id
+on:
+  pull_request:
+    types: [opened, edited, synchronize]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ensure PR title contains [STEP SNN]
+        run: |
+          t="${{ github.event.pull_request.title }}"
+          [[ "$t" =~ ^\[STEP\ S[0-9]{2}\]\  ]] || {
+            echo "Title must start with: [STEP SNN]"; exit 1; }

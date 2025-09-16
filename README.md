@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Coach House LMS
 
-## Getting Started
+Minimal, production‑ready LMS. Next.js (App Router, RSC), Supabase, Stripe, shadcn/ui.
 
-First, run the development server:
+## Why this repo design
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+* **PR‑first**: small, reviewable changes.
+* **Agent‑driven**: `docs/CODEX_RUNBOOK.md` stepper; say **“Proceed.”** to advance.
+* **Explicit contract**: `docs/AGENTS.md` = source of truth.
+
+## Architecture
+
+* **Web**: Next.js + TS, RSC‑first, Tailwind, shadcn/ui, next‑themes, Sonner.
+* **Data/Auth**: Supabase (Postgres, Auth, Storage, RLS).
+* **Billing**: Stripe (Checkout, Customer Portal, webhooks).
+* **Runtimes**: Node (API, webhooks), Edge/ISR (public pages).
+* **Caching**: ISR for marketing; `no-store` for authed data; invalidate on writes.
+* **Security**: CSP, XSS sanitization, HTTPS, HttpOnly cookies, admin audit.
+
+## Repository layout
+
+```
+app/                     # routes: (public)|(auth)|(dashboard), /admin, /billing
+src/components/          # UI + app components (Skeleton, Breadcrumb, DataTable, etc.)
+src/lib/                 # clients/helpers (supabase, stripe, auth)
+docs/AGENTS.md           # execution contract (v4)
+docs/CODEX_RUNBOOK.md    # build stepper & prompts
+migrations/              # SQL schema + RLS policies (versioned)
+.github/workflows/       # CI (validate title, build/test)
+.github/PULL_REQUEST_TEMPLATE.md
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Prerequisites
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+* Node 18+ and **pnpm**
+* Supabase project (or local via CLI)
+* Stripe account (test mode)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Setup
 
-## Learn More
+```bash
+pnpm i
+cp .env.example .env.local
+# Fill:
+# NEXT_PUBLIC_SITE_URL=https://localhost:3000
+# NEXT_PUBLIC_SUPABASE_URL=...
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+# SUPABASE_SERVICE_ROLE_KEY=...      # server only
+# NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=...
+# STRIPE_SECRET_KEY=...
+# STRIPE_WEBHOOK_SECRET=...
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Run (dev)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm dev          # web
+# optional: supabase start  # if using local DB
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Database & RLS
 
-## Deploy on Vercel
+* Schema per `docs/AGENTS.md §4`; RLS enabled on all app tables.
+* Apply migrations (example):
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# using Supabase CLI (or psql):
+supabase db push   # or run SQL files in migrations/
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Stripe
+
+* Create products/prices in dashboard.
+* Set webhook → `/api/stripe/webhook` (verify signature).
+* Use Customer Portal for billing mgmt.
+
+## CI/CD
+
+* **Checks**: typecheck, lint, build, unit, e2e, a11y quick.
+* **Titles**: enforce `[STEP SNN]` via `validate-step-id.yml`.
+* **Previews**: configure your host (e.g., Vercel) for PR previews.
+
+## Agent workflow
+
+1. Open `docs/CODEX_RUNBOOK.md`.
+2. Say **“Proceed.”** (Codex executes first unchecked step).
+3. Review PR → merge.
+4. Repeat.
+
+## Development standards
+
+* RSC by default; client only for interactivity.
+* Secrets server‑side; storage via **signed URLs**.
+* Verify webhooks; log failures; idempotency by `event_id`.
+* Hydration minimization; lazy/dynamic for heavy UI.
+* WCAG AA; keyboard/focus visible; touch targets ≥44px.
+
+## Acceptance (MVP)
+
+* Paid signup → dashboard reflects subscription.
+* `/class/[slug]/module/[index]` flow; completing 1 unlocks 2.
+* Admin: classes/modules CRUD + reorder + publish; users list/detail (search/filter/CSV, role change, resend verification/magic link, revoke sessions); KPIs.
+* Errors observable; budgets met (LCP ≤2.5s, TTI ≤4s); no console errors.
+
+## Contributing
+
+* Branch: `feat|fix|chore/<slug>`.
+* PR title: `[STEP SNN] <title>`; use template.
+* One concern per PR; migrations reversible; tests/docs included.
+
+## License
+
+MIT (or your choice).
+
+---
+
+**Sanity check**: This README matches the proposed workflow: runbook in `docs/`, PR‑gated steps, CI title guard, agent proceeds step‑by‑step. Ready to start at **S00**.

@@ -51,12 +51,20 @@ feat(step {id}): {title}
     * Introduced a TypeScript snapshot runner with a JSON baseline under `tests/snapshots`.
     * Exposed snapshot verify/update scripts via `npm test`.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/2
-* [ ] **S02** — Supabase client & SSR auth
+* [x] **S02** — Supabase client & SSR auth
 
   * SSR cookie wiring; typed client in `src/lib/supabase`; envs; helper hooks.
   * **Accept**: server and client examples reading user session.
+  * **Changelog**:
+    * Added Supabase env validation and typed client factories for server, browser, and route handlers.
+    * Dashboard now fetches the session server-side and hydrates a `SessionPreview` client widget.
+    * Documented required Supabase env vars in `.env.example`.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/3
 * [x] **S03** — DB schema & RLS (migrations)
-
+  * **Changelog**:
+    * Schema + migrations (profiles, classes, modules, enrollments, module_progress, subscriptions), indexes, RLS.
+    * Seeds + RLS test script; generated DB types; npm scripts.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/4
   * Create tables per AGENTS §4; indexes; uniques; RLS policies; profiles with roles.
   * **Accept**: migration up/down; RLS tests; seed script.
   * **Changelog**:

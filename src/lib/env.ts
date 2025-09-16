@@ -1,0 +1,42 @@
+import { z } from "zod"
+
+const serverEnvSchema = z.object({
+  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().min(1),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1).optional(),
+  SUPABASE_JWT_SECRET: z.string().min(1).optional(),
+})
+
+const clientEnvSchema = serverEnvSchema.pick({
+  NEXT_PUBLIC_SUPABASE_URL: true,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: true,
+})
+
+type ServerEnv = z.infer<typeof serverEnvSchema>
+type ClientEnv = z.infer<typeof clientEnvSchema>
+
+function assertEnv<TSchema extends z.ZodTypeAny>(schema: TSchema, input: unknown) {
+  const parsed = schema.safeParse(input)
+
+  if (!parsed.success) {
+    const formatted = parsed.error.issues
+      .map((issue) => `${issue.path.join(".") || "unknown"}: ${issue.message}`)
+      .join("; ")
+
+    throw new Error(`Invalid environment variables: ${formatted}`)
+  }
+
+  return parsed.data
+}
+
+export const env: ServerEnv = assertEnv(serverEnvSchema, {
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
+  SUPABASE_JWT_SECRET: process.env.SUPABASE_JWT_SECRET,
+})
+
+export const clientEnv: ClientEnv = assertEnv(clientEnvSchema, {
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+})

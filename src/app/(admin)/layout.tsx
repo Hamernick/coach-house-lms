@@ -4,7 +4,10 @@ import type { ReactNode } from "react"
 import { requireAdmin } from "@/lib/admin/auth"
 import { cn } from "@/lib/utils"
 
-const NAV_ITEMS = [{ href: "/admin/classes", label: "Classes" }]
+const NAV_ITEMS = [
+  { href: "/admin/classes", label: "Classes" },
+  { href: "/admin/users", label: "Users" },
+]
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   await requireAdmin()

@@ -94,10 +94,15 @@ feat(step {id}): {title}
     * Updated marketing hero copy/CTAs and surfaced plan features, empty-state messaging, and support details.
     * Extended env validation + examples for Stripe keys to support future checkout flows.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/7
-* [ ] **S07** — Stripe checkout
+* [x] **S07** — Stripe checkout
 
   * Client → Checkout; return handler; subscription record.
   * **Accept**: trialing/active states shown on dashboard.
+  * **Changelog**:
+    * Added server actions and success handler to create Stripe checkout sessions and persist subscription status.
+    * Dashboard now surfaces subscription state via dedicated card and Suspense skeletons.
+    * Pricing plans submit through server actions with fallback flow when Stripe keys are absent.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/8
 * [ ] **S08** — Stripe webhook + idempotency
 
   * Verify signature; store `event_id`; sync subscription lifecycle.

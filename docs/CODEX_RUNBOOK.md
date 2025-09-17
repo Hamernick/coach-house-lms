@@ -81,7 +81,7 @@ feat(step {id}): {title}
     * Added shared auth UI, protected route middleware, and sign-out control for the dashboard shell.
     * Linked verification/reset redirects through `/auth/callback` and surfaced helpful form states.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/5
-* [ ] **S05** — Shell & navigation
+* [x] **S05** — Shell & navigation
 
   * Sidebar/header shell; breadcrumbs; skeletons; empty states.
   * **Accept**: `/dashboard` loads with skeletons; a11y landmarks.

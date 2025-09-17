@@ -81,23 +81,41 @@ feat(step {id}): {title}
     * Added shared auth UI, protected route middleware, and sign-out control for the dashboard shell.
     * Linked verification/reset redirects through `/auth/callback` and surfaced helpful form states.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/5
-* [ ] **S05** — Shell & navigation
+* [x] **S05** — Shell & navigation
 
   * Sidebar/header shell; breadcrumbs; skeletons; empty states.
   * **Accept**: `/dashboard` loads with skeletons; a11y landmarks.
-* [ ] **S06** — Pricing page
+* [x] **S06** — Pricing page
 
   * Public `/pricing` with plans pulled from Stripe (test keys placeholder).
   * **Accept**: LCP budget met on mid‑range mobile.
-* [ ] **S07** — Stripe checkout
+  * **Changelog**:
+    * Added `/pricing` with Stripe-backed plan retrieval and graceful fallbacks when keys are absent.
+    * Updated marketing hero copy/CTAs and surfaced plan features, empty-state messaging, and support details.
+    * Extended env validation + examples for Stripe keys to support future checkout flows.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/7
+* [x] **S07** — Stripe checkout
 
   * Client → Checkout; return handler; subscription record.
   * **Accept**: trialing/active states shown on dashboard.
-* [ ] **S08** — Stripe webhook + idempotency
+  * **Changelog**:
+    * Added server actions and success handler to create Stripe checkout sessions and persist subscription status.
+    * Dashboard now surfaces subscription state via dedicated card and Suspense skeletons.
+    * Pricing plans submit through server actions with fallback flow when Stripe keys are absent.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/9
+* [x] **S08** — Stripe webhook + idempotency
 
   * Verify signature; store `event_id`; sync subscription lifecycle.
   * **Accept**: replay safe; logs; tests for states.
+
 * [x] **S09** — Billing management - placeholder
+
+  * **Changelog**:
+    * Added `/api/stripe/webhook` with signature verification, idempotent logging, and subscription upserts via Supabase admin client.
+    * Persist webhook events in `stripe_webhook_events` and extended env config for webhook secret.
+    * Pricing checkout and dashboard reflect subscription status end-to-end with fallbacks when Stripe keys are absent.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/9
+
 
   * Stripe Customer Portal link; invoices; cancel/resubscribe.
   * **Accept**: portal opens; state reflects after return.

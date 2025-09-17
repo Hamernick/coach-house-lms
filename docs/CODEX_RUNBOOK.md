@@ -148,6 +148,11 @@ feat(step {id}): {title}
 
   * Supabase Storage `decks` private; server‑generated signed URLs; upload UI.
   * **Accept**: upload→view via signed URL; no public ACLs.
+  * **Changelog**:
+    * Added Supabase storage helpers for private `decks` bucket with signed URL generation.
+    * Enabled module deck upload/removal on the admin module editor plus secure view links.
+    * Exposed authenticated API route for learners to fetch signed deck URLs.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/15
 * [ ] **S14** — Admin: users list/detail
 
   * `/admin/users` with search/filter/CSV; detail: profile, enrollments, progress, subscription; actions: role change, resend verification/magic link, revoke sessions; read‑only impersonation.

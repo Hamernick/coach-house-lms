@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { notFound } from "next/navigation"
 
 import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
@@ -10,7 +11,12 @@ import { requireAdmin } from "@/lib/admin/auth"
 
 import { ModulePublishedToggle } from "../../classes/[id]/_components/module-published-toggle"
 import { MarkdownEditor } from "./_components/markdown-editor"
-import { deleteModuleFromDetailAction, updateModuleDetailsAction } from "./actions"
+import {
+  deleteModuleFromDetailAction,
+  removeModuleDeckAction,
+  updateModuleDetailsAction,
+  uploadModuleDeckAction,
+} from "./actions"
 
 export default async function AdminModuleDetailPage({
   params,
@@ -22,7 +28,7 @@ export default async function AdminModuleDetailPage({
   const { data, error } = await supabase
     .from("modules")
     .select(
-      "id, class_id, idx, slug, title, description, video_url, content_md, duration_minutes, published, classes ( id, title, slug )"
+      "id, class_id, idx, slug, title, description, video_url, content_md, duration_minutes, deck_path, published, classes ( id, title, slug )"
     )
     .eq("id", params.id)
     .maybeSingle()
@@ -36,6 +42,7 @@ export default async function AdminModuleDetailPage({
   }
 
   const parentClass = data.classes
+  const deckFileName = data.deck_path ? data.deck_path.split("/").pop() ?? "Deck" : null
 
   return (
     <div className="space-y-6">
@@ -101,6 +108,51 @@ export default async function AdminModuleDetailPage({
             <MarkdownEditor name="contentMd" defaultValue={data.content_md ?? ""} />
             <Button type="submit">Save changes</Button>
           </form>
+
+          <div className="space-y-3 rounded-lg border p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold">Slide deck</p>
+                <p className="text-xs text-muted-foreground">
+                  Upload a PDF deck for learners to download alongside this module.
+                </p>
+              </div>
+              {data.deck_path ? (
+                <Button asChild variant="outline" size="sm">
+                  <Link href={`/api/admin/modules/${data.id}/deck`} target="_blank" rel="noopener">
+                    View deck
+                  </Link>
+                </Button>
+              ) : null}
+            </div>
+            {data.deck_path ? (
+              <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">{deckFileName}</span>
+                <form action={removeModuleDeckAction} className="inline-flex">
+                  <input type="hidden" name="moduleId" value={data.id} />
+                  <input type="hidden" name="classId" value={data.class_id} />
+                  <Button type="submit" variant="destructive" size="sm">
+                    Remove deck
+                  </Button>
+                </form>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No deck uploaded yet.</p>
+            )}
+            <form
+              action={uploadModuleDeckAction}
+              className="flex flex-col gap-3 sm:flex-row sm:items-center"
+              encType="multipart/form-data"
+            >
+              <input type="hidden" name="moduleId" value={data.id} />
+              <input type="hidden" name="classId" value={data.class_id} />
+              <Input type="file" name="deck" accept="application/pdf" required className="sm:w-auto" />
+              <Button type="submit" size="sm">
+                Upload deck
+              </Button>
+            </form>
+          </div>
+
           <form action={deleteModuleFromDetailAction} className="inline-flex">
             <input type="hidden" name="moduleId" value={data.id} />
             <input type="hidden" name="classId" value={data.class_id} />

@@ -134,10 +134,15 @@ feat(step {id}): {title}
 
   * Canonical route `/class/[slug]/module/[index]`; video embed; markdown render; form inputs; Prev/Next.
   * **Accept**: completing module 1 unlocks 2.
-* [ ] **S12** — Admin: classes/modules CRUD
+* [x] **S12** — Admin: classes/modules CRUD
 
   * `/admin/classes`, `/admin/classes/[id]`, `/admin/modules/[id]`; drag‑reorder; publish/unpublish.
   * **Accept**: reorder persists; publish toggles visibility.
+  * **Changelog**:
+    * Added admin layout plus classes table with create/delete and publish toggles.
+    * Built class detail editor with metadata form, module reorder drag-and-drop, and module creation flow.
+    * Implemented module editor with markdown preview, video metadata, and delete controls.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/14
 * [ ] **S13** — PDF storage (signed URLs)
 
   * Supabase Storage `decks` private; server‑generated signed URLs; upload UI.

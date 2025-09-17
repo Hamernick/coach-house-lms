@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { redirect } from "next/navigation"
 import Stripe from "stripe"
-import type { SupabaseClient } from "@supabase/supabase-js"
 
-import { createSupabaseServerClient } from "@/lib/supabase"
 import { env } from "@/lib/env"
+import { createSupabaseServerClient } from "@/lib/supabase"
 import type { Database } from "@/lib/supabase"
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
@@ -18,9 +19,7 @@ export default async function PricingSuccessPage({
   const params = searchParams ? await searchParams : {}
   const sessionId = typeof params?.session_id === "string" ? params.session_id : undefined
 
-  const supabase: SupabaseClient<Database> = createSupabaseServerClient()
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const uncheckedSupabase = supabase as SupabaseClient<any>
+  const supabase = createSupabaseServerClient() as any
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -33,6 +32,7 @@ export default async function PricingSuccessPage({
   let status: Database["public"]["Enums"]["subscription_status"] = "trialing"
   let subscriptionId: string | undefined
   let currentPeriodEnd: string | null = null
+  let planName: string | undefined
 
   if (stripe && sessionId) {
     try {
@@ -48,6 +48,7 @@ export default async function PricingSuccessPage({
         currentPeriodEnd = currentPeriodEndUnix
           ? new Date(currentPeriodEndUnix * 1000).toISOString()
           : null
+        planName = typeof subscription.metadata?.planName === "string" ? subscription.metadata.planName : undefined
       }
     } catch (error) {
       console.warn("Unable to read Stripe checkout session", error)
@@ -61,9 +62,10 @@ export default async function PricingSuccessPage({
     stripe_subscription_id: subscriptionId ?? `stub_${Date.now()}`,
     status,
     current_period_end: currentPeriodEnd,
+    metadata: planName ? { planName } : null,
   }
 
-  await uncheckedSupabase
+  await supabase
     .from("subscriptions")
     .upsert(upsertPayload, { onConflict: "stripe_subscription_id" })
 

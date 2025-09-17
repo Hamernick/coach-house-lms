@@ -7,6 +7,7 @@ const serverEnvSchema = z.object({
   SUPABASE_JWT_SECRET: z.string().min(1).optional(),
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
 })
 
 const clientEnvSchema = serverEnvSchema.pick({
@@ -39,6 +40,7 @@ export const env: ServerEnv = assertEnv(serverEnvSchema, {
   SUPABASE_JWT_SECRET: process.env.SUPABASE_JWT_SECRET,
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+  STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
 })
 
 export const clientEnv: ClientEnv = assertEnv(clientEnvSchema, {

@@ -107,15 +107,22 @@ feat(step {id}): {title}
 
   * Verify signature; store `event_id`; sync subscription lifecycle.
   * **Accept**: replay safe; logs; tests for states.
+
+* [x] **S09** — Billing management - placeholder
+
   * **Changelog**:
     * Added `/api/stripe/webhook` with signature verification, idempotent logging, and subscription upserts via Supabase admin client.
     * Persist webhook events in `stripe_webhook_events` and extended env config for webhook secret.
     * Pricing checkout and dashboard reflect subscription status end-to-end with fallbacks when Stripe keys are absent.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/9
-* [ ] **S09** — Billing management - We're going to placeholder this. We don't have stripe set up yet so we'll set this up so our flows are created/demonstrated but we'll set it up with functionality later. 
+
 
   * Stripe Customer Portal link; invoices; cancel/resubscribe.
   * **Accept**: portal opens; state reflects after return.
+  * **Changelog**:
+    * Added `/billing` placeholder page outlining upcoming management features and temporary support path.
+    * Surfaced contact CTA in dashboard navigation via visible billing entry.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/10
 * [ ] **S10** — Classes model & list
 
   * CRUD API + RSC queries; `/dashboard` cards with progress stub.

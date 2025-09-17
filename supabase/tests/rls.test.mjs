@@ -1,13 +1,16 @@
 #!/usr/bin/env node
-const crypto = require("node:crypto")
-const { createClient } = require("@supabase/supabase-js")
+import { randomUUID } from "node:crypto"
+
+import { createClient } from "@supabase/supabase-js"
 
 const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL
 const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const serviceRole = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!url || !anonKey || !serviceRole) {
-  console.log("[supabase] Skipping RLS tests – set SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY.")
+  console.log(
+    "[supabase] Skipping RLS tests – set SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY."
+  )
   process.exit(0)
 }
 
@@ -15,7 +18,7 @@ const adminClient = createClient(url, serviceRole, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
 
-const suffix = crypto.randomUUID().slice(0, 8)
+const suffix = randomUUID().slice(0, 8)
 const studentEmail = `student-${suffix}@example.com`
 const adminEmail = `admin-${suffix}@example.com`
 const password = `TempPass!${suffix}`
@@ -60,10 +63,10 @@ async function createUsers() {
 }
 
 async function createDemoContent(studentId) {
-  const publishedClassId = crypto.randomUUID()
-  const unpublishedClassId = crypto.randomUUID()
-  const moduleId = crypto.randomUUID()
-  const hiddenModuleId = crypto.randomUUID()
+  const publishedClassId = randomUUID()
+  const unpublishedClassId = randomUUID()
+  const moduleId = randomUUID()
+  const hiddenModuleId = randomUUID()
 
   const { error: classErr } = await adminClient.from("classes").insert([
     {
@@ -130,10 +133,14 @@ async function run() {
 
   // Profile visibility
   {
-    const { data, error } = await studentClient.from("profiles").select("id").eq("id", student.id).maybeSingle()
+    const { data, error } = await studentClient
+      .from("profiles")
+      .select("id")
+      .eq("id", student.id)
+      .maybeSingle()
     results.push({ name: "student reads own profile", passed: !!data && !error })
 
-    const { data: otherProfile, error: otherError } = await studentClient
+    const { data: otherProfile } = await studentClient
       .from("profiles")
       .select("id")
       .eq("id", admin.id)
@@ -162,7 +169,10 @@ async function run() {
 
   // Admin update allowed
   {
-    const { error } = await adminSessionClient.from("classes").update({ title: "Published Class Updated" }).eq("id", assets.publishedClassId)
+    const { error } = await adminSessionClient
+      .from("classes")
+      .update({ title: "Published Class Updated" })
+      .eq("id", assets.publishedClassId)
     results.push({ name: "admin can update classes", passed: !error })
   }
 
@@ -184,7 +194,7 @@ async function run() {
 
   // Subscription visibility
   {
-    const subId = crypto.randomUUID()
+    const subId = randomUUID()
     const { error } = await adminClient.from("subscriptions").insert({
       id: subId,
       user_id: student.id,
@@ -208,11 +218,11 @@ async function run() {
     console.log(`${result.passed ? "✓" : "✗"} ${result.name}`)
   })
 
-  await adminClient.from('module_progress').delete().eq('user_id', student.id)
-  await adminClient.from('enrollments').delete().eq('user_id', student.id)
-  await adminClient.from('modules').delete().in('id', [assets.moduleId, assets.hiddenModuleId])
-  await adminClient.from('classes').delete().in('id', [assets.publishedClassId, assets.unpublishedClassId])
-  await adminClient.from('subscriptions').delete().eq('user_id', student.id)
+  await adminClient.from("module_progress").delete().eq("user_id", student.id)
+  await adminClient.from("enrollments").delete().eq("user_id", student.id)
+  await adminClient.from("modules").delete().in("id", [assets.moduleId, assets.hiddenModuleId])
+  await adminClient.from("classes").delete().in("id", [assets.publishedClassId, assets.unpublishedClassId])
+  await adminClient.from("subscriptions").delete().eq("user_id", student.id)
   await adminClient.auth.admin.deleteUser(student.id)
   await adminClient.auth.admin.deleteUser(admin.id)
 

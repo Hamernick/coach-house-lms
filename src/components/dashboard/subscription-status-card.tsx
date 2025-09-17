@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
+import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -19,7 +22,7 @@ function statusLabel(status: string) {
 }
 
 export async function SubscriptionStatusCard() {
-  const supabase = createSupabaseServerClient()
+  const supabase = createSupabaseServerClient() as any
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -38,8 +41,7 @@ export async function SubscriptionStatusCard() {
     .limit(1)
     .maybeSingle()
 
-  type SubscriptionData = Pick<SubscriptionRow, "status" | "current_period_end" | "metadata">
-  const subscription = (data as SubscriptionData | null)
+  const subscription = (data as Pick<SubscriptionRow, "status" | "current_period_end" | "metadata"> | null)
 
   if (!subscription) {
     return (
@@ -47,7 +49,7 @@ export async function SubscriptionStatusCard() {
         <CardHeader>
           <CardTitle className="text-lg">Subscription status</CardTitle>
           <CardDescription>
-            No billing information yet. Start a trial from the pricing page to unlock premium features.
+            No billing information yet. Visit the pricing page to start a trial.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -65,11 +67,11 @@ export async function SubscriptionStatusCard() {
     ? formatDistanceToNow(new Date(subscription.current_period_end), { addSuffix: true })
     : null
 
-  const planMetadata =
+  const metadata =
     typeof subscription.metadata === "object" && subscription.metadata
       ? (subscription.metadata as Record<string, string | null>)
       : null
-  const planName = planMetadata?.planName ?? undefined
+  const planName = metadata?.planName ?? undefined
 
   const descriptionParts: string[] = []
   if (planName) {
@@ -95,12 +97,23 @@ export async function SubscriptionStatusCard() {
         </div>
         <CardDescription>{descriptionParts.join(" ")}</CardDescription>
       </CardHeader>
-      <CardContent className="text-sm text-muted-foreground">
-        {isTrial
-          ? "Upgrade before the trial ends to keep access to private courses and automation."
-          : isActive
-          ? "Thank you for supporting Coach House. Your team has full access to premium features."
-          : "Resume your subscription to continue engaging your learners."}
+      <CardContent className="space-y-2 text-sm text-muted-foreground">
+        <p>
+          {isTrial
+            ? "Upgrade before the trial ends to keep access to private courses and automation."
+            : isActive
+            ? "Thank you for supporting Coach House. Your team has full access to premium features."
+            : "Resume your subscription to continue engaging your learners."}
+        </p>
+        <p>
+          Billing management is coming soon. Until then, contact{' '}
+          <Link
+            href="mailto:support@coachhouse.io"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            support@coachhouse.io
+          </Link>{' '}for plan changes.
+        </p>
       </CardContent>
     </Card>
   )

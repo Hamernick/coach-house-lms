@@ -1,32 +1,35 @@
 import { Suspense } from "react"
 
 import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
-import { DashboardEmptyState } from "@/components/dashboard/empty-state"
+
+import { ClassesHighlights } from "@/components/dashboard/classes-overview"
+import { SubscriptionStatusCard } from "@/components/dashboard/subscription-status-card"
 import {
   ChartSkeleton,
+  ClassesSkeleton,
   SectionCardsSkeleton,
   SubscriptionStatusSkeleton,
   TableSkeleton,
 } from "@/components/dashboard/skeletons"
-import { SubscriptionStatusCard } from "@/components/dashboard/subscription-status-card"
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { DataTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
+import { SessionPreview } from "@/components/session-preview"
+import { SiteHeader } from "@/components/site-header"
+import { createSupabaseServerClient } from "@/lib/supabase"
+import {
+  SidebarInset,
+  SidebarProvider,
+} from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
 
 import data from "./data.json"
 
-async function wait<T>(value: T, ms = 350): Promise<T> {
-  await new Promise((resolve) => setTimeout(resolve, ms))
-  return value
-}
-
 async function AnalyticsOverview() {
-  await wait(null, 250)
   return <SectionCards />
 }
 
 async function EngagementChart() {
-  await wait(null, 350)
   return (
     <div className="px-4 lg:px-6">
       <ChartAreaInteractive />
@@ -35,60 +38,58 @@ async function EngagementChart() {
 }
 
 async function OpportunitiesTable() {
-  const rows = await wait(data, 450)
-
-  if (!rows.length) {
-    return (
-      <DashboardEmptyState
-        title="No classes yet"
-        description="Create your first class to populate this activity table."
-        actionLabel="Create class"
-        onActionHref="/dashboard/classes"
-        helperText="Analytics populate automatically once learners enroll."
-      />
-    )
-  }
-
   return (
     <div className="px-4 lg:px-6">
-      <DataTable data={rows} />
+      <DataTable data={data} />
     </div>
   )
 }
 
-async function AnnouncementsPanel() {
-  await wait(null, 500)
-  return (
-    <DashboardEmptyState
-      title="No announcements"
-      description="Keep your cohort informed. Share welcome messages or release notes once classes begin."
-      actionLabel="Plan announcement"
-      onActionHref="/dashboard/classes"
-    />
-  )
-}
+export default async function DashboardPage() {
+  const supabase = createSupabaseServerClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
 export default function DashboardPage() {
   return (
-    <div className="space-y-6">
-      <div className="px-4 lg:px-6">
-        <DashboardBreadcrumbs segments={[{ label: "Dashboard" }]} />
-      </div>
-      <Suspense fallback={<SubscriptionStatusSkeleton />}>
-        <SubscriptionStatusCard />
-      </Suspense>
-      <Suspense fallback={<SectionCardsSkeleton />}>
-        <AnalyticsOverview />
-      </Suspense>
-      <Suspense fallback={<ChartSkeleton />}>
-        <EngagementChart />
-      </Suspense>
-      <Suspense fallback={<TableSkeleton />}>
-        <OpportunitiesTable />
-      </Suspense>
-      <Suspense fallback={<TableSkeleton />}>
-        <AnnouncementsPanel />
-      </Suspense>
-    </div>
+    <SidebarProvider
+      style={
+        {
+          "--sidebar-width": "calc(var(--spacing) * 72)",
+          "--header-height": "calc(var(--spacing) * 12)",
+        } as React.CSSProperties
+      }
+    >
+      <AppSidebar variant="inset" />
+      <SidebarInset>
+        <SiteHeader />
+        <main className="flex flex-1 flex-col" role="main">
+          <div className="flex flex-col gap-6 py-6">
+            <div className="px-4 lg:px-6">
+              <DashboardBreadcrumbs segments={[{ label: "Dashboard" }]} />
+            </div>
+            <div className="px-4 lg:px-6">
+              <SessionPreview initialSession={session} />
+            </div>
+            <Suspense fallback={<SubscriptionStatusSkeleton />}>
+              <SubscriptionStatusCard />
+            </Suspense>
+            <Suspense fallback={<ClassesSkeleton />}>
+              <ClassesHighlights />
+            </Suspense>
+            <Suspense fallback={<SectionCardsSkeleton />}>
+              <AnalyticsOverview />
+            </Suspense>
+            <Suspense fallback={<ChartSkeleton />}>
+              <EngagementChart />
+            </Suspense>
+            <Suspense fallback={<TableSkeleton />}>
+              <OpportunitiesTable />
+            </Suspense>
+          </div>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

@@ -16,8 +16,8 @@ type DashboardEmptyStateProps = {
 export function DashboardEmptyState({
   title,
   description,
-  actionLabel = "Create",
-  onActionHref = "/dashboard/classes",
+  actionLabel,
+  onActionHref,
   helperText,
 }: DashboardEmptyStateProps) {
   return (
@@ -31,7 +31,7 @@ export function DashboardEmptyState({
           <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-3">
-          {actionLabel ? (
+          {actionLabel && onActionHref ? (
             <Button asChild>
               <Link href={onActionHref}>{actionLabel}</Link>
             </Button>

@@ -213,6 +213,26 @@ export type Database = {
           metadata?: Json | null
         }
       }
+      stripe_webhook_events: {
+        Row: {
+          id: string
+          type: string
+          payload: Json
+          created_at: string
+        }
+        Insert: {
+          id: string
+          type: string
+          payload: Json
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          type?: string
+          payload?: Json
+          created_at?: string
+        }
+      }
     }
     Views: Record<string, never>
     Functions: {

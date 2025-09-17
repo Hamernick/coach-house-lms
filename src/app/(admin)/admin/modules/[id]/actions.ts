@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { requireAdmin } from "@/lib/admin/auth"
+import { uploadModuleDeck, removeModuleDeck } from "@/lib/storage/decks"
 
 export async function updateModuleDetailsAction(formData: FormData) {
   const moduleId = formData.get("moduleId")
@@ -69,4 +70,94 @@ export async function deleteModuleFromDetailAction(formData: FormData) {
 
   revalidatePath(`/admin/classes/${classId}`)
   redirect(`/admin/classes/${classId}`)
+}
+
+export async function uploadModuleDeckAction(formData: FormData) {
+  const moduleId = formData.get("moduleId")
+  const classId = formData.get("classId")
+  const file = formData.get("deck")
+
+  if (typeof moduleId !== "string" || typeof classId !== "string" || !(file instanceof File)) {
+    return
+  }
+
+  if (file.size === 0) {
+    return
+  }
+
+  if (file.type !== "application/pdf") {
+    throw new Error("Deck must be a PDF file")
+  }
+
+  if (file.size > 15 * 1024 * 1024) {
+    throw new Error("Deck exceeds 15MB limit")
+  }
+
+  const { supabase } = await requireAdmin()
+
+  const { data: moduleRow, error } = await supabase
+    .from("modules")
+    .select("deck_path")
+    .eq("id", moduleId)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  const deckPath = await uploadModuleDeck({
+    moduleId,
+    filename: file.name,
+    fileBuffer: await file.arrayBuffer(),
+    previousPath: moduleRow?.deck_path ?? undefined,
+  })
+
+  const { error: updateError } = await supabase
+    .from("modules")
+    .update({ deck_path: deckPath })
+    .eq("id", moduleId)
+
+  if (updateError) {
+    throw updateError
+  }
+
+  revalidatePath(`/admin/modules/${moduleId}`)
+  revalidatePath(`/admin/classes/${classId}`)
+}
+
+export async function removeModuleDeckAction(formData: FormData) {
+  const moduleId = formData.get("moduleId")
+  const classId = formData.get("classId")
+
+  if (typeof moduleId !== "string" || typeof classId !== "string") {
+    return
+  }
+
+  const { supabase } = await requireAdmin()
+
+  const { data, error } = await supabase
+    .from("modules")
+    .select("deck_path")
+    .eq("id", moduleId)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  if (data?.deck_path) {
+    await removeModuleDeck(data.deck_path)
+  }
+
+  const { error: updateError } = await supabase
+    .from("modules")
+    .update({ deck_path: null })
+    .eq("id", moduleId)
+
+  if (updateError) {
+    throw updateError
+  }
+
+  revalidatePath(`/admin/modules/${moduleId}`)
+  revalidatePath(`/admin/classes/${classId}`)
 }

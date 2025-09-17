@@ -1,4 +1,15 @@
-import { AppSidebar } from "@/components/app-sidebar"
+import { Suspense } from "react"
+
+import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { ClassesHighlights } from "@/components/dashboard/classes-overview"
+import { SubscriptionStatusCard } from "@/components/dashboard/subscription-status-card"
+import {
+  ChartSkeleton,
+  ClassesSkeleton,
+  SectionCardsSkeleton,
+  SubscriptionStatusSkeleton,
+  TableSkeleton,
+} from "@/components/dashboard/skeletons"
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { DataTable } from "@/components/data-table"
 import { SectionCards } from "@/components/section-cards"
@@ -9,10 +20,31 @@ import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import { AppSidebar } from "@/components/app-sidebar"
 
 import data from "./data.json"
 
-export default async function Page() {
+async function AnalyticsOverview() {
+  return <SectionCards />
+}
+
+async function EngagementChart() {
+  return (
+    <div className="px-4 lg:px-6">
+      <ChartAreaInteractive />
+    </div>
+  )
+}
+
+async function OpportunitiesTable() {
+  return (
+    <div className="px-4 lg:px-6">
+      <DataTable data={data} />
+    </div>
+  )
+}
+
+export default async function DashboardPage() {
   const supabase = createSupabaseServerClient()
   const {
     data: { session },
@@ -30,20 +62,31 @@ export default async function Page() {
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />
-        <div className="flex flex-1 flex-col">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <div className="px-4 lg:px-6">
-                <SessionPreview initialSession={session} />
-              </div>
-              <SectionCards />
-              <div className="px-4 lg:px-6">
-                <ChartAreaInteractive />
-              </div>
-              <DataTable data={data} />
+        <main className="flex flex-1 flex-col" role="main">
+          <div className="flex flex-col gap-6 py-6">
+            <div className="px-4 lg:px-6">
+              <DashboardBreadcrumbs segments={[{ label: "Dashboard" }]} />
             </div>
+            <div className="px-4 lg:px-6">
+              <SessionPreview initialSession={session} />
+            </div>
+            <Suspense fallback={<SubscriptionStatusSkeleton />}>
+              <SubscriptionStatusCard />
+            </Suspense>
+            <Suspense fallback={<ClassesSkeleton />}>
+              <ClassesHighlights />
+            </Suspense>
+            <Suspense fallback={<SectionCardsSkeleton />}>
+              <AnalyticsOverview />
+            </Suspense>
+            <Suspense fallback={<ChartSkeleton />}>
+              <EngagementChart />
+            </Suspense>
+            <Suspense fallback={<TableSkeleton />}>
+              <OpportunitiesTable />
+            </Suspense>
           </div>
-        </div>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   )

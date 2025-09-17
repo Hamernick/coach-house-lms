@@ -85,15 +85,15 @@ feat(step {id}): {title}
 
   * Sidebar/header shell; breadcrumbs; skeletons; empty states.
   * **Accept**: `/dashboard` loads with skeletons; a11y landmarks.
-  * **Changelog**:
-    * Added shared dashboard layout with persistent sidebar/header landmarks and breadcrumb support.
-    * Refreshed navigation links, resources, and support actions; includes sign-out in header.
-    * Introduced Suspense-driven skeletons and empty states for analytics, charts, and announcements.
-  * PR: https://github.com/Hamernick/coach-house-lms/pull/6
-* [ ] **S06** — Pricing page
+* [x] **S06** — Pricing page
 
   * Public `/pricing` with plans pulled from Stripe (test keys placeholder).
   * **Accept**: LCP budget met on mid‑range mobile.
+  * **Changelog**:
+    * Added `/pricing` with Stripe-backed plan retrieval and graceful fallbacks when keys are absent.
+    * Updated marketing hero copy/CTAs and surfaced plan features, empty-state messaging, and support details.
+    * Extended env validation + examples for Stripe keys to support future checkout flows.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/7
 * [ ] **S07** — Stripe checkout
 
   * Client → Checkout; return handler; subscription record.

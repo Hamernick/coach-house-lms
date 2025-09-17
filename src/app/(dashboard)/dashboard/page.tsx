@@ -50,7 +50,6 @@ export default async function DashboardPage() {
   const {
     data: { session },
   } = await supabase.auth.getSession()
-
   return (
     <SidebarProvider
       style={

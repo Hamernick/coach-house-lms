@@ -120,14 +120,16 @@ feat(step {id}): {title}
 
   * Stripe Customer Portal link; invoices; cancel/resubscribe.
   * **Accept**: portal opens; state reflects after return.
-  * **Changelog**:
-    * Added `/billing` placeholder page outlining upcoming management features and temporary support path.
-    * Surfaced contact CTA in dashboard navigation via visible billing entry.
-  * PR: https://github.com/Hamernick/coach-house-lms/pull/10
-* [ ] **S10** — Classes model & list
+
+* [x] **S10** — Classes model & list
 
   * CRUD API + RSC queries; `/dashboard` cards with progress stub.
   * **Accept**: list, paginate; empty state.
+  * **Changelog**:
+    * Added dashboard Suspense flow with breadcrumb, subscription, classes, and analytics panels streaming progressively.
+    * Implemented Supabase classes service, paginated `/dashboard/classes` route, and shared empty/skeleton states.
+    * Exposed admin Supabase client plus `/api/classes` endpoints for list/create/update/delete.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/12
 * [ ] **S11** — Modules & sequential unlock
 
   * Canonical route `/class/[slug]/module/[index]`; video embed; markdown render; form inputs; Prev/Next.

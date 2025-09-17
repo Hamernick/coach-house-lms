@@ -130,10 +130,15 @@ feat(step {id}): {title}
     * Implemented Supabase classes service, paginated `/dashboard/classes` route, and shared empty/skeleton states.
     * Exposed admin Supabase client plus `/api/classes` endpoints for list/create/update/delete.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/12
-* [ ] **S11** — Modules & sequential unlock
+* [x] **S11** — Modules & sequential unlock
 
   * Canonical route `/class/[slug]/module/[index]`; video embed; markdown render; form inputs; Prev/Next.
   * **Accept**: completing module 1 unlocks 2.
+  * **Changelog**:
+    * Added module server helpers plus sequential unlock routing at `/class/[slug]/module/[index]` with video, markdown, and reflection form.
+    * Implemented module completion server action that stores reflections, unlocks the next module, and redirects forward.
+    * Updated dashboard class listings to deep-link into the first module experience.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/13
 * [ ] **S12** — Admin: classes/modules CRUD
 
   * `/admin/classes`, `/admin/classes/[id]`, `/admin/modules/[id]`; drag‑reorder; publish/unpublish.

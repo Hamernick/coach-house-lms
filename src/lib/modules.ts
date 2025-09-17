@@ -1,0 +1,125 @@
+import { notFound } from "next/navigation"
+
+import { createSupabaseServerClient } from "@/lib/supabase/server"
+
+export type ModuleRecord = {
+  id: string
+  idx: number
+  slug: string
+  title: string
+  description: string | null
+  videoUrl: string | null
+  contentMd: string | null
+  durationMinutes: number | null
+  published: boolean
+}
+
+export type ModuleProgressStatus = "not_started" | "in_progress" | "completed"
+
+type ClassModuleResult = {
+  classId: string
+  classTitle: string
+  classDescription: string | null
+  modules: ModuleRecord[]
+  progressMap: Record<string, ModuleProgressStatus>
+}
+
+export async function getClassModulesForUser({
+  classSlug,
+  userId,
+}: {
+  classSlug: string
+  userId: string
+}): Promise<ClassModuleResult> {
+  const supabase = createSupabaseServerClient()
+
+  const { data: classRow, error } = await supabase
+    .from("classes")
+    .select(
+      `id, title, description, published, modules ( id, idx, slug, title, description, video_url, content_md, duration_minutes, published )`
+    )
+    .eq("slug", classSlug)
+    .maybeSingle()
+
+  if (error) {
+    throw error
+  }
+
+  if (!classRow) {
+    notFound()
+  }
+
+  const modules = (classRow.modules ?? [])
+    .filter((module) => module.published)
+    .sort((a, b) => a.idx - b.idx)
+    .map((module) => ({
+      id: module.id,
+      idx: module.idx,
+      slug: module.slug,
+      title: module.title,
+      description: module.description ?? null,
+      videoUrl: module.video_url ?? null,
+      contentMd: module.content_md ?? null,
+      durationMinutes: module.duration_minutes ?? null,
+      published: module.published,
+    }))
+
+  if (modules.length === 0) {
+    return {
+      classId: classRow.id,
+      classTitle: classRow.title,
+      classDescription: classRow.description ?? null,
+      modules: [],
+      progressMap: {},
+    }
+  }
+
+  const moduleIds = modules.map((module) => module.id)
+
+  const { data: progressRows, error: progressError } = await supabase
+    .from("module_progress")
+    .select("module_id, status")
+    .eq("user_id", userId)
+    .in("module_id", moduleIds)
+
+  if (progressError) {
+    throw progressError
+  }
+
+  const progressMap: Record<string, ModuleProgressStatus> = {}
+  for (const row of progressRows ?? []) {
+    progressMap[row.module_id] = row.status as ModuleProgressStatus
+  }
+
+  return {
+    classId: classRow.id,
+    classTitle: classRow.title,
+    classDescription: classRow.description ?? null,
+    modules,
+    progressMap,
+  }
+}
+
+export async function markModuleCompleted({
+  moduleId,
+  userId,
+  notes,
+}: {
+  moduleId: string
+  userId: string
+  notes?: Record<string, unknown> | null
+}) {
+  const supabase = createSupabaseServerClient()
+
+  const { error } = await supabase.from("module_progress").upsert({
+    user_id: userId,
+    module_id: moduleId,
+    status: "completed",
+    completed_at: new Date().toISOString(),
+    notes: notes ?? undefined,
+  })
+
+  if (error) {
+    throw error
+  }
+}

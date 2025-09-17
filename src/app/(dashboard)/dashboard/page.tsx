@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 
 import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
+
 import { ClassesHighlights } from "@/components/dashboard/classes-overview"
 import { SubscriptionStatusCard } from "@/components/dashboard/subscription-status-card"
 import {
@@ -50,6 +51,7 @@ export default async function DashboardPage() {
     data: { session },
   } = await supabase.auth.getSession()
 
+export default function DashboardPage() {
   return (
     <SidebarProvider
       style={

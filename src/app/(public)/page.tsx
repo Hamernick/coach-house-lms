@@ -11,9 +11,8 @@ export default function LandingPage() {
           Ship courses faster with an opinionated learning platform
         </h1>
         <p className="mx-auto max-w-2xl text-balance text-muted-foreground">
-          This placeholder page anchors the public route group while we build the
-          full marketing experience. Future steps will flesh out pricing, feature
-          highlights, and capture forms.
+          Launch an LMS with Supabase auth, Stripe billing, and production-ready
+          dashboard components. Pricing stays simple as you add more cohorts.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link
@@ -21,6 +20,12 @@ export default function LandingPage() {
             className="rounded-full bg-primary px-6 py-2 text-primary-foreground transition hover:bg-primary/90"
           >
             Sign in
+          </Link>
+          <Link
+            href="/pricing"
+            className="rounded-full border border-border px-6 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"
+          >
+            View pricing
           </Link>
           <Link
             href="/dashboard"
@@ -38,7 +43,7 @@ export default function LandingPage() {
           ✓ Authentication routes staged
         </p>
         <p className="text-left text-muted-foreground">
-          ✓ Dashboard foundation ready for data
+          ✓ Dashboard + pricing experiences ready for real data
         </p>
       </div>
     </main>

@@ -6,6 +6,7 @@ import { type Icon } from "@tabler/icons-react"
 import {
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -13,6 +14,7 @@ import {
 
 export function NavSecondary({
   items,
+  label = "Support",
   ...props
 }: {
   items: {
@@ -20,9 +22,15 @@ export function NavSecondary({
     url: string
     icon: Icon
   }[]
+  label?: string
 } & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
+  if (items.length === 0) {
+    return null
+  }
+
   return (
     <SidebarGroup {...props}>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (

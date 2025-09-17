@@ -1,11 +1,12 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 
+import { startCheckout } from "@/app/(public)/pricing/actions"
 import { getPricingPlans } from "@/lib/pricing"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { CheckoutSubmit } from "@/components/pricing/checkout-submit"
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -46,6 +47,8 @@ export default async function PricingPage() {
       <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {plans.map((plan) => {
           const isContactPlan = plan.amount === 0
+          const priceLabel = formatAmount(plan.amount, plan.currency, plan.interval)
+
           return (
             <Card
               key={plan.id}
@@ -65,9 +68,7 @@ export default async function PricingPage() {
                 <CardDescription className="text-balance">
                   {plan.description ?? "All of the essentials for modern course delivery."}
                 </CardDescription>
-                <p className="text-3xl font-semibold">
-                  {formatAmount(plan.amount, plan.currency, plan.interval)}
-                </p>
+                <p className="text-3xl font-semibold">{priceLabel}</p>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-3 text-sm">
@@ -85,11 +86,24 @@ export default async function PricingPage() {
                     </p>
                   )}
                 </div>
-                <Button asChild className="w-full" variant={plan.highlight ? "default" : "outline"}>
-                  <Link href={isContactPlan ? "mailto:sales@coachhouse.io" : "/sign-up"}>
-                    {isContactPlan ? "Talk to sales" : "Start free trial"}
-                  </Link>
-                </Button>
+                {isContactPlan ? (
+                  <CardDescription className="text-center">
+                    <Link
+                      href="mailto:sales@coachhouse.io"
+                      className="font-medium text-primary underline-offset-4 hover:underline"
+                    >
+                      Talk to sales
+                    </Link>
+                  </CardDescription>
+                ) : (
+                  <form action={startCheckout} className="space-y-2">
+                    <input type="hidden" name="priceId" value={plan.id} />
+                    <input type="hidden" name="planName" value={plan.name} />
+                    <CheckoutSubmit variant={plan.highlight ? "default" : "outline"}>
+                      Start free trial
+                    </CheckoutSubmit>
+                  </form>
+                )}
               </CardContent>
             </Card>
           )

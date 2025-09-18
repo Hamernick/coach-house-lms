@@ -157,15 +157,16 @@ feat(step {id}): {title}
 
   * KPI cards (students, active subs, 30‑day revenue); recent enrollments/payments.
   * **Accept**: queries cached sensibly; loading skeletons.
-  * **Changelog**:
-    * Added admin dashboard KPI cards with Suspense skeleton fallbacks.
-    * Implemented recent enrollments and subscription-derived payment feeds.
-    * Introduced admin KPI helpers and shared currency formatter.
-  * PR: https://github.com/Hamernick/coach-house-lms/pull/17
-* [ ] **S16** — Observability & errors
+
+* [x] **S16** — Observability & errors
 
   * Structured logs; error boundaries; toasts; webhook/event logs.
   * **Accept**: forced failures produce actionable errors.
+  * **Changelog**:
+    * Added structured logger, global instrumentation, and error boundaries with streaming fallbacks.
+    * Wired Stripe webhook to emit structured logs and surface failures.
+    * Introduced global toast provider for surfaced UI errors.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/18
 * [ ] **S17** — Performance
 
   * Hydration minimization; dynamic imports; pagination; budgets enforced.

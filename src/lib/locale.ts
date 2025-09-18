@@ -1,12 +1,10 @@
-import { cookies, headers } from "next/headers"
-
 export const SUPPORTED_LOCALES = ["en-US", "es-ES", "fr-FR"] as const
 export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
 
-const DEFAULT_LOCALE: SupportedLocale = "en-US"
+export const DEFAULT_LOCALE: SupportedLocale = "en-US"
 const LOCALE_COOKIE = "coach_locale"
 
-function parseAcceptLanguage(value: string | null): SupportedLocale {
+export function parseAcceptLanguage(value: string | null): SupportedLocale {
   if (!value) {
     return DEFAULT_LOCALE
   }
@@ -24,20 +22,6 @@ function parseAcceptLanguage(value: string | null): SupportedLocale {
   }
 
   return DEFAULT_LOCALE
-}
-
-export function getLocale(): SupportedLocale {
-  const cookieStore = cookies()
-  const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value
-
-  if (cookieLocale && SUPPORTED_LOCALES.includes(cookieLocale as SupportedLocale)) {
-    return cookieLocale as SupportedLocale
-  }
-
-  const headerStore = headers()
-  const headerLocale = parseAcceptLanguage(headerStore.get("accept-language"))
-
-  return headerLocale
 }
 
 export function isSupportedLocale(locale: string): locale is SupportedLocale {

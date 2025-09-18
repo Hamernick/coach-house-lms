@@ -162,10 +162,15 @@ feat(step {id}): {title}
 
   * Locale scaffolding; UTC→local formatting; currency/number.
   * **Accept**: per‑user locale switch; snapshots updated.
-* [ ] **S19** — CI/CD & environments
+* [x] **S19** — CI/CD & environments
 
   * GitHub Actions: typecheck/lint/build/test/a11y; preview deploy; prod envs wired.
   * **Accept**: PR status checks green; preview URL posted.
+  * **Changelog**:
+    * Added CI workflow running lint, snapshot tests, and Next build with Node 20.
+    * Enabled concurrency cancellation to keep newest runs active.
+    * Documented workflow expectations for contributors.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/21
 * [ ] **S20** — Acceptance tests
 
   * E2E flows: paid signup→dashboard; module unlock; admin CRUD; billing changes.

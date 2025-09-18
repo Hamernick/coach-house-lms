@@ -76,7 +76,7 @@ supabase db push   # or run SQL files in migrations/
 
 ## CI/CD
 
-* **Checks**: typecheck, lint, build, unit, e2e, a11y quick.
+* **Checks**: `ci.yml` runs lint (`npm run lint`), snapshot tests (`npm run test:snapshots`), and build (`npm run build`).
 * **Titles**: enforce `[STEP SNN]` via `validate-step-id.yml`.
 * **Previews**: configure your host (e.g., Vercel) for PR previews.
 

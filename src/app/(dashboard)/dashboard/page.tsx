@@ -23,6 +23,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
+import { DynamicChartAreaInteractive } from "@/components/dashboard/chart-area-interactive-client"
 
 const DynamicSectionCards = dynamic(
   () => import("@/components/section-cards").then((mod) => ({ default: mod.SectionCards })),
@@ -30,10 +31,6 @@ const DynamicSectionCards = dynamic(
     loading: () => <SectionCardsSkeleton />,
   }
 )
-
-
-
-
 
 export default async function DashboardPage() {
   const supabase = createSupabaseServerClient()

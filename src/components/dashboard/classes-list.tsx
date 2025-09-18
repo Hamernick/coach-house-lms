@@ -39,7 +39,7 @@ export function ClassesList({ items }: { items: ClassSummary[] }) {
               <p className="text-xs">Progress stub · {item.progressPercent}%</p>
             </div>
             <Button asChild size="sm" variant="outline">
-              <Link href={`/dashboard/classes?focus=${item.id}`}>Open</Link>
+              <Link href={`/class/${item.slug}/module/1`}>Open</Link>
             </Button>
           </CardContent>
         </Card>

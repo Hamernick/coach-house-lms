@@ -70,7 +70,7 @@ export async function getClassById(id: string) {
   const supabase = createSupabaseServerClient()
   const { data, error } = await supabase
     .from("classes")
-    .select("*, modules ( id, title, idx, slug, published, created_at )")
+    .select("*, modules ( id, title, idx, slug, published, created_at, deck_path )")
     .eq("id", id)
     .maybeSingle()
 

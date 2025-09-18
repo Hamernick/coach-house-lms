@@ -18,9 +18,10 @@ import { ModuleListManager } from "./_components/module-list-manager"
 export default async function AdminClassDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
-  const classData = await getClassById(params.id)
+  const { id } = await params
+  const classData = await getClassById(id)
 
   if (!classData) {
     notFound()

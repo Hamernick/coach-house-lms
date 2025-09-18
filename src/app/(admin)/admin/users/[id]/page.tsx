@@ -34,10 +34,11 @@ export default async function AdminUserDetailPage({
   params,
   searchParams,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
   searchParams?: SearchParams
 }) {
-  const detail = await getAdminUserDetail(params.id)
+  const { id } = await params
+  const detail = await getAdminUserDetail(id)
   if (!detail) {
     notFound()
   }

@@ -4,6 +4,8 @@ import { Suspense } from "react"
 import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 
 import { ClassesHighlights } from "@/components/dashboard/classes-overview"
+import { DynamicChartAreaInteractive } from "@/components/dashboard/chart-area-interactive-client"
+import { DynamicDataTable } from "@/components/dashboard/data-table-client"
 import { SubscriptionStatusCard } from "@/components/dashboard/subscription-status-card"
 import {
   ChartSkeleton,
@@ -22,7 +24,6 @@ import {
 } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 
-import data from "./data.json"
 const DynamicSectionCards = dynamic(
   () => import("@/components/section-cards").then((mod) => ({ default: mod.SectionCards })),
   {
@@ -30,21 +31,9 @@ const DynamicSectionCards = dynamic(
   }
 )
 
-const DynamicChartAreaInteractive = dynamic(
-  () =>
-    import("@/components/chart-area-interactive").then((mod) => ({ default: mod.ChartAreaInteractive })),
-  {
-    loading: () => <ChartSkeleton />,
-    ssr: false,
-  }
-)
 
-const DynamicDataTable = dynamic(
-  () => import("@/components/data-table").then((mod) => ({ default: mod.DataTable })),
-  {
-    loading: () => <TableSkeleton />,
-  }
-)
+
+
 
 export default async function DashboardPage() {
   const supabase = createSupabaseServerClient()
@@ -87,7 +76,7 @@ export default async function DashboardPage() {
             </Suspense>
             <Suspense fallback={<TableSkeleton />}>
               <div className="px-4 lg:px-6">
-                <DynamicDataTable data={data} />
+                <DynamicDataTable />
               </div>
             </Suspense>
           </div>

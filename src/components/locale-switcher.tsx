@@ -3,7 +3,7 @@
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"
 
-import { SUPPORTED_LOCALES, type SupportedLocale } from "@/lib/locale"
+import { SUPPORTED_LOCALES, type SupportedLocale } from "@/lib/locale/constants"
 import { Button } from "@/components/ui/button"
 
 export function LocaleSwitcher({ currentLocale }: { currentLocale: SupportedLocale }) {

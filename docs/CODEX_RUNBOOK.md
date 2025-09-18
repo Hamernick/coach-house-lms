@@ -167,10 +167,14 @@ feat(step {id}): {title}
     * Wired Stripe webhook to emit structured logs and surface failures.
     * Introduced global toast provider for surfaced UI errors.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/18
-* [ ] **S17** — Performance
+* [x] **S17** — Performance
 
   * Hydration minimization; dynamic imports; pagination; budgets enforced.
   * **Accept**: LCP≤2.5s, TTI≤4s on mid‑range mobile.
+  * **Changelog**:
+    * Moved dashboard analytics widgets behind client wrappers with lazy data fetch and paginated admin classes to reduce hydration and payload size.
+    * Added Supabase-backed dashboard table API with dynamic fetch to avoid bundling large JSON at render time.
+    * Introduced perf budget script with CI hook to track `/dashboard` and `/admin` first-load JS.
 
 * [x] **S18** — i18n & time
 

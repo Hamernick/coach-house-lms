@@ -24,6 +24,30 @@ export type AdminRecentPayment = {
   paidAt: string | null
 }
 
+type SubscriptionRow = {
+  status: string | null
+  metadata: unknown
+  updated_at: string | null
+  created_at?: string | null
+}
+
+type EnrollmentRow = {
+  id: string
+  user_id: string
+  created_at: string
+  classes?: { title: string | null } | null
+  profiles?: { email: string | null } | null
+}
+
+type SubscriptionPaymentRow = {
+  id: string
+  user_id: string
+  status: string | null
+  metadata: unknown
+  updated_at: string | null
+}
+
+
 function extractAmount(metadata: unknown): { amount: number; currency: string } | null {
   if (!metadata || typeof metadata !== "object") {
     return null
@@ -58,7 +82,8 @@ export async function fetchAdminKpis(): Promise<AdminKpis> {
     throw subsError
   }
 
-  const subscriptionRows = subs ?? []
+  const profileSummary = profileCount as unknown as { count: number | null } | null
+  const subscriptionRows = (subs ?? []) as SubscriptionRow[]
   const activeSubscriptions = subscriptionRows.filter((row) => row.status === "active").length
 
   const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000
@@ -77,7 +102,7 @@ export async function fetchAdminKpis(): Promise<AdminKpis> {
   }
 
   return {
-    totalStudents: profileCount?.count ?? 0,
+    totalStudents: profileSummary?.count ?? 0,
     activeSubscriptions,
     thirtyDayRevenue: revenueTotal,
     revenueCurrency,
@@ -97,7 +122,9 @@ export async function fetchRecentEnrollments(limit = 5): Promise<AdminRecentEnro
     throw error
   }
 
-  return (data ?? []).map((row) => ({
+  const rows = (data ?? []) as EnrollmentRow[]
+
+  return rows.map((row) => ({
     id: row.id,
     userId: row.user_id,
     userEmail: row.profiles?.email ?? row.user_id,
@@ -119,7 +146,9 @@ export async function fetchRecentPayments(limit = 5): Promise<AdminRecentPayment
     throw error
   }
 
-  return (data ?? []).map((row) => {
+  const rows = (data ?? []) as SubscriptionPaymentRow[]
+
+  return rows.map((row) => {
     const amountInfo = extractAmount(row.metadata)
     return {
       id: row.id,

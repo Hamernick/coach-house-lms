@@ -49,7 +49,25 @@ export async function getClassModulesForUser({
     notFound()
   }
 
-  const modules = (classRow.modules ?? [])
+  const classRecord = classRow as {
+    id: string
+    title: string
+    description: string | null
+    modules?: Array<{
+      id: string
+      idx: number
+      slug: string
+      title: string
+      description: string | null
+      video_url: string | null
+      content_md: string | null
+      duration_minutes: number | null
+      deck_path: string | null
+      published: boolean
+    }> | null
+  }
+
+  const modules = (classRecord.modules ?? [])
     .filter((module) => module.published)
     .sort((a, b) => a.idx - b.idx)
     .map((module) => ({
@@ -66,9 +84,9 @@ export async function getClassModulesForUser({
 
   if (modules.length === 0) {
     return {
-      classId: classRow.id,
-      classTitle: classRow.title,
-      classDescription: classRow.description ?? null,
+      classId: classRecord.id,
+      classTitle: classRecord.title,
+      classDescription: classRecord.description ?? null,
       modules: [],
       progressMap: {},
     }
@@ -86,15 +104,16 @@ export async function getClassModulesForUser({
     throw progressError
   }
 
+  const progressRecords = (progressRows ?? []) as Array<{ module_id: string; status: string }>
   const progressMap: Record<string, ModuleProgressStatus> = {}
-  for (const row of progressRows ?? []) {
+  for (const row of progressRecords) {
     progressMap[row.module_id] = row.status as ModuleProgressStatus
   }
 
   return {
-    classId: classRow.id,
-    classTitle: classRow.title,
-    classDescription: classRow.description ?? null,
+    classId: classRecord.id,
+    classTitle: classRecord.title,
+    classDescription: classRecord.description ?? null,
     modules,
     progressMap,
   }
@@ -111,7 +130,9 @@ export async function markModuleCompleted({
 }) {
   const supabase = createSupabaseServerClient()
 
-  const { error } = await supabase.from("module_progress").upsert({
+  const { error } = await supabase.from("module_progress")
+    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
+    .upsert({
     user_id: userId,
     module_id: moduleId,
     status: "completed",

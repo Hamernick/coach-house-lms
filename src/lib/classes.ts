@@ -18,6 +18,16 @@ export type ListClassesResult = {
   pageSize: number
 }
 
+type ClassRowForList = {
+  id: string
+  title: string
+  slug: string
+  description: string | null
+  published: boolean
+  created_at: string
+  modules?: { id: string }[] | null
+}
+
 const DEFAULT_PAGE_SIZE = 6
 
 export async function listClasses({
@@ -43,8 +53,8 @@ export async function listClasses({
     throw error
   }
 
-  const items: ClassSummary[] = (data ?? []).map((row) => {
-    const modules = (row as { modules?: { id: string }[] }).modules ?? []
+  const items: ClassSummary[] = ((data ?? []) as ClassRowForList[]).map((row) => {
+    const modules = row.modules ?? []
     const moduleCount = modules.length
     return {
       id: row.id,

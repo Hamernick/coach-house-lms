@@ -11,9 +11,6 @@ What/why. Scope. Risks.
 - [ ] e2e
 - [ ] a11y quick
 
-## Screens
-Light/Dark, mobile.
-
 ## Notes
 Migrations, rollbacks, back-compat.
 

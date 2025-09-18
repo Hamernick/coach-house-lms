@@ -142,17 +142,14 @@ export default function AdminDashboardPage() {
     <div className="space-y-6">
       <DashboardBreadcrumbs segments={[{ label: "Admin" }, { label: "Dashboard" }]} />
       <Suspense fallback={<KpiSkeleton />}>
-        {/* @ts-expect-error Async Server Component */}
-        <KpiSection />
+                <KpiSection />
       </Suspense>
       <div className="grid gap-6 lg:grid-cols-2">
         <Suspense fallback={<ListSkeleton title="Recent enrollments" />}>
-          {/* @ts-expect-error Async Server Component */}
-          <RecentEnrollments />
+                    <RecentEnrollments />
         </Suspense>
         <Suspense fallback={<ListSkeleton title="Recent payments" />}>
-          {/* @ts-expect-error Async Server Component */}
-          <RecentPayments />
+                    <RecentPayments />
         </Suspense>
       </div>
     </div>

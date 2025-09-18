@@ -1,10 +1,11 @@
 import { cookies, headers } from "next/headers"
 
-export const SUPPORTED_LOCALES = ["en-US", "es-ES", "fr-FR"] as const
-export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number]
-
-const DEFAULT_LOCALE: SupportedLocale = "en-US"
-const LOCALE_COOKIE = "coach_locale"
+import {
+  DEFAULT_LOCALE,
+  LOCALE_COOKIE,
+  SUPPORTED_LOCALES,
+  type SupportedLocale,
+} from "@/lib/locale/constants"
 
 function parseAcceptLanguage(value: string | null): SupportedLocale {
   if (!value) {
@@ -27,23 +28,21 @@ function parseAcceptLanguage(value: string | null): SupportedLocale {
 }
 
 export function getLocale(): SupportedLocale {
-  const cookieStore = cookies()
+  const cookieStore = cookies() as unknown as { get: (name: string) => { value: string } | undefined }
   const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value
 
   if (cookieLocale && SUPPORTED_LOCALES.includes(cookieLocale as SupportedLocale)) {
     return cookieLocale as SupportedLocale
   }
 
-  const headerStore = headers()
+  const headerStore = headers() as unknown as { get: (name: string) => string | null }
   const headerLocale = parseAcceptLanguage(headerStore.get("accept-language"))
 
   return headerLocale
 }
 
-export function isSupportedLocale(locale: string): locale is SupportedLocale {
-  return SUPPORTED_LOCALES.includes(locale as SupportedLocale)
-}
-
 export function getLocaleCookieName() {
   return LOCALE_COOKIE
 }
+
+export { SUPPORTED_LOCALES, type SupportedLocale, isSupportedLocale } from "@/lib/locale/constants"

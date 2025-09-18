@@ -1,6 +1,7 @@
 import Link from "next/link"
 
 import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { PaginationControls } from "@/components/dashboard/pagination-controls"
 import { Button } from "@/components/ui/button"
 import {
   Table,
@@ -15,8 +16,20 @@ import { listClasses } from "@/lib/classes"
 import { ClassPublishedToggle } from "./_components/class-published-toggle"
 import { createClassAction, deleteClassAction } from "./actions"
 
-export default async function AdminClassesPage() {
-  const { items } = await listClasses({ pageSize: 100 })
+const PAGE_SIZE = 12
+
+type SearchParams = Promise<Record<string, string | string[] | undefined>>
+
+export default async function AdminClassesPage({
+  searchParams,
+}: {
+  searchParams?: SearchParams
+}) {
+  const params = searchParams ? await searchParams : {}
+  const pageParam = params?.page
+  const parsedPage = typeof pageParam === "string" ? Number.parseInt(pageParam, 10) : NaN
+  const page = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1
+  const result = await listClasses({ page, pageSize: PAGE_SIZE })
 
   return (
     <div className="space-y-6">
@@ -44,14 +57,14 @@ export default async function AdminClassesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.length === 0 ? (
+            {result.items.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="py-12 text-center text-sm text-muted-foreground">
                   No classes yet. Create one to get started.
                 </TableCell>
               </TableRow>
             ) : null}
-            {items.map((item) => (
+            {result.items.map((item) => (
               <TableRow key={item.id} className="hover:bg-muted/20">
                 <TableCell className="font-medium">{item.title}</TableCell>
                 <TableCell className="text-sm text-muted-foreground">{item.slug}</TableCell>
@@ -76,6 +89,12 @@ export default async function AdminClassesPage() {
             ))}
           </TableBody>
         </Table>
+        <PaginationControls
+          page={result.page}
+          pageSize={result.pageSize}
+          total={result.total}
+          basePath="/admin/classes"
+        />
       </div>
     </div>
   )

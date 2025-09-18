@@ -3,12 +3,7 @@ import { cache } from "react"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
-type AdminContext = {
-  supabase: ReturnType<typeof createSupabaseServerClient>
-  userId: string
-}
-
-async function requireAdminInternal(): Promise<AdminContext> {
+async function requireAdminInternal() {
   const supabase = createSupabaseServerClient()
   const {
     data: { session },

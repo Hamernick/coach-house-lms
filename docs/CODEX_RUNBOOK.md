@@ -153,15 +153,15 @@ feat(step {id}): {title}
 
   * `/admin/users` with search/filter/CSV; detail: profile, enrollments, progress, subscription; actions: role change, resend verification/magic link, revoke sessions; read-only impersonation.
   * **Accept**: CSV export; audit log entries.
-  * **Changelog**:
-    * Added users list with search, filters, CSV export, and quick links into detail view.
-    * Built user detail screen with role management, session revoke, magic link generation, enrollments, and progress summaries.
-    * Implemented admin-only actions plus API route for exporting filtered users to CSV.
-  * PR: https://github.com/Hamernick/coach-house-lms/pull/16
-* [ ] **S15** — Admin dashboard KPIs
+* [x] **S15** — Admin dashboard KPIs
 
   * KPI cards (students, active subs, 30‑day revenue); recent enrollments/payments.
   * **Accept**: queries cached sensibly; loading skeletons.
+  * **Changelog**:
+    * Added admin dashboard KPI cards with Suspense skeleton fallbacks.
+    * Implemented recent enrollments and subscription-derived payment feeds.
+    * Introduced admin KPI helpers and shared currency formatter.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/17
 * [ ] **S16** — Observability & errors
 
   * Structured logs; error boundaries; toasts; webhook/event logs.

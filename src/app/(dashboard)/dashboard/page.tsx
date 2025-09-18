@@ -21,21 +21,13 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
+import { DynamicChartAreaInteractive } from "@/components/dashboard/chart-area-interactive-client"
 
 import data from "./data.json"
 const DynamicSectionCards = dynamic(
   () => import("@/components/section-cards").then((mod) => ({ default: mod.SectionCards })),
   {
     loading: () => <SectionCardsSkeleton />,
-  }
-)
-
-const DynamicChartAreaInteractive = dynamic(
-  () =>
-    import("@/components/chart-area-interactive").then((mod) => ({ default: mod.ChartAreaInteractive })),
-  {
-    loading: () => <ChartSkeleton />,
-    ssr: false,
   }
 )
 

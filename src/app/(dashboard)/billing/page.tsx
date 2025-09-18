@@ -1,31 +1,51 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
+import { env } from "@/lib/env"
+
+import { BillingPortalButton } from "./billing-portal-button"
+
+const PORTAL_ENABLED = Boolean(env.STRIPE_SECRET_KEY)
+
 export default function BillingPlaceholderPage() {
   return (
     <div className="space-y-6 px-4 py-6 lg:px-6">
       <Card className="border-dashed bg-card/70">
         <CardHeader>
-          <CardTitle>Billing management coming soon</CardTitle>
+          <CardTitle>Billing management</CardTitle>
           <CardDescription>
-            Stripe customer portal integration ships in a later step. For now, reach out and our
-            team will adjust your subscription manually.
+            {PORTAL_ENABLED
+              ? "Manage your subscription through the Stripe customer portal."
+              : "Stripe customer portal integration ships in a later step. Reach out and our team will adjust your subscription manually."}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <div className="text-sm text-muted-foreground">
-            Need to upgrade, downgrade, or change payment methods? Email
+            {PORTAL_ENABLED ? (
+              <>
+                Open the portal to update payment methods, change plan, or cancel/resume your
+                subscription.
+              </>
+            ) : (
+              <>
+                Need to upgrade, downgrade, or change payment methods? Email
+              </>
+            )}
             <a
               href="mailto:support@coachhouse.io"
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
               {" "}support@coachhouse.io
             </a>
-            and include your workspace name.
+            {PORTAL_ENABLED ? " if something looks off." : " and include your workspace name."}
           </div>
-          <Button asChild variant="outline" className="self-start">
-            <a href="/pricing">View plans</a>
-          </Button>
+          {PORTAL_ENABLED ? (
+            <BillingPortalButton />
+          ) : (
+            <Button asChild variant="outline" className="self-start">
+              <a href="/pricing">View plans</a>
+            </Button>
+          )}
         </CardContent>
       </Card>
       <Card>

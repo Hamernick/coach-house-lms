@@ -28,21 +28,19 @@ function decodeMagicLink(encoded?: string | string[]) {
   }
 }
 
-type SearchParams = Promise<Record<string, string | string[] | undefined>>
-
 export default async function AdminUserDetailPage({
   params,
   searchParams,
 }: {
   params: { id: string }
-  searchParams?: SearchParams
+  searchParams?: Record<string, string | string[] | undefined>
 }) {
   const detail = await getAdminUserDetail(params.id)
   if (!detail) {
     notFound()
   }
 
-  const paramsMap = searchParams ? await searchParams : {}
+  const paramsMap = searchParams ?? {}
   const magicLink = decodeMagicLink(paramsMap.magic)
 
   return (

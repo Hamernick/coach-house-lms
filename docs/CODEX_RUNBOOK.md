@@ -171,6 +171,11 @@ feat(step {id}): {title}
 
   * Hydration minimization; dynamic imports; pagination; budgets enforced.
   * **Accept**: LCP≤2.5s, TTI≤4s on mid‑range mobile.
+  * **Changelog**:
+    * Dynamically imported heavy dashboard charts/tables to trim hydration cost.
+    * Added streaming loading states for dashboard route to keep perceived speed high.
+    * Ensured root layout toasts render client-side only.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/19
 * [ ] **S18** — i18n & time
 
   * Locale scaffolding; UTC→local formatting; currency/number.

@@ -1,3 +1,4 @@
+import dynamic from "next/dynamic"
 import { Suspense } from "react"
 
 import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
@@ -11,9 +12,18 @@ import {
   SubscriptionStatusSkeleton,
   TableSkeleton,
 } from "@/components/dashboard/skeletons"
-import { ChartAreaInteractive } from "@/components/chart-area-interactive"
-import { DataTable } from "@/components/data-table"
-import { SectionCards } from "@/components/section-cards"
+const ChartAreaInteractive = dynamic(() => import("@/components/chart-area-interactive"), {
+  loading: () => <ChartSkeleton />,
+  ssr: false,
+})
+
+const DataTable = dynamic(() => import("@/components/data-table"), {
+  loading: () => <TableSkeleton />,
+})
+
+const SectionCards = dynamic(() => import("@/components/section-cards"), {
+  loading: () => <SectionCardsSkeleton />,
+})
 import { SessionPreview } from "@/components/session-preview"
 import { SiteHeader } from "@/components/site-header"
 import { createSupabaseServerClient } from "@/lib/supabase"

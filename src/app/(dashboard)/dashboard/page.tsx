@@ -12,18 +12,7 @@ import {
   SubscriptionStatusSkeleton,
   TableSkeleton,
 } from "@/components/dashboard/skeletons"
-const ChartAreaInteractive = dynamic(() => import("@/components/chart-area-interactive"), {
-  loading: () => <ChartSkeleton />,
-  ssr: false,
-})
 
-const DataTable = dynamic(() => import("@/components/data-table"), {
-  loading: () => <TableSkeleton />,
-})
-
-const SectionCards = dynamic(() => import("@/components/section-cards"), {
-  loading: () => <SectionCardsSkeleton />,
-})
 import { SessionPreview } from "@/components/session-preview"
 import { SiteHeader } from "@/components/site-header"
 import { createSupabaseServerClient } from "@/lib/supabase"
@@ -34,26 +23,28 @@ import {
 import { AppSidebar } from "@/components/app-sidebar"
 
 import data from "./data.json"
+const DynamicSectionCards = dynamic(
+  () => import("@/components/section-cards").then((mod) => ({ default: mod.SectionCards })),
+  {
+    loading: () => <SectionCardsSkeleton />,
+  }
+)
 
-async function AnalyticsOverview() {
-  return <SectionCards />
-}
+const DynamicChartAreaInteractive = dynamic(
+  () =>
+    import("@/components/chart-area-interactive").then((mod) => ({ default: mod.ChartAreaInteractive })),
+  {
+    loading: () => <ChartSkeleton />,
+    ssr: false,
+  }
+)
 
-async function EngagementChart() {
-  return (
-    <div className="px-4 lg:px-6">
-      <ChartAreaInteractive />
-    </div>
-  )
-}
-
-async function OpportunitiesTable() {
-  return (
-    <div className="px-4 lg:px-6">
-      <DataTable data={data} />
-    </div>
-  )
-}
+const DynamicDataTable = dynamic(
+  () => import("@/components/data-table").then((mod) => ({ default: mod.DataTable })),
+  {
+    loading: () => <TableSkeleton />,
+  }
+)
 
 export default async function DashboardPage() {
   const supabase = createSupabaseServerClient()
@@ -87,13 +78,17 @@ export default async function DashboardPage() {
               <ClassesHighlights />
             </Suspense>
             <Suspense fallback={<SectionCardsSkeleton />}>
-              <AnalyticsOverview />
+              <DynamicSectionCards />
             </Suspense>
             <Suspense fallback={<ChartSkeleton />}>
-              <EngagementChart />
+              <div className="px-4 lg:px-6">
+                <DynamicChartAreaInteractive />
+              </div>
             </Suspense>
             <Suspense fallback={<TableSkeleton />}>
-              <OpportunitiesTable />
+              <div className="px-4 lg:px-6">
+                <DynamicDataTable data={data} />
+              </div>
             </Suspense>
           </div>
         </main>

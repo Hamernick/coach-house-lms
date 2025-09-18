@@ -4,6 +4,7 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import Stripe from "stripe"
 
+
 import { env } from "@/lib/env"
 import { logger } from "@/lib/logger"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -19,6 +20,7 @@ export async function createBillingPortalSession() {
   }
 
   if (!env.STRIPE_SECRET_KEY) {
+
     return { error: "Billing portal not available yet." }
   }
 
@@ -55,5 +57,6 @@ export async function createBillingPortalSession() {
   } catch (portalError) {
     logger.error("billing_portal_session_failed", portalError, { userId: session.user.id })
     return { error: "We couldn't open the billing portal. Contact support." }
+
   }
 }

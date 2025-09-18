@@ -5,6 +5,7 @@ import { requireAdmin } from "@/lib/admin/auth"
 import { cn } from "@/lib/utils"
 
 const NAV_ITEMS = [
+  { href: "/admin", label: "Dashboard" },
   { href: "/admin/classes", label: "Classes" },
   { href: "/admin/users", label: "Users" },
 ]
@@ -34,9 +35,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
           </nav>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-6xl px-4 py-8">
-        {children}
-      </main>
+      <main className="mx-auto w-full max-w-6xl px-4 py-8">{children}</main>
     </div>
   )
 }

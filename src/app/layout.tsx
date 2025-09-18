@@ -2,6 +2,9 @@ import type { Metadata } from "next"
 import type { ReactNode } from "react"
 import "./globals.css"
 
+import { ToastProvider } from "@/components/providers/toast-provider"
+import { getLocale } from "@/lib/locale"
+
 export const metadata: Metadata = {
   title: {
     default: "Coach House LMS",
@@ -16,9 +19,12 @@ export default function RootLayout({
 }: Readonly<{
   children: ReactNode
 }>) {
+  const locale = getLocale()
+  const language = locale.split("-")[0] ?? "en"
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={language} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
+        <ToastProvider />
         {children}
       </body>
     </html>

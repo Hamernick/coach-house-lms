@@ -171,15 +171,16 @@ feat(step {id}): {title}
 
   * Hydration minimization; dynamic imports; pagination; budgets enforced.
   * **Accept**: LCP≤2.5s, TTI≤4s on mid‑range mobile.
-  * **Changelog**:
-    * Dynamically imported heavy dashboard charts/tables to trim hydration cost.
-    * Added streaming loading states for dashboard route to keep perceived speed high.
-    * Ensured root layout toasts render client-side only.
-  * PR: https://github.com/Hamernick/coach-house-lms/pull/19
-* [ ] **S18** — i18n & time
+
+* [x] **S18** — i18n & time
 
   * Locale scaffolding; UTC→local formatting; currency/number.
-  * **Accept**: per‑user locale switch; snapshots updated.
+  * **Accept**: per-user locale switch; snapshots updated.
+  * **Changelog**:
+    * Added locale utilities, API route, and header switcher to persist user language.
+    * Updated formatting helpers to honor locale for currency, date, and number display.
+    * Set document language dynamically and ensured root toast provider renders client-side only.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/20
 * [ ] **S19** — CI/CD & environments
 
   * GitHub Actions: typecheck/lint/build/test/a11y; preview deploy; prod envs wired.

@@ -175,16 +175,17 @@ feat(step {id}): {title}
 * [x] **S18** — i18n & time
 
   * Locale scaffolding; UTC→local formatting; currency/number.
-  * **Accept**: per-user locale switch; snapshots updated.
-  * **Changelog**:
-    * Added locale utilities, API route, and header switcher to persist user language.
-    * Updated formatting helpers to honor locale for currency, date, and number display.
-    * Set document language dynamically and ensured root toast provider renders client-side only.
-  * PR: https://github.com/Hamernick/coach-house-lms/pull/20
-* [ ] **S19** — CI/CD & environments
+  * **Accept**: per‑user locale switch; snapshots updated.
+* [x] **S19** — CI/CD & environments
+
 
   * GitHub Actions: typecheck/lint/build/test/a11y; preview deploy; prod envs wired.
   * **Accept**: PR status checks green; preview URL posted.
+  * **Changelog**:
+    * Added CI workflow running lint, snapshot tests, and Next build with Node 20.
+    * Enabled concurrency cancellation to keep newest runs active.
+    * Documented workflow expectations for contributors.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/21
 * [ ] **S20** — Acceptance tests
 
   * E2E flows: paid signup→dashboard; module unlock; admin CRUD; billing changes.

@@ -44,6 +44,7 @@ export async function PUT(request: Request, context: any) {
   const admin = createSupabaseAdminClient()
   const { data, error } = await admin
     .from("classes")
+    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
     .update(parsed.data)
     .eq("id", params.id)
     .select()

@@ -12,7 +12,8 @@
     "snapshots:update": "npm run snapshots:build && node -r ./dist-snapshots/scripts/register-alias.js dist-snapshots/scripts/generate-snapshots.js --update",
     "test:snapshots": "npm run snapshots:verify",
     "test": "npm run test:snapshots && npm run test:rls",
-    "test:rls": "node supabase/tests/rls.test.mjs"
+    "test:rls": "node supabase/tests/rls.test.mjs",
+    "check:perf": "node scripts/check-performance-budgets.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

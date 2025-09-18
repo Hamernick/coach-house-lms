@@ -3,8 +3,8 @@ import { NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/admin/auth"
 import { createModuleDeckSignedUrl } from "@/lib/storage/decks"
 
-export async function GET(_request: Request, { params }: { params: { id: string } }) {
-  const moduleId = params.id
+export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
+  const { id: moduleId } = await context.params
 
   const { supabase } = await requireAdmin()
 
@@ -18,11 +18,13 @@ export async function GET(_request: Request, { params }: { params: { id: string 
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  if (!data || !data.deck_path) {
+  const record = data as { deck_path: string | null } | null
+
+  if (!record || !record.deck_path) {
     return NextResponse.json({ error: "No deck found" }, { status: 404 })
   }
 
-  const signedUrl = await createModuleDeckSignedUrl(data.deck_path)
+  const signedUrl = await createModuleDeckSignedUrl(record.deck_path)
 
   return NextResponse.redirect(signedUrl)
 }

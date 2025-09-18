@@ -20,6 +20,7 @@ export async function changeUserRoleAction(formData: FormData) {
 
   const { error } = await supabase
     .from("profiles")
+    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
     .update({ role: nextRole })
     .eq("id", userId)
 

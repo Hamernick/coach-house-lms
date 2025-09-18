@@ -23,6 +23,7 @@ export async function updateClassDetailsAction(formData: FormData) {
 
   const { error } = await supabase
     .from("classes")
+    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
     .update({
       title: title.trim(),
       slug: slug.trim(),
@@ -61,11 +62,13 @@ export async function createModuleAction(formData: FormData) {
     throw idxError
   }
 
-  const nextIdx = maxIdxData ? maxIdxData.idx + 1 : 1
+  const currentMaxIdx = (maxIdxData as { idx: number } | null)?.idx ?? 0
+  const nextIdx = currentMaxIdx + 1
   const slug = `module-${randomUUID().slice(0, 8)}`
 
   const { data, error } = await supabase
     .from("modules")
+    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
     .insert({
       class_id: classId,
       idx: nextIdx,
@@ -83,7 +86,10 @@ export async function createModuleAction(formData: FormData) {
 
   revalidatePath(`/admin/classes/${classId}`)
 
-  redirect(`/admin/modules/${data.id}`)
+  const createdModule = data as { id: string } | null
+  if (createdModule?.id) {
+    redirect(`/admin/modules/${createdModule.id}`)
+  }
 }
 
 export async function reorderModulesAction(classId: string, orderedIds: string[]) {
@@ -91,7 +97,9 @@ export async function reorderModulesAction(classId: string, orderedIds: string[]
 
   const updates = orderedIds.map((id, index) => ({ id, idx: index + 1 }))
 
-  const { error } = await supabase.from("modules").upsert(updates, { onConflict: "id" })
+  const { error } = await supabase.from("modules")
+    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
+    .upsert(updates, { onConflict: "id" })
 
   if (error) {
     throw error
@@ -124,6 +132,7 @@ export async function setModulePublishedAction(moduleId: string, classId: string
 
   const { error } = await supabase
     .from("modules")
+    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
     .update({ published })
     .eq("id", moduleId)
 

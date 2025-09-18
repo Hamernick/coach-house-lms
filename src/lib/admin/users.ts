@@ -49,8 +49,15 @@ export async function listAdminUsers({
     throw profilesError
   }
 
-  const profileMap = new Map<string, (typeof profiles)[number]>()
-  for (const profile of profiles ?? []) {
+  const profileRecords = (profiles ?? []) as Array<{
+    id: string
+    full_name: string | null
+    role: string | null
+    enrollments?: { id: string }[] | null
+    subscriptions?: { status: string | null; created_at: string | null }[] | null
+  }>
+  const profileMap = new Map<string, (typeof profileRecords)[number]>()
+  for (const profile of profileRecords) {
     profileMap.set(profile.id, profile)
   }
 
@@ -68,7 +75,7 @@ export async function listAdminUsers({
         email: user.email ?? "",
         fullName: profile?.full_name ?? user.user_metadata?.full_name ?? null,
         role: (profile?.role ?? "student") as "student" | "admin",
-        lastSignInAt: user.last_sign_in_at,
+        lastSignInAt: user.last_sign_in_at ?? null,
         enrollmentCount: profile?.enrollments?.length ?? 0,
         subscriptionStatus: latestSubscription?.status ?? null,
       }
@@ -143,6 +150,8 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     return null
   }
 
+  const profileRecord = profile as { full_name: string | null; role: string | null; created_at: string }
+
   const { data: enrollments, error: enrollmentsError } = await supabase
     .from("enrollments")
     .select("id, status, created_at, classes ( id, title, slug )")
@@ -176,14 +185,27 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     throw subscriptionError
   }
 
+  const subscriptionRecord = subscription as {
+    status: string
+    current_period_end: string | null
+    metadata: unknown
+  } | null
+
   return {
     id: userId,
     email: userData.user.email ?? "",
-    fullName: profile.full_name ?? userData.user.user_metadata?.full_name ?? null,
-    role: profile.role as "student" | "admin",
-    createdAt: profile.created_at,
-    lastSignInAt: userData.user.last_sign_in_at,
-    enrollments: (enrollments ?? []).map((item) => ({
+    fullName:
+      profileRecord.full_name ??
+      (typeof userData.user.user_metadata?.full_name === "string" ? userData.user.user_metadata.full_name : null),
+    role: (profileRecord.role ?? "student") as "student" | "admin",
+    createdAt: profileRecord.created_at,
+    lastSignInAt: userData.user.last_sign_in_at ?? null,
+    enrollments: ((enrollments ?? []) as Array<{
+      id: string
+      status: string
+      created_at: string
+      classes?: { id: string; slug: string; title: string | null } | null
+    }>).map((item) => ({
       id: item.id,
       classId: item.classes?.id ?? "",
       classSlug: item.classes?.slug ?? "",
@@ -191,19 +213,24 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
       status: item.status,
       enrolledAt: item.created_at,
     })),
-    moduleProgress: (progress ?? []).map((item) => ({
+    moduleProgress: ((progress ?? []) as Array<{
+      module_id: string
+      status: Database["public"]["Enums"]["module_progress_status"]
+      completed_at: string | null
+      modules?: { title: string | null } | null
+    }>).map((item) => ({
       moduleId: item.module_id,
       moduleTitle: item.modules?.title ?? "Unknown module",
       status: item.status,
       completedAt: item.completed_at,
     })),
-    subscription: subscription
+    subscription: subscriptionRecord
       ? {
-          status: subscription.status,
-          currentPeriodEnd: subscription.current_period_end,
+          status: subscriptionRecord.status,
+          currentPeriodEnd: subscriptionRecord.current_period_end,
           planName:
-            typeof subscription.metadata === "object" && subscription.metadata
-              ? (subscription.metadata as Record<string, string | null>).planName ?? null
+            typeof subscriptionRecord.metadata === "object" && subscriptionRecord.metadata
+              ? (subscriptionRecord.metadata as Record<string, string | null>).planName ?? null
               : null,
         }
       : null,

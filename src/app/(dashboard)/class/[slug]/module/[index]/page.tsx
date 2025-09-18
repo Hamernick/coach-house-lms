@@ -30,9 +30,10 @@ type ModuleState = {
 export default async function ModulePage({
   params,
 }: {
-  params: ModuleParams
+  params: Promise<ModuleParams>
 }) {
-  const moduleIndex = Number.parseInt(params.index, 10)
+  const { slug, index } = await params
+  const moduleIndex = Number.parseInt(index, 10)
   if (!Number.isFinite(moduleIndex) || moduleIndex <= 0) {
     notFound()
   }
@@ -47,7 +48,7 @@ export default async function ModulePage({
   }
 
   const classContext = await getClassModulesForUser({
-    classSlug: params.slug,
+    classSlug: slug,
     userId: session.user.id,
   })
 
@@ -64,7 +65,7 @@ export default async function ModulePage({
 
   const firstAvailable = moduleStates.find((state) => !state.locked) ?? currentState
   if (currentState.locked) {
-    redirect(`/class/${params.slug}/module/${firstAvailable.module.idx}`)
+    redirect(`/class/${slug}/module/${firstAvailable.module.idx}`)
   }
 
   const currentIndex = moduleStates.findIndex((state) => state.module.id === currentState.module.id)
@@ -82,7 +83,7 @@ export default async function ModulePage({
       />
       <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
         <ModuleList
-          slug={params.slug}
+          slug={slug}
           items={moduleStates}
           currentModuleId={currentState.module.id}
         />
@@ -114,7 +115,7 @@ export default async function ModulePage({
                 </p>
                 <ModuleCompletionForm
                   moduleId={currentState.module.id}
-                  classSlug={params.slug}
+                  classSlug={slug}
                   currentIndex={currentState.module.idx}
                   nextModuleIndex={nextState?.module.idx ?? null}
                   completed={currentState.completed}
@@ -130,7 +131,7 @@ export default async function ModulePage({
               disabled={!previousState}
             >
               <a
-                href={previousState ? `/class/${params.slug}/module/${previousState.module.idx}` : "#"}
+                href={previousState ? `/class/${slug}/module/${previousState.module.idx}` : "#"}
               >
                 Previous
               </a>
@@ -141,7 +142,7 @@ export default async function ModulePage({
               asChild
               disabled={!nextState || nextState.locked}
             >
-              <a href={nextState ? `/class/${params.slug}/module/${nextState.module.idx}` : "#"}>
+              <a href={nextState ? `/class/${slug}/module/${nextState.module.idx}` : "#"}>
                 Next
               </a>
             </Button>

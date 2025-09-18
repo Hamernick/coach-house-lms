@@ -23,7 +23,9 @@ async function requireAdminInternal() {
     throw error
   }
 
-  if (!profile || profile.role !== "admin") {
+  const typedProfile = profile as { role: string } | null
+
+  if (!typedProfile || typedProfile.role !== "admin") {
     redirect("/dashboard")
   }
 

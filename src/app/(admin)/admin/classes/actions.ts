@@ -14,6 +14,7 @@ export async function createClassAction() {
 
   const { data, error } = await supabase
     .from("classes")
+    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
     .insert({
       title: "Untitled Class",
       slug,
@@ -27,7 +28,10 @@ export async function createClassAction() {
     throw error
   }
 
-  redirect(`/admin/classes/${data.id}`)
+  const createdClass = data as { id: string } | null
+  if (createdClass?.id) {
+    redirect(`/admin/classes/${createdClass.id}`)
+  }
 }
 
 export async function deleteClassAction(formData: FormData) {
@@ -53,6 +57,7 @@ export async function setClassPublishedAction(classId: string, published: boolea
 
   const { error } = await supabase
     .from("classes")
+    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
     .update({ published })
     .eq("id", classId)
 

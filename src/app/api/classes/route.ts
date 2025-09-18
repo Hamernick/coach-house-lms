@@ -31,6 +31,7 @@ export async function POST(request: NextRequest) {
   const admin = createSupabaseAdminClient()
   const { data, error } = await admin
     .from("classes")
+    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
     .insert({
       title: parsed.data.title,
       slug: parsed.data.slug,

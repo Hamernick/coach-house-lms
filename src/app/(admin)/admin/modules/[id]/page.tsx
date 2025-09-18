@@ -21,8 +21,9 @@ import {
 export default async function AdminModuleDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
   const { supabase } = await requireAdmin()
 
   const { data, error } = await supabase
@@ -30,7 +31,7 @@ export default async function AdminModuleDetailPage({
     .select(
       "id, class_id, idx, slug, title, description, video_url, content_md, duration_minutes, deck_path, published, classes ( id, title, slug )"
     )
-    .eq("id", params.id)
+    .eq("id", id)
     .maybeSingle()
 
   if (error) {

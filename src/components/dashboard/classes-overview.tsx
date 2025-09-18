@@ -42,7 +42,7 @@ export async function ClassesHighlights() {
               <p className="text-xs">Progress stub · {item.progressPercent}%</p>
             </div>
             <Button asChild size="sm" variant="outline">
-              <Link href={`/dashboard/classes?focus=${item.id}`}>View</Link>
+              <Link href={`/class/${item.slug}/module/1`}>View</Link>
             </Button>
           </CardContent>
         </Card>

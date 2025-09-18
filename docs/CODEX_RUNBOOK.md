@@ -130,26 +130,34 @@ feat(step {id}): {title}
     * Implemented Supabase classes service, paginated `/dashboard/classes` route, and shared empty/skeleton states.
     * Exposed admin Supabase client plus `/api/classes` endpoints for list/create/update/delete.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/12
-* [ ] **S11** — Modules & sequential unlock
+* [x] **S11** — Modules & sequential unlock
 
   * Canonical route `/class/[slug]/module/[index]`; video embed; markdown render; form inputs; Prev/Next.
   * **Accept**: completing module 1 unlocks 2.
-* [ ] **S12** — Admin: classes/modules CRUD
+
+* [x] **S12** — Admin: classes/modules CRUD
 
   * `/admin/classes`, `/admin/classes/[id]`, `/admin/modules/[id]`; drag‑reorder; publish/unpublish.
   * **Accept**: reorder persists; publish toggles visibility.
+  * **Changelog**:
+    * Added admin layout plus classes table with create/delete and publish toggles.
+    * Built class detail editor with metadata form, module reorder drag-and-drop, and module creation flow.
+    * Implemented module editor with markdown preview, video metadata, and delete controls.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/14
 * [ ] **S13** — PDF storage (signed URLs)
 
   * Supabase Storage `decks` private; server‑generated signed URLs; upload UI.
   * **Accept**: upload→view via signed URL; no public ACLs.
-* [ ] **S14** — Admin: users list/detail
 
-  * `/admin/users` with search/filter/CSV; detail: profile, enrollments, progress, subscription; actions: role change, resend verification/magic link, revoke sessions; read‑only impersonation.
+* [x] **S14** — Admin: users list/detail
+
+  * `/admin/users` with search/filter/CSV; detail: profile, enrollments, progress, subscription; actions: role change, resend verification/magic link, revoke sessions; read-only impersonation.
   * **Accept**: CSV export; audit log entries.
-* [ ] **S15** — Admin dashboard KPIs
+* [x] **S15** — Admin dashboard KPIs
 
   * KPI cards (students, active subs, 30‑day revenue); recent enrollments/payments.
   * **Accept**: queries cached sensibly; loading skeletons.
+
 * [x] **S16** — Observability & errors
 
   * Structured logs; error boundaries; toasts; webhook/event logs.

@@ -87,6 +87,7 @@ export type Database = {
           video_url: string | null
           content_md: string | null
           duration_minutes: number | null
+          deck_path: string | null
           created_at: string
           updated_at: string
         }
@@ -100,6 +101,7 @@ export type Database = {
           video_url?: string | null
           content_md?: string | null
           duration_minutes?: number | null
+          deck_path?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -113,6 +115,7 @@ export type Database = {
           video_url?: string | null
           content_md?: string | null
           duration_minutes?: number | null
+          deck_path?: string | null
           created_at?: string
           updated_at?: string
         }

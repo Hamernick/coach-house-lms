@@ -34,6 +34,7 @@ export async function updateModuleDetailsAction(formData: FormData) {
 
   const { error } = await supabase
     .from("modules")
+    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
     .update({
       title: title.trim(),
       slug: slug.trim(),
@@ -105,15 +106,18 @@ export async function uploadModuleDeckAction(formData: FormData) {
     throw error
   }
 
+  const currentModuleRow = moduleRow as { deck_path: string | null } | null
+
   const deckPath = await uploadModuleDeck({
     moduleId,
     filename: file.name,
     fileBuffer: await file.arrayBuffer(),
-    previousPath: moduleRow?.deck_path ?? undefined,
+    previousPath: currentModuleRow?.deck_path ?? undefined,
   })
 
   const { error: updateError } = await supabase
     .from("modules")
+    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
     .update({ deck_path: deckPath })
     .eq("id", moduleId)
 
@@ -145,12 +149,15 @@ export async function removeModuleDeckAction(formData: FormData) {
     throw error
   }
 
-  if (data?.deck_path) {
-    await removeModuleDeck(data.deck_path)
+  const existingModuleRow = data as { deck_path: string | null } | null
+
+  if (existingModuleRow?.deck_path) {
+    await removeModuleDeck(existingModuleRow.deck_path)
   }
 
   const { error: updateError } = await supabase
     .from("modules")
+    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
     .update({ deck_path: null })
     .eq("id", moduleId)
 

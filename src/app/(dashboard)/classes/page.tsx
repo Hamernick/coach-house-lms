@@ -24,8 +24,7 @@ export default async function ClassesPage({
     <div className="space-y-6 px-4 py-6 lg:px-6">
       <DashboardBreadcrumbs segments={[{ label: "Dashboard", href: "/dashboard" }, { label: "Classes" }]} />
       <Suspense fallback={<TableSkeleton />}>
-        {/* @ts-expect-error Async Server Component */}
-        <ClassesSection page={page} pageSize={PAGE_SIZE} />
+                <ClassesSection page={page} pageSize={PAGE_SIZE} />
       </Suspense>
     </div>
   )

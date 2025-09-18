@@ -9,11 +9,23 @@ import { Textarea } from "@/components/ui/textarea"
 import { getClassById } from "@/lib/classes"
 
 import { ClassPublishedToggle } from "../_components/class-published-toggle"
+
+import type { Database } from "@/lib/supabase/types"
 import {
   createModuleAction,
   updateClassDetailsAction,
 } from "./actions"
 import { ModuleListManager } from "./_components/module-list-manager"
+
+type ClassDetailRecord = Database["public"]["Tables"]["classes"]["Row"] & {
+  modules?: {
+    id: string
+    title: string
+    slug: string
+    idx: number
+    published: boolean
+  }[] | null
+}
 
 export default async function AdminClassDetailPage({
   params,
@@ -21,7 +33,7 @@ export default async function AdminClassDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const classData = await getClassById(id)
+  const classData = (await getClassById(id)) as ClassDetailRecord | null
 
   if (!classData) {
     notFound()

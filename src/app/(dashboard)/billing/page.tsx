@@ -5,7 +5,7 @@ import { env } from "@/lib/env"
 
 import { BillingPortalButton } from "./billing-portal-button"
 
-const PORTAL_ENABLED = Boolean(env.STRIPE_SECRET_KEY)
+const PORTAL_READY = Boolean(env.STRIPE_SECRET_KEY)
 
 export default function BillingPlaceholderPage() {
   return (
@@ -14,22 +14,17 @@ export default function BillingPlaceholderPage() {
         <CardHeader>
           <CardTitle>Billing management</CardTitle>
           <CardDescription>
-            {PORTAL_ENABLED
+            {PORTAL_READY
               ? "Manage your subscription through the Stripe customer portal."
-              : "Stripe customer portal integration ships in a later step. Reach out and our team will adjust your subscription manually."}
+              : "Stripe customer portal integration ships in a later step. For now, reach out and our team will adjust your subscription manually."}
           </CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <div className="text-sm text-muted-foreground">
-            {PORTAL_ENABLED ? (
-              <>
-                Open the portal to update payment methods, change plan, or cancel/resume your
-                subscription.
-              </>
+            {PORTAL_READY ? (
+              <>Open the portal to update payment methods, change plan, or cancel/resume your subscription.</>
             ) : (
-              <>
-                Need to upgrade, downgrade, or change payment methods? Email
-              </>
+              <>Need to upgrade, downgrade, or change payment methods? Email</>
             )}
             <a
               href="mailto:support@coachhouse.io"
@@ -37,9 +32,9 @@ export default function BillingPlaceholderPage() {
             >
               {" "}support@coachhouse.io
             </a>
-            {PORTAL_ENABLED ? " if something looks off." : " and include your workspace name."}
+            {PORTAL_READY ? " if you need additional help." : " and include your workspace name."}
           </div>
-          {PORTAL_ENABLED ? (
+          {PORTAL_READY ? (
             <BillingPortalButton />
           ) : (
             <Button asChild variant="outline" className="self-start">
@@ -53,7 +48,11 @@ export default function BillingPlaceholderPage() {
           <CardTitle>What to expect next</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>• Stripe customer portal link will appear here once credentials are connected.</p>
+          <p>
+            • {PORTAL_READY
+              ? "Stripe customer portal is now available for self-serve management."
+              : "Stripe customer portal link will appear here once credentials are connected."}
+          </p>
           <p>• Subscription status on the dashboard already reflects the latest webhook data.</p>
           <p>• Webhook events are stored in Supabase for replay-safe processing.</p>
         </CardContent>

@@ -4,11 +4,12 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import Stripe from "stripe"
 
-import { logger } from "@/lib/logger"
+
 import { env } from "@/lib/env"
+import { logger } from "@/lib/logger"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
-export async function createPortalSessionAction() {
+export async function createBillingPortalSession() {
   const supabase = createSupabaseServerClient()
   const {
     data: { session },
@@ -19,7 +20,8 @@ export async function createPortalSessionAction() {
   }
 
   if (!env.STRIPE_SECRET_KEY) {
-    return { error: "Stripe is not configured yet." }
+
+    return { error: "Billing portal not available yet." }
   }
 
   const { data: subscription, error } = await supabase
@@ -31,13 +33,13 @@ export async function createPortalSessionAction() {
     .maybeSingle()
 
   if (error) {
-    logger.error("billing_portal_subscription_fetch_failed", error)
-    return { error: "Unable to find your subscription." }
+    logger.error("billing_portal_subscription_lookup_failed", error, { userId: session.user.id })
+    return { error: "Unable to locate your subscription." }
   }
 
   const customerId = subscription?.stripe_customer_id
   if (!customerId) {
-    return { error: "No Stripe customer linked to your account yet." }
+    return { error: "No Stripe customer linked to this account yet." }
   }
 
   const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: "2024-06-20" })
@@ -52,8 +54,9 @@ export async function createPortalSessionAction() {
     logger.info("billing_portal_session_created", { userId: session.user.id })
 
     return { url: portalSession.url }
-  } catch (stripeError) {
-    logger.error("billing_portal_session_failed", stripeError)
-    return { error: "We couldn't start the billing portal. Contact support." }
+  } catch (portalError) {
+    logger.error("billing_portal_session_failed", portalError, { userId: session.user.id })
+    return { error: "We couldn't open the billing portal. Contact support." }
+
   }
 }

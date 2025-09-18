@@ -3,7 +3,7 @@ import type { ReactNode } from "react"
 import "./globals.css"
 
 import { ToastProvider } from "@/components/providers/toast-provider"
-import { getLocale } from "@/lib/locale"
+import { getLocale } from "@/lib/locale.server"
 
 export const metadata: Metadata = {
   title: {

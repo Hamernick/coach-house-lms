@@ -6,6 +6,8 @@ import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { requireAdmin } from "@/lib/admin/auth"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
+import type { Database } from "@/lib/supabase/types"
 
 export async function updateClassDetailsAction(formData: FormData) {
   const classId = formData.get("classId")
@@ -19,18 +21,20 @@ export async function updateClassDetailsAction(formData: FormData) {
     return
   }
 
-  const { supabase } = await requireAdmin()
+  await requireAdmin()
+  const supabase = createSupabaseServerClient()
+
+  const updatePayload: Database["public"]["Tables"]["classes"]["Update"] = {
+    title: title.trim(),
+    slug: slug.trim(),
+    description: typeof description === "string" ? description : null,
+    stripe_product_id: typeof stripeProductId === "string" && stripeProductId.length > 0 ? stripeProductId : null,
+    stripe_price_id: typeof stripePriceId === "string" && stripePriceId.length > 0 ? stripePriceId : null,
+  }
 
   const { error } = await supabase
-    .from("classes")
-    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
-    .update({
-      title: title.trim(),
-      slug: slug.trim(),
-      description: typeof description === "string" ? description : null,
-      stripe_product_id: typeof stripeProductId === "string" && stripeProductId.length > 0 ? stripeProductId : null,
-      stripe_price_id: typeof stripePriceId === "string" && stripePriceId.length > 0 ? stripePriceId : null,
-    })
+    .from("classes" satisfies keyof Database["public"]["Tables"])
+    .update<Database["public"]["Tables"]["classes"]["Update"]>(updatePayload)
     .eq("id", classId)
 
   if (error) {
@@ -48,10 +52,11 @@ export async function createModuleAction(formData: FormData) {
     return
   }
 
-  const { supabase } = await requireAdmin()
+  await requireAdmin()
+  const supabase = createSupabaseServerClient()
 
   const { data: maxIdxData, error: idxError } = await supabase
-    .from("modules")
+    .from("modules" satisfies keyof Database["public"]["Tables"])
     .select("idx")
     .eq("class_id", classId)
     .order("idx", { ascending: false })
@@ -66,17 +71,18 @@ export async function createModuleAction(formData: FormData) {
   const nextIdx = currentMaxIdx + 1
   const slug = `module-${randomUUID().slice(0, 8)}`
 
+  const insertPayload: Database["public"]["Tables"]["modules"]["Insert"] = {
+    class_id: classId,
+    idx: nextIdx,
+    slug,
+    title: "Untitled Module",
+    content_md: "",
+    published: false,
+  }
+
   const { data, error } = await supabase
-    .from("modules")
-    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
-    .insert({
-      class_id: classId,
-      idx: nextIdx,
-      slug,
-      title: "Untitled Module",
-      content_md: "",
-      published: false,
-    })
+    .from("modules" satisfies keyof Database["public"]["Tables"])
+    .insert(insertPayload)
     .select("id")
     .single()
 
@@ -93,16 +99,21 @@ export async function createModuleAction(formData: FormData) {
 }
 
 export async function reorderModulesAction(classId: string, orderedIds: string[]) {
-  const { supabase } = await requireAdmin()
+  await requireAdmin()
+  const supabase = createSupabaseServerClient()
 
-  const updates = orderedIds.map((id, index) => ({ id, idx: index + 1 }))
+  const updateResponses = await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase
+        .from("modules" satisfies keyof Database["public"]["Tables"])
+        .update<Database["public"]["Tables"]["modules"]["Update"]>({ idx: index + 1 })
+        .eq("id", id)
+    )
+  )
 
-  const { error } = await supabase.from("modules")
-    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
-    .upsert(updates, { onConflict: "id" })
-
-  if (error) {
-    throw error
+  const failed = updateResponses.find((response) => response.error)
+  if (failed?.error) {
+    throw failed.error
   }
 
   revalidatePath(`/admin/classes/${classId}`)
@@ -116,9 +127,13 @@ export async function deleteModuleAction(formData: FormData) {
     return
   }
 
-  const { supabase } = await requireAdmin()
+  await requireAdmin()
+  const supabase = createSupabaseServerClient()
 
-  const { error } = await supabase.from("modules").delete().eq("id", moduleId)
+  const { error } = await supabase
+    .from("modules" satisfies keyof Database["public"]["Tables"])
+    .delete()
+    .eq("id", moduleId)
 
   if (error) {
     throw error
@@ -128,12 +143,14 @@ export async function deleteModuleAction(formData: FormData) {
 }
 
 export async function setModulePublishedAction(moduleId: string, classId: string, published: boolean) {
-  const { supabase } = await requireAdmin()
+  await requireAdmin()
+  const supabase = createSupabaseServerClient()
+
+  const publishPayload: Database["public"]["Tables"]["modules"]["Update"] = { published }
 
   const { error } = await supabase
-    .from("modules")
-    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
-    .update({ published })
+    .from("modules" satisfies keyof Database["public"]["Tables"])
+    .update(publishPayload)
     .eq("id", moduleId)
 
   if (error) {

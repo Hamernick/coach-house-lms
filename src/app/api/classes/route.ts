@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server"
 import { z } from "zod"
 
 import { createSupabaseAdminClient } from "@/lib/supabase"
+import type { Database } from "@/lib/supabase"
 import { listClasses } from "@/lib/classes"
 
 const createClassSchema = z.object({
@@ -29,15 +30,16 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createSupabaseAdminClient()
+  const insertPayload: Database["public"]["Tables"]["classes"]["Insert"] = {
+    title: parsed.data.title,
+    slug: parsed.data.slug,
+    description: parsed.data.description ?? null,
+    published: parsed.data.published,
+  }
+
   const { data, error } = await admin
-    .from("classes")
-    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
-    .insert({
-      title: parsed.data.title,
-      slug: parsed.data.slug,
-      description: parsed.data.description ?? null,
-      published: parsed.data.published,
-    })
+    .from("classes" satisfies keyof Database["public"]["Tables"])
+    .insert(insertPayload)
     .select()
     .single()
 

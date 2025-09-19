@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 "use server"
 
 import { headers } from "next/headers"
@@ -18,7 +16,7 @@ export async function startCheckout(formData: FormData) {
   const planNameEntry = formData.get("planName")
   const planName = typeof planNameEntry === "string" ? planNameEntry : undefined
 
-  const supabase = createSupabaseServerClient() as any
+  const supabase = createSupabaseServerClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -44,7 +42,9 @@ export async function startCheckout(formData: FormData) {
       metadata: planName ? { planName } : null,
     }
 
-    await supabase.from("subscriptions").upsert(payload, { onConflict: "stripe_subscription_id" })
+    await supabase
+      .from("subscriptions" satisfies keyof Database["public"]["Tables"])
+      .upsert<SubscriptionInsert>(payload, { onConflict: "stripe_subscription_id" })
 
     redirect(`/dashboard?subscription=${status}`)
   }

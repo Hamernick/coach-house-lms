@@ -2,8 +2,15 @@ import { redirect } from "next/navigation"
 import { cache } from "react"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import type { SupabaseClient } from "@supabase/supabase-js"
+import type { Database } from "@/lib/supabase"
 
-async function requireAdminInternal() {
+type RequireAdminResult = {
+  supabase: SupabaseClient<Database>
+  userId: string
+}
+
+async function requireAdminInternal(): Promise<RequireAdminResult> {
   const supabase = createSupabaseServerClient()
   const {
     data: { session },
@@ -23,9 +30,7 @@ async function requireAdminInternal() {
     throw error
   }
 
-  const typedProfile = profile as { role: string } | null
-
-  if (!typedProfile || typedProfile.role !== "admin") {
+  if (!profile || profile.role !== "admin") {
     redirect("/dashboard")
   }
 

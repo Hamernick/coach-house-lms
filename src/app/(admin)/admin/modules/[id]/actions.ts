@@ -5,6 +5,8 @@ import { redirect } from "next/navigation"
 
 import { requireAdmin } from "@/lib/admin/auth"
 import { uploadModuleDeck, removeModuleDeck } from "@/lib/storage/decks"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
+import type { Database } from "@/lib/supabase"
 
 export async function updateModuleDetailsAction(formData: FormData) {
   const moduleId = formData.get("moduleId")
@@ -25,24 +27,29 @@ export async function updateModuleDetailsAction(formData: FormData) {
     return
   }
 
-  const { supabase } = await requireAdmin()
+  await requireAdmin()
+  const supabase = createSupabaseServerClient()
 
   const durationValue =
     typeof duration === "string" && duration.length > 0
       ? Number.parseInt(duration, 10)
       : null
 
+  const normalizedDuration =
+    typeof durationValue === "number" && Number.isFinite(durationValue) ? durationValue : null
+
+  const updatePayload: Database["public"]["Tables"]["modules"]["Update"] = {
+    title: title.trim(),
+    slug: slug.trim(),
+    description: typeof description === "string" ? description : null,
+    video_url: typeof videoUrl === "string" && videoUrl.length > 0 ? videoUrl : null,
+    duration_minutes: normalizedDuration,
+    content_md: typeof content === "string" ? content : null,
+  }
+
   const { error } = await supabase
-    .from("modules")
-    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
-    .update({
-      title: title.trim(),
-      slug: slug.trim(),
-      description: typeof description === "string" ? description : null,
-      video_url: typeof videoUrl === "string" && videoUrl.length > 0 ? videoUrl : null,
-      duration_minutes: Number.isFinite(durationValue) ? durationValue : null,
-      content_md: typeof content === "string" ? content : null,
-    })
+    .from("modules" satisfies keyof Database["public"]["Tables"])
+    .update(updatePayload)
     .eq("id", moduleId)
 
   if (error) {
@@ -61,9 +68,13 @@ export async function deleteModuleFromDetailAction(formData: FormData) {
     return
   }
 
-  const { supabase } = await requireAdmin()
+  await requireAdmin()
+  const supabase = createSupabaseServerClient()
 
-  const { error } = await supabase.from("modules").delete().eq("id", moduleId)
+  const { error } = await supabase
+    .from("modules" satisfies keyof Database["public"]["Tables"])
+    .delete()
+    .eq("id", moduleId)
 
   if (error) {
     throw error
@@ -94,31 +105,33 @@ export async function uploadModuleDeckAction(formData: FormData) {
     throw new Error("Deck exceeds 15MB limit")
   }
 
-  const { supabase } = await requireAdmin()
+  await requireAdmin()
+  const supabase = createSupabaseServerClient()
 
   const { data: moduleRow, error } = await supabase
-    .from("modules")
+    .from("modules" satisfies keyof Database["public"]["Tables"])
     .select("deck_path")
     .eq("id", moduleId)
-    .maybeSingle()
+    .maybeSingle<Pick<Database["public"]["Tables"]["modules"]["Row"], "deck_path">>()
 
   if (error) {
     throw error
   }
 
-  const currentModuleRow = moduleRow as { deck_path: string | null } | null
-
   const deckPath = await uploadModuleDeck({
     moduleId,
     filename: file.name,
     fileBuffer: await file.arrayBuffer(),
-    previousPath: currentModuleRow?.deck_path ?? undefined,
+    previousPath: moduleRow?.deck_path ?? undefined,
   })
 
+  const deckUpdatePayload: Database["public"]["Tables"]["modules"]["Update"] = {
+    deck_path: deckPath,
+  }
+
   const { error: updateError } = await supabase
-    .from("modules")
-    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
-    .update({ deck_path: deckPath })
+    .from("modules" satisfies keyof Database["public"]["Tables"])
+    .update(deckUpdatePayload)
     .eq("id", moduleId)
 
   if (updateError) {
@@ -137,28 +150,30 @@ export async function removeModuleDeckAction(formData: FormData) {
     return
   }
 
-  const { supabase } = await requireAdmin()
+  await requireAdmin()
+  const supabase = createSupabaseServerClient()
 
   const { data, error } = await supabase
-    .from("modules")
+    .from("modules" satisfies keyof Database["public"]["Tables"])
     .select("deck_path")
     .eq("id", moduleId)
-    .maybeSingle()
+    .maybeSingle<Pick<Database["public"]["Tables"]["modules"]["Row"], "deck_path">>()
 
   if (error) {
     throw error
   }
 
-  const existingModuleRow = data as { deck_path: string | null } | null
+  if (data?.deck_path) {
+    await removeModuleDeck(data.deck_path)
+  }
 
-  if (existingModuleRow?.deck_path) {
-    await removeModuleDeck(existingModuleRow.deck_path)
+  const clearDeckPayload: Database["public"]["Tables"]["modules"]["Update"] = {
+    deck_path: null,
   }
 
   const { error: updateError } = await supabase
-    .from("modules")
-    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
-    .update({ deck_path: null })
+    .from("modules" satisfies keyof Database["public"]["Tables"])
+    .update(clearDeckPayload)
     .eq("id", moduleId)
 
   if (updateError) {

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 
@@ -22,7 +20,7 @@ function statusLabel(status: string) {
 }
 
 export async function SubscriptionStatusCard() {
-  const supabase = createSupabaseServerClient() as any
+  const supabase = createSupabaseServerClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -34,14 +32,14 @@ export async function SubscriptionStatusCard() {
   type SubscriptionRow = Database["public"]["Tables"]["subscriptions"]["Row"]
 
   const { data } = await supabase
-    .from("subscriptions")
+    .from("subscriptions" satisfies keyof Database["public"]["Tables"])
     .select("status, current_period_end, metadata")
     .eq("user_id", session.user.id)
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle()
+    .maybeSingle<Pick<SubscriptionRow, "status" | "current_period_end" | "metadata">>()
 
-  const subscription = (data as Pick<SubscriptionRow, "status" | "current_period_end" | "metadata"> | null)
+  const subscription = data
 
   if (!subscription) {
     return (

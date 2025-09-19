@@ -4,6 +4,7 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 
 import { createSupabaseAdminClient } from "@/lib/supabase"
+import type { Database } from "@/lib/supabase"
 
 const updateSchema = z.object({
   title: z.string().min(1).optional(),
@@ -42,10 +43,11 @@ export async function PUT(request: Request, context: any) {
   }
 
   const admin = createSupabaseAdminClient()
+  const updatePayload: Database["public"]["Tables"]["classes"]["Update"] = parsed.data
+
   const { data, error } = await admin
-    .from("classes")
-    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
-    .update(parsed.data)
+    .from("classes" satisfies keyof Database["public"]["Tables"])
+    .update(updatePayload)
     .eq("id", params.id)
     .select()
     .maybeSingle()

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { createModuleDeckSignedUrl } from "@/lib/storage/decks"
+import type { Database } from "@/lib/supabase"
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const { id: moduleId } = await context.params
@@ -16,22 +17,20 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   }
 
   const { data, error } = await supabase
-    .from("modules")
+    .from("modules" satisfies keyof Database["public"]["Tables"])
     .select("deck_path")
     .eq("id", moduleId)
-    .maybeSingle()
+    .maybeSingle<Pick<Database["public"]["Tables"]["modules"]["Row"], "deck_path">>()
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  const record = data as { deck_path: string | null } | null
-
-  if (!record || !record.deck_path) {
+  if (!data || !data.deck_path) {
     return NextResponse.json({ error: "Deck not found" }, { status: 404 })
   }
 
-  const signedUrl = await createModuleDeckSignedUrl(record.deck_path)
+  const signedUrl = await createModuleDeckSignedUrl(data.deck_path)
 
   return NextResponse.redirect(signedUrl)
 }

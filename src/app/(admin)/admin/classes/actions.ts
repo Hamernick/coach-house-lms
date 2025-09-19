@@ -6,21 +6,25 @@ import { redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 
 import { requireAdmin } from "@/lib/admin/auth"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
+import type { Database } from "@/lib/supabase"
 
 export async function createClassAction() {
-  const { supabase } = await requireAdmin()
+  await requireAdmin()
+  const supabase = createSupabaseServerClient()
 
   const slug = `class-${randomUUID().slice(0, 8)}`
 
+  const insertPayload: Database["public"]["Tables"]["classes"]["Insert"] = {
+    title: "Untitled Class",
+    slug,
+    description: "",
+    published: false,
+  }
+
   const { data, error } = await supabase
-    .from("classes")
-    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
-    .insert({
-      title: "Untitled Class",
-      slug,
-      description: "",
-      published: false,
-    })
+    .from("classes" satisfies keyof Database["public"]["Tables"])
+    .insert(insertPayload)
     .select("id")
     .single()
 
@@ -28,9 +32,8 @@ export async function createClassAction() {
     throw error
   }
 
-  const createdClass = data as { id: string } | null
-  if (createdClass?.id) {
-    redirect(`/admin/classes/${createdClass.id}`)
+  if (data?.id) {
+    redirect(`/admin/classes/${data.id}`)
   }
 }
 
@@ -41,9 +44,13 @@ export async function deleteClassAction(formData: FormData) {
     return
   }
 
-  const { supabase } = await requireAdmin()
+  await requireAdmin()
+  const supabase = createSupabaseServerClient()
 
-  const { error } = await supabase.from("classes").delete().eq("id", classId)
+  const { error } = await supabase
+    .from("classes" satisfies keyof Database["public"]["Tables"])
+    .delete()
+    .eq("id", classId)
 
   if (error) {
     throw error
@@ -53,12 +60,14 @@ export async function deleteClassAction(formData: FormData) {
 }
 
 export async function setClassPublishedAction(classId: string, published: boolean) {
-  const { supabase } = await requireAdmin()
+  await requireAdmin()
+  const supabase = createSupabaseServerClient()
+
+  const updatePayload: Database["public"]["Tables"]["classes"]["Update"] = { published }
 
   const { error } = await supabase
-    .from("classes")
-    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
-    .update({ published })
+    .from("classes" satisfies keyof Database["public"]["Tables"])
+    .update(updatePayload)
     .eq("id", classId)
 
   if (error) {

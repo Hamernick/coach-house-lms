@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { redirect } from "next/navigation"
 import Stripe from "stripe"
 
@@ -19,7 +17,7 @@ export default async function PricingSuccessPage({
   const params = searchParams ? await searchParams : {}
   const sessionId = typeof params?.session_id === "string" ? params.session_id : undefined
 
-  const supabase = createSupabaseServerClient() as any
+  const supabase = createSupabaseServerClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -66,8 +64,8 @@ export default async function PricingSuccessPage({
   }
 
   await supabase
-    .from("subscriptions")
-    .upsert(upsertPayload, { onConflict: "stripe_subscription_id" })
+    .from("subscriptions" satisfies keyof Database["public"]["Tables"])
+    .upsert<SubscriptionInsert>(upsertPayload, { onConflict: "stripe_subscription_id" })
 
   redirect(`/dashboard?subscription=${status}`)
 }

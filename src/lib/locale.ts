@@ -45,4 +45,9 @@ export function getLocaleCookieName() {
   return LOCALE_COOKIE
 }
 
-export { SUPPORTED_LOCALES, type SupportedLocale, isSupportedLocale } from "@/lib/locale/constants"
+export {
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  type SupportedLocale,
+  isSupportedLocale,
+} from "@/lib/locale/constants"

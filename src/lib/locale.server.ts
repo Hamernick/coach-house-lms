@@ -1,20 +1,6 @@
-import { cookies, headers } from "next/headers"
+import { getLocale as getLocaleBase } from "@/lib/locale"
+import type { SupportedLocale } from "@/lib/locale"
 
-import {
-  SupportedLocale,
-  getLocaleCookieName,
-  isSupportedLocale,
-  parseAcceptLanguage,
-} from "@/lib/locale"
-
-export function getLocale(): SupportedLocale {
-  const cookieStore = cookies()
-  const cookieLocale = cookieStore.get(getLocaleCookieName())?.value
-
-  if (cookieLocale && isSupportedLocale(cookieLocale)) {
-    return cookieLocale
-  }
-
-  const headerStore = headers()
-  return parseAcceptLanguage(headerStore.get("accept-language"))
+export async function getLocale(): Promise<SupportedLocale> {
+  return getLocaleBase()
 }

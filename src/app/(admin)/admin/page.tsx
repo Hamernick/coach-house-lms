@@ -139,8 +139,8 @@ async function RecentPayments({ locale }: { locale: SupportedLocale }) {
   )
 }
 
-export default function AdminDashboardPage() {
-  const locale = getLocale()
+export default async function AdminDashboardPage() {
+  const locale = await getLocale()
   return (
     <div className="space-y-6">
       <DashboardBreadcrumbs segments={[{ label: "Admin" }, { label: "Dashboard" }]} />

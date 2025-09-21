@@ -14,12 +14,12 @@ export const metadata: Metadata = {
     "A course platform built with Next.js, Tailwind CSS, and shadcn/ui. Bootstrapped in step S00.",
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: ReactNode
 }>) {
-  const locale = getLocale()
+  const locale = await getLocale()
   const language = locale.split("-")[0] ?? "en"
   return (
     <html lang={language} suppressHydrationWarning>

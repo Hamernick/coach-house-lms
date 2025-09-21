@@ -1,4 +1,4 @@
-import { DEFAULT_LOCALE, type SupportedLocale } from "@/lib/locale"
+import { DEFAULT_LOCALE, type SupportedLocale } from "@/lib/locale/constants"
 
 type DateOptions = Intl.DateTimeFormatOptions
 

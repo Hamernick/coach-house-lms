@@ -11,6 +11,7 @@
     "snapshots:verify": "npm run snapshots:build && node -r ./dist-snapshots/scripts/register-alias.js dist-snapshots/scripts/generate-snapshots.js",
     "snapshots:update": "npm run snapshots:build && node -r ./dist-snapshots/scripts/register-alias.js dist-snapshots/scripts/generate-snapshots.js --update",
     "test:snapshots": "npm run snapshots:verify",
+    "test:acceptance": "vitest run --config vitest.config.ts",
     "test": "npm run test:snapshots && npm run test:rls",
     "test:rls": "node supabase/tests/rls.test.mjs",
     "check:perf": "node scripts/check-performance-budgets.mjs"
@@ -86,6 +87,7 @@
     "prettier-plugin-tailwindcss": "^0.6.14",
     "tailwindcss": "^4",
     "tw-animate-css": "^1.3.8",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^1.6.0"
   }
 }

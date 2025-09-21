@@ -23,7 +23,6 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
-import { DynamicChartAreaInteractive } from "@/components/dashboard/chart-area-interactive-client"
 
 const DynamicSectionCards = dynamic(
   () => import("@/components/section-cards").then((mod) => ({ default: mod.SectionCards })),

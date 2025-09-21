@@ -1,34 +1,52 @@
-import { SignOutButton } from "@/components/sign-out-button"
+import Link from "next/link"
+
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { LocaleSwitcher } from "@/components/locale-switcher"
-import { getLocale } from "@/lib/locale.server"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
+
+import { UserMenu } from "./user-menu"
+
+const SUPPORT_EMAIL = "contact@coachhousesolutions.org"
 
 export async function SiteHeader() {
-  const locale = await getLocale()
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  let displayName: string | null = null
+  const email: string | null = session?.user.email ?? null
+
+  if (session) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name")
+      .eq("id", session.user.id)
+      .maybeSingle<{ full_name: string | null }>()
+
+    displayName = profile?.full_name ?? (session.user.user_metadata?.full_name as string | undefined) ?? null
+  }
+
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
-        <Separator
-          orientation="vertical"
-          className="mx-2 data-[orientation=vertical]:h-4"
-        />
+        <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
         <h1 className="text-base font-medium">Dashboard</h1>
         <div className="ml-auto flex items-center gap-2">
-          <LocaleSwitcher currentLocale={locale} />
-          <Button variant="ghost" asChild size="sm" className="hidden sm:flex">
-            <a
-              href="https://github.com/shadcn-ui/ui/tree/main/apps/v4/app/(examples)/dashboard"
-              rel="noopener noreferrer"
-              target="_blank"
-              className="dark:text-foreground"
-            >
-              GitHub
+          <Button variant="ghost" size="sm" asChild>
+            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-sm">
+              Support
             </a>
           </Button>
-          <SignOutButton variant="outline" size="sm" />
+          {session ? (
+            <UserMenu name={displayName} email={email} />
+          ) : (
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/login">Sign in</Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>

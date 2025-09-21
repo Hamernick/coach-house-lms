@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { LocaleSwitcher } from "@/components/locale-switcher"
-import { getLocale } from "@/lib/locale"
+import { getLocale } from "@/lib/locale.server"
 
 export function SiteHeader() {
   const locale = getLocale()

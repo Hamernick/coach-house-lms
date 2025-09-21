@@ -4,6 +4,7 @@ import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { fetchAdminKpis, fetchRecentEnrollments, fetchRecentPayments } from "@/lib/admin/kpis"
+
 import { formatCurrency } from "@/lib/format"
 import { getLocale, type SupportedLocale } from "@/lib/locale"
 

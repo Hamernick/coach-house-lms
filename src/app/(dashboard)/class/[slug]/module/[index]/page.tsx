@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { IconCircle, IconCircleCheck, IconLock } from "@tabler/icons-react"
+import { IconCircle, IconCircleCheck, IconFileText, IconLock } from "@tabler/icons-react"
 
 import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Button } from "@/components/ui/button"
@@ -102,6 +102,30 @@ export default async function ModulePage({
             </CardHeader>
             <CardContent className="space-y-6">
               <ModuleVideo videoUrl={currentState.module.videoUrl} title={currentState.module.title} />
+              {currentState.module.hasDeck ? (
+                <div className="rounded-lg border border-border/60 bg-muted/10 p-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      <IconFileText aria-hidden className="mt-0.5 h-5 w-5 text-primary" />
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold">Slide deck</p>
+                        <p className="text-sm text-muted-foreground">
+                          Download the companion PDF deck to review lessons offline.
+                        </p>
+                      </div>
+                    </div>
+                    <Button asChild size="sm" variant="outline" className="sm:w-auto">
+                      <a
+                        href={`/api/modules/${currentState.module.id}/deck`}
+                        rel="noopener"
+                        target="_blank"
+                      >
+                        Download PDF
+                      </a>
+                    </Button>
+                  </div>
+                </div>
+              ) : null}
               {currentState.module.contentMd ? (
                 <article className="prose prose-invert max-w-none">
                   <ReactMarkdown remarkPlugins={[remarkGfm]}>{currentState.module.contentMd}</ReactMarkdown>

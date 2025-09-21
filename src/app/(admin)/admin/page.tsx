@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Skeleton } from "@/components/ui/skeleton"
 import { fetchAdminKpis, fetchRecentEnrollments, fetchRecentPayments } from "@/lib/admin/kpis"
 import { formatCurrency } from "@/lib/format"
+import { getLocale, type SupportedLocale } from "@/lib/locale"
 
 function KpiSkeleton() {
   return (
@@ -44,7 +45,7 @@ function ListSkeleton({ title }: { title: string }) {
   )
 }
 
-async function KpiSection() {
+async function KpiSection({ locale }: { locale: SupportedLocale }) {
   const kpis = await fetchAdminKpis()
   return (
     <div className="grid gap-4 md:grid-cols-3">
@@ -53,7 +54,7 @@ async function KpiSection() {
           <CardTitle>Total students</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-3xl font-semibold">{kpis.totalStudents.toLocaleString()}</p>
+          <p className="text-3xl font-semibold">{kpis.totalStudents.toLocaleString(locale)}</p>
         </CardContent>
       </Card>
       <Card className="bg-card/60">
@@ -61,7 +62,7 @@ async function KpiSection() {
           <CardTitle>Active subscriptions</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-3xl font-semibold">{kpis.activeSubscriptions.toLocaleString()}</p>
+          <p className="text-3xl font-semibold">{kpis.activeSubscriptions.toLocaleString(locale)}</p>
         </CardContent>
       </Card>
       <Card className="bg-card/60">
@@ -70,7 +71,7 @@ async function KpiSection() {
         </CardHeader>
         <CardContent>
           <p className="text-3xl font-semibold">
-            {formatCurrency(kpis.thirtyDayRevenue / 100, kpis.revenueCurrency)}
+            {formatCurrency(kpis.thirtyDayRevenue / 100, kpis.revenueCurrency, locale)}
           </p>
         </CardContent>
       </Card>
@@ -78,7 +79,7 @@ async function KpiSection() {
   )
 }
 
-async function RecentEnrollments() {
+async function RecentEnrollments({ locale }: { locale: SupportedLocale }) {
   const enrollments = await fetchRecentEnrollments()
   return (
     <Card className="bg-card/60">
@@ -95,7 +96,7 @@ async function RecentEnrollments() {
               <div>
                 <p className="text-sm font-medium">{entry.classTitle}</p>
                 <p className="text-xs text-muted-foreground">
-                  {entry.userEmail} · {new Date(entry.enrolledAt).toLocaleString()}
+                  {entry.userEmail} · {new Date(entry.enrolledAt).toLocaleString(locale)}
                 </p>
               </div>
             </div>
@@ -106,7 +107,7 @@ async function RecentEnrollments() {
   )
 }
 
-async function RecentPayments() {
+async function RecentPayments({ locale }: { locale: SupportedLocale }) {
   const payments = await fetchRecentPayments()
   return (
     <Card className="bg-card/60">
@@ -122,11 +123,11 @@ async function RecentPayments() {
             <div key={payment.id} className="flex items-center justify-between border-b pb-2 last:border-0 last:pb-0">
               <div>
                 <p className="text-sm font-medium">
-                  {formatCurrency(payment.amount / 100, payment.currency)}
+                  {formatCurrency(payment.amount / 100, payment.currency, locale)}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {payment.status.replace(/_/g, " ")} ·{" "}
-                  {payment.paidAt ? new Date(payment.paidAt).toLocaleString() : "Pending"}
+                  {payment.paidAt ? new Date(payment.paidAt).toLocaleString(locale) : "Pending"}
                 </p>
               </div>
             </div>
@@ -138,18 +139,19 @@ async function RecentPayments() {
 }
 
 export default function AdminDashboardPage() {
+  const locale = getLocale()
   return (
     <div className="space-y-6">
       <DashboardBreadcrumbs segments={[{ label: "Admin" }, { label: "Dashboard" }]} />
       <Suspense fallback={<KpiSkeleton />}>
-                <KpiSection />
+        <KpiSection locale={locale} />
       </Suspense>
       <div className="grid gap-6 lg:grid-cols-2">
         <Suspense fallback={<ListSkeleton title="Recent enrollments" />}>
-                    <RecentEnrollments />
+          <RecentEnrollments locale={locale} />
         </Suspense>
         <Suspense fallback={<ListSkeleton title="Recent payments" />}>
-                    <RecentPayments />
+          <RecentPayments locale={locale} />
         </Suspense>
       </div>
     </div>

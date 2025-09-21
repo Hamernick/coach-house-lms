@@ -214,13 +214,17 @@ feat(step {id}): {title}
   * **Accept**: header actions match spec across dashboard/admin layouts; sign-out verified.
   * **Changelog**:
     * Replaced header controls with Support mailto and Supabase-backed user menu displaying name/email.
-    * Added client dropdown with settings shortcut and sign-out action driven by Supabase.
+    * Added client dropdown with settings shortcut and sign-out action.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/30
 
-* [ ] **S22** — Dashboard duplication fix
+* [x] **S22** — Dashboard duplication fix
 
   * Ensure `/dashboard` and `/admin` render a single shell instance (no nested dashboards).
   * **Accept**: visual inspection/screenshots confirm single layout; regression covered with acceptance test update.
+  * **Changelog**:
+    * Simplified `/dashboard` to render content only, relying on layout chrome to eliminate nested shells.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/31
+
 
 * [ ] **S23** — Student navigation pages
 

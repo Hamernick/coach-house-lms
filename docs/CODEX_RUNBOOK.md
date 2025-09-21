@@ -225,6 +225,7 @@ feat(step {id}): {title}
     * Simplified `/dashboard` to render content only, relying on layout chrome to eliminate nested shells.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/31
 
+
 * [ ] **S23** — Student navigation pages
 
   * Implement `/classes`, `/schedule`, `/settings` with responsive layouts, placeholder data (fetch stubs), and links from sidebar.

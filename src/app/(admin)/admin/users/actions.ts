@@ -7,6 +7,8 @@ import { redirect } from "next/navigation"
 
 import { requireAdmin } from "@/lib/admin/auth"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
+import type { Database } from "@/lib/supabase"
 
 export async function changeUserRoleAction(formData: FormData) {
   const userId = formData.get("userId")
@@ -16,12 +18,16 @@ export async function changeUserRoleAction(formData: FormData) {
     return
   }
 
-  const { supabase } = await requireAdmin()
+  await requireAdmin()
+  const supabase = createSupabaseServerClient()
+
+  const updatePayload: Database["public"]["Tables"]["profiles"]["Update"] = {
+    role: nextRole,
+  }
 
   const { error } = await supabase
-    .from("profiles")
-    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
-    .update({ role: nextRole })
+    .from("profiles" satisfies keyof Database["public"]["Tables"])
+    .update(updatePayload)
     .eq("id", userId)
 
   if (error) {

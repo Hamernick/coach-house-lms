@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import type { Database } from "@/lib/supabase"
 
 export type ModuleRecord = {
   id: string
@@ -24,6 +25,15 @@ type ClassModuleResult = {
   progressMap: Record<string, ModuleProgressStatus>
 }
 
+type ClassWithModules = Database["public"]["Tables"]["classes"]["Row"] & {
+  modules: Array<
+    Pick<
+      Database["public"]["Tables"]["modules"]["Row"],
+      "id" | "idx" | "slug" | "title" | "description" | "video_url" | "content_md" | "duration_minutes" | "published"
+    >
+  > | null
+}
+
 export async function getClassModulesForUser({
   classSlug,
   userId,
@@ -34,7 +44,7 @@ export async function getClassModulesForUser({
   const supabase = createSupabaseServerClient()
 
   const { data: classRow, error } = await supabase
-    .from("classes")
+    .from("classes" satisfies keyof Database["public"]["Tables"])
     .select(
       `id, title, description, published, modules ( id, idx, slug, title, description, video_url, content_md, duration_minutes, published )`
     )
@@ -49,23 +59,7 @@ export async function getClassModulesForUser({
     notFound()
   }
 
-  const classRecord = classRow as {
-    id: string
-    title: string
-    description: string | null
-    modules?: Array<{
-      id: string
-      idx: number
-      slug: string
-      title: string
-      description: string | null
-      video_url: string | null
-      content_md: string | null
-      duration_minutes: number | null
-      deck_path: string | null
-      published: boolean
-    }> | null
-  }
+  const classRecord = classRow as ClassWithModules
 
   const modules = (classRecord.modules ?? [])
     .filter((module) => module.published)
@@ -95,7 +89,7 @@ export async function getClassModulesForUser({
   const moduleIds = modules.map((module) => module.id)
 
   const { data: progressRows, error: progressError } = await supabase
-    .from("module_progress")
+    .from("module_progress" satisfies keyof Database["public"]["Tables"])
     .select("module_id, status")
     .eq("user_id", userId)
     .in("module_id", moduleIds)
@@ -119,6 +113,8 @@ export async function getClassModulesForUser({
   }
 }
 
+type ModuleProgressInsert = Database["public"]["Tables"]["module_progress"]["Insert"]
+
 export async function markModuleCompleted({
   moduleId,
   userId,
@@ -126,19 +122,21 @@ export async function markModuleCompleted({
 }: {
   moduleId: string
   userId: string
-  notes?: Record<string, unknown> | null
+  notes?: ModuleProgressInsert["notes"]
 }) {
   const supabase = createSupabaseServerClient()
 
-  const { error } = await supabase.from("module_progress")
-    // @ts-expect-error: @supabase/ssr currently loses table typings under Next 15 promises
-    .upsert({
+  const upsertPayload: ModuleProgressInsert = {
     user_id: userId,
     module_id: moduleId,
     status: "completed",
     completed_at: new Date().toISOString(),
     notes: notes ?? undefined,
-  })
+  }
+
+  const { error } = await supabase
+    .from("module_progress" satisfies keyof Database["public"]["Tables"])
+    .upsert(upsertPayload)
 
   if (error) {
     throw error

@@ -28,15 +28,15 @@ export function parseAcceptLanguage(value: string | null): SupportedLocale {
   return DEFAULT_LOCALE
 }
 
-export function getLocale(): SupportedLocale {
-  const cookieStore = cookies() as unknown as { get: (name: string) => { value: string } | undefined }
+export async function getLocale(): Promise<SupportedLocale> {
+  const cookieStore = await cookies()
   const cookieLocale = cookieStore.get(LOCALE_COOKIE)?.value
 
   if (cookieLocale && SUPPORTED_LOCALES.includes(cookieLocale as SupportedLocale)) {
     return cookieLocale as SupportedLocale
   }
 
-  const headerStore = headers() as unknown as { get: (name: string) => string | null }
+  const headerStore = await headers()
   const headerLocale = parseAcceptLanguage(headerStore.get("accept-language"))
 
   return headerLocale
@@ -46,4 +46,9 @@ export function getLocaleCookieName() {
   return LOCALE_COOKIE
 }
 
-export { SUPPORTED_LOCALES, type SupportedLocale, isSupportedLocale } from "@/lib/locale/constants"
+export {
+  DEFAULT_LOCALE,
+  SUPPORTED_LOCALES,
+  type SupportedLocale,
+  isSupportedLocale,
+} from "@/lib/locale/constants"

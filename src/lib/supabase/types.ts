@@ -16,6 +16,7 @@ export type Database = {
           avatar_url: string | null
           headline: string | null
           timezone: string | null
+          email: string | null
           role: Database["public"]["Enums"]["user_role"]
           created_at: string
           updated_at: string
@@ -26,6 +27,7 @@ export type Database = {
           avatar_url?: string | null
           headline?: string | null
           timezone?: string | null
+          email?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           created_at?: string
           updated_at?: string
@@ -36,10 +38,20 @@ export type Database = {
           avatar_url?: string | null
           headline?: string | null
           timezone?: string | null
+          email?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey",
+            columns: ["id"],
+            isOneToOne: true,
+            referencedRelation: "users",
+            referencedColumns: ["id"],
+          },
+        ]
       }
       classes: {
         Row: {
@@ -75,6 +87,7 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: []
       }
       modules: {
         Row: {
@@ -88,6 +101,7 @@ export type Database = {
           content_md: string | null
           duration_minutes: number | null
           deck_path: string | null
+          published: boolean
           created_at: string
           updated_at: string
         }
@@ -102,6 +116,7 @@ export type Database = {
           content_md?: string | null
           duration_minutes?: number | null
           deck_path?: string | null
+          published?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -116,9 +131,18 @@ export type Database = {
           content_md?: string | null
           duration_minutes?: number | null
           deck_path?: string | null
+          published?: boolean
           created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "modules_class_id_fkey",
+            columns: ["class_id"],
+            referencedRelation: "classes",
+            referencedColumns: ["id"],
+          },
+        ]
       }
       enrollments: {
         Row: {
@@ -142,6 +166,20 @@ export type Database = {
           status?: string
           created_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "enrollments_class_id_fkey",
+            columns: ["class_id"],
+            referencedRelation: "classes",
+            referencedColumns: ["id"],
+          },
+          {
+            foreignKeyName: "enrollments_user_id_fkey",
+            columns: ["user_id"],
+            referencedRelation: "profiles",
+            referencedColumns: ["id"],
+          },
+        ]
       }
       module_progress: {
         Row: {
@@ -174,6 +212,20 @@ export type Database = {
           created_at?: string
           updated_at?: string
         }
+        Relationships: [
+          {
+            foreignKeyName: "module_progress_module_id_fkey",
+            columns: ["module_id"],
+            referencedRelation: "modules",
+            referencedColumns: ["id"],
+          },
+          {
+            foreignKeyName: "module_progress_user_id_fkey",
+            columns: ["user_id"],
+            referencedRelation: "profiles",
+            referencedColumns: ["id"],
+          },
+        ]
       }
       subscriptions: {
         Row: {
@@ -215,6 +267,14 @@ export type Database = {
           updated_at?: string
           metadata?: Json | null
         }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey",
+            columns: ["user_id"],
+            referencedRelation: "profiles",
+            referencedColumns: ["id"],
+          },
+        ]
       }
       stripe_webhook_events: {
         Row: {
@@ -235,6 +295,7 @@ export type Database = {
           payload?: Json
           created_at?: string
         }
+        Relationships: []
       }
     }
     Views: Record<string, never>

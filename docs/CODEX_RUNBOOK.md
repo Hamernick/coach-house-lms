@@ -115,11 +115,16 @@ feat(step {id}): {title}
     * Pricing checkout and dashboard reflect subscription status end-to-end with fallbacks when Stripe keys are absent.
 
   * PR: https://github.com/Hamernick/coach-house-lms/pull/8
-* [ ] **S09** — Billing management - We're going to placeholder this. We don't have stripe set up yet so we'll set this up so our flows are created/demonstrated but we'll set it up with functionality later. 
+* [x] **S09** — Billing management - We're going to placeholder this. We don't have stripe set up yet so we'll set this up so our flows are created/demonstrated but we'll set it up with functionality later. 
 
 
   * Stripe Customer Portal link; invoices; cancel/resubscribe.
   * **Accept**: portal opens; state reflects after return.
+  * **Changelog**:
+    * Added billing portal server action/button that redirects when Stripe credentials are set.
+    * Surfaced fallback messaging and support link when Stripe is not configured.
+    * Documented placeholder expectations for follow-up implementation.
+  * PR: TODO
 
 * [x] **S10** — Classes model & list
 

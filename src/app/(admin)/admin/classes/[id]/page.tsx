@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { getClassById } from "@/lib/classes"
 
 import { ClassPublishedToggle } from "../_components/class-published-toggle"
+
 import type { Database } from "@/lib/supabase/types"
 import {
   createModuleAction,

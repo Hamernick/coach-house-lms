@@ -28,8 +28,6 @@ function decodeMagicLink(encoded?: string | string[]) {
   }
 }
 
-type SearchParams = Promise<Record<string, string | string[] | undefined>>
-
 export default async function AdminUserDetailPage({
   params,
   searchParams,
@@ -43,7 +41,7 @@ export default async function AdminUserDetailPage({
     notFound()
   }
 
-  const paramsMap = searchParams ? await searchParams : {}
+  const paramsMap = searchParams ?? {}
   const magicLink = decodeMagicLink(paramsMap.magic)
 
   return (

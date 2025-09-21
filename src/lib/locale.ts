@@ -1,3 +1,4 @@
+
 import { cookies, headers } from "next/headers"
 
 import {
@@ -7,7 +8,7 @@ import {
   type SupportedLocale,
 } from "@/lib/locale/constants"
 
-function parseAcceptLanguage(value: string | null): SupportedLocale {
+export function parseAcceptLanguage(value: string | null): SupportedLocale {
   if (!value) {
     return DEFAULT_LOCALE
   }

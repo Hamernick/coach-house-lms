@@ -28,6 +28,7 @@ function decodeMagicLink(encoded?: string | string[]) {
   }
 }
 
+type SearchParams = Record<string, string | string[] | undefined>
 export default async function AdminUserDetailPage({
   params,
   searchParams,

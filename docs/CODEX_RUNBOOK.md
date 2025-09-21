@@ -195,10 +195,14 @@ feat(step {id}): {title}
     * Enabled concurrency cancellation to keep newest runs active.
     * Documented workflow expectations for contributors.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/21
-* [ ] **S20** — Acceptance tests
+* [x] **S20** — Acceptance tests
 
   * E2E flows: paid signup→dashboard; module unlock; admin CRUD; billing changes.
   * **Accept**: all green in CI; no console errors.
+  * **Changelog**:
+    * Added a Vitest-powered acceptance suite covering checkout fallbacks, billing portal access, and admin module creation.
+    * Exposed module progress helpers for sequential unlock validation and wired the suite into CI.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/29
 
 ## Controller prompt (for “Proceed” runs)
 

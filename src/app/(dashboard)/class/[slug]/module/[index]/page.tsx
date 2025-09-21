@@ -12,19 +12,12 @@ import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { getClassModulesForUser, markModuleCompleted } from "@/lib/modules"
-import type { ModuleProgressStatus, ModuleRecord } from "@/lib/modules"
+import { buildModuleStates, type ModuleState } from "@/lib/module-progress"
 import { cn } from "@/lib/utils"
 
 type ModuleParams = {
   slug: string
   index: string
-}
-
-type ModuleState = {
-  module: ModuleRecord
-  completed: boolean
-  locked: boolean
-  status: ModuleProgressStatus
 }
 
 export default async function ModulePage({
@@ -151,34 +144,6 @@ export default async function ModulePage({
       </div>
     </div>
   )
-}
-
-function buildModuleStates(
-  modules: ModuleRecord[],
-  progressMap: Record<string, ModuleProgressStatus>
-): ModuleState[] {
-  const ordered = [...modules].sort((a, b) => a.idx - b.idx)
-  const states: ModuleState[] = []
-  let allPreviousCompleted = true
-
-  for (const record of ordered) {
-    const status = progressMap[record.id] ?? "not_started"
-    const completed = status === "completed"
-    const locked = !allPreviousCompleted
-
-    states.push({
-      module: record,
-      completed,
-      locked,
-      status,
-    })
-
-    if (!completed) {
-      allPreviousCompleted = false
-    }
-  }
-
-  return states
 }
 
 function ModuleList({

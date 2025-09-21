@@ -208,6 +208,35 @@ feat(step {id}): {title}
     * Exposed module progress helpers for sequential unlock validation and wired the suite into CI.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/29
 
+* [x] **S21** — App shell polish
+
+  * Remove locale/GitHub controls; surface `Support` mailto (contact@coachhousesolutions.org); show accurate user name/email with working sign-out.
+  * **Accept**: header actions match spec across dashboard/admin layouts; sign-out verified.
+  * **Changelog**:
+    * Replaced header controls with Support mailto and Supabase-backed user menu displaying name/email.
+    * Added client dropdown with settings shortcut and sign-out action driven by Supabase.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/30
+
+* [ ] **S22** — Dashboard duplication fix
+
+  * Ensure `/dashboard` and `/admin` render a single shell instance (no nested dashboards).
+  * **Accept**: visual inspection/screenshots confirm single layout; regression covered with acceptance test update.
+
+* [ ] **S23** — Student navigation pages
+
+  * Implement `/classes`, `/schedule`, `/settings` with responsive layouts, placeholder data (fetch stubs), and links from sidebar.
+  * **Accept**: routes accessible; empty/loading states present; settings surfaces marketing/newsletter toggles.
+
+* [ ] **S24** — Admin overview content
+
+  * Flesh out `/admin` landing (KPIs + recent activity) using existing data services.
+  * **Accept**: admin homepage populated with cards/table/skeletons.
+
+* [ ] **S25** — Onboarding flow
+
+  * Build first-login onboarding stepper (name, role, goals, marketing/newsletter opt-ins) patterned after shadcn example; persist completion flag.
+  * **Accept**: onboarding runs once per user, stores preferences, and redirects to dashboard.
+
 ## Controller prompt (for “Proceed” runs)
 
 > Read `CODEX_RUNBOOK.md`. Identify the first unchecked step. Execute only that step. Produce a PR with the prescribed template. Update the checkbox to checked, add a short **Changelog** section under the step with what changed, and append a link to the PR. End with `DONE`.

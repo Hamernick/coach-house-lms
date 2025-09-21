@@ -42,7 +42,9 @@ export async function createBillingPortalSession() {
     return { error: "No Stripe customer linked to this account yet." }
   }
 
-  const stripe = new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: Stripe.LatestApiVersion })
+  const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
+    apiVersion: "2025-08-27.basil",
+  })
   const origin = headers().get("origin") ?? "https://coachhouse.local"
 
   try {

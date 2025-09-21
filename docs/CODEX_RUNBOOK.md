@@ -149,10 +149,14 @@ feat(step {id}): {title}
     * Built class detail editor with metadata form, module reorder drag-and-drop, and module creation flow.
     * Implemented module editor with markdown preview, video metadata, and delete controls.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/14
-* [ ] **S13** — PDF storage (signed URLs)
+* [x] **S13** — PDF storage (signed URLs)
 
   * Supabase Storage `decks` private; server‑generated signed URLs; upload UI.
   * **Accept**: upload→view via signed URL; no public ACLs.
+  * **Changelog**:
+    * Added a learner-facing download block that routes through signed URLs for module decks.
+    * Extended module queries to surface deck availability without exposing storage paths.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/28
 
 * [x] **S14** — Admin: users list/detail
 

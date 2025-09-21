@@ -13,6 +13,7 @@ export type ModuleRecord = {
   contentMd: string | null
   durationMinutes: number | null
   published: boolean
+  hasDeck: boolean
 }
 
 export type ModuleProgressStatus = "not_started" | "in_progress" | "completed"
@@ -29,7 +30,7 @@ type ClassWithModules = Database["public"]["Tables"]["classes"]["Row"] & {
   modules: Array<
     Pick<
       Database["public"]["Tables"]["modules"]["Row"],
-      "id" | "idx" | "slug" | "title" | "description" | "video_url" | "content_md" | "duration_minutes" | "published"
+      "id" | "idx" | "slug" | "title" | "description" | "video_url" | "content_md" | "duration_minutes" | "published" | "deck_path"
     >
   > | null
 }
@@ -46,7 +47,7 @@ export async function getClassModulesForUser({
   const { data: classRow, error } = await supabase
     .from("classes" satisfies keyof Database["public"]["Tables"])
     .select(
-      `id, title, description, published, modules ( id, idx, slug, title, description, video_url, content_md, duration_minutes, published )`
+      `id, title, description, published, modules ( id, idx, slug, title, description, video_url, content_md, duration_minutes, published, deck_path )`
     )
     .eq("slug", classSlug)
     .maybeSingle()
@@ -74,6 +75,7 @@ export async function getClassModulesForUser({
       contentMd: module.content_md ?? null,
       durationMinutes: module.duration_minutes ?? null,
       published: module.published,
+      hasDeck: Boolean(module.deck_path),
     }))
 
   if (modules.length === 0) {

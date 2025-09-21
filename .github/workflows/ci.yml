@@ -32,6 +32,9 @@ jobs:
       - name: Tests
         run: npm run test:snapshots
 
+      - name: Acceptance tests
+        run: npm run test:acceptance
+
       - name: Build
         run: npm run build
 

@@ -45,7 +45,8 @@ export async function createBillingPortalSession() {
   const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
     apiVersion: "2025-08-27.basil",
   })
-  const origin = headers().get("origin") ?? "https://coachhouse.local"
+  const headerStore = await headers()
+  const origin = headerStore.get("origin") ?? "https://coachhouse.local"
 
   try {
     const portalSession = await stripe.billingPortal.sessions.create({

@@ -33,9 +33,13 @@ function assertEnv<TSchema extends z.ZodTypeAny>(schema: TSchema, input: unknown
   return parsed.data
 }
 
+const PLACEHOLDER_SUPABASE_URL = "https://placeholder.supabase.co"
+const PLACEHOLDER_SUPABASE_ANON_KEY = "public-anon-placeholder"
+
 export const env: ServerEnv = assertEnv(serverEnvSchema, {
-  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? PLACEHOLDER_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY:
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? PLACEHOLDER_SUPABASE_ANON_KEY,
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
   SUPABASE_JWT_SECRET: process.env.SUPABASE_JWT_SECRET,
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
@@ -44,7 +48,8 @@ export const env: ServerEnv = assertEnv(serverEnvSchema, {
 })
 
 export const clientEnv: ClientEnv = assertEnv(clientEnvSchema, {
-  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL ?? PLACEHOLDER_SUPABASE_URL,
+  NEXT_PUBLIC_SUPABASE_ANON_KEY:
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? PLACEHOLDER_SUPABASE_ANON_KEY,
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
 })

@@ -1,10 +1,11 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
+import type { SupabaseClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 
 import { env } from "@/lib/env"
 import type { Database } from "./types"
 
-export function createSupabaseServerClient() {
+export function createSupabaseServerClient(): SupabaseClient<Database, "public"> {
   const cookieStore = cookies() as unknown as {
     get: (name: string) => { value: string } | undefined
     set?: (options: { name: string; value: string } & CookieOptions) => void

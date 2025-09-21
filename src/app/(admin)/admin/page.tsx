@@ -4,9 +4,9 @@ import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { fetchAdminKpis, fetchRecentEnrollments, fetchRecentPayments } from "@/lib/admin/kpis"
-import { formatCurrency, formatDateTime, formatNumber } from "@/lib/format"
-import { getLocale } from "@/lib/locale.server"
-import type { SupportedLocale } from "@/lib/locale"
+
+import { formatCurrency } from "@/lib/format"
+import { getLocale, type SupportedLocale } from "@/lib/locale"
 
 function KpiSkeleton() {
   return (
@@ -55,7 +55,7 @@ async function KpiSection({ locale }: { locale: SupportedLocale }) {
           <CardTitle>Total students</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-3xl font-semibold">{formatNumber(kpis.totalStudents, locale)}</p>
+          <p className="text-3xl font-semibold">{kpis.totalStudents.toLocaleString(locale)}</p>
         </CardContent>
       </Card>
       <Card className="bg-card/60">
@@ -63,7 +63,7 @@ async function KpiSection({ locale }: { locale: SupportedLocale }) {
           <CardTitle>Active subscriptions</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-3xl font-semibold">{formatNumber(kpis.activeSubscriptions, locale)}</p>
+          <p className="text-3xl font-semibold">{kpis.activeSubscriptions.toLocaleString(locale)}</p>
         </CardContent>
       </Card>
       <Card className="bg-card/60">
@@ -97,7 +97,7 @@ async function RecentEnrollments({ locale }: { locale: SupportedLocale }) {
               <div>
                 <p className="text-sm font-medium">{entry.classTitle}</p>
                 <p className="text-xs text-muted-foreground">
-                  {entry.userEmail} · {formatDateTime(entry.enrolledAt, locale)}
+                  {entry.userEmail} · {new Date(entry.enrolledAt).toLocaleString(locale)}
                 </p>
               </div>
             </div>
@@ -128,7 +128,7 @@ async function RecentPayments({ locale }: { locale: SupportedLocale }) {
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {payment.status.replace(/_/g, " ")} ·{" "}
-                  {payment.paidAt ? formatDateTime(payment.paidAt, locale) : "Pending"}
+                  {payment.paidAt ? new Date(payment.paidAt).toLocaleString(locale) : "Pending"}
                 </p>
               </div>
             </div>
@@ -139,20 +139,20 @@ async function RecentPayments({ locale }: { locale: SupportedLocale }) {
   )
 }
 
-export default function AdminDashboardPage() {
-  const locale = getLocale()
+export default async function AdminDashboardPage() {
+  const locale = await getLocale()
   return (
     <div className="space-y-6">
       <DashboardBreadcrumbs segments={[{ label: "Admin" }, { label: "Dashboard" }]} />
       <Suspense fallback={<KpiSkeleton />}>
-                <KpiSection />
+        <KpiSection locale={locale} />
       </Suspense>
       <div className="grid gap-6 lg:grid-cols-2">
         <Suspense fallback={<ListSkeleton title="Recent enrollments" />}>
-                    <RecentEnrollments />
+          <RecentEnrollments locale={locale} />
         </Suspense>
         <Suspense fallback={<ListSkeleton title="Recent payments" />}>
-                    <RecentPayments />
+          <RecentPayments locale={locale} />
         </Suspense>
       </div>
     </div>

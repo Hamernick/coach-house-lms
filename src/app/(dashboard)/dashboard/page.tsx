@@ -4,7 +4,7 @@ import { Suspense } from "react"
 import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 
 import { ClassesHighlights } from "@/components/dashboard/classes-overview"
-import { DynamicChartAreaInteractive } from "@/components/dashboard/chart-area-interactive-client"
+import { DynamicChartAreaInteractive as DashboardChartArea } from "@/components/dashboard/chart-area-interactive-client"
 import { DynamicDataTable } from "@/components/dashboard/data-table-client"
 import { SubscriptionStatusCard } from "@/components/dashboard/subscription-status-card"
 import {
@@ -23,7 +23,6 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
-import { DynamicChartAreaInteractive } from "@/components/dashboard/chart-area-interactive-client"
 
 const DynamicSectionCards = dynamic(
   () => import("@/components/section-cards").then((mod) => ({ default: mod.SectionCards })),
@@ -68,7 +67,7 @@ export default async function DashboardPage() {
             </Suspense>
             <Suspense fallback={<ChartSkeleton />}>
               <div className="px-4 lg:px-6">
-                <DynamicChartAreaInteractive />
+                <DashboardChartArea />
               </div>
             </Suspense>
             <Suspense fallback={<TableSkeleton />}>

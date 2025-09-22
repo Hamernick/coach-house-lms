@@ -42,7 +42,7 @@ export async function getClassModulesForUser({
   classSlug: string
   userId: string
 }): Promise<ClassModuleResult> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { data: classRow, error } = await supabase
     .from("classes" satisfies keyof Database["public"]["Tables"])
@@ -126,7 +126,7 @@ export async function markModuleCompleted({
   userId: string
   notes?: ModuleProgressInsert["notes"]
 }) {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const upsertPayload: ModuleProgressInsert = {
     user_id: userId,

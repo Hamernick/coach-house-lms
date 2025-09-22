@@ -16,7 +16,7 @@ export async function startCheckout(formData: FormData) {
   const planNameEntry = formData.get("planName")
   const planName = typeof planNameEntry === "string" ? planNameEntry : undefined
 
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()

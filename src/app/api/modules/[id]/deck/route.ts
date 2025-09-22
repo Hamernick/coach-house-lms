@@ -6,7 +6,7 @@ import type { Database } from "@/lib/supabase"
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const { id: moduleId } = await context.params
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const {
     data: { session },

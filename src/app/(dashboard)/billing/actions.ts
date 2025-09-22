@@ -10,7 +10,7 @@ import { logger } from "@/lib/logger"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export async function createBillingPortalSession() {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()

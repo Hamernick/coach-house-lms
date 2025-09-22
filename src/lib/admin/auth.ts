@@ -11,7 +11,7 @@ type RequireAdminResult = {
 }
 
 async function requireAdminInternal(): Promise<RequireAdminResult> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()

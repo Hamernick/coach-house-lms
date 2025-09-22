@@ -17,7 +17,7 @@ export default async function PricingSuccessPage({
   const params = searchParams ? await searchParams : {}
   const sessionId = typeof params?.session_id === "string" ? params.session_id : undefined
 
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()

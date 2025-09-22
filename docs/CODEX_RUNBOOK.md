@@ -236,7 +236,7 @@ feat(step {id}): {title}
     * `/schedule`: responsive card list showing placeholder upcoming events with types and formatted times.
     * `/settings`: profile form (full name) plus marketing/newsletter opt-in checkboxes backed by Supabase user metadata; server actions with revalidation and success notice.
     * Sidebar updated to include Classes, Schedule, and Settings entries.
-  * PR: (pending)
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/33
 
 * [ ] **S24** — Admin overview content
 

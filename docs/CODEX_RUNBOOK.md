@@ -241,6 +241,11 @@ feat(step {id}): {title}
   * Build first-login onboarding stepper (name, role, goals, marketing/newsletter opt-ins) patterned after shadcn example; persist completion flag.
   * **Accept**: onboarding runs once per user, stores preferences, and redirects to dashboard.
 
+  * [ ] **S26** — Darkmode/lightmode/system aware
+
+  * Every single page, element, component, etc should be system aware for darkmode/lightmode
+  * **Accept**: Theme switches successfully throughout the entire app when I change my system setting manually on my computer.
+
 ## Controller prompt (for “Proceed” runs)
 
 > Read `CODEX_RUNBOOK.md`. Identify the first unchecked step. Execute only that step. Produce a PR with the prescribed template. Update the checkbox to checked, add a short **Changelog** section under the step with what changed, and append a link to the PR. End with `DONE`.

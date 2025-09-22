@@ -12,20 +12,25 @@ const SUPPORT_EMAIL = "contact@coachhousesolutions.org"
 export async function SiteHeader() {
   const supabase = await createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError) {
+    throw userError
+  }
 
   let displayName: string | null = null
-  const email: string | null = session?.user.email ?? null
+  const email: string | null = user?.email ?? null
 
-  if (session) {
+  if (user) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .maybeSingle<{ full_name: string | null }>()
 
-    displayName = profile?.full_name ?? (session.user.user_metadata?.full_name as string | undefined) ?? null
+    displayName = profile?.full_name ?? (user.user_metadata?.full_name as string | undefined) ?? null
   }
 
   return (
@@ -40,7 +45,7 @@ export async function SiteHeader() {
               Support
             </a>
           </Button>
-          {session ? (
+          {user ? (
             <UserMenu name={displayName} email={email} />
           ) : (
             <Button variant="outline" size="sm" asChild>

@@ -18,20 +18,25 @@ export default async function SettingsPage({
 }) {
   const supabase = await createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (userError) {
+    throw userError
+  }
+
+  if (!user) {
     redirect("/login?redirect=/settings")
   }
 
   const { data: profile } = await supabase
     .from("profiles")
     .select("full_name")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .maybeSingle<{ full_name: string | null }>()
 
-  const metadata = session.user.user_metadata ?? {}
+  const metadata = user.user_metadata ?? {}
   const marketingOptIn = Boolean(metadata.marketing_opt_in ?? true)
   const newsletterOptIn = Boolean(metadata.newsletter_opt_in ?? true)
 
@@ -79,7 +84,7 @@ export default async function SettingsPage({
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" value={session.user.email ?? ""} disabled />
+                <Input id="email" value={user.email ?? ""} disabled />
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Button type="submit">
@@ -138,10 +143,15 @@ async function updateAccountAction(formData: FormData) {
 
   const supabase = await createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (userError) {
+    throw userError
+  }
+
+  if (!user) {
     redirect("/login?redirect=/settings")
   }
 
@@ -151,7 +161,7 @@ async function updateAccountAction(formData: FormData) {
   await supabase
     .from("profiles")
     .update({ full_name: typeof fullName === "string" && fullName.trim().length > 0 ? fullName.trim() : null })
-    .eq("id", session.user.id)
+    .eq("id", user.id)
 
   revalidatePath("/settings")
   redirect(redirectTo)
@@ -162,10 +172,15 @@ async function updatePreferencesAction(formData: FormData) {
 
   const supabase = await createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (userError) {
+    throw userError
+  }
+
+  if (!user) {
     redirect("/login?redirect=/settings")
   }
 

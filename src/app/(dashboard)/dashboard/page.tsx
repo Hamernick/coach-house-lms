@@ -1,5 +1,6 @@
 import dynamic from "next/dynamic"
 import { Suspense } from "react"
+import { redirect } from "next/navigation"
 
 import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { ClassesHighlights } from "@/components/dashboard/classes-overview"
@@ -26,8 +27,26 @@ const DynamicSectionCards = dynamic(
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient()
   const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError) {
+    throw userError
+  }
+
+  if (!user) {
+    redirect("/login?redirect=/dashboard")
+  }
+
+  const {
     data: { session },
+    error: sessionError,
   } = await supabase.auth.getSession()
+
+  if (sessionError) {
+    throw sessionError
+  }
 
   return (
     <>

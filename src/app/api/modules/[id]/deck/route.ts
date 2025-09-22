@@ -9,10 +9,15 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   const supabase = await createSupabaseServerClient()
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (userError) {
+    return NextResponse.json({ error: userError.message }, { status: 500 })
+  }
+
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

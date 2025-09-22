@@ -22,10 +22,15 @@ function statusLabel(status: string) {
 export async function SubscriptionStatusCard() {
   const supabase = createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (userError) {
+    throw userError
+  }
+
+  if (!user) {
     return null
   }
 
@@ -34,7 +39,7 @@ export async function SubscriptionStatusCard() {
   const { data } = await supabase
     .from("subscriptions" satisfies keyof Database["public"]["Tables"])
     .select("status, current_period_end, metadata")
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle<Pick<SubscriptionRow, "status" | "current_period_end" | "metadata">>()

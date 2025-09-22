@@ -19,14 +19,19 @@ export default async function PricingSuccessPage({
 
   const supabase = createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (userError) {
+    throw userError
+  }
+
+  if (!user) {
     redirect("/login?redirect=/pricing/success")
   }
 
-  const userId = session.user.id
+  const userId = user.id
   let status: Database["public"]["Enums"]["subscription_status"] = "trialing"
   let subscriptionId: string | undefined
   let currentPeriodEnd: string | null = null

@@ -38,10 +38,15 @@ const UPCOMING_EVENTS = [
 export default async function SchedulePage() {
   const supabase = await createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (userError) {
+    throw userError
+  }
+
+  if (!user) {
     redirect("/login?redirect=/schedule")
   }
 

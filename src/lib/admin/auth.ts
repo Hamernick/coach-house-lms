@@ -13,17 +13,22 @@ type RequireAdminResult = {
 async function requireAdminInternal(): Promise<RequireAdminResult> {
   const supabase = await createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (userError) {
+    throw userError
+  }
+
+  if (!user) {
     redirect("/auth/sign-in")
   }
 
   const { data: profile, error } = await supabase
     .from("profiles")
     .select("role")
-    .eq("id", session.user.id)
+    .eq("id", user.id)
     .maybeSingle()
 
   if (error) {
@@ -34,7 +39,7 @@ async function requireAdminInternal(): Promise<RequireAdminResult> {
     redirect("/dashboard")
   }
 
-  return { supabase, userId: session.user.id }
+  return { supabase, userId: user.id }
 }
 
 export const requireAdmin = cache(requireAdminInternal)

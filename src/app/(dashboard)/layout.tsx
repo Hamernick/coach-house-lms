@@ -11,28 +11,33 @@ import { createSupabaseServerClient } from "@/lib/supabase"
 export default async function DashboardLayout({ children }: { children: ReactNode }) {
   const supabase = await createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError) {
+    throw userError
+  }
 
   let displayName: string | null = null
-  let email: string | null = session?.user.email ?? null
+  let email: string | null = user?.email ?? null
   let avatar: string | null = null
 
-  if (session) {
+  if (user) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("full_name")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .maybeSingle<{ full_name: string | null }>()
 
-    displayName = profile?.full_name ?? (session.user.user_metadata?.full_name as string | undefined) ?? null
+    displayName = profile?.full_name ?? (user.user_metadata?.full_name as string | undefined) ?? null
 
-    if (!email && typeof session.user.user_metadata?.email === "string") {
-      email = session.user.user_metadata.email as string
+    if (!email && typeof user.user_metadata?.email === "string") {
+      email = user.user_metadata.email as string
     }
 
-    if (typeof session.user.user_metadata?.avatar_url === "string") {
-      avatar = session.user.user_metadata.avatar_url as string
+    if (typeof user.user_metadata?.avatar_url === "string") {
+      avatar = user.user_metadata.avatar_url as string
     }
   }
 

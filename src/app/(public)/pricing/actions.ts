@@ -18,10 +18,15 @@ export async function startCheckout(formData: FormData) {
 
   const supabase = await createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (userError) {
+    throw userError
+  }
+
+  if (!user) {
     redirect("/login?redirect=/pricing")
   }
 
@@ -29,7 +34,7 @@ export async function startCheckout(formData: FormData) {
   const origin =
     requestHeaders.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"
 
-  const userId = session.user.id
+  const userId = user.id
 
   type SubscriptionStatus = Database["public"]["Enums"]["subscription_status"]
   type SubscriptionInsert = Database["public"]["Tables"]["subscriptions"]["Insert"]
@@ -61,7 +66,7 @@ export async function startCheckout(formData: FormData) {
       mode: "subscription",
       allow_promotion_codes: true,
       client_reference_id: userId,
-      customer_email: session.user.email ?? undefined,
+      customer_email: user.email ?? undefined,
       line_items: [
         {
           price: safePriceId,

@@ -11,7 +11,7 @@ import type { Database } from "@/lib/supabase"
 
 export async function createClassAction() {
   await requireAdmin()
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const slug = `class-${randomUUID().slice(0, 8)}`
 
@@ -45,7 +45,7 @@ export async function deleteClassAction(formData: FormData) {
   }
 
   await requireAdmin()
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { error } = await supabase
     .from("classes" satisfies keyof Database["public"]["Tables"])
@@ -61,7 +61,7 @@ export async function deleteClassAction(formData: FormData) {
 
 export async function setClassPublishedAction(classId: string, published: boolean) {
   await requireAdmin()
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const updatePayload: Database["public"]["Tables"]["classes"]["Update"] = { published }
 

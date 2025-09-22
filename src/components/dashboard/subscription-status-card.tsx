@@ -20,7 +20,7 @@ function statusLabel(status: string) {
 }
 
 export async function SubscriptionStatusCard() {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()

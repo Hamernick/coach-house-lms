@@ -65,7 +65,7 @@ function extractAmount(metadata: unknown): { amount: number; currency: string } 
 }
 
 export async function fetchAdminKpis(): Promise<AdminKpis> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const [{ data: profileCount, error: profileError }, { data: subs, error: subsError }] = await Promise.all([
     supabase.from("profiles").select("id", { count: "exact", head: true }),
@@ -110,7 +110,7 @@ export async function fetchAdminKpis(): Promise<AdminKpis> {
 }
 
 export async function fetchRecentEnrollments(limit = 5): Promise<AdminRecentEnrollment[]> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase
     .from("enrollments")
@@ -134,7 +134,7 @@ export async function fetchRecentEnrollments(limit = 5): Promise<AdminRecentEnro
 }
 
 export async function fetchRecentPayments(limit = 5): Promise<AdminRecentPayment[]> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase
     .from("subscriptions")

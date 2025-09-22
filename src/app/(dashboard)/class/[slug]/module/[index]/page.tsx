@@ -31,7 +31,7 @@ export default async function ModulePage({
     notFound()
   }
 
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()
@@ -313,7 +313,7 @@ async function completeModuleAction(formData: FormData) {
     return
   }
 
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const {
     data: { session },
   } = await supabase.auth.getSession()

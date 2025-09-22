@@ -30,7 +30,7 @@ export default async function DashboardPage() {
   } = await supabase.auth.getSession()
 
   return (
-    <div className="flex flex-col gap-6">
+    <>
       <section className="px-4 lg:px-6">
         <DashboardBreadcrumbs segments={[{ label: "Dashboard" }]} />
       </section>
@@ -62,6 +62,6 @@ export default async function DashboardPage() {
           <DynamicDataTable />
         </section>
       </Suspense>
-    </div>
+    </>
   )
 }

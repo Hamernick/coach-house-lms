@@ -226,10 +226,17 @@ feat(step {id}): {title}
   * PR: https://github.com/Hamernick/coach-house-lms/pull/31
 
 
-* [ ] **S23** — Student navigation pages
+* [x] **S23** — Student navigation pages
 
   * Implement `/classes`, `/schedule`, `/settings` with responsive layouts, placeholder data (fetch stubs), and links from sidebar.
   * **Accept**: routes accessible; empty/loading states present; settings surfaces marketing/newsletter toggles.
+  * **Changelog**:
+    * Added student navigation routes under `(dashboard)`: `/classes`, `/schedule`, and `/settings`, each protected by SSR auth.
+    * `/classes`: paginated grid of enrolled classes via Supabase RSC fetch with empty state and breadcrumb; links into canonical module route.
+    * `/schedule`: responsive card list showing placeholder upcoming events with types and formatted times.
+    * `/settings`: profile form (full name) plus marketing/newsletter opt-in checkboxes backed by Supabase user metadata; server actions with revalidation and success notice.
+    * Sidebar updated to include Classes, Schedule, and Settings entries.
+  * PR: (pending)
 
 * [ ] **S24** — Admin overview content
 

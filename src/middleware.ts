@@ -1,13 +1,39 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { createServerClient } from "@supabase/ssr"
+
+import { env } from "@/lib/env"
+import type { Database } from "@/lib/supabase/types"
 
 const PROTECTED_PREFIXES = ["/dashboard", "/class", "/classes", "/schedule", "/settings", "/billing", "/admin"]
 const AUTH_ROUTES = new Set(["/login", "/sign-up", "/forgot-password"])
 
-export function middleware(request: NextRequest) {
-  const accessToken = request.cookies.get("sb-access-token")?.value
-  const refreshToken = request.cookies.get("sb-refresh-token")?.value
-  const hasSession = Boolean(accessToken && refreshToken)
+export async function middleware(request: NextRequest) {
+  const response = NextResponse.next()
+
+  const supabase = createServerClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      cookies: {
+        get(name) {
+          return request.cookies.get(name)?.value
+        },
+        set(name, value, options) {
+          response.cookies.set({ name, value, ...options })
+        },
+        remove(name, options) {
+          response.cookies.set({ name, value: "", ...options, maxAge: 0 })
+        },
+      },
+    }
+  )
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
+
+  const hasSession = Boolean(session)
 
   const pathname = request.nextUrl.pathname
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
@@ -16,14 +42,24 @@ export function middleware(request: NextRequest) {
   if (!hasSession && isProtected) {
     const redirectUrl = new URL("/login", request.url)
     redirectUrl.searchParams.set("redirect", pathname + request.nextUrl.search)
-    return NextResponse.redirect(redirectUrl)
+    const redirectResponse = NextResponse.redirect(redirectUrl)
+    copyCookies(response, redirectResponse)
+    return redirectResponse
   }
 
   if (hasSession && isAuthRoute) {
-    return NextResponse.redirect(new URL("/dashboard", request.url))
+    const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url))
+    copyCookies(response, redirectResponse)
+    return redirectResponse
   }
 
-  return NextResponse.next()
+  return response
+}
+
+function copyCookies(source: NextResponse, destination: NextResponse) {
+  source.cookies.getAll().forEach((cookie) => {
+    destination.cookies.set(cookie)
+  })
 }
 
 export const config = {

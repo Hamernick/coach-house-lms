@@ -6,7 +6,7 @@ export function PaginationControls({
   page,
   pageSize,
   total,
-  basePath = "/dashboard/classes",
+  basePath = "/classes",
 }: {
   page: number
   pageSize: number

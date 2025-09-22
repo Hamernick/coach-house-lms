@@ -25,7 +25,7 @@ const breadcrumbStories = {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard/classes">
+              <BreadcrumbLink href="/classes">
                 Classes
               </BreadcrumbLink>
             </BreadcrumbItem>

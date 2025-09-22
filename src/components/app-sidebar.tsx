@@ -27,66 +27,77 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 
-const navigation = {
-  user: {
-    name: "Alex Morgan",
-    email: "alex@coachhouse.io",
-    avatar: "/avatars/shadcn.jpg",
+const SUPPORT_EMAIL = "contact@coachhousesolutions.org"
+
+const MAIN_NAV = [
+  {
+    title: "Dashboard",
+    href: "/dashboard",
+    icon: IconLayoutDashboard,
   },
-  main: [
-    {
-      title: "Dashboard",
-      href: "/dashboard",
-      icon: IconLayoutDashboard,
-    },
-    {
-      title: "Classes",
-      href: "/dashboard/classes",
-      icon: IconBook,
-    },
-    {
-      title: "Schedule",
-      href: "/dashboard/schedule",
-      icon: IconCalendarTime,
-    },
-    {
-      title: "Billing",
-      href: "/billing",
-      icon: IconCreditCard,
-    },
-    {
-      title: "Admin",
-      href: "/admin",
-      icon: IconShieldLock,
-    },
-  ],
-  resources: [
-    {
-      name: "Knowledge base",
-      url: "https://coachhouse.example.com/docs",
-      icon: IconNotebook,
-    },
-    {
-      name: "Community",
-      url: "https://coachhouse.example.com/community",
-      icon: IconLifebuoy,
-    },
-  ],
-  secondary: [
-    {
-      title: "Settings",
-      url: "/settings",
-      icon: IconSettings,
-    },
-    {
-      title: "Support",
-      url: "mailto:support@coachhouse.io",
-      icon: IconHelp,
-    },
-  ],
+  {
+    title: "Classes",
+    href: "/classes",
+    icon: IconBook,
+  },
+  {
+    title: "Schedule",
+    href: "/schedule",
+    icon: IconCalendarTime,
+  },
+  {
+    title: "Billing",
+    href: "/billing",
+    icon: IconCreditCard,
+  },
+  {
+    title: "Admin",
+    href: "/admin",
+    icon: IconShieldLock,
+  },
+]
+
+const RESOURCE_NAV = [
+  {
+    name: "Knowledge base",
+    url: "https://coachhouse.example.com/docs",
+    icon: IconNotebook,
+  },
+  {
+    name: "Community",
+    url: "https://coachhouse.example.com/community",
+    icon: IconLifebuoy,
+  },
+]
+
+const SECONDARY_NAV = [
+  {
+    title: "Settings",
+    url: "/settings",
+    icon: IconSettings,
+  },
+  {
+    title: "Support",
+    url: `mailto:${SUPPORT_EMAIL}`,
+    icon: IconHelp,
+  },
+]
+
+type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
+  user?: {
+    name?: string | null
+    email?: string | null
+    avatar?: string | null
+  }
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ user, ...props }: AppSidebarProps) {
+  const resolvedUser = {
+    name: user?.name ?? null,
+    email: user?.email ?? null,
+    avatar: user?.avatar ?? null,
+  }
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -103,12 +114,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navigation.main} label="Platform" />
-        <NavDocuments items={navigation.resources} label="Resources" />
-        <NavSecondary items={navigation.secondary} className="mt-auto" />
+        <NavMain items={MAIN_NAV} label="Platform" />
+        <NavDocuments items={RESOURCE_NAV} label="Resources" />
+        <NavSecondary items={SECONDARY_NAV} className="mt-auto" />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={navigation.user} />
+        <NavUser user={resolvedUser} />
       </SidebarFooter>
     </Sidebar>
   )

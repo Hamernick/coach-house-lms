@@ -70,7 +70,8 @@ export default async function ModulePage({
       <DashboardBreadcrumbs
         segments={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: classContext.classTitle, href: `/dashboard/classes?focus=${classContext.classId}` },
+          { label: "Classes", href: "/classes" },
+          { label: classContext.classTitle, href: `/classes?focus=${classContext.classId}` },
           { label: `Module ${currentState.module.idx}` },
         ]}
       />

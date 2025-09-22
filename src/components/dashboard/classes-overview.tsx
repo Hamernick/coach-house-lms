@@ -15,7 +15,7 @@ export async function ClassesHighlights() {
         title="No classes published"
         description="Create your first class to unlock analytics and module progress tracking."
         actionLabel="Create class"
-        onActionHref="/dashboard/classes"
+        onActionHref="/admin/classes"
         helperText="Classes automatically appear here once they are published."
       />
     )

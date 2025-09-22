@@ -132,7 +132,7 @@ feat(step {id}): {title}
   * **Accept**: list, paginate; empty state.
   * **Changelog**:
     * Added dashboard Suspense flow with breadcrumb, subscription, classes, and analytics panels streaming progressively.
-    * Implemented Supabase classes service, paginated `/dashboard/classes` route, and shared empty/skeleton states.
+    * Implemented Supabase classes service, paginated `/classes` route, and shared empty/skeleton states.
     * Exposed admin Supabase client plus `/api/classes` endpoints for list/create/update/delete.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/12
 * [x] **S11** — Modules & sequential unlock

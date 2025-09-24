@@ -16,7 +16,7 @@ export type ServerSessionResult = {
 
 function resolveSupabase(): SupabaseClient<Database> {
   const a = (createFromServer as unknown as () => SupabaseClient<Database>)?.()
-  if (a && (a as any).auth) return a
+  if (a && (a as SupabaseClient<Database> | undefined)?.auth) return a
   const b = (createFromIndex as unknown as () => SupabaseClient<Database>)?.()
   return b
 }

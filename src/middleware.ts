@@ -5,7 +5,16 @@ import { createServerClient } from "@supabase/ssr"
 import { env } from "@/lib/env"
 import type { Database } from "@/lib/supabase/types"
 
-const PROTECTED_PREFIXES = ["/dashboard", "/class", "/classes", "/schedule", "/settings", "/billing", "/admin"]
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/class",
+  "/classes",
+  "/schedule",
+  "/settings",
+  "/billing",
+  "/admin",
+  "/onboarding",
+]
 const AUTH_ROUTES = new Set(["/login", "/sign-up", "/forgot-password"])
 
 export async function middleware(request: NextRequest) {
@@ -37,6 +46,7 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  const isOnboardingRoute = pathname.startsWith("/onboarding")
   const isAuthRoute = AUTH_ROUTES.has(pathname)
 
   if (!hasSession && isProtected) {
@@ -51,6 +61,17 @@ export async function middleware(request: NextRequest) {
     const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url))
     copyCookies(response, redirectResponse)
     return redirectResponse
+  }
+
+  // If logged in but onboarding not completed, gate protected routes behind onboarding (allow the onboarding route itself)
+  if (hasSession && isProtected && !isOnboardingRoute) {
+    const meta = session!.user.user_metadata as Record<string, unknown> | null
+    const completed = Boolean(meta?.onboarding_completed)
+    if (!completed) {
+      const redirectResponse = NextResponse.redirect(new URL("/onboarding", request.url))
+      copyCookies(response, redirectResponse)
+      return redirectResponse
+    }
   }
 
   return response

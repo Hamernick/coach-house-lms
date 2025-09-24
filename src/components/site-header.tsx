@@ -6,6 +6,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 import { UserMenu } from "./user-menu"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 const SUPPORT_EMAIL = "contact@coachhousesolutions.org"
 
@@ -40,6 +41,7 @@ export async function SiteHeader() {
         <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
         <h1 className="text-base font-medium">Dashboard</h1>
         <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
           <Button variant="ghost" size="sm" asChild>
             <a href={`mailto:${SUPPORT_EMAIL}`} className="text-sm">
               Support

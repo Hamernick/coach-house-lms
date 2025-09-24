@@ -266,7 +266,7 @@ feat(step {id}): {title}
     * Added `next-themes` provider with `attribute="class"` and `defaultTheme="system"` at the app root to sync with OS theme.
     * Switched Sonner Toaster to theme-aware variant wired to `next-themes`.
     * Ensured middleware and pages rely on CSS variables with `.dark` class; html uses `suppressHydrationWarning` to avoid flicker.
-  * PR: (pending)
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/40
 
 ## Controller prompt (for “Proceed” runs)
 

@@ -14,6 +14,7 @@ describe("module unlocking", () => {
     contentMd: null,
     durationMinutes: null,
     published: true,
+    hasDeck: false,
     ...overrides,
   })
 

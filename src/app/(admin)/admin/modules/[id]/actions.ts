@@ -28,7 +28,7 @@ export async function updateModuleDetailsAction(formData: FormData) {
   }
 
   await requireAdmin()
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const durationValue =
     typeof duration === "string" && duration.length > 0
@@ -69,7 +69,7 @@ export async function deleteModuleFromDetailAction(formData: FormData) {
   }
 
   await requireAdmin()
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { error } = await supabase
     .from("modules" satisfies keyof Database["public"]["Tables"])
@@ -106,7 +106,7 @@ export async function uploadModuleDeckAction(formData: FormData) {
   }
 
   await requireAdmin()
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { data: moduleRow, error } = await supabase
     .from("modules" satisfies keyof Database["public"]["Tables"])
@@ -151,7 +151,7 @@ export async function removeModuleDeckAction(formData: FormData) {
   }
 
   await requireAdmin()
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase
     .from("modules" satisfies keyof Database["public"]["Tables"])

@@ -37,7 +37,7 @@ export async function listAdminUsers({
     return []
   }
 
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const userIds = users.map((user) => user.id)
 
   const { data: profiles, error: profilesError } = await supabase
@@ -134,7 +134,7 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     return null
   }
 
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")

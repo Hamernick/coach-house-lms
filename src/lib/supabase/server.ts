@@ -5,8 +5,10 @@ import { cookies } from "next/headers"
 import { env } from "@/lib/env"
 import type { Database } from "./types"
 
-export function createSupabaseServerClient(): SupabaseClient<Database, "public"> {
-  const cookieStore = cookies() as unknown as {
+export async function createSupabaseServerClient(): Promise<
+  SupabaseClient<Database, "public">
+> {
+  const cookieStore = (await cookies()) as unknown as {
     get: (name: string) => { value: string } | undefined
     set?: (options: { name: string; value: string } & CookieOptions) => void
     delete?: (name: string) => void

@@ -22,7 +22,7 @@ export async function updateClassDetailsAction(formData: FormData) {
   }
 
   await requireAdmin()
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const updatePayload: Database["public"]["Tables"]["classes"]["Update"] = {
     title: title.trim(),
@@ -53,7 +53,7 @@ export async function createModuleAction(formData: FormData) {
   }
 
   await requireAdmin()
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { data: maxIdxData, error: idxError } = await supabase
     .from("modules" satisfies keyof Database["public"]["Tables"])
@@ -100,7 +100,7 @@ export async function createModuleAction(formData: FormData) {
 
 export async function reorderModulesAction(classId: string, orderedIds: string[]) {
   await requireAdmin()
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const updateResponses = await Promise.all(
     orderedIds.map((id, index) =>
@@ -128,7 +128,7 @@ export async function deleteModuleAction(formData: FormData) {
   }
 
   await requireAdmin()
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const { error } = await supabase
     .from("modules" satisfies keyof Database["public"]["Tables"])
@@ -144,7 +144,7 @@ export async function deleteModuleAction(formData: FormData) {
 
 export async function setModulePublishedAction(moduleId: string, classId: string, published: boolean) {
   await requireAdmin()
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const publishPayload: Database["public"]["Tables"]["modules"]["Update"] = { published }
 

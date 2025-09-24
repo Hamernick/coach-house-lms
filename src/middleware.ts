@@ -39,17 +39,18 @@ export async function middleware(request: NextRequest) {
   )
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  const hasSession = Boolean(session)
+  const hasUser = Boolean(user)
 
   const pathname = request.nextUrl.pathname
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
   const isOnboardingRoute = pathname.startsWith("/onboarding")
   const isAuthRoute = AUTH_ROUTES.has(pathname)
 
-  if (!hasSession && isProtected) {
+  if ((!hasUser || userError) && isProtected) {
     const redirectUrl = new URL("/login", request.url)
     redirectUrl.searchParams.set("redirect", pathname + request.nextUrl.search)
     const redirectResponse = NextResponse.redirect(redirectUrl)
@@ -57,7 +58,7 @@ export async function middleware(request: NextRequest) {
     return redirectResponse
   }
 
-  if (hasSession && isAuthRoute) {
+  if (hasUser && !userError && isAuthRoute) {
     const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url))
     copyCookies(response, redirectResponse)
     return redirectResponse

@@ -13,7 +13,7 @@ export const redirectMock = vi.fn((destination: string) => {
 export const revalidatePathMock = vi.fn()
 
 export const headersMock = vi.fn(async () => ({
-  get: (name: string) => {
+  get: (name: string): string | undefined => {
     if (name.toLowerCase() === "origin") {
       return "https://example.test"
     }

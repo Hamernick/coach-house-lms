@@ -6,13 +6,18 @@ import type { Database } from "@/lib/supabase"
 
 export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
   const { id: moduleId } = await context.params
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (userError) {
+    return NextResponse.json({ error: userError.message }, { status: 500 })
+  }
+
+  if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

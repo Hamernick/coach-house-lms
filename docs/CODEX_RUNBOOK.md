@@ -256,7 +256,7 @@ feat(step {id}): {title}
     * Added `/onboarding` protected route with a simple step form (name, goals, marketing/newsletter checkboxes) using shadcn/ui.
     * Persisted `full_name` and optional goals to `profiles`; saved `marketing_opt_in`, `newsletter_opt_in`, and `onboarding_completed` to Supabase auth metadata.
     * Middleware now redirects authenticated users without `onboarding_completed` to `/onboarding` and allows skipping (defaults to opt-in true) while still marking completion.
-  * PR: (pending)
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/38
 
   * [ ] **S26** — Darkmode/lightmode/system aware
 

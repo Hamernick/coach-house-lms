@@ -3,7 +3,7 @@ import { redirect } from "next/navigation"
 import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
+import { CheckboxField } from "@/components/form/checkbox-field"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -55,24 +55,20 @@ export default async function OnboardingPage() {
                 <Textarea id="goals" name="goals" defaultValue={profile?.headline ?? ""} placeholder="What would you like to achieve?" />
               </div>
               <div className="space-y-3">
-                <div className="flex items-start gap-3 rounded-md border border-border/50 p-3">
-                  <Checkbox id="marketingOptIn" name="marketingOptIn" defaultChecked={marketingOptIn} />
-                  <div className="space-y-1">
-                    <Label htmlFor="marketingOptIn" className="text-sm font-medium">
-                      Product communication
-                    </Label>
-                    <p className="text-sm text-muted-foreground">Get product updates, tips, and offers.</p>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3 rounded-md border border-border/50 p-3">
-                  <Checkbox id="newsletterOptIn" name="newsletterOptIn" defaultChecked={newsletterOptIn} />
-                  <div className="space-y-1">
-                    <Label htmlFor="newsletterOptIn" className="text-sm font-medium">
-                      Weekly newsletter
-                    </Label>
-                    <p className="text-sm text-muted-foreground">Curated learning resources and community news.</p>
-                  </div>
-                </div>
+                <CheckboxField
+                  id="marketingOptIn"
+                  name="marketingOptIn"
+                  label="Product communication"
+                  description="Get product updates, tips, and offers."
+                  defaultChecked={marketingOptIn}
+                />
+                <CheckboxField
+                  id="newsletterOptIn"
+                  name="newsletterOptIn"
+                  label="Weekly newsletter"
+                  description="Curated learning resources and community news."
+                  defaultChecked={newsletterOptIn}
+                />
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Button type="submit">Finish</Button>

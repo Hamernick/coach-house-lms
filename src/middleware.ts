@@ -5,7 +5,16 @@ import { createServerClient } from "@supabase/ssr"
 import { env } from "@/lib/env"
 import type { Database } from "@/lib/supabase/types"
 
-const PROTECTED_PREFIXES = ["/dashboard", "/class", "/classes", "/schedule", "/settings", "/billing", "/admin"]
+const PROTECTED_PREFIXES = [
+  "/dashboard",
+  "/class",
+  "/classes",
+  "/schedule",
+  "/settings",
+  "/billing",
+  "/admin",
+  "/onboarding",
+]
 const AUTH_ROUTES = new Set(["/login", "/sign-up", "/forgot-password"])
 
 export async function middleware(request: NextRequest) {
@@ -30,17 +39,15 @@ export async function middleware(request: NextRequest) {
   )
 
   const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-
-  const hasUser = Boolean(user)
-
+    data: { session },
+  } = await supabase.auth.getSession()
+  const user = session?.user ?? null
   const pathname = request.nextUrl.pathname
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  const isOnboardingRoute = pathname.startsWith("/onboarding")
   const isAuthRoute = AUTH_ROUTES.has(pathname)
 
-  if ((!hasUser || userError) && isProtected) {
+  if (!user && isProtected) {
     const redirectUrl = new URL("/login", request.url)
     redirectUrl.searchParams.set("redirect", pathname + request.nextUrl.search)
     const redirectResponse = NextResponse.redirect(redirectUrl)
@@ -48,10 +55,21 @@ export async function middleware(request: NextRequest) {
     return redirectResponse
   }
 
-  if (hasUser && !userError && isAuthRoute) {
+  if (user && isAuthRoute) {
     const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url))
     copyCookies(response, redirectResponse)
     return redirectResponse
+  }
+
+  // If logged in but onboarding not completed, gate protected routes behind onboarding (allow the onboarding route itself)
+  if (user && isProtected && !isOnboardingRoute) {
+    const meta = user.user_metadata as Record<string, unknown> | null
+    const completed = Boolean(meta?.onboarding_completed)
+    if (!completed) {
+      const redirectResponse = NextResponse.redirect(new URL("/onboarding", request.url))
+      copyCookies(response, redirectResponse)
+      return redirectResponse
+    }
   }
 
   return response

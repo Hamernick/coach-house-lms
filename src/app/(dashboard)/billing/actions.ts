@@ -2,14 +2,13 @@
 
 import { headers } from "next/headers"
 import Stripe from "stripe"
-
-
 import { env } from "@/lib/env"
 import { logger } from "@/lib/logger"
 import { requireServerSession } from "@/lib/auth"
 
 export async function createBillingPortalSession() {
   const { supabase, session } = await requireServerSession("/billing")
+  const user = session.user
 
   if (!env.STRIPE_SECRET_KEY) {
 

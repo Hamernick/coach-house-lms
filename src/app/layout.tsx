@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import "./globals.css"
 
 import { ToastProvider } from "@/components/providers/toast-provider"
+import { ThemeProvider } from "@/components/providers/theme-provider"
 import { getLocale } from "@/lib/locale.server"
 
 export const metadata: Metadata = {
@@ -24,8 +25,10 @@ export default async function RootLayout({
   return (
     <html lang={language} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
-        <ToastProvider />
-        {children}
+        <ThemeProvider>
+          <ToastProvider />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )

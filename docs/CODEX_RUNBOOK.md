@@ -258,10 +258,15 @@ feat(step {id}): {title}
     * Middleware now redirects authenticated users without `onboarding_completed` to `/onboarding` and allows skipping (defaults to opt-in true) while still marking completion.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/38
 
-  * [ ] **S26** — Darkmode/lightmode/system aware
+* [x] **S26** — Darkmode/lightmode/system aware
 
   * Every single page, element, component, etc should be system aware for darkmode/lightmode
   * **Accept**: Theme switches successfully throughout the entire app when I change my system setting manually on my computer.
+  * **Changelog**:
+    * Added `next-themes` provider with `attribute="class"` and `defaultTheme="system"` at the app root to sync with OS theme.
+    * Switched Sonner Toaster to theme-aware variant wired to `next-themes`.
+    * Ensured middleware and pages rely on CSS variables with `.dark` class; html uses `suppressHydrationWarning` to avoid flicker.
+  * PR: (pending)
 
 ## Controller prompt (for “Proceed” runs)
 

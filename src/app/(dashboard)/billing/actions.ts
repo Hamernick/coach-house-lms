@@ -1,28 +1,15 @@
 "use server"
 
 import { headers } from "next/headers"
-import { redirect } from "next/navigation"
 import Stripe from "stripe"
 
 
 import { env } from "@/lib/env"
 import { logger } from "@/lib/logger"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { requireServerSession } from "@/lib/auth"
 
 export async function createBillingPortalSession() {
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-
-  if (userError) {
-    throw userError
-  }
-
-  if (!user) {
-    redirect("/login?redirect=/billing")
-  }
+  const { supabase, session } = await requireServerSession("/billing")
 
   if (!env.STRIPE_SECRET_KEY) {
 

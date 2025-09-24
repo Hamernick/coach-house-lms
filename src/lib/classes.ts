@@ -37,7 +37,7 @@ export async function listClasses({
   page?: number
   pageSize?: number
 } = {}): Promise<ListClassesResult> {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const safePage = Number.isFinite(page) && page > 0 ? Math.floor(page) : 1
   const size = Number.isFinite(pageSize) && pageSize > 0 ? Math.floor(pageSize) : DEFAULT_PAGE_SIZE
   const from = (safePage - 1) * size
@@ -77,7 +77,7 @@ export async function listClasses({
 }
 
 export async function getClassById(id: string) {
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase
     .from("classes")
     .select("*, modules ( id, title, idx, slug, published, created_at, deck_path )")

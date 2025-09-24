@@ -19,7 +19,7 @@ export async function changeUserRoleAction(formData: FormData) {
   }
 
   await requireAdmin()
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
 
   const updatePayload: Database["public"]["Tables"]["profiles"]["Update"] = {
     role: nextRole,

@@ -266,7 +266,7 @@ feat(step {id}): {title}
     * Added `next-themes` provider with `attribute="class"` and `defaultTheme="system"` at the app root to sync with OS theme.
     * Switched Sonner Toaster to theme-aware variant wired to `next-themes`.
     * Ensured middleware and pages rely on CSS variables with `.dark` class; html uses `suppressHydrationWarning` to avoid flicker.
-  * PR: (pending)
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/40
 
 ## Controller prompt (for “Proceed” runs)
 
@@ -289,6 +289,14 @@ feat(step {id}): {title}
 
 * Required checks: typecheck · lint · build · unit · e2e · a11y quick.
 * Review checklist: security, perf, a11y, RLS, migrations reversible.
+
+## Post‑S26 follow‑ups (release v0.1.0)
+
+* A11y quick sweep: header landmarks, contrasts, and focus states reviewed; no blockers found.
+* Theme UX: added header theme toggle that cycles system → light → dark; persisted via `next-themes`.
+* Onboarding QA: acceptance test added for gate redirect when `onboarding_completed=true`.
+* Build noise: disabled webpack FS cache in CI to suppress large string serialization warning.
+* Release PR: https://github.com/Hamernick/coach-house-lms/pull/41
 
 ## Ground rules for Codex
 

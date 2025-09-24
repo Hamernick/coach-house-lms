@@ -31,18 +31,23 @@ export default async function ModulePage({
     notFound()
   }
 
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (userError) {
+    throw userError
+  }
+
+  if (!user) {
     redirect("/auth/sign-in")
   }
 
   const classContext = await getClassModulesForUser({
     classSlug: slug,
-    userId: session.user.id,
+    userId: user.id,
   })
 
   if (classContext.modules.length === 0) {
@@ -313,12 +318,17 @@ async function completeModuleAction(formData: FormData) {
     return
   }
 
-  const supabase = createSupabaseServerClient()
+  const supabase = await createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (userError) {
+    throw userError
+  }
+
+  if (!user) {
     redirect("/auth/sign-in")
   }
 
@@ -327,7 +337,7 @@ async function completeModuleAction(formData: FormData) {
       ? { reflection: reflection.trim() }
       : null
 
-  await markModuleCompleted({ moduleId, userId: session.user.id, notes })
+  await markModuleCompleted({ moduleId, userId: user.id, notes })
 
   if (typeof currentIndex === "string" && currentIndex.length > 0) {
     revalidatePath(`/class/${classSlug}/module/${currentIndex}`)

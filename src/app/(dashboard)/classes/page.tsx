@@ -20,10 +20,15 @@ export default async function ClassesPage({
   const params = searchParams ? await searchParams : {}
   const supabase = await createSupabaseServerClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
 
-  if (!session) {
+  if (userError) {
+    throw userError
+  }
+
+  if (!user) {
     redirect("/login?redirect=/classes")
   }
 

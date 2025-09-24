@@ -7,17 +7,10 @@ import Stripe from "stripe"
 
 import { env } from "@/lib/env"
 import { logger } from "@/lib/logger"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { requireServerSession } from "@/lib/auth"
 
 export async function createBillingPortalSession() {
-  const supabase = createSupabaseServerClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    redirect("/login?redirect=/billing")
-  }
+  const { supabase, session } = await requireServerSession("/billing")
 
   if (!env.STRIPE_SECRET_KEY) {
 

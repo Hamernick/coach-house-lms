@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { captureRedirect, resetTestMocks } from "./test-utils"
-import { vi } from "vitest"
 
 describe("onboarding gate", () => {
   beforeEach(() => {

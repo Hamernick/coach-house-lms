@@ -290,6 +290,14 @@ feat(step {id}): {title}
 * Required checks: typecheck · lint · build · unit · e2e · a11y quick.
 * Review checklist: security, perf, a11y, RLS, migrations reversible.
 
+## Post‑S26 follow‑ups (release v0.1.0)
+
+* A11y quick sweep: header landmarks, contrasts, and focus states reviewed; no blockers found.
+* Theme UX: added header theme toggle that cycles system → light → dark; persisted via `next-themes`.
+* Onboarding QA: acceptance test added for gate redirect when `onboarding_completed=true`.
+* Build noise: disabled webpack FS cache in CI to suppress large string serialization warning.
+* Release PR: https://github.com/Hamernick/coach-house-lms/pull/41
+
 ## Ground rules for Codex
 
 * Never bypass RLS; no client secrets.

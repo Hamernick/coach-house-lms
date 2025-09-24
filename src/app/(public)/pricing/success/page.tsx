@@ -2,7 +2,7 @@ import { redirect } from "next/navigation"
 import Stripe from "stripe"
 
 import { env } from "@/lib/env"
-import { createSupabaseServerClient } from "@/lib/supabase"
+import { requireServerSession } from "@/lib/auth"
 import type { Database } from "@/lib/supabase"
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
@@ -17,14 +17,7 @@ export default async function PricingSuccessPage({
   const params = searchParams ? await searchParams : {}
   const sessionId = typeof params?.session_id === "string" ? params.session_id : undefined
 
-  const supabase = createSupabaseServerClient()
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  if (!session) {
-    redirect("/login?redirect=/pricing/success")
-  }
+  const { supabase, session } = await requireServerSession("/pricing/success")
 
   const userId = session.user.id
   let status: Database["public"]["Enums"]["subscription_status"] = "trialing"

@@ -238,10 +238,15 @@ feat(step {id}): {title}
     * Sidebar updated to include Classes, Schedule, and Settings entries.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/33
 
-* [ ] **S24** — Admin overview content
+* [x] **S24** — Admin overview content
 
   * Flesh out `/admin` landing (KPIs + recent activity) using existing data services.
   * **Accept**: admin homepage populated with cards/table/skeletons.
+  * **Changelog**:
+    * Added Admin landing at `/admin` rendering KPI cards (Total Students, Active Subscriptions, 30‑day Revenue) via `fetchAdminKpis`.
+    * Implemented recent lists: enrollments and payments using `fetchRecentEnrollments`/`fetchRecentPayments` with loading skeletons.
+    * Wired locale-aware number/currency formatting and breadcrumb.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/36
 
 * [ ] **S25** — Onboarding flow
 

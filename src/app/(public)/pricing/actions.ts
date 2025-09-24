@@ -5,7 +5,7 @@ import { redirect } from "next/navigation"
 import Stripe from "stripe"
 
 import { env } from "@/lib/env"
-import { createSupabaseServerClient } from "@/lib/supabase"
+import { requireServerSession } from "@/lib/auth"
 import type { Database } from "@/lib/supabase"
 
 const stripe = env.STRIPE_SECRET_KEY ? new Stripe(env.STRIPE_SECRET_KEY) : null
@@ -16,20 +16,7 @@ export async function startCheckout(formData: FormData) {
   const planNameEntry = formData.get("planName")
   const planName = typeof planNameEntry === "string" ? planNameEntry : undefined
 
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-
-  if (userError) {
-    throw userError
-  }
-
-  if (!user) {
-    redirect("/login?redirect=/pricing")
-  }
-
+  const { supabase, session } = await requireServerSession("/pricing")
   const requestHeaders = await headers()
   const origin =
     requestHeaders.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"

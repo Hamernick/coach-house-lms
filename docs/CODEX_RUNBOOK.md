@@ -246,7 +246,7 @@ feat(step {id}): {title}
     * Added Admin landing at `/admin` rendering KPI cards (Total Students, Active Subscriptions, 30‑day Revenue) via `fetchAdminKpis`.
     * Implemented recent lists: enrollments and payments using `fetchRecentEnrollments`/`fetchRecentPayments` with loading skeletons.
     * Wired locale-aware number/currency formatting and breadcrumb.
-  * PR: (pending)
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/36
 
 * [ ] **S25** — Onboarding flow
 

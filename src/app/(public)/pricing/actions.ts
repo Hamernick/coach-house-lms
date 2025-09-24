@@ -17,6 +17,9 @@ export async function startCheckout(formData: FormData) {
   const planName = typeof planNameEntry === "string" ? planNameEntry : undefined
 
   const { supabase, session } = await requireServerSession("/pricing")
+
+  const user = session.user
+
   const requestHeaders = await headers()
   const origin =
     requestHeaders.get("origin") ?? process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"

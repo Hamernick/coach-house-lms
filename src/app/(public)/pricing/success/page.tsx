@@ -18,8 +18,8 @@ export default async function PricingSuccessPage({
   const sessionId = typeof params?.session_id === "string" ? params.session_id : undefined
 
   const { supabase, session } = await requireServerSession("/pricing/success")
-
-  const userId = session.user.id
+  const user = session.user
+  const userId = user.id
   let status: Database["public"]["Enums"]["subscription_status"] = "trialing"
   let subscriptionId: string | undefined
   let currentPeriodEnd: string | null = null

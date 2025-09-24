@@ -8,6 +8,7 @@ import { requireServerSession } from "@/lib/auth"
 
 export async function createBillingPortalSession() {
   const { supabase, session } = await requireServerSession("/billing")
+  const user = session.user
 
   if (!env.STRIPE_SECRET_KEY) {
 
@@ -17,13 +18,13 @@ export async function createBillingPortalSession() {
   const { data: subscription, error } = await supabase
     .from("subscriptions")
     .select("stripe_customer_id")
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle()
 
   if (error) {
-    logger.error("billing_portal_subscription_lookup_failed", error, { userId: session.user.id })
+    logger.error("billing_portal_subscription_lookup_failed", error, { userId: user.id })
     return { error: "Unable to locate your subscription." }
   }
 
@@ -44,11 +45,11 @@ export async function createBillingPortalSession() {
       return_url: `${origin}/billing`,
     })
 
-    logger.info("billing_portal_session_created", { userId: session.user.id })
+    logger.info("billing_portal_session_created", { userId: user.id })
 
     return { url: portalSession.url }
   } catch (portalError) {
-    logger.error("billing_portal_session_failed", portalError, { userId: session.user.id })
+    logger.error("billing_portal_session_failed", portalError, { userId: user.id })
     return { error: "We couldn't open the billing portal. Contact support." }
 
   }

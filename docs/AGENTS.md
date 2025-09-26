@@ -36,6 +36,7 @@
 ## 4) Data model (contract)
 
 * Entities: **Profile**, **Class**, **Module**, **Enrollment**, **ModuleProgress**, **Subscription**.
+* Extended (execution plan): **ModuleAssignment**, **AssignmentSubmission**, **Nonprofit**.
 * Constraints
 
   * Uniques: class `slug`; module `(class_id, idx)` and `(class_id, slug)`; enrollment `(user_id, class_id)`; subscription `(user_id, stripe_subscription_id)`.
@@ -43,6 +44,10 @@
 * Indexes (min): `enrollments.user_id`, `modules.class_id`, `modules(class_id, idx)`, `module_progress.user_id`, `module_progress.module_id`, `subscriptions.user_id`.
 * Idempotency: persist external `event_id` (Stripe) to dedupe.
 * **Admin views (read‑only)**: `progress_summary`, `subscription_summary`; revenue from Stripe at render or cached server‑side; optional nightly snapshot.
+* Notes
+  * `ModuleAssignment` stores a JSON form schema per module.
+  * `AssignmentSubmission` stores per‑user answers/files with feedback/status.
+  * `Nonprofit` stores a denormalized rollup of a learner’s org profile built from latest submissions.
 
 ## 5) Access control (RLS)
 
@@ -60,7 +65,10 @@
   * `/class/{class-slug}`
   * `/class/{class-slug}/module/{index}` (**canonical**) — optional alias `/module/{slug}` 301→index
   * `/pricing`, `/billing`
+  * `/assignments` (learner list)
+  * `/nonprofit` (learner canvas)
   * `/admin`, `/admin/classes`, `/admin/classes/{id}`, `/admin/modules`, `/admin/modules/{id}`, `/admin/users`, `/admin/users/{id}`, `/admin/payments`, `/admin/reports`
+  * `/admin/schedule` (optional)
 * **Shell**: persistent sidebar + header; only main canvas scrolls.
 * **Breadcrumbs**: `Dashboard › {Class} › Module {n}` or `Admin › {Section} › {Entity}`; last crumb not a link; skeleton while resolving; mobile truncate.
 * **Guards**: 401→login; 403→friendly message; unpublished/locked disabled with reason; 404 pleasant empty.
@@ -69,19 +77,21 @@
 
 ### Student
 
-* **Dashboard (`/dashboard`)**: grid of enrolled classes; each card shows title + progress bar.
+* **Dashboard (`/dashboard`)**: top: **Next Up** card; **Progress Overview**; **Nonprofit Canvas** (read‑only preview). Below: **Upcoming Schedule**, **My Classes** (enrolled only, with real progress), **Assignments Due**, **Recent Activity**.
 * **Class (`/class/[slug]`)**: main pane = description; left sidebar = modules with progress/lock icons.
 * **Module (`/class/[slug]/module/[index]`)**: single‑column: video, markdown, form inputs; bottom **Prev/Next**.
+* **Nonprofit (`/nonprofit`)**: full canvas view of the learner’s org, compiled from assignment submissions; each section links back to its module.
 
 ### Admin
 
-* **Admin Dashboard (`/admin`)**: KPI cards (Total Students, Active Subs, 30‑day Revenue). Main panel: table of Recent Enrollments or Progress Overview (skeletons while loading).
+* **Admin Dashboard (`/admin`)**: KPI cards (Total Students, Active Subs, 30‑day Revenue); **Teaching Tasks** (new submissions, stalled learners, upcoming sessions); **Recent Submissions** stream with “Review”.
 * **Classes (`/admin/classes`)**: full‑page data table (shadcn/ui). Columns: **Class Title**, **Published** (Switch), **# Modules**, **Actions** (Edit, Delete). Primary **New Class** button top‑right.
 * **Class Editor (`/admin/classes/[id]`)**: two‑column.
 
   * Left: form (Title, Slug, Description, Stripe IDs, Publish toggle).
   * Right: list of modules with drag‑handle; buttons **Edit Module** / **Add Module**.
-* **Module Editor (`/admin/modules/[id]`)**: single‑column form: Title, Slug, YouTube URL, **Markdown editor + side‑by‑side preview**, PDF slide deck upload.
+* **Module Editor (extended)**: Tabs — Details (title/slug/video), Content (markdown + preview), **Assignment** (form schema), **Resources** (links/files), Deck (PDF upload).
+* **Roster (tab under Class)**: table of learners with progress %, last activity; CSV export; links to user detail.
 * **Users (`/admin/users`)**: table with search (name/email), filters (role/status/plan), pagination, **CSV export**.
 * **User Detail (`/admin/users/[id]`)**: profile, enrollments, progress summary, subscription status, recent payments; actions: change role, resend verification/magic link, revoke sessions (no direct password edits). **Impersonation** read‑only preview.
 * **Payments/Reports**: lists with drill‑downs; link to billing portal for account changes.
@@ -154,7 +164,10 @@
 
 * Paid signup → authenticated return → dashboard reflects subscription.
 * Student can open module 1, save inputs, **complete**, and **unlock** module 2.
+* Student dashboard shows **Next Up** and accurate per‑class progress; completing a module advances **Next Up**.
+* Nonprofit Canvas reflects latest assignment submissions immediately (server‑rendered snapshot).
 * Admin can manage users (list/search/filter, view detail with progress & subscription, role change, resend verification/magic link, revoke sessions) and see **Admin Dashboard** with KPIs and recent payments.
+* Admin can review submissions, leave feedback/status, and see cohort progress in a roster view.
 * Admin can create/edit class & module, reorder, upload PDF, publish.
 * Routing matches §6; deep links work; guards handled. States implemented; video spec met.
 * Meets perf budgets; no console errors; WCAG AA; build passes.

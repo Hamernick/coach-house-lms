@@ -268,6 +268,60 @@ feat(step {id}): {title}
     * Ensured middleware and pages rely on CSS variables with `.dark` class; html uses `suppressHydrationWarning` to avoid flicker.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/40
 
+* [ ] **S27 — Shell & nav rename**
+  * Rename “Nonprofit”→“Organizations”.
+  * Student nav: **Dashboard · Organizations · People · Settings**.
+  * Admin nav: **Dashboard · Classes · People · Settings**.
+  * Remove **Explore/Schedule/Submissions** (nav, routes, links).
+  * Hide **Admin** for non-admins (SSR role in `(dashboard)/layout`).
+  * Fix all guards to `/login?redirect=…`.
+  * **Accept:** students never see Admin; `/schedule` removed; no dead links; build/tests pass. types regen clean; drift check clean.
+  * **Changelog:** nav updated; guards fixed; removals applied.
+
+* [ ] **S28 — DB extensions (create)**
+  * **organizations**: `user_id PK`, `ein`, `status('pending'|'approved'|'n/a')`, `profile jsonb`, `updated_at`.
+  * **module_assignments**: `module_id PK`, `schema jsonb`, `complete_on_submit bool`, timestamps.
+  * **assignment_submissions**: `id`, `module_id`, `user_id`, `answers jsonb`, `status('submitted'|'accepted'|'revise')`, `feedback`, timestamps, **unique(module_id,user_id)**.
+  * **attachments**: `id`, `owner_id`, `scope_type('class'|'module'|'submission')`, `scope_id`, `kind('deck'|'resource'|'submission')`, `storage_path`, `mime`, `size`, `meta jsonb`, timestamps.
+  * **enrollment_invites**: `id`, `class_id`, `email`, `token`, `expires_at`, `invited_by`, `accepted_at`, timestamps.
+  * **RLS:** enable on all; admins full; learners read published/enrolled; learners RW own submissions; learners read own organizations/progress; enrollments admin-write/learner-read.
+  * **Triggers:** on submission insert/update → roll up latest answers into `organizations.profile` and touch `updated_at`.
+  * **RPC:** `next_unlocked_module(user_id)`; `progress_for_class(user_id,class_id)`.
+  * **Storage:** private buckets `decks|resources|submissions`; signed URLs only.
+  * **Types/tests:** regenerate Supabase types; add RLS tests.
+  * **Accept:** migrations reversible; RLS/RPC callable; buckets present; types regen clean; drift check clean; RLS tests green.
+  * **Changelog:** tables + RLS + triggers + RPC + buckets.
+
+* [ ] **S29 — Dashboard (student)**
+  * Add **ProgressOverview** (truth from `module_progress`).
+  * Add **NextUpCard** (uses `next_unlocked_module`).
+  * Add **OrganizationsPreview** (reads `organizations.profile`; chips deep-link to module).
+  * Below-fold: **My Classes** (enrolled only), **Assignments Due**, **Activity**.
+  * **Accept:** progress accurate; completing module advances Next Up; preview updates immediately after submission; build/tests pass.
+  * **Changelog:** widgets + data hooks added.
+
+* [ ] **S30 — Module/Lesson UX**
+  * Module page: breadcrumb, **Prev/Next**, video, markdown, resources (signed URLs), **assignment form** (from `module_assignments.schema`), notes.
+  * Behavior: `complete_on_submit` honored; restore on reload; lock states (Locked/In-progress/Completed/Needs-revise).
+  * Optional lessons: left rail; “Mark done”; completing last lesson can complete module when `complete_on_submit=false`.
+  * **Accept:** submit persists; completion correct; locks correct; tests pass.
+  * **Changelog:** route + form renderer + state wiring.
+
+* [ ] **S31 — Authoring UX**
+  * **Class Wizard (5):** Basics → Structure (sortable) → **People** (add existing, invite by email) → Access (Draft/Public) → Review/Publish.
+  * **Module Editor tabs:** Details · Content · **Assignment** (`schema`, `complete_on_submit`) · **Resources** (links/files) · Settings.
+  * Behaviors: autosave 500ms; ⌘S; unsaved guard.
+  * **Accept:** enroll/invite/remove works; publish toggles; reorder persists; tests pass.
+  * **Changelog:** wizard People step; editor tabs; admin services.
+
+* [ ] **S32 — People management**
+  * **Admin → People (global):** users table (create/search).
+  * **Admin → Class → People tab:** enroll/unenroll/invite; role badges; audit entry.
+  * **Student → People:** read-only classmates/mentors list.
+  * **Accept:** admin can add/remove learners for any class; audit written; tests pass.
+  * **Changelog:** users screens; class People tab; enrollment services.
+
+
 ## Controller prompt (for “Proceed” runs)
 
 > Read `CODEX_RUNBOOK.md`. Identify the first unchecked step. Execute only that step. Produce a PR with the prescribed template. Update the checkbox to checked, add a short **Changelog** section under the step with what changed, and append a link to the PR. End with `DONE`.

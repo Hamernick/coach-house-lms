@@ -14,9 +14,11 @@ import { MarkdownEditor } from "./_components/markdown-editor"
 import {
   deleteModuleFromDetailAction,
   removeModuleDeckAction,
+  updateModuleAssignmentAction,
   updateModuleDetailsAction,
   uploadModuleDeckAction,
 } from "./actions"
+import { AssignmentEditor } from "./_components/assignment-editor"
 
 export default async function AdminModuleDetailPage({
   params,
@@ -59,6 +61,12 @@ export default async function AdminModuleDetailPage({
 
   const parentClass = moduleRecord.classes
   const deckFileName = moduleRecord.deck_path ? moduleRecord.deck_path.split("/").pop() ?? "Deck" : null
+
+  const { data: assignment } = await supabase
+    .from("module_assignments")
+    .select("schema, complete_on_submit")
+    .eq("module_id", moduleRecord.id)
+    .maybeSingle<{ schema: Record<string, unknown> | null; complete_on_submit: boolean | null }>()
 
   return (
     <div className="space-y-6">
@@ -124,6 +132,21 @@ export default async function AdminModuleDetailPage({
             <MarkdownEditor name="contentMd" defaultValue={moduleRecord.content_md ?? ""} />
             <Button type="submit">Save changes</Button>
           </form>
+
+          <div className="space-y-3 rounded-lg border p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold">Assignment</p>
+                <p className="text-xs text-muted-foreground">Define form schema and completion behavior.</p>
+              </div>
+            </div>
+            <AssignmentEditor
+              moduleId={moduleRecord.id}
+              initialSchema={assignment?.schema ?? null}
+              initialCompleteOnSubmit={Boolean(assignment?.complete_on_submit)}
+              onSave={updateModuleAssignmentAction}
+            />
+          </div>
 
           <div className="space-y-3 rounded-lg border p-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

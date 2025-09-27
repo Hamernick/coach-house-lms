@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { getClassById } from "@/lib/classes"
+import { requireAdmin } from "@/lib/admin/auth"
 
 import { ClassPublishedToggle } from "../_components/class-published-toggle"
 
@@ -16,6 +17,7 @@ import {
   updateClassDetailsAction,
 } from "./actions"
 import { ModuleListManager } from "./_components/module-list-manager"
+import { EnrollmentsManager } from "./_components/enrollments-manager"
 
 type ClassDetailRecord = Database["public"]["Tables"]["classes"]["Row"] & {
   modules?: {
@@ -45,6 +47,24 @@ export default async function AdminClassDetailPage({
     slug: module.slug,
     idx: module.idx,
     published: module.published,
+  }))
+
+  // Fetch enrollments for this class
+  const { supabase } = await requireAdmin()
+  const { data: enrollments } = await supabase
+    .from("enrollments")
+    .select("user_id, created_at, profiles ( full_name )")
+    .eq("class_id", classData.id)
+    .order("created_at", { ascending: false })
+
+  const people = ((enrollments ?? []) as Array<{
+    user_id: string
+    created_at: string
+    profiles: { full_name: string | null } | null
+  }>).map((row) => ({
+    userId: row.user_id,
+    name: row.profiles?.full_name ?? null,
+    enrolledAt: row.created_at,
   }))
 
   return (
@@ -129,6 +149,15 @@ export default async function AdminClassDetailPage({
             ) : (
               <ModuleListManager classId={classData.id} modules={modules} />
             )}
+          </CardContent>
+        </Card>
+        <Card className="bg-card/60">
+          <CardHeader>
+            <CardTitle>People</CardTitle>
+            <CardDescription>Enroll existing users or invite by email.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <EnrollmentsManager classId={classData.id} people={people} />
           </CardContent>
         </Card>
       </div>

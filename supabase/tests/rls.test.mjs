@@ -192,6 +192,92 @@ async function run() {
     results.push({ name: "student can upsert own module progress", passed: !progressErr })
   }
 
+  // Assignment submissions + organizations rollup + module assignments visibility
+  {
+    // Admin defines an assignment schema for the module
+    const { error: assignErr } = await adminClient.from("module_assignments").upsert({
+      module_id: assets.moduleId,
+      schema: { fields: [{ name: "org_name", type: "text" }] },
+      complete_on_submit: true,
+    })
+    if (assignErr) throw assignErr
+
+    // Student submits answers
+    const { error: submitErr } = await studentClient.from("assignment_submissions").upsert({
+      module_id: assets.moduleId,
+      user_id: student.id,
+      answers: { org_name: "Test Org" },
+      status: "submitted",
+    })
+    results.push({ name: "student can upsert own submission", passed: !submitErr })
+
+    // Student can read their submission but not others
+    const { data: ownSub } = await studentClient
+      .from("assignment_submissions")
+      .select("id")
+      .eq("user_id", student.id)
+      .maybeSingle()
+    results.push({ name: "student can read own submission", passed: !!ownSub })
+
+    const { data: otherSub } = await studentClient
+      .from("assignment_submissions")
+      .select("id")
+      .eq("user_id", admin.id)
+      .maybeSingle()
+    results.push({ name: "student cannot read others' submissions", passed: !otherSub })
+
+    // Organizations rollup visible to student
+    const { data: orgRow } = await studentClient
+      .from("organizations")
+      .select("user_id")
+      .eq("user_id", student.id)
+      .maybeSingle()
+    results.push({ name: "student can read own organization rollup", passed: !!orgRow })
+
+    // Student can read module assignments for enrolled class
+    const { data: assignRead, error: assignReadErr } = await studentClient
+      .from("module_assignments")
+      .select("module_id")
+      .eq("module_id", assets.moduleId)
+      .maybeSingle()
+    results.push({ name: "student can read module assignment (enrolled)", passed: !!assignRead && !assignReadErr })
+  }
+
+  // Attachments visibility and invites admin-only
+  {
+    // Admin attaches a resource to the module
+    const { data: attachment, error: attachErr } = await adminClient
+      .from("attachments")
+      .insert({
+        scope_type: "module",
+        scope_id: assets.moduleId,
+        kind: "resource",
+        storage_path: `resources/${assets.moduleId}/sample.pdf`,
+        mime: "application/pdf",
+      })
+      .select("id")
+      .single()
+    if (attachErr) throw attachErr
+
+    const { data: attachRead } = await studentClient
+      .from("attachments")
+      .select("id")
+      .eq("id", attachment.id)
+      .maybeSingle()
+    results.push({ name: "student can read module attachment (enrolled/published)", passed: !!attachRead })
+
+    // Student should not be able to create invites
+    const { error: inviteErr } = await studentClient
+      .from("enrollment_invites")
+      .insert({
+        class_id: assets.publishedClassId,
+        email: `invitee-${suffix}@example.com`,
+        token: `tok_${suffix}`,
+        expires_at: new Date(Date.now() + 3600_000).toISOString(),
+      })
+    results.push({ name: "student cannot create enrollment invites", passed: !!inviteErr })
+  }
+
   // Subscription visibility
   {
     const subId = randomUUID()
@@ -219,6 +305,10 @@ async function run() {
   })
 
   await adminClient.from("module_progress").delete().eq("user_id", student.id)
+  await adminClient.from("assignment_submissions").delete().eq("user_id", student.id)
+  await adminClient.from("module_assignments").delete().eq("module_id", assets.moduleId)
+  await adminClient.from("attachments").delete().eq("scope_id", assets.moduleId)
+  await adminClient.from("organizations").delete().eq("user_id", student.id)
   await adminClient.from("enrollments").delete().eq("user_id", student.id)
   await adminClient.from("modules").delete().in("id", [assets.moduleId, assets.hiddenModuleId])
   await adminClient.from("classes").delete().in("id", [assets.publishedClassId, assets.unpublishedClassId])

@@ -285,7 +285,7 @@ feat(step {id}): {title}
     * Added placeholder pages for `/organizations` and `/people` with SSR auth gates.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/43
 
-* [ ] **S28 — DB extensions (create)**
+* [x] **S28 — DB extensions (create)**
   * **organizations**: `user_id PK`, `ein`, `status('pending'|'approved'|'n/a')`, `profile jsonb`, `updated_at`.
   * **module_assignments**: `module_id PK`, `schema jsonb`, `complete_on_submit bool`, timestamps.
   * **assignment_submissions**: `id`, `module_id`, `user_id`, `answers jsonb`, `status('submitted'|'accepted'|'revise')`, `feedback`, timestamps, **unique(module_id,user_id)**.
@@ -297,7 +297,14 @@ feat(step {id}): {title}
   * **Storage:** private buckets `decks|resources|submissions`; signed URLs only.
   * **Types/tests:** regenerate Supabase types; add RLS tests.
   * **Accept:** migrations reversible; RLS/RPC callable; buckets present; types regen clean; drift check clean; RLS tests green.
-  * **Changelog:** tables + RLS + triggers + RPC + buckets.
+  * **Changelog:**
+    * Added tables: organizations, module_assignments, assignment_submissions, attachments, enrollment_invites with enums and constraints.
+    * RLS: admin-manage; learners RW own submissions; read own organizations; enrolled/published read for assignments and attachments; invites admin-only.
+    * Triggers: roll up submission answers into organizations.profile via SECURITY DEFINER; updated_at triggers for all new tables.
+    * RPCs: next_unlocked_module(user_id), progress_for_class(user_id,class_id) with grants to authenticated.
+    * Storage: ensured private buckets decks/resources/submissions.
+    * Types: extended Supabase typings; RLS tests expanded (skip when env absent).
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/44
 
 * [ ] **S29 — Dashboard (student)**
   * Add **ProgressOverview** (truth from `module_progress`).

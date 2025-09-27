@@ -4,6 +4,9 @@ import { redirect } from "next/navigation"
 
 import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { ClassesHighlights } from "@/components/dashboard/classes-overview"
+import { NextUpCard } from "@/components/dashboard/next-up-card"
+import { ProgressOverview } from "@/components/dashboard/progress-overview"
+import { OrganizationsPreview } from "@/components/dashboard/organizations-preview"
 import { DynamicChartAreaInteractive as DashboardChartArea } from "@/components/dashboard/chart-area-interactive-client"
 import { DynamicDataTable } from "@/components/dashboard/data-table-client"
 import { SubscriptionStatusCard } from "@/components/dashboard/subscription-status-card"
@@ -61,11 +64,19 @@ export default async function DashboardPage() {
           <SubscriptionStatusCard />
         </section>
       </Suspense>
+      <section className="grid gap-4 px-4 lg:grid-cols-2 lg:px-6">
+        <NextUpCard />
+        <ProgressOverview />
+      </section>
+      <section className="px-4 lg:px-6">
+        <OrganizationsPreview />
+      </section>
       <Suspense fallback={<ClassesSkeleton />}>
         <section className="px-4 lg:px-6">
           <ClassesHighlights />
         </section>
       </Suspense>
+      {/* Below fold – keep existing demo sections for now */}
       <Suspense fallback={<SectionCardsSkeleton />}>
         <section className="px-4 lg:px-6">
           <DynamicSectionCards />

@@ -189,7 +189,7 @@ end;
 $$;
 
 revoke all on function public.apply_submission_to_organization(uuid, jsonb) from public;
-grant execute on function public.apply_submission_to_organization(uuid, jsonb) to authenticated;
+revoke execute on function public.apply_submission_to_organization(uuid, jsonb) from authenticated;
 
 create or replace function public.on_assignment_submission_change()
 returns trigger
@@ -209,7 +209,6 @@ for each row execute procedure public.on_assignment_submission_change();
 create or replace function public.next_unlocked_module(p_user_id uuid)
 returns uuid
 language sql
-security definer
 set search_path = public
 as $$
   with visible_modules as (
@@ -236,7 +235,6 @@ grant execute on function public.next_unlocked_module(uuid) to authenticated;
 create or replace function public.progress_for_class(p_user_id uuid, p_class_id uuid)
 returns table(total integer, completed integer)
 language sql
-security definer
 set search_path = public
 as $$
   with ms as (
@@ -277,4 +275,3 @@ do $$ begin
     perform storage.create_bucket('submissions', false);
   end if;
 exception when others then null; end $$;
-

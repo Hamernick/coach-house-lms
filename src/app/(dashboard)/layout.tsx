@@ -22,15 +22,17 @@ export default async function DashboardLayout({ children }: { children: ReactNod
   let displayName: string | null = null
   let email: string | null = user?.email ?? null
   let avatar: string | null = null
+  let isAdmin = false
 
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name")
+      .select("full_name, role")
       .eq("id", user.id)
-      .maybeSingle<{ full_name: string | null }>()
+      .maybeSingle<{ full_name: string | null; role: string | null }>()
 
     displayName = profile?.full_name ?? (user.user_metadata?.full_name as string | undefined) ?? null
+    isAdmin = profile?.role === "admin"
 
     if (!email && typeof user.user_metadata?.email === "string") {
       email = user.user_metadata.email as string
@@ -57,6 +59,7 @@ export default async function DashboardLayout({ children }: { children: ReactNod
           email,
           avatar,
         }}
+        isAdmin={isAdmin}
       />
       <SidebarInset>
         <SiteHeader />

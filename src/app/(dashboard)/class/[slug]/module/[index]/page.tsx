@@ -158,6 +158,7 @@ export default async function ModulePage({
                   completed={currentState.completed}
                   completeOnSubmit={Boolean(assignment.complete_on_submit)}
                   existingAnswers={(existingSubmission?.answers as Record<string, unknown> | null) ?? null}
+                  existingStatus={existingSubmission?.status ?? null}
                 />
               ) : (
                 <div className="space-y-3">
@@ -478,6 +479,7 @@ function AssignmentForm({
   completed,
   completeOnSubmit,
   existingAnswers,
+  existingStatus,
 }: {
   schema: Record<string, unknown> | null
   moduleId: string
@@ -487,6 +489,7 @@ function AssignmentForm({
   completed: boolean
   completeOnSubmit: boolean
   existingAnswers: Record<string, unknown> | null
+  existingStatus: 'submitted' | 'accepted' | 'revise' | null
 }) {
   type FieldDef = { name: string; label?: string; type?: string; options?: Array<{ label: string; value: string }> }
   const fields: Array<FieldDef> = Array.isArray((schema as Record<string, unknown> | null)?.fields)
@@ -551,7 +554,12 @@ function AssignmentForm({
       <input type="hidden" name="nextModuleIndex" value={nextModuleIndex ?? ""} />
       <input type="hidden" name="completeOnSubmit" value={completeOnSubmit ? "true" : "false"} />
       <div className="flex items-center gap-2">
-        <Button type="submit" disabled={completed && completeOnSubmit}>Submit</Button>
+        {(() => {
+          const disableSubmit = completed && completeOnSubmit && existingStatus !== 'revise'
+          return (
+            <Button type="submit" disabled={disableSubmit}>Submit</Button>
+          )
+        })()}
         {!completeOnSubmit ? (
           <Button type="submit" formAction={completeModuleAction} variant="outline" disabled={completed}>
             {completed ? "Module Completed" : "Mark Module Complete"}

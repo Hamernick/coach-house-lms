@@ -306,13 +306,19 @@ feat(step {id}): {title}
     * Types: extended Supabase typings; RLS tests expanded (skip when env absent).
   * PR: https://github.com/Hamernick/coach-house-lms/pull/44
 
-* [ ] **S29 — Dashboard (student)**
+* [x] **S29 — Dashboard (student)**
   * Add **ProgressOverview** (truth from `module_progress`).
   * Add **NextUpCard** (uses `next_unlocked_module`).
   * Add **OrganizationsPreview** (reads `organizations.profile`; chips deep-link to module).
   * Below-fold: **My Classes** (enrolled only), **Assignments Due**, **Activity**.
   * **Accept:** progress accurate; completing module advances Next Up; preview updates immediately after submission; build/tests pass.
-  * **Changelog:** widgets + data hooks added.
+  * **Changelog:**
+    * Added ProgressOverview (module_progress across enrolled classes).
+    * Added NextUpCard (RPC next_unlocked_module) with deep link.
+    * Added OrganizationsPreview (reads organizations.profile; chips render up to 6 fields).
+    * Module completion now revalidates /dashboard for immediate Next Up/Progress updates.
+    * Integrated widgets on dashboard; kept demo sections below the fold.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/45
 
 * [ ] **S30 — Module/Lesson UX**
   * Module page: breadcrumb, **Prev/Next**, video, markdown, resources (signed URLs), **assignment form** (from `module_assignments.schema`), notes.

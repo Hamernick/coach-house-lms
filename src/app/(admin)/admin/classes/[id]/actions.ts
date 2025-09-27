@@ -195,6 +195,8 @@ export async function enrollUserByEmailAction(formData: FormData) {
 
   if (error) throw error
 
+  console.log("ADMIN_AUDIT", JSON.stringify({ action: "enroll_user", classId, userId: user.id, email }))
+
   revalidatePath(`/admin/classes/${classId}`)
 }
 
@@ -216,6 +218,8 @@ export async function unenrollUserAction(formData: FormData) {
     .eq("user_id", userId)
 
   if (error) throw error
+
+  console.log("ADMIN_AUDIT", JSON.stringify({ action: "unenroll_user", classId, userId }))
 
   revalidatePath(`/admin/classes/${classId}`)
 }
@@ -249,6 +253,8 @@ export async function createEnrollmentInviteAction(formData: FormData) {
     .insert(insertPayload)
 
   if (error) throw error
+
+  console.log("ADMIN_AUDIT", JSON.stringify({ action: "create_enrollment_invite", classId, email, expiresAt }))
 
   revalidatePath(`/admin/classes/${classId}`)
 }

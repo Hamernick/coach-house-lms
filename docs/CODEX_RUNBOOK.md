@@ -332,12 +332,16 @@ feat(step {id}): {title}
     * Revalidates class and dashboard on completion.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/46
 
-* [ ] **S31 — Authoring UX**
+* [x] **S31 — Authoring UX**
   * **Class Wizard (5):** Basics → Structure (sortable) → **People** (add existing, invite by email) → Access (Draft/Public) → Review/Publish.
   * **Module Editor tabs:** Details · Content · **Assignment** (`schema`, `complete_on_submit`) · **Resources** (links/files) · Settings.
   * Behaviors: autosave 500ms; ⌘S; unsaved guard.
   * **Accept:** enroll/invite/remove works; publish toggles; reorder persists; tests pass.
-  * **Changelog:** wizard People step; editor tabs; admin services.
+  * **Changelog:**
+    * Added People management to class detail: enroll existing by email, invite by email (token + expiry), and unenroll. Enrolled list shown.
+    * Added Assignment editor to module detail: JSON schema + complete_on_submit; 500ms autosave + manual save.
+    * Existing reorder and publish toggles integrated; actions revalidate relevant pages.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/47
 
 * [ ] **S32 — People management**
   * **Admin → People (global):** users table (create/search).

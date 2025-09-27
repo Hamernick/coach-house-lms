@@ -183,3 +183,38 @@ export async function removeModuleDeckAction(formData: FormData) {
   revalidatePath(`/admin/modules/${moduleId}`)
   revalidatePath(`/admin/classes/${classId}`)
 }
+
+export async function updateModuleAssignmentAction(formData: FormData) {
+  const moduleId = formData.get("moduleId")
+  const schemaText = formData.get("schema")
+  const completeOnSubmit = formData.get("completeOnSubmit") === "true"
+
+  if (typeof moduleId !== "string" || typeof schemaText !== "string") {
+    return
+  }
+
+  await requireAdmin()
+  const supabase = await createSupabaseServerClient()
+
+  let schema: Database["public"]["Tables"]["module_assignments"]["Insert"]["schema"]
+  try {
+    const obj = JSON.parse(schemaText)
+    schema = obj
+  } catch {
+    throw new Error("Invalid JSON schema")
+  }
+
+  const upsertPayload: Database["public"]["Tables"]["module_assignments"]["Insert"] = {
+    module_id: moduleId,
+    schema,
+    complete_on_submit: completeOnSubmit,
+  }
+
+  const { error } = await supabase
+    .from("module_assignments" satisfies keyof Database["public"]["Tables"])
+    .upsert(upsertPayload)
+
+  if (error) throw error
+
+  revalidatePath(`/admin/modules/${moduleId}`)
+}

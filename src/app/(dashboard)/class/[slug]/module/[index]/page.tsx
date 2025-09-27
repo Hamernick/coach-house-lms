@@ -344,6 +344,8 @@ async function completeModuleAction(formData: FormData) {
     revalidatePath(`/class/${classSlug}/module/${currentIndex}`)
   }
   revalidatePath(`/class/${classSlug}`)
+  // Ensure dashboard widgets (Next Up / Progress) reflect the change immediately
+  revalidatePath(`/dashboard`)
 
   if (typeof nextModuleIndex === "string" && nextModuleIndex.length > 0) {
     redirect(`/class/${classSlug}/module/${nextModuleIndex}`)

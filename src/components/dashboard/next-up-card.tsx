@@ -41,6 +41,25 @@ export async function NextUpCard() {
 
   if (!klass) return null
 
+  // Safety: ensure the user is enrolled in the class
+  const { data: enrollment } = await supabase
+    .from("enrollments")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("class_id", klass.id)
+    .maybeSingle()
+
+  if (!enrollment) {
+    return (
+      <Card className="bg-card/60">
+        <CardHeader>
+          <CardTitle>Next up</CardTitle>
+          <CardDescription>You&apos;re all caught up. Great job!</CardDescription>
+        </CardHeader>
+      </Card>
+    )
+  }
+
   return (
     <Card className="bg-card/60">
       <CardHeader>

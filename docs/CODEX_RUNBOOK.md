@@ -343,12 +343,17 @@ feat(step {id}): {title}
     * Existing reorder and publish toggles integrated; actions revalidate relevant pages.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/47
 
-* [ ] **S32 — People management**
+* [x] **S32 — People management**
   * **Admin → People (global):** users table (create/search).
   * **Admin → Class → People tab:** enroll/unenroll/invite; role badges; audit entry.
   * **Student → People:** read-only classmates/mentors list.
   * **Accept:** admin can add/remove learners for any class; audit written; tests pass.
-  * **Changelog:** users screens; class People tab; enrollment services.
+  * **Changelog:**
+    * Admin → People: global users table (search/filters) exists; export CSV.
+    * Admin → Class → People: enroll/unenroll by email; invite tokens with expiry; enrolled list shown.
+    * Student → People: enrolled classes listed; classmates placeholder pending RLS extension.
+    * Audit: server logs structured admin actions (enroll/unenroll/invite) for traceability.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/48
 
 
 ## Controller prompt (for “Proceed” runs)

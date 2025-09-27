@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils"
 const NAV_ITEMS = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/classes", label: "Classes" },
-  { href: "/admin/users", label: "Users" },
+  { href: "/admin/users", label: "People" },
+  { href: "/admin/settings", label: "Settings" },
 ]
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {

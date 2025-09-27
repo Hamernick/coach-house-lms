@@ -1,16 +1,16 @@
 "use client"
 
 import * as React from "react"
+import type { Icon } from "@tabler/icons-react"
 import {
-  IconBook,
-  IconCalendarTime,
-  IconCreditCard,
+  IconBuilding,
   IconHelp,
   IconLayoutDashboard,
   IconLifebuoy,
   IconNotebook,
   IconSettings,
   IconShieldLock,
+  IconUsers,
 } from "@tabler/icons-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -29,33 +29,44 @@ import {
 
 const SUPPORT_EMAIL = "contact@coachhousesolutions.org"
 
-const MAIN_NAV = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: IconLayoutDashboard,
-  },
-  {
-    title: "Classes",
-    href: "/classes",
-    icon: IconBook,
-  },
-  {
-    title: "Schedule",
-    href: "/schedule",
-    icon: IconCalendarTime,
-  },
-  {
-    title: "Billing",
-    href: "/billing",
-    icon: IconCreditCard,
-  },
-  {
-    title: "Admin",
-    href: "/admin",
-    icon: IconShieldLock,
-  },
-]
+function buildMainNav(isAdmin: boolean): { title: string; href: string; icon?: Icon }[] {
+  const items = [
+    {
+      title: "Dashboard",
+      href: "/dashboard",
+      icon: IconLayoutDashboard,
+    },
+    {
+      title: "Organizations",
+      href: "/organizations",
+      icon: IconBuilding,
+    },
+    {
+      title: "People",
+      href: "/people",
+      icon: IconUsers,
+    },
+    {
+      title: "Settings",
+      href: "/settings",
+      icon: IconSettings,
+    },
+  ]
+
+  // Admins also see a direct link to the Admin area
+  if (isAdmin) {
+    return [
+      ...items,
+      {
+        title: "Admin",
+        href: "/admin",
+        icon: IconShieldLock,
+      },
+    ]
+  }
+
+  return items
+}
 
 const RESOURCE_NAV = [
   {
@@ -89,9 +100,10 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
     email?: string | null
     avatar?: string | null
   }
+  isAdmin?: boolean
 }
 
-export function AppSidebar({ user, ...props }: AppSidebarProps) {
+export function AppSidebar({ user, isAdmin = false, ...props }: AppSidebarProps) {
   const resolvedUser = {
     name: user?.name ?? null,
     email: user?.email ?? null,
@@ -114,7 +126,7 @@ export function AppSidebar({ user, ...props }: AppSidebarProps) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={MAIN_NAV} label="Platform" />
+        <NavMain items={buildMainNav(isAdmin)} label="Platform" />
         <NavDocuments items={RESOURCE_NAV} label="Resources" />
         <NavSecondary items={SECONDARY_NAV} className="mt-auto" />
       </SidebarContent>

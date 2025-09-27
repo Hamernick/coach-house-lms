@@ -9,6 +9,203 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      organizations: {
+        Row: {
+          user_id: string
+          ein: string | null
+          status: Database["public"]["Enums"]["organization_status"]
+          profile: Json
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          ein?: string | null
+          status?: Database["public"]["Enums"]["organization_status"]
+          profile?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          ein?: string | null
+          status?: Database["public"]["Enums"]["organization_status"]
+          profile?: Json
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organizations_user_id_fkey",
+            columns: ["user_id"],
+            isOneToOne: true,
+            referencedRelation: "profiles",
+            referencedColumns: ["id"],
+          },
+        ]
+      }
+      module_assignments: {
+        Row: {
+          module_id: string
+          schema: Json
+          complete_on_submit: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          module_id: string
+          schema?: Json
+          complete_on_submit?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          module_id?: string
+          schema?: Json
+          complete_on_submit?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "module_assignments_module_id_fkey",
+            columns: ["module_id"],
+            referencedRelation: "modules",
+            referencedColumns: ["id"],
+          },
+        ]
+      }
+      assignment_submissions: {
+        Row: {
+          id: string
+          module_id: string
+          user_id: string
+          answers: Json
+          status: Database["public"]["Enums"]["submission_status"]
+          feedback: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          module_id: string
+          user_id: string
+          answers?: Json
+          status?: Database["public"]["Enums"]["submission_status"]
+          feedback?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          module_id?: string
+          user_id?: string
+          answers?: Json
+          status?: Database["public"]["Enums"]["submission_status"]
+          feedback?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_submissions_module_id_fkey",
+            columns: ["module_id"],
+            referencedRelation: "modules",
+            referencedColumns: ["id"],
+          },
+          {
+            foreignKeyName: "assignment_submissions_user_id_fkey",
+            columns: ["user_id"],
+            referencedRelation: "profiles",
+            referencedColumns: ["id"],
+          },
+        ]
+      }
+      attachments: {
+        Row: {
+          id: string
+          owner_id: string | null
+          scope_type: Database["public"]["Enums"]["attachment_scope_type"]
+          scope_id: string
+          kind: Database["public"]["Enums"]["attachment_kind"]
+          storage_path: string
+          mime: string | null
+          size: number | null
+          meta: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          owner_id?: string | null
+          scope_type: Database["public"]["Enums"]["attachment_scope_type"]
+          scope_id: string
+          kind: Database["public"]["Enums"]["attachment_kind"]
+          storage_path: string
+          mime?: string | null
+          size?: number | null
+          meta?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          owner_id?: string | null
+          scope_type?: Database["public"]["Enums"]["attachment_scope_type"]
+          scope_id?: string
+          kind?: Database["public"]["Enums"]["attachment_kind"]
+          storage_path?: string
+          mime?: string | null
+          size?: number | null
+          meta?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      enrollment_invites: {
+        Row: {
+          id: string
+          class_id: string
+          email: string
+          token: string
+          expires_at: string
+          invited_by: string | null
+          accepted_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          class_id: string
+          email: string
+          token: string
+          expires_at: string
+          invited_by?: string | null
+          accepted_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          class_id?: string
+          email?: string
+          token?: string
+          expires_at?: string
+          invited_by?: string | null
+          accepted_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_invites_class_id_fkey",
+            columns: ["class_id"],
+            referencedRelation: "classes",
+            referencedColumns: ["id"],
+          },
+        ]
+      }
       profiles: {
         Row: {
           id: string
@@ -308,6 +505,29 @@ export type Database = {
         Args: Record<string, never>
         Returns: unknown
       }
+      apply_submission_to_organization: {
+        Args: {
+          p_user_id: string
+          p_answers: Json
+        }
+        Returns: void
+      }
+      next_unlocked_module: {
+        Args: {
+          p_user_id: string
+        }
+        Returns: string | null
+      }
+      progress_for_class: {
+        Args: {
+          p_user_id: string
+          p_class_id: string
+        }
+        Returns: {
+          total: number | null
+          completed: number | null
+        }[]
+      }
     }
     Enums: {
       user_role: "student" | "admin"
@@ -319,6 +539,10 @@ export type Database = {
         | "canceled"
         | "incomplete"
         | "incomplete_expired"
+      organization_status: "pending" | "approved" | "n/a"
+      submission_status: "submitted" | "accepted" | "revise"
+      attachment_scope_type: "class" | "module" | "submission"
+      attachment_kind: "deck" | "resource" | "submission"
     }
     CompositeTypes: Record<string, never>
   }

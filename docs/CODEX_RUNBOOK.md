@@ -283,7 +283,7 @@ feat(step {id}): {title}
     * Admin link hidden for non-admins; shown only when user role=admin.
     * Guards standardized to `/login?redirect=…` across admin require and module page.
     * Added placeholder pages for `/organizations` and `/people` with SSR auth gates.
-  * PR: (pending)
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/43
 
 * [ ] **S28 — DB extensions (create)**
   * **organizations**: `user_id PK`, `ein`, `status('pending'|'approved'|'n/a')`, `profile jsonb`, `updated_at`.

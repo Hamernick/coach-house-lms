@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation"
 import { revalidatePath } from "next/cache"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { IconCircle, IconCircleCheck, IconFileText, IconLock } from "@tabler/icons-react"
+import { IconCircle, IconCircleCheck, IconFileText, IconInfoCircle, IconLock } from "@tabler/icons-react"
 
 import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import type { Database } from "@/lib/supabase"
 import { getClassModulesForUser, markModuleCompleted } from "@/lib/modules"
 import { buildModuleStates, type ModuleState } from "@/lib/module-progress"
 import { cn } from "@/lib/utils"
@@ -70,6 +71,20 @@ export default async function ModulePage({
   const previousState = currentIndex > 0 ? moduleStates[currentIndex - 1] : undefined
   const nextState = currentIndex >= 0 && currentIndex < moduleStates.length - 1 ? moduleStates[currentIndex + 1] : undefined
 
+  // Assignment wiring
+  const { data: assignment } = await supabase
+    .from("module_assignments")
+    .select("schema, complete_on_submit")
+    .eq("module_id", currentState.module.id)
+    .maybeSingle<{ schema: Record<string, unknown> | null; complete_on_submit: boolean }>()
+
+  const { data: existingSubmission } = await supabase
+    .from("assignment_submissions")
+    .select("answers, status")
+    .eq("module_id", currentState.module.id)
+    .eq("user_id", user.id)
+    .maybeSingle<{ answers: Record<string, unknown> | null; status: 'submitted'|'accepted'|'revise' }>()
+
   return (
     <div className="space-y-6 px-4 lg:px-6">
       <DashboardBreadcrumbs
@@ -91,7 +106,9 @@ export default async function ModulePage({
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>{currentState.module.title}</span>
-                {currentState.completed ? (
+                {existingSubmission?.status === 'revise' ? (
+                  <span className="text-sm font-medium text-amber-500 flex items-center gap-1"><IconInfoCircle className="h-4 w-4" /> Needs revise</span>
+                ) : currentState.completed ? (
                   <span className="text-sm font-medium text-primary">Completed</span>
                 ) : null}
               </CardTitle>
@@ -131,19 +148,33 @@ export default async function ModulePage({
                 </article>
               ) : null}
               <Separator />
-              <div className="space-y-3">
-                <h2 className="text-lg font-semibold">Reflection</h2>
-                <p className="text-sm text-muted-foreground">
-                  Capture one takeaway before you continue to the next module.
-                </p>
-                <ModuleCompletionForm
+              {assignment ? (
+                <AssignmentForm
+                  schema={assignment.schema}
                   moduleId={currentState.module.id}
                   classSlug={slug}
                   currentIndex={currentState.module.idx}
                   nextModuleIndex={nextState?.module.idx ?? null}
                   completed={currentState.completed}
+                  completeOnSubmit={Boolean(assignment.complete_on_submit)}
+                  existingAnswers={(existingSubmission?.answers as Record<string, unknown> | null) ?? null}
+                  existingStatus={existingSubmission?.status ?? null}
                 />
-              </div>
+              ) : (
+                <div className="space-y-3">
+                  <h2 className="text-lg font-semibold">Reflection</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Capture one takeaway before you continue to the next module.
+                  </p>
+                  <ModuleCompletionForm
+                    moduleId={currentState.module.id}
+                    classSlug={slug}
+                    currentIndex={currentState.module.idx}
+                    nextModuleIndex={nextState?.module.idx ?? null}
+                    completed={currentState.completed}
+                  />
+                </div>
+              )}
             </CardContent>
           </Card>
           <div className="flex items-center justify-between">
@@ -352,6 +383,60 @@ async function completeModuleAction(formData: FormData) {
   }
 }
 
+async function submitAssignmentAction(formData: FormData) {
+  "use server"
+
+  const moduleId = formData.get("moduleId")
+  const classSlug = formData.get("classSlug")
+  const nextModuleIndex = formData.get("nextModuleIndex")
+  const currentIndex = formData.get("currentIndex")
+  const completeOnSubmit = formData.get("completeOnSubmit") === "true"
+
+  if (typeof moduleId !== "string" || typeof classSlug !== "string") {
+    return
+  }
+
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError) throw userError
+  if (!user) redirect(`/login?redirect=/class/${classSlug}/module/${currentIndex ?? ""}`)
+
+  const answers: Database["public"]["Tables"]["assignment_submissions"]["Insert"]["answers"] = {}
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("a_")) {
+      const field = key.slice(2)
+      answers[field] = typeof value === "string" ? value : String(value)
+    }
+  }
+
+  await supabase
+    .from("assignment_submissions" satisfies keyof Database["public"]["Tables"])
+    .upsert({
+      module_id: moduleId,
+      user_id: user.id,
+      answers,
+      status: "submitted",
+    })
+
+  if (completeOnSubmit) {
+    await markModuleCompleted({ moduleId, userId: user.id })
+  }
+
+  if (typeof currentIndex === "string" && currentIndex.length > 0) {
+    revalidatePath(`/class/${classSlug}/module/${currentIndex}`)
+  }
+  revalidatePath(`/class/${classSlug}`)
+  revalidatePath(`/dashboard`)
+
+  if (completeOnSubmit && typeof nextModuleIndex === "string" && nextModuleIndex.length > 0) {
+    redirect(`/class/${classSlug}/module/${nextModuleIndex}`)
+  }
+}
+
 function ModuleCompletionForm({
   moduleId,
   classSlug,
@@ -381,6 +466,106 @@ function ModuleCompletionForm({
       <Button type="submit" disabled={completed}>
         {completed ? "Module Completed" : "Mark Module Complete"}
       </Button>
+    </form>
+  )
+}
+
+function AssignmentForm({
+  schema,
+  moduleId,
+  classSlug,
+  currentIndex,
+  nextModuleIndex,
+  completed,
+  completeOnSubmit,
+  existingAnswers,
+  existingStatus,
+}: {
+  schema: Record<string, unknown> | null
+  moduleId: string
+  classSlug: string
+  currentIndex: number
+  nextModuleIndex: number | null
+  completed: boolean
+  completeOnSubmit: boolean
+  existingAnswers: Record<string, unknown> | null
+  existingStatus: 'submitted' | 'accepted' | 'revise' | null
+}) {
+  type FieldDef = { name: string; label?: string; type?: string; options?: Array<{ label: string; value: string }> }
+  const fields: Array<FieldDef> = Array.isArray((schema as Record<string, unknown> | null)?.fields)
+    ? ((schema as unknown as { fields: FieldDef[] }).fields)
+    : []
+
+  if (fields.length === 0) {
+    return (
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold">Assignment</h2>
+        <p className="text-sm text-muted-foreground">No inputs for this module.</p>
+        <ModuleCompletionForm
+          moduleId={moduleId}
+          classSlug={classSlug}
+          currentIndex={currentIndex}
+          nextModuleIndex={nextModuleIndex}
+          completed={completed}
+        />
+      </div>
+    )
+  }
+
+  return (
+    <form action={submitAssignmentAction} className="space-y-4">
+      <h2 className="text-lg font-semibold">Assignment</h2>
+      <p className="text-sm text-muted-foreground">Fill out the fields and submit to continue.</p>
+      {fields.map((f) => {
+        const key = f.name
+        const label = f.label ?? key
+        const type = f.type ?? "text"
+        const defaultValue = (existingAnswers?.[key] as string | undefined) ?? ""
+        if (type === "textarea") {
+          return (
+            <div className="space-y-1" key={key}>
+              <label className="text-sm font-medium" htmlFor={`a_${key}`}>{label}</label>
+              <Textarea id={`a_${key}`} name={`a_${key}`} defaultValue={defaultValue} className="min-h-24" />
+            </div>
+          )
+        }
+        if (type === "select" && Array.isArray(f.options)) {
+          return (
+            <div className="space-y-1" key={key}>
+              <label className="text-sm font-medium" htmlFor={`a_${key}`}>{label}</label>
+              <select id={`a_${key}`} name={`a_${key}`} defaultValue={defaultValue} className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm">
+                {f.options.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          )
+        }
+        return (
+          <div className="space-y-1" key={key}>
+            <label className="text-sm font-medium" htmlFor={`a_${key}`}>{label}</label>
+            <input id={`a_${key}`} name={`a_${key}`} defaultValue={defaultValue} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" />
+          </div>
+        )
+      })}
+      <input type="hidden" name="moduleId" value={moduleId} />
+      <input type="hidden" name="classSlug" value={classSlug} />
+      <input type="hidden" name="currentIndex" value={currentIndex} />
+      <input type="hidden" name="nextModuleIndex" value={nextModuleIndex ?? ""} />
+      <input type="hidden" name="completeOnSubmit" value={completeOnSubmit ? "true" : "false"} />
+      <div className="flex items-center gap-2">
+        {(() => {
+          const disableSubmit = completed && completeOnSubmit && existingStatus !== 'revise'
+          return (
+            <Button type="submit" disabled={disableSubmit}>Submit</Button>
+          )
+        })()}
+        {!completeOnSubmit ? (
+          <Button type="submit" formAction={completeModuleAction} variant="outline" disabled={completed}>
+            {completed ? "Module Completed" : "Mark Module Complete"}
+          </Button>
+        ) : null}
+      </div>
     </form>
   )
 }

@@ -320,12 +320,17 @@ feat(step {id}): {title}
     * Integrated widgets on dashboard; kept demo sections below the fold.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/45
 
-* [ ] **S30 — Module/Lesson UX**
+* [x] **S30 — Module/Lesson UX**
   * Module page: breadcrumb, **Prev/Next**, video, markdown, resources (signed URLs), **assignment form** (from `module_assignments.schema`), notes.
   * Behavior: `complete_on_submit` honored; restore on reload; lock states (Locked/In-progress/Completed/Needs-revise).
   * Optional lessons: left rail; “Mark done”; completing last lesson can complete module when `complete_on_submit=false`.
   * **Accept:** submit persists; completion correct; locks correct; tests pass.
-  * **Changelog:** route + form renderer + state wiring.
+  * **Changelog:**
+    * Module page renders assignment form from module_assignments.schema (text, textarea, select) and restores existing answers.
+    * Submissions upsert to assignment_submissions with server action; complete_on_submit triggers module completion and optional redirect to next.
+    * “Needs revise” badge shows when latest submission status=revise.
+    * Revalidates class and dashboard on completion.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/46
 
 * [ ] **S31 — Authoring UX**
   * **Class Wizard (5):** Basics → Structure (sortable) → **People** (add existing, invite by email) → Access (Draft/Public) → Review/Publish.

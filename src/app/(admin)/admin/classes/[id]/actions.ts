@@ -8,6 +8,7 @@ import { redirect } from "next/navigation"
 import { requireAdmin } from "@/lib/admin/auth"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase/types"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 
 export async function updateClassDetailsAction(formData: FormData) {
   const classId = formData.get("classId")
@@ -159,4 +160,95 @@ export async function setModulePublishedAction(moduleId: string, classId: string
 
   revalidatePath(`/admin/classes/${classId}`)
   revalidatePath(`/admin/modules/${moduleId}`)
+}
+
+export async function enrollUserByEmailAction(formData: FormData) {
+  const classId = formData.get("classId")
+  const email = formData.get("email")
+
+  if (typeof classId !== "string" || typeof email !== "string") {
+    return
+  }
+
+  await requireAdmin()
+  const admin = createSupabaseAdminClient()
+
+  // Find user by email via admin API
+  const { data: userList, error: listErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 })
+  if (listErr) throw listErr
+
+  const user = userList.users.find((u) => (u.email ?? "").toLowerCase() === email.toLowerCase())
+  if (!user) {
+    throw new Error("User not found for email")
+  }
+
+  const supabase = await createSupabaseServerClient()
+  const insertPayload: Database["public"]["Tables"]["enrollments"]["Insert"] = {
+    user_id: user.id,
+    class_id: classId,
+    status: "active",
+  }
+
+  const { error } = await supabase
+    .from("enrollments" satisfies keyof Database["public"]["Tables"])
+    .upsert(insertPayload, { onConflict: "user_id,class_id" })
+
+  if (error) throw error
+
+  revalidatePath(`/admin/classes/${classId}`)
+}
+
+export async function unenrollUserAction(formData: FormData) {
+  const classId = formData.get("classId")
+  const userId = formData.get("userId")
+
+  if (typeof classId !== "string" || typeof userId !== "string") {
+    return
+  }
+
+  await requireAdmin()
+  const supabase = await createSupabaseServerClient()
+
+  const { error } = await supabase
+    .from("enrollments" satisfies keyof Database["public"]["Tables"])
+    .delete()
+    .eq("class_id", classId)
+    .eq("user_id", userId)
+
+  if (error) throw error
+
+  revalidatePath(`/admin/classes/${classId}`)
+}
+
+export async function createEnrollmentInviteAction(formData: FormData) {
+  const classId = formData.get("classId")
+  const email = formData.get("email")
+  const days = formData.get("days")
+
+  if (typeof classId !== "string" || typeof email !== "string") {
+    return
+  }
+
+  const expiresDays = typeof days === "string" && days.length > 0 ? Number.parseInt(days, 10) : 7
+  const expiresAt = new Date(Date.now() + expiresDays * 24 * 3600 * 1000)
+
+  await requireAdmin()
+  const supabase = await createSupabaseServerClient()
+
+  const token = randomUUID()
+
+  const insertPayload: Database["public"]["Tables"]["enrollment_invites"]["Insert"] = {
+    class_id: classId,
+    email,
+    token,
+    expires_at: expiresAt.toISOString(),
+  }
+
+  const { error } = await supabase
+    .from("enrollment_invites" satisfies keyof Database["public"]["Tables"])
+    .insert(insertPayload)
+
+  if (error) throw error
+
+  revalidatePath(`/admin/classes/${classId}`)
 }

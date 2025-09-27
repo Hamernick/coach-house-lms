@@ -22,7 +22,7 @@ async function requireAdminInternal(): Promise<RequireAdminResult> {
   }
 
   if (!user) {
-    redirect("/auth/sign-in")
+    redirect("/login?redirect=/admin")
   }
 
   const { data: profile, error } = await supabase

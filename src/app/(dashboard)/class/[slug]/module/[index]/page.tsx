@@ -42,7 +42,7 @@ export default async function ModulePage({
   }
 
   if (!user) {
-    redirect("/auth/sign-in")
+    redirect(`/login?redirect=/class/${slug}/module/${index}`)
   }
 
   const classContext = await getClassModulesForUser({
@@ -329,7 +329,8 @@ async function completeModuleAction(formData: FormData) {
   }
 
   if (!user) {
-    redirect("/auth/sign-in")
+    const ci = typeof currentIndex === "string" && currentIndex.length > 0 ? currentIndex : ""
+    redirect(`/login?redirect=/class/${classSlug}/module/${ci}`)
   }
 
   const notes =

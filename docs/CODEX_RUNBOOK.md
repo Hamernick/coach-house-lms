@@ -268,7 +268,7 @@ feat(step {id}): {title}
     * Ensured middleware and pages rely on CSS variables with `.dark` class; html uses `suppressHydrationWarning` to avoid flicker.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/40
 
-* [ ] **S27 — Shell & nav rename**
+* [x] **S27 — Shell & nav rename**
   * Rename “Nonprofit”→“Organizations”.
   * Student nav: **Dashboard · Organizations · People · Settings**.
   * Admin nav: **Dashboard · Classes · People · Settings**.
@@ -276,7 +276,14 @@ feat(step {id}): {title}
   * Hide **Admin** for non-admins (SSR role in `(dashboard)/layout`).
   * Fix all guards to `/login?redirect=…`.
   * **Accept:** students never see Admin; `/schedule` removed; no dead links; build/tests pass. types regen clean; drift check clean.
-  * **Changelog:** nav updated; guards fixed; removals applied.
+  * **Changelog:**
+    * Sidebar updated to student nav: Dashboard, Organizations, People, Settings.
+    * Admin header nav now: Dashboard, Classes, People, Settings.
+    * Schedule removed (route and nav); no Explore/Submissions anywhere.
+    * Admin link hidden for non-admins; shown only when user role=admin.
+    * Guards standardized to `/login?redirect=…` across admin require and module page.
+    * Added placeholder pages for `/organizations` and `/people` with SSR auth gates.
+  * PR: https://github.com/Hamernick/coach-house-lms/pull/43
 
 * [ ] **S28 — DB extensions (create)**
   * **organizations**: `user_id PK`, `ein`, `status('pending'|'approved'|'n/a')`, `profile jsonb`, `updated_at`.

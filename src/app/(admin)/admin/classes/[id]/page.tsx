@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation"
 
-import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -69,12 +68,6 @@ export default async function AdminClassDetailPage({
 
   return (
     <div className="space-y-6">
-      <DashboardBreadcrumbs
-        segments={[
-          { label: "Admin", href: "/admin/classes" },
-          { label: classData.title },
-        ]}
-      />
       <div className="grid gap-6 lg:grid-cols-[360px_1fr]">
         <Card className="bg-card/60">
           <CardHeader>

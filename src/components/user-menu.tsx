@@ -53,11 +53,7 @@ export function UserMenu({ name, email }: UserMenuProps) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <a href="/settings" className="w-full cursor-pointer">
-            Settings
-          </a>
-        </DropdownMenuItem>
+        
         <DropdownMenuSeparator />
         <DropdownMenuItem
           className="flex items-center gap-2 text-destructive focus:text-destructive"

@@ -30,7 +30,16 @@ type ClassWithModules = Database["public"]["Tables"]["classes"]["Row"] & {
   modules: Array<
     Pick<
       Database["public"]["Tables"]["modules"]["Row"],
-      "id" | "idx" | "slug" | "title" | "description" | "video_url" | "content_md" | "duration_minutes" | "published" | "deck_path"
+      | "id"
+      | "idx"
+      | "slug"
+      | "title"
+      | "description"
+      | "published"
+      | "video_url"
+      | "content_md"
+      | "duration_minutes"
+      | "deck_path"
     >
   > | null
 }
@@ -44,16 +53,32 @@ export async function getClassModulesForUser({
 }): Promise<ClassModuleResult> {
   const supabase = await createSupabaseServerClient()
 
-  const { data: classRow, error } = await supabase
-    .from("classes" satisfies keyof Database["public"]["Tables"])
-    .select(
-      `id, title, description, published, modules ( id, idx, slug, title, description, video_url, content_md, duration_minutes, published, deck_path )`
-    )
-    .eq("slug", classSlug)
-    .maybeSingle()
-
-  if (error) {
-    throw error
+  let classRow: unknown | null = null
+  {
+    // Prefer expanded module fields; fall back on 42703
+    const { data, error } = await supabase
+      .from("classes" satisfies keyof Database["public"]["Tables"])
+      .select(
+        `id, title, description, published, modules ( id, idx, slug, title, description, published, video_url, content_md, duration_minutes, deck_path )`
+      )
+      .eq("slug", classSlug)
+      .maybeSingle()
+    if (error) {
+      // Fallback for local schemas missing some columns
+      if ((error as { code?: string }).code === "42703") {
+        const { data: fallback, error: err2 } = await supabase
+          .from("classes" satisfies keyof Database["public"]["Tables"])
+          .select(`id, title, description, published, modules ( id, idx, slug, title, description, published )`)
+          .eq("slug", classSlug)
+          .maybeSingle()
+        if (err2) throw err2
+        classRow = fallback
+      } else {
+        throw error
+      }
+    } else {
+      classRow = data
+    }
   }
 
   if (!classRow) {
@@ -71,11 +96,11 @@ export async function getClassModulesForUser({
       slug: module.slug,
       title: module.title,
       description: module.description ?? null,
-      videoUrl: module.video_url ?? null,
-      contentMd: module.content_md ?? null,
-      durationMinutes: module.duration_minutes ?? null,
-      published: module.published,
-      hasDeck: Boolean(module.deck_path),
+      videoUrl: (module as { video_url?: string | null }).video_url ?? null,
+      contentMd: (module as { content_md?: string | null }).content_md ?? null,
+      durationMinutes: (module as { duration_minutes?: number | null }).duration_minutes ?? null,
+      published: ("published" in module ? (module as { published?: boolean }).published ?? true : true),
+      hasDeck: Boolean((module as { deck_path?: string | null }).deck_path ?? null),
     }))
 
   if (modules.length === 0) {
@@ -97,6 +122,16 @@ export async function getClassModulesForUser({
     .in("module_id", moduleIds)
 
   if (progressError) {
+    // If progress table doesn't exist yet in a local env, default to empty
+    if ((progressError as { code?: string }).code === "42P01" || (progressError as { code?: string }).code === "42703") {
+      return {
+        classId: classRecord.id,
+        classTitle: classRecord.title,
+        classDescription: classRecord.description ?? null,
+        modules,
+        progressMap: {},
+      }
+    }
     throw progressError
   }
 

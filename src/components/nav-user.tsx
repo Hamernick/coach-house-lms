@@ -1,14 +1,8 @@
 "use client"
 
-import { useTransition } from "react"
+import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import {
-  IconCreditCard,
-  IconDotsVertical,
-  IconLogout,
-  IconNotification,
-  IconUserCircle,
-} from "@tabler/icons-react"
+import { IconCreditCard, IconDotsVertical, IconLogout, IconUserCircle } from "@tabler/icons-react"
 
 import {
   Avatar,
@@ -31,6 +25,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
+import { AccountSettingsDialog } from "@/components/account-settings/account-settings-dialog"
 
 type NavUserProps = {
   user: {
@@ -45,6 +40,7 @@ export function NavUser({ user }: NavUserProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   function handleSignOut() {
     startTransition(async () => {
@@ -98,24 +94,23 @@ export function NavUser({ user }: NavUserProps) {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem asChild>
-                <a href="/settings" className="flex w-full items-center gap-2">
-                  <IconUserCircle />
-                  Account settings
-                </a>
+              <DropdownMenuItem
+                className="flex items-center gap-2"
+                onSelect={(e) => {
+                  e.preventDefault()
+                  setSettingsOpen(true)
+                }}
+              >
+                <IconUserCircle />
+                Account settings
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <a href="/billing" className="flex w-full items-center gap-2">
+                <a className="flex w-full items-center gap-2" href="/billing" onClick={(e) => { /* ensure client nav */ }}>
                   <IconCreditCard />
                   Billing
                 </a>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <a href="/settings?tab=notifications" className="flex w-full items-center gap-2">
-                  <IconNotification />
-                  Notifications
-                </a>
-              </DropdownMenuItem>
+              
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -132,6 +127,14 @@ export function NavUser({ user }: NavUserProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
+        <AccountSettingsDialog
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+          defaultName={displayName}
+          defaultEmail={displayEmail}
+          defaultMarketingOptIn={true}
+          defaultNewsletterOptIn={true}
+        />
       </SidebarMenuItem>
     </SidebarMenu>
   )

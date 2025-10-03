@@ -218,3 +218,71 @@ export async function updateModuleAssignmentAction(formData: FormData) {
 
   revalidatePath(`/admin/modules/${moduleId}`)
 }
+
+export async function updateModuleContentAction(formData: FormData) {
+  const moduleId = formData.get("moduleId")
+  const transcript = formData.get("transcript")
+  const interactions = formData.get("interactions")
+  const resources = formData.get("resources")
+  const homework = formData.get("homework")
+  const adminNotes = formData.get("adminNotes")
+
+  if (typeof moduleId !== "string") return
+
+  await requireAdmin()
+  const supabase = await createSupabaseServerClient()
+
+  type JsonType = Database["public"]["Tables"]["assignment_submissions"]["Insert"]["answers"]
+  const parseJson = (val: FormDataEntryValue | null): JsonType => {
+    if (typeof val !== "string" || val.trim().length === 0) return [] as unknown as JsonType
+    try {
+      const v = JSON.parse(val)
+      return v as JsonType
+    } catch {
+      throw new Error("Invalid JSON provided for one of the content fields")
+    }
+  }
+
+  type ModuleContentInsert = {
+    module_id: string
+    transcript?: string | null
+    talking_points?: JsonType
+    interactions?: JsonType
+    resources?: JsonType
+    homework?: JsonType
+    admin_notes?: string | null
+  }
+  const upsertPayload: ModuleContentInsert = {
+    module_id: moduleId,
+    transcript: typeof transcript === "string" ? transcript : null,
+    interactions: parseJson(interactions),
+    resources: parseJson(resources),
+    homework: parseJson(homework),
+    admin_notes: typeof adminNotes === "string" ? adminNotes : null,
+  }
+
+  const client = supabase as unknown as {
+    from: (t: string) => {
+      upsert: (
+        v: unknown,
+        opts?: { onConflict?: string }
+      ) => Promise<{ error: { message?: string } | null }>
+    }
+  }
+  const { error } = await client.from("module_content").upsert(upsertPayload, { onConflict: "module_id" })
+
+  if (error) throw error
+
+  revalidatePath(`/admin/modules/${moduleId}`)
+}
+
+export async function generateSignedUrlAction(bucket: string, path: string) {
+  "use server"
+
+  await requireAdmin()
+  const supabase = await createSupabaseServerClient()
+
+  const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60)
+  if (error) throw error
+  return data.signedUrl as string
+}

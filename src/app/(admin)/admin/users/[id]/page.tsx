@@ -3,7 +3,6 @@ import { Buffer } from "node:buffer"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
-import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -47,12 +46,6 @@ export default async function AdminUserDetailPage({
 
   return (
     <div className="space-y-6">
-      <DashboardBreadcrumbs
-        segments={[
-          { label: "Admin", href: "/admin/users" },
-          { label: detail.fullName ?? detail.email },
-        ]}
-      />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,360px)_minmax(0,1fr)]">
         <Card className="bg-card/60">

@@ -9,10 +9,22 @@ const ORDER: Array<"system" | "light" | "dark"> = ["system", "light", "dark"]
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
+  React.useEffect(() => setMounted(true), [])
+
+  // During SSR and the initial client render, render a stable UI
+  // to avoid hydration mismatches due to system theme resolution.
+  if (!mounted) {
+    return (
+      <Button variant="ghost" size="icon" aria-label="Theme">
+        <IconDeviceDesktop className="size-4" />
+      </Button>
+    )
+  }
+
   const current = (theme as "system" | "light" | "dark") ?? "system"
   const idx = ORDER.indexOf(current)
   const next = ORDER[(idx + 1) % ORDER.length]
-
   const Icon = current === "dark" ? IconMoon : current === "light" ? IconSun : IconDeviceDesktop
 
   return (
@@ -21,4 +33,3 @@ export function ThemeToggle() {
     </Button>
   )
 }
-

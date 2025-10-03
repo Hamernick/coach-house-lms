@@ -1,6 +1,5 @@
 import { Suspense } from "react"
 
-import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { fetchAdminKpis, fetchRecentEnrollments, fetchRecentPayments } from "@/lib/admin/kpis"
@@ -143,7 +142,6 @@ export default async function AdminDashboardPage() {
   const locale = await getLocale()
   return (
     <div className="space-y-6">
-      <DashboardBreadcrumbs segments={[{ label: "Admin" }, { label: "Dashboard" }]} />
       <Suspense fallback={<KpiSkeleton />}>
         <KpiSection locale={locale} />
       </Suspense>

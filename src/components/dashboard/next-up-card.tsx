@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export async function NextUpCard() {
@@ -72,7 +73,9 @@ export async function NextUpCard() {
           <p className="truncate text-xs text-muted-foreground">Continue where you left off.</p>
         </div>
         <Button asChild size="sm">
-          <a href={`/class/${klass.slug}/module/${mod.idx}`}>Resume</a>
+          <Link href={`/class/${klass.slug}/module/${mod.idx}`} prefetch>
+            Resume
+          </Link>
         </Button>
       </CardContent>
     </Card>

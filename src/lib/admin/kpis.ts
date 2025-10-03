@@ -114,7 +114,16 @@ export async function fetchRecentEnrollments(limit = 5): Promise<AdminRecentEnro
 
   const { data, error } = await supabase
     .from("enrollments")
-    .select("id, user_id, created_at, classes ( title ), profiles ( email )")
+    .select(
+      [
+        "id",
+        "user_id",
+        "created_at",
+        "classes ( title )",
+        // Be explicit about the FK to avoid ambiguity
+        "profiles:profiles!enrollments_user_id_fkey ( email )",
+      ].join(", ")
+    )
     .order("created_at", { ascending: false })
     .limit(limit)
 
@@ -122,7 +131,7 @@ export async function fetchRecentEnrollments(limit = 5): Promise<AdminRecentEnro
     throw error
   }
 
-  const rows = (data ?? []) as EnrollmentRow[]
+  const rows = (data ?? []) as unknown as EnrollmentRow[]
 
   return rows.map((row) => ({
     id: row.id,
@@ -146,7 +155,7 @@ export async function fetchRecentPayments(limit = 5): Promise<AdminRecentPayment
     throw error
   }
 
-  const rows = (data ?? []) as SubscriptionPaymentRow[]
+  const rows = (data ?? []) as unknown as SubscriptionPaymentRow[]
 
   return rows.map((row) => {
     const amountInfo = extractAmount(row.metadata)

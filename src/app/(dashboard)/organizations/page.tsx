@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation"
 
-import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { createSupabaseServerClient } from "@/lib/supabase"
 
@@ -19,9 +18,6 @@ export default async function OrganizationsPage() {
   return (
     <div className="flex flex-col gap-6 px-4 lg:px-6">
       <section>
-        <DashboardBreadcrumbs segments={[{ label: "Dashboard", href: "/dashboard" }, { label: "Organizations" }]} />
-      </section>
-      <section>
         <Card className="bg-card/60">
           <CardHeader>
             <CardTitle>Organizations</CardTitle>
@@ -35,4 +31,3 @@ export default async function OrganizationsPage() {
     </div>
   )
 }
-

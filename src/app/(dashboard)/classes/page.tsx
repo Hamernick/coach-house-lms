@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
-import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { PaginationControls } from "@/components/dashboard/pagination-controls"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -39,14 +38,7 @@ export default async function ClassesPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="px-4 lg:px-6">
-        <DashboardBreadcrumbs
-          segments={[
-            { label: "Dashboard", href: "/dashboard" },
-            { label: "Classes" },
-          ]}
-        />
-      </section>
+      
       <section className="space-y-3 px-4 lg:px-6">
         <div>
           <h2 className="text-2xl font-semibold">Your classes</h2>

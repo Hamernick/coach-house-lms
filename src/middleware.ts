@@ -8,10 +8,11 @@ import type { Database } from "@/lib/supabase/types"
 const PROTECTED_PREFIXES = [
   "/dashboard",
   "/class",
+  "/academy",
   "/classes",
   "/organizations",
+  "/my-organization",
   "/people",
-  "/settings",
   "/billing",
   "/admin",
   "/onboarding",
@@ -40,9 +41,8 @@ export async function middleware(request: NextRequest) {
   )
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  const user = session?.user ?? null
+    data: { user },
+  } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
   const isOnboardingRoute = pathname.startsWith("/onboarding")
@@ -62,16 +62,7 @@ export async function middleware(request: NextRequest) {
     return redirectResponse
   }
 
-  // If logged in but onboarding not completed, gate protected routes behind onboarding (allow the onboarding route itself)
-  if (user && isProtected && !isOnboardingRoute) {
-    const meta = user.user_metadata as Record<string, unknown> | null
-    const completed = Boolean(meta?.onboarding_completed)
-    if (!completed) {
-      const redirectResponse = NextResponse.redirect(new URL("/onboarding", request.url))
-      copyCookies(response, redirectResponse)
-      return redirectResponse
-    }
-  }
+  // Onboarding is now an in-app overlay; do not redirect to /onboarding here.
 
   return response
 }

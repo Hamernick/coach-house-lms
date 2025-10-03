@@ -1,6 +1,5 @@
 import Link from "next/link"
 
-import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -42,7 +41,6 @@ export default async function AdminUsersPage({
 
   return (
     <div className="space-y-6">
-      <DashboardBreadcrumbs segments={[{ label: "Admin" }, { label: "People" }]} />
       <div className="flex flex-col gap-4 rounded-xl border bg-card/60 p-4 md:flex-row md:items-end md:justify-between">
         <form className="grid gap-3 md:grid-cols-[200px_160px_160px_auto] md:items-end" method="GET">
           <div className="flex flex-col gap-1">

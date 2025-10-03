@@ -1,7 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
-import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,10 +14,15 @@ import {
   deleteModuleFromDetailAction,
   removeModuleDeckAction,
   updateModuleAssignmentAction,
+  generateSignedUrlAction,
+  updateModuleContentAction,
   updateModuleDetailsAction,
   uploadModuleDeckAction,
 } from "./actions"
 import { AssignmentEditor } from "./_components/assignment-editor"
+import { ContentEditor } from "./_components/content-editor"
+import { ContentBuilder } from "./_components/content-builder"
+import { VideoSignedUrlHelper } from "./_components/signed-url-helper"
 
 export default async function AdminModuleDetailPage({
   params,
@@ -68,15 +72,20 @@ export default async function AdminModuleDetailPage({
     .eq("module_id", moduleRecord.id)
     .maybeSingle<{ schema: Record<string, unknown> | null; complete_on_submit: boolean | null }>()
 
+  const { data: contentRow } = await supabase
+    .from("module_content")
+    .select("transcript, interactions, resources, homework, admin_notes")
+    .eq("module_id", moduleRecord.id)
+    .maybeSingle<{
+      transcript: string | null
+      interactions: unknown[] | null
+      resources: unknown[] | null
+      homework: unknown[] | null
+      admin_notes: string | null
+    }>()
+
   return (
     <div className="space-y-6">
-      <DashboardBreadcrumbs
-        segments={[
-          { label: "Admin", href: "/admin/classes" },
-          { label: parentClass.title, href: `/admin/classes/${parentClass.id}` },
-          { label: moduleRecord.title },
-        ]}
-      />
       <Card className="bg-card/60">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -116,6 +125,13 @@ export default async function AdminModuleDetailPage({
                 <div className="space-y-2">
                   <Label htmlFor="videoUrl">Video URL</Label>
                   <Input id="videoUrl" name="videoUrl" defaultValue={moduleRecord.video_url ?? ""} />
+                  <VideoSignedUrlHelper
+                    onCreate={generateSignedUrlAction}
+                    onGenerate={(url) => {
+                      const el = document.getElementById('videoUrl') as HTMLInputElement | null
+                      if (el) el.value = url
+                    }}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="durationMinutes">Duration (minutes)</Label>
@@ -145,6 +161,24 @@ export default async function AdminModuleDetailPage({
               initialSchema={assignment?.schema ?? null}
               initialCompleteOnSubmit={Boolean(assignment?.complete_on_submit)}
               onSave={updateModuleAssignmentAction}
+            />
+          </div>
+
+          <div className="space-y-3 rounded-lg border p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold">Content</p>
+                <p className="text-xs text-muted-foreground">Add and reorder interactions, resources, and homework.</p>
+              </div>
+            </div>
+            <ContentBuilder
+              moduleId={moduleRecord.id}
+              initialTranscript={contentRow?.transcript ?? ""}
+              initialAdminNotes={contentRow?.admin_notes ?? ""}
+              initialInteractions={Array.isArray(contentRow?.interactions) ? (contentRow?.interactions as unknown[]) : []}
+              initialResources={Array.isArray(contentRow?.resources) ? (contentRow?.resources as unknown[]) : []}
+              initialHomework={Array.isArray(contentRow?.homework) ? (contentRow?.homework as unknown[]) : []}
+              onSave={updateModuleContentAction}
             />
           </div>
 

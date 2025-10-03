@@ -1,6 +1,5 @@
 import Link from "next/link"
 
-import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { PaginationControls } from "@/components/dashboard/pagination-controls"
 import { Button } from "@/components/ui/button"
 import {
@@ -33,7 +32,6 @@ export default async function AdminClassesPage({
 
   return (
     <div className="space-y-6">
-      <DashboardBreadcrumbs segments={[{ label: "Admin" }, { label: "Classes" }]} />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Classes</h1>

@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation"
 
-import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckboxField } from "@/components/form/checkbox-field"
@@ -34,9 +33,6 @@ export default async function OnboardingPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="px-4 lg:px-6">
-        <DashboardBreadcrumbs segments={[{ label: "Onboarding" }]} />
-      </section>
       <section className="px-4 lg:px-6">
         <Card className="border bg-card/60">
           <CardHeader>

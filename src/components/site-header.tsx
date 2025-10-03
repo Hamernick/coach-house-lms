@@ -1,16 +1,16 @@
 import Link from "next/link"
+import type { ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
-import { UserMenu } from "./user-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 const SUPPORT_EMAIL = "contact@coachhousesolutions.org"
 
-export async function SiteHeader() {
+export async function SiteHeader({ breadcrumbs }: { breadcrumbs?: ReactNode }) {
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -39,7 +39,7 @@ export async function SiteHeader() {
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
         <SidebarTrigger className="-ml-1" />
         <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
-        <h1 className="text-base font-medium">Dashboard</h1>
+        <div className="flex min-w-0 items-center text-sm">{breadcrumbs}</div>
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
           <Button variant="ghost" size="sm" asChild>
@@ -47,9 +47,7 @@ export async function SiteHeader() {
               Support
             </a>
           </Button>
-          {user ? (
-            <UserMenu name={displayName} email={email} />
-          ) : (
+          {user ? null : (
             <Button variant="outline" size="sm" asChild>
               <Link href="/login">Sign in</Link>
             </Button>

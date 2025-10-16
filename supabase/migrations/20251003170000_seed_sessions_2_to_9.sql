@@ -10,9 +10,9 @@ as $$
 declare
   v_id uuid;
 begin
-  insert into classes (slug, title, description, published)
+  insert into classes (slug, title, description, is_published)
   values (p_slug, p_title, p_desc, p_published)
-  on conflict (slug) do update set title = excluded.title, description = excluded.description, published = excluded.published
+  on conflict (slug) do update set title = excluded.title, description = excluded.description, is_published = excluded.is_published
   returning id into v_id;
   return v_id;
 end;
@@ -90,9 +90,9 @@ begin
       (c9, 5, 'Summary & Homework', 'Board development plan')
     ) as t(class_id, idx, title, description)
   )
-  insert into modules (class_id, idx, slug, title, description, published)
+  insert into modules (class_id, idx, slug, title, description, is_published)
   select class_id, idx, concat('m', idx), title, description, true from defs
-  on conflict (class_id, idx) do update set title = excluded.title, description = excluded.description, published = excluded.published;
+  on conflict (class_id, idx) do update set title = excluded.title, description = excluded.description, is_published = excluded.is_published;
 end $$;
 
 drop function if exists upsert_class(text, text, text, boolean, int);

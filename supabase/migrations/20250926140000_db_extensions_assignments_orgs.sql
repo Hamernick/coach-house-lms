@@ -117,7 +117,7 @@ create policy "module_assignments_read_enrolled_or_published" on module_assignme
       select 1 from modules m
       join classes c on c.id = m.class_id
       left join enrollments e on e.class_id = m.class_id and e.user_id = auth.uid()
-      where m.id = module_assignments.module_id and (c.published or e.id is not null)
+      where m.id = module_assignments.module_id and (c.is_published or e.id is not null)
     )
   );
 
@@ -157,13 +157,13 @@ create policy "attachments_enrolled_read" on attachments
     (scope_type = 'class' and exists (
       select 1 from classes c
       left join enrollments e on e.class_id = c.id and e.user_id = auth.uid()
-      where c.id = attachments.scope_id and (c.published or e.id is not null)
+      where c.id = attachments.scope_id and (c.is_published or e.id is not null)
     ))
     or (scope_type = 'module' and exists (
       select 1 from modules m
       join classes c on c.id = m.class_id
       left join enrollments e on e.class_id = c.id and e.user_id = auth.uid()
-      where m.id = attachments.scope_id and (c.published or e.id is not null)
+      where m.id = attachments.scope_id and (c.is_published or e.id is not null)
     ))
   );
 
@@ -216,7 +216,7 @@ as $$
     from modules m
     join classes c on c.id = m.class_id
     left join enrollments e on e.class_id = c.id and e.user_id = p_user_id
-    where c.published or e.id is not null
+    where c.is_published or e.id is not null
   ),
   progress as (
     select module_id, status from module_progress where user_id = p_user_id

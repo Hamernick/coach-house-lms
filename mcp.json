@@ -1,0 +1,33 @@
+{
+  "servers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "${workspaceFolder}"
+      ]
+    },
+    "shell": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-shell"
+      ]
+    },
+    "ripgrep": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-ripgrep@latest"
+      ]
+    },
+    "git": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-git"
+      ]
+    }
+  }
+}

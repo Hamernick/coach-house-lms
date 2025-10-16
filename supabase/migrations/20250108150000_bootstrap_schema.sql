@@ -33,7 +33,7 @@ create table classes (
   description text,
   stripe_product_id text,
   stripe_price_id text,
-  published boolean not null default false,
+  is_published boolean not null default false,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now())
 );
@@ -48,6 +48,7 @@ create table modules (
   video_url text,
   content_md text,
   duration_minutes integer,
+  is_published boolean not null default true,
   created_at timestamptz not null default timezone('utc', now()),
   updated_at timestamptz not null default timezone('utc', now()),
   unique (class_id, idx),
@@ -180,7 +181,7 @@ CREATE POLICY "profiles_admin_manage" ON profiles
 
 CREATE POLICY "classes_view_published" ON classes
   FOR SELECT
-  USING (published);
+  USING (is_published);
 
 CREATE POLICY "classes_view_enrolled" ON classes
   FOR SELECT
@@ -204,7 +205,8 @@ CREATE POLICY "modules_view_published" ON modules
     OR EXISTS (
       SELECT 1 FROM classes c
       WHERE c.id = modules.class_id
-        AND c.published
+        AND c.is_published
+        AND modules.is_published
     )
     OR EXISTS (
       SELECT 1

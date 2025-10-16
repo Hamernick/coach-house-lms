@@ -258,7 +258,7 @@ export type Database = {
           description: string | null
           stripe_product_id: string | null
           stripe_price_id: string | null
-          published: boolean
+          is_published: boolean
           created_at: string
           updated_at: string
         }
@@ -269,7 +269,7 @@ export type Database = {
           description?: string | null
           stripe_product_id?: string | null
           stripe_price_id?: string | null
-          published?: boolean
+          is_published?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -280,7 +280,7 @@ export type Database = {
           description?: string | null
           stripe_product_id?: string | null
           stripe_price_id?: string | null
-          published?: boolean
+          is_published?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -298,7 +298,7 @@ export type Database = {
           content_md: string | null
           duration_minutes: number | null
           deck_path: string | null
-          published: boolean
+          is_published: boolean
           created_at: string
           updated_at: string
         }
@@ -313,7 +313,7 @@ export type Database = {
           content_md?: string | null
           duration_minutes?: number | null
           deck_path?: string | null
-          published?: boolean
+          is_published?: boolean
           created_at?: string
           updated_at?: string
         }
@@ -328,7 +328,7 @@ export type Database = {
           content_md?: string | null
           duration_minutes?: number | null
           deck_path?: string | null
-          published?: boolean
+          is_published?: boolean
           created_at?: string
           updated_at?: string
         }

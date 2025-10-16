@@ -51,7 +51,7 @@ export function NavDocuments({
             <SidebarMenuButton asChild>
               <a href={item.url}>
                 <item.icon />
-                <span>{item.name}</span>
+                <span className="max-w-[calc(100%-2.5rem)] leading-snug break-words text-pretty">{item.name}</span>
               </a>
             </SidebarMenuButton>
             <DropdownMenu>

@@ -115,15 +115,20 @@ export function ContentBuilder({
         )}
         />
         <div className="rounded-md border p-3 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="it-type">Type</Label>
-              <select id="it-type" value={newType} onChange={(e) => setNewType(e.target.value)} className="flex h-9 rounded-md border bg-background px-2 text-sm">
-                <option value="prompt">Prompt</option>
-                <option value="poll">Poll (1–5)</option>
-                <option value="quiz">Quiz</option>
-                <option value="activity">Activity (multi)</option>
-              </select>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <Label htmlFor="it-type">Type</Label>
+          <select
+            id="it-type"
+            value={newType}
+            onChange={(e) => setNewType(e.target.value)}
+            className="flex h-9 appearance-none rounded-md border border-input bg-background pl-3 pr-9 text-sm"
+          >
+            <option value="prompt">Prompt</option>
+            <option value="poll">Poll (1–5)</option>
+            <option value="quiz">Quiz</option>
+            <option value="activity">Activity (multi)</option>
+          </select>
             </div>
             {newType === 'poll' ? (
               <div className="grid grid-cols-2 gap-2">
@@ -190,10 +195,12 @@ export function ContentBuilder({
         />
         <div className="grid gap-3 md:grid-cols-2">
           <AddResource onAdd={addResource} />
-          <UploadResource moduleId={moduleId} onUploaded={(label, url, path) => setResources((arr) => [...arr, { _id: newId(), label, url, storage_path: path }])} onDeleteFile={async (path) => {
-            await fetch(`/api/admin/modules/${moduleId}/resource?path=${encodeURIComponent(path)}`, { method: 'DELETE' })
-            setResources((arr) => arr.filter((r) => r.storage_path !== path))
-          }} />
+          <UploadResource
+            moduleId={moduleId}
+            onUploaded={(label, url, path) =>
+              setResources((arr) => [...arr, { _id: newId(), label, url, storage_path: path }])
+            }
+          />
         </div>
       </Section>
 
@@ -284,7 +291,13 @@ function AddResource({ onAdd }: { onAdd: (label: string, url: string) => void })
   )
 }
 
-function UploadResource({ moduleId, onUploaded, onDeleteFile }: { moduleId: string; onUploaded: (label: string, url: string, path: string) => void; onDeleteFile: (path: string) => Promise<void> }) {
+function UploadResource({
+  moduleId,
+  onUploaded,
+}: {
+  moduleId: string
+  onUploaded: (label: string, url: string, path: string) => void
+}) {
   const [pending, start] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const onSelect = (file: File | null) => {
@@ -352,6 +365,7 @@ function normalizeArray<T>(arr: unknown[]): WithId<T>[] {
 }
 
 function stripId<T extends { _id: string }>(item: T): Omit<T, '_id'> {
-  const { _id: _omit, ...rest } = item
+  const { _id, ...rest } = item
+  void _id
   return rest as Omit<T, '_id'>
 }

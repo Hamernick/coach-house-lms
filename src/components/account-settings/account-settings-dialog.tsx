@@ -188,14 +188,14 @@ export function AccountSettingsDialog({
     onOpenChange(false)
   }
 
-  function validateForTab(which: TabKey): boolean {
+  function validateForTab(): boolean {
     // Settings are lenient: allow partial edits; clear errors
     setErrors({})
     return true
   }
 
   async function handleSave() {
-    if (!validateForTab(tab)) return
+    if (!validateForTab()) return
     setIsSaving(true)
     try {
       // Update profile name

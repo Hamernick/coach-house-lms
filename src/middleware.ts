@@ -11,8 +11,6 @@ const PROTECTED_PREFIXES = [
   "/academy",
   "/classes",
   "/organizations",
-  "/my-organization",
-  "/people",
   "/billing",
   "/admin",
   "/onboarding",
@@ -45,7 +43,6 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
   const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
-  const isOnboardingRoute = pathname.startsWith("/onboarding")
   const isAuthRoute = AUTH_ROUTES.has(pathname)
 
   if (!user && isProtected) {

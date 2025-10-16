@@ -1,15 +1,25 @@
 "use client"
 
-import { useEffect, useState, useTransition } from "react"
+import { Children, useEffect, useState, useTransition, type ChangeEvent, type ReactNode } from "react"
 import { toast } from "sonner"
 
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  Field as FieldRow,
+  FieldDescription as FieldHelperText,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/field"
+import { PeopleShowcase, SupportersShowcase, type OrgPersonWithImage } from "@/components/people/supporters-showcase"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,13 +34,18 @@ import { Loader2, ChevronDown } from "lucide-react"
 
 type OrgProfile = {
   name?: string | null
-  entity?: string | null
+  description?: string | null
+  tagline?: string | null
   ein?: string | null
-  incorporation?: string | null
   rep?: string | null
+  email?: string | null
   phone?: string | null
   address?: string | null
-  coverUrl?: string | null
+  addressStreet?: string | null
+  addressCity?: string | null
+  addressState?: string | null
+  addressPostal?: string | null
+  addressCountry?: string | null
   logoUrl?: string | null
   publicUrl?: string | null
   twitter?: string | null
@@ -40,40 +55,38 @@ type OrgProfile = {
   mission?: string | null
   need?: string | null
   values?: string | null
-  people?: string | null
   programs?: string | null
   reports?: string | null
-  toolkit?: string | null
-  supporters?: string | null
-  readinessScore?: string | null
 }
 
-export function OrgProfileCard({ initial }: { initial: OrgProfile }) {
+export function OrgProfileCard({ initial, people }: { initial: OrgProfile; people: OrgPersonWithImage[] }) {
   const [editMode, setEditMode] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
-  const [isUploadingCover, setIsUploadingCover] = useState(false)
   const [dirty, setDirty] = useState(false)
   const [tab, setTab] = useState<string>("company")
   const tabs = [
-    { value: "company", label: "Organization" },
+    { value: "company", label: "About" },
     { value: "branding", label: "Branding" },
-    { value: "about", label: "About" },
     { value: "people", label: "People" },
     { value: "programs", label: "Programs" },
     { value: "reports", label: "Reports" },
-    { value: "toolkit", label: "Toolkit" },
     { value: "supporters", label: "Supporters" },
   ]
   const [company, setCompany] = useState<OrgProfile>({
     name: initial.name ?? "",
-    entity: initial.entity ?? "",
+    description: initial.description ?? "",
+    tagline: initial.tagline ?? "",
     ein: initial.ein ?? "",
-    incorporation: initial.incorporation ?? "",
     rep: initial.rep ?? "",
+    email: initial.email ?? "",
     phone: initial.phone ?? "",
     address: initial.address ?? "",
-    coverUrl: initial.coverUrl ?? "",
+    addressStreet: initial.addressStreet ?? "",
+    addressCity: initial.addressCity ?? "",
+    addressState: initial.addressState ?? "",
+    addressPostal: initial.addressPostal ?? "",
+    addressCountry: initial.addressCountry ?? "",
     logoUrl: initial.logoUrl ?? "",
     publicUrl: initial.publicUrl ?? "",
     twitter: initial.twitter ?? "",
@@ -83,28 +96,29 @@ export function OrgProfileCard({ initial }: { initial: OrgProfile }) {
     mission: initial.mission ?? "",
     need: initial.need ?? "",
     values: initial.values ?? "",
-    people: initial.people ?? "",
     programs: initial.programs ?? "",
     reports: initial.reports ?? "",
-    toolkit: initial.toolkit ?? "",
-    supporters: initial.supporters ?? "",
-    readinessScore: initial.readinessScore ?? "",
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
 
   const Schema = z.object({
     name: z.string().min(1, "Name is required").max(120),
-    entity: z.string().max(120).optional().or(z.literal("")),
+    tagline: z.string().max(160).optional().or(z.literal("")),
+    description: z.string().max(5000).optional().or(z.literal("")),
     ein: z
       .string()
       .regex(/^[0-9]{2}-?[0-9]{7}$/i, "EIN must be 9 digits (e.g., 12-3456789)")
       .optional()
       .or(z.literal("")),
-    incorporation: z.string().max(120).optional().or(z.literal("")),
     rep: z.string().max(120).optional().or(z.literal("")),
+    email: z.string().email("Must be a valid email").optional().or(z.literal("")),
     phone: z.string().max(60).optional().or(z.literal("")),
     address: z.string().max(500).optional().or(z.literal("")),
-    coverUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+    addressStreet: z.string().max(400).optional().or(z.literal("")),
+    addressCity: z.string().max(200).optional().or(z.literal("")),
+    addressState: z.string().max(200).optional().or(z.literal("")),
+    addressPostal: z.string().max(40).optional().or(z.literal("")),
+    addressCountry: z.string().max(120).optional().or(z.literal("")),
     logoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
     publicUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
     twitter: z.string().max(200).optional().or(z.literal("")),
@@ -114,15 +128,11 @@ export function OrgProfileCard({ initial }: { initial: OrgProfile }) {
     mission: z.string().max(5000).optional().or(z.literal("")),
     need: z.string().max(5000).optional().or(z.literal("")),
     values: z.string().max(5000).optional().or(z.literal("")),
-    people: z.string().max(5000).optional().or(z.literal("")),
     programs: z.string().max(5000).optional().or(z.literal("")),
     reports: z.string().max(5000).optional().or(z.literal("")),
-    toolkit: z.string().max(5000).optional().or(z.literal("")),
-    supporters: z.string().max(5000).optional().or(z.literal("")),
-    readinessScore: z.string().optional().or(z.literal("")),
   })
 
-  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  function handleChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.currentTarget
     setCompany((prev) => ({ ...prev, [name]: value }))
     setDirty(true)
@@ -166,20 +176,54 @@ export function OrgProfileCard({ initial }: { initial: OrgProfile }) {
     return () => window.removeEventListener("beforeunload", handler)
   }, [dirty])
 
+  const headerSquares: Array<[number, number]> = [
+    [4, 4],
+    [5, 1],
+    [8, 2],
+    [5, 3],
+    [5, 5],
+    [10, 10],
+    [12, 15],
+    [15, 10],
+    [10, 15],
+    [15, 10],
+    [10, 15],
+    [15, 10],
+  ]
+
+  const addressLines = buildAddressLines({
+    street: company.addressStreet,
+    city: company.addressCity,
+    state: company.addressState,
+    postal: company.addressPostal,
+    country: company.addressCountry,
+    fallback: company.address,
+  })
+
   return (
     <Card className="overflow-hidden bg-card/60 py-0 pb-6">
       {/* Header cover */}
-      <div className="relative h-36 w-full bg-muted">
-        {company.coverUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={company.coverUrl} alt="Cover" className="block h-full w-full object-cover" />
-        ) : (
-          <div className="h-full w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-muted via-background to-background" />
-        )}
+      <div className="relative h-36 w-full overflow-hidden rounded-b-xl border-b bg-background">
+        <GridPattern
+          squares={headerSquares}
+          className="inset-x-0 inset-y-[-30%] h-[200%] skew-y-12 opacity-70 [mask-image:radial-gradient(320px_circle_at_center,white,transparent)]"
+        />
+      </div>
 
-        {editMode ? (
-          <div className="absolute right-3 top-3 flex items-center gap-2">
-            <label className="cursor-pointer">
+      {/* Header with logo overlay and actions */}
+      <div className="relative p-6">
+        {/* Logo overlay + controls */}
+        <div className="absolute -top-12 left-6 flex items-center gap-3">
+          <div className="h-24 w-24 overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+            {company.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={company.logoUrl} alt="Logo" className="h-full w-full object-cover" />
+            ) : (
+              <div className="grid h-full w-full place-items-center text-sm text-muted-foreground">LOGO</div>
+            )}
+          </div>
+          {editMode ? (
+            <label className="inline-flex self-center">
               <input
                 type="file"
                 accept="image/*"
@@ -189,85 +233,41 @@ export function OrgProfileCard({ initial }: { initial: OrgProfile }) {
                   if (!f) return
                   const fd = new FormData()
                   fd.append("file", f)
-                  setIsUploadingCover(true)
-                  const toastId = toast.loading("Uploading cover…")
+                  setIsUploadingLogo(true)
+                  const toastId = toast.loading("Uploading image…")
                   try {
-                    const res = await fetch(`/api/account/org-media?kind=cover`, { method: "POST", body: fd })
+                    const res = await fetch(`/api/account/org-media?kind=logo`, { method: "POST", body: fd })
                     if (!res.ok) {
                       const err = await res.json().catch(() => ({}))
                       throw new Error(err?.error || "Upload failed")
                     }
                     const { url } = await res.json()
-                    setCompany((p) => ({ ...p, coverUrl: url }))
+                    setCompany((p) => ({ ...p, logoUrl: url }))
                     setDirty(true)
-                    toast.success("Cover uploaded", { id: toastId })
+                    toast.success("Image uploaded", { id: toastId })
                   } catch (err: unknown) {
                     toast.error(err instanceof Error ? err.message : "Upload failed", { id: toastId })
                   } finally {
-                    setIsUploadingCover(false)
+                    setIsUploadingLogo(false)
                   }
                 }}
               />
-              <Button size="sm" variant="outline" disabled={isUploadingCover}>
-                {isUploadingCover ? <span className="inline-flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> Cover…</span> : "Upload cover"}
+              <Button size="sm" variant="outline" disabled={isUploadingLogo}>
+                {isUploadingLogo ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="size-4 animate-spin" /> Image…
+                  </span>
+                ) : (
+                  "Add image"
+                )}
               </Button>
             </label>
-          </div>
-        ) : null}
-      </div>
-
-      {/* Header with logo overlay and actions */}
-      <div className="relative p-6">
-        {/* Logo overlay */}
-        <div className="absolute -top-12 left-6 h-24 w-24 overflow-hidden rounded-xl border border-border bg-background shadow-sm">
-          {company.logoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={company.logoUrl} alt="Logo" className="h-full w-full object-cover" />
-          ) : (
-            <div className="grid h-full w-full place-items-center text-sm text-muted-foreground">LOGO</div>
-          )}
-          {editMode ? (
-            <div className="absolute inset-x-0 bottom-0 flex justify-center bg-background/60 p-1">
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={async (e) => {
-                    const f = e.currentTarget.files?.[0]
-                    if (!f) return
-                    const fd = new FormData()
-                    fd.append("file", f)
-                    setIsUploadingLogo(true)
-                    const toastId = toast.loading("Uploading logo…")
-                    try {
-                      const res = await fetch(`/api/account/org-media?kind=logo`, { method: "POST", body: fd })
-                      if (!res.ok) {
-                        const err = await res.json().catch(() => ({}))
-                        throw new Error(err?.error || "Upload failed")
-                      }
-                      const { url } = await res.json()
-                      setCompany((p) => ({ ...p, logoUrl: url }))
-                      setDirty(true)
-                      toast.success("Logo uploaded", { id: toastId })
-                    } catch (err: unknown) {
-                      toast.error(err instanceof Error ? err.message : "Upload failed", { id: toastId })
-                    } finally {
-                      setIsUploadingLogo(false)
-                    }
-                  }}
-                />
-                <Button size="sm" variant="outline" disabled={isUploadingLogo}>
-                  {isUploadingLogo ? <span className="inline-flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> Logo…</span> : "Upload logo"}
-                </Button>
-              </label>
-            </div>
           ) : null}
         </div>
 
         <div className="mt-14">
           <h2 className="text-2xl font-semibold tracking-tight">{company.name || "Organization"}</h2>
-          <p className="text-sm text-muted-foreground">{company.entity || "—"}</p>
+          <p className="text-sm text-muted-foreground">{company.tagline || "—"}</p>
         </div>
 
         <div className="absolute right-6 top-6 flex gap-2">
@@ -328,23 +328,27 @@ export function OrgProfileCard({ initial }: { initial: OrgProfile }) {
 
           <TabsContent value="company" className="grid gap-8 p-6">
             <Section title="Company details">
-              <Field label="Organization name">
-                {editMode ? (
+              {editMode ? (
+                <ProfileField label="Organization name">
                   <Input name="name" value={company.name ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.name)} />
-                ) : (
-                  <FieldText text={company.name} />
-                )}
-                {errors.name ? <p className="text-xs text-destructive">{errors.name}</p> : null}
-              </Field>
-              <Field label="Entity type">
+                  {errors.name ? <p className="text-xs text-destructive">{errors.name}</p> : null}
+                </ProfileField>
+              ) : null}
+              {editMode ? (
+                <ProfileField label="Tag line">
+                  <Input name="tagline" value={company.tagline ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.tagline)} />
+                  {errors.tagline ? <p className="text-xs text-destructive">{errors.tagline}</p> : null}
+                </ProfileField>
+              ) : null}
+              <ProfileField label="Description">
                 {editMode ? (
-                  <Input name="entity" value={company.entity ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.entity)} />
+                  <Textarea name="description" value={company.description ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.description)} />
                 ) : (
-                  <FieldText text={company.entity} />
+                  <FieldText text={company.description} multiline />
                 )}
-                {errors.entity ? <p className="text-xs text-destructive">{errors.entity}</p> : null}
-              </Field>
-              <Field label="EIN">
+                {errors.description ? <p className="text-xs text-destructive">{errors.description}</p> : null}
+              </ProfileField>
+              <ProfileField label="EIN">
                 {editMode ? (
                   <Input name="ein" value={company.ein ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.ein)} />
                 ) : (
@@ -354,56 +358,148 @@ export function OrgProfileCard({ initial }: { initial: OrgProfile }) {
                 {editMode ? (
                   <p className="text-xs text-muted-foreground">Format: 12-3456789</p>
                 ) : null}
-              </Field>
-              <Field label="Readiness score (1–5)">
-                {editMode ? (
-                  <Input name="readinessScore" type="number" min={1} max={5} value={company.readinessScore ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.readinessScore)} />
-                ) : (
-                  <p className="text-sm">{company.readinessScore ? `${company.readinessScore}/5` : <span className="text-muted-foreground">—</span>}</p>
-                )}
-                {errors.readinessScore ? <p className="text-xs text-destructive">{errors.readinessScore}</p> : null}
-              </Field>
-              <Field label="Incorporation date">
-                {editMode ? (
-                  <Input name="incorporation" value={company.incorporation ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.incorporation)} />
-                ) : (
-                  <FieldText text={company.incorporation} />
-                )}
-                {errors.incorporation ? <p className="text-xs text-destructive">{errors.incorporation}</p> : null}
-              </Field>
+              </ProfileField>
             </Section>
 
             <Section title="Contact">
-              <Field label="Representative">
+              <ProfileField label="Representative">
                 {editMode ? (
                   <Input name="rep" value={company.rep ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.rep)} />
                 ) : (
                   <FieldText text={company.rep} />
                 )}
                 {errors.rep ? <p className="text-xs text-destructive">{errors.rep}</p> : null}
-              </Field>
-              <Field label="Phone">
+              </ProfileField>
+              <ProfileField label="Email">
+                {editMode ? (
+                  <Input name="email" type="email" value={company.email ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.email)} />
+                ) : (
+                  <LinkText text={company.email} />
+                )}
+                {errors.email ? <p className="text-xs text-destructive">{errors.email}</p> : null}
+              </ProfileField>
+              <ProfileField label="Phone">
                 {editMode ? (
                   <Input name="phone" value={company.phone ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.phone)} />
                 ) : (
                   <FieldText text={company.phone} />
                 )}
                 {errors.phone ? <p className="text-xs text-destructive">{errors.phone}</p> : null}
-              </Field>
-              <Field label="Address">
+              </ProfileField>
+              {editMode ? (
+                <FieldSet className="gap-4 rounded-lg border border-dashed p-4">
+                  <FieldLegend>Organization address</FieldLegend>
+                  <FieldHelperText>
+                    Provide a mailing address for invoices and communications.
+                  </FieldHelperText>
+                  <FieldGroup className="gap-4">
+                    <FieldRow>
+                      <FieldLabel htmlFor="addressStreet">Street address</FieldLabel>
+                      <Input
+                        id="addressStreet"
+                        name="addressStreet"
+                        value={company.addressStreet ?? ""}
+                        onChange={handleChange}
+                        placeholder="123 Main St"
+                      />
+                    </FieldRow>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FieldRow>
+                        <FieldLabel htmlFor="addressCity">City</FieldLabel>
+                        <Input
+                          id="addressCity"
+                          name="addressCity"
+                          value={company.addressCity ?? ""}
+                          onChange={handleChange}
+                          placeholder="New York"
+                        />
+                      </FieldRow>
+                      <FieldRow>
+                        <FieldLabel htmlFor="addressState">State / Region</FieldLabel>
+                        <Input
+                          id="addressState"
+                          name="addressState"
+                          value={company.addressState ?? ""}
+                          onChange={handleChange}
+                          placeholder="NY"
+                        />
+                      </FieldRow>
+                    </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <FieldRow>
+                        <FieldLabel htmlFor="addressPostal">Postal code</FieldLabel>
+                        <Input
+                          id="addressPostal"
+                          name="addressPostal"
+                          value={company.addressPostal ?? ""}
+                          onChange={handleChange}
+                          placeholder="10001"
+                        />
+                      </FieldRow>
+                      <FieldRow>
+                        <FieldLabel htmlFor="addressCountry">Country</FieldLabel>
+                        <Input
+                          id="addressCountry"
+                          name="addressCountry"
+                          value={company.addressCountry ?? ""}
+                          onChange={handleChange}
+                          placeholder="United States"
+                        />
+                      </FieldRow>
+                    </div>
+                  </FieldGroup>
+                </FieldSet>
+              ) : addressLines.length > 0 ? (
+                <ProfileField label="Address">
+                  <AddressDisplay lines={addressLines} />
+                </ProfileField>
+              ) : null}
+            </Section>
+
+            <Section title="Story & impact">
+              <ProfileField label="Vision">
                 {editMode ? (
-                  <Textarea name="address" value={company.address ?? ""} onChange={handleChange} rows={2} aria-invalid={Boolean(errors.address)} />
+                  <Textarea name="vision" value={company.vision ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.vision)} />
                 ) : (
-                  <FieldText text={company.address} multiline />
+                  <FieldText text={company.vision} multiline />
                 )}
-                {errors.address ? <p className="text-xs text-destructive">{errors.address}</p> : null}
-              </Field>
+                {errors.vision ? <p className="text-xs text-destructive">{errors.vision}</p> : null}
+              </ProfileField>
+              <ProfileField label="Need statement">
+                {editMode ? (
+                  <Textarea name="need" value={company.need ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.need)} />
+                ) : (
+                  <FieldText text={company.need} multiline />
+                )}
+                {errors.need ? <p className="text-xs text-destructive">{errors.need}</p> : null}
+              </ProfileField>
+              <ProfileField label="Mission">
+                {editMode ? (
+                  <Textarea name="mission" value={company.mission ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.mission)} />
+                ) : (
+                  <FieldText text={company.mission} multiline />
+                )}
+                {errors.mission ? <p className="text-xs text-destructive">{errors.mission}</p> : null}
+              </ProfileField>
+              <ProfileField label="Values">
+                {editMode ? (
+                  <Textarea name="values" value={company.values ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.values)} />
+                ) : (
+                  <TagList value={company.values} />
+                )}
+                {errors.values ? <p className="text-xs text-destructive">{errors.values}</p> : null}
+                {editMode ? (
+                  <p className="text-xs text-muted-foreground">
+                    Separate multiple values with commas (e.g., compassion, integrity, innovation).
+                  </p>
+                ) : null}
+              </ProfileField>
             </Section>
           </TabsContent>
 
           <TabsContent value="branding" className="grid gap-8 p-6">
             <Section title="Branding & social">
-              <Field label="Public URL">
+              <ProfileField label="Public URL">
                 {editMode ? (
                   <Input name="publicUrl" value={company.publicUrl ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.publicUrl)} />
                 ) : (
@@ -413,8 +509,8 @@ export function OrgProfileCard({ initial }: { initial: OrgProfile }) {
                 {editMode ? (
                   <p className="text-xs text-muted-foreground">Include full URL with https://</p>
                 ) : null}
-              </Field>
-              <Field label="Twitter">
+              </ProfileField>
+              <ProfileField label="Twitter">
                 {editMode ? (
                   <Input name="twitter" value={company.twitter ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.twitter)} />
                 ) : (
@@ -424,8 +520,8 @@ export function OrgProfileCard({ initial }: { initial: OrgProfile }) {
                 {editMode ? (
                   <p className="text-xs text-muted-foreground">URL (e.g., https://x.com/yourhandle)</p>
                 ) : null}
-              </Field>
-              <Field label="Facebook">
+              </ProfileField>
+              <ProfileField label="Facebook">
                 {editMode ? (
                   <Input name="facebook" value={company.facebook ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.facebook)} />
                 ) : (
@@ -435,8 +531,8 @@ export function OrgProfileCard({ initial }: { initial: OrgProfile }) {
                 {editMode ? (
                   <p className="text-xs text-muted-foreground">URL (e.g., https://facebook.com/yourpage)</p>
                 ) : null}
-              </Field>
-              <Field label="LinkedIn">
+              </ProfileField>
+              <ProfileField label="LinkedIn">
                 {editMode ? (
                   <Input name="linkedin" value={company.linkedin ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.linkedin)} />
                 ) : (
@@ -446,126 +542,50 @@ export function OrgProfileCard({ initial }: { initial: OrgProfile }) {
                 {editMode ? (
                   <p className="text-xs text-muted-foreground">URL (e.g., https://linkedin.com/company/yourorg)</p>
                 ) : null}
-              </Field>
-              <Field label="Logo URL">
+              </ProfileField>
+              <ProfileField label="Logo URL">
                 {editMode ? (
                   <Input name="logoUrl" value={company.logoUrl ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.logoUrl)} />
                 ) : (
                   <FieldText text={company.logoUrl} />
                 )}
                 {errors.logoUrl ? <p className="text-xs text-destructive">{errors.logoUrl}</p> : null}
-              </Field>
-              <Field label="Cover URL">
-                {editMode ? (
-                  <Input name="coverUrl" value={company.coverUrl ?? ""} onChange={handleChange} aria-invalid={Boolean(errors.coverUrl)} />
-                ) : (
-                  <FieldText text={company.coverUrl} />
-                )}
-                {errors.coverUrl ? <p className="text-xs text-destructive">{errors.coverUrl}</p> : null}
-              </Field>
-            </Section>
-          </TabsContent>
-
-          <TabsContent value="about" className="grid gap-8 p-6">
-            <Section title="About">
-              <Field label="Vision">
-                {editMode ? (
-                  <Textarea name="vision" value={company.vision ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.vision)} />
-                ) : (
-                  <FieldText text={company.vision} multiline />
-                )}
-                {errors.vision ? <p className="text-xs text-destructive">{errors.vision}</p> : null}
-              </Field>
-              <Field label="Need statement">
-                {editMode ? (
-                  <Textarea name="need" value={company.need ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.need)} />
-                ) : (
-                  <FieldText text={company.need} multiline />
-                )}
-                {errors.need ? <p className="text-xs text-destructive">{errors.need}</p> : null}
-              </Field>
-              <Field label="Mission">
-                {editMode ? (
-                  <Textarea name="mission" value={company.mission ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.mission)} />
-                ) : (
-                  <FieldText text={company.mission} multiline />
-                )}
-                {errors.mission ? <p className="text-xs text-destructive">{errors.mission}</p> : null}
-              </Field>
-              <Field label="Values">
-                {editMode ? (
-                  <Textarea name="values" value={company.values ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.values)} />
-                ) : (
-                  <TagList value={company.values} />
-                )}
-                {errors.values ? <p className="text-xs text-destructive">{errors.values}</p> : null}
-              </Field>
+              </ProfileField>
             </Section>
           </TabsContent>
 
           <TabsContent value="people" className="grid gap-8 p-6">
-            <Section title="People">
-              <Field label="People">
-                {editMode ? (
-                  <Textarea name="people" value={company.people ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.people)} />
-                ) : (
-                  <TagList value={company.people} />
-                )}
-                {errors.people ? <p className="text-xs text-destructive">{errors.people}</p> : null}
-              </Field>
-            </Section>
+            <PeopleSection editMode={editMode} people={people} />
           </TabsContent>
 
           <TabsContent value="programs" className="grid gap-8 p-6">
             <Section title="Programs">
-              <Field label="Programs">
+              <ProfileField label="Programs">
                 {editMode ? (
                   <Textarea name="programs" value={company.programs ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.programs)} />
                 ) : (
                   <TagList value={company.programs} />
                 )}
                 {errors.programs ? <p className="text-xs text-destructive">{errors.programs}</p> : null}
-              </Field>
+              </ProfileField>
             </Section>
           </TabsContent>
 
           <TabsContent value="reports" className="grid gap-8 p-6">
             <Section title="Reports">
-              <Field label="Reports">
+              <ProfileField label="Reports">
                 {editMode ? (
                   <Textarea name="reports" value={company.reports ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.reports)} />
                 ) : (
                   <FieldText text={company.reports} multiline />
                 )}
                 {errors.reports ? <p className="text-xs text-destructive">{errors.reports}</p> : null}
-              </Field>
-            </Section>
-          </TabsContent>
-
-          <TabsContent value="toolkit" className="grid gap-8 p-6">
-            <Section title="Toolkit">
-              <Field label="Toolkit">
-                {editMode ? (
-                  <Textarea name="toolkit" value={company.toolkit ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.toolkit)} />
-                ) : (
-                  <FieldText text={company.toolkit} multiline />
-                )}
-                {errors.toolkit ? <p className="text-xs text-destructive">{errors.toolkit}</p> : null}
-              </Field>
+              </ProfileField>
             </Section>
           </TabsContent>
 
           <TabsContent value="supporters" className="grid gap-8 p-6">
-            <Section title="Supporters">
-              <Field label="Supporters">
-                {editMode ? (
-                  <Textarea name="supporters" value={company.supporters ?? ""} onChange={handleChange} rows={3} aria-invalid={Boolean(errors.supporters)} />
-                ) : (
-                  <TagList value={company.supporters} />
-                )}
-                {errors.supporters ? <p className="text-xs text-destructive">{errors.supporters}</p> : null}
-              </Field>
-            </Section>
+            <SupportersSection editMode={editMode} people={people} />
           </TabsContent>
         </Tabs>
       </CardContent>
@@ -573,7 +593,12 @@ export function OrgProfileCard({ initial }: { initial: OrgProfile }) {
   )
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function ProfileField({ label, children }: { label: string; children: ReactNode }) {
+  const childArray = Children.toArray(children)
+  if (childArray.length === 0) {
+    return null
+  }
+
   return (
     <div className="grid gap-1">
       <Label className="text-xs text-muted-foreground">{label}</Label>
@@ -583,24 +608,89 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function FieldText({ text, multiline = false }: { text?: string | null; multiline?: boolean }) {
+  const hasValue = Boolean(text && text.trim().length > 0)
   if (multiline) {
-    return <p className="whitespace-pre-wrap text-sm">{text || <span className="text-muted-foreground">—</span>}</p>
+    return hasValue ? <p className="whitespace-pre-wrap text-sm">{text}</p> : null
   }
-  return <p className="text-sm">{text || <span className="text-muted-foreground">—</span>}</p>
+  return hasValue ? <p className="text-sm">{text}</p> : null
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  const childArray = Children.toArray(children).filter(Boolean)
+  if (childArray.length === 0) return null
+
   return (
     <section className="space-y-3" aria-label={title}>
       <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
-      <div className="grid gap-3 md:grid-cols-2">{children}</div>
+      <div className="grid gap-3 md:grid-cols-2">{childArray}</div>
+    </section>
+  )
+}
+
+function PeopleSection({ editMode, people }: { editMode: boolean; people: OrgPersonWithImage[] }) {
+  const staff = people.filter((p) => p.category === "staff")
+  const board = people.filter((p) => p.category === "board")
+
+  const renderGroup = (
+    label: string,
+    group: OrgPersonWithImage[],
+    editMessage: string,
+    viewMessage: string,
+  ) => (
+    <div className="space-y-2" key={label}>
+      <h4 className="text-sm font-medium text-muted-foreground">{label}</h4>
+      <PeopleShowcase
+        people={group}
+        allPeople={people}
+        emptyMessage={editMode ? editMessage : viewMessage}
+      />
+    </div>
+  )
+
+  return (
+    <section className="space-y-4" aria-label="People">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-medium text-muted-foreground">People</h3>
+        <Button asChild size="sm" variant="outline">
+          <Link href="/people">Manage in People</Link>
+        </Button>
+      </div>
+      <div className="space-y-4">
+        {renderGroup("Staff", staff, "No staff yet. Add team members from the People page.", "Staff will appear after they are added in the People page.")}
+        {renderGroup("Board", board, "No board members yet. Add them from the People page.", "Board members will appear after they are added in the People page.")}
+      </div>
+    </section>
+  )
+}
+
+function SupportersSection({ editMode, people }: { editMode: boolean; people: OrgPersonWithImage[] }) {
+  const supporters = people.filter((p) => p.category === "supporter")
+
+  return (
+    <section className="space-y-3" aria-label="Supporters">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-medium text-muted-foreground">Supporters</h3>
+        <Button asChild size="sm" variant="outline">
+          <Link href="/people">Manage in People</Link>
+        </Button>
+      </div>
+      <SupportersShowcase
+        supporters={supporters}
+        allPeople={people}
+        emptyMessage={editMode ? "No supporters yet. Add supporters from the People page." : "Supporters will appear here once they are added in the People page."}
+      />
+      {supporters.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          Updates to supporters on the People page are reflected here automatically.
+        </p>
+      ) : null}
     </section>
   )
 }
 
 function TagList({ value }: { value?: string | null }) {
   const items = normalizeToList(value)
-  if (items.length === 0) return <span className="text-muted-foreground">—</span>
+  if (items.length === 0) return null
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((it, i) => {
@@ -632,9 +722,9 @@ function normalizeToList(value?: string | null): string[] {
 }
 
 function LinkText({ text }: { text?: string | null }) {
-  if (!text) return <span className="text-muted-foreground">—</span>
+  if (!text) return null
   const v = text.trim()
-  if (!v) return <span className="text-muted-foreground">—</span>
+  if (!v) return null
   const isUrl = /^https?:\/\//i.test(v)
   return isUrl ? (
     <a href={v} target="_blank" rel="noopener" className="text-sm underline underline-offset-2">{shortUrl(v)}</a>
@@ -651,4 +741,46 @@ function shortUrl(url: string): string {
   } catch {
     return url
   }
+}
+
+function AddressDisplay({ lines }: { lines: string[] }) {
+  return (
+    <div className="space-y-0.5 text-sm">
+      {lines.map((line, idx) => (
+        <p key={idx}>{line}</p>
+      ))}
+    </div>
+  )
+}
+
+function buildAddressLines({
+  street,
+  city,
+  state,
+  postal,
+  country,
+  fallback,
+}: {
+  street?: string | null
+  city?: string | null
+  state?: string | null
+  postal?: string | null
+  country?: string | null
+  fallback?: string | null
+}): string[] {
+  const lines: string[] = []
+  if (street && street.trim()) lines.push(street.trim())
+  const locality = [city, state, postal].filter((part) => part && String(part).trim().length > 0).map((part) => String(part).trim())
+  if (locality.length > 0) lines.push(locality.join(", "))
+  if (country && country.trim()) lines.push(country.trim())
+
+  if (lines.length === 0 && fallback && fallback.trim()) {
+    fallback
+      .split(/\n+/)
+      .map((segment) => segment.trim())
+      .filter(Boolean)
+      .forEach((segment) => lines.push(segment))
+  }
+
+  return lines
 }

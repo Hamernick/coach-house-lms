@@ -21,17 +21,15 @@ export async function SiteHeader({ breadcrumbs }: { breadcrumbs?: ReactNode }) {
     throw userError
   }
 
-  let displayName: string | null = null
-  const email: string | null = user?.email ?? null
-
+  let isAdmin = false
   if (user) {
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name")
+      .select("full_name, role")
       .eq("id", user.id)
-      .maybeSingle<{ full_name: string | null }>()
+      .maybeSingle<{ full_name: string | null; role: string | null }>()
 
-    displayName = profile?.full_name ?? (user.user_metadata?.full_name as string | undefined) ?? null
+    isAdmin = (profile?.role ?? user.app_metadata?.role) === 'admin'
   }
 
   return (
@@ -42,11 +40,13 @@ export async function SiteHeader({ breadcrumbs }: { breadcrumbs?: ReactNode }) {
         <div className="flex min-w-0 items-center text-sm">{breadcrumbs}</div>
         <div className="ml-auto flex items-center gap-2">
           <ThemeToggle />
-          <Button variant="ghost" size="sm" asChild>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-sm">
-              Support
-            </a>
-          </Button>
+          {!isAdmin ? (
+            <Button variant="ghost" size="sm" asChild>
+              <a href={`mailto:${SUPPORT_EMAIL}`} className="text-sm">
+                Support
+              </a>
+            </Button>
+          ) : null}
           {user ? null : (
             <Button variant="outline" size="sm" asChild>
               <Link href="/login">Sign in</Link>

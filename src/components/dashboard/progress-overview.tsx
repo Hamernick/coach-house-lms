@@ -32,7 +32,7 @@ export async function ProgressOverview() {
     .from("modules")
     .select("id")
     .in("class_id", classIds)
-    .eq("published", true)
+    .eq("is_published", true)
 
   const moduleIds = (modules ?? []).map((m) => m.id)
   const total = moduleIds.length
@@ -64,4 +64,3 @@ export async function ProgressOverview() {
     </Card>
   )
 }
-

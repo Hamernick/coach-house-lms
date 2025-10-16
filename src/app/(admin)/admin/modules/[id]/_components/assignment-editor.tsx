@@ -39,7 +39,7 @@ export function AssignmentEditor({
           await onSave(fd)
           setError(null)
           setDirty(false)
-        } catch (e) {
+        } catch {
           setError("Failed to save assignment")
         }
       })
@@ -58,7 +58,7 @@ export function AssignmentEditor({
         await onSave(fd)
         setError(null)
         setDirty(false)
-      } catch (_e) {
+      } catch {
         setError("Failed to save assignment")
       }
     })

@@ -18,7 +18,7 @@ export async function GET(_request: Request, context: any) {
   const admin = createSupabaseAdminClient()
   const { data, error } = await admin
     .from("classes")
-    .select("*, modules ( id, title, idx, slug, published )")
+    .select("*, modules ( id, title, idx, slug, is_published )")
     .eq("id", params.id)
     .maybeSingle()
 
@@ -43,7 +43,11 @@ export async function PUT(request: Request, context: any) {
   }
 
   const admin = createSupabaseAdminClient()
-  const updatePayload: Database["public"]["Tables"]["classes"]["Update"] = parsed.data
+  const updatePayload: Database["public"]["Tables"]["classes"]["Update"] = {
+    ...parsed.data,
+    ...(parsed.data.published !== undefined ? { is_published: parsed.data.published } : {}),
+  }
+  delete (updatePayload as Record<string, unknown>).published
 
   const { data, error } = await admin
     .from("classes" satisfies keyof Database["public"]["Tables"])

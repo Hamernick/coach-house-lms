@@ -1,9 +1,11 @@
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export type SidebarModule = {
   id: string
   index: number
   title: string
+  description: string | null
   published: boolean
 }
 
@@ -11,30 +13,50 @@ export type SidebarClass = {
   id: string
   slug: string
   title: string
+  description: string | null
   published: boolean
   position?: number | null
   modules: SidebarModule[]
 }
 
-/**
- * Fetch classes + modules for the Academy sidebar.
- * - Includes drafts when includeDrafts=true (admins)
- * - Falls back across legacy/new column names
- */
-export async function fetchSidebarTree({ includeDrafts }: { includeDrafts: boolean }): Promise<SidebarClass[]> {
-  const supabase = await createSupabaseServerClient()
+type FetchSidebarOptions = {
+  includeDrafts: boolean
+  forceAdmin?: boolean
+}
 
-  // Prefer new columns; fall back to legacy on 42703 (undefined_column)
+/**
+ * Fetch classes + modules for the Academy sidebar / training shell.
+ * - `includeDrafts=true` keeps unpublished items (used for admins or preview modes)
+ * - `forceAdmin=true` uses the service-role client to bypass RLS (needed for learners).
+ */
+export async function fetchSidebarTree({
+  includeDrafts,
+  forceAdmin = false,
+}: FetchSidebarOptions): Promise<SidebarClass[]> {
+  const supabase = forceAdmin
+    ? (() => {
+        try {
+          return createSupabaseAdminClient()
+        } catch {
+          return null
+        }
+      })()
+    : null
+
+  const client = supabase ?? (await createSupabaseServerClient())
+
   type ClassRow = {
     id: string
     slug: string
     title: string
+    description?: string | null
     is_published?: boolean | null
     published?: boolean | null
     position?: number | null
     modules: Array<{
       id: string
       title: string
+      description?: string | null
       index_in_class?: number | null
       idx?: number | null
       is_published?: boolean | null
@@ -43,18 +65,21 @@ export async function fetchSidebarTree({ includeDrafts }: { includeDrafts: boole
   }
 
   let classes: ClassRow[] | null = null
+
   {
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from("classes")
-      .select("id, slug, title, is_published, position, modules ( id, title, index_in_class, is_published )")
+      .select(
+        "id, slug, title, description, is_published, position, modules ( id, title, description, index_in_class, idx, is_published )"
+      )
+
     if (error) {
-      // Fallback to legacy columns
       if ((error as { code?: string }).code === "42703") {
-        const { data: legacy, error: err2 } = await supabase
+        const { data: fallback, error: err2 } = await client
           .from("classes")
-          .select("id, slug, title, published, position, modules ( id, title, idx, published )")
+          .select("id, slug, title, description, published, position, modules ( id, title, description, idx, published )")
         if (err2) throw err2
-        classes = legacy as unknown as ClassRow[]
+        classes = fallback as unknown as ClassRow[]
       } else {
         throw error
       }
@@ -63,51 +88,75 @@ export async function fetchSidebarTree({ includeDrafts }: { includeDrafts: boole
     }
   }
 
-  const normalized: SidebarClass[] = (classes ?? []).map((c) => {
-    const classPublished = (typeof c.is_published === "boolean" ? c.is_published : c.published) ?? false
-    const mods = (c.modules ?? []).map((m) => {
-      const idx = (typeof m.index_in_class === "number" && Number.isFinite(m.index_in_class))
-        ? m.index_in_class!
-        : (typeof m.idx === "number" && Number.isFinite(m.idx)) ? m.idx! : 0
-      const pub = (typeof m.is_published === "boolean" ? m.is_published : m.published) ?? true
+  const normalized: SidebarClass[] = (classes ?? []).map((klass) => {
+    const classPublished =
+      (typeof klass.is_published === "boolean" ? klass.is_published : klass.published) ?? false
+
+    const modulesRaw = (klass.modules ?? []).map((mod) => {
+      const rawIndex =
+        typeof mod.index_in_class === "number" && Number.isFinite(mod.index_in_class)
+          ? mod.index_in_class
+          : typeof mod.idx === "number" && Number.isFinite(mod.idx)
+            ? mod.idx
+            : 1
+      const modulePublished =
+        (typeof mod.is_published === "boolean" ? mod.is_published : mod.published) ?? true
+
       return {
-        id: m.id,
-        index: idx,
-        title: m.title,
-        published: pub,
+        id: mod.id,
+        index: rawIndex ?? 1,
+        title: mod.title,
+        description: mod.description ?? null,
+        published: modulePublished,
       } satisfies SidebarModule
     })
-    // sort modules by index
-    mods.sort((a, b) => a.index - b.index)
+
+    const byIndex = new Map<number, SidebarModule>()
+    for (const mod of modulesRaw) {
+      const safeIndex = Number.isFinite(mod.index) && mod.index > 0 ? mod.index : 1
+      if (!byIndex.has(safeIndex)) {
+        byIndex.set(safeIndex, { ...mod, index: safeIndex })
+      }
+    }
+    const deduped = Array.from(byIndex.values()).sort((a, b) => a.index - b.index)
 
     return {
-      id: c.id,
-      slug: c.slug,
-      title: c.title,
+      id: klass.id,
+      slug: klass.slug,
+      title: klass.title,
+      description: ("description" in klass ? klass.description ?? null : null),
       published: classPublished,
-      position: typeof (c as { position?: number | null }).position === 'number' ? (c as { position?: number | null }).position : null,
-      modules: mods,
-    } satisfies SidebarClass
+      position: typeof klass.position === "number" ? klass.position : null,
+      modules: deduped,
+    }
   })
 
-  // If not admin, only published classes/modules should appear; RLS should already limit,
-  // but we filter as a safeguard.
   const filtered = includeDrafts
     ? normalized
     : normalized
-        .filter((c) => c.published)
-        .map((c) => ({
-          ...c,
-          modules: c.modules.filter((m) => m.published),
+        .filter((klass) => klass.published)
+        .map((klass) => ({
+          ...klass,
+          modules: klass.modules.filter((mod) => mod.published),
         }))
 
-  // Sort classes by position then title as stable default
-  filtered.sort((a, b) => {
-    const pa = typeof a.position === 'number' ? a.position! : 9999
-    const pb = typeof b.position === 'number' ? b.position! : 9999
+  const seenSlugs = new Set<string>()
+  const uniqueBase = filtered.filter((klass) => {
+    if (seenSlugs.has(klass.slug)) return false
+    seenSlugs.add(klass.slug)
+    return true
+  })
+
+  const unique = uniqueBase
+    .filter((klass) => !/^session\s+\d+\s*[–-]\s*/i.test(klass.title))
+    .filter((klass) => (forceAdmin ? klass.modules.length > 0 : true))
+
+  unique.sort((a, b) => {
+    const pa = typeof a.position === "number" ? a.position : Number.MAX_SAFE_INTEGER
+    const pb = typeof b.position === "number" ? b.position : Number.MAX_SAFE_INTEGER
     if (pa !== pb) return pa - pb
     return a.title.localeCompare(b.title)
   })
 
-  return filtered
+  return unique
 }

@@ -33,9 +33,10 @@ type NavUserProps = {
     email: string | null
     avatar?: string | null
   }
+  isAdmin?: boolean
 }
 
-export function NavUser({ user }: NavUserProps) {
+export function NavUser({ user, isAdmin = false }: NavUserProps) {
   const { isMobile } = useSidebar()
   const supabase = useSupabaseClient()
   const router = useRouter()
@@ -104,13 +105,14 @@ export function NavUser({ user }: NavUserProps) {
                 <IconUserCircle />
                 Account settings
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <a className="flex w-full items-center gap-2" href="/billing" onClick={(e) => { /* ensure client nav */ }}>
-                  <IconCreditCard />
-                  Billing
-                </a>
-              </DropdownMenuItem>
-              
+              {!isAdmin ? (
+                <DropdownMenuItem asChild>
+                  <a className="flex w-full items-center gap-2" href="/billing">
+                    <IconCreditCard />
+                    Billing
+                  </a>
+                </DropdownMenuItem>
+              ) : null}
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem

@@ -10,7 +10,7 @@ const createClassSchema = z.object({
   title: z.string().min(1),
   slug: z.string().min(1),
   description: z.string().optional(),
-  published: z.boolean().default(false),
+  published: z.boolean().optional(),
 })
 
 export async function GET(request: NextRequest) {
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     title: parsed.data.title,
     slug: parsed.data.slug,
     description: parsed.data.description ?? null,
-    published: parsed.data.published,
+    is_published: parsed.data.published ?? false,
   }
 
   const { data, error } = await admin

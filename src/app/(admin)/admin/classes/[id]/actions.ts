@@ -8,6 +8,13 @@ import { redirect } from "next/navigation"
 import { requireAdmin } from "@/lib/admin/auth"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase/types"
+import {
+  LESSON_SUBTITLE_MAX_LENGTH,
+  LESSON_TITLE_MAX_LENGTH,
+  MODULE_SUBTITLE_MAX_LENGTH,
+  MODULE_TITLE_MAX_LENGTH,
+  clampText,
+} from "@/lib/lessons/limits"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 
 export async function updateClassDetailsAction(formData: FormData) {
@@ -25,10 +32,18 @@ export async function updateClassDetailsAction(formData: FormData) {
   await requireAdmin()
   const supabase = await createSupabaseServerClient()
 
+  const trimmedTitle = title.trim()
+  const normalizedTitle = clampText(trimmedTitle, LESSON_TITLE_MAX_LENGTH)
+
+  const rawDescription = typeof description === "string" ? description : ""
+  const normalizedDescription = rawDescription.trim().length > 0
+    ? clampText(rawDescription.trim(), LESSON_SUBTITLE_MAX_LENGTH)
+    : null
+
   const updatePayload: Database["public"]["Tables"]["classes"]["Update"] = {
-    title: title.trim(),
+    title: normalizedTitle,
     slug: slug.trim(),
-    description: typeof description === "string" ? description : null,
+    description: normalizedDescription,
     stripe_product_id: typeof stripeProductId === "string" && stripeProductId.length > 0 ? stripeProductId : null,
     stripe_price_id: typeof stripePriceId === "string" && stripePriceId.length > 0 ? stripePriceId : null,
   }
@@ -76,9 +91,9 @@ export async function createModuleAction(formData: FormData) {
     class_id: classId,
     idx: nextIdx,
     slug,
-    title: "Untitled Module",
+    title: clampText("Untitled Module", MODULE_TITLE_MAX_LENGTH),
     content_md: "",
-    published: false,
+    is_published: false,
   }
 
   const { data, error } = await supabase
@@ -117,7 +132,20 @@ export async function reorderModulesAction(classId: string, orderedIds: string[]
     throw failed.error
   }
 
+  const { data: classRow } = await supabase
+    .from("classes" satisfies keyof Database["public"]["Tables"])
+    .select("slug")
+    .eq("id", classId)
+    .maybeSingle<{ slug: string | null }>()
+
   revalidatePath(`/admin/classes/${classId}`)
+  revalidatePath("/admin/academy")
+  revalidatePath("/dashboard", "layout")
+  revalidatePath("/dashboard")
+  revalidatePath("/training")
+  if (classRow?.slug) {
+    revalidatePath(`/class/${classRow.slug}`)
+  }
 }
 
 export async function deleteModuleAction(formData: FormData) {
@@ -147,7 +175,7 @@ export async function setModulePublishedAction(moduleId: string, classId: string
   await requireAdmin()
   const supabase = await createSupabaseServerClient()
 
-  const publishPayload: Database["public"]["Tables"]["modules"]["Update"] = { published }
+  const publishPayload: Database["public"]["Tables"]["modules"]["Update"] = { is_published: published }
 
   const { error } = await supabase
     .from("modules" satisfies keyof Database["public"]["Tables"])
@@ -158,8 +186,32 @@ export async function setModulePublishedAction(moduleId: string, classId: string
     throw error
   }
 
+  const [{ data: moduleMeta }, { data: classMeta }] = await Promise.all([
+    supabase
+      .from("modules" satisfies keyof Database["public"]["Tables"])
+      .select("idx, slug")
+      .eq("id", moduleId)
+      .maybeSingle<{ idx: number | null; slug: string | null }>(),
+    supabase
+      .from("classes" satisfies keyof Database["public"]["Tables"])
+      .select("slug")
+      .eq("id", classId)
+      .maybeSingle<{ slug: string | null }>(),
+  ])
+
   revalidatePath(`/admin/classes/${classId}`)
+  revalidatePath("/admin/classes")
   revalidatePath(`/admin/modules/${moduleId}`)
+  revalidatePath("/admin/academy")
+  revalidatePath("/dashboard", "layout")
+  revalidatePath("/dashboard")
+  revalidatePath("/training")
+  if (classMeta?.slug) {
+    revalidatePath(`/class/${classMeta.slug}`)
+    if (moduleMeta?.idx != null) {
+      revalidatePath(`/class/${classMeta.slug}/module/${moduleMeta.idx}`)
+    }
+  }
 }
 
 export async function enrollUserByEmailAction(formData: FormData) {

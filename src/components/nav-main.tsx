@@ -35,10 +35,15 @@ export function NavMain({
 
             return (
               <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild tooltip={item.title} isActive={isActive}>
+                <SidebarMenuButton
+                  asChild
+                  tooltip={item.title}
+                  isActive={isActive}
+                  className="h-auto min-h-7 py-1 items-start [&>span:last-child]:!whitespace-normal [&>span:last-child]:!break-words [&>span:last-child]:!overflow-visible"
+                >
                   <Link href={item.href}>
                     {item.icon ? <item.icon /> : null}
-                    <span>{item.title}</span>
+                    <span className="leading-snug text-pretty break-words max-w-[calc(100%-2.5rem)]">{item.title}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

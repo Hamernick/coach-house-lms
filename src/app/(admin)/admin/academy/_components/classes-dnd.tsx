@@ -1,5 +1,6 @@
 "use client"
 
+import { useCallback, useEffect, useState, useTransition } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,16 +35,48 @@ export function ClassesDnd({ tree }: { tree: TreeClass[] }) {
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor)
   )
-  const items = tree
+  const [items, setItems] = useState<TreeClass[]>(tree)
+  const [pendingOrder, startTransition] = useTransition()
+
+  useEffect(() => {
+    setItems(tree)
+  }, [tree])
+
+  const handleModulesReordered = useCallback((classId: string, nextModules: TreeClass["modules"]) => {
+    setItems((prev) =>
+      prev.map((klass) => (klass.id === classId ? { ...klass, modules: nextModules } : klass))
+    )
+  }, [])
+
+  const onDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event
+      if (!over || active.id === over.id) return
+
+      setItems((current) => {
+        const oldIndex = current.findIndex((klass) => klass.id === active.id)
+        const newIndex = current.findIndex((klass) => klass.id === over.id)
+        if (oldIndex === -1 || newIndex === -1) {
+          return current
+        }
+
+        const next = arrayMove(current, oldIndex, newIndex).map((klass, index) => ({
+          ...klass,
+          position: index + 1,
+        }))
+
+        startTransition(async () => {
+          await reorderClassesAction(next.map((klass) => klass.id))
+        })
+
+        return next
+      })
+    },
+    [startTransition]
+  )
+
   const ids = items.map((c) => c.id)
-  const onDragEnd = async (e: DragEndEvent) => {
-    const { active, over } = e
-    if (!over || active.id === over.id) return
-    const oldIndex = ids.findIndex((id) => id === active.id)
-    const newIndex = ids.findIndex((id) => id === over.id)
-    const nextOrder = arrayMove(ids, oldIndex, newIndex)
-    await reorderClassesAction(nextOrder)
-  }
+
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
@@ -82,12 +115,20 @@ export function ClassesDnd({ tree }: { tree: TreeClass[] }) {
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
-                <ModuleDnd classId={c.id} slug={c.slug} modules={c.modules} />
+                <ModuleDnd
+                  classId={c.id}
+                  slug={c.slug}
+                  modules={c.modules}
+                  onReorder={(next) => handleModulesReordered(c.id, next)}
+                />
               </CardContent>
             </Card>
           </SortableCard>
         ))}
       </SortableContext>
+      {pendingOrder ? (
+        <p className="mt-3 text-xs text-muted-foreground">Saving session order…</p>
+      ) : null}
     </DndContext>
   )
 }
@@ -102,28 +143,61 @@ function SortableCard({ id, children }: { id: string; children: React.ReactNode 
   )
 }
 
-function ModuleDnd({ classId, slug, modules }: { classId: string; slug: string; modules: Array<{ id: string; index: number; title: string; published: boolean }> }) {
+function ModuleDnd({
+  classId,
+  slug,
+  modules,
+  onReorder,
+}: {
+  classId: string
+  slug: string
+  modules: Array<{ id: string; index: number; title: string; published: boolean }>
+  onReorder: (next: Array<{ id: string; index: number; title: string; published: boolean }>) => void
+}) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(KeyboardSensor)
   )
-  const ids = modules.map((m) => m.id)
-  const onDragEnd = async (e: DragEndEvent) => {
-    const { active, over } = e
+  const [items, setItems] = useState(modules)
+  const [pending, startTransition] = useTransition()
+
+  useEffect(() => {
+    setItems(modules)
+  }, [modules])
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
     if (!over || active.id === over.id) return
-    const oldIndex = ids.findIndex((id) => id === active.id)
-    const newIndex = ids.findIndex((id) => id === over.id)
-    const nextOrder = arrayMove(ids, oldIndex, newIndex)
-    await reorderModulesAction(classId, nextOrder)
+
+    setItems((current) => {
+      const oldIndex = current.findIndex((module) => module.id === active.id)
+      const newIndex = current.findIndex((module) => module.id === over.id)
+      if (oldIndex === -1 || newIndex === -1) return current
+
+      const next = arrayMove(current, oldIndex, newIndex).map((module, idx) => ({
+        ...module,
+        index: idx + 1,
+      }))
+
+      startTransition(async () => {
+        await reorderModulesAction(classId, next.map((module) => module.id))
+      })
+      onReorder(next)
+
+      return next
+    })
   }
+
+  const ids = items.map((module) => module.id)
+
   return (
     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
       <SortableContext items={ids} strategy={verticalListSortingStrategy}>
-        {modules.length === 0 ? (
+        {items.length === 0 ? (
           <p className="text-sm text-muted-foreground">No modules yet.</p>
         ) : (
           <div className="divide-y rounded-lg border">
-            {modules.map((m) => (
+            {items.map((m) => (
               <SortableRow key={m.id} id={m.id}>
                 <div className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
@@ -154,6 +228,9 @@ function ModuleDnd({ classId, slug, modules }: { classId: string; slug: string; 
           </div>
         )}
       </SortableContext>
+      {pending ? (
+        <p className="pt-2 text-xs text-muted-foreground">Saving module order…</p>
+      ) : null}
     </DndContext>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState, useTransition } from "react"
+import { useRouter } from "next/navigation"
 
 import { Switch } from "@/components/ui/switch"
 
@@ -17,6 +18,7 @@ export function ModulePublishedToggle({
 }) {
   const [checked, setChecked] = useState(published)
   const [isPending, startTransition] = useTransition()
+  const router = useRouter()
 
   useEffect(() => {
     setChecked(published)
@@ -29,6 +31,7 @@ export function ModulePublishedToggle({
         setChecked(next)
         startTransition(async () => {
           await setModulePublishedAction(moduleId, classId, next)
+          router.refresh()
         })
       }}
       disabled={isPending}

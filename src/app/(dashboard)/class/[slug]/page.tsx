@@ -1,7 +1,7 @@
 import { ClassOverview } from "@/components/training/class-overview"
 import { getClassModulesForUser } from "@/lib/modules"
+import { buildModuleStates } from "@/lib/module-progress"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-import { Button } from "@/components/ui/button"
  
 // Static landing that relies on middleware for auth
 
@@ -27,31 +27,33 @@ export default async function ClassLandingPage({ params }: { params: Promise<Par
     ? await getClassModulesForUser({ classSlug: slug, userId: auth.user.id })
     : null
 
-  const c = classCtx
+  const moduleStates = classCtx ? buildModuleStates(classCtx.modules, classCtx.progressMap) : null
+
+  const c = classCtx && moduleStates
     ? {
         id: classCtx.classId,
         title: classCtx.classTitle,
         blurb: classCtx.classDescription ?? "",
+        description: classCtx.classDescription ?? "",
         slug,
-        modules: classCtx.modules.map((m) => ({ id: m.id, title: m.title, subtitle: m.description ?? undefined })),
+        modules: moduleStates.map(({ module, status, locked }) => ({
+          id: module.id,
+          title: module.title,
+          subtitle: module.description ?? undefined,
+          idx: module.idx,
+          status,
+          locked,
+          progressPercent: status === "completed" ? 100 : status === "in_progress" ? 55 : 0,
+          durationMinutes: module.durationMinutes ?? null,
+          lessonCount: (module as { lesson_count?: number | null }).lesson_count ?? null,
+        })),
       }
     : null
 
   return (
     <div className="px-4 lg:px-6 space-y-3">
-      {profile?.role === 'admin' && classCtx ? (
-        <div className="rounded-lg border bg-muted/20 p-3 text-xs">
-          <div className="flex items-center justify-between">
-            <span className="font-medium">Admin shortcuts</span>
-            <div className="flex items-center gap-2">
-              <Button asChild size="sm" variant="outline"><a href={`/admin/classes/${classCtx.classId}`}>Edit class</a></Button>
-              <Button asChild size="sm" variant="outline"><a href={`/admin/classes/${classCtx.classId}`}>Add module</a></Button>
-            </div>
-          </div>
-        </div>
-      ) : null}
       {c ? (
-        <ClassOverview c={c} />
+        <ClassOverview c={c} isAdmin={profile?.role === 'admin'} />
       ) : (
         <div className="rounded-lg border bg-card/60 p-6 text-sm text-muted-foreground">Class not found.</div>
       )}

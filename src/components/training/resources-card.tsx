@@ -2,17 +2,21 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, FileDown, FileText, Link as LinkIcon } from "lucide-react"
+import { ExternalLink, FileText, Link as LinkIcon, Video } from "lucide-react"
+import type { ModuleResource, ModuleResourceProvider } from "@/components/training/types"
 
-type Item = { id: string; label: string; href: string; icon: typeof FileText; download?: boolean }
+const PROVIDER_ICON: Record<ModuleResourceProvider, typeof FileText> = {
+  youtube: Video,
+  "google-drive": FileText,
+  dropbox: FileText,
+  loom: Video,
+  vimeo: Video,
+  notion: FileText,
+  figma: FileText,
+  generic: LinkIcon,
+}
 
-export function ResourcesCard() {
-  const items: Item[] = [
-    { id: "doc", label: "Syllabus (Google Doc)", href: "#", icon: FileText },
-    { id: "slides", label: "Lecture Slides (Google Slides)", href: "#", icon: LinkIcon },
-    { id: "pdf", label: "Reference PDF", href: "#", icon: FileText, download: true },
-  ]
-
+export function ResourcesCard({ resources }: { resources: ModuleResource[] }) {
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -20,28 +24,30 @@ export function ResourcesCard() {
         <CardDescription>Extra materials for this module.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
-        {items.map(({ id, label, href, icon: Icon, download }) => (
-          <div key={id} className="flex items-center justify-between rounded-md border p-2">
-            <div className="flex items-center gap-2 text-sm">
-              <Icon className="h-4 w-4" />
-              <span>{label}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button asChild size="sm" variant="ghost">
-                <a href={href} target="_blank" rel="noreferrer">
-                  <ExternalLink className="mr-2 h-4 w-4" /> Open
-                </a>
-              </Button>
-              {download && (
-                <Button asChild size="sm" variant="secondary">
-                  <a href={href} download>
-                    <FileDown className="mr-2 h-4 w-4" /> Download
+        {resources.length === 0 ? (
+          <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
+            No additional resources provided yet.
+          </p>
+        ) : (
+          resources.map(({ label, url, provider }, index) => {
+            const Icon = PROVIDER_ICON[provider] ?? LinkIcon
+            return (
+              <div key={`${url}-${index}`} className="flex items-center justify-between rounded-md border p-2">
+                <div className="flex min-w-0 items-center gap-2 text-sm">
+                  <Icon className="h-4 w-4 shrink-0" />
+                  <span className="truncate" title={label}>
+                    {label}
+                  </span>
+                </div>
+                <Button asChild size="sm" variant="ghost">
+                  <a href={url} target="_blank" rel="noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" /> Open
                   </a>
                 </Button>
-              )}
-            </div>
-          </div>
-        ))}
+              </div>
+            )
+          })
+        )}
       </CardContent>
     </Card>
   )

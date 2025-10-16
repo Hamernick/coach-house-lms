@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { requireAdmin } from "@/lib/admin/auth"
+import { MODULE_SUBTITLE_MAX_LENGTH, MODULE_TITLE_MAX_LENGTH } from "@/lib/lessons/limits"
 
-import { ModulePublishedToggle } from "../../classes/[id]/_components/module-published-toggle"
+import { ModulePublishButton } from "./_components/module-publish-button"
 import { MarkdownEditor } from "./_components/markdown-editor"
 import {
   deleteModuleFromDetailAction,
@@ -20,7 +21,6 @@ import {
   uploadModuleDeckAction,
 } from "./actions"
 import { AssignmentEditor } from "./_components/assignment-editor"
-import { ContentEditor } from "./_components/content-editor"
 import { ContentBuilder } from "./_components/content-builder"
 import { VideoSignedUrlHelper } from "./_components/signed-url-helper"
 
@@ -35,7 +35,7 @@ export default async function AdminModuleDetailPage({
   const { data, error } = await supabase
     .from("modules")
     .select(
-      "id, class_id, idx, slug, title, description, video_url, content_md, duration_minutes, deck_path, published, classes ( id, title, slug )"
+      "id, class_id, idx, slug, title, description, video_url, content_md, duration_minutes, deck_path, is_published, classes ( id, title, slug, is_published )"
     )
     .eq("id", id)
     .maybeSingle()
@@ -55,15 +55,18 @@ export default async function AdminModuleDetailPage({
     content_md: string | null
     duration_minutes: number | null
     deck_path: string | null
-    published: boolean
-    classes: { id: string; title: string; slug: string } | null
+    is_published: boolean
+    classes: { id: string; title: string; slug: string; is_published?: boolean | null } | null
   } | null
 
   if (!moduleRecord || !moduleRecord.classes) {
     notFound()
   }
 
-  const parentClass = moduleRecord.classes
+  const classPublished = "is_published" in moduleRecord.classes
+    ? Boolean(moduleRecord.classes.is_published)
+    : true
+
   const deckFileName = moduleRecord.deck_path ? moduleRecord.deck_path.split("/").pop() ?? "Deck" : null
 
   const { data: assignment } = await supabase
@@ -94,7 +97,12 @@ export default async function AdminModuleDetailPage({
           </div>
           <div className="flex items-center gap-2 rounded-lg border p-3">
             <span className="text-sm font-medium">Published</span>
-            <ModulePublishedToggle moduleId={moduleRecord.id} classId={moduleRecord.class_id} published={moduleRecord.published} />
+            <ModulePublishButton
+              moduleId={moduleRecord.id}
+              classId={moduleRecord.class_id}
+              published={Boolean(moduleRecord.is_published)}
+              disabled={!classPublished && !moduleRecord.is_published}
+            />
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -104,7 +112,13 @@ export default async function AdminModuleDetailPage({
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="title">Title</Label>
-                <Input id="title" name="title" defaultValue={moduleRecord.title} required />
+                <Input
+                  id="title"
+                  name="title"
+                  defaultValue={moduleRecord.title}
+                  maxLength={MODULE_TITLE_MAX_LENGTH}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="slug">Slug</Label>
@@ -119,6 +133,7 @@ export default async function AdminModuleDetailPage({
                   name="description"
                   defaultValue={moduleRecord.description ?? ""}
                   className="min-h-24"
+                  maxLength={MODULE_SUBTITLE_MAX_LENGTH}
                 />
               </div>
               <div className="space-y-4">

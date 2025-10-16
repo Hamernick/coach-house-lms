@@ -50,42 +50,44 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
   }
 
   // Sidebar academy tree (DB-driven)
-  const sidebarTree = await fetchSidebarTree({ includeDrafts: isAdmin })
+  const sidebarTree = await fetchSidebarTree({ includeDrafts: true, forceAdmin: isAdmin })
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 72)",
-          "--header-height": "calc(var(--spacing) * 12)",
-        } as CSSProperties
-      }
-    >
-      <AppSidebar
-        variant="inset"
-        user={{
-          name: displayName,
-          email,
-          avatar,
-        }}
-        isAdmin={isAdmin}
-        classes={sidebarTree}
-      />
-      <SidebarInset>
-        <SiteHeader breadcrumbs={breadcrumbs} />
-        <main className="flex flex-1 flex-col" role="main">
-          <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">{children}</div>
-          </div>
-        </main>
-      </SidebarInset>
-      {user ? (
-        <OnboardingDialog
-          open={needsOnboarding}
-          defaultEmail={email}
-          onSubmit={completeOnboardingAction}
+    <div className="min-h-svh bg-sidebar">
+      <SidebarProvider
+        style={
+          {
+            "--sidebar-width": "calc(var(--spacing) * 72)",
+            "--header-height": "calc(var(--spacing) * 12)",
+          } as CSSProperties
+        }
+      >
+        <AppSidebar
+          variant="inset"
+          user={{
+            name: displayName,
+            email,
+            avatar,
+          }}
+          isAdmin={isAdmin}
+          classes={sidebarTree}
         />
-      ) : null}
-    </SidebarProvider>
+        <SidebarInset>
+          <SiteHeader breadcrumbs={breadcrumbs} />
+          <main className="flex flex-1 flex-col" role="main">
+            <div className="@container/main flex flex-1 flex-col gap-2">
+              <div className="flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">{children}</div>
+            </div>
+          </main>
+        </SidebarInset>
+        {user ? (
+          <OnboardingDialog
+            open={needsOnboarding}
+            defaultEmail={email}
+            onSubmit={completeOnboardingAction}
+          />
+        ) : null}
+      </SidebarProvider>
+    </div>
   )
 }

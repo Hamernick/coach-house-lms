@@ -1,5 +1,7 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { SteppedProgress } from "@/components/ui/stepped-progress"
+import { Button } from "@/components/ui/button"
+import { Item, ItemActions, ItemContent, ItemDescription, ItemFooter, ItemTitle } from "@/components/ui/item"
+import Link from "next/link"
 import { createSupabaseServerClient } from "@/lib/supabase"
 
 type ClassProgress = {
@@ -73,6 +75,35 @@ async function fetchClassProgressForUser(userId: string): Promise<ClassProgress[
 export async function OrgProgressCards({ userId }: { userId: string }) {
   const classProgress = await fetchClassProgressForUser(userId)
 
+  // Determine the next actionable module across all enrolled classes
+  const supabase = await createSupabaseServerClient()
+  const { data: nextModuleId } = await supabase.rpc("next_unlocked_module", { p_user_id: userId })
+  let nextAction:
+    | { classSlug: string; classTitle: string; moduleIdx: number; moduleTitle: string }
+    | null = null
+  if (nextModuleId) {
+    const { data: mod } = await supabase
+      .from("modules")
+      .select("id, idx, title, class_id")
+      .eq("id", nextModuleId as string)
+      .maybeSingle<{ id: string; idx: number; title: string | null; class_id: string }>()
+    if (mod) {
+      const { data: klass } = await supabase
+        .from("classes")
+        .select("id, slug, title")
+        .eq("id", mod.class_id)
+        .maybeSingle<{ id: string; slug: string; title: string | null }>()
+      if (klass) {
+        nextAction = {
+          classSlug: klass.slug,
+          classTitle: klass.title ?? "Class",
+          moduleIdx: mod.idx,
+          moduleTitle: mod.title ?? "Module",
+        }
+      }
+    }
+  }
+
   const totalModules = classProgress.reduce((acc, cp) => acc + cp.totalModules, 0)
   const completedModules = classProgress.reduce((acc, cp) => acc + cp.completedModules, 0)
   const classesTotal = classProgress.length
@@ -80,49 +111,65 @@ export async function OrgProgressCards({ userId }: { userId: string }) {
 
   // Cards to render: Overall Org Completeness (by training), Classes Completed summary, then per-class progress
   return (
-    <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:thin]">
-      <div className="flex gap-3 md:gap-4">
-        <Card className="min-w-[260px] bg-card/60">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Organization Completeness</CardTitle>
-            <CardDescription>Based on training progress</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <SteppedProgress steps={Math.max(1, Math.min(10, totalModules || 1))} completed={Math.round(((totalModules ? completedModules / totalModules : 0) * Math.max(1, Math.min(10, totalModules || 1))))} />
-            <p className="text-xs text-muted-foreground">
-              {completedModules}/{totalModules} modules completed
-            </p>
-          </CardContent>
-        </Card>
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 md:gap-4">
+        {/* Organization completeness as Item */}
+        <Item className="w-full">
+          <ItemContent>
+            <ItemTitle>Organization Completeness</ItemTitle>
+            <ItemDescription>Academy progression</ItemDescription>
+            <ItemFooter>
+              <SteppedProgress
+                size="sm"
+                steps={Math.max(1, Math.min(10, totalModules || 1))}
+                completed={Math.round((totalModules ? (completedModules / totalModules) : 0) * Math.max(1, Math.min(10, totalModules || 1)))}
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Modules {completedModules}/{totalModules}
+                {" · "}
+                Classes {classesCompleted}/{classesTotal}
+              </p>
+            </ItemFooter>
+          </ItemContent>
+        </Item>
 
-        <Card className="min-w-[220px] bg-card/60">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Classes</CardTitle>
-            <CardDescription>Completed vs total</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <SteppedProgress steps={Math.max(1, classesTotal)} completed={classesCompleted} />
-            <p className="text-xs text-muted-foreground">
-              {classesCompleted}/{classesTotal} classes completed
-            </p>
-          </CardContent>
-        </Card>
+        {/* Classes action as Item */}
+        <Item className="w-full">
+          <ItemContent>
+            <ItemTitle>Your Next Class</ItemTitle>
+            {nextAction ? (
+              <>
+                <ItemDescription className="truncate">{nextAction.classTitle}</ItemDescription>
+                <p className="truncate text-xs text-muted-foreground">Module {nextAction.moduleIdx}: {nextAction.moduleTitle}</p>
+              </>
+            ) : (
+              <ItemDescription>All caught up — no pending modules</ItemDescription>
+            )}
+          </ItemContent>
+          <ItemActions>
+            {nextAction ? (
+              <Button asChild size="sm">
+                <Link prefetch href={`/class/${nextAction.classSlug}/module/${nextAction.moduleIdx}`}>
+                  Resume
+                </Link>
+              </Button>
+            ) : null}
+          </ItemActions>
+        </Item>
 
         {classProgress.map((cp) => (
-          <Card key={cp.classId} className="min-w-[260px] bg-card/60">
-            <CardHeader className="pb-2">
-              <CardTitle className="truncate text-base">{cp.classTitle}</CardTitle>
-              <CardDescription>Module progress</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <SteppedProgress steps={Math.max(1, cp.totalModules)} completed={cp.completedModules} />
-              <p className="text-xs text-muted-foreground">
-                {cp.completedModules}/{cp.totalModules} modules
-              </p>
-            </CardContent>
-          </Card>
+          <Item key={cp.classId} className="w-full">
+            <ItemContent>
+              <ItemTitle className="truncate">{cp.classTitle}</ItemTitle>
+              <ItemDescription>Module progress</ItemDescription>
+              <ItemFooter>
+                <SteppedProgress size="sm" steps={Math.max(1, cp.totalModules)} completed={cp.completedModules} />
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {cp.completedModules}/{cp.totalModules} modules
+                </p>
+              </ItemFooter>
+            </ItemContent>
+          </Item>
         ))}
-      </div>
     </div>
   )
 }

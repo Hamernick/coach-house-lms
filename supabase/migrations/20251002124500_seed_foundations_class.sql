@@ -3,16 +3,16 @@ do $$
 declare
   v_class_id uuid;
 begin
-  insert into classes (id, title, slug, description, published)
+  insert into classes (id, title, slug, description, is_published)
   values (gen_random_uuid(), 'Foundations', 'foundations', 'Foundations overview, outcomes, prerequisites.', true)
   on conflict (slug) do update set
     title = excluded.title,
     description = excluded.description,
-    published = excluded.published
+    is_published = excluded.is_published
   returning id into v_class_id;
 
   -- Module 1
-  insert into modules (id, class_id, idx, slug, title, description, video_url, content_md, duration_minutes, published)
+  insert into modules (id, class_id, idx, slug, title, description, video_url, content_md, duration_minutes, is_published)
   values (
     gen_random_uuid(), v_class_id, 1, 'intro-and-goals', 'Module 1', 'Intro & goals',
     'https://www.youtube.com/watch?v=ysz5S6PUM-U',
@@ -25,10 +25,10 @@ begin
     video_url = excluded.video_url,
     content_md = excluded.content_md,
     duration_minutes = excluded.duration_minutes,
-    published = excluded.published;
+    is_published = excluded.is_published;
 
   -- Module 2
-  insert into modules (id, class_id, idx, slug, title, description, video_url, content_md, duration_minutes, published)
+  insert into modules (id, class_id, idx, slug, title, description, video_url, content_md, duration_minutes, is_published)
   values (
     gen_random_uuid(), v_class_id, 2, 'core-concepts', 'Module 2', 'Core concepts',
     'https://www.youtube.com/watch?v=HhesaQXLuRY',
@@ -41,10 +41,10 @@ begin
     video_url = excluded.video_url,
     content_md = excluded.content_md,
     duration_minutes = excluded.duration_minutes,
-    published = excluded.published;
+    is_published = excluded.is_published;
 
   -- Module 3
-  insert into modules (id, class_id, idx, slug, title, description, video_url, content_md, duration_minutes, published)
+  insert into modules (id, class_id, idx, slug, title, description, video_url, content_md, duration_minutes, is_published)
   values (
     gen_random_uuid(), v_class_id, 3, 'practice-recap', 'Module 3', 'Practice & recap',
     'https://www.youtube.com/watch?v=oHg5SJYRHA0',
@@ -57,6 +57,6 @@ begin
     video_url = excluded.video_url,
     content_md = excluded.content_md,
     duration_minutes = excluded.duration_minutes,
-    published = excluded.published;
+    is_published = excluded.is_published;
 end $$;
 

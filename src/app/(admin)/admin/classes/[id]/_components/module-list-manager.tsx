@@ -1,7 +1,8 @@
 "use client"
 
-import { useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useState, useTransition } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   DndContext,
   type DragEndEvent,
@@ -19,12 +20,21 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { IconGripVertical } from "@tabler/icons-react"
+import { Loader2, MoreVertical } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-import { deleteModuleAction, reorderModulesAction } from "../actions"
-import { ModulePublishedToggle } from "./module-published-toggle"
+import { deleteModuleAction, reorderModulesAction, setModulePublishedAction } from "../actions"
+import { cn } from "@/lib/utils"
 
 type ModuleItem = {
   id: string
@@ -37,11 +47,18 @@ type ModuleItem = {
 export function ModuleListManager({
   classId,
   modules,
+  classPublished,
 }: {
   classId: string
   modules: ModuleItem[]
+  classPublished: boolean
 }) {
-  const sorted = useMemo(() => [...modules].sort((a, b) => a.idx - b.idx), [modules])
+  const sorted = useMemo(() => {
+    const byIndex = [...modules].sort((a, b) => a.idx - b.idx)
+    const published = byIndex.filter((module) => module.published)
+    const drafts = byIndex.filter((module) => !module.published)
+    return [...published, ...drafts]
+  }, [modules])
   const [items, setItems] = useState(sorted)
   const [isPending, startTransition] = useTransition()
 
@@ -52,48 +69,96 @@ export function ModuleListManager({
     useSensor(KeyboardSensor)
   )
 
+  useEffect(() => {
+    setItems(sorted)
+  }, [sorted])
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (!over || active.id === over.id) {
       return
     }
 
-    setItems((current) => {
-      const oldIndex = current.findIndex((module) => module.id === active.id)
-      const newIndex = current.findIndex((module) => module.id === over.id)
-      const next = arrayMove(current, oldIndex, newIndex).map((module, index) => ({
-        ...module,
-        idx: index + 1,
-      }))
+    // Compute the next list outside of setState updater to avoid side-effects during render
+    const oldIndex = items.findIndex((module) => module.id === active.id)
+    const newIndex = items.findIndex((module) => module.id === over.id)
+    const next = arrayMove(items, oldIndex, newIndex).map((module, index) => ({
+      ...module,
+      idx: index + 1,
+    }))
 
-      startTransition(async () => {
-        await reorderModulesAction(
-          classId,
-          next.map((module) => module.id)
-        )
-      })
+    setItems(next)
 
-      return next
+    // Persist the new order in a transition (non-blocking UI)
+    startTransition(async () => {
+      await reorderModulesAction(
+        classId,
+        next.map((module) => module.id)
+      )
     })
   }
+
+  const publishedItems = items.filter((module) => module.published)
+  const draftItems = items.filter((module) => !module.published)
 
   return (
     <div className="space-y-3">
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
-          <ul className="space-y-3">
-            {items.map((item) => (
-              <SortableModuleRow
-                key={item.id}
-                module={item}
-                classId={classId}
-                disabled={isPending}
-              />
-            ))}
-          </ul>
+          <div className="space-y-6">
+            <section className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  Published modules
+                </h3>
+                {isPending ? <p className="text-xs text-muted-foreground">Saving new order…</p> : null}
+              </div>
+              {publishedItems.length === 0 ? (
+                <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                  No published modules yet. Publish a module to make it available to learners.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {publishedItems.map((item) => (
+                    <SortableModuleRow
+                      key={item.id}
+                      module={item}
+                      classId={classId}
+                      disabled={isPending}
+                      classPublished={classPublished}
+                    />
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section className="space-y-3 border-t pt-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                  Unpublished
+                </h3>
+              </div>
+              {draftItems.length === 0 ? (
+                <p className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                  All modules are published.
+                </p>
+              ) : (
+                <ul className="space-y-3">
+                  {draftItems.map((item) => (
+                    <SortableModuleRow
+                      key={item.id}
+                      module={item}
+                      classId={classId}
+                      disabled={isPending}
+                      classPublished={classPublished}
+                    />
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
         </SortableContext>
       </DndContext>
-      {isPending ? <p className="text-xs text-muted-foreground">Saving new order…</p> : null}
     </div>
   )
 }
@@ -102,10 +167,12 @@ function SortableModuleRow({
   module,
   classId,
   disabled,
+  classPublished,
 }: {
   module: ModuleItem
   classId: string
   disabled: boolean
+  classPublished: boolean
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: module.id,
@@ -120,7 +187,12 @@ function SortableModuleRow({
     <li
       ref={setNodeRef}
       style={style}
-      className="rounded-xl border bg-card/60 p-4 shadow-sm"
+      className={cn(
+        "rounded-xl border p-4 shadow-sm transition-colors",
+        module.published
+          ? "bg-card/60"
+          : "border-dashed border-muted-foreground/40 bg-muted/30"
+      )}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex flex-1 items-start gap-3">
@@ -134,37 +206,105 @@ function SortableModuleRow({
           >
             <IconGripVertical className="size-4" />
           </button>
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">Module {module.idx}</span>
-              <Badge variant={module.published ? "default" : "outline"}>
+              <span className="text-sm font-semibold leading-tight">Module {module.idx}</span>
+              <Badge
+                variant={module.published ? "default" : "outline"}
+                className="uppercase tracking-wide"
+              >
                 {module.published ? "Published" : "Draft"}
               </Badge>
             </div>
-            <span className="text-sm text-muted-foreground">{module.title}</span>
+            <span className="text-sm text-foreground">{module.title}</span>
             <span className="text-xs text-muted-foreground">Slug: {module.slug}</span>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
-          <ModulePublishedToggle
-            moduleId={module.id}
-            classId={classId}
-            published={module.published}
-          />
-          <div className="flex gap-2">
-            <Button asChild size="sm" variant="outline">
-              <Link href={`/admin/modules/${module.id}`}>Edit</Link>
-            </Button>
-            <form action={deleteModuleAction} className="inline">
-              <input type="hidden" name="moduleId" value={module.id} />
-              <input type="hidden" name="classId" value={classId} />
-              <Button size="sm" variant="destructive">
-                Delete
-              </Button>
-            </form>
-          </div>
-        </div>
+        <ModuleActions module={module} classId={classId} disabled={disabled} classPublished={classPublished} />
       </div>
     </li>
+  )
+}
+
+function ModuleActions({
+  module,
+  classId,
+  disabled,
+  classPublished,
+}: {
+  module: ModuleItem
+  classId: string
+  disabled: boolean
+  classPublished: boolean
+}) {
+  const [publishPending, startPublish] = useTransition()
+  const [menuPending, startMenu] = useTransition()
+  const router = useRouter()
+
+  const publishDisabled = !classPublished && !module.published
+
+  const handleToggle = () => {
+    if (publishDisabled) return
+    startPublish(async () => {
+      await setModulePublishedAction(module.id, classId, !module.published)
+      router.refresh()
+    })
+  }
+
+  const handleDelete = () => {
+    if (!confirm("Delete this module?")) return
+    const fd = new FormData()
+    fd.append("moduleId", module.id)
+    fd.append("classId", classId)
+    startMenu(async () => {
+      await deleteModuleAction(fd)
+      router.refresh()
+    })
+  }
+
+  return (
+    <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
+      <Button
+        type="button"
+        size="sm"
+        variant={module.published ? "outline" : "default"}
+      disabled={disabled || publishPending || publishDisabled}
+        onClick={handleToggle}
+        className="min-w-[6rem]"
+      >
+        {publishPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+        {module.published ? "Unpublish" : "Publish"}
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            disabled={menuPending}
+          >
+            {menuPending ? <Loader2 className="size-4 animate-spin" /> : <MoreVertical className="size-4" />}
+            <span className="sr-only">Module actions</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuLabel>Module actions</DropdownMenuLabel>
+          <DropdownMenuItem asChild>
+            <Link href={`/admin/modules/${module.id}`}>Edit module</Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onSelect={(event) => {
+              event.preventDefault()
+              handleDelete()
+            }}
+          >
+            Delete module
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   )
 }

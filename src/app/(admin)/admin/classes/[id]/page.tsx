@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { getClassById } from "@/lib/classes"
 import { requireAdmin } from "@/lib/admin/auth"
+import { LESSON_SUBTITLE_MAX_LENGTH, LESSON_TITLE_MAX_LENGTH } from "@/lib/lessons/limits"
 
-import { ClassPublishedToggle } from "../_components/class-published-toggle"
 
 import type { Database } from "@/lib/supabase/types"
 import {
@@ -17,6 +17,7 @@ import {
 } from "./actions"
 import { ModuleListManager } from "./_components/module-list-manager"
 import { EnrollmentsManager } from "./_components/enrollments-manager"
+import { ClassPublishButton } from "../_components/class-publish-button"
 
 type ClassDetailRecord = Database["public"]["Tables"]["classes"]["Row"] & {
   modules?: {
@@ -24,7 +25,7 @@ type ClassDetailRecord = Database["public"]["Tables"]["classes"]["Row"] & {
     title: string
     slug: string
     idx: number
-    published: boolean
+    is_published: boolean
   }[] | null
 }
 
@@ -40,12 +41,16 @@ export default async function AdminClassDetailPage({
     notFound()
   }
 
+  const classPublished = "is_published" in classData
+    ? Boolean(classData.is_published)
+    : Boolean((classData as { published?: boolean }).published)
+
   const modules = (classData.modules ?? []).map((module) => ({
     id: module.id,
     title: module.title,
     slug: module.slug,
     idx: module.idx,
-    published: module.published,
+    published: "is_published" in module ? Boolean(module.is_published) : Boolean((module as { published?: boolean }).published),
   }))
 
   // Fetch enrollments for this class
@@ -79,7 +84,13 @@ export default async function AdminClassDetailPage({
               <input type="hidden" name="classId" value={classData.id} />
               <div className="space-y-2">
                 <Label htmlFor="title">Title</Label>
-                <Input id="title" name="title" defaultValue={classData.title} required />
+                <Input
+                  id="title"
+                  name="title"
+                  defaultValue={classData.title}
+                  maxLength={LESSON_TITLE_MAX_LENGTH}
+                  required
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="slug">Slug</Label>
@@ -92,6 +103,7 @@ export default async function AdminClassDetailPage({
                   name="description"
                   defaultValue={classData.description ?? ""}
                   className="min-h-32"
+                  maxLength={LESSON_SUBTITLE_MAX_LENGTH}
                 />
               </div>
               <div className="space-y-2">
@@ -114,10 +126,10 @@ export default async function AdminClassDetailPage({
                 <div>
                   <p className="text-sm font-medium">Published</p>
                   <p className="text-xs text-muted-foreground">
-                    Toggle visibility for students. Draft classes stay hidden.
+                    Publish when you’re ready for learners to access this class.
                   </p>
                 </div>
-                <ClassPublishedToggle classId={classData.id} published={classData.published} />
+                <ClassPublishButton classId={classData.id} published={classPublished} />
               </div>
               <Button type="submit">Save changes</Button>
             </form>
@@ -129,10 +141,13 @@ export default async function AdminClassDetailPage({
               <CardTitle>Modules</CardTitle>
               <CardDescription>Reorder modules or manage publication status.</CardDescription>
             </div>
-            <form action={createModuleAction}>
-              <input type="hidden" name="classId" value={classData.id} />
-              <Button type="submit">Add module</Button>
-            </form>
+            <div className="flex flex-wrap items-center gap-2">
+              <form action={createModuleAction}>
+                <input type="hidden" name="classId" value={classData.id} />
+                <Button type="submit">Add module</Button>
+              </form>
+              <ClassPublishButton classId={classData.id} published={classPublished} />
+            </div>
           </CardHeader>
           <CardContent>
             {modules.length === 0 ? (
@@ -140,7 +155,7 @@ export default async function AdminClassDetailPage({
                 No modules yet. Create one to start building your class.
               </p>
             ) : (
-              <ModuleListManager classId={classData.id} modules={modules} />
+              <ModuleListManager classId={classData.id} modules={modules} classPublished={classPublished} />
             )}
           </CardContent>
         </Card>

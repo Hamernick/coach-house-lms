@@ -3,6 +3,8 @@ import { redirect } from "next/navigation"
 import { OrgProgressCards } from "@/components/organization/org-progress-cards"
 import { OrgProfileCard } from "@/components/organization/org-profile-card"
 import { createSupabaseServerClient } from "@/lib/supabase"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import type { OrgPerson } from "../people/actions"
 
 export const dynamic = "force-dynamic"
 
@@ -22,30 +24,56 @@ export default async function MyOrganizationPage() {
     .eq("user_id", user.id)
     .maybeSingle<{ ein: string | null; profile: Record<string, unknown> | null }>()
 
+  const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
+
+  const peopleRaw = (Array.isArray(profile.org_people) ? profile.org_people : []) as OrgPerson[]
+  let people: (OrgPerson & { displayImage: string | null })[] = []
+  try {
+    const admin = createSupabaseAdminClient()
+    for (const p of peopleRaw) {
+      let displayImage: string | null = null
+      if (p.image) {
+        if (/^https?:/i.test(p.image) || p.image.startsWith("data:")) {
+          displayImage = p.image
+        } else {
+          const { data: signed } = await admin.storage.from("avatars").createSignedUrl(p.image, 60 * 60)
+          displayImage = signed?.signedUrl ?? null
+        }
+      }
+      people.push({ ...p, displayImage })
+    }
+  } catch {
+    people = peopleRaw.map((p) => ({
+      ...p,
+      displayImage: /^https?:/i.test(p.image ?? "") ? (p.image as string) : null,
+    }))
+  }
+
   const initialProfile = {
-    name: String(orgRow?.profile?.["name"] ?? ""),
-    entity: String(orgRow?.profile?.["entity"] ?? ""),
-    ein: String(orgRow?.ein ?? orgRow?.profile?.["ein"] ?? ""),
-    incorporation: String(orgRow?.profile?.["incorporation"] ?? ""),
-    rep: String(orgRow?.profile?.["rep"] ?? ""),
-    phone: String(orgRow?.profile?.["phone"] ?? ""),
-    address: String(orgRow?.profile?.["address"] ?? ""),
-    coverUrl: String(orgRow?.profile?.["coverUrl"] ?? ""),
-    logoUrl: String(orgRow?.profile?.["logoUrl"] ?? ""),
-    publicUrl: String(orgRow?.profile?.["publicUrl"] ?? ""),
-    twitter: String(orgRow?.profile?.["twitter"] ?? ""),
-    facebook: String(orgRow?.profile?.["facebook"] ?? ""),
-    linkedin: String(orgRow?.profile?.["linkedin"] ?? ""),
-    vision: String(orgRow?.profile?.["vision"] ?? ""),
-    mission: String(orgRow?.profile?.["mission"] ?? ""),
-    need: String(orgRow?.profile?.["need"] ?? ""),
-    values: String(orgRow?.profile?.["values"] ?? ""),
-    people: String(orgRow?.profile?.["people"] ?? ""),
-    programs: String(orgRow?.profile?.["programs"] ?? ""),
-    reports: String(orgRow?.profile?.["reports"] ?? ""),
-    toolkit: String(orgRow?.profile?.["toolkit"] ?? ""),
-    supporters: String(orgRow?.profile?.["supporters"] ?? ""),
-    readinessScore: String(orgRow?.profile?.["readiness_score"] ?? ""),
+    name: String(profile["name"] ?? ""),
+    description: String(profile["description"] ?? profile["entity"] ?? ""),
+    tagline: String(profile["tagline"] ?? ""),
+    ein: String(orgRow?.ein ?? profile["ein"] ?? ""),
+    rep: String(profile["rep"] ?? ""),
+    email: String(profile["email"] ?? ""),
+    phone: String(profile["phone"] ?? ""),
+    address: String(profile["address"] ?? ""),
+    addressStreet: String(profile["address_street"] ?? ""),
+    addressCity: String(profile["address_city"] ?? ""),
+    addressState: String(profile["address_state"] ?? ""),
+    addressPostal: String(profile["address_postal"] ?? ""),
+    addressCountry: String(profile["address_country"] ?? ""),
+    logoUrl: String(profile["logoUrl"] ?? ""),
+    publicUrl: String(profile["publicUrl"] ?? ""),
+    twitter: String(profile["twitter"] ?? ""),
+    facebook: String(profile["facebook"] ?? ""),
+    linkedin: String(profile["linkedin"] ?? ""),
+    vision: String(profile["vision"] ?? ""),
+    mission: String(profile["mission"] ?? ""),
+    need: String(profile["need"] ?? ""),
+    values: String(profile["values"] ?? ""),
+    programs: String(profile["programs"] ?? ""),
+    reports: String(profile["reports"] ?? ""),
   }
 
   return (
@@ -54,7 +82,7 @@ export default async function MyOrganizationPage() {
         <OrgProgressCards userId={user.id} />
       </section>
       <section>
-        <OrgProfileCard initial={initialProfile} />
+        <OrgProfileCard initial={initialProfile} people={people} />
       </section>
     </div>
   )

@@ -7,6 +7,11 @@ import { requireAdmin } from "@/lib/admin/auth"
 import { uploadModuleDeck, removeModuleDeck } from "@/lib/storage/decks"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
+import {
+  MODULE_SUBTITLE_MAX_LENGTH,
+  MODULE_TITLE_MAX_LENGTH,
+  clampText,
+} from "@/lib/lessons/limits"
 
 export async function updateModuleDetailsAction(formData: FormData) {
   const moduleId = formData.get("moduleId")
@@ -38,10 +43,18 @@ export async function updateModuleDetailsAction(formData: FormData) {
   const normalizedDuration =
     typeof durationValue === "number" && Number.isFinite(durationValue) ? durationValue : null
 
+  const trimmedTitle = typeof title === "string" ? title.trim() : ""
+  const normalizedTitle = clampText(trimmedTitle, MODULE_TITLE_MAX_LENGTH)
+
+  const rawDescription = typeof description === "string" ? description : ""
+  const normalizedDescription = rawDescription.trim().length > 0
+    ? clampText(rawDescription.trim(), MODULE_SUBTITLE_MAX_LENGTH)
+    : null
+
   const updatePayload: Database["public"]["Tables"]["modules"]["Update"] = {
-    title: title.trim(),
+    title: normalizedTitle,
     slug: slug.trim(),
-    description: typeof description === "string" ? description : null,
+    description: normalizedDescription,
     video_url: typeof videoUrl === "string" && videoUrl.length > 0 ? videoUrl : null,
     duration_minutes: normalizedDuration,
     content_md: typeof content === "string" ? content : null,

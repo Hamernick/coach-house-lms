@@ -23,7 +23,7 @@ type ClassRowForList = {
   title: string
   slug: string
   description: string | null
-  published: boolean
+  is_published: boolean
   created_at: string
   modules?: { id: string }[] | null
 }
@@ -45,7 +45,7 @@ export async function listClasses({
 
   const { data, error, count } = await supabase
     .from("classes")
-    .select("id, title, slug, description, published, created_at, modules ( id )", { count: "exact" })
+    .select("id, title, slug, description, is_published, created_at, modules ( id )", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(from, to)
 
@@ -61,7 +61,7 @@ export async function listClasses({
       title: row.title,
       slug: row.slug,
       description: row.description ?? null,
-      published: row.published,
+      published: Boolean(row.is_published),
       moduleCount,
       progressPercent: moduleCount === 0 ? 0 : Math.min(100, moduleCount * 20),
       createdAt: row.created_at,
@@ -80,7 +80,7 @@ export async function getClassById(id: string) {
   const supabase = await createSupabaseServerClient()
   const { data, error } = await supabase
     .from("classes")
-    .select("*, modules ( id, title, idx, slug, published, created_at, deck_path )")
+    .select("*, modules ( id, title, idx, slug, is_published, created_at, deck_path )")
     .eq("id", id)
     .maybeSingle()
 

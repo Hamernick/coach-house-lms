@@ -35,12 +35,15 @@ export async function getServerSession(): Promise<ServerSessionResult> {
       auth: { persistSession: false, autoRefreshToken: false },
     }) as unknown) as SupabaseClient<Database>
   }
-  const authApi = (supabase as unknown as { auth?: { getSession?: () => Promise<{ data?: { session: Session | null } }> } }).auth
-  if (!authApi || typeof authApi.getSession !== "function") {
+  // Use verified user retrieval; avoids relying on unverified cookie session payloads
+  const { data: userData, error } = await (supabase as any).auth.getUser()
+  const user = (userData?.user ?? null) as Session["user"] | null
+  if (!user || error) {
     return { supabase, session: null }
   }
-  const { data } = await authApi.getSession()
-  return { supabase, session: (data?.session ?? null) as Session | null }
+  // Construct a minimal Session shape carrying the verified user
+  const minimalSession = ({ user } as unknown) as Session
+  return { supabase, session: minimalSession }
 }
 
 export async function requireServerSession(redirectPath: string = "/dashboard"): Promise<

@@ -99,15 +99,16 @@ export async function upsertPersonAction(person: Omit<OrgPerson, "id"> & { id?: 
     } catch {}
   }
 
+  const normalizedCategory = normalizeCategory(person.category)
   const nextItem: OrgPerson = {
     id,
     name: person.name?.trim() || "Untitled",
     title: person.title?.trim() || null,
     email: person.email?.trim() || null,
     linkedin: person.linkedin?.trim() || null,
-    category: normalizeCategory(person.category),
+    category: normalizedCategory,
     image,
-    reportsToId: person.reportsToId ?? null,
+    reportsToId: normalizedCategory === "staff" ? (person.reportsToId ?? null) : null,
     pos: null,
   }
 

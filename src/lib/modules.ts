@@ -3,6 +3,8 @@ import { notFound } from "next/navigation"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
+import { inferProviderSlug } from "@/lib/lessons/providers"
+import { toNumberOrNull, normalizeFormFieldTypeLegacy } from "@/lib/lessons/fields"
 
 export type ModuleResourceProvider =
   | "youtube"
@@ -67,6 +69,8 @@ type ClassModuleResult = {
   classId: string
   classTitle: string
   classDescription: string | null
+  classSubtitle?: string | null
+  classPublished: boolean
   modules: ModuleRecord[]
   progressMap: Record<string, ModuleProgressStatus>
 }
@@ -89,62 +93,16 @@ type ClassWithModules = Database["public"]["Tables"]["classes"]["Row"] & {
   > | null
 }
 
-const RESOURCE_PROVIDER_PATTERNS: Array<{ provider: ModuleResourceProvider; hosts: RegExp[] }> = [
-  { provider: "youtube", hosts: [/youtube\.com$/i, /youtu\.be$/i] },
-  { provider: "google-drive", hosts: [/drive\.google\.com$/i, /docs\.google\.com$/i] },
-  { provider: "dropbox", hosts: [/dropbox\.com$/i, /dropboxusercontent\.com$/i] },
-  { provider: "loom", hosts: [/loom\.com$/i] },
-  { provider: "vimeo", hosts: [/vimeo\.com$/i] },
-  { provider: "notion", hosts: [/notion\.so$/i] },
-  { provider: "figma", hosts: [/figma\.com$/i] },
-]
-
+// Use shared provider inference; cast union to ModuleResourceProvider
 function inferResourceProvider(rawUrl: string | null | undefined): ModuleResourceProvider {
-  if (!rawUrl) return "generic"
-  try {
-    const host = new URL(rawUrl).hostname.toLowerCase()
-    const match = RESOURCE_PROVIDER_PATTERNS.find((pattern) => pattern.hosts.some((regex) => regex.test(host)))
-    return match ? match.provider : "generic"
-  } catch {
-    return "generic"
-  }
+  return inferProviderSlug(rawUrl) as ModuleResourceProvider
 }
 
-function normalizeAssignmentFieldType(
-  type: unknown,
-  variant?: unknown,
-): ModuleAssignmentField["type"] {
-  const raw = typeof type === "string" ? type : ""
-  switch (raw) {
-    case "short_text":
-    case "text":
-      return "short_text"
-    case "long_text":
-    case "textarea":
-      return "long_text"
-    case "select":
-      return "select"
-    case "multi_select":
-      return "multi_select"
-    case "slider":
-      return "slider"
-    case "custom_program":
-    case "program_builder":
-      return "custom_program"
-    case "display":
-      return variant === "subtitle" ? "subtitle" : "short_text"
-    case "subtitle":
-      return "subtitle"
-    default:
-      return "short_text"
-  }
+function normalizeAssignmentFieldType(type: unknown, variant?: unknown): ModuleAssignmentField["type"] {
+  return normalizeFormFieldTypeLegacy(type, variant)
 }
 
-function toNumberOrNull(value: unknown): number | null {
-  if (value === null || value === undefined || value === "") return null
-  const num = Number(value)
-  return Number.isFinite(num) ? num : null
-}
+// toNumberOrNull is provided by lessons/fields
 
 function makeSafeKey(value: string, fallback: string): string {
   const sanitized = value
@@ -297,26 +255,30 @@ function parseLegacyHomework(raw: unknown): ModuleAssignmentField[] {
 export async function getClassModulesForUser({
   classSlug,
   userId,
+  forceAdmin = false,
 }: {
   classSlug: string
   userId: string
+  forceAdmin?: boolean
 }): Promise<ClassModuleResult> {
   const supabase = await createSupabaseServerClient()
+  const elevated = forceAdmin ? createSupabaseAdminClient() : null
+  const primary = elevated ?? supabase
 
   let classRow: unknown | null = null
   {
     // Prefer expanded module fields; fall back on 42703
-    const { data, error } = await supabase
+    const { data, error } = await primary
       .from("classes" satisfies keyof Database["public"]["Tables"])
       .select(
-        `id, title, description, is_published, modules ( id, idx, slug, title, description, is_published, video_url, content_md, duration_minutes, deck_path )`
+        `id, title, description, subtitle, video_url, link1_title, link1_url, link2_title, link2_url, link3_title, link3_url, is_published, modules ( id, idx, slug, title, description, is_published, video_url, content_md, duration_minutes, deck_path )`
       )
       .eq("slug", classSlug)
       .maybeSingle()
     if (error) {
       // Fallback for local schemas missing some columns
       if ((error as { code?: string }).code === "42703") {
-        const { data: fallback, error: err2 } = await supabase
+        const { data: fallback, error: err2 } = await primary
           .from("classes" satisfies keyof Database["public"]["Tables"])
           .select(`id, title, description, published, modules ( id, idx, slug, title, description, published )`)
           .eq("slug", classSlug)
@@ -333,11 +295,11 @@ export async function getClassModulesForUser({
 
   if (!classRow) {
     try {
-      const admin = createSupabaseAdminClient()
-      const { data: adminData } = await admin
+      const elevatedClient = elevated ?? createSupabaseAdminClient()
+      const { data: adminData } = await elevatedClient
         .from("classes" satisfies keyof Database["public"]["Tables"])
         .select(
-          `id, title, description, is_published, modules ( id, idx, slug, title, description, is_published, video_url, content_md, duration_minutes, deck_path )`
+          `id, title, description, subtitle, video_url, link1_title, link1_url, link2_title, link2_url, link3_title, link3_url, is_published, modules ( id, idx, slug, title, description, is_published, video_url, content_md, duration_minutes, deck_path )`
         )
         .eq("slug", classSlug)
         .maybeSingle()
@@ -352,14 +314,36 @@ export async function getClassModulesForUser({
   }
 
   const classRecord = classRow as ClassWithModules
+  // Build class-level resources and video URL
+  const classVideoUrl = (classRecord as { video_url?: string | null }).video_url ?? null
+  const classResources: ModuleResource[] = []
+  const linkPairs: Array<[string | null | undefined, string | null | undefined]> = [
+    [(classRecord as any).link1_title, (classRecord as any).link1_url],
+    [(classRecord as any).link2_title, (classRecord as any).link2_url],
+    [(classRecord as any).link3_title, (classRecord as any).link3_url],
+  ]
+  for (const [t, u] of linkPairs) {
+    const title = (t ?? '').trim()
+    const url = (u ?? '').trim()
+    if (!title && !url) continue
+    const label = title || url
+    classResources.push({ label, url, provider: inferResourceProvider(url) })
+  }
 
-  const moduleRows = (classRecord.modules ?? []).sort((a, b) => a.idx - b.idx)
+  const moduleRows = (classRecord.modules ?? []).sort((a, b) => (a.idx ?? 0) - (b.idx ?? 0))
 
   if (moduleRows.length === 0) {
     return {
       classId: classRecord.id,
       classTitle: classRecord.title,
       classDescription: classRecord.description ?? null,
+      classSubtitle: (classRecord as { subtitle?: string | null }).subtitle ?? null,
+      classVideoUrl,
+      classResources,
+      classPublished:
+        "is_published" in classRecord
+          ? Boolean((classRecord as { is_published?: boolean | null }).is_published)
+          : Boolean((classRecord as { published?: boolean | null }).published ?? true),
       modules: [],
       progressMap: {},
     }
@@ -373,7 +357,7 @@ export async function getClassModulesForUser({
   >()
 
   {
-    const { data: contentRows, error: contentError } = await supabase
+    const { data: contentRows, error: contentError } = await primary
       .from("module_content" satisfies keyof Database["public"]["Tables"])
       .select("module_id, video_url, resources, homework")
       .in("module_id", moduleIds)
@@ -421,7 +405,7 @@ export async function getClassModulesForUser({
 
   const assignmentByModuleId = new Map<string, ModuleAssignment>()
   {
-    const { data: assignmentRows, error: assignmentError } = await supabase
+    const { data: assignmentRows, error: assignmentError } = await primary
       .from("module_assignments" satisfies keyof Database["public"]["Tables"])
       .select("module_id, schema, complete_on_submit")
       .in("module_id", moduleIds)
@@ -484,10 +468,11 @@ export async function getClassModulesForUser({
     }
   }
 
-  const modules: ModuleRecord[] = moduleRows.map((module) => {
+  const modules: ModuleRecord[] = moduleRows.map((module, index) => {
     const content = contentByModuleId.get(module.id)
     const assignment = assignmentByModuleId.get(module.id)
     const submission = submissionByModuleId.get(module.id)
+    const idxValue = typeof module.idx === "number" && Number.isFinite(module.idx) ? module.idx : index + 1
     const legacyAssignment = content?.legacyHomework ?? []
     const resolvedAssignment = assignment
       ? assignment
@@ -500,7 +485,7 @@ export async function getClassModulesForUser({
 
     return {
       id: module.id,
-      idx: module.idx,
+      idx: idxValue,
       slug: module.slug,
       title: module.title,
       description: module.description ?? null,
@@ -531,6 +516,11 @@ export async function getClassModulesForUser({
         classId: classRecord.id,
         classTitle: classRecord.title,
         classDescription: classRecord.description ?? null,
+        classSubtitle: (classRecord as { subtitle?: string | null }).subtitle ?? null,
+        classPublished:
+          "is_published" in classRecord
+            ? Boolean((classRecord as { is_published?: boolean | null }).is_published)
+            : Boolean((classRecord as { published?: boolean | null }).published ?? true),
         modules,
         progressMap: {},
       }
@@ -548,6 +538,13 @@ export async function getClassModulesForUser({
     classId: classRecord.id,
     classTitle: classRecord.title,
     classDescription: classRecord.description ?? null,
+    classSubtitle: (classRecord as { subtitle?: string | null }).subtitle ?? null,
+    classVideoUrl,
+    classResources,
+    classPublished:
+      "is_published" in classRecord
+        ? Boolean((classRecord as { is_published?: boolean | null }).is_published)
+        : Boolean((classRecord as { published?: boolean | null }).published ?? true),
     modules,
     progressMap,
   }

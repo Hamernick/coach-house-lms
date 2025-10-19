@@ -6,7 +6,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export function VideoSignedUrlHelper({ onGenerate, onCreate }: { onGenerate: (url: string) => void; onCreate: (bucket: string, path: string) => Promise<string> }) {
+type VideoSignedUrlHelperProps = {
+  onCreate: (bucket: string, path: string) => Promise<string>
+  onGenerate?: (url: string) => void
+  targetInputId?: string
+}
+
+export function VideoSignedUrlHelper({ onGenerate, onCreate, targetInputId }: VideoSignedUrlHelperProps) {
   const [bucket, setBucket] = useState("lms-videos")
   const [path, setPath] = useState("")
   const [pending, start] = useTransition()
@@ -34,7 +40,18 @@ export function VideoSignedUrlHelper({ onGenerate, onCreate }: { onGenerate: (ur
             start(async () => {
               try {
                 const url = await onCreate(bucket, path)
-                if (typeof url === 'string') onGenerate(url)
+                if (typeof url === "string") {
+                  if (typeof onGenerate === "function") {
+                    onGenerate(url)
+                  } else if (typeof targetInputId === "string" && targetInputId.length > 0) {
+                    const el = document.getElementById(targetInputId) as HTMLInputElement | HTMLTextAreaElement | null
+                    if (el) {
+                      el.value = url
+                      el.dispatchEvent(new Event("input", { bubbles: true }))
+                      el.dispatchEvent(new Event("change", { bubbles: true }))
+                    }
+                  }
+                }
                 setError(null)
               } catch {
                 setError("Failed to create signed URL")

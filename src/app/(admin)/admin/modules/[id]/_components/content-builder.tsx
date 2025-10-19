@@ -5,22 +5,15 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  DndContext,
-  type DragEndEvent,
-  PointerSensor,
-  KeyboardSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core"
-import {
-  SortableContext,
-  useSortable,
-  arrayMove,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable"
-import { CSS } from "@dnd-kit/utilities"
+import { type DragEndEvent, PointerSensor, KeyboardSensor, useSensor, useSensors } from "@dnd-kit/core"
+import { arrayMove } from "@dnd-kit/sortable"
+import { Section } from "@/components/admin/module-builder/Section"
+import { DndList } from "@/components/admin/module-builder/DndList"
+import { AddResource } from "@/components/admin/module-builder/AddResource"
+import { UploadResource } from "@/components/admin/module-builder/UploadResource"
+import { AddHomework } from "@/components/admin/module-builder/AddHomework"
+import { parseOptions } from "@/lib/text/options"
+import { makeId } from "@/lib/id"
 
 type InteractionItem = { type: string; config?: Record<string, unknown> }
 type ResourceItem = { label?: string; url?: string; storage_path?: string }
@@ -62,20 +55,20 @@ export function ContentBuilder({
     const c: Record<string, unknown> = {}
     if (t === 'prompt') c.label = cfg.label || 'Response'
     if (t === 'poll') { c.question = cfg.question || 'Rate'; c.scale_min = Number(cfg.min || '1'); c.scale_max = Number(cfg.max || '5') }
-    if (t === 'quiz') { c.question = cfg.question || 'Choose one'; c.options = parseOptions(cfg.options) }
-    if (t === 'activity') { c.label = cfg.label || 'Select'; c.options = parseOptions(cfg.options).map((x, i) => ({ label: x, value: String(i) })) }
-    setInteractions((arr) => [...arr, { _id: newId(), type: t, config: c }])
+    if (t === 'quiz') { c.question = cfg.question || 'Choose one'; c.options = parseOptions(cfg.options, 'comma') }
+    if (t === 'activity') { c.label = cfg.label || 'Select'; c.options = parseOptions(cfg.options, 'comma').map((x, i) => ({ label: x, value: String(i) })) }
+    setInteractions((arr) => [...arr, { _id: makeId(), type: t, config: c }])
     setCfg({ label: "", question: "", min: "1", max: "5", options: "" })
   }
 
   const addResource = (label: string, url: string) => {
     if (!label && !url) return
-    setResources((arr) => [...arr, { _id: newId(), label, url }])
+    setResources((arr) => [...arr, { _id: makeId(), label, url }])
   }
 
   const addHomework = (label: string, instructions: string, uploadRequired: boolean) => {
     if (!label && !instructions) return
-    setHomework((arr) => [...arr, { _id: newId(), label, instructions, upload_required: uploadRequired }])
+    setHomework((arr) => [...arr, { _id: makeId(), label, instructions, upload_required: uploadRequired }])
   }
 
   const onDragEnd = <T extends { _id: string }>(arr: T[], setArr: (next: T[]) => void, e: DragEndEvent) => {
@@ -198,7 +191,7 @@ export function ContentBuilder({
           <UploadResource
             moduleId={moduleId}
             onUploaded={(label, url, path) =>
-              setResources((arr) => [...arr, { _id: newId(), label, url, storage_path: path }])
+              setResources((arr) => [...arr, { _id: makeId(), label, url, storage_path: path }])
             }
           />
         </div>
@@ -227,141 +220,9 @@ export function ContentBuilder({
   )
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-2 rounded-lg border p-4">
-      <div className="text-sm font-semibold">{title}</div>
-      {children}
-    </div>
-  )
-}
-
-function DndList<T extends { _id: string }>({ items, render, onDragEnd, onDelete, sensors }: { items: T[]; render: (item: T) => React.ReactNode; onDragEnd: (e: DragEndEvent) => void; onDelete: (index: number) => void; sensors: ReturnType<typeof useSensors> }) {
-  return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-      <SortableContext items={items.map((i) => i._id)} strategy={verticalListSortingStrategy}>
-        <ul className="space-y-2">
-          {items.length === 0 ? <li className="text-xs text-muted-foreground">No items yet.</li> : null}
-          {items.map((it, idx) => (
-            <SortableRow key={it._id} id={it._id} onDelete={() => onDelete(idx)}>
-              {render(it)}
-            </SortableRow>
-          ))}
-        </ul>
-      </SortableContext>
-    </DndContext>
-  )
-}
-
-function SortableRow({ id, children, onDelete }: { id: string; children: React.ReactNode; onDelete: () => void }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id })
-  const style = { transform: CSS.Transform.toString(transform), transition }
-  return (
-    <li ref={setNodeRef} style={style} className="flex items-start justify-between gap-2 rounded-md border bg-card/60 p-2">
-      <div className="flex-1">
-        <button type="button" aria-label="Drag to reorder" className="mr-2 cursor-grab text-muted-foreground" {...attributes} {...listeners}>⋮⋮</button>
-        {children}
-      </div>
-      <div className="flex items-center gap-1">
-        <Button type="button" size="icon" variant="destructive" className="h-7 w-7" onClick={onDelete}>✕</Button>
-      </div>
-    </li>
-  )
-}
-
-function AddResource({ onAdd }: { onAdd: (label: string, url: string) => void }) {
-  const [label, setLabel] = useState("")
-  const [url, setUrl] = useState("")
-  return (
-    <div className="rounded-md border p-3 space-y-2">
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <Label>Label</Label>
-          <Input value={label} onChange={(e) => setLabel(e.target.value)} />
-        </div>
-        <div className="space-y-1">
-          <Label>URL</Label>
-          <Input value={url} onChange={(e) => setUrl(e.target.value)} />
-        </div>
-      </div>
-      <div className="flex justify-end">
-        <Button size="sm" onClick={() => { onAdd(label, url); setLabel(""); setUrl("") }}>Add resource</Button>
-      </div>
-    </div>
-  )
-}
-
-function UploadResource({
-  moduleId,
-  onUploaded,
-}: {
-  moduleId: string
-  onUploaded: (label: string, url: string, path: string) => void
-}) {
-  const [pending, start] = useTransition()
-  const [error, setError] = useState<string | null>(null)
-  const onSelect = (file: File | null) => {
-    if (!file) return
-    const fd = new FormData()
-    fd.set('file', file)
-    start(async () => {
-      try {
-        const res = await fetch(`/api/admin/modules/${moduleId}/resource`, { method: 'POST', body: fd })
-        const json = await res.json().catch(() => ({}) as { url?: string; label?: string; path?: string })
-        if (!res.ok) throw new Error(json?.error || 'Upload failed')
-        onUploaded(String(json.label || file.name), String(json.url), String(json.path || ''))
-        setError(null)
-      } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : 'Upload failed')
-      }
-    })
-  }
-  return (
-    <div className="rounded-md border p-3 space-y-2">
-      <Label>Upload resource</Label>
-      <input type="file" onChange={(e) => onSelect(e.currentTarget.files?.[0] ?? null)} disabled={pending} />
-      {error ? <p className="text-xs text-rose-500">{error}</p> : null}
-      <p className="text-xs text-muted-foreground">Max 25 MB. Publicly accessible via URL.</p>
-    </div>
-  )
-}
-
-function AddHomework({ onAdd }: { onAdd: (label: string, instructions: string, uploadRequired: boolean) => void }) {
-  const [label, setLabel] = useState("")
-  const [instructions, setInstructions] = useState("")
-  const [upload, setUpload] = useState(false)
-  return (
-    <div className="rounded-md border p-3 space-y-2">
-      <div className="space-y-1">
-        <Label>Label</Label>
-        <Input value={label} onChange={(e) => setLabel(e.target.value)} />
-      </div>
-      <div className="space-y-1">
-        <Label>Instructions</Label>
-        <Textarea value={instructions} onChange={(e) => setInstructions(e.target.value)} className="min-h-20" />
-      </div>
-      <div className="flex items-center justify-between rounded-md border p-2">
-        <span className="text-xs">Upload required</span>
-        <input type="checkbox" checked={upload} onChange={(e) => setUpload(e.target.checked)} />
-      </div>
-      <div className="flex justify-end">
-        <Button size="sm" onClick={() => { onAdd(label, instructions, upload); setLabel(""); setInstructions(""); setUpload(false) }}>Add homework</Button>
-      </div>
-    </div>
-  )
-}
-
-function parseOptions(s: string): string[] {
-  return s.split(',').map((x) => x.trim()).filter(Boolean)
-}
-
-function newId() {
-  try { return crypto.randomUUID() } catch { return String(Date.now()) + Math.random().toString(36).slice(2) }
-}
-
 function normalizeArray<T>(arr: unknown[]): WithId<T>[] {
   if (!Array.isArray(arr)) return []
-  return (arr as T[]).map((item) => ({ ...(item as object), _id: newId() } as WithId<T>))
+  return (arr as T[]).map((item) => ({ ...(item as object), _id: makeId() } as WithId<T>))
 }
 
 function stripId<T extends { _id: string }>(item: T): Omit<T, '_id'> {

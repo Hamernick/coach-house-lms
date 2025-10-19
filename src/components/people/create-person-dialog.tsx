@@ -14,6 +14,7 @@ import { upsertPersonAction, type OrgPerson } from "@/app/(dashboard)/people/act
 import { toast } from "sonner"
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"
+import { ManagerSelect } from "@/components/people/manager-select"
 
 type Props = {
   triggerClassName?: string
@@ -79,6 +80,12 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
     })
   }
 
+  const CATEGORY_BADGE: Record<OrgPerson["category"], string> = {
+    staff: "bg-sky-500/15 text-sky-700 dark:text-sky-200 border-sky-500/30",
+    board: "bg-violet-500/15 text-violet-700 dark:text-violet-200 border-violet-500/30",
+    supporter: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 border-emerald-500/30",
+  }
+
   return (
     <Dialog open={open} onOpenChange={(o)=>{ setOpen(o); if (!o) reset() }}>
       <DialogTrigger asChild>
@@ -102,6 +109,37 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
         {step === 1 && (
           <FieldGroup>
             <Field orientation="responsive">
+              <FieldLabel>Category</FieldLabel>
+              <FieldControl>
+                <Select
+                  value={category}
+                  onValueChange={(v)=>{ setCategory(v as OrgPerson["category"]); if (v !== 'staff') setReportsToId(null) }}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="staff">Staff</SelectItem>
+                    <SelectItem value="board">Board</SelectItem>
+                    <SelectItem value="supporter">Supporters</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="mt-2 text-xs">
+                  <span className={`inline-flex items-center gap-2 rounded-md border px-2 py-1 ${CATEGORY_BADGE[category]}`}>
+                    <span className={`inline-block h-2 w-2 rounded-full ${category==='staff'?'bg-sky-500':category==='board'?'bg-violet-500':'bg-emerald-500'}`} />
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  </span>
+                </div>
+              </FieldControl>
+            </Field>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={()=>setOpen(false)}>Cancel</Button>
+              <Button onClick={()=>setStep(2)} disabled={!category}>Continue</Button>
+            </div>
+          </FieldGroup>
+        )}
+
+        {step === 2 && (
+          <FieldGroup>
+            <Field orientation="responsive">
               <FieldLabel htmlFor="p-name">Name</FieldLabel>
               <FieldControl>
                 <Input id="p-name" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Full name" />
@@ -113,47 +151,21 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
                 <Input id="p-title" value={title ?? ""} onChange={(e)=>setTitle(e.target.value)} placeholder="Role or title" />
               </FieldControl>
             </Field>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={()=>setOpen(false)}>Cancel</Button>
-              <Button onClick={()=>setStep(2)} disabled={!name.trim()}>Continue</Button>
-            </div>
-          </FieldGroup>
-        )}
-
-        {step === 2 && (
-          <FieldGroup>
-            <Field orientation="responsive">
-              <FieldLabel>Category</FieldLabel>
-              <FieldControl>
-                <Select value={category} onValueChange={(v)=>setCategory(v as OrgPerson["category"])}>
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="staff">Staff</SelectItem>
-                    <SelectItem value="board">Board</SelectItem>
-                    <SelectItem value="supporter">Supporters</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FieldControl>
-            </Field>
-            <Field orientation="responsive">
-              <FieldLabel>Reports to</FieldLabel>
-              <FieldControl>
-                <Select value={reportsToId ?? undefined} onValueChange={(v)=>setReportsToId(v === 'none' ? null : v)}>
-                  <SelectTrigger><SelectValue placeholder="Select manager (optional)" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No manager</SelectItem>
-                    {people
-                      .filter((p) => p.category === category && (!initial?.id || p.id !== initial.id))
-                      .map((p) => (
-                        <SelectItem key={p.id} value={p.id}>{p.name}{p.title ? ` — ${p.title}` : ""}</SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </FieldControl>
-            </Field>
+            {category === 'staff' ? (
+              <Field orientation="responsive">
+                <FieldLabel>Reports to</FieldLabel>
+                <FieldControl>
+                  <ManagerSelect
+                    value={reportsToId}
+                    options={people.filter((p)=> p.category === 'staff' && (!initial?.id || p.id !== initial.id))}
+                    onChange={(val)=> setReportsToId(val)}
+                  />
+                </FieldControl>
+              </Field>
+            ) : null}
             <div className="flex justify-between pt-2">
               <Button variant="outline" onClick={()=>setStep(1)}>Back</Button>
-              <Button onClick={()=>setStep(3)} disabled={!category}>Continue</Button>
+              <Button onClick={()=>setStep(3)} disabled={!name.trim()}>Continue</Button>
             </div>
           </FieldGroup>
         )}

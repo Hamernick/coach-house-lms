@@ -1,13 +1,25 @@
 "use client"
 
-import React, { useCallback, useEffect, useMemo, useState } from "react"
-import ReactFlow, { Background, Controls, MiniMap, Node, Edge, Handle, Position, Panel, type NodeDragHandler } from "reactflow"
+import React, { memo, useCallback, useEffect, useMemo, useState } from "react"
+import ReactFlow, {
+  Background,
+  MiniMap,
+  Node,
+  Edge,
+  Handle,
+  Position,
+  applyNodeChanges,
+  applyEdgeChanges,
+  type NodeChange,
+  type EdgeChange,
+  type NodeDragHandler,
+} from "reactflow"
 import "reactflow/dist/style.css"
 
 import type { OrgPerson } from "@/app/(dashboard)/people/actions"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTheme } from "next-themes"
-import { toast } from "sonner"
+// Removed toast notifications for drag operations per UX request
 
 type ViewPerson = OrgPerson & { displayImage?: string | null }
 type Props = { people: ViewPerson[] }
@@ -31,11 +43,11 @@ const CATEGORY_STRIP: Record<ViewPerson["category"], string> = {
   supporter: "bg-emerald-500",
 }
 
-function PersonNode({ data }: { data: { name: string; title?: string | null; image?: string | null; category?: ViewPerson["category"] } }) {
+const PersonNode = memo(function PersonNode({ data }: { name: string; title?: string | null; image?: string | null; category?: ViewPerson["category"] }) {
   const img = data.image ?? null
   const cat = (data.category ?? "staff") as ViewPerson["category"]
   return (
-    <div className="relative w-[240px] rounded-lg border bg-card p-2 shadow-sm">
+    <div className="relative w-[240px] rounded-lg border bg-card p-2">
       <div className="flex items-center gap-3 pl-2">
         <Avatar className="size-10">
           <AvatarImage className="object-cover" src={img ?? undefined} alt={data.name} />
@@ -51,13 +63,17 @@ function PersonNode({ data }: { data: { name: string; title?: string | null; ima
       <Handle type="source" position={Position.Bottom} className="!bg-transparent" />
     </div>
   )
-}
+})
 
-export function OrgChartCanvas({ people }: Props) {
+// Stable node type map (module scope) to avoid creating a new object per render
+const ORG_NODE_TYPES = Object.freeze({ person: PersonNode })
+
+function OrgChartCanvasComponent({ people }: Props) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   const theme = mounted && resolvedTheme ? resolvedTheme : "light"
+  const isDark = theme === "dark"
   const [peopleLocal, setPeopleLocal] = useState<ViewPerson[]>(people)
   useEffect(() => setPeopleLocal(people), [people])
 
@@ -103,7 +119,6 @@ export function OrgChartCanvas({ people }: Props) {
       }
 
       // Add nodes by level with positions
-      const maxWidth = Math.max(...Array.from(levels.values()).map((arr) => arr.length), 1)
       const startX = 40
       for (const [d, arr] of Array.from(levels.entries()).sort((a, b) => a[0] - b[0])) {
         arr.forEach((p, i) => {
@@ -140,25 +155,30 @@ export function OrgChartCanvas({ people }: Props) {
         nodes: prev.nodes.map((n) => (n.id === node.id ? { ...n, position: node.position } : n)),
         edges: prev.edges,
       }))
-      const t = toast.loading("Saving position…")
-      const res = await fetch("/api/people/position", {
+      // Silent persistence; no toasts
+      await fetch("/api/people/position", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: node.id, x: node.position.x, y: node.position.y }),
       })
-      if (!res.ok) {
-        const j = await res.json().catch(() => ({}))
-        toast.error(j?.error || "Save failed", { id: t })
-      } else {
-        toast.success("Position saved", { id: t })
-      }
     } catch (e) {
-      toast.error("Save failed")
+      // Silently ignore; UI stays responsive
+      console.error("Save position failed", e)
     }
   }, [])
 
+  // Smooth live dragging: apply changes as React Flow emits them
+  const onNodesChange = useCallback((changes: NodeChange[]) => {
+    setGraph((prev) => ({ nodes: applyNodeChanges(changes, prev.nodes), edges: prev.edges }))
+  }, [])
+  const onEdgesChange = useCallback((changes: EdgeChange[]) => {
+    setGraph((prev) => ({ nodes: prev.nodes, edges: applyEdgeChanges(changes, prev.edges) }))
+  }, [])
+
+  // nodeTypes must be stable to avoid React Flow warning 002
+
   return (
-    <div className="h-[min(60vh,620px)] w-full">
+    <div className="h-[min(60vh,620px)] w-full" style={{ contain: "layout paint" }}>
       {!mounted ? (
         <div className="h-full w-full" />
       ) : (
@@ -169,51 +189,27 @@ export function OrgChartCanvas({ people }: Props) {
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.3}
         maxZoom={1.5}
-        nodeTypes={{ person: PersonNode }}
-        className="[&_.react-flow__attribution]:hidden [&_.react-flow__controls]:bg-background/70 [&_.react-flow__controls]:backdrop-blur [&_.react-flow__controls-button]:text-foreground [&_.react-flow__controls-button]:bg-background/80 [&_.react-flow__controls-button]:border [&_.react-flow__controls-button]:border-border [&_.react-flow__controls-button:hover]:bg-accent/60 [&_.react-flow__minimap]:bg-background/80 [&_.react-flow__minimap]:border [&_.react-flow__minimap]:border-border"
+        zoomOnPinch
+        zoomOnScroll
+        onlyRenderVisibleElements
+        proOptions={{ hideAttribution: true }}
+        nodeTypes={ORG_NODE_TYPES}
+        nodesConnectable={false}
+        elementsSelectable={false}
+        selectNodesOnDrag={false}
+        panOnDrag
+        className="org-flow"
+        style={{ width: "100%", height: "100%" }}
         onNodeDragStop={onNodeDragStop}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
       >
-        <Panel position="top-right" className="m-2 flex gap-2 rounded-md border bg-background/80 p-2 text-xs backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          {(["staff","board","supporter"] as const).map((cat) => (
-            <button
-              key={cat}
-              className="inline-flex items-center gap-1 rounded border px-2 py-1 hover:bg-accent"
-              onClick={async ()=>{
-                const t = toast.loading("Resetting layout…")
-                const res = await fetch("/api/people/position/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ category: cat }) })
-                if (!res.ok) {
-                  const j = await res.json().catch(()=>({}))
-                  toast.error(j?.error || "Reset failed", { id: t })
-                  return
-                }
-                // clear locally and rebuild
-                const next = peopleLocal.map((p) => (p.category === cat ? { ...p, pos: null } : p))
-                setPeopleLocal(next)
-                setGraph(buildGraph(next))
-                toast.success("Layout reset", { id: t })
-              }}
-            >
-              Reset {cat.charAt(0).toUpperCase() + cat.slice(1)}
-            </button>
-          ))}
-        </Panel>
-        <Panel position="top-left" className="m-2 rounded-md border bg-background/80 p-2 text-xs backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-sky-500" /> Staff</div>
-            <div className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-violet-500" /> Board</div>
-            <div className="flex items-center gap-1"><span className="inline-block h-2 w-2 rounded-full bg-emerald-500" /> Supporters</div>
-          </div>
-        </Panel>
-        <MiniMap
-          pannable
-          zoomable
-          maskColor={theme === "dark" ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"}
-          nodeColor={() => (theme === "dark" ? "#94a3b8" : "#64748b")}
-        />
-        <Controls className="!bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60" />
-        <Background color={theme === "dark" ? "#1f2937" : "#e5e7eb"} gap={16} />
+        <MiniMap pannable zoomable />
+        <Background color={isDark ? "#1f2937" : "#e5e7eb"} gap={16} />
       </ReactFlow>
       )}
     </div>
   )
 }
+
+export const OrgChartCanvas = memo(OrgChartCanvasComponent)

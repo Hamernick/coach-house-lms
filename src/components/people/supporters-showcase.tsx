@@ -31,7 +31,7 @@ export function PeopleShowcase({
   const collection = allPeople ?? people
 
   return (
-    <div className={cn("grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3", className)}>
+    <div className={cn("grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3", className)}>
       {people.map((person) => (
         <PersonItem key={person.id} person={person} allPeople={collection} />
       ))}

@@ -30,10 +30,12 @@ export default async function TrainingPage() {
     blurb: klass.description ?? "",
     description: klass.description ?? "",
     slug: klass.slug,
+    published: klass.published,
     modules: klass.modules.map((module) => ({
       id: module.id,
       title: module.title,
       subtitle: module.description ?? undefined,
+      published: module.published,
     })),
   }))
 

@@ -8,6 +8,7 @@ import { revalidatePath } from "next/cache"
 import { requireAdmin } from "@/lib/admin/auth"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { htmlToMarkdown, stripHtml } from "@/lib/markdown/convert"
 import type { Database } from "@/lib/supabase"
 import {
   LESSON_SUBTITLE_MAX_LENGTH,
@@ -16,6 +17,10 @@ import {
   MODULE_TITLE_MAX_LENGTH,
   clampText,
 } from "@/lib/lessons/limits"
+import { normalizeFormFieldTypeLegacy, toNumberOrNull } from "@/lib/lessons/fields"
+import { validateFinalPayload } from "@/lib/lessons/schemas"
+import type { LessonWizardPayload as SharedLessonWizardPayload } from "@/lib/lessons/types"
+import { buildAssignmentSchema, buildResourcePayload } from "@/lib/lessons/builders"
 
 export async function createClassAction() {
   await requireAdmin()
@@ -230,14 +235,17 @@ export async function updateClassWizardAction(formData: FormData) {
 }
 
 async function createClassFromLessonWizardPayload(payloadRaw: string) {
-  let payload: LessonWizardPayload
+  let parsed: unknown
   try {
-    payload = JSON.parse(payloadRaw) as LessonWizardPayload
+    parsed = JSON.parse(payloadRaw)
   } catch {
     return { error: "Invalid lesson payload" }
   }
 
-  if (!payload || typeof payload !== 'object') {
+  let payload: SharedLessonWizardPayload
+  try {
+    payload = validateFinalPayload(parsed)
+  } catch {
     return { error: "Invalid lesson payload" }
   }
 
@@ -272,26 +280,34 @@ async function createClassFromLessonWizardPayload(payloadRaw: string) {
     .limit(1)
   const nextPos = ((rows?.[0] as { position?: number } | undefined)?.position ?? 0) + 1
 
-  const description = extractSummary(normalizedSubtitle, payload.body ?? '')
+  const description = htmlToMarkdown(payload.body ?? '')
 
   const classInsert: Database["public"]["Tables"]["classes"]["Insert"] & Record<string, unknown> = {
     title: normalizedTitle,
     slug: slugCandidate,
     description,
+    subtitle: normalizedSubtitle || null,
+    video_url: typeof payload.videoUrl === 'string' && payload.videoUrl.trim().length > 0 ? payload.videoUrl.trim() : null,
+    link1_title: (payload.links?.[0]?.title ?? '').trim() || null,
+    link1_url: (payload.links?.[0]?.url ?? '').trim() || null,
+    link2_title: (payload.links?.[1]?.title ?? '').trim() || null,
+    link2_url: (payload.links?.[1]?.url ?? '').trim() || null,
+    link3_title: (payload.links?.[2]?.title ?? '').trim() || null,
+    link3_url: (payload.links?.[2]?.url ?? '').trim() || null,
     is_published: false,
     // @ts-expect-error local types may not include 'position' in classes yet
     position: nextPos,
   }
 
   let { data: created, error } = await supabase
-    .from("classes" satisfies keyof Database["public"]["Tables"])
+    .from("classes" satisfies keyof Database["public"]["Tables"]) 
     .insert(classInsert)
     .select("id")
     .single()
 
-  if (error && isRlsError(error)) {
+  if (error) {
     const res = await admin
-      .from("classes" satisfies keyof Database["public"]["Tables"])
+      .from("classes" satisfies keyof Database["public"]["Tables"]) 
       .insert(classInsert)
       .select("id")
       .single()
@@ -449,14 +465,17 @@ async function createClassFromLessonWizardPayload(payloadRaw: string) {
 }
 
 async function updateClassFromLessonWizardPayload(classId: string, payloadRaw: string) {
-  let payload: LessonWizardPayload
+  let parsed: unknown
   try {
-    payload = JSON.parse(payloadRaw) as LessonWizardPayload
+    parsed = JSON.parse(payloadRaw)
   } catch {
     return { error: "Invalid lesson payload" }
   }
 
-  if (!payload || typeof payload !== 'object') {
+  let payload: SharedLessonWizardPayload
+  try {
+    payload = validateFinalPayload(parsed)
+  } catch {
     return { error: "Invalid lesson payload" }
   }
 
@@ -471,24 +490,38 @@ async function updateClassFromLessonWizardPayload(classId: string, payloadRaw: s
     return typeof module?.moduleId === 'string' && module.moduleId.trim().length > 0
   })
 
-  if (modules.length === 0) {
-    return { error: "No modules available to update" }
-  }
-
   await requireAdmin()
   const supabase = await createSupabaseServerClient()
   const admin = createSupabaseAdminClient()
 
-  const { data: existingClass, error: classFetchError } = await supabase
+  let { data: existingClass, error: classFetchError } = await supabase
     .from("classes" satisfies keyof Database["public"]["Tables"])
     .select("id, slug")
     .eq("id", classId)
     .maybeSingle<{ id: string; slug: string | null }>()
   if (classFetchError) {
-    return { error: classFetchError.message }
+    // Try admin fallback on fetch
+    const { data: adminClass, error: adminFetchError } = await admin
+      .from("classes" satisfies keyof Database["public"]["Tables"])
+      .select("id, slug")
+      .eq("id", classId)
+      .maybeSingle<{ id: string; slug: string | null }>()
+    if (adminFetchError) {
+      return { error: adminFetchError.message }
+    }
+    existingClass = adminClass as typeof existingClass
   }
   if (!existingClass) {
-    return { error: "Class not found" }
+    // Attempt admin fallback if RLS returned no row
+    const { data: adminClass } = await admin
+      .from("classes" satisfies keyof Database["public"]["Tables"])
+      .select("id, slug")
+      .eq("id", classId)
+      .maybeSingle<{ id: string; slug: string | null }>()
+    if (!adminClass) {
+      return { error: "Class not found" }
+    }
+    existingClass = adminClass as typeof existingClass
   }
 
   const trimmedSubtitle = typeof payload.subtitle === 'string' ? payload.subtitle.trim() : ''
@@ -497,31 +530,44 @@ async function updateClassFromLessonWizardPayload(classId: string, payloadRaw: s
   const originalSlug = existingClass.slug ?? null
   const slugBase = slugify(normalizedTitle)
   const nextSlug = slugBase.length > 0 ? await ensureUniqueClassSlug(supabase, slugBase, classId) : originalSlug ?? `class-${classId.slice(0, 8)}`
-  const description = extractSummary(normalizedSubtitle, payload.body ?? '')
+  const description = htmlToMarkdown(payload.body ?? '')
 
-  const classUpdatePayload: Database["public"]["Tables"]["classes"]["Update"] = {
+  const classUpdatePayload: Database["public"]["Tables"]["classes"]["Update"] & Record<string, unknown> = {
     title: normalizedTitle,
     description,
+    subtitle: normalizedSubtitle || null,
+    video_url: typeof payload.videoUrl === 'string' && payload.videoUrl.trim().length > 0 ? payload.videoUrl.trim() : null,
+    link1_title: (payload.links?.[0]?.title ?? '').trim() || null,
+    link1_url: (payload.links?.[0]?.url ?? '').trim() || null,
+    link2_title: (payload.links?.[1]?.title ?? '').trim() || null,
+    link2_url: (payload.links?.[1]?.url ?? '').trim() || null,
+    link3_title: (payload.links?.[2]?.title ?? '').trim() || null,
+    link3_url: (payload.links?.[2]?.url ?? '').trim() || null,
   }
   if (nextSlug) {
     classUpdatePayload.slug = nextSlug
   }
 
-  let { error: classUpdateError } = await supabase
-    .from("classes" satisfies keyof Database["public"]["Tables"])
+  let { data: updatedClassRow, error: classUpdateError } = await supabase
+    .from("classes" satisfies keyof Database["public"]["Tables"]) 
     .update(classUpdatePayload)
     .eq("id", classId)
+    .select("id")
+    .maybeSingle<{ id: string }>()
 
-  if (classUpdateError && isRlsError(classUpdateError)) {
+  if (classUpdateError || !updatedClassRow) {
     const res = await admin
-      .from("classes" satisfies keyof Database["public"]["Tables"])
+      .from("classes" satisfies keyof Database["public"]["Tables"]) 
       .update(classUpdatePayload)
       .eq("id", classId)
+      .select("id")
+      .maybeSingle<{ id: string }>()
     classUpdateError = res.error as typeof classUpdateError
+    updatedClassRow = res.data as typeof updatedClassRow
   }
 
-  if (classUpdateError) {
-    return { error: classUpdateError.message }
+  if (classUpdateError || !updatedClassRow) {
+    return { error: classUpdateError?.message ?? "Failed to update class" }
   }
 
   const { data: moduleRows, error: moduleFetchError } = await supabase
@@ -577,21 +623,26 @@ async function updateClassFromLessonWizardPayload(classId: string, payloadRaw: s
         idx: index + 1,
       }
 
-      let { error: moduleUpdateError } = await supabase
-        .from("modules" satisfies keyof Database["public"]["Tables"])
+      let { data: updatedModuleRow, error: moduleUpdateError } = await supabase
+        .from("modules" satisfies keyof Database["public"]["Tables"]) 
         .update(moduleUpdate)
         .eq("id", moduleId)
+        .select("id")
+        .maybeSingle<{ id: string }>()
 
-      if (moduleUpdateError && isRlsError(moduleUpdateError)) {
+      if (moduleUpdateError || !updatedModuleRow) {
         const res = await admin
-          .from("modules" satisfies keyof Database["public"]["Tables"])
+          .from("modules" satisfies keyof Database["public"]["Tables"]) 
           .update(moduleUpdate)
           .eq("id", moduleId)
+          .select("id")
+          .maybeSingle<{ id: string }>()
         moduleUpdateError = res.error as typeof moduleUpdateError
+        updatedModuleRow = res.data as typeof updatedModuleRow
       }
 
-      if (moduleUpdateError) {
-        throw new Error(moduleUpdateError.message)
+      if (moduleUpdateError || !updatedModuleRow) {
+        throw new Error(moduleUpdateError?.message ?? "Failed to update module")
       }
 
       moduleRevalidateTargets.push(`/admin/modules/${moduleId}`)
@@ -713,14 +764,7 @@ type LessonWizardModulePayload = {
   formFields: LessonWizardFormFieldPayload[]
 }
 
-type LessonWizardPayload = {
-  title: string
-  subtitle: string
-  body: string
-  videoUrl: string
-  links: Array<{ title: string; url: string; provider?: string | null }>
-  modules: LessonWizardModulePayload[]
-}
+// validateFinalPayload provides canonical payload shape and types
 
 function isRlsError(error: { message?: string | null; code?: string | number | null } | null | undefined) {
   if (!error) return false
@@ -755,39 +799,6 @@ async function ensureUniqueClassSlug(
   return `${baseSlug}-${randomUUID().slice(0, 6)}`
 }
 
-function htmlToMarkdown(html: string) {
-  if (typeof html !== 'string' || html.trim().length === 0) {
-    return ''
-  }
-  let output = html
-    .replace(/<h1[^>]*>/gi, '# ')
-    .replace(/<h2[^>]*>/gi, '## ')
-    .replace(/<h3[^>]*>/gi, '### ')
-    .replace(/<h4[^>]*>/gi, '#### ')
-    .replace(/<h5[^>]*>/gi, '##### ')
-    .replace(/<h6[^>]*>/gi, '###### ')
-    .replace(/<\/h[1-6]>/gi, '\n\n')
-    .replace(/<p[^>]*>/gi, '')
-    .replace(/<\/p>/gi, '\n\n')
-    .replace(/<br\s*\/?\s*>/gi, '\n')
-    .replace(/<li[^>]*>/gi, '- ')
-    .replace(/<\/li>/gi, '\n')
-    .replace(/<ul[^>]*>/gi, '\n')
-    .replace(/<\/ul>/gi, '\n')
-    .replace(/<strong[^>]*>/gi, '**')
-    .replace(/<\/strong>/gi, '**')
-    .replace(/<em[^>]*>/gi, '*')
-    .replace(/<\/em>/gi, '*')
-  output = output.replace(/<[^>]+>/g, '')
-  output = decodeHtmlEntities(output)
-  return output
-    .split('\n')
-    .map((line) => line.trimEnd())
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-}
-
 function extractSummary(subtitle: string, body: string) {
   const trimmedSubtitle = subtitle.trim()
   if (trimmedSubtitle.length > 0) {
@@ -801,174 +812,9 @@ function extractSummary(subtitle: string, body: string) {
   return summary.length > 0 ? summary : null
 }
 
-function stripHtml(html: string) {
-  if (typeof html !== 'string') {
-    return ''
-  }
-  const output = html
-    .replace(/<br\s*\/?\s*>/gi, '\n')
-    .replace(/<p[^>]*>/gi, '')
-    .replace(/<\/p>/gi, '\n\n')
-    .replace(/<li[^>]*>/gi, '- ')
-    .replace(/<\/li>/gi, '\n')
-    .replace(/<[^>]+>/g, '')
-  return decodeHtmlEntities(output).replace(/\n{3,}/g, '\n\n').trim()
-}
+// toNumberOrNull provided by @/lib/lessons/fields
 
-function decodeHtmlEntities(value: string) {
-  const str = String(value)
-  return str
-    .replace(/&nbsp;/gi, ' ')
-    .replace(/&amp;/gi, '&')
-    .replace(/&lt;/gi, '<')
-    .replace(/&gt;/gi, '>')
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'")
-}
-
-function toNumberOrNull(value: unknown): number | null {
-  if (value === null || value === undefined || value === '') return null
-  const num = Number(value)
-  return Number.isFinite(num) ? num : null
-}
-
-function buildResourcePayload(
-  resources: LessonWizardResourcePayload[],
-  lessonLinks: Array<{ title: string; url: string }>,
-) {
-  const items: Array<{ label: string; url: string }> = []
-  for (const link of lessonLinks) {
-    const url = typeof link?.url === 'string' ? link.url.trim() : ''
-    if (!url) continue
-    const label = typeof link?.title === 'string' && link.title.trim().length > 0 ? link.title.trim() : url
-    items.push({ label, url })
-  }
-  for (const resource of resources) {
-    if (!resource) continue
-    const url = typeof resource.url === 'string' ? resource.url.trim() : ''
-    if (!url) continue
-    const label = typeof resource.title === 'string' && resource.title.trim().length > 0 ? resource.title.trim() : url
-    items.push({ label, url })
-  }
-  return items
-}
-
-function buildAssignmentSchema(formFields: LessonWizardFormFieldPayload[]) {
-  if (!Array.isArray(formFields) || formFields.length === 0) {
-    return null
-  }
-
-  const fields: Array<Record<string, unknown>> = []
-  const usedNames = new Set<string>()
-
-  const normalizeType = (raw: string | null | undefined): string => {
-    switch (raw) {
-      case 'short_text':
-      case 'text':
-        return 'short_text'
-      case 'long_text':
-      case 'textarea':
-        return 'long_text'
-      case 'select':
-        return 'select'
-      case 'multi_select':
-        return 'multi_select'
-      case 'slider':
-        return 'slider'
-      case 'subtitle':
-      case 'display':
-        return 'subtitle'
-      case 'custom_program':
-      case 'program_builder':
-        return 'custom_program'
-      default:
-        return 'short_text'
-    }
-  }
-
-  formFields.forEach((field, index) => {
-    if (!field) return
-    const normalizedType = normalizeType(field.type)
-
-    const rawLabel = typeof field.label === 'string' ? field.label.trim() : ''
-    const hasLabel = rawLabel.length > 0
-    if (!hasLabel && normalizedType !== 'subtitle') {
-      return
-    }
-
-    const baseSlug = slugify(hasLabel ? rawLabel : `subtitle_${index + 1}`).replace(/-/g, '_') || `field_${index + 1}`
-    let name = baseSlug
-    let attempt = 1
-    while (usedNames.has(name)) {
-      name = `${baseSlug}_${attempt}`
-      attempt += 1
-    }
-    usedNames.add(name)
-
-    const placeholder = typeof field.placeholder === 'string' ? field.placeholder.trim() : ''
-    const description = typeof field.description === 'string' ? field.description.trim() : ''
-    const options = Array.isArray(field.options)
-      ? field.options.map((option) => String(option).trim()).filter(Boolean)
-      : []
-    const minRaw = toNumberOrNull(field.min)
-    const maxRaw = toNumberOrNull(field.max)
-    const stepRaw = toNumberOrNull(field.step)
-    const programTemplate = typeof field.programTemplate === 'string' ? field.programTemplate.trim() : ''
-
-    if (normalizedType === 'subtitle') {
-      fields.push({
-        name,
-        type: 'display',
-        variant: 'subtitle',
-        label: rawLabel || `Section ${index + 1}`,
-        description: description || undefined,
-      })
-      return
-    }
-
-    const entry: Record<string, unknown> = {
-      name,
-      label: rawLabel,
-      type: normalizedType,
-      required: Boolean(field.required),
-    }
-
-    if (placeholder) entry.placeholder = placeholder
-    if (description) entry.description = description
-
-    if (normalizedType === 'select' || normalizedType === 'multi_select') {
-      if (options.length > 0) {
-        entry.options = options
-      }
-    }
-
-    if (normalizedType === 'slider') {
-      const resolvedMin = minRaw ?? 0
-      let resolvedMax = maxRaw ?? resolvedMin + 100
-      if (resolvedMax < resolvedMin) {
-        resolvedMax = resolvedMin
-      }
-      const resolvedStep = stepRaw && stepRaw > 0 ? stepRaw : 1
-      entry.min = resolvedMin
-      entry.max = resolvedMax
-      entry.step = resolvedStep
-    }
-
-    if (normalizedType === 'custom_program') {
-      if (programTemplate) {
-        entry.programTemplate = programTemplate
-      }
-    }
-
-    fields.push(entry)
-  })
-
-  if (fields.length === 0) {
-    return null
-  }
-
-  return { fields }
-}
+// Assignment/resource builders moved to @/lib/lessons/builders
 
 async function safeDeleteClass(
   classId: string,

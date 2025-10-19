@@ -1,20 +1,23 @@
 "use client"
 
- import * as React from "react"
- import type { Icon } from "@tabler/icons-react"
- import {
-   IconBuilding,
-   IconHelp,
-   IconLayoutDashboard,
-   IconLifebuoy,
-   IconNotebook,
-   IconUsers,
- } from "@tabler/icons-react"
- 
- import { NavDocuments } from "@/components/nav-documents"
- import { NavMain } from "@/components/nav-main"
- import { NavSecondary } from "@/components/nav-secondary"
- import { NavUser } from "@/components/nav-user"
+import * as React from "react"
+import { AnimatePresence, motion } from "framer-motion"
+import type { Icon } from "@tabler/icons-react"
+import {
+  IconBuilding,
+  IconHelp,
+  IconLayoutDashboard,
+  IconMessageCircle,
+  IconNotebook,
+  IconUsers,
+} from "@tabler/icons-react"
+
+import { NavDocuments } from "@/components/nav-documents"
+import { NavMain } from "@/components/nav-main"
+import { NavSecondary } from "@/components/nav-secondary"
+import { NavUser } from "@/components/nav-user"
+import { cn } from "@/lib/utils"
+import Image from "next/image"
 import {
   Sidebar,
   SidebarContent,
@@ -30,19 +33,17 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
- 
- import {
-   GraduationCap,
-   ChevronDown,
-   ChevronRight,
-   MoreVertical,
-   Loader2,
- } from "lucide-react"
- import Link from "next/link"
- import { useRouter } from "next/navigation"
- import { usePathname } from "next/navigation"
- import type { SidebarClass } from "@/lib/academy"
- import { CreateEntityPopover } from "@/components/admin/create-entity-popover"
+import {
+  GraduationCap,
+  ChevronRight,
+  MoreVertical,
+  Loader2,
+} from "lucide-react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { usePathname } from "next/navigation"
+import type { SidebarClass } from "@/lib/academy"
+import { CreateEntityPopover } from "@/components/admin/create-entity-popover"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -85,15 +86,56 @@ function buildMainNav(isAdmin: boolean): { title: string; href: string; icon?: I
 const RESOURCE_NAV = [
   {
     name: "Knowledge base",
-    url: "https://coachhouse.example.com/docs",
+    url: "https://coach-house.gitbook.io/coach-house",
     icon: IconNotebook,
+    external: true,
   },
   {
     name: "Community",
-    url: "https://coachhouse.example.com/community",
-    icon: IconLifebuoy,
+    url: "/community",
+    icon: IconMessageCircle,
   },
 ]
+
+const ACCORDION_EASING: [number, number, number, number] = [0.4, 0, 0.2, 1]
+
+const LIST_VARIANTS = {
+  collapsed: {
+    height: 0,
+    opacity: 0,
+    transition: {
+      height: { duration: 0.2, ease: ACCORDION_EASING },
+      opacity: { duration: 0.18, ease: ACCORDION_EASING },
+    },
+  },
+  open: {
+    height: "auto",
+    opacity: 1,
+    transition: {
+      height: { duration: 0.32, ease: ACCORDION_EASING },
+      opacity: { duration: 0.25, ease: ACCORDION_EASING },
+      when: "beforeChildren" as const,
+      staggerChildren: 0.045,
+    },
+  },
+}
+
+const LIST_ITEM_VARIANTS = {
+  collapsed: {
+    opacity: 0,
+    y: -6,
+    transition: { duration: 0.18, ease: ACCORDION_EASING },
+  },
+  open: (index: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.24,
+      ease: ACCORDION_EASING,
+      delay: index * 0.045,
+    },
+  }),
+}
 
 const SUPPORT_EMAIL = "contact@coachhousesolutions.org"
 
@@ -192,11 +234,30 @@ export function AppSidebar({ user, isAdmin = false, classes, ...props }: AppSide
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className="data-[slot=sidebar-menu-button]:!p-1.5">
-              <a href="/dashboard">
-                <span className="text-base font-semibold tracking-tight">
-                  Coach House LMS
+            <SidebarMenuButton
+              asChild
+              className="data-[slot=sidebar-menu-button]:!p-2 data-[slot=sidebar-menu-button]:!h-10 data-[slot=sidebar-menu-button]:!items-center data-[slot=sidebar-menu-button]:!rounded-lg"
+            >
+              <a href="/dashboard" className="flex items-center gap-2">
+                <span className="relative flex h-8 w-8 items-center justify-center">
+                  <Image
+                    src="/coach-house-logo-light.png"
+                    alt="Coach House logo"
+                    width={32}
+                    height={32}
+                    className="block dark:hidden"
+                    priority
+                  />
+                  <Image
+                    src="/coach-house-logo-dark.png"
+                    alt="Coach House logo"
+                    width={32}
+                    height={32}
+                    className="hidden dark:block"
+                    priority
+                  />
                 </span>
+                <span className="text-base font-semibold tracking-tight">Coach House</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -234,22 +295,34 @@ export function AppSidebar({ user, isAdmin = false, classes, ...props }: AppSide
 
           const TopItem = ({ node }: { node: Node }) => {
             const isActive = pathname === node.href
+            const isOpen = Boolean(openMap[node.key])
             return (
               <SidebarMenuItem key={node.key}>
-                <div className="flex items-center">
+                <div className="flex items-center gap-1.5">
                   {node.children ? (
                     <SidebarMenuAction
-                      title={openMap[node.key] ? 'Collapse' : 'Expand'}
-                      className="mr-2 h-7 w-7 shrink-0 rounded-md flex items-center justify-center hover:bg-sidebar-accent"
-                      onClick={(e) => { e.preventDefault(); const map = { ...openMap, [node.key]: !openMap[node.key] }; setOpenMap(map) }}
+                      title={isOpen ? 'Collapse' : 'Expand'}
+                      className="static order-first flex size-7 shrink-0 items-center justify-center rounded-md border border-transparent hover:border-border hover:bg-sidebar-accent"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        const map = { ...openMap, [node.key]: !isOpen }
+                        setOpenMap(map)
+                      }}
                     >
-                      {openMap[node.key] ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+                      <motion.span
+                        initial={false}
+                        animate={{ rotate: isOpen ? 90 : 0 }}
+                        transition={{ duration: 0.18, ease: "easeInOut" }}
+                        className="flex items-center justify-center"
+                      >
+                        <ChevronRight className="size-4" />
+                      </motion.span>
                     </SidebarMenuAction>
                   ) : null}
                   <SidebarMenuButton
                     asChild
                     isActive={isActive}
-                    className="flex-1 hover:bg-sidebar-accent rounded-md h-auto min-h-9 py-2 whitespace-normal break-words overflow-visible"
+                    className="flex-1 rounded-md px-2 py-2 hover:bg-sidebar-accent"
                   >
                     <Link
                       href={node.href}
@@ -262,39 +335,55 @@ export function AppSidebar({ user, isAdmin = false, classes, ...props }: AppSide
                           try { window.localStorage.setItem('academyOpenMap', JSON.stringify(map)) } catch {}
                         }
                       }}
+                      className="flex w-full items-center justify-between gap-2 text-left text-sm leading-snug transition-colors"
                     >
-                      <span className="relative block w-full whitespace-normal break-words overflow-visible leading-snug max-w-[calc(100%-2.5rem)] transition-all data-[active=true]:font-semibold data-[active=true]:text-foreground data-[active=true]:before:content-[''] data-[active=true]:before:absolute data-[active=true]:before:left-[-13px] data-[active=true]:before:top-1 data-[active=true]:before:bottom-1 data-[active=true]:before:w-0.5 data-[active=true]:before:bg-primary data-[active=true]:before:rounded data-[active=true]:before:z-10">
-                        {node.title}
-                      </span>
+                      <span className="flex-1 truncate break-words text-pretty">{node.title}</span>
                     </Link>
                   </SidebarMenuButton>
                 </div>
-                {node.children && openMap[node.key] ? (
-                  <SidebarMenuSub className="relative border-l pl-3">
-                    {node.children.map((c) => {
-                      const active = pathname === c.href
-                      return (
-                        <SidebarMenuSubItem key={c.id}>
-                          <SidebarMenuSubButton
-                            asChild
-                            size="sm"
-                            isActive={active}
-                            className="relative transition-all duration-200 rounded-md h-auto min-h-9 py-2 whitespace-normal break-words overflow-visible data-[active=true]:font-semibold data-[active=true]:text-foreground data-[active=true]:before:content-[''] data-[active=true]:before:absolute data-[active=true]:before:left-[-13px] data-[active=true]:before:top-1 data-[active=true]:before:bottom-1 data-[active=true]:before:w-0.5 data-[active=true]:before:bg-primary data-[active=true]:before:rounded data-[active=true]:before:z-10 hover:bg-sidebar-accent"
-                          >
-                            <Link
-                              href={c.href}
-                              prefetch
-                              className="block w-full whitespace-normal break-words overflow-visible text-muted-foreground leading-snug hover:text-foreground max-w-[calc(100%-2.5rem)]"
-                              onMouseEnter={() => router.prefetch(c.href)}
-                            >
-                              {c.title}
-                            </Link>
-                          </SidebarMenuSubButton>
-                        </SidebarMenuSubItem>
-                      )
-                    })}
-                  </SidebarMenuSub>
-                ) : null}
+                <AnimatePresence initial={false} mode="wait">
+                  {node.children && isOpen ? (
+                    <motion.div
+                      key={`${node.key}-modules`}
+                      variants={LIST_VARIANTS}
+                      initial="collapsed"
+                      animate="open"
+                      exit="collapsed"
+                      style={{ overflow: "hidden" }}
+                    >
+                    <SidebarMenuSub className="relative pl-3 lg:pl-4">
+                        {node.children.map((c, index) => {
+                          const active = pathname === c.href
+                          return (
+                            <SidebarMenuSubItem key={c.id} className="overflow-hidden">
+                              <motion.div
+                                variants={LIST_ITEM_VARIANTS}
+                                custom={index}
+                                className="w-full"
+                              >
+                                <SidebarMenuSubButton
+                                  asChild
+                                  size="sm"
+                                  isActive={active}
+                                  className="relative transition-colors duration-200 rounded-md h-auto min-h-9 py-2 whitespace-normal break-words overflow-visible hover:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:text-foreground"
+                                >
+                                  <Link
+                                    href={c.href}
+                                    prefetch
+                                    className="relative block w-full whitespace-normal break-words overflow-visible text-muted-foreground leading-snug hover:text-foreground max-w-[calc(100%-2.5rem)]"
+                                    onMouseEnter={() => router.prefetch(c.href)}
+                                  >
+                                    {c.title}
+                                  </Link>
+                                </SidebarMenuSubButton>
+                              </motion.div>
+                            </SidebarMenuSubItem>
+                          )
+                        })}
+                      </SidebarMenuSub>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
               </SidebarMenuItem>
             )
           }
@@ -347,61 +436,80 @@ export function AppSidebar({ user, isAdmin = false, classes, ...props }: AppSide
                       <div className="flex items-center gap-2">
                         <SidebarMenuAction
                           title={isOpen ? "Collapse" : "Expand"}
-                          className="h-7 w-7 shrink-0 rounded-md hover:bg-sidebar-accent flex items-center justify-center"
+                          className="static order-first flex size-7 shrink-0 items-center justify-center rounded-md border border-transparent hover:border-border hover:bg-sidebar-accent"
                           onClick={(event) => {
                             event.preventDefault()
-                            toggle()
+                            if (unpublishedModules.length > 0) toggle()
                           }}
                         >
-                          {unpublishedModules.length > 0 ? (
-                            isOpen ? (
-                              <ChevronDown className="size-4" />
-                            ) : (
-                              <ChevronRight className="size-4" />
-                            )
-                          ) : (
-                            <ChevronRight className="size-4 opacity-20" />
-                          )}
+                          <motion.span
+                            initial={false}
+                            animate={{ rotate: unpublishedModules.length > 0 && isOpen ? 90 : 0 }}
+                            transition={{ duration: 0.18, ease: "easeInOut" }}
+                            className={cn("flex items-center justify-center", unpublishedModules.length === 0 && "opacity-40")}
+                          >
+                            <ChevronRight className="size-4" />
+                          </motion.span>
                         </SidebarMenuAction>
                         <ClassDraftActions classId={klass.id} />
                         <SidebarMenuButton
                           asChild
                           isActive={pathname === `/class/${klass.slug}`}
-                          className="h-auto flex-1 rounded-md py-2 text-left whitespace-normal"
+                          className="flex-1 rounded-md px-2 py-2 text-left hover:bg-sidebar-accent"
                         >
-                          <Link href={`/class/${klass.slug}`} prefetch onMouseEnter={() => router.prefetch(`/class/${klass.slug}`)}>
-                            <span className="block text-sm font-medium leading-tight text-foreground break-words">
+                          <Link
+                            href={`/class/${klass.slug}`}
+                            prefetch
+                            onMouseEnter={() => router.prefetch(`/class/${klass.slug}`)}
+                            className="flex w-full items-center justify-between gap-2 text-sm font-medium leading-tight"
+                          >
+                            <span className="flex-1 truncate break-words text-pretty">
                               {klass.title}
                             </span>
                           </Link>
                         </SidebarMenuButton>
                       </div>
-                      {unpublishedModules.length > 0 && isOpen ? (
-                        <SidebarMenuSub className="mt-2 border-l border-dashed border-muted-foreground/40 pl-3">
-                          {unpublishedModules.map((mod) => (
-                            <SidebarMenuSubItem key={mod.id}>
-                              <div className="flex items-center gap-2">
-                                <ModuleDraftActions moduleId={mod.id} classId={klass.id} />
-                                <SidebarMenuSubButton
-                                  asChild
-                                  size="sm"
-                                  className="h-auto flex-1 rounded-md px-2 py-1 text-left whitespace-normal"
-                                >
-                                  <Link
-                                    href={`/class/${klass.slug}/module/${mod.index}`}
-                                    prefetch
-                                    onMouseEnter={() => router.prefetch(`/class/${klass.slug}/module/${mod.index}`)}
+                      <AnimatePresence initial={false} mode="wait">
+                        {unpublishedModules.length > 0 && isOpen ? (
+                          <motion.div
+                            key={`${klass.id}-draft-modules`}
+                            variants={LIST_VARIANTS}
+                            initial="collapsed"
+                            animate="open"
+                            exit="collapsed"
+                            style={{ overflow: "hidden" }}
+                          >
+                            <SidebarMenuSub className="mt-2 pl-3">
+                              {unpublishedModules.map((mod, index) => (
+                                <SidebarMenuSubItem key={mod.id} className="overflow-hidden">
+                                  <motion.div
+                                    variants={LIST_ITEM_VARIANTS}
+                                    custom={index}
+                                    className="flex w-full items-center gap-2"
                                   >
-                                    <span className="block text-sm leading-tight break-words">
-                                      Module {mod.index}: {mod.title}
-                                    </span>
-                                  </Link>
-                                </SidebarMenuSubButton>
-                              </div>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      ) : null}
+                                    <ModuleDraftActions moduleId={mod.id} classId={klass.id} />
+                                    <SidebarMenuSubButton
+                                      asChild
+                                      size="sm"
+                                      className="h-auto flex-1 rounded-md px-2 py-1 text-left whitespace-normal data-[active=true]:font-semibold data-[active=true]:text-foreground"
+                                      isActive={pathname === `/class/${klass.slug}/module/${mod.index}`}
+                                    >
+                                      <Link
+                                        href={`/class/${klass.slug}/module/${mod.index}`}
+                                        prefetch
+                                        onMouseEnter={() => router.prefetch(`/class/${klass.slug}/module/${mod.index}`)}
+                                        className="relative block text-sm leading-tight break-words"
+                                      >
+                                        Module {mod.index}: {mod.title}
+                                      </Link>
+                                    </SidebarMenuSubButton>
+                                  </motion.div>
+                                </SidebarMenuSubItem>
+                              ))}
+                            </SidebarMenuSub>
+                          </motion.div>
+                        ) : null}
+                      </AnimatePresence>
                     </SidebarMenuItem>
                   )
                 })}

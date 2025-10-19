@@ -1,4 +1,5 @@
 import { AuthCard } from "@/components/auth/auth-card"
+import { AuthScreenShell } from "@/components/auth/auth-screen-shell"
 import { SignUpForm } from "@/components/auth/sign-up-form"
 
 type SearchParams = Record<string, string | string[] | undefined>
@@ -12,11 +13,13 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   const redirect = typeof resolved.redirect === "string" ? resolved.redirect : undefined
 
   return (
-    <AuthCard
-      title="Create your account"
-      description="Join Coach House to access premium learning paths."
-    >
-      <SignUpForm redirectTo={redirect} />
-    </AuthCard>
+    <AuthScreenShell>
+      <AuthCard
+        title="Create your account"
+        description="Join Coach House to access premium learning paths."
+      >
+        <SignUpForm redirectTo={redirect} />
+      </AuthCard>
+    </AuthScreenShell>
   )
 }

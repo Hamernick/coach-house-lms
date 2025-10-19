@@ -1,4 +1,5 @@
 import { AuthCard } from "@/components/auth/auth-card"
+import { AuthScreenShell } from "@/components/auth/auth-screen-shell"
 import { UpdatePasswordForm } from "@/components/auth/update-password-form"
 
 type SearchParams = Record<string, string | string[] | undefined>
@@ -12,11 +13,13 @@ export default async function UpdatePasswordPage({ searchParams }: UpdatePasswor
   const redirect = typeof resolved.redirect === "string" ? resolved.redirect : undefined
 
   return (
-    <AuthCard
-      title="Choose a new password"
-      description="Passwords must be at least 8 characters."
-    >
-      <UpdatePasswordForm redirectTo={redirect ?? "/dashboard"} />
-    </AuthCard>
+    <AuthScreenShell>
+      <AuthCard
+        title="Choose a new password"
+        description="Passwords must be at least 8 characters."
+      >
+        <UpdatePasswordForm redirectTo={redirect ?? "/dashboard"} />
+      </AuthCard>
+    </AuthScreenShell>
   )
 }

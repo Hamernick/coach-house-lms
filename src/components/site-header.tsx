@@ -39,6 +39,7 @@ export async function SiteHeader({ breadcrumbs }: { breadcrumbs?: ReactNode }) {
         <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
         <div className="flex min-w-0 items-center text-sm">{breadcrumbs}</div>
         <div className="ml-auto flex items-center gap-2">
+          <div id="site-header-actions" className="flex items-center gap-2" />
           <ThemeToggle />
           {!isAdmin ? (
             <Button variant="ghost" size="sm" asChild>

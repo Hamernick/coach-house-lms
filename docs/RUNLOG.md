@@ -79,3 +79,15 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Step 3 complete: added shared limits (`src/lib/lessons/limits.ts`), clamped lesson/module titles and subtitles in the wizard with inline counters, and mirrored those caps through admin edit actions + forms (class + module detail pages, wizard server actions). Front-end inputs now use `maxLength`; server actions clamp payloads before persistence.
 - Remaining backlog for this track: adjust resource dropdown spacing, ensure admin content unlocks as expected, and add ordering controls.
 - Step 4 complete: learner assignment submissions persist via `/api/modules/[id]/assignment-submission` (upserts `assignment_submissions`, honors `complete_on_submit`, reuses shared schema parsing) and mark progress with `markModuleCompleted`. Module detail now preloads prior answers/status, handles resubmits, surfaces review states, and nudges learners to the next module once saved.
+
+## 2025-10-17 — Lessons Refactor Plan (checklist)
+
+- [x] Extract shared lesson types/constants/providers/fields/schemas; move wizard state to a reducer + zod; add unit tests.
+- [x] Refactor wizard API route and modules library to use shared helpers; add simple markdown/id/options utils.
+- [ ] Deduplicate in admin actions: replace local field type/number utils with shared; keep behavior identical.
+- [x] Validate wizard payloads server-side using shared zod schema before DB writes.
+- [x] Extract assignment/resource builders to `src/lib/lessons/builders.ts` and use in actions.
+- [x] Promote provider icon map to `src/components/shared/provider-icons.ts`; reuse in training UI.
+- [x] Decompose content builder into subcomponents under `src/components/admin/module-builder/**`.
+- [x] Add unit tests for providers/fields/builders. (Added a skipped placeholder for route GET payload tests.)
+- [x] Investigate acceptance test redirect mismatch in `admin-crud.test.ts` and align code/tests.

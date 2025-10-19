@@ -13,6 +13,13 @@ export const metadata: Metadata = {
   },
   description:
     "A course platform built with Next.js, Tailwind CSS, and shadcn/ui. Bootstrapped in step S00.",
+  icons: {
+    icon: [
+      { url: "/favicon-light.svg", type: "image/svg+xml", media: "(prefers-color-scheme: light)" },
+      { url: "/favicon-dark.svg", type: "image/svg+xml", media: "(prefers-color-scheme: dark)" },
+    ],
+    shortcut: "/favicon-light.svg",
+  },
 }
 
 export default async function RootLayout({

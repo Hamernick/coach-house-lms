@@ -1,20 +1,6 @@
 "use client"
 
-import {
-  IconDots,
-  IconFolder,
-  IconShare3,
-  IconTrash,
-  type Icon,
-} from "@tabler/icons-react"
-
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+import { IconExternalLink, type Icon } from "@tabler/icons-react"
 import {
   SidebarGroup,
   SidebarGroupLabel,
@@ -22,7 +8,6 @@ import {
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
 
 export function NavDocuments({
@@ -33,11 +18,10 @@ export function NavDocuments({
     name: string
     url: string
     icon: Icon
+    external?: boolean
   }[]
   label?: string
 }) {
-  const { isMobile } = useSidebar()
-
   if (items.length === 0) {
     return null
   }
@@ -49,41 +33,20 @@ export function NavDocuments({
         {items.map((item) => (
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
-              <a href={item.url}>
+              <a
+                href={item.url}
+                {...(item.external ? { target: "_blank", rel: "noreferrer" } : null)}
+              >
                 <item.icon />
                 <span className="max-w-[calc(100%-2.5rem)] leading-snug break-words text-pretty">{item.name}</span>
               </a>
             </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction
-                  showOnHover
-                  className="data-[state=open]:bg-accent rounded-sm"
-                >
-                  <IconDots />
-                  <span className="sr-only">More</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-32 rounded-lg"
-                side={isMobile ? "bottom" : "right"}
-                align={isMobile ? "end" : "start"}
-              >
-                <DropdownMenuItem>
-                  <IconFolder />
-                  <span>Open</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <IconShare3 />
-                  <span>Share</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem variant="destructive">
-                  <IconTrash />
-                  <span>Delete</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {item.external ? (
+              <SidebarMenuAction className="pointer-events-none rounded-sm text-muted-foreground">
+                <IconExternalLink className="size-4" aria-hidden="true" />
+                <span className="sr-only">Opens in new tab</span>
+              </SidebarMenuAction>
+            ) : null}
           </SidebarMenuItem>
         ))}
       </SidebarMenu>

@@ -39,11 +39,11 @@ export function NavMain({
                   asChild
                   tooltip={item.title}
                   isActive={isActive}
-                  className="h-auto min-h-7 py-1 items-start [&>span:last-child]:!whitespace-normal [&>span:last-child]:!break-words [&>span:last-child]:!overflow-visible"
+                  className="h-auto min-h-9 items-center gap-2 py-2 [&>span:last-child]:!whitespace-normal [&>span:last-child]:!break-words [&>span:last-child]:!overflow-visible"
                 >
                   <Link href={item.href}>
                     {item.icon ? <item.icon /> : null}
-                    <span className="leading-snug text-pretty break-words max-w-[calc(100%-2.5rem)]">{item.title}</span>
+                    <span className="max-w-[calc(100%-2.5rem)] break-words text-pretty leading-snug">{item.title}</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

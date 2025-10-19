@@ -2,8 +2,12 @@
 
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
-import { ArrowRight, ExternalLink, Lock, Play, Send, Video } from "lucide-react"
+import { ArrowRight, ExternalLink, Lock, Play, Send, Video, Pencil, Loader2 } from "lucide-react"
+import ReactMarkdown from "react-markdown"
+import remarkGfm from "remark-gfm"
+import remarkBreaks from "remark-breaks"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,6 +23,8 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 import { ResourcesCard } from "./resources-card"
 import type { ClassDef, Module, ModuleAssignmentField } from "./types"
+import { LessonCreationWizard, type LessonWizardPayload } from "@/components/admin/lesson-creation-wizard"
+import { updateClassWizardAction } from "@/app/(admin)/admin/classes/actions"
 
 type AssignmentValues = Record<string, string | string[] | number>
 
@@ -408,6 +414,87 @@ export function ModuleDetail({ c, m, isAdmin = false }: { c: ClassDef; m: Module
   const assignmentFields = m.assignment?.fields ?? []
   const completeOnSubmit = Boolean(m.assignment?.completeOnSubmit)
   const lockedForLearners = Boolean(m.locked)
+  const [wizardOpen, setWizardOpen] = useState(false)
+  const [wizardPayload, setWizardPayload] = useState<LessonWizardPayload | null>(null)
+  const [wizardLoading, setWizardLoading] = useState(false)
+  const [wizardError, setWizardError] = useState<string | null>(null)
+  const [wizardFocusModuleId, setWizardFocusModuleId] = useState<string | null>(m.id)
+
+  const progressStats = useMemo(() => {
+    const total = c.modules.length
+    const completed = c.modules.reduce((count, module) => {
+      const status = module.assignmentSubmission?.status ?? null
+      return status === "completed" ? count + 1 : count
+    }, 0)
+    const currentIndex = c.modules.findIndex((module) => module.id === m.id)
+    return {
+      total,
+      completed,
+      currentIndex: currentIndex >= 0 ? currentIndex + 1 : null,
+    }
+  }, [c.modules, m.id])
+
+  useEffect(() => {
+    if (!wizardOpen) {
+      setWizardFocusModuleId(m.id)
+    }
+  }, [m.id, wizardOpen])
+
+  const loadWizardPayload = useCallback(
+    async (focusModuleId: string | null) => {
+      setWizardError(null)
+      setWizardPayload(null)
+      setWizardFocusModuleId(focusModuleId ?? m.id)
+      setWizardOpen(true)
+      setWizardLoading(true)
+      let success = false
+      try {
+        const response = await fetch(`/api/admin/classes/${c.id}/wizard`, { cache: "no-store" })
+        if (!response.ok) {
+          const data = await response.json().catch(() => null)
+          throw new Error(data?.error ?? "Failed to load class data")
+        }
+        const data = (await response.json()) as { payload: LessonWizardPayload }
+        setWizardPayload(data.payload)
+        success = true
+      } catch (err) {
+        setWizardError(err instanceof Error ? err.message : "Failed to load class data")
+      } finally {
+        setWizardLoading(false)
+      }
+      return success
+    },
+    [c.id, m.id],
+  )
+
+  const handleCreateModule = useCallback(async () => {
+    const toastId = toast.loading("Creating module…")
+    setWizardError(null)
+    setWizardLoading(true)
+    try {
+      const response = await fetch(`/api/admin/classes/${c.id}/modules`, { method: "POST" })
+      if (!response.ok) {
+        const data = await response.json().catch(() => null)
+        throw new Error(data?.error ?? "Failed to create module")
+      }
+      const data = (await response.json()) as { moduleId?: string }
+      if (!data?.moduleId) {
+        throw new Error("Module id missing in response")
+      }
+      const ok = await loadWizardPayload(data.moduleId)
+      if (ok) {
+        toast.success("Module created", { id: toastId })
+        router.refresh()
+      } else {
+        toast.error("Module created, but failed to open editor", { id: toastId })
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to create module"
+      setWizardError(message)
+      toast.error(message, { id: toastId })
+      setWizardLoading(false)
+    }
+  }, [c.id, loadWizardPayload, router])
 
   const initialFormValues = useMemo(() => {
     return buildAssignmentValues(assignmentFields, m.assignmentSubmission?.answers ?? null)
@@ -518,9 +605,46 @@ export function ModuleDetail({ c, m, isAdmin = false }: { c: ClassDef; m: Module
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{m.title}</h1>
-        {m.subtitle ? <p className="text-muted-foreground">{m.subtitle}</p> : null}
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 space-y-3">
+          {(() => {
+            const parts: string[] = []
+            if (progressStats.currentIndex != null && progressStats.total > 0) {
+              parts.push(`Module ${progressStats.currentIndex} of ${progressStats.total}`)
+            }
+            if (progressStats.total > 0) {
+              parts.push(`${progressStats.completed}/${progressStats.total} completed`)
+            }
+            return parts.length > 0 ? (
+              <p className="text-sm text-muted-foreground">{parts.join(" · ")}</p>
+            ) : null
+          })()}
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground">{m.title}</h1>
+          {m.subtitle ? <p className="max-w-3xl text-base text-muted-foreground">{m.subtitle}</p> : null}
+        </div>
+        {isAdmin ? (
+          <div className="flex flex-col items-end gap-2">
+            {wizardError ? (
+              <p className="text-xs text-rose-500">{wizardError}</p>
+            ) : null}
+            <Button
+              size="sm"
+              variant="outline"
+              className="min-h-9 gap-2 shrink-0"
+              onClick={() => {
+                void loadWizardPayload(m.id)
+              }}
+              disabled={wizardLoading}
+            >
+              {wizardLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+              ) : (
+                <Pencil className="h-4 w-4" aria-hidden />
+              )}
+              <span>{wizardLoading ? "Loading…" : "Edit module"}</span>
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       {isAdmin && lockedForLearners ? (
@@ -570,21 +694,39 @@ export function ModuleDetail({ c, m, isAdmin = false }: { c: ClassDef; m: Module
         </CardContent>
       </Card>
 
-      <ResourcesCard resources={m.resources ?? []} />
+      {m.contentMd ? (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Lesson Notes</CardTitle>
+            <CardDescription>Additional context and instructions.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <article className="prose prose-sm dark:prose-invert max-w-none">
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>{m.contentMd}</ReactMarkdown>
+            </article>
+          </CardContent>
+        </Card>
+      ) : null}
 
-      <AssignmentForm
-        fields={assignmentFields}
-        initialValues={formSeed}
-        pending={isSubmitting}
-        onSubmit={handleSubmit}
-        statusLabel={statusMeta?.label ?? null}
-        statusVariant={statusMeta?.variant ?? "outline"}
-        statusNote={statusMeta?.note ?? null}
-        helperText={message}
-        errorMessage={error}
-        updatedAt={lastSavedAt}
-        completeOnSubmit={completeOnSubmit}
-      />
+      {Array.isArray(m.resources) && m.resources.length > 0 ? (
+        <ResourcesCard resources={m.resources} />
+      ) : null}
+
+      {assignmentFields.length > 0 ? (
+        <AssignmentForm
+          fields={assignmentFields}
+          initialValues={formSeed}
+          pending={isSubmitting}
+          onSubmit={handleSubmit}
+          statusLabel={statusMeta?.label ?? null}
+          statusVariant={statusMeta?.variant ?? "outline"}
+          statusNote={statusMeta?.note ?? null}
+          helperText={message}
+          errorMessage={error}
+          updatedAt={lastSavedAt}
+          completeOnSubmit={completeOnSubmit}
+        />
+      ) : null}
 
       {(() => {
         const idx = c.modules.findIndex((x) => x.id === m.id)
@@ -609,19 +751,29 @@ export function ModuleDetail({ c, m, isAdmin = false }: { c: ClassDef; m: Module
             </Link>
           )
         }
-        return (
-          <div
-            aria-disabled
-            className="flex items-center justify-between rounded-xl border bg-card/60 p-4 opacity-60"
-          >
-            <div>
-              <p className="text-sm font-medium">Next</p>
-              <p className="text-sm text-muted-foreground">All modules complete</p>
-            </div>
-            <ArrowRight className="h-5 w-5" />
-          </div>
-        )
+        return null
       })()}
+
+      {isAdmin ? (
+        <LessonCreationWizard
+          open={wizardOpen}
+          mode="edit"
+          classId={c.id}
+          initialPayload={wizardPayload}
+          focusModuleId={wizardFocusModuleId ?? m.id}
+          loading={wizardLoading}
+          onCreateModule={handleCreateModule}
+          onOpenChange={(value) => {
+            setWizardOpen(value)
+            if (!value) {
+              setWizardPayload(null)
+              setWizardError(null)
+              setWizardFocusModuleId(m.id)
+            }
+          }}
+          onSubmit={updateClassWizardAction}
+        />
+      ) : null}
     </div>
   )
 }

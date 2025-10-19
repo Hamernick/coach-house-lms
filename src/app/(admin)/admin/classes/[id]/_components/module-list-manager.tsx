@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useState, useTransition } from "react"
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import {
   DndContext,
@@ -20,20 +19,12 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { IconGripVertical } from "@tabler/icons-react"
-import { Loader2, MoreVertical } from "lucide-react"
+import { Loader2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 
-import { deleteModuleAction, reorderModulesAction, setModulePublishedAction } from "../actions"
+import { reorderModulesAction, setModulePublishedAction } from "../actions"
 import { cn } from "@/lib/utils"
 
 type ModuleItem = {
@@ -238,7 +229,6 @@ function ModuleActions({
   classPublished: boolean
 }) {
   const [publishPending, startPublish] = useTransition()
-  const [menuPending, startMenu] = useTransition()
   const router = useRouter()
 
   const publishDisabled = !classPublished && !module.published
@@ -251,60 +241,19 @@ function ModuleActions({
     })
   }
 
-  const handleDelete = () => {
-    if (!confirm("Delete this module?")) return
-    const fd = new FormData()
-    fd.append("moduleId", module.id)
-    fd.append("classId", classId)
-    startMenu(async () => {
-      await deleteModuleAction(fd)
-      router.refresh()
-    })
-  }
-
   return (
     <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
       <Button
         type="button"
         size="sm"
         variant={module.published ? "outline" : "default"}
-      disabled={disabled || publishPending || publishDisabled}
+        disabled={disabled || publishPending || publishDisabled}
         onClick={handleToggle}
         className="min-w-[6rem]"
       >
         {publishPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
         {module.published ? "Unpublish" : "Publish"}
       </Button>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-            disabled={menuPending}
-          >
-            {menuPending ? <Loader2 className="size-4 animate-spin" /> : <MoreVertical className="size-4" />}
-            <span className="sr-only">Module actions</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-48">
-          <DropdownMenuLabel>Module actions</DropdownMenuLabel>
-          <DropdownMenuItem asChild>
-            <Link href={`/admin/modules/${module.id}`}>Edit module</Link>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem
-            className="text-destructive focus:text-destructive"
-            onSelect={(event) => {
-              event.preventDefault()
-              handleDelete()
-            }}
-          >
-            Delete module
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
     </div>
   )
 }

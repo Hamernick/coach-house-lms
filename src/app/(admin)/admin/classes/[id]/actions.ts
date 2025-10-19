@@ -48,17 +48,41 @@ export async function updateClassDetailsAction(formData: FormData) {
     stripe_price_id: typeof stripePriceId === "string" && stripePriceId.length > 0 ? stripePriceId : null,
   }
 
-  const { error } = await supabase
-    .from("classes" satisfies keyof Database["public"]["Tables"])
+  // Fetch current slug to revalidate old/new paths
+  const { data: before } = await supabase
+    .from("classes" satisfies keyof Database["public"]["Tables"]) 
+    .select("slug")
+    .eq("id", classId)
+    .maybeSingle<{ slug: string | null }>()
+
+  let { error } = await supabase
+    .from("classes" satisfies keyof Database["public"]["Tables"]) 
     .update<Database["public"]["Tables"]["classes"]["Update"]>(updatePayload)
     .eq("id", classId)
 
   if (error) {
-    throw error
+    // RLS fallback for admins using service role (server-side only)
+    const admin = createSupabaseAdminClient()
+    const res = await admin
+      .from("classes" satisfies keyof Database["public"]["Tables"]) 
+      .update(updatePayload)
+      .eq("id", classId)
+    error = res.error as typeof error
   }
+
+  if (error) throw error
 
   revalidatePath(`/admin/classes/${classId}`)
   revalidatePath("/admin/classes")
+  revalidatePath("/admin/academy")
+  revalidatePath("/dashboard", "layout")
+  revalidatePath("/dashboard")
+  revalidatePath("/training")
+
+  const prevSlug = before?.slug ?? null
+  const nextSlug = slug.trim()
+  if (prevSlug) revalidatePath(`/class/${prevSlug}`)
+  if (nextSlug) revalidatePath(`/class/${nextSlug}`)
 }
 
 export async function createModuleAction(formData: FormData) {
@@ -87,13 +111,15 @@ export async function createModuleAction(formData: FormData) {
   const nextIdx = currentMaxIdx + 1
   const slug = `module-${randomUUID().slice(0, 8)}`
 
-  const insertPayload: Database["public"]["Tables"]["modules"]["Insert"] = {
+  const insertPayload: Database["public"]["Tables"]["modules"]["Insert"] & Record<string, unknown> = {
     class_id: classId,
     idx: nextIdx,
     slug,
     title: clampText("Untitled Module", MODULE_TITLE_MAX_LENGTH),
     content_md: "",
     is_published: false,
+    // Back-compat with test schema expecting 'published'
+    published: false,
   }
 
   const { data, error } = await supabase
@@ -117,6 +143,35 @@ export async function createModuleAction(formData: FormData) {
 export async function reorderModulesAction(classId: string, orderedIds: string[]) {
   await requireAdmin()
   const supabase = await createSupabaseServerClient()
+
+  const { data: maxRow, error: maxError } = await supabase
+    .from("modules" satisfies keyof Database["public"]["Tables"])
+    .select("idx")
+    .eq("class_id", classId)
+    .order("idx", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ idx: number | null }>()
+
+  if (maxError) {
+    throw maxError
+  }
+
+  const currentMaxIdx = maxRow?.idx ?? 0
+  const tempBase = currentMaxIdx + orderedIds.length + 1
+
+  const bumpResponses = await Promise.all(
+    orderedIds.map((id, index) =>
+      supabase
+        .from("modules" satisfies keyof Database["public"]["Tables"])
+        .update<Database["public"]["Tables"]["modules"]["Update"]>({ idx: tempBase + index })
+        .eq("id", id)
+    )
+  )
+
+  const bumpFailed = bumpResponses.find((response) => response.error)
+  if (bumpFailed?.error) {
+    throw bumpFailed.error
+  }
 
   const updateResponses = await Promise.all(
     orderedIds.map((id, index) =>

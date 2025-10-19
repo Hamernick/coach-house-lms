@@ -1,13 +1,31 @@
 import Link from "next/link"
+import Image from "next/image"
 
 export default function LandingPage() {
   return (
-    <main className="relative min-h-screen bg-gradient-to-b from-background via-background to-secondary/40">
+    <main className="relative min-h-screen bg-[#FAFAFA] dark:bg-gradient-to-b dark:from-background dark:via-background dark:to-secondary/40">
       {/* Floating glass header */}
       <header className="sticky top-4 z-50 mx-auto w-[min(1100px,92%)] rounded-2xl border border-border/70 bg-background/50 px-4 py-3 shadow-md backdrop-blur supports-[backdrop-filter]:bg-background/40">
         <nav className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-md bg-primary/10" aria-hidden />
+            <span className="relative flex h-8 w-8 items-center justify-center">
+              <Image
+                src="/coach-house-logo-light.png"
+                alt="Coach House logo"
+                width={32}
+                height={32}
+                className="block dark:hidden"
+                priority
+              />
+              <Image
+                src="/coach-house-logo-dark.png"
+                alt="Coach House logo"
+                width={32}
+                height={32}
+                className="hidden dark:block"
+                priority
+              />
+            </span>
             <span className="text-sm font-semibold tracking-tight">Coach House</span>
           </div>
           <div className="flex items-center gap-3 text-sm text-muted-foreground">

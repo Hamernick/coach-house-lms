@@ -19,6 +19,7 @@ export type Module = {
   title: string
   subtitle?: string
   idx?: number
+  published?: boolean
   status?: "not_started" | "in_progress" | "completed"
   locked?: boolean
   progressPercent?: number
@@ -37,5 +38,8 @@ export type ClassDef = {
   blurb?: string
   description?: string
   slug?: string
+  published?: boolean
+  resources?: ModuleResource[]
+  videoUrl?: string | null
   modules: Module[]
 }

@@ -2,19 +2,9 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ExternalLink, FileText, Link as LinkIcon, Video } from "lucide-react"
-import type { ModuleResource, ModuleResourceProvider } from "@/components/training/types"
-
-const PROVIDER_ICON: Record<ModuleResourceProvider, typeof FileText> = {
-  youtube: Video,
-  "google-drive": FileText,
-  dropbox: FileText,
-  loom: Video,
-  vimeo: Video,
-  notion: FileText,
-  figma: FileText,
-  generic: LinkIcon,
-}
+import { ExternalLink } from "lucide-react"
+import type { ModuleResource } from "@/components/training/types"
+import { PROVIDER_ICON } from "@/components/shared/provider-icons"
 
 export function ResourcesCard({ resources }: { resources: ModuleResource[] }) {
   return (
@@ -30,7 +20,7 @@ export function ResourcesCard({ resources }: { resources: ModuleResource[] }) {
           </p>
         ) : (
           resources.map(({ label, url, provider }, index) => {
-            const Icon = PROVIDER_ICON[provider] ?? LinkIcon
+            const Icon = PROVIDER_ICON[String(provider)] ?? PROVIDER_ICON.generic
             return (
               <div key={`${url}-${index}`} className="flex items-center justify-between rounded-md border p-2">
                 <div className="flex min-w-0 items-center gap-2 text-sm">

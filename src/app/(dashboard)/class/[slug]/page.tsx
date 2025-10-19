@@ -24,7 +24,7 @@ export default async function ClassLandingPage({ params }: { params: Promise<Par
 
   // Use existing server helper that already respects RLS and publication
   const classCtx = auth.user
-    ? await getClassModulesForUser({ classSlug: slug, userId: auth.user.id })
+    ? await getClassModulesForUser({ classSlug: slug, userId: auth.user.id, forceAdmin: profile?.role === "admin" })
     : null
 
   const moduleStates = classCtx ? buildModuleStates(classCtx.modules, classCtx.progressMap) : null
@@ -33,14 +33,18 @@ export default async function ClassLandingPage({ params }: { params: Promise<Par
     ? {
         id: classCtx.classId,
         title: classCtx.classTitle,
-        blurb: classCtx.classDescription ?? "",
+        blurb: classCtx.classSubtitle ?? classCtx.classDescription ?? "",
         description: classCtx.classDescription ?? "",
+        published: classCtx.classPublished,
         slug,
+        resources: classCtx.classResources ?? [],
+        videoUrl: classCtx.classVideoUrl ?? null,
         modules: moduleStates.map(({ module, status, locked }) => ({
           id: module.id,
           title: module.title,
           subtitle: module.description ?? undefined,
           idx: module.idx,
+          published: module.published !== false,
           status,
           locked,
           progressPercent: status === "completed" ? 100 : status === "in_progress" ? 55 : 0,
@@ -51,7 +55,7 @@ export default async function ClassLandingPage({ params }: { params: Promise<Par
     : null
 
   return (
-    <div className="px-4 lg:px-6 space-y-3">
+    <div className="mx-auto w-full max-w-5xl px-6 lg:px-8 space-y-8">
       {c ? (
         <ClassOverview c={c} isAdmin={profile?.role === 'admin'} />
       ) : (

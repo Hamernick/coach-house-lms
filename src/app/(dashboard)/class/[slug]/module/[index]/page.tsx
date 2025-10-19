@@ -35,21 +35,22 @@ export default async function ModulePage({
     redirect(`/login?redirect=/class/${slug}/module/${index}`)
   }
 
-  const classContext = await getClassModulesForUser({
-    classSlug: slug,
-    userId: user.id,
-  })
-
-  if (classContext.modules.length === 0) {
-    notFound()
-  }
-
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .maybeSingle<{ role: string | null }>()
   const isAdmin = (profile?.role ?? "").toLowerCase() === "admin"
+
+  const classContext = await getClassModulesForUser({
+    classSlug: slug,
+    userId: user.id,
+    forceAdmin: isAdmin,
+  })
+
+  if (classContext.modules.length === 0) {
+    notFound()
+  }
 
   const moduleStates = buildModuleStates(classContext.modules, classContext.progressMap)
   const currentState = moduleStates.find((state) => state.module.idx === moduleIndex)
@@ -84,6 +85,7 @@ export default async function ModulePage({
     title: currentState.module.title,
     subtitle: currentState.module.description ?? undefined,
     videoUrl: currentState.module.videoUrl ?? null,
+    contentMd: (currentState.module as { contentMd?: string | null }).contentMd ?? null,
     resources: currentState.module.resources,
     assignment: currentState.module.assignment,
     assignmentSubmission: currentState.module.assignmentSubmission,
@@ -91,8 +93,10 @@ export default async function ModulePage({
   }
 
   return (
-    <div className="px-4 lg:px-6">
-      <TrainingModuleDetail c={classDef} m={moduleDef} isAdmin={isAdmin} />
+    <div className="px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-5xl">
+        <TrainingModuleDetail c={classDef} m={moduleDef} isAdmin={isAdmin} />
+      </div>
     </div>
   )
 }

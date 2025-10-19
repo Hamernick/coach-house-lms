@@ -210,9 +210,7 @@ function ModuleDnd({
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="text-sm">Published</span>
                     <ModulePublishedToggle moduleId={m.id} classId={classId} published={m.published} />
-                    <Button asChild size="sm" variant="outline">
-                      <Link href={`/admin/modules/${m.id}`}>Edit module</Link>
-                    </Button>
+                    {/* Editing modules uses the wizard from the module page; remove direct editor link */}
                     <Button asChild size="sm" variant="ghost">
                       <Link href={`/class/${slug}/module/${m.index}`} target="_blank" rel="noopener">Open page</Link>
                     </Button>

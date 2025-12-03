@@ -1,6 +1,7 @@
 "use client"
 
-import { Plus, X } from "lucide-react"
+import Plus from "lucide-react/dist/esm/icons/plus"
+import X from "lucide-react/dist/esm/icons/x"
 
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"

@@ -14,6 +14,9 @@ export const metadata: Metadata = {
     "Choose a Coach House LMS plan that fits your cohort. Upgrade any time as your classrooms grow.",
 }
 
+export const runtime = "nodejs"
+export const revalidate = 3600
+
 function formatAmount(amount: number, currency: string, interval: string) {
   if (!amount) {
     return "Contact us"

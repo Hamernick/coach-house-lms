@@ -45,9 +45,9 @@
 
 :root {
   --font-geist-sans: "Inter", "system-ui", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-geist-mono: "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", monospace;
-  --radius: 0.625rem;
-  --app-surface: var(--sidebar);
+  --font-geist-mono: "JetBrains Mono", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", monospace;
+  --radius: 0.65rem;
+  --app-surface: var(--background);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -71,18 +71,19 @@
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: hsl(0 0% 98%);
-  --sidebar-foreground: hsl(240 5.3% 26.1%);
-  --sidebar-primary: hsl(240 5.9% 10%);
-  --sidebar-primary-foreground: hsl(0 0% 98%);
-  --sidebar-accent: hsl(240 4.8% 95.9%);
-  --sidebar-accent-foreground: hsl(240 5.9% 10%);
-  --sidebar-border: hsl(220 13% 91%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
 }
 
 .dark {
-  --app-surface: var(--sidebar);
+  --app-surface: var(--background);
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
   --card: oklch(0.205 0 0);
@@ -106,14 +107,14 @@
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: hsl(240 5.9% 10%);
-  --sidebar-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-primary: hsl(224.3 76.3% 48%);
-  --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(240 3.7% 15.9%);
-  --sidebar-accent-foreground: hsl(240 4.8% 95.9%);
-  --sidebar-border: hsl(240 3.7% 15.9%);
-  --sidebar-ring: hsl(217.2 91.2% 59.8%);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @layer base {
@@ -121,14 +122,61 @@
     min-height: 100%;
     background-color: var(--app-surface);
   }
+
   * {
     @apply border-border outline-ring/50;
   }
-body {
-  min-height: 100%;
-  background-color: var(--app-surface);
-  color: var(--foreground);
+
+  body {
+    min-height: 100%;
+    background-color: var(--app-surface);
+    color: var(--foreground);
+  }
+
+  /* Dashboard shell: when a sidebar wrapper exists, match overscroll bg to sidebar */
+  html:has([data-slot="sidebar-wrapper"]) {
+    background-color: var(--sidebar);
+  }
+
+  body:has([data-slot="sidebar-wrapper"]) {
+    background-color: var(--sidebar);
+  }
 }
+
+@layer utilities {
+  .bg-dot-grid {
+    background-color: #f9f9f9;
+    background-image: radial-gradient(#dadada 0.9px, transparent 0);
+    background-size: 34px 34px;
+  }
+
+  .dark .bg-dot-grid {
+    background-color: #151517;
+    background-image: radial-gradient(#2a2a2c 0.8px, transparent 0);
+    background-size: 36px 36px;
+  }
+}
+
+.community-marker {
+  width: 42px;
+  height: 42px;
+  border-radius: 9999px;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  background-color: rgba(15, 23, 42, 0.85);
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 4px 14px rgba(2, 6, 23, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(241, 245, 249, 0.9);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.community-marker--fallback {
+  background-image: none !important;
 }
 
 /* React Flow theming for /people org chart */
@@ -232,4 +280,30 @@ body {
 .dark .org-flow .react-flow__minimap-node {
   fill: color-mix(in srgb, var(--muted-foreground) 85%, transparent) !important;
   stroke: color-mix(in srgb, var(--muted-foreground) 95%, transparent) !important;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Lesson notes / markdown typography */
+  .prose.prose-sm h2 {
+    @apply text-lg font-semibold mt-2 mb-2;
+  }
+
+  .prose.prose-sm h3 {
+    @apply text-base font-semibold mt-2 mb-1;
+  }
+
+  .prose.prose-sm p {
+    @apply text-sm leading-relaxed;
+  }
+
+  .prose.prose-sm ul {
+    @apply list-disc pl-5 mt-1 mb-1;
+  }
 }

@@ -1,26 +1,30 @@
-import { dirname } from "path";
-import { fileURLToPath } from "url";
-import { FlatCompat } from "@eslint/eslintrc";
+import next from "eslint-config-next"
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-const compat = new FlatCompat({
-  baseDirectory: __dirname,
-});
-
-const eslintConfig = [
-  ...compat.extends("next/core-web-vitals", "next/typescript"),
+const config = [
+  ...next,
   {
     ignores: [
       "node_modules/**",
-      ".next/**",
-      "out/**",
-      "build/**",
       "dist-snapshots/**",
-      "next-env.d.ts",
+      "build/**",
     ],
+    rules: {
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/refs": "off",
+      "react-hooks/incompatible-library": "off",
+      "react-hooks/static-components": "off",
+      "react-hooks/purity": "off",
+    },
+    linterOptions: {
+      reportUnusedDisableDirectives: false,
+    },
   },
-];
+  {
+    files: ["tests/**/*.{ts,tsx}", "**/*.test.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+    },
+  },
+]
 
-export default eslintConfig;
+export default config

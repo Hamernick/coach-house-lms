@@ -1,24 +1,9 @@
-import { Suspense } from "react"
-
-import {
-  ChartSkeleton,
-  ClassesSkeleton,
-  SectionCardsSkeleton,
-  SubscriptionStatusSkeleton,
-  TableSkeleton,
-} from "@/components/dashboard/skeletons"
-
 export default function DashboardLoading() {
   return (
-    <div className="flex flex-1 flex-col gap-6 py-6">
-      
-      <Suspense fallback={<SubscriptionStatusSkeleton />}>
-        <SubscriptionStatusSkeleton />
-      </Suspense>
-      <ClassesSkeleton />
-      <SectionCardsSkeleton />
-      <ChartSkeleton />
-      <TableSkeleton />
+    <div className="flex min-h-[50vh] items-center justify-center p-6">
+      <div className="size-6 animate-spin rounded-full border-2 border-muted-foreground/50 border-t-foreground" />
+      <span className="sr-only">Loading dashboard…</span>
     </div>
   )
 }
+

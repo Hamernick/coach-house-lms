@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation"
 
-import { OrgProgressCards } from "@/components/organization/org-progress-cards"
 import { OrgProfileCard } from "@/components/organization/org-profile-card"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -20,11 +19,20 @@ export default async function MyOrganizationPage() {
   // Load organization profile for the current user
   const { data: orgRow } = await supabase
     .from("organizations")
-    .select("ein, profile")
+    .select("ein, profile, public_slug, is_public")
     .eq("user_id", user.id)
-    .maybeSingle<{ ein: string | null; profile: Record<string, unknown> | null }>()
+    .maybeSingle<{ ein: string | null; profile: Record<string, unknown> | null; public_slug: string | null; is_public: boolean | null }>()
 
   const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
+
+  // Load programs for this organization (by user)
+  const { data: programs } = await supabase
+    .from("programs")
+    .select(
+      "id, title, subtitle, location, image_url, duration_label, features, status_label, goal_cents, raised_cents, is_public, created_at, start_date, end_date, address_city, address_state, address_country, cta_label, cta_url",
+    )
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
 
   const peopleRaw = (Array.isArray(profile.org_people) ? profile.org_people : []) as OrgPerson[]
   let people: (OrgPerson & { displayImage: string | null })[] = []
@@ -68,21 +76,28 @@ export default async function MyOrganizationPage() {
     twitter: String(profile["twitter"] ?? ""),
     facebook: String(profile["facebook"] ?? ""),
     linkedin: String(profile["linkedin"] ?? ""),
+    instagram: String(profile["instagram"] ?? ""),
+    youtube: String(profile["youtube"] ?? ""),
+    tiktok: String(profile["tiktok"] ?? ""),
+    newsletter: String(profile["newsletter"] ?? ""),
+    github: String(profile["github"] ?? ""),
     vision: String(profile["vision"] ?? ""),
     mission: String(profile["mission"] ?? ""),
     need: String(profile["need"] ?? ""),
     values: String(profile["values"] ?? ""),
     programs: String(profile["programs"] ?? ""),
     reports: String(profile["reports"] ?? ""),
+    boilerplate: String(profile["boilerplate"] ?? ""),
+    brandPrimary: String(profile["brandPrimary"] ?? ""),
+    brandColors: Array.isArray(profile["brandColors"]) ? (profile["brandColors"] as unknown[]).map((c) => String(c)) : [],
+    publicSlug: String(orgRow?.public_slug ?? ""),
+    isPublic: Boolean(orgRow?.is_public ?? false),
   }
 
   return (
     <div className="flex flex-col gap-6 px-4 lg:px-6">
       <section>
-        <OrgProgressCards userId={user.id} />
-      </section>
-      <section>
-        <OrgProfileCard initial={initialProfile} people={people} />
+        <OrgProfileCard initial={initialProfile} people={people} programs={programs ?? []} />
       </section>
     </div>
   )

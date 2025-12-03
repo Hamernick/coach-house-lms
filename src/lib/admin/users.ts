@@ -44,18 +44,19 @@ export async function listAdminUsers({
     .from("profiles")
     .select("id, full_name, role, enrollments ( id ), subscriptions ( status, created_at )")
     .in("id", userIds)
+    .returns<Array<{
+      id: string
+      full_name: string | null
+      role: string | null
+      enrollments?: { id: string }[] | null
+      subscriptions?: { status: string | null; created_at: string | null }[] | null
+    }>>()
 
   if (profilesError) {
     throw profilesError
   }
 
-  const profileRecords = (profiles ?? []) as Array<{
-    id: string
-    full_name: string | null
-    role: string | null
-    enrollments?: { id: string }[] | null
-    subscriptions?: { status: string | null; created_at: string | null }[] | null
-  }>
+  const profileRecords = profiles ?? []
   const profileMap = new Map<string, (typeof profileRecords)[number]>()
   for (const profile of profileRecords) {
     profileMap.set(profile.id, profile)
@@ -140,7 +141,7 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     .from("profiles")
     .select("id, full_name, role, created_at")
     .eq("id", userId)
-    .maybeSingle()
+    .maybeSingle<{ id: string; full_name: string | null; role: string | null; created_at: string }>()
 
   if (profileError) {
     throw profileError
@@ -150,13 +151,19 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     return null
   }
 
-  const profileRecord = profile as { full_name: string | null; role: string | null; created_at: string }
+  const profileRecord = profile
 
   const { data: enrollments, error: enrollmentsError } = await supabase
     .from("enrollments")
     .select("id, status, created_at, classes ( id, title, slug )")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
+    .returns<Array<{
+      id: string
+      status: string | null
+      created_at: string
+      classes: { id: string; title: string | null; slug: string | null } | null
+    }>>()
 
   if (enrollmentsError) {
     throw enrollmentsError
@@ -168,6 +175,12 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     .eq("user_id", userId)
     .order("updated_at", { ascending: false })
     .limit(10)
+    .returns<Array<{
+      module_id: string
+      status: Database["public"]["Enums"]["module_progress_status"]
+      completed_at: string | null
+      modules: { title: string | null } | null
+    }>>()
 
   if (progressError) {
     throw progressError
@@ -179,17 +192,13 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle()
+    .maybeSingle<{ status: string | null; current_period_end: string | null; metadata: unknown }>()
 
   if (subscriptionError) {
     throw subscriptionError
   }
 
-  const subscriptionRecord = subscription as {
-    status: string
-    current_period_end: string | null
-    metadata: unknown
-  } | null
+  const subscriptionRecord = subscription
 
   return {
     id: userId,
@@ -200,25 +209,15 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     role: (profileRecord.role ?? "student") as "student" | "admin",
     createdAt: profileRecord.created_at,
     lastSignInAt: userData.user.last_sign_in_at ?? null,
-    enrollments: ((enrollments ?? []) as Array<{
-      id: string
-      status: string
-      created_at: string
-      classes?: { id: string; slug: string; title: string | null } | null
-    }>).map((item) => ({
+    enrollments: (enrollments ?? []).map((item) => ({
       id: item.id,
       classId: item.classes?.id ?? "",
       classSlug: item.classes?.slug ?? "",
       classTitle: item.classes?.title ?? "Unknown class",
-      status: item.status,
+      status: item.status ?? "enrolled",
       enrolledAt: item.created_at,
     })),
-    moduleProgress: ((progress ?? []) as Array<{
-      module_id: string
-      status: Database["public"]["Enums"]["module_progress_status"]
-      completed_at: string | null
-      modules?: { title: string | null } | null
-    }>).map((item) => ({
+    moduleProgress: (progress ?? []).map((item) => ({
       moduleId: item.module_id,
       moduleTitle: item.modules?.title ?? "Unknown module",
       status: item.status,
@@ -226,7 +225,7 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     })),
     subscription: subscriptionRecord
       ? {
-          status: subscriptionRecord.status,
+          status: subscriptionRecord.status ?? "inactive",
           currentPeriodEnd: subscriptionRecord.current_period_end,
           planName:
             typeof subscriptionRecord.metadata === "object" && subscriptionRecord.metadata

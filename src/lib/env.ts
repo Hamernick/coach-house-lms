@@ -8,12 +8,14 @@ const serverEnvSchema = z.object({
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  NEXT_PUBLIC_MAPBOX_TOKEN: z.string().min(1).optional(),
 })
 
 const clientEnvSchema = serverEnvSchema.pick({
   NEXT_PUBLIC_SUPABASE_URL: true,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: true,
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: true,
+  NEXT_PUBLIC_MAPBOX_TOKEN: true,
 })
 
 type ServerEnv = z.infer<typeof serverEnvSchema>
@@ -45,6 +47,7 @@ export const env: ServerEnv = assertEnv(serverEnvSchema, {
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
 })
 
 export const clientEnv: ClientEnv = assertEnv(clientEnvSchema, {
@@ -52,4 +55,5 @@ export const clientEnv: ClientEnv = assertEnv(clientEnvSchema, {
   NEXT_PUBLIC_SUPABASE_ANON_KEY:
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? PLACEHOLDER_SUPABASE_ANON_KEY,
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+  NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
 })

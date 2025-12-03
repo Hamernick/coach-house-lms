@@ -36,6 +36,7 @@ export async function getServerSession(): Promise<ServerSessionResult> {
     }) as unknown) as SupabaseClient<Database>
   }
   // Use verified user retrieval; avoids relying on unverified cookie session payloads
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: userData, error } = await (supabase as any).auth.getUser()
   const user = (userData?.user ?? null) as Session["user"] | null
   if (!user || error) {

@@ -14,7 +14,7 @@ import {
   type SortingState,
 } from "@tanstack/react-table"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 
 import type { OrgPerson } from "@/app/(dashboard)/people/actions"
 import { deletePersonAction, refreshPersonLinkedInImageAction, upsertPersonAction } from "@/app/(dashboard)/people/actions"
@@ -27,7 +27,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { IconDotsVertical, IconExternalLink } from "@tabler/icons-react"
+import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
+import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 import { CreatePersonDialog } from "@/components/people/create-person-dialog"
 import { ManagerSelect } from "@/components/people/manager-select"
 
@@ -63,7 +64,7 @@ function PeopleTableComponent({
   const [categoryFilter, setCategoryFilter] = useState<OrgPerson["category"] | "all">("all")
   const [selection, setSelection] = useState<Record<string, boolean>>({})
   const [editing, setEditing] = useState<PersonRow | null>(null)
-  const [pending, startTransition] = useTransition()
+  const [, startTransition] = useTransition()
 
   const deferredFilter = useDeferredValue(globalFilter)
   const filtered = useMemo(() => {
@@ -167,8 +168,8 @@ function PeopleTableComponent({
                     image: p.image ?? null,
                     reportsToId: val,
                   })
-                  if ((res as any)?.error) {
-                    toast.error((res as any).error, { id: toastId })
+                  if ("error" in res) {
+                    toast.error(res.error, { id: toastId })
                   } else {
                     toast.success("Updated", { id: toastId })
                     router.refresh()
@@ -205,13 +206,13 @@ function PeopleTableComponent({
             return (
               <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-foreground underline-offset-4 hover:underline">
                 {u.hostname.replace(/^www\./, "")}
-                <IconExternalLink className="size-3" />
+                <ExternalLinkIcon className="size-3" />
               </a>
             )
           } catch {
             return (
               <a href={href} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-foreground underline-offset-4 hover:underline">
-                LinkedIn <IconExternalLink className="size-3" />
+                LinkedIn <ExternalLinkIcon className="size-3" />
               </a>
             )
           }
@@ -225,24 +226,39 @@ function PeopleTableComponent({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="text-muted-foreground">
-                  <IconDotsVertical />
+                  <MoreVerticalIcon />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
                 <DropdownMenuItem onClick={() => setEditing(p)}>Edit</DropdownMenuItem>
-                <DropdownMenuItem onClick={async()=>{
+                <DropdownMenuItem onClick={async () => {
                   const t = toast.loading("Refreshing photo…")
                   const r = await refreshPersonLinkedInImageAction(p.id)
-                  if ((r as any)?.error) toast.error((r as any).error, { id: t })
-                  else { toast.success("Photo updated", { id: t }); router.refresh() }
-                }}>Refresh LinkedIn Photo</DropdownMenuItem>
+                  if ("error" in r) {
+                    toast.error(r.error, { id: t })
+                  } else {
+                    toast.success("Photo updated", { id: t })
+                    router.refresh()
+                  }
+                }}>
+                  Refresh LinkedIn Photo
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive" onClick={async()=>{
-                  const t = toast.loading("Deleting…")
-                  const r = await deletePersonAction(p.id)
-                  if ((r as any)?.error) toast.error((r as any).error, { id: t })
-                  else { toast.success("Deleted", { id: t }); router.refresh() }
-                }}>Delete</DropdownMenuItem>
+                <DropdownMenuItem
+                  className="text-destructive"
+                  onClick={async () => {
+                    const t = toast.loading("Deleting…")
+                    const r = await deletePersonAction(p.id)
+                    if ("error" in r) {
+                      toast.error(r.error, { id: t })
+                    } else {
+                      toast.success("Deleted", { id: t })
+                      router.refresh()
+                    }
+                  }}
+                >
+                  Delete
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )
@@ -301,7 +317,14 @@ function PeopleTableComponent({
         </div>
         <div className="ml-auto flex items-center gap-2">
           <CreatePersonDialog triggerClassName="h-8" people={people} />
-          <Select value={categoryFilter} onValueChange={(v)=> setCategoryFilter(v as any)}>
+          <Select
+            value={categoryFilter}
+            onValueChange={(value) => {
+              if (value === "all" || value === "staff" || value === "board" || value === "supporter") {
+                setCategoryFilter(value)
+              }
+            }}
+          >
             <SelectTrigger size="sm" className="w-36">
               <SelectValue placeholder="All categories" />
             </SelectTrigger>

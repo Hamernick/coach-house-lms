@@ -1,6 +1,11 @@
 import Link from "next/link"
 import Image from "next/image"
 
+import { NewsGradientThumb } from "@/components/news/gradient-thumb"
+
+export const runtime = "edge"
+export const revalidate = 86400
+
 export default function LandingPage() {
   return (
     <main className="relative min-h-screen bg-[#FAFAFA] dark:bg-gradient-to-b dark:from-background dark:via-background dark:to-secondary/40">
@@ -32,6 +37,7 @@ export default function LandingPage() {
             <Link href="#benefits" className="hidden sm:inline hover:text-foreground">Benefits</Link>
             <Link href="#how" className="hidden sm:inline hover:text-foreground">How it works</Link>
             <Link href="/pricing" className="hidden sm:inline hover:text-foreground">Pricing</Link>
+            <Link href="/news" className="hidden sm:inline hover:text-foreground">News</Link>
             <Link
               href="/login"
               className="rounded-full bg-primary px-4 py-2 font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
@@ -47,32 +53,39 @@ export default function LandingPage() {
         <div className="flex flex-col items-center gap-8 text-center md:flex-row md:items-start md:text-left">
           <div className="flex-1 space-y-5">
             <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card/70 px-3 py-1 text-xs text-muted-foreground">
-              <span className="size-1 rounded-full bg-emerald-500" /> 1200+ active users
+              <span className="size-1 rounded-full bg-emerald-500" /> For nonprofits turning ideas into impact
             </div>
             <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl">
-              Launch and run your courses without the busywork
+              Build your organization as you move through class
             </h1>
             <p className="max-w-xl text-balance text-muted-foreground">
-              Coach House LMS handles auth, billing, content, and progress tracking so you can focus on teaching—not integrations.
+              Coach House is a cohort-ready LMS for nonprofit founders. Each module combines teaching, AI-assisted homework, and
+              a live “My Organization” profile that fills in as you go.
             </p>
             <div className="flex flex-wrap items-center gap-3 md:justify-start md:gap-4">
               <Link
                 href="/pricing"
                 className="rounded-full bg-primary px-6 py-2 text-primary-foreground transition hover:bg-primary/90"
               >
-                Start a free trial
+                Apply for the next cohort
               </Link>
               <Link
                 href="/login"
                 className="rounded-full border border-border px-6 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"
               >
-                Sign in to your account
+                Sign in to your workspace
               </Link>
             </div>
-            <p className="text-xs text-muted-foreground">No setup fees. Cancel anytime.</p>
+            <p className="text-xs text-muted-foreground">
+              Strategic foundations, mission/vision/values, theory of change, pilots, budgets, and more—linked directly to your org
+              record.
+            </p>
           </div>
           <div className="flex-1">
-            <div className="aspect-video w-full rounded-2xl border border-border bg-card/60 shadow-sm" aria-hidden />
+            <NewsGradientThumb
+              seed="hero-my-organization"
+              className="aspect-video w-full rounded-2xl border border-border shadow-sm"
+            />
           </div>
         </div>
       </section>
@@ -91,25 +104,25 @@ export default function LandingPage() {
       <section id="benefits" className="mx-auto mt-20 w-[min(1100px,92%)]">
         <h2 className="text-center text-2xl font-semibold">Benefits</h2>
         <p className="mx-auto mt-2 max-w-2xl text-center text-muted-foreground">
-          Help learners progress with sequential modules, built‑in assignments, and real‑time progress tracking.
+          Follow a proven accelerator path while your homework quietly builds a usable organization profile in the background.
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
-              title: "Faster time to launch",
-              body: "Go live in days—not months—with auth, billing, and content already wired.",
+              title: "Homework that becomes your org",
+              body: "Origin story, need statement, mission, vision, values, pilot design, and budgets are captured once and reused across My Organization and reports.",
             },
             {
-              title: "Built for teaching",
-              body: "Modules, assignments, and progress states keep learners engaged and on track.",
+              title: "Built for accelerators",
+              body: "Sequenced classes, assignments, and progress states tuned for nonprofit cohorts instead of generic course catalogs.",
             },
             {
-              title: "Simple billing",
-              body: "Stripe subscriptions with a customer portal—no custom invoices required.",
+              title: "Stripe-powered access",
+              body: "Stripe subscriptions manage access so you can focus on content, coaching, and community.",
             },
             {
-              title: "Admin control",
-              body: "Create and reorder modules, manage users, and review submissions in one place.",
+              title: "Instructor & admin control",
+              body: "Create and reorder modules, review submissions, and see who is stuck at a glance.",
             },
             {
               title: "Secure by default",

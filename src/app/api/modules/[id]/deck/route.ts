@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { createModuleDeckSignedUrl } from "@/lib/storage/decks"
 import type { Database } from "@/lib/supabase"
 
-export async function GET(_request: Request, context: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, context: { params: Promise<{ id: string }> }) {
   const { id: moduleId } = await context.params
   const supabase = await createSupabaseServerClient()
 
@@ -36,6 +36,11 @@ export async function GET(_request: Request, context: { params: Promise<{ id: st
   }
 
   const signedUrl = await createModuleDeckSignedUrl(data.deck_path)
+
+  const format = new URL(request.url).searchParams.get("format")
+  if (format === "json") {
+    return NextResponse.json({ url: signedUrl })
+  }
 
   return NextResponse.redirect(signedUrl)
 }

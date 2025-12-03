@@ -1,15 +1,9 @@
-import type { CSSProperties, ReactNode } from "react"
+import type { ReactNode } from "react"
 
-import { AppSidebar } from "@/components/app-sidebar"
-import { SiteHeader } from "@/components/site-header"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
 import { createSupabaseServerClient } from "@/lib/supabase"
-import { OnboardingDialog } from "@/components/onboarding/onboarding-dialog"
 import { completeOnboardingAction } from "@/app/(dashboard)/onboarding/actions"
 import { fetchSidebarTree } from "@/lib/academy"
+import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 
 export default async function DashboardLayout({ children, breadcrumbs }: { children: ReactNode; breadcrumbs?: ReactNode }) {
   const supabase = await createSupabaseServerClient()
@@ -49,45 +43,22 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
     needsOnboarding = !isAdmin && !completed
   }
 
-  // Sidebar academy tree (DB-driven)
   const sidebarTree = await fetchSidebarTree({ includeDrafts: true, forceAdmin: isAdmin })
 
   return (
-    <div className="min-h-svh bg-sidebar">
-      <SidebarProvider
-        style={
-          {
-            "--sidebar-width": "calc(var(--spacing) * 72)",
-            "--header-height": "calc(var(--spacing) * 12)",
-          } as CSSProperties
-        }
-      >
-        <AppSidebar
-          variant="inset"
-          user={{
-            name: displayName,
-            email,
-            avatar,
-          }}
-          isAdmin={isAdmin}
-          classes={sidebarTree}
-        />
-        <SidebarInset>
-          <SiteHeader breadcrumbs={breadcrumbs} />
-          <main className="flex flex-1 flex-col" role="main">
-            <div className="@container/main flex flex-1 flex-col gap-2">
-              <div className="flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">{children}</div>
-            </div>
-          </main>
-        </SidebarInset>
-        {user ? (
-          <OnboardingDialog
-            open={needsOnboarding}
-            defaultEmail={email}
-            onSubmit={completeOnboardingAction}
-          />
-        ) : null}
-      </SidebarProvider>
-    </div>
+    <DashboardShell
+      breadcrumbs={breadcrumbs}
+      sidebarTree={sidebarTree}
+      user={{ name: displayName, email: email ?? null, avatar: avatar ?? null }}
+      isAdmin={isAdmin}
+      onboardingProps={{
+        enabled: Boolean(user && needsOnboarding),
+        open: needsOnboarding,
+        defaultEmail: email,
+        onSubmit: completeOnboardingAction,
+      }}
+    >
+      {children}
+    </DashboardShell>
   )
 }

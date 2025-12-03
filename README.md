@@ -8,6 +8,12 @@ Minimal, production‑ready LMS. Next.js (App Router, RSC), Supabase, Stripe, sh
 * **Agent‑driven**: `docs/CODEX_RUNBOOK.md` stepper; say **“Proceed.”** to advance.
 * **Explicit contract**: `docs/AGENTS.md` = source of truth.
 
+For a product/system mental model (who it’s for, how classes/modules/homework connect to My Organization, and how the data model hangs together), start with:
+
+- `docs/OVERVIEW.md` — high‑level system overview + roadmap.
+- `docs/DB_SCHEMA.md` — core tables and relationships.
+- `docs/RUNLOG.md` + `docs/RUNLOG-strategic-roadmap.md` — recent work + design notes.
+
 ## Architecture
 
 * **Web**: Next.js + TS, RSC‑first, Tailwind, shadcn/ui, next‑themes, Sonner.

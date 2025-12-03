@@ -116,58 +116,6 @@ export function LessonCreationWizard({
     })
   }
 
-  const renderStepIndicator = () => <Stepper step={step} totalSteps={totalSteps} />
-
-  const renderLandingPageStep = () => (
-    <LandingStep
-      title={title}
-      subtitle={subtitle}
-      body={body}
-      videoUrl={videoUrl}
-      links={links}
-      onTitleChange={(v) => setTitle(clampText(v, LESSON_TITLE_MAX_LENGTH))}
-      onSubtitleChange={(v) => setSubtitle(clampText(v, LESSON_SUBTITLE_MAX_LENGTH))}
-      onBodyChange={setBody}
-      onVideoUrlChange={setVideoUrl}
-      onAddLink={addLink}
-      onUpdateLink={updateLink}
-      onRemoveLink={removeLink}
-    />
-  )
-
-  const renderModulesOverviewStep = () => (
-    <ModulesOverviewStep
-      modules={modules}
-      isEditMode={isEditMode}
-      onAdd={overviewAddHandler}
-      onRemove={removeModule}
-      addDisabled={moduleAddDisabled}
-    />
-  )
-
-  const renderModuleStep = () => {
-    const activeModule = modules[currentModuleIndex]
-    if (!activeModule) return null
-    return (
-      <ModuleStep
-        index={currentModuleIndex}
-        module={activeModule}
-        formFieldTypeOptions={FORM_FIELD_TYPE_OPTIONS}
-        defaultSliderRange={DEFAULT_SLIDER_RANGE}
-        onChangeTitle={(v) => updateModule(currentModuleIndex, "title", v)}
-        onChangeSubtitle={(v) => updateModule(currentModuleIndex, "subtitle", v)}
-        onChangeBody={(v) => updateModule(currentModuleIndex, "body", v)}
-        onChangeVideoUrl={(v) => updateModule(currentModuleIndex, "videoUrl", v)}
-        onAddResource={() => addResource(currentModuleIndex)}
-        onUpdateResource={(id, field, value) => updateResource(currentModuleIndex, id, field, value)}
-        onRemoveResource={(id) => removeResource(currentModuleIndex, id)}
-        onAddField={() => addFormField(currentModuleIndex)}
-        onUpdateField={(fieldId, updater) => updateFormField(currentModuleIndex, fieldId, updater)}
-        onRemoveField={(fieldId) => removeFormField(currentModuleIndex, fieldId)}
-      />
-    )
-  }
-
   return (
     <Dialog
       open={open}
@@ -237,7 +185,6 @@ export function LessonCreationWizard({
                     onChangeTitle={(v) => updateModule(currentModuleIndex, "title", v)}
                     onChangeSubtitle={(v) => updateModule(currentModuleIndex, "subtitle", v)}
                     onChangeBody={(v) => updateModule(currentModuleIndex, "body", v)}
-                    onChangeVideoUrl={(v) => updateModule(currentModuleIndex, "videoUrl", v)}
                     onAddResource={() => addResource(currentModuleIndex)}
                     onUpdateResource={(id, field, value) => updateResource(currentModuleIndex, id, field, value)}
                     onRemoveResource={(id) => removeResource(currentModuleIndex, id)}
@@ -260,12 +207,10 @@ export function LessonCreationWizard({
           isDirty={isDirty}
           step={step}
           totalSteps={totalSteps}
-          onBack={handleBack}
-          onNext={handleNext}
-          onFinish={handleFinish}
           onCancel={() => onOpenChange(false)}
-          // Disable navigation while loading payload
-          {...(loading ? { onBack: () => {}, onNext: () => {}, onFinish: () => {} } : {})}
+          {...(loading
+            ? { onBack: () => {}, onNext: () => {}, onFinish: () => {} }
+            : { onBack: handleBack, onNext: handleNext, onFinish: handleFinish })}
         />
       </DialogContent>
     </Dialog>

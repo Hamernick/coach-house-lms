@@ -214,6 +214,7 @@ docs/**            # runbooks, contracts, diagrams, context extensions
 2. Implement: code/migrations/docs in correct dirs.
 3. Validate: run checks; smoke test (auth, payment, unlock, billing, admin).
 4. Deliver: PR with screenshots (light/dark/mobile) + state coverage notes.
+5. Log: append a concise entry to `docs/RUNLOG.md` for every ad‑hoc or Codex session (what changed, what worked, what didn’t, and where to pick up next).
 
 ---
 

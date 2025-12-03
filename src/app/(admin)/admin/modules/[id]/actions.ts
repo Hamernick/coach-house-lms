@@ -1,6 +1,5 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { requireAdmin } from "@/lib/admin/auth"
@@ -12,6 +11,48 @@ import {
   MODULE_TITLE_MAX_LENGTH,
   clampText,
 } from "@/lib/lessons/limits"
+import { revalidateClassViews } from "@/app/(admin)/admin/classes/actions"
+
+type SupabaseServer = Awaited<ReturnType<typeof createSupabaseServerClient>>
+
+async function revalidateModuleViews(
+  supabase: SupabaseServer,
+  moduleId: string,
+  classId?: string | null,
+  options: { fallbackSlug?: string | null; fallbackIdx?: number | null } = {},
+) {
+  let resolvedClassId = classId ?? null
+  let resolvedClassSlug: string | null = options.fallbackSlug ?? null
+  let resolvedModuleIdx: number | null | undefined = options.fallbackIdx
+
+  if (!resolvedClassId || resolvedClassSlug == null || resolvedModuleIdx == null) {
+    const { data: moduleMeta } = await supabase
+      .from("modules" satisfies keyof Database["public"]["Tables"])
+      .select("class_id, idx, slug, classes ( slug )")
+      .eq("id", moduleId)
+      .maybeSingle<{
+        class_id: string | null
+        idx: number | null
+        slug: string | null
+        classes: { slug: string | null } | null
+      }>()
+
+    resolvedClassId = resolvedClassId ?? moduleMeta?.class_id ?? null
+    resolvedClassSlug = resolvedClassSlug ?? moduleMeta?.classes?.slug ?? null
+    resolvedModuleIdx = resolvedModuleIdx ?? moduleMeta?.idx ?? null
+  }
+
+  await revalidateClassViews({
+    classId: resolvedClassId,
+    classSlug: resolvedClassSlug,
+    additionalTargets: [
+      `/admin/modules/${moduleId}`,
+      ...(resolvedClassSlug != null && resolvedModuleIdx != null
+        ? [`/class/${resolvedClassSlug}/module/${resolvedModuleIdx}`]
+        : []),
+    ],
+  })
+}
 
 export async function updateModuleDetailsAction(formData: FormData) {
   const moduleId = formData.get("moduleId")
@@ -69,8 +110,7 @@ export async function updateModuleDetailsAction(formData: FormData) {
     throw error
   }
 
-  revalidatePath(`/admin/classes/${classId}`)
-  revalidatePath(`/admin/modules/${moduleId}`)
+  await revalidateModuleViews(supabase, moduleId, classId)
 }
 
 export async function deleteModuleFromDetailAction(formData: FormData) {
@@ -84,6 +124,17 @@ export async function deleteModuleFromDetailAction(formData: FormData) {
   await requireAdmin()
   const supabase = await createSupabaseServerClient()
 
+  const { data: moduleMeta } = await supabase
+    .from("modules" satisfies keyof Database["public"]["Tables"])
+    .select("class_id, idx, slug, classes ( slug )")
+    .eq("id", moduleId)
+    .maybeSingle<{
+      class_id: string | null
+      idx: number | null
+      slug: string | null
+      classes: { slug: string | null } | null
+    }>()
+
   const { error } = await supabase
     .from("modules" satisfies keyof Database["public"]["Tables"])
     .delete()
@@ -93,7 +144,16 @@ export async function deleteModuleFromDetailAction(formData: FormData) {
     throw error
   }
 
-  revalidatePath(`/admin/classes/${classId}`)
+  await revalidateClassViews({
+    classId,
+    classSlug: moduleMeta?.classes?.slug ?? null,
+    additionalTargets: [
+      `/admin/modules/${moduleId}`,
+      ...(moduleMeta?.classes?.slug && moduleMeta?.idx != null
+        ? [`/class/${moduleMeta.classes.slug}/module/${moduleMeta.idx}`]
+        : []),
+    ],
+  })
   redirect(`/admin/classes/${classId}`)
 }
 
@@ -151,8 +211,7 @@ export async function uploadModuleDeckAction(formData: FormData) {
     throw updateError
   }
 
-  revalidatePath(`/admin/modules/${moduleId}`)
-  revalidatePath(`/admin/classes/${classId}`)
+  await revalidateModuleViews(supabase, moduleId, classId)
 }
 
 export async function removeModuleDeckAction(formData: FormData) {
@@ -193,8 +252,7 @@ export async function removeModuleDeckAction(formData: FormData) {
     throw updateError
   }
 
-  revalidatePath(`/admin/modules/${moduleId}`)
-  revalidatePath(`/admin/classes/${classId}`)
+  await revalidateModuleViews(supabase, moduleId, classId)
 }
 
 export async function updateModuleAssignmentAction(formData: FormData) {
@@ -229,7 +287,7 @@ export async function updateModuleAssignmentAction(formData: FormData) {
 
   if (error) throw error
 
-  revalidatePath(`/admin/modules/${moduleId}`)
+  await revalidateModuleViews(supabase, moduleId)
 }
 
 export async function updateModuleContentAction(formData: FormData) {
@@ -286,7 +344,7 @@ export async function updateModuleContentAction(formData: FormData) {
 
   if (error) throw error
 
-  revalidatePath(`/admin/modules/${moduleId}`)
+  await revalidateModuleViews(supabase, moduleId)
 }
 
 export async function generateSignedUrlAction(bucket: string, path: string) {

@@ -2,11 +2,7 @@
 
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { RichTextEditor } from "@/components/rich-text-editor"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Plus, X } from "lucide-react"
+import { RichTextEditor } from "./rich-text-editor-client"
 import { ResourceList } from "@/components/admin/lesson-wizard/steps/ResourceList"
 import { FormFieldsEditor } from "@/components/admin/lesson-wizard/steps/FormFieldsEditor"
 import type { FormField as ModuleField, FormFieldType, Resource as ModuleResource } from "@/lib/lessons/types"
@@ -20,7 +16,6 @@ function ModuleStepBase({
   onChangeTitle,
   onChangeSubtitle,
   onChangeBody,
-  onChangeVideoUrl,
   onAddResource,
   onUpdateResource,
   onRemoveResource,
@@ -42,7 +37,6 @@ function ModuleStepBase({
   onChangeTitle: (value: string) => void
   onChangeSubtitle: (value: string) => void
   onChangeBody: (value: string) => void
-  onChangeVideoUrl: (value: string) => void
   onAddResource: () => void
   onUpdateResource: (resourceId: string, field: "title" | "url", value: string) => void
   onRemoveResource: (resourceId: string) => void

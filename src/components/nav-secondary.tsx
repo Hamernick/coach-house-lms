@@ -1,7 +1,6 @@
 "use client"
 
-import * as React from "react"
-import { type Icon } from "@tabler/icons-react"
+import type { LucideIcon } from "lucide-react"
 
 import {
   SidebarGroup,
@@ -15,30 +14,40 @@ import {
 export function NavSecondary({
   items,
   label = "Support",
-  ...props
+  className,
 }: {
   items: {
     title: string
     url: string
-    icon: Icon
+    icon: LucideIcon
   }[]
   label?: string
-} & React.ComponentPropsWithoutRef<typeof SidebarGroup>) {
+  className?: string
+}) {
   if (items.length === 0) {
     return null
   }
 
   return (
-    <SidebarGroup {...props}>
-      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+    <SidebarGroup className={className}>
+      <SidebarGroupLabel className="px-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
-              <SidebarMenuButton asChild>
-                <a href={item.url}>
-                  <item.icon />
-                  <span>{item.title}</span>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.title}
+                className="justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
+              >
+                <a
+                  href={item.url}
+                  title={item.title}
+                >
+                  <item.icon className="size-4 shrink-0" />
+                  <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>

@@ -9,9 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Field, FieldControl, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { InputGroup, InputGroupAddon, InputGroupButton } from "@/components/ui/input-group"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { IconPlus } from "@tabler/icons-react"
+import PlusIcon from "lucide-react/dist/esm/icons/plus"
 import { upsertPersonAction, type OrgPerson } from "@/app/(dashboard)/people/actions"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { ManagerSelect } from "@/components/people/manager-select"
@@ -90,7 +90,7 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
     <Dialog open={open} onOpenChange={(o)=>{ setOpen(o); if (!o) reset() }}>
       <DialogTrigger asChild>
         <Button className={triggerClassName} size="sm">
-          <IconPlus className="size-4" />
+          <PlusIcon className="size-4" />
           <span className="ml-2">Create</span>
         </Button>
       </DialogTrigger>

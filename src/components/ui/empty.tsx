@@ -24,7 +24,9 @@ const emptyCardVariants = cva(
   }
 )
 
-interface EmptyProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof emptyCardVariants> {
+interface EmptyProps
+  extends Omit<React.HTMLAttributes<HTMLDivElement>, "title">,
+    VariantProps<typeof emptyCardVariants> {
   icon?: React.ReactNode
   title?: React.ReactNode
   description?: React.ReactNode

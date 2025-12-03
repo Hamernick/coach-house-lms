@@ -13,7 +13,7 @@ export const Item = React.forwardRef<HTMLDivElement, ItemProps>(
     const Comp = asChild ? Slot : "div"
     return (
       <Comp
-        ref={ref as any}
+        ref={ref as unknown as React.Ref<HTMLDivElement>}
         className={cn(
           "group relative w-full rounded-lg border bg-card/60 p-3 sm:p-4",
           "hover:bg-accent/50 transition-colors",

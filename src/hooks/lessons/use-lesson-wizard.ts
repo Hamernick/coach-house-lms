@@ -5,7 +5,7 @@ import { LESSON_SUBTITLE_MAX_LENGTH, LESSON_TITLE_MAX_LENGTH, MODULE_SUBTITLE_MA
 import { DEFAULT_SLIDER_RANGE, MAX_CLASS_LINKS } from "@/lib/lessons/constants"
 import { createDefaultFormField, normalizeFieldForType, normalizeFormFieldType, toNumberOrNull } from "@/lib/lessons/fields"
 import { inferProviderSlug } from "@/lib/lessons/providers"
-import type { FormField, LessonLink, LessonWizardPayload, ModuleDefinition, ProviderSlug, Resource } from "@/lib/lessons/types"
+import type { FormField, LessonWizardPayload, ModuleDefinition } from "@/lib/lessons/types"
 import { initialWizardData, wizardReducer } from "./wizard-reducer"
 import { normalizeIncomingPayload, validateFinalPayload } from "@/lib/lessons/schemas"
 
@@ -354,7 +354,7 @@ export function useLessonWizard({ open, mode = "create", initialPayload = null, 
     try {
       const validated = validateFinalPayload(payload)
       return { payload: validated }
-    } catch (e) {
+    } catch {
       return { error: "Validation failed. Please review your inputs." }
     }
   }, [lessonTitle, lessonSubtitle, body, videoUrl, links, modules, isEditMode])

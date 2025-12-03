@@ -14,6 +14,7 @@ export async function ProgressOverview() {
     .from("enrollments")
     .select("class_id")
     .eq("user_id", user.id)
+    .returns<Array<{ class_id: string }>>()
 
   const classIds = (enrollments ?? []).map((e) => e.class_id)
   if (classIds.length === 0) {
@@ -33,6 +34,7 @@ export async function ProgressOverview() {
     .select("id")
     .in("class_id", classIds)
     .eq("is_published", true)
+    .returns<Array<{ id: string }>>()
 
   const moduleIds = (modules ?? []).map((m) => m.id)
   const total = moduleIds.length
@@ -45,6 +47,7 @@ export async function ProgressOverview() {
       .eq("user_id", user.id)
       .in("module_id", moduleIds)
       .eq("status", "completed")
+      .returns<Array<{ id: string }>>()
     completed = (progress ?? []).length
   }
 

@@ -73,6 +73,7 @@ export async function fetchAdminKpis(): Promise<AdminKpis> {
       .from("subscriptions")
       .select("status, metadata, updated_at")
       .order("updated_at", { ascending: false })
+      .returns<SubscriptionRow[]>()
   ])
 
   if (profileError) {
@@ -83,7 +84,7 @@ export async function fetchAdminKpis(): Promise<AdminKpis> {
   }
 
   const profileSummary = profileCount as unknown as { count: number | null } | null
-  const subscriptionRows = (subs ?? []) as SubscriptionRow[]
+  const subscriptionRows = subs ?? []
   const activeSubscriptions = subscriptionRows.filter((row) => row.status === "active").length
 
   const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000

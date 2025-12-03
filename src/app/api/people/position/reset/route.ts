@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 
 import { requireServerSession } from "@/lib/auth"
 
@@ -29,9 +31,12 @@ export async function POST(request: Request) {
       .upsert({ user_id: userId, profile: nextProfile }, { onConflict: "user_id" })
     if (upsertErr) return NextResponse.json({ error: upsertErr.message }, { status: 500 })
 
+    revalidatePath("/people")
+    revalidatePath("/my-organization")
+
     return NextResponse.json({ ok: true })
-  } catch (e) {
+  } catch {
     return NextResponse.json({ error: "Unexpected error" }, { status: 500 })
   }
 }
-
+ 

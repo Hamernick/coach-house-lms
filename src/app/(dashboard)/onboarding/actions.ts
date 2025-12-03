@@ -28,6 +28,21 @@ export async function completeOnboardingAction(form: FormData) {
   const problem = String(form.get("problem") || "").trim()
   const mission = String(form.get("mission") || "").trim()
   const goals = String(form.get("goals") || "").trim()
+  const notes = String(form.get("confidenceNotes") || "").trim()
+  const followUpLater = form.get("followUpLater") === "on"
+
+  const toScore = (value: FormDataEntryValue | null) => {
+    if (typeof value !== "string") return null
+    const parsed = Number(value)
+    if (!Number.isFinite(parsed)) return null
+    const clamped = Math.round(parsed)
+    if (clamped < 1 || clamped > 10) return null
+    return clamped
+  }
+
+  const confidenceOperating = toScore(form.get("confidenceOperating"))
+  const confidenceFunding = toScore(form.get("confidenceFunding"))
+  const confidenceFunders = toScore(form.get("confidenceFunders"))
 
   let avatarUrl: string | null = null
   const avatar = form.get("avatar")
@@ -88,4 +103,21 @@ export async function completeOnboardingAction(form: FormData) {
       },
     },
   })
+
+  if (confidenceOperating && confidenceFunding && confidenceFunders) {
+    await supabase
+      .from("onboarding_responses")
+      .upsert(
+        {
+          user_id: user.id,
+          org_id: user.id,
+          confidence_operating: confidenceOperating,
+          confidence_funding: confidenceFunding,
+          confidence_funders: confidenceFunders,
+          notes: notes.length > 0 ? notes : null,
+          follow_up: followUpLater,
+        },
+        { onConflict: "user_id" }
+      )
+  }
 }

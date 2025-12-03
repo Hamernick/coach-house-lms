@@ -11,6 +11,7 @@ interface GridPatternProps {
   y?: number
   squares?: Array<[number, number]>
   strokeDasharray?: string
+  patternId?: string
   className?: string
   [key: string]: unknown
 }
@@ -22,10 +23,12 @@ export function GridPattern({
   y = -1,
   strokeDasharray = "0",
   squares,
+  patternId,
   className,
   ...props
 }: GridPatternProps) {
-  const id = React.useId()
+  const reactId = React.useId()
+  const id = patternId || reactId
 
   return (
     <svg

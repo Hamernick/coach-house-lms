@@ -2,9 +2,9 @@
 
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { CircleUser, LogOut } from "lucide-react"
+import CircleUser from "lucide-react/dist/esm/icons/circle-user"
+import LogOut from "lucide-react/dist/esm/icons/log-out"
 
-import { useSupabaseClient } from "@/hooks/use-supabase-client"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -21,13 +21,12 @@ type UserMenuProps = {
 }
 
 export function UserMenu({ name, email }: UserMenuProps) {
-  const supabase = useSupabaseClient()
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
   function signOut() {
     startTransition(async () => {
-      await supabase.auth.signOut()
+      await fetch("/api/auth/signout", { method: "POST" })
       router.replace("/login")
       router.refresh()
     })

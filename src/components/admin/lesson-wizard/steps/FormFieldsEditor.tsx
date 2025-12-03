@@ -5,7 +5,9 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ChevronDown, Plus, X } from "lucide-react"
+import ChevronDown from "lucide-react/dist/esm/icons/chevron-down"
+import Plus from "lucide-react/dist/esm/icons/plus"
+import X from "lucide-react/dist/esm/icons/x"
 import type { FormField as ModuleField, FormFieldType } from "@/lib/lessons/types"
 import { memo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
@@ -50,13 +52,19 @@ function FormFieldsEditorBase({
             const showSlider = field.type === "slider"
             const showProgram = field.type === "custom_program"
             const showRequiredToggle = field.type !== "subtitle"
-            const normalizedOptions = Array.isArray(field.options)
-              ? field.options
-                  .map((option) =>
-                    typeof option === "string" ? option : option?.label ?? option?.value ?? ""
-                  )
-                  .filter(Boolean)
-              : []
+            const rawOptions = Array.isArray(field.options) ? field.options : []
+            const normalizedOptions = rawOptions
+              .map((option) => {
+                if (typeof option === "string") return option
+                if (option && typeof option === "object") {
+                  const opt = option as { label?: unknown; value?: unknown }
+                  const label = typeof opt.label === "string" ? opt.label : ""
+                  const value = typeof opt.value === "string" ? opt.value : ""
+                  return label || value
+                }
+                return ""
+              })
+              .filter((value): value is string => value.length > 0)
             const typeLabel =
               formFieldTypeOptions.find((option) => option.value === field.type)?.label ?? "Field"
             const labelId = `field-${field.id}-label`

@@ -1,7 +1,9 @@
 "use client"
 
 import { useTheme } from "next-themes"
-import { IconMoon, IconSun, IconDeviceDesktop } from "@tabler/icons-react"
+import DeviceDesktopIcon from "lucide-react/dist/esm/icons/monitor"
+import MoonIcon from "lucide-react/dist/esm/icons/moon"
+import SunIcon from "lucide-react/dist/esm/icons/sun"
 import { Button } from "@/components/ui/button"
 import * as React from "react"
 
@@ -17,7 +19,7 @@ export function ThemeToggle() {
   if (!mounted) {
     return (
       <Button variant="ghost" size="icon" aria-label="Theme">
-        <IconDeviceDesktop className="size-4" />
+        <DeviceDesktopIcon className="size-4" />
       </Button>
     )
   }
@@ -25,7 +27,7 @@ export function ThemeToggle() {
   const current = (theme as "system" | "light" | "dark") ?? "system"
   const idx = ORDER.indexOf(current)
   const next = ORDER[(idx + 1) % ORDER.length]
-  const Icon = current === "dark" ? IconMoon : current === "light" ? IconSun : IconDeviceDesktop
+  const Icon = current === "dark" ? MoonIcon : current === "light" ? SunIcon : DeviceDesktopIcon
 
   return (
     <Button variant="ghost" size="icon" onClick={() => setTheme(next)} aria-label={`Theme: ${current}`}>

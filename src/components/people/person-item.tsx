@@ -16,10 +16,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from "@/components/ui/item"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { IconDots } from "@tabler/icons-react"
+import MoreHorizontalIcon from "lucide-react/dist/esm/icons/more-horizontal"
 import type { OrgPerson } from "@/app/(dashboard)/people/actions"
 import { deletePersonAction, refreshPersonLinkedInImageAction } from "@/app/(dashboard)/people/actions"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 import { CreatePersonDialog } from "./create-person-dialog"
 
 const CATEGORY_CHIP: Record<OrgPerson["category"], string> = {
@@ -35,7 +35,13 @@ function initials(name?: string | null) {
   return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase()
 }
 
-export function PersonItem({ person, allPeople }: { person: OrgPerson & { displayImage?: string | null }, allPeople: (OrgPerson & { displayImage?: string | null })[] }) {
+export function PersonItem({
+  person,
+  allPeople,
+}: {
+  person: OrgPerson & { displayImage?: string | null }
+  allPeople: (OrgPerson & { displayImage?: string | null })[]
+}) {
   const [editing, setEditing] = React.useState(false)
   const [confirmOpen, setConfirmOpen] = React.useState(false)
   const router = useRouter()
@@ -44,7 +50,7 @@ export function PersonItem({ person, allPeople }: { person: OrgPerson & { displa
     <>
       <Item className="cursor-pointer" onClick={() => setEditing(true)}>
         <Avatar className="size-10">
-          <AvatarImage src={(person as any).displayImage ?? person.image ?? undefined} alt={person.name} />
+          <AvatarImage src={person.displayImage ?? person.image ?? undefined} alt={person.name} />
           <AvatarFallback>{initials(person.name)}</AvatarFallback>
         </Avatar>
         <ItemContent className="pl-2">
@@ -58,13 +64,35 @@ export function PersonItem({ person, allPeople }: { person: OrgPerson & { displa
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" onClick={(e)=>e.stopPropagation()}>
-                <IconDots className="size-4" />
+                <MoreHorizontalIcon className="size-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={()=>setEditing(true)}>Edit</DropdownMenuItem>
-              <DropdownMenuItem onClick={async(e)=>{ e.stopPropagation(); const t=toast.loading("Refreshing photo…"); const r=await refreshPersonLinkedInImageAction(person.id); if (r && (r as any).error) { toast.error((r as any).error, { id: t }) } else { toast.success("Photo updated", { id: t }); router.refresh() } }}>Refresh photo from LinkedIn</DropdownMenuItem>
-              <DropdownMenuItem className="text-destructive" onClick={(e)=>{ e.stopPropagation(); setConfirmOpen(true) }}>Delete</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setEditing(true)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={async (event) => {
+                  event.stopPropagation()
+                  const toastId = toast.loading("Refreshing photo…")
+                  const result = await refreshPersonLinkedInImageAction(person.id)
+                  if ("error" in result) {
+                    toast.error(result.error, { id: toastId })
+                  } else {
+                    toast.success("Photo updated", { id: toastId })
+                    router.refresh()
+                  }
+                }}
+              >
+                Refresh photo from LinkedIn
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-destructive"
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setConfirmOpen(true)
+                }}
+              >
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </ItemActions>
@@ -91,13 +119,13 @@ export function PersonItem({ person, allPeople }: { person: OrgPerson & { displa
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={async()=>{
-                const t = toast.loading("Deleting…")
-                const r = await deletePersonAction(person.id)
-                if (r && (r as any).error) {
-                  toast.error((r as any).error, { id: t })
+              onClick={async () => {
+                const toastId = toast.loading("Deleting…")
+                const result = await deletePersonAction(person.id)
+                if ("error" in result) {
+                  toast.error(result.error, { id: toastId })
                 } else {
-                  toast.success("Deleted", { id: t })
+                  toast.success("Deleted", { id: toastId })
                   router.refresh()
                 }
                 setConfirmOpen(false)

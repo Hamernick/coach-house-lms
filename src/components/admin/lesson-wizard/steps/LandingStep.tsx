@@ -1,12 +1,16 @@
 "use client"
 
-import { Plus, X, Link as LinkIcon, Video } from "lucide-react"
+import Plus from "lucide-react/dist/esm/icons/plus"
+import X from "lucide-react/dist/esm/icons/x"
+import LinkIcon from "lucide-react/dist/esm/icons/link"
+import VideoIcon from "lucide-react/dist/esm/icons/video"
+import Globe from "lucide-react/dist/esm/icons/globe"
 
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { RichTextEditor } from "@/components/rich-text-editor"
+import { RichTextEditor } from "./rich-text-editor-client"
 import { LESSON_SUBTITLE_MAX_LENGTH, LESSON_TITLE_MAX_LENGTH } from "@/lib/lessons/limits"
 import { MAX_CLASS_LINKS } from "@/lib/lessons/constants"
 import { memo } from "react"
@@ -90,7 +94,7 @@ function LandingStepBase({
 
         <div className="space-y-2">
           <Label htmlFor="videoUrl">
-            <Video className="mr-2 inline h-4 w-4" />
+            <VideoIcon className="mr-2 inline h-4 w-4" />
             YouTube Video URL
           </Label>
           <Input

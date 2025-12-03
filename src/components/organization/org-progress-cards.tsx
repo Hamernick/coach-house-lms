@@ -18,10 +18,11 @@ async function fetchClassProgressForUser(userId: string): Promise<ClassProgress[
     .select("classes ( id, title, slug ), created_at")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
+    .returns<Array<{ created_at: string; classes: { id: string; title: string | null; slug: string | null } | null }>>()
 
   if (error) throw error
 
-  const classes = ((enrollments ?? []) as Array<{ created_at: string; classes: { id: string; title: string | null; slug: string | null } | null }>)
+  const classes = (enrollments ?? [])
     .map((row) => ({ id: row.classes?.id ?? "", title: row.classes?.title ?? "Untitled Class", slug: row.classes?.slug ?? "" }))
     .filter((c) => c.id && c.slug)
 
@@ -41,7 +42,8 @@ async function fetchClassProgressForUser(userId: string): Promise<ClassProgress[
         .select("module_id, status")
         .eq("user_id", userId)
         .in("module_id", moduleIds)
-      const rows = (progress ?? []) as Array<{ module_id: string; status: string }>
+        .returns<Array<{ module_id: string; status: string }>>()
+      const rows = progress ?? []
       const completedByProgress = new Set(rows.filter((r) => r.status === "completed").map((r) => r.module_id))
 
       // Assignment-based completion when complete_on_submit is true and submission not 'revise'
@@ -49,8 +51,8 @@ async function fetchClassProgressForUser(userId: string): Promise<ClassProgress[
         .from("module_assignments")
         .select("module_id, complete_on_submit")
         .in("module_id", moduleIds)
-      const eligibleModules = new Set(((assignments ?? []) as Array<{ module_id: string; complete_on_submit: boolean }>).
-        filter((a) => a.complete_on_submit).map((a) => a.module_id))
+        .returns<Array<{ module_id: string; complete_on_submit: boolean }>>()
+      const eligibleModules = new Set((assignments ?? []).filter((a) => a.complete_on_submit).map((a) => a.module_id))
 
       let completedByAssignment = new Set<string>()
       if (eligibleModules.size > 0) {
@@ -59,7 +61,8 @@ async function fetchClassProgressForUser(userId: string): Promise<ClassProgress[
           .select("module_id, status")
           .eq("user_id", userId)
           .in("module_id", Array.from(eligibleModules))
-        const subs = (submissions ?? []) as Array<{ module_id: string; status: 'submitted' | 'accepted' | 'revise' }>
+          .returns<Array<{ module_id: string; status: "submitted" | "accepted" | "revise" }>>()
+        const subs = submissions ?? []
         completedByAssignment = new Set(subs.filter((s) => s.status !== 'revise').map((s) => s.module_id))
       }
 

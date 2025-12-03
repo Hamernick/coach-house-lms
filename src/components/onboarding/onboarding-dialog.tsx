@@ -3,19 +3,20 @@
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
+import NextImage from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import Cropper from "react-easy-crop"
 
-type Props = {
+export type OnboardingDialogProps = {
   open: boolean
   defaultEmail?: string | null
   onSubmit: (form: FormData) => Promise<void>
 }
 
-export function OnboardingDialog({ open, defaultEmail, onSubmit }: Props) {
+export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDialogProps) {
   const [step, setStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -23,6 +24,10 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: Props) {
   const formRef = useRef<HTMLFormElement>(null)
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
+  const [confidenceOperating, setConfidenceOperating] = useState(6)
+  const [confidenceFunding, setConfidenceFunding] = useState(5)
+  const [confidenceFunders, setConfidenceFunders] = useState(5)
+  const [followUpLater, setFollowUpLater] = useState(false)
   const [cropOpen, setCropOpen] = useState(false)
   const [rawImageUrl, setRawImageUrl] = useState<string | null>(null)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
@@ -30,12 +35,29 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: Props) {
   const [croppedArea, setCroppedArea] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
 
   // Load saved draft on mount
-  useOnboardingDraft(formRef, setStep, setAvatarPreview, setFirstName, setLastName)
+  useOnboardingDraft(formRef, setStep, setAvatarPreview, setFirstName, setLastName, {
+    setOperatingScore: setConfidenceOperating,
+    setFundingScore: setConfidenceFunding,
+    setFundersScore: setConfidenceFunders,
+    setFollowUp: setFollowUpLater,
+  })
 
-  function saveDraft(extra?: Partial<{ avatar: string | null; step: number }>) {
+  function saveDraft(
+    extra?: Partial<{
+      avatar: string | null
+      step: number
+      values: Record<string, string>
+      flags: Partial<{ optInUpdates: boolean; followUpLater: boolean }>
+    }>,
+  ) {
     if (typeof window === "undefined" || !formRef.current) return
     const data = new FormData(formRef.current)
-    const draft: { step: number; values: Record<string, string>; flags: { optInUpdates: boolean }; avatar: string | null } = {
+    const draft: {
+      step: number
+      values: Record<string, string>
+      flags: { optInUpdates: boolean; followUpLater: boolean }
+      avatar: string | null
+    } = {
       step,
       values: Object.fromEntries(
         [
@@ -52,12 +74,23 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: Props) {
           "problem",
           "mission",
           "goals",
+          "confidenceOperating",
+          "confidenceFunding",
+          "confidenceFunders",
+          "confidenceNotes",
         ].map((k) => [k, String(data.get(k) ?? "")])
       ),
       flags: {
         optInUpdates: Boolean(data.get("optInUpdates")),
+        followUpLater: Boolean(data.get("followUpLater")),
       },
       avatar: avatarPreview,
+    }
+    if (extra?.values) {
+      draft.values = { ...draft.values, ...extra.values }
+    }
+    if (extra?.flags) {
+      draft.flags = { ...draft.flags, ...extra.flags }
     }
     if (extra?.avatar !== undefined) draft.avatar = extra.avatar
     if (typeof extra?.step === "number") draft.step = extra.step
@@ -95,6 +128,18 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: Props) {
     } else if (s === 2) {
       if (!String(form.get("stage") || "").trim()) newErrors.stage = "Select your stage"
       if (!String(form.get("problem") || "").trim()) newErrors.problem = "Problem statement is required"
+    } else if (s === 3) {
+      const confidenceFields: Array<{ key: keyof typeof newErrors; name: string }> = [
+        { key: "confidenceOperating", name: "confidenceOperating" },
+        { key: "confidenceFunding", name: "confidenceFunding" },
+        { key: "confidenceFunders", name: "confidenceFunders" },
+      ]
+      confidenceFields.forEach(({ key, name }) => {
+        const raw = Number(form.get(name) ?? NaN)
+        if (!Number.isFinite(raw)) {
+          newErrors[key as string] = "Please choose a value from 1–10"
+        }
+      })
     }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -148,8 +193,13 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: Props) {
                 <div className="flex flex-col items-center gap-3">
                   <div className="relative size-28 overflow-hidden rounded-full border border-border bg-card">
                     {avatarPreview ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={avatarPreview} alt="Avatar preview" className="h-full w-full object-cover" />
+                      <NextImage
+                        src={avatarPreview}
+                        alt="Avatar preview"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-muted-foreground">
                         {(firstName[0] ?? "A").toUpperCase()}
@@ -275,6 +325,85 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: Props) {
                 </div>
               </>
             )}
+            {step === 3 && (
+              <>
+                <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-primary">
+                  Capture a quick “before” snapshot so we can celebrate how your confidence grows during the accelerator.
+                </div>
+                {[
+                  {
+                    id: "confidenceOperating",
+                    label: "Operating as an organization",
+                    description: "How ready do you feel to run the day-to-day operations of your organization?",
+                    value: confidenceOperating,
+                    setter: setConfidenceOperating,
+                  },
+                  {
+                    id: "confidenceFunding",
+                    label: "Being ready for funding",
+                    description: "How confident are you in your financial model, budget, and readiness to accept funding?",
+                    value: confidenceFunding,
+                    setter: setConfidenceFunding,
+                  },
+                  {
+                    id: "confidenceFunders",
+                    label: "Finding & communicating with funders",
+                    description: "How confident are you when it comes to identifying funders and telling your story to them?",
+                    value: confidenceFunders,
+                    setter: setConfidenceFunders,
+                  },
+                ].map(({ id, label, description, value, setter }) => (
+                  <div key={id} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor={id}>{label}</Label>
+                      <span className="text-sm font-semibold text-foreground">{value}/10</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{description}</p>
+                    <input
+                      type="range"
+                      min={1}
+                      max={10}
+                      step={1}
+                      id={id}
+                      name={id}
+                      value={value}
+                      onChange={(event) => {
+                        const next = Number(event.currentTarget.value)
+                        setter(next)
+                        saveDraft({ values: { [id]: String(next) } })
+                      }}
+                      className="mt-2 w-full accent-primary"
+                    />
+                    {errors[id] ? <p className="text-xs text-destructive">{errors[id]}</p> : null}
+                  </div>
+                ))}
+                <div className="space-y-2">
+                  <Label htmlFor="confidenceNotes">Context (optional)</Label>
+                  <Textarea
+                    id="confidenceNotes"
+                    name="confidenceNotes"
+                    placeholder="Share any context or notes about your confidence levels."
+                  />
+                </div>
+                <label className="flex items-start gap-3 text-sm">
+                  <input
+                    type="checkbox"
+                    name="followUpLater"
+                    className="mt-1 h-4 w-4 accent-primary"
+                    checked={followUpLater}
+                    onChange={(event) => {
+                      setFollowUpLater(event.currentTarget.checked)
+                      saveDraft({
+                        flags: { followUpLater: event.currentTarget.checked },
+                      })
+                    }}
+                  />
+                  <span className="text-muted-foreground">
+                    Remind me later to share a follow-up confidence snapshot.
+                  </span>
+                </label>
+              </>
+            )}
           </div>
           <div className="flex items-center justify-between border-t px-6 py-4">
             <Button type="button" variant="ghost" onClick={prev} disabled={step === 0 || submitting}>
@@ -348,6 +477,10 @@ const STEPS = [
     title: "Your work and goals",
     description: "Share your stage, focus, and goals.",
   },
+  {
+    title: "Confidence snapshot",
+    description: "Rate how ready you feel heading into the accelerator.",
+  },
 ]
 
 async function getCroppedBlob(
@@ -355,7 +488,7 @@ async function getCroppedBlob(
   area: { x: number; y: number; width: number; height: number }
 ): Promise<Blob | null> {
   return new Promise((resolve) => {
-    const img = new Image()
+    const img = new window.Image()
     img.onload = () => {
       const size = Math.min(area.width, area.height)
       const canvas = document.createElement("canvas")
@@ -392,14 +525,27 @@ export function useOnboardingDraft(
   setStep: (n: number) => void,
   setAvatarPreview: (url: string | null) => void,
   setFirst: (v: string) => void,
-  setLast: (v: string) => void
+  setLast: (v: string) => void,
+  extras?: {
+    setOperatingScore?: (value: number) => void
+    setFundingScore?: (value: number) => void
+    setFundersScore?: (value: number) => void
+    setFollowUp?: (value: boolean) => void
+  },
 ) {
+  const { setOperatingScore, setFundingScore, setFundersScore, setFollowUp } = extras ?? {}
+
   useEffect(() => {
     if (typeof window === "undefined") return
     const raw = window.localStorage.getItem("onboardingDraft")
     if (!raw) return
     try {
-      const draft = JSON.parse(raw) as { step?: number; avatar?: string | null; values?: Record<string, string>; flags?: { optInUpdates?: boolean } }
+      const draft = JSON.parse(raw) as {
+        step?: number
+        avatar?: string | null
+        values?: Record<string, string>
+        flags?: { optInUpdates?: boolean; followUpLater?: boolean }
+      }
       if (typeof draft.step === "number") setStep(draft.step)
       if (draft.avatar) setAvatarPreview(draft.avatar)
       const form = formRef.current
@@ -418,11 +564,38 @@ export function useOnboardingDraft(
           const cb = form.querySelector('input[name="optInUpdates"][type="checkbox"]') as HTMLInputElement | null
           if (cb) cb.checked = Boolean(draft.flags.optInUpdates)
         }
+        if (draft.flags?.followUpLater !== undefined) {
+          const followCb = form.querySelector('input[name="followUpLater"][type="checkbox"]') as HTMLInputElement | null
+          if (followCb) followCb.checked = Boolean(draft.flags.followUpLater)
+          setFollowUp?.(Boolean(draft.flags.followUpLater))
+        }
         setFirst(draft.values?.firstName ?? "")
         setLast(draft.values?.lastName ?? "")
+        const parseScore = (value?: string) => {
+          if (!value) return undefined
+          const parsed = Number(value)
+          if (!Number.isFinite(parsed)) return undefined
+          return parsed
+        }
+        const op = parseScore(draft.values?.confidenceOperating)
+        const funding = parseScore(draft.values?.confidenceFunding)
+        const funders = parseScore(draft.values?.confidenceFunders)
+        if (typeof op === "number") setOperatingScore?.(op)
+        if (typeof funding === "number") setFundingScore?.(funding)
+        if (typeof funders === "number") setFundersScore?.(funders)
       }
     } catch {
       // ignore
     }
-  }, [formRef, setStep, setAvatarPreview, setFirst, setLast])
+  }, [
+    formRef,
+    setAvatarPreview,
+    setFirst,
+    setFundingScore,
+    setFundersScore,
+    setLast,
+    setOperatingScore,
+    setStep,
+    setFollowUp,
+  ])
 }

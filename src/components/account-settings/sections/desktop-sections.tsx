@@ -1,0 +1,8 @@
+export { ProfileSection } from "./desktop/profile"
+export type { ProfileSectionProps } from "./desktop/profile"
+export { OrganizationSection } from "./desktop/organization"
+export type { OrganizationSectionProps } from "./desktop/organization"
+export { CommunicationsSection } from "./desktop/communications"
+export { SecuritySection } from "./desktop/security"
+export { DangerSection } from "./desktop/danger"
+export { DesktopFooter } from "./desktop/footer"

@@ -2,7 +2,10 @@
 
 import Link from "next/link"
 import { cn } from "@/lib/utils"
-import { ChevronDown, ChevronRight, NotebookPen, School } from "lucide-react"
+import ChevronDown from "lucide-react/dist/esm/icons/chevron-down"
+import ChevronRight from "lucide-react/dist/esm/icons/chevron-right"
+import NotebookPen from "lucide-react/dist/esm/icons/notebook-pen"
+import School from "lucide-react/dist/esm/icons/school"
 import type { ClassDef } from "./types"
 
 export function SidebarClass({ c, activeClassId, onOpenClass, activeModuleId, onOpenModule, getModuleHref }: { c: ClassDef; activeClassId?: string | null; activeModuleId?: string | null; onOpenClass: (id: string) => void; onOpenModule: (classId: string, moduleId: string) => void; getModuleHref?: (index: number) => string | null }) {

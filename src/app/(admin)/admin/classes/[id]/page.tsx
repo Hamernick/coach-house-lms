@@ -29,6 +29,8 @@ type ClassDetailRecord = Database["public"]["Tables"]["classes"]["Row"] & {
   }[] | null
 }
 
+type ClassModuleRecord = NonNullable<ClassDetailRecord["modules"]>[number]
+
 export default async function AdminClassDetailPage({
   params,
 }: {
@@ -45,7 +47,8 @@ export default async function AdminClassDetailPage({
     ? Boolean(classData.is_published)
     : Boolean((classData as { published?: boolean }).published)
 
-  const modules = (classData.modules ?? []).map((module) => ({
+  const moduleRows: ClassModuleRecord[] = Array.isArray(classData.modules) ? classData.modules : []
+  const modules = moduleRows.map((module) => ({
     id: module.id,
     title: module.title,
     slug: module.slug,
@@ -60,12 +63,9 @@ export default async function AdminClassDetailPage({
     .select("user_id, created_at, profiles ( full_name )")
     .eq("class_id", classData.id)
     .order("created_at", { ascending: false })
+    .returns<Array<{ user_id: string; created_at: string; profiles: { full_name: string | null } | null }>>()
 
-  const people = ((enrollments ?? []) as Array<{
-    user_id: string
-    created_at: string
-    profiles: { full_name: string | null } | null
-  }>).map((row) => ({
+  const people = (enrollments ?? []).map((row) => ({
     userId: row.user_id,
     name: row.profiles?.full_name ?? null,
     enrolledAt: row.created_at,

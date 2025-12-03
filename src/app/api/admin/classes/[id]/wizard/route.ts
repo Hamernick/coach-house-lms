@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
 
 import { requireAdmin } from "@/lib/admin/auth"
@@ -5,6 +6,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
 import { inferProviderSlug } from "@/lib/lessons/providers"
+import type { ProviderSlug } from "@/lib/lessons/types"
 import { toNumberOrNull, normalizeFormFieldTypeLegacy } from "@/lib/lessons/fields"
 import { markdownToHtmlLite } from "@/lib/markdown/simple"
 
@@ -16,6 +18,17 @@ type ModuleContentRow = {
 type ModuleAssignmentRow = {
   schema: Record<string, unknown> | null
 } | null
+
+type ModuleRow = {
+  id: string
+  idx: number
+  title: string | null
+  description: string | null
+  video_url: string | null
+  content_md: string | null
+  module_content: ModuleContentRow | ModuleContentRow[]
+  module_assignments: ModuleAssignmentRow | ModuleAssignmentRow[]
+}
 
 
 export async function GET(_req: Request, props: { params: Promise<{ id: string }> }) {
@@ -85,22 +98,14 @@ export async function GET(_req: Request, props: { params: Promise<{ id: string }
     )
     .eq("class_id", classId)
     .order("idx", { ascending: true })
+    .returns<ModuleRow[]>()
 
   if (moduleError) {
     return NextResponse.json({ error: moduleError.message }, { status: 500 })
   }
   const resolvedModules = moduleRows ?? []
 
-  const modulesPayload = ((resolvedModules ?? []) as Array<{
-    id: string
-    idx: number
-    title: string | null
-    description: string | null
-    video_url: string | null
-    content_md: string | null
-    module_content: ModuleContentRow[] | ModuleContentRow
-    module_assignments: ModuleAssignmentRow[] | ModuleAssignmentRow
-  }>).map((module) => {
+  const modulesPayload = (resolvedModules ?? []).map((module) => {
     const contentRowArray = Array.isArray(module.module_content) ? module.module_content : [module.module_content]
     const contentRow = contentRowArray.find(Boolean) ?? null
     const assignmentArray = Array.isArray(module.module_assignments) ? module.module_assignments : [module.module_assignments]
@@ -203,3 +208,4 @@ export async function GET(_req: Request, props: { params: Promise<{ id: string }
 
   return NextResponse.json({ payload })
 }
+ 

@@ -26,22 +26,15 @@ function selectChain(table: string) {
     chain.order.mockReturnThis()
     chain.eq.mockReturnThis()
     chain.select.mockReturnThis()
-    // Return one module with content and assignment rows embedded as arrays
-    chain.then = undefined
-    chain.maybeSingle = undefined
-    chain = undefined
   }
   return {
-    select: (sel: string) => {
+    select: () => {
       if (table === "modules") {
         return {
           eq: () => ({
             order: () => ({
               then: undefined,
               // simulate next request stage returning data
-            }),
-            order: (_: any) => ({
-              then: undefined,
             }),
           }),
         } as any
@@ -96,4 +89,3 @@ describe("wizard route GET", () => {
     expect(res).toBeTruthy()
   })
 })
-

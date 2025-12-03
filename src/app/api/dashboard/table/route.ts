@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 
-import rawData from "@/app/(dashboard)/dashboard/data.json"
 import { dashboardTableRowSchema } from "@/lib/dashboard/table-data"
+import { dashboardTableRows } from "@/lib/dashboard/mock-table-data"
 
 const DEFAULT_PAGE_SIZE = 25
 const MAX_PAGE_SIZE = 50
 const MIN_PAGE = 1
 
-const tableRows = dashboardTableRowSchema.array().parse(rawData)
+const tableRows = dashboardTableRowSchema.array().parse(dashboardTableRows)
 
 export const revalidate = 60
 

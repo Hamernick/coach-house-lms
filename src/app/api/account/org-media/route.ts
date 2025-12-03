@@ -4,7 +4,7 @@ import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 
 const BUCKET = "org-media"
 const MAX_BYTES = 10 * 1024 * 1024
-const ALLOWED = new Set(["image/png", "image/jpeg", "image/webp"]) as Set<string>
+const ALLOWED = new Set(["image/png", "image/jpeg", "image/webp", "image/svg+xml"]) as Set<string>
 
 export async function POST(request: NextRequest) {
   const response = NextResponse.next()
@@ -43,4 +43,3 @@ export async function POST(request: NextRequest) {
   const { data: publicUrl } = supabase.storage.from(BUCKET).getPublicUrl(objectName)
   return NextResponse.json({ url: publicUrl.publicUrl }, { status: 200 })
 }
-

@@ -12,7 +12,7 @@ export async function OrganizationsPreview() {
     .from("organizations")
     .select("profile")
     .eq("user_id", user.id)
-    .maybeSingle()
+    .maybeSingle<{ profile: Record<string, unknown> | null }>()
 
   const profile = (row?.profile as Record<string, unknown> | null) ?? null
   const entries = profile ? Object.entries(profile).slice(0, 6) : []
@@ -43,4 +43,3 @@ export async function OrganizationsPreview() {
     </Card>
   )
 }
-

@@ -2,20 +2,14 @@
 
 import { randomUUID } from "node:crypto"
 
-import { revalidatePath } from "next/cache"
 import { redirect } from "next/navigation"
 
 import { requireAdmin } from "@/lib/admin/auth"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase/types"
-import {
-  LESSON_SUBTITLE_MAX_LENGTH,
-  LESSON_TITLE_MAX_LENGTH,
-  MODULE_SUBTITLE_MAX_LENGTH,
-  MODULE_TITLE_MAX_LENGTH,
-  clampText,
-} from "@/lib/lessons/limits"
+import { LESSON_SUBTITLE_MAX_LENGTH, LESSON_TITLE_MAX_LENGTH, MODULE_TITLE_MAX_LENGTH, clampText } from "@/lib/lessons/limits"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { revalidateClassViews } from "../actions"
 
 export async function updateClassDetailsAction(formData: FormData) {
   const classId = formData.get("classId")
@@ -72,17 +66,14 @@ export async function updateClassDetailsAction(formData: FormData) {
 
   if (error) throw error
 
-  revalidatePath(`/admin/classes/${classId}`)
-  revalidatePath("/admin/classes")
-  revalidatePath("/admin/academy")
-  revalidatePath("/dashboard", "layout")
-  revalidatePath("/dashboard")
-  revalidatePath("/training")
-
   const prevSlug = before?.slug ?? null
   const nextSlug = slug.trim()
-  if (prevSlug) revalidatePath(`/class/${prevSlug}`)
-  if (nextSlug) revalidatePath(`/class/${nextSlug}`)
+
+  await revalidateClassViews({
+    classId,
+    classSlug: nextSlug,
+    additionalTargets: prevSlug && prevSlug !== nextSlug ? [`/class/${prevSlug}`] : undefined,
+  })
 }
 
 export async function createModuleAction(formData: FormData) {
@@ -126,17 +117,16 @@ export async function createModuleAction(formData: FormData) {
     .from("modules" satisfies keyof Database["public"]["Tables"])
     .insert(insertPayload)
     .select("id")
-    .single()
+    .single<{ id: string }>()
 
   if (error) {
     throw error
   }
 
-  revalidatePath(`/admin/classes/${classId}`)
+  await revalidateClassViews({ classId })
 
-  const createdModule = data as { id: string } | null
-  if (createdModule?.id) {
-    redirect(`/admin/modules/${createdModule.id}`)
+  if (data?.id) {
+    redirect(`/admin/modules/${data.id}`)
   }
 }
 
@@ -193,14 +183,10 @@ export async function reorderModulesAction(classId: string, orderedIds: string[]
     .eq("id", classId)
     .maybeSingle<{ slug: string | null }>()
 
-  revalidatePath(`/admin/classes/${classId}`)
-  revalidatePath("/admin/academy")
-  revalidatePath("/dashboard", "layout")
-  revalidatePath("/dashboard")
-  revalidatePath("/training")
-  if (classRow?.slug) {
-    revalidatePath(`/class/${classRow.slug}`)
-  }
+  await revalidateClassViews({
+    classId,
+    classSlug: classRow?.slug ?? null,
+  })
 }
 
 export async function deleteModuleAction(formData: FormData) {
@@ -223,7 +209,10 @@ export async function deleteModuleAction(formData: FormData) {
     throw error
   }
 
-  revalidatePath(`/admin/classes/${classId}`)
+  await revalidateClassViews({
+    classId,
+    additionalTargets: [`/admin/modules/${moduleId}`],
+  })
 }
 
 export async function setModulePublishedAction(moduleId: string, classId: string, published: boolean) {
@@ -254,19 +243,16 @@ export async function setModulePublishedAction(moduleId: string, classId: string
       .maybeSingle<{ slug: string | null }>(),
   ])
 
-  revalidatePath(`/admin/classes/${classId}`)
-  revalidatePath("/admin/classes")
-  revalidatePath(`/admin/modules/${moduleId}`)
-  revalidatePath("/admin/academy")
-  revalidatePath("/dashboard", "layout")
-  revalidatePath("/dashboard")
-  revalidatePath("/training")
-  if (classMeta?.slug) {
-    revalidatePath(`/class/${classMeta.slug}`)
-    if (moduleMeta?.idx != null) {
-      revalidatePath(`/class/${classMeta.slug}/module/${moduleMeta.idx}`)
-    }
+  const additionalTargets: string[] = [`/admin/modules/${moduleId}`]
+  if (classMeta?.slug && moduleMeta?.idx != null) {
+    additionalTargets.push(`/class/${classMeta.slug}/module/${moduleMeta.idx}`)
   }
+
+  await revalidateClassViews({
+    classId,
+    classSlug: classMeta?.slug ?? null,
+    additionalTargets,
+  })
 }
 
 export async function enrollUserByEmailAction(formData: FormData) {
@@ -304,7 +290,7 @@ export async function enrollUserByEmailAction(formData: FormData) {
 
   console.log("ADMIN_AUDIT", JSON.stringify({ action: "enroll_user", classId, userId: user.id, email }))
 
-  revalidatePath(`/admin/classes/${classId}`)
+  await revalidateClassViews({ classId })
 }
 
 export async function unenrollUserAction(formData: FormData) {
@@ -328,7 +314,7 @@ export async function unenrollUserAction(formData: FormData) {
 
   console.log("ADMIN_AUDIT", JSON.stringify({ action: "unenroll_user", classId, userId }))
 
-  revalidatePath(`/admin/classes/${classId}`)
+  await revalidateClassViews({ classId })
 }
 
 export async function createEnrollmentInviteAction(formData: FormData) {
@@ -363,5 +349,5 @@ export async function createEnrollmentInviteAction(formData: FormData) {
 
   console.log("ADMIN_AUDIT", JSON.stringify({ action: "create_enrollment_invite", classId, email, expiresAt }))
 
-  revalidatePath(`/admin/classes/${classId}`)
+  await revalidateClassViews({ classId })
 }

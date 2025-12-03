@@ -157,7 +157,7 @@ async function main() {
   const assignmentSchema = {
     title: "Brand Messaging Blueprint",
     fields: [
-      { name: "org_name", label: "Organization name", type: "text" },
+      { name: "name", label: "Organization name", type: "text", org_key: "name" },
       { name: "audience_primary", label: "Primary audience description", type: "textarea" },
       {
         name: "tone_select",
@@ -172,6 +172,12 @@ async function main() {
       },
       { name: "proof_point", label: "Signature proof point", type: "textarea" },
       { name: "cta", label: "Primary call to action", type: "text" },
+      {
+        name: "boilerplate",
+        label: "One-paragraph boilerplate",
+        type: "textarea",
+        org_key: "boilerplate",
+      },
     ],
   }
 

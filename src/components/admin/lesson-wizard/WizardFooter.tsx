@@ -1,6 +1,8 @@
 "use client"
 
-import { ChevronLeft, ChevronRight, Check } from "lucide-react"
+import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left"
+import ChevronRight from "lucide-react/dist/esm/icons/chevron-right"
+import Check from "lucide-react/dist/esm/icons/check"
 import { DialogFooter } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 
@@ -63,4 +65,3 @@ export function WizardFooter({
     </DialogFooter>
   )
 }
-

@@ -14,7 +14,7 @@ import {
 
 export function NavMain({
   items,
-  label = "Navigation",
+  label = "Platform",
 }: {
   items: {
     title: string
@@ -27,7 +27,9 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      <SidebarGroupLabel className="px-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => {
@@ -37,13 +39,15 @@ export function NavMain({
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton
                   asChild
-                  tooltip={item.title}
                   isActive={isActive}
-                  className="h-auto min-h-9 items-center gap-2 py-2 [&>span:last-child]:!whitespace-normal [&>span:last-child]:!break-words [&>span:last-child]:!overflow-visible"
+                  tooltip={item.title}
+                  className="justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
                 >
-                  <Link href={item.href}>
-                    {item.icon ? <item.icon /> : null}
-                    <span className="max-w-[calc(100%-2.5rem)] break-words text-pretty leading-snug">{item.title}</span>
+                  <Link href={item.href} title={item.title}>
+                    {item.icon ? <item.icon className="size-4 shrink-0" /> : null}
+                    <span className="flex-1 break-words leading-snug group-data-[collapsible=icon]:hidden">
+                      {item.title}
+                    </span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

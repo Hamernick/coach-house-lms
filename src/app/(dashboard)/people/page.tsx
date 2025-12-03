@@ -1,13 +1,12 @@
+import { Suspense } from "react"
 import { redirect } from "next/navigation"
 
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
-import { Card, CardContent } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Suspense } from "react"
 import { OrgChartSkeleton } from "@/components/people/org-chart-skeleton"
-import { OrgChartCanvas } from "@/components/people/org-chart-canvas"
 import { PeopleTable } from "@/components/people/people-table"
+import { Separator } from "@/components/ui/separator"
+import { OrgChartCanvasLite } from "@/components/people/org-chart-canvas-lite"
 import type { OrgPerson } from "./actions"
 
 export const dynamic = "force-dynamic"
@@ -54,13 +53,9 @@ export default async function PeoplePage() {
   return (
     <div className="flex flex-col gap-6 px-4 lg:px-6">
       <section>
-        <Card className="bg-card/60 gap-0 overflow-hidden py-0">
-          <CardContent className="p-0">
-            <Suspense fallback={<OrgChartSkeleton />}>
-              <OrgChartCanvas people={people} />
-            </Suspense>
-          </CardContent>
-        </Card>
+        <Suspense fallback={<OrgChartSkeleton />}>
+          <OrgChartCanvasLite people={people} />
+        </Suspense>
       </section>
 
       <section>

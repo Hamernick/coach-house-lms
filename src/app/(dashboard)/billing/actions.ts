@@ -21,7 +21,7 @@ export async function createBillingPortalSession() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle()
+    .maybeSingle<{ stripe_customer_id: string | null }>()
 
   if (error) {
     logger.error("billing_portal_subscription_lookup_failed", error, { userId: user.id })

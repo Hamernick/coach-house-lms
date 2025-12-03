@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function DashboardError({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
@@ -20,7 +21,7 @@ export default function DashboardError({ error, reset }: { error: Error; reset: 
       <div className="flex items-center gap-2">
         <Button onClick={() => reset()}>Retry</Button>
         <Button asChild variant="outline">
-          <a href="/dashboard">Dashboard</a>
+          <Link href="/dashboard">Dashboard</Link>
         </Button>
       </div>
     </div>

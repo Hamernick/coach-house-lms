@@ -6,7 +6,7 @@ import {
   MODULE_TITLE_MAX_LENGTH,
   clampText,
 } from "@/lib/lessons/limits"
-import type { LessonWizardPayload, ProviderSlug } from "./types"
+import type { LessonWizardPayload } from "./types"
 
 const zProviderSlug = z.enum([
   "youtube",
@@ -103,4 +103,3 @@ export function normalizeIncomingPayload(input: unknown): LessonWizardPayload {
 export function validateFinalPayload(payload: LessonWizardPayload): LessonWizardPayload {
   return WizardPayloadSchema.parse(payload) as LessonWizardPayload
 }
-

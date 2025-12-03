@@ -1,6 +1,6 @@
 "use client"
 
-import { Check } from "lucide-react"
+import Check from "lucide-react/dist/esm/icons/check"
 
 export function Stepper({ step, totalSteps, className }: { step: number; totalSteps: number; className?: string }) {
   return (

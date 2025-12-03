@@ -48,12 +48,13 @@ export async function listClasses({
     .select("id, title, slug, description, is_published, created_at, modules ( id )", { count: "exact" })
     .order("created_at", { ascending: false })
     .range(from, to)
+    .returns<ClassRowForList[]>()
 
   if (error) {
     throw error
   }
 
-  const items: ClassSummary[] = ((data ?? []) as ClassRowForList[]).map((row) => {
+  const items: ClassSummary[] = (data ?? []).map((row) => {
     const modules = row.modules ?? []
     const moduleCount = modules.length
     return {
@@ -82,7 +83,17 @@ export async function getClassById(id: string) {
     .from("classes")
     .select("*, modules ( id, title, idx, slug, is_published, created_at, deck_path )")
     .eq("id", id)
-    .maybeSingle()
+    .maybeSingle<ClassRowForList & {
+      modules: Array<{
+        id: string
+        title: string | null
+        idx: number | null
+        slug: string | null
+        is_published: boolean | null
+        created_at: string | null
+        deck_path: string | null
+      }> | null
+    }>()
 
   if (error) {
     throw error

@@ -1,11 +1,13 @@
 "use client"
 
-import { IconExternalLink, type Icon } from "@tabler/icons-react"
+import type { LucideIcon } from "lucide-react"
+import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
+
 import {
   SidebarGroup,
+  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
@@ -17,7 +19,7 @@ export function NavDocuments({
   items: {
     name: string
     url: string
-    icon: Icon
+    icon: LucideIcon
     external?: boolean
   }[]
   label?: string
@@ -27,29 +29,40 @@ export function NavDocuments({
   }
 
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>{label}</SidebarGroupLabel>
-      <SidebarMenu>
-        {items.map((item) => (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <a
-                href={item.url}
-                {...(item.external ? { target: "_blank", rel: "noreferrer" } : null)}
+    <SidebarGroup className="mt-4">
+      <SidebarGroupLabel className="px-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.name}>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.name}
+                className="justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
               >
-                <item.icon />
-                <span className="max-w-[calc(100%-2.5rem)] leading-snug break-words text-pretty">{item.name}</span>
-              </a>
-            </SidebarMenuButton>
-            {item.external ? (
-              <SidebarMenuAction className="pointer-events-none rounded-sm text-muted-foreground">
-                <IconExternalLink className="size-4" aria-hidden="true" />
-                <span className="sr-only">Opens in new tab</span>
-              </SidebarMenuAction>
-            ) : null}
-          </SidebarMenuItem>
-        ))}
-      </SidebarMenu>
+                <a
+                  href={item.url}
+                  title={item.name}
+                  {...(item.external ? { target: "_blank", rel: "noreferrer" } : null)}
+                >
+                  <item.icon className="size-4 shrink-0" />
+                  <span className="flex-1 break-words leading-snug group-data-[collapsible=icon]:hidden">
+                    {item.name}
+                  </span>
+                  {item.external ? (
+                    <ExternalLinkIcon
+                      className="size-4 text-muted-foreground group-data-[collapsible=icon]:hidden"
+                      aria-hidden
+                    />
+                  ) : null}
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
     </SidebarGroup>
   )
 }

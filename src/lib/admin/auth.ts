@@ -29,7 +29,7 @@ async function requireAdminInternal(): Promise<RequireAdminResult> {
     .from("profiles")
     .select("role")
     .eq("id", user.id)
-    .maybeSingle()
+    .maybeSingle<{ role: string | null }>()
 
   if (error) {
     throw error

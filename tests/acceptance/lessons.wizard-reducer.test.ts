@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest"
 import { initialWizardData, wizardReducer } from "@/hooks/lessons/wizard-reducer"
-import { MODULE_TITLE_MAX_LENGTH, clampText } from "@/lib/lessons/limits"
+import { MODULE_TITLE_MAX_LENGTH } from "@/lib/lessons/limits"
 
 describe("wizardReducer", () => {
   it("handles link lifecycle", () => {
@@ -45,4 +45,3 @@ describe("wizardReducer", () => {
     expect(s.modules).toHaveLength(0)
   })
 })
-

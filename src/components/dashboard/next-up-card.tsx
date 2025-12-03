@@ -28,7 +28,7 @@ export async function NextUpCard() {
     .from("modules")
     .select("id, idx, title, class_id")
     .eq("id", nextId as string)
-    .maybeSingle()
+    .maybeSingle<{ id: string; idx: number; title: string | null; class_id: string }>()
 
   if (!mod) {
     return null
@@ -38,7 +38,7 @@ export async function NextUpCard() {
     .from("classes")
     .select("id, slug, title")
     .eq("id", mod.class_id)
-    .maybeSingle()
+    .maybeSingle<{ id: string; slug: string | null; title: string | null }>()
 
   if (!klass) return null
 
@@ -48,7 +48,7 @@ export async function NextUpCard() {
     .select("id")
     .eq("user_id", user.id)
     .eq("class_id", klass.id)
-    .maybeSingle()
+    .maybeSingle<{ id: string }>()
 
   if (!enrollment) {
     return (

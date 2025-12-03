@@ -3,6 +3,7 @@
 import { useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 export default function GlobalError({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
@@ -18,7 +19,7 @@ export default function GlobalError({ error, reset }: { error: Error; reset: () 
       <div className="mt-4 flex items-center gap-2">
         <Button onClick={() => reset()}>Try again</Button>
         <Button asChild variant="outline">
-          <a href="/dashboard">Back to dashboard</a>
+          <Link href="/dashboard">Back to dashboard</Link>
         </Button>
       </div>
     </div>

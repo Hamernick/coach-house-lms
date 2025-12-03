@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { IconSparkles } from "@tabler/icons-react"
+import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
 import type { ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -25,7 +25,7 @@ export function DashboardEmptyState({
       <Card className="border-dashed bg-card/60 text-center">
         <CardHeader>
           <CardTitle className="flex items-center justify-center gap-2 text-lg">
-            <IconSparkles className="text-primary" />
+            <SparklesIcon className="text-primary" />
             {title}
           </CardTitle>
           <CardDescription>{description}</CardDescription>

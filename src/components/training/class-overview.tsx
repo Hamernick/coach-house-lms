@@ -1,47 +1,33 @@
 "use client"
 
-import { useEffect, useState, useTransition } from "react"
-import Link from "next/link"
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Progress } from "@/components/ui/progress"
 import { Separator } from "@/components/ui/separator"
 import { Empty } from "@/components/ui/empty"
-import {
-  Item,
-  ItemActions,
-  ItemContent,
-  ItemDescription,
-  ItemFooter,
-  ItemMedia,
-  ItemTitle,
-} from "@/components/ui/item"
-import { LessonCreationWizard, LessonWizardPayload } from "@/components/admin/lesson-creation-wizard"
-import { updateClassWizardAction } from "@/app/(admin)/admin/classes/actions"
-import { deleteModuleAction, setModulePublishedAction } from "@/app/(admin)/admin/classes/[id]/actions"
-import {
-  IconDotsVertical,
-  IconNotebook,
-  IconPlus,
-  IconEye,
-  IconEyeOff,
-  IconPencil,
-  IconTrash,
-} from "@tabler/icons-react"
-import { Check, Loader2, Pencil, Rocket } from "lucide-react"
+import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
+import { LessonCreationWizard } from "@/components/admin/lesson-creation-wizard"
+import type { LessonWizardPayload } from "@/lib/lessons/types"
+import { createClassWizardAction, updateClassWizardAction } from "@/app/(admin)/admin/classes/actions"
+import { setModulePublishedAction } from "@/app/(admin)/admin/classes/[id]/actions"
+import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
+import PlusIcon from "lucide-react/dist/esm/icons/plus"
+import Check from "lucide-react/dist/esm/icons/check"
+import Loader2 from "lucide-react/dist/esm/icons/loader-2"
+import Pencil from "lucide-react/dist/esm/icons/pencil"
+import Rocket from "lucide-react/dist/esm/icons/rocket"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import remarkBreaks from "remark-breaks"
-import { toast } from "sonner"
+import { toast } from "@/lib/toast"
 import { PROVIDER_ICON } from "@/components/shared/provider-icons"
-import { ExternalLink } from "lucide-react"
-import { AspectRatio } from "@/components/ui/aspect-ratio"
+import ExternalLink from "lucide-react/dist/esm/icons/external-link"
 import { HeaderActionsPortal } from "@/components/header-actions-portal"
 
 import type { ClassDef } from "./types"
-import { cn } from "@/lib/utils"
+import { ModuleCard } from "./class-overview/module-card"
+import { getYouTubeId, LazyYouTube } from "./class-overview/video-preview"
 
 type ClassOverviewProps = {
   c: ClassDef
@@ -50,60 +36,6 @@ type ClassOverviewProps = {
 }
 
 export function ClassOverview({ c, isAdmin = false, onStartModule }: ClassOverviewProps) {
-  function getYouTubeId(raw: string | null | undefined): string | null {
-    if (!raw) return null
-    try {
-      const u = new URL(raw)
-      const host = u.hostname.toLowerCase()
-      if (host.endsWith("youtube.com") || host.endsWith("m.youtube.com") || host.endsWith("www.youtube.com")) {
-        const v = u.searchParams.get("v")
-        if (v) return v
-        const parts = u.pathname.split("/").filter(Boolean)
-        const idx = parts.findIndex((p) => p === "embed" || p === "shorts")
-        if (idx >= 0 && parts[idx + 1]) return parts[idx + 1]
-      }
-      if (host.endsWith("youtu.be")) {
-        const id = u.pathname.replace(/^\//, "").split("/")[0]
-        return id || null
-      }
-    } catch {}
-    return null
-  }
-  function LazyYouTube({ id }: { id: string }) {
-    const [play, setPlay] = useState(false)
-    const thumb = `https://i.ytimg.com/vi/${id}/hqdefault.jpg`
-    return (
-      <div className="rounded-lg border overflow-hidden">
-        <AspectRatio ratio={16 / 9}>
-          {play ? (
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${id}`}
-              title="Class video"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              allowFullScreen
-              className="h-full w-full"
-            />
-          ) : (
-            <button
-              type="button"
-              onClick={() => setPlay(true)}
-              className="group relative h-full w-full"
-              aria-label="Play video"
-            >
-              <img src={thumb} alt="Video thumbnail" className="h-full w-full object-cover" />
-              <span className="absolute inset-0 grid place-items-center bg-black/20 transition group-hover:bg-black/30">
-                <span className="inline-flex items-center justify-center rounded-full bg-white/90 p-3 shadow">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-6 w-6 text-black">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                </span>
-              </span>
-            </button>
-          )}
-        </AspectRatio>
-      </div>
-    )
-  }
   const router = useRouter()
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardPayload, setWizardPayload] = useState<LessonWizardPayload | null>(null)
@@ -204,10 +136,36 @@ export function ClassOverview({ c, isAdmin = false, onStartModule }: ClassOvervi
   const moduleCountLabel = moduleCount > 0 ? `${moduleCount} ${moduleCount === 1 ? "Module" : "Modules"}` : ""
   const heroSubtitle = moduleCountLabel
 
-  const moduleIndexMap = new Map<string, number>(resolvedModules.map((module, index) => [module.id, index]))
+  const moduleIndexMap = useMemo(
+    () => new Map<string, number>(resolvedModules.map((module, index) => [module.id, index])),
+    [resolvedModules],
+  )
 
   const publishedModules = resolvedModules.filter((module) => module.published !== false)
   const unpublishedModules = resolvedModules.filter((module) => module.published === false)
+
+  const handleToggleModulePublished = useCallback(
+    async (moduleId: string, next: boolean) => {
+      try {
+        await setModulePublishedAction(moduleId, c.id, next)
+        setModulePublishedOverrides((prev) => ({ ...prev, [moduleId]: next }))
+      } catch (error) {
+        throw error instanceof Error ? error : new Error("Failed to update module")
+      }
+    },
+    [c.id],
+  )
+
+  const getModuleIndex = useCallback(
+    (module: ClassDef["modules"][number]) => {
+      if (typeof module.idx === "number" && Number.isFinite(module.idx)) {
+        return module.idx
+      }
+      const position = moduleIndexMap.get(module.id)
+      return typeof position === "number" ? position + 1 : moduleIndexMap.size + 1
+    },
+    [moduleIndexMap],
+  )
 
   const moduleSections = isAdmin
     ? [
@@ -215,187 +173,6 @@ export function ClassOverview({ c, isAdmin = false, onStartModule }: ClassOvervi
         { key: "unpublished", title: "Unpublished", modules: unpublishedModules },
       ]
     : [{ key: "published", title: null as string | null, modules: publishedModules }]
-
-  const ModuleCard = ({ module }: { module: ClassDef["modules"][number] }) => {
-    const [publishPending, startPublish] = useTransition()
-    const position = moduleIndexMap.get(module.id)
-    const moduleIndex = typeof module.idx === "number" && Number.isFinite(module.idx)
-      ? module.idx
-      : typeof position === "number"
-        ? position + 1
-        : moduleIndexMap.size + 1
-    const dashboardHref = c.slug ? `/class/${c.slug}/module/${moduleIndex}` : null
-    const lockedForLearners = Boolean(module.locked)
-    const locked = isAdmin ? false : lockedForLearners
-    const status = lockedForLearners ? "locked" : module.status ?? "not_started"
-    const completed = status === "completed"
-    const inProgress = status === "in_progress"
-    const progress = Math.max(
-      0,
-      Math.min(
-        100,
-        typeof module.progressPercent === "number"
-          ? module.progressPercent
-          : completed
-            ? 100
-            : inProgress
-              ? 50
-              : 0
-      )
-    )
-    const isPublished = module.published !== false
-
-    const ctaLabel = locked
-      ? "Complete previous modules"
-      : completed
-        ? "Review module"
-        : inProgress
-          ? "Continue learning"
-          : "Start module"
-    const primaryLabel = isAdmin ? "View module" : ctaLabel
-
-    return (
-      <Item
-        key={module.id}
-        className={cn(
-          "flex h-full min-h-[260px] flex-col items-stretch gap-5 rounded-2xl border border-border/60 bg-card/60 p-6 shadow-sm transition hover:shadow-md",
-          locked ? "opacity-80" : "",
-        )}
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 flex-1 items-start gap-4">
-            <ItemMedia className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-              <IconNotebook className="h-6 w-6" aria-hidden />
-            </ItemMedia>
-            <ItemContent className="min-w-0 space-y-1">
-              <ItemTitle className="text-xl font-semibold leading-tight" title={module.title}>
-                {module.title}
-              </ItemTitle>
-              {module.subtitle ? (
-                <ItemDescription className="text-sm text-muted-foreground [display:-webkit-box] [-webkit-line-clamp:2] [-webkit-box-orient:vertical] overflow-hidden text-ellipsis">
-                  {module.subtitle}
-                </ItemDescription>
-              ) : null}
-            </ItemContent>
-          </div>
-          {isAdmin ? (
-            <ItemActions className="items-start gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <IconDotsVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-44">
-                  <DropdownMenuItem
-                    disabled={publishPending}
-                    onSelect={(event) => {
-                      event.preventDefault()
-                      startPublish(async () => {
-                        const next = !isPublished
-                        const toastId = toast.loading(next ? "Publishing module…" : "Unpublishing module…")
-                        try {
-                          await setModulePublishedAction(module.id, c.id, next)
-                          setModulePublishedOverrides((prev) => ({ ...prev, [module.id]: next }))
-                          toast.success(next ? "Module published" : "Module unpublished", { id: toastId })
-                          router.refresh()
-                        } catch (error) {
-                          const message = error instanceof Error ? error.message : "Failed to update module"
-                          toast.error(message, { id: toastId })
-                        }
-                      })
-                    }}
-                  >
-                    {isPublished ? (
-                      <>
-                        <IconEyeOff className="mr-2 h-4 w-4" aria-hidden />
-                        <span>Unpublish module</span>
-                      </>
-                    ) : (
-                      <>
-                        <IconEye className="mr-2 h-4 w-4" aria-hidden />
-                        <span>Publish module</span>
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onSelect={(event) => {
-                      event.preventDefault()
-                      handleEditModule(module.id)
-                    }}
-                  >
-                    <IconPencil className="mr-2 h-4 w-4" aria-hidden />
-                    <span>Edit module</span>
-                  </DropdownMenuItem>
-                  <form
-                    action={deleteModuleAction}
-                    className="contents"
-                    onSubmit={(event) => {
-                      if (!confirm("Delete module?")) {
-                        event.preventDefault()
-                      }
-                    }}
-                  >
-                    <input type="hidden" name="moduleId" value={module.id} />
-                    <input type="hidden" name="classId" value={c.id} />
-                    <DropdownMenuItem asChild className="text-destructive focus:text-destructive">
-                      <button type="submit" className="flex w-full items-center gap-2 text-destructive focus:text-destructive">
-                        <IconTrash className="h-4 w-4" aria-hidden />
-                        <span>Delete module</span>
-                      </button>
-                    </DropdownMenuItem>
-                  </form>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </ItemActions>
-          ) : null}
-        </div>
-
-        <ItemFooter className="mt-auto space-y-4">
-          <div className="space-y-1">
-            <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              <span>Progress</span>
-              <span>{progress}%</span>
-            </div>
-            <Progress value={progress} className="h-2 overflow-hidden rounded-full" />
-          </div>
-
-          <div>
-            {dashboardHref ? (
-              <Button
-                asChild
-                size="sm"
-                className={cn(
-                  "w-auto px-3",
-                  locked ? "bg-muted text-muted-foreground hover:bg-muted" : ""
-                )}
-                disabled={locked && !isAdmin}
-              >
-                <Link href={dashboardHref ?? "#"} prefetch>
-                  {primaryLabel}
-                </Link>
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                className={cn(
-                  "w-auto px-3",
-                  locked ? "bg-muted text-muted-foreground hover:bg-muted" : ""
-                )}
-                onClick={() => {
-                  if (!locked || isAdmin) onStartModule?.(module.id)
-                }}
-                disabled={locked && !isAdmin}
-              >
-                {primaryLabel}
-              </Button>
-            )}
-          </div>
-        </ItemFooter>
-      </Item>
-    )
-  }
 
   return (
     <div className="space-y-6">
@@ -530,7 +307,19 @@ export function ClassOverview({ c, isAdmin = false, onStartModule }: ClassOvervi
           return (
             <div key={section.key} className="grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(340px,1fr))]">
               {section.modules.map((module) => (
-                <ModuleCard key={module.id} module={module} />
+                <ModuleCard
+                  key={module.id}
+                  module={module}
+                  classId={c.id}
+                  classSlug={c.slug ?? null}
+                  isAdmin={isAdmin}
+                  showAdminActions={false}
+                  moduleIndex={getModuleIndex(module)}
+                  lockedForLearners={Boolean(module.locked)}
+                  onStartModule={onStartModule}
+                  onEditModule={handleEditModule}
+                  onTogglePublish={handleToggleModulePublished}
+                />
               ))}
             </div>
           )
@@ -548,13 +337,25 @@ export function ClassOverview({ c, isAdmin = false, onStartModule }: ClassOvervi
             {section.modules.length > 0 ? (
               <div className="grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(340px,1fr))]">
                 {section.modules.map((module) => (
-                  <ModuleCard key={module.id} module={module} />
+                  <ModuleCard
+                    key={module.id}
+                    module={module}
+                    classId={c.id}
+                    classSlug={c.slug ?? null}
+                    isAdmin={isAdmin}
+                    showAdminActions={false}
+                    moduleIndex={getModuleIndex(module)}
+                    lockedForLearners={Boolean(module.locked)}
+                    onStartModule={onStartModule}
+                    onEditModule={handleEditModule}
+                    onTogglePublish={handleToggleModulePublished}
+                  />
                 ))}
               </div>
             ) : (
               <div className="grid gap-6 [grid-template-columns:repeat(auto-fit,minmax(340px,1fr))]">
                 <Empty
-                  icon={<IconNotebook className="h-6 w-6" aria-hidden />}
+                  icon={<NotebookIcon className="h-6 w-6" aria-hidden />}
                   title={section.key === "published" ? "No published modules" : section.key === "unpublished" ? "No unpublished modules" : "No modules yet"}
                   description={
                     section.key === "published"
@@ -565,14 +366,14 @@ export function ClassOverview({ c, isAdmin = false, onStartModule }: ClassOvervi
                   }
                   className="min-h-[260px]"
                   actions={isAdmin ? (
-                    <Button type="button" size="sm" className="gap-2" onClick={handleCreateModule} disabled={wizardLoading}>
-                      {wizardLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                      ) : (
-                        <IconPlus className="h-4 w-4" aria-hidden />
-                      )}
-                      <span>{wizardLoading ? "Loading…" : "Add module"}</span>
-                    </Button>
+                <Button type="button" size="sm" className="gap-2" onClick={handleCreateModule} disabled={wizardLoading}>
+                  {wizardLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  ) : (
+                    <PlusIcon className="h-4 w-4" aria-hidden />
+                  )}
+                  <span>{wizardLoading ? "Loading…" : "Add module"}</span>
+                </Button>
                   ) : null}
                 />
               </div>
@@ -583,7 +384,7 @@ export function ClassOverview({ c, isAdmin = false, onStartModule }: ClassOvervi
       {isAdmin ? (
         <LessonCreationWizard
           open={wizardOpen}
-          mode="edit"
+          mode={wizardPayload ? "edit" : "create"}
           classId={c.id}
           initialPayload={wizardPayload}
           focusModuleId={wizardFocusModuleId}
@@ -596,7 +397,17 @@ export function ClassOverview({ c, isAdmin = false, onStartModule }: ClassOvervi
               setWizardFocusModuleId(null)
             }
           }}
-          onSubmit={updateClassWizardAction}
+          onSubmit={async (formData) => {
+            const payloadRaw = formData.get("payload")
+            const classIdValue = formData.get("classId") ?? c.id
+            if (typeof payloadRaw !== "string" || typeof classIdValue !== "string") {
+              return { error: "Invalid lesson payload" }
+            }
+            if (wizardPayload) {
+              return updateClassWizardAction(classIdValue, payloadRaw)
+            }
+            return createClassWizardAction(formData)
+          }}
         />
       ) : null}
     </div>

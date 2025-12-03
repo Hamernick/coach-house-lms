@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/admin/auth"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
-import { revalidatePath } from "next/cache"
+import { revalidateClassViews } from "@/app/(admin)/admin/classes/actions"
 
 function isRlsError(error: { message?: string | null; code?: string | number | null } | null | undefined) {
   if (!error) return false
@@ -96,10 +96,35 @@ export async function POST(_req: Request, props: { params: Promise<{ id: string 
     return NextResponse.json({ error: "Failed to create module" }, { status: 500 })
   }
 
-  revalidatePath(`/admin/classes/${classId}`)
-  revalidatePath("/admin/academy")
-  revalidatePath("/training")
+  let classSlug: string | null = null
+  {
+    const { data, error } = await supabase
+      .from("classes" satisfies keyof Database["public"]["Tables"])
+      .select("slug")
+      .eq("id", classId)
+      .maybeSingle<{ slug: string | null }>()
+    if (error && isRlsError(error)) {
+      const { data: adminData, error: adminError } = await admin
+        .from("classes" satisfies keyof Database["public"]["Tables"])
+        .select("slug")
+        .eq("id", classId)
+        .maybeSingle<{ slug: string | null }>()
+      if (adminError) {
+        return NextResponse.json({ error: adminError.message }, { status: 500 })
+      }
+      classSlug = adminData?.slug ?? null
+    } else if (error) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    } else {
+      classSlug = data?.slug ?? null
+    }
+  }
+
+  await revalidateClassViews({
+    classId,
+    classSlug,
+    additionalTargets: [`/admin/classes/${classId}`],
+  })
 
   return NextResponse.json({ moduleId }, { status: 201 })
 }
-

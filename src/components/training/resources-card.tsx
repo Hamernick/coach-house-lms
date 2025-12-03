@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ExternalLink } from "lucide-react"
+import ExternalLink from "lucide-react/dist/esm/icons/external-link"
 import type { ModuleResource } from "@/components/training/types"
 import { PROVIDER_ICON } from "@/components/shared/provider-icons"
 

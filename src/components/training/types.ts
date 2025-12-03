@@ -30,6 +30,7 @@ export type Module = {
   resources?: ModuleResource[]
   assignment?: ModuleAssignment | null
   assignmentSubmission?: ModuleAssignmentSubmission | null
+  hasDeck?: boolean
 }
 
 export type ClassDef = {

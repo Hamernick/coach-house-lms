@@ -1,7 +1,18 @@
 import { logger } from "@/lib/logger"
 
+export const runtime = "nodejs"
+
 export async function register() {
-  if (typeof process === "undefined") {
+  const isEdgeRuntime =
+    typeof (globalThis as { EdgeRuntime?: string }).EdgeRuntime === "string"
+
+  if (isEdgeRuntime) {
+    return
+  }
+
+  const maybeProcess = (globalThis as { process?: NodeJS.Process }).process
+
+  if (!maybeProcess || typeof maybeProcess.on !== "function") {
     return
   }
 
@@ -13,6 +24,6 @@ export async function register() {
     logger.error("uncaught_exception", error)
   }
 
-  process.on("unhandledRejection", handleRejection)
-  process.on("uncaughtException", handleException)
+  maybeProcess.on("unhandledRejection", handleRejection)
+  maybeProcess.on("uncaughtException", handleException)
 }

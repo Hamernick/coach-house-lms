@@ -58,11 +58,6 @@ export default async function ModulePage({
     notFound()
   }
 
-  const firstAvailable = moduleStates.find((state) => !state.locked) ?? currentState
-  if (currentState.locked && !isAdmin) {
-    redirect(`/class/${slug}/module/${firstAvailable.module.idx}`)
-  }
-
   const classDef = {
     id: classContext.classId,
     title: classContext.classTitle,
@@ -77,19 +72,25 @@ export default async function ModulePage({
       resources: module.resources,
       assignment: module.assignment,
       assignmentSubmission: module.assignmentSubmission,
+      hasDeck: module.hasDeck,
     })),
   }
 
+  const contentMd = (currentState.module as { contentMd?: string | null }).contentMd ?? null
+  const moduleTitle = currentState.module.title
+  const moduleSubtitle = currentState.module.description ?? undefined
+
   const moduleDef = {
     id: currentState.module.id,
-    title: currentState.module.title,
-    subtitle: currentState.module.description ?? undefined,
+    title: moduleTitle,
+    subtitle: moduleSubtitle,
     videoUrl: currentState.module.videoUrl ?? null,
-    contentMd: (currentState.module as { contentMd?: string | null }).contentMd ?? null,
+    contentMd,
     resources: currentState.module.resources,
     assignment: currentState.module.assignment,
     assignmentSubmission: currentState.module.assignmentSubmission,
     locked: currentState.locked,
+    hasDeck: currentState.module.hasDeck,
   }
 
   return (

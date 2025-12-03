@@ -18,8 +18,8 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { IconGripVertical } from "@tabler/icons-react"
-import { Loader2 } from "lucide-react"
+import GripVerticalIcon from "lucide-react/dist/esm/icons/grip-vertical"
+import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -195,7 +195,7 @@ function SortableModuleRow({
             {...listeners}
             disabled={disabled}
           >
-            <IconGripVertical className="size-4" />
+            <GripVerticalIcon className="size-4" />
           </button>
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2">

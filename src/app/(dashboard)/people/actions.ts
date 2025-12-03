@@ -194,7 +194,7 @@ export async function refreshPersonLinkedInImageAction(id: string) {
     if (upsertErr) return { error: upsertErr.message }
     revalidatePath("/people")
     return { ok: true }
-  } catch (e) {
+  } catch {
     return { error: "Upload failed" }
   }
 }

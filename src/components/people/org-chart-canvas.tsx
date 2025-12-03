@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
-import React, { memo, useCallback, useEffect, useMemo, useState } from "react"
+import React, { memo, useCallback, useEffect, useState } from "react"
 import ReactFlow, {
   Background,
   MiniMap,
@@ -22,7 +23,7 @@ import { useTheme } from "next-themes"
 // Removed toast notifications for drag operations per UX request
 
 type ViewPerson = OrgPerson & { displayImage?: string | null }
-type Props = { people: ViewPerson[] }
+type Props = { people: ViewPerson[]; extras?: boolean }
 
 const laneY: Record<OrgPerson["category"], number> = {
   board: 0,
@@ -43,7 +44,7 @@ const CATEGORY_STRIP: Record<ViewPerson["category"], string> = {
   supporter: "bg-emerald-500",
 }
 
-const PersonNode = memo(function PersonNode({ data }: { name: string; title?: string | null; image?: string | null; category?: ViewPerson["category"] }) {
+const PersonNode = memo(function PersonNode({ data }: { data: { name: string; title?: string | null; image?: string | null; category?: ViewPerson["category"] } }) {
   const img = data.image ?? null
   const cat = (data.category ?? "staff") as ViewPerson["category"]
   return (
@@ -68,7 +69,7 @@ const PersonNode = memo(function PersonNode({ data }: { name: string; title?: st
 // Stable node type map (module scope) to avoid creating a new object per render
 const ORG_NODE_TYPES = Object.freeze({ person: PersonNode })
 
-function OrgChartCanvasComponent({ people }: Props) {
+function OrgChartCanvasComponent({ people, extras = false }: Props) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -204,8 +205,8 @@ function OrgChartCanvasComponent({ people }: Props) {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
       >
-        <MiniMap pannable zoomable />
-        <Background color={isDark ? "#1f2937" : "#e5e7eb"} gap={16} />
+        {extras ? <MiniMap pannable zoomable /> : null}
+        {extras ? <Background color={isDark ? "#1f2937" : "#e5e7eb"} gap={16} /> : null}
       </ReactFlow>
       )}
     </div>

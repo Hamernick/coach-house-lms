@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 
 import { env } from "@/lib/env"
 
@@ -38,7 +39,7 @@ export default function BillingPlaceholderPage() {
             <BillingPortalButton />
           ) : (
             <Button asChild variant="outline" className="self-start">
-              <a href="/pricing">View plans</a>
+              <Link href="/pricing">View plans</Link>
             </Button>
           )}
         </CardContent>

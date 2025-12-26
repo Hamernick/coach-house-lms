@@ -1,6 +1,7 @@
 "use client"
 
 import { z } from "zod"
+import { publicSharingEnabled } from "@/lib/feature-flags"
 
 export const ProgramWizardSchema = z.object({
   title: z.string().min(1).max(160),
@@ -43,5 +44,5 @@ export const defaultProgramWizardForm: ProgramWizardFormState = {
   goalUsd: 0,
   raisedUsd: 0,
   features: ["12 Weeks", "Paid Stipend", "Applications Open"],
-  isPublic: true,
+  isPublic: publicSharingEnabled,
 }

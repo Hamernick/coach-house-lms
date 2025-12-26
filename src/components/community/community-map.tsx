@@ -1,20 +1,26 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef } from "react"
 import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 
 import type { CommunityOrganization } from "@/lib/queries/community"
 
 const MAP_STYLE = "mapbox://styles/mapbox/satellite-v9"
-const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? ""
 
-export function CommunityMap({ organizations }: { organizations: CommunityOrganization[] }) {
+export function CommunityMap({
+  organizations,
+  mapboxToken,
+}: {
+  organizations: CommunityOrganization[]
+  mapboxToken?: string
+}) {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const mapboxRef = useRef<typeof mapboxgl | null>(null)
   const markersRef = useRef<mapboxgl.Marker[]>([])
-  const [tokenAvailable] = useState(() => Boolean(MAPBOX_TOKEN))
+  const token = mapboxToken?.trim() ?? ""
+  const tokenAvailable = Boolean(token)
 
   useEffect(() => {
     if (!tokenAvailable) return
@@ -27,7 +33,7 @@ export function CommunityMap({ organizations }: { organizations: CommunityOrgani
       const mapboxModule = await import("mapbox-gl")
       const mapboxgl = mapboxModule.default
       mapboxRef.current = mapboxgl
-      mapboxgl.accessToken = MAPBOX_TOKEN
+      mapboxgl.accessToken = token
 
       if (!containerRef.current || cancelled) return
 
@@ -65,7 +71,7 @@ export function CommunityMap({ organizations }: { organizations: CommunityOrgani
         mapRef.current = null
       }
     }
-  }, [tokenAvailable])
+  }, [token, tokenAvailable])
 
   useEffect(() => {
     if (!tokenAvailable) return
@@ -106,7 +112,7 @@ export function CommunityMap({ organizations }: { organizations: CommunityOrgani
   if (!tokenAvailable) {
     return (
       <div className="flex h-[480px] w-full items-center justify-center rounded-3xl border bg-card/70 text-sm text-muted-foreground">
-        Map unavailable. Add `NEXT_PUBLIC_MAPBOX_TOKEN` to enable the community globe.
+        Map unavailable. Add `MAPBOX_TOKEN` or `NEXT_PUBLIC_MAPBOX_TOKEN` to enable the community globe.
       </div>
     )
   }

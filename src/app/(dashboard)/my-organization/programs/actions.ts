@@ -3,6 +3,7 @@
 
 import { revalidatePath } from "next/cache"
 import { requireServerSession } from "@/lib/auth"
+import { publicSharingEnabled } from "@/lib/feature-flags"
 
 export type CreateProgramPayload = {
   title: string
@@ -29,6 +30,7 @@ export type CreateProgramPayload = {
 export async function createProgramAction(payload: CreateProgramPayload) {
   const { supabase, session } = await requireServerSession("/my-organization")
   const userId = session.user.id
+  const allowPublicSharing = publicSharingEnabled
 
   const insert = {
     user_id: userId,
@@ -48,7 +50,7 @@ export async function createProgramAction(payload: CreateProgramPayload) {
     status_label: payload.statusLabel ?? null,
     goal_cents: payload.goalCents ?? 0,
     raised_cents: payload.raisedCents ?? 0,
-    is_public: Boolean(payload.isPublic ?? false),
+    is_public: allowPublicSharing ? Boolean(payload.isPublic ?? false) : false,
     cta_label: payload.ctaLabel ?? null,
     cta_url: payload.ctaUrl ?? null,
   }
@@ -64,6 +66,7 @@ export type UpdateProgramPayload = Partial<CreateProgramPayload>
 export async function updateProgramAction(id: string, payload: UpdateProgramPayload) {
   const { supabase, session } = await requireServerSession("/my-organization")
   const userId = session.user.id
+  const allowPublicSharing = publicSharingEnabled
 
   const update = {
     title: payload.title ?? undefined,
@@ -82,7 +85,7 @@ export async function updateProgramAction(id: string, payload: UpdateProgramPayl
     status_label: payload.statusLabel ?? undefined,
     goal_cents: payload.goalCents ?? undefined,
     raised_cents: payload.raisedCents ?? undefined,
-    is_public: payload.isPublic ?? undefined,
+    is_public: (allowPublicSharing ? payload.isPublic : false) ?? undefined,
     cta_label: payload.ctaLabel ?? undefined,
     cta_url: payload.ctaUrl ?? undefined,
   }

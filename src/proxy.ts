@@ -17,7 +17,7 @@ const PROTECTED_PREFIXES = [
 ]
 const AUTH_ROUTES = new Set(["/login", "/sign-up", "/forgot-password"])
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const response = NextResponse.next()
 
   const supabase = createServerClient<Database>(

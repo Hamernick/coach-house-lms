@@ -1,9 +1,8 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
-import CopyIcon from "lucide-react/dist/esm/icons/copy"
+import { useEffect, useState } from "react"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
-import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
+import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 
 import { NewsGradientThumb, getNewsGradientPalette } from "@/components/news/gradient-thumb"
 import { Button } from "@/components/ui/button"
@@ -11,14 +10,17 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { toast } from "@/lib/toast"
+import { publicSharingEnabled } from "@/lib/feature-flags"
 
 const LAYOUT_OPTIONS = [
   { id: "square", label: "Square", description: "Best for feed posts", aspectClass: "aspect-square" },
   { id: "vertical", label: "Vertical", description: "Great for stories", aspectClass: "aspect-[3/4]" },
   { id: "wide", label: "Wide", description: "Use for hero banners", aspectClass: "aspect-[16/9]" },
 ]
+
+const DEFAULT_CTA_LABEL = "Learn more"
 
 type RoadmapShareDrawerProps = {
   open: boolean
@@ -48,95 +50,84 @@ export function RoadmapShareDrawer({
   saving = false,
 }: RoadmapShareDrawerProps) {
   const [localLayout, setLocalLayout] = useState(layout)
-  const [localCtaLabel, setLocalCtaLabel] = useState(ctaLabel ?? "Learn more")
+  const [localCtaLabel, setLocalCtaLabel] = useState(ctaLabel ?? DEFAULT_CTA_LABEL)
   const [localCtaUrl, setLocalCtaUrl] = useState(ctaUrl ?? "")
   const [downloadPending, setDownloadPending] = useState(false)
+  const sharingEnabled = publicSharingEnabled
 
   useEffect(() => {
     setLocalLayout(layout)
   }, [layout])
 
   useEffect(() => {
-    setLocalCtaLabel(ctaLabel ?? "Learn more")
+    setLocalCtaLabel(ctaLabel ?? DEFAULT_CTA_LABEL)
   }, [ctaLabel])
 
   useEffect(() => {
     setLocalCtaUrl(ctaUrl ?? "")
   }, [ctaUrl])
 
-  const shareTarget = useMemo(() => {
-    if (!sharePath) return null
-    if (typeof window !== "undefined" && window.location) {
-      return `${window.location.origin}${sharePath}`
-    }
-    return sharePath
-  }, [sharePath])
+  const initialLabel = ctaLabel ?? DEFAULT_CTA_LABEL
+  const initialUrl = ctaUrl ?? ""
+  const isDirty = localLayout !== layout || localCtaLabel !== initialLabel || localCtaUrl !== initialUrl
 
-  const handleCopy = async () => {
-    if (!shareTarget) {
-      toast.error("Set a public slug to generate a share link")
-      return
-    }
-    if (!isSectionPublic) {
-      toast.error("Publish this section to share it publicly")
-      return
-    }
-    try {
-      await navigator.clipboard.writeText(shareTarget)
-      toast.success("Roadmap link copied to clipboard")
-    } catch {
-      toast.error("Unable to copy link")
-    }
-  }
+  const layoutMeta =
+    LAYOUT_OPTIONS.find((option) => option.id === localLayout) ?? LAYOUT_OPTIONS[0]
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full max-w-xl overflow-y-auto">
         <SheetHeader className="text-left">
           <SheetTitle>Share “{sectionTitle}”</SheetTitle>
-          <SheetDescription>
-            Configure how this section should show up in social posts. Layout + CTA updates are saved to your roadmap so future cards match automatically.
-          </SheetDescription>
+          <SheetDescription>Layout, CTA, and a share-ready preview.</SheetDescription>
         </SheetHeader>
         <div className="mt-6 space-y-6">
           <div className="space-y-3">
-            <Label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Layout</Label>
-            <Tabs value={localLayout} onValueChange={(value) => setLocalLayout(value as typeof localLayout)} className="w-full">
-              <TabsList className="grid grid-cols-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <Label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Layout</Label>
+              <ToggleGroup
+                type="single"
+                value={localLayout}
+                onValueChange={(value) => {
+                  if (value) setLocalLayout(value as typeof localLayout)
+                }}
+                variant="outline"
+                size="sm"
+                className="w-full sm:w-auto"
+              >
                 {LAYOUT_OPTIONS.map((option) => (
-                  <TabsTrigger key={option.id} value={option.id} className="flex flex-col gap-1 text-xs">
+                  <ToggleGroupItem key={option.id} value={option.id} className="px-3 text-xs">
                     {option.label}
-                    <span className="text-[10px] text-muted-foreground">{option.description}</span>
-                  </TabsTrigger>
+                  </ToggleGroupItem>
                 ))}
-              </TabsList>
-              {LAYOUT_OPTIONS.map((option) => (
-                <TabsContent key={option.id} value={option.id} className="mt-3">
-                  <Card className="overflow-hidden border border-border/60 bg-card/70 p-4 text-sm text-muted-foreground shadow-sm">
-                    <div className={`${option.aspectClass} relative rounded-2xl border border-border/40 bg-muted/30`}>
-                      <NewsGradientThumb seed={`${sectionTitle}-${option.id}`} className="absolute inset-0 rounded-2xl" />
-                      <div className="absolute inset-0 flex flex-col justify-between rounded-2xl bg-gradient-to-b from-black/20 via-black/70 to-black/80 p-4 text-white">
-                        <div>
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/70">Strategic Roadmap</p>
-                          <p className="mt-2 text-lg font-semibold leading-snug">{sectionTitle}</p>
-                          <p className="mt-1 line-clamp-2 text-xs text-white/80">{sectionDescription || "Preview of your section summary."}</p>
-                        </div>
-                        <Button type="button" size="sm" className="self-start rounded-full bg-white/90 text-xs font-semibold text-black">
-                          {localCtaLabel}
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                </TabsContent>
-              ))}
-            </Tabs>
+              </ToggleGroup>
+            </div>
+
+            <Card className="overflow-hidden border border-border/60 bg-card/70 p-3 shadow-sm">
+              <div className={`${layoutMeta.aspectClass} relative overflow-hidden rounded-2xl border border-border/40 bg-muted/30`}>
+                <NewsGradientThumb seed={`${sectionTitle}-${layoutMeta.id}`} className="absolute inset-0 rounded-2xl" />
+                <div className="absolute inset-0 flex flex-col justify-between rounded-2xl bg-gradient-to-b from-black/20 via-black/70 to-black/80 p-4 text-white">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/70">Strategic Roadmap</p>
+                    <p className="mt-2 text-lg font-semibold leading-snug">{sectionTitle}</p>
+                    <p className="mt-1 line-clamp-2 text-xs text-white/80">
+                      {sectionDescription || "Preview of your section summary."}
+                    </p>
+                  </div>
+                  <Button type="button" size="sm" className="self-start rounded-full bg-white/90 text-xs font-semibold text-black">
+                    {localCtaLabel || DEFAULT_CTA_LABEL}
+                  </Button>
+                </div>
+              </div>
+            </Card>
           </div>
+
           <div className="space-y-3">
-            <Label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Call to action</Label>
-            <div className="grid gap-3">
+            <Label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">CTA</Label>
+            <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="roadmap-cta-label" className="text-xs text-muted-foreground">
-                  Button label
+                  Label
                 </Label>
                 <Input
                   id="roadmap-cta-label"
@@ -146,7 +137,7 @@ export function RoadmapShareDrawer({
               </div>
               <div className="space-y-1">
                 <Label htmlFor="roadmap-cta-url" className="text-xs text-muted-foreground">
-                  Optional link
+                  URL (optional)
                 </Label>
                 <Input
                   id="roadmap-cta-url"
@@ -156,91 +147,83 @@ export function RoadmapShareDrawer({
                 />
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              CTA settings aren&apos;t published yet—they help you plan upcoming posts and will power auto-generated graphics in a future release.
-            </p>
           </div>
-          <div className="rounded-2xl border border-border/60 bg-muted/40 p-4 text-xs text-muted-foreground">
-            <p className="flex items-center gap-2 font-semibold text-foreground">
-              <SparklesIcon className="h-4 w-4 text-primary" />
-              Coming soon
-            </p>
-            <ul className="mt-2 list-disc space-y-1 pl-5">
-              <li>Download PNG previews sized for each layout.</li>
-              <li>Auto-generated captions from your roadmap content.</li>
-              <li>Schedule share reminders before major milestones.</li>
-            </ul>
+
+          <div className="space-y-3">
+            <Label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Link</Label>
+            {sharePath && isSectionPublic && sharingEnabled ? (
+              <Button asChild type="button" variant="outline" className="w-full justify-between gap-3 rounded-2xl">
+                <a href={sharePath} target="_blank" rel="noreferrer">
+                  <span className="text-sm font-medium">View public section</span>
+                  <ExternalLinkIcon className="h-4 w-4 text-muted-foreground" aria-hidden />
+                </a>
+              </Button>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {!sharingEnabled
+                  ? "Public sharing is disabled until launch."
+                  : !sharePath
+                    ? "Set a public slug to generate a share link."
+                    : "Publish this section to view it publicly."}
+              </p>
+            )}
           </div>
         </div>
-        <SheetFooter className="mt-6 flex flex-col gap-3">
+
+        <SheetFooter className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
           <Button
             type="button"
-            onClick={() =>
-        onSave({
-          layout: localLayout,
-          ctaLabel: localCtaLabel,
-          ctaUrl: localCtaUrl,
-        })
-      }
-      disabled={saving}
-      className="justify-center"
-    >
-      {saving ? "Saving…" : "Save share settings"}
-    </Button>
-    <Button
-      type="button"
-      variant="outline"
-      disabled={downloadPending || !isSectionPublic}
-      onClick={async () => {
-        if (!isSectionPublic) {
-          toast.error("Publish this section before downloading a card")
-          return
-        }
-        setDownloadPending(true)
-        try {
-          const url = await renderShareCardImage({
-            title: sectionTitle,
-            description: sectionDescription ?? "",
-            layout: localLayout,
-            ctaLabel: localCtaLabel,
-            paletteSeed: sectionTitle,
-          })
-          const link = document.createElement("a")
-          link.href = url
-          link.download = `${sectionTitle.replace(/\s+/g, "-").toLowerCase()}-${localLayout}.png`
-          document.body.appendChild(link)
-          link.click()
-          document.body.removeChild(link)
-          toast.success("Share card downloaded")
-        } catch (error) {
-          console.error(error)
-          toast.error("Unable to generate card — try again")
-        } finally {
-          setDownloadPending(false)
-        }
-      }}
-      className="gap-2"
-    >
-      <DownloadIcon className="h-4 w-4" />
-      {downloadPending ? "Generating…" : "Download preview"}
-    </Button>
-          {!sharePath ? (
-            <p className="text-sm text-amber-600">
-              Add a public slug on My Organization to generate a shareable link.
-            </p>
-          ) : !isSectionPublic ? (
-            <p className="text-sm text-amber-600">Publish this section (toggle in the editor) to unlock sharing.</p>
-          ) : (
-            <div className="flex items-center gap-3 rounded-2xl border border-border/70 bg-muted/40 px-3 py-2">
-              <code className="flex-1 truncate text-sm">{shareTarget}</code>
-              <Button type="button" size="sm" variant="outline" className="gap-2" onClick={handleCopy}>
-                <CopyIcon className="h-3.5 w-3.5" />
-                Copy
-              </Button>
-            </div>
-          )}
-          <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-            Close
+            variant="outline"
+            disabled={downloadPending || !isSectionPublic}
+            onClick={async () => {
+              if (!isSectionPublic) {
+                toast.error("Publish this section before downloading a card")
+                return
+              }
+              setDownloadPending(true)
+              try {
+                const url = await renderShareCardImage({
+                  title: sectionTitle,
+                  description: sectionDescription ?? "",
+                  layout: localLayout,
+                  ctaLabel: localCtaLabel,
+                  paletteSeed: sectionTitle,
+                })
+                const link = document.createElement("a")
+                link.href = url
+                link.download = `${sectionTitle.replace(/\s+/g, "-").toLowerCase()}-${localLayout}.png`
+                document.body.appendChild(link)
+                link.click()
+                document.body.removeChild(link)
+                toast.success("Share card downloaded")
+              } catch (error) {
+                console.error(error)
+                toast.error("Unable to generate card — try again")
+              } finally {
+                setDownloadPending(false)
+              }
+            }}
+            className="gap-2"
+          >
+            <DownloadIcon className="h-4 w-4" />
+            {downloadPending ? "Generating…" : "Download"}
+          </Button>
+          <Button
+            type="button"
+            disabled={saving || !isDirty}
+            onClick={() => {
+              if (!isDirty) return
+              onSave({
+                layout: localLayout,
+                ctaLabel: localCtaLabel,
+                ctaUrl: localCtaUrl,
+              })
+            }}
+          >
+            {saving ? "Saving…" : "Save"}
           </Button>
         </SheetFooter>
       </SheetContent>

@@ -10,7 +10,7 @@ import Layers from "lucide-react/dist/esm/icons/layers"
 import Target from "lucide-react/dist/esm/icons/target"
 import GitBranch from "lucide-react/dist/esm/icons/git-branch"
 import Rocket from "lucide-react/dist/esm/icons/rocket"
-import DotIcon from "lucide-react/dist/esm/icons/dot"
+import CheckIcon from "lucide-react/dist/esm/icons/check"
 import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 import MoreVertical from "lucide-react/dist/esm/icons/more-vertical"
 
@@ -41,6 +41,7 @@ import {
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import type { SidebarClass } from "@/lib/academy"
+import { ModuleStepper, type StepStatus, type StepItem } from "./module-stepper"
 
 const CreateEntityPopover = dynamic(
   () => import("@/components/admin/create-entity-popover").then((mod) => mod.CreateEntityPopover),
@@ -66,6 +67,60 @@ function getClassIcon(slug: string) {
   if (slug === "theory-of-change") return GitBranch
   if (slug === "piloting-programs") return Rocket
   return Layers
+}
+
+type ModuleStatus = "not_started" | "in_progress" | "complete"
+
+function deriveModuleStatus(activeIndex: number | null, moduleIndex: number): ModuleStatus {
+  if (activeIndex == null) return "not_started"
+  if (moduleIndex < activeIndex) return "complete"
+  if (moduleIndex === activeIndex) return "in_progress"
+  return "not_started"
+}
+
+function ModuleBadge({ status, label, className }: { status: ModuleStatus; label: number; className?: string }) {
+  const styles =
+    status === "complete"
+      ? {
+          border: "border-emerald-500",
+          text: "text-emerald-500",
+          icon: <CheckIcon className="h-3 w-3" />,
+          dashed: false,
+        }
+      : status === "in_progress"
+        ? {
+            border: "border-amber-500",
+            text: "text-amber-500",
+            icon: <span className="text-[10px] font-semibold">{label}</span>,
+            dashed: true,
+          }
+        : {
+            border: "border-muted-foreground/60",
+            text: "text-muted-foreground",
+            icon: <span className="text-[10px] font-semibold">{label}</span>,
+            dashed: false,
+          }
+
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 bg-sidebar",
+        styles.border,
+        className,
+      )}
+      style={{ borderStyle: styles.dashed ? "dashed" : "solid" }}
+    >
+      <span
+        className={cn(
+          "flex h-4 w-4 items-center justify-center rounded-full bg-transparent text-center leading-none",
+          styles.text,
+        )}
+      >
+        {styles.icon}
+      </span>
+    </span>
+  )
 }
 
 export type ClassesSectionProps = {
@@ -145,7 +200,7 @@ type ClassListProps = {
 
 function ClassList({ classes, pathname, routerPrefetch, openMap, setOpenMap, variant, isAdmin }: ClassListProps) {
   return (
-    <SidebarMenu>
+    <SidebarMenu className="gap-0.5">
       {classes.map((klass) => {
         const nodeKey = klass.slug || klass.id
         const modules = klass.modules.filter((module) => (variant === "published" ? module.published : !module.published))
@@ -163,7 +218,7 @@ function ClassList({ classes, pathname, routerPrefetch, openMap, setOpenMap, var
         }
 
         return (
-          <SidebarMenuItem key={klass.id} className="space-y-1">
+          <SidebarMenuItem key={klass.id}>
             <SidebarMenuButton
               asChild
               isActive={isActive}
@@ -192,73 +247,66 @@ function ClassList({ classes, pathname, routerPrefetch, openMap, setOpenMap, var
                 <ChevronRight
                   className={cn("size-4 transition-transform", isOpen && "rotate-90")}
                 />
-              </SidebarMenuAction>
-            ) : null}
-            {variant === "draft" && isAdmin ? <ClassDraftActions classId={klass.id} /> : null}
-            {modules.length > 0 ? (
-              <SidebarMenuSub
-                data-open={isOpen ? "true" : "false"}
-                className={cn(
-                  "overflow-hidden transition-all duration-200 ease-out",
-                  isOpen ? "max-h-64 opacity-100" : "max-h-0 opacity-0",
-                )}
-              >
-                {modules.map((module) => {
-                  const moduleHref = `/class/${klass.slug}/module/${module.index}`
-                  const moduleActive = pathname === moduleHref
-
-                  return (
-                    <SidebarMenuSubItem key={module.id} className="flex w-full items-center gap-2">
-                      {isAdmin ? <ModuleDraftActions moduleId={module.id} classId={klass.id} /> : null}
-                      <SidebarMenuSubButton
-                        asChild
-                        isActive={moduleActive}
-                        className="h-auto min-h-7 justify-start gap-2 py-1 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
-                      >
-                        <Link
-                          href={moduleHref}
-                          onMouseEnter={() => routerPrefetch(moduleHref)}
-                          title={module.title}
-                          className="flex w-full items-center gap-2 group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:gap-0"
-                        >
-                          <DotIcon className="mt-0.5 size-3 shrink-0" />
-                          <span className="min-w-0 flex-1 break-words whitespace-normal! overflow-visible! text-clip! text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                            {module.title}
-                          </span>
-                        </Link>
-                    </SidebarMenuSubButton>
-                  </SidebarMenuSubItem>
-                )
-              })}
-              </SidebarMenuSub>
-            ) : null}
+          </SidebarMenuAction>
+        ) : null}
+        {variant === "draft" && isAdmin ? <ClassDraftActions classId={klass.id} /> : null}
+        {modules.length > 0 ? (
+          <SidebarMenuSub
+            data-open={isOpen ? "true" : "false"}
+            className={cn(
+              "overflow-hidden transition-all duration-200 ease-out",
+              isOpen ? "max-h-64 opacity-100 mt-1 py-0.5" : "max-h-0 opacity-0 py-0",
+            )}
+          >
+            {(() => {
+              const activeIdx =
+                modules.find((m) => `/class/${klass.slug}/module/${m.index}` === pathname)?.index ?? null
+              const steps: StepItem[] = modules.map((module, idx) => {
+                const moduleHref = `/class/${klass.slug}/module/${module.index}`
+                const moduleActive = pathname === moduleHref
+                const status: StepStatus = deriveModuleStatus(activeIdx, module.index)
+                return {
+                  id: module.id,
+                  href: moduleHref,
+                  title: module.title,
+                  status,
+                  active: moduleActive,
+                }
+              })
+              return <ModuleStepper steps={steps} onHover={(href) => routerPrefetch(href)} />
+            })()}
+          </SidebarMenuSub>
+        ) : null}
             {modules.length > 0 && isCurrentClass ? (
               <div className="hidden group-data-[collapsible=icon]:mt-1 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
                 <div className="relative flex flex-col items-center gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
                   <div
                     aria-hidden
-                    className="bg-sidebar-border/70 pointer-events-none absolute inset-y-1 left-1/2 w-px -translate-x-1/2"
+                    className="bg-sidebar-border/70 pointer-events-none absolute inset-y-1 left-1/2 z-0 w-px -translate-x-1/2"
                   />
                   {modules.map((module) => {
                     const moduleHref = `/class/${klass.slug}/module/${module.index}`
                     const moduleActive = pathname === moduleHref
+                    const activeIdx =
+                      modules.find((m) => `/class/${klass.slug}/module/${m.index}` === pathname)?.index ?? null
+                    const status = deriveModuleStatus(activeIdx, module.index)
 
                     return (
-                      <SidebarMenuButton
-                        key={`${klass.id}-${module.id}-collapsed-icon`}
-                        asChild
-                        size="sm"
-                        isActive={moduleActive}
-                        tooltip={module.title}
-                        className="h-7 w-7 rounded-full p-0"
-                      >
-                        <Link
-                          href={moduleHref}
-                          onMouseEnter={() => routerPrefetch(moduleHref)}
-                          title={module.title}
-                          className="flex h-7 w-7 items-center justify-center"
+                        <SidebarMenuButton
+                          key={`${klass.id}-${module.id}-collapsed-icon`}
+                          asChild
+                          size="sm"
+                          isActive={moduleActive}
+                          tooltip={module.title}
+                          className="relative z-10 h-7 w-7 rounded-full p-0"
                         >
-                          <DotIcon className="size-3 shrink-0" />
+                          <Link
+                            href={moduleHref}
+                            onMouseEnter={() => routerPrefetch(moduleHref)}
+                            title={module.title}
+                        className="flex h-7 w-7 items-center justify-center"
+                        >
+                          <ModuleBadge status={status} label={module.index} />
                         </Link>
                       </SidebarMenuButton>
                     )

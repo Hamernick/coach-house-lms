@@ -15,6 +15,7 @@ import type { OnboardingDialogProps } from "@/components/onboarding/onboarding-d
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
+import { NotificationsMenu } from "@/components/notifications/notifications-menu"
 import type { SidebarClass } from "@/lib/academy"
 
 const ThemeToggle = dynamic(() => import("@/components/theme-toggle").then((mod) => mod.ThemeToggle), {
@@ -100,6 +101,7 @@ function DashboardHeader({ breadcrumbs, isAdmin, hasUser }: DashboardHeaderProps
       </div>
       <div className="ml-auto flex items-center gap-2">
         <div id="site-header-actions" className="flex items-center gap-2" />
+        <NotificationsMenu />
         <ThemeToggle />
         {!isAdmin ? (
           <Button variant="ghost" size="sm" asChild>

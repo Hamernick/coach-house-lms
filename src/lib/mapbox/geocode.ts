@@ -1,4 +1,4 @@
-import { env } from "@/lib/env"
+import { getMapboxToken } from "@/lib/mapbox/token"
 
 const MAPBOX_GEOCODE_ENDPOINT = "https://api.mapbox.com/geocoding/v5/mapbox.places"
 
@@ -8,7 +8,7 @@ export type GeocodeResult = {
 }
 
 export async function geocodeAddress(address: string): Promise<GeocodeResult | null> {
-  const token = env.NEXT_PUBLIC_MAPBOX_TOKEN
+  const token = getMapboxToken()
   if (!token) return null
   const query = address.trim()
   if (!query) return null

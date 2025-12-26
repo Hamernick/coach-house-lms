@@ -6,12 +6,19 @@ import { CommunityMapSkeleton } from "@/components/community/community-map-skele
 import { CommunityOrganizationList } from "@/components/community/community-organization-list"
 import { CommunityHeader } from "@/components/community/community-header"
 import { Separator } from "@/components/ui/separator"
+import { requireServerSession } from "@/lib/auth"
+import { publicSharingEnabled } from "@/lib/feature-flags"
+import { getMapboxToken } from "@/lib/mapbox/token"
 
 export const runtime = "nodejs"
-export const revalidate = 120
+export const dynamic = "force-dynamic"
 
 export default async function CommunityPage() {
+  if (!publicSharingEnabled) {
+    await requireServerSession("/community")
+  }
   const organizations = await fetchCommunityOrganizations()
+  const mapboxToken = getMapboxToken()
 
   return (
     <div className="min-h-screen bg-background">
@@ -25,7 +32,7 @@ export default async function CommunityPage() {
             </p>
           </div>
           <Suspense fallback={<CommunityMapSkeleton />}>
-            <CommunityMap organizations={organizations} />
+            <CommunityMap organizations={organizations} mapboxToken={mapboxToken} />
           </Suspense>
         </section>
 

@@ -12,11 +12,19 @@ import { slugifyLocal } from "../../../utils"
 import type { CompanyEditProps } from "../types"
 import { RESERVED_SLUGS } from "../constants"
 import { Switch } from "@/components/ui/switch"
+import { publicSharingEnabled } from "@/lib/feature-flags"
 
 export function PublicPageSettings({ company, onUpdate, onDirty, slugStatus, setSlugStatus }: CompanyEditProps) {
+  const sharingEnabled = publicSharingEnabled
+
   return (
     <FormRow title="Public Page" description="Publish a minimal brand overview at a shareable URL.">
       <div className="grid gap-4">
+        {!sharingEnabled ? (
+          <p className="text-xs text-muted-foreground">
+            Public pages are disabled until the site launches. You can still prepare your details.
+          </p>
+        ) : null}
         <div className="flex items-center justify-between gap-4">
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Make public</Label>
@@ -26,6 +34,7 @@ export function PublicPageSettings({ company, onUpdate, onDirty, slugStatus, set
           </div>
           <Switch
             checked={Boolean(company.isPublic)}
+            disabled={!sharingEnabled}
             onCheckedChange={(value) => {
               onUpdate({ isPublic: Boolean(value) })
               onDirty()

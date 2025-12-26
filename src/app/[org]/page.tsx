@@ -5,6 +5,7 @@ import { OrgProfilePublicCard } from "@/components/organization/org-profile-card
 import { PublicThemeToggle } from "@/components/organization/public-theme-toggle"
 import { ShareButton } from "@/components/shared/share-button"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { publicSharingEnabled } from "@/lib/feature-flags"
 import type { OrgPerson } from "@/app/(dashboard)/people/actions"
 
 export const revalidate = 300
@@ -12,6 +13,7 @@ export const revalidate = 300
 export default async function PublicOrgPage({ params }: { params: Promise<{ org: string }> }) {
   const { org } = await params
   const slug = String(org)
+  if (!publicSharingEnabled) return notFound()
   const admin = createSupabaseAdminClient()
 
   const { data: orgRow, error } = await admin

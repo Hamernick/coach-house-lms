@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { OrgProfileCard } from "@/components/organization/org-profile-card"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { publicSharingEnabled } from "@/lib/feature-flags"
 import type { OrgPerson } from "../people/actions"
 
 export const dynamic = "force-dynamic"
@@ -91,7 +92,7 @@ export default async function MyOrganizationPage() {
     brandPrimary: String(profile["brandPrimary"] ?? ""),
     brandColors: Array.isArray(profile["brandColors"]) ? (profile["brandColors"] as unknown[]).map((c) => String(c)) : [],
     publicSlug: String(orgRow?.public_slug ?? ""),
-    isPublic: Boolean(orgRow?.is_public ?? false),
+    isPublic: publicSharingEnabled ? Boolean(orgRow?.is_public ?? false) : false,
   }
 
   return (

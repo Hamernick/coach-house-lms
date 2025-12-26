@@ -35,16 +35,33 @@ export async function getServerSession(): Promise<ServerSessionResult> {
       auth: { persistSession: false, autoRefreshToken: false },
     }) as unknown) as SupabaseClient<Database>
   }
-  // Use verified user retrieval; avoids relying on unverified cookie session payloads
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: userData, error } = await (supabase as any).auth.getUser()
-  const user = (userData?.user ?? null) as Session["user"] | null
-  if (!user || error) {
-    return { supabase, session: null }
+  const auth = (supabase as unknown as { auth?: unknown }).auth as
+    | { getUser?: () => Promise<{ data?: { user?: unknown }; error?: unknown }>; getSession?: () => Promise<{ data?: { session?: unknown }; error?: unknown }> }
+    | undefined
+
+  // Prefer verified user retrieval; avoids relying on unverified cookie session payloads.
+  if (typeof auth?.getUser === "function") {
+    const { data: userData, error } = await auth.getUser()
+    const user = (userData?.user ?? null) as Session["user"] | null
+    if (!user || error) {
+      return { supabase, session: null }
+    }
+    // Construct a minimal Session shape carrying the verified user.
+    const minimalSession = ({ user } as unknown) as Session
+    return { supabase, session: minimalSession }
   }
-  // Construct a minimal Session shape carrying the verified user
-  const minimalSession = ({ user } as unknown) as Session
-  return { supabase, session: minimalSession }
+
+  // Test/mocks: fall back to getSession when getUser is unavailable.
+  if (typeof auth?.getSession === "function") {
+    const { data, error } = await auth.getSession()
+    const session = (data?.session ?? null) as Session | null
+    if (!session || error) {
+      return { supabase, session: null }
+    }
+    return { supabase, session }
+  }
+
+  return { supabase, session: null }
 }
 
 export async function requireServerSession(redirectPath: string = "/dashboard"): Promise<

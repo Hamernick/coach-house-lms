@@ -8,7 +8,7 @@ export const revalidate = 86400
 
 export default function LandingPage() {
   return (
-    <main className="relative min-h-screen bg-[#FAFAFA] dark:bg-gradient-to-b dark:from-background dark:via-background dark:to-secondary/40">
+    <main className="relative min-h-screen bg-gradient-to-b from-background via-background to-secondary/40">
       {/* Floating glass header */}
       <header className="sticky top-4 z-50 mx-auto w-[min(1100px,92%)] rounded-2xl border border-border/70 bg-background/50 px-4 py-3 shadow-md backdrop-blur supports-[backdrop-filter]:bg-background/40">
         <nav className="flex items-center justify-between gap-4">
@@ -56,29 +56,28 @@ export default function LandingPage() {
               <span className="size-1 rounded-full bg-emerald-500" /> For nonprofits turning ideas into impact
             </div>
             <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl">
-              Build your organization as you move through class
+              Turn strategy into a clear, shareable roadmap
             </h1>
             <p className="max-w-xl text-balance text-muted-foreground">
-              Coach House is a cohort-ready LMS for nonprofit founders. Each module combines teaching, AI-assisted homework, and
-              a live “My Organization” profile that fills in as you go.
+              Coach House guides you through a proven accelerator path and turns your work into an organization profile, programs,
+              and a strategic roadmap you can publish for stakeholders.
             </p>
             <div className="flex flex-wrap items-center gap-3 md:justify-start md:gap-4">
               <Link
                 href="/pricing"
                 className="rounded-full bg-primary px-6 py-2 text-primary-foreground transition hover:bg-primary/90"
               >
-                Apply for the next cohort
+                View plans
               </Link>
               <Link
                 href="/login"
                 className="rounded-full border border-border px-6 py-2 text-sm font-medium text-foreground transition hover:bg-secondary"
               >
-                Sign in to your workspace
+                Sign in
               </Link>
             </div>
             <p className="text-xs text-muted-foreground">
-              Strategic foundations, mission/vision/values, theory of change, pilots, budgets, and more—linked directly to your org
-              record.
+              Mission, theory of change, pilots, budgets, and more—captured once and reused across your roadmap and public page.
             </p>
           </div>
           <div className="flex-1">
@@ -102,31 +101,31 @@ export default function LandingPage() {
 
       {/* Benefits */}
       <section id="benefits" className="mx-auto mt-20 w-[min(1100px,92%)]">
-        <h2 className="text-center text-2xl font-semibold">Benefits</h2>
+        <h2 className="text-center text-2xl font-semibold">What it does</h2>
         <p className="mx-auto mt-2 max-w-2xl text-center text-muted-foreground">
-          Follow a proven accelerator path while your homework quietly builds a usable organization profile in the background.
+          A guided workflow that turns your thinking into assets your team can use immediately.
         </p>
         <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[
             {
-              title: "Homework that becomes your org",
-              body: "Origin story, need statement, mission, vision, values, pilot design, and budgets are captured once and reused across My Organization and reports.",
+              title: "Roadmap, automatically compiled",
+              body: "Your module answers become a strategic roadmap you can publish and share with funders and stakeholders.",
             },
             {
-              title: "Built for accelerators",
-              body: "Sequenced classes, assignments, and progress states tuned for nonprofit cohorts instead of generic course catalogs.",
+              title: "One source of truth",
+              body: "Keep your organization profile, programs, and key decisions in one place—no more scattered docs.",
             },
             {
-              title: "Stripe-powered access",
-              body: "Stripe subscriptions manage access so you can focus on content, coaching, and community.",
+              title: "Momentum built in",
+              body: "Sequential modules, next-up navigation, and progress tracking keep you moving without guesswork.",
             },
             {
-              title: "Instructor & admin control",
-              body: "Create and reorder modules, review submissions, and see who is stuck at a glance.",
+              title: "Public sharing (optional)",
+              body: "Publish a clean public page and roadmap when you’re ready—and keep everything private by default.",
             },
             {
-              title: "Secure by default",
-              body: "Row‑level security, signed URLs for private files, and verified webhooks.",
+              title: "People + org chart",
+              body: "Capture staff, board, and supporters to build an org chart and clarify accountability.",
             },
             {
               title: "Accessible & fast",
@@ -145,24 +144,24 @@ export default function LandingPage() {
       <section id="how" className="mx-auto mt-20 w-[min(1100px,92%)]">
         <h2 className="text-center text-2xl font-semibold">How it works</h2>
         <p className="mx-auto mt-2 max-w-2xl text-center text-muted-foreground">
-          Get started in three simple steps.
+          Three steps. One clear plan.
         </p>
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {[
             {
               step: "1",
-              title: "Create your class",
-              body: "Add modules, upload a deck, and publish when you’re ready.",
+              title: "Start with a baseline",
+              body: "Set up your organization and pick up the next module in your accelerator path.",
             },
             {
               step: "2",
-              title: "Invite learners",
-              body: "Enroll by email or send invites—billing handled by Stripe.",
+              title: "Work through modules",
+              body: "Answer guided prompts, submit work, and iterate with feedback as you progress.",
             },
             {
               step: "3",
-              title: "Track progress",
-              body: "Review submissions, leave feedback, and see completion at a glance.",
+              title: "Publish when ready",
+              body: "Share a clean public roadmap and org page, or keep everything private while you refine.",
             },
           ].map((item) => (
             <div key={item.step} className="rounded-xl border border-border bg-card/60 p-5">
@@ -225,11 +224,11 @@ export default function LandingPage() {
       {/* CTA + Footer */}
       <section className="mx-auto mt-20 w-[min(1100px,92%)]">
         <div className="rounded-2xl border border-border bg-primary/10 p-8 text-center">
-          <h2 className="text-2xl font-semibold">Ready to teach with less setup?</h2>
-          <p className="mt-2 text-muted-foreground">Spin up your course in minutes and invite your first learners today.</p>
+          <h2 className="text-2xl font-semibold">Ready to turn strategy into momentum?</h2>
+          <p className="mt-2 text-muted-foreground">Build a roadmap you can share—and keep your organization’s plan in sync as you grow.</p>
           <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link href="/pricing" className="rounded-full bg-primary px-6 py-2 text-primary-foreground hover:bg-primary/90">
-              Start free trial
+              View plans
             </Link>
             <Link href="/login" className="rounded-full border border-border px-6 py-2 text-sm hover:bg-secondary">
               Sign in
@@ -242,7 +241,7 @@ export default function LandingPage() {
         <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
           <div className="flex items-center gap-2">
             <div className="size-6 rounded-md bg-primary/10" aria-hidden />
-            <span>Coach House LMS</span>
+            <span>Coach House</span>
           </div>
           <div className="flex items-center gap-4">
             <Link href="/pricing" className="hover:text-foreground">Pricing</Link>

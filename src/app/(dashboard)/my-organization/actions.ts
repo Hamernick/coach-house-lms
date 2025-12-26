@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache"
 import { requireServerSession } from "@/lib/auth"
 import { geocodeAddress } from "@/lib/mapbox/geocode"
 import type { Database } from "@/lib/supabase"
+import { publicSharingEnabled } from "@/lib/feature-flags"
 
 type OrgProfilePayload = {
   name?: string | null
@@ -48,6 +49,7 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   const { supabase, session } = await requireServerSession("/my-organization")
 
   const userId = session.user.id
+  const allowPublicSharing = publicSharingEnabled
 
   // Load existing profile to merge
   const { data: orgRow, error: orgErr } = await supabase
@@ -139,7 +141,7 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   const desiredSlug =
     typeof payload.publicSlug === "string" && payload.publicSlug.length > 0
       ? payload.publicSlug
-      : payload.isPublic
+      : allowPublicSharing && payload.isPublic
         ? String(payload.name ?? current["name"] ?? "")
         : ""
   const normalizedSlugRaw = desiredSlug ? slugify(desiredSlug) : undefined
@@ -164,7 +166,7 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
     user_id: userId,
     ein: typeof payload.ein === "string" ? payload.ein : orgRow?.ein ?? null,
     public_slug: normalizedSlug ?? undefined,
-    is_public: payload.isPublic ?? undefined,
+    is_public: allowPublicSharing ? payload.isPublic ?? undefined : false,
     profile: next as unknown as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
     location_lat: locationLat,
     location_lng: locationLng,
@@ -181,7 +183,7 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   const previousSlug = typeof orgRow?.public_slug === "string" && orgRow.public_slug.length > 0 ? orgRow.public_slug : null
   const nextSlug = normalizedSlug ?? previousSlug
   const wasPublic = Boolean(orgRow?.is_public)
-  const isPublic = typeof payload.isPublic === "boolean" ? payload.isPublic : wasPublic
+  const isPublic = allowPublicSharing ? (typeof payload.isPublic === "boolean" ? payload.isPublic : wasPublic) : false
 
   revalidateOrganizationViews({
     previousSlug,

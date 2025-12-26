@@ -4,11 +4,14 @@ import { revalidatePath } from "next/cache"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase"
-import { ROADMAP_SECTION_IDS, updateRoadmapSection, type RoadmapSection } from "@/lib/roadmap"
+import { updateRoadmapSection, type RoadmapSection } from "@/lib/roadmap"
+import { publicSharingEnabled } from "@/lib/feature-flags"
 
 type SaveInput = {
-  sectionId: string
-  content: string
+  sectionId?: string
+  title?: string
+  subtitle?: string
+  content?: string
   isPublic?: boolean
   layout?: "square" | "vertical" | "wide"
   ctaLabel?: string
@@ -19,16 +22,15 @@ type SaveResult = { section: RoadmapSection } | { error: string }
 
 export async function saveRoadmapSectionAction({
   sectionId,
+  title,
+  subtitle,
   content,
   isPublic,
   layout,
   ctaLabel,
   ctaUrl,
 }: SaveInput): Promise<SaveResult> {
-  if (!ROADMAP_SECTION_IDS.includes(sectionId)) {
-    return { error: "Unknown section" }
-  }
-
+  const allowPublicSharing = publicSharingEnabled
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -54,8 +56,11 @@ export async function saveRoadmapSectionAction({
   }
 
   const currentProfile = (orgRow?.profile ?? {}) as Record<string, unknown>
-  const { nextProfile, section } = updateRoadmapSection(currentProfile, sectionId, content, {
-    isPublic,
+  const { nextProfile, section } = updateRoadmapSection(currentProfile, sectionId ?? null, {
+    title,
+    subtitle,
+    content,
+    isPublic: allowPublicSharing ? isPublic : false,
     layout,
     ctaLabel,
     ctaUrl,
@@ -80,6 +85,10 @@ export async function saveRoadmapSectionAction({
 type ToggleResult = { ok: true } | { error: string }
 
 export async function setRoadmapPublicAction(nextPublic: boolean): Promise<ToggleResult> {
+  if (!publicSharingEnabled) {
+    return { error: "Public sharing is disabled until launch." }
+  }
+
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },

@@ -13,7 +13,7 @@ import CheckCircle from "lucide-react/dist/esm/icons/check-circle"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -63,7 +63,22 @@ type AssignmentFormProps = {
   totalSteps?: number
 }
 
-export function AssignmentForm({
+export function AssignmentForm(props: AssignmentFormProps) {
+  if (props.fields.length === 0) {
+    return (
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Homework</CardTitle>
+          <CardDescription>No assignment data yet — check back soon.</CardDescription>
+        </CardHeader>
+      </Card>
+    )
+  }
+
+  return <AssignmentFormInner {...props} />
+}
+
+function AssignmentFormInner({
   fields,
   initialValues,
   pending,
@@ -319,9 +334,28 @@ export function AssignmentForm({
         case "custom_program":
           return (
             <div key={field.name} className="space-y-2">
-              <Label htmlFor={fieldId} className="text-base font-semibold leading-tight">
-                {labelText}
-              </Label>
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Label htmlFor={fieldId} className="text-base font-semibold leading-tight">
+                  {labelText}
+                </Label>
+                {moduleId ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleAssist(field)}
+                    disabled={isAssistPending && activeAssistField === field.name}
+                    className="gap-1"
+                  >
+                    {isAssistPending && activeAssistField === field.name ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                    Assist
+                  </Button>
+                ) : null}
+              </div>
               {description}
               {field.programTemplate ? (
                 <p className="rounded-md border border-dashed bg-muted/40 p-3 text-xs text-muted-foreground">
@@ -333,16 +367,6 @@ export function AssignmentForm({
                 onChange={(next) => updateValue(field.name, next)}
                 placeholder={field.placeholder ?? "Outline your plan"}
                 mode="homework"
-                assist={
-                  moduleId
-                    ? {
-                        label: "Assist",
-                        description: "Generate a first draft using your org profile.",
-                        onRequest: () => handleAssist(field),
-                        loading: isAssistPending && activeAssistField === field.name,
-                      }
-                    : undefined
-                }
               />
             </div>
           )
@@ -458,17 +482,6 @@ export function AssignmentForm({
     [values],
   )
 
-  if (fields.length === 0) {
-    return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-base">Homework</CardTitle>
-          <CardDescription>No assignment data yet — check back soon.</CardDescription>
-        </CardHeader>
-      </Card>
-    )
-  }
-
   const overall = useMemo(() => {
     let total = 0
     let answered = 0
@@ -506,7 +519,7 @@ export function AssignmentForm({
 
   return (
     <div className="grid items-start gap-6 md:grid-cols-[minmax(260px,_320px)_minmax(0,_1fr)]">
-      <div className="rounded-2xl border border-border/60 bg-[#171717] px-4 pb-4 pt-3 self-start overflow-hidden">
+      <div className="rounded-2xl border border-border/60 bg-card/70 px-4 pb-4 pt-3 self-start overflow-hidden">
         <div className="border-b border-border/60 px-0 pb-2 pt-0">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Progress</p>
           <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-border/40">
@@ -530,7 +543,7 @@ export function AssignmentForm({
                 ref={(el) => {
                   tabRefs.current[idx] = el
                 }}
-                className="relative z-10 flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm font-semibold text-muted-foreground transition hover:bg-[#262626] data-[state=active]:bg-[#262626] data-[state=active]:text-foreground"
+                className="relative z-10 flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm font-semibold text-muted-foreground transition hover:bg-accent/60 data-[state=active]:bg-accent/70 data-[state=active]:text-foreground"
               >
                 <span className="min-w-0 flex-1 whitespace-normal break-words select-text pr-2 text-sm leading-snug">
                   {section.title ?? `Step ${idx + 1}`}

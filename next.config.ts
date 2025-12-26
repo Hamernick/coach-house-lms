@@ -8,12 +8,8 @@ const supabaseHost = process.env.NEXT_PUBLIC_SUPABASE_URL
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  turbopack: {},
-  modularizeImports: {
-    "lucide-react": {
-      transform: "lucide-react/dist/esm/icons/{{member}}",
-      skipDefaultConversion: true,
-    },
+  turbopack: {
+    root: __dirname, // ensure Turbopack resolves Next from the repo root
   },
   webpack(config, options) {
     if (process.env.ANALYZE) {
@@ -36,6 +32,11 @@ const nextConfig: NextConfig = {
       {
         protocol: "https",
         hostname: "images.unsplash.com",
+      },
+      {
+        protocol: "https",
+        hostname: "api.mapbox.com",
+        pathname: "/styles/v1/**",
       },
       // Allow images served from Supabase Storage buckets for this project
       ...(supabaseHost

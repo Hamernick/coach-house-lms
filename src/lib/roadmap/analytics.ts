@@ -27,7 +27,7 @@ export async function fetchRoadmapAnalyticsSummary(): Promise<RoadmapAnalyticsSu
   const start = subDays(new Date(), 30).toISOString()
   const { data: events } = await supabase
     .from("roadmap_events")
-    .select("event_type, section_id, created_at")
+    .select("event_type, section_id, created_at, source, duration_ms")
     .eq("org_id", user.id)
     .gte("created_at", start)
     .order("created_at", { ascending: false })

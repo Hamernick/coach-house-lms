@@ -10,6 +10,7 @@ import { Empty } from "@/components/ui/empty"
 import type { OrgProgram } from "../types"
 import { FormRow } from "@/components/organization/org-profile-card/shared"
 import { dateRangeChip, locationSummary } from "../utils"
+import { publicSharingEnabled } from "@/lib/feature-flags"
 
 type ProgramsTabProps = {
   programs: OrgProgram[]
@@ -20,6 +21,9 @@ type ProgramsTabProps = {
 
 export function ProgramsTab({ programs, companyName, editMode, onProgramEdit }: ProgramsTabProps) {
   const hasPrograms = programs && programs.length > 0
+  const publicCopy = publicSharingEnabled
+    ? "Programs appear in your overview and public page when published."
+    : "Programs stay private until public sharing is enabled."
 
   return (
     <div className="grid gap-6">
@@ -31,9 +35,7 @@ export function ProgramsTab({ programs, companyName, editMode, onProgramEdit }: 
               <p className="mt-1 text-sm text-muted-foreground">Create and manage programs.</p>
             </div>
             <div className="md:col-span-2 flex items-center justify-between px-6 md:px-0">
-              <p className="text-sm text-muted-foreground">
-                Programs appear in your overview and public page when published.
-              </p>
+              <p className="text-sm text-muted-foreground">{publicCopy}</p>
               <ProgramWizardLazy />
             </div>
           </div>

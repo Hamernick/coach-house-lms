@@ -2,6 +2,38 @@
 
 Purpose: Track changes we’re making outside the formal PR stepper.
 
+## 2025-12-15
+
+- Dashboard: Moved the calendar up beside the Command Center hero, removed the “Calendar / This month.” header wrapper, and resized the calendar to a mid-compact footprint (`src/app/(dashboard)/dashboard/page.tsx`, `src/components/dashboard/dashboard-calendar-card.tsx`, `src/app/(dashboard)/dashboard/loading.tsx`).
+- Dashboard: Removed the extra calendar card wrapper so the calendar itself is the card, moved the Accelerator CTA into the “Next up” block (with total module count in the progress copy), and removed the redundant “Next actions” section (`src/components/dashboard/dashboard-calendar-card.tsx`, `src/components/dashboard/accelerator-progress-radial-card.tsx`, `src/app/(dashboard)/dashboard/page.tsx`, `src/app/(dashboard)/dashboard/loading.tsx`).
+- Dashboard: Added a tiny “Updates” notifications card under the calendar (renders up to 2 items + empty state) and standardized gutters across the page (consistent `gap-4` + outer edge alignment) (`src/components/dashboard/dashboard-notifications-card.tsx`, `src/app/(dashboard)/dashboard/page.tsx`, `src/app/(dashboard)/dashboard/loading.tsx`).
+- Dashboard: Removed the redundant “Command Center” eyebrow label from the hero card (`src/app/(dashboard)/dashboard/page.tsx`).
+- Dashboard: Tightened the hero card footer padding so the “All clear” line + Roadmap button don’t leave dead space (`src/app/(dashboard)/dashboard/page.tsx`).
+- Dashboard: Fixed Accelerator totals to count visible modules (not just enrollments) and split Marketplace into a two-card row with an Insights placeholder to avoid ultra-wide cards on large screens (`src/app/(dashboard)/dashboard/page.tsx`, `src/app/(dashboard)/dashboard/loading.tsx`).
+- Marketing: Refreshed the landing page copy to focus on outcomes (roadmap/org profile/programs) and removed “LMS/cohort/workspace/My Organization” phrasing (`src/app/(public)/page.tsx`).
+
+## 2025-12-14
+
+- Sidebar (Accelerator): Tightened module list spacing by making the stepper connector rails absolutely positioned (no layout height contribution) and ensuring they render behind the badges; removed extra vertical padding that was making the module list feel overly gappy (`src/components/app-sidebar/module-stepper.tsx`). Verified with `npm run lint -- src/components/app-sidebar/module-stepper.tsx`.
+- Sidebar (Accelerator): Ensured the collapsed-icon module rail renders behind badges (explicit z-index) and badges have a sidebar-colored background so the rail reads as a subtle roadmap line, not an overlaid divider (`src/components/app-sidebar/classes-section.tsx`). Verified with `npm run lint -- src/components/app-sidebar/classes-section.tsx`.
+- Sidebar (Accelerator): Reduced extra gap between class rows by removing item-level spacing and zeroing submenu padding when collapsed; slightly increased module row padding for breathing room (`src/components/app-sidebar/classes-section.tsx`, `src/components/app-sidebar/module-stepper.tsx`).
+- Sidebar (Accelerator): Removed the extra nested `<ul>` wrapper inside `ModuleStepper` so module items render as proper `<li>` children of `SidebarMenuSub` (fewer containers + cleaner DOM) (`src/components/app-sidebar/module-stepper.tsx`).
+- Dashboard: Rebuilt `/dashboard` into a minimal “Command Center” with a Mapbox-powered, location-aware hero, “Signals” notification list, marketplace picks, and calendar; fallback dot-grid background when `NEXT_PUBLIC_MAPBOX_TOKEN` is missing (`src/app/(dashboard)/dashboard/page.tsx`, `next.config.ts`).
+- Dashboard: Added a route-level skeleton that matches the new layout for faster streaming and less jarring loads (`src/app/(dashboard)/dashboard/loading.tsx`).
+- Dashboard: Tightened `/dashboard` by moving quick actions into top-level cards, adding radial chart cards for roadmap publishing progress + people composition, shrinking the calendar, and renaming “Signals” → “Next actions” (with fewer items) (`src/app/(dashboard)/dashboard/page.tsx`, `src/app/(dashboard)/dashboard/loading.tsx`, `src/components/dashboard/dashboard-calendar-card.tsx`, `src/components/dashboard/roadmap-progress-radial-card.tsx`, `src/components/dashboard/people-composition-radial-card.tsx`).
+- Dashboard: Made the calendar genuinely compact (w-fit + smaller cells), replaced the roadmap radial with an Accelerator progress radial (CTA + next-up copy), added an in-card “Create” person dialog trigger, and swapped the “Profile” metric for a roadmap publishing metric (`src/app/(dashboard)/dashboard/page.tsx`, `src/components/dashboard/dashboard-calendar-card.tsx`, `src/components/dashboard/accelerator-progress-radial-card.tsx`, `src/components/dashboard/people-composition-radial-card.tsx`).
+- Tests: Acceptance + snapshots now pass after making `getServerSession()` fall back to `auth.getSession()` when `getUser()` isn’t available (test mocks) (`src/lib/auth.ts`).
+- Build fixes: Removed a missing export that was breaking TS (`src/components/ui/sidebar/index.ts`), switched shadcn-studio demo tabs to `framer-motion` (`components/shadcn-studio/tabs/tabs-29.tsx`), and aligned roadmap analytics select fields to the columns used in code (`src/lib/roadmap/analytics.ts`).
+- Module homework: Removed a stray unsupported `assist` prop from the TipTap editor callsite and preserved the Assist button UI so TS builds cleanly (`src/components/training/module-detail/assignment-form.tsx`).
+- Strategic roadmap: Rebuilt the timeline rail to be a single continuous, behind-the-content gradient line (no per-item rail spans), and upgraded the step nodes to numbered markers aligned to the rail (`src/app/(dashboard)/strategic-roadmap/page.tsx`, `src/components/roadmap/roadmap-section-editor.tsx`).
+- Strategic roadmap: Tightened item layout by removing nested shadows, removing the redundant “Step X” pill (step number lives in the node), and fixing a data-loss edge case where saving share settings could overwrite unsaved draft edits (`src/components/roadmap/roadmap-section-editor.tsx`).
+- Strategic roadmap: Removed the redundant “Ready to tweak…” footer text and moved the edit trigger to a top-right icon button (`src/components/roadmap/roadmap-section-editor.tsx`).
+- Strategic roadmap: Simplified the global visibility control and share drawer UI (compact toggle row, minimal layout picker + preview, reduced copy/sections) to match the new timeline design (`src/components/roadmap/roadmap-visibility-toggle.tsx`, `src/components/roadmap/roadmap-share-drawer.tsx`).
+- Strategic roadmap: Removed inline share-link previews and swapped copy buttons for “View” actions that open the public roadmap/section in a new tab (only shown when visibility is Public) (`src/components/roadmap/roadmap-visibility-toggle.tsx`, `src/components/roadmap/roadmap-share-drawer.tsx`).
+- Strategic roadmap: Fixed public roadmap URL pathing to use `/{publicSlug}/roadmap` (no `/org` prefix) and moved the “View” button to sit to the right of the visibility switch (`src/components/roadmap/roadmap-visibility-toggle.tsx`, `src/components/roadmap/roadmap-section-editor.tsx`, `src/app/[org]/roadmap/page.tsx`).
+- Strategic roadmap: Public roadmap view now renders all sections inside a single, blog-like card and removes the redundant per-section “Section” label (`src/app/[org]/roadmap/page.tsx`).
+- Strategic roadmap: Public roadmap view now matches the public org page chrome (dot-grid body background, top action row) and adds the same left-rail stepper (gradient rail + numbered nodes) used in the private timeline (`src/app/[org]/roadmap/page.tsx`).
+
 ## 2025-12-03
 
 - Sidebar nav alignment: Ensured module sub-items span the full width of the class row and balanced padding (`px-2`) so hover/active pills align with the class entry edge while keeping the left indent (`src/components/ui/sidebar.tsx`, `src/components/app-sidebar/classes-section.tsx`).
@@ -364,3 +396,41 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Homework progress rail: restored vertical tab spacing, added padding to the rail list, and aligned counts so long titles wrap instead of colliding with counts (`src/components/training/module-detail/assignment-form.tsx`).
 - Module video: Moved the video into the card body with a bordered header, added a status pill, and kept the player full-bleed inside the card; Next/Save buttons now icon-only and aligned to the assignment footer (`src/components/training/module-detail.tsx`, `src/components/training/module-detail/assignment-form.tsx`).
 - Homework layout: Forced the rail/content split from medium screens up with self-start cards so the nav stays left/top aligned with the form pane instead of stacking (`src/components/training/module-detail/assignment-form.tsx`).
+
+## 2025-12-03 — Codex session (Module detail refactor)
+
+- Refactored the training module detail view into separated concerns: extracted the deck viewer into its own client component, pulled wizard + assignment submission state into reusable hooks, and slimmed the main component while preserving existing UI/behavior (`src/components/training/module-detail.tsx`, `src/components/training/module-detail/deck-viewer.tsx`, `src/components/training/module-detail/use-lesson-wizard.ts`, `src/components/training/module-detail/use-assignment-submission.ts`).
+- Further decomposed the deck viewer UI into a dedicated presentation component to keep files under 400 LOC and keep the PDF logic isolated; linted the touched files via `npm run lint -- ...` (`src/components/training/module-detail/deck-viewer.tsx`, `src/components/training/module-detail/deck-viewer/view.tsx`).
+- Split remaining UI into focused pieces (header, video block, lesson notes) and tightened `module-detail.tsx` to a small orchestrator so concerns stay isolated while behavior/layout remain unchanged (`src/components/training/module-detail/module-header.tsx`, `src/components/training/module-detail/video-section.tsx`, `src/components/training/module-detail/lesson-notes.tsx`, `src/components/training/module-detail.tsx`).
+- Note: Attempted to run `pnpm eslint …` but pnpm is not installed in this environment.
+
+## 2025-12-09 — Codex session (RSC CVE audit + Next.js patch)
+
+- Performed RSC/Flight surface audit for CVE-2025-55182: enumerated server actions across dashboard/admin/public flows and confirmed no custom Flight handling or unsafe eval usage.
+- Upgraded Next.js to a patched release to address the RSC RCE issue (`next` -> `^16.0.7`, lockfile updated).
+- Confirmed React/React DOM remain on 19.2.0; no experimental RSC flags or custom webpack overrides detected.
+- Fixed lucide icon imports in the breadcrumb component to use typed entrypoints and restored snapshot baseline after the Next upgrade (`src/components/ui/breadcrumb.tsx`, `dist-snapshots`).
+- Ran `npm test` (snapshots + RLS placeholder); RLS suite skipped due to missing Supabase env vars.
+- Migrated the deprecated `middleware` convention to `proxy` by moving auth/redirect logic into `src/proxy.ts` and removing `src/middleware.ts`; reran `npm test` to confirm snapshots unaffected (RLS still skipped without envs).
+- Removed the lucide `modularizeImports` transform (Next 16.0.7 now resolves icons directly) to fix the case-sensitive icon resolution failure on `/dashboard`; `npm test` green after the change.
+- Redesigned the Strategic Roadmap page to an ultra-minimal timeline: hero removed, timeline list with empty-state messaging, edit via dialog-based editor per section, share/visibility controls preserved, and timeline preview/empty states shown (`src/app/(dashboard)/strategic-roadmap/page.tsx`, `src/components/roadmap/roadmap-section-editor.tsx`); `npm test` still green (RLS skipped without envs).
+- Dashboard overhaul: added horizontal roadmap tracker, accelerator tracker hero, calendar with actionable links, workspace shortcuts, and a minimal roadmap timeline preview plus dialog editing flows; introduced dashboard calendar card and roadmap mini tracker components (`src/app/(dashboard)/dashboard/page.tsx`, `src/components/roadmap/roadmap-mini-tracker.tsx`, `src/components/dashboard/dashboard-calendar-card.tsx`); `npm test` remains green (RLS skipped without envs).
+- Removed duplicate accelerator progress card to keep the dashboard minimal and prevent overlapping content; layout spacing retained (`src/app/(dashboard)/dashboard/page.tsx`).
+- Removed the roadmap analytics summary/share performance card from the dashboard to simplify the layout and avoid duplication (`src/app/(dashboard)/dashboard/page.tsx`).
+
+## 2025-12-22 — Codex session (Roadmap editor + scheduling)
+
+- Theme: made landing/news pages and homework progress rail use theme tokens so dark/light/system are consistent (`src/app/(public)/page.tsx`, `src/app/(public)/news/page.tsx`, `src/components/training/module-detail/assignment-form.tsx`).
+- Strategic roadmap: rebuilt data model to support custom sections with title/subtitle, added side-nav single-form editor, and updated public roadmap rendering to show subtitles (`src/lib/roadmap.ts`, `src/components/roadmap/roadmap-editor.tsx`, `src/app/(dashboard)/strategic-roadmap/page.tsx`, `src/app/[org]/roadmap/page.tsx`).
+- Roadmap export: added docx download endpoint + button (`src/app/api/roadmap/docx/route.ts`, `src/app/(dashboard)/strategic-roadmap/page.tsx`, `package.json`, `package-lock.json`).
+- Public sharing gate: added feature flag to disable public pages/visibility toggles and force public state off in org/roadmap/program updates (`src/lib/feature-flags.ts`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/public-page-settings.tsx`, `src/components/roadmap/roadmap-visibility-toggle.tsx`, `src/components/roadmap/roadmap-editor.tsx`, `src/components/roadmap/roadmap-share-drawer.tsx`, `src/app/[org]/page.tsx`, `src/app/[org]/roadmap/page.tsx`, `src/app/(dashboard)/my-organization/actions.ts`, `src/app/(dashboard)/my-organization/programs/actions.ts`, `src/app/(dashboard)/dashboard/page.tsx`).
+- Scheduling: added a dashboard check-in card with toast prompt and a scheduling API enforcing free-tier meeting caps (`src/components/dashboard/dashboard-checkin-card.tsx`, `src/app/api/meetings/schedule/route.ts`, `src/lib/meetings.ts`, `src/app/(dashboard)/dashboard/page.tsx`).
+- Header: added a notifications bell in the dashboard shell with a popover list UI (`src/components/notifications/notifications-menu.tsx`, `src/components/dashboard/dashboard-shell.tsx`).
+- What worked: npm dependency install for docx succeeded.
+- What didn’t: tests not run; meeting schedule URLs and AI Assist flow still need confirmation.
+- Next: confirm Google Calendar links + free-tier definition, decide AI Assist ChatGPT handoff approach, and set `NEXT_PUBLIC_PUBLIC_SHARING_ENABLED` for launch gating.
+
+## 2025-12-22 — Codex session (Mapbox token wiring)
+
+- Mapbox: added a server-only token helper with MAPBOX_TOKEN fallback, passed the token into the community map, and reused it for dashboard/static maps + geocoding (`src/lib/mapbox/token.ts`, `src/app/community/page.tsx`, `src/components/community/community-map.tsx`, `src/app/(dashboard)/dashboard/page.tsx`, `src/lib/mapbox/geocode.ts`).
+- What didn’t: tests not run.

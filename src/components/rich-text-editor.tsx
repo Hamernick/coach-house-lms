@@ -72,7 +72,7 @@ export function RichTextEditor({
     ? `min-height: ${editorMinHeight};${stableScrollbars ? " scrollbar-gutter: stable;" : ""}`
     : stableScrollbars
       ? "scrollbar-gutter: stable;"
-      : undefined
+      : ""
   const overflowClass = stableScrollbars ? "overflow-y-scroll overflow-x-auto" : "overflow-auto"
   const editor = useEditor({
     extensions: [
@@ -327,8 +327,9 @@ export function RichTextEditor({
                   editor.chain().focus().setParagraph().run()
                   return
                 }
-                const level = Number(value.split("-")[1])
-                if ([1, 2, 3].includes(level)) {
+                const level =
+                  value === "heading-1" ? 1 : value === "heading-2" ? 2 : value === "heading-3" ? 3 : null
+                if (level) {
                   editor.chain().focus().setHeading({ level }).run()
                 }
               }}

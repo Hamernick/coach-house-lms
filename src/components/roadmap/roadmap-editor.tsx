@@ -511,7 +511,7 @@ export function RoadmapEditor({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete section?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently remove "{deleteTargetTitle}" and its content from your roadmap.
+              This will permanently remove &quot;{deleteTargetTitle}&quot; and its content from your roadmap.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

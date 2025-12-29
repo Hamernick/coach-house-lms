@@ -684,3 +684,7 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-29 — Codex session (Next.js CVE patch)
 
 - Chore: bumped Next.js + eslint-config-next to 16.1.1 to address Vercel CVE warning (`package.json`, `package-lock.json`).
+
+## 2025-12-29 — Codex session (Org profile cleanup type fix)
+
+- Fix: cast cleaned org profile payloads to Supabase Json type during cleanup upsert to satisfy TS (`src/app/(dashboard)/my-organization/page.tsx`).

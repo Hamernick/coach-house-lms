@@ -4,7 +4,7 @@ import { OrgProfileCard } from "@/components/organization/org-profile-card"
 import type { ProfileTab } from "@/components/organization/org-profile-card/types"
 import { resolveRoadmapSections } from "@/lib/roadmap"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
-import { createSupabaseServerClient } from "@/lib/supabase"
+import { createSupabaseServerClient, type Json } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import type { OrgPerson } from "../people/actions"
@@ -44,7 +44,7 @@ export default async function MyOrganizationPage({
     if (changed) {
       const { error: cleanupError } = await supabase
         .from("organizations")
-        .upsert({ user_id: user.id, profile: nextProfile }, { onConflict: "user_id" })
+        .upsert({ user_id: user.id, profile: nextProfile as Json }, { onConflict: "user_id" })
       if (!cleanupError) {
         profile = nextProfile
       }

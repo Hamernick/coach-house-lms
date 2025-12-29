@@ -688,3 +688,18 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-29 — Codex session (Org profile cleanup type fix)
 
 - Fix: cast cleaned org profile payloads to Supabase Json type during cleanup upsert to satisfy TS (`src/app/(dashboard)/my-organization/page.tsx`).
+
+## 2025-12-29 — Codex session (Build + lint fixes)
+
+- Fix: corrected Mapbox dynamic import typing to resolve TS compile error (`src/components/community/community-map.tsx`).
+- Fix: escaped quotes in roadmap delete dialog copy (`src/components/roadmap/roadmap-editor.tsx`).
+- Fix: aligned roadmap share save callback deps to satisfy React compiler + hooks rules (`src/components/roadmap/roadmap-section-editor.tsx`).
+- Fix: marked unused drag event parameter as intentionally unused (`src/components/people/org-chart-canvas.tsx`).
+
+## 2025-12-29 — Codex session (Rich text editor typing fix)
+
+- Fix: ensured editor inline style is always a string to satisfy TipTap editor typing (`src/components/rich-text-editor.tsx`).
+
+## 2025-12-29 — Codex session (Heading level typing)
+
+- Fix: ensure TipTap heading levels are typed as literals to satisfy Level union (`src/components/rich-text-editor.tsx`).

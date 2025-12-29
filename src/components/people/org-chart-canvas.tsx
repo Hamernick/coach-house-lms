@@ -150,7 +150,8 @@ function OrgChartCanvasComponent({ people, extras = false }: Props) {
     setGraph(buildGraph(peopleLocal))
   }, [peopleLocal, buildGraph])
 
-  const onNodeDragStop: NodeDragHandler = useCallback(async (_e, node) => {
+  const onNodeDragStop: NodeDragHandler = useCallback(async (event, node) => {
+    void event
     try {
       setGraph((prev) => ({
         nodes: prev.nodes.map((n) => (n.id === node.id ? { ...n, position: node.position } : n)),

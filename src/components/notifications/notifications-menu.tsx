@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Bell from "lucide-react/dist/esm/icons/bell"
 import MessageCircle from "lucide-react/dist/esm/icons/message-circle"
 import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle"
@@ -63,11 +63,27 @@ const ARCHIVE_ITEMS: NotificationItem[] = []
 
 export function NotificationsMenu() {
   const [open, setOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
 
   const unreadCount = useMemo(
     () => INBOX_ITEMS.filter((item) => item.unread).length,
     [],
   )
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+        <Bell className="h-4 w-4" />
+        {unreadCount > 0 ? (
+          <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-primary" aria-hidden />
+        ) : null}
+      </Button>
+    )
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

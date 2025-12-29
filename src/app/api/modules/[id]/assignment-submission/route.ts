@@ -5,6 +5,7 @@ import type { Database } from "@/lib/supabase"
 import type { Json } from "@/lib/supabase/schema/json"
 import { markModuleCompleted, parseAssignmentFields, type ModuleAssignmentField } from "@/lib/modules"
 import { revalidateClassViews } from "@/app/(admin)/admin/classes/actions"
+import { sanitizeOrgProfileText, shouldStripOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 
 type SubmissionStatus = Database["public"]["Enums"]["submission_status"]
 
@@ -252,14 +253,21 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         if (typeof value === "string") {
           const trimmed = value.trim()
           if (trimmed.length > 0) {
-            nextProfile[orgKey] = trimmed
+            const cleaned = shouldStripOrgProfileHtml(orgKey) ? sanitizeOrgProfileText(trimmed) : trimmed
+            if (cleaned) {
+              nextProfile[orgKey] = cleaned
+            }
           }
         } else if (Array.isArray(value)) {
           const normalized = value
             .map((item) => (typeof item === "string" ? item.trim() : ""))
             .filter((item) => item.length > 0)
           if (normalized.length > 0) {
-            nextProfile[orgKey] = normalized
+            if (shouldStripOrgProfileHtml(orgKey)) {
+              nextProfile[orgKey] = normalized.join("\n")
+            } else {
+              nextProfile[orgKey] = normalized
+            }
           }
         } else if (typeof value === "number") {
           nextProfile[orgKey] = value

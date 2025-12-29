@@ -1,7 +1,7 @@
 "use client"
 
 import { useEditor, EditorContent } from "@tiptap/react"
-import { useEffect, useRef, useState, type ComponentType } from "react"
+import { forwardRef, useEffect, useRef, useState, type ComponentType } from "react"
 import StarterKit from "@tiptap/starter-kit"
 import TextAlign from "@tiptap/extension-text-align"
 import Underline from "@tiptap/extension-underline"
@@ -15,25 +15,32 @@ import AlignCenter from "lucide-react/dist/esm/icons/align-center"
 import AlignLeft from "lucide-react/dist/esm/icons/align-left"
 import AlignRight from "lucide-react/dist/esm/icons/align-right"
 import BoldIcon from "lucide-react/dist/esm/icons/bold"
-import CodeIcon from "lucide-react/dist/esm/icons/code"
+import ChevronDown from "lucide-react/dist/esm/icons/chevron-down"
+import CornerDownLeft from "lucide-react/dist/esm/icons/corner-down-left"
 import Heading1 from "lucide-react/dist/esm/icons/heading-1"
 import Heading2 from "lucide-react/dist/esm/icons/heading-2"
 import Heading3 from "lucide-react/dist/esm/icons/heading-3"
 import ItalicIcon from "lucide-react/dist/esm/icons/italic"
-import LinkIcon from "lucide-react/dist/esm/icons/link"
-import Link2Off from "lucide-react/dist/esm/icons/link-2-off"
 import ListIcon from "lucide-react/dist/esm/icons/list"
 import ListOrdered from "lucide-react/dist/esm/icons/list-ordered"
 import Minus from "lucide-react/dist/esm/icons/minus"
 import Quote from "lucide-react/dist/esm/icons/quote"
 import Redo2 from "lucide-react/dist/esm/icons/redo-2"
-import StrikethroughIcon from "lucide-react/dist/esm/icons/strikethrough"
+import TypeIcon from "lucide-react/dist/esm/icons/type"
 import UnderlineIcon from "lucide-react/dist/esm/icons/underline"
 import Undo2 from "lucide-react/dist/esm/icons/undo-2"
 import Pilcrow from "lucide-react/dist/esm/icons/pilcrow"
 import ExternalLink from "lucide-react/dist/esm/icons/external-link"
 
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { Glimpse, GlimpseContent, GlimpseDescription, GlimpseImage, GlimpseTitle, GlimpseTrigger } from "@/components/kibo-ui/glimpse"
 
@@ -43,6 +50,8 @@ interface RichTextEditorProps {
   placeholder?: string
   className?: string
   mode?: "default" | "compact" | "homework"
+  minHeight?: number
+  stableScrollbars?: boolean
 }
 
 export function RichTextEditor({
@@ -51,11 +60,20 @@ export function RichTextEditor({
   placeholder = "Start typing...",
   className,
   mode = "default",
+  minHeight,
+  stableScrollbars = false,
 }: RichTextEditorProps) {
   const applyingRef = useRef(false)
   const [counts, setCounts] = useState({ words: 0, chars: 0 })
   const [links, setLinks] = useState<string[]>([])
   const [linkMeta, setLinkMeta] = useState<Record<string, { title?: string | null; description?: string | null; image?: string | null }>>({})
+  const editorMinHeight = typeof minHeight === "number" && minHeight > 0 ? `${Math.round(minHeight)}px` : undefined
+  const editorStyle = editorMinHeight
+    ? `min-height: ${editorMinHeight};${stableScrollbars ? " scrollbar-gutter: stable;" : ""}`
+    : stableScrollbars
+      ? "scrollbar-gutter: stable;"
+      : undefined
+  const overflowClass = stableScrollbars ? "overflow-y-scroll overflow-x-auto" : "overflow-auto"
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -64,6 +82,7 @@ export function RichTextEditor({
         },
         hardBreak: false,
         horizontalRule: false,
+        codeBlock: false,
       }),
       TextAlign.configure({
         types: ["heading", "paragraph"],
@@ -101,13 +120,15 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          "prose prose-sm dark:prose-invert max-w-none min-h-[240px] px-4 py-3 focus:outline-none",
+          "block w-full min-w-0 break-words prose prose-sm dark:prose-invert max-w-none min-h-[240px] resize-y px-4 py-3 focus:outline-none",
+          overflowClass,
           "prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h1:font-semibold prose-h2:font-semibold prose-h3:font-medium",
           "prose-p:my-3 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-5 prose-ol:pl-5",
           "prose-blockquote:border-l-2 prose-blockquote:border-primary/50 prose-blockquote:pl-4 prose-blockquote:text-muted-foreground",
           "prose-code:bg-muted prose-code:px-1.5 prose-code:py-1 prose-code:rounded-md prose-code:text-sm",
           "prose-hr:border-border prose-hr:my-6"
         ),
+        style: editorStyle,
       },
     },
     immediatelyRender: false,
@@ -120,6 +141,11 @@ export function RichTextEditor({
       chars: editor.storage.characterCount?.characters?.() ?? 0,
     })
   }, [editor])
+
+  useEffect(() => {
+    if (!editor || !editorMinHeight) return
+    editor.view.dom.style.minHeight = editorMinHeight
+  }, [editor, editorMinHeight])
 
   useEffect(() => {
     if (!editor || typeof value !== "string") return
@@ -170,12 +196,6 @@ export function RichTextEditor({
     return null
   }
 
-  const addLink = () => {
-    const url = window.prompt("Enter URL:")
-    if (!url) return
-    editor.chain().focus().extendMarkRange("link").setLink({ href: url }).run()
-  }
-
   const ToolbarButton = ({
     icon: Icon,
     label,
@@ -198,7 +218,7 @@ export function RichTextEditor({
       aria-label={label}
       title={label}
       className={cn(
-        "h-8 w-8 p-0 text-muted-foreground hover:text-foreground",
+        "h-7 w-7 p-0 text-muted-foreground hover:text-foreground sm:h-8 sm:w-8",
         isActive && "bg-accent text-accent-foreground hover:bg-accent hover:text-accent-foreground"
       )}
     >
@@ -206,10 +226,60 @@ export function RichTextEditor({
     </Button>
   )
 
-  const ToolbarDivider = () => <span className="mx-1 h-8 w-px bg-border" />
+  const ToolbarMenuTrigger = forwardRef<
+    HTMLButtonElement,
+    React.ButtonHTMLAttributes<HTMLButtonElement> & {
+      icon: ComponentType<{ className?: string }>
+      label: string
+      valueLabel?: string
+    }
+  >(({ icon: Icon, label, valueLabel, className, type, ...props }, ref) => (
+    <button
+      ref={ref}
+      type={type ?? "button"}
+      aria-label={valueLabel ? `${label} (${valueLabel})` : label}
+      className={cn(
+        buttonVariants({ variant: "ghost", size: "sm" }),
+        "h-7 gap-1 px-1 text-muted-foreground hover:text-foreground sm:h-8 sm:px-1.5",
+        className
+      )}
+      {...props}
+    >
+      <Icon className="h-4 w-4" />
+      <ChevronDown className="h-3 w-3" />
+    </button>
+  ))
+
+  ToolbarMenuTrigger.displayName = "ToolbarMenuTrigger"
+
+  const ToolbarDivider = () => <span className="mx-1 hidden h-8 w-px bg-border sm:block" />
   const ToolbarSpacer = () => <span className="flex-1" />
 
   const compact = mode === "compact" || mode === "homework"
+
+  const textStyle = editor.isActive("heading", { level: 1 })
+    ? "heading-1"
+    : editor.isActive("heading", { level: 2 })
+      ? "heading-2"
+      : editor.isActive("heading", { level: 3 })
+        ? "heading-3"
+        : "paragraph"
+
+  const textStyleLabel = ({
+    paragraph: "Paragraph",
+    "heading-1": "H1",
+    "heading-2": "H2",
+    "heading-3": "H3",
+  } as Record<string, string>)[textStyle] ?? "Paragraph"
+
+  const alignmentValue = editor.isActive({ textAlign: "center" })
+    ? "center"
+    : editor.isActive({ textAlign: "right" })
+      ? "right"
+      : "left"
+
+  const blockItemClass = (active: boolean) =>
+    cn("cursor-pointer", active && "bg-accent text-accent-foreground")
 
   const LinkPreviewCard = ({ href }: { href: string }) => {
     const display = href.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")
@@ -237,31 +307,53 @@ export function RichTextEditor({
   }
 
   return (
-    <div className={cn("rounded-2xl border bg-card shadow-sm dark:border-border/60", className)}>
-      <div className="flex flex-wrap items-center gap-1 border-b bg-muted/40 px-2 py-2">
-        {!compact ? (
-          <>
-            <ToolbarButton
-              icon={Heading1}
-              label="Heading 1"
-              onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-              isActive={editor.isActive("heading", { level: 1 })}
-            />
-            <ToolbarButton
-              icon={Heading2}
-              label="Heading 2"
-              onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-              isActive={editor.isActive("heading", { level: 2 })}
-            />
-            <ToolbarButton
-              icon={Heading3}
-              label="Heading 3"
-              onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-              isActive={editor.isActive("heading", { level: 3 })}
-            />
-            <ToolbarDivider />
-          </>
-        ) : null}
+    <div
+      className={cn(
+        "w-full min-w-full max-w-full rounded-2xl border bg-card shadow-sm dark:border-border/60 overflow-hidden",
+        className
+      )}
+    >
+      <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/40 px-2 py-2 sm:gap-1">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <ToolbarMenuTrigger icon={TypeIcon} label="Text style" valueLabel={textStyleLabel} />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-44">
+            <DropdownMenuRadioGroup
+              value={textStyle}
+              onValueChange={(value) => {
+                if (!value) return
+                if (value === "paragraph") {
+                  editor.chain().focus().setParagraph().run()
+                  return
+                }
+                const level = Number(value.split("-")[1])
+                if ([1, 2, 3].includes(level)) {
+                  editor.chain().focus().setHeading({ level }).run()
+                }
+              }}
+            >
+              <DropdownMenuRadioItem value="paragraph">
+                <Pilcrow className="h-4 w-4" />
+                Paragraph
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="heading-1">
+                <Heading1 className="h-4 w-4" />
+                Heading 1
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="heading-2">
+                <Heading2 className="h-4 w-4" />
+                Heading 2
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="heading-3">
+                <Heading3 className="h-4 w-4" />
+                Heading 3
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <ToolbarDivider />
         <ToolbarButton
           icon={BoldIcon}
           label="Bold"
@@ -280,83 +372,83 @@ export function RichTextEditor({
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           isActive={editor.isActive("underline")}
         />
-        <ToolbarButton
-          icon={StrikethroughIcon}
-          label="Strikethrough"
-          onClick={() => editor.chain().focus().toggleStrike().run()}
-          isActive={editor.isActive("strike")}
-        />
-        {!compact ? (
-          <>
-            <ToolbarDivider />
-            <ToolbarButton
-              icon={AlignLeft}
-              label="Align left"
-              onClick={() => editor.chain().focus().setTextAlign("left").run()}
-              isActive={editor.isActive({ textAlign: "left" })}
-            />
-            <ToolbarButton
-              icon={AlignCenter}
-              label="Align center"
-              onClick={() => editor.chain().focus().setTextAlign("center").run()}
-              isActive={editor.isActive({ textAlign: "center" })}
-            />
-            <ToolbarButton
-              icon={AlignRight}
-              label="Align right"
-              onClick={() => editor.chain().focus().setTextAlign("right").run()}
-              isActive={editor.isActive({ textAlign: "right" })}
-            />
-          </>
-        ) : null}
+
         <ToolbarDivider />
-        <ToolbarButton
-          icon={ListIcon}
-          label="Bulleted list"
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          isActive={editor.isActive("bulletList")}
-        />
-        <ToolbarButton
-          icon={ListOrdered}
-          label="Numbered list"
-          onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          isActive={editor.isActive("orderedList")}
-        />
-        <ToolbarButton
-          icon={Quote}
-          label="Block quote"
-          onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          isActive={editor.isActive("blockquote")}
-        />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <ToolbarMenuTrigger icon={ListIcon} label="Blocks" valueLabel="Blocks" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuItem
+              onSelect={() => editor.chain().focus().toggleBulletList().run()}
+              className={blockItemClass(editor.isActive("bulletList"))}
+            >
+              <ListIcon className="h-4 w-4" />
+              Bulleted list
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => editor.chain().focus().toggleOrderedList().run()}
+              className={blockItemClass(editor.isActive("orderedList"))}
+            >
+              <ListOrdered className="h-4 w-4" />
+              Numbered list
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => editor.chain().focus().toggleBlockquote().run()}
+              className={blockItemClass(editor.isActive("blockquote"))}
+            >
+              <Quote className="h-4 w-4" />
+              Block quote
+            </DropdownMenuItem>
+            {!compact ? (
+              <>
+                <DropdownMenuItem onSelect={() => editor.chain().focus().setHorizontalRule().run()} className="cursor-pointer">
+                  <Minus className="h-4 w-4" />
+                  Horizontal rule
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => editor.chain().focus().setHardBreak().run()} className="cursor-pointer">
+                  <CornerDownLeft className="h-4 w-4" />
+                  Line break
+                </DropdownMenuItem>
+              </>
+            ) : null}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {!compact ? (
           <>
-            <ToolbarButton
-              icon={CodeIcon}
-              label="Code block"
-              onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-              isActive={editor.isActive("codeBlock")}
-            />
-            <ToolbarDivider />
-            <ToolbarButton
-              icon={Minus}
-              label="Horizontal rule"
-              onClick={() => editor.chain().focus().setHorizontalRule().run()}
-            />
-            <ToolbarButton
-              icon={Pilcrow}
-              label="Insert line break"
-              onClick={() => editor.chain().focus().setHardBreak().run()}
-            />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <ToolbarMenuTrigger icon={AlignLeft} label="Align" valueLabel="Align" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-40">
+                <DropdownMenuRadioGroup
+                  value={alignmentValue}
+                  onValueChange={(value) => {
+                    if (!value) return
+                    editor.chain().focus().setTextAlign(value as "left" | "center" | "right").run()
+                  }}
+                >
+                  <DropdownMenuRadioItem value="left">
+                    <AlignLeft className="h-4 w-4" />
+                    Align left
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="center">
+                    <AlignCenter className="h-4 w-4" />
+                    Align center
+                  </DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="right">
+                    <AlignRight className="h-4 w-4" />
+                    Align right
+                  </DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <ToolbarDivider />
           </>
-        ) : null}
-        <ToolbarButton icon={LinkIcon} label="Add link" onClick={addLink} />
-        <ToolbarButton
-          icon={Link2Off}
-          label="Remove link"
-          onClick={() => editor.chain().focus().unsetLink().run()}
-          disabled={!editor.isActive("link")}
-        />
+        ) : (
+          <ToolbarDivider />
+        )}
         <ToolbarSpacer />
         <ToolbarButton
           icon={Undo2}

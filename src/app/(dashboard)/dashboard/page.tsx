@@ -1,11 +1,9 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
-import Image from "next/image"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { AlertTriangle, ArrowUpRight, BookOpen, Building2, Map, Sparkles, Users, type LucideIcon } from "lucide-react"
+import { ArrowUpRight, Building2, Map, Sparkles, Users, type LucideIcon } from "lucide-react"
 
 import type { OrgPerson } from "@/app/(dashboard)/people/actions"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { AcceleratorProgressRadialCard } from "@/components/dashboard/accelerator-progress-radial-card"
@@ -18,9 +16,9 @@ import { createSupabaseServerClient, type Json } from "@/lib/supabase"
 import type { Database } from "@/lib/supabase/types"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import { isFreeTierSubscription } from "@/lib/meetings"
-import { getMapboxToken } from "@/lib/mapbox/token"
 
 export const dynamic = "force-dynamic"
+const ROADMAP_TAB_HREF = "/my-organization?tab=roadmap"
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient()
@@ -31,17 +29,40 @@ export default async function DashboardPage() {
   if (userError) throw userError
   if (!user) redirect("/login?redirect=/dashboard")
 
-  const { data: orgRow } = await supabase
-    .from("organizations")
-    .select("profile, public_slug, is_public, location_lat, location_lng")
-    .eq("user_id", user.id)
-    .maybeSingle<{
-      profile: Record<string, unknown> | null
-      public_slug: string | null
-      is_public: boolean | null
-      location_lat: number | null
-      location_lng: number | null
-    }>()
+  const [
+    { data: orgRow },
+    { count: programsCount },
+    { data: subscription },
+    nextAction,
+    acceleratorProgress,
+    reviseMeta,
+  ] = await Promise.all([
+    supabase
+      .from("organizations")
+      .select("profile, public_slug, is_public, location_lat, location_lng")
+      .eq("user_id", user.id)
+      .maybeSingle<{
+        profile: Record<string, unknown> | null
+        public_slug: string | null
+        is_public: boolean | null
+        location_lat: number | null
+        location_lng: number | null
+      }>(),
+    supabase
+      .from("programs")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", user.id),
+    supabase
+      .from("subscriptions")
+      .select("status, metadata, created_at")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ status: string | null; metadata: Json | null }>(),
+    fetchNextAction(supabase, user.id),
+    fetchAcceleratorProgress(supabase, user.id),
+    fetchReviseMeta(supabase, user.id),
+  ])
 
   const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
   const sections = resolveRoadmapSections(profile).map((section) =>
@@ -49,9 +70,8 @@ export default async function DashboardPage() {
   )
   const isOrgPublic = publicSharingEnabled ? Boolean(orgRow?.is_public) : false
   const meetingCount = typeof profile.meeting_requests === "number" ? profile.meeting_requests : 0
+  const isFreeTier = isFreeTierSubscription(subscription ?? null)
 
-  const nextAction = await fetchNextAction(supabase, user.id)
-  const publishedCount = sections.filter((s) => s.content.trim().length > 0 && s.isPublic).length
   const firstEmpty = sections.find((s) => !s.content.trim())
 
   const peopleRaw = Array.isArray(profile.org_people) ? profile.org_people : []
@@ -69,55 +89,7 @@ export default async function DashboardPage() {
     { staff: 0, board: 0, supporters: 0 },
   )
 
-  const { count: programsCount } = await supabase
-    .from("programs")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
-
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("status, metadata, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ status: string | null; metadata: Json | null }>()
-  const isFreeTier = isFreeTierSubscription(subscription ?? null)
-
-  const acceleratorProgress = await fetchAcceleratorProgress(supabase, user.id)
-
-  const reviseMeta = await fetchReviseMeta(supabase, user.id)
-
-  const orgName = typeof profile.name === "string" && profile.name.trim().length > 0 ? profile.name.trim() : "Your organization"
-  const orgTagline = typeof profile.tagline === "string" && profile.tagline.trim().length > 0 ? profile.tagline.trim() : null
-
   const hasAddressPin = orgRow?.location_lat != null && orgRow?.location_lng != null
-  const mapToken = getMapboxToken()
-  const mapEnabled = Boolean(mapToken)
-
-  const mapCenter: [number, number] = hasAddressPin
-    ? [orgRow?.location_lng ?? 0, orgRow?.location_lat ?? 20]
-    : [0, 20]
-
-  const lightMapUrl = mapEnabled
-    ? buildMapboxStaticUrl({
-        token: mapToken,
-        styleId: "light-v11",
-        center: mapCenter,
-        zoom: hasAddressPin ? 10 : 1.2,
-        width: 1280,
-        height: 720,
-      })
-    : null
-  const darkMapUrl = mapEnabled
-    ? buildMapboxStaticUrl({
-        token: mapToken,
-        styleId: "dark-v11",
-        center: mapCenter,
-        zoom: hasAddressPin ? 10 : 1.2,
-        width: 1280,
-        height: 720,
-      })
-    : null
 
   const today = new Date()
   const calendarEvents = [
@@ -125,7 +97,7 @@ export default async function DashboardPage() {
       ? {
           date: today.toISOString(),
           label: `Draft: ${firstEmpty.title}`,
-          href: "/strategic-roadmap",
+          href: ROADMAP_TAB_HREF,
           type: "roadmap" as const,
         }
       : null,
@@ -170,127 +142,10 @@ export default async function DashboardPage() {
         />
       </div>
 
-      <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
-        <Card className="relative overflow-hidden border-border/70 bg-card/70">
-          <div className="pointer-events-none absolute inset-0">
-            {mapEnabled ? (
-              <>
-                {lightMapUrl ? (
-                  <Image
-                    alt=""
-                    src={lightMapUrl}
-                    fill
-                    priority={false}
-                    className="object-cover opacity-40 dark:hidden"
-                    sizes="(max-width: 1024px) 100vw, 1400px"
-                  />
-                ) : null}
-                {darkMapUrl ? (
-                  <Image
-                    alt=""
-                    src={darkMapUrl}
-                    fill
-                    priority={false}
-                    className="hidden object-cover opacity-35 dark:block"
-                    sizes="(max-width: 1024px) 100vw, 1400px"
-                  />
-                ) : null}
-              </>
-            ) : (
-              <div className="absolute inset-0 bg-dot-grid opacity-40 dark:opacity-30" />
-            )}
-
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,hsl(var(--background)/0.55),transparent_60%)]" />
-            <div className="absolute inset-0 bg-gradient-to-tr from-background/90 via-background/35 to-background/90" />
-          </div>
-
-          <CardHeader className="relative pb-4">
-            <div className="space-y-1">
-              <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{orgName}</h1>
-              {orgTagline ? <p className="text-sm text-muted-foreground">{orgTagline}</p> : null}
-            </div>
-          </CardHeader>
-
-          <CardContent className="relative space-y-4">
-            <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/70 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="min-w-0 space-y-1">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Focus</p>
-                {nextAction ? (
-                  <>
-                    <p className="truncate text-sm font-medium text-foreground">
-                      {nextAction.classTitle} · Module {nextAction.moduleIdx}: {nextAction.moduleTitle}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Continue your accelerator path — the sidebar stays in sync.</p>
-                  </>
-                ) : (
-                  <>
-                    <p className="text-sm font-medium text-foreground">All caught up</p>
-                    <p className="text-xs text-muted-foreground">Polish your roadmap or publish your profile to the map.</p>
-                  </>
-                )}
-              </div>
-
-              {nextAction ? (
-                <Button asChild size="sm">
-                  <Link prefetch href={`/class/${nextAction.classSlug}/module/${nextAction.moduleIdx}`}>
-                    <Sparkles className="h-4 w-4" />
-                    Resume
-                  </Link>
-                </Button>
-              ) : (
-                <Button asChild size="sm" variant="outline">
-                  <Link prefetch href="/strategic-roadmap">
-                    <BookOpen className="h-4 w-4" />
-                    Strategic roadmap
-                  </Link>
-                </Button>
-              )}
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-2">
-              <Metric
-                label="Roadmap"
-                value={`${publishedCount}/${sections.length}`}
-                meta={publishedCount > 0 ? "Published sections" : "Publish your first section"}
-              />
-              <Metric
-                label="Programs"
-                value={String(programsCount ?? 0)}
-                meta={(programsCount ?? 0) > 0 ? "Active catalog" : "Add your first program"}
-              />
-            </div>
-          </CardContent>
-
-          <CardFooter className="relative flex flex-wrap items-center justify-between gap-2 border-t border-border/60 !py-2">
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              {reviseMeta.count > 0 ? (
-                <>
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  <span className="font-medium text-foreground">Review requested</span>
-                  <span>{reviseMeta.count} submission{reviseMeta.count === 1 ? "" : "s"} need revision.</span>
-                </>
-              ) : (
-                <>
-                  <span className="font-medium text-foreground">All clear.</span>
-                  <span>Keep shipping — your roadmap becomes your story.</span>
-                </>
-              )}
-            </div>
-
-            <Button asChild size="sm" variant="ghost">
-              <Link prefetch href="/strategic-roadmap">
-                Roadmap
-                <ArrowUpRight className="h-4 w-4" />
-              </Link>
-            </Button>
-          </CardFooter>
-        </Card>
-
-        <div className="min-w-0 space-y-4 lg:justify-self-end lg:self-start">
-          <DashboardCalendarCard events={calendarEvents} />
-          <DashboardCheckInCard userId={user.id} meetingCount={meetingCount} isFreeTier={isFreeTier} />
-          <DashboardNotificationsCard items={notifications} />
-        </div>
+      <div className="min-w-0 space-y-4">
+        <DashboardCalendarCard events={calendarEvents} />
+        <DashboardCheckInCard userId={user.id} meetingCount={meetingCount} isFreeTier={isFreeTier} />
+        <DashboardNotificationsCard items={notifications} />
       </div>
 
       <div className="grid min-w-0 gap-4 lg:grid-cols-2">
@@ -395,7 +250,7 @@ function buildDashboardNotifications(input: {
       id: "roadmap",
       title: `Draft roadmap: ${input.firstEmptyRoadmapTitle}`,
       description: "Turn your work into a narrative stakeholders can scan in minutes.",
-      href: "/strategic-roadmap",
+      href: ROADMAP_TAB_HREF,
     })
   }
 
@@ -538,52 +393,6 @@ function QuickActionCard({
       <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" aria-hidden />
     </Link>
   )
-}
-
-function Metric({
-  label,
-  value,
-  meta,
-  tone = "neutral",
-}: {
-  label: string
-  value: string
-  meta: string
-  tone?: "neutral" | "ok" | "warn"
-}) {
-  const badgeVariant = tone === "ok" ? "secondary" : tone === "warn" ? "outline" : "outline"
-  const badgeClassName = tone === "warn" ? "border-amber-500/40 text-amber-600 dark:text-amber-400" : undefined
-
-  return (
-    <div className="rounded-xl border border-border/60 bg-background/70 px-3 py-3">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
-        <Badge variant={badgeVariant} className={badgeClassName}>
-          {value}
-        </Badge>
-      </div>
-      <p className="mt-2 text-xs text-muted-foreground">{meta}</p>
-    </div>
-  )
-}
-
-function buildMapboxStaticUrl(input: {
-  token: string
-  styleId: string
-  center: [number, number]
-  zoom: number
-  width: number
-  height: number
-}) {
-  const token = input.token.trim()
-  if (!token) return null
-  const [lng, lat] = input.center
-  const zoom = Number.isFinite(input.zoom) ? input.zoom : 1
-  const width = Math.max(1, Math.round(input.width))
-  const height = Math.max(1, Math.round(input.height))
-  const styleId = input.styleId.trim()
-
-  return `https://api.mapbox.com/styles/v1/mapbox/${encodeURIComponent(styleId)}/static/${lng},${lat},${zoom}/${width}x${height}?access_token=${encodeURIComponent(token)}`
 }
 
 function getMarketplacePicks(): Array<{ id: string; name: string; description: string; url: string }> {

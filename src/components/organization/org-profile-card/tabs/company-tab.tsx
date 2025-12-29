@@ -66,10 +66,6 @@ export function CompanyTab({ company, errors, editMode, onInputChange, onUpdate,
     ],
   )
 
-  const hasBrandKit = useMemo(
-    () => [company.logoUrl, company.boilerplate].some((value) => typeof value === "string" && value.trim().length > 0),
-    [company.logoUrl, company.boilerplate],
-  )
 
   if (editMode) {
     const editProps: CompanyEditProps = {
@@ -89,7 +85,6 @@ export function CompanyTab({ company, errors, editMode, onInputChange, onUpdate,
     company,
     addressLines,
     hasAnyBrandLink,
-    hasBrandKit,
   }
 
   return <ViewModeSections {...viewProps} />

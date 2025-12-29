@@ -46,6 +46,7 @@ export default async function ModulePage({
     classSlug: slug,
     userId: user.id,
     forceAdmin: isAdmin,
+    supabase,
   })
 
   if (classContext.modules.length === 0) {

@@ -126,7 +126,7 @@ export function RoadmapSectionEditor({ section, publicSlug, index }: RoadmapSect
         toast.success("Share settings saved")
       })
     },
-    [draft, isSectionPublic, savedValue, section.id],
+    [draft, isSectionPublic, savedValue, section.id, section.subtitle, section.title],
   )
 
   const handleReset = () => {

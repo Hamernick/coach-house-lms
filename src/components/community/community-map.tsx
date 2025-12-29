@@ -7,6 +7,7 @@ import "mapbox-gl/dist/mapbox-gl.css"
 import type { CommunityOrganization } from "@/lib/queries/community"
 
 const MAP_STYLE = "mapbox://styles/mapbox/satellite-v9"
+type MapboxApi = typeof import("mapbox-gl")["default"]
 
 export function CommunityMap({
   organizations,
@@ -18,7 +19,7 @@ export function CommunityMap({
   const [mapError, setMapError] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
-  const mapboxRef = useRef<typeof mapboxgl | null>(null)
+  const mapboxRef = useRef<MapboxApi | null>(null)
   const markersRef = useRef<mapboxgl.Marker[]>([])
   const token = (mapboxToken ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "").trim()
   const tokenAvailable = Boolean(token)
@@ -33,7 +34,7 @@ export function CommunityMap({
     async function initMap() {
       try {
         const mapboxModule = await import("mapbox-gl")
-        const mapboxgl = (mapboxModule.default ?? mapboxModule) as mapboxgl
+        const mapboxgl = (mapboxModule.default ?? mapboxModule) as MapboxApi
         if (!mapboxgl?.Map) {
           throw new Error("Mapbox failed to initialize.")
         }

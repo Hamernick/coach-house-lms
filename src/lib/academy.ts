@@ -149,6 +149,8 @@ export async function fetchSidebarTree({
 
   const unique = uniqueBase
     .filter((klass) => !/^session\s+\d+\s*[–-]\s*/i.test(klass.title))
+    .filter((klass) => !/^session\s+[a-z]\d+\s*[–-]\s*/i.test(klass.title))
+    .filter((klass) => !/^session-e\d+/i.test(klass.slug))
     .filter((klass) => (forceAdmin ? klass.modules.length > 0 : true))
 
   unique.sort((a, b) => {

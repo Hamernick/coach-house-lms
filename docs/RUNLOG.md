@@ -434,3 +434,249 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 
 - Mapbox: added a server-only token helper with MAPBOX_TOKEN fallback, passed the token into the community map, and reused it for dashboard/static maps + geocoding (`src/lib/mapbox/token.ts`, `src/app/community/page.tsx`, `src/components/community/community-map.tsx`, `src/app/(dashboard)/dashboard/page.tsx`, `src/lib/mapbox/geocode.ts`).
 - What didn’t: tests not run.
+
+## 2025-12-22 — Codex session (Pricing refresh)
+
+- Pricing: rewrote the pricing page copy for OpenNFP, added Free/Paid/Enterprise feature lists with dedicated CTAs, and introduced Public/Marketplace highlights (`src/app/(public)/pricing/page.tsx`, `src/lib/pricing.ts`).
+- What didn’t: tests not run.
+
+## 2025-12-22 — Codex session (Pricing layout polish)
+
+- Pricing: tightened the plan cards (footer-anchored CTAs), removed redundant “Free” labeling, set Paid to $99/month, and removed sales CTA from the Paid tier while keeping Enterprise contact (`src/app/(public)/pricing/page.tsx`, `src/lib/pricing.ts`).
+- What didn’t: tests not run.
+
+## 2025-12-22 — Codex session (Public header reuse)
+
+- Public nav: extracted the landing header into a reusable component and added it to the pricing page (`src/components/public/public-header.tsx`, `src/app/(public)/page.tsx`, `src/app/(public)/pricing/page.tsx`).
+- What didn’t: tests not run.
+
+## 2025-12-22 — Codex session (Pricing tier hierarchy)
+
+- Pricing: updated Free copy to “Brand kit” and clarified tier inheritance (Paid includes Free, Enterprise includes Paid) (`src/app/(public)/pricing/page.tsx`, `src/lib/pricing.ts`).
+- What didn’t: tests not run.
+
+## 2025-12-22 — Codex session (Enable public sharing locally)
+
+- Config: enabled public sharing for local prototyping via `NEXT_PUBLIC_PUBLIC_SHARING_ENABLED=true` in `.env.local`.
+- What didn’t: tests not run.
+
+## 2025-12-22 — Codex session (Accelerator videos sync)
+
+- Content: created new session classes/modules (S5–S9, E1–E3) from the `accelerator-videos` bucket and attached video URLs across all modules; cleaned duplicate E2/E3 files and reindexed modules to keep sequential navigation.
+- What didn’t: tests not run; class titles/descriptions may need refinement after review.
+
+## 2025-12-22 — Codex session (Session S7 module 4)
+
+- Content: added Session S7 module 4 “Donor Journey” from the updated `accelerator-videos` bucket and reindexed Session S7 modules to keep the sequence ordered.
+
+## 2025-12-22 — Codex session (Sidebar class labels)
+
+- UI: shortened sidebar class labels by stripping the “Session X —” prefix for accelerator sessions (`src/components/app-sidebar/classes-section.tsx`).
+
+## 2025-12-22 — Codex session (Inline module video playback)
+
+- Module video: removed the placeholder YouTube fallback and added inline HTML5 playback for direct MP4/MOV/WebM links (`src/components/training/module-detail.tsx`, `src/components/training/module-detail/video-section.tsx`, `src/components/training/module-detail/utils.ts`).
+
+## 2025-12-22 — Codex session (Curriculum CSV sync)
+
+- Content: synced sessions/modules from the S1–S9 CSV (titles + descriptions), attached accelerator video URLs by session/module number, and unpublished non‑CSV E‑sessions to avoid duplication. Modules without matching videos now show no player.
+
+## 2025-12-22 — Codex session (Hide E sessions from sidebar)
+
+- Sidebar: filtered out E-session classes from the sidebar tree so “Session E1/E2/E3” no longer render in nav (`src/lib/academy.ts`).
+
+## 2025-12-22 — Codex session (Curriculum sync + electives consolidation)
+
+- Content: re-synced S1–S9 modules from `docs/lessons-modules-list.csv` (titles/descriptions + indices), refreshed video URLs, consolidated E1–E3 videos into a single Electives class, and added missing electives (“Retention and Security”, “Filing 1023”).
+- What didn’t: tests not run.
+
+## 2025-12-28 — Codex session (Slide deck sync)
+
+- Content: attached accelerator slide decks from the `accelerator-slide-decks` bucket to S1–S9 modules (deck_path updates) and flagged the unmatched “S08 M2 Asynch Audiences” deck for follow-up.
+- UI: deck viewer now loads module-specific decks via signed URLs and removes the static placeholder PDF (`src/components/training/module-detail/deck-viewer.tsx`, `src/components/training/module-detail.tsx`, `src/lib/storage/decks.ts`).
+- What didn’t: tests not run.
+
+## 2025-12-28 — Codex session (Sidebar module list height)
+
+- UI: increased the open sub-list max height in the sidebar so longer lesson module lists no longer clip (`src/components/app-sidebar/classes-section.tsx`).
+
+## 2025-12-28 — Codex session (S9 deck update)
+
+- Content: attached the Session 9 module 6 deck (`S09 _ M6 Asynch - Agendas, Minutes, Resolutions.pdf`) to the “Agendas, Minutes, Resolutions” module.
+
+## 2025-12-28 — Codex session (Lesson icons + S7 deck)
+
+- UI: mapped lesson sidebar icons to unique, relevant glyphs for each session (`src/components/app-sidebar/classes-section.tsx`).
+- Content: attached the Session 7 module 8 deck (`S07 M8 Asynch Corporate Giving.pdf`) to the “Corporate Giving” module.
+
+## 2025-12-28 — Codex session (Elective duplicates cleanup)
+
+- Content: removed the unpublished Session E1/E2/E3 classes after consolidating their modules into the single Electives lesson.
+
+## 2025-12-28 — Codex session (Theory of Change homework tabs)
+
+- UI: added an inline If/Then/So tab layout for assignment editors and repositioned Assist to sit beside the tabs (`src/components/training/module-detail/assignment-form.tsx`).
+- Content: created structured module assignments for Theory of Change module 1 to remove the “Assignment not found” error and replace legacy homework.
+
+## 2025-12-28 — Codex session (Selectable homework labels)
+
+- UI: made homework prompt labels selectable so learners can copy question text above editors (`src/components/training/module-detail/assignment-form.tsx`).
+
+## 2025-12-28 — Codex session (If/Then/So tabs styling)
+
+- UI: restored the progress card for If/Then/So homework and updated the inline tabs to use the module-stepper style badges with an underline rail (`src/components/training/module-detail/assignment-form.tsx`).
+
+## 2025-12-28 — Codex session (S7 video updates)
+
+- Content: attached Session 7 module 2 and 3 videos (`S 07 M2 Segmentation.mp4`, `S 07 M3 Treasure Mapping.mp4`) to their modules.
+
+## 2025-12-28 — Codex session (S7 M7 video fix)
+
+- Content: attached the Session 7 module 7 video (`S 07 M7 Tools & Systems.mov`) to the “Tools & Systems” module.
+
+## 2025-12-28 — Codex session (S9 video updates)
+
+- Content: attached Session 9 module 4 and 6 videos (`S09 M4 Board Policy 4.mov`, `S09 M6 Agendas, Mins, Resolutions.mov`) to their modules.
+
+## 2025-12-28 — Codex session (Electives naming)
+
+- Content: renamed electives modules to “Naming your NFP”, “NFP Registration”, and “Due Diligence”.
+
+## 2025-12-28 — Codex session (Tiptap rounded corners)
+
+- UI: clipped tiptap toolbar/footer backgrounds to the editor container radius to avoid sharp corners (`src/components/rich-text-editor.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap editor wrapper removal)
+
+- UI: removed the extra bordered wrapper around the roadmap tiptap editor so the editor’s own container defines the card (`src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-28 — Codex session (Strategic roadmap layout cleanup)
+
+- UI: simplified strategic roadmap header copy and layout, aligning actions to the right and reducing vertical chrome (`src/app/(dashboard)/strategic-roadmap/page.tsx`).
+- UI: removed redundant sharing helper text in the editor footer to keep actions tighter (`src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap header tweak)
+
+- UI: moved roadmap actions under the header copy and removed the link icon from the visibility toggle (`src/app/(dashboard)/strategic-roadmap/page.tsx`, `src/components/roadmap/roadmap-visibility-toggle.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap share drawer cleanup)
+
+- UI: simplified share settings drawer layout, tightened preview, and added a copyable public link field (`src/components/roadmap/roadmap-share-drawer.tsx`).
+
+## 2025-12-28 — Codex session (Tiptap toolbar condense + resize)
+
+- UI: made tiptap editor content resizable via drag handle and condensed toolbar controls into dropdown menus (`src/components/rich-text-editor.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap reset removal)
+
+- UI: removed the reset button from the roadmap editor action row (`src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-28 — Codex session (Toolbar + hydration fixes)
+
+- UI: removed manual link buttons from the tiptap toolbar and made dropdown triggers ref-safe for Radix menus (`src/components/rich-text-editor.tsx`).
+- UI: avoided hydration mismatches in roadmap timestamps by moving relative-time rendering to the client (`src/components/roadmap/roadmap-editor.tsx`).
+- UI: deferred notifications popover rendering until mount to prevent Radix id hydration mismatches (`src/components/notifications/notifications-menu.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap sections mobile select)
+
+- UI: moved section status dot to the top-right of each item and added a mobile-only section dropdown selector (`src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap public toggle + drawer padding)
+
+- UI: moved the roadmap public toggle to the header with a single page-level switch and removed per-section visibility controls (`src/components/roadmap/roadmap-shell.tsx`, `src/components/roadmap/roadmap-editor.tsx`, `src/components/roadmap/roadmap-visibility-toggle.tsx`).
+- UI: removed the roadmap docx download entry point and moved header rendering into a client shell (`src/app/(dashboard)/strategic-roadmap/page.tsx`).
+- UI: added horizontal padding inside the share settings drawer and updated public gating copy (`src/components/roadmap/roadmap-share-drawer.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap public toggle consolidation)
+
+- UI: introduced a client roadmap shell to host the single public toggle and removed per-section visibility toggles (`src/components/roadmap/roadmap-shell.tsx`, `src/components/roadmap/roadmap-editor.tsx`, `src/components/roadmap/roadmap-visibility-toggle.tsx`).
+- API: removed the roadmap docx export endpoint now that the download control is gone (`src/app/api/roadmap/docx/route.ts`).
+- UI: added horizontal padding to the share settings drawer content (`src/components/roadmap/roadmap-share-drawer.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap toggle polish)
+
+- UI: added a visible label to the public roadmap link button and changed the switch checked state to green (`src/components/roadmap/roadmap-visibility-toggle.tsx`, `src/components/ui/switch.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap header alignment)
+
+- UI: constrained header copy width and right-aligned the public toggle row away from the title (`src/components/roadmap/roadmap-shell.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap header icon + sections cleanup)
+
+- UI: added a milestone-style icon next to the roadmap title block and removed section status dots in the selector (`src/components/roadmap/roadmap-shell.tsx`, `src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap action button sizing)
+
+- UI: aligned Share settings and Save section button heights by using the default size (`src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-28 — Codex session (Performance + hydration cleanup)
+
+- Perf: parallelized dashboard data fetches to reduce serial Supabase latency (`src/app/(dashboard)/dashboard/page.tsx`).
+- Perf: reused Supabase client in class/module routes and parallelized module content/assignment/submission queries (`src/lib/modules/service.ts`, `src/app/(dashboard)/class/[slug]/page.tsx`, `src/app/(dashboard)/class/[slug]/module/[index]/page.tsx`).
+- Hydration: made sidebar skeleton width deterministic on SSR and moved assignment last-saved label to client-only rendering (`src/components/ui/sidebar.tsx`, `src/components/training/module-detail/assignment-form.tsx`).
+
+## 2025-12-28 — Codex session (Performance plan doc)
+
+- Docs: added a performance and DB sync plan checklist for follow-up (`docs/PERFORMANCE-PLAN.md`).
+
+## 2025-12-28 — Codex session (Roadmap layout refinements)
+
+- UI: swapped roadmap icon to waypoints, moved it above the title, and made it a rounded square (`src/components/roadmap/roadmap-shell.tsx`).
+- UI: added a section details label, moved the public toggle into the editor area, and moved the updated timestamp below the editor (`src/components/roadmap/roadmap-editor.tsx`).
+- UI: matched the editor default height to the sections list via ResizeObserver and added a minHeight prop to the rich text editor (`src/components/roadmap/roadmap-editor.tsx`, `src/components/rich-text-editor.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap sections list layout)
+
+- UI: removed the sections list card container and tightened the sidebar width to free horizontal space (`src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap layout + timestamp polish)
+
+- UI: switched sections list to a left “ear” on large screens, uses dropdown on smaller screens, and tightened the main column to be full-width (`src/components/roadmap/roadmap-editor.tsx`).
+- UI: shortened the updated timestamp and aligned it on the same row as the action buttons (`src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap save label)
+
+- UI: shortened the roadmap save button label to "Save" (`src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap action row width)
+
+- UI: constrained the main editor column on large screens and kept the action row on one line without overflow (`src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap ear width stability)
+
+- UI: fixed the left “ear” width and clamped section titles to prevent layout shift when switching sections (`src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap updated label placement)
+
+- UI: moved the updated timestamp under the editor with a shorter "Updated X ago" label and kept action buttons on one row (`src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-28 — Codex session (Roadmap editor scrollbar stability)
+
+- UI: added stable editor scrollbars for the strategic roadmap to prevent width shifts when switching sections (`src/components/roadmap/roadmap-editor.tsx`, `src/components/rich-text-editor.tsx`).
+- UI: pinned dashboard scrollbars to avoid width changes from page-level overflow (`src/components/dashboard/dashboard-shell.tsx`).
+- UI: moved the sections picker into a responsive grid column so it stays inside the app shell at narrower widths (`src/components/roadmap/roadmap-editor.tsx`).
+- UI: removed the strikethrough tool and hid toolbar separators on mobile (`src/components/rich-text-editor.tsx`).
+- UI: tightened mobile toolbar spacing and aligned roadmap inputs/action row (`src/components/rich-text-editor.tsx`, `src/components/roadmap/roadmap-editor.tsx`).
+- UI: clamped section list item widths to keep the roadmap editor column consistent (`src/components/roadmap/roadmap-editor.tsx`).
+- UI: removed code block tooling and forced the editor to stay full width regardless of content length (`src/components/rich-text-editor.tsx`).
+- UI: moved the unsaved changes badge under the updated timestamp in the roadmap editor (`src/components/roadmap/roadmap-editor.tsx`).
+- UI: pinned roadmap editor grid/items and editor wrapper to full width to prevent content-driven resizing (`src/components/roadmap/roadmap-editor.tsx`, `src/components/rich-text-editor.tsx`).
+- UI: locked the strategic roadmap page container to full width inside the flex shell to prevent content-based shrink (`src/app/(dashboard)/strategic-roadmap/page.tsx`).
+- UI: updated the public roadmap hero gradient to the new multi-stop palette (`src/app/[org]/roadmap/page.tsx`).
+- UI: moved the Strategic Roadmap editor into the My Organization tabs and pointed all dashboard links there (`src/components/organization/org-profile-card/org-profile-card.tsx`, `src/components/organization/org-profile-card/types.ts`, `src/app/(dashboard)/my-organization/page.tsx`, `src/app/(dashboard)/dashboard/page.tsx`).
+- UI: removed the Strategic Roadmap sidebar nav entry and redirected the old route to the My Organization tab (`src/components/app-sidebar/nav-data.ts`, `src/app/(dashboard)/strategic-roadmap/page.tsx`, `src/app/(dashboard)/strategic-roadmap/actions.ts`).
+- UI: added delete support for roadmap sections and surfaced the action in the editor (`src/lib/roadmap.ts`, `src/app/(dashboard)/strategic-roadmap/actions.ts`, `src/components/roadmap/roadmap-editor.tsx`).
+- UI: removed the Reports tab and added icons to My Organization tabs (`src/components/organization/org-profile-card/org-profile-card.tsx`, `src/components/organization/org-profile-card/types.ts`, `src/app/(dashboard)/my-organization/page.tsx`).
+- UI: swapped roadmap deletion to an alert dialog and stripped HTML tags from About previews (`src/components/roadmap/roadmap-editor.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/display-sections.tsx`, `src/components/organization/org-profile-card/tabs/company-tab.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/types.ts`).
+- UI: cleaned About/Public profile text rendering and replaced values badges with plain text (`src/components/organization/org-profile-card/tabs/company-tab/display-sections.tsx`, `src/components/organization/org-profile-card/public-card.tsx`).
+- Data: added org profile HTML cleanup helpers and apply them on profile updates, assignment org_key sync, and on My Organization load (`src/lib/organization/profile-cleanup.ts`, `src/app/(dashboard)/my-organization/actions.ts`, `src/app/(dashboard)/my-organization/page.tsx`, `src/app/api/modules/[id]/assignment-submission/route.ts`).
+- Data: normalized array-backed org profile values into newline-delimited text during cleanup and org sync to keep About fields consistent (`src/lib/organization/profile-cleanup.ts`, `src/app/api/modules/[id]/assignment-submission/route.ts`).
+
+## 2025-12-29 — Codex session (Community map diagnostics)
+
+- UI: added Mapbox error handling + env fallback to surface map load failures (`src/components/community/community-map.tsx`).
+- Docs: added a working plan/to-do doc for follow-up (`docs/WORKPLAN.md`).
+
+## 2025-12-29 — Codex session (Dashboard cleanup)
+
+- UI: removed the org hero/focus card from the dashboard and simplified the layout to the remaining utility cards (`src/app/(dashboard)/dashboard/page.tsx`).

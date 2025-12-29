@@ -12,8 +12,9 @@ import { PROVIDER_ICON } from "@/components/shared/provider-icons"
 import Image from "next/image"
 
 import type { OrgProfile, OrgProgram } from "./types"
-import { buildAddressLines, dateRangeChip, locationSummary, normalizeToList } from "./utils"
-import { AddressDisplay, BrandLink, FieldText, FormRow, ProfileField, TagList } from "./shared"
+import { buildAddressLines, dateRangeChip, locationSummary } from "./utils"
+import { AddressDisplay, BrandLink, FieldText, FormRow, ProfileField } from "./shared"
+import { stripHtml } from "@/lib/markdown/convert"
 
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
 
@@ -90,7 +91,11 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
   const hasPeople = staff.length > 0 || board.length > 0
   const hasSupporters = supporters.length > 0
 
-  const valuesList = normalizeToList(profile.values)
+  const description = typeof profile.description === "string" ? stripHtml(profile.description) : ""
+  const mission = typeof profile.mission === "string" ? stripHtml(profile.mission) : ""
+  const vision = typeof profile.vision === "string" ? stripHtml(profile.vision) : ""
+  const values = typeof profile.values === "string" ? stripHtml(profile.values) : ""
+  const boilerplate = typeof profile.boilerplate === "string" ? stripHtml(profile.boilerplate) : ""
 
   return (
     <Card className="w-full overflow-hidden bg-card/70 py-0 pb-10 shadow-xl shadow-black/10">
@@ -176,23 +181,23 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
 
         <FormRow title="About" description="Mission, vision, and values">
           <div className="space-y-4 text-sm">
-            {hasValue(profile.description) ? <FieldText text={profile.description} multiline /> : null}
-            {hasValue(profile.mission) ? (
+            {description.trim().length > 0 ? <FieldText text={description} multiline /> : null}
+            {mission.trim().length > 0 ? (
               <div className="space-y-1">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Mission</p>
-                <FieldText text={profile.mission} multiline />
+                <FieldText text={mission} multiline />
               </div>
             ) : null}
-            {hasValue(profile.vision) ? (
+            {vision.trim().length > 0 ? (
               <div className="space-y-1">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Vision</p>
-                <FieldText text={profile.vision} multiline />
+                <FieldText text={vision} multiline />
               </div>
             ) : null}
-            {valuesList.length > 0 ? (
+            {values.trim().length > 0 ? (
               <div className="space-y-1">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Values</p>
-                <TagList value={profile.values} />
+                <FieldText text={values} multiline />
               </div>
             ) : null}
           </div>
@@ -280,7 +285,7 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
             <FormRow title="Board" description="Governance & advisors">
               <PeopleShowcase people={board} allPeople={people} emptyMessage="" variant="public" />
             </FormRow>
-            {(hasSupporters || hasValue(profile.boilerplate)) ? <Separator /> : null}
+            {hasSupporters || boilerplate.trim().length > 0 ? <Separator /> : null}
           </>
         ) : null}
 
@@ -289,13 +294,13 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
             <FormRow title="Supporters" description="Partners and champions">
               <SupportersShowcase supporters={supporters} allPeople={people} emptyMessage="" variant="public" />
             </FormRow>
-            {hasValue(profile.boilerplate) ? <Separator /> : null}
+            {boilerplate.trim().length > 0 ? <Separator /> : null}
           </>
         ) : null}
 
-        {hasValue(profile.boilerplate) ? (
+        {boilerplate.trim().length > 0 ? (
           <FormRow title="Boilerplate" description="Shareable summary">
-            <FieldText text={profile.boilerplate} multiline />
+            <FieldText text={boilerplate} multiline />
           </FormRow>
         ) : null}
       </CardContent>

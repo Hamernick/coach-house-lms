@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation"
 
+import type { SupabaseClient } from "@supabase/supabase-js"
+
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
@@ -43,12 +45,14 @@ export async function getClassModulesForUser({
   classSlug,
   userId,
   forceAdmin = false,
+  supabase: supabaseOverride,
 }: {
   classSlug: string
   userId: string
   forceAdmin?: boolean
+  supabase?: SupabaseClient<Database, "public">
 }): Promise<ClassModuleResult> {
-  const supabase = await createSupabaseServerClient()
+  const supabase = supabaseOverride ?? await createSupabaseServerClient()
   const elevated = forceAdmin ? createSupabaseAdminClient() : null
   const primary = elevated ?? supabase
 
@@ -153,109 +157,106 @@ export async function getClassModulesForUser({
     string,
     { videoUrl: string | null; resources: ModuleResource[]; legacyHomework: ReturnType<typeof parseLegacyHomework> }
   >()
+  const assignmentByModuleId = new Map<string, ModuleAssignment>()
+  const submissionByModuleId = new Map<string, ModuleAssignmentSubmission>()
 
-  {
-    const { data: contentRows, error: contentError } = await primary
+  const [contentResult, assignmentResult, submissionResult] = await Promise.all([
+    primary
       .from("module_content" satisfies keyof Database["public"]["Tables"])
       .select("module_id, video_url, resources, homework")
       .in("module_id", moduleIds)
-      .returns<Array<{ module_id: string; video_url: string | null; resources: unknown; homework: unknown }>>()
-
-    if (contentError) {
-      const code = (contentError as { code?: string }).code
-      if (code !== "42P01" && code !== "42703") {
-        throw contentError
-      }
-    } else {
-      for (const row of contentRows ?? []) {
-        if (!row?.module_id) continue
-        const rawResources = Array.isArray(row.resources)
-          ? (row.resources as Array<Record<string, unknown>>)
-          : []
-        const resources: ModuleResource[] = rawResources
-          .map((resource) => {
-            if (!resource || typeof resource !== "object") return null
-            const r = resource as { label?: unknown; url?: unknown }
-            const labelRaw = typeof r.label === "string" ? r.label : ""
-            const urlRaw = typeof r.url === "string" ? r.url : ""
-            const label = labelRaw.trim().length > 0 ? labelRaw.trim() : urlRaw.trim()
-            const url = urlRaw.trim()
-            if (!label && !url) return null
-            return {
-              label: label || url,
-              url,
-              provider: inferResourceProvider(url),
-            }
-          })
-          .filter((value): value is ModuleResource => Boolean(value))
-
-        const legacyHomework = parseLegacyHomework(row.homework)
-
-        contentByModuleId.set(row.module_id, {
-          videoUrl: row.video_url ?? null,
-          resources,
-          legacyHomework,
-        })
-      }
-    }
-  }
-
-  const assignmentByModuleId = new Map<string, ModuleAssignment>()
-  {
-    const { data: assignmentRows, error: assignmentError } = await primary
+      .returns<Array<{ module_id: string; video_url: string | null; resources: unknown; homework: unknown }>>(),
+    primary
       .from("module_assignments" satisfies keyof Database["public"]["Tables"])
       .select("module_id, schema, complete_on_submit")
       .in("module_id", moduleIds)
-      .returns<Array<{ module_id: string; schema: unknown; complete_on_submit: boolean | null }>>()
-
-    if (assignmentError) {
-      const code = (assignmentError as { code?: string }).code
-      if (code !== "42P01" && code !== "42703") {
-        throw assignmentError
-      }
-    } else {
-      for (const row of assignmentRows ?? []) {
-        if (!row?.module_id) continue
-        const fields = parseAssignmentFields(row.schema)
-        if (fields.length === 0) continue
-        assignmentByModuleId.set(row.module_id, {
-          fields,
-          completeOnSubmit: Boolean(row.complete_on_submit),
-        })
-      }
-    }
-  }
-
-  const submissionByModuleId = new Map<string, ModuleAssignmentSubmission>()
-  {
-    const { data: submissionRows, error: submissionError } = await supabase
+      .returns<Array<{ module_id: string; schema: unknown; complete_on_submit: boolean | null }>>(),
+    supabase
       .from("assignment_submissions" satisfies keyof Database["public"]["Tables"])
       .select("module_id, answers, status, updated_at")
       .eq("user_id", userId)
       .in("module_id", moduleIds)
-      .returns<Array<{ module_id: string; answers: unknown; status: string | null; updated_at: string | null }>>()
+      .returns<Array<{ module_id: string; answers: unknown; status: string | null; updated_at: string | null }>>(),
+  ])
 
-    if (submissionError) {
-      const code = (submissionError as { code?: string }).code
-      if (code !== "42P01" && code !== "42703") {
-        throw submissionError
-      }
-    } else {
-      for (const row of submissionRows ?? []) {
-        if (!row?.module_id) continue
-        const answers =
-          row.answers && typeof row.answers === "object" && !Array.isArray(row.answers)
-            ? (row.answers as Record<string, unknown>)
-            : {}
-        const rawStatus = typeof row.status === "string" ? row.status : "submitted"
-        const status: ModuleAssignmentSubmission["status"] =
-          rawStatus === "accepted" || rawStatus === "revise" ? rawStatus : "submitted"
-        submissionByModuleId.set(row.module_id, {
-          answers,
-          status,
-          updatedAt: row.updated_at ?? null,
+  const { data: contentRows, error: contentError } = contentResult
+  if (contentError) {
+    const code = (contentError as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      throw contentError
+    }
+  } else {
+    for (const row of contentRows ?? []) {
+      if (!row?.module_id) continue
+      const rawResources = Array.isArray(row.resources)
+        ? (row.resources as Array<Record<string, unknown>>)
+        : []
+      const resources: ModuleResource[] = rawResources
+        .map((resource) => {
+          if (!resource || typeof resource !== "object") return null
+          const r = resource as { label?: unknown; url?: unknown }
+          const labelRaw = typeof r.label === "string" ? r.label : ""
+          const urlRaw = typeof r.url === "string" ? r.url : ""
+          const label = labelRaw.trim().length > 0 ? labelRaw.trim() : urlRaw.trim()
+          const url = urlRaw.trim()
+          if (!label && !url) return null
+          return {
+            label: label || url,
+            url,
+            provider: inferResourceProvider(url),
+          }
         })
-      }
+        .filter((value): value is ModuleResource => Boolean(value))
+
+      const legacyHomework = parseLegacyHomework(row.homework)
+
+      contentByModuleId.set(row.module_id, {
+        videoUrl: row.video_url ?? null,
+        resources,
+        legacyHomework,
+      })
+    }
+  }
+
+  const { data: assignmentRows, error: assignmentError } = assignmentResult
+  if (assignmentError) {
+    const code = (assignmentError as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      throw assignmentError
+    }
+  } else {
+    for (const row of assignmentRows ?? []) {
+      if (!row?.module_id) continue
+      const fields = parseAssignmentFields(row.schema)
+      if (fields.length === 0) continue
+      assignmentByModuleId.set(row.module_id, {
+        fields,
+        completeOnSubmit: Boolean(row.complete_on_submit),
+      })
+    }
+  }
+
+  const { data: submissionRows, error: submissionError } = submissionResult
+  if (submissionError) {
+    const code = (submissionError as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      throw submissionError
+    }
+  } else {
+    for (const row of submissionRows ?? []) {
+      if (!row?.module_id) continue
+      const answers =
+        row.answers && typeof row.answers === "object" && !Array.isArray(row.answers)
+          ? (row.answers as Record<string, unknown>)
+          : {}
+      const rawStatus = typeof row.status === "string" ? row.status : "submitted"
+      const status: ModuleAssignmentSubmission["status"] =
+        rawStatus === "accepted" || rawStatus === "revise" ? rawStatus : "submitted"
+      submissionByModuleId.set(row.module_id, {
+        answers,
+        status,
+        updatedAt: row.updated_at ?? null,
+      })
     }
   }
 

@@ -21,23 +21,38 @@ import { organizationProfileSchema } from "./validation"
 import { OrgProfileHeader } from "./header"
 import { CompanyTab } from "./tabs/company-tab"
 import { ProgramsTab } from "./tabs/programs-tab"
-import { ReportsTab } from "./tabs/reports-tab"
 import { PeopleTab } from "./tabs/people-tab"
 import { SupportersTab } from "./tabs/supporters-tab"
+import BuildingIcon from "lucide-react/dist/esm/icons/building-2"
+import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
+import HeartHandshakeIcon from "lucide-react/dist/esm/icons/heart-handshake"
+import UsersIcon from "lucide-react/dist/esm/icons/users"
+import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 
-const TABS: Array<{ value: ProfileTab; label: string }> = [
-  { value: "company", label: "About" },
-  { value: "programs", label: "Programs" },
-  { value: "reports", label: "Reports" },
-  { value: "people", label: "People" },
-  { value: "supporters", label: "Supporters" },
+import { RoadmapShell } from "@/components/roadmap/roadmap-shell"
+
+const TABS: Array<{ value: ProfileTab; label: string; icon: typeof BuildingIcon }> = [
+  { value: "company", label: "About", icon: BuildingIcon },
+  { value: "programs", label: "Programs", icon: ClipboardListIcon },
+  { value: "people", label: "People", icon: UsersIcon },
+  { value: "supporters", label: "Supporters", icon: HeartHandshakeIcon },
+  { value: "roadmap", label: "Roadmap", icon: WaypointsIcon },
 ]
 
-export function OrgProfileEditor({ initial, people, programs = [], canEdit = true }: OrgProfileCardProps) {
+export function OrgProfileEditor({
+  initial,
+  people,
+  programs = [],
+  canEdit = true,
+  roadmapSections,
+  roadmapPublicSlug,
+  roadmapIsPublic,
+  initialTab,
+}: OrgProfileCardProps) {
   const [editMode, setEditMode] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [dirty, setDirty] = useState(false)
-  const [tab, setTab] = useState<ProfileTab>("company")
+  const [tab, setTab] = useState<ProfileTab>(() => initialTab ?? "company")
   const [company, setCompany] = useState<OrgProfile>(() => ({
     name: initial.name ?? "",
     description: initial.description ?? "",
@@ -93,6 +108,11 @@ export function OrgProfileEditor({ initial, people, programs = [], canEdit = tru
   useEffect(() => {
     try {
       if (typeof window === "undefined") return
+      if (initialTab && TABS.some((tab) => tab.value === initialTab)) {
+        setTab(initialTab)
+        window.localStorage.setItem("myorg.activeTab", initialTab)
+        return
+      }
       const stored = window.localStorage.getItem("myorg.activeTab") as ProfileTab | null
       if (stored && TABS.some((tab) => tab.value === stored)) {
         setTab(stored)
@@ -100,7 +120,7 @@ export function OrgProfileEditor({ initial, people, programs = [], canEdit = tru
     } catch {
       // ignore
     }
-  }, [])
+  }, [initialTab])
 
   useEffect(() => {
     if (!canEdit || typeof window === "undefined") return
@@ -195,8 +215,9 @@ export function OrgProfileEditor({ initial, people, programs = [], canEdit = tru
                 value={item.value}
                 id={`${tabsIdBase}-trigger-${item.value}`}
                 aria-controls={`${tabsIdBase}-content-${item.value}`}
-                className="relative -mb-[1px] inline-flex h-10 items-end justify-center whitespace-nowrap rounded-none border-b-0 bg-transparent px-2 pb-2 pt-1 text-sm font-medium text-muted-foreground shadow-none transition-all duration-200 hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=active]:border-b-[2px] data-[state=active]:border-b-primary data-[state=active]:border-solid data-[state=active]:font-semibold data-[state=active]:text-foreground dark:data-[state=active]:!bg-transparent"
+                className="relative -mb-[1px] inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-none border-b-0 bg-transparent px-2 pb-2 pt-1 text-sm font-medium text-muted-foreground shadow-none transition-all duration-200 hover:bg-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=active]:border-b-[2px] data-[state=active]:border-b-primary data-[state=active]:border-solid data-[state=active]:font-semibold data-[state=active]:text-foreground dark:data-[state=active]:!bg-transparent"
               >
+                <item.icon className="h-4 w-4" aria-hidden />
                 {item.label}
               </TabsTrigger>
             ))}
@@ -265,15 +286,6 @@ export function OrgProfileEditor({ initial, people, programs = [], canEdit = tru
           </TabsContent>
 
           <TabsContent
-            value="reports"
-            id={`${tabsIdBase}-content-reports`}
-            aria-labelledby={`${tabsIdBase}-trigger-reports`}
-            className="grid gap-8 p-6"
-          >
-            <ReportsTab editMode={editMode} reports={company.reports} errors={errors} onInputChange={handleInputChange} />
-          </TabsContent>
-
-          <TabsContent
             value="people"
             id={`${tabsIdBase}-content-people`}
             aria-labelledby={`${tabsIdBase}-trigger-people`}
@@ -289,6 +301,19 @@ export function OrgProfileEditor({ initial, people, programs = [], canEdit = tru
             className="grid gap-8 p-6"
           >
             <SupportersTab editMode={editMode} people={people} />
+          </TabsContent>
+
+          <TabsContent
+            value="roadmap"
+            id={`${tabsIdBase}-content-roadmap`}
+            aria-labelledby={`${tabsIdBase}-trigger-roadmap`}
+            className="grid gap-8 p-6"
+          >
+            <RoadmapShell
+              sections={roadmapSections}
+              publicSlug={roadmapPublicSlug}
+              initialPublic={roadmapIsPublic}
+            />
           </TabsContent>
         </Tabs>
       </CardContent>

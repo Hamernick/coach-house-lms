@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation"
 
 import { OrgProfileCard } from "@/components/organization/org-profile-card"
+import type { ProfileTab } from "@/components/organization/org-profile-card/types"
+import { resolveRoadmapSections } from "@/lib/roadmap"
+import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { publicSharingEnabled } from "@/lib/feature-flags"
@@ -8,7 +11,11 @@ import type { OrgPerson } from "../people/actions"
 
 export const dynamic = "force-dynamic"
 
-export default async function MyOrganizationPage() {
+export default async function MyOrganizationPage({
+  searchParams,
+}: {
+  searchParams?: Record<string, string | string[] | undefined>
+}) {
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -20,11 +27,29 @@ export default async function MyOrganizationPage() {
   // Load organization profile for the current user
   const { data: orgRow } = await supabase
     .from("organizations")
-    .select("ein, profile, public_slug, is_public")
+    .select("ein, profile, public_slug, is_public, is_public_roadmap")
     .eq("user_id", user.id)
-    .maybeSingle<{ ein: string | null; profile: Record<string, unknown> | null; public_slug: string | null; is_public: boolean | null }>()
+    .maybeSingle<{
+      ein: string | null
+      profile: Record<string, unknown> | null
+      public_slug: string | null
+      is_public: boolean | null
+      is_public_roadmap: boolean | null
+    }>()
 
-  const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
+  let profile = (orgRow?.profile ?? {}) as Record<string, unknown>
+
+  if (orgRow?.profile) {
+    const { nextProfile, changed } = cleanupOrgProfileHtml(profile)
+    if (changed) {
+      const { error: cleanupError } = await supabase
+        .from("organizations")
+        .upsert({ user_id: user.id, profile: nextProfile }, { onConflict: "user_id" })
+      if (!cleanupError) {
+        profile = nextProfile
+      }
+    }
+  }
 
   // Load programs for this organization (by user)
   const { data: programs } = await supabase
@@ -95,10 +120,28 @@ export default async function MyOrganizationPage() {
     isPublic: publicSharingEnabled ? Boolean(orgRow?.is_public ?? false) : false,
   }
 
+  const allowedTabs: ProfileTab[] = ["company", "programs", "people", "supporters", "roadmap"]
+  const tabParam = typeof searchParams?.tab === "string" ? searchParams.tab : ""
+  const initialTab = allowedTabs.includes(tabParam as ProfileTab) ? (tabParam as ProfileTab) : undefined
+
+  const roadmapSections = resolveRoadmapSections(profile).map((section) =>
+    publicSharingEnabled ? section : { ...section, isPublic: false },
+  )
+  const roadmapIsPublic = publicSharingEnabled ? Boolean(orgRow?.is_public_roadmap) : false
+  const roadmapPublicSlug = orgRow?.public_slug ?? null
+
   return (
     <div className="flex flex-col gap-6 px-4 lg:px-6">
       <section>
-        <OrgProfileCard initial={initialProfile} people={people} programs={programs ?? []} />
+        <OrgProfileCard
+          initial={initialProfile}
+          people={people}
+          programs={programs ?? []}
+          roadmapSections={roadmapSections}
+          roadmapPublicSlug={roadmapPublicSlug}
+          roadmapIsPublic={roadmapIsPublic}
+          initialTab={initialTab}
+        />
       </section>
     </div>
   )

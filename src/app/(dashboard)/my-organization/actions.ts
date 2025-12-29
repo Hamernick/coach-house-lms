@@ -7,6 +7,7 @@ import { requireServerSession } from "@/lib/auth"
 import { geocodeAddress } from "@/lib/mapbox/geocode"
 import type { Database } from "@/lib/supabase"
 import { publicSharingEnabled } from "@/lib/feature-flags"
+import { sanitizeOrgProfileText, shouldStripOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 
 type OrgProfilePayload = {
   name?: string | null
@@ -78,7 +79,11 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
       next[k] = v ?? null
     } else {
       if (typeof v === "string") {
-        next[k] = v.length === 0 ? null : v
+        if (shouldStripOrgProfileHtml(k)) {
+          next[k] = sanitizeOrgProfileText(v)
+        } else {
+          next[k] = v.length === 0 ? null : v
+        }
       } else if (Array.isArray(v)) {
         next[k] = v.filter((x) => typeof x === "string" && x.trim().length > 0)
       } else {

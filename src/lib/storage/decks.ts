@@ -2,7 +2,7 @@ import { Buffer } from "node:buffer"
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 
-const DECKS_BUCKET = "decks"
+const DECKS_BUCKET = "accelerator-slide-decks"
 const MAX_BYTES = 15 * 1024 * 1024 // 15MB safety cap
 
 let bucketEnsured = false

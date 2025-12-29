@@ -13,7 +13,7 @@ import { LessonNotes } from "./module-detail/lesson-notes"
 import { ModuleHeader, computeModuleProgress } from "./module-detail/module-header"
 import { VideoSection } from "./module-detail/video-section"
 import type { ClassDef, Module } from "./types"
-import { getVideoEmbedUrl } from "./module-detail/utils"
+import { getInlineVideoUrl, getVideoEmbedUrl } from "./module-detail/utils"
 import { DeckViewer } from "./module-detail/deck-viewer"
 import { useLessonWizard } from "./module-detail/use-lesson-wizard"
 import { useAssignmentSubmission } from "./module-detail/use-assignment-submission"
@@ -48,9 +48,6 @@ const LessonCreationWizardLazy = dynamic(
     ),
   },
 )
-
-const FALLBACK_VIDEO_URL =
-  "https://www.youtube.com/watch?v=Aq5WXmQQooo&list=RDAq5WXmQQooo&start_radio=1"
 
 export function ModuleDetail({
   c,
@@ -94,8 +91,8 @@ export function ModuleDetail({
     [c.modules, m.id],
   )
 
-  const fallbackEmbedUrl = getVideoEmbedUrl(FALLBACK_VIDEO_URL)
-  const embedUrl = getVideoEmbedUrl(m.videoUrl) ?? fallbackEmbedUrl
+  const embedUrl = getVideoEmbedUrl(m.videoUrl)
+  const inlineVideoUrl = getInlineVideoUrl(m.videoUrl)
   const lessonNotesContent = m.contentMd ?? null
 
   return (
@@ -121,9 +118,9 @@ export function ModuleDetail({
         </Alert>
       ) : null}
 
-      <VideoSection embedUrl={embedUrl} fallbackUrl={m.videoUrl ?? null} />
+      <VideoSection embedUrl={embedUrl} videoUrl={inlineVideoUrl} fallbackUrl={m.videoUrl ?? null} />
 
-      <DeckViewer />
+      <DeckViewer moduleId={m.id} hasDeck={Boolean(m.hasDeck)} />
 
       {lessonNotesContent ? <LessonNotes title={m.title} content={lessonNotesContent} /> : null}
 

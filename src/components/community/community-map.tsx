@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 
@@ -15,11 +15,12 @@ export function CommunityMap({
   organizations: CommunityOrganization[]
   mapboxToken?: string
 }) {
+  const [mapError, setMapError] = useState<string | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const mapboxRef = useRef<typeof mapboxgl | null>(null)
   const markersRef = useRef<mapboxgl.Marker[]>([])
-  const token = mapboxToken?.trim() ?? ""
+  const token = (mapboxToken ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "").trim()
   const tokenAvailable = Boolean(token)
 
   useEffect(() => {
@@ -30,34 +31,54 @@ export function CommunityMap({
     let cancelled = false
 
     async function initMap() {
-      const mapboxModule = await import("mapbox-gl")
-      const mapboxgl = mapboxModule.default
-      mapboxRef.current = mapboxgl
-      mapboxgl.accessToken = token
+      try {
+        const mapboxModule = await import("mapbox-gl")
+        const mapboxgl = (mapboxModule.default ?? mapboxModule) as mapboxgl
+        if (!mapboxgl?.Map) {
+          throw new Error("Mapbox failed to initialize.")
+        }
 
-      if (!containerRef.current || cancelled) return
+        mapboxRef.current = mapboxgl
+        mapboxgl.accessToken = token
 
-      const map = new mapboxgl.Map({
-        container: containerRef.current,
-        style: MAP_STYLE,
-        center: [0, 20],
-        zoom: 1.2,
-        projection: "globe",
-        cooperativeGestures: true,
-      })
+        if (!containerRef.current || cancelled) return
 
-      map.dragRotate.disable()
-      map.boxZoom.disable()
-      if (typeof map.touchZoomRotate.disableRotation === "function") {
-        map.touchZoomRotate.disableRotation()
+        const map = new mapboxgl.Map({
+          container: containerRef.current,
+          style: MAP_STYLE,
+          center: [0, 20],
+          zoom: 1.2,
+          projection: "globe",
+          cooperativeGestures: true,
+        })
+
+        map.dragRotate.disable()
+        map.boxZoom.disable()
+        if (typeof map.touchZoomRotate.disableRotation === "function") {
+          map.touchZoomRotate.disableRotation()
+        }
+        map.scrollZoom.disable()
+
+        map.on("style.load", () => {
+          map.setFog({
+            color: "rgba(12, 24, 36, 0.95)",
+            "high-color": "rgba(36, 72, 96, 0.6)",
+            "space-color": "#010104",
+          })
+        })
+
+        map.on("error", (event) => {
+          if (event?.error) {
+            console.error("Mapbox error:", event.error)
+            setMapError("Mapbox couldn't load the map tiles.")
+          }
+        })
+
+        mapRef.current = map
+      } catch (error) {
+        console.error("Mapbox init error:", error)
+        setMapError("Mapbox couldn't start. Check your token and domain restrictions.")
       }
-      map.scrollZoom.disable()
-
-      map.on("style.load", () => {
-        map.setFog({ color: "rgba(12, 24, 36, 0.95)", "high-color": "rgba(36, 72, 96, 0.6)", "space-color": "#010104" })
-      })
-
-      mapRef.current = map
     }
 
     initMap()
@@ -113,6 +134,15 @@ export function CommunityMap({
     return (
       <div className="flex h-[480px] w-full items-center justify-center rounded-3xl border bg-card/70 text-sm text-muted-foreground">
         Map unavailable. Add `MAPBOX_TOKEN` or `NEXT_PUBLIC_MAPBOX_TOKEN` to enable the community globe.
+      </div>
+    )
+  }
+
+  if (mapError) {
+    return (
+      <div className="flex h-[480px] w-full flex-col items-center justify-center gap-2 rounded-3xl border bg-card/70 px-6 text-center text-sm text-muted-foreground">
+        <p className="text-sm font-medium text-foreground">Map unavailable.</p>
+        <p>{mapError}</p>
       </div>
     )
   }

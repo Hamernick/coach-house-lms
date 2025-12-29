@@ -9,10 +9,11 @@ import { Card, CardContent } from "@/components/ui/card"
 
 interface VideoSectionProps {
   embedUrl: string | null
+  videoUrl: string | null
   fallbackUrl: string | null
 }
 
-export function VideoSection({ embedUrl, fallbackUrl }: VideoSectionProps) {
+export function VideoSection({ embedUrl, videoUrl, fallbackUrl }: VideoSectionProps) {
   return (
     <Card className="overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b px-6 py-3">
@@ -30,6 +31,16 @@ export function VideoSection({ embedUrl, fallbackUrl }: VideoSectionProps) {
               className="absolute inset-0 h-full w-full"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
+            />
+          </div>
+        ) : videoUrl ? (
+          <div className="relative aspect-video w-full bg-black">
+            <video
+              src={videoUrl}
+              className="absolute inset-0 h-full w-full"
+              controls
+              playsInline
+              preload="metadata"
             />
           </div>
         ) : fallbackUrl ? (

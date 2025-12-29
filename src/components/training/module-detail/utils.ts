@@ -148,3 +148,17 @@ export function getVideoEmbedUrl(rawUrl: string | null | undefined): string | nu
   }
   return null
 }
+
+export function getInlineVideoUrl(rawUrl: string | null | undefined): string | null {
+  if (!rawUrl) return null
+  try {
+    const url = new URL(rawUrl)
+    const ext = url.pathname.split(".").pop()?.toLowerCase() ?? ""
+    if (["mp4", "mov", "webm", "ogg"].includes(ext)) {
+      return rawUrl
+    }
+  } catch {
+    return null
+  }
+  return null
+}

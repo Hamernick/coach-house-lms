@@ -1,12 +1,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import CheckIcon from "lucide-react/dist/esm/icons/check"
+import CopyIcon from "lucide-react/dist/esm/icons/copy"
 import DownloadIcon from "lucide-react/dist/esm/icons/download"
 import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 
 import { NewsGradientThumb, getNewsGradientPalette } from "@/components/news/gradient-thumb"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -28,7 +29,7 @@ type RoadmapShareDrawerProps = {
   sharePath: string | null
   sectionTitle: string
   sectionDescription?: string
-  isSectionPublic: boolean
+  roadmapIsPublic: boolean
   layout: "square" | "vertical" | "wide"
   ctaLabel?: string
   ctaUrl?: string
@@ -42,7 +43,7 @@ export function RoadmapShareDrawer({
   sharePath,
   sectionTitle,
   sectionDescription,
-  isSectionPublic,
+  roadmapIsPublic,
   layout,
   ctaLabel,
   ctaUrl,
@@ -53,6 +54,7 @@ export function RoadmapShareDrawer({
   const [localCtaLabel, setLocalCtaLabel] = useState(ctaLabel ?? DEFAULT_CTA_LABEL)
   const [localCtaUrl, setLocalCtaUrl] = useState(ctaUrl ?? "")
   const [downloadPending, setDownloadPending] = useState(false)
+  const [copied, setCopied] = useState(false)
   const sharingEnabled = publicSharingEnabled
 
   useEffect(() => {
@@ -76,15 +78,17 @@ export function RoadmapShareDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full max-w-xl overflow-y-auto">
+      <SheetContent side="right" className="flex w-full flex-col sm:max-w-lg">
         <SheetHeader className="text-left">
-          <SheetTitle>Share “{sectionTitle}”</SheetTitle>
-          <SheetDescription>Layout, CTA, and a share-ready preview.</SheetDescription>
+          <SheetTitle>Share settings</SheetTitle>
+          <SheetDescription>{sectionTitle}</SheetDescription>
         </SheetHeader>
-        <div className="mt-6 space-y-6">
+        <div className="mt-5 flex-1 space-y-6 overflow-y-auto px-4 pb-6">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <Label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Layout</Label>
+              <Label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                Share card
+              </Label>
               <ToggleGroup
                 type="single"
                 value={localLayout}
@@ -96,38 +100,38 @@ export function RoadmapShareDrawer({
                 className="w-full sm:w-auto"
               >
                 {LAYOUT_OPTIONS.map((option) => (
-                  <ToggleGroupItem key={option.id} value={option.id} className="px-3 text-xs">
+                  <ToggleGroupItem key={option.id} value={option.id} className="px-2.5 text-[11px]">
                     {option.label}
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
             </div>
 
-            <Card className="overflow-hidden border border-border/60 bg-card/70 p-3 shadow-sm">
-              <div className={`${layoutMeta.aspectClass} relative overflow-hidden rounded-2xl border border-border/40 bg-muted/30`}>
-                <NewsGradientThumb seed={`${sectionTitle}-${layoutMeta.id}`} className="absolute inset-0 rounded-2xl" />
-                <div className="absolute inset-0 flex flex-col justify-between rounded-2xl bg-gradient-to-b from-black/20 via-black/70 to-black/80 p-4 text-white">
+            <div className="rounded-2xl border border-border/60 bg-card/40 p-3">
+              <div className={`${layoutMeta.aspectClass} relative overflow-hidden rounded-xl border border-border/50 bg-muted/20`}>
+                <NewsGradientThumb seed={`${sectionTitle}-${layoutMeta.id}`} className="absolute inset-0 rounded-xl" />
+                <div className="absolute inset-0 flex flex-col justify-between rounded-xl bg-gradient-to-b from-black/10 via-black/55 to-black/70 p-3 text-white">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/70">Strategic Roadmap</p>
-                    <p className="mt-2 text-lg font-semibold leading-snug">{sectionTitle}</p>
+                    <p className="text-[10px] font-semibold uppercase tracking-[0.28em] text-white/70">Strategic Roadmap</p>
+                    <p className="mt-2 text-base font-semibold leading-snug">{sectionTitle}</p>
                     <p className="mt-1 line-clamp-2 text-xs text-white/80">
                       {sectionDescription || "Preview of your section summary."}
                     </p>
                   </div>
-                  <Button type="button" size="sm" className="self-start rounded-full bg-white/90 text-xs font-semibold text-black">
+                  <Button type="button" size="sm" className="self-start rounded-full bg-white/90 text-[11px] font-semibold text-black">
                     {localCtaLabel || DEFAULT_CTA_LABEL}
                   </Button>
                 </div>
               </div>
-            </Card>
+            </div>
           </div>
 
           <div className="space-y-3">
-            <Label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">CTA</Label>
+            <Label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">CTA</Label>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1">
                 <Label htmlFor="roadmap-cta-label" className="text-xs text-muted-foreground">
-                  Label
+                  Button label
                 </Label>
                 <Input
                   id="roadmap-cta-label"
@@ -137,7 +141,7 @@ export function RoadmapShareDrawer({
               </div>
               <div className="space-y-1">
                 <Label htmlFor="roadmap-cta-url" className="text-xs text-muted-foreground">
-                  URL (optional)
+                  Link (optional)
                 </Label>
                 <Input
                   id="roadmap-cta-url"
@@ -150,37 +154,58 @@ export function RoadmapShareDrawer({
           </div>
 
           <div className="space-y-3">
-            <Label className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Link</Label>
-            {sharePath && isSectionPublic && sharingEnabled ? (
-              <Button asChild type="button" variant="outline" className="w-full justify-between gap-3 rounded-2xl">
-                <a href={sharePath} target="_blank" rel="noreferrer">
-                  <span className="text-sm font-medium">View public section</span>
-                  <ExternalLinkIcon className="h-4 w-4 text-muted-foreground" aria-hidden />
-                </a>
-              </Button>
+            <Label className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+              Public link
+            </Label>
+            {sharePath && roadmapIsPublic && sharingEnabled ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Input value={sharePath} readOnly className="flex-1 text-xs" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label="Copy public link"
+                  onClick={async () => {
+                    try {
+                      await navigator.clipboard.writeText(sharePath)
+                      setCopied(true)
+                      setTimeout(() => setCopied(false), 2000)
+                    } catch {
+                      toast.error("Unable to copy link")
+                    }
+                  }}
+                >
+                  {copied ? <CheckIcon className="h-4 w-4" /> : <CopyIcon className="h-4 w-4" />}
+                </Button>
+                <Button asChild type="button" variant="outline" size="icon" aria-label="View public section">
+                  <a href={sharePath} target="_blank" rel="noreferrer">
+                    <ExternalLinkIcon className="h-4 w-4" aria-hidden />
+                  </a>
+                </Button>
+              </div>
             ) : (
               <p className="text-xs text-muted-foreground">
                 {!sharingEnabled
                   ? "Public sharing is disabled until launch."
                   : !sharePath
                     ? "Set a public slug to generate a share link."
-                    : "Publish this section to view it publicly."}
+                    : "Make the roadmap public to view this section."}
               </p>
             )}
           </div>
         </div>
 
-        <SheetFooter className="mt-6 flex flex-col gap-2 sm:flex-row sm:justify-end">
+        <SheetFooter className="border-t border-border/60 bg-background/80 pt-4 sm:flex-row sm:justify-end">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Close
           </Button>
           <Button
             type="button"
             variant="outline"
-            disabled={downloadPending || !isSectionPublic}
+            disabled={downloadPending || !roadmapIsPublic}
             onClick={async () => {
-              if (!isSectionPublic) {
-                toast.error("Publish this section before downloading a card")
+              if (!roadmapIsPublic) {
+                toast.error("Make the roadmap public before downloading a card")
                 return
               }
               setDownloadPending(true)

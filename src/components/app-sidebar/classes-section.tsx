@@ -10,6 +10,12 @@ import Layers from "lucide-react/dist/esm/icons/layers"
 import Target from "lucide-react/dist/esm/icons/target"
 import GitBranch from "lucide-react/dist/esm/icons/git-branch"
 import Rocket from "lucide-react/dist/esm/icons/rocket"
+import Coins from "lucide-react/dist/esm/icons/coins"
+import Calculator from "lucide-react/dist/esm/icons/calculator"
+import HandCoins from "lucide-react/dist/esm/icons/hand-coins"
+import Megaphone from "lucide-react/dist/esm/icons/megaphone"
+import Gavel from "lucide-react/dist/esm/icons/gavel"
+import Sparkles from "lucide-react/dist/esm/icons/sparkles"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 import MoreVertical from "lucide-react/dist/esm/icons/more-vertical"
@@ -62,11 +68,24 @@ const CreateEntityPopover = dynamic(
 )
 
 function getClassIcon(slug: string) {
-  if (slug === "strategic-foundations") return Layers
-  if (slug === "mission-vision-values") return Target
-  if (slug === "theory-of-change") return GitBranch
-  if (slug === "piloting-programs") return Rocket
-  return Layers
+  const normalized = slug.toLowerCase()
+  if (normalized.includes("strategic-foundations")) return Layers
+  if (normalized.includes("mission-vision-values")) return Target
+  if (normalized.includes("theory-of-change")) return GitBranch
+  if (normalized.includes("piloting-programs")) return Rocket
+  if (normalized.includes("bookkeeping") || normalized.includes("financial")) return Calculator
+  if (normalized.includes("budget")) return Coins
+  if (normalized.includes("fundraising") || normalized.includes("mindset")) return HandCoins
+  if (normalized.includes("comms") || normalized.includes("communication")) return Megaphone
+  if (normalized.includes("boards")) return Gavel
+  if (normalized.includes("electives")) return Sparkles
+  return GraduationCap
+}
+
+function formatClassTitle(title: string) {
+  const match = title.match(/^Session\s+[A-Za-z]\d+\s*[–-]\s*(.+)$/i)
+  if (match) return match[1].trim()
+  return title
 }
 
 type ModuleStatus = "not_started" | "in_progress" | "complete"
@@ -203,6 +222,7 @@ function ClassList({ classes, pathname, routerPrefetch, openMap, setOpenMap, var
     <SidebarMenu className="gap-0.5">
       {classes.map((klass) => {
         const nodeKey = klass.slug || klass.id
+        const classTitle = formatClassTitle(klass.title)
         const modules = klass.modules.filter((module) => (variant === "published" ? module.published : !module.published))
         const isOpen = Boolean(openMap[nodeKey])
         const classHref = `/class/${klass.slug}`
@@ -222,18 +242,18 @@ function ClassList({ classes, pathname, routerPrefetch, openMap, setOpenMap, var
             <SidebarMenuButton
               asChild
               isActive={isActive}
-              tooltip={klass.title}
+              tooltip={classTitle}
               className="h-auto min-h-8 items-center pr-12 justify-start gap-2 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:min-h-0 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
             >
               <Link
                 href={classHref}
                 onMouseEnter={() => routerPrefetch(classHref)}
-                title={klass.title}
+                title={classTitle}
                 className="flex w-full items-center gap-2 group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:gap-0"
               >
                 <ClassIcon className="size-4 shrink-0" />
                 <span className="min-w-0 flex-1 break-words whitespace-normal! overflow-visible! text-clip! text-sm font-medium leading-tight text-pretty group-data-[collapsible=icon]:hidden">
-                  {klass.title}
+                  {classTitle}
                 </span>
               </Link>
             </SidebarMenuButton>
@@ -255,7 +275,7 @@ function ClassList({ classes, pathname, routerPrefetch, openMap, setOpenMap, var
             data-open={isOpen ? "true" : "false"}
             className={cn(
               "overflow-hidden transition-all duration-200 ease-out",
-              isOpen ? "max-h-64 opacity-100 mt-1 py-0.5" : "max-h-0 opacity-0 py-0",
+              isOpen ? "max-h-[1000px] opacity-100 mt-1 py-0.5" : "max-h-0 opacity-0 py-0",
             )}
           >
             {(() => {

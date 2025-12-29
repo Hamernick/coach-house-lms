@@ -4,7 +4,6 @@ import React, { useCallback, useEffect, useRef, useState, type TouchEvent } from
 
 import { DeckPresentation } from "./deck-viewer/view"
 
-const DEFAULT_DECK_URL = "/week-08.pdf"
 const DECK_SWIPE_THRESHOLD = 45
 const PDF_JS_SRC = "/vendor/pdfjs/pdf.min.js"
 const PDF_JS_WORKER_SRC = "/vendor/pdfjs/pdf.worker.min.js"
@@ -65,7 +64,15 @@ async function loadPdfJs() {
   return pdfJsLoaderPromise
 }
 
-export function DeckViewer() {
+type DeckViewerProps = {
+  moduleId: string
+  hasDeck?: boolean
+}
+
+export function DeckViewer({ moduleId, hasDeck = false }: DeckViewerProps) {
+  const [deckUrl, setDeckUrl] = useState<string | null>(null)
+  const [loadingUrl, setLoadingUrl] = useState(false)
+  const [fetchError, setFetchError] = useState<string | null>(null)
   const [page, setPage] = useState(1)
   const [pageCount, setPageCount] = useState<number | null>(null)
   const [loadingDoc, setLoadingDoc] = useState(true)
@@ -80,6 +87,53 @@ export function DeckViewer() {
   const renderTaskRef = useRef<any>(null)
   const renderCacheRef = useRef<Map<number, ImageBitmap>>(new Map())
   const preloadingRef = useRef<Set<number>>(new Set())
+
+  useEffect(() => {
+    if (!hasDeck) {
+      setDeckUrl(null)
+      setFetchError(null)
+      setLoadingUrl(false)
+      return
+    }
+
+    let cancelled = false
+    const controller = new AbortController()
+
+    setLoadingUrl(true)
+    setFetchError(null)
+    setDeckUrl(null)
+
+    fetch(`/api/modules/${moduleId}/deck?format=json`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) {
+          const data = await response.json().catch(() => null)
+          throw new Error(typeof data?.error === "string" ? data.error : "Deck unavailable")
+        }
+        return response.json()
+      })
+      .then((data) => {
+        if (cancelled) return
+        if (typeof data?.url === "string" && data.url.length > 0) {
+          setDeckUrl(data.url)
+        } else {
+          setFetchError("Deck unavailable")
+        }
+      })
+      .catch((err) => {
+        if (cancelled || err?.name === "AbortError") return
+        setFetchError(err?.message ?? "Deck unavailable")
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoadingUrl(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+      controller.abort()
+    }
+  }, [moduleId, hasDeck])
 
   const clampPage = useCallback((value: number, max: number) => {
     return Math.max(1, Math.min(max, value))
@@ -117,6 +171,16 @@ export function DeckViewer() {
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
   }, [navigate])
+
+  useEffect(() => {
+    renderCacheRef.current.clear()
+    preloadingRef.current.clear()
+    pdfRef.current = null
+    setPage(1)
+    setPageCount(null)
+    setError(null)
+    setSupportsCanvas(true)
+  }, [deckUrl])
 
   const renderPage = useCallback(async () => {
     if (!supportsCanvas) {
@@ -274,6 +338,10 @@ export function DeckViewer() {
   useEffect(() => {
     let cancelled = false
     const loadDocument = async () => {
+      if (!deckUrl) {
+        setLoadingDoc(false)
+        return
+      }
       try {
         setLoadingDoc(true)
         setError(null)
@@ -282,7 +350,7 @@ export function DeckViewer() {
           setSupportsCanvas(false)
           return
         }
-        const instance = await pdfjsLib.getDocument({ url: DEFAULT_DECK_URL }).promise
+        const instance = await pdfjsLib.getDocument({ url: deckUrl }).promise
         if (cancelled) return
         pdfRef.current = instance
         setPageCount(instance.numPages ?? null)
@@ -303,7 +371,7 @@ export function DeckViewer() {
     return () => {
       cancelled = true
     }
-  }, [renderPage])
+  }, [deckUrl, renderPage])
 
   const pageLabel = pageCount ? `${page}/${pageCount}` : `${page}/?`
 
@@ -336,6 +404,23 @@ export function DeckViewer() {
   const handleWheel = useCallback((event: React.WheelEvent<HTMLDivElement>) => {
     event.preventDefault()
   }, [])
+
+  if (!hasDeck) {
+    return null
+  }
+
+  if (!deckUrl) {
+    const message = loadingUrl ? "Loading deck..." : fetchError ?? "Deck unavailable"
+    return (
+      <div
+        className="flex w-full items-center justify-center rounded-2xl border border-border/40 bg-card/80 p-6 text-sm text-muted-foreground shadow-sm"
+        style={{ aspectRatio: "16 / 9" }}
+      >
+        {message}
+      </div>
+    )
+  }
+
   return (
     <DeckPresentation
       page={page}
@@ -353,7 +438,7 @@ export function DeckViewer() {
       canvasRef={canvasRef}
       containerRef={containerRef}
       viewportRef={viewportRef}
-      deckUrl={DEFAULT_DECK_URL}
+      deckUrl={deckUrl}
       hasCacheForPage={renderCacheRef.current.has(page)}
     />
   )

@@ -126,7 +126,13 @@ function RoadmapHero({ orgName, subtitle }: { orgName: string; subtitle: string 
   return (
     <div className="w-full overflow-hidden rounded-3xl border border-border/50 shadow-lg">
       <div className="relative h-72 w-full">
-        <NewsGradientThumb seed={orgName} className="h-full w-full" />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              "linear-gradient(to bottom right,#fcc5e4,#fda34b,#ff7882,#c8699e,#7046aa,#0c1db8,#020f75)",
+          }}
+        />
         <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-b from-black/10 via-black/70 to-black/90 p-6 text-white">
           <p className="text-xs font-semibold uppercase tracking-[0.4em] text-white/80">Strategic Roadmap</p>
           <h1 className="mt-3 text-4xl font-semibold leading-tight text-white">{orgName}</h1>

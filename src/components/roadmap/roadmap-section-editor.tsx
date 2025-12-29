@@ -252,7 +252,7 @@ export function RoadmapSectionEditor({ section, publicSlug, index }: RoadmapSect
         sharePath={sharePath}
         sectionTitle={section.title}
         sectionDescription={section.subtitle}
-        isSectionPublic={isSectionPublic}
+        roadmapIsPublic={isSectionPublic}
         layout={shareLayout}
         ctaLabel={shareCtaLabel}
         ctaUrl={shareCtaUrl}

@@ -72,7 +72,7 @@ export function DashboardShell({
       <SidebarInset>
         <div className="flex min-h-svh flex-col">
           <DashboardHeader breadcrumbs={breadcrumbs} isAdmin={isAdmin} hasUser={Boolean(user.email)} />
-          <main className="flex-1 overflow-y-auto" role="main">
+          <main className="flex-1 overflow-y-scroll" role="main" style={{ scrollbarGutter: "stable" }}>
             <div className="@container/main flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
               {children}
             </div>

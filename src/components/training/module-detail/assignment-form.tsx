@@ -2,14 +2,11 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, use
 import dynamic from "next/dynamic"
 import { motion } from "framer-motion"
 import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2"
-import SaveIcon from "lucide-react/dist/esm/icons/save"
+import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ArrowRight from "lucide-react/dist/esm/icons/arrow-right"
 import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 import Sparkles from "lucide-react/dist/esm/icons/sparkles"
 import Link from "next/link"
-import CircleDot from "lucide-react/dist/esm/icons/circle-dot"
-import Clock3 from "lucide-react/dist/esm/icons/clock-3"
-import CheckCircle from "lucide-react/dist/esm/icons/check-circle"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,12 +18,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 
 import type { ModuleAssignmentField } from "../types"
 import {
   assignmentValuesEqual,
   buildAssignmentValues,
-  formatTimestamp,
   normalizeOptions,
   type AssignmentValues,
 } from "./utils"
@@ -61,6 +58,47 @@ type AssignmentFormProps = {
   nextHref?: string | null
   currentStep?: number
   totalSteps?: number
+}
+
+type TabStepStatus = "not_started" | "in_progress" | "complete"
+
+function TabStepBadge({ status, label }: { status: TabStepStatus; label: number }) {
+  const styles =
+    status === "complete"
+      ? {
+          border: "border-emerald-500",
+          text: "text-emerald-500",
+          icon: <CheckIcon className="h-3 w-3" />,
+          dashed: false,
+        }
+      : status === "in_progress"
+        ? {
+            border: "border-amber-500",
+            text: "text-amber-500",
+            icon: <span className="text-[10px] font-semibold">{label}</span>,
+            dashed: true,
+          }
+        : {
+            border: "border-muted-foreground/60",
+            text: "text-muted-foreground",
+            icon: <span className="text-[10px] font-semibold">{label}</span>,
+            dashed: false,
+          }
+
+  return (
+    <span
+      aria-hidden
+      className={cn(
+        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 bg-sidebar",
+        styles.border,
+      )}
+      style={{ borderStyle: styles.dashed ? "dashed" : "solid" }}
+    >
+      <span className={cn("flex h-4 w-4 items-center justify-center rounded-full text-center leading-none", styles.text)}>
+        {styles.icon}
+      </span>
+    </span>
+  )
 }
 
 export function AssignmentForm(props: AssignmentFormProps) {
@@ -104,26 +142,32 @@ function AssignmentFormInner({
   const [indicator, setIndicator] = useState({ top: 0, height: 0 })
   const [autoSaving, setAutoSaving] = useState(false)
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null)
-  const lastSavedLabel = formatTimestamp(updatedAt)
   const showStatusBadge = statusLabel && statusLabel !== "Submitted"
   const hasMeta = Boolean(showStatusBadge || helperText || errorMessage || statusNote)
-  const lastSavedShort = useMemo(() => {
-    if (!updatedAt || typeof window === "undefined") return lastSavedLabel
+  const [lastSavedShort, setLastSavedShort] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!updatedAt) {
+      setLastSavedShort(null)
+      return
+    }
     const saved = new Date(updatedAt)
+    if (Number.isNaN(saved.getTime())) {
+      setLastSavedShort(null)
+      return
+    }
     const now = new Date()
     const isToday =
       saved.getFullYear() === now.getFullYear() &&
       saved.getMonth() === now.getMonth() &&
       saved.getDate() === now.getDate()
-    const dayLabel = isToday
-      ? "Today"
-      : `${saved.getMonth() + 1}/${saved.getDate()}`
+    const dayLabel = isToday ? "Today" : `${saved.getMonth() + 1}/${saved.getDate()}`
     const timeLabel = new Intl.DateTimeFormat("en-US", {
       hour: "numeric",
       minute: "2-digit",
     }).format(saved)
-    return `Last saved ${dayLabel}, ${timeLabel}`
-  }, [lastSavedLabel, updatedAt])
+    setLastSavedShort(`Last saved ${dayLabel}, ${timeLabel}`)
+  }, [updatedAt])
 
   useEffect(() => {
     setValues((prev) => (assignmentValuesEqual(prev, initialValues) ? prev : initialValues))
@@ -197,8 +241,14 @@ function AssignmentFormInner({
   )
 
   const renderField = useCallback(
-    (field: ModuleAssignmentField) => {
+    (field: ModuleAssignmentField, options?: { hideLabel?: boolean; hideAssist?: boolean }) => {
+      const hideLabel = Boolean(options?.hideLabel)
+      const hideAssist = Boolean(options?.hideAssist)
       const labelText = field.required ? `${field.label} *` : field.label
+      const labelClassName = cn(
+        "text-base font-semibold leading-tight select-text",
+        hideLabel && "sr-only",
+      )
       const description = field.description ? <p className="text-xs text-muted-foreground">{field.description}</p> : null
       const fieldId = field.name
 
@@ -206,7 +256,7 @@ function AssignmentFormInner({
         case "short_text":
           return (
             <div key={field.name} className="space-y-2">
-              <Label htmlFor={fieldId} className="text-base font-semibold leading-tight">
+              <Label htmlFor={fieldId} className={labelClassName}>
                 {labelText}
               </Label>
               {description}
@@ -222,28 +272,34 @@ function AssignmentFormInner({
         case "long_text":
           return (
             <div key={field.name} className="space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Label htmlFor={fieldId} className="text-base font-semibold leading-tight">
+              {!hideLabel || (!hideAssist && moduleId) ? (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Label htmlFor={fieldId} className={labelClassName}>
+                    {labelText}
+                  </Label>
+                  {!hideAssist && moduleId ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAssist(field)}
+                      disabled={isAssistPending && activeAssistField === field.name}
+                      className="gap-1"
+                    >
+                      {isAssistPending && activeAssistField === field.name ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      Assist
+                    </Button>
+                  ) : null}
+                </div>
+              ) : (
+                <Label htmlFor={fieldId} className={labelClassName}>
                   {labelText}
                 </Label>
-                {moduleId ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAssist(field)}
-                    disabled={isAssistPending && activeAssistField === field.name}
-                    className="gap-1"
-                  >
-                    {isAssistPending && activeAssistField === field.name ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                    Assist
-                  </Button>
-                ) : null}
-              </div>
+              )}
               {description}
               <RichTextEditorLazy
                 value={(values[field.name] as string) ?? ""}
@@ -257,7 +313,7 @@ function AssignmentFormInner({
           const normalizedOptions = normalizeOptions(field.options ?? [])
           return (
             <div key={field.name} className="space-y-2">
-              <Label className="text-base font-semibold leading-tight">{labelText}</Label>
+              <Label className={labelClassName}>{labelText}</Label>
               {description}
               <Select
                 value={(values[field.name] as string) ?? ""}
@@ -283,7 +339,7 @@ function AssignmentFormInner({
           const normalizedOptions = normalizeOptions(field.options ?? [])
           return (
             <div key={field.name} className="space-y-2">
-              <Label className="text-base font-semibold leading-tight">{labelText}</Label>
+              <Label className={labelClassName}>{labelText}</Label>
               {description}
               <div className="space-y-2">
                 {normalizedOptions.map((option) => {
@@ -323,7 +379,14 @@ function AssignmentFormInner({
           return (
             <div key={field.name} className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-medium leading-tight">{labelText}</Label>
+                <Label
+                  className={cn(
+                    "text-sm font-medium leading-tight select-text",
+                    hideLabel && "sr-only",
+                  )}
+                >
+                  {labelText}
+                </Label>
                 <span className="text-xs text-muted-foreground">{sliderValue}</span>
               </div>
               {description}
@@ -334,28 +397,34 @@ function AssignmentFormInner({
         case "custom_program":
           return (
             <div key={field.name} className="space-y-2">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <Label htmlFor={fieldId} className="text-base font-semibold leading-tight">
+              {!hideLabel || (!hideAssist && moduleId) ? (
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <Label htmlFor={fieldId} className={labelClassName}>
+                    {labelText}
+                  </Label>
+                  {!hideAssist && moduleId ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAssist(field)}
+                      disabled={isAssistPending && activeAssistField === field.name}
+                      className="gap-1"
+                    >
+                      {isAssistPending && activeAssistField === field.name ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      Assist
+                    </Button>
+                  ) : null}
+                </div>
+              ) : (
+                <Label htmlFor={fieldId} className={labelClassName}>
                   {labelText}
                 </Label>
-                {moduleId ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleAssist(field)}
-                    disabled={isAssistPending && activeAssistField === field.name}
-                    className="gap-1"
-                  >
-                    {isAssistPending && activeAssistField === field.name ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                    Assist
-                  </Button>
-                ) : null}
-              </div>
+              )}
               {description}
               {field.programTemplate ? (
                 <p className="rounded-md border border-dashed bg-muted/40 p-3 text-xs text-muted-foreground">
@@ -455,6 +524,10 @@ function AssignmentFormInner({
   }, [baseSections])
 
   const shouldUseTabs = tabSections.length > 1
+  const inlineTabTitles = useMemo(() => {
+    return tabSections.map((section) => (section.title ?? "").trim().toLowerCase())
+  }, [tabSections])
+  const useInlineTabs = shouldUseTabs && inlineTabTitles.join("|") === "if|then|so"
   const [activeSection, setActiveSection] = useState<string>(tabSections[0]?.id ?? "section-0")
 
   useEffect(() => {
@@ -481,6 +554,17 @@ function AssignmentFormInner({
     },
     [values],
   )
+
+  const activeInlineField = useMemo(() => {
+    if (!useInlineTabs) return null
+    const active = tabSections.find((section) => section.id === activeSection) ?? tabSections[0]
+    return active?.fields[0] ?? null
+  }, [activeSection, tabSections, useInlineTabs])
+
+  const inlineActiveIndex = useMemo(() => {
+    if (!useInlineTabs) return -1
+    return tabSections.findIndex((section) => section.id === activeSection)
+  }, [activeSection, tabSections, useInlineTabs])
 
   const overall = useMemo(() => {
     let total = 0
@@ -530,57 +614,108 @@ function AssignmentFormInner({
             />
           </div>
         </div>
-        <Tabs
-          value={activeSection}
-          onValueChange={setActiveSection}
-          className="flex flex-col gap-3"
-        >
-          <TabsList className="relative flex w-full flex-col items-stretch gap-2 bg-transparent p-0 pl-2.5 pr-0 pt-3">
-            {tabSections.map((section, idx) => (
-              <TabsTrigger
-                key={section.id}
-                value={section.id}
-                ref={(el) => {
-                  tabRefs.current[idx] = el
-                }}
-                className="relative z-10 flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm font-semibold text-muted-foreground transition hover:bg-accent/60 data-[state=active]:bg-accent/70 data-[state=active]:text-foreground"
-              >
-                <span className="min-w-0 flex-1 whitespace-normal break-words select-text pr-2 text-sm leading-snug">
-                  {section.title ?? `Step ${idx + 1}`}
-                </span>
-                {(() => {
-                  const total = section.fields.length
-                  const answered = section.fields.reduce((acc, field) => acc + (fieldAnswered(field) ? 1 : 0), 0)
-                  const complete = total > 0 && answered === total
-                  const inProgress = answered > 0 && !complete
-                  const badgeClass = complete
-                    ? "text-emerald-500"
-                    : inProgress
-                      ? "text-amber-500"
-                      : "text-muted-foreground"
-                  return complete ? (
-                    <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-label="Complete" />
-                  ) : (
-                    <span className={`shrink-0 min-w-[32px] text-right text-[11px] font-semibold leading-none ${badgeClass}`}>
-                      {answered}/{total || 0}
-                    </span>
-                  )
-                })()}
-              </TabsTrigger>
-            ))}
-            <motion.div
-              className="bg-primary absolute left-0.5 top-2 z-0 w-0.5 rounded-full"
-              layout
-              style={{ top: indicator.top + 2, height: Math.max(0, indicator.height - 4) }}
-              transition={{ type: "spring", stiffness: 420, damping: 36 }}
-            />
-          </TabsList>
-        </Tabs>
+        {useInlineTabs ? (
+          <div className="pt-3 text-xs text-muted-foreground">
+            {overall.answered}/{overall.total} prompts completed
+          </div>
+        ) : (
+          <Tabs
+            value={activeSection}
+            onValueChange={setActiveSection}
+            className="flex flex-col gap-3"
+          >
+            <TabsList className="relative flex w-full flex-col items-stretch gap-2 bg-transparent p-0 pl-2.5 pr-0 pt-3">
+              {tabSections.map((section, idx) => (
+                <TabsTrigger
+                  key={section.id}
+                  value={section.id}
+                  ref={(el) => {
+                    tabRefs.current[idx] = el
+                  }}
+                  className="relative z-10 flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-sm font-semibold text-muted-foreground transition hover:bg-accent/60 data-[state=active]:bg-accent/70 data-[state=active]:text-foreground"
+                >
+                  <span className="min-w-0 flex-1 whitespace-normal break-words select-text pr-2 text-sm leading-snug">
+                    {section.title ?? `Step ${idx + 1}`}
+                  </span>
+                  {(() => {
+                    const total = section.fields.length
+                    const answered = section.fields.reduce((acc, field) => acc + (fieldAnswered(field) ? 1 : 0), 0)
+                    const complete = total > 0 && answered === total
+                    const inProgress = answered > 0 && !complete
+                    const badgeClass = complete
+                      ? "text-emerald-500"
+                      : inProgress
+                        ? "text-amber-500"
+                        : "text-muted-foreground"
+                    return complete ? (
+                      <CheckCircle2 className="h-4 w-4 text-emerald-500" aria-label="Complete" />
+                    ) : (
+                      <span className={`shrink-0 min-w-[32px] text-right text-[11px] font-semibold leading-none ${badgeClass}`}>
+                        {answered}/{total || 0}
+                      </span>
+                    )
+                  })()}
+                </TabsTrigger>
+              ))}
+              <motion.div
+                className="bg-primary absolute left-0.5 top-2 z-0 w-0.5 rounded-full"
+                layout
+                style={{ top: indicator.top + 2, height: Math.max(0, indicator.height - 4) }}
+                transition={{ type: "spring", stiffness: 420, damping: 36 }}
+              />
+            </TabsList>
+          </Tabs>
+        )}
       </div>
 
       <div className="space-y-3 self-start">
         {shouldUseTabs ? (
           <Tabs value={activeSection} onValueChange={setActiveSection} className="w-full">
+            {useInlineTabs ? (
+              <div className="space-y-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <TabsList className="w-full flex-1 flex-wrap items-end gap-6 border-b border-border/60 bg-transparent p-0 pb-2">
+                    {tabSections.map((section, idx) => {
+                      const status: TabStepStatus =
+                        inlineActiveIndex === -1
+                          ? "not_started"
+                          : idx < inlineActiveIndex
+                            ? "complete"
+                            : idx === inlineActiveIndex
+                              ? "in_progress"
+                              : "not_started"
+                      return (
+                        <TabsTrigger
+                          key={section.id}
+                          value={section.id}
+                          className="flex items-center gap-2 border-b-2 border-transparent pb-2 text-sm font-semibold text-muted-foreground data-[state=active]:border-foreground data-[state=active]:text-foreground"
+                        >
+                          <TabStepBadge status={status} label={idx + 1} />
+                          <span>{section.title ?? "Step"}</span>
+                        </TabsTrigger>
+                      )
+                    })}
+                  </TabsList>
+                  {moduleId && activeInlineField ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleAssist(activeInlineField)}
+                      disabled={isAssistPending && activeAssistField === activeInlineField.name}
+                      className="gap-1"
+                    >
+                      {isAssistPending && activeAssistField === activeInlineField.name ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Sparkles className="h-3.5 w-3.5" />
+                      )}
+                      Assist
+                    </Button>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
             {tabSections.map((section) => (
               <TabsContent
                 key={section.id}
@@ -588,7 +723,9 @@ function AssignmentFormInner({
                 className="space-y-5"
               >
                 <div className="space-y-5">
-                  {section.fields.map((field) => renderField(field))}
+                  {section.fields.map((field) =>
+                    renderField(field, useInlineTabs ? { hideLabel: true, hideAssist: true } : undefined),
+                  )}
                 </div>
               </TabsContent>
             ))}

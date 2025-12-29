@@ -290,3 +290,44 @@ export function updateRoadmapSection(
     section: updatedSection,
   }
 }
+
+export function removeRoadmapSection(
+  profile: Record<string, unknown> | null | undefined,
+  sectionId: string | null | undefined,
+): { nextProfile: Record<string, unknown>; sections: RoadmapSection[]; removed: boolean; error?: string } {
+  const nextProfile = isRecord(profile) ? { ...profile } : {}
+  const roadmapRecord = isRecord(nextProfile.roadmap) ? { ...(nextProfile.roadmap as Record<string, unknown>) } : {}
+  const resolved = resolveRoadmapSections(nextProfile)
+  const targetId = normalizeText(sectionId)
+
+  if (!targetId) {
+    return { nextProfile, sections: resolved, removed: false, error: "Missing section id." }
+  }
+
+  if (resolved.length <= 1) {
+    return { nextProfile, sections: resolved, removed: false, error: "At least one section is required." }
+  }
+
+  const nextSections = resolved.filter((section) => section.id !== targetId)
+
+  if (nextSections.length === resolved.length) {
+    return { nextProfile, sections: resolved, removed: false, error: "Section not found." }
+  }
+
+  const updatedSections = ensureUniqueSlugs(nextSections)
+  roadmapRecord.sections = updatedSections.map((section) => ({
+    id: section.id,
+    title: section.title,
+    subtitle: section.subtitle,
+    slug: section.slug,
+    content: section.content,
+    lastUpdated: section.lastUpdated,
+    isPublic: section.isPublic,
+    layout: section.layout,
+    ctaLabel: section.ctaLabel,
+    ctaUrl: section.ctaUrl,
+  }))
+  nextProfile.roadmap = roadmapRecord
+
+  return { nextProfile, sections: updatedSections, removed: true }
+}

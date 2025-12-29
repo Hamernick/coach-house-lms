@@ -24,7 +24,12 @@ export default async function ClassLandingPage({ params }: { params: Promise<Par
 
   // Use existing server helper that already respects RLS and publication
   const classCtx = auth.user
-    ? await getClassModulesForUser({ classSlug: slug, userId: auth.user.id, forceAdmin: profile?.role === "admin" })
+    ? await getClassModulesForUser({
+        classSlug: slug,
+        userId: auth.user.id,
+        forceAdmin: profile?.role === "admin",
+        supabase,
+      })
     : null
 
   const moduleStates = classCtx ? buildModuleStates(classCtx.modules, classCtx.progressMap) : null

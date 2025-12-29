@@ -1,4 +1,5 @@
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
+import type { RoadmapSection } from "@/lib/roadmap"
 
 export type OrgProfile = {
   name?: string | null
@@ -61,7 +62,7 @@ export type OrgProgram = {
   cta_url?: string | null
 }
 
-export type ProfileTab = "company" | "programs" | "reports" | "people" | "supporters"
+export type ProfileTab = "company" | "programs" | "people" | "supporters" | "roadmap"
 
 export type SlugStatus = { available: boolean; suggestion?: string; message?: string } | null
 
@@ -70,4 +71,8 @@ export interface OrgProfileCardProps {
   people: OrgPersonWithImage[]
   programs?: OrgProgram[]
   canEdit?: boolean
+  roadmapSections: RoadmapSection[]
+  roadmapPublicSlug: string | null
+  roadmapIsPublic: boolean
+  initialTab?: ProfileTab
 }

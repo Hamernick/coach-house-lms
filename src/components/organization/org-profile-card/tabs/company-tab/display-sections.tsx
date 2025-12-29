@@ -8,9 +8,9 @@ import {
   FormRow,
   LinkText,
   ProfileField,
-  TagList,
 } from "@/components/organization/org-profile-card/shared"
 import type { CompanyViewProps } from "./types"
+import { stripHtml } from "@/lib/markdown/convert"
 
 export function IdentityPreview({ company }: CompanyViewProps) {
   if (!([company.description, company.ein].some((value) => typeof value === "string" && value.trim()))) {
@@ -86,31 +86,36 @@ const socialFields: Array<{ key: keyof CompanyViewProps["company"]; label: strin
 ]
 
 export function StoryPreview({ company }: CompanyViewProps) {
-  if (!([company.vision, company.need, company.mission, company.values].some((value) => typeof value === "string" && value.trim()))) {
+  const vision = typeof company.vision === "string" ? stripHtml(company.vision) : ""
+  const need = typeof company.need === "string" ? stripHtml(company.need) : ""
+  const mission = typeof company.mission === "string" ? stripHtml(company.mission) : ""
+  const values = typeof company.values === "string" ? stripHtml(company.values) : ""
+
+  if (!([vision, need, mission, values].some((value) => value.trim().length > 0))) {
     return null
   }
 
   return (
     <FormRow title="Story & impact">
       <div className="grid gap-4 md:grid-cols-2">
-        {typeof company.vision === "string" && company.vision.trim() ? (
+        {vision.trim().length > 0 ? (
           <ProfileField label="Vision">
-            <FieldText text={company.vision} multiline />
+            <FieldText text={vision} multiline />
           </ProfileField>
         ) : null}
-        {typeof company.need === "string" && company.need.trim() ? (
+        {need.trim().length > 0 ? (
           <ProfileField label="Need statement">
-            <FieldText text={company.need} multiline />
+            <FieldText text={need} multiline />
           </ProfileField>
         ) : null}
-        {typeof company.mission === "string" && company.mission.trim() ? (
+        {mission.trim().length > 0 ? (
           <ProfileField label="Mission">
-            <FieldText text={company.mission} multiline />
+            <FieldText text={mission} multiline />
           </ProfileField>
         ) : null}
-        {typeof company.values === "string" && company.values.trim() ? (
+        {values.trim().length > 0 ? (
           <ProfileField label="Values">
-            <TagList value={company.values} />
+            <FieldText text={values} multiline />
           </ProfileField>
         ) : null}
       </div>
@@ -164,8 +169,12 @@ export function SocialPreview({ company, hasAnyBrandLink }: CompanyViewProps) {
   )
 }
 
-export function BrandKitPreview({ company, hasBrandKit }: CompanyViewProps) {
-  if (!hasBrandKit) {
+export function BrandKitPreview({ company }: CompanyViewProps) {
+  const boilerplate = typeof company.boilerplate === "string" ? stripHtml(company.boilerplate) : ""
+  const showBrandKit =
+    (typeof company.logoUrl === "string" && company.logoUrl.trim()) || boilerplate.trim().length > 0
+
+  if (!showBrandKit) {
     return null
   }
 
@@ -177,9 +186,9 @@ export function BrandKitPreview({ company, hasBrandKit }: CompanyViewProps) {
             <BrandLink href={company.logoUrl} />
           </ProfileField>
         ) : null}
-        {typeof company.boilerplate === "string" && company.boilerplate.trim() ? (
+        {boilerplate.trim().length > 0 ? (
           <ProfileField label="Boilerplate">
-            <FieldText text={company.boilerplate} multiline />
+            <FieldText text={boilerplate} multiline />
           </ProfileField>
         ) : null}
       </div>

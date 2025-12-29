@@ -4,7 +4,6 @@ import type { LucideIcon } from "lucide-react"
 import BuildingIcon from "lucide-react/dist/esm/icons/building-2"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
 import LayoutDashboardIcon from "lucide-react/dist/esm/icons/layout-dashboard"
-import MapIcon from "lucide-react/dist/esm/icons/map"
 import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
 import ShoppingBagIcon from "lucide-react/dist/esm/icons/shopping-bag"
@@ -20,7 +19,6 @@ export function buildMainNav(isAdmin: boolean): Array<{ title: string; href: str
   if (!isAdmin) {
     items.push(
       { title: "My Organization", href: "/my-organization", icon: BuildingIcon },
-      { title: "Strategic Roadmap", href: "/strategic-roadmap", icon: MapIcon },
       { title: "People", href: "/people", icon: UsersIcon },
     )
   }

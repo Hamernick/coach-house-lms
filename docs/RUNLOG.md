@@ -680,3 +680,7 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-29 — Codex session (Dashboard cleanup)
 
 - UI: removed the org hero/focus card from the dashboard and simplified the layout to the remaining utility cards (`src/app/(dashboard)/dashboard/page.tsx`).
+
+## 2025-12-29 — Codex session (Next.js CVE patch)
+
+- Chore: bumped Next.js + eslint-config-next to 16.1.1 to address Vercel CVE warning (`package.json`, `package-lock.json`).

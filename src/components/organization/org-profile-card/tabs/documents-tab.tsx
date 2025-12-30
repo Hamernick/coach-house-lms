@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Lock from "lucide-react/dist/esm/icons/lock"
 import FileText from "lucide-react/dist/esm/icons/file-text"
 import UploadCloud from "lucide-react/dist/esm/icons/upload-cloud"
@@ -10,15 +10,18 @@ import ExternalLink from "lucide-react/dist/esm/icons/external-link"
 import PencilLine from "lucide-react/dist/esm/icons/pencil-line"
 import { formatDistanceToNow } from "date-fns"
 
-import { Button } from "@/components/ui/button"
+import { Button, buttonVariants } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { FormRow, ProfileField } from "@/components/organization/org-profile-card/shared"
+import { Dropzone } from "@/components/ui/shadcn-io/dropzone"
 import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 import type { OrgDocuments, OrgDocument } from "../types"
 
 const DOCUMENT_KIND = "verification-letter"
 const MAX_LABEL_LENGTH = 120
+const MAX_BYTES = 15 * 1024 * 1024
 
 type DocumentsTabProps = {
   documents?: OrgDocuments | null
@@ -53,7 +56,6 @@ export function DocumentsTab({ documents, editMode, canEdit }: DocumentsTabProps
   const [isRenaming, setIsRenaming] = useState(false)
   const [isViewing, setIsViewing] = useState(false)
   const [nameDraft, setNameDraft] = useState(initial?.name ?? "")
-  const fileInputId = useId()
 
   useEffect(() => {
     setDoc(documents?.verificationLetter ?? null)
@@ -230,24 +232,42 @@ export function DocumentsTab({ documents, editMode, canEdit }: DocumentsTabProps
               ) : null}
 
               <div className="flex flex-wrap items-center gap-2">
-                <input
-                  id={fileInputId}
-                  type="file"
-                  accept="application/pdf"
-                  className="sr-only"
-                  onChange={(event) => {
-                    const file = event.currentTarget.files?.[0]
+                <Dropzone
+                  accept={{ "application/pdf": [] }}
+                  maxFiles={1}
+                  maxSize={MAX_BYTES}
+                  disabled={isUploading}
+                  onDrop={(accepted) => {
+                    const file = accepted[0]
                     if (!file) return
                     void handleUpload(file)
-                    event.currentTarget.value = ""
                   }}
-                />
-                <Button asChild size="sm" variant="secondary" disabled={isUploading}>
-                  <label htmlFor={fileInputId} className="cursor-pointer">
-                    {hasDocument ? <RefreshCw className="h-4 w-4" /> : <UploadCloud className="h-4 w-4" />}
-                    {isUploading ? "Uploading…" : hasDocument ? "Replace file" : "Upload file"}
-                  </label>
-                </Button>
+                  onError={(error) => {
+                    toast.error(error.message || "Upload failed")
+                  }}
+                  className="border-dashed bg-muted/20 hover:bg-muted/30"
+                >
+                  <div className="flex flex-col items-center gap-3 text-center">
+                    <div className="flex size-10 items-center justify-center rounded-full border bg-background text-muted-foreground">
+                      {hasDocument ? <RefreshCw className="h-4 w-4" /> : <UploadCloud className="h-4 w-4" />}
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">
+                        {hasDocument ? "Replace the current PDF" : "Upload your PDF"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Drag and drop here, or click to upload.</p>
+                      <p className="text-xs text-muted-foreground">PDF up to 15 MB.</p>
+                    </div>
+                    <span
+                      className={cn(
+                        buttonVariants({ variant: "secondary", size: "sm" }),
+                        isUploading && "pointer-events-none opacity-60",
+                      )}
+                    >
+                      {isUploading ? "Uploading…" : hasDocument ? "Replace file" : "Upload file"}
+                    </span>
+                  </div>
+                </Dropzone>
                 {hasDocument ? (
                   <>
                     <Button size="sm" variant="outline" onClick={handleView} disabled={isViewing}>

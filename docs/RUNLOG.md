@@ -770,8 +770,39 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 
 ## 2025-12-30 — Codex session (Brand kit upload buttons)
 
-- Fix: brand kit logo/header upload buttons now trigger the file picker reliably (`src/components/organization/org-profile-card/tabs/company-tab/edit-sections/brand-kit.tsx`).
+- Fix: brand kit logo upload button now triggers the file picker reliably (`src/components/organization/org-profile-card/tabs/company-tab/edit-sections/brand-kit.tsx`).
 
 ## 2025-12-30 — Codex session (Brand kit scope tweak)
 
 - UI: removed header image upload/input from the Brand Kit section so it only manages logo + boilerplate (`src/components/organization/org-profile-card/tabs/company-tab/edit-sections/brand-kit.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/display-sections.tsx`).
+
+## 2025-12-30 — Codex session (Brand kit boilerplate helper)
+
+- UI: added boilerplate description text and an example tooltip in Brand Kit (`src/components/organization/org-profile-card/tabs/company-tab/edit-sections/brand-kit.tsx`, `src/components/organization/org-profile-card/shared.tsx`).
+
+## 2025-12-30 — Codex session (Presence icon alignment)
+
+- UI: aligned InputWithIcon glyphs via flex centering to fix newsletter icon offset (`src/components/organization/org-profile-card/shared.tsx`).
+
+## 2025-12-30 — Codex session (Story values helper)
+
+- UI: removed the comma-separated values helper text from Story & impact (`src/components/organization/org-profile-card/tabs/company-tab/edit-sections/story.tsx`).
+
+## 2025-12-30 — Codex session (Org form placeholders + icon alignment)
+
+- UI: added placeholders across organization About form inputs and textareas (`src/components/organization/org-profile-card/tabs/company-tab/edit-sections/identity.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/contact.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/story.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/programs-reports.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/brand-kit.tsx`).
+- UI: nudged InputWithIcon glyphs up for better alignment in newsletter/social inputs (`src/components/organization/org-profile-card/shared.tsx`).
+
+## 2025-12-30 — Codex session (Empty states + dropzone)
+
+- UI: added empty states to People and Supporters tabs (`src/components/organization/org-profile-card/tabs/people-tab.tsx`, `src/components/organization/org-profile-card/tabs/supporters-tab.tsx`).
+- UI: added a dropzone upload area for documents with centered upload control (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`).
+- UI: added placeholders for newsletter + logo URL inputs and adjusted icon alignment (`src/components/organization/org-profile-card/tabs/company-tab/edit-sections/presence.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/brand-kit.tsx`, `src/components/organization/org-profile-card/shared.tsx`).
+
+## 2025-12-30 — Codex session (Dropzone PDF validation check)
+
+- Verified: documents dropzone and upload route already restrict files to PDFs only (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`, `src/app/api/account/org-documents/route.ts`).
+
+## 2025-12-30 — Codex session (Org logo upload click fix)
+
+- Fix: logo/header image upload buttons now use labeled inputs so clicking "Add image" opens the file picker (`src/components/organization/org-profile-card/header.tsx`).

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 
 import { inferSocialSlug, normalizeToList, shortUrl } from "./utils"
 
-export function ProfileField({ label, children }: { label: string; children: ReactNode }) {
+export function ProfileField({ label, children }: { label: ReactNode; children: ReactNode }) {
   const childArray = Children.toArray(children).filter((child) => {
     if (child == null) return false
     if (typeof child === "string") return child.trim().length > 0
@@ -68,7 +68,9 @@ export function InputWithIcon({
 }) {
   return (
     <div className="relative">
-      <Icon className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+      <span className="pointer-events-none absolute inset-y-0 left-2 flex items-center">
+        <Icon className="h-4 w-4 -translate-y-[2px] text-muted-foreground" />
+      </span>
       <Input {...inputProps} className={cn("pl-7", inputProps.className)} />
     </div>
   )

@@ -31,7 +31,7 @@ export function PresenceSection({ company, errors, onInputChange }: CompanyEditP
               value: company.newsletter ?? "",
               onChange: onInputChange,
               "aria-invalid": Boolean((errors as Record<string, string>).newsletter),
-              placeholder: "https://",
+              placeholder: "newsletter.example.org",
             }}
           />
           {(errors as Record<string, string>).newsletter ? (

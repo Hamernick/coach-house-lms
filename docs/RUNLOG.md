@@ -880,3 +880,7 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-30 — Codex session (Program card header fill)
 
 - UI: removed header padding and inner rounding so program card images fill the header edge-to-edge (`src/components/programs/program-card.tsx`).
+
+## 2025-12-30 — Codex session (Header tagline width)
+
+- UI: constrained org header tagline width for better readability (`src/components/organization/org-profile-card/header.tsx`).

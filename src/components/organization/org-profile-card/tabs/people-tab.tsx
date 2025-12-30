@@ -3,8 +3,10 @@
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
+import { Empty } from "@/components/ui/empty"
 import { FormRow } from "@/components/organization/org-profile-card/shared"
 import { PeopleShowcase, type OrgPersonWithImage } from "@/components/people/supporters-showcase"
+import UsersIcon from "lucide-react/dist/esm/icons/users"
 
 type PeopleTabProps = {
   editMode: boolean
@@ -20,56 +22,75 @@ export function PeopleTab({ editMode, people }: PeopleTabProps) {
     return (
       <div className="grid gap-6">
         <FormRow title="People" description="Staff and board members.">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between gap-2">
-              <div />
-              <Button asChild size="sm" variant="outline">
-                <Link href="/people">Manage in People</Link>
-              </Button>
-            </div>
+          {!hasAny ? (
+            <Empty
+              icon={<UsersIcon className="h-5 w-5" />}
+              title="No people yet"
+              description="Add staff and board members from the People page."
+              actions={
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/people">Manage in People</Link>
+                </Button>
+              }
+            />
+          ) : (
             <div className="space-y-4">
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Staff</h4>
-                <PeopleShowcase
-                  people={staff}
-                  allPeople={people}
-                  emptyMessage={"No staff yet. Add team members from the People page."}
-                />
+              <div className="flex items-center justify-between gap-2">
+                <div />
+                <Button asChild size="sm" variant="outline">
+                  <Link href="/people">Manage in People</Link>
+                </Button>
               </div>
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-muted-foreground">Board</h4>
-                <PeopleShowcase
-                  people={board}
-                  allPeople={people}
-                  emptyMessage={"No board members yet. Add them from the People page."}
-                />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Staff</h4>
+                  <PeopleShowcase
+                    people={staff}
+                    allPeople={people}
+                    emptyMessage={"No staff yet. Add team members from the People page."}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Board</h4>
+                  <PeopleShowcase
+                    people={board}
+                    allPeople={people}
+                    emptyMessage={"No board members yet. Add them from the People page."}
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </FormRow>
       </div>
     )
   }
 
-  if (!hasAny) return null
-
   return (
     <div className="grid gap-6">
       <FormRow title="People">
-        <div className="space-y-4">
-          {staff.length > 0 ? (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Staff</h4>
-              <PeopleShowcase people={staff} allPeople={people} emptyMessage={""} />
-            </div>
-          ) : null}
-          {board.length > 0 ? (
-            <div className="space-y-2">
-              <h4 className="text-sm font-medium text-muted-foreground">Board</h4>
-              <PeopleShowcase people={board} allPeople={people} emptyMessage={""} />
-            </div>
-          ) : null}
-        </div>
+        {!hasAny ? (
+          <Empty
+            icon={<UsersIcon className="h-5 w-5" />}
+            title="No people to display"
+            description="Staff and board members will show up here once they are added."
+          />
+        ) : (
+          <div className="space-y-4">
+            {staff.length > 0 ? (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Staff</h4>
+                <PeopleShowcase people={staff} allPeople={people} emptyMessage={""} />
+              </div>
+            ) : null}
+            {board.length > 0 ? (
+              <div className="space-y-2">
+                <h4 className="text-sm font-medium text-muted-foreground">Board</h4>
+                <PeopleShowcase people={board} allPeople={people} emptyMessage={""} />
+              </div>
+            ) : null}
+          </div>
+        )}
       </FormRow>
     </div>
   )

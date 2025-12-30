@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useId, useState } from "react"
 import { toast } from "@/lib/toast"
 
 import Link from "next/link"
@@ -60,6 +60,8 @@ export function OrgProfileHeader({
   onCancelEdit,
   onSave,
 }: OrgProfileHeaderProps) {
+  const logoInputId = useId()
+  const headerInputId = useId()
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const [isUploadingHeader, setIsUploadingHeader] = useState(false)
 
@@ -106,18 +108,20 @@ export function OrgProfileHeader({
         />
         {canEdit && editMode ? (
           <div className="absolute right-4 top-4 flex items-center gap-2">
-            <label className="inline-flex">
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.currentTarget.files?.[0]
-                  if (!file) return
-                  void handleUpload(file, "header")
-                }}
-              />
-              <Button size="sm" variant="secondary" disabled={isUploadingHeader}>
+            <input
+              id={headerInputId}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0]
+                if (!file) return
+                void handleUpload(file, "header")
+                event.currentTarget.value = ""
+              }}
+            />
+            <Button asChild size="sm" variant="secondary" disabled={isUploadingHeader}>
+              <label htmlFor={headerInputId} className="cursor-pointer">
                 {isUploadingHeader ? (
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="size-4 animate-spin" /> Image…
@@ -127,8 +131,8 @@ export function OrgProfileHeader({
                 ) : (
                   "Add header"
                 )}
-              </Button>
-            </label>
+              </label>
+            </Button>
           </div>
         ) : null}
       </div>
@@ -145,27 +149,31 @@ export function OrgProfileHeader({
             </div>
           </div>
           {canEdit && editMode ? (
-            <label className="inline-flex">
+            <>
               <input
+                id={logoInputId}
                 type="file"
                 accept="image/*"
-                className="hidden"
+                className="sr-only"
                 onChange={(event) => {
                   const file = event.currentTarget.files?.[0]
                   if (!file) return
                   void handleUpload(file, "logo")
+                  event.currentTarget.value = ""
                 }}
               />
-              <Button size="sm" variant="outline" disabled={isUploadingLogo}>
-                {isUploadingLogo ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 className="size-4 animate-spin" /> Image…
-                  </span>
-                ) : (
-                  "Add image"
-                )}
+              <Button asChild size="sm" variant="outline" disabled={isUploadingLogo}>
+                <label htmlFor={logoInputId} className="cursor-pointer">
+                  {isUploadingLogo ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="size-4 animate-spin" /> Image…
+                    </span>
+                  ) : (
+                    "Add image"
+                  )}
+                </label>
               </Button>
-            </label>
+            </>
           ) : null}
         </div>
 

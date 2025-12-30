@@ -1,14 +1,12 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 
-import { startCheckout } from "@/app/(public)/pricing/actions"
-import { getPricingPlans, type PricingPlan } from "@/lib/pricing"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { CheckoutSubmit } from "@/components/pricing/checkout-submit"
 import { PublicHeader } from "@/components/public/public-header"
+import { cn } from "@/lib/utils"
+import Check from "lucide-react/dist/esm/icons/check"
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -19,59 +17,145 @@ export const metadata: Metadata = {
 export const runtime = "nodejs"
 export const revalidate = 3600
 
-const FREE_FEATURES = [
-  "501(c)(3) formation (articles of incorporation, bylaws, basic financial manual)",
-  "Core documents",
-  "CRM + org chart",
-  "Fundraising tools",
-  "Brand kit",
-  "Public + shareable assets with a donate button",
-  "Reports",
+type PlanSection = {
+  title: string
+  items: string[]
+}
+
+type PricingTier = {
+  id: string
+  name: string
+  price: string
+  priceNote?: string
+  purpose: string
+  outcome?: string
+  ctaLabel: string
+  ctaHref: string
+  featured?: boolean
+  badge?: string
+  sections: PlanSection[]
+}
+
+const TIERS: PricingTier[] = [
+  {
+    id: "tier-1",
+    name: "Platform",
+    price: "Free",
+    purpose: "Help users start their 501(c)(3) non-profit.",
+    outcome: "Outcome: Legally exist and able to raise money.",
+    ctaLabel: "Get started",
+    ctaHref: "/sign-up",
+    sections: [
+      {
+        title: "Guidance on how to start a 501(c)(3)",
+        items: ["Register EIN", "Board setup", "501(c)(3) filing", "Fiscal agent (optional)"],
+      },
+      {
+        title: "Platform access",
+        items: ["Logo", "Org basics", "Bank account setup"],
+      },
+    ],
+  },
+  {
+    id: "tier-2",
+    name: "Accelerator",
+    price: "$349",
+    priceNote: "One-time",
+    purpose: "Add structured accelerator content and planning support.",
+    ctaLabel: "Get started",
+    ctaHref: "/sign-up",
+    sections: [
+      {
+        title: "Includes",
+        items: ["Accelerator videos", "Strategic roadmap"],
+      },
+      {
+        title: "Add-ons (optional)",
+        items: ["Electives: $25", "Coaching: $100"],
+      },
+    ],
+  },
+  {
+    id: "tier-3",
+    name: "Launch",
+    price: "$499",
+    priceNote: "One-time",
+    purpose: "Core offering for launching with support.",
+    ctaLabel: "Get started",
+    ctaHref: "/sign-up",
+    featured: true,
+    badge: "Recommended",
+    sections: [
+      {
+        title: "Includes",
+        items: ["Everything in Tier 2", "4 coaching sessions", "Core offering through T.O.C. (Theory of Change)"],
+      },
+      {
+        title: "Key coaching topics",
+        items: ["Original Need", "Mission, Vision", "Theory of Change", "Timeline", "Readiness"],
+      },
+      {
+        title: "Add-ons",
+        items: ["Verified and visible to funders: Pilot evaluation, Budget, Compliance"],
+      },
+    ],
+  },
+  {
+    id: "tier-4",
+    name: "Community",
+    price: "$58/month",
+    purpose: "Ongoing support and community access.",
+    ctaLabel: "Get started",
+    ctaHref: "/sign-up",
+    sections: [
+      {
+        title: "Includes",
+        items: [
+          "Accelerator",
+          "Strategic roadmap (templates included)",
+          "Platform access",
+          "Community access: topics in communications, fundraising, strategy",
+          "Treasure map pin",
+          "Monthly/weekly Zoom calls (ask anything, see others, communicate)",
+          "Community meetups",
+          "Find board members",
+        ],
+      },
+      {
+        title: "Add-ons",
+        items: ["Electives: $25", "Coaching: $125 per 45-minute session"],
+      },
+    ],
+  },
 ]
 
-const PAID_FEATURES = [
-  "AI tooling (token limits)",
-  "4 expert sessions (45 minutes each)",
-  "Accelerator",
-  "Verified badge upon completion",
-  "Strategic roadmap",
-  "Multiple seats (admins + employees)",
-  "Advanced templates (board policy, bylaws)",
-]
-
-const ENTERPRISE_FEATURES = [
-  "AI tooling (higher token limits)",
-  "1:1 coaching (3x a month)",
-]
-
-const PUBLIC_FEATURES = ["ResourceMap listing"]
-
-const MARKETPLACE_FEATURES = [
-  "Services, tools, SaaS",
-  "Accountants",
-  "Lawyers",
-  "HR",
-  "Free tools + discounts",
-]
-
-function findPaidPlan(plans: PricingPlan[]) {
-  const paidMatch = plans.find((plan) =>
-    ["paid", "pro", "growth", "plus", "accelerator"].some((keyword) =>
-      plan.name.toLowerCase().includes(keyword),
-    ),
+function TierSection({ title, items, featured }: { title: string; items: string[]; featured?: boolean }) {
+  return (
+    <div className="space-y-3">
+      <p
+        className={cn(
+          "text-xs font-semibold uppercase tracking-[0.18em]",
+          featured ? "text-background/70" : "text-muted-foreground",
+        )}
+      >
+        {title}
+      </p>
+      <ul className="space-y-2 text-sm">
+        {items.map((item) => (
+          <li key={item} className="flex items-start gap-2">
+            <Check
+              className={cn("mt-0.5 h-4 w-4", featured ? "text-background" : "text-foreground")}
+              aria-hidden
+            />
+            <span className={cn(featured ? "text-background/80" : "text-muted-foreground")}>{item}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
   )
-
-  if (paidMatch) return paidMatch
-
-  return plans.find((plan) => plan.amount > 0) ?? null
 }
 
 export default async function PricingPage() {
-  const plans = await getPricingPlans()
-  const paidPriceOverride = "$99/month"
-  const paidPlan = findPaidPlan(plans)
-  const paidPriceId = paidPlan?.id ?? null
-
   return (
     <main className="relative min-h-screen bg-background">
       <PublicHeader />
@@ -79,160 +163,87 @@ export default async function PricingPage() {
         <section className="mx-auto max-w-3xl text-center">
           <Badge variant="outline" className="mb-4">OpenNFP</Badge>
           <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl">
-            The platform for organizations
+            Pricing for every stage of your nonprofit
           </h1>
-        <p className="mt-4 text-lg text-muted-foreground">
-          We get your fundraising ready with core documents, fundraising tools, and expert guidance.
-        </p>
-        </section>
-
-        <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="flex h-full flex-col bg-card/80">
-          <CardHeader className="space-y-3 text-center">
-            <div className="flex items-center justify-center gap-2">
-              <CardTitle className="text-2xl font-semibold">Free</CardTitle>
-            </div>
-            <CardDescription className="text-balance">
-              Everything you need to get organized and fundraising-ready.
-            </CardDescription>
-            <p className="text-3xl font-semibold">No cost</p>
-          </CardHeader>
-          <CardContent className="flex flex-1 flex-col gap-4">
-            <ul className="space-y-3 text-sm">
-              {FREE_FEATURES.map((feature) => (
-                <li key={feature} className="flex items-start gap-2 text-left">
-                  <span className="mt-1 size-1.5 rounded-full bg-primary" aria-hidden />
-                  <span className="text-muted-foreground">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-          <CardFooter className="mt-auto">
-            <Button asChild variant="outline" className="w-full">
-              <Link href="/sign-up">Get started free</Link>
-            </Button>
-          </CardFooter>
-        </Card>
-
-        <Card className="flex h-full flex-col border-primary/30 bg-primary/5 shadow-lg">
-          <CardHeader className="space-y-3 text-center">
-            <div className="flex items-center justify-center gap-2">
-              <CardTitle className="text-2xl font-semibold">Paid</CardTitle>
-              <Badge variant="default">Most popular</Badge>
-            </div>
-            <CardDescription className="text-balance">
-              Expert guidance, accelerator workflows, and advanced templates.
-            </CardDescription>
-            <div className="space-y-1">
-              <p className="text-3xl font-semibold">{paidPriceOverride}</p>
-              <p className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">Billed monthly</p>
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-1 flex-col gap-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Everything in Free, plus:
-            </p>
-            <ul className="space-y-3 text-sm">
-              {PAID_FEATURES.map((feature) => (
-                <li key={feature} className="flex items-start gap-2 text-left">
-                  <span className="mt-1 size-1.5 rounded-full bg-primary" aria-hidden />
-                  <span className="text-muted-foreground">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-          <CardFooter className="mt-auto">
-            {paidPriceId && paidPriceId.startsWith("price_") ? (
-              <form action={startCheckout} className="w-full">
-                <input type="hidden" name="priceId" value={paidPriceId} />
-                <input type="hidden" name="planName" value="Paid" />
-                <CheckoutSubmit variant="default">Start paid plan</CheckoutSubmit>
-              </form>
-            ) : (
-              <Button asChild className="w-full">
-                <Link href="/sign-up">Start paid plan</Link>
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-
-        <Card className="flex h-full flex-col bg-card/80">
-          <CardHeader className="space-y-3 text-center">
-            <div className="flex items-center justify-center gap-2">
-              <CardTitle className="text-2xl font-semibold">Enterprise</CardTitle>
-            </div>
-            <CardDescription className="text-balance">
-              Everything in Paid plus higher-touch coaching for larger teams.
-            </CardDescription>
-            <p className="text-3xl font-semibold">Custom</p>
-          </CardHeader>
-          <CardContent className="flex flex-1 flex-col gap-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Everything in Paid, plus:
-            </p>
-            <ul className="space-y-3 text-sm">
-              {ENTERPRISE_FEATURES.map((feature) => (
-                <li key={feature} className="flex items-start gap-2 text-left">
-                  <span className="mt-1 size-1.5 rounded-full bg-primary" aria-hidden />
-                  <span className="text-muted-foreground">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-          <CardFooter className="mt-auto">
-            <Button asChild variant="outline" className="w-full">
-              <Link href="mailto:sales@coachhouse.io">Contact enterprise</Link>
-            </Button>
-          </CardFooter>
-        </Card>
-        </section>
-
-        <section className="space-y-6">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-2xl font-semibold">Public + Marketplace</h2>
-          <p className="text-sm text-muted-foreground">
-            Included for every organization to grow visibility and find trusted partners.
+          <p className="mt-4 text-lg text-muted-foreground">
+            Start free, move into accelerator support, or stay with us for ongoing coaching and community.
           </p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card className="bg-card/60">
-            <CardHeader className="space-y-2">
-              <CardTitle className="text-lg">Public</CardTitle>
-              <CardDescription>Show up on the community map and share your story.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              {PUBLIC_FEATURES.map((feature) => (
-                <div key={feature} className="flex items-start gap-2 text-left">
-                  <span className="mt-1 size-1.5 rounded-full bg-primary" aria-hidden />
-                  <span className="text-muted-foreground">{feature}</span>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
+        </section>
 
-          <Card className="bg-card/60">
-            <CardHeader className="space-y-2">
-              <CardTitle className="text-lg">Marketplace</CardTitle>
-              <CardDescription>Discover tools and vetted partners for growth.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              {MARKETPLACE_FEATURES.map((feature) => (
-                <div key={feature} className="flex items-start gap-2 text-left">
-                  <span className="mt-1 size-1.5 rounded-full bg-primary" aria-hidden />
-                  <span className="text-muted-foreground">{feature}</span>
+        <section className="grid gap-6 lg:grid-cols-4">
+          {TIERS.map((tier) => (
+            <Card
+              key={tier.id}
+              className={cn(
+                "flex h-full flex-col rounded-3xl border bg-card/80 shadow-sm",
+                tier.featured && "border-foreground/70 bg-foreground text-background shadow-xl",
+              )}
+            >
+              <CardHeader className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className={cn("text-lg font-semibold", tier.featured && "text-background")}>
+                    {tier.name}
+                  </CardTitle>
+                  {tier.badge ? (
+                    <Badge
+                      variant="secondary"
+                      className={cn(
+                        "rounded-full text-xs",
+                        tier.featured && "bg-background text-foreground",
+                      )}
+                    >
+                      {tier.badge}
+                    </Badge>
+                  ) : null}
                 </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-        <Separator />
-        <div className="text-center text-sm text-muted-foreground">
-          Questions? Email{" "}
-          <a href="mailto:support@coachhouse.io" className="font-medium text-primary underline-offset-4 hover:underline">
-            support@coachhouse.io
-          </a>{" "}
-          and we will help you plan your rollout.
-        </div>
+                <div className="space-y-1">
+                  <CardTitle className={cn("text-4xl font-semibold", tier.featured && "text-background")}>
+                    {tier.price}
+                  </CardTitle>
+                  {tier.priceNote ? (
+                    <p
+                      className={cn(
+                        "text-xs font-semibold uppercase tracking-[0.18em]",
+                        tier.featured ? "text-background/60" : "text-muted-foreground",
+                      )}
+                    >
+                      {tier.priceNote}
+                    </p>
+                  ) : null}
+                </div>
+                <CardDescription className={cn("text-sm text-muted-foreground", tier.featured && "text-background/70")}>
+                  {tier.purpose}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="flex flex-1 flex-col gap-6">
+                {tier.sections.map((section) => (
+                  <TierSection
+                    key={`${tier.id}-${section.title}`}
+                    title={section.title}
+                    items={section.items}
+                    featured={tier.featured}
+                  />
+                ))}
+                {tier.outcome ? (
+                  <p className={cn("text-sm font-medium", tier.featured ? "text-background" : "text-foreground")}>
+                    {tier.outcome}
+                  </p>
+                ) : null}
+              </CardContent>
+              <CardFooter className="mt-auto">
+                <Button
+                  asChild
+                  className={cn(
+                    "w-full",
+                    tier.featured ? "bg-background text-foreground hover:bg-background/90" : "",
+                  )}
+                  variant={tier.featured ? "secondary" : "outline"}
+                >
+                  <Link href={tier.ctaHref}>{tier.ctaLabel}</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          ))}
         </section>
       </div>
     </main>

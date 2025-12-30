@@ -926,3 +926,19 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-30 — Codex session (News header)
 
 - UI: added the public header to the news page and adjusted spacing for the sticky layout (`src/app/(public)/news/page.tsx`).
+
+## 2025-12-30 — Codex session (Pricing card order)
+
+- UI: reordered pricing cards so the $58/month Community tier appears immediately after Free (`src/app/(public)/pricing/page.tsx`).
+
+## 2025-12-30 — Codex session (Pricing add-ons cards)
+
+- UI: moved elective/coaching add-ons into separate cards below the tiers and standardized checkmark sizing (`src/app/(public)/pricing/page.tsx`).
+
+## 2025-12-30 — Codex session (Pricing checkmarks)
+
+- UI: wrapped pricing checkmarks in rounded square badges for a checkbox-like appearance (`src/app/(public)/pricing/page.tsx`).
+
+## 2025-12-30 — Codex session (Pricing separators)
+
+- UI: added a divider above each tier purpose line to match the pricing card layout (`src/app/(public)/pricing/page.tsx`).

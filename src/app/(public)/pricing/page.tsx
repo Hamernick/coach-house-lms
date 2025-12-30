@@ -4,6 +4,7 @@ import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
 import { PublicHeader } from "@/components/public/public-header"
 import { cn } from "@/lib/utils"
 import Check from "lucide-react/dist/esm/icons/check"
@@ -57,50 +58,6 @@ const TIERS: PricingTier[] = [
     ],
   },
   {
-    id: "tier-2",
-    name: "Accelerator",
-    price: "$349",
-    priceNote: "One-time",
-    purpose: "Add structured accelerator content and planning support.",
-    ctaLabel: "Get started",
-    ctaHref: "/sign-up",
-    sections: [
-      {
-        title: "Includes",
-        items: ["Accelerator videos", "Strategic roadmap"],
-      },
-      {
-        title: "Add-ons (optional)",
-        items: ["Electives: $25", "Coaching: $100"],
-      },
-    ],
-  },
-  {
-    id: "tier-3",
-    name: "Launch",
-    price: "$499",
-    priceNote: "One-time",
-    purpose: "Core offering for launching with support.",
-    ctaLabel: "Get started",
-    ctaHref: "/sign-up",
-    featured: true,
-    badge: "Recommended",
-    sections: [
-      {
-        title: "Includes",
-        items: ["Everything in Tier 2", "4 coaching sessions", "Core offering through T.O.C. (Theory of Change)"],
-      },
-      {
-        title: "Key coaching topics",
-        items: ["Original Need", "Mission, Vision", "Theory of Change", "Timeline", "Readiness"],
-      },
-      {
-        title: "Add-ons",
-        items: ["Verified and visible to funders: Pilot evaluation, Budget, Compliance"],
-      },
-    ],
-  },
-  {
     id: "tier-4",
     name: "Community",
     price: "$58/month",
@@ -121,13 +78,61 @@ const TIERS: PricingTier[] = [
           "Find board members",
         ],
       },
+    ],
+  },
+  {
+    id: "tier-2",
+    name: "Accelerator",
+    price: "$349",
+    priceNote: "One-time",
+    purpose: "Add structured accelerator content and planning support.",
+    ctaLabel: "Get started",
+    ctaHref: "/sign-up",
+    sections: [
       {
-        title: "Add-ons",
-        items: ["Electives: $25", "Coaching: $125 per 45-minute session"],
+        title: "Includes",
+        items: ["Accelerator videos", "Strategic roadmap"],
+      },
+    ],
+  },
+  {
+    id: "tier-3",
+    name: "Launch",
+    price: "$499",
+    priceNote: "One-time",
+    purpose: "Core offering for launching with support.",
+    ctaLabel: "Get started",
+    ctaHref: "/sign-up",
+    featured: true,
+    badge: "Recommended",
+    sections: [
+      {
+        title: "Includes",
+        items: ["Everything in Tier 2", "Core offering through T.O.C. (Theory of Change)"],
+      },
+      {
+        title: "Verified & visible to funders",
+        items: ["Pilot evaluation", "Budget", "Compliance"],
       },
     ],
   },
 ]
+
+function CheckBadge({ featured }: { featured?: boolean }) {
+  return (
+    <span
+      className={cn(
+        "mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border text-[11px]",
+        featured
+          ? "border-background/30 bg-background/10 text-background"
+          : "border-border/70 bg-muted/50 text-foreground",
+      )}
+      aria-hidden
+    >
+      <Check className="h-3 w-3" />
+    </span>
+  )
+}
 
 function TierSection({ title, items, featured }: { title: string; items: string[]; featured?: boolean }) {
   return (
@@ -143,10 +148,7 @@ function TierSection({ title, items, featured }: { title: string; items: string[
       <ul className="space-y-2 text-sm">
         {items.map((item) => (
           <li key={item} className="flex items-start gap-2">
-            <Check
-              className={cn("mt-0.5 h-4 w-4", featured ? "text-background" : "text-foreground")}
-              aria-hidden
-            />
+            <CheckBadge featured={featured} />
             <span className={cn(featured ? "text-background/80" : "text-muted-foreground")}>{item}</span>
           </li>
         ))}
@@ -211,6 +213,7 @@ export default async function PricingPage() {
                     </p>
                   ) : null}
                 </div>
+                <Separator className={cn("my-1", tier.featured ? "bg-background/30" : "bg-border/70")} />
                 <CardDescription className={cn("text-sm text-muted-foreground", tier.featured && "text-background/70")}>
                   {tier.purpose}
                 </CardDescription>
@@ -244,6 +247,46 @@ export default async function PricingPage() {
               </CardFooter>
             </Card>
           ))}
+        </section>
+
+        <section className="grid gap-6 md:grid-cols-2">
+          <Card className="rounded-3xl border bg-card/70 shadow-sm">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-lg font-semibold">Electives</CardTitle>
+              <CardDescription>Optional curriculum extensions.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm text-muted-foreground">
+              <div className="flex items-start gap-2">
+                <CheckBadge />
+                $25 per elective module
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckBadge />
+                Add to Accelerator or Community tiers
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="rounded-3xl border bg-card/70 shadow-sm">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-lg font-semibold">Coaching</CardTitle>
+              <CardDescription>Calendar scheduling with a consultant.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 text-sm text-muted-foreground">
+              <div className="flex items-start gap-2">
+                <CheckBadge />
+                Launch includes 4 coaching sessions (covers Original Need, Mission, Vision, Theory of Change, Timeline, Readiness)
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckBadge />
+                Accelerator: $100 per 45-minute session
+              </div>
+              <div className="flex items-start gap-2">
+                <CheckBadge />
+                Community: $75 per 45-minute session
+              </div>
+            </CardContent>
+          </Card>
         </section>
       </div>
     </main>

@@ -64,8 +64,8 @@ export function ProgramCard({
 
   return (
     <Card className="w-[380px] h-[600px] overflow-hidden rounded-3xl shadow-sm border-muted/50 flex flex-col py-0 gap-0">
-      <div className="relative p-[5px] pb-0">
-        <div className="relative overflow-hidden rounded-[var(--radius-program-image)] aspect-[4/3] bg-muted">
+      <div className="relative">
+        <div className="relative overflow-hidden aspect-[4/3] bg-muted">
           {imageUrl ? (
             <Image
               src={imageUrl}

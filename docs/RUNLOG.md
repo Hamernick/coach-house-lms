@@ -876,3 +876,7 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-30 — Codex session (Program button alignment)
 
 - UI: right-aligned the New program button and added a plus icon to the trigger (`src/components/organization/org-profile-card/tabs/programs-tab.tsx`, `src/components/programs/program-wizard.tsx`).
+
+## 2025-12-30 — Codex session (Program card header fill)
+
+- UI: removed header padding and inner rounding so program card images fill the header edge-to-edge (`src/components/programs/program-card.tsx`).

@@ -134,16 +134,18 @@ export function OrgProfileHeader({
       </div>
 
       <div className="relative p-6">
-        <div className="absolute -top-12 left-6 flex items-center gap-3">
-          <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-border bg-background shadow-sm">
-            {logoUrl ? (
-              <Image src={logoUrl} alt="Logo" fill className="object-cover" sizes="96px" />
-            ) : (
-              <div className="grid h-full w-full place-items-center text-sm text-muted-foreground">LOGO</div>
-            )}
+        <div className="absolute -top-12 left-6 flex flex-col items-start gap-2">
+          <div className="flex items-center gap-3">
+            <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+              {logoUrl ? (
+                <Image src={logoUrl} alt="Logo" fill className="object-cover" sizes="96px" />
+              ) : (
+                <div className="grid h-full w-full place-items-center text-sm text-muted-foreground">LOGO</div>
+              )}
+            </div>
           </div>
           {canEdit && editMode ? (
-            <label className="inline-flex self-center">
+            <label className="inline-flex">
               <input
                 type="file"
                 accept="image/*"
@@ -167,7 +169,7 @@ export function OrgProfileHeader({
           ) : null}
         </div>
 
-        <div className="mt-14">
+        <div className={cn("mt-14", editMode && canEdit && "mt-24")}>
           <h2 className="text-2xl font-semibold tracking-tight">{name || "Organization"}</h2>
           <p className="text-sm text-muted-foreground">{tagline || "—"}</p>
         </div>

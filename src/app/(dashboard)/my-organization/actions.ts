@@ -8,6 +8,7 @@ import { geocodeAddress } from "@/lib/mapbox/geocode"
 import type { Database } from "@/lib/supabase"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import { sanitizeOrgProfileText, shouldStripOrgProfileHtml } from "@/lib/organization/profile-cleanup"
+import { normalizeExternalUrl } from "@/lib/organization/urls"
 
 type OrgProfilePayload = {
   name?: string | null
@@ -73,6 +74,19 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
 
   const current = (orgRow?.profile ?? {}) as Record<string, unknown>
   const next: Record<string, unknown> = { ...current }
+  const urlFields = new Set([
+    "publicUrl",
+    "newsletter",
+    "twitter",
+    "facebook",
+    "linkedin",
+    "instagram",
+    "youtube",
+    "tiktok",
+    "github",
+    "logoUrl",
+    "headerUrl",
+  ])
 
   for (const [k, v] of Object.entries(payload)) {
     // Store EIN in both the column and profile for now (column is canonical)
@@ -80,6 +94,10 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
       next[k] = v ?? null
     } else {
       if (typeof v === "string") {
+        if (urlFields.has(k)) {
+          next[k] = normalizeExternalUrl(v)
+          continue
+        }
         if (shouldStripOrgProfileHtml(k)) {
           next[k] = sanitizeOrgProfileText(v)
         } else {

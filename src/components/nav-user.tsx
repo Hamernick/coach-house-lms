@@ -8,6 +8,7 @@ import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
 import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
 import LogOutIcon from "lucide-react/dist/esm/icons/log-out"
 import CircleUserIcon from "lucide-react/dist/esm/icons/circle-user"
+import MessageSquareIcon from "lucide-react/dist/esm/icons/message-square"
 
 import {
   Avatar,
@@ -129,6 +130,14 @@ export function NavUser({ user, isAdmin = false }: NavUserProps) {
               <CircleUserIcon className="size-4" />
               Account settings
             </button>
+            <a
+              href="mailto:contact@coachhousesolutions.org?subject=Coach%20House%20Feedback"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition hover:bg-muted"
+              onClick={() => setMenuOpen(false)}
+            >
+              <MessageSquareIcon className="size-4" />
+              Submit feedback
+            </a>
             {!isAdmin ? (
               <Link
                 href="/billing"

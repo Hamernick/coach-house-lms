@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useId, useState } from "react"
 
 import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 
@@ -14,32 +14,27 @@ import { uploadOrgMedia, validateOrgMediaFile } from "@/lib/organization/org-med
 import type { CompanyEditProps } from "../types"
 
 export function BrandKitSection({ company, errors, onInputChange, onUpdate, onDirty }: CompanyEditProps) {
+  const logoInputId = useId()
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
-  const [isUploadingHeader, setIsUploadingHeader] = useState(false)
 
-  const handleUpload = async (file: File, kind: "logo" | "header") => {
+  const handleUpload = async (file: File) => {
     const error = validateOrgMediaFile(file)
     if (error) {
       toast.error(error)
       return
     }
 
-    const setUploading = kind === "logo" ? setIsUploadingLogo : setIsUploadingHeader
-    setUploading(true)
+    setIsUploadingLogo(true)
     const toastId = toast.loading("Uploading image…")
     try {
-      const url = await uploadOrgMedia({ file, kind })
-      if (kind === "logo") {
-        onUpdate({ logoUrl: url })
-      } else {
-        onUpdate({ headerUrl: url })
-      }
+      const url = await uploadOrgMedia({ file, kind: "logo" })
+      onUpdate({ logoUrl: url })
       onDirty()
       toast.success("Image uploaded", { id: toastId })
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Upload failed", { id: toastId })
     } finally {
-      setUploading(false)
+      setIsUploadingLogo(false)
     }
   }
 
@@ -55,18 +50,20 @@ export function BrandKitSection({ company, errors, onInputChange, onUpdate, onDi
               aria-invalid={Boolean(errors.logoUrl)}
               className="sm:flex-1"
             />
-            <label className="inline-flex">
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.currentTarget.files?.[0]
-                  if (!file) return
-                  void handleUpload(file, "logo")
-                }}
-              />
-              <Button size="sm" variant="outline" disabled={isUploadingLogo}>
+            <input
+              id={logoInputId}
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0]
+                if (!file) return
+                void handleUpload(file)
+                event.currentTarget.value = ""
+              }}
+            />
+            <Button asChild size="sm" variant="outline" disabled={isUploadingLogo}>
+              <label htmlFor={logoInputId} className="cursor-pointer">
                 {isUploadingLogo ? (
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
@@ -74,43 +71,10 @@ export function BrandKitSection({ company, errors, onInputChange, onUpdate, onDi
                 ) : (
                   "Upload logo"
                 )}
-              </Button>
-            </label>
+              </label>
+            </Button>
           </div>
           {errors.logoUrl ? <p className="text-xs text-destructive">{errors.logoUrl}</p> : null}
-        </ProfileField>
-        <ProfileField label="Header image URL">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Input
-              name="headerUrl"
-              value={company.headerUrl ?? ""}
-              onChange={onInputChange}
-              aria-invalid={Boolean(errors.headerUrl)}
-              className="sm:flex-1"
-            />
-            <label className="inline-flex">
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.currentTarget.files?.[0]
-                  if (!file) return
-                  void handleUpload(file, "header")
-                }}
-              />
-              <Button size="sm" variant="outline" disabled={isUploadingHeader}>
-                {isUploadingHeader ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
-                  </span>
-                ) : (
-                  "Upload header"
-                )}
-              </Button>
-            </label>
-          </div>
-          {errors.headerUrl ? <p className="text-xs text-destructive">{errors.headerUrl}</p> : null}
         </ProfileField>
         <ProfileField label="Boilerplate">
           <Textarea name="boilerplate" value={company.boilerplate ?? ""} onChange={onInputChange} rows={4} />

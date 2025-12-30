@@ -1,5 +1,7 @@
 import { z } from "zod"
 
+import { isValidExternalUrl } from "@/lib/organization/urls"
+
 export const hexColor = z
   .string()
   .regex(/^#?[0-9a-fA-F]{6}$/i, "Must be a hex color like #0055FF")
@@ -9,6 +11,14 @@ export const hexColor = z
   })
   .optional()
   .or(z.literal(""))
+
+const urlInput = z
+  .string()
+  .trim()
+  .refine((value) => value.length === 0 || isValidExternalUrl(value), {
+    message: "Enter a valid URL or domain",
+  })
+  .optional()
 
 export const organizationProfileSchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
@@ -28,9 +38,9 @@ export const organizationProfileSchema = z.object({
   addressState: z.string().max(200).optional().or(z.literal("")),
   addressPostal: z.string().max(40).optional().or(z.literal("")),
   addressCountry: z.string().max(120).optional().or(z.literal("")),
-  logoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  headerUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
-  publicUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  logoUrl: urlInput.or(z.literal("")),
+  headerUrl: urlInput.or(z.literal("")),
+  publicUrl: urlInput.or(z.literal("")),
   twitter: z.string().max(200).optional().or(z.literal("")),
   facebook: z.string().max(200).optional().or(z.literal("")),
   linkedin: z.string().max(200).optional().or(z.literal("")),

@@ -57,7 +57,7 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
 
   function onSubmit() {
     startTransition(async () => {
-      const toastId = toast.loading(initial?.id ? "Saving changes…" : "Creating person…")
+      const toastId = toast.loading(initial?.id ? "Saving changes…" : "Adding person…")
       const res = await upsertPersonAction({
         id: initial?.id,
         name,
@@ -72,7 +72,7 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
         setOpen(false)
         reset()
         onSaved?.(res.id)
-        toast.success(initial?.id ? "Person updated" : "Person created", { id: toastId })
+        toast.success(initial?.id ? "Person updated" : "Person added", { id: toastId })
         router.refresh()
       } else {
         toast.error(res.error, { id: toastId })
@@ -91,7 +91,7 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
       <DialogTrigger asChild>
         <Button className={triggerClassName} size="sm">
           <PlusIcon className="size-4" />
-          <span className="ml-2">Create</span>
+          <span className="ml-2">Add</span>
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[640px]">
@@ -210,7 +210,7 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
             </Field>
             <div className="flex justify-between pt-2">
               <Button variant="outline" onClick={()=>setStep(2)}>Back</Button>
-              <Button onClick={onSubmit} disabled={pending} aria-busy={pending}>{initial?.id ? (pending ? "Saving…" : "Save Changes") : (pending ? "Creating…" : "Create Person")}</Button>
+              <Button onClick={onSubmit} disabled={pending} aria-busy={pending}>{initial?.id ? (pending ? "Saving…" : "Save Changes") : (pending ? "Adding…" : "Add Person")}</Button>
             </div>
           </FieldGroup>
         )}

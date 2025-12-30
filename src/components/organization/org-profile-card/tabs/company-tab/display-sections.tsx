@@ -172,9 +172,7 @@ export function SocialPreview({ company, hasAnyBrandLink }: CompanyViewProps) {
 export function BrandKitPreview({ company }: CompanyViewProps) {
   const boilerplate = typeof company.boilerplate === "string" ? stripHtml(company.boilerplate) : ""
   const showBrandKit =
-    (typeof company.logoUrl === "string" && company.logoUrl.trim()) ||
-    (typeof company.headerUrl === "string" && company.headerUrl.trim()) ||
-    boilerplate.trim().length > 0
+    (typeof company.logoUrl === "string" && company.logoUrl.trim()) || boilerplate.trim().length > 0
 
   if (!showBrandKit) {
     return null
@@ -186,11 +184,6 @@ export function BrandKitPreview({ company }: CompanyViewProps) {
         {typeof company.logoUrl === "string" && company.logoUrl.trim() ? (
           <ProfileField label="Logo">
             <BrandLink href={company.logoUrl} />
-          </ProfileField>
-        ) : null}
-        {typeof company.headerUrl === "string" && company.headerUrl.trim() ? (
-          <ProfileField label="Header image">
-            <BrandLink href={company.headerUrl} />
           </ProfileField>
         ) : null}
         {boilerplate.trim().length > 0 ? (

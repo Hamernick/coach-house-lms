@@ -17,11 +17,11 @@ export function PresenceSection({ company, errors, onInputChange }: CompanyEditP
               value: company.publicUrl ?? "",
               onChange: onInputChange,
               "aria-invalid": Boolean(errors.publicUrl),
-              placeholder: "https://example.org",
+              placeholder: "example.org",
             }}
           />
           {errors.publicUrl ? <p className="text-xs text-destructive">{errors.publicUrl}</p> : null}
-          <p className="text-xs text-muted-foreground">Include full URL with https://</p>
+          <p className="text-xs text-muted-foreground">Paste a domain or full URL — we&apos;ll add https:// if missing.</p>
         </ProfileField>
         <ProfileField label="Newsletter">
           <InputWithIcon

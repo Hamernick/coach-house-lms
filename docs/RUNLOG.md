@@ -904,3 +904,13 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-30 — Codex session (Pricing tier label)
 
 - Copy: renamed the Tier 1 label to "Platform" (`src/app/(public)/pricing/page.tsx`).
+
+## 2025-12-30 — Codex session (Quality fixes)
+
+- Test: made the Stripe mock constructable for billing portal acceptance coverage (`tests/acceptance/test-utils.ts`).
+- Lint: resolved missing hook dependencies in assignment form autosave effects (`src/components/training/module-detail/assignment-form.tsx`).
+- Lint: replaced marketplace `<img>` with `next/image` for optimized loading (`src/app/(dashboard)/marketplace/ui/marketplace-client.tsx`).
+
+## 2025-12-30 — Codex session (Build fix)
+
+- Fix: removed typed `maybeSingle` call on an untyped Supabase chain to unblock build (`src/app/(dashboard)/my-organization/programs/actions.ts`).

@@ -914,3 +914,11 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-30 — Codex session (Build fix)
 
 - Fix: removed typed `maybeSingle` call on an untyped Supabase chain to unblock build (`src/app/(dashboard)/my-organization/programs/actions.ts`).
+
+## 2025-12-30 — Codex session (Build fix follow-up)
+
+- Fix: adjusted org profile autosave assignment typing to satisfy strict index access (`src/components/organization/org-profile-card/org-profile-card.tsx`).
+
+## 2025-12-30 — Codex session (Theme fallback)
+
+- Fix: added system dark-mode CSS variable fallback and color-scheme hints to restore public page theming without relying on JS theme hydration (`src/app/globals.css`).

@@ -227,15 +227,16 @@ export function OrgProfileEditor({
     if (keys.length === 0) return
 
     setCompany((prev) => {
-      const next = { ...prev }
+      const next: OrgProfile = { ...prev }
+      const mutable = next as Record<keyof OrgProfile, OrgProfile[keyof OrgProfile]>
       for (const key of keys) {
         const value = updates[key]
         if (typeof value === "boolean") {
-          next[key] = value
+          mutable[key] = value
         } else if (Array.isArray(value)) {
-          next[key] = value
+          mutable[key] = value
         } else {
-          next[key] = (value ?? "") as OrgProfile[typeof key]
+          mutable[key] = (value ?? "") as OrgProfile[typeof key]
         }
       }
       return next
@@ -246,15 +247,16 @@ export function OrgProfileEditor({
     if (error) {
       const previous = savedCompanyRef.current
       setCompany((prev) => {
-        const next = { ...prev }
+        const next: OrgProfile = { ...prev }
+        const mutable = next as Record<keyof OrgProfile, OrgProfile[keyof OrgProfile]>
         for (const key of keys) {
           const value = previous[key]
           if (typeof value === "boolean") {
-            next[key] = value
+            mutable[key] = value
           } else if (Array.isArray(value)) {
-            next[key] = value
+            mutable[key] = value
           } else {
-            next[key] = (value ?? "") as OrgProfile[typeof key]
+            mutable[key] = (value ?? "") as OrgProfile[typeof key]
           }
         }
         return next

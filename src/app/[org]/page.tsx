@@ -80,6 +80,7 @@ export default async function PublicOrgPage({ params }: { params: Promise<{ org:
     addressPostal: String(profile["address_postal"] ?? ""),
     addressCountry: String(profile["address_country"] ?? ""),
     logoUrl: String(profile["logoUrl"] ?? ""),
+    headerUrl: String(profile["headerUrl"] ?? ""),
     publicUrl: String(profile["publicUrl"] ?? ""),
     twitter: String(profile["twitter"] ?? ""),
     facebook: String(profile["facebook"] ?? ""),
@@ -105,10 +106,10 @@ export default async function PublicOrgPage({ params }: { params: Promise<{ org:
   const shareLink = `/${slug}`
 
   return (
-    <div className="min-h-screen bg-dot-grid">
+    <div className="min-h-screen bg-dot-grid" data-public-grid>
       <PublicOrgBodyBackground />
-      <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mb-6 flex w-full items-center justify-end gap-2">
+      <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+        <div className="mb-4 flex w-full flex-wrap items-center justify-between gap-2 sm:mb-6 sm:justify-end">
           <ShareButton title={initialProfile.name || "Organization"} url={shareLink} icon="link" />
           <PublicThemeToggle />
         </div>

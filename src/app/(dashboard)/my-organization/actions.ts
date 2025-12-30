@@ -24,6 +24,7 @@ type OrgProfilePayload = {
   addressPostal?: string | null
   addressCountry?: string | null
   logoUrl?: string | null
+  headerUrl?: string | null
   publicUrl?: string | null
   twitter?: string | null
   facebook?: string | null

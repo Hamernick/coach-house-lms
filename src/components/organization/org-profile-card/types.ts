@@ -16,6 +16,7 @@ export type OrgProfile = {
   addressPostal?: string | null
   addressCountry?: string | null
   logoUrl?: string | null
+  headerUrl?: string | null
   publicUrl?: string | null
   twitter?: string | null
   facebook?: string | null
@@ -36,6 +37,18 @@ export type OrgProfile = {
   brandColors?: string[] | null
   publicSlug?: string | null
   isPublic?: boolean | null
+}
+
+export type OrgDocument = {
+  name: string
+  path: string
+  size?: number | null
+  mime?: string | null
+  updatedAt?: string | null
+}
+
+export type OrgDocuments = {
+  verificationLetter?: OrgDocument | null
 }
 
 export type OrgProfileErrors = Record<string, string>
@@ -62,7 +75,7 @@ export type OrgProgram = {
   cta_url?: string | null
 }
 
-export type ProfileTab = "company" | "programs" | "people" | "supporters" | "roadmap"
+export type ProfileTab = "company" | "programs" | "people" | "supporters" | "roadmap" | "documents"
 
 export type SlugStatus = { available: boolean; suggestion?: string; message?: string } | null
 
@@ -70,9 +83,11 @@ export interface OrgProfileCardProps {
   initial: OrgProfile
   people: OrgPersonWithImage[]
   programs?: OrgProgram[]
+  documents?: OrgDocuments | null
   canEdit?: boolean
   roadmapSections: RoadmapSection[]
   roadmapPublicSlug: string | null
   roadmapIsPublic: boolean
+  roadmapHeroUrl?: string | null
   initialTab?: ProfileTab
 }

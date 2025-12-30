@@ -53,12 +53,15 @@ export async function completeOnboardingAction(form: FormData) {
   // Update profile full name, avatar, and marketing preferences
   await supabase
     .from("profiles")
-    .update({
-      full_name: [first, last].filter(Boolean).join(" "),
-      avatar_url: avatarUrl,
-      marketing_opt_in: optInUpdates,
-    })
-    .eq("id", user.id)
+    .upsert(
+      {
+        id: user.id,
+        full_name: [first, last].filter(Boolean).join(" "),
+        avatar_url: avatarUrl,
+        marketing_opt_in: optInUpdates,
+      },
+      { onConflict: "id" },
+    )
 
   // Upsert organization rollup from onboarding responses
   await supabase

@@ -80,6 +80,8 @@ export function RichTextEditor({
         heading: {
           levels: [1, 2, 3],
         },
+        link: false,
+        underline: false,
         hardBreak: false,
         horizontalRule: false,
         codeBlock: false,

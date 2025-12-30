@@ -35,14 +35,25 @@ export function FieldText({ text, multiline = false }: { text?: string | null; m
   return <p className="text-sm">{text}</p>
 }
 
-export function FormRow({ title, description, children }: { title: string; description?: string; children: ReactNode }) {
+export function FormRow({
+  title,
+  description,
+  children,
+  inset = true,
+}: {
+  title: string
+  description?: string
+  children: ReactNode
+  inset?: boolean
+}) {
+  const insetClass = inset ? "px-6 md:px-0" : "px-0"
   return (
     <div className="grid gap-4 md:grid-cols-3">
-      <div className="px-6 md:px-0">
+      <div className={insetClass}>
         <h3 className="text-base font-medium leading-none">{title}</h3>
         {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
       </div>
-      <div className="md:col-span-2 px-6 md:px-0">{children}</div>
+      <div className={cn("md:col-span-2", insetClass)}>{children}</div>
     </div>
   )
 }

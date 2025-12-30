@@ -29,6 +29,7 @@ export const organizationProfileSchema = z.object({
   addressPostal: z.string().max(40).optional().or(z.literal("")),
   addressCountry: z.string().max(120).optional().or(z.literal("")),
   logoUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  headerUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   publicUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   twitter: z.string().max(200).optional().or(z.literal("")),
   facebook: z.string().max(200).optional().or(z.literal("")),

@@ -12,6 +12,7 @@ import { toast } from "@/lib/toast"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
 import { updateOrganizationProfileAction } from "@/app/(dashboard)/my-organization/actions"
@@ -23,11 +24,13 @@ import { CompanyTab } from "./tabs/company-tab"
 import { ProgramsTab } from "./tabs/programs-tab"
 import { PeopleTab } from "./tabs/people-tab"
 import { SupportersTab } from "./tabs/supporters-tab"
+import { DocumentsTab } from "./tabs/documents-tab"
 import BuildingIcon from "lucide-react/dist/esm/icons/building-2"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
 import HeartHandshakeIcon from "lucide-react/dist/esm/icons/heart-handshake"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
 import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
+import LockIcon from "lucide-react/dist/esm/icons/lock"
 
 import { RoadmapShell } from "@/components/roadmap/roadmap-shell"
 
@@ -37,16 +40,19 @@ const TABS: Array<{ value: ProfileTab; label: string; icon: typeof BuildingIcon 
   { value: "people", label: "People", icon: UsersIcon },
   { value: "supporters", label: "Supporters", icon: HeartHandshakeIcon },
   { value: "roadmap", label: "Roadmap", icon: WaypointsIcon },
+  { value: "documents", label: "Documents", icon: LockIcon },
 ]
 
 export function OrgProfileEditor({
   initial,
   people,
   programs = [],
+  documents,
   canEdit = true,
   roadmapSections,
   roadmapPublicSlug,
   roadmapIsPublic,
+  roadmapHeroUrl,
   initialTab,
 }: OrgProfileCardProps) {
   const [editMode, setEditMode] = useState(false)
@@ -68,6 +74,7 @@ export function OrgProfileEditor({
     addressPostal: initial.addressPostal ?? "",
     addressCountry: initial.addressCountry ?? "",
     logoUrl: initial.logoUrl ?? "",
+    headerUrl: initial.headerUrl ?? "",
     publicUrl: initial.publicUrl ?? "",
     twitter: initial.twitter ?? "",
     facebook: initial.facebook ?? "",
@@ -191,20 +198,22 @@ export function OrgProfileEditor({
 
   return (
     <Card className="overflow-hidden bg-card/60 py-0 pb-6">
-      <OrgProfileHeader
-        name={company.name || "Organization"}
-        tagline={company.tagline || "—"}
-        logoUrl={company.logoUrl ?? ""}
-        editMode={editMode}
-        isSaving={isPending}
-        canEdit={canEdit}
-        publicLink={publicLink}
-        onLogoChange={(url) => updateCompany({ logoUrl: url })}
-        onSetDirty={markDirty}
-        onEnterEdit={() => canEdit && setEditMode(true)}
-        onCancelEdit={() => setEditMode(false)}
-        onSave={handleSave}
-      />
+        <OrgProfileHeader
+          name={company.name || "Organization"}
+          tagline={company.tagline || "—"}
+          logoUrl={company.logoUrl ?? ""}
+          headerUrl={company.headerUrl ?? ""}
+          editMode={editMode}
+          isSaving={isPending}
+          canEdit={canEdit}
+          publicLink={publicLink}
+          onLogoChange={(url) => updateCompany({ logoUrl: url })}
+          onHeaderChange={(url) => updateCompany({ headerUrl: url })}
+          onSetDirty={markDirty}
+          onEnterEdit={() => canEdit && setEditMode(true)}
+          onCancelEdit={() => setEditMode(false)}
+          onSave={handleSave}
+        />
 
       <CardContent className="p-0">
         <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
@@ -228,21 +237,21 @@ export function OrgProfileEditor({
               <span className="-mb-px border-b-2 border-b-primary pb-[2px] transition-all duration-200">{currentTabLabel}</span>
             </div>
             <div className="ml-auto pb-1">
-              <label className="sr-only" htmlFor={`${tabsIdBase}-mobile-select`}>
-                Select section
-              </label>
-              <select
-                id={`${tabsIdBase}-mobile-select`}
-                value={tab}
-                onChange={(event) => handleTabChange(event.target.value)}
-                className="rounded-lg border border-border bg-muted/60 px-3 py-2 text-sm font-medium text-foreground shadow-xs focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-              >
-                {TABS.map((item) => (
-                  <option key={item.value} value={item.value}>
-                    {item.label}
-                  </option>
-                ))}
-              </select>
+              <Select value={tab} onValueChange={handleTabChange}>
+                <SelectTrigger className="h-9 min-w-[160px] bg-muted/60 text-sm font-medium">
+                  <SelectValue aria-label="Select section" placeholder={currentTabLabel} />
+                </SelectTrigger>
+                <SelectContent align="end">
+                  {TABS.map((item) => (
+                    <SelectItem key={item.value} value={item.value}>
+                      <span className="flex items-center gap-2">
+                        <item.icon className="h-4 w-4 text-muted-foreground" aria-hidden />
+                        {item.label}
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -313,7 +322,17 @@ export function OrgProfileEditor({
               sections={roadmapSections}
               publicSlug={roadmapPublicSlug}
               initialPublic={roadmapIsPublic}
+              heroUrl={roadmapHeroUrl ?? null}
             />
+          </TabsContent>
+
+          <TabsContent
+            value="documents"
+            id={`${tabsIdBase}-content-documents`}
+            aria-labelledby={`${tabsIdBase}-trigger-documents`}
+            className="grid gap-8 p-6"
+          >
+            <DocumentsTab documents={documents} editMode={editMode} canEdit={canEdit} />
           </TabsContent>
         </Tabs>
       </CardContent>

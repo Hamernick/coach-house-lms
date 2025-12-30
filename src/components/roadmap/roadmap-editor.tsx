@@ -423,7 +423,7 @@ export function RoadmapEditor({
               value={activeDraft.title}
               onChange={(event) => handleDraftChange({ title: event.target.value })}
               placeholder="Section title"
-              className="text-base font-semibold"
+              className="text-base font-semibold max-w-[520px]"
             />
           </div>
           <div className="grid gap-1">
@@ -435,6 +435,7 @@ export function RoadmapEditor({
               value={activeDraft.subtitle}
               onChange={(event) => handleDraftChange({ subtitle: event.target.value })}
               placeholder="Subtitle (optional)"
+              className="max-w-[520px]"
             />
           </div>
         </div>

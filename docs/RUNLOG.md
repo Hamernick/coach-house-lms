@@ -703,3 +703,52 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-29 — Codex session (Heading level typing)
 
 - Fix: ensure TipTap heading levels are typed as literals to satisfy Level union (`src/components/rich-text-editor.tsx`).
+
+## 2025-12-29 — Codex session (Org documents tab)
+
+- UI: added a private Documents tab in My Organization with upload/view/rename/delete for the 501(c)(3) verification letter (`src/components/organization/org-profile-card/org-profile-card.tsx`, `src/components/organization/org-profile-card/tabs/documents-tab.tsx`, `src/components/organization/org-profile-card/types.ts`, `src/app/(dashboard)/my-organization/page.tsx`).
+- API: added private org documents endpoint for CRUD + signed URLs (`src/app/api/account/org-documents/route.ts`).
+- DB: added private `org-documents` storage bucket + RLS policies (`supabase/migrations/20251229140207_storage_org_documents_bucket.sql`).
+
+## 2025-12-29 — Codex session (My Organization searchParams)
+
+- Fix: await promised searchParams before reading tab in My Organization route (`src/app/(dashboard)/my-organization/page.tsx`).
+
+## 2025-12-29 — Codex session (Documents upload click fix)
+
+- Fix: converted file upload button to explicit label/for pairing so click reliably opens the picker (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`).
+
+## 2025-12-29 — Codex session (My Organization mobile spacing)
+
+- UI: reduced mobile horizontal padding on My Organization so the main card uses more width (`src/app/(dashboard)/my-organization/page.tsx`).
+
+## 2025-12-29 — Codex session (My Organization mobile tabs dropdown)
+
+- UI: replaced the mobile tab switcher with the shadcn Select component for cleaner styling (`src/components/organization/org-profile-card/org-profile-card.tsx`).
+
+## 2025-12-29 — Codex session (TipTap duplicate extensions)
+
+- Fix: disabled StarterKit link/underline when custom Link/Underline extensions are registered to avoid duplicate extension warnings (`src/components/rich-text-editor.tsx`).
+
+## 2025-12-29 — Codex session (Roadmap inputs width)
+
+- UI: constrained strategic roadmap title/subtitle inputs to a tighter max width for readability (`src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-29 — Codex session (My Organization desktop padding)
+
+- UI: removed extra desktop horizontal padding so left/right spacing matches top/bottom in the shell (`src/app/(dashboard)/my-organization/page.tsx`).
+
+## 2025-12-29 — Codex session (Public grid overscroll)
+
+- UI: applied dot-grid background to body when viewing public org + roadmap pages so overscroll stays consistent (`src/app/[org]/page.tsx`, `src/app/[org]/roadmap/page.tsx`, `src/app/globals.css`).
+
+## 2025-12-29 — Codex session (Public pages mobile polish)
+
+- UI: tightened spacing and responsive typography on public org + roadmap pages; adjusted card paddings, hero sizing, timeline layout, and public people row padding (`src/app/[org]/page.tsx`, `src/app/[org]/roadmap/page.tsx`, `src/components/organization/org-profile-card/public-card.tsx`, `src/components/organization/org-profile-card/shared.tsx`, `src/components/people/supporters-showcase.tsx`).
+
+## 2025-12-30 — Codex session (Profile + org media)
+
+- Fix: avatar uploads now upsert profiles so new users can save profile photos (`src/app/api/account/avatar/route.ts`, `src/app/(dashboard)/onboarding/actions.ts`).
+- UI: added org header image + synced logo uploads between header and Brand Kit, plus public header rendering (`src/components/organization/org-profile-card/header.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/brand-kit.tsx`, `src/components/organization/org-profile-card/public-card.tsx`, `src/app/(dashboard)/my-organization/page.tsx`, `src/app/[org]/page.tsx`).
+- UI: added roadmap hero image upload + persistence and render it on the public roadmap hero (`src/components/roadmap/roadmap-shell.tsx`, `src/app/(dashboard)/strategic-roadmap/actions.ts`, `src/app/[org]/roadmap/page.tsx`, `src/lib/roadmap.ts`).
+- Infra: added org-media upload helper and expanded route support for header/roadmap media (`src/lib/organization/org-media.ts`, `src/app/api/account/org-media/route.ts`).

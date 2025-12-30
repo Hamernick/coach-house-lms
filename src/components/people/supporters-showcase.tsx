@@ -53,7 +53,7 @@ export function PeopleShowcase({
       <ItemGroup className={cn("w-full gap-4", className)}>
         {people.map((person, index) => (
           <Fragment key={person.id}>
-            <div className="relative flex items-center gap-3.5 px-6 py-0.5">
+            <div className="relative flex items-center gap-3.5 px-4 py-0.5 sm:px-6">
               <Avatar className="size-10">
                 <AvatarImage src={person.displayImage ?? person.image ?? undefined} alt={person.name ?? "Person"} />
                 <AvatarFallback>{initials(person.name)}</AvatarFallback>

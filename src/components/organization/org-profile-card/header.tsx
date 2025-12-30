@@ -281,7 +281,7 @@ export function OrgProfileHeader({
 
         <div className={cn("mt-14", editMode && canEdit && "mt-24")}>
           <h2 className="text-2xl font-semibold tracking-tight">{name || "Organization"}</h2>
-          <p className="text-sm text-muted-foreground">{tagline || "—"}</p>
+          <p className="max-w-md text-sm text-muted-foreground">{tagline || "—"}</p>
         </div>
 
         <div className="absolute right-6 top-6 flex gap-2">

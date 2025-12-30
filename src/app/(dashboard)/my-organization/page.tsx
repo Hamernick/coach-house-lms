@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation"
 
 import { OrgProfileCard } from "@/components/organization/org-profile-card"
-import type { ProfileTab } from "@/components/organization/org-profile-card/types"
-import { resolveRoadmapSections } from "@/lib/roadmap"
+import type { OrgDocuments, ProfileTab } from "@/components/organization/org-profile-card/types"
+import { resolveRoadmapHeroUrl, resolveRoadmapSections } from "@/lib/roadmap"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 import { createSupabaseServerClient, type Json } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -14,8 +14,9 @@ export const dynamic = "force-dynamic"
 export default async function MyOrganizationPage({
   searchParams,
 }: {
-  searchParams?: Record<string, string | string[] | undefined>
+  searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -38,6 +39,9 @@ export default async function MyOrganizationPage({
     }>()
 
   let profile = (orgRow?.profile ?? {}) as Record<string, unknown>
+
+  const isRecord = (value: unknown): value is Record<string, unknown> =>
+    Boolean(value) && typeof value === "object" && !Array.isArray(value)
 
   if (orgRow?.profile) {
     const { nextProfile, changed } = cleanupOrgProfileHtml(profile)
@@ -98,6 +102,7 @@ export default async function MyOrganizationPage({
     addressPostal: String(profile["address_postal"] ?? ""),
     addressCountry: String(profile["address_country"] ?? ""),
     logoUrl: String(profile["logoUrl"] ?? ""),
+    headerUrl: String(profile["headerUrl"] ?? ""),
     publicUrl: String(profile["publicUrl"] ?? ""),
     twitter: String(profile["twitter"] ?? ""),
     facebook: String(profile["facebook"] ?? ""),
@@ -120,8 +125,8 @@ export default async function MyOrganizationPage({
     isPublic: publicSharingEnabled ? Boolean(orgRow?.is_public ?? false) : false,
   }
 
-  const allowedTabs: ProfileTab[] = ["company", "programs", "people", "supporters", "roadmap"]
-  const tabParam = typeof searchParams?.tab === "string" ? searchParams.tab : ""
+  const allowedTabs: ProfileTab[] = ["company", "programs", "people", "supporters", "roadmap", "documents"]
+  const tabParam = typeof resolvedSearchParams?.tab === "string" ? resolvedSearchParams.tab : ""
   const initialTab = allowedTabs.includes(tabParam as ProfileTab) ? (tabParam as ProfileTab) : undefined
 
   const roadmapSections = resolveRoadmapSections(profile).map((section) =>
@@ -129,17 +134,37 @@ export default async function MyOrganizationPage({
   )
   const roadmapIsPublic = publicSharingEnabled ? Boolean(orgRow?.is_public_roadmap) : false
   const roadmapPublicSlug = orgRow?.public_slug ?? null
+  const roadmapHeroUrl = resolveRoadmapHeroUrl(profile)
+
+  const documentsRaw = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : null
+  const verificationRaw = documentsRaw && isRecord(documentsRaw["verificationLetter"]) ? documentsRaw["verificationLetter"] : null
+  const documents: OrgDocuments | null = verificationRaw
+    ? {
+        verificationLetter: {
+          name: String((verificationRaw as Record<string, unknown>)["name"] ?? ""),
+          path: String((verificationRaw as Record<string, unknown>)["path"] ?? ""),
+          size: typeof (verificationRaw as Record<string, unknown>)["size"] === "number" ? ((verificationRaw as Record<string, unknown>)["size"] as number) : null,
+          mime: typeof (verificationRaw as Record<string, unknown>)["mime"] === "string" ? ((verificationRaw as Record<string, unknown>)["mime"] as string) : null,
+          updatedAt:
+            typeof (verificationRaw as Record<string, unknown>)["updatedAt"] === "string"
+              ? ((verificationRaw as Record<string, unknown>)["updatedAt"] as string)
+              : null,
+        },
+      }
+    : null
 
   return (
-    <div className="flex flex-col gap-6 px-4 lg:px-6">
+    <div className="flex flex-col gap-6 px-0 sm:px-2 lg:px-0">
       <section>
         <OrgProfileCard
           initial={initialProfile}
           people={people}
           programs={programs ?? []}
+          documents={documents}
           roadmapSections={roadmapSections}
           roadmapPublicSlug={roadmapPublicSlug}
           roadmapIsPublic={roadmapIsPublic}
+          roadmapHeroUrl={roadmapHeroUrl}
           initialTab={initialTab}
         />
       </section>

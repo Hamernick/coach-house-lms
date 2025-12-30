@@ -10,6 +10,7 @@ import { PeopleShowcase, SupportersShowcase } from "@/components/people/supporte
 import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern/index"
 import { PROVIDER_ICON } from "@/components/shared/provider-icons"
 import Image from "next/image"
+import { cn } from "@/lib/utils"
 
 import type { OrgProfile, OrgProgram } from "./types"
 import { buildAddressLines, dateRangeChip, locationSummary } from "./utils"
@@ -96,20 +97,28 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
   const vision = typeof profile.vision === "string" ? stripHtml(profile.vision) : ""
   const values = typeof profile.values === "string" ? stripHtml(profile.values) : ""
   const boilerplate = typeof profile.boilerplate === "string" ? stripHtml(profile.boilerplate) : ""
+  const hasHeaderImage = hasValue(profile.headerUrl)
 
   return (
     <Card className="w-full overflow-hidden bg-card/70 py-0 pb-10 shadow-xl shadow-black/10">
       <div className="relative h-36 w-full overflow-hidden border-b bg-background">
+        {hasHeaderImage ? (
+          <Image src={profile.headerUrl as string} alt="" fill className="object-cover" sizes="100vw" />
+        ) : null}
+        <div className="absolute inset-0 bg-gradient-to-b from-background/5 via-background/10 to-background/40" />
         <GridPattern
           patternId="org-public-header-pattern"
           squares={headerSquares}
-          className="inset-x-0 inset-y-[-30%] h-[200%] skew-y-12 opacity-70 [mask-image:radial-gradient(320px_circle_at_center,white,transparent)]"
+          className={cn(
+            "inset-x-0 inset-y-[-30%] h-[200%] skew-y-12 [mask-image:radial-gradient(320px_circle_at_center,white,transparent)]",
+            hasHeaderImage ? "opacity-40" : "opacity-70",
+          )}
         />
       </div>
 
-      <div className="relative p-6 sm:px-10 sm:pb-10">
-        <div className="absolute -top-12 left-6 flex items-center gap-3 sm:left-10">
-          <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+      <div className="relative p-5 sm:px-10 sm:pb-10">
+        <div className="absolute -top-10 left-4 flex items-center gap-3 sm:-top-12 sm:left-10">
+          <div className="relative h-20 w-20 overflow-hidden rounded-xl border border-border bg-background shadow-sm sm:h-24 sm:w-24">
             {hasValue(profile.logoUrl) ? (
               <Image
                 src={profile.logoUrl as string}
@@ -124,17 +133,19 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
           </div>
         </div>
 
-        <div className="mt-14 flex flex-col gap-3">
+        <div className="mt-12 flex flex-col gap-3 sm:mt-14">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{profile.name || "Organization"}</h1>
-            <p className="text-sm text-muted-foreground">{profile.tagline && profile.tagline.trim() ? profile.tagline : "—"}</p>
+            <p className="text-xs text-muted-foreground sm:text-sm">
+              {profile.tagline && profile.tagline.trim() ? profile.tagline : "—"}
+            </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {hasValue(profile.publicUrl) ? (
               <Link
                 href={profile.publicUrl as string}
                 target="_blank"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/60 bg-card/80 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-card/80 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:h-9 sm:w-9"
               >
                 {createIcon("link")}
                 <span className="sr-only">Website</span>
@@ -144,7 +155,7 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
               <Link
                 href={profile.newsletter as string}
                 target="_blank"
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/60 bg-card/80 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-card/80 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:h-9 sm:w-9"
               >
                 {createIcon("link")}
                 <span className="sr-only">Newsletter</span>
@@ -153,7 +164,7 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
             {hasValue(profile.email) ? (
               <Link
                 href={`mailto:${profile.email}`}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/60 bg-card/80 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-card/80 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:h-9 sm:w-9"
               >
                 {createIcon("email")}
                 <span className="sr-only">Email</span>
@@ -165,7 +176,7 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
                   key={key}
                   href={profile[key] as string}
                   target="_blank"
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border/60 bg-card/80 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-card/80 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground sm:h-9 sm:w-9"
                 >
                   {createIcon(icon)}
                   <span className="sr-only">{key}</span>
@@ -176,10 +187,10 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
         </div>
       </div>
 
-      <CardContent className="space-y-12 px-6 pt-0 sm:px-10">
+      <CardContent className="space-y-10 px-5 pt-0 sm:space-y-12 sm:px-10">
         <Separator />
 
-        <FormRow title="About" description="Mission, vision, and values">
+        <FormRow title="About" description="Mission, vision, and values" inset={false}>
           <div className="space-y-4 text-sm">
             {description.trim().length > 0 ? <FieldText text={description} multiline /> : null}
             {mission.trim().length > 0 ? (
@@ -205,7 +216,7 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
 
         <Separator />
 
-        <FormRow title="Details" description="How to connect">
+        <FormRow title="Details" description="How to connect" inset={false}>
           <div className="space-y-6">
             {addressLines.length > 0 ? (
               <div className="space-y-1">
@@ -273,7 +284,7 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
 
         {staff.length > 0 ? (
           <>
-            <FormRow title="Team" description="Who leads the work">
+            <FormRow title="Team" description="Who leads the work" inset={false}>
               <PeopleShowcase people={staff} allPeople={people} emptyMessage="" variant="public" />
             </FormRow>
             {(board.length > 0 || hasSupporters || hasValue(profile.boilerplate)) ? <Separator /> : null}
@@ -282,7 +293,7 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
 
         {board.length > 0 ? (
           <>
-            <FormRow title="Board" description="Governance & advisors">
+            <FormRow title="Board" description="Governance & advisors" inset={false}>
               <PeopleShowcase people={board} allPeople={people} emptyMessage="" variant="public" />
             </FormRow>
             {hasSupporters || boilerplate.trim().length > 0 ? <Separator /> : null}
@@ -291,7 +302,7 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
 
         {hasSupporters ? (
           <>
-            <FormRow title="Supporters" description="Partners and champions">
+            <FormRow title="Supporters" description="Partners and champions" inset={false}>
               <SupportersShowcase supporters={supporters} allPeople={people} emptyMessage="" variant="public" />
             </FormRow>
             {boilerplate.trim().length > 0 ? <Separator /> : null}
@@ -299,7 +310,7 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
         ) : null}
 
         {boilerplate.trim().length > 0 ? (
-          <FormRow title="Boilerplate" description="Shareable summary">
+          <FormRow title="Boilerplate" description="Shareable summary" inset={false}>
             <FieldText text={boilerplate} multiline />
           </FormRow>
         ) : null}

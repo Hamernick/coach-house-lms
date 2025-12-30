@@ -31,13 +31,13 @@ export async function POST(request: NextRequest) {
   try {
     // Prefer user-credentialed upload (bucket has RLS for own folder)
     const avatarUrl = await uploadAvatarWithUser({ client: supabase, userId: user.id, file })
-    await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id)
+    await supabase.from("profiles").upsert({ id: user.id, avatar_url: avatarUrl }, { onConflict: "id" })
     return NextResponse.json({ avatarUrl }, { status: 200 })
   } catch (userUploadError: unknown) {
     // Fallback to admin upload if available (e.g., server role configured)
     try {
       const avatarUrl = await uploadAvatarAdmin({ userId: user.id, file })
-      await supabase.from("profiles").update({ avatar_url: avatarUrl }).eq("id", user.id)
+      await supabase.from("profiles").upsert({ id: user.id, avatar_url: avatarUrl }, { onConflict: "id" })
       return NextResponse.json({ avatarUrl }, { status: 200 })
     } catch (adminError: unknown) {
       const adminMsg = adminError instanceof Error ? adminError.message : undefined

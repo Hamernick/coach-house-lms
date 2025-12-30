@@ -79,6 +79,7 @@ type StoredSection = {
 
 type StoredRoadmap = {
   sections?: unknown
+  heroUrl?: unknown
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -89,7 +90,7 @@ const normalizeText = (value: unknown): string =>
 
 function getStoredRoadmap(profile: Record<string, unknown> | null | undefined): StoredRoadmap {
   const roadmap = isRecord(profile?.roadmap) ? (profile!.roadmap as Record<string, unknown>) : {}
-  return { sections: roadmap.sections }
+  return { sections: roadmap.sections, heroUrl: roadmap.heroUrl }
 }
 
 function slugify(value: string): string {
@@ -182,6 +183,14 @@ export function resolveRoadmapSections(profile: Record<string, unknown> | null |
 
   const fallbackSections = SECTION_DEFINITIONS.map((definition, index) => buildRoadmapSection(null, definition, index))
   return ensureUniqueSlugs(fallbackSections)
+}
+
+export function resolveRoadmapHeroUrl(profile: Record<string, unknown> | null | undefined): string | null {
+  const storedRoadmap = getStoredRoadmap(profile)
+  const heroUrl = storedRoadmap.heroUrl
+  if (typeof heroUrl !== "string") return null
+  const trimmed = heroUrl.trim()
+  return trimmed.length > 0 ? trimmed : null
 }
 
 export function updateRoadmapSection(

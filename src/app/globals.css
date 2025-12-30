@@ -141,6 +141,18 @@
   body:has([data-slot="sidebar-wrapper"]) {
     background-color: var(--sidebar);
   }
+
+  body:has([data-public-grid]) {
+    background-color: #f9f9f9;
+    background-image: radial-gradient(#dadada 0.9px, transparent 0);
+    background-size: 34px 34px;
+  }
+
+  .dark body:has([data-public-grid]) {
+    background-color: #151517;
+    background-image: radial-gradient(#2a2a2c 0.8px, transparent 0);
+    background-size: 36px 36px;
+  }
 }
 
 @layer utilities {

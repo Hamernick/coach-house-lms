@@ -18,7 +18,11 @@ export async function POST(request: NextRequest) {
   }
 
   const { searchParams } = new URL(request.url)
-  const kind = searchParams.get("kind") === "logo" ? "logo" : "cover"
+  const kindParam = searchParams.get("kind")
+  const kind =
+    kindParam === "logo" || kindParam === "header" || kindParam === "roadmap" || kindParam === "cover"
+      ? kindParam
+      : "cover"
 
   const form = await request.formData()
   const file = form.get("file")
@@ -26,7 +30,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing file" }, { status: 400 })
   }
   if (!ALLOWED.has(file.type)) {
-    return NextResponse.json({ error: "Unsupported image type. Use PNG, JPEG, or WebP." }, { status: 400 })
+    return NextResponse.json({ error: "Unsupported image type. Use PNG, JPEG, WebP, or SVG." }, { status: 400 })
   }
   if (file.size > MAX_BYTES) {
     return NextResponse.json({ error: "Image too large. Max size is 10 MB." }, { status: 400 })

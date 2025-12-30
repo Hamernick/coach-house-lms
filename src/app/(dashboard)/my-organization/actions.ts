@@ -9,6 +9,7 @@ import type { Database } from "@/lib/supabase"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import { sanitizeOrgProfileText, shouldStripOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 import { normalizeExternalUrl } from "@/lib/organization/urls"
+import { ORG_MEDIA_BUCKET, resolveOrgMediaCleanupPath } from "@/lib/storage/org-media"
 
 type OrgProfilePayload = {
   name?: string | null
@@ -73,6 +74,10 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   }
 
   const current = (orgRow?.profile ?? {}) as Record<string, unknown>
+  const previousLogoUrl = typeof current["logoUrl"] === "string" ? (current["logoUrl"] as string) : null
+  const previousHeaderUrl = typeof current["headerUrl"] === "string" ? (current["headerUrl"] as string) : null
+  const logoTouched = Object.prototype.hasOwnProperty.call(payload, "logoUrl")
+  const headerTouched = Object.prototype.hasOwnProperty.call(payload, "headerUrl")
   const next: Record<string, unknown> = { ...current }
   const urlFields = new Set([
     "publicUrl",
@@ -174,6 +179,18 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   let locationLat = orgRow?.location_lat ?? null
   let locationLng = orgRow?.location_lng ?? null
 
+  const nextLogoUrl = typeof next["logoUrl"] === "string" ? (next["logoUrl"] as string) : null
+  const nextHeaderUrl = typeof next["headerUrl"] === "string" ? (next["headerUrl"] as string) : null
+  const cleanupPaths = new Set<string>()
+  if (logoTouched) {
+    const cleanupPath = resolveOrgMediaCleanupPath({ previousUrl: previousLogoUrl, nextUrl: nextLogoUrl, userId })
+    if (cleanupPath) cleanupPaths.add(cleanupPath)
+  }
+  if (headerTouched) {
+    const cleanupPath = resolveOrgMediaCleanupPath({ previousUrl: previousHeaderUrl, nextUrl: nextHeaderUrl, userId })
+    if (cleanupPath) cleanupPaths.add(cleanupPath)
+  }
+
   const addressForGeocode = typeof next.address === "string" ? next.address.replace(/\n+/g, ", ") : ""
   if (!addressForGeocode) {
     locationLat = null
@@ -202,6 +219,10 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
 
   if (upsertErr) {
     return { error: upsertErr.message }
+  }
+
+  if (cleanupPaths.size > 0) {
+    await supabase.storage.from(ORG_MEDIA_BUCKET).remove(Array.from(cleanupPaths))
   }
 
   const previousSlug = typeof orgRow?.public_slug === "string" && orgRow.public_slug.length > 0 ? orgRow.public_slug : null

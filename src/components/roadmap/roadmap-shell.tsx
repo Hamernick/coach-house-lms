@@ -1,15 +1,23 @@
 "use client"
 
-import { useState } from "react"
+import { useId, useState } from "react"
 
 import Image from "next/image"
 
 import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 import Loader2 from "lucide-react/dist/esm/icons/loader-2"
+import MoreHorizontal from "lucide-react/dist/esm/icons/more-horizontal"
 
 import { RoadmapEditor } from "@/components/roadmap/roadmap-editor"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { toast } from "@/lib/toast"
 import { uploadOrgMedia, validateOrgMediaFile } from "@/lib/organization/org-media"
 import { setRoadmapHeroImageAction } from "@/app/(dashboard)/strategic-roadmap/actions"
@@ -19,12 +27,22 @@ type RoadmapShellProps = {
   publicSlug: string | null
   initialPublic: boolean
   heroUrl: string | null
+  onDirtyChange?: (dirty: boolean) => void
+  onRegisterDiscard?: (handler: (() => void) | null) => void
 }
 
 const HERO_GRADIENT =
   "linear-gradient(to bottom right,#fcc5e4,#fda34b,#ff7882,#c8699e,#7046aa,#0c1db8,#020f75)"
 
-export function RoadmapShell({ sections, publicSlug, initialPublic, heroUrl: initialHeroUrl }: RoadmapShellProps) {
+export function RoadmapShell({
+  sections,
+  publicSlug,
+  initialPublic,
+  heroUrl: initialHeroUrl,
+  onDirtyChange,
+  onRegisterDiscard,
+}: RoadmapShellProps) {
+  const heroInputId = useId()
   const [isPublic, setIsPublic] = useState(initialPublic)
   const [heroUrl, setHeroUrl] = useState(initialHeroUrl ?? "")
   const [isUploadingHero, setIsUploadingHero] = useState(false)
@@ -97,7 +115,7 @@ export function RoadmapShell({ sections, publicSlug, initialPublic, heroUrl: ini
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <input
-              id="roadmap-hero-upload"
+              id={heroInputId}
               type="file"
               accept="image/*"
               className="sr-only"
@@ -108,24 +126,45 @@ export function RoadmapShell({ sections, publicSlug, initialPublic, heroUrl: ini
                 event.currentTarget.value = ""
               }}
             />
-            <Button asChild size="sm" variant="outline" disabled={isUploadingHero || isSavingHero}>
-              <label htmlFor="roadmap-hero-upload" className="cursor-pointer">
-                {isUploadingHero ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
-                  </span>
-                ) : heroUrl ? (
-                  "Change image"
-                ) : (
-                  "Upload image"
-                )}
-              </label>
-            </Button>
-            {heroUrl ? (
-              <Button size="sm" variant="ghost" disabled={isSavingHero || isUploadingHero} onClick={() => void saveHero(null)}>
-                Remove
-              </Button>
-            ) : null}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  disabled={isUploadingHero || isSavingHero}
+                  aria-label="Roadmap hero image actions"
+                >
+                  <MoreHorizontal className="h-4 w-4" aria-hidden />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem asChild disabled={isUploadingHero || isSavingHero} className="cursor-pointer">
+                  <label htmlFor={heroInputId} className="flex w-full cursor-pointer items-center gap-2">
+                    {isUploadingHero ? (
+                      <>
+                        <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
+                      </>
+                    ) : heroUrl ? (
+                      "Change image"
+                    ) : (
+                      "Upload image"
+                    )}
+                  </label>
+                </DropdownMenuItem>
+                {heroUrl ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      variant="destructive"
+                      disabled={isSavingHero || isUploadingHero}
+                      onSelect={() => void saveHero(null)}
+                    >
+                      Remove image
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
         <div className="relative mt-4 h-40 w-full overflow-hidden rounded-xl border border-border/50 sm:h-48">
@@ -140,6 +179,8 @@ export function RoadmapShell({ sections, publicSlug, initialPublic, heroUrl: ini
         publicSlug={publicSlug}
         roadmapIsPublic={isPublic}
         onRoadmapPublicChange={setIsPublic}
+        onDirtyChange={onDirtyChange}
+        onRegisterDiscard={onRegisterDiscard}
       />
     </div>
   )

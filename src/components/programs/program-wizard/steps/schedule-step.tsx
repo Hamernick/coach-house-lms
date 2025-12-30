@@ -20,13 +20,14 @@ import {
 import type { ProgramWizardFormState } from "../schema"
 
 export type ScheduleStepProps = {
+  index?: number
   form: ProgramWizardFormState
   onOpenChange: (open: boolean) => void
   onEdit: (next: ProgramWizardFormState) => void
   onScheduleSave: (next: ProgramWizardFormState) => void
 }
 
-export function ScheduleStep({ form, onOpenChange, onEdit, onScheduleSave }: ScheduleStepProps) {
+export function ScheduleStep({ index, form, onOpenChange, onEdit, onScheduleSave }: ScheduleStepProps) {
   const update = (patch: Partial<ProgramWizardFormState>) => {
     const next = { ...form, ...patch }
     onEdit(next)
@@ -34,7 +35,7 @@ export function ScheduleStep({ form, onOpenChange, onEdit, onScheduleSave }: Sch
   }
 
   return (
-    <DialogStackContent className="relative min-h-[520px] sm:min-h-[560px]">
+    <DialogStackContent index={index} className="relative min-h-[520px] sm:min-h-[560px]">
       <button
         type="button"
         onClick={() => onOpenChange(false)}

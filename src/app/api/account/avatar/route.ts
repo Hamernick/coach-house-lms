@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
-import { uploadAvatarWithUser, uploadAvatarAdmin } from "@/lib/storage/avatars"
+import { uploadAvatarWithUser, uploadAvatarAdmin, resolveAvatarCleanupPath, AVATARS_BUCKET } from "@/lib/storage/avatars"
 
 export async function POST(request: NextRequest) {
   const response = NextResponse.next()
@@ -28,17 +28,42 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Image too large. Max size is 5 MB." }, { status: 400 })
   }
 
+  let previousAvatarUrl: string | null = null
+  try {
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", user.id)
+      .maybeSingle<{ avatar_url: string | null }>()
+    previousAvatarUrl = profileRow?.avatar_url ?? null
+  } catch {
+    previousAvatarUrl = null
+  }
+
+  const persistAvatar = async (avatarUrl: string) => {
+    const { error: upsertError } = await supabase
+      .from("profiles")
+      .upsert({ id: user.id, avatar_url: avatarUrl }, { onConflict: "id" })
+    if (upsertError) throw upsertError
+
+    const cleanupPath = resolveAvatarCleanupPath({ previousUrl: previousAvatarUrl, nextUrl: avatarUrl, userId: user.id })
+    if (cleanupPath) {
+      await supabase.storage.from(AVATARS_BUCKET).remove([cleanupPath])
+    }
+    return avatarUrl
+  }
+
   try {
     // Prefer user-credentialed upload (bucket has RLS for own folder)
     const avatarUrl = await uploadAvatarWithUser({ client: supabase, userId: user.id, file })
-    await supabase.from("profiles").upsert({ id: user.id, avatar_url: avatarUrl }, { onConflict: "id" })
-    return NextResponse.json({ avatarUrl }, { status: 200 })
+    const saved = await persistAvatar(avatarUrl)
+    return NextResponse.json({ avatarUrl: saved }, { status: 200 })
   } catch (userUploadError: unknown) {
     // Fallback to admin upload if available (e.g., server role configured)
     try {
       const avatarUrl = await uploadAvatarAdmin({ userId: user.id, file })
-      await supabase.from("profiles").upsert({ id: user.id, avatar_url: avatarUrl }, { onConflict: "id" })
-      return NextResponse.json({ avatarUrl }, { status: 200 })
+      const saved = await persistAvatar(avatarUrl)
+      return NextResponse.json({ avatarUrl: saved }, { status: 200 })
     } catch (adminError: unknown) {
       const adminMsg = adminError instanceof Error ? adminError.message : undefined
       const userMsg = userUploadError instanceof Error ? userUploadError.message : undefined

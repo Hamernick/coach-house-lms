@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { extractPublicObjectPath } from "@/lib/storage/public-url"
 
 export const AVATARS_BUCKET = "avatars"
 const MAX_BYTES = 5 * 1024 * 1024
@@ -53,4 +54,21 @@ export async function uploadAvatarAdmin({ userId, file }: { userId: string; file
   if (error) throw error
   const { data: publicUrl } = admin.storage.from(AVATARS_BUCKET).getPublicUrl(objectName)
   return publicUrl.publicUrl
+}
+
+export function resolveAvatarCleanupPath({
+  previousUrl,
+  nextUrl,
+  userId,
+}: {
+  previousUrl?: string | null
+  nextUrl?: string | null
+  userId: string
+}): string | null {
+  if (!previousUrl) return null
+  if (previousUrl === nextUrl) return null
+  const objectPath = extractPublicObjectPath(previousUrl, AVATARS_BUCKET)
+  if (!objectPath) return null
+  if (!objectPath.startsWith(`${userId}/`)) return null
+  return objectPath
 }

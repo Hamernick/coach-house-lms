@@ -18,6 +18,7 @@ import type { ProgramWizardFormState } from "../schema"
 import Image from "next/image"
 
 export type BasicsStepProps = {
+  index?: number
   form: ProgramWizardFormState
   onOpenChange: (open: boolean) => void
   onEdit: (next: ProgramWizardFormState) => void
@@ -26,11 +27,13 @@ export type BasicsStepProps = {
 }
 
 export function BasicsStep({
+  index,
   form,
   onOpenChange,
   onEdit,
   onScheduleSave,
-  onUpload}: BasicsStepProps) {
+  onUpload,
+}: BasicsStepProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const update = (patch: Partial<ProgramWizardFormState>) => {
@@ -40,7 +43,7 @@ export function BasicsStep({
   }
 
   return (
-    <DialogStackContent className="relative min-h-[520px] sm:min-h-[560px]">
+    <DialogStackContent index={index} className="relative min-h-[520px] sm:min-h-[560px]">
       <button
         type="button"
         onClick={() => onOpenChange(false)}

@@ -1,7 +1,8 @@
 "use client"
 
-import { useCallback, useMemo, useRef, useState, useTransition } from "react"
+import { useCallback, useMemo, useRef, useState, useTransition, type ReactNode } from "react"
 import { toast } from "@/lib/toast"
+import Plus from "lucide-react/dist/esm/icons/plus"
 
 import { createProgramAction, updateProgramAction } from "@/app/(dashboard)/my-organization/programs/actions"
 import {
@@ -47,7 +48,7 @@ export type ProgramWizardProps = {
   program?: (Partial<ProgramRecord> & { id: string }) | null
   open?: boolean
   onOpenChange?: (open: boolean) => void
-  triggerLabel?: string
+  triggerLabel?: ReactNode
 }
 
 export function ProgramWizard({
@@ -55,7 +56,7 @@ export function ProgramWizard({
   program,
   open,
   onOpenChange,
-  triggerLabel = "New program",
+  triggerLabel,
 }: ProgramWizardProps = {}) {
   const [internalOpen, setInternalOpen] = useState(false)
   const isControlled = typeof open === "boolean"
@@ -155,11 +156,17 @@ export function ProgramWizard({
     }),
     [scheduleSave, setOpen],
   )
+  const resolvedTrigger = triggerLabel ?? (
+    <span className="inline-flex items-center gap-2">
+      <Plus className="h-4 w-4" aria-hidden />
+      New program
+    </span>
+  )
 
   return (
     <DialogStack open={isOpen} onOpenChange={setOpen}>
       {mode === "create" && !isControlled ? (
-        <DialogStackTrigger className="h-8 px-3">{triggerLabel}</DialogStackTrigger>
+        <DialogStackTrigger className="h-8 gap-2 px-3">{resolvedTrigger}</DialogStackTrigger>
       ) : null}
       <DialogStackOverlay />
       <DialogStackBody>

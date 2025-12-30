@@ -77,7 +77,12 @@ export type OrgProgram = {
 
 export type ProfileTab = "company" | "programs" | "people" | "supporters" | "roadmap" | "documents"
 
-export type SlugStatus = { available: boolean; suggestion?: string; message?: string } | null
+export type SlugStatus = {
+  available: boolean
+  suggestion?: string
+  message?: string
+  slug?: string
+} | null
 
 export interface OrgProfileCardProps {
   initial: OrgProfile

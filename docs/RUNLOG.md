@@ -806,3 +806,73 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-30 — Codex session (Org logo upload click fix)
 
 - Fix: logo/header image upload buttons now use labeled inputs so clicking "Add image" opens the file picker (`src/components/organization/org-profile-card/header.tsx`).
+
+## 2025-12-30 — Codex session (Upload/security review)
+
+- Review: confirmed org-media/avatars are public buckets with RLS by user folder, org-documents is private with signed URLs, and org profile images sync on save; no code changes (`src/app/api/account/org-media/route.ts`, `src/app/api/account/org-documents/route.ts`, `src/app/api/account/avatar/route.ts`, `supabase/migrations/20251001110000_storage_org_media_bucket.sql`, `supabase/migrations/20251229140207_storage_org_documents_bucket.sql`, `supabase/migrations/20251001090000_storage_avatars_bucket.sql`).
+
+## 2025-12-30 — Codex session (Image uploader menus)
+
+- UI: replaced header/logo upload buttons with a three-dot menu that also supports removing images (`src/components/organization/org-profile-card/header.tsx`).
+- UI: added a three-dot menu for roadmap hero image upload/remove actions (`src/components/roadmap/roadmap-shell.tsx`).
+
+## 2025-12-30 — Codex session (Org profile autosave + discard)
+
+- Fix: org logo/header uploads now auto-save to the org profile instead of relying on the Save button (`src/components/organization/org-profile-card/org-profile-card.tsx`, `src/components/organization/org-profile-card/header.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/brand-kit.tsx`).
+- UX: Save changes button now enables only after edits; Cancel/leave prompts to discard unsaved changes (`src/components/organization/org-profile-card/org-profile-card.tsx`, `src/components/organization/org-profile-card/header.tsx`).
+
+## 2025-12-30 — Codex session (Media cleanup + shared unsaved guard)
+
+- Cleanup: deleting or replacing org logo/header/roadmap hero now removes the old storage object (`src/app/(dashboard)/my-organization/actions.ts`, `src/app/(dashboard)/strategic-roadmap/actions.ts`, `src/lib/storage/org-media.ts`, `src/lib/storage/public-url.ts`).
+- UX: unsaved-change guard now covers roadmap drafts alongside org profile edits (`src/components/organization/org-profile-card/org-profile-card.tsx`, `src/components/roadmap/roadmap-shell.tsx`, `src/components/roadmap/roadmap-editor.tsx`).
+
+## 2025-12-30 — Codex session (Additional media cleanup)
+
+- Cleanup: profile avatar uploads now remove the previous avatar object (`src/app/api/account/avatar/route.ts`, `src/lib/storage/avatars.ts`, `src/lib/storage/public-url.ts`).
+- Cleanup: program image updates remove the prior program media object (`src/app/(dashboard)/my-organization/programs/actions.ts`, `src/lib/storage/program-media.ts`, `src/lib/storage/public-url.ts`).
+- Cleanup: org people image updates/deletes remove mirrored avatar objects (`src/app/(dashboard)/people/actions.ts`).
+
+## 2025-12-30 — Codex session (Logo/header edit icon)
+
+- UI: replaced the three-dot menu trigger for logo/header actions with an edit icon button (`src/components/organization/org-profile-card/header.tsx`).
+
+## 2025-12-30 — Codex session (Public page layout polish)
+
+- UI: improved responsive layout for the Public Page settings section and removed the redundant header View Public Page button in edit mode (`src/components/organization/org-profile-card/tabs/company-tab/edit-sections/public-page-settings.tsx`, `src/components/organization/org-profile-card/header.tsx`).
+
+## 2025-12-30 — Codex session (Logo/header upload UI tweaks)
+
+- UI: moved the logo upload control to the bottom-right of the logo card and swapped menu vs upload button based on whether an image exists (`src/components/organization/org-profile-card/header.tsx`).
+
+## 2025-12-30 — Codex session (Public URL auto-check)
+
+- UX: public URL now auto-checks availability, shows status next to the label, and the slash prefix is inside the input; save blocks when the slug is unavailable (`src/components/organization/org-profile-card/org-profile-card.tsx`, `src/components/organization/org-profile-card/tabs/company-tab.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/public-page-settings.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/types.ts`, `src/components/organization/org-profile-card/types.ts`).
+
+## 2025-12-30 — Codex session (Public page buttons + share icon)
+
+- UI: stacked View/Share buttons vertically in the public page section and switched the share icon to lucide share (`src/components/organization/org-profile-card/tabs/company-tab/edit-sections/public-page-settings.tsx`, `src/components/shared/share-button.tsx`).
+
+## 2025-12-30 — Codex session (Logo upload placement)
+
+- UI: moved the logo upload/edit control to the right of the logo card with spacing instead of overlaying the logo (`src/components/organization/org-profile-card/header.tsx`).
+
+## 2025-12-30 — Codex session (Private documents UI)
+
+- UI: private documents now show a square preview card with a three-dot menu (view/replace/delete), hide the dropzone when a file exists or when not in edit mode, and validate PDF uploads (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`).
+
+## 2025-12-30 — Codex session (Edit button sizing)
+
+- UI: matched the Edit button height to the View public page button by using the small button size (`src/components/organization/org-profile-card/header.tsx`).
+
+## 2025-12-30 — Codex session (Header action sizing)
+
+- UI: aligned Cancel/Save button heights with the small action buttons (`src/components/organization/org-profile-card/header.tsx`).
+
+## 2025-12-30 — Codex session (Programs tab tooltip + wizard steps)
+
+- UI: moved the public programs note into an info tooltip next to the Programs title (`src/components/organization/org-profile-card/tabs/programs-tab.tsx`).
+- Fix: program wizard steps now respect dialog stack index so only the active step shows (`src/components/programs/program-wizard/steps/basics-step.tsx`, `src/components/programs/program-wizard/steps/schedule-step.tsx`, `src/components/programs/program-wizard/steps/funding-step.tsx`).
+
+## 2025-12-30 — Codex session (Program button alignment)
+
+- UI: right-aligned the New program button and added a plus icon to the trigger (`src/components/organization/org-profile-card/tabs/programs-tab.tsx`, `src/components/programs/program-wizard.tsx`).

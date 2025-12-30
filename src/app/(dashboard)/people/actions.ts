@@ -17,6 +17,18 @@ export type OrgPerson = {
   pos?: { x: number; y: number } | null
 }
 
+function resolvePeopleAvatarCleanupPath(
+  previous: string | null | undefined,
+  next: string | null | undefined,
+  userId: string,
+) {
+  if (!previous) return null
+  if (previous === next) return null
+  if (/^https?:/i.test(previous)) return null
+  if (!previous.startsWith(`users/${userId}/`)) return null
+  return previous
+}
+
 function normalizeCategory(input: string): OrgPerson["category"] {
   const v = (input || "").toLowerCase()
   if (v.startsWith("board")) return "board"
@@ -113,6 +125,7 @@ export async function upsertPersonAction(person: Omit<OrgPerson, "id"> & { id?: 
   }
 
   const existingIdx = arr.findIndex((p) => p.id === id)
+  const prevImage = existingIdx >= 0 && typeof arr[existingIdx]?.image === "string" ? arr[existingIdx]?.image : null
   if (existingIdx >= 0) {
     const prev = arr[existingIdx]
     if (prev?.pos && !nextItem.pos) nextItem.pos = prev.pos
@@ -125,6 +138,14 @@ export async function upsertPersonAction(person: Omit<OrgPerson, "id"> & { id?: 
     .from("organizations")
     .upsert({ user_id: userId, profile: nextProfile }, { onConflict: "user_id" })
   if (upsertErr) return { error: upsertErr.message }
+
+  const cleanupPath = resolvePeopleAvatarCleanupPath(prevImage, nextItem.image, userId)
+  if (cleanupPath) {
+    try {
+      const admin = createSupabaseAdminClient()
+      await admin.storage.from("avatars").remove([cleanupPath])
+    } catch {}
+  }
 
   revalidatePath("/people")
   return { ok: true, id }
@@ -142,12 +163,25 @@ export async function deletePersonAction(id: string) {
 
   const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
   const arr = Array.isArray(profile.org_people) ? (profile.org_people as OrgPerson[]) : []
+  const target = arr.find((p) => p.id === id)
+  const cleanupPath = resolvePeopleAvatarCleanupPath(
+    typeof target?.image === "string" ? target.image : null,
+    null,
+    userId,
+  )
   const next = arr.filter((p) => p.id !== id)
   const nextProfile = { ...profile, org_people: next }
   const { error: upsertErr } = await supabase
     .from("organizations")
     .upsert({ user_id: userId, profile: nextProfile }, { onConflict: "user_id" })
   if (upsertErr) return { error: upsertErr.message }
+
+  if (cleanupPath) {
+    try {
+      const admin = createSupabaseAdminClient()
+      await admin.storage.from("avatars").remove([cleanupPath])
+    } catch {}
+  }
   revalidatePath("/people")
   return { ok: true }
 }

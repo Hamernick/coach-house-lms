@@ -1,15 +1,17 @@
 import Link from "next/link"
 
 import { NewsGradientThumb } from "@/components/news/gradient-thumb"
+import { PublicHeader } from "@/components/public/public-header"
 
 export const revalidate = 86400
 
 export default function NewsPage() {
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <div className="mx-auto flex min-h-screen w-[min(1200px,100%)] gap-8 px-4 py-10 md:gap-10">
+      <PublicHeader />
+      <div className="mx-auto flex min-h-screen w-[min(1200px,100%)] gap-8 px-4 pb-10 pt-28 md:gap-10">
         {/* Left rail nav */}
-        <aside className="sticky top-10 hidden h-[calc(100vh-5rem)] w-40 flex-col justify-between text-xs text-muted-foreground md:flex">
+        <aside className="sticky top-24 hidden h-[calc(100vh-6rem)] w-40 flex-col justify-between text-xs text-muted-foreground md:flex">
           <div className="space-y-1">
             {[
               { label: "Benefits", href: "/#benefits" },
@@ -35,13 +37,8 @@ export default function NewsPage() {
 
         {/* Main content */}
         <section className="flex-1">
-          <header className="mb-6 flex items-center justify-between text-xs text-muted-foreground">
+          <header className="mb-6 text-xs text-muted-foreground">
             <span>Coach House · News</span>
-            <div className="flex items-center gap-3">
-              <Link href="/login" className="rounded-full bg-secondary px-3 py-1 text-xs font-medium text-secondary-foreground">
-                Log in
-              </Link>
-            </div>
           </header>
 
           <div className="grid gap-6 md:grid-cols-[minmax(0,2.1fr)_minmax(0,1fr)]">

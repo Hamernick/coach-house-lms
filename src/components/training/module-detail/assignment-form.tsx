@@ -180,10 +180,10 @@ function AssignmentFormInner({
     try {
       const raw = window.localStorage.getItem(key)
       if (!raw) return
-      const parsed = JSON.parse(raw) as { values: AssignmentValues }
-      if (parsed?.values && !assignmentValuesEqual(parsed.values, values)) {
-        setValues(parsed.values)
-      }
+      const parsed = JSON.parse(raw) as { values?: AssignmentValues }
+      if (!parsed?.values) return
+      const nextValues = parsed.values as AssignmentValues
+      setValues((prev) => (assignmentValuesEqual(nextValues, prev) ? prev : nextValues))
     } catch {
       // ignore
     }
@@ -599,7 +599,7 @@ function AssignmentFormInner({
     return () => {
       if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
     }
-  }, [moduleId, values])
+  }, [moduleId, onSubmit, values])
 
   return (
     <div className="grid items-start gap-6 md:grid-cols-[minmax(260px,_320px)_minmax(0,_1fr)]">

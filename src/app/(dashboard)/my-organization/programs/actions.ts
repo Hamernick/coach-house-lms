@@ -77,10 +77,11 @@ export async function updateProgramAction(id: string, payload: UpdateProgramPayl
       .select("image_url")
       .eq("id", id)
       .eq("user_id", userId)
-      .maybeSingle<{ image_url: string | null }>()
+      .maybeSingle()
 
     if (existingError) return { error: existingError.message }
-    previousImageUrl = existing?.image_url ?? null
+    const existingRow = existing as { image_url?: string | null } | null
+    previousImageUrl = existingRow?.image_url ?? null
   }
 
   const update = {

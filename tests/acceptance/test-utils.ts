@@ -81,23 +81,26 @@ export const stripeCheckoutCreateMock = vi.fn()
 export const stripeCheckoutRetrieveMock = vi.fn()
 export const stripeBillingPortalCreateMock = vi.fn()
 
-vi.mock("stripe", () => ({
-  default: vi.fn().mockImplementation((...args: unknown[]) => {
+class StripeMock {
+  checkout = {
+    sessions: {
+      create: stripeCheckoutCreateMock,
+      retrieve: stripeCheckoutRetrieveMock,
+    },
+  }
+  billingPortal = {
+    sessions: {
+      create: stripeBillingPortalCreateMock,
+    },
+  }
+
+  constructor(...args: unknown[]) {
     stripeConstructorMock(...args)
-    return {
-      checkout: {
-        sessions: {
-          create: stripeCheckoutCreateMock,
-          retrieve: stripeCheckoutRetrieveMock,
-        },
-      },
-      billingPortal: {
-        sessions: {
-          create: stripeBillingPortalCreateMock,
-        },
-      },
-    }
-  }),
+  }
+}
+
+vi.mock("stripe", () => ({
+  default: StripeMock,
 }))
 
 export function resetTestMocks() {

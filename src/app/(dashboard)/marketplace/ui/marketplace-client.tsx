@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import Image from "next/image"
 
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -31,11 +32,13 @@ function MarketCard({
         <ItemMedia className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-muted text-muted-foreground">
           <span className="text-base font-semibold leading-none">{name.slice(0, 1)}</span>
           {image ? (
-            <img
+            <Image
               src={image}
               alt=""
-              loading="lazy"
-              onLoad={() => setImgOk(true)}
+              fill
+              sizes="48px"
+              unoptimized
+              onLoadingComplete={() => setImgOk(true)}
               onError={() => setImgOk(false)}
               className="absolute inset-0 h-full w-full object-cover transition-opacity"
               style={{ opacity: imgOk ? 1 : 0 }}

@@ -752,3 +752,26 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - UI: added org header image + synced logo uploads between header and Brand Kit, plus public header rendering (`src/components/organization/org-profile-card/header.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/brand-kit.tsx`, `src/components/organization/org-profile-card/public-card.tsx`, `src/app/(dashboard)/my-organization/page.tsx`, `src/app/[org]/page.tsx`).
 - UI: added roadmap hero image upload + persistence and render it on the public roadmap hero (`src/components/roadmap/roadmap-shell.tsx`, `src/app/(dashboard)/strategic-roadmap/actions.ts`, `src/app/[org]/roadmap/page.tsx`, `src/lib/roadmap.ts`).
 - Infra: added org-media upload helper and expanded route support for header/roadmap media (`src/lib/organization/org-media.ts`, `src/app/api/account/org-media/route.ts`).
+
+## 2025-12-30 — Codex session (Prioritized to-do list)
+
+- Docs: organized the Notes re LMS list from easiest to hardest and saved as `docs/TODO_PRIORITIZED.md`.
+
+## 2025-12-30 — Codex session (Quick wins 1-4)
+
+- UX: accept domain-only website inputs and normalize org links to https when missing (`src/lib/organization/urls.ts`, `src/app/(dashboard)/my-organization/actions.ts`, `src/components/organization/org-profile-card/validation.ts`, `src/components/organization/org-profile-card/shared.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/presence.tsx`).
+- UI: renamed People action button to "Add" with matching copy (`src/components/people/create-person-dialog.tsx`).
+- UI: added Submit feedback entry to the sidebar user menu (`src/components/nav-user.tsx`).
+
+## 2025-12-30 — Codex session (Roadmap hero upload + header spacing)
+
+- Fix: roadmap hero upload button now reliably opens the file picker (`src/components/roadmap/roadmap-shell.tsx`).
+- UI: moved the org logo upload button below the header image to avoid overlap (`src/components/organization/org-profile-card/header.tsx`).
+
+## 2025-12-30 — Codex session (Brand kit upload buttons)
+
+- Fix: brand kit logo/header upload buttons now trigger the file picker reliably (`src/components/organization/org-profile-card/tabs/company-tab/edit-sections/brand-kit.tsx`).
+
+## 2025-12-30 — Codex session (Brand kit scope tweak)
+
+- UI: removed header image upload/input from the Brand Kit section so it only manages logo + boilerplate (`src/components/organization/org-profile-card/tabs/company-tab/edit-sections/brand-kit.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/display-sections.tsx`).

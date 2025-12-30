@@ -96,18 +96,20 @@ export function RoadmapShell({ sections, publicSlug, initialPublic, heroUrl: ini
             <p className="text-sm text-muted-foreground">Shown on the public roadmap page header. Gradient is used if empty.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <label className="inline-flex">
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(event) => {
-                  const file = event.currentTarget.files?.[0]
-                  if (!file) return
-                  void handleHeroUpload(file)
-                }}
-              />
-              <Button size="sm" variant="outline" disabled={isUploadingHero || isSavingHero}>
+            <input
+              id="roadmap-hero-upload"
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={(event) => {
+                const file = event.currentTarget.files?.[0]
+                if (!file) return
+                void handleHeroUpload(file)
+                event.currentTarget.value = ""
+              }}
+            />
+            <Button asChild size="sm" variant="outline" disabled={isUploadingHero || isSavingHero}>
+              <label htmlFor="roadmap-hero-upload" className="cursor-pointer">
                 {isUploadingHero ? (
                   <span className="inline-flex items-center gap-2">
                     <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
@@ -117,8 +119,8 @@ export function RoadmapShell({ sections, publicSlug, initialPublic, heroUrl: ini
                 ) : (
                   "Upload image"
                 )}
-              </Button>
-            </label>
+              </label>
+            </Button>
             {heroUrl ? (
               <Button size="sm" variant="ghost" disabled={isSavingHero || isUploadingHero} onClick={() => void saveHero(null)}>
                 Remove

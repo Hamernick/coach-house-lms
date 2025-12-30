@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Glimpse, GlimpseContent, GlimpseDescription, GlimpseTitle, GlimpseTrigger } from "@/components/kibo-ui/glimpse"
 import { PROVIDER_ICON } from "@/components/shared/provider-icons"
+import { normalizeExternalUrl } from "@/lib/organization/urls"
 import { cn } from "@/lib/utils"
 
 import { inferSocialSlug, normalizeToList, shortUrl } from "./utils"
@@ -75,18 +76,20 @@ export function InputWithIcon({
 
 export function BrandLink({ href }: { href: string }) {
   if (!href) return null
-  const slug = inferSocialSlug(href)
+  const normalizedHref = normalizeExternalUrl(href) ?? href
+  const slug = inferSocialSlug(normalizedHref)
   const Icon = PROVIDER_ICON[slug] ?? PROVIDER_ICON.generic
+  const displayUrl = shortUrl(normalizedHref)
   return (
     <Glimpse>
       <GlimpseTrigger asChild>
-        <a href={href} target="_blank" rel="noopener" className="inline-flex items-center gap-2 underline underline-offset-2">
+        <a href={normalizedHref} target="_blank" rel="noopener" className="inline-flex items-center gap-2 underline underline-offset-2">
           <Icon className="h-4 w-4" />
-          <span>{shortUrl(href)}</span>
+          <span>{displayUrl}</span>
         </a>
       </GlimpseTrigger>
       <GlimpseContent className="w-80">
-        <GlimpseTitle>{shortUrl(href)}</GlimpseTitle>
+        <GlimpseTitle>{displayUrl}</GlimpseTitle>
         <GlimpseDescription>Opens in a new tab</GlimpseDescription>
       </GlimpseContent>
     </Glimpse>

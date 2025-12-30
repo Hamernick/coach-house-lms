@@ -884,3 +884,23 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-30 — Codex session (Header tagline width)
 
 - UI: constrained org header tagline width for better readability (`src/components/organization/org-profile-card/header.tsx`).
+
+## 2025-12-30 — Codex session (Pricing refresh)
+
+- UI: rebuilt the pricing page layout and content for the four tiers, including featured styling and updated feature lists (`src/app/(public)/pricing/page.tsx`).
+
+## 2025-12-30 — Codex session (Pricing grid sizing)
+
+- UI: adjusted pricing grid to keep four columns on desktop and stack only on smaller screens (`src/app/(public)/pricing/page.tsx`).
+
+## 2025-12-30 — Codex session (Pricing card header)
+
+- UI: removed tier badges and aligned the header structure closer to the provided pricing card layout (`src/app/(public)/pricing/page.tsx`).
+
+## 2025-12-30 — Codex session (Pricing fee copy)
+
+- Copy: removed the setup fee note from the Community tier (`src/app/(public)/pricing/page.tsx`).
+
+## 2025-12-30 — Codex session (Pricing tier label)
+
+- Copy: renamed the Tier 1 label to "Platform" (`src/app/(public)/pricing/page.tsx`).

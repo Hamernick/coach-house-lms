@@ -4,6 +4,7 @@
 import { revalidatePath } from "next/cache"
 import { requireServerSession } from "@/lib/auth"
 import { publicSharingEnabled } from "@/lib/feature-flags"
+import { PROGRAM_MEDIA_BUCKET, resolveProgramMediaCleanupPath } from "@/lib/storage/program-media"
 
 export type CreateProgramPayload = {
   title: string
@@ -67,6 +68,20 @@ export async function updateProgramAction(id: string, payload: UpdateProgramPayl
   const { supabase, session } = await requireServerSession("/my-organization")
   const userId = session.user.id
   const allowPublicSharing = publicSharingEnabled
+  const imageTouched = Object.prototype.hasOwnProperty.call(payload, "imageUrl")
+
+  let previousImageUrl: string | null = null
+  if (imageTouched) {
+    const { data: existing, error: existingError } = await (supabase
+      .from("programs") as any)
+      .select("image_url")
+      .eq("id", id)
+      .eq("user_id", userId)
+      .maybeSingle<{ image_url: string | null }>()
+
+    if (existingError) return { error: existingError.message }
+    previousImageUrl = existing?.image_url ?? null
+  }
 
   const update = {
     title: payload.title ?? undefined,
@@ -77,7 +92,7 @@ export async function updateProgramAction(id: string, payload: UpdateProgramPayl
     address_state: payload.addressState ?? undefined,
     address_postal: payload.addressPostal ?? undefined,
     address_country: payload.addressCountry ?? undefined,
-    image_url: payload.imageUrl ?? undefined,
+    image_url: payload.imageUrl === null ? null : payload.imageUrl ?? undefined,
     duration_label: payload.duration ?? undefined,
     start_date: payload.startDate ? (new Date(payload.startDate).toISOString() as unknown as any) : undefined,
     end_date: payload.endDate ? (new Date(payload.endDate).toISOString() as unknown as any) : undefined,
@@ -97,6 +112,17 @@ export async function updateProgramAction(id: string, payload: UpdateProgramPayl
     .eq("user_id", userId)
 
   if (error) return { error: error.message }
+
+  if (imageTouched) {
+    const cleanupPath = resolveProgramMediaCleanupPath({
+      previousUrl: previousImageUrl,
+      nextUrl: payload.imageUrl ?? null,
+      userId,
+    })
+    if (cleanupPath) {
+      await supabase.storage.from(PROGRAM_MEDIA_BUCKET).remove([cleanupPath])
+    }
+  }
   await revalidateOrganizationProgramViews(supabase, userId)
   return { ok: true }
 }

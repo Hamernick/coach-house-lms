@@ -2,17 +2,13 @@
 
 import type { ChangeEvent } from "react"
 
-import type { OrgProfile, OrgProfileErrors } from "../../types"
-
-export type SlugStatus = {
-  available: boolean
-  message: string
-} | null
+import type { OrgProfile, OrgProfileErrors, SlugStatus } from "../../types"
 
 export type CompanyEditHandlers = {
   onInputChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
   onUpdate: (updates: Partial<OrgProfile>) => void
   onDirty: () => void
+  onAutoSave: (updates: Partial<OrgProfile>) => Promise<void>
   setSlugStatus: (status: SlugStatus) => void
   slugStatus: SlugStatus
 }

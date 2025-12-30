@@ -1,19 +1,27 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useId, useMemo, useState } from "react"
 import Lock from "lucide-react/dist/esm/icons/lock"
 import FileText from "lucide-react/dist/esm/icons/file-text"
 import UploadCloud from "lucide-react/dist/esm/icons/upload-cloud"
 import Trash2 from "lucide-react/dist/esm/icons/trash-2"
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw"
 import ExternalLink from "lucide-react/dist/esm/icons/external-link"
+import MoreHorizontal from "lucide-react/dist/esm/icons/more-horizontal"
 import PencilLine from "lucide-react/dist/esm/icons/pencil-line"
 import { formatDistanceToNow } from "date-fns"
 
 import { Button, buttonVariants } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { FormRow, ProfileField } from "@/components/organization/org-profile-card/shared"
+import { FormRow } from "@/components/organization/org-profile-card/shared"
 import { Dropzone } from "@/components/ui/shadcn-io/dropzone"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -48,9 +56,17 @@ function formatUpdatedAt(value?: string | null) {
   return formatDistanceToNow(parsed, { addSuffix: true })
 }
 
+function validatePdf(file: File) {
+  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+  if (!isPdf) return "Only PDF files are supported."
+  if (file.size > MAX_BYTES) return "PDF must be 15 MB or less."
+  return null
+}
+
 export function DocumentsTab({ documents, editMode, canEdit }: DocumentsTabProps) {
   const initial = documents?.verificationLetter ?? null
   const [doc, setDoc] = useState<OrgDocument | null>(initial)
+  const replaceInputId = useId()
   const [isUploading, setIsUploading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
@@ -64,8 +80,14 @@ export function DocumentsTab({ documents, editMode, canEdit }: DocumentsTabProps
 
   const hasDocument = Boolean(doc?.path)
   const displayName = useMemo(() => nameDraft.trim().slice(0, MAX_LABEL_LENGTH), [nameDraft])
+  const menuBusy = isUploading || isDeleting || isViewing
 
   const handleUpload = async (file: File) => {
+    const validationError = validatePdf(file)
+    if (validationError) {
+      toast.error(validationError)
+      return
+    }
     const form = new FormData()
     form.append("file", file)
 
@@ -186,110 +208,135 @@ export function DocumentsTab({ documents, editMode, canEdit }: DocumentsTabProps
             </div>
           </div>
 
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <div className="mt-4 grid gap-4">
             {hasDocument ? (
-              <>
-                <ProfileField label="File">
-                  <div className="flex items-center gap-2 text-sm">
-                    <FileText className="h-4 w-4 text-muted-foreground" aria-hidden />
-                    <span className="truncate">{doc?.name}</span>
+              <div className="grid gap-4 sm:max-w-xs">
+                {canEdit && editMode ? (
+                  <input
+                    id={replaceInputId}
+                    type="file"
+                    accept="application/pdf"
+                    className="sr-only"
+                    onChange={(event) => {
+                      const file = event.currentTarget.files?.[0]
+                      if (!file) return
+                      void handleUpload(file)
+                      event.currentTarget.value = ""
+                    }}
+                  />
+                ) : null}
+                <div className="relative aspect-square w-36 overflow-hidden rounded-2xl border border-border/60 bg-muted/30">
+                  <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                    <FileText className="h-6 w-6" aria-hidden />
+                    <span className="text-xs font-medium">PDF</span>
                   </div>
-                </ProfileField>
-                <ProfileField label="Size">
-                  <span className="text-sm">{formatBytes(doc?.size)}</span>
-                </ProfileField>
-                <ProfileField label="Last updated">
-                  <span className="text-sm">{formatUpdatedAt(doc?.updatedAt)}</span>
-                </ProfileField>
-              </>
-            ) : (
-              <ProfileField label="Status">
-                <span className="text-sm text-muted-foreground">No document uploaded yet.</span>
-              </ProfileField>
-            )}
-          </div>
-
-          {canEdit ? (
-            <div className="mt-4 grid gap-3">
-              {hasDocument && editMode ? (
-                <div className="grid gap-2">
-                  <Label htmlFor="org-doc-name" className="text-xs text-muted-foreground">
-                    Document title
-                  </Label>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Input
-                      id="org-doc-name"
-                      value={nameDraft}
-                      onChange={(event) => setNameDraft(event.currentTarget.value)}
-                      className="max-w-sm"
-                    />
-                    <Button size="sm" variant="outline" onClick={handleRename} disabled={isRenaming}>
-                      <PencilLine className="h-4 w-4" />
-                      {isRenaming ? "Saving…" : "Update name"}
-                    </Button>
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        className="absolute right-2 top-2 h-8 w-8"
+                        disabled={menuBusy}
+                        aria-label="Document actions"
+                      >
+                        <MoreHorizontal className="h-4 w-4" aria-hidden />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onSelect={() => void handleView()} disabled={isViewing}>
+                        <ExternalLink className="h-4 w-4" />
+                        {isViewing ? "Opening…" : "View"}
+                      </DropdownMenuItem>
+                      {canEdit && editMode ? (
+                        <>
+                          <DropdownMenuItem asChild disabled={isUploading} className="cursor-pointer">
+                            <label htmlFor={replaceInputId} className="flex w-full cursor-pointer items-center gap-2">
+                              <RefreshCw className="h-4 w-4" />
+                              {isUploading ? "Uploading…" : "Replace file"}
+                            </label>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onSelect={() => void handleDelete()}
+                            disabled={isDeleting}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            {isDeleting ? "Removing…" : "Delete"}
+                          </DropdownMenuItem>
+                        </>
+                      ) : null}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
-              ) : null}
 
-              <div className="flex flex-wrap items-center gap-2">
-                <Dropzone
-                  accept={{ "application/pdf": [] }}
-                  maxFiles={1}
-                  maxSize={MAX_BYTES}
-                  disabled={isUploading}
-                  onDrop={(accepted) => {
-                    const file = accepted[0]
-                    if (!file) return
-                    void handleUpload(file)
-                  }}
-                  onError={(error) => {
-                    toast.error(error.message || "Upload failed")
-                  }}
-                  className="border-dashed bg-muted/20 hover:bg-muted/30"
-                >
-                  <div className="flex flex-col items-center gap-3 text-center">
-                    <div className="flex size-10 items-center justify-center rounded-full border bg-background text-muted-foreground">
-                      {hasDocument ? <RefreshCw className="h-4 w-4" /> : <UploadCloud className="h-4 w-4" />}
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold">{displayName || doc?.name || "Verification letter"}</p>
+                  <p className="text-xs text-muted-foreground">{formatBytes(doc?.size)}</p>
+                  <p className="text-xs text-muted-foreground">Updated {formatUpdatedAt(doc?.updatedAt)}</p>
+                </div>
+
+                {canEdit && editMode ? (
+                  <div className="grid gap-2">
+                    <Label htmlFor="org-doc-name" className="text-xs text-muted-foreground">
+                      Document title
+                    </Label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        id="org-doc-name"
+                        value={nameDraft}
+                        onChange={(event) => setNameDraft(event.currentTarget.value)}
+                        className="max-w-sm"
+                      />
+                      <Button size="sm" variant="outline" onClick={handleRename} disabled={isRenaming}>
+                        <PencilLine className="h-4 w-4" />
+                        {isRenaming ? "Saving…" : "Update name"}
+                      </Button>
                     </div>
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">
-                        {hasDocument ? "Replace the current PDF" : "Upload your PDF"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Drag and drop here, or click to upload.</p>
-                      <p className="text-xs text-muted-foreground">PDF up to 15 MB.</p>
-                    </div>
-                    <span
-                      className={cn(
-                        buttonVariants({ variant: "secondary", size: "sm" }),
-                        isUploading && "pointer-events-none opacity-60",
-                      )}
-                    >
-                      {isUploading ? "Uploading…" : hasDocument ? "Replace file" : "Upload file"}
-                    </span>
                   </div>
-                </Dropzone>
-                {hasDocument ? (
-                  <>
-                    <Button size="sm" variant="outline" onClick={handleView} disabled={isViewing}>
-                      <ExternalLink className="h-4 w-4" />
-                      {isViewing ? "Opening…" : "View"}
-                    </Button>
-                    <Button size="sm" variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-                      <Trash2 className="h-4 w-4" />
-                      {isDeleting ? "Removing…" : "Delete"}
-                    </Button>
-                  </>
                 ) : null}
               </div>
-            </div>
-          ) : hasDocument ? (
-            <div className="mt-4">
-              <Button size="sm" variant="outline" onClick={handleView} disabled={isViewing}>
-                <ExternalLink className="h-4 w-4" />
-                {isViewing ? "Opening…" : "View"}
-              </Button>
-            </div>
-          ) : null}
+            ) : (
+              <p className="text-sm text-muted-foreground">No document uploaded yet.</p>
+            )}
+
+            {canEdit && editMode && !hasDocument ? (
+              <Dropzone
+                accept={{ "application/pdf": [] }}
+                maxFiles={1}
+                maxSize={MAX_BYTES}
+                disabled={isUploading}
+                onDrop={(accepted) => {
+                  const file = accepted[0]
+                  if (!file) return
+                  void handleUpload(file)
+                }}
+                onError={(error) => {
+                  toast.error(error.message || "Upload failed")
+                }}
+                className="border-dashed bg-muted/20 hover:bg-muted/30"
+              >
+                <div className="flex flex-col items-center gap-3 text-center">
+                  <div className="flex size-10 items-center justify-center rounded-full border bg-background text-muted-foreground">
+                    <UploadCloud className="h-4 w-4" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium">Upload your PDF</p>
+                    <p className="text-xs text-muted-foreground">Drag and drop here, or click to upload.</p>
+                    <p className="text-xs text-muted-foreground">PDF up to 15 MB.</p>
+                  </div>
+                  <span
+                    className={cn(
+                      buttonVariants({ variant: "secondary", size: "sm" }),
+                      isUploading && "pointer-events-none opacity-60",
+                    )}
+                  >
+                    {isUploading ? "Uploading…" : "Upload file"}
+                  </span>
+                </div>
+              </Dropzone>
+            ) : null}
+          </div>
         </div>
       </FormRow>
     </div>

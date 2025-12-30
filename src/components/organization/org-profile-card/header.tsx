@@ -6,9 +6,17 @@ import { toast } from "@/lib/toast"
 import Link from "next/link"
 
 import { Button } from "@/components/ui/button"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern/index"
 import Image from "next/image"
 import Loader2 from "lucide-react/dist/esm/icons/loader-2"
+import PencilLine from "lucide-react/dist/esm/icons/pencil-line"
 import { cn } from "@/lib/utils"
 import { uploadOrgMedia, validateOrgMediaFile } from "@/lib/organization/org-media"
 
@@ -19,11 +27,11 @@ type OrgProfileHeaderProps = {
   headerUrl: string
   editMode: boolean
   isSaving: boolean
+  isDirty: boolean
   canEdit: boolean
   publicLink?: string | null
-  onLogoChange: (url: string) => void
-  onHeaderChange: (url: string) => void
-  onSetDirty: () => void
+  onLogoChange: (url: string | null) => Promise<void>
+  onHeaderChange: (url: string | null) => Promise<void>
   onEnterEdit: () => void
   onCancelEdit: () => void
   onSave: () => void
@@ -51,11 +59,11 @@ export function OrgProfileHeader({
   headerUrl,
   editMode,
   isSaving,
+  isDirty,
   canEdit,
   publicLink,
   onLogoChange,
   onHeaderChange,
-  onSetDirty,
   onEnterEdit,
   onCancelEdit,
   onSave,
@@ -64,6 +72,8 @@ export function OrgProfileHeader({
   const headerInputId = useId()
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
   const [isUploadingHeader, setIsUploadingHeader] = useState(false)
+  const [isRemovingLogo, setIsRemovingLogo] = useState(false)
+  const [isRemovingHeader, setIsRemovingHeader] = useState(false)
 
   const handleUpload = async (file: File, kind: "logo" | "header") => {
     const error = validateOrgMediaFile(file)
@@ -78,18 +88,40 @@ export function OrgProfileHeader({
     try {
       const url = await uploadOrgMedia({ file, kind })
       if (kind === "logo") {
-        onLogoChange(url)
+        await onLogoChange(url)
       } else {
-        onHeaderChange(url)
+        await onHeaderChange(url)
       }
-      onSetDirty()
-      toast.success("Image uploaded", { id: toastId })
+      toast.success("Image saved", { id: toastId })
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Upload failed", { id: toastId })
     } finally {
       setUploading(false)
     }
   }
+
+  const handleRemove = async (kind: "logo" | "header") => {
+    const setRemoving = kind === "logo" ? setIsRemovingLogo : setIsRemovingHeader
+    setRemoving(true)
+    const toastId = toast.loading("Removing image…")
+    try {
+      if (kind === "logo") {
+        await onLogoChange(null)
+      } else {
+        await onHeaderChange(null)
+      }
+      toast.success("Image removed", { id: toastId })
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Remove failed", { id: toastId })
+    } finally {
+      setRemoving(false)
+    }
+  }
+
+  const logoBusy = isUploadingLogo || isRemovingLogo || isSaving
+  const headerBusy = isUploadingHeader || isRemovingHeader || isSaving
+  const hasLogo = Boolean(logoUrl)
+  const hasHeader = Boolean(headerUrl)
 
   return (
     <>
@@ -120,26 +152,60 @@ export function OrgProfileHeader({
                 event.currentTarget.value = ""
               }}
             />
-            <Button asChild size="sm" variant="secondary" disabled={isUploadingHeader}>
-              <label htmlFor={headerInputId} className="cursor-pointer">
-                {isUploadingHeader ? (
-                  <span className="inline-flex items-center gap-2">
-                    <Loader2 className="size-4 animate-spin" /> Image…
-                  </span>
-                ) : headerUrl ? (
-                  "Change header"
-                ) : (
-                  "Add header"
-                )}
-              </label>
-            </Button>
+            {hasHeader ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="secondary"
+                    disabled={headerBusy}
+                    aria-label="Header image actions"
+                  >
+                    <PencilLine className="h-4 w-4" aria-hidden />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild disabled={headerBusy} className="cursor-pointer">
+                    <label htmlFor={headerInputId} className="flex w-full cursor-pointer items-center gap-2">
+                      {isUploadingHeader ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
+                        </>
+                      ) : (
+                        "Replace header"
+                      )}
+                    </label>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    disabled={headerBusy}
+                    onSelect={() => void handleRemove("header")}
+                  >
+                    Remove header
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button asChild size="sm" variant="secondary" disabled={headerBusy}>
+                <label htmlFor={headerInputId} className="cursor-pointer">
+                  {isUploadingHeader ? (
+                    <span className="inline-flex items-center gap-2">
+                      <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
+                    </span>
+                  ) : (
+                    "Upload"
+                  )}
+                </label>
+              </Button>
+            )}
           </div>
         ) : null}
       </div>
 
       <div className="relative p-6">
-        <div className="absolute -top-12 left-6 flex flex-col items-start gap-2">
-          <div className="flex items-center gap-3">
+        <div className="absolute -top-12 left-6">
+          <div className="flex items-end gap-3">
             <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-border bg-background shadow-sm">
               {logoUrl ? (
                 <Image src={logoUrl} alt="Logo" fill className="object-cover" sizes="96px" />
@@ -147,34 +213,70 @@ export function OrgProfileHeader({
                 <div className="grid h-full w-full place-items-center text-sm text-muted-foreground">LOGO</div>
               )}
             </div>
+            {canEdit && editMode ? (
+              <div className="flex items-center">
+                <input
+                  id={logoInputId}
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0]
+                    if (!file) return
+                    void handleUpload(file, "logo")
+                    event.currentTarget.value = ""
+                  }}
+                />
+                {hasLogo ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        disabled={logoBusy}
+                        aria-label="Logo image actions"
+                      >
+                        <PencilLine className="h-4 w-4" aria-hidden />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start">
+                      <DropdownMenuItem asChild disabled={logoBusy} className="cursor-pointer">
+                        <label htmlFor={logoInputId} className="flex w-full cursor-pointer items-center gap-2">
+                          {isUploadingLogo ? (
+                            <>
+                              <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
+                            </>
+                          ) : (
+                            "Replace logo"
+                          )}
+                        </label>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        variant="destructive"
+                        disabled={logoBusy}
+                        onSelect={() => void handleRemove("logo")}
+                      >
+                        Remove logo
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <Button asChild size="sm" variant="outline" disabled={logoBusy}>
+                    <label htmlFor={logoInputId} className="cursor-pointer">
+                      {isUploadingLogo ? (
+                        <span className="inline-flex items-center gap-2">
+                          <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
+                        </span>
+                      ) : (
+                        "Upload"
+                      )}
+                    </label>
+                  </Button>
+                )}
+              </div>
+            ) : null}
           </div>
-          {canEdit && editMode ? (
-            <>
-              <input
-                id={logoInputId}
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={(event) => {
-                  const file = event.currentTarget.files?.[0]
-                  if (!file) return
-                  void handleUpload(file, "logo")
-                  event.currentTarget.value = ""
-                }}
-              />
-              <Button asChild size="sm" variant="outline" disabled={isUploadingLogo}>
-                <label htmlFor={logoInputId} className="cursor-pointer">
-                  {isUploadingLogo ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="size-4 animate-spin" /> Image…
-                    </span>
-                  ) : (
-                    "Add image"
-                  )}
-                </label>
-              </Button>
-            </>
-          ) : null}
         </div>
 
         <div className={cn("mt-14", editMode && canEdit && "mt-24")}>
@@ -183,7 +285,7 @@ export function OrgProfileHeader({
         </div>
 
         <div className="absolute right-6 top-6 flex gap-2">
-          {publicLink ? (
+          {publicLink && !editMode ? (
             <Button asChild size="sm" variant="secondary">
               <Link href={publicLink}>View public page</Link>
             </Button>
@@ -191,15 +293,17 @@ export function OrgProfileHeader({
           {canEdit ? (
             editMode ? (
             <>
-              <Button variant="ghost" onClick={onCancelEdit} disabled={isSaving}>
+              <Button size="sm" variant="ghost" onClick={onCancelEdit} disabled={isSaving}>
                 Cancel
               </Button>
-              <Button onClick={onSave} disabled={isSaving}>
+              <Button size="sm" onClick={onSave} disabled={isSaving || !isDirty}>
                 {isSaving ? "Saving…" : "Save changes"}
               </Button>
             </>
             ) : (
-              <Button onClick={onEnterEdit}>Edit</Button>
+              <Button size="sm" onClick={onEnterEdit}>
+                Edit
+              </Button>
             )
           ) : null}
         </div>

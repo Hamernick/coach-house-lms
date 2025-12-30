@@ -4,6 +4,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
   type ChangeEvent,
@@ -15,9 +16,10 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
+import { useRouter } from "next/navigation"
 import { updateOrganizationProfileAction } from "@/app/(dashboard)/my-organization/actions"
 
-import type { OrgProfile, OrgProfileCardProps, OrgProfileErrors, OrgProgram, ProfileTab } from "./types"
+import type { OrgProfile, OrgProfileCardProps, OrgProfileErrors, OrgProgram, ProfileTab, SlugStatus } from "./types"
 import { organizationProfileSchema } from "./validation"
 import { OrgProfileHeader } from "./header"
 import { CompanyTab } from "./tabs/company-tab"
@@ -33,6 +35,18 @@ import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 import LockIcon from "lucide-react/dist/esm/icons/lock"
 
 import { RoadmapShell } from "@/components/roadmap/roadmap-shell"
+import { slugifyLocal } from "./utils"
+import { RESERVED_SLUGS } from "./tabs/company-tab/constants"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 const TABS: Array<{ value: ProfileTab; label: string; icon: typeof BuildingIcon }> = [
   { value: "company", label: "About", icon: BuildingIcon },
@@ -42,6 +56,46 @@ const TABS: Array<{ value: ProfileTab; label: string; icon: typeof BuildingIcon 
   { value: "roadmap", label: "Roadmap", icon: WaypointsIcon },
   { value: "documents", label: "Documents", icon: LockIcon },
 ]
+
+function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
+  return {
+    name: source.name ?? "",
+    description: source.description ?? "",
+    tagline: source.tagline ?? "",
+    ein: source.ein ?? "",
+    rep: source.rep ?? "",
+    email: source.email ?? "",
+    phone: source.phone ?? "",
+    address: source.address ?? "",
+    addressStreet: source.addressStreet ?? "",
+    addressCity: source.addressCity ?? "",
+    addressState: source.addressState ?? "",
+    addressPostal: source.addressPostal ?? "",
+    addressCountry: source.addressCountry ?? "",
+    logoUrl: source.logoUrl ?? "",
+    headerUrl: source.headerUrl ?? "",
+    publicUrl: source.publicUrl ?? "",
+    twitter: source.twitter ?? "",
+    facebook: source.facebook ?? "",
+    linkedin: source.linkedin ?? "",
+    instagram: source.instagram ?? "",
+    youtube: source.youtube ?? "",
+    tiktok: source.tiktok ?? "",
+    newsletter: source.newsletter ?? "",
+    github: source.github ?? "",
+    vision: source.vision ?? "",
+    mission: source.mission ?? "",
+    need: source.need ?? "",
+    values: source.values ?? "",
+    programs: source.programs ?? "",
+    reports: source.reports ?? "",
+    boilerplate: source.boilerplate ?? "",
+    brandPrimary: source.brandPrimary ?? "",
+    brandColors: Array.isArray(source.brandColors) ? source.brandColors : [],
+    publicSlug: source.publicSlug ?? "",
+    isPublic: Boolean(source.isPublic ?? false),
+  }
+}
 
 export function OrgProfileEditor({
   initial,
@@ -55,50 +109,28 @@ export function OrgProfileEditor({
   roadmapHeroUrl,
   initialTab,
 }: OrgProfileCardProps) {
+  const normalizedInitial = useMemo(() => normalizeCompanyProfile(initial), [initial])
+  const router = useRouter()
   const [editMode, setEditMode] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [dirty, setDirty] = useState(false)
   const [tab, setTab] = useState<ProfileTab>(() => initialTab ?? "company")
-  const [company, setCompany] = useState<OrgProfile>(() => ({
-    name: initial.name ?? "",
-    description: initial.description ?? "",
-    tagline: initial.tagline ?? "",
-    ein: initial.ein ?? "",
-    rep: initial.rep ?? "",
-    email: initial.email ?? "",
-    phone: initial.phone ?? "",
-    address: initial.address ?? "",
-    addressStreet: initial.addressStreet ?? "",
-    addressCity: initial.addressCity ?? "",
-    addressState: initial.addressState ?? "",
-    addressPostal: initial.addressPostal ?? "",
-    addressCountry: initial.addressCountry ?? "",
-    logoUrl: initial.logoUrl ?? "",
-    headerUrl: initial.headerUrl ?? "",
-    publicUrl: initial.publicUrl ?? "",
-    twitter: initial.twitter ?? "",
-    facebook: initial.facebook ?? "",
-    linkedin: initial.linkedin ?? "",
-    instagram: initial.instagram ?? "",
-    youtube: initial.youtube ?? "",
-    tiktok: initial.tiktok ?? "",
-    newsletter: initial.newsletter ?? "",
-    github: initial.github ?? "",
-    vision: initial.vision ?? "",
-    mission: initial.mission ?? "",
-    need: initial.need ?? "",
-    values: initial.values ?? "",
-    programs: initial.programs ?? "",
-    reports: initial.reports ?? "",
-    boilerplate: initial.boilerplate ?? "",
-    brandPrimary: initial.brandPrimary ?? "",
-    brandColors: Array.isArray(initial.brandColors) ? initial.brandColors : [],
-    publicSlug: initial.publicSlug ?? "",
-    isPublic: Boolean(initial.isPublic ?? false),
-  }))
+  const [company, setCompany] = useState<OrgProfile>(() => normalizedInitial)
+  const [savedCompany, setSavedCompany] = useState<OrgProfile>(() => normalizedInitial)
+  const savedCompanyRef = useRef(savedCompany)
+  const pendingNavigationRef = useRef<string | null>(null)
+  const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false)
+  const [roadmapDirty, setRoadmapDirty] = useState(false)
+  const roadmapDiscardRef = useRef<(() => void) | null>(null)
   const [errors, setErrors] = useState<OrgProfileErrors>({})
   const [editProgram, setEditProgram] = useState<OrgProgram | null>(null)
   const [editOpen, setEditOpen] = useState(false)
+  const hasUnsavedChanges = dirty || roadmapDirty
+  const [slugStatus, setSlugStatus] = useState<SlugStatus>(null)
+
+  useEffect(() => {
+    savedCompanyRef.current = savedCompany
+  }, [savedCompany])
 
   const handleTabChange = useCallback((value: string) => {
     if (!TABS.some((tab) => tab.value === value)) return
@@ -132,13 +164,33 @@ export function OrgProfileEditor({
   useEffect(() => {
     if (!canEdit || typeof window === "undefined") return
     const handler = (event: BeforeUnloadEvent) => {
-      if (!dirty) return
+      if (!hasUnsavedChanges) return
       event.preventDefault()
       event.returnValue = ""
     }
     window.addEventListener("beforeunload", handler)
     return () => window.removeEventListener("beforeunload", handler)
-  }, [dirty, canEdit])
+  }, [hasUnsavedChanges, canEdit])
+
+  useEffect(() => {
+    if (!hasUnsavedChanges || typeof window === "undefined") return
+    const handleClick = (event: MouseEvent) => {
+      if (event.defaultPrevented) return
+      if (!(event.target instanceof Element)) return
+      const anchor = event.target.closest("a[href]") as HTMLAnchorElement | null
+      if (!anchor) return
+      if (anchor.target && anchor.target !== "_self") return
+      if (anchor.hasAttribute("download")) return
+      const href = anchor.getAttribute("href")
+      if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return
+      event.preventDefault()
+      event.stopPropagation()
+      pendingNavigationRef.current = anchor.href
+      setConfirmDiscardOpen(true)
+    }
+    document.addEventListener("click", handleClick, true)
+    return () => document.removeEventListener("click", handleClick, true)
+  }, [hasUnsavedChanges])
 
   const handleInputChange = useCallback(
     (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -160,6 +212,66 @@ export function OrgProfileEditor({
     setDirty(true)
   }, [canEdit])
 
+  const discardChanges = useCallback(() => {
+    setCompany(savedCompanyRef.current)
+    setErrors({})
+    setDirty(false)
+    setEditMode(false)
+    roadmapDiscardRef.current?.()
+    setRoadmapDirty(false)
+    setSlugStatus(null)
+  }, [])
+
+  const persistProfileUpdates = useCallback(async (updates: Partial<OrgProfile>) => {
+    const keys = Object.keys(updates) as Array<keyof OrgProfile>
+    if (keys.length === 0) return
+
+    setCompany((prev) => {
+      const next = { ...prev }
+      for (const key of keys) {
+        const value = updates[key]
+        if (typeof value === "boolean") {
+          next[key] = value
+        } else if (Array.isArray(value)) {
+          next[key] = value
+        } else {
+          next[key] = (value ?? "") as OrgProfile[typeof key]
+        }
+      }
+      return next
+    })
+
+    const res = await updateOrganizationProfileAction(updates)
+    const error = (res as { error?: string })?.error
+    if (error) {
+      const previous = savedCompanyRef.current
+      setCompany((prev) => {
+        const next = { ...prev }
+        for (const key of keys) {
+          const value = previous[key]
+          if (typeof value === "boolean") {
+            next[key] = value
+          } else if (Array.isArray(value)) {
+            next[key] = value
+          } else {
+            next[key] = (value ?? "") as OrgProfile[typeof key]
+          }
+        }
+        return next
+      })
+      throw new Error(error)
+    }
+
+    setSavedCompany((prev) => ({ ...prev, ...updates }))
+    setErrors((prev) => {
+      const next = { ...prev }
+      for (const key of keys) {
+        next[key] = ""
+      }
+      return next
+    })
+  }, [])
+
   const handleSave = useCallback(() => {
     if (!canEdit) return
     startTransition(async () => {
@@ -174,6 +286,54 @@ export function OrgProfileEditor({
         return
       }
 
+      const hasExplicitSlug = typeof company.publicSlug === "string" && company.publicSlug.trim().length > 0
+      const shouldCheckSlug = hasExplicitSlug || Boolean(company.isPublic)
+      if (shouldCheckSlug) {
+        const base = hasExplicitSlug ? company.publicSlug ?? "" : company.name ?? ""
+        const candidate = slugifyLocal(String(base))
+        if (!candidate) {
+          setSlugStatus({ available: false, message: "Enter a public URL", slug: "" })
+          setErrors((prev) => ({ ...prev, publicSlug: "Enter a public URL" }))
+          toast.error("Enter a public URL")
+          return
+        }
+        if (RESERVED_SLUGS.has(candidate)) {
+          setSlugStatus({ available: false, message: "Reserved URL", slug: candidate })
+          setErrors((prev) => ({ ...prev, publicSlug: "This URL is reserved" }))
+          toast.error("That public URL is reserved")
+          return
+        }
+        if (slugStatus?.slug === candidate && slugStatus.available) {
+          setErrors((prev) => ({ ...prev, publicSlug: "" }))
+        }
+        if (!(slugStatus?.slug === candidate && slugStatus.available)) {
+          try {
+            const res = await fetch(`/api/public/organizations/slug-available?slug=${encodeURIComponent(candidate)}`)
+            const data = await res.json().catch(() => ({}))
+            if (typeof data.available === "boolean") {
+              const message = data.available ? "Available" : data.error || "Taken"
+              setSlugStatus({ available: data.available, message, slug: candidate })
+              if (!data.available) {
+                setErrors((prev) => ({ ...prev, publicSlug: data.error || "Public URL is taken" }))
+                toast.error("Public URL is not available")
+                return
+              }
+              setErrors((prev) => ({ ...prev, publicSlug: "" }))
+            } else {
+              setSlugStatus({ available: false, message: data.error || "Not available", slug: candidate })
+              setErrors((prev) => ({ ...prev, publicSlug: data.error || "Public URL is not available" }))
+              toast.error("Public URL is not available")
+              return
+            }
+          } catch {
+            setSlugStatus({ available: false, message: "Unable to check", slug: candidate })
+            setErrors((prev) => ({ ...prev, publicSlug: "Unable to verify public URL" }))
+            toast.error("Unable to verify public URL")
+            return
+          }
+        }
+      }
+
       const res = await updateOrganizationProfileAction(company)
       if ((res as { error?: string })?.error) {
         toast.error((res as { error?: string }).error as string)
@@ -182,14 +342,42 @@ export function OrgProfileEditor({
       toast.success("Organization updated")
       setEditMode(false)
       setDirty(false)
+      setSavedCompany(company)
     })
-  }, [company, canEdit])
+  }, [company, canEdit, slugStatus])
 
   const handleProgramEdit = useCallback((program: OrgProgram) => {
     if (!canEdit) return
     setEditProgram(program)
     setEditOpen(true)
   }, [canEdit])
+
+  const handleRoadmapDiscardRegister = useCallback((handler: (() => void) | null) => {
+    roadmapDiscardRef.current = handler
+  }, [])
+
+  const handleCancelEdit = useCallback(() => {
+    if (!hasUnsavedChanges) {
+      discardChanges()
+      return
+    }
+    pendingNavigationRef.current = null
+    setConfirmDiscardOpen(true)
+  }, [hasUnsavedChanges, discardChanges])
+
+  const handleDiscardConfirm = useCallback(() => {
+    const nextUrl = pendingNavigationRef.current
+    pendingNavigationRef.current = null
+    discardChanges()
+    if (nextUrl && typeof window !== "undefined") {
+      const targetUrl = new URL(nextUrl, window.location.href)
+      if (targetUrl.origin === window.location.origin) {
+        router.push(`${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`)
+      } else {
+        window.location.href = nextUrl
+      }
+    }
+  }, [discardChanges, router])
 
   const currentTabLabel = useMemo(() => TABS.find((t) => t.value === tab)?.label ?? "About", [tab])
   const publicLink = canEdit && company.isPublic && company.publicSlug ? `/${company.publicSlug}` : null
@@ -198,22 +386,22 @@ export function OrgProfileEditor({
 
   return (
     <Card className="overflow-hidden bg-card/60 py-0 pb-6">
-        <OrgProfileHeader
-          name={company.name || "Organization"}
-          tagline={company.tagline || "—"}
-          logoUrl={company.logoUrl ?? ""}
-          headerUrl={company.headerUrl ?? ""}
-          editMode={editMode}
-          isSaving={isPending}
-          canEdit={canEdit}
-          publicLink={publicLink}
-          onLogoChange={(url) => updateCompany({ logoUrl: url })}
-          onHeaderChange={(url) => updateCompany({ headerUrl: url })}
-          onSetDirty={markDirty}
-          onEnterEdit={() => canEdit && setEditMode(true)}
-          onCancelEdit={() => setEditMode(false)}
-          onSave={handleSave}
-        />
+      <OrgProfileHeader
+        name={company.name || "Organization"}
+        tagline={company.tagline || "—"}
+        logoUrl={company.logoUrl ?? ""}
+        headerUrl={company.headerUrl ?? ""}
+        editMode={editMode}
+        isSaving={isPending}
+        isDirty={dirty}
+        canEdit={canEdit}
+        publicLink={publicLink}
+        onLogoChange={(url) => persistProfileUpdates({ logoUrl: url })}
+        onHeaderChange={(url) => persistProfileUpdates({ headerUrl: url })}
+        onEnterEdit={() => canEdit && setEditMode(true)}
+        onCancelEdit={handleCancelEdit}
+        onSave={handleSave}
+      />
 
       <CardContent className="p-0">
         <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
@@ -277,6 +465,9 @@ export function OrgProfileEditor({
                 })
               }}
               onDirty={markDirty}
+              onAutoSave={persistProfileUpdates}
+              slugStatus={slugStatus}
+              setSlugStatus={setSlugStatus}
             />
           </TabsContent>
 
@@ -323,6 +514,8 @@ export function OrgProfileEditor({
               publicSlug={roadmapPublicSlug}
               initialPublic={roadmapIsPublic}
               heroUrl={roadmapHeroUrl ?? null}
+              onDirtyChange={setRoadmapDirty}
+              onRegisterDiscard={handleRoadmapDiscardRegister}
             />
           </TabsContent>
 
@@ -336,6 +529,35 @@ export function OrgProfileEditor({
           </TabsContent>
         </Tabs>
       </CardContent>
+
+      <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Discard them before leaving?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => {
+                pendingNavigationRef.current = null
+                setConfirmDiscardOpen(false)
+              }}
+            >
+              Keep editing
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                setConfirmDiscardOpen(false)
+                handleDiscardConfirm()
+              }}
+            >
+              Discard changes
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {canEdit && editProgram ? (
         <ProgramWizardLazy mode="edit" program={editProgram} open={editOpen} onOpenChange={setEditOpen} />

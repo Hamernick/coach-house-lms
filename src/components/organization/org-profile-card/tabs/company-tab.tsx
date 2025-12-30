@@ -1,12 +1,12 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 
 import type { OrgProfile, OrgProfileErrors } from "../types"
 import { buildAddressLines } from "../utils"
 import { EditModeSections } from "./company-tab/edit-sections"
 import { ViewModeSections } from "./company-tab/display-sections"
-import type { CompanyEditProps, CompanyViewProps, SlugStatus } from "./company-tab/types"
+import type { CompanyEditProps, CompanyViewProps } from "./company-tab/types"
 
 export type CompanyTabProps = {
   company: OrgProfile
@@ -15,11 +15,22 @@ export type CompanyTabProps = {
   onInputChange: CompanyEditProps["onInputChange"]
   onUpdate: CompanyEditProps["onUpdate"]
   onDirty: CompanyEditProps["onDirty"]
+  onAutoSave: CompanyEditProps["onAutoSave"]
+  slugStatus: CompanyEditProps["slugStatus"]
+  setSlugStatus: CompanyEditProps["setSlugStatus"]
 }
 
-export function CompanyTab({ company, errors, editMode, onInputChange, onUpdate, onDirty }: CompanyTabProps) {
-  const [slugStatus, setSlugStatus] = useState<SlugStatus>(null)
-
+export function CompanyTab({
+  company,
+  errors,
+  editMode,
+  onInputChange,
+  onUpdate,
+  onDirty,
+  onAutoSave,
+  slugStatus,
+  setSlugStatus,
+}: CompanyTabProps) {
   const addressLines = useMemo(
     () =>
       buildAddressLines({
@@ -66,7 +77,6 @@ export function CompanyTab({ company, errors, editMode, onInputChange, onUpdate,
     ],
   )
 
-
   if (editMode) {
     const editProps: CompanyEditProps = {
       company,
@@ -74,6 +84,7 @@ export function CompanyTab({ company, errors, editMode, onInputChange, onUpdate,
       onInputChange,
       onUpdate,
       onDirty,
+      onAutoSave,
       slugStatus,
       setSlugStatus,
     }

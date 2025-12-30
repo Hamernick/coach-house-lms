@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react"
 import { formatDistanceToNowStrict } from "date-fns"
 import PlusIcon from "lucide-react/dist/esm/icons/plus"
 import Share2 from "lucide-react/dist/esm/icons/share-2"
@@ -33,6 +33,8 @@ type RoadmapEditorProps = {
   publicSlug: string | null
   roadmapIsPublic: boolean
   onRoadmapPublicChange?: (next: boolean) => void
+  onDirtyChange?: (dirty: boolean) => void
+  onRegisterDiscard?: (handler: (() => void) | null) => void
 }
 
 type RoadmapDraft = {
@@ -100,6 +102,8 @@ export function RoadmapEditor({
   publicSlug,
   roadmapIsPublic,
   onRoadmapPublicChange,
+  onDirtyChange,
+  onRegisterDiscard,
 }: RoadmapEditorProps) {
   const [sections, setSections] = useState<RoadmapSection[]>(() => initialSections)
   const [drafts, setDrafts] = useState<Record<string, RoadmapDraft>>(() => {
@@ -196,6 +200,36 @@ export function RoadmapEditor({
       activeDraft.content !== activeSection.content
     )
   }, [activeDraft, activeSection])
+
+  const hasUnsavedChanges = useMemo(
+    () =>
+      sections.some((section) => {
+        const draft = drafts[section.id]
+        if (!draft) return false
+        return (
+          draft.title !== section.title ||
+          draft.subtitle !== (section.subtitle ?? "") ||
+          draft.content !== (section.content ?? "")
+        )
+      }),
+    [sections, drafts],
+  )
+
+  const discardDrafts = useCallback(() => {
+    setDrafts(() => {
+      const entries = sections.map((section) => [section.id, createDraft(section)] as const)
+      return Object.fromEntries(entries)
+    })
+  }, [sections])
+
+  useEffect(() => {
+    onDirtyChange?.(hasUnsavedChanges)
+  }, [hasUnsavedChanges, onDirtyChange])
+
+  useEffect(() => {
+    onRegisterDiscard?.(discardDrafts)
+    return () => onRegisterDiscard?.(null)
+  }, [onRegisterDiscard, discardDrafts])
 
   const handleDraftChange = (updates: Partial<RoadmapDraft>) => {
     if (!activeSection) return

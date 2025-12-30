@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase"
 import { removeRoadmapSection, updateRoadmapSection, type RoadmapSection } from "@/lib/roadmap"
 import { publicSharingEnabled } from "@/lib/feature-flags"
+import { ORG_MEDIA_BUCKET, resolveOrgMediaCleanupPath } from "@/lib/storage/org-media"
 
 type SaveInput = {
   sectionId?: string
@@ -205,10 +206,18 @@ export async function setRoadmapHeroImageAction(heroUrl: string | null): Promise
   }
 
   const currentProfile = (orgRow?.profile ?? {}) as Record<string, unknown>
+  const currentRoadmap = isRecord(currentProfile.roadmap) ? (currentProfile.roadmap as Record<string, unknown>) : {}
+  const previousHeroUrl = typeof currentRoadmap.heroUrl === "string" ? (currentRoadmap.heroUrl as string) : null
   const nextProfile = isRecord(currentProfile) ? { ...currentProfile } : {}
   const roadmapRecord = isRecord(nextProfile.roadmap) ? { ...(nextProfile.roadmap as Record<string, unknown>) } : {}
   roadmapRecord.heroUrl = nextHero
   nextProfile.roadmap = roadmapRecord
+
+  const cleanupPath = resolveOrgMediaCleanupPath({
+    previousUrl: previousHeroUrl,
+    nextUrl: nextHero,
+    userId: user.id,
+  })
 
   const { error: upsertError } = await supabase
     .from("organizations")
@@ -216,6 +225,10 @@ export async function setRoadmapHeroImageAction(heroUrl: string | null): Promise
 
   if (upsertError) {
     return { error: upsertError.message }
+  }
+
+  if (cleanupPath) {
+    await supabase.storage.from(ORG_MEDIA_BUCKET).remove([cleanupPath])
   }
 
   revalidatePath("/my-organization")

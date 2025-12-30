@@ -2,10 +2,12 @@
 
 import { Fragment } from "react"
 import FolderPlus from "lucide-react/dist/esm/icons/folder-plus"
+import InfoIcon from "lucide-react/dist/esm/icons/info"
 
 import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
 import { ProgramCard } from "@/components/programs/program-card"
 import { Empty } from "@/components/ui/empty"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 
 import type { OrgProgram } from "../types"
 import { FormRow } from "@/components/organization/org-profile-card/shared"
@@ -31,11 +33,24 @@ export function ProgramsTab({ programs, companyName, editMode, onProgramEdit }: 
         <Fragment>
           <div className="grid gap-2 md:grid-cols-3">
             <div className="px-6 md:px-0">
-              <h3 className="text-base font-medium leading-none">Programs</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-medium leading-none">Programs</h3>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border/70 text-muted-foreground transition hover:text-foreground"
+                      aria-label="Programs visibility info"
+                    >
+                      <InfoIcon className="h-3.5 w-3.5" aria-hidden />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">{publicCopy}</TooltipContent>
+                </Tooltip>
+              </div>
               <p className="mt-1 text-sm text-muted-foreground">Create and manage programs.</p>
             </div>
-            <div className="md:col-span-2 flex items-center justify-between px-6 md:px-0">
-              <p className="text-sm text-muted-foreground">{publicCopy}</p>
+            <div className="md:col-span-2 flex items-center justify-end px-6 md:px-0">
               <ProgramWizardLazy />
             </div>
           </div>

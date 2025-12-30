@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import Share2 from "lucide-react/dist/esm/icons/share-2"
+import Share from "lucide-react/dist/esm/icons/share"
 import ExternalLink from "lucide-react/dist/esm/icons/external-link"
 import { toast } from "@/lib/toast"
 
@@ -33,7 +33,7 @@ export function ShareButton({ url, title = "Share", icon = "default" }: { url?: 
     }
   }
 
-  const Icon = icon === "link" ? ExternalLink : Share2
+  const Icon = icon === "link" ? ExternalLink : Share
 
   return (
     <Button type="button" size="sm" variant="outline" onClick={handleShare} disabled={busy} className="inline-flex items-center gap-2">

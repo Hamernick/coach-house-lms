@@ -18,6 +18,7 @@ import type { ProgramWizardFormState } from "../schema"
 import { TagInput } from "../tag-input"
 
 export type FundingStepProps = {
+  index?: number
   form: ProgramWizardFormState
   onOpenChange: (open: boolean) => void
   onEdit: (next: ProgramWizardFormState) => void
@@ -28,6 +29,7 @@ export type FundingStepProps = {
 }
 
 export function FundingStep({
+  index,
   form,
   onOpenChange,
   onEdit,
@@ -43,7 +45,7 @@ export function FundingStep({
   }
 
   return (
-    <DialogStackContent className="relative flex min-h-[520px] flex-col sm:min-h-[560px]">
+    <DialogStackContent index={index} className="relative flex min-h-[520px] flex-col sm:min-h-[560px]">
       <button
         type="button"
         onClick={() => onOpenChange(false)}

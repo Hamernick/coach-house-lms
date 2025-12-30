@@ -15,7 +15,7 @@ import { FormRow, ProfileField } from "@/components/organization/org-profile-car
 import { uploadOrgMedia, validateOrgMediaFile } from "@/lib/organization/org-media"
 import type { CompanyEditProps } from "../types"
 
-export function BrandKitSection({ company, errors, onInputChange, onUpdate, onDirty }: CompanyEditProps) {
+export function BrandKitSection({ company, errors, onInputChange, onAutoSave }: CompanyEditProps) {
   const logoInputId = useId()
   const [isUploadingLogo, setIsUploadingLogo] = useState(false)
 
@@ -30,9 +30,8 @@ export function BrandKitSection({ company, errors, onInputChange, onUpdate, onDi
     const toastId = toast.loading("Uploading image…")
     try {
       const url = await uploadOrgMedia({ file, kind: "logo" })
-      onUpdate({ logoUrl: url })
-      onDirty()
-      toast.success("Image uploaded", { id: toastId })
+      await onAutoSave({ logoUrl: url })
+      toast.success("Logo saved", { id: toastId })
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Upload failed", { id: toastId })
     } finally {

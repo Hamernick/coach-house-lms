@@ -124,49 +124,57 @@ const PHOTO_STRIP = [
     id: "photo-1",
     label: "Studio gathering",
     className: "h-60 w-[var(--first-card)] sm:h-64 lg:h-72",
-    imageUrl: "https://picsum.photos/seed/coach-house-01/1200/900",
+    imageUrl:
+      "https://www.lummi.ai/api/render/image/c67bc356-57d1-462e-a02d-cdbe5d051fcf?token=eyJhbGciOiJIUzI1NiJ9.eyJpZHMiOlsiYzY3YmMzNTYtNTdkMS00NjJlLWEwMmQtY2RiZTVkMDUxZmNmIl0sInJlc29sdXRpb24iOiJtZWRpdW0iLCJyZW5kZXJTcGVjcyI6eyJlZmZlY3RzIjp7InJlZnJhbWUiOnt9fX0sInNob3VsZEF1dG9Eb3dubG9hZCI6ZmFsc2UsImp0aSI6IjVVNjV0Zy1WYi1rcjlqek4yVDFYMCIsImlhdCI6MTc2NzIxNjQ0NCwiZXhwIjoxNzY3MjE2NTA0fQ.H0u2nP1zkepGqa5FA7G7zshPDuu8xag2d65jJ43fHxs",
   },
   {
     id: "photo-2",
     label: "Demo night",
     className: "h-48 w-48 sm:h-52 sm:w-52 lg:h-56 lg:w-56",
-    imageUrl: "https://picsum.photos/seed/coach-house-02/900/900",
+    imageUrl:
+      "https://www.lummi.ai/api/render/image/6a4ac922-6d4c-4ecc-be99-5982d62a1d69?token=eyJhbGciOiJIUzI1NiJ9.eyJpZHMiOlsiNmE0YWM5MjItNmQ0Yy00ZWNjLWJlOTktNTk4MmQ2MmExZDY5Il0sInJlc29sdXRpb24iOiJtZWRpdW0iLCJyZW5kZXJTcGVjcyI6eyJlZmZlY3RzIjp7InJlZnJhbWUiOnt9fX0sInNob3VsZEF1dG9Eb3dubG9hZCI6ZmFsc2UsImp0aSI6InFaYUZsWGxjdmU3WHEzNFRNN2ZSbyIsImlhdCI6MTc2NzIxNjQyNiwiZXhwIjoxNzY3MjE2NDg2fQ.R56U4jNjo3KNN9XiIahzQkcWn8ZX2ZywVOIA7586Bms",
   },
   {
     id: "photo-3",
     label: "Team work",
     className: "h-56 w-64 sm:h-60 sm:w-72 lg:h-64 lg:w-80",
-    imageUrl: "https://picsum.photos/seed/coach-house-03/1400/900",
+    imageUrl:
+      "https://www.lummi.ai/api/render/image/22cddc17-10fe-4f3e-9a2e-78cbd66bba50?token=eyJhbGciOiJIUzI1NiJ9.eyJpZHMiOlsiMjJjZGRjMTctMTBmZS00ZjNlLTlhMmUtNzhjYmQ2NmJiYTUwIl0sInJlc29sdXRpb24iOiJtZWRpdW0iLCJyZW5kZXJTcGVjcyI6eyJlZmZlY3RzIjp7InJlZnJhbWUiOnt9fX0sInNob3VsZEF1dG9Eb3dubG9hZCI6ZmFsc2UsImp0aSI6Im1JQnM5N2JUWEdEeHVSUFp4R2xucSIsImlhdCI6MTc2NzIxNjQxMywiZXhwIjoxNzY3MjE2NDczfQ.yPEYkLZ8f4FMgsMi7E-ldEQ8dE_Tt1eT0O7GobJgdNQ",
   },
   {
     id: "photo-4",
     label: "Workshop",
     className: "h-44 w-44 sm:h-48 sm:w-48 lg:h-52 lg:w-52",
-    imageUrl: "https://picsum.photos/seed/coach-house-04/900/900",
+    imageUrl:
+      "https://www.lummi.ai/api/render/image/131a2362-6bfa-4da4-91d8-2ce42ae1678f?token=eyJhbGciOiJIUzI1NiJ9.eyJpZHMiOlsiMTMxYTIzNjItNmJmYS00ZGE0LTkxZDgtMmNlNDJhZTE2NzhmIl0sInJlc29sdXRpb24iOiJtZWRpdW0iLCJyZW5kZXJTcGVjcyI6eyJlZmZlY3RzIjp7InJlZnJhbWUiOnt9fX0sInNob3VsZEF1dG9Eb3dubG9hZCI6ZmFsc2UsImp0aSI6ImhETnJ6N1hDbFhyWjBFX1pBcXZsUSIsImlhdCI6MTc2NzIxNjQwMCwiZXhwIjoxNzY3MjE2NDYwfQ._J3m0Ca6so3sNdchS_uYoRsKmJL052Hh7ddpqg1lEJY",
   },
   {
     id: "photo-5",
     label: "Community night",
     className: "h-64 w-72 sm:h-72 sm:w-[28rem]",
-    imageUrl: "https://picsum.photos/seed/coach-house-05/1400/1000",
+    imageUrl:
+      "https://www.lummi.ai/api/render/image/352c0bc8-dee7-4d03-b1d8-01b8a9f3282e?token=eyJhbGciOiJIUzI1NiJ9.eyJpZHMiOlsiMzUyYzBiYzgtZGVlNy00ZDAzLWIxZDgtMDFiOGE5ZjMyODJlIl0sInJlc29sdXRpb24iOiJtZWRpdW0iLCJyZW5kZXJTcGVjcyI6eyJlZmZlY3RzIjp7InJlZnJhbWUiOnt9fX0sInNob3VsZEF1dG9Eb3dubG9hZCI6ZmFsc2UsImp0aSI6InEzV09KR2xBOWJ5cVNLYjNFM2VYYiIsImlhdCI6MTc2NzIxNjM4MywiZXhwIjoxNzY3MjE2NDQzfQ.-UcnGkTwE9EzrTeYG-Kuaej-VWVI2xd7P87kD8jwZkk",
   },
   {
     id: "photo-6",
     label: "Founder talk",
     className: "h-44 w-44 sm:h-48 sm:w-48 lg:h-52 lg:w-52",
-    imageUrl: "https://picsum.photos/seed/coach-house-06/900/900",
+    imageUrl:
+      "https://www.lummi.ai/api/render/image/c67bc356-57d1-462e-a02d-cdbe5d051fcf?token=eyJhbGciOiJIUzI1NiJ9.eyJpZHMiOlsiYzY3YmMzNTYtNTdkMS00NjJlLWEwMmQtY2RiZTVkMDUxZmNmIl0sInJlc29sdXRpb24iOiJtZWRpdW0iLCJyZW5kZXJTcGVjcyI6eyJlZmZlY3RzIjp7InJlZnJhbWUiOnt9fX0sInNob3VsZEF1dG9Eb3dubG9hZCI6ZmFsc2UsImp0aSI6IjVVNjV0Zy1WYi1rcjlqek4yVDFYMCIsImlhdCI6MTc2NzIxNjQ0NCwiZXhwIjoxNzY3MjE2NTA0fQ.H0u2nP1zkepGqa5FA7G7zshPDuu8xag2d65jJ43fHxs",
   },
   {
     id: "photo-7",
     label: "Brainstorm",
     className: "h-56 w-64 sm:h-60 sm:w-72 lg:h-64 lg:w-80",
-    imageUrl: "https://picsum.photos/seed/coach-house-07/1400/900",
+    imageUrl:
+      "https://www.lummi.ai/api/render/image/6a4ac922-6d4c-4ecc-be99-5982d62a1d69?token=eyJhbGciOiJIUzI1NiJ9.eyJpZHMiOlsiNmE0YWM5MjItNmQ0Yy00ZWNjLWJlOTktNTk4MmQ2MmExZDY5Il0sInJlc29sdXRpb24iOiJtZWRpdW0iLCJyZW5kZXJTcGVjcyI6eyJlZmZlY3RzIjp7InJlZnJhbWUiOnt9fX0sInNob3VsZEF1dG9Eb3dubG9hZCI6ZmFsc2UsImp0aSI6InFaYUZsWGxjdmU3WHEzNFRNN2ZSbyIsImlhdCI6MTc2NzIxNjQyNiwiZXhwIjoxNzY3MjE2NDg2fQ.R56U4jNjo3KNN9XiIahzQkcWn8ZX2ZywVOIA7586Bms",
   },
   {
     id: "photo-8",
     label: "Celebration",
     className: "h-52 w-56 sm:h-56 sm:w-64 lg:h-60 lg:w-72",
-    imageUrl: "https://picsum.photos/seed/coach-house-08/1200/900",
+    imageUrl:
+      "https://www.lummi.ai/api/render/image/22cddc17-10fe-4f3e-9a2e-78cbd66bba50?token=eyJhbGciOiJIUzI1NiJ9.eyJpZHMiOlsiMjJjZGRjMTctMTBmZS00ZjNlLTlhMmUtNzhjYmQ2NmJiYTUwIl0sInJlc29sdXRpb24iOiJtZWRpdW0iLCJyZW5kZXJTcGVjcyI6eyJlZmZlY3RzIjp7InJlZnJhbWUiOnt9fX0sInNob3VsZEF1dG9Eb3dubG9hZCI6ZmFsc2UsImp0aSI6Im1JQnM5N2JUWEdEeHVSUFp4R2xucSIsImlhdCI6MTc2NzIxNjQxMywiZXhwIjoxNzY3MjE2NDczfQ.yPEYkLZ8f4FMgsMi7E-ldEQ8dE_Tt1eT0O7GobJgdNQ",
   },
 ]
 

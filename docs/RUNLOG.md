@@ -1052,3 +1052,11 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-31 — Codex session (Home2 photo strip easing)
 
 - UI: replaced CSS snapping with eased JS snapping and allowed hover lift without clipping (`src/components/public/home2-photo-strip.tsx`, `src/app/globals.css`).
+
+## 2025-12-31 — Codex session (Home2 as landing)
+
+- UI: set the `/` landing page to render the `/home2` prototype content (`src/app/(public)/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 photo strip images)
+
+- UI: swapped the photo strip placeholders to the provided Lummi image URLs (`src/app/(public)/home2/page.tsx`).

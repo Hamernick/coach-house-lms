@@ -17,8 +17,14 @@ export function PublicThemeToggle() {
 
   if (!mounted) {
     return (
-      <Button variant="outline" size="sm" className="inline-flex items-center gap-2">
-        <DeviceDesktopIcon className="h-4 w-4" /> Theme
+      <Button
+        variant="outline"
+        size="icon"
+        className="rounded-full"
+        aria-label="Toggle theme"
+        title="Toggle theme"
+      >
+        <DeviceDesktopIcon className="h-4 w-4" />
       </Button>
     )
   }
@@ -28,18 +34,16 @@ export function PublicThemeToggle() {
   const next = ORDER[(idx + 1) % ORDER.length]
 
   const Icon = current === "dark" ? MoonIcon : current === "light" ? SunIcon : DeviceDesktopIcon
-  const label = current.charAt(0).toUpperCase() + current.slice(1)
-
   return (
     <Button
       variant="outline"
-      size="sm"
+      size="icon"
       onClick={() => setTheme(next)}
-      className="inline-flex items-center gap-2"
-      aria-label={`Theme: ${current}`}
+      className="rounded-full"
+      aria-label={`Toggle theme (currently ${current})`}
+      title={`Theme: ${current}`}
     >
       <Icon className="h-4 w-4" />
-      {label}
     </Button>
   )
 }

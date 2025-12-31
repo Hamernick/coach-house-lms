@@ -942,3 +942,61 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-30 — Codex session (Pricing separators)
 
 - UI: added a divider above each tier purpose line to match the pricing card layout (`src/app/(public)/pricing/page.tsx`).
+
+## 2025-12-30 — Codex session (Public header theme toggle)
+
+- UI: removed Benefits/How links and added a theme toggle to the public header (`src/components/public/public-header.tsx`, `src/app/(public)/page.tsx`).
+
+## 2025-12-30 — Codex session (Home prototype)
+
+- UI: added a new `/home` prototype page inspired by the requested template, with studio-style layout and custom typography (`src/app/(public)/home/page.tsx`).
+
+## 2025-12-30 — Codex session (Home prototype polish)
+
+- UI: aligned header linking, added staggered reveal animations, and refined the hero cards (`src/app/(public)/home/page.tsx`).
+
+## 2025-12-30 — Codex session (Home eyebrow tracking)
+
+- UI: removed extra letter-spacing from home page eyebrow labels (`src/app/(public)/home/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 prototype)
+
+- UI: added a second `/home2` public prototype page based on the provided layout references (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 motion + layout)
+
+- UI: removed serif typography on `/home2`, expanded spacing, and swapped in media placeholders plus a scroll-scaling video block with glow (`src/app/(public)/home2/page.tsx`, `src/components/public/home2-scroll-video.tsx`).
+- UI: made the public theme toggle icon-only and added subtle motion utility classes for fade/pop effects (`src/components/organization/public-theme-toggle.tsx`, `src/app/globals.css`).
+
+## 2025-12-31 — Codex session (Home2 news links + video glow)
+
+- UI: aligned `/home2` feature and library cards with the `/news` content and link targets, removed featured header copy, and restored the hero media block without the nested frame (`src/app/(public)/home2/page.tsx`).
+- UI: refined the scroll video container to reduce GPU load, added optional video-based glow sampling, and disabled glow when no video is provided (`src/components/public/home2-scroll-video.tsx`).
+
+## 2025-12-31 — Codex session (Home2 photo strip)
+
+- UI: removed the separator and replaced the demo/sprint grid with a horizontally scrollable, bottom-aligned photo strip (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 library cards)
+
+- UI: redesigned the library/news cards to match the new taller card layout with image placeholders and CTA icon (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 studio sections)
+
+- UI: integrated the studio style, process, and studio note sections from `/home` into `/home2` and reordered content blocks (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 photo strip snap)
+
+- UI: replaced the photo strip with a draggable, snap-to-center scroller and expanded the strip to eight placeholder cards (`src/app/(public)/home2/page.tsx`, `src/components/public/home2-photo-strip.tsx`, `src/app/globals.css`).
+
+## 2025-12-31 — Codex session (Home2 featured cards removal)
+
+- UI: removed the three-feature card row under the scroll video block (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 narrative text removal)
+
+- UI: removed the narrative text block and list under the hero media section (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 hero buttons)
+
+- UI: added “View pricing” and “Start free” buttons beneath the hero description (`src/app/(public)/home2/page.tsx`).

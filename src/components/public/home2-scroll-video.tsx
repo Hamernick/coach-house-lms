@@ -44,8 +44,8 @@ export function Home2ScrollVideo({ className, videoSrc, posterSrc }: Home2Scroll
       const end = viewport * 0.25
       const raw = 1 - (rect.top - end) / (start - end)
       const progress = clamp(raw, 0, 1)
-      const scale = 0.84 + progress * 0.16
-      const translate = 28 - progress * 28
+      const scale = 0.85 + progress * 0.2
+      const translate = 26 - progress * 26
       const opacity = 0.7 + progress * 0.3
 
       card.style.transform = `translate3d(0, ${translate}px, 0) scale(${scale})`
@@ -159,12 +159,12 @@ export function Home2ScrollVideo({ className, videoSrc, posterSrc }: Home2Scroll
   }, [videoSrc])
 
   return (
-    <section ref={sectionRef} className={cn("relative min-h-[140vh] py-20", className)}>
+    <section ref={sectionRef} className={cn("relative min-h-[110vh] py-12", className)}>
       <div className="sticky top-24 flex justify-center px-4">
         <div
           ref={cardRef}
-          className="relative w-full max-w-4xl overflow-visible will-change-transform"
-          style={{ transform: "translate3d(0, 28px, 0) scale(0.84)", opacity: 0.7 }}
+          className="relative w-full max-w-5xl overflow-visible will-change-transform"
+          style={{ transform: "translate3d(0, 26px, 0) scale(0.85)", opacity: 0.7 }}
         >
           {videoSrc ? (
             <div

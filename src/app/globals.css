@@ -217,8 +217,8 @@
   }
 
   .drag-scroll {
-    scroll-behavior: smooth;
-    scroll-snap-type: x mandatory;
+    scroll-behavior: auto;
+    scroll-snap-type: none;
   }
 
   .drag-scroll[data-dragging="true"] {

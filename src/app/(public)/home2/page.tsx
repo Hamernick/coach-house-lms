@@ -9,6 +9,7 @@ import Layers from "lucide-react/dist/esm/icons/layers"
 
 import { Home2PhotoStrip } from "@/components/public/home2-photo-strip"
 import { Home2ScrollVideo } from "@/components/public/home2-scroll-video"
+import { NewsGradientThumb } from "@/components/news/gradient-thumb"
 import { PublicHeader } from "@/components/public/public-header"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -76,12 +77,14 @@ const NEWS_FEATURES = [
     eyebrow: "Product · Oct 2025",
     title: "Introducing accelerator safeguards",
     description: "The guardrails we built so students can move fast without losing progress.",
+    seed: "news-safeguards",
   },
   {
     href: "/news/how-we-think-about-AI",
     eyebrow: "Story · Sep 2025",
     title: "How we think about AI for nonprofits",
     description: "AI is math at scale pointed at fundraising, storytelling, and stewardship.",
+    seed: "news-sora",
   },
 ]
 
@@ -91,36 +94,80 @@ const LIBRARY = [
     eyebrow: "Product · Oct 21, 2025",
     title: "How we think about and approach AI for nonprofits",
     subtitle: "A framework for using AI without losing the human story.",
+    seed: "featured-how-we-think-about-ai",
   },
   {
     href: "/news/how-we-think-about-AI",
     eyebrow: "Product · Oct 2025",
     title: "Introducing accelerator safeguards",
     subtitle: "Protect progress, keep students moving, and stay audit-ready.",
+    seed: "news-safeguards",
   },
   {
     href: "/news/how-we-think-about-AI",
     eyebrow: "Story · Sep 2025",
     title: "Sora 2 is here",
     subtitle: "What generative media means for nonprofit storytelling.",
+    seed: "news-sora",
   },
   {
     href: "/news/how-we-think-about-AI",
     eyebrow: "Story · Sep 2025",
     title: "Building the roadmap with the board",
     subtitle: "How we structure planning so funders can follow along.",
+    seed: "news-roadmap",
   },
 ]
 
 const PHOTO_STRIP = [
-  { id: "photo-1", label: "Studio gathering", className: "h-60 w-[var(--first-card)] sm:h-64 lg:h-72" },
-  { id: "photo-2", label: "Demo night", className: "h-48 w-48 sm:h-52 sm:w-52 lg:h-56 lg:w-56" },
-  { id: "photo-3", label: "Team work", className: "h-56 w-64 sm:h-60 sm:w-72 lg:h-64 lg:w-80" },
-  { id: "photo-4", label: "Workshop", className: "h-44 w-44 sm:h-48 sm:w-48 lg:h-52 lg:w-52" },
-  { id: "photo-5", label: "Community night", className: "h-64 w-72 sm:h-72 sm:w-[28rem]" },
-  { id: "photo-6", label: "Founder talk", className: "h-44 w-44 sm:h-48 sm:w-48 lg:h-52 lg:w-52" },
-  { id: "photo-7", label: "Brainstorm", className: "h-56 w-64 sm:h-60 sm:w-72 lg:h-64 lg:w-80" },
-  { id: "photo-8", label: "Celebration", className: "h-52 w-56 sm:h-56 sm:w-64 lg:h-60 lg:w-72" },
+  {
+    id: "photo-1",
+    label: "Studio gathering",
+    className: "h-60 w-[var(--first-card)] sm:h-64 lg:h-72",
+    imageUrl: "https://picsum.photos/seed/coach-house-01/1200/900",
+  },
+  {
+    id: "photo-2",
+    label: "Demo night",
+    className: "h-48 w-48 sm:h-52 sm:w-52 lg:h-56 lg:w-56",
+    imageUrl: "https://picsum.photos/seed/coach-house-02/900/900",
+  },
+  {
+    id: "photo-3",
+    label: "Team work",
+    className: "h-56 w-64 sm:h-60 sm:w-72 lg:h-64 lg:w-80",
+    imageUrl: "https://picsum.photos/seed/coach-house-03/1400/900",
+  },
+  {
+    id: "photo-4",
+    label: "Workshop",
+    className: "h-44 w-44 sm:h-48 sm:w-48 lg:h-52 lg:w-52",
+    imageUrl: "https://picsum.photos/seed/coach-house-04/900/900",
+  },
+  {
+    id: "photo-5",
+    label: "Community night",
+    className: "h-64 w-72 sm:h-72 sm:w-[28rem]",
+    imageUrl: "https://picsum.photos/seed/coach-house-05/1400/1000",
+  },
+  {
+    id: "photo-6",
+    label: "Founder talk",
+    className: "h-44 w-44 sm:h-48 sm:w-48 lg:h-52 lg:w-52",
+    imageUrl: "https://picsum.photos/seed/coach-house-06/900/900",
+  },
+  {
+    id: "photo-7",
+    label: "Brainstorm",
+    className: "h-56 w-64 sm:h-60 sm:w-72 lg:h-64 lg:w-80",
+    imageUrl: "https://picsum.photos/seed/coach-house-07/1400/900",
+  },
+  {
+    id: "photo-8",
+    label: "Celebration",
+    className: "h-52 w-56 sm:h-56 sm:w-64 lg:h-60 lg:w-72",
+    imageUrl: "https://picsum.photos/seed/coach-house-08/1200/900",
+  },
 ]
 
 export default function HomeTwoPage() {
@@ -161,17 +208,20 @@ export default function HomeTwoPage() {
         </section>
 
         <section className="space-y-10">
-          <Home2ScrollVideo className="animate-fade-in" />
+          <Home2ScrollVideo
+            className="animate-fade-in"
+            videoSrc="https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
+            posterSrc="https://storage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerJoyrides.jpg"
+          />
         </section>
 
-        <section className="flex justify-center">
-          <Card className="relative w-full max-w-5xl overflow-hidden rounded-[40px] border border-border/70 bg-[linear-gradient(135deg,#f6c7ef_0%,#f3b0df_45%,#f0a2d6_100%)] shadow-xl dark:border-white/10 dark:bg-[linear-gradient(135deg,#5b2b4b_0%,#472238_55%,#341a29_100%)] aspect-[16/9]" />
-        </section>
-
-        <section className="grid gap-12 md:grid-cols-2">
+        <section className="grid gap-12 pb-12 md:grid-cols-2">
           {NEWS_FEATURES.map((item) => (
             <Link key={item.title} href={item.href} className="group space-y-5">
-              <div className="relative aspect-[4/3] overflow-hidden rounded-[28px] border border-border/60 bg-muted/40 shadow-lg transition-transform duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-xl" />
+              <NewsGradientThumb
+                seed={item.seed}
+                className="aspect-[4/3] w-full rounded-[28px] shadow-lg transition-transform duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-xl"
+              />
               <div className="flex items-center justify-between">
                 <div className="space-y-1">
                   <p className="text-xs uppercase text-muted-foreground">{item.eyebrow}</p>
@@ -230,7 +280,7 @@ export default function HomeTwoPage() {
             </div>
           </div>
 
-          <div className="rounded-[32px] border border-border/60 bg-foreground p-6 text-background shadow-xl">
+          <div className="flex flex-col rounded-[32px] border border-border/60 bg-foreground p-6 text-background shadow-xl">
             <p className="text-xs uppercase text-background/70">Studio note</p>
             <h2 className={cn(heading.className, "mt-4 text-3xl font-semibold")}>
               Make it easy for funders to say yes.
@@ -239,8 +289,8 @@ export default function HomeTwoPage() {
               The platform keeps your mission, plan, and proof in sync. That means fewer follow-up emails and a clearer narrative
               when it matters most.
             </p>
-            <Button asChild size="lg" variant="secondary" className="mt-6 rounded-full px-6">
-              <Link href="/pricing">Explore tiers</Link>
+            <Button asChild size="sm" variant="secondary" className="mt-auto self-start rounded-full px-4">
+              <Link href="/pricing">View pricing</Link>
             </Button>
           </div>
         </section>
@@ -259,7 +309,8 @@ export default function HomeTwoPage() {
               href={item.href}
               className="group flex min-h-[360px] flex-col rounded-[26px] bg-card/70 p-4 shadow-sm transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-md"
             >
-              <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[22px] bg-muted/40">
+              <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[22px] shadow-sm">
+                <NewsGradientThumb seed={item.seed} className="absolute inset-0" />
                 <span className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/80 text-muted-foreground shadow-sm transition group-hover:bg-background">
                   <ArrowUpRight className="h-4 w-4" aria-hidden />
                 </span>
@@ -273,7 +324,7 @@ export default function HomeTwoPage() {
           ))}
         </section>
 
-        <section className="flex flex-col gap-10">
+        <section className="relative left-1/2 right-1/2 w-screen -translate-x-1/2">
           <Home2PhotoStrip items={PHOTO_STRIP} />
         </section>
 

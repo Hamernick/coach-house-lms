@@ -989,6 +989,54 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 
 - UI: replaced the photo strip with a draggable, snap-to-center scroller and expanded the strip to eight placeholder cards (`src/app/(public)/home2/page.tsx`, `src/components/public/home2-photo-strip.tsx`, `src/app/globals.css`).
 
+## 2025-12-31 — Codex session (Home2 photo strip full-bleed)
+
+- UI: made the photo strip section full-bleed so cards extend to the viewport edge without clipping (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 studio note button)
+
+- UI: anchored the “Explore tiers” button to the bottom of the studio note card (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 photo strip build fix)
+
+- Fix: resolved a TypeScript inference error in the photo strip snapping logic (`src/components/public/home2-photo-strip.tsx`).
+
+## 2025-12-31 — Codex session (Home2 news gradients + photo placeholders)
+
+- UI: swapped the 4:3 news feature placeholders for the shared news gradients and added image API placeholders to the photo strip (`src/app/(public)/home2/page.tsx`, `src/components/public/home2-photo-strip.tsx`).
+
+## 2025-12-31 — Codex session (Home2 media block removal)
+
+- UI: removed the standalone gradient media card between the scroll video and news features (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 video spacing)
+
+- UI: reduced the scroll video section height/padding to tighten the space beneath the video container (`src/components/public/home2-scroll-video.tsx`).
+
+## 2025-12-31 — Codex session (Home2 placeholder video)
+
+- UI: added a looping public-domain placeholder video and poster to the scroll video block (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 video scale)
+
+- UI: increased the scroll video max width and scale range for a larger reveal (`src/components/public/home2-scroll-video.tsx`).
+
+## 2025-12-31 — Codex session (Home2 studio note button text)
+
+- UI: left-aligned and shortened the studio note button with updated label text (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 library gradients)
+
+- UI: applied the shared news gradient thumbnails to the library card media placeholders (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 media borders)
+
+- UI: removed borders on photo strip and news gradient cards to eliminate the double-frame artifact (`src/app/(public)/home2/page.tsx`, `src/components/public/home2-photo-strip.tsx`).
+
+## 2025-12-31 — Codex session (Home2 spacing tweak)
+
+- UI: tightened the scroll video section height and added extra spacing below the news feature section (`src/components/public/home2-scroll-video.tsx`, `src/app/(public)/home2/page.tsx`).
+
 ## 2025-12-31 — Codex session (Home2 featured cards removal)
 
 - UI: removed the three-feature card row under the scroll video block (`src/app/(public)/home2/page.tsx`).
@@ -1000,3 +1048,7 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-31 — Codex session (Home2 hero buttons)
 
 - UI: added “View pricing” and “Start free” buttons beneath the hero description (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Home2 photo strip easing)
+
+- UI: replaced CSS snapping with eased JS snapping and allowed hover lift without clipping (`src/components/public/home2-photo-strip.tsx`, `src/app/globals.css`).

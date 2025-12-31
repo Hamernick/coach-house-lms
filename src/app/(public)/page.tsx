@@ -10,7 +10,7 @@ export default function LandingPage() {
   return (
     <main className="relative min-h-screen bg-gradient-to-b from-background via-background to-secondary/40">
       {/* Floating glass header */}
-      <PublicHeader homeAnchors />
+      <PublicHeader />
 
       {/* Hero */}
       <section className="mx-auto w-[min(1100px,92%)] px-1 pt-28">

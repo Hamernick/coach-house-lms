@@ -207,6 +207,91 @@
     background-image: radial-gradient(#2a2a2c 0.8px, transparent 0);
     background-size: 36px 36px;
   }
+
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .drag-scroll {
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+  }
+
+  .drag-scroll[data-dragging="true"] {
+    scroll-behavior: auto;
+    cursor: grabbing;
+  }
+
+  .animate-soft-pop {
+    animation: soft-pop 0.7s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .animate-fade-up {
+    animation: fade-up 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.8s ease-out both;
+  }
+
+  .animate-float {
+    animation: floaty 6s ease-in-out infinite;
+  }
+}
+
+@keyframes soft-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(18px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fade-up {
+  0% {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes floaty {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-soft-pop,
+  .animate-fade-up,
+  .animate-fade-in,
+  .animate-float {
+    animation: none !important;
+    transform: none !important;
+  }
 }
 
 .community-marker {

@@ -1,14 +1,11 @@
+"use client"
+
 import Image from "next/image"
 import Link from "next/link"
 
-type PublicHeaderProps = {
-  homeAnchors?: boolean
-}
+import { PublicThemeToggle } from "@/components/organization/public-theme-toggle"
 
-export function PublicHeader({ homeAnchors = false }: PublicHeaderProps) {
-  const benefitsHref = homeAnchors ? "#benefits" : "/#benefits"
-  const howHref = homeAnchors ? "#how" : "/#how"
-
+export function PublicHeader() {
   return (
     <header className="sticky top-4 z-50 mx-auto w-[min(1100px,92%)] rounded-2xl border border-border/70 bg-background/50 px-4 py-3 shadow-md backdrop-blur supports-[backdrop-filter]:bg-background/40">
       <nav className="flex items-center justify-between gap-4" aria-label="Primary">
@@ -34,12 +31,6 @@ export function PublicHeader({ homeAnchors = false }: PublicHeaderProps) {
           <span className="text-sm font-semibold tracking-tight">Coach House</span>
         </div>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <Link href={benefitsHref} className="hidden sm:inline hover:text-foreground">
-            Benefits
-          </Link>
-          <Link href={howHref} className="hidden sm:inline hover:text-foreground">
-            How it works
-          </Link>
           <Link href="/pricing" className="hidden sm:inline hover:text-foreground">
             Pricing
           </Link>
@@ -52,6 +43,7 @@ export function PublicHeader({ homeAnchors = false }: PublicHeaderProps) {
           >
             Sign in
           </Link>
+          <PublicThemeToggle />
         </div>
       </nav>
     </header>

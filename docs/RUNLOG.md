@@ -2019,3 +2019,8 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 
 - Fix: import `randomUUID` for enrollment invite token generation to satisfy typecheck (`src/app/(admin)/admin/classes/[id]/actions.ts`).
 - Tests: not run.
+
+## 2026-01-10 — Codex session (Build/typing follow-ups)
+
+- Fix: replace Edge-unsafe `randomUUID` import with `randomId` helper and restore missing mobile sidebar prop (`src/app/(admin)/admin/classes/[id]/actions.ts`, `src/components/app-sidebar/mobile-sidebar.tsx`).
+- Tests: not run.

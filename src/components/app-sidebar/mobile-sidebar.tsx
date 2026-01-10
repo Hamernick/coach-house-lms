@@ -1,6 +1,7 @@
 "use client"
 
 import XIcon from "lucide-react/dist/esm/icons/x"
+import { usePathname } from "next/navigation"
 
 import type { AppSidebarProps } from "@/components/app-sidebar"
 import { SidebarBody } from "@/components/app-sidebar"
@@ -22,6 +23,8 @@ export function MobileSidebar({
   open,
   onOpenChange,
 }: MobileSidebarProps) {
+  const pathname = usePathname()
+  const isAcceleratorActive = (pathname ?? "").startsWith("/accelerator")
   if (!open) {
     return null
   }
@@ -42,6 +45,7 @@ export function MobileSidebar({
           isAdmin={Boolean(isAdmin)}
           classes={classes}
           acceleratorProgress={acceleratorProgress}
+          isAcceleratorActive={isAcceleratorActive}
           openMap={openMap}
           setOpenMap={(next) => {
             setOpenMap(next)

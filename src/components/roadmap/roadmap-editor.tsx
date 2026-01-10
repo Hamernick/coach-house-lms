@@ -440,7 +440,7 @@ export function RoadmapEditor({
       throw new Error(error)
     }
     return uploadOrgMedia({ file, kind: "roadmap" })
-  }, [uploadOrgMedia, validateOrgMediaFile])
+  }, [])
 
   if (!activeSection || !activeDraft) {
     return null

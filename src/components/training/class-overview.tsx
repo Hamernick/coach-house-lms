@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -37,6 +37,8 @@ type ClassOverviewProps = {
 
 export function ClassOverview({ c, isAdmin = false, onStartModule }: ClassOverviewProps) {
   const router = useRouter()
+  const pathname = usePathname()
+  const basePath = pathname?.startsWith("/accelerator") ? "/accelerator" : ""
   const [wizardOpen, setWizardOpen] = useState(false)
   const [wizardPayload, setWizardPayload] = useState<LessonWizardPayload | null>(null)
   const [wizardLoading, setWizardLoading] = useState(false)
@@ -316,6 +318,7 @@ export function ClassOverview({ c, isAdmin = false, onStartModule }: ClassOvervi
                   showAdminActions={false}
                   moduleIndex={getModuleIndex(module)}
                   lockedForLearners={Boolean(module.locked)}
+                  basePath={basePath}
                   onStartModule={onStartModule}
                   onEditModule={handleEditModule}
                   onTogglePublish={handleToggleModulePublished}
@@ -346,6 +349,7 @@ export function ClassOverview({ c, isAdmin = false, onStartModule }: ClassOvervi
                     showAdminActions={false}
                     moduleIndex={getModuleIndex(module)}
                     lockedForLearners={Boolean(module.locked)}
+                    basePath={basePath}
                     onStartModule={onStartModule}
                     onEditModule={handleEditModule}
                     onTogglePublish={handleToggleModulePublished}

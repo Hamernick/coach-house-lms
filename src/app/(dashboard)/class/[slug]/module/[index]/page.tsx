@@ -55,7 +55,9 @@ export default async function ModulePage({
 
   const moduleStates = buildModuleStates(classContext.modules, classContext.progressMap)
   const currentState = moduleStates.find((state) => state.module.idx === moduleIndex)
-  if (!currentState) {
+  const fallbackState = moduleStates[moduleIndex - 1] ?? null
+  const resolvedState = currentState ?? fallbackState
+  if (!resolvedState) {
     notFound()
   }
 
@@ -77,21 +79,21 @@ export default async function ModulePage({
     })),
   }
 
-  const contentMd = (currentState.module as { contentMd?: string | null }).contentMd ?? null
-  const moduleTitle = currentState.module.title
-  const moduleSubtitle = currentState.module.description ?? undefined
+  const contentMd = (resolvedState.module as { contentMd?: string | null }).contentMd ?? null
+  const moduleTitle = resolvedState.module.title
+  const moduleSubtitle = resolvedState.module.description ?? undefined
 
   const moduleDef = {
-    id: currentState.module.id,
+    id: resolvedState.module.id,
     title: moduleTitle,
     subtitle: moduleSubtitle,
-    videoUrl: currentState.module.videoUrl ?? null,
+    videoUrl: resolvedState.module.videoUrl ?? null,
     contentMd,
-    resources: currentState.module.resources,
-    assignment: currentState.module.assignment,
-    assignmentSubmission: currentState.module.assignmentSubmission,
-    locked: currentState.locked,
-    hasDeck: currentState.module.hasDeck,
+    resources: resolvedState.module.resources,
+    assignment: resolvedState.module.assignment,
+    assignmentSubmission: resolvedState.module.assignmentSubmission,
+    locked: resolvedState.locked,
+    hasDeck: resolvedState.module.hasDeck,
   }
 
   return (

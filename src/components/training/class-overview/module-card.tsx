@@ -34,6 +34,7 @@ type ModuleCardProps = {
   module: ClassDef["modules"][number]
   moduleIndex: number
   lockedForLearners: boolean
+  basePath?: string
   onStartModule?: (moduleId: string) => void
   onEditModule?: (moduleId: string) => void
   onTogglePublish?: (moduleId: string, next: boolean) => Promise<void>
@@ -47,6 +48,7 @@ export function ModuleCard({
   module,
   moduleIndex,
   lockedForLearners,
+  basePath = "",
   onStartModule,
   onEditModule,
   onTogglePublish,
@@ -54,7 +56,7 @@ export function ModuleCard({
   const router = useRouter()
   const [publishPending, startPublish] = useTransition()
 
-  const dashboardHref = classSlug ? `/class/${classSlug}/module/${moduleIndex}` : null
+  const dashboardHref = classSlug ? `${basePath}/class/${classSlug}/module/${moduleIndex}` : null
   const locked = isAdmin ? false : lockedForLearners
   const status = lockedForLearners ? "locked" : module.status ?? "not_started"
   const completed = status === "completed"

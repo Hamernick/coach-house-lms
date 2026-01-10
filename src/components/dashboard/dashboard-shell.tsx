@@ -6,8 +6,6 @@ import type { ReactNode } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
-import dynamic from "next/dynamic"
-
 import { SidebarBody } from "@/components/app-sidebar"
 import { useSidebarOpenMap } from "@/components/app-sidebar/hooks"
 import { GlobalSearch } from "@/components/global-search"
@@ -18,12 +16,8 @@ import { Separator } from "@/components/ui/separator"
 import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { NotificationsMenu } from "@/components/notifications/notifications-menu"
 import { SupportMenu } from "@/components/support-menu"
+import { ThemeToggle } from "@/components/theme-toggle"
 import type { SidebarClass } from "@/lib/academy"
-
-const ThemeToggle = dynamic(() => import("@/components/theme-toggle").then((mod) => mod.ThemeToggle), {
-  ssr: false,
-  loading: () => null,
-})
 
 const SUPPORT_EMAIL = "contact@coachhousesolutions.org"
 

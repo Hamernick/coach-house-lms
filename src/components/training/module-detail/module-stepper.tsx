@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
 import { NotificationsMenu } from "@/components/notifications/notifications-menu"
 import { SupportMenu } from "@/components/support-menu"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import { LessonNotes } from "./lesson-notes"
@@ -36,14 +37,6 @@ const AssignmentFormLazy = dynamic(
         </div>
       </div>
     ),
-  },
-)
-
-const ThemeToggle = dynamic(
-  () => import("@/components/theme-toggle").then((mod) => mod.ThemeToggle),
-  {
-    ssr: false,
-    loading: () => null,
   },
 )
 

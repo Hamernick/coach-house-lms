@@ -5,6 +5,7 @@
 5. [done] Under people let’s make options governing board, staff, volunteers, advisory board (board/staff exist; volunteers/advisory missing)
 6. [done] Change “Due Diligence” to “Documents”
 7. [done] We need to map the Roadmap options under my org so they attach to the accelerator homework wherever possible.
+8. [done] Fix module navigation 404s + keep accelerator links within /accelerator.
 
 
 ORIGIN STORY COPY [done]

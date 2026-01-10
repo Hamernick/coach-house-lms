@@ -2003,3 +2003,9 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 
 - UI: compacted the program budget table and auto-fit column widths to reduce scrolling (`src/components/training/module-detail/assignment-form.tsx`).
 - Tests: not run.
+
+## 2026-01-10 — Codex session (Module routing + hydration fix)
+
+- Fix: added accelerator-aware module links plus a safer module index fallback to stop 404s (`src/components/training/class-overview.tsx`, `src/components/training/class-overview/module-card.tsx`, `src/app/(dashboard)/class/[slug]/module/[index]/page.tsx`).
+- Fix: render theme toggle during SSR to avoid SupportMenu hydration id mismatches (`src/components/accelerator/accelerator-shell.tsx`, `src/components/dashboard/dashboard-shell.tsx`, `src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.

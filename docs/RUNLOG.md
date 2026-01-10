@@ -2024,3 +2024,8 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 
 - Fix: replace Edge-unsafe `randomUUID` import with `randomId` helper and restore missing mobile sidebar prop (`src/app/(admin)/admin/classes/[id]/actions.ts`, `src/components/app-sidebar/mobile-sidebar.tsx`).
 - Tests: not run.
+
+## 2026-01-10 — Codex session (Dashboard sidebar prop)
+
+- Fix: pass `isAcceleratorActive` into the desktop dashboard sidebar body to satisfy types (`src/components/dashboard/dashboard-shell.tsx`).
+- Tests: not run.

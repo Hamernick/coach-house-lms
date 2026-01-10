@@ -1,6 +1,5 @@
 "use server"
 
-import { randomUUID } from "crypto"
 import { redirect } from "next/navigation"
 
 import { requireAdmin } from "@/lib/admin/auth"
@@ -332,7 +331,7 @@ export async function createEnrollmentInviteAction(formData: FormData) {
   await requireAdmin()
   const supabase = await createSupabaseServerClient()
 
-  const token = randomUUID()
+  const token = randomId()
 
   const insertPayload: Database["public"]["Tables"]["enrollment_invites"]["Insert"] = {
     class_id: classId,

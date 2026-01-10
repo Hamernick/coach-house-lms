@@ -334,7 +334,17 @@ export function useLessonWizard({ open, mode = "create", initialPayload = null, 
         videoUrl: m.videoUrl.trim(),
         resources: m.resources.map((r) => ({ title: r.title.trim(), type: "link", url: r.url.trim() || null, provider: r.providerSlug })),
         formFields: m.formFields.map((f) => {
-          const options = Array.isArray(f.options) ? f.options.map((opt) => opt.trim()).filter(Boolean) : []
+          const rawOptions = Array.isArray(f.options) ? f.options : []
+          const options =
+            f.type === "budget_table"
+              ? rawOptions.filter(
+                  (opt): opt is { category: string; description?: string; costType?: string; unit?: string } =>
+                    typeof opt === "object" && opt !== null && "category" in opt,
+                )
+              : rawOptions
+                  .filter((opt): opt is string => typeof opt === "string")
+                  .map((opt) => opt.trim())
+                  .filter(Boolean)
           const placeholder = f.placeholder?.trim() ?? ""
           const description = f.description?.trim() ?? ""
           const min = toNumberOrNull(f.min)

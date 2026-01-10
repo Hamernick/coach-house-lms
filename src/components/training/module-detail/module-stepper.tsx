@@ -185,7 +185,7 @@ export function ModuleStepper({
     }
     list.push({ id: "complete", label: "Congratulations", type: "complete" })
     return list
-  }, [embedUrl, fallbackUrl, hasDeck, lessonNotesContent, resources, tabSections, videoUrl])
+  }, [assignmentFields.length, embedUrl, fallbackUrl, hasDeck, lessonNotesContent, resources, tabSections, videoUrl])
 
   const [activeIndex, setActiveIndex] = useState(0)
   const [schedulePending, setSchedulePending] = useState(false)

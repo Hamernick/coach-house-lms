@@ -129,13 +129,13 @@ export async function resolveRoadmapHomework(
     let matched: { sectionId: string; classSlug: string; module: { id: string; idx: number; slug: string; title: string | null }; label: string } | null = null
     for (const target of targets) {
       const modules = modulesByClassSlug.get(target.classSlug) ?? []
-      const module = target.moduleSlug
+      const moduleMatch = target.moduleSlug
         ? modules.find((item) => item.slug === target.moduleSlug)
         : typeof target.moduleIdx === "number"
           ? modules.find((item) => item.idx === target.moduleIdx)
           : null
-      if (module) {
-        matched = { sectionId, classSlug: target.classSlug, module, label: target.label }
+      if (moduleMatch) {
+        matched = { sectionId, classSlug: target.classSlug, module: moduleMatch, label: target.label }
         break
       }
     }

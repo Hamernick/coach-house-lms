@@ -145,7 +145,7 @@ function DocumentCard({
   useEffect(() => {
     setDoc(document ?? null)
     setNameDraft(document?.name ?? "")
-  }, [document?.name, document?.path, document?.updatedAt])
+  }, [document])
 
   const hasDocument = Boolean(doc?.path)
   const displayName = useMemo(() => nameDraft.trim().slice(0, MAX_LABEL_LENGTH), [nameDraft])

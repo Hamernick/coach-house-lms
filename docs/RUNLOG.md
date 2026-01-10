@@ -2009,3 +2009,8 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Fix: added accelerator-aware module links plus a safer module index fallback to stop 404s (`src/components/training/class-overview.tsx`, `src/components/training/class-overview/module-card.tsx`, `src/app/(dashboard)/class/[slug]/module/[index]/page.tsx`).
 - Fix: render theme toggle during SSR to avoid SupportMenu hydration id mismatches (`src/components/accelerator/accelerator-shell.tsx`, `src/components/dashboard/dashboard-shell.tsx`, `src/components/training/module-detail/module-stepper.tsx`).
 - Tests: not run.
+
+## 2026-01-10 — Codex session (CI lint fixes)
+
+- Fix: resolved Next lint issues around variable naming and hook deps (`src/lib/roadmap/homework.ts`, `src/components/training/module-detail/module-stepper.tsx`, `src/components/roadmap/roadmap-editor.tsx`, `src/components/public/home2-scroll-video.tsx`, `src/components/organization/org-profile-card/tabs/documents-tab.tsx`).
+- Tests: not run.

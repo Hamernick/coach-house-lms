@@ -125,7 +125,7 @@ export function Home2ScrollVideo({ className, videoSrc, posterSrc }: Home2Scroll
       window.removeEventListener("resize", onScroll)
       observer.disconnect()
     }
-  }, [])
+  }, [videoSrc])
 
   return (
     <section ref={sectionRef} className={cn("relative min-h-[110vh] py-12", className)}>

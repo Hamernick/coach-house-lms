@@ -618,6 +618,7 @@ Sample New Member Handbook :  https://docs.google.com/document/d/1ZH-MATqOh65ssJ
 
 MISC:
 [done] Download button for slide decks isn’t always working.
+[done] Inline deck step now renders inside a fixed frame so slides display in the stepper.
 
 
 

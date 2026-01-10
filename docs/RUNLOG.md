@@ -2029,3 +2029,13 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 
 - Fix: pass `isAcceleratorActive` into the desktop dashboard sidebar body to satisfy types (`src/components/dashboard/dashboard-shell.tsx`).
 - Tests: not run.
+
+## 2026-01-10 — Codex session (Home2 scroll video typing)
+
+- Fix: corrected scroll-parent detection typing so IntersectionObserver roots never receive `window` (`src/components/public/home2-scroll-video.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Deck step frame)
+
+- UI: wrapped the module deck step in the shared StepFrame and passed through `hasDeck` so the inline viewer has a fixed height and respects actual deck availability (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.

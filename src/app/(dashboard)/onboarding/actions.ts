@@ -23,13 +23,13 @@ export async function completeOnboardingAction(form: FormData) {
   const orgDesc = String(form.get("orgDesc") || "").trim()
   const website = String(form.get("website") || "").trim()
   const social = String(form.get("social") || "").trim()
-  const applyingAs = String(form.get("applyingAs") || "").trim()
   const stage = String(form.get("stage") || "").trim()
   const problem = String(form.get("problem") || "").trim()
   const mission = String(form.get("mission") || "").trim()
   const goals = String(form.get("goals") || "").trim()
   const notes = String(form.get("confidenceNotes") || "").trim()
   const followUpLater = form.get("followUpLater") === "on"
+  const variant = String(form.get("onboardingVariant") || "accelerator")
 
   const toScore = (value: FormDataEntryValue | null) => {
     if (typeof value !== "string") return null
@@ -63,26 +63,31 @@ export async function completeOnboardingAction(form: FormData) {
       { onConflict: "id" },
     )
 
-  // Upsert organization rollup from onboarding responses
-  await supabase
-    .from("organizations")
-    .upsert(
-      {
-        user_id: user.id,
-        profile: {
-          name: orgName,
-          description: orgDesc,
-          website,
-          social,
-          applying_as: applyingAs,
-          stage,
-          problem,
-          mission,
-          goals,
+  const hasOrgDetails =
+    variant !== "basic" &&
+    [orgName, orgDesc, website, social, stage, problem, mission, goals].some((value) => value.length > 0)
+
+  if (hasOrgDetails) {
+    // Upsert organization rollup from onboarding responses
+    await supabase
+      .from("organizations")
+      .upsert(
+        {
+          user_id: user.id,
+          profile: {
+            name: orgName,
+            description: orgDesc,
+            website,
+            social,
+            stage,
+            problem,
+            mission,
+            goals,
+          },
         },
-      },
-      { onConflict: "user_id" }
-    )
+        { onConflict: "user_id" }
+      )
+  }
 
   // Update user metadata with onboarding fields
   await supabase.auth.updateUser({
@@ -91,23 +96,26 @@ export async function completeOnboardingAction(form: FormData) {
       marketing_opt_in: optInUpdates,
       phone,
       email,
-      // A small echo in user_metadata is fine for client-side caching,
-      // but the source of truth is organizations.profile (server-owned)
-      organization: {
-        name: orgName,
-        description: orgDesc,
-        website,
-        social,
-        applying_as: applyingAs,
-        stage,
-        problem,
-        mission,
-        goals,
-      },
+      ...(hasOrgDetails
+        ? {
+            // A small echo in user_metadata is fine for client-side caching,
+            // but the source of truth is organizations.profile (server-owned)
+            organization: {
+              name: orgName,
+              description: orgDesc,
+              website,
+              social,
+              stage,
+              problem,
+              mission,
+              goals,
+            },
+          }
+        : {}),
     },
   })
 
-  if (confidenceOperating && confidenceFunding && confidenceFunders) {
+  if (variant !== "basic" && confidenceOperating && confidenceFunding && confidenceFunders) {
     await supabase
       .from("onboarding_responses")
       .upsert(

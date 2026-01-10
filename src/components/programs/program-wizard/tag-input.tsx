@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import X from "lucide-react/dist/esm/icons/x"
 
 import { Badge } from "@/components/ui/badge"
@@ -12,21 +12,41 @@ type TagInputProps = {
   values: string[]
   onChange: (values: string[]) => void
   placeholder?: string
+  maxTags?: number
+  maxLength?: number
 }
 
-export function TagInput({ label, values, onChange, placeholder }: TagInputProps) {
+export function TagInput({ label, values, onChange, placeholder, maxTags, maxLength }: TagInputProps) {
   const [input, setInput] = useState("")
+
+  useEffect(() => {
+    if (!maxTags && !maxLength) return
+    const nextValues = values
+      .map((value) => (typeof maxLength === "number" ? value.slice(0, maxLength) : value))
+      .filter(Boolean)
+    const limitedValues = typeof maxTags === "number" ? nextValues.slice(0, maxTags) : nextValues
+    const changed =
+      limitedValues.length !== values.length ||
+      limitedValues.some((value, index) => value !== values[index])
+    if (changed) {
+      onChange(limitedValues)
+    }
+  }, [maxLength, maxTags, onChange, values])
 
   const add = useCallback(
     (value: string) => {
       const trimmed = value.trim()
-      if (!trimmed || values.includes(trimmed)) {
+      const nextValue = typeof maxLength === "number" ? trimmed.slice(0, maxLength) : trimmed
+      if (typeof maxTags === "number" && values.length >= maxTags) {
         return
       }
-      onChange([...values, trimmed])
+      if (!nextValue || values.includes(nextValue)) {
+        return
+      }
+      onChange([...values, nextValue])
       setInput("")
     },
-    [values, onChange],
+    [maxLength, maxTags, values, onChange],
   )
 
   return (
@@ -49,6 +69,8 @@ export function TagInput({ label, values, onChange, placeholder }: TagInputProps
       <Input
         value={input}
         onChange={(event) => setInput(event.currentTarget.value)}
+        maxLength={typeof maxLength === "number" ? maxLength : undefined}
+        disabled={typeof maxTags === "number" ? values.length >= maxTags : false}
         onKeyDown={(event) => {
           if (event.key === "Enter" || event.key === ",") {
             event.preventDefault()

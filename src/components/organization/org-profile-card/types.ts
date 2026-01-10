@@ -49,6 +49,12 @@ export type OrgDocument = {
 
 export type OrgDocuments = {
   verificationLetter?: OrgDocument | null
+  articlesOfIncorporation?: OrgDocument | null
+  bylaws?: OrgDocument | null
+  stateRegistration?: OrgDocument | null
+  goodStandingCertificate?: OrgDocument | null
+  w9?: OrgDocument | null
+  taxExemptCertificate?: OrgDocument | null
 }
 
 export type OrgProfileErrors = Record<string, string>
@@ -57,6 +63,7 @@ export type OrgProgram = {
   id: string
   title?: string | null
   subtitle?: string | null
+  description?: string | null
   location?: string | null
   image_url?: string | null
   status_label?: string | null

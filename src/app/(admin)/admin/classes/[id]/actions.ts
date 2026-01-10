@@ -1,7 +1,5 @@
 "use server"
 
-import { randomUUID } from "node:crypto"
-
 import { redirect } from "next/navigation"
 
 import { requireAdmin } from "@/lib/admin/auth"
@@ -10,6 +8,7 @@ import type { Database } from "@/lib/supabase/types"
 import { LESSON_SUBTITLE_MAX_LENGTH, LESSON_TITLE_MAX_LENGTH, MODULE_TITLE_MAX_LENGTH, clampText } from "@/lib/lessons/limits"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { revalidateClassViews } from "../actions"
+import { randomId } from "../actions/utils"
 
 export async function updateClassDetailsAction(formData: FormData) {
   const classId = formData.get("classId")
@@ -100,7 +99,7 @@ export async function createModuleAction(formData: FormData) {
 
   const currentMaxIdx = (maxIdxData as { idx: number } | null)?.idx ?? 0
   const nextIdx = currentMaxIdx + 1
-  const slug = `module-${randomUUID().slice(0, 8)}`
+  const slug = `module-${randomId().slice(0, 8)}`
 
   const insertPayload: Database["public"]["Tables"]["modules"]["Insert"] & Record<string, unknown> = {
     class_id: classId,

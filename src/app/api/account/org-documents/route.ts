@@ -8,6 +8,12 @@ const MAX_BYTES = 15 * 1024 * 1024
 const ALLOWED = new Set(["application/pdf"])
 const KIND_KEY_MAP = {
   "verification-letter": "verificationLetter",
+  "articles-of-incorporation": "articlesOfIncorporation",
+  "bylaws": "bylaws",
+  "state-registration": "stateRegistration",
+  "good-standing-certificate": "goodStandingCertificate",
+  "w9": "w9",
+  "tax-exempt-certificate": "taxExemptCertificate",
 } as const
 
 type DocumentKey = (typeof KIND_KEY_MAP)[keyof typeof KIND_KEY_MAP]

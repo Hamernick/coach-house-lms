@@ -16,6 +16,16 @@ export type ModuleResource = {
   provider: ModuleResourceProvider
 }
 
+export type BudgetTableRow = {
+  category: string
+  description: string
+  costType: string
+  unit: string
+  units: string
+  costPerUnit: string
+  totalCost: string
+}
+
 export type ModuleAssignmentField = {
   name: string
   label: string
@@ -26,6 +36,7 @@ export type ModuleAssignmentField = {
     | "multi_select"
     | "slider"
     | "subtitle"
+    | "budget_table"
     | "custom_program"
   required: boolean
   placeholder?: string
@@ -37,6 +48,7 @@ export type ModuleAssignmentField = {
   programTemplate?: string
   orgKey?: string
   assistContext?: string
+  rows?: BudgetTableRow[]
 }
 
 export type ModuleAssignment = {

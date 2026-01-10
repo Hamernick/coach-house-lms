@@ -1,11 +1,79 @@
-import type { ModuleAssignmentField } from "../types"
+import type { ModuleAssignmentField, BudgetTableRow } from "../types"
 
-export type AssignmentValues = Record<string, string | string[] | number>
+export type AssignmentValue = string | string[] | number | BudgetTableRow[]
+
+export type AssignmentValues = Record<string, AssignmentValue>
 
 export type OptionItem = {
   key: string
   value: string
   label: string
+}
+
+const BUDGET_ROW_KEYS: Array<keyof BudgetTableRow> = [
+  "category",
+  "description",
+  "costType",
+  "unit",
+  "units",
+  "costPerUnit",
+  "totalCost",
+]
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+}
+
+function normalizeBudgetRow(
+  raw: unknown,
+  fallback?: BudgetTableRow,
+): BudgetTableRow {
+  const record = isRecord(raw) ? raw : {}
+  return {
+    category: typeof record.category === "string" ? record.category : fallback?.category ?? "",
+    description: typeof record.description === "string" ? record.description : fallback?.description ?? "",
+    costType: typeof record.costType === "string" ? record.costType : fallback?.costType ?? "",
+    unit: typeof record.unit === "string" ? record.unit : fallback?.unit ?? "",
+    units: typeof record.units === "string" ? record.units : fallback?.units ?? "",
+    costPerUnit: typeof record.costPerUnit === "string" ? record.costPerUnit : fallback?.costPerUnit ?? "",
+    totalCost: typeof record.totalCost === "string" ? record.totalCost : fallback?.totalCost ?? "",
+  }
+}
+
+function normalizeBudgetRows(
+  raw: unknown,
+  fallbackRows: BudgetTableRow[],
+): BudgetTableRow[] {
+  if (Array.isArray(raw) && raw.length > 0) {
+    return raw.map((row, index) => normalizeBudgetRow(row, fallbackRows[index]))
+  }
+  if (fallbackRows.length > 0) {
+    return fallbackRows.map((row) => normalizeBudgetRow(row, row))
+  }
+  return [
+    {
+      category: "",
+      description: "",
+      costType: "",
+      unit: "",
+      units: "",
+      costPerUnit: "",
+      totalCost: "",
+    },
+  ]
+}
+
+function budgetRowsEqual(a: BudgetTableRow[], b: BudgetTableRow[]): boolean {
+  if (a.length !== b.length) return false
+  for (let index = 0; index < a.length; index += 1) {
+    const rowA = a[index]
+    const rowB = b[index]
+    if (!rowA || !rowB) return false
+    for (const key of BUDGET_ROW_KEYS) {
+      if (rowA[key] !== rowB[key]) return false
+    }
+  }
+  return true
 }
 
 export function assignmentValuesEqual(a: AssignmentValues, b: AssignmentValues): boolean {
@@ -19,9 +87,14 @@ export function assignmentValuesEqual(a: AssignmentValues, b: AssignmentValues):
       if (!Array.isArray(valueA) || !Array.isArray(valueB)) {
         return false
       }
-      if (valueA.length !== valueB.length) return false
-      for (let index = 0; index < valueA.length; index += 1) {
-        if (valueA[index] !== valueB[index]) return false
+      const hasObject = valueA.some((item) => isRecord(item)) || valueB.some((item) => isRecord(item))
+      if (hasObject) {
+        if (!budgetRowsEqual(valueA as BudgetTableRow[], valueB as BudgetTableRow[])) return false
+      } else {
+        if (valueA.length !== valueB.length) return false
+        for (let index = 0; index < valueA.length; index += 1) {
+          if (valueA[index] !== valueB[index]) return false
+        }
       }
     } else if (valueA !== valueB) {
       return false
@@ -96,6 +169,12 @@ export function buildAssignmentValues(
           numeric = Number.isFinite(asNumber) ? asNumber : null
         }
         map[field.name] = numeric ?? min
+        break
+      }
+      case "budget_table": {
+        const fallbackRows = field.rows ?? []
+        const normalizedRows = normalizeBudgetRows(rawValue, fallbackRows)
+        map[field.name] = normalizedRows
         break
       }
       default: {

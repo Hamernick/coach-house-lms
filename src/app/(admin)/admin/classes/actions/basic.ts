@@ -1,7 +1,5 @@
 "use server"
 
-import { randomUUID } from "node:crypto"
-
 import { redirect } from "next/navigation"
 
 import type { PostgrestError } from "@supabase/supabase-js"
@@ -11,14 +9,14 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
 
-import { isRlsError } from "./utils"
+import { isRlsError, randomId } from "./utils"
 import { revalidateClassViews } from "./revalidate"
 
 export async function createClassAction() {
   await requireAdmin()
   const supabase = await createSupabaseServerClient()
 
-  const slug = `class-${randomUUID().slice(0, 8)}`
+  const slug = `class-${randomId().slice(0, 8)}`
 
   const insertPayload: Database["public"]["Tables"]["classes"]["Insert"] & Record<string, unknown> = {
     title: "Untitled Class",

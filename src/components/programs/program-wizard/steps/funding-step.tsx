@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group"
 import {
   DialogStackContent,
@@ -45,110 +44,107 @@ export function FundingStep({
   }
 
   return (
-    <DialogStackContent index={index} className="relative flex min-h-[520px] flex-col sm:min-h-[560px]">
-      <button
-        type="button"
-        onClick={() => onOpenChange(false)}
-        className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-md border bg-background/70 text-muted-foreground transition hover:text-foreground"
-        aria-label="Close"
-      >
-        ×
-      </button>
-      <DialogStackHeader>
-        <DialogStackTitle>Funding</DialogStackTitle>
-        <DialogStackDescription>Goal, raised, and features.</DialogStackDescription>
-      </DialogStackHeader>
-      <div className="flex-1 overflow-y-auto py-4">
-        <div className="space-y-5">
-          <div className="grid gap-2">
-            <div>
-              <h4 className="text-sm font-medium leading-none">Funding goals</h4>
-              <p className="mt-0.5 text-xs text-muted-foreground">Set your target and current progress.</p>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <CurrencyInput
-                id="goal"
-                label="Goal"
-                value={form.goalUsd ?? 0}
-                onChange={(value) => update({ goalUsd: value })}
-              />
-              <CurrencyInput
-                id="raised"
-                label="Raised"
-                value={form.raisedUsd ?? 0}
-                onChange={(value) => update({ raisedUsd: value })}
-              />
-            </div>
-          </div>
-
-          <Separator />
-
-          <div className="grid gap-2">
-            <div>
-              <h4 className="text-sm font-medium leading-none">Tags</h4>
-              <p className="mt-0.5 text-xs text-muted-foreground">Highlight key aspects (press Enter to add).</p>
-            </div>
-            <TagInput
-              label="Tags"
-              placeholder="Type and press Enter"
-              values={form.features as string[]}
-              onChange={(values) => update({ features: values })}
-            />
-          </div>
-
-          <Separator />
-
-          <div className="grid gap-2">
-            <div>
-              <h4 className="text-sm font-medium leading-none">Call to action</h4>
-              <p className="mt-0.5 text-xs text-muted-foreground">Control the button text and destination.</p>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              <TextInput
-                id="ctaLabel"
-                label="Button text"
-                value={form.ctaLabel ?? ""}
-                placeholder="e.g., Learn more"
-                onChange={(value) => update({ ctaLabel: value })}
-              />
-              <div className="grid gap-1">
-                <Label htmlFor="ctaUrl">Button URL</Label>
-                <InputGroup>
-                  <InputGroupAddon>
-                    <InputGroupText>https://</InputGroupText>
-                  </InputGroupAddon>
-                  <InputGroupInput
-                    id="ctaUrl"
-                    value={(form.ctaUrl ?? "").replace(/^https?:\/\//i, "")}
-                    onChange={(event) => {
-                      const raw = event.currentTarget.value
-                      const nextValue = raw ? (raw.startsWith("http") ? raw : `https://${raw}`) : ""
-                      update({ ctaUrl: nextValue })
-                    }}
-                    placeholder="example.org/apply"
-                    className="!pl-0.5"
+    <DialogStackContent
+      index={index}
+      className="relative flex h-full w-full max-w-none flex-col overflow-hidden rounded-none border-0 bg-transparent p-0 shadow-none"
+    >
+      <div className="flex h-full flex-col">
+        <DialogStackHeader className="shrink-0 border-b border-border/60 bg-background/95 px-6 py-4 text-left backdrop-blur">
+          <DialogStackTitle className="text-xl">Funding</DialogStackTitle>
+          <DialogStackDescription className="text-sm">Goal, raised, and features.</DialogStackDescription>
+        </DialogStackHeader>
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="mx-auto w-full max-w-5xl">
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
+              <div className="space-y-4">
+                <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                  <div className="text-sm font-medium">Funding goals</div>
+                  <p className="mt-1 text-xs text-muted-foreground">Set your target and current progress.</p>
+                  <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <CurrencyInput
+                      id="goal"
+                      label="Goal"
+                      value={form.goalUsd ?? 0}
+                      onChange={(value) => update({ goalUsd: value })}
+                    />
+                    <CurrencyInput
+                      id="raised"
+                      label="Raised"
+                      value={form.raisedUsd ?? 0}
+                      onChange={(value) => update({ raisedUsd: value })}
+                    />
+                  </div>
+                </div>
+                <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                  <div className="text-sm font-medium">Tags</div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Highlight key aspects (press Enter to add).
+                  </p>
+                  <div className="mt-3">
+                    <TagInput
+                      label="Tags"
+                      placeholder="Type and press Enter"
+                      values={form.features as string[]}
+                      maxTags={3}
+                      maxLength={17}
+                      onChange={(values) => update({ features: values })}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-4 lg:self-start">
+                <div className="text-sm font-medium">Call to action</div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Control the button text and destination.
+                </p>
+                <div className="mt-4 grid gap-4">
+                  <TextInput
+                    id="ctaLabel"
+                    label="Button text"
+                    value={form.ctaLabel ?? ""}
+                    placeholder="e.g., Donate"
+                    onChange={(value) => update({ ctaLabel: value })}
                   />
-                </InputGroup>
+                  <div className="grid gap-1">
+                    <Label htmlFor="ctaUrl">Button URL</Label>
+                    <InputGroup>
+                      <InputGroupInput
+                        id="ctaUrl"
+                        value={form.ctaUrl ?? ""}
+                        onChange={(event) => {
+                          const raw = event.currentTarget.value.trim()
+                          const nextValue = raw ? (raw.startsWith("http") ? raw : `https://${raw}`) : ""
+                          update({ ctaUrl: nextValue })
+                        }}
+                        placeholder="https://www.example.org/apple"
+                      />
+                    </InputGroup>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
+        <DialogStackFooter className="shrink-0 border-t border-border/60 bg-background/95 px-6 py-4 backdrop-blur">
+          <div className="flex w-full items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" className="h-9 px-3" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <DialogStackPrevious className="h-9 rounded-md px-3">Back</DialogStackPrevious>
+            </div>
+            {mode === "create" ? (
+              <Button onClick={onSubmit} disabled={isPending} className="h-9 rounded-md px-4">
+                {isPending ? "Creating…" : "Create program"}
+              </Button>
+            ) : (
+              <Button onClick={() => onOpenChange(false)} className="h-9 rounded-md px-4">
+                Close
+              </Button>
+            )}
+          </div>
+        </DialogStackFooter>
       </div>
-      <DialogStackFooter>
-        <Button variant="ghost" className="h-9 rounded-md px-3" onClick={() => onOpenChange(false)}>
-          Cancel
-        </Button>
-        <DialogStackPrevious className="h-9 rounded-md px-3">Back</DialogStackPrevious>
-        {mode === "create" ? (
-          <Button onClick={onSubmit} disabled={isPending} className="h-9 rounded-md px-3">
-            {isPending ? "Creating…" : "Create program"}
-          </Button>
-        ) : (
-          <Button onClick={() => onOpenChange(false)} className="h-9 rounded-md px-3">
-            Close
-          </Button>
-        )}
-      </DialogStackFooter>
     </DialogStackContent>
   )
 }

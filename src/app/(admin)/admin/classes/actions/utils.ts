@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto"
 import { revalidatePath } from "next/cache"
 
 import type { Database } from "@/lib/supabase"
@@ -15,6 +14,13 @@ export function isRlsError(error: { message?: string | null; code?: string | num
 
 export function slugify(value: string) {
   return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
+}
+
+export function randomId() {
+  if (typeof globalThis.crypto?.randomUUID === "function") {
+    return globalThis.crypto.randomUUID()
+  }
+  return `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`
 }
 
 export async function ensureUniqueClassSlug(
@@ -36,7 +42,7 @@ export async function ensureUniqueClassSlug(
     attempt += 1
     candidate = `${baseSlug}-${attempt}`
   }
-  return `${baseSlug}-${randomUUID().slice(0, 6)}`
+  return `${baseSlug}-${randomId().slice(0, 6)}`
 }
 
 export function extractSummary(subtitle: string, body: string) {
@@ -76,4 +82,3 @@ export async function safeDeleteClass(
       .eq("id", classId)
   }
 }
-

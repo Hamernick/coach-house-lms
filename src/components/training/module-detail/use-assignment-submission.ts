@@ -50,7 +50,7 @@ export function useAssignmentSubmission({
   }, [submission?.status, submission?.updatedAt, moduleId])
 
   const handleSubmit = useCallback(
-    (values: AssignmentValues) => {
+    (values: AssignmentValues, options?: { silent?: boolean }) => {
       if (assignmentFields.length === 0) return
       const fieldsSnapshot = assignmentFields
       setMessage(null)
@@ -101,11 +101,15 @@ export function useAssignmentSubmission({
             setLastSavedAt(savedAt)
 
             const autoComplete = Boolean(data.completeOnSubmit)
-            setMessage(
-              autoComplete
-                ? "Submission saved — this module is now marked complete."
-                : "Submission saved.",
-            )
+            if (!options?.silent) {
+              setMessage(
+                autoComplete
+                  ? "Submission saved — this module is now marked complete."
+                  : "Submission saved.",
+              )
+            } else {
+              setMessage(null)
+            }
             setError(null)
 
             router.refresh()

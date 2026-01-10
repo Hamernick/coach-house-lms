@@ -7,6 +7,7 @@ import { OrgChartSkeleton } from "@/components/people/org-chart-skeleton"
 import { PeopleTable } from "@/components/people/people-table"
 import { Separator } from "@/components/ui/separator"
 import { OrgChartCanvasLite } from "@/components/people/org-chart-canvas-lite"
+import { normalizePersonCategory } from "@/lib/people/categories"
 import type { OrgPerson } from "./actions"
 
 export const dynamic = "force-dynamic"
@@ -24,13 +25,17 @@ export default async function PeoplePage() {
 
   const profile = (org?.profile ?? {}) as Record<string, unknown>
   const peopleRaw = (Array.isArray(profile.org_people) ? profile.org_people : []) as OrgPerson[]
+  const normalizedPeople = peopleRaw.map((person) => ({
+    ...person,
+    category: normalizePersonCategory(person.category),
+  }))
 
   // Resolve signed URLs for storage-backed avatars (parallelized)
   let people: (OrgPerson & { displayImage: string | null })[] = []
   try {
     const admin = createSupabaseAdminClient()
     people = await Promise.all(
-      peopleRaw.map(async (p) => {
+      normalizedPeople.map(async (p) => {
         let displayImage: string | null = null
         if (p.image) {
           if (/^https?:/i.test(p.image) || p.image.startsWith("data:")) {
@@ -45,7 +50,7 @@ export default async function PeoplePage() {
     )
   } catch {
     // Fallback: no admin key or signing failed; still render with initials
-    people = peopleRaw.map((p) => ({ ...p, displayImage: /^https?:/i.test(p.image ?? "") ? (p.image as string) : null }))
+    people = normalizedPeople.map((p) => ({ ...p, displayImage: /^https?:/i.test(p.image ?? "") ? (p.image as string) : null }))
   }
 
   // Flat list drives both canvas and table; table filters internally

@@ -12,7 +12,16 @@ type MobileSidebarProps = AppSidebarProps & {
   onOpenChange: (open: boolean) => void
 }
 
-export function MobileSidebar({ user, isAdmin, classes, openMap, setOpenMap, open, onOpenChange }: MobileSidebarProps) {
+export function MobileSidebar({
+  user,
+  isAdmin,
+  classes,
+  acceleratorProgress,
+  openMap,
+  setOpenMap,
+  open,
+  onOpenChange,
+}: MobileSidebarProps) {
   if (!open) {
     return null
   }
@@ -32,6 +41,7 @@ export function MobileSidebar({ user, isAdmin, classes, openMap, setOpenMap, ope
         <SidebarBody
           isAdmin={Boolean(isAdmin)}
           classes={classes}
+          acceleratorProgress={acceleratorProgress}
           openMap={openMap}
           setOpenMap={(next) => {
             setOpenMap(next)

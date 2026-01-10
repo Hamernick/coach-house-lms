@@ -6,7 +6,7 @@ import {
   MODULE_TITLE_MAX_LENGTH,
   clampText,
 } from "@/lib/lessons/limits"
-import type { LessonWizardPayload } from "./types"
+import type { BudgetTableOption, LessonWizardPayload } from "./types"
 
 const zProviderSlug = z.enum([
   "youtube",
@@ -26,6 +26,7 @@ const zFormFieldType = z.enum([
   "multi_select",
   "slider",
   "subtitle",
+  "budget_table",
   "custom_program",
 ])
 
@@ -35,7 +36,20 @@ const zFormField = z.object({
   required: z.boolean().default(false),
   placeholder: z.string().nullish().transform((s) => (s ? s.trim() : undefined)),
   description: z.string().nullish().transform((s) => (s ? s.trim() : undefined)),
-  options: z.array(z.string()).nullish().transform((arr) => (Array.isArray(arr) ? arr.map((x) => String(x).trim()).filter(Boolean) : undefined)),
+  options: z
+    .array(
+      z.union([
+        z.string(),
+        z.object({
+          category: z.string().default("").transform((s) => s.trim()),
+          description: z.string().nullish().transform((s) => (s ? s.trim() : "")),
+          costType: z.string().nullish().transform((s) => (s ? s.trim() : "")),
+          unit: z.string().nullish().transform((s) => (s ? s.trim() : "")),
+        }),
+      ]),
+    )
+    .nullish()
+    .transform((arr) => (Array.isArray(arr) ? arr : undefined)),
   min: z.number().nullable().optional(),
   max: z.number().nullable().optional(),
   step: z.number().nullable().optional(),
@@ -45,7 +59,33 @@ const zFormField = z.object({
     return { ...f, required: false, placeholder: undefined }
   }
   if (f.type === "select" || f.type === "multi_select") {
-    return { ...f, options: f.options && f.options.length > 0 ? f.options : undefined }
+    const stringOptions = (f.options ?? []).filter((option): option is string => typeof option === "string")
+    return { ...f, options: stringOptions.length > 0 ? stringOptions.map((x) => x.trim()).filter(Boolean) : undefined }
+  }
+  if (f.type === "budget_table") {
+    const rowOptions = (f.options ?? []).flatMap((option): BudgetTableOption[] => {
+      if (typeof option === "string") {
+        const category = option.trim()
+        return category ? [{ category }] : []
+      }
+      const category = option.category?.trim() ?? ""
+      if (!category) return []
+      return [{
+        category,
+        description: option.description?.trim() ?? "",
+        costType: option.costType?.trim() ?? "",
+        unit: option.unit?.trim() ?? "",
+      }]
+    })
+    return {
+      ...f,
+      placeholder: undefined,
+      options: rowOptions.length > 0 ? rowOptions : undefined,
+      min: undefined,
+      max: undefined,
+      step: undefined,
+      programTemplate: undefined,
+    }
   }
   if (f.type === "slider") {
     return { ...f }

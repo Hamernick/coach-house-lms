@@ -4,7 +4,7 @@ import HomeTwoPage from "./home2/page"
 
 export const metadata: Metadata = {
   title: "Coach House",
-  description: "A nonprofit launch studio for formation, planning, and public-ready storytelling.",
+  description: "A nonprofit platform for formation, planning, and public-ready storytelling.",
 }
 
 export const runtime = "edge"

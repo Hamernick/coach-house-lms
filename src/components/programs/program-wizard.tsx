@@ -1,16 +1,15 @@
 "use client"
 
-import { useCallback, useMemo, useRef, useState, useTransition, type ReactNode } from "react"
-import { toast } from "@/lib/toast"
+import { Children, cloneElement, useCallback, useContext, useEffect, useMemo, useRef, useState, useTransition, type ReactElement, type ReactNode } from "react"
 import Plus from "lucide-react/dist/esm/icons/plus"
 
 import { createProgramAction, updateProgramAction } from "@/app/(dashboard)/my-organization/programs/actions"
-import {
-  DialogStack,
-  DialogStackBody,
-  DialogStackOverlay,
-  DialogStackTrigger,
-} from "@/components/kibo-ui/dialog-stack"
+import { DialogStack } from "@/components/kibo-ui/dialog-stack"
+import { DialogStackContext } from "@/components/kibo-ui/dialog-stack/context"
+import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 
 import {
   defaultProgramWizardForm,
@@ -25,6 +24,7 @@ type ProgramRecord = {
   id: string
   title: string | null
   subtitle?: string | null
+  description?: string | null
   location?: string | null
   address_street?: string | null
   address_city?: string | null
@@ -49,6 +49,37 @@ export type ProgramWizardProps = {
   open?: boolean
   onOpenChange?: (open: boolean) => void
   triggerLabel?: ReactNode
+}
+
+type ProgramWizardPanelProps = {
+  children: ReactElement<{ index?: number }> | ReactElement<{ index?: number }>[]
+  className?: string
+}
+
+function ProgramWizardPanel({ children, className }: ProgramWizardPanelProps) {
+  const context = useContext(DialogStackContext)
+  const [totalDialogs, setTotalDialogs] = useState(Children.count(children))
+
+  useEffect(() => {
+    setTotalDialogs(Children.count(children))
+  }, [children])
+
+  if (!context) {
+    throw new Error("ProgramWizardPanel must be used within a DialogStack")
+  }
+
+  if (!context.isOpen) return null
+
+  return (
+    <DialogStackContext.Provider value={{ ...context, totalDialogs, setTotalDialogs }}>
+      <div className={cn("relative flex min-h-0 w-full flex-1 flex-col", className)}>
+        {Children.map(children, (child, index) => {
+          const childElement = child as ReactElement<{ index: number }>
+          return cloneElement(childElement, { ...childElement.props, index })
+        })}
+      </div>
+    </DialogStackContext.Provider>
+  )
 }
 
 export function ProgramWizard({
@@ -90,6 +121,7 @@ export function ProgramWizard({
       ...prev,
       title: p.title || "",
       subtitle: p.subtitle || "",
+      description: p.description || "",
       location: p.location || "",
       imageUrl: p.image_url || "",
       startDate: p.start_date || "",
@@ -165,28 +197,42 @@ export function ProgramWizard({
 
   return (
     <DialogStack open={isOpen} onOpenChange={setOpen}>
-      {mode === "create" && !isControlled ? (
-        <DialogStackTrigger className="h-8 gap-2 px-3">{resolvedTrigger}</DialogStackTrigger>
-      ) : null}
-      <DialogStackOverlay />
-      <DialogStackBody>
-        <BasicsStep
-          form={form}
-          onUpload={handleUpload}
-          {...editHandlers}
-        />
-        <ScheduleStep
-          form={form}
-          {...editHandlers}
-        />
-        <FundingStep
-          form={form}
-          mode={mode}
-          isPending={isPending}
-          onSubmit={submit}
-          {...editHandlers}
-        />
-      </DialogStackBody>
+      <Dialog open={isOpen} onOpenChange={setOpen}>
+        {mode === "create" && !isControlled ? (
+          <DialogTrigger asChild>
+            <Button size="sm" className="h-8 gap-2 px-3">
+              {resolvedTrigger}
+            </Button>
+          </DialogTrigger>
+        ) : null}
+        <DialogContent
+          showCloseButton={false}
+          className="left-0 right-0 top-auto bottom-0 z-50 flex h-[92svh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-t-3xl border border-border/60 bg-background p-0 shadow-2xl sm:inset-0 sm:h-svh sm:max-w-none sm:rounded-none sm:border-0 sm:shadow-none"
+        >
+          <DialogTitle className="sr-only">Program builder</DialogTitle>
+          <div className="flex h-full min-h-0 w-full flex-col overflow-hidden">
+            <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-muted sm:hidden" aria-hidden />
+            <ProgramWizardPanel className="overflow-hidden">
+              <BasicsStep
+                form={form}
+                onUpload={handleUpload}
+                {...editHandlers}
+              />
+              <ScheduleStep
+                form={form}
+                {...editHandlers}
+              />
+              <FundingStep
+                form={form}
+                mode={mode}
+                isPending={isPending}
+                onSubmit={submit}
+                {...editHandlers}
+              />
+            </ProgramWizardPanel>
+          </div>
+        </DialogContent>
+      </Dialog>
     </DialogStack>
   )
 }
@@ -195,6 +241,7 @@ function serializePayload(form: ProgramWizardFormState) {
   return {
     title: form.title,
     subtitle: form.subtitle,
+    description: form.description,
     location: form.location,
     imageUrl: form.imageUrl,
     startDate: form.startDate || null,

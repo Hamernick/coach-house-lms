@@ -1,5 +1,5 @@
 import { toNumberOrNull, normalizeFormFieldTypeLegacy } from "@/lib/lessons/fields"
-import type { ModuleAssignmentField } from "./types"
+import type { ModuleAssignmentField, BudgetTableRow } from "./types"
 
 function makeSafeKey(value: string, fallback: string): string {
   const sanitized = value
@@ -15,6 +15,54 @@ function normalizeAssignmentFieldType(
   variant?: unknown,
 ): ModuleAssignmentField["type"] {
   return normalizeFormFieldTypeLegacy(type, variant)
+}
+
+function normalizeBudgetRow(raw: unknown): BudgetTableRow | null {
+  if (typeof raw === "string") {
+    const category = raw.trim()
+    if (!category) return null
+    return {
+      category,
+      description: "",
+      costType: "",
+      unit: "",
+      units: "",
+      costPerUnit: "",
+      totalCost: "",
+    }
+  }
+
+  if (!raw || typeof raw !== "object") return null
+  const row = raw as Record<string, unknown>
+  const category = typeof row.category === "string" ? row.category.trim() : ""
+  const description = typeof row.description === "string" ? row.description.trim() : ""
+  const costType = typeof row.costType === "string" ? row.costType.trim() : ""
+  const unit = typeof row.unit === "string" ? row.unit.trim() : ""
+  const units = typeof row.units === "string" ? row.units.trim() : ""
+  const costPerUnit = typeof row.costPerUnit === "string" ? row.costPerUnit.trim() : ""
+  const totalCost = typeof row.totalCost === "string" ? row.totalCost.trim() : ""
+
+  if (
+    !category &&
+    !description &&
+    !costType &&
+    !unit &&
+    !units &&
+    !costPerUnit &&
+    !totalCost
+  ) {
+    return null
+  }
+
+  return {
+    category,
+    description,
+    costType,
+    unit,
+    units,
+    costPerUnit,
+    totalCost,
+  }
 }
 
 export function parseAssignmentFields(schema: unknown): ModuleAssignmentField[] {
@@ -90,6 +138,11 @@ export function parseAssignmentFields(schema: unknown): ModuleAssignmentField[] 
         ? programTemplateRaw.trim()
         : undefined
 
+    const rowsRaw = Array.isArray((field as { rows?: unknown }).rows)
+      ? ((field as { rows: unknown[] }).rows as unknown[])
+      : []
+    const rows = rowsRaw.map(normalizeBudgetRow).filter((row): row is BudgetTableRow => Boolean(row))
+
     const required =
       normalizedType === "subtitle"
         ? false
@@ -141,6 +194,10 @@ export function parseAssignmentFields(schema: unknown): ModuleAssignmentField[] 
 
     if (normalizedType === "custom_program" && programTemplate) {
       assignmentField.programTemplate = programTemplate
+    }
+
+    if (normalizedType === "budget_table" && rows.length > 0) {
+      assignmentField.rows = rows
     }
 
     if (orgKey) assignmentField.orgKey = orgKey

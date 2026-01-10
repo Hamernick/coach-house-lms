@@ -20,13 +20,13 @@ import MoreHorizontalIcon from "lucide-react/dist/esm/icons/more-horizontal"
 import type { OrgPerson } from "@/app/(dashboard)/people/actions"
 import { deletePersonAction, refreshPersonLinkedInImageAction } from "@/app/(dashboard)/people/actions"
 import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 import { CreatePersonDialog } from "./create-person-dialog"
+import { PERSON_CATEGORY_META } from "@/lib/people/categories"
 
-const CATEGORY_CHIP: Record<OrgPerson["category"], string> = {
-  staff: "bg-sky-500",
-  board: "bg-violet-500",
-  supporter: "bg-emerald-500",
-}
+const CATEGORY_CHIP: Record<OrgPerson["category"], string> = Object.fromEntries(
+  Object.entries(PERSON_CATEGORY_META).map(([key, value]) => [key, value.stripClass]),
+) as Record<OrgPerson["category"], string>
 
 function initials(name?: string | null) {
   if (!name) return "?"
@@ -45,13 +45,18 @@ export function PersonItem({
   const [editing, setEditing] = React.useState(false)
   const [confirmOpen, setConfirmOpen] = React.useState(false)
   const router = useRouter()
+  const isSupporter = person.category === "supporters"
 
   return (
     <>
       <Item className="cursor-pointer" onClick={() => setEditing(true)}>
-        <Avatar className="size-10">
-          <AvatarImage src={person.displayImage ?? person.image ?? undefined} alt={person.name} />
-          <AvatarFallback>{initials(person.name)}</AvatarFallback>
+        <Avatar className={cn("size-10", isSupporter && "rounded-xl bg-muted/60 ring-1 ring-border/60")}>
+          <AvatarImage
+            src={person.displayImage ?? person.image ?? undefined}
+            alt={person.name}
+            className={cn(isSupporter && "object-contain p-1.5")}
+          />
+          <AvatarFallback className={cn(isSupporter && "rounded-xl")}>{initials(person.name)}</AvatarFallback>
         </Avatar>
         <ItemContent className="pl-2">
           <ItemTitle className="truncate">

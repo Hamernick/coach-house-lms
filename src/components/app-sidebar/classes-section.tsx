@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useTransition, type Dispatch, type SetStateAction } from "react"
+import { Fragment, useMemo, useTransition, type Dispatch, type SetStateAction } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
@@ -40,6 +40,7 @@ import {
   SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarSeparator,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
@@ -147,11 +148,19 @@ export type ClassesSectionProps = {
   isAdmin: boolean
   openMap: Record<string, boolean>
   setOpenMap: Dispatch<SetStateAction<Record<string, boolean>>>
+  basePath?: string
 }
 
-export function ClassesSection({ classes = [], isAdmin, openMap, setOpenMap }: ClassesSectionProps) {
+export function ClassesSection({
+  classes = [],
+  isAdmin,
+  openMap,
+  setOpenMap,
+  basePath,
+}: ClassesSectionProps) {
   const pathname = usePathname()
   const router = useRouter()
+  const normalizedBase = basePath?.replace(/\/$/, "") ?? ""
 
   const publishedClasses = useMemo(() => classes.filter((klass) => klass.published), [classes])
   const draftClasses = useMemo(() => (isAdmin ? classes.filter((klass) => !klass.published) : []), [classes, isAdmin])
@@ -161,7 +170,7 @@ export function ClassesSection({ classes = [], isAdmin, openMap, setOpenMap }: C
   }
 
   return (
-    <SidebarGroup>
+    <SidebarGroup className="px-0">
       <SidebarGroupLabel className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         <GraduationCap className="size-4" />
         <span>Accelerator</span>
@@ -177,16 +186,17 @@ export function ClassesSection({ classes = [], isAdmin, openMap, setOpenMap }: C
             No published classes yet. Publish a class to make it visible to learners.
           </p>
         ) : (
-          <ClassList
-            classes={publishedClasses}
-            pathname={pathname}
-            routerPrefetch={router.prefetch.bind(router)}
-            openMap={openMap}
-            setOpenMap={setOpenMap}
-            variant="published"
-            isAdmin={isAdmin}
-          />
-        )}
+        <ClassList
+          classes={publishedClasses}
+          pathname={pathname}
+          routerPrefetch={router.prefetch.bind(router)}
+          openMap={openMap}
+          setOpenMap={setOpenMap}
+          variant="published"
+          isAdmin={isAdmin}
+          basePath={normalizedBase}
+        />
+      )}
 
         {isAdmin && draftClasses.length > 0 ? (
           <div className="mt-4 space-y-2">
@@ -199,6 +209,7 @@ export function ClassesSection({ classes = [], isAdmin, openMap, setOpenMap }: C
               setOpenMap={setOpenMap}
               variant="draft"
               isAdmin={isAdmin}
+              basePath={normalizedBase}
             />
           </div>
         ) : null}
@@ -215,9 +226,19 @@ type ClassListProps = {
   setOpenMap: Dispatch<SetStateAction<Record<string, boolean>>>
   variant: "published" | "draft"
   isAdmin: boolean
+  basePath?: string
 }
 
-function ClassList({ classes, pathname, routerPrefetch, openMap, setOpenMap, variant, isAdmin }: ClassListProps) {
+function ClassList({
+  classes,
+  pathname,
+  routerPrefetch,
+  openMap,
+  setOpenMap,
+  variant,
+  isAdmin,
+  basePath = "",
+}: ClassListProps) {
   return (
     <SidebarMenu className="gap-0.5">
       {classes.map((klass) => {
@@ -225,10 +246,11 @@ function ClassList({ classes, pathname, routerPrefetch, openMap, setOpenMap, var
         const classTitle = formatClassTitle(klass.title)
         const modules = klass.modules.filter((module) => (variant === "published" ? module.published : !module.published))
         const isOpen = Boolean(openMap[nodeKey])
-        const classHref = `/class/${klass.slug}`
+        const classHref = `${basePath}/class/${klass.slug}`
         const isActive = pathname === classHref
         const isCurrentClass = isActive || pathname.startsWith(`${classHref}/`)
         const ClassIcon = getClassIcon(klass.slug)
+        const isElectives = klass.slug?.toLowerCase().includes("electives")
 
         const toggleNode = () => {
           setOpenMap((previous) => ({
@@ -238,103 +260,106 @@ function ClassList({ classes, pathname, routerPrefetch, openMap, setOpenMap, var
         }
 
         return (
-          <SidebarMenuItem key={klass.id}>
-            <SidebarMenuButton
-              asChild
-              isActive={isActive}
-              tooltip={classTitle}
-              className="h-auto min-h-8 items-center pr-12 justify-start gap-2 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:min-h-0 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
-            >
-              <Link
-                href={classHref}
-                onMouseEnter={() => routerPrefetch(classHref)}
-                title={classTitle}
-                className="flex w-full items-center gap-2 group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:gap-0"
+          <Fragment key={klass.id}>
+            {isElectives ? <SidebarSeparator className="my-2" /> : null}
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                isActive={isActive}
+                tooltip={classTitle}
+                className="h-auto min-h-8 items-center pr-12 justify-start gap-2 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:min-h-0 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
               >
-                <ClassIcon className="size-4 shrink-0" />
-                <span className="min-w-0 flex-1 break-words whitespace-normal! overflow-visible! text-clip! text-sm font-medium leading-tight text-pretty group-data-[collapsible=icon]:hidden">
-                  {classTitle}
-                </span>
-              </Link>
-            </SidebarMenuButton>
-            {modules.length > 0 ? (
-              <SidebarMenuAction
-                type="button"
-                onClick={toggleNode}
-                aria-label={isOpen ? "Collapse modules" : "Expand modules"}
-                className="right-2"
-              >
-                <ChevronRight
-                  className={cn("size-4 transition-transform", isOpen && "rotate-90")}
-                />
-          </SidebarMenuAction>
-        ) : null}
-        {variant === "draft" && isAdmin ? <ClassDraftActions classId={klass.id} /> : null}
-        {modules.length > 0 ? (
-          <SidebarMenuSub
-            data-open={isOpen ? "true" : "false"}
-            className={cn(
-              "overflow-hidden transition-all duration-200 ease-out",
-              isOpen ? "max-h-[1000px] opacity-100 mt-1 py-0.5" : "max-h-0 opacity-0 py-0",
-            )}
-          >
-            {(() => {
-              const activeIdx =
-                modules.find((m) => `/class/${klass.slug}/module/${m.index}` === pathname)?.index ?? null
-              const steps: StepItem[] = modules.map((module, idx) => {
-                const moduleHref = `/class/${klass.slug}/module/${module.index}`
-                const moduleActive = pathname === moduleHref
-                const status: StepStatus = deriveModuleStatus(activeIdx, module.index)
-                return {
-                  id: module.id,
-                  href: moduleHref,
-                  title: module.title,
-                  status,
-                  active: moduleActive,
-                }
-              })
-              return <ModuleStepper steps={steps} onHover={(href) => routerPrefetch(href)} />
-            })()}
-          </SidebarMenuSub>
-        ) : null}
-            {modules.length > 0 && isCurrentClass ? (
-              <div className="hidden group-data-[collapsible=icon]:mt-1 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
-                <div className="relative flex flex-col items-center gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <div
-                    aria-hidden
-                    className="bg-sidebar-border/70 pointer-events-none absolute inset-y-1 left-1/2 z-0 w-px -translate-x-1/2"
+                <Link
+                  href={classHref}
+                  onMouseEnter={() => routerPrefetch(classHref)}
+                  title={classTitle}
+                  className="flex w-full items-center gap-2 group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:gap-0"
+                >
+                  <ClassIcon className="size-4 shrink-0" />
+                  <span className="min-w-0 flex-1 break-words whitespace-normal! overflow-visible! text-clip! text-sm font-medium leading-tight text-pretty group-data-[collapsible=icon]:hidden">
+                    {classTitle}
+                  </span>
+                </Link>
+              </SidebarMenuButton>
+              {modules.length > 0 ? (
+                <SidebarMenuAction
+                  type="button"
+                  onClick={toggleNode}
+                  aria-label={isOpen ? "Collapse modules" : "Expand modules"}
+                  className="right-2"
+                >
+                  <ChevronRight
+                    className={cn("size-4 transition-transform", isOpen && "rotate-90")}
                   />
-                  {modules.map((module) => {
-                    const moduleHref = `/class/${klass.slug}/module/${module.index}`
-                    const moduleActive = pathname === moduleHref
-                    const activeIdx =
-                      modules.find((m) => `/class/${klass.slug}/module/${m.index}` === pathname)?.index ?? null
-                    const status = deriveModuleStatus(activeIdx, module.index)
+            </SidebarMenuAction>
+          ) : null}
+          {variant === "draft" && isAdmin ? <ClassDraftActions classId={klass.id} /> : null}
+          {modules.length > 0 ? (
+            <SidebarMenuSub
+              data-open={isOpen ? "true" : "false"}
+              className={cn(
+                "overflow-hidden transition-all duration-200 ease-out",
+                isOpen ? "max-h-[1000px] opacity-100 mt-1 py-0.5" : "max-h-0 opacity-0 py-0",
+              )}
+            >
+              {(() => {
+                const activeIdx =
+                  modules.find((m) => `${basePath}/class/${klass.slug}/module/${m.index}` === pathname)?.index ?? null
+                const steps: StepItem[] = modules.map((module, idx) => {
+                  const moduleHref = `${basePath}/class/${klass.slug}/module/${module.index}`
+                  const moduleActive = pathname === moduleHref
+                  const status: StepStatus = deriveModuleStatus(activeIdx, module.index)
+                  return {
+                    id: module.id,
+                    href: moduleHref,
+                    title: module.title,
+                    status,
+                    active: moduleActive,
+                  }
+                })
+                return <ModuleStepper steps={steps} onHover={(href) => routerPrefetch(href)} />
+              })()}
+            </SidebarMenuSub>
+          ) : null}
+              {modules.length > 0 && isCurrentClass ? (
+                <div className="hidden group-data-[collapsible=icon]:mt-1 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
+                  <div className="relative flex flex-col items-center gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
+                    <div
+                      aria-hidden
+                      className="bg-sidebar-border/70 pointer-events-none absolute inset-y-1 left-1/2 z-0 w-px -translate-x-1/2"
+                    />
+                    {modules.map((module) => {
+                      const moduleHref = `${basePath}/class/${klass.slug}/module/${module.index}`
+                  const moduleActive = pathname === moduleHref
+                  const activeIdx =
+                        modules.find((m) => `${basePath}/class/${klass.slug}/module/${m.index}` === pathname)?.index ?? null
+                      const status = deriveModuleStatus(activeIdx, module.index)
 
-                    return (
-                        <SidebarMenuButton
-                          key={`${klass.id}-${module.id}-collapsed-icon`}
-                          asChild
-                          size="sm"
-                          isActive={moduleActive}
-                          tooltip={module.title}
-                          className="relative z-10 h-7 w-7 rounded-full p-0"
-                        >
-                          <Link
-                            href={moduleHref}
-                            onMouseEnter={() => routerPrefetch(moduleHref)}
-                            title={module.title}
-                        className="flex h-7 w-7 items-center justify-center"
-                        >
-                          <ModuleBadge status={status} label={module.index} />
-                        </Link>
-                      </SidebarMenuButton>
-                    )
-                  })}
+                      return (
+                          <SidebarMenuButton
+                            key={`${klass.id}-${module.id}-collapsed-icon`}
+                            asChild
+                            size="sm"
+                            isActive={moduleActive}
+                            tooltip={module.title}
+                            className="relative z-10 h-7 w-7 rounded-full p-0"
+                          >
+                            <Link
+                              href={moduleHref}
+                              onMouseEnter={() => routerPrefetch(moduleHref)}
+                              title={module.title}
+                          className="flex h-7 w-7 items-center justify-center"
+                          >
+                            <ModuleBadge status={status} label={module.index} />
+                          </Link>
+                        </SidebarMenuButton>
+                      )
+                    })}
+                  </div>
                 </div>
-              </div>
-            ) : null}
-          </SidebarMenuItem>
+              ) : null}
+            </SidebarMenuItem>
+          </Fragment>
         )
       })}
     </SidebarMenu>

@@ -17,7 +17,15 @@ export type FormFieldType =
   | "multi_select"
   | "slider"
   | "subtitle"
+  | "budget_table"
   | "custom_program"
+
+export type BudgetTableOption = {
+  category: string
+  description?: string
+  costType?: string
+  unit?: string
+}
 
 export type LessonLink = {
   id: string
@@ -40,7 +48,7 @@ export type FormField = {
   required: boolean
   placeholder?: string
   description?: string
-  options?: string[]
+  options?: Array<string | BudgetTableOption>
   min?: number | null
   max?: number | null
   step?: number | null
@@ -77,7 +85,7 @@ export interface LessonWizardPayload {
       required: boolean
       placeholder?: string | null
       description?: string | null
-      options?: string[] | null
+      options?: Array<string | BudgetTableOption> | null
       min?: number | null
       max?: number | null
       step?: number | null
@@ -87,4 +95,3 @@ export interface LessonWizardPayload {
 }
 
 export type SliderRange = { min: number; max: number; step: number }
-

@@ -8,30 +8,12 @@ import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 import { createClassWizardAction, updateClassWizardAction } from "@/app/(admin)/admin/classes/actions"
-import { ResourcesCard } from "./resources-card"
-import { LessonNotes } from "./module-detail/lesson-notes"
-import { ModuleHeader, computeModuleProgress } from "./module-detail/module-header"
-import { VideoSection } from "./module-detail/video-section"
+import { ModuleHeader } from "./module-detail/module-header"
+import { ModuleStepper } from "./module-detail/module-stepper"
 import type { ClassDef, Module } from "./types"
 import { getInlineVideoUrl, getVideoEmbedUrl } from "./module-detail/utils"
-import { DeckViewer } from "./module-detail/deck-viewer"
 import { useLessonWizard } from "./module-detail/use-lesson-wizard"
 import { useAssignmentSubmission } from "./module-detail/use-assignment-submission"
-
-const AssignmentFormLazy = dynamic(
-  () => import("./module-detail/assignment-form").then((mod) => mod.AssignmentForm),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="space-y-3 rounded-lg border p-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Loading assignment…</span>
-        </div>
-      </div>
-    ),
-  },
-)
 
 const LessonCreationWizardLazy = dynamic(
   () =>
@@ -86,25 +68,28 @@ export function ModuleDetail({
     submission: m.assignmentSubmission ?? null,
   })
 
-  const progressStats = useMemo(
-    () => computeModuleProgress(c.modules, m.id),
-    [c.modules, m.id],
-  )
 
   const embedUrl = getVideoEmbedUrl(m.videoUrl)
   const inlineVideoUrl = getInlineVideoUrl(m.videoUrl)
   const lessonNotesContent = m.contentMd ?? null
+  const resources = Array.isArray(m.resources) ? m.resources : []
+  const currentModuleIndex = useMemo(
+    () => c.modules.findIndex((module) => module.id === m.id),
+    [c.modules, m.id],
+  )
+  const nextModule = currentModuleIndex >= 0 ? c.modules[currentModuleIndex + 1] : null
+  const nextHref = nextModule && c.slug ? `/class/${c.slug}/module/${currentModuleIndex + 2}` : null
 
   return (
     <div className="space-y-6">
       <ModuleHeader
-        progress={progressStats}
         title={m.title}
         subtitle={m.subtitle}
         isAdmin={isAdmin}
         wizardError={wizardError}
         wizardLoading={wizardLoading}
         onEdit={() => void loadWizardPayload(m.id)}
+        titlePlacement="header"
       />
 
       {isAdmin && lockedForLearners ? (
@@ -118,47 +103,33 @@ export function ModuleDetail({
         </Alert>
       ) : null}
 
-      <VideoSection embedUrl={embedUrl} videoUrl={inlineVideoUrl} fallbackUrl={m.videoUrl ?? null} />
-
-      <DeckViewer moduleId={m.id} hasDeck={Boolean(m.hasDeck)} />
-
-      {lessonNotesContent ? <LessonNotes title={m.title} content={lessonNotesContent} /> : null}
-
-      {Array.isArray(m.resources) && m.resources.length > 0 ? (
-        <ResourcesCard resources={m.resources} />
-      ) : null}
-
-      {assignmentFields.length > 0 ? (
-        (() => {
-          const idx = c.modules.findIndex((x) => x.id === m.id)
-          const next = idx >= 0 ? c.modules[idx + 1] : null
-          const nextHref =
-            next && c.slug ? `/class/${c.slug}/module/${idx + 2}` : null
-          return (
-            <section className="mt-8">
-              <AssignmentFormLazy
-                fields={assignmentFields}
-                initialValues={formSeed}
-                pending={isSubmitting}
-                onSubmit={handleSubmit}
-                statusLabel={statusMeta?.label ?? null}
-                statusVariant={statusMeta?.variant ?? "outline"}
-                statusNote={statusMeta?.note ?? null}
-                helperText={message}
-                errorMessage={submissionError}
-                updatedAt={lastSavedAt}
-                completeOnSubmit={completeOnSubmit}
-                moduleId={m.id}
-                moduleTitle={m.title}
-                classTitle={c.title}
-                nextHref={nextHref}
-                currentStep={idx}
-                totalSteps={c.modules.length}
-              />
-            </section>
-          )
-        })()
-      ) : null}
+      <ModuleStepper
+        moduleId={m.id}
+        moduleTitle={m.title}
+        moduleSubtitle={m.subtitle ?? null}
+        classTitle={c.title}
+        embedUrl={embedUrl}
+        videoUrl={inlineVideoUrl}
+        fallbackUrl={m.videoUrl ?? null}
+        hasDeck={Boolean(m.hasDeck)}
+        lessonNotesContent={lessonNotesContent}
+        resources={resources}
+        assignmentFields={assignmentFields}
+        initialValues={formSeed}
+        pending={isSubmitting}
+        onSubmit={handleSubmit}
+        statusLabel={statusMeta?.label ?? null}
+        statusVariant={statusMeta?.variant ?? "outline"}
+        statusNote={statusMeta?.note ?? null}
+        helperText={message}
+        errorMessage={submissionError}
+        updatedAt={lastSavedAt}
+        completeOnSubmit={completeOnSubmit}
+        nextHref={nextHref}
+        moduleIndex={currentModuleIndex >= 0 ? currentModuleIndex : null}
+        moduleCount={c.modules.length}
+        isAdmin={isAdmin}
+      />
 
       {isAdmin ? (
         <LessonCreationWizardLazy

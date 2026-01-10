@@ -28,6 +28,7 @@ describe("Wizard payload schemas", () => {
             { label: " Colors ", type: "multi_select", options: ["  red  ", "", " blue "] },
             { label: " Scale ", type: "slider", min: 1, max: 5, step: 1 },
             { label: " Program ", type: "custom_program", programTemplate: " template " },
+            { label: " Budget ", type: "budget_table", options: [" Staff ", " Supplies "] },
           ],
         },
       ],
@@ -46,7 +47,7 @@ describe("Wizard payload schemas", () => {
     expect(m.subtitle.length).toBe(MODULE_SUBTITLE_MAX_LENGTH)
     expect(m.videoUrl).toBe("https://videos")
 
-    const [f0, f1, f2, f3] = m.formFields
+    const [f0, f1, f2, f3, f4] = m.formFields
     expect(f0.type).toBe("subtitle")
     expect(f0.required).toBe(false)
     expect(f0.placeholder).toBeUndefined()
@@ -58,6 +59,11 @@ describe("Wizard payload schemas", () => {
     expect(f2.step).toBe(1)
     expect(f3.type).toBe("custom_program")
     expect(f3.programTemplate).toBe(" template ")
+    expect(f4.type).toBe("budget_table")
+    expect(f4.options).toEqual([
+      { category: "Staff", description: "", costType: "", unit: "" },
+      { category: "Supplies", description: "", costType: "", unit: "" },
+    ])
   })
 
   it("validates final payload without mutation", () => {
@@ -82,4 +88,3 @@ describe("Wizard payload schemas", () => {
     expect(validated).toMatchObject(payload)
   })
 })
-

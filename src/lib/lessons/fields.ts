@@ -10,6 +10,7 @@ export function normalizeFormFieldType(raw: unknown): FormFieldType {
     case "multi_select":
     case "slider":
     case "subtitle":
+    case "budget_table":
     case "custom_program":
       return value
     case "text":
@@ -39,6 +40,8 @@ export function normalizeFormFieldTypeLegacy(type: unknown, variant?: unknown): 
       return "multi_select"
     case "slider":
       return "slider"
+    case "budget_table":
+      return "budget_table"
     case "custom_program":
     case "program_builder":
       return "custom_program"
@@ -96,6 +99,18 @@ export function normalizeFieldForType(field: FormField, nextType: FormFieldType)
         ...base,
         required: field.required,
         placeholder: field.placeholder ?? "",
+        description: field.description ?? "",
+        options: Array.isArray(field.options) ? field.options : [],
+        min: null,
+        max: null,
+        step: null,
+        programTemplate: undefined,
+      }
+    case "budget_table":
+      return {
+        ...base,
+        required: field.required,
+        placeholder: "",
         description: field.description ?? "",
         options: Array.isArray(field.options) ? field.options : [],
         min: null,

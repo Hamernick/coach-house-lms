@@ -31,9 +31,10 @@ type NavUserProps = {
     avatar?: string | null
   }
   isAdmin?: boolean
+  showDivider?: boolean
 }
 
-export function NavUser({ user, isAdmin = false }: NavUserProps) {
+export function NavUser({ user, isAdmin = false, showDivider = true }: NavUserProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -79,7 +80,7 @@ export function NavUser({ user, isAdmin = false }: NavUserProps) {
   const avatarFallback = displayName.charAt(0).toUpperCase() || "U"
 
   return (
-    <div className="border-t border-border/60 pt-2">
+    <div className={showDivider ? "border-t border-border/60 pt-2" : ""}>
       <div ref={containerRef} className="relative">
         <SidebarMenu>
           <SidebarMenuItem>

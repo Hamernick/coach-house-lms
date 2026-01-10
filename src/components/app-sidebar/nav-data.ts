@@ -56,11 +56,14 @@ export const SECONDARY_NAV = [
 export function computeActiveOpenMap(pathname: string, classes?: SidebarClass[] | null): Record<string, boolean> {
   const map: Record<string, boolean> = {}
   if (!classes) return map
+  const basePath = pathname.startsWith("/accelerator/") ? "/accelerator" : ""
 
   for (const klass of classes) {
-    const classHref = `/class/${klass.slug}`
+    const classHref = `${basePath}/class/${klass.slug}`
     const isClassActive = pathname === classHref
-    const moduleActive = klass.modules.some((module) => pathname === `/class/${klass.slug}/module/${module.index}`)
+    const moduleActive = klass.modules.some(
+      (module) => pathname === `${basePath}/class/${klass.slug}/module/${module.index}`,
+    )
     if (isClassActive || moduleActive) {
       map[klass.slug] = true
     }

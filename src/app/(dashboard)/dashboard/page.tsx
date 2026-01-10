@@ -1,21 +1,27 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import type { CSSProperties } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ArrowUpRight, Building2, Map, Sparkles, Users, type LucideIcon } from "lucide-react"
+import { ArrowUpRight, Building2, Globe2, MapPin, Palette } from "lucide-react"
 
 import type { OrgPerson } from "@/app/(dashboard)/people/actions"
+import { normalizePersonCategory } from "@/lib/people/categories"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { AcceleratorProgressRadialCard } from "@/components/dashboard/accelerator-progress-radial-card"
 import { PeopleCompositionRadialCard } from "@/components/dashboard/people-composition-radial-card"
 import { DashboardCalendarCard } from "@/components/dashboard/dashboard-calendar-card"
 import { DashboardCheckInCard } from "@/components/dashboard/dashboard-checkin-card"
 import { DashboardNotificationsCard, type DashboardNotificationItem } from "@/components/dashboard/dashboard-notifications-card"
 import { resolveRoadmapSections } from "@/lib/roadmap"
+import { fetchRoadmapAnalyticsSummary } from "@/lib/roadmap/analytics"
+import { stripHtml } from "@/lib/markdown/convert"
 import { createSupabaseServerClient, type Json } from "@/lib/supabase"
 import type { Database } from "@/lib/supabase/types"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import { isFreeTierSubscription } from "@/lib/meetings"
+import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 const ROADMAP_TAB_HREF = "/my-organization?tab=roadmap"
@@ -34,17 +40,17 @@ export default async function DashboardPage() {
     { count: programsCount },
     { data: subscription },
     nextAction,
-    acceleratorProgress,
     reviseMeta,
   ] = await Promise.all([
     supabase
       .from("organizations")
-      .select("profile, public_slug, is_public, location_lat, location_lng")
+      .select("profile, public_slug, is_public, is_public_roadmap, location_lat, location_lng")
       .eq("user_id", user.id)
       .maybeSingle<{
         profile: Record<string, unknown> | null
         public_slug: string | null
         is_public: boolean | null
+        is_public_roadmap: boolean | null
         location_lat: number | null
         location_lng: number | null
       }>(),
@@ -60,7 +66,6 @@ export default async function DashboardPage() {
       .limit(1)
       .maybeSingle<{ status: string | null; metadata: Json | null }>(),
     fetchNextAction(supabase, user.id),
-    fetchAcceleratorProgress(supabase, user.id),
     fetchReviseMeta(supabase, user.id),
   ])
 
@@ -69,24 +74,29 @@ export default async function DashboardPage() {
     publicSharingEnabled ? section : { ...section, isPublic: false },
   )
   const isOrgPublic = publicSharingEnabled ? Boolean(orgRow?.is_public) : false
+  const isRoadmapPublic = publicSharingEnabled ? Boolean(orgRow?.is_public_roadmap) : false
   const meetingCount = typeof profile.meeting_requests === "number" ? profile.meeting_requests : 0
   const isFreeTier = isFreeTierSubscription(subscription ?? null)
 
   const firstEmpty = sections.find((s) => !s.content.trim())
 
   const peopleRaw = Array.isArray(profile.org_people) ? profile.org_people : []
-  const peopleCount = peopleRaw.length
-  const peopleCategoryCounts = peopleRaw.reduce(
+  const peopleNormalized = peopleRaw
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    .map((item) => ({
+      ...(item as Record<string, unknown>),
+      category: normalizePersonCategory(typeof item.category === "string" ? item.category : ""),
+    })) as OrgPerson[]
+  const peopleCount = peopleNormalized.length
+  const peopleCategoryCounts = peopleNormalized.reduce(
     (acc, item) => {
-      if (!item || typeof item !== "object") return acc
-      const categoryRaw = "category" in item ? (item.category as unknown) : null
-      const categoryValue = typeof categoryRaw === "string" ? categoryRaw.toLowerCase() : ""
-      if (categoryValue.startsWith("board")) acc.board += 1
-      else if (categoryValue.startsWith("support")) acc.supporters += 1
+      if (item.category === "governing_board") acc.governingBoard += 1
+      else if (item.category === "advisory_board") acc.advisoryBoard += 1
+      else if (item.category === "volunteers") acc.volunteers += 1
       else acc.staff += 1
       return acc
     },
-    { staff: 0, board: 0, supporters: 0 },
+    { staff: 0, governingBoard: 0, advisoryBoard: 0, volunteers: 0 },
   )
 
   const hasAddressPin = orgRow?.location_lat != null && orgRow?.location_lng != null
@@ -118,106 +128,117 @@ export default async function DashboardPage() {
     hasAddressPin,
   })
 
+  const roadmapAnalytics = await fetchRoadmapAnalyticsSummary()
+  const orgName = typeof profile.name === "string" && profile.name.trim().length > 0 ? profile.name.trim() : "Your organization"
+  const publicSlug = orgRow?.public_slug ?? null
+  const publicUrl = publicSlug ? `/${publicSlug}` : null
+  const roadmapUrl = publicSlug ? `/${publicSlug}/roadmap` : null
+  const roadmapCompleteCount = sections.filter((section) => section.content.trim().length > 0).length
+  const boilerplatePreview =
+    typeof profile.boilerplate === "string" ? stripHtml(profile.boilerplate).trim() : ""
+  const brandLogo =
+    typeof profile.logoUrl === "string" && profile.logoUrl.trim().length > 0 ? profile.logoUrl.trim() : ""
+  const brandPrimary =
+    typeof profile.brandPrimary === "string" && profile.brandPrimary.trim().length > 0 ? profile.brandPrimary.trim() : ""
+  const brandColors = Array.isArray(profile.brandColors)
+    ? profile.brandColors.map((color) => String(color)).filter((color) => color.trim().length > 0)
+    : []
+  const brandSwatches = Array.from(new Set([brandPrimary, ...brandColors])).filter(Boolean).slice(0, 5)
+  const hasBrandKit = Boolean(brandLogo || brandSwatches.length > 0 || boilerplatePreview)
+
+  const hasNotifications = notifications.length > 0
+
   return (
-    <div className="w-full space-y-4 md:-m-2">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <QuickActionCard
-          href="/my-organization"
-          icon={Building2}
-          title="My organization"
-          description={isOrgPublic ? "Public profile" : "Profile settings + publishing"}
-        />
-        <QuickActionCard
-          href="/people"
-          icon={Users}
-          title="People"
-          description={peopleCount > 0 ? `${peopleCount} on your org chart` : "Build your org chart"}
-        />
-        <QuickActionCard href="/marketplace" icon={Sparkles} title="Marketplace" description="Bookmark tools + services" />
-        <QuickActionCard
-          href="/community"
-          icon={Map}
-          title="Resource map"
-          description={hasAddressPin ? "Pinned location" : "Add an address to pin"}
-        />
-      </div>
-
-      <div className="min-w-0 space-y-4">
-        <DashboardCalendarCard events={calendarEvents} />
-        <DashboardCheckInCard userId={user.id} meetingCount={meetingCount} isFreeTier={isFreeTier} />
-        <DashboardNotificationsCard items={notifications} />
-      </div>
-
-      <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-        <AcceleratorProgressRadialCard
-          completed={acceleratorProgress.completed}
-          total={acceleratorProgress.total}
-          nextLabel={
-            nextAction
-              ? `${nextAction.classTitle} · Module ${nextAction.moduleIdx}: ${nextAction.moduleTitle}`
-              : null
-          }
-          cta={{
-            href: nextAction ? `/class/${nextAction.classSlug}/module/${nextAction.moduleIdx}` : "/classes",
-            label: nextAction ? "Resume" : "View classes",
-          }}
-        />
-        <PeopleCompositionRadialCard
-          staff={peopleCategoryCounts.staff}
-          board={peopleCategoryCounts.board}
-          supporters={peopleCategoryCounts.supporters}
-          people={peopleRaw as OrgPerson[]}
-        />
-      </div>
-
-      <div className="grid min-w-0 gap-4 lg:grid-cols-2">
+    <div className="w-full space-y-6 md:-m-2">
+      <section className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
         <Card className="border-border/70 bg-card/70">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Marketplace</CardTitle>
-            <CardDescription>Tools and services worth bookmarking.</CardDescription>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-1">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Building2 className="h-4 w-4 text-muted-foreground" aria-hidden />
+                  {orgName}
+                </CardTitle>
+                <CardDescription>
+                  {isOrgPublic ? "Public profile live and shareable." : "Drafting your public profile and roadmap."}
+                </CardDescription>
+              </div>
+              <Badge variant={isOrgPublic ? "secondary" : "outline"} className="rounded-full">
+                {isOrgPublic ? "Public" : "Private"}
+              </Badge>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-2">
-            <ul className="space-y-2">
-              {getMarketplacePicks().map((item) => (
-                <li key={item.id}>
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="group flex items-start justify-between gap-3 rounded-xl border border-border/60 bg-background/60 px-3 py-2.5 transition-colors hover:bg-accent/40"
-                  >
-                    <div className="min-w-0 space-y-0.5">
-                      <p className="truncate text-sm font-medium text-foreground">{item.name}</p>
-                      <p className="line-clamp-2 text-xs text-muted-foreground">{item.description}</p>
-                    </div>
-                    <ArrowUpRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
-                  </a>
-                </li>
-              ))}
-            </ul>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-3">
+              <StatTile label="Programs" value={programsCount ?? 0} />
+              <StatTile label="People" value={peopleCount} />
+              <StatTile label="Roadmap drafted" value={`${roadmapCompleteCount}/${sections.length}`} />
+            </div>
+            {nextAction ? (
+              <div className="rounded-xl border border-border/60 bg-background/60 p-3">
+                <p className="text-xs uppercase text-muted-foreground">Next module</p>
+                <p className="mt-1 text-sm font-semibold text-foreground">
+                  {nextAction.classTitle} · Module {nextAction.moduleIdx}
+                </p>
+                <p className="text-xs text-muted-foreground">{nextAction.moduleTitle}</p>
+                <Button asChild size="sm" className="mt-3 w-fit">
+                  <Link href={`/class/${nextAction.classSlug}/module/${nextAction.moduleIdx}`}>
+                    Resume accelerator <ArrowUpRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                </Button>
+              </div>
+            ) : null}
           </CardContent>
-          <CardFooter className="border-t border-border/60">
-            <Button asChild size="sm" variant="outline" className="w-full sm:w-auto">
-              <Link prefetch href="/marketplace">
-                Browse marketplace
-              </Link>
+          <CardFooter className="flex flex-wrap gap-2 border-t border-border/60">
+            <Button asChild size="sm">
+              <Link href="/my-organization">Edit profile</Link>
             </Button>
+            <Button asChild size="sm" variant="outline">
+              <Link href="/accelerator/roadmap">Open roadmap</Link>
+            </Button>
+            {isOrgPublic && publicUrl ? (
+              <Button asChild size="sm" variant="outline">
+                <Link href={publicUrl}>View public page</Link>
+              </Button>
+            ) : (
+              <Button asChild size="sm" variant="outline">
+                <Link href="/my-organization?tab=company">Publish profile</Link>
+              </Button>
+            )}
           </CardFooter>
         </Card>
 
-        <Card className="border-border/70 bg-card/70">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Insights</CardTitle>
-            <CardDescription>Placeholder.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="rounded-xl border border-dashed border-border/60 bg-background/50 px-4 py-6">
-              <p className="text-sm font-medium text-foreground">Coming soon</p>
-              <p className="mt-1 text-xs text-muted-foreground">KPIs, tasks, and a weekly digest will live here.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+        <PublicPresenceCard
+          analytics={roadmapAnalytics}
+          isOrgPublic={isOrgPublic}
+          isRoadmapPublic={isRoadmapPublic}
+          publicUrl={publicUrl}
+          roadmapUrl={roadmapUrl}
+        />
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-3">
+        <PeopleCompositionRadialCard
+          staff={peopleCategoryCounts.staff}
+          governingBoard={peopleCategoryCounts.governingBoard}
+          advisoryBoard={peopleCategoryCounts.advisoryBoard}
+          volunteers={peopleCategoryCounts.volunteers}
+          people={peopleNormalized}
+        />
+        <BrandKitCard
+          logoUrl={brandLogo}
+          swatches={brandSwatches}
+          boilerplate={boilerplatePreview}
+          hasBrandKit={hasBrandKit}
+        />
+        <MapPreviewCard hasAddressPin={hasAddressPin} />
+      </section>
+
+      <section className={cn("grid gap-4", hasNotifications ? "lg:grid-cols-3" : "lg:grid-cols-2")}>
+        {hasNotifications ? <DashboardNotificationsCard items={notifications} /> : null}
+        <DashboardCheckInCard userId={user.id} meetingCount={meetingCount} isFreeTier={isFreeTier} />
+        <DashboardCalendarCard events={calendarEvents} />
+      </section>
     </div>
   )
 }
@@ -269,7 +290,7 @@ function buildDashboardNotifications(input: {
     items.push({
       id: "people",
       title: "Add your team",
-      description: "Build your org chart for staff, board, and supporters.",
+      description: "Build your org chart for staff, boards, and volunteers.",
       href: "/people",
     })
   }
@@ -315,27 +336,6 @@ async function fetchNextAction(
   }
 }
 
-async function fetchAcceleratorProgress(
-  supabase: SupabaseClient<Database, "public">,
-  userId: string,
-): Promise<{ total: number; completed: number }> {
-  // RLS already enforces visibility: published modules in published classes OR enrolled classes OR admin.
-  const { data: modules } = await supabase.from("modules").select("id").returns<Array<{ id: string }>>()
-
-  const moduleIds = (modules ?? []).map((row) => row.id)
-  const total = moduleIds.length
-  if (total === 0) return { total, completed: 0 }
-
-  const { count: completedCount } = await supabase
-    .from("module_progress")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", userId)
-    .in("module_id", moduleIds)
-    .eq("status", "completed")
-
-  return { total, completed: completedCount ?? 0 }
-}
-
 async function fetchReviseMeta(
   supabase: SupabaseClient<Database, "public">,
   userId: string,
@@ -364,57 +364,201 @@ async function fetchReviseMeta(
   }
 }
 
-function QuickActionCard({
-  href,
-  icon: Icon,
-  title,
-  description,
-}: {
-  href: string
-  icon: LucideIcon
-  title: string
-  description: string
-}) {
+function StatTile({ label, value }: { label: string; value: number | string }) {
   return (
-    <Link
-      prefetch
-      href={href}
-      className="group flex items-start justify-between gap-3 rounded-2xl border border-border/70 bg-card/70 p-4 transition-colors hover:bg-accent/35"
-    >
-      <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 bg-background/60">
-          <Icon className="h-4 w-4 text-muted-foreground" aria-hidden />
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground">{title}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
-        </div>
-      </div>
-      <ArrowUpRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" aria-hidden />
-    </Link>
+    <div className="rounded-xl border border-border/60 bg-background/60 px-3 py-2.5">
+      <p className="text-xs uppercase text-muted-foreground">{label}</p>
+      <p className="mt-1 text-lg font-semibold text-foreground">{value}</p>
+    </div>
   )
 }
 
-function getMarketplacePicks(): Array<{ id: string; name: string; description: string; url: string }> {
-  // Avoid importing marketplace client code; keep this list tiny and dashboard-friendly.
-  return [
-    {
-      id: "harbor-compliance",
-      name: "Harbor Compliance",
-      description: "Nonprofit formation and fundraising registration across states.",
-      url: "https://www.harborcompliance.com/",
-    },
-    {
-      id: "catchafire",
-      name: "Catchafire",
-      description: "Volunteer professional services marketplace for nonprofits.",
-      url: "https://www.catchafire.org/",
-    },
-    {
-      id: "fluxx",
-      name: "Fluxx",
-      description: "Grants management software used by foundations and nonprofits.",
-      url: "https://www.fluxx.io/",
-    },
-  ]
+function PublicPresenceCard({
+  analytics,
+  isOrgPublic,
+  isRoadmapPublic,
+  publicUrl,
+  roadmapUrl,
+}: {
+  analytics: Awaited<ReturnType<typeof fetchRoadmapAnalyticsSummary>>
+  isOrgPublic: boolean
+  isRoadmapPublic: boolean
+  publicUrl: string | null
+  roadmapUrl: string | null
+}) {
+  const summary = analytics ?? {
+    totalViews: 0,
+    totalCtaClicks: 0,
+    conversionRate: 0,
+  }
+
+  return (
+    <Card className="border-border/70 bg-card/70">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Globe2 className="h-4 w-4 text-muted-foreground" aria-hidden />
+              Public reach
+            </CardTitle>
+            <CardDescription>Roadmap and profile engagement over the last 30 days.</CardDescription>
+          </div>
+          <Badge variant={isOrgPublic ? "secondary" : "outline"} className="rounded-full">
+            {isOrgPublic ? "Live" : "Draft"}
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <StatTile label="Roadmap views" value={formatCompactNumber(summary.totalViews)} />
+          <StatTile label="CTA clicks" value={formatCompactNumber(summary.totalCtaClicks)} />
+          <StatTile label="Conversion" value={`${summary.conversionRate}%`} />
+        </div>
+        <div className="rounded-xl border border-border/60 bg-background/60 px-3 py-3 text-xs text-muted-foreground">
+          <div className="flex items-center justify-between">
+            <span>Public profile</span>
+            <span className={isOrgPublic ? "text-emerald-600" : "text-muted-foreground"}>
+              {isOrgPublic ? "Live" : "Private"}
+            </span>
+          </div>
+          <div className="mt-2 flex items-center justify-between">
+            <span>Roadmap</span>
+            <span className={isRoadmapPublic ? "text-emerald-600" : "text-muted-foreground"}>
+              {isRoadmapPublic ? "Live" : "Hidden"}
+            </span>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="flex flex-wrap gap-2 border-t border-border/60">
+        {isOrgPublic && publicUrl ? (
+          <Button asChild size="sm" variant="outline">
+            <Link href={publicUrl}>View public page</Link>
+          </Button>
+        ) : (
+          <Button asChild size="sm" variant="outline">
+            <Link href="/my-organization?tab=company">Publish profile</Link>
+          </Button>
+        )}
+        {isRoadmapPublic && roadmapUrl ? (
+          <Button asChild size="sm" variant="outline">
+            <Link href={roadmapUrl}>View roadmap</Link>
+          </Button>
+        ) : (
+          <Button asChild size="sm" variant="outline">
+            <Link href="/accelerator/roadmap">Edit roadmap</Link>
+          </Button>
+        )}
+      </CardFooter>
+    </Card>
+  )
+}
+
+function BrandKitCard({
+  logoUrl,
+  swatches,
+  boilerplate,
+  hasBrandKit,
+}: {
+  logoUrl: string
+  swatches: string[]
+  boilerplate: string
+  hasBrandKit: boolean
+}) {
+  return (
+    <Card className="border-border/70 bg-card/70">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Palette className="h-4 w-4 text-muted-foreground" aria-hidden />
+          Brand kit
+        </CardTitle>
+        <CardDescription>Logo, colors, and boilerplate at a glance.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {hasBrandKit ? (
+          <>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative h-14 w-14 overflow-hidden rounded-xl border border-border/60 bg-muted/40">
+                {logoUrl ? (
+                  <Image src={logoUrl} alt="" fill className="object-cover" sizes="56px" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+                    <Palette className="h-4 w-4" aria-hidden />
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {swatches.length > 0 ? (
+                  swatches.map((color, index) => (
+                    <span
+                      key={`${color}-${index}`}
+                      className="h-7 w-7 rounded-lg border border-border/60"
+                      style={{ backgroundColor: color }}
+                      aria-label={`Brand color ${color}`}
+                    />
+                  ))
+                ) : (
+                  <span className="text-xs text-muted-foreground">Add brand colors</span>
+                )}
+              </div>
+            </div>
+            {boilerplate ? (
+              <p className="text-xs text-muted-foreground line-clamp-3">{boilerplate}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground">Add a boilerplate summary for quick sharing.</p>
+            )}
+          </>
+        ) : (
+          <div className="rounded-xl border border-dashed border-border/60 bg-background/50 px-4 py-6 text-center text-xs text-muted-foreground">
+            Add your logo, colors, and boilerplate to build a quick-share brand kit.
+          </div>
+        )}
+      </CardContent>
+      <CardFooter className="border-t border-border/60">
+        <Button asChild size="sm" variant="outline">
+          <Link href="/my-organization?tab=company">Open brand kit</Link>
+        </Button>
+      </CardFooter>
+    </Card>
+  )
+}
+
+function MapPreviewCard({ hasAddressPin }: { hasAddressPin: boolean }) {
+  const mapStyle: CSSProperties = {
+    backgroundImage: [
+      "radial-gradient(circle at 18% 20%, hsl(var(--chart-2) / 0.25), transparent 55%)",
+      "radial-gradient(circle at 78% 30%, hsl(var(--primary) / 0.2), transparent 50%)",
+      "repeating-linear-gradient(0deg, hsl(var(--border) / 0.35) 0 1px, transparent 1px 64px)",
+      "repeating-linear-gradient(90deg, hsl(var(--border) / 0.35) 0 1px, transparent 1px 64px)",
+    ].join(","),
+  } as React.CSSProperties
+
+  return (
+    <Card className="relative aspect-square overflow-hidden rounded-3xl border-border/70 bg-card/70 p-0">
+      <div className="absolute inset-0" style={mapStyle} />
+      <div className="absolute inset-0 bg-gradient-to-b from-background/5 via-background/30 to-background/90" />
+      <div className="relative z-10 flex h-full flex-col justify-between p-5">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+          <MapPin className="h-4 w-4" aria-hidden />
+          Resource map
+        </div>
+        <div className="space-y-2">
+          <p className="text-lg font-semibold text-foreground">Map presence</p>
+          <p className="text-sm text-muted-foreground">
+            {hasAddressPin
+              ? "Your organization is pinned on the community map."
+              : "Add your address to appear on the community map."}
+          </p>
+          <Button asChild size="sm" variant="outline" className="w-fit">
+            <Link href={hasAddressPin ? "/community" : "/my-organization?tab=company"}>
+              {hasAddressPin ? "View map" : "Add address"}
+            </Link>
+          </Button>
+        </div>
+      </div>
+    </Card>
+  )
+}
+
+function formatCompactNumber(value: number): string {
+  return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value)
 }

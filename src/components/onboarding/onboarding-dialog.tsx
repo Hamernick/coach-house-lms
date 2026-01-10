@@ -14,9 +14,10 @@ export type OnboardingDialogProps = {
   open: boolean
   defaultEmail?: string | null
   onSubmit: (form: FormData) => Promise<void>
+  variant?: "basic" | "accelerator"
 }
 
-export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDialogProps) {
+export function OnboardingDialog({ open, defaultEmail, onSubmit, variant = "accelerator" }: OnboardingDialogProps) {
   const [step, setStep] = useState(0)
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -34,8 +35,10 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDia
   const [zoom, setZoom] = useState(1)
   const [croppedArea, setCroppedArea] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
 
+  const steps = variant === "basic" ? BASIC_STEPS : FULL_STEPS
+
   // Load saved draft on mount
-  useOnboardingDraft(formRef, setStep, setAvatarPreview, setFirstName, setLastName, {
+  useOnboardingDraft(formRef, setStep, steps.length - 1, setAvatarPreview, setFirstName, setLastName, {
     setOperatingScore: setConfidenceOperating,
     setFundingScore: setConfidenceFunding,
     setFundersScore: setConfidenceFunders,
@@ -69,7 +72,6 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDia
           "orgDesc",
           "website",
           "social",
-          "applyingAs",
           "stage",
           "problem",
           "mission",
@@ -99,7 +101,7 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDia
 
   function next() {
     setStep((s) => {
-      const n = Math.min(s + 1, STEPS.length - 1)
+      const n = Math.min(s + 1, steps.length - 1)
       saveDraft({ step: n })
       return n
     })
@@ -114,21 +116,21 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDia
 
   function validate(form: FormData, s: number): boolean {
     const newErrors: Record<string, string> = {}
-    if (s === 0) {
+    const currentStep = steps[s]?.id ?? "profile"
+    if (currentStep === "profile") {
       if (!String(form.get("firstName") || "").trim()) newErrors.firstName = "First name is required"
       if (!String(form.get("lastName") || "").trim()) newErrors.lastName = "Last name is required"
       if (!String(form.get("phone") || "").trim()) newErrors.phone = "Phone is required"
       const email = String(form.get("email") || "").trim()
       if (!email) newErrors.email = "Email is required"
       else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = "Enter a valid email"
-    } else if (s === 1) {
+    } else if (currentStep === "organization") {
       if (!String(form.get("orgName") || "").trim()) newErrors.orgName = "Organization/Project name is required"
       if (!String(form.get("orgDesc") || "").trim()) newErrors.orgDesc = "Description is required"
-      if (!String(form.get("applyingAs") || "").trim()) newErrors.applyingAs = "Please select one"
-    } else if (s === 2) {
+    } else if (currentStep === "work") {
       if (!String(form.get("stage") || "").trim()) newErrors.stage = "Select your stage"
       if (!String(form.get("problem") || "").trim()) newErrors.problem = "Problem statement is required"
-    } else if (s === 3) {
+    } else if (currentStep === "confidence") {
       const confidenceFields: Array<{ key: keyof typeof newErrors; name: string }> = [
         { key: "confidenceOperating", name: "confidenceOperating" },
         { key: "confidenceFunding", name: "confidenceFunding" },
@@ -148,7 +150,7 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDia
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const form = new FormData(e.currentTarget)
-    if (step < STEPS.length - 1) {
+    if (step < steps.length - 1) {
       if (!validate(form, step)) return
       return next()
     }
@@ -171,12 +173,12 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDia
       <DialogContent className="max-h-[92vh] w-[min(760px,92%)] overflow-y-auto rounded-2xl p-0 sm:p-0">
         <form ref={formRef} onSubmit={handleSubmit} className="space-y-0">
           <div className="border-b px-6 py-4">
-            <p className="text-xs text-muted-foreground">Step {step + 1} of {STEPS.length}</p>
-            <h2 className="mt-1 text-xl font-semibold">{STEPS[step].title}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{STEPS[step].description}</p>
+            <p className="text-xs text-muted-foreground">Step {step + 1} of {steps.length}</p>
+            <h2 className="mt-1 text-xl font-semibold">{steps[step].title}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">{steps[step].description}</p>
             {/* Progress dots */}
             <div className="mt-3 flex items-center gap-1.5">
-              {STEPS.map((_, i) => (
+              {steps.map((_, i) => (
                 <span
                   key={i}
                   className={
@@ -188,6 +190,7 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDia
             </div>
           </div>
           <div className="space-y-5 p-6" onChange={() => saveDraft()}>
+            <input type="hidden" name="onboardingVariant" value={variant} />
             {step === 0 && (
               <>
                 <div className="flex flex-col items-center gap-3">
@@ -258,7 +261,7 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDia
                 </div>
               </>
             )}
-            {step === 1 && (
+            {variant === "accelerator" && step === 1 && (
               <>
                 <div>
                   <Label htmlFor="orgName">Organization/Project Name</Label>
@@ -286,17 +289,9 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDia
                     </div>
                   </div>
                 </div>
-                <div>
-                  <Label>Are you applying as an individual or with an organization?</Label>
-                  <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                    <label className="inline-flex items-center gap-2 text-sm"><input type="radio" name="applyingAs" value="individual" required className="h-4 w-4"/> Individual</label>
-                    <label className="inline-flex items-center gap-2 text-sm"><input type="radio" name="applyingAs" value="organization" className="h-4 w-4"/> Organization</label>
-                  </div>
-                  {errors.applyingAs ? <p className="mt-1 text-xs text-destructive">{errors.applyingAs}</p> : null}
-                </div>
               </>
             )}
-            {step === 2 && (
+            {variant === "accelerator" && step === 2 && (
               <>
                 <div>
                   <Label htmlFor="stage">Stage of your work</Label>
@@ -325,7 +320,7 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDia
                 </div>
               </>
             )}
-            {step === 3 && (
+            {variant === "accelerator" && step === 3 && (
               <>
                 <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-primary">
                   Capture a quick “before” snapshot so we can celebrate how your confidence grows during the accelerator.
@@ -411,7 +406,7 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDia
             </Button>
             <div className="flex items-center gap-2">
               <Button type="submit" disabled={submitting}>
-                {step === STEPS.length - 1 ? (submitting ? "Submitting…" : "Finish") : "Continue"}
+                {step === steps.length - 1 ? (submitting ? "Submitting…" : "Finish") : "Continue"}
               </Button>
             </div>
           </div>
@@ -464,20 +459,32 @@ export function OnboardingDialog({ open, defaultEmail, onSubmit }: OnboardingDia
   )
 }
 
-const STEPS = [
+const BASIC_STEPS = [
   {
+    id: "profile",
+    title: "Tell us about you",
+    description: "Basic details to set up your profile.",
+  },
+]
+
+const FULL_STEPS = [
+  {
+    id: "profile",
     title: "Tell us about you",
     description: "Basic details to set up your profile.",
   },
   {
+    id: "organization",
     title: "Your organization or project",
     description: "Help us understand what you’re building.",
   },
   {
+    id: "work",
     title: "Your work and goals",
     description: "Share your stage, focus, and goals.",
   },
   {
+    id: "confidence",
     title: "Confidence snapshot",
     description: "Rate how ready you feel heading into the accelerator.",
   },
@@ -523,6 +530,7 @@ if (typeof window !== "undefined") {
 export function useOnboardingDraft(
   formRef: React.RefObject<HTMLFormElement | null>,
   setStep: (n: number) => void,
+  maxStep: number,
   setAvatarPreview: (url: string | null) => void,
   setFirst: (v: string) => void,
   setLast: (v: string) => void,
@@ -546,7 +554,10 @@ export function useOnboardingDraft(
         values?: Record<string, string>
         flags?: { optInUpdates?: boolean; followUpLater?: boolean }
       }
-      if (typeof draft.step === "number") setStep(draft.step)
+      if (typeof draft.step === "number") {
+        const clampedStep = Math.max(0, Math.min(maxStep, draft.step))
+        setStep(clampedStep)
+      }
       if (draft.avatar) setAvatarPreview(draft.avatar)
       const form = formRef.current
       if (form && draft.values) {
@@ -589,6 +600,7 @@ export function useOnboardingDraft(
     }
   }, [
     formRef,
+    maxStep,
     setAvatarPreview,
     setFirst,
     setFundingScore,

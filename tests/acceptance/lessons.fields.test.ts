@@ -20,6 +20,6 @@ describe("lessons fields helpers", () => {
     expect(normalizeFormFieldTypeLegacy("select")).toBe("select")
     expect(normalizeFormFieldTypeLegacy("multi_select")).toBe("multi_select")
     expect(normalizeFormFieldTypeLegacy("slider")).toBe("slider")
+    expect(normalizeFormFieldTypeLegacy("budget_table")).toBe("budget_table")
   })
 })
-

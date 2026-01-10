@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 
 import { requireServerSession } from "@/lib/auth"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { normalizePersonCategory, type PersonCategory } from "@/lib/people/categories"
 
 export type OrgPerson = {
   id: string
@@ -11,7 +12,7 @@ export type OrgPerson = {
   title?: string | null
   email?: string | null
   linkedin?: string | null
-  category: "staff" | "board" | "supporter"
+  category: PersonCategory
   image?: string | null
   reportsToId?: string | null
   pos?: { x: number; y: number } | null
@@ -30,10 +31,7 @@ function resolvePeopleAvatarCleanupPath(
 }
 
 function normalizeCategory(input: string): OrgPerson["category"] {
-  const v = (input || "").toLowerCase()
-  if (v.startsWith("board")) return "board"
-  if (v.startsWith("support")) return "supporter"
-  return "staff"
+  return normalizePersonCategory(input)
 }
 
 async function fetchLinkedInImage(url: string): Promise<string | null> {

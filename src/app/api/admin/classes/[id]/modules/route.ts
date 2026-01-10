@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server"
-import { randomUUID } from "node:crypto"
-
 import { requireAdmin } from "@/lib/admin/auth"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
 import { revalidateClassViews } from "@/app/(admin)/admin/classes/actions"
+import { randomId } from "@/app/(admin)/admin/classes/actions/utils"
 
 function isRlsError(error: { message?: string | null; code?: string | number | null } | null | undefined) {
   if (!error) return false
@@ -55,7 +54,7 @@ export async function POST(_req: Request, props: { params: Promise<{ id: string 
   }
 
   const nextIdx = maxIdx + 1
-  const slug = `module-${randomUUID().slice(0, 8)}`
+  const slug = `module-${randomId().slice(0, 8)}`
 
   const insertPayload: Database["public"]["Tables"]["modules"]["Insert"] = {
     class_id: classId,

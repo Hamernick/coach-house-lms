@@ -1,24 +1,37 @@
 import type { Metadata } from "next"
 import Link from "next/link"
-import { Sora, Space_Grotesk } from "next/font/google"
+import { Inter, Sora, Space_Grotesk } from "next/font/google"
 
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
 import CalendarCheck from "lucide-react/dist/esm/icons/calendar-check"
-import Compass from "lucide-react/dist/esm/icons/compass"
+import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap"
 import Layers from "lucide-react/dist/esm/icons/layers"
+import MapIcon from "lucide-react/dist/esm/icons/map"
+import Notebook from "lucide-react/dist/esm/icons/notebook"
+import PanelTop from "lucide-react/dist/esm/icons/panel-top"
 
 import { Home2PhotoStrip } from "@/components/public/home2-photo-strip"
 import { Home2ScrollVideo } from "@/components/public/home2-scroll-video"
 import { NewsGradientThumb } from "@/components/news/gradient-thumb"
 import { PublicHeader } from "@/components/public/public-header"
+import { SectionReveal } from "@/components/public/section-reveal"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { FlipWords } from "@/components/ui/flip-words"
+import { ScrollReveal } from "@/components/ui/scroll-reveal"
 import { cn } from "@/lib/utils"
+import { HOME2_VIDEO_POSTER, HOME2_VIDEO_SRC } from "./constants"
 
 const heading = Sora({
   subsets: ["latin"],
   weight: ["400", "500", "600"],
   variable: "--font-heading",
+})
+
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
 })
 
 const body = Space_Grotesk({
@@ -37,9 +50,9 @@ export const revalidate = 86400
 
 const STUDIO_BLOCKS = [
   {
-    title: "The launch studio",
+    title: "C-Suite and Executive level training",
     body: "A guided path that combines formation, planning, and the assets funders expect to see.",
-    icon: Compass,
+    icon: GraduationCap,
   },
   {
     title: "Roadmap as a living artifact",
@@ -47,7 +60,7 @@ const STUDIO_BLOCKS = [
     icon: Layers,
   },
   {
-    title: "Coaching rhythm built in",
+    title: "1:1 expert sessions included",
     body: "Weekly prompts plus coaching sessions keep your leadership team aligned and moving.",
     icon: CalendarCheck,
   },
@@ -71,20 +84,82 @@ const PROCESS_STEPS = [
   },
 ]
 
-const NEWS_FEATURES = [
+const HERO_FLIP_WORDS = ["sustainable", "fundable", "resilient", "community-led"]
+
+function DiscordLogo({ className }: { className?: string }) {
+  return (
+    <svg
+      role="img"
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      fill="currentColor"
+    >
+      <path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z" />
+    </svg>
+  )
+}
+
+function WhatsAppLogo({ className }: { className?: string }) {
+  return (
+    <svg
+      role="img"
+      viewBox="0 0 24 24"
+      className={className}
+      aria-hidden
+      fill="currentColor"
+    >
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z" />
+    </svg>
+  )
+}
+
+const PRODUCT_HIGHLIGHTS = [
   {
-    href: "/news/how-we-think-about-AI",
-    eyebrow: "Product · Oct 2025",
-    title: "Introducing accelerator safeguards",
-    description: "The guardrails we built so students can move fast without losing progress.",
-    seed: "news-safeguards",
+    href: "/accelerator",
+    eyebrow: "Core offering",
+    title: "Accelerator + coaching",
+    description: "Step-by-step curriculum with assignments, progress, and 1:1 expert sessions.",
+    seed: "news-accelerator",
+    icon: <GraduationCap className="h-5 w-5" aria-hidden />,
   },
   {
-    href: "/news/how-we-think-about-AI",
-    eyebrow: "Story · Sep 2025",
-    title: "How we think about AI for nonprofits",
-    description: "AI is math at scale pointed at fundraising, storytelling, and stewardship.",
-    seed: "news-sora",
+    href: "/dashboard",
+    eyebrow: "Platform",
+    title: "Nonprofit platform",
+    description: "Your home base for roadmap, org profile, program builder, and progress tracking.",
+    seed: "news-platform",
+    icon: <PanelTop className="h-5 w-5" aria-hidden />,
+  },
+  {
+    href: "/community#groups",
+    eyebrow: "Community",
+    title: "Discord + WhatsApp groups",
+    description: "Connect with founders, share wins, and get real-time help from the community.",
+    seed: "news-community",
+    icon: (
+      <span className="flex items-center gap-1">
+        <DiscordLogo className="h-4 w-4 text-[#5865F2]" />
+        <WhatsAppLogo className="h-4 w-4 text-[#25D366]" />
+      </span>
+    ),
+  },
+  {
+    href: "https://coach-house.gitbook.io/coach-house",
+    eyebrow: "Documentation",
+    title: "Development documentation",
+    description: "Implementation guides, platform references, and technical runbooks.",
+    seed: "news-docs",
+    icon: <Notebook className="h-5 w-5" aria-hidden />,
+    external: true,
+  },
+  {
+    href: "/community#map",
+    eyebrow: "NFP map",
+    title: "Community map",
+    description: "Explore the network of nonprofits building alongside Coach House.",
+    seed: "news-map",
+    icon: <MapIcon className="h-5 w-5" aria-hidden />,
   },
 ]
 
@@ -97,25 +172,25 @@ const LIBRARY = [
     seed: "featured-how-we-think-about-ai",
   },
   {
-    href: "/news/how-we-think-about-AI",
-    eyebrow: "Product · Oct 2025",
-    title: "Introducing accelerator safeguards",
-    subtitle: "Protect progress, keep students moving, and stay audit-ready.",
-    seed: "news-safeguards",
+    href: "/news/funding-roadmaps",
+    eyebrow: "Guide · Jan 2026",
+    title: "Funding roadmaps funders actually read",
+    subtitle: "Turn strategy into a single view of outcomes, costs, and timing.",
+    seed: "news-funding-roadmaps",
   },
   {
-    href: "/news/how-we-think-about-AI",
-    eyebrow: "Story · Sep 2025",
-    title: "Sora 2 is here",
-    subtitle: "What generative media means for nonprofit storytelling.",
-    seed: "news-sora",
+    href: "/news/formation-to-funding",
+    eyebrow: "Product · Jan 2026",
+    title: "From formation to funding",
+    subtitle: "A founder path from governance setup to funder readiness.",
+    seed: "news-formation-funding",
   },
   {
-    href: "/news/how-we-think-about-AI",
-    eyebrow: "Story · Sep 2025",
-    title: "Building the roadmap with the board",
-    subtitle: "How we structure planning so funders can follow along.",
-    seed: "news-roadmap",
+    href: "/news/grassroots-discovery",
+    eyebrow: "Community · Jan 2026",
+    title: "Discovery tools for grassroots organizations",
+    subtitle: "Make your work easier to find, trust, and support.",
+    seed: "news-grassroots-discovery",
   },
 ]
 
@@ -123,16 +198,14 @@ const PHOTO_STRIP = [
   {
     id: "photo-1",
     label: "Studio gathering",
-    className: "h-60 w-[var(--first-card)] sm:h-64 lg:h-72",
-    imageUrl:
-      "https://www.lummi.ai/api/render/image/c67bc356-57d1-462e-a02d-cdbe5d051fcf?token=eyJhbGciOiJIUzI1NiJ9.eyJpZHMiOlsiYzY3YmMzNTYtNTdkMS00NjJlLWEwMmQtY2RiZTVkMDUxZmNmIl0sInJlc29sdXRpb24iOiJtZWRpdW0iLCJyZW5kZXJTcGVjcyI6eyJlZmZlY3RzIjp7InJlZnJhbWUiOnt9fX0sInNob3VsZEF1dG9Eb3dubG9hZCI6ZmFsc2UsImp0aSI6IjVVNjV0Zy1WYi1rcjlqek4yVDFYMCIsImlhdCI6MTc2NzIxNjQ0NCwiZXhwIjoxNzY3MjE2NTA0fQ.H0u2nP1zkepGqa5FA7G7zshPDuu8xag2d65jJ43fHxs",
+    className: "h-72 w-[var(--first-card)] sm:h-80 lg:h-96",
+    imageUrl: "https://vswzhuwjtgzrkxknrmxu.supabase.co/storage/v1/object/public/avatars/Paula.png",
   },
   {
     id: "photo-2",
     label: "Demo night",
-    className: "h-48 w-48 sm:h-52 sm:w-52 lg:h-56 lg:w-56",
-    imageUrl:
-      "https://www.lummi.ai/api/render/image/6a4ac922-6d4c-4ecc-be99-5982d62a1d69?token=eyJhbGciOiJIUzI1NiJ9.eyJpZHMiOlsiNmE0YWM5MjItNmQ0Yy00ZWNjLWJlOTktNTk4MmQ2MmExZDY5Il0sInJlc29sdXRpb24iOiJtZWRpdW0iLCJyZW5kZXJTcGVjcyI6eyJlZmZlY3RzIjp7InJlZnJhbWUiOnt9fX0sInNob3VsZEF1dG9Eb3dubG9hZCI6ZmFsc2UsImp0aSI6InFaYUZsWGxjdmU3WHEzNFRNN2ZSbyIsImlhdCI6MTc2NzIxNjQyNiwiZXhwIjoxNzY3MjE2NDg2fQ.R56U4jNjo3KNN9XiIahzQkcWn8ZX2ZywVOIA7586Bms",
+    className: "h-72 w-[var(--first-card)] sm:h-80 lg:h-96",
+    imageUrl: "https://vswzhuwjtgzrkxknrmxu.supabase.co/storage/v1/object/public/avatars/Joel.png",
   },
   {
     id: "photo-3",
@@ -183,176 +256,223 @@ export default function HomeTwoPage() {
     <main
       className={cn(
         body.className,
-        "relative min-h-screen overflow-hidden bg-background text-foreground",
+        "relative min-h-screen bg-background text-foreground",
+        "h-[100dvh] overflow-y-auto scroll-smooth snap-y snap-proximity scroll-py-24",
         "dark:bg-[#0f0f12]",
       )}
     >
       <PublicHeader />
 
-      <div className="mx-auto flex w-[min(1240px,92%)] flex-col gap-32 pb-32 pt-32">
-        <section className="grid min-h-[70vh] place-items-center text-center">
-          <div className="space-y-6">
-            <div className="inline-flex items-center justify-center gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-2 text-xs text-muted-foreground shadow-sm animate-fade-in">
-              <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
-              Coach House public prototype
-            </div>
-            <h1 className={cn(heading.className, "text-balance text-4xl font-semibold sm:text-5xl lg:text-6xl animate-soft-pop")}>
-              Coach House has opened the nonprofit studio.
-            </h1>
-            <p className="mx-auto max-w-2xl text-base text-muted-foreground animate-fade-up">
-              A formation and planning platform for leaders who need their roadmap to look as good as it reads.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-              <Button asChild size="lg" className="rounded-full px-6">
-                <Link href="/pricing">
-                  View pricing <ArrowUpRight className="h-4 w-4" aria-hidden />
-                </Link>
-              </Button>
-              <Button asChild size="lg" variant="outline" className="rounded-full px-6">
-                <Link href="/sign-up">Start free</Link>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        <section className="space-y-10">
-          <Home2ScrollVideo
-            className="animate-fade-in"
-            videoSrc="https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4"
-            posterSrc="https://storage.googleapis.com/gtv-videos-bucket/sample/images/ForBiggerJoyrides.jpg"
-          />
-        </section>
-
-        <section className="grid gap-12 pb-12 md:grid-cols-2">
-          {NEWS_FEATURES.map((item) => (
-            <Link key={item.title} href={item.href} className="group space-y-5">
-              <NewsGradientThumb
-                seed={item.seed}
-                className="aspect-[4/3] w-full rounded-[28px] shadow-lg transition-transform duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-xl"
-              />
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-xs uppercase text-muted-foreground">{item.eyebrow}</p>
-                  <p className="text-base font-semibold">{item.title}</p>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
-                </div>
-                <ArrowUpRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+      <div className="relative overflow-x-hidden">
+        <div className="mx-auto flex w-[min(1240px,92%)] flex-col gap-0 pb-24 pt-24 md:pb-28 md:pt-28">
+          <SectionReveal className="grid min-h-[70vh] place-items-center py-0 md:py-0">
+            <div className={cn(inter.className, "mx-auto w-full max-w-3xl space-y-6 text-left lg:max-w-4xl")}>
+              <div className="inline-flex items-center justify-start gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-2 text-xs text-muted-foreground shadow-sm animate-fade-in">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
+                The Coach House Commons
               </div>
-            </Link>
-          ))}
-        </section>
-
-        <section className="grid gap-10 lg:grid-cols-[0.6fr_1fr] lg:items-start">
-          <div className="space-y-4">
-            <p className="text-xs uppercase text-muted-foreground">Studio style</p>
-            <h2 className={cn(heading.className, "text-3xl font-semibold")}>
-              A strategic home for every nonprofit decision.
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Use the platform as a living studio board. Every entry becomes part of your published story.
-            </p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            {STUDIO_BLOCKS.map((block, index) => (
-              <Card
-                key={block.title}
-                className="rounded-[28px] border border-border/60 bg-card/70 p-5 shadow-sm transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-md animate-fade-up"
-                style={{ animationDelay: `${index * 80}ms` }}
-              >
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                  <block.icon className="h-5 w-5" aria-hidden />
-                </div>
-                <h3 className="mt-4 text-base font-semibold">{block.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">{block.body}</p>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        <section className="grid gap-8 lg:grid-cols-[1fr_1.1fr]">
-          <div className="rounded-[32px] border border-border/60 bg-card/70 p-6">
-            <div className="flex items-center justify-between text-xs uppercase text-muted-foreground">
-              Process
-              <span>3 steps</span>
+              <h1 className="text-balance text-3xl font-normal leading-tight tracking-tight text-[#525252] sm:text-4xl lg:text-5xl animate-soft-pop dark:text-[#A1A1A1]">
+                Build{" "}
+                <FlipWords
+                  words={HERO_FLIP_WORDS}
+                  className="min-w-[12ch] font-normal tracking-tight text-black dark:text-white"
+                />{" "}
+                nonprofits{" "}
+                <span className="whitespace-nowrap">
+                  with <span className="font-semibold">Coach House.</span>
+                </span>
+              </h1>
+              <p className="max-w-xl text-base text-muted-foreground animate-fade-up">
+                The platform built for NFP founders, operators, & grassroots organizations — from formation to funding.
+              </p>
+              <div className="flex flex-wrap items-center justify-start gap-3 pt-2">
+                <Button asChild size="lg" className="rounded-full px-6">
+                  <Link href="/pricing">
+                    View pricing <ArrowUpRight className="h-4 w-4" aria-hidden />
+                  </Link>
+                </Button>
+                <Button asChild size="lg" variant="outline" className="rounded-full px-6">
+                  <Link href="/sign-up">Start free</Link>
+                </Button>
+              </div>
             </div>
-            <div className="mt-5 space-y-5">
-              {PROCESS_STEPS.map((step) => (
-                <div key={step.step} className="flex gap-4">
-                  <div className="text-xs font-semibold text-muted-foreground">{step.step}</div>
-                  <div>
-                    <p className="text-sm font-semibold">{step.title}</p>
-                    <p className="text-sm text-muted-foreground">{step.body}</p>
+          </SectionReveal>
+
+          <SectionReveal className="space-y-10 py-12 md:py-14">
+            <Home2ScrollVideo
+              className="animate-fade-in"
+              videoSrc={HOME2_VIDEO_SRC}
+              posterSrc={HOME2_VIDEO_POSTER}
+            />
+          </SectionReveal>
+
+          <SectionReveal className="pt-12 pb-28 md:pt-14 md:pb-32">
+            <div className="mx-auto flex max-w-4xl flex-col items-center gap-5 text-center">
+              <ScrollReveal
+                textClassName={cn(
+                  inter.className,
+                  "text-balance text-3xl font-semibold leading-tight text-foreground sm:text-4xl lg:text-5xl",
+                )}
+              >
+                {"Changing the world is hard, but it shouldn't be."}
+              </ScrollReveal>
+            </div>
+          </SectionReveal>
+
+          <SectionReveal className="grid gap-10 md:grid-cols-2 py-28 md:py-36">
+            {PRODUCT_HIGHLIGHTS.map((item) => (
+              <Link
+                key={item.title}
+                href={item.href}
+                className="group space-y-3"
+                target={item.external ? "_blank" : undefined}
+                rel={item.external ? "noreferrer" : undefined}
+              >
+                <div className="relative">
+                  <NewsGradientThumb
+                    seed={item.seed}
+                    className="aspect-[5/3] w-full rounded-[24px] shadow-lg transition-transform duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-xl"
+                  />
+                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-background/80 text-foreground shadow-sm backdrop-blur">
+                      {item.icon}
+                    </span>
                   </div>
                 </div>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <p className="text-[11px] uppercase text-muted-foreground">{item.eyebrow}</p>
+                    <p className="text-sm font-semibold">{item.title}</p>
+                    <p className="text-sm text-muted-foreground">{item.description}</p>
+                  </div>
+                  <ArrowUpRight className="h-4 w-4 text-muted-foreground" aria-hidden />
+                </div>
+              </Link>
+            ))}
+          </SectionReveal>
+
+          <SectionReveal className="grid gap-12 lg:grid-cols-[0.6fr_1fr] lg:items-start py-28 md:py-36">
+            <div className="space-y-4">
+              <p className="text-xs uppercase text-muted-foreground">Everything in one place</p>
+              <h2 className={cn(heading.className, "text-3xl font-semibold")}>
+                A strategic home for every nonprofit decision.
+              </h2>
+              <p className="text-sm text-muted-foreground">
+                Use the platform as a living strategy board. Every entry becomes part of your published story.
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {STUDIO_BLOCKS.map((block, index) => (
+                <Card
+                  key={block.title}
+                  className="rounded-[28px] border border-border/60 bg-card/70 p-5 shadow-sm transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-md animate-fade-up"
+                  style={{ animationDelay: `${index * 80}ms` }}
+                >
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                    <block.icon className="h-5 w-5" aria-hidden />
+                  </div>
+                  <h3 className="mt-4 text-base font-semibold">{block.title}</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">{block.body}</p>
+                </Card>
               ))}
             </div>
-          </div>
+          </SectionReveal>
 
-          <div className="flex flex-col rounded-[32px] border border-border/60 bg-foreground p-6 text-background shadow-xl">
-            <p className="text-xs uppercase text-background/70">Studio note</p>
-            <h2 className={cn(heading.className, "mt-4 text-3xl font-semibold")}>
-              Make it easy for funders to say yes.
+          <SectionReveal className="grid gap-10 lg:grid-cols-[1fr_1.1fr] py-28 md:py-36">
+            <div className="rounded-[32px] border border-border/60 bg-card/70 p-6">
+              <div className="flex items-center justify-between text-xs uppercase text-muted-foreground">
+                Process
+              </div>
+              <div className="mt-5 space-y-5">
+                {PROCESS_STEPS.map((step) => (
+                  <div key={step.step} className="flex gap-4">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-muted text-xs font-semibold text-muted-foreground shadow-sm">
+                      {step.step}
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-semibold">{step.title}</p>
+                      <p className="text-sm text-muted-foreground">{step.body}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex flex-col rounded-[32px] border border-border/60 bg-foreground p-6 text-background shadow-xl">
+              <p className="text-xs uppercase text-background/70">Platform note</p>
+              <h2 className={cn(heading.className, "mt-4 text-3xl font-semibold")}>
+                Make it easy for funders to say yes.
+              </h2>
+              <p className="mt-4 text-sm text-background/80">
+                The platform keeps your mission, plan, and proof in sync. That means fewer follow-up emails and a clearer narrative
+                when it matters most.
+              </p>
+              <Button asChild size="sm" variant="secondary" className="mt-auto self-start rounded-full px-4">
+                <Link href="/pricing">View pricing</Link>
+              </Button>
+            </div>
+          </SectionReveal>
+
+          <SectionReveal className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 py-28 md:py-36">
+            <h2 className="text-left text-lg font-semibold text-foreground sm:col-span-2 lg:col-span-4">
+              News
             </h2>
-            <p className="mt-4 text-sm text-background/80">
-              The platform keeps your mission, plan, and proof in sync. That means fewer follow-up emails and a clearer narrative
-              when it matters most.
+            {LIBRARY.map((item) => (
+              <Link
+                key={item.title}
+                href={item.href}
+                className="group flex min-h-[360px] flex-col rounded-[26px] bg-card/70 p-4 shadow-sm transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-md"
+              >
+                <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[22px] shadow-sm">
+                  <NewsGradientThumb seed={item.seed} className="absolute inset-0" />
+                  <span className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/80 text-muted-foreground shadow-sm transition group-hover:bg-background">
+                    <ArrowUpRight className="h-4 w-4" aria-hidden />
+                  </span>
+                </div>
+                <div className="mt-4 space-y-2">
+                  <p className="text-[11px] uppercase text-muted-foreground">{item.eyebrow}</p>
+                  <p className="text-sm font-semibold">{item.title}</p>
+                  <p className="text-xs text-muted-foreground">{item.subtitle}</p>
+                </div>
+              </Link>
+            ))}
+          </SectionReveal>
+
+          <SectionReveal className="relative">
+            <div className="relative">
+              <div className="mb-8 space-y-4 text-left lg:pointer-events-none lg:absolute lg:left-0 lg:top-1/2 lg:z-0 lg:mb-0 lg:max-w-[320px] lg:-translate-y-1/2">
+                <h2 className="text-balance text-4xl font-semibold leading-tight tracking-tight text-foreground sm:text-5xl">
+                  <span className="block">Meet</span>
+                  <span className="block">the team</span>
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Coaches, strategists, and operators helping founders move from formation to funding.
+                </p>
+              </div>
+              <div className="relative z-10 lg:-ml-[calc((100vw-100%)/2)] lg:-mr-[calc((100vw-100%)/2)]">
+                <Home2PhotoStrip items={PHOTO_STRIP} />
+              </div>
+            </div>
+          </SectionReveal>
+
+          <SectionReveal className="rounded-[32px] border border-border/60 bg-card/70 p-10 text-center">
+            <p className="text-sm text-muted-foreground">Ready to begin?</p>
+            <h2 className={cn(heading.className, "mt-4 text-3xl font-semibold")}>
+              Build the first draft of your nonprofit plan.
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground">
+              Start with the free platform, then upgrade when you want accelerator guidance or ongoing coaching.
             </p>
-            <Button asChild size="sm" variant="secondary" className="mt-auto self-start rounded-full px-4">
-              <Link href="/pricing">View pricing</Link>
-            </Button>
-          </div>
-        </section>
-
-        <section className="flex justify-center">
-          <div className="max-w-2xl text-center text-base text-muted-foreground">
-            We have partnered with more than 28 organizations and built a deep library of frameworks for nonprofit strategy,
-            storytelling, and fundraising. We share unpolished demos so teams can move faster together.
-          </div>
-        </section>
-
-        <section className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          {LIBRARY.map((item) => (
-            <Link
-              key={item.title}
-              href={item.href}
-              className="group flex min-h-[360px] flex-col rounded-[26px] bg-card/70 p-4 shadow-sm transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-md"
-            >
-              <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[22px] shadow-sm">
-                <NewsGradientThumb seed={item.seed} className="absolute inset-0" />
-                <span className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/80 text-muted-foreground shadow-sm transition group-hover:bg-background">
-                  <ArrowUpRight className="h-4 w-4" aria-hidden />
-                </span>
-              </div>
-              <div className="mt-4 space-y-2">
-                <p className="text-[11px] uppercase text-muted-foreground">{item.eyebrow}</p>
-                <p className="text-sm font-semibold">{item.title}</p>
-                <p className="text-xs text-muted-foreground">{item.subtitle}</p>
-              </div>
-            </Link>
-          ))}
-        </section>
-
-        <section className="relative left-1/2 right-1/2 w-screen -translate-x-1/2">
-          <Home2PhotoStrip items={PHOTO_STRIP} />
-        </section>
-
-        <section className="rounded-[32px] border border-border/60 bg-card/70 p-10 text-center">
-          <p className="text-sm text-muted-foreground">Ready to begin?</p>
-          <h2 className={cn(heading.className, "mt-4 text-3xl font-semibold")}>
-            Build the first draft of your nonprofit plan.
-          </h2>
-          <p className="mx-auto mt-3 max-w-2xl text-sm text-muted-foreground">
-            Start with the free platform, then upgrade when you want accelerator guidance or ongoing coaching.
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <Button asChild size="lg" className="rounded-full px-6">
-              <Link href="/sign-up">Start free</Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="rounded-full px-6">
-              <Link href="/pricing">View pricing</Link>
-            </Button>
-          </div>
-        </section>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              <Button asChild size="lg" className="rounded-full px-6">
+                <Link href="/sign-up">Start free</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="rounded-full px-6">
+                <Link href="/pricing">View pricing</Link>
+              </Button>
+            </div>
+          </SectionReveal>
+        </div>
       </div>
     </main>
   )

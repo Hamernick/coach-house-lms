@@ -16,7 +16,7 @@ begin
   values (
     gen_random_uuid(), v_class_id, 1, 'intro-and-goals', 'Module 1', 'Intro & goals',
     'https://www.youtube.com/watch?v=ysz5S6PUM-U',
-    '# Module 1 — Intro & goals\n\nWelcome to the course.\n\n- Understand the journey\n- Set expectations\n- Meet your cohort',
+    '# Module 1 — Intro & goals\n\nWelcome to the course.\n\n## In this module\n- Understand the journey.\n- Set expectations.\n- Meet your cohort.',
     8, true)
   on conflict (class_id, idx) do update set
     slug = excluded.slug,
@@ -32,7 +32,7 @@ begin
   values (
     gen_random_uuid(), v_class_id, 2, 'core-concepts', 'Module 2', 'Core concepts',
     'https://www.youtube.com/watch?v=HhesaQXLuRY',
-    '# Module 2 — Core concepts\n\nDig into fundamentals with examples and short exercises.',
+    '# Module 2 — Core concepts\n\nReview the fundamentals with examples and short exercises.\n\n## What to focus on\n- Core definitions and language.\n- How the concepts show up in your work.',
     12, true)
   on conflict (class_id, idx) do update set
     slug = excluded.slug,
@@ -48,7 +48,7 @@ begin
   values (
     gen_random_uuid(), v_class_id, 3, 'practice-recap', 'Module 3', 'Practice & recap',
     'https://www.youtube.com/watch?v=oHg5SJYRHA0',
-    '# Module 3 — Practice & recap\n\nApply what you''ve learned and summarize key takeaways.',
+    '# Module 3 — Practice & recap\n\nApply what you''ve learned and capture key takeaways.\n\n## Your output\n- A short reflection.\n- The ideas you want to carry forward.',
     10, true)
   on conflict (class_id, idx) do update set
     slug = excluded.slug,
@@ -59,4 +59,3 @@ begin
     duration_minutes = excluded.duration_minutes,
     is_published = excluded.is_published;
 end $$;
-

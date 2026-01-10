@@ -35,84 +35,96 @@ export function ScheduleStep({ index, form, onOpenChange, onEdit, onScheduleSave
   }
 
   return (
-    <DialogStackContent index={index} className="relative min-h-[520px] sm:min-h-[560px]">
-      <button
-        type="button"
-        onClick={() => onOpenChange(false)}
-        className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-md border bg-background/70 text-muted-foreground transition hover:text-foreground"
-        aria-label="Close"
-      >
-        ×
-      </button>
-      <DialogStackHeader>
-        <DialogStackTitle>Schedule & Location</DialogStackTitle>
-        <DialogStackDescription>Pick dates and add an address.</DialogStackDescription>
-      </DialogStackHeader>
-      <div className="grid gap-4 py-4">
-        <div className="grid gap-1 sm:grid-cols-2">
-          <DatePicker
-            label="Start date"
-            value={form.startDate}
-            onChange={(value) => update({ startDate: value })}
-          />
-          <DatePicker
-            label="End date"
-            value={form.endDate}
-            onChange={(value) => update({ endDate: value })}
-          />
+    <DialogStackContent
+      index={index}
+      className="relative flex h-full w-full max-w-none flex-col overflow-hidden rounded-none border-0 bg-transparent p-0 shadow-none"
+    >
+      <div className="flex h-full flex-col">
+        <DialogStackHeader className="shrink-0 border-b border-border/60 bg-background/95 px-6 py-4 text-left backdrop-blur">
+          <DialogStackTitle className="text-xl">Schedule & Location</DialogStackTitle>
+          <DialogStackDescription className="text-sm">Pick dates and add an address.</DialogStackDescription>
+        </DialogStackHeader>
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="mx-auto w-full max-w-5xl">
+            <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="space-y-4">
+                <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                  <div className="text-sm font-medium">Schedule</div>
+                  <p className="mt-1 text-xs text-muted-foreground">Add dates for the full program window.</p>
+                  <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                    <DatePicker
+                      label="Start date"
+                      value={form.startDate}
+                      onChange={(value) => update({ startDate: value })}
+                    />
+                    <DatePicker
+                      label="End date"
+                      value={form.endDate}
+                      onChange={(value) => update({ endDate: value })}
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                <div className="text-sm font-medium">Full address</div>
+                <p className="mt-1 text-xs text-muted-foreground">Use this for directions and logistics.</p>
+                <div className="mt-4 grid gap-4">
+                  <TextInput
+                    id="addressStreet"
+                    label="Street"
+                    value={form.addressStreet}
+                    placeholder="123 Main St"
+                    onChange={(value) => update({ addressStreet: value })}
+                  />
+                  <div className="grid gap-4 sm:grid-cols-3">
+                    <TextInput
+                      id="addressCity"
+                      label="City"
+                      value={form.addressCity}
+                      placeholder="Chicago"
+                      onChange={(value) => update({ addressCity: value })}
+                    />
+                    <TextInput
+                      id="addressState"
+                      label="State"
+                      value={form.addressState}
+                      placeholder="IL"
+                      onChange={(value) => update({ addressState: value })}
+                    />
+                    <TextInput
+                      id="addressPostal"
+                      label="Postal"
+                      value={form.addressPostal}
+                      placeholder="60601"
+                      onChange={(value) => update({ addressPostal: value })}
+                    />
+                  </div>
+                  <TextInput
+                    id="addressCountry"
+                    label="Country"
+                    value={form.addressCountry}
+                    placeholder="United States"
+                    onChange={(value) => update({ addressCountry: value })}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        <TextInput
-          id="location"
-          label="Location (summary)"
-          value={form.location}
-          placeholder="e.g., Chicago, IL"
-          onChange={(value) => update({ location: value })}
-        />
-        <TextInput
-          id="addressStreet"
-          label="Street"
-          value={form.addressStreet}
-          placeholder="123 Main St"
-          onChange={(value) => update({ addressStreet: value })}
-        />
-        <div className="grid gap-1 sm:grid-cols-3">
-          <TextInput
-            id="addressCity"
-            label="City"
-            value={form.addressCity}
-            placeholder="Chicago"
-            onChange={(value) => update({ addressCity: value })}
-          />
-          <TextInput
-            id="addressState"
-            label="State"
-            value={form.addressState}
-            placeholder="IL"
-            onChange={(value) => update({ addressState: value })}
-          />
-          <TextInput
-            id="addressPostal"
-            label="Postal"
-            value={form.addressPostal}
-            placeholder="60601"
-            onChange={(value) => update({ addressPostal: value })}
-          />
-        </div>
-        <TextInput
-          id="addressCountry"
-          label="Country"
-          value={form.addressCountry}
-          placeholder="United States"
-          onChange={(value) => update({ addressCountry: value })}
-        />
+        <DialogStackFooter className="shrink-0 border-t border-border/60 bg-background/95 px-6 py-4 backdrop-blur">
+          <div className="flex w-full items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" className="h-9 px-3" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
+              <DialogStackPrevious className="h-9 rounded-md px-3">Back</DialogStackPrevious>
+            </div>
+            <DialogStackNext className="h-9 rounded-md bg-primary px-4 text-primary-foreground">
+              Continue
+            </DialogStackNext>
+          </div>
+        </DialogStackFooter>
       </div>
-      <DialogStackFooter>
-        <Button variant="ghost" className="h-9 rounded-md px-3" onClick={() => onOpenChange(false)}>
-          Cancel
-        </Button>
-        <DialogStackPrevious className="h-9 rounded-md px-3">Back</DialogStackPrevious>
-        <DialogStackNext className="h-9 rounded-md bg-primary px-3 text-primary-foreground">Next</DialogStackNext>
-      </DialogStackFooter>
     </DialogStackContent>
   )
 }

@@ -49,16 +49,6 @@ const INBOX_ITEMS: NotificationItem[] = [
   },
 ]
 
-const COMMENTS_ITEMS: NotificationItem[] = [
-  {
-    id: "comment-1",
-    title: "Mentor feedback",
-    description: "New comment on your Funding section draft.",
-    time: "2d ago",
-    tone: "success",
-  },
-]
-
 const ARCHIVE_ITEMS: NotificationItem[] = []
 
 export function NotificationsMenu() {
@@ -119,12 +109,6 @@ export function NotificationsMenu() {
                 {ARCHIVE_ITEMS.length}
               </Badge>
             </TabsTrigger>
-            <TabsTrigger value="comments" className="gap-2">
-              Comments
-              <Badge variant="secondary" className="rounded-full">
-                {COMMENTS_ITEMS.length}
-              </Badge>
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="inbox" className="p-0">
@@ -132,9 +116,6 @@ export function NotificationsMenu() {
           </TabsContent>
           <TabsContent value="archive" className="p-0">
             <NotificationsList items={ARCHIVE_ITEMS} emptyLabel="Archive is empty" />
-          </TabsContent>
-          <TabsContent value="comments" className="p-0">
-            <NotificationsList items={COMMENTS_ITEMS} emptyLabel="No new comments" />
           </TabsContent>
         </Tabs>
 

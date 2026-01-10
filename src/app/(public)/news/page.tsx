@@ -47,7 +47,7 @@ export default function NewsPage() {
               <Link href="/news/how-we-think-about-AI" className="block">
                 <NewsGradientThumb
                   seed="featured-how-we-think-about-ai"
-                  className="aspect-[16/9] w-full rounded-3xl shadow-lg"
+                  className="aspect-[16/9] w-full rounded-[28px] shadow-lg"
                 />
                 <div className="mt-5 space-y-2">
                   <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
@@ -67,34 +67,50 @@ export default function NewsPage() {
             {/* Right column cards */}
             <div className="space-y-4">
               <Link
-                href="/news/how-we-think-about-AI"
-                className="block rounded-3xl border border-border/60 bg-card/60 p-1 shadow-lg"
+                href="/news/funding-roadmaps"
+                className="block rounded-[28px] border border-border/60 bg-card/60 p-1 shadow-lg"
               >
                 <NewsGradientThumb
-                  seed="news-safeguards"
-                  className="aspect-[4/5] w-full rounded-2xl"
+                  seed="news-funding-roadmaps"
+                  className="aspect-[4/5] w-full rounded-[28px]"
                 />
                 <div className="mt-3 space-y-1 px-2 pb-3">
                   <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                    Product · Oct 2025
+                    Guide · Jan 2026
                   </p>
-                  <p className="text-sm font-semibold text-foreground">Introducing accelerator safeguards</p>
+                  <p className="text-sm font-semibold text-foreground">Funding roadmaps funders actually read</p>
                 </div>
               </Link>
 
               <Link
-                href="/news/how-we-think-about-AI"
-                className="block rounded-3xl border border-border/60 bg-card/60 p-1 shadow-lg"
+                href="/news/formation-to-funding"
+                className="block rounded-[28px] border border-border/60 bg-card/60 p-1 shadow-lg"
               >
                 <NewsGradientThumb
-                  seed="news-sora"
-                  className="aspect-[4/5] w-full rounded-2xl"
+                  seed="news-formation-funding"
+                  className="aspect-[4/5] w-full rounded-[28px]"
                 />
                 <div className="mt-3 space-y-1 px-2 pb-3">
                   <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                    Story · Sep 2025
+                    Product · Jan 2026
                   </p>
-                  <p className="text-sm font-semibold text-foreground">Sora 2 is here</p>
+                  <p className="text-sm font-semibold text-foreground">From formation to funding</p>
+                </div>
+              </Link>
+
+              <Link
+                href="/news/grassroots-discovery"
+                className="block rounded-[28px] border border-border/60 bg-card/60 p-1 shadow-lg"
+              >
+                <NewsGradientThumb
+                  seed="news-grassroots-discovery"
+                  className="aspect-[4/5] w-full rounded-[28px]"
+                />
+                <div className="mt-3 space-y-1 px-2 pb-3">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                    Community · Jan 2026
+                  </p>
+                  <p className="text-sm font-semibold text-foreground">Discovery tools for grassroots organizations</p>
                 </div>
               </Link>
             </div>

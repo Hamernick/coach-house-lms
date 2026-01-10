@@ -9,6 +9,7 @@ export const FORM_FIELD_TYPE_OPTIONS: Array<{ value: FormFieldType; label: strin
   { value: "multi_select", label: "Multi-select" },
   { value: "slider", label: "Slider" },
   { value: "subtitle", label: "Subtitle / section heading" },
+  { value: "budget_table", label: "Budget table" },
   { value: "custom_program", label: "Custom program builder" },
 ]
 

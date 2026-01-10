@@ -9,6 +9,7 @@ import { PROGRAM_MEDIA_BUCKET, resolveProgramMediaCleanupPath } from "@/lib/stor
 export type CreateProgramPayload = {
   title: string
   subtitle?: string | null
+  description?: string | null
   location?: string | null
   addressStreet?: string | null
   addressCity?: string | null
@@ -37,6 +38,7 @@ export async function createProgramAction(payload: CreateProgramPayload) {
     user_id: userId,
     title: payload.title,
     subtitle: payload.subtitle ?? null,
+    description: payload.description ?? null,
     location: payload.location ?? null,
     address_street: payload.addressStreet ?? null,
     address_city: payload.addressCity ?? null,
@@ -87,6 +89,7 @@ export async function updateProgramAction(id: string, payload: UpdateProgramPayl
   const update = {
     title: payload.title ?? undefined,
     subtitle: payload.subtitle ?? undefined,
+    description: payload.description ?? undefined,
     location: payload.location ?? undefined,
     address_street: payload.addressStreet ?? undefined,
     address_city: payload.addressCity ?? undefined,

@@ -16,7 +16,7 @@ function ClientToaster() {
     return null
   }
 
-  return <Toaster />
+  return <Toaster position="top-right" richColors />
 }
 
 export function AppProviders({ children }: { children: ReactNode }) {

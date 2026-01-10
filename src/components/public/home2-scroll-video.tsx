@@ -40,8 +40,8 @@ export function Home2ScrollVideo({ className, videoSrc, posterSrc }: Home2Scroll
     let frame = 0
     let isActive = true
 
-    const getScrollParent = (node: HTMLElement | null): Window | HTMLElement => {
-      if (!node) return window
+    const getScrollParent = (node: HTMLElement | null): HTMLElement | null => {
+      if (!node) return null
       let parent: HTMLElement | null = node.parentElement
       while (parent) {
         const style = window.getComputedStyle(parent)
@@ -51,7 +51,7 @@ export function Home2ScrollVideo({ className, videoSrc, posterSrc }: Home2Scroll
         }
         parent = parent.parentElement
       }
-      return window
+      return null
     }
 
     const scrollParent = getScrollParent(section)
@@ -59,9 +59,8 @@ export function Home2ScrollVideo({ className, videoSrc, posterSrc }: Home2Scroll
     const update = () => {
       frame = 0
       const rect = section.getBoundingClientRect()
-      const viewport =
-        scrollParent === window ? window.innerHeight || 1 : (scrollParent as HTMLElement).clientHeight || 1
-      const containerTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top
+      const viewport = scrollParent ? scrollParent.clientHeight || 1 : window.innerHeight || 1
+      const containerTop = scrollParent ? scrollParent.getBoundingClientRect().top : 0
       const relativeTop = rect.top - containerTop
       const start = viewport * 0.9
       const end = viewport * 0.25
@@ -98,13 +97,13 @@ export function Home2ScrollVideo({ className, videoSrc, posterSrc }: Home2Scroll
         }
       },
       {
-        root: scrollParent === window ? null : scrollParent,
+        root: scrollParent ?? null,
         rootMargin: "45% 0px",
         threshold: 0,
       },
     )
 
-    if (scrollParent === window) {
+    if (!scrollParent) {
       window.addEventListener("scroll", onScroll, { passive: true })
     } else {
       scrollParent.addEventListener("scroll", onScroll, { passive: true })
@@ -117,7 +116,7 @@ export function Home2ScrollVideo({ className, videoSrc, posterSrc }: Home2Scroll
       if (frame) {
         window.cancelAnimationFrame(frame)
       }
-      if (scrollParent === window) {
+      if (!scrollParent) {
         window.removeEventListener("scroll", onScroll)
       } else {
         scrollParent.removeEventListener("scroll", onScroll)

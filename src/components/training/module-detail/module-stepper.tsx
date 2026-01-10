@@ -477,15 +477,17 @@ export function ModuleStepper({
                   )
                 case "deck":
                   return (
-                    <DeckViewer
-                      moduleId={moduleId}
-                      hasDeck
-                      variant="frame"
-                      className="h-full w-full"
-                      showPreviewTrigger={false}
-                      inlinePreview
-                      shellActions={deckShellActions}
-                    />
+                    <StepFrame>
+                      <DeckViewer
+                        moduleId={moduleId}
+                        hasDeck={hasDeck}
+                        variant="frame"
+                        className="h-full w-full"
+                        showPreviewTrigger={false}
+                        inlinePreview
+                        shellActions={deckShellActions}
+                      />
+                    </StepFrame>
                   )
                 case "notes":
                   return lessonNotesContent ? (

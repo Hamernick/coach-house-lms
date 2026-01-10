@@ -2014,3 +2014,8 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 
 - Fix: resolved Next lint issues around variable naming and hook deps (`src/lib/roadmap/homework.ts`, `src/components/training/module-detail/module-stepper.tsx`, `src/components/roadmap/roadmap-editor.tsx`, `src/components/public/home2-scroll-video.tsx`, `src/components/organization/org-profile-card/tabs/documents-tab.tsx`).
 - Tests: not run.
+
+## 2026-01-10 — Codex session (Vercel build fix)
+
+- Fix: import `randomUUID` for enrollment invite token generation to satisfy typecheck (`src/app/(admin)/admin/classes/[id]/actions.ts`).
+- Tests: not run.

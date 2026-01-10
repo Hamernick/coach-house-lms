@@ -46,6 +46,7 @@ export function DashboardShell({
 }: DashboardShellProps) {
   const pathname = usePathname()
   const { openMap, setOpenMap } = useSidebarOpenMap(pathname ?? "/", sidebarTree)
+  const isAcceleratorActive = (pathname ?? "").startsWith("/accelerator")
 
   const navUser = useMemo(
     () => ({
@@ -65,6 +66,7 @@ export function DashboardShell({
           openMap={openMap}
           setOpenMap={setOpenMap}
           user={navUser}
+          isAcceleratorActive={isAcceleratorActive}
           acceleratorProgress={acceleratorProgress}
         />
       </Sidebar>

@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import dynamic from "next/dynamic"
+import { usePathname } from "next/navigation"
 import Lock from "lucide-react/dist/esm/icons/lock"
 import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 import { Button } from "@/components/ui/button"
@@ -68,6 +69,8 @@ export function ModuleDetail({
     submission: m.assignmentSubmission ?? null,
   })
 
+  const pathname = usePathname()
+  const basePath = pathname?.startsWith("/accelerator") ? "/accelerator" : ""
 
   const embedUrl = getVideoEmbedUrl(m.videoUrl)
   const inlineVideoUrl = getInlineVideoUrl(m.videoUrl)
@@ -78,7 +81,7 @@ export function ModuleDetail({
     [c.modules, m.id],
   )
   const nextModule = currentModuleIndex >= 0 ? c.modules[currentModuleIndex + 1] : null
-  const nextHref = nextModule && c.slug ? `/class/${c.slug}/module/${currentModuleIndex + 2}` : null
+  const nextHref = nextModule && c.slug ? `${basePath}/class/${c.slug}/module/${currentModuleIndex + 2}` : null
 
   return (
     <div className="space-y-6">

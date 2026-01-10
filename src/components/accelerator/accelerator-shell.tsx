@@ -1,20 +1,14 @@
 "use client"
 
 import type { ReactNode } from "react"
-import dynamic from "next/dynamic"
-
 import { AcceleratorSidebar } from "@/components/accelerator/accelerator-sidebar"
 import { GlobalSearch } from "@/components/global-search"
 import { Separator } from "@/components/ui/separator"
 import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { NotificationsMenu } from "@/components/notifications/notifications-menu"
 import { SupportMenu } from "@/components/support-menu"
+import { ThemeToggle } from "@/components/theme-toggle"
 import type { SidebarClass } from "@/lib/academy"
-
-const ThemeToggle = dynamic(() => import("@/components/theme-toggle").then((mod) => mod.ThemeToggle), {
-  ssr: false,
-  loading: () => null,
-})
 
 const SUPPORT_EMAIL = "contact@coachhousesolutions.org"
 

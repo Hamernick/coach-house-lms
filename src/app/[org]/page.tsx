@@ -36,7 +36,7 @@ export default async function PublicOrgPage({ params }: { params: Promise<{ org:
   const { data: programs } = await admin
     .from("programs")
     .select(
-      "id, title, subtitle, location, image_url, duration_label, features, status_label, goal_cents, raised_cents, is_public, created_at, start_date, end_date, address_city, address_state, address_country, cta_label, cta_url",
+      "id, title, subtitle, description, location, image_url, duration_label, features, status_label, goal_cents, raised_cents, is_public, created_at, start_date, end_date, address_city, address_state, address_country, cta_label, cta_url",
     )
     .eq("user_id", orgRow.user_id)
     .eq("is_public", true)

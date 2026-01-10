@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
 import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern/index"
 import Image from "next/image"
+import { cn } from "@/lib/utils"
 
 export type ProgramCardProps = {
   title: string
@@ -18,8 +19,10 @@ export type ProgramCardProps = {
   asOf?: string
   ctaLabel?: string
   ctaHref?: string
+  ctaTarget?: string
   onCtaClick?: () => void
   patternId?: string
+  className?: string
 }
 
 export function ProgramCard({
@@ -34,8 +37,10 @@ export function ProgramCard({
   asOf,
   ctaLabel = "Action",
   ctaHref,
+  ctaTarget = "_blank",
   onCtaClick,
   patternId,
+  className,
 }: ProgramCardProps) {
   const goal = goalCents || 0
   const raised = raisedCents || 0
@@ -63,9 +68,14 @@ export function ProgramCard({
   ]
 
   return (
-    <Card className="w-[380px] h-[600px] overflow-hidden rounded-3xl shadow-sm border-muted/50 flex flex-col py-0 gap-0">
+    <Card
+      className={cn(
+        "w-full max-w-[380px] overflow-hidden rounded-3xl border-muted/50 shadow-sm flex flex-col py-0 gap-0",
+        className,
+      )}
+    >
       <div className="relative">
-        <div className="relative overflow-hidden aspect-[4/3] bg-muted">
+        <div className="relative overflow-hidden aspect-[16/9] bg-muted">
           {imageUrl ? (
             <Image
               src={imageUrl}
@@ -78,7 +88,7 @@ export function ProgramCard({
             <GridPattern
               patternId={patternId}
               squares={headerSquares}
-              className="absolute inset-0 opacity-70 [mask-image:radial-gradient(220px_circle_at_center,white,transparent)]"
+              className="absolute inset-0 opacity-85 fill-gray-500/50 stroke-gray-500/50 dark:fill-white/15 dark:stroke-white/25 [mask-image:radial-gradient(220px_circle_at_center,white,transparent)]"
             />
           )}
           <div className="absolute right-3 top-3">
@@ -92,13 +102,13 @@ export function ProgramCard({
         </div>
       </div>
 
-      <CardContent className="px-5 pt-3 pb-5 flex-1">
-        <h3 className="text-xl font-semibold leading-6">{title}</h3>
+      <CardContent className="px-4 pt-3 pb-4 flex-1">
+        <h3 className="text-lg font-semibold leading-6">{title}</h3>
         {(org || location) ? (
           <p className="text-sm text-muted-foreground mt-0.5">{[org, location].filter(Boolean).join(" · ")}</p>
         ) : null}
 
-        <Separator className="my-3" />
+        <Separator className="my-2.5" />
 
         {chips.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
@@ -110,11 +120,11 @@ export function ProgramCard({
           </div>
         ) : null}
 
-        <Separator className="my-3" />
+        <Separator className="my-2.5" />
 
-        <div className="mt-2 space-y-2">
+        <div className="mt-2 space-y-1.5">
           <div className="flex items-baseline justify-between text-sm">
-            <span className="font-medium">Progress</span>
+            <span className="font-medium">Fundraising Progress</span>
             <span className="tabular-nums text-muted-foreground">
               {money(raised)} / {money(goal)}{asOfText ? ` · ${asOfText}` : ""}
             </span>
@@ -124,10 +134,16 @@ export function ProgramCard({
         </div>
       </CardContent>
 
-      <CardFooter className="px-5 pb-5 pt-0 flex justify-end">
+      <CardFooter className="px-4 pb-4 pt-0 flex justify-end">
         {ctaHref ? (
           <Button size="sm" asChild>
-            <a href={ctaHref} target="_blank" rel="noopener noreferrer">{ctaLabel}</a>
+            <a
+              href={ctaHref}
+              target={ctaTarget}
+              rel={ctaTarget === "_blank" ? "noopener noreferrer" : undefined}
+            >
+              {ctaLabel}
+            </a>
           </Button>
         ) : (
           <Button size="sm" onClick={onCtaClick} disabled={!onCtaClick}>

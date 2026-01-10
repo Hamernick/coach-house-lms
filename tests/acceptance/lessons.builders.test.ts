@@ -26,6 +26,7 @@ describe("lessons builders", () => {
       { label: "Intro", type: "subtitle" },
       { label: "Satisfaction", type: "slider", min: 1, max: 5, step: 1 },
       { label: "Colors", type: "multi_select", options: [" red ", "", " blue "] },
+      { label: "Budget", type: "budget_table", options: [" Staff ", " Supplies "] },
     ]
     const schema = buildAssignmentSchema(fields as any)
     expect(schema).not.toBeNull()
@@ -35,6 +36,26 @@ describe("lessons builders", () => {
     expect(schema!.fields[1]).toMatchObject({ type: "slider", min: 1, max: 5, step: 1 })
     const multi = schema!.fields.find((f: any) => f.type === "multi_select") as any
     expect(multi.options).toEqual(["red", "blue"])
+    const budget = schema!.fields.find((f: any) => f.type === "budget_table") as any
+    expect(budget.rows).toEqual([
+      {
+        category: "Staff",
+        description: "",
+        costType: "",
+        unit: "",
+        units: "",
+        costPerUnit: "",
+        totalCost: "",
+      },
+      {
+        category: "Supplies",
+        description: "",
+        costType: "",
+        unit: "",
+        units: "",
+        costPerUnit: "",
+        totalCost: "",
+      },
+    ])
   })
 })
-

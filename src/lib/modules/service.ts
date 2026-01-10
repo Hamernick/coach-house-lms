@@ -125,7 +125,7 @@ export async function getClassModulesForUser({
   for (const [t, u] of linkPairs) {
     const title = (t ?? '').trim()
     const url = (u ?? '').trim()
-    if (!title && !url) continue
+    if (!url) continue
     const label = title || url
     classResources.push({ label, url, provider: inferResourceProvider(url) })
   }
@@ -195,10 +195,8 @@ export async function getClassModulesForUser({
         .map((resource) => {
           if (!resource || typeof resource !== "object") return null
           const r = resource as { label?: unknown; url?: unknown }
-          const labelRaw = typeof r.label === "string" ? r.label : ""
-          const urlRaw = typeof r.url === "string" ? r.url : ""
-          const label = labelRaw.trim().length > 0 ? labelRaw.trim() : urlRaw.trim()
-          const url = urlRaw.trim()
+          const label = typeof r.label === "string" ? r.label.trim() : ""
+          const url = typeof r.url === "string" ? r.url.trim() : ""
           if (!label && !url) return null
           return {
             label: label || url,

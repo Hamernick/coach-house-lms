@@ -146,7 +146,7 @@ export function Home2PhotoStrip({ items, className }: Home2PhotoStripProps) {
         className={cn(
           "drag-scroll no-scrollbar flex items-end gap-6 overflow-x-auto overflow-y-visible pb-6 pt-3",
           "cursor-grab select-none touch-pan-y",
-          "[--first-card:20rem] sm:[--first-card:22rem] lg:[--first-card:26rem]",
+          "[--first-card:14rem] sm:[--first-card:16rem] lg:[--first-card:18rem]",
         )}
         style={{
           scrollPaddingLeft: "calc(50vw - var(--first-card) / 2)",

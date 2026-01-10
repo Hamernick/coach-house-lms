@@ -146,9 +146,13 @@ export function useLessonWizard({ open, mode = "create", initialPayload = null, 
         const type = normalizeFormFieldType(field.type)
         const placeholder = typeof field.placeholder === "string" ? field.placeholder : ""
         const description = typeof field.description === "string" ? field.description : ""
-        const options = Array.isArray(field.options)
-          ? field.options.map((option) => String(option).trim()).filter(Boolean)
-          : []
+        const rawOptions = Array.isArray(field.options) ? field.options : []
+        const options = type === "budget_table"
+          ? rawOptions
+          : rawOptions
+              .filter((option): option is string => typeof option === "string")
+              .map((option) => option.trim())
+              .filter(Boolean)
         const min = toNumberOrNull(field.min)
         const max = toNumberOrNull(field.max)
         const step = toNumberOrNull(field.step)

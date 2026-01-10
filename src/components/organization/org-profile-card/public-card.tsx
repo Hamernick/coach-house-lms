@@ -85,12 +85,15 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
   )
 
   const staff = people.filter((p) => p.category === "staff")
-  const board = people.filter((p) => p.category === "board")
-  const supporters = people.filter((p) => p.category === "supporter")
+  const governingBoard = people.filter((p) => p.category === "governing_board")
+  const advisoryBoard = people.filter((p) => p.category === "advisory_board")
+  const supporters = people.filter((p) => p.category === "supporters")
+  const volunteers = people.filter((p) => p.category === "volunteers")
+  const supporterRoster = [...supporters, ...volunteers]
 
   const hasPrograms = programs.length > 0
-  const hasPeople = staff.length > 0 || board.length > 0
-  const hasSupporters = supporters.length > 0
+  const hasPeople = staff.length > 0 || governingBoard.length > 0 || advisoryBoard.length > 0
+  const hasSupporters = supporterRoster.length > 0
 
   const description = typeof profile.description === "string" ? stripHtml(profile.description) : ""
   const mission = typeof profile.mission === "string" ? stripHtml(profile.mission) : ""
@@ -287,23 +290,32 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
             <FormRow title="Team" description="Who leads the work" inset={false}>
               <PeopleShowcase people={staff} allPeople={people} emptyMessage="" variant="public" />
             </FormRow>
-            {(board.length > 0 || hasSupporters || hasValue(profile.boilerplate)) ? <Separator /> : null}
+            {(governingBoard.length > 0 || advisoryBoard.length > 0 || hasSupporters || hasValue(profile.boilerplate)) ? <Separator /> : null}
           </>
         ) : null}
 
-        {board.length > 0 ? (
+        {governingBoard.length > 0 ? (
           <>
-            <FormRow title="Board" description="Governance & advisors" inset={false}>
-              <PeopleShowcase people={board} allPeople={people} emptyMessage="" variant="public" />
+            <FormRow title="Governing board" description="Governance" inset={false}>
+              <PeopleShowcase people={governingBoard} allPeople={people} emptyMessage="" variant="public" />
             </FormRow>
-            {hasSupporters || boilerplate.trim().length > 0 ? <Separator /> : null}
+            {(advisoryBoard.length > 0 || hasSupporters || boilerplate.trim().length > 0) ? <Separator /> : null}
+          </>
+        ) : null}
+
+        {advisoryBoard.length > 0 ? (
+          <>
+            <FormRow title="Advisory board" description="Advisors and subject matter experts" inset={false}>
+              <PeopleShowcase people={advisoryBoard} allPeople={people} emptyMessage="" variant="public" />
+            </FormRow>
+            {(hasSupporters || boilerplate.trim().length > 0) ? <Separator /> : null}
           </>
         ) : null}
 
         {hasSupporters ? (
           <>
-            <FormRow title="Supporters" description="Partners and champions" inset={false}>
-              <SupportersShowcase supporters={supporters} allPeople={people} emptyMessage="" variant="public" />
+            <FormRow title="Supporters" description="Foundations, corporate partners, and volunteers" inset={false}>
+              <SupportersShowcase supporters={supporterRoster} allPeople={people} emptyMessage="" variant="public" />
             </FormRow>
             {boilerplate.trim().length > 0 ? <Separator /> : null}
           </>

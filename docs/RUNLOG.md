@@ -1060,3 +1060,946 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2025-12-31 — Codex session (Home2 photo strip images)
 
 - UI: swapped the photo strip placeholders to the provided Lummi image URLs (`src/app/(public)/home2/page.tsx`).
+
+## 2025-12-31 — Codex session (Accelerator shell + landing copy)
+
+- UI: updated landing hero copy and created a new Accelerator route group with its own shell, sidebar, and overview layout (`src/app/(public)/home2/page.tsx`, `src/app/(accelerator)/layout.tsx`, `src/app/(accelerator)/page.tsx`, `src/components/accelerator/accelerator-shell.tsx`, `src/components/accelerator/accelerator-sidebar.tsx`).
+- UI: replaced the sidebar Accelerator label with a button linking into the new Accelerator experience (`src/components/app-sidebar.tsx`).
+
+## 2025-12-31 — Codex session (Accelerator route fix)
+
+- Fix: moved the Accelerator overview page under the `/accelerator` segment to avoid route collisions with `/` (`src/app/(accelerator)/accelerator/page.tsx`).
+
+## 2026-01-06 — Codex session (Accelerator shell refactor)
+
+- UI: rebuilt the Accelerator shell and sidebar on the shadcn sidebar primitives, refreshed the overview layout to match the control-center design, and tightened auth data exposure (`src/components/accelerator/accelerator-shell.tsx`, `src/components/accelerator/accelerator-sidebar.tsx`, `src/app/(accelerator)/accelerator/page.tsx`, `src/app/(accelerator)/layout.tsx`).
+- UI: moved Resources/Support navigation into the sidebar footer area (`src/components/app-sidebar.tsx`).
+
+## 2026-01-06 — Codex session (Accelerator polish + status page)
+
+- UI: made the Accelerator shell/theme tokens consistent, removed the header pill/label, and wired scroll-spy highlighting for the overview sections (`src/components/accelerator/accelerator-shell.tsx`, `src/components/accelerator/accelerator-sidebar.tsx`).
+- UI: restored the curriculum dropdown to the shared ClassesSection design and updated the overview cards to use theme tokens (`src/components/accelerator/accelerator-sidebar.tsx`, `src/app/(accelerator)/accelerator/page.tsx`).
+- UI: linked the status card to a new public status page (`src/app/(accelerator)/accelerator/page.tsx`, `src/app/(public)/status/page.tsx`).
+
+## 2026-01-06 — Codex session (Accelerator class routing)
+
+- UI: routed accelerator curriculum links through `/accelerator/class/*` and reused existing class/module pages inside the accelerator shell (`src/components/app-sidebar/classes-section.tsx`, `src/components/app-sidebar/nav-data.ts`, `src/components/accelerator/accelerator-sidebar.tsx`, `src/app/(accelerator)/accelerator/class/[slug]/page.tsx`, `src/app/(accelerator)/accelerator/class/[slug]/module/[index]/page.tsx`).
+
+## 2026-01-06 — Codex session (Budget table + deck retry)
+
+- Homework: added a new `budget_table` field type end-to-end (schemas, builders, admin wizard UX, module parsing, assignment UI, and submission sanitization), plus updated tests for the new type (`src/lib/lessons/types.ts`, `src/lib/lessons/fields.ts`, `src/lib/lessons/schemas.ts`, `src/lib/lessons/constants.ts`, `src/lib/lessons/builders.ts`, `src/lib/modules/types.ts`, `src/lib/modules/assignment.ts`, `src/components/training/module-detail/utils.ts`, `src/components/training/module-detail/assignment-form.tsx`, `src/app/api/modules/[id]/assignment-submission/route.ts`, `src/components/admin/lesson-wizard/steps/FormFieldsEditor.tsx`, `tests/acceptance/lessons.fields.test.ts`, `tests/acceptance/lessons.schemas.test.ts`, `tests/acceptance/lessons.builders.test.ts`).
+- Homework: seeded a multi-year budgeting homework prompt for the module (migration + seed) (`supabase/migrations/20260106123500_add_multi_year_budget_homework.sql`, `supabase/seed.sql`).
+- UI: improved deck download reliability by routing downloads through the API and added a visible retry state when the deck URL fetch fails (`src/components/training/module-detail/deck-viewer.tsx`, `src/components/training/module-detail/deck-viewer/view.tsx`).
+
+## 2026-01-06 — Codex session (Program budget table)
+
+- Homework: upgraded the budget table field to compute totals/subtotal, use cost type select, and present the exact column labels (`src/components/training/module-detail/assignment-form.tsx`).
+- Homework: allowed budget table options to carry row metadata through the lesson wizard, plus updated schema normalization/tests to accept structured options (`src/lib/lessons/types.ts`, `src/lib/lessons/schemas.ts`, `src/lib/lessons/builders.ts`, `src/hooks/lessons/use-lesson-wizard.ts`, `src/components/admin/lesson-wizard/steps/FormFieldsEditor.tsx`, `tests/acceptance/lessons.schemas.test.ts`).
+- Homework: seeded the Program_Expense_Breakdown table for the Budgeting for a Program module (migration + seed) (`supabase/migrations/20260106191500_add_program_budget_table.sql`, `supabase/seed.sql`).
+
+## 2026-01-06 — Codex session (Systems Thinking prompts)
+
+- Homework: cleared legacy resources/homework for Systems Thinking and enforced the five required prompts in the assignment schema (`supabase/migrations/20260106120000_update_systems_thinking_prompts.sql`).
+
+## 2026-01-06 — Codex session (Budget table fallback targeting)
+
+- Homework: added a fallback migration to locate the Budgeting for a Program module by class slug + index so the budget table schema always attaches even if the module slug differs (`supabase/migrations/20260106200000_fix_program_budget_table.sql`).
+- Seed: aligned the seed query with the same fallback targeting (`supabase/seed.sql`).
+
+## 2026-01-06 — Codex session (Deck preview card)
+
+- UI: replaced the inline PDF deck viewer with a compact preview card that opens the full viewer in a dialog (`src/components/training/module-detail/deck-viewer.tsx`).
+
+## 2026-01-06 — Codex session (Deck dialog layout)
+
+- UI: made the deck dialog full-bleed, removed header chrome, and moved the close button into the overlay next to download (`src/components/training/module-detail/deck-viewer.tsx`, `src/components/training/module-detail/deck-viewer/view.tsx`).
+
+## 2026-01-06 — Codex session (Accelerator header + home link)
+
+- UI: matched the accelerator header actions to the main shell (sidebar trigger, notifications, theme toggle, support) and moved the Home link into the sidebar above search (`src/components/accelerator/accelerator-shell.tsx`, `src/components/accelerator/accelerator-sidebar.tsx`).
+
+## 2026-01-07 — Codex session (Strategic Foundations copy refresh)
+
+- UI: hide empty resources so broken/blank resource URLs do not render (`src/components/training/module-detail.tsx`).
+- Curriculum: refreshed Strategic Foundations + Theory of Change module copy, prompts, and Systems Thinking guidance, plus aligned Program Budget table labels/instructions (new migration) (`supabase/migrations/20260107100000_update_strategic_foundations_copy.sql`).
+- Seed: mirrored the same curriculum copy, prompt, and budget table updates for new environments (`supabase/seed.sql`).
+
+## 2026-01-07 — Codex session (Admin UUID + pilot video)
+
+- Admin: replaced Node-only `randomUUID` usage with Edge-safe `crypto.randomUUID` fallback helper (`src/app/(admin)/admin/classes/actions/utils.ts`, `src/app/(admin)/admin/classes/actions/basic.ts`, `src/app/(admin)/admin/classes/actions/wizard-create.ts`, `src/app/(admin)/admin/classes/[id]/actions.ts`, `src/app/api/admin/classes/[id]/modules/route.ts`).
+- Curriculum: set the Designing Your Pilot video URL in module content (migration + seed) (`supabase/migrations/20260107102000_add_designing_pilot_video.sql`, `supabase/seed.sql`).
+
+## 2026-01-07 — Codex session (Deck viewer import fix)
+
+- UI: added missing Button import for the deck dialog close control (`src/components/training/module-detail/deck-viewer.tsx`).
+
+## 2026-01-07 — Codex session (Deck/progress layout)
+
+- UI: moved the assignment progress panel into a flexible header layout so it can sit beside the slide deck card when present, with optional header slot support (`src/components/training/module-detail/assignment-form.tsx`, `src/components/training/module-detail.tsx`).
+- UI: restyled the slide deck card to a vertical layout with tighter spacing (`src/components/training/module-detail/deck-viewer.tsx`).
+
+## 2026-01-07 — Codex session (Accelerator badge overlay)
+
+- UI: moved the curriculum highlight badge onto the gradient thumbnail (top-right overlay) (`src/app/(accelerator)/accelerator/page.tsx`).
+
+## 2026-01-07 — Codex session (Budget table UX)
+
+- UI: improved the Program Expense Breakdown table layout with better labeling, clearer instructions, currency inputs, and horizontal scrolling (`src/components/training/module-detail/assignment-form.tsx`).
+
+## 2026-01-07 — Codex session (Budget table QoL)
+
+- UI: added column resizing, row reordering, add-row action, sticky totals, and header/footer spacing improvements for the budget table, plus pill-style progress counts (`src/components/training/module-detail/assignment-form.tsx`).
+
+## 2026-01-07 — Codex session (Module header progress pill)
+
+- UI: replaced the module header progress line with a single pill-style “x of y completed” badge (`src/components/training/module-detail/module-header.tsx`).
+
+## 2026-01-07 — Codex session (Budget table polish)
+
+- UI: refined budget table header spacing, vertical dividers, rounded inputs, header add-row icon, and right-aligned save/status metadata (`src/components/training/module-detail/assignment-form.tsx`).
+
+## 2026-01-07 — Codex session (Budget table corner clipping)
+
+- UI: clipped the budget table to the rounded container and added rounded footer corners to avoid sharp edges on subtotal cells (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+- Next: verify corner rendering + sticky subtotal cell in the module budget table on wide and scrolled views.
+
+## 2026-01-07 — Codex session (Budget table resize + wrapping)
+
+- UI: removed fixed min-widths that caused overlap, added a wrapping textarea for descriptions with autosize, and ensured numeric inputs can shrink with column resizing (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+- Next: confirm column resizing no longer overlaps and description text wraps gracefully.
+
+## 2026-01-07 — Codex session (Budget table spacing + responsive width)
+
+- UI: tightened budget table header spacing, widened the responsive table container, and hid the visible subtotal label while keeping an accessible sr-only label (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+- Next: verify spacing above the table and responsive width behavior on mobile/desktop.
+
+## 2026-01-07 — Codex session (Budget table subtotal cell background)
+
+- UI: removed the explicit background on the sticky subtotal cell to avoid a visible block in the footer (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+- Next: confirm footer row background still reads well while the subtotal cell no longer looks boxed.
+
+## 2026-01-07 — Codex session (Budget table hint removal)
+
+- UI: removed the drag/resize helper hint text below the budget table (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Next module button alignment)
+
+- UI: moved the next module button to the right-side meta cluster and updated the step label to “x of y” (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Deck preview sizing)
+
+- UI: constrained the deck preview column to a smaller min/max width in the header layout so the preview stays compact (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Accelerator sidebar user menu)
+
+- UI: added the NavUser profile menu to the accelerator sidebar footer and allowed NavUser to render without its internal divider when needed (`src/components/accelerator/accelerator-sidebar.tsx`, `src/components/nav-user.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Accelerator sidebar links)
+
+- UI: removed Quickstart and Progress from the accelerator sidebar starter links (`src/components/accelerator/accelerator-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Accelerator roadmap route)
+
+- UI: routed the accelerator sidebar Roadmap link to a dedicated `/accelerator/roadmap` page and rendered the roadmap editor in the accelerator shell (`src/components/accelerator/accelerator-sidebar.tsx`, `src/app/(accelerator)/accelerator/roadmap/page.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Accelerator sidebar footer)
+
+- UI: removed the privacy note from the accelerator sidebar footer, leaving only the user menu (`src/components/accelerator/accelerator-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Accelerator quickstart card)
+
+- UI: made the quickstart card visually flat, removed the step badge, and updated the snippet copy to reflect nonprofit planning tools (`src/app/(accelerator)/accelerator/page.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Roadmap hero background selector)
+
+- UI: replaced the roadmap hero gradient fallback with a dot-grid background and added swatch controls for grid vs image upload (`src/components/roadmap/roadmap-shell.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Roadmap homework links)
+
+- UI: removed the "Open homework" links from roadmap section list items, leaving only the status pill (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Roadmap delete button)
+
+- UI: removed the visible "Delete" label from the roadmap delete button while keeping an accessible label (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Accelerator overview card merge)
+
+- UI: moved the "Next up" content and resume action into the completion card and removed the standalone Next up card (`src/app/(accelerator)/accelerator/page.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Accelerator support card alignment)
+
+- UI: aligned support cards by making the card links themselves flex containers and centering their contents (`src/app/(accelerator)/accelerator/page.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Accelerator program builder section)
+
+- UI: replaced curriculum highlights with a program builder preview, including a large create-program empty state and template cards (`src/app/(accelerator)/accelerator/page.tsx`).
+- UI: added an optional CTA target for program cards to allow same-tab navigation (`src/components/programs/program-card.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Dashboard kanban layout)
+
+- UI: hid the dashboard notifications card when empty and removed its empty-state copy (`src/components/dashboard/dashboard-notifications-card.tsx`).
+- UI: removed the accelerator progress radial card and reorganized the dashboard into three kanban-style columns (`src/app/(dashboard)/dashboard/page.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Dashboard redesign)
+
+- UI: redesigned the dashboard layout into a multi-row snapshot with org status, public reach, brand kit preview, people composition, and a full-bleed map card (`src/app/(dashboard)/dashboard/page.tsx`).
+- UI: removed the kanban layout and unused accelerator progress calculation (`src/app/(dashboard)/dashboard/page.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Accelerator completion card)
+
+- UI: simplified the completion/next-up card into a shorter horizontal layout and moved the resume button to a right-aligned footer (`src/app/(accelerator)/accelerator/page.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Dashboard sidebar label)
+
+- UI: changed the dashboard sidebar sublabel from “Accelerator” to “Dashboard” (`src/components/app-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Dashboard sidebar label tweak)
+
+- UI: updated the dashboard sidebar sublabel to “Platform” (`src/components/app-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Deck preview width)
+
+- UI: constrained the assignment header deck preview to a compact max width on desktop (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Origin story formatting)
+
+- Content: updated origin story lesson notes to add hierarchy and line breaks (`supabase/migrations/20260107153000_update_origin_story_hierarchy.sql`, `supabase/seed.sql`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Lesson notes hierarchy)
+
+- Content: standardized lesson notes formatting for core modules and demo foundations modules, plus a migration to update existing data (`supabase/migrations/20260107100000_update_strategic_foundations_copy.sql`, `supabase/migrations/20251002124500_seed_foundations_class.sql`, `supabase/migrations/20260107173000_format_lesson_notes.sql`, `supabase/seed.sql`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Assignment form flow)
+
+- UX: centered long-text labels, moved AI assist into the editor toolbar, and reduced status layout shifts in assignment submissions (`src/components/training/module-detail/assignment-form.tsx`, `src/components/rich-text-editor.tsx`, `src/components/training/module-detail/use-assignment-submission.ts`).
+- UX: added scroll-snap spacing for assignment sections and extra breathing room in tabbed prompts (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Assignment scroll + assist)
+
+- UX: moved autosave submissions to silent mode, centered long-form labels, and added step-style scroll snapping for non-tabbed prompts (`src/components/training/module-detail/assignment-form.tsx`, `src/components/training/module-detail/use-assignment-submission.ts`, `src/components/rich-text-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Autosave guard)
+
+- UX: skipped autosave when assignment values match the current saved state to avoid redundant submissions (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Brand link previews)
+
+- UI: render brand kit image URLs as thumbnail previews instead of plain links (`src/components/organization/org-profile-card/shared.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Program builder aspect ratio)
+
+- UI: aligned the empty program builder state and program template cards to the same aspect ratio on the accelerator overview (`src/app/(accelerator)/accelerator/page.tsx`, `src/components/programs/program-card.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Completion card width)
+
+- UI: expanded the completion card to full width and removed the module detail line (`src/app/(accelerator)/accelerator/page.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Roadmap program preview)
+
+- UI: hid the roadmap hero editor in the accelerator roadmap view and replaced it with a program preview card, using the latest program when available (`src/components/roadmap/roadmap-shell.tsx`, `src/app/(accelerator)/accelerator/roadmap/page.tsx`, `src/components/programs/program-card.tsx`).
+- Tests: not run.
+
+## 2026-01-07 — Codex session (Fundraising label)
+
+- UI: updated the program card progress label to “Fundraising Progress” (`src/components/programs/program-card.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Systems thinking + budgeting updates)
+
+- Data: refreshed Systems Thinking copy/prompts and removed resource links via migrations + seed alignment (`supabase/migrations/20260108113000_update_systems_thinking_reflection.sql`, `supabase/seed.sql`).
+- Data: expanded multi-year budgeting homework schema and updated program budget categories, plus new migration for live DB updates (`supabase/migrations/20260108120000_update_budgeting_homework.sql`, `supabase/seed.sql`).
+- UI: allowed resource entries without URLs to render as “Link coming soon” and preserved description line breaks (`src/lib/modules/service.ts`, `src/components/training/module-detail.tsx`, `src/components/training/resources-card.tsx`, `src/components/training/module-detail/assignment-form.tsx`).
+- UX: added reliable slide deck downloads with inline error + retry feedback (`src/components/training/module-detail/deck-viewer/view.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Roadmap homework linkage)
+
+- UI: surfaced homework status + link per roadmap section and added homework labels in the section list (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Roadmap homework hidden)
+
+- UI: removed roadmap homework indicators/links from the editor and mini tracker to keep sections content-focused (`src/components/roadmap/roadmap-editor.tsx`, `src/components/roadmap/roadmap-mini-tracker.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Pilot resources + multi-year video)
+
+- Data: removed the Designing Your Pilot resource link and added the multi-year budgeting video URL (new migrations + seed updates in `supabase/migrations/20260108132000_remove_designing_pilot_resource.sql`, `supabase/migrations/20260108132500_add_multi_year_budget_video.sql`, `supabase/seed.sql`).
+- UI: hide assignment progress panel when a module only has a single step (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Fundraising + comms homework copy)
+
+- Data: updated AI The Need instructions (four prompts) and added budgeting/financial lesson notes (org budget, bookkeeping, financial statements) in seed + migration (`supabase/seed.sql`, `supabase/migrations/20260109140000_add_fundraising_comms_homework.sql`).
+- Data: added fundraising fundamentals and communications strategy homework schemas across modules (`supabase/seed.sql`, `supabase/migrations/20260109140000_add_fundraising_comms_homework.sql`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Apply fundraising/comms homework to live slugs)
+
+- Data: applied fundraising and communications homework to session-s7-mindset and session-s8-comms-as-mission modules, plus budgeting/financial notes for session-s6 (`supabase/migrations/20260109152000_update_fundraising_comms_session_classes.sql`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Module stepper redesign)
+
+- UI: added shared assignment section helper and a new module stepper that sequences video, deck, notes/resources, assignments, and a celebration step (`src/components/training/module-detail/assignment-sections.ts`, `src/components/training/module-detail/module-stepper.tsx`, `src/components/training/module-detail.tsx`).
+- UI: added stepper mode to AssignmentForm (single-section render, no internal progress panel/tabs) (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Module stepper alignment tweak)
+
+- UI: centered the step header while keeping step content left-aligned (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Module header + stepper rail)
+
+- UI: moved module title/subtitle into the accelerator shell header via a header title portal (`src/components/header-title-portal.tsx`, `src/components/accelerator/accelerator-shell.tsx`, `src/components/training/module-detail/module-header.tsx`, `src/components/training/module-detail.tsx`).
+- UI: added a gradient progress rail behind step dots and increased spacing (`src/components/training/module-detail/module-stepper.tsx`).
+- UI: added the Aceternity timeline component for the animated rail styling reference (`src/components/ui/timeline.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Stepper rail spacing)
+
+- UI: padded the stepper rail container and made step buttons opaque to avoid clipping/see-through (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Module step frames)
+
+- UI: added fixed-aspect step frames for video, deck, and assignment steps to keep consistent sizing across the stepper (`src/components/training/module-detail/module-stepper.tsx`, `src/components/training/module-detail/video-section.tsx`, `src/components/training/module-detail/deck-viewer.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Stepper scroll centering)
+
+- UI: auto-center the active step dot and added extra rail padding to prevent clipping (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Stepper rail fade)
+
+- UI: added edge fade overlays and scroll-state tracking so long step rails fade in/out when overflowing (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Stepper rail alignment)
+
+- UI: constrained the step rail to the center points of the first/last dots using CSS variables (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Celebration step polish)
+
+- UI: centered celebration copy, simplified to a single gradient icon, and played a one-time completion chime (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Module stepper badge)
+
+- UI: replaced the step counter with a progress badge in the module stepper header (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Resource card redesign + substack link)
+
+- UI: redesigned module resources into square resource cards with icon + CTA button (`src/components/training/resources-card.tsx`).
+- Data: ensured the strategic foundations intro module includes the Coach House Substack resource link (`supabase/migrations/20260108190000_update_foundations_substack_resource.sql`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Accelerator sidebar active state)
+
+- UI: defaulted the accelerator starter nav to Overview when landing on `/accelerator` without a hash (`src/components/accelerator/accelerator-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Deck dialog title)
+
+- UI: added an sr-only dialog title to the deck viewer for accessibility (`src/components/training/module-detail/deck-viewer.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Stepper frame container)
+
+- UI: removed the absolute step-frame wrapper so content stretches naturally inside the fixed aspect frame (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Stepper polish + checklist status)
+
+- UI: added a step count badge, focus-visible styling, and module-level celebration reset in the module stepper (`src/components/training/module-detail/module-stepper.tsx`).
+- UI: enriched resource cards with provider/host meta labels, a consistent disabled CTA for missing links, and focus ring styling (`src/components/training/resources-card.tsx`).
+- Docs: annotated the updates checklist with done/pending status markers (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Deck preview frame fix)
+
+- UI: ensured the frame-mode deck preview container fills the step frame height so the preview canvas renders (`src/components/training/module-detail/deck-viewer.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Resource card sizing)
+
+- UI: centered resource cards and constrained them to a smaller square footprint (`src/components/training/resources-card.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Grid pattern dark mode)
+
+- UI: tuned grid pattern strokes to render white in dark mode (`src/components/ui/shadcn-io/grid-pattern/index.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Module header/stepper badge removal)
+
+- UI: removed the module progress badge from the module header and the step count badge from the module stepper (`src/components/training/module-detail/module-header.tsx`, `src/components/training/module-detail/module-stepper.tsx`, `src/components/training/module-detail.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Stepper nav + deck trigger)
+
+- UI: moved stepper previous/next controls to sit on either side of the step dots (`src/components/training/module-detail/module-stepper.tsx`).
+- UI: relocated the slide deck dialog trigger above-left of the deck frame and removed the overlay trigger (`src/components/training/module-detail/module-stepper.tsx`, `src/components/training/module-detail/deck-viewer.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Deck dialog header controls)
+
+- UI: added app-shell action buttons to the deck dialog overlay and improved the dialog framing/loading feedback (`src/components/training/module-detail/module-stepper.tsx`, `src/components/training/module-detail/deck-viewer.tsx`, `src/components/training/module-detail/deck-viewer/view.tsx`, `src/components/training/module-detail.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Stepper dot status styling)
+
+- UI: aligned module step dots with sidebar progress styling (dashed amber for in-progress, green check for complete, muted for not started) (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Electives separator)
+
+- UI: added a sidebar separator above the Electives class entry in the accelerator list (`src/components/app-sidebar/classes-section.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Stepper header text)
+
+- UI: replaced the step label with the module title/subtitle in the stepper header and centered the text (`src/components/training/module-detail/module-stepper.tsx`, `src/components/training/module-detail.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Program card sizing)
+
+- UI: removed the outer program preview wrapper in the roadmap shell and tightened ProgramCard spacing/hero aspect to reduce overall height (`src/components/roadmap/roadmap-shell.tsx`, `src/components/programs/program-card.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Accelerator overview polish)
+
+- UI: fixed Shift+Enter soft breaks in the rich text editor and reworked accelerator overview layout, progress placement, and program builder card row (`src/components/rich-text-editor.tsx`, `src/app/(accelerator)/accelerator/page.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Quickstart placeholder)
+
+- UI: replaced the quickstart code snippet with a compact placeholder card on the accelerator overview page (`src/app/(accelerator)/accelerator/page.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Sidebar group alignment)
+
+- UI: removed extra horizontal padding on accelerator sidebar groups to re-center the navigation list (`src/components/accelerator/accelerator-sidebar.tsx`, `src/components/app-sidebar/classes-section.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Program builder card height)
+
+- UI: increased the accelerator program builder card row height to reduce cramped layouts (`src/app/(accelerator)/accelerator/page.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Curriculum call card)
+
+- UI: replaced the accelerator quickstart placeholder with a curriculum call scheduling card that surfaces the 4-call limit and upgrade tag (`src/app/(accelerator)/accelerator/page.tsx`, `src/components/accelerator/accelerator-schedule-card.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Schedule card alignment)
+
+- UI: centered the curriculum call card content for a more balanced layout (`src/components/accelerator/accelerator-schedule-card.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Inline deck controls)
+
+- UI: enabled slide deck overlay controls inside the step frame by rendering the full deck presentation inline and keeping render hooks active outside the dialog (`src/components/training/module-detail/deck-viewer.tsx`, `src/components/training/module-detail/deck-viewer/view.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Accelerator hydration fix)
+
+- Fix: forced the accelerator overview page to render dynamically to prevent stale ISR markup mismatching the client bundle (`src/app/(accelerator)/accelerator/page.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Accelerator nav active state)
+
+- UI: pinned the overview nav highlight on `/accelerator` by ordering section visibility updates in the sidebar observer (`src/components/accelerator/accelerator-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Checklist sync)
+
+- Docs: marked completed backlog items per latest status update in the checklist (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Org documents expansion)
+
+- UI/Data: expanded private documents to cover incorporation, bylaws, registration, good standing, W-9, and tax exempt certificates, and extended the document upload API to accept the new kinds (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`, `src/app/(dashboard)/my-organization/page.tsx`, `src/app/api/account/org-documents/route.ts`, `src/components/organization/org-profile-card/types.ts`).
+- Data: added a migration to attach the Board Engagement handbook resource (`supabase/migrations/20260109180000_update_board_handbook_resource.sql`).
+- Docs: marked the documents checklist and board resource as done (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-08 — Codex session (Notifications cleanup)
+
+- UI: moved toast notifications to top-right and removed the placeholder comments tab from the notifications menu (`src/components/providers/app-providers.tsx`, `src/components/notifications/notifications-menu.tsx`).
+- Docs: updated checklist statuses for people roles, notifications, and People action button label (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Supporters foundations + logos)
+
+- People: added a Supporters category (foundation/corporate supporters), including normalization keywords and color tokens (`src/lib/people/categories.ts`).
+- Org profile: renamed the Supporters tab, split Supporters vs Volunteers sections, and updated the public profile to show supporters alongside volunteers (`src/components/organization/org-profile-card/org-profile-card.tsx`, `src/components/organization/org-profile-card/tabs/supporters-tab.tsx`, `src/components/organization/org-profile-card/public-card.tsx`).
+- UI: render supporter logos in squared, contained avatars for supporter rows (`src/components/people/person-item.tsx`, `src/components/people/supporters-showcase.tsx`).
+- Fix: add Supporters lane handling to the org chart canvas and guard unknown categories to avoid runtime crashes (`src/components/people/org-chart-canvas.tsx`).
+- Docs: marked supporters/foundations item complete (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Accelerator sidebar active state)
+
+- UI: only highlight the Accelerator sidebar group label when the current route starts with `/accelerator` (`src/components/app-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (People drawer)
+
+- UI: converted the People add/edit dialog into a right-side sheet tray (`src/components/people/create-person-dialog.tsx`).
+- UI: refreshed the People drawer step layout with a progress header, cleaner spacing, and a pinned action bar (`src/components/people/create-person-dialog.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Home2 hero flip words)
+
+- UI: replaced the HomeTwo hero headline with a flip-words treatment and left-aligned copy within a centered container (`src/app/(public)/home2/page.tsx`, `src/components/ui/flip-words.tsx`).
+- UI: widened the hero text column, switched the hero typography to Inter, and kept “with Coach House” on the same line (`src/app/(public)/home2/page.tsx`).
+- UI: updated the first studio card title and swapped its icon to a training-focused glyph (`src/app/(public)/home2/page.tsx`).
+- UI: retitled the coaching card to emphasize 1:1 expert sessions (`src/app/(public)/home2/page.tsx`).
+- UI: updated the studio eyebrow copy to “Everything in one place” (`src/app/(public)/home2/page.tsx`).
+- UI: set hero headline color treatment per theme and softened to regular weight (`src/app/(public)/home2/page.tsx`).
+- UI: tightened hero tracking, reduced headline size, and bolded “Coach House” (`src/app/(public)/home2/page.tsx`).
+- UI: refreshed hero subcopy to be more platform-forward and highlight funding roadmaps, discovery tools, and community (`src/app/(public)/home2/page.tsx`).
+- UI: refined the hero subcopy to position Coach House as the platform for nonprofit founders through funder readiness (`src/app/(public)/home2/page.tsx`).
+- UI: tightened the hero subcopy to a concise “platform for NFP founders and grassroots organizations” line (`src/app/(public)/home2/page.tsx`).
+- UI: restored the full hero subcopy with the “from formation through funder readiness” clause (`src/app/(public)/home2/page.tsx`).
+- UI: revised the hero subcopy to include founders, operators, and grassroots organizations with “formation to funding” language (`src/app/(public)/home2/page.tsx`).
+- UI: centered the left-aligned hero group within the section container (`src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Public header scroll)
+
+- UI: removed sticky positioning from the public header so it scrolls with the page (`src/components/public/public-header.tsx`).
+- UI: restored sticky positioning with top spacing so the public header stays visible while scrolling (`src/components/public/public-header.tsx`).
+- Fix: made the public header a server component to avoid hydration mismatches (`src/components/public/public-header.tsx`).
+- Fix: removed the top-level overflow clipping in HomeTwo so the sticky public header can stay visible while scrolling (`src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Home page copy cleanup)
+
+- Copy: removed “studio” language across public home pages and updated metadata wording (`src/app/(public)/page.tsx`, `src/app/(public)/home/page.tsx`, `src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (News posts)
+
+- Content: added three new news posts using the AI post layout as a template (`src/app/(public)/news/funding-roadmaps/page.tsx`, `src/app/(public)/news/formation-to-funding/page.tsx`, `src/app/(public)/news/grassroots-discovery/page.tsx`).
+- UI: linked the HomeTwo library cards to the new posts and refreshed card copy (`src/app/(public)/home2/page.tsx`).
+- UI: updated the News index sidebar cards to feature the new posts (`src/app/(public)/news/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Home2 product highlights)
+
+- UI: converted the HomeTwo news feature cards into compact product highlight cards with centered icons and new copy (`src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Home2 scroll pacing)
+
+- UI: introduced scroll-reveal sections and normalized vertical pacing across the HomeTwo layout (`src/components/public/section-reveal.tsx`, `src/app/(public)/home2/page.tsx`).
+- UI: strengthened the scroll pacing with snap-friendly sections, a dedicated scroll container, and consistent section padding (`src/components/public/section-reveal.tsx`, `src/app/(public)/home2/page.tsx`).
+- UI: increased section padding to keep main sections evenly spaced (`src/components/public/section-reveal.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Photo strip hero)
+
+- UI: updated the first photo strip card to a vertical aspect and swapped in the provided avatar image (`src/app/(public)/home2/page.tsx`).
+- UI: reduced the primary photo strip card width for a thinner vertical profile (`src/components/public/home2-photo-strip.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Flip words clipping)
+
+- UI: removed overflow clipping on the flip-words container to prevent visible hard edges during blur transitions (`src/components/ui/flip-words.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Home2 news header)
+
+- UI: added a left-aligned News title above the HomeTwo news card grid (`src/app/(public)/home2/page.tsx`).
+- UI: moved the partner proof paragraph above the product highlight cards (`src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Brand link cleanup)
+
+- UI: removed the “Open image” link from brand asset previews (`src/components/organization/org-profile-card/shared.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Home2 team callout)
+
+- UI: stacked the “Meet the team” callout beside the photo strip and tightened the lead card width for a slimmer vertical profile (`src/app/(public)/home2/page.tsx`, `src/components/public/home2-photo-strip.tsx`).
+- UI: overlayed the team callout on large screens so the photo strip stays aligned and doesn’t shift left (`src/app/(public)/home2/page.tsx`).
+- UI: swapped the second photo strip card to the provided Joel image and matched its width/height to the main portrait card (`src/app/(public)/home2/page.tsx`).
+- UI: restored the strip offset padding and ensured the strip layers above the callout text while scrolling (`src/app/(public)/home2/page.tsx`).
+- Docs: noted landing page redesign progress in the checklist (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Public header wordmark)
+
+- UI: set the public header wordmark to Inter Black with a larger size for stronger branding (`src/components/public/public-header.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Photo strip image swap)
+
+- UI: switched the Demo night photo strip card to the Joel PNG asset (`src/app/(public)/home2/page.tsx`).
+- UI: made the photo strip full-bleed on the left while preserving the right bleed so the first card centers in the viewport (`src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Home2 scroll video)
+
+- Fix: restored the scroll animation for the Home2 video by listening to the page’s scroll container instead of the window (`src/components/public/home2-scroll-video.tsx`).
+- Fix: removed per-frame video sampling and tightened the glow effect to reduce GPU/CPU load and prevent Chrome artifacting (`src/components/public/home2-scroll-video.tsx`).
+- Fix: limited scroll updates to when the video section is intersecting the viewport for smoother 60fps scrolling (`src/components/public/home2-scroll-video.tsx`).
+- Perf: preloaded the hero poster, deferred video fetching until the section nears the viewport, and switched to `preload="auto"` once loading is requested (`src/app/(public)/home2/head.tsx`, `src/components/public/home2-scroll-video.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Home2 process cards)
+
+- UI: wrapped the process step numbers in rounded cards with a badge-style step marker for clearer hierarchy (`src/app/(public)/home2/page.tsx`).
+- UI: removed the redundant “3 steps” label from the process card header (`src/app/(public)/home2/page.tsx`).
+- UI: reverted the process rows to plain layout while keeping only the step numbers in rounded badges (`src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Home2 intro statement)
+
+- UI: added a text-generate effect component and rewrote the intro statement as a title-sized section beneath the video (`src/components/ui/text-generate-effect.tsx`, `src/app/(public)/home2/page.tsx`).
+- UI: tightened spacing between the hero video and the new intro section (`src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Program card grid)
+
+- UI: darkened the program card grid pattern so the template state reads with more contrast (`src/components/programs/program-card.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Accelerator nav label)
+
+- UI: renamed the accelerator sidebar “Home” link to “Return to dashboard” for clearer navigation (`src/components/accelerator/accelerator-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Curriculum call section)
+
+- UI: converted the curriculum call card to a horizontal shadcn-style layout and moved it into its own section above the program builder (`src/components/accelerator/accelerator-schedule-card.tsx`, `src/app/(accelerator)/accelerator/page.tsx`).
+- UI: hid the duplicate call card in the hero grid on large screens to keep a single primary section (`src/app/(accelerator)/accelerator/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Program wizard tray)
+
+- UI: replaced the program wizard dialog with a right-side sheet tray and reused it everywhere create/edit program is triggered (`src/components/programs/program-wizard.tsx`).
+- UI: removed redundant close buttons inside wizard steps to align with the sheet chrome (`src/components/programs/program-wizard/steps/basics-step.tsx`, `src/components/programs/program-wizard/steps/schedule-step.tsx`, `src/components/programs/program-wizard/steps/funding-step.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Accelerator label styling)
+
+- UI: restyled the accelerator group label as a proper sidebar menu button for consistent hover/active states (`src/components/app-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Home2 spacing)
+
+- UI: nudged the “Who we are” section up to balance spacing between the video and the next block (`src/app/(public)/home2/page.tsx`).
+- UI: increased spacing around the “Who we are” section and replaced the copy with the shorter headline using the text-generate effect (`src/app/(public)/home2/page.tsx`).
+- UI: expanded default vertical padding for all Home2 sections to increase overall spacing (`src/components/public/section-reveal.tsx`).
+- UI: increased the default section padding again to create more separation between the mid-page sections (`src/components/public/section-reveal.tsx`).
+- UI: added extra padding and larger internal gaps for the Core offering, Everything in one place, Process, and News sections (`src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Roadmap editor + org chart + global search)
+
+- Roadmap: enabled inline image uploads in the roadmap editor and added local draft persistence to prevent refresh data loss (`src/components/rich-text-editor.tsx`, `src/components/roadmap/roadmap-editor.tsx`).
+- Roadmap: moved section deletion into per-section overflow menus and added a mobile actions menu (`src/components/roadmap/roadmap-editor.tsx`).
+- People: added category lane labels and refined the org chart skeleton to match the updated canvas (`src/components/people/org-chart-canvas.tsx`, `src/components/people/org-chart-skeleton.tsx`).
+- Search: introduced a global Cmd+K search palette with navigation targets and wired it into dashboard/accelerator shells (`src/components/global-search.tsx`, `src/components/dashboard/dashboard-shell.tsx`, `src/components/accelerator/accelerator-shell.tsx`).
+- Dependencies: added TipTap image extension (`package.json`, `package-lock.json`).
+- Docs: updated checklist progress for onboarding, org chart, roadmap edits, and global search (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Global search gating + styling)
+
+- Search: gated accelerator results to accelerator context, added class/module indexing, and kept platform links outside the accelerator (`src/components/global-search.tsx`, `src/components/accelerator/accelerator-shell.tsx`, `src/components/dashboard/dashboard-shell.tsx`).
+- UI: restyled the command palette to match the dark, rounded command UI pattern and extended command component options (`src/components/global-search.tsx`, `src/components/ui/command.tsx`).
+- Docs: updated checklist notes for the global search progress (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Accelerator call card cleanup)
+
+- UI: removed the duplicate curriculum call card from the overview grid and retitled the section label to “Book a meeting” (`src/app/(accelerator)/accelerator/page.tsx`).
+- UI: aligned the schedule card eyebrow to the updated label (`src/components/accelerator/accelerator-schedule-card.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Accelerator sidebar cleanup)
+
+- UI: removed the inline curriculum search input from the accelerator sidebar header now that the global search palette is the primary entry (`src/components/accelerator/accelerator-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Global search button sizing)
+
+- UI: widened the header search trigger for a longer, more prominent pill (`src/components/global-search.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Accelerator sidebar spacing)
+
+- UI: added a separator under the accelerator header links and pushed the “Return to dashboard” entry down slightly (`src/components/accelerator/accelerator-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Accelerator return button styling)
+
+- UI: removed the header separator, increased spacing above “Return to dashboard,” and styled it as a primary button (light/dark) (`src/components/accelerator/accelerator-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Global search trigger spacing)
+
+- UI: nudged the header search trigger spacing to tighten the icon position (`src/components/global-search.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Home2 intro pacing)
+
+- UI: switched the who-we-are headline to Inter, slowed the text-generate timing, and added extra bottom padding (`src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Sidebar accelerator progress)
+
+- UI/Data: added an accelerator progress meter next to the main sidebar link, wired to module completion progress (`src/app/(dashboard)/layout.tsx`, `src/components/app-sidebar.tsx`, `src/components/app-sidebar/mobile-sidebar.tsx`, `src/components/dashboard/dashboard-shell.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Search icon spacing)
+
+- UI: tightened left padding on the header search trigger so the icon sits closer to the edge (`src/components/global-search.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Search shortcut alignment)
+
+- UI: moved the CMD+K badge to the right side of the header search trigger (`src/components/global-search.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Accelerator shell responsiveness)
+
+- Layout: added min-width/height guards to the sidebar inset and accelerator shell to prevent clipping on resize, and tuned padding for small screens (`src/components/ui/sidebar.tsx`, `src/components/accelerator/accelerator-shell.tsx`).
+- Layout: allowed the overview grid to shrink and adjusted support links to wrap earlier on narrow screens (`src/app/(accelerator)/accelerator/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Roadmap program preview removal)
+
+- UI/Data: removed the program preview card from the accelerator roadmap page (`src/app/(accelerator)/accelerator/roadmap/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Roadmap header relocation)
+
+- UI: moved the strategic roadmap header into the accelerator shell header via the title portal and hid the inline header block (`src/app/(accelerator)/accelerator/roadmap/page.tsx`, `src/components/roadmap/roadmap-shell.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Search footer badge sizing)
+
+- UI: fixed the command palette footer badge sizing so the “Enter” label stays within its pill (`src/components/global-search.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Accelerator documentation card)
+
+- UI: repointed the library support card to the GitBook documentation and retitled it to “Documentation” (`src/app/(accelerator)/accelerator/page.tsx`).
+- Tests: not run.
+
+## 2026-01-09 — Codex session (Home2 who-we-are cleanup)
+
+- UI: removed the “Who we are” eyebrow so the text-generate effect stands alone in the HomeTwo intro section (`src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Program wizard dialog layout)
+
+- UI: rebuilt the program wizard steps into a full-screen dialog frame with fixed header/footer actions, scrollable bodies, and mobile drawer styling (`src/components/programs/program-wizard/steps/basics-step.tsx`, `src/components/programs/program-wizard/steps/schedule-step.tsx`, `src/components/programs/program-wizard/steps/funding-step.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Accelerator sidebar progress)
+
+- UI: replaced the linear accelerator progress meter with a circular indicator and removed the percentage label in the sidebar (`src/components/ui/circular-progress.tsx`, `src/components/app-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Home2 process step badges)
+
+- UI: switched the process step badges to rounded-square containers instead of circles on HomeTwo (`src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Program wizard dialog a11y)
+
+- A11y/UI: added a hidden dialog title and ensured the program wizard dialog uses full-width sizing on desktop (`src/components/programs/program-wizard.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Program wizard image rounding)
+
+- UI: rounded the program wizard cover image container corners in the Basics step (`src/components/programs/program-wizard/steps/basics-step.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Program wizard cover overlay removal)
+
+- UI: removed the title/subtitle overlay from the program wizard cover preview (`src/components/programs/program-wizard/steps/basics-step.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Program wizard preview card removal)
+
+- UI: removed the Basics step preview card from the program wizard sidebar column (`src/components/programs/program-wizard/steps/basics-step.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Program wizard subtitle placeholder)
+
+- UI: updated the subtitle placeholder example to better match the sample program title (`src/components/programs/program-wizard/steps/basics-step.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Program wizard location summary removal)
+
+- UI: removed the location summary card from the schedule step so the full address drives the summary (`src/components/programs/program-wizard/steps/schedule-step.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Program wizard CTA layout)
+
+- UI: updated the CTA field placeholder, removed the https prefix addon, and prevented the CTA card from stretching tall with empty space (`src/components/programs/program-wizard/steps/funding-step.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Dialog hydration + funding import fix)
+
+- A11y/UI: moved the command palette dialog title/description into the dialog content to avoid hydration ID mismatch (`src/components/ui/command.tsx`).
+- Fix: restored missing input-group addons for currency inputs (`src/components/programs/program-wizard/steps/funding-step.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Accelerator overview ordering)
+
+- Layout: moved the program builder section below the Start building progress section on the accelerator overview (`src/app/(accelerator)/accelerator/page.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Program wizard cover + description)
+
+- UI/Data: rebuilt the cover upload area into a centered dropzone empty state and added a program description field, wiring it through the wizard + program writes (`src/components/programs/program-wizard/steps/basics-step.tsx`, `src/components/programs/program-wizard/schema.ts`, `src/components/programs/program-wizard.tsx`, `src/app/(dashboard)/my-organization/programs/actions.ts`, `src/components/organization/org-profile-card/types.ts`, `src/app/(dashboard)/my-organization/page.tsx`, `src/app/[org]/page.tsx`, `supabase/migrations/20260110154000_add_program_description.sql`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Program wizard publish toggle)
+
+- UI: added a published/unpublished switch to the program wizard status card with public-sharing messaging (`src/components/programs/program-wizard/steps/basics-step.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Program wizard tag limits)
+
+- UI: limited program tags to 3 entries and 17 characters each (`src/components/programs/program-wizard/tag-input.tsx`, `src/components/programs/program-wizard/steps/funding-step.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Home2 scroll-tied text reveal)
+
+- UI: added a scroll-linked text reveal component for the “Changing the world…” section and increased its bottom spacing (`src/components/ui/scroll-text-reveal.tsx`, `src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Deck header cleanup)
+
+- UI: removed the slide deck label pill from the deck viewer header overlay (`src/components/training/module-detail/deck-viewer/view.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Deck step dialog-only)
+
+- UI: removed the inline deck preview/button and now auto-opens the deck dialog when the deck step is active (`src/components/training/module-detail/module-stepper.tsx`, `src/components/training/module-detail/deck-viewer.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Origin story CTA + copy tweak)
+
+- UI/Content: added a “Book a session” CTA below the origin story coaching prompt and updated the follow-up bullet copy; includes a new migration to refresh lesson notes (`src/components/training/module-detail/lesson-notes.tsx`, `supabase/migrations/20260110170000_update_origin_story_notes.sql`, `supabase/seed.sql`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Assignment step fit-to-content)
+
+- UI: removed scrollable assignment frames so homework steps expand to fit the page content (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Homework description alignment)
+
+- UI: left-aligned long-text homework labels and descriptions so they align with the prompt title (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Module completion CTA)
+
+- UI: added a booking CTA in the completion card to schedule a coaching session (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Completion icon color)
+
+- UI: forced the module completion celebration icon to render white in all themes (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Support menu)
+
+- UI: swapped the Support button for a dropdown menu with Email + Book an expert session across dashboard/accelerator/module deck headers (`src/components/support-menu.tsx`, `src/components/accelerator/accelerator-shell.tsx`, `src/components/dashboard/dashboard-shell.tsx`, `src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Sidebar separator centering)
+
+- UI: centered the sidebar separator within the sidebar content width for the electives divider (`src/components/ui/sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap editor layout)
+
+- UI: reorganized the roadmap section editor into a single editor surface with top status/actions, inline visibility, and minimalist title/subtitle inputs to match a doc-style layout (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Scroll text reveal container)
+
+- Fix: made the scroll-tied text reveal detect the nearest scroll container so it animates inside the Home2 scroll viewport (`src/components/ui/scroll-text-reveal.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (News card rounding)
+
+- UI: increased the corner radius on News page gradient thumbnails and card shells for a softer look (`src/app/(public)/news/page.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Home2 scroll reveal)
+
+- UI: swapped the Home2 statement to a GSAP-based scroll reveal and wired supporting styles (`src/components/ui/scroll-reveal.tsx`, `src/app/(public)/home2/page.tsx`, `src/components/ScrollReveal.css`, `src/app/globals.css`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap editor centering)
+
+- UI: centered the roadmap editor column and offset the sections list to read as a left-side “ear” on large screens (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Home2 core offerings)
+
+- UI: expanded the Home2 core offering cards to cover platform, community, documentation, and the NFP map with updated icon treatments (`src/app/(public)/home2/page.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap sections stepper)
+
+- UI: restyled the roadmap sections sidebar into a stepper-style rail with progress colors and title/subtitle previews per section (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Inline deck restore)
+
+- Fix: restored the inline slide deck viewer in module step 2 and removed the auto-opening dialog (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Budget table fit)
+
+- UI: compacted the program budget table and auto-fit column widths to reduce scrolling (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.

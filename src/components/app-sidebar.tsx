@@ -4,13 +4,14 @@ import Link from "next/link"
 import Image from "next/image"
 import { useMemo, type Dispatch, type SetStateAction } from "react"
 import { usePathname } from "next/navigation"
+import Rocket from "lucide-react/dist/esm/icons/rocket"
 
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
-import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import type { SidebarClass } from "@/lib/academy"
+import { CircularProgress } from "@/components/ui/circular-progress"
 
 import { useSidebarOpenMap } from "@/components/app-sidebar/hooks"
 import { RESOURCE_NAV, SECONDARY_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
@@ -18,6 +19,7 @@ import {
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -31,11 +33,19 @@ export type AppSidebarProps = {
   }
   isAdmin?: boolean
   classes?: SidebarClass[]
+  acceleratorProgress?: number | null
   openMap?: Record<string, boolean>
   setOpenMap?: Dispatch<SetStateAction<Record<string, boolean>>>
 }
 
-export function AppSidebar({ user, isAdmin = false, classes, openMap: controlledOpenMap, setOpenMap: controlledSetOpenMap }: AppSidebarProps) {
+export function AppSidebar({
+  user,
+  isAdmin = false,
+  classes,
+  acceleratorProgress,
+  openMap: controlledOpenMap,
+  setOpenMap: controlledSetOpenMap,
+}: AppSidebarProps) {
   const resolvedUser = useMemo(
     () => ({
       name: user?.name ?? null,
@@ -49,6 +59,7 @@ export function AppSidebar({ user, isAdmin = false, classes, openMap: controlled
   const fallback = useSidebarOpenMap(pathname ?? "/", classes)
   const openMap = controlledOpenMap ?? fallback.openMap
   const setOpenMap = controlledSetOpenMap ?? fallback.setOpenMap
+  const isAcceleratorActive = (pathname ?? "").startsWith("/accelerator")
 
   return (
     <aside className="hidden h-full w-72 shrink-0 border-r border-border/70 bg-sidebar px-3 py-6 md:flex md:flex-col md:gap-6">
@@ -58,6 +69,8 @@ export function AppSidebar({ user, isAdmin = false, classes, openMap: controlled
         openMap={openMap}
         setOpenMap={setOpenMap}
         user={resolvedUser}
+        isAcceleratorActive={isAcceleratorActive}
+        acceleratorProgress={acceleratorProgress}
       />
     </aside>
   )
@@ -73,9 +86,24 @@ type SidebarBodyProps = {
     email: string | null
     avatar?: string | null
   }
+  isAcceleratorActive: boolean
+  acceleratorProgress?: number | null
 }
 
-export function SidebarBody({ isAdmin, classes, openMap, setOpenMap, user }: SidebarBodyProps) {
+export function SidebarBody({
+  isAdmin,
+  classes,
+  openMap,
+  setOpenMap,
+  user,
+  isAcceleratorActive,
+  acceleratorProgress,
+}: SidebarBodyProps) {
+  const progressValue =
+    typeof acceleratorProgress === "number" && Number.isFinite(acceleratorProgress)
+      ? Math.max(0, Math.min(100, Math.round(acceleratorProgress)))
+      : null
+
   return (
     <>
       <SidebarHeader className="p-2">
@@ -107,7 +135,7 @@ export function SidebarBody({ isAdmin, classes, openMap, setOpenMap, user }: Sid
                 </span>
                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                   <span className="truncate font-medium tracking-tight">Coach House</span>
-                  <span className="truncate text-xs text-muted-foreground">Accelerator</span>
+                  <span className="truncate text-xs text-muted-foreground">Platform</span>
                 </div>
               </Link>
             </SidebarMenuButton>
@@ -117,16 +145,37 @@ export function SidebarBody({ isAdmin, classes, openMap, setOpenMap, user }: Sid
 
       <SidebarContent className="gap-4">
         <NavMain items={buildMainNav(isAdmin)} label="Platform" />
-        <ClassesSection classes={classes} isAdmin={isAdmin} openMap={openMap} setOpenMap={setOpenMap} />
+        <SidebarGroup>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild isActive={isAcceleratorActive}>
+                <Link href="/accelerator" className="flex w-full items-center gap-2">
+                  <Rocket className="size-4" />
+                  <span>Accelerator</span>
+                  {progressValue !== null ? (
+                    <span className="ml-auto flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+                      <CircularProgress
+                        value={progressValue}
+                        size={26}
+                        strokeWidth={3}
+                        aria-label={`Accelerator progress ${progressValue}%`}
+                      />
+                    </span>
+                  ) : null}
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter className="mt-auto gap-4">
         {!isAdmin ? (
           <div className="space-y-4 pt-2">
             <NavDocuments items={RESOURCE_NAV} label="Resources" />
             <NavSecondary items={SECONDARY_NAV} />
           </div>
         ) : null}
-      </SidebarContent>
-
-      <SidebarFooter className="gap-2">
         <NavUser user={user} isAdmin={isAdmin} />
       </SidebarFooter>
     </>

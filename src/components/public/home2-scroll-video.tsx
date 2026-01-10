@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { cn } from "@/lib/utils"
 
@@ -17,6 +17,8 @@ export function Home2ScrollVideo({ className, videoSrc, posterSrc }: Home2Scroll
   const cardRef = useRef<HTMLDivElement>(null)
   const glowRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false)
+  const hasQueuedLoad = useRef(false)
 
   useEffect(() => {
     const section = sectionRef.current
@@ -36,13 +38,34 @@ export function Home2ScrollVideo({ className, videoSrc, posterSrc }: Home2Scroll
     }
 
     let frame = 0
+    let isActive = true
+
+    const getScrollParent = (node: HTMLElement | null): Window | HTMLElement => {
+      if (!node) return window
+      let parent: HTMLElement | null = node.parentElement
+      while (parent) {
+        const style = window.getComputedStyle(parent)
+        const isScrollable = /(auto|scroll)/.test(style.overflowY)
+        if (isScrollable && parent.scrollHeight > parent.clientHeight) {
+          return parent
+        }
+        parent = parent.parentElement
+      }
+      return window
+    }
+
+    const scrollParent = getScrollParent(section)
+
     const update = () => {
       frame = 0
       const rect = section.getBoundingClientRect()
-      const viewport = window.innerHeight || 1
+      const viewport =
+        scrollParent === window ? window.innerHeight || 1 : (scrollParent as HTMLElement).clientHeight || 1
+      const containerTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top
+      const relativeTop = rect.top - containerTop
       const start = viewport * 0.9
       const end = viewport * 0.25
-      const raw = 1 - (rect.top - end) / (start - end)
+      const raw = 1 - (relativeTop - end) / (start - end)
       const progress = clamp(raw, 0, 1)
       const scale = 0.85 + progress * 0.2
       const translate = 26 - progress * 26
@@ -58,105 +81,51 @@ export function Home2ScrollVideo({ className, videoSrc, posterSrc }: Home2Scroll
     }
 
     const onScroll = () => {
+      if (!isActive) return
       if (frame) return
       frame = window.requestAnimationFrame(update)
     }
 
-    window.addEventListener("scroll", onScroll, { passive: true })
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isActive = entry.isIntersecting
+        if (entry.isIntersecting && videoSrc && !hasQueuedLoad.current) {
+          hasQueuedLoad.current = true
+          setShouldLoadVideo(true)
+        }
+        if (entry.isIntersecting) {
+          onScroll()
+        }
+      },
+      {
+        root: scrollParent === window ? null : scrollParent,
+        rootMargin: "45% 0px",
+        threshold: 0,
+      },
+    )
+
+    if (scrollParent === window) {
+      window.addEventListener("scroll", onScroll, { passive: true })
+    } else {
+      scrollParent.addEventListener("scroll", onScroll, { passive: true })
+    }
     window.addEventListener("resize", onScroll)
+    observer.observe(section)
     update()
 
     return () => {
       if (frame) {
         window.cancelAnimationFrame(frame)
       }
-      window.removeEventListener("scroll", onScroll)
+      if (scrollParent === window) {
+        window.removeEventListener("scroll", onScroll)
+      } else {
+        scrollParent.removeEventListener("scroll", onScroll)
+      }
       window.removeEventListener("resize", onScroll)
+      observer.disconnect()
     }
   }, [])
-
-  useEffect(() => {
-    if (!videoSrc) return
-
-    const video = videoRef.current
-    const glow = glowRef.current
-
-    if (!video || !glow) return
-
-    const canvas = document.createElement("canvas")
-    const ctx = canvas.getContext("2d", { willReadFrequently: true })
-    if (!ctx) return
-
-    canvas.width = 18
-    canvas.height = 18
-
-    let rafId = 0
-    let lastSample = 0
-
-    const updateGlow = () => {
-      if (video.videoWidth === 0 || video.videoHeight === 0) return
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-      const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data
-      let r = 0
-      let g = 0
-      let b = 0
-      const count = data.length / 4
-      for (let i = 0; i < data.length; i += 4) {
-        r += data[i]
-        g += data[i + 1]
-        b += data[i + 2]
-      }
-      const avgR = Math.round(r / count)
-      const avgG = Math.round(g / count)
-      const avgB = Math.round(b / count)
-      glow.style.setProperty("--video-glow", `rgba(${avgR}, ${avgG}, ${avgB}, 0.42)`)
-    }
-
-    const tick = (now: number) => {
-      rafId = 0
-      if (video.paused || video.ended) return
-      if (now - lastSample > 450) {
-        lastSample = now
-        try {
-          updateGlow()
-        } catch {
-          return
-        }
-      }
-      rafId = window.requestAnimationFrame(tick)
-    }
-
-    const start = () => {
-      if (rafId) return
-      rafId = window.requestAnimationFrame(tick)
-    }
-
-    const stop = () => {
-      if (rafId) {
-        window.cancelAnimationFrame(rafId)
-        rafId = 0
-      }
-    }
-
-    const handlePlay = () => start()
-    const handlePause = () => stop()
-
-    video.addEventListener("play", handlePlay)
-    video.addEventListener("pause", handlePause)
-    video.addEventListener("ended", handlePause)
-    video.addEventListener("loadeddata", handlePlay, { once: true })
-
-    if (!video.paused) {
-      start()
-    }
-
-    return () => {
-      stop()
-      video.removeEventListener("play", handlePlay)
-      video.removeEventListener("pause", handlePause)
-      video.removeEventListener("ended", handlePause)
-    }
-  }, [videoSrc])
 
   return (
     <section ref={sectionRef} className={cn("relative min-h-[110vh] py-12", className)}>
@@ -169,7 +138,7 @@ export function Home2ScrollVideo({ className, videoSrc, posterSrc }: Home2Scroll
           {videoSrc ? (
             <div
               ref={glowRef}
-              className="pointer-events-none absolute -inset-20 rounded-[40px] bg-[radial-gradient(circle_at_center,var(--video-glow,rgba(99,102,241,0.35)),transparent_70%)] blur-[60px]"
+              className="pointer-events-none absolute -inset-16 rounded-[40px] bg-[radial-gradient(circle_at_center,rgba(79,70,229,0.28),transparent_70%)] blur-[40px]"
               style={{ opacity: 0.2, transform: "scale(0.94)" }}
             />
           ) : null}
@@ -178,13 +147,13 @@ export function Home2ScrollVideo({ className, videoSrc, posterSrc }: Home2Scroll
               <video
                 ref={videoRef}
                 className="h-full w-full object-cover"
-                src={videoSrc}
+                src={shouldLoadVideo ? videoSrc : undefined}
                 poster={posterSrc}
                 muted
                 loop
                 playsInline
                 autoPlay
-                preload="metadata"
+                preload={shouldLoadVideo ? "auto" : "none"}
                 crossOrigin="anonymous"
               />
             ) : (

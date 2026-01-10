@@ -1,8 +1,19 @@
 "use client"
 
 import React, { useCallback, useEffect, useRef, useState, type TouchEvent } from "react"
+import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
+import X from "lucide-react/dist/esm/icons/x"
 
 import { DeckPresentation } from "./deck-viewer/view"
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogTrigger,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { cn } from "@/lib/utils"
 
 const DECK_SWIPE_THRESHOLD = 45
 const PDF_JS_SRC = "/vendor/pdfjs/pdf.min.js"
@@ -67,26 +78,57 @@ async function loadPdfJs() {
 type DeckViewerProps = {
   moduleId: string
   hasDeck?: boolean
+  variant?: "card" | "frame"
+  className?: string
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  showPreviewTrigger?: boolean
+  inlinePreview?: boolean
+  shellActions?: React.ReactNode
 }
 
-export function DeckViewer({ moduleId, hasDeck = false }: DeckViewerProps) {
+export function DeckViewer({
+  moduleId,
+  hasDeck = false,
+  variant = "card",
+  className,
+  open,
+  onOpenChange,
+  showPreviewTrigger = true,
+  inlinePreview = true,
+  shellActions,
+}: DeckViewerProps) {
+  const isFrame = variant === "frame"
   const [deckUrl, setDeckUrl] = useState<string | null>(null)
   const [loadingUrl, setLoadingUrl] = useState(false)
   const [fetchError, setFetchError] = useState<string | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
   const [page, setPage] = useState(1)
   const [pageCount, setPageCount] = useState<number | null>(null)
   const [loadingDoc, setLoadingDoc] = useState(true)
   const [isRendering, setIsRendering] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [supportsCanvas, setSupportsCanvas] = useState(true)
+  const [internalDialogOpen, setInternalDialogOpen] = useState(false)
+  const [previewReady, setPreviewReady] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
   const touchStart = useRef<number | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const previewCanvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const viewportRef = useRef<HTMLDivElement>(null)
+  const previewContainerRef = useRef<HTMLDivElement>(null)
   const pdfRef = useRef<any>(null)
   const renderTaskRef = useRef<any>(null)
   const renderCacheRef = useRef<Map<number, ImageBitmap>>(new Map())
   const preloadingRef = useRef<Set<number>>(new Set())
+
+  const dialogOpen = open ?? internalDialogOpen
+  const setDialogOpen = onOpenChange ?? setInternalDialogOpen
+  const inlineViewer = inlinePreview && !showPreviewTrigger
+  const viewerActive = dialogOpen || inlineViewer
+
+  const downloadUrl = `/api/modules/${moduleId}/deck`
 
   useEffect(() => {
     if (!hasDeck) {
@@ -133,7 +175,7 @@ export function DeckViewer({ moduleId, hasDeck = false }: DeckViewerProps) {
       cancelled = true
       controller.abort()
     }
-  }, [moduleId, hasDeck])
+  }, [moduleId, hasDeck, reloadToken])
 
   const clampPage = useCallback((value: number, max: number) => {
     return Math.max(1, Math.min(max, value))
@@ -180,6 +222,8 @@ export function DeckViewer({ moduleId, hasDeck = false }: DeckViewerProps) {
     setPageCount(null)
     setError(null)
     setSupportsCanvas(true)
+    setPreviewReady(false)
+    setPreviewError(null)
   }, [deckUrl])
 
   const renderPage = useCallback(async () => {
@@ -274,12 +318,56 @@ export function DeckViewer({ moduleId, hasDeck = false }: DeckViewerProps) {
     }
   }, [page, supportsCanvas])
 
+  const renderPreview = useCallback(async () => {
+    if (!supportsCanvas) {
+      return
+    }
+    const pdfDoc = pdfRef.current
+    const canvas = previewCanvasRef.current
+    const container = previewContainerRef.current
+    if (!pdfDoc || !canvas || !container) {
+      return
+    }
+
+    try {
+      setPreviewError(null)
+      const pdfPage = await pdfDoc.getPage(1)
+      const baseViewport = pdfPage.getViewport({ scale: 1 })
+      const targetHeight = container.clientHeight || baseViewport.height
+      const targetWidth = container.clientWidth || baseViewport.width
+      const coverScale = Math.max(
+        targetHeight / baseViewport.height,
+        targetWidth / baseViewport.width,
+      )
+      const viewport = pdfPage.getViewport({ scale: coverScale })
+      const context = canvas.getContext("2d")
+      if (!context) return
+      canvas.width = viewport.width
+      canvas.height = viewport.height
+      canvas.style.width = `${viewport.width}px`
+      canvas.style.height = `${viewport.height}px`
+      canvas.style.position = "absolute"
+      canvas.style.top = "50%"
+      canvas.style.left = "50%"
+      canvas.style.transform = "translate(-50%, -50%)"
+      canvas.style.borderRadius = "inherit"
+      canvas.style.pointerEvents = "none"
+      context.clearRect(0, 0, canvas.width, canvas.height)
+      await pdfPage.render({ canvasContext: context, viewport }).promise
+      setPreviewReady(true)
+    } catch (err) {
+      console.error("Failed to render deck preview", err)
+      setPreviewError("Unable to render preview")
+      setPreviewReady(false)
+    }
+  }, [supportsCanvas])
+
   useEffect(() => {
-    if (!supportsCanvas || !pdfRef.current) {
+    if (!supportsCanvas || !pdfRef.current || !viewerActive) {
       return
     }
     void renderPage()
-  }, [renderPage, supportsCanvas, pageCount])
+  }, [renderPage, supportsCanvas, pageCount, viewerActive])
 
   const preloadPage = useCallback(
     async (target: number) => {
@@ -311,11 +399,17 @@ export function DeckViewer({ moduleId, hasDeck = false }: DeckViewerProps) {
   )
 
   useEffect(() => {
+    if (!viewerActive) {
+      return
+    }
     void preloadPage(page + 1)
     void preloadPage(page - 1)
-  }, [page, preloadPage])
+  }, [page, preloadPage, viewerActive])
 
   useEffect(() => {
+    if (!viewerActive) {
+      return
+    }
     const observer =
       typeof ResizeObserver !== "undefined"
         ? new ResizeObserver(() => {
@@ -332,7 +426,7 @@ export function DeckViewer({ moduleId, hasDeck = false }: DeckViewerProps) {
     return () => {
       observer?.disconnect()
     }
-  }, [renderPage])
+  }, [renderPage, viewerActive])
 
   // Intentional one-time load; re-running would refetch the PDF on every page change.
   useEffect(() => {
@@ -354,7 +448,12 @@ export function DeckViewer({ moduleId, hasDeck = false }: DeckViewerProps) {
         if (cancelled) return
         pdfRef.current = instance
         setPageCount(instance.numPages ?? null)
-        await renderPage()
+        if (showPreviewTrigger) {
+          await renderPreview()
+        }
+        if (viewerActive) {
+          await renderPage()
+        }
       } catch (err) {
         console.error("Failed to load PDF deck", err)
         if (!cancelled) {
@@ -371,7 +470,24 @@ export function DeckViewer({ moduleId, hasDeck = false }: DeckViewerProps) {
     return () => {
       cancelled = true
     }
-  }, [deckUrl, renderPage])
+  }, [deckUrl, renderPage, renderPreview, showPreviewTrigger, viewerActive])
+
+  useEffect(() => {
+    if (!deckUrl || !supportsCanvas || !pdfRef.current || !showPreviewTrigger) {
+      return
+    }
+    if (previewReady || previewError) {
+      return
+    }
+    void renderPreview()
+  }, [deckUrl, supportsCanvas, previewReady, previewError, renderPreview, showPreviewTrigger])
+
+  useEffect(() => {
+  if (!supportsCanvas && deckUrl && showPreviewTrigger) {
+    setPreviewError("Preview unavailable")
+    setPreviewReady(false)
+  }
+  }, [supportsCanvas, deckUrl, showPreviewTrigger])
 
   const pageLabel = pageCount ? `${page}/${pageCount}` : `${page}/?`
 
@@ -411,35 +527,168 @@ export function DeckViewer({ moduleId, hasDeck = false }: DeckViewerProps) {
 
   if (!deckUrl) {
     const message = loadingUrl ? "Loading deck..." : fetchError ?? "Deck unavailable"
+    if (isFrame) {
+      return (
+        <div className={`relative h-full w-full ${className ?? ""}`}>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center text-xs text-muted-foreground">
+            <div className="h-10 w-10 rounded-full border border-border/60 bg-muted/50" />
+            <div className="space-y-1">
+              <p className="text-sm font-semibold text-foreground">Slide deck</p>
+              <p>{message}</p>
+            </div>
+            {!loadingUrl ? (
+              <button
+                type="button"
+                onClick={() => setReloadToken((prev) => prev + 1)}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+              >
+                Retry <ArrowUpRight className="h-3 w-3" />
+              </button>
+            ) : null}
+          </div>
+        </div>
+      )
+    }
     return (
-      <div
-        className="flex w-full items-center justify-center rounded-2xl border border-border/40 bg-card/80 p-6 text-sm text-muted-foreground shadow-sm"
-        style={{ aspectRatio: "16 / 9" }}
-      >
-        {message}
+      <div className="w-full rounded-2xl border border-border/40 bg-card/80 p-3 shadow-sm">
+        <div className="flex flex-col gap-3">
+          <div className="aspect-[16/9] w-full overflow-hidden rounded-xl border border-border/40 bg-muted/50" />
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-foreground">Slide deck</p>
+            <p className="text-xs text-muted-foreground">{message}</p>
+            {!loadingUrl ? (
+              <button
+                type="button"
+                onClick={() => setReloadToken((prev) => prev + 1)}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground transition hover:text-foreground"
+              >
+                Retry <ArrowUpRight className="h-3 w-3" />
+              </button>
+            ) : null}
+          </div>
+        </div>
       </div>
     )
   }
 
+  const framePreviewClass = "flex-1 rounded-none border-0"
+  const preview = (
+    <div
+      ref={previewContainerRef}
+      className={`relative w-full overflow-hidden bg-muted/40 ${
+        isFrame ? framePreviewClass : "aspect-[16/9] rounded-xl border border-border/40"
+      }`}
+    >
+      <canvas ref={previewCanvasRef} className="absolute inset-0" />
+      {!previewReady && !previewError ? (
+        <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+          Loading preview…
+        </div>
+      ) : null}
+      {previewError ? (
+        <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
+          Preview unavailable
+        </div>
+      ) : null}
+    </div>
+  )
+
+  const triggerButton = (
+    <button
+      type="button"
+      className={`group relative w-full text-left transition ${
+        isFrame
+          ? "h-full overflow-hidden rounded-2xl"
+          : "rounded-2xl border border-border/40 bg-card/80 p-3 shadow-sm hover:shadow-md"
+      } ${className ?? ""}`}
+    >
+      <div className={`flex flex-col gap-3 ${isFrame ? "h-full" : ""}`}>
+        {preview}
+        {!isFrame ? (
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-foreground">Slide deck</p>
+            <p className="text-xs text-muted-foreground">
+              {pageCount
+                ? `${pageCount} slides · Open the full PDF for details.`
+                : "Open the full PDF for details."}
+            </p>
+            <span className="inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground transition group-hover:text-foreground">
+              Open full deck <ArrowUpRight className="h-3 w-3" />
+            </span>
+          </div>
+        ) : null}
+      </div>
+    </button>
+  )
+
   return (
-    <DeckPresentation
-      page={page}
-      pageCount={pageCount}
-      maxPage={effectiveMaxPage}
-      pageLabel={pageLabel}
-      loadingDoc={loadingDoc}
-      isRendering={isRendering}
-      error={error}
-      supportsCanvas={supportsCanvas}
-      onNavigate={navigate}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onWheel={handleWheel}
-      canvasRef={canvasRef}
-      containerRef={containerRef}
-      viewportRef={viewportRef}
-      deckUrl={deckUrl}
-      hasCacheForPage={renderCacheRef.current.has(page)}
-    />
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      {showPreviewTrigger ? <DialogTrigger asChild>{triggerButton}</DialogTrigger> : null}
+      {inlineViewer ? (
+        <DeckPresentation
+          variant="inline"
+          className={cn("h-full", className)}
+          page={page}
+          pageCount={pageCount}
+          maxPage={effectiveMaxPage}
+          pageLabel={pageLabel}
+          loadingDoc={loadingDoc}
+          isRendering={isRendering}
+          error={error}
+          supportsCanvas={supportsCanvas}
+          onNavigate={navigate}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onWheel={handleWheel}
+          canvasRef={canvasRef}
+          containerRef={containerRef}
+          viewportRef={viewportRef}
+          deckUrl={deckUrl}
+          downloadUrl={downloadUrl}
+          hasCacheForPage={renderCacheRef.current.has(page)}
+        />
+      ) : null}
+
+      <DialogContent
+        className="max-w-[min(94vw,1200px)] w-[min(94vw,1200px)] border-none bg-transparent p-0 shadow-none"
+        showCloseButton={false}
+      >
+        <DialogTitle className="sr-only">Slide deck</DialogTitle>
+        <DeckPresentation
+          page={page}
+          pageCount={pageCount}
+          maxPage={effectiveMaxPage}
+          pageLabel={pageLabel}
+          loadingDoc={loadingDoc}
+          isRendering={isRendering}
+          error={error}
+          supportsCanvas={supportsCanvas}
+          onNavigate={navigate}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onWheel={handleWheel}
+          canvasRef={canvasRef}
+          containerRef={containerRef}
+          viewportRef={viewportRef}
+          deckUrl={deckUrl}
+          downloadUrl={downloadUrl}
+          hasCacheForPage={renderCacheRef.current.has(page)}
+          shellActions={shellActions}
+          closeControl={
+            <DialogClose asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 rounded-full"
+                aria-label="Close deck"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogClose>
+          }
+        />
+      </DialogContent>
+    </Dialog>
   )
 }

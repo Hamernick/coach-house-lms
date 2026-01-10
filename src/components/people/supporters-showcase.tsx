@@ -7,6 +7,7 @@ import { PersonItem } from "@/components/people/person-item"
 import { cn } from "@/lib/utils"
 import { ItemGroup, ItemSeparator } from "@/components/ui/item-group"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { PERSON_CATEGORY_META } from "@/lib/people/categories"
 
 export type OrgPersonWithImage = OrgPerson & { displayImage?: string | null }
 
@@ -20,11 +21,9 @@ interface PeopleShowcaseProps {
   variant?: PeopleShowcaseVariant
 }
 
-const CATEGORY_STRIP: Record<OrgPerson["category"], string> = {
-  staff: "bg-sky-500",
-  board: "bg-violet-500",
-  supporter: "bg-emerald-500",
-}
+const CATEGORY_STRIP: Record<OrgPerson["category"], string> = Object.fromEntries(
+  Object.entries(PERSON_CATEGORY_META).map(([key, value]) => [key, value.stripClass]),
+) as Record<OrgPerson["category"], string>
 
 function initials(name?: string | null) {
   if (!name) return "?"
@@ -51,30 +50,37 @@ export function PeopleShowcase({
   if (variant === "public") {
     return (
       <ItemGroup className={cn("w-full gap-4", className)}>
-        {people.map((person, index) => (
-          <Fragment key={person.id}>
-            <div className="relative flex items-center gap-3.5 px-4 py-0.5 sm:px-6">
-              <Avatar className="size-10">
-                <AvatarImage src={person.displayImage ?? person.image ?? undefined} alt={person.name ?? "Person"} />
-                <AvatarFallback>{initials(person.name)}</AvatarFallback>
-              </Avatar>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-semibold text-foreground">{person.name}</p>
-                {person.title ? (
-                  <p className="truncate text-xs text-muted-foreground">{person.title}</p>
-                ) : null}
+        {people.map((person, index) => {
+          const isSupporter = person.category === "supporters"
+          return (
+            <Fragment key={person.id}>
+              <div className="relative flex items-center gap-3.5 px-4 py-0.5 sm:px-6">
+                <Avatar className={cn("size-10", isSupporter && "rounded-xl bg-muted/60 ring-1 ring-border/60")}>
+                  <AvatarImage
+                    src={person.displayImage ?? person.image ?? undefined}
+                    alt={person.name ?? "Person"}
+                    className={cn(isSupporter && "object-contain p-1.5")}
+                  />
+                  <AvatarFallback className={cn(isSupporter && "rounded-xl")}>
+                    {initials(person.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-foreground">{person.name}</p>
+                  {person.title ? <p className="truncate text-xs text-muted-foreground">{person.title}</p> : null}
+                </div>
+                <span
+                  className={cn(
+                    "pointer-events-none absolute left-0 top-1/2 h-10 w-1 -translate-y-1/2 rounded-full",
+                    CATEGORY_STRIP[person.category],
+                  )}
+                  aria-hidden="true"
+                />
               </div>
-              <span
-                className={cn(
-                  "pointer-events-none absolute left-0 top-1/2 h-10 w-1 -translate-y-1/2 rounded-full",
-                  CATEGORY_STRIP[person.category],
-                )}
-                aria-hidden="true"
-              />
-            </div>
-            {index !== people.length - 1 ? <ItemSeparator className="my-1 w-full" /> : null}
-          </Fragment>
-        ))}
+              {index !== people.length - 1 ? <ItemSeparator className="my-1 w-full" /> : null}
+            </Fragment>
+          )
+        })}
       </ItemGroup>
     )
   }

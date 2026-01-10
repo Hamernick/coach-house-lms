@@ -3,10 +3,12 @@ import { redirect } from "next/navigation"
 import { OrgProfileCard } from "@/components/organization/org-profile-card"
 import type { OrgDocuments, ProfileTab } from "@/components/organization/org-profile-card/types"
 import { resolveRoadmapHeroUrl, resolveRoadmapSections } from "@/lib/roadmap"
+import { resolveRoadmapHomework } from "@/lib/roadmap/homework"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 import { createSupabaseServerClient, type Json } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { publicSharingEnabled } from "@/lib/feature-flags"
+import { normalizePersonCategory } from "@/lib/people/categories"
 import type { OrgPerson } from "../people/actions"
 
 export const dynamic = "force-dynamic"
@@ -59,16 +61,20 @@ export default async function MyOrganizationPage({
   const { data: programs } = await supabase
     .from("programs")
     .select(
-      "id, title, subtitle, location, image_url, duration_label, features, status_label, goal_cents, raised_cents, is_public, created_at, start_date, end_date, address_city, address_state, address_country, cta_label, cta_url",
+      "id, title, subtitle, description, location, image_url, duration_label, features, status_label, goal_cents, raised_cents, is_public, created_at, start_date, end_date, address_city, address_state, address_country, cta_label, cta_url",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
 
   const peopleRaw = (Array.isArray(profile.org_people) ? profile.org_people : []) as OrgPerson[]
+  const peopleNormalized = peopleRaw.map((person) => ({
+    ...person,
+    category: normalizePersonCategory(person.category),
+  }))
   let people: (OrgPerson & { displayImage: string | null })[] = []
   try {
     const admin = createSupabaseAdminClient()
-    for (const p of peopleRaw) {
+    for (const p of peopleNormalized) {
       let displayImage: string | null = null
       if (p.image) {
         if (/^https?:/i.test(p.image) || p.image.startsWith("data:")) {
@@ -81,7 +87,7 @@ export default async function MyOrganizationPage({
       people.push({ ...p, displayImage })
     }
   } catch {
-    people = peopleRaw.map((p) => ({
+    people = peopleNormalized.map((p) => ({
       ...p,
       displayImage: /^https?:/i.test(p.image ?? "") ? (p.image as string) : null,
     }))
@@ -129,29 +135,50 @@ export default async function MyOrganizationPage({
   const tabParam = typeof resolvedSearchParams?.tab === "string" ? resolvedSearchParams.tab : ""
   const initialTab = allowedTabs.includes(tabParam as ProfileTab) ? (tabParam as ProfileTab) : undefined
 
-  const roadmapSections = resolveRoadmapSections(profile).map((section) =>
-    publicSharingEnabled ? section : { ...section, isPublic: false },
-  )
+  const roadmapHomework = await resolveRoadmapHomework(user.id, supabase)
+  const roadmapSections = resolveRoadmapSections(profile).map((section) => {
+    const withHomework = {
+      ...section,
+      homework: roadmapHomework[section.id] ?? null,
+    }
+    return publicSharingEnabled ? withHomework : { ...withHomework, isPublic: false }
+  })
   const roadmapIsPublic = publicSharingEnabled ? Boolean(orgRow?.is_public_roadmap) : false
   const roadmapPublicSlug = orgRow?.public_slug ?? null
   const roadmapHeroUrl = resolveRoadmapHeroUrl(profile)
 
   const documentsRaw = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : null
-  const verificationRaw = documentsRaw && isRecord(documentsRaw["verificationLetter"]) ? documentsRaw["verificationLetter"] : null
-  const documents: OrgDocuments | null = verificationRaw
-    ? {
-        verificationLetter: {
-          name: String((verificationRaw as Record<string, unknown>)["name"] ?? ""),
-          path: String((verificationRaw as Record<string, unknown>)["path"] ?? ""),
-          size: typeof (verificationRaw as Record<string, unknown>)["size"] === "number" ? ((verificationRaw as Record<string, unknown>)["size"] as number) : null,
-          mime: typeof (verificationRaw as Record<string, unknown>)["mime"] === "string" ? ((verificationRaw as Record<string, unknown>)["mime"] as string) : null,
-          updatedAt:
-            typeof (verificationRaw as Record<string, unknown>)["updatedAt"] === "string"
-              ? ((verificationRaw as Record<string, unknown>)["updatedAt"] as string)
-              : null,
-        },
-      }
-    : null
+  const documentKeys: Array<keyof OrgDocuments> = [
+    "verificationLetter",
+    "articlesOfIncorporation",
+    "bylaws",
+    "stateRegistration",
+    "goodStandingCertificate",
+    "w9",
+    "taxExemptCertificate",
+  ]
+
+  const parseDocument = (key: keyof OrgDocuments) => {
+    const raw = documentsRaw && isRecord(documentsRaw[key]) ? (documentsRaw[key] as Record<string, unknown>) : null
+    if (!raw) return null
+    return {
+      name: String(raw["name"] ?? ""),
+      path: String(raw["path"] ?? ""),
+      size: typeof raw["size"] === "number" ? (raw["size"] as number) : null,
+      mime: typeof raw["mime"] === "string" ? (raw["mime"] as string) : null,
+      updatedAt: typeof raw["updatedAt"] === "string" ? (raw["updatedAt"] as string) : null,
+    }
+  }
+
+  const parsedDocuments = documentKeys.reduce((acc, key) => {
+    const parsed = parseDocument(key)
+    if (parsed?.path) {
+      acc[key] = parsed
+    }
+    return acc
+  }, {} as OrgDocuments)
+
+  const documents: OrgDocuments | null = Object.keys(parsedDocuments).length > 0 ? parsedDocuments : null
 
   return (
     <div className="flex flex-col gap-6 px-0 sm:px-2 lg:px-0">

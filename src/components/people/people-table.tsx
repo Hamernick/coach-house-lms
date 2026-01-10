@@ -31,20 +31,13 @@ import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
 import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 import { CreatePersonDialog } from "@/components/people/create-person-dialog"
 import { ManagerSelect } from "@/components/people/manager-select"
+import { PERSON_CATEGORY_META, PERSON_CATEGORY_OPTIONS } from "@/lib/people/categories"
 
 export type PersonRow = OrgPerson & { displayImage?: string | null }
 
-const CATEGORY_LABEL: Record<OrgPerson["category"], string> = {
-  staff: "Staff",
-  board: "Board",
-  supporter: "Supporter",
-}
-
-const CATEGORY_BADGE: Record<OrgPerson["category"], string> = {
-  staff: "bg-sky-500/15 text-sky-700 dark:text-sky-200 border-sky-500/30",
-  board: "bg-violet-500/15 text-violet-700 dark:text-violet-200 border-violet-500/30",
-  supporter: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 border-emerald-500/30",
-}
+const CATEGORY_LABEL: Record<OrgPerson["category"], string> = Object.fromEntries(
+  PERSON_CATEGORY_OPTIONS.map((option) => [option.value, option.label]),
+) as Record<OrgPerson["category"], string>
 
 function initials(name?: string | null) {
   if (!name) return "?"
@@ -136,7 +129,9 @@ function PeopleTableComponent({
         cell: ({ row }) => {
           const cat = row.original.category
           return (
-            <Badge variant="outline" className={`px-1.5 ${CATEGORY_BADGE[cat]}`}>{CATEGORY_LABEL[cat]}</Badge>
+            <Badge variant="outline" className={`px-1.5 ${PERSON_CATEGORY_META[cat].badgeClass}`}>
+              {CATEGORY_LABEL[cat]}
+            </Badge>
           )
         },
       },
@@ -320,8 +315,8 @@ function PeopleTableComponent({
           <Select
             value={categoryFilter}
             onValueChange={(value) => {
-              if (value === "all" || value === "staff" || value === "board" || value === "supporter") {
-                setCategoryFilter(value)
+              if (value === "all" || PERSON_CATEGORY_OPTIONS.some((option) => option.value === value)) {
+                setCategoryFilter(value as OrgPerson["category"] | "all")
               }
             }}
           >
@@ -330,9 +325,11 @@ function PeopleTableComponent({
             </SelectTrigger>
             <SelectContent align="end">
               <SelectItem value="all">All categories</SelectItem>
-              <SelectItem value="staff">Staff</SelectItem>
-              <SelectItem value="board">Board</SelectItem>
-              <SelectItem value="supporter">Supporters</SelectItem>
+              {PERSON_CATEGORY_OPTIONS.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>

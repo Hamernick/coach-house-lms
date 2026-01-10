@@ -3,14 +3,16 @@ import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 
 import { requireServerSession } from "@/lib/auth"
+import { normalizePersonCategory } from "@/lib/people/categories"
 
 export async function POST(request: Request) {
   try {
     const { supabase, session } = await requireServerSession("/people")
     const userId = session.user.id
-    const body = await request.json().catch(() => ({})) as { category?: "staff" | "board" | "supporter" }
-    const category = body?.category
-    if (!category || !["staff", "board", "supporter"].includes(category)) {
+    const body = await request.json().catch(() => ({})) as { category?: string }
+    const categoryRaw = body?.category
+    const category = normalizePersonCategory(typeof categoryRaw === "string" ? categoryRaw : "")
+    if (!category) {
       return NextResponse.json({ error: "Invalid category" }, { status: 400 })
     }
 
@@ -23,7 +25,11 @@ export async function POST(request: Request) {
 
     const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
     const arr = Array.isArray(profile.org_people) ? (profile.org_people as any[]) : []
-    const next = arr.map((p) => (p?.category === category ? { ...p, pos: null } : p))
+    const next = arr.map((p) =>
+      normalizePersonCategory(typeof p?.category === "string" ? p.category : "") === category
+        ? { ...p, pos: null, category }
+        : p
+    )
     const nextProfile = { ...profile, org_people: next }
 
     const { error: upsertErr } = await supabase

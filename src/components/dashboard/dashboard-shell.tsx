@@ -10,12 +10,14 @@ import dynamic from "next/dynamic"
 
 import { SidebarBody } from "@/components/app-sidebar"
 import { useSidebarOpenMap } from "@/components/app-sidebar/hooks"
+import { GlobalSearch } from "@/components/global-search"
 import { OnboardingDialogEntry } from "@/components/onboarding/onboarding-dialog-entry"
 import type { OnboardingDialogProps } from "@/components/onboarding/onboarding-dialog"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { NotificationsMenu } from "@/components/notifications/notifications-menu"
+import { SupportMenu } from "@/components/support-menu"
 import type { SidebarClass } from "@/lib/academy"
 
 const ThemeToggle = dynamic(() => import("@/components/theme-toggle").then((mod) => mod.ThemeToggle), {
@@ -35,6 +37,7 @@ type DashboardShellProps = {
     avatar?: string | null
   }
   isAdmin: boolean
+  acceleratorProgress?: number | null
   onboardingProps?: OnboardingDialogProps & { enabled: boolean }
 }
 
@@ -44,6 +47,7 @@ export function DashboardShell({
   sidebarTree,
   user,
   isAdmin,
+  acceleratorProgress,
   onboardingProps,
 }: DashboardShellProps) {
   const pathname = usePathname()
@@ -67,6 +71,7 @@ export function DashboardShell({
           openMap={openMap}
           setOpenMap={setOpenMap}
           user={navUser}
+          acceleratorProgress={acceleratorProgress}
         />
       </Sidebar>
       <SidebarInset>
@@ -80,6 +85,7 @@ export function DashboardShell({
         </div>
       </SidebarInset>
 
+      <GlobalSearch isAdmin={isAdmin} context="platform" />
       {onboardingProps?.enabled ? <OnboardingDialogEntry {...onboardingProps} /> : null}
     </SidebarProvider>
   )
@@ -99,17 +105,19 @@ function DashboardHeader({ breadcrumbs, isAdmin, hasUser }: DashboardHeaderProps
         <Separator orientation="vertical" className="mr-2 data-[orientation=vertical]:h-4" />
         {breadcrumbs}
       </div>
-      <div className="ml-auto flex items-center gap-2">
-        <div id="site-header-actions" className="flex items-center gap-2" />
-        <NotificationsMenu />
-        <ThemeToggle />
-        {!isAdmin ? (
-          <Button variant="ghost" size="sm" asChild>
-            <a href={`mailto:${SUPPORT_EMAIL}`} className="text-sm">
-              Support
-            </a>
-          </Button>
-        ) : null}
+        <div className="ml-auto flex items-center gap-2">
+          <div id="site-header-actions" className="flex items-center gap-2" />
+          <NotificationsMenu />
+          <ThemeToggle />
+          {!isAdmin ? (
+            <SupportMenu
+              email={SUPPORT_EMAIL}
+              host="joel"
+              buttonVariant="ghost"
+              buttonSize="sm"
+              buttonClassName="text-sm"
+            />
+          ) : null}
         {!hasUser ? (
           <Button variant="outline" size="sm" asChild>
             <Link href="/login">Sign in</Link>

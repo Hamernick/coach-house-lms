@@ -4,6 +4,7 @@ import type {
   ModuleAssignmentSubmission,
   ModuleResource,
   ModuleResourceProvider,
+  BudgetTableRow,
 } from "@/lib/modules"
 
 export type {
@@ -12,6 +13,7 @@ export type {
   ModuleAssignment,
   ModuleAssignmentField,
   ModuleAssignmentSubmission,
+  BudgetTableRow,
 }
 
 export type Module = {

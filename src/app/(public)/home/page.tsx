@@ -37,7 +37,7 @@ const SIGNALS = [
 
 const STUDIO_BLOCKS = [
   {
-    title: "The launch studio",
+    title: "The launch track",
     body: "A guided path that combines formation, planning, and the assets funders expect to see.",
     icon: Compass,
   },
@@ -129,7 +129,7 @@ export default function HomePage() {
           <div className="grid gap-4 animate-in fade-in slide-in-from-bottom-6 duration-700 delay-150">
             <Card className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/70 p-6 shadow-lg">
               <div className="flex items-center justify-between text-xs uppercase text-muted-foreground">
-                Studio Board
+                Platform Board
                 <Badge variant="secondary" className="rounded-full">Draft</Badge>
               </div>
               <p className={cn(display.className, "mt-6 text-2xl font-semibold")}>
@@ -164,12 +164,12 @@ export default function HomePage() {
 
         <section className="grid gap-10 lg:grid-cols-[0.6fr_1fr] lg:items-start">
           <div className="space-y-4">
-            <p className="text-xs uppercase text-muted-foreground">Studio style</p>
+            <p className="text-xs uppercase text-muted-foreground">Everything in one place</p>
             <h2 className={cn(display.className, "text-3xl font-semibold")}>
               A strategic home for every nonprofit decision.
             </h2>
             <p className="text-sm text-muted-foreground">
-              Use the platform as a living studio board. Every entry becomes part of your published story.
+              Use the platform as a living strategy board. Every entry becomes part of your published story.
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
@@ -210,7 +210,7 @@ export default function HomePage() {
           </div>
 
           <div className="rounded-3xl border border-border/60 bg-foreground p-6 text-background shadow-xl">
-            <p className="text-xs uppercase text-background/70">Studio note</p>
+            <p className="text-xs uppercase text-background/70">Platform note</p>
             <h2 className={cn(display.className, "mt-4 text-3xl font-semibold")}>
               Make it easy for funders to say yes.
             </h2>

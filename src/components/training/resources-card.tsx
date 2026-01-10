@@ -1,44 +1,79 @@
 "use client"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import ExternalLink from "lucide-react/dist/esm/icons/external-link"
 import type { ModuleResource } from "@/components/training/types"
 import { PROVIDER_ICON } from "@/components/shared/provider-icons"
 
+const PROVIDER_LABEL: Record<string, string> = {
+  youtube: "YouTube",
+  "google-drive": "Google Drive",
+  dropbox: "Dropbox",
+  loom: "Loom",
+  vimeo: "Vimeo",
+  notion: "Notion",
+  figma: "Figma",
+  generic: "Resource",
+}
+
 export function ResourcesCard({ resources }: { resources: ModuleResource[] }) {
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-base">Resources</CardTitle>
-        <CardDescription>Extra materials for this module.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-2">
-        {resources.length === 0 ? (
-          <p className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-            No additional resources provided yet.
-          </p>
-        ) : (
-          resources.map(({ label, url, provider }, index) => {
-            const Icon = PROVIDER_ICON[String(provider)] ?? PROVIDER_ICON.generic
-            return (
-              <div key={`${url}-${index}`} className="flex items-center justify-between rounded-md border p-2">
-                <div className="flex min-w-0 items-center gap-2 text-sm">
-                  <Icon className="h-4 w-4 shrink-0" />
-                  <span className="truncate" title={label}>
-                    {label}
+    <div className="grid justify-items-center gap-4 sm:grid-cols-2">
+      {resources.length === 0 ? (
+        <div className="aspect-square w-full max-w-[260px] rounded-2xl border border-dashed border-border/60 bg-muted/30 p-4 text-sm text-muted-foreground">
+          No additional resources provided yet.
+        </div>
+      ) : (
+        resources.map(({ label, url, provider }, index) => {
+          const Icon = PROVIDER_ICON[String(provider)] ?? PROVIDER_ICON.generic
+          const trimmedUrl = typeof url === "string" ? url.trim() : ""
+          const hasUrl = trimmedUrl.length > 0
+          const providerLabel = PROVIDER_LABEL[String(provider)] ?? "Resource"
+          let hostLabel: string | null = null
+          if (hasUrl && /^https?:\/\//i.test(trimmedUrl)) {
+            try {
+              hostLabel = new URL(trimmedUrl).host.replace(/^www\./, "")
+            } catch {
+              hostLabel = null
+            }
+          }
+          const metaLabel = hostLabel ? `${providerLabel} | ${hostLabel}` : providerLabel
+          return (
+            <div
+              key={`${trimmedUrl || label}-${index}`}
+              className="group aspect-square w-full max-w-[260px] rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm transition hover:shadow-md focus-within:ring-2 focus-within:ring-primary/40 focus-within:ring-offset-2 focus-within:ring-offset-background"
+            >
+              <div className="flex h-full flex-col justify-between">
+                <div className="space-y-3">
+                  <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-foreground">
+                    <Icon className="h-5 w-5" />
                   </span>
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-foreground line-clamp-2">{label}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-1">{metaLabel}</p>
+                  </div>
                 </div>
-                <Button asChild size="sm" variant="ghost">
-                  <a href={url} target="_blank" rel="noreferrer">
-                    <ExternalLink className="mr-2 h-4 w-4" /> Open
-                  </a>
-                </Button>
+                {hasUrl ? (
+                  <Button asChild size="sm" variant="secondary" className="w-full">
+                    <a
+                      href={trimmedUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Open resource: ${label}`}
+                    >
+                      Open resource <ExternalLink className="ml-2 h-4 w-4" />
+                    </a>
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="secondary" className="w-full" disabled>
+                    Link coming soon
+                  </Button>
+                )}
               </div>
-            )
-          })
-        )}
-      </CardContent>
-    </Card>
+            </div>
+          )
+        })
+      )}
+    </div>
   )
 }

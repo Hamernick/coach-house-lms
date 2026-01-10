@@ -12,38 +12,52 @@ const chartConfig = {
     label: "Staff",
     color: "var(--chart-1)",
   },
-  board: {
-    label: "Board",
+  governing_board: {
+    label: "Governing Board",
     color: "var(--chart-4)",
   },
-  supporters: {
-    label: "Supporters",
+  advisory_board: {
+    label: "Advisory Board",
     color: "var(--chart-5)",
+  },
+  volunteers: {
+    label: "Volunteers",
+    color: "var(--chart-2)",
   },
 } satisfies ChartConfig
 
 export function PeopleCompositionRadialCard({
   staff,
-  board,
-  supporters,
+  governingBoard,
+  advisoryBoard,
+  volunteers,
   people,
 }: {
   staff: number
-  board: number
-  supporters: number
+  governingBoard: number
+  advisoryBoard: number
+  volunteers: number
   people?: OrgPerson[]
 }) {
   const staffCount = Math.max(0, staff)
-  const boardCount = Math.max(0, board)
-  const supportersCount = Math.max(0, supporters)
-  const total = staffCount + boardCount + supportersCount
-  const chartData = [{ staff: staffCount, board: boardCount, supporters: supportersCount }]
+  const governingCount = Math.max(0, governingBoard)
+  const advisoryCount = Math.max(0, advisoryBoard)
+  const volunteersCount = Math.max(0, volunteers)
+  const total = staffCount + governingCount + advisoryCount + volunteersCount
+  const chartData = [
+    {
+      staff: staffCount,
+      governing_board: governingCount,
+      advisory_board: advisoryCount,
+      volunteers: volunteersCount,
+    },
+  ]
 
   return (
     <Card className="border-border/70 bg-card/70">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">People</CardTitle>
-        <CardDescription>Staff, board, supporters.</CardDescription>
+        <CardDescription>Staff, boards, and volunteers.</CardDescription>
         <CardAction>
           <CreatePersonDialog triggerClassName="h-8" people={people ?? []} />
         </CardAction>
@@ -80,33 +94,44 @@ export function PeopleCompositionRadialCard({
               className="stroke-transparent stroke-2"
             />
             <RadialBar
-              dataKey="board"
+              dataKey="governing_board"
               stackId="a"
               cornerRadius={8}
-              fill="var(--color-board)"
+              fill="var(--color-governing_board)"
               className="stroke-transparent stroke-2"
             />
             <RadialBar
-              dataKey="supporters"
+              dataKey="advisory_board"
               stackId="a"
               cornerRadius={8}
-              fill="var(--color-supporters)"
+              fill="var(--color-advisory_board)"
+              className="stroke-transparent stroke-2"
+            />
+            <RadialBar
+              dataKey="volunteers"
+              stackId="a"
+              cornerRadius={8}
+              fill="var(--color-volunteers)"
               className="stroke-transparent stroke-2"
             />
           </RadialBarChart>
         </ChartContainer>
-        <div className="mt-3 grid grid-cols-3 gap-2 text-xs text-muted-foreground">
+        <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-muted-foreground sm:grid-cols-4">
           <div className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
             <span className="truncate">Staff</span>
             <span className="font-mono font-medium tabular-nums text-foreground">{staffCount}</span>
           </div>
           <div className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
-            <span className="truncate">Board</span>
-            <span className="font-mono font-medium tabular-nums text-foreground">{boardCount}</span>
+            <span className="truncate">Governing</span>
+            <span className="font-mono font-medium tabular-nums text-foreground">{governingCount}</span>
           </div>
           <div className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
-            <span className="truncate">Supporters</span>
-            <span className="font-mono font-medium tabular-nums text-foreground">{supportersCount}</span>
+            <span className="truncate">Advisory</span>
+            <span className="font-mono font-medium tabular-nums text-foreground">{advisoryCount}</span>
+          </div>
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-border/60 bg-background/60 px-2 py-1.5">
+            <span className="truncate">Volunteers</span>
+            <span className="font-mono font-medium tabular-nums text-foreground">{volunteersCount}</span>
           </div>
         </div>
       </CardContent>

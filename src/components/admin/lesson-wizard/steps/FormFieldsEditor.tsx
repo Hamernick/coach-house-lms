@@ -48,7 +48,7 @@ function FormFieldsEditorBase({
         <div className="space-y-4">
           {fields.map((field, index) => {
             const showPlaceholder = field.type === "short_text" || field.type === "long_text"
-            const showOptions = field.type === "select" || field.type === "multi_select"
+            const showOptions = field.type === "select" || field.type === "multi_select" || field.type === "budget_table"
             const showSlider = field.type === "slider"
             const showProgram = field.type === "custom_program"
             const showRequiredToggle = field.type !== "subtitle"
@@ -57,10 +57,11 @@ function FormFieldsEditorBase({
               .map((option) => {
                 if (typeof option === "string") return option
                 if (option && typeof option === "object") {
-                  const opt = option as { label?: unknown; value?: unknown }
+                  const opt = option as { label?: unknown; value?: unknown; category?: unknown }
+                  const category = typeof opt.category === "string" ? opt.category : ""
                   const label = typeof opt.label === "string" ? opt.label : ""
                   const value = typeof opt.value === "string" ? opt.value : ""
-                  return label || value
+                  return category || label || value
                 }
                 return ""
               })
@@ -178,9 +179,9 @@ function FormFieldsEditorBase({
                     <div className="space-y-3">
                       <div className="grid gap-3 md:grid-cols-[1fr_auto]">
                         <div className="space-y-2">
-                          <Label>Add option</Label>
+                          <Label>{field.type === "budget_table" ? "Expense categories" : "Add option"}</Label>
                           <Input
-                            placeholder="Write a prompt response here..."
+                            placeholder={field.type === "budget_table" ? "Add an expense category" : "Write a prompt response here..."}
                             value={optionDrafts[field.id] ?? ""}
                             onChange={(e) =>
                               setOptionDrafts((prev) => ({ ...prev, [field.id]: e.target.value }))
@@ -215,11 +216,11 @@ function FormFieldsEditorBase({
                             setOptionDrafts((prev) => ({ ...prev, [field.id]: "" }))
                           }}
                         >
-                          Add option
+                          {field.type === "budget_table" ? "Add category" : "Add option"}
                         </Button>
                       </div>
                       <div className="space-y-2">
-                        <Label>Current options</Label>
+                        <Label>{field.type === "budget_table" ? "Current categories" : "Current options"}</Label>
                         <div className="flex flex-wrap gap-2">
                           {normalizedOptions.map((option, optionIndex) => (
                               <span
@@ -247,7 +248,9 @@ function FormFieldsEditorBase({
                           ) : null}
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          Learners will see these as selectable choices in the order listed.
+                          {field.type === "budget_table"
+                            ? "These become the prefilled expense categories in the budget table."
+                            : "Learners will see these as selectable choices in the order listed."}
                         </p>
                       </div>
                     </div>

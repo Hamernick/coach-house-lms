@@ -7,8 +7,8 @@ type RoadmapMiniTrackerProps = {
 
 export function RoadmapMiniTracker({ sections }: RoadmapMiniTrackerProps) {
   const total = sections.length
-  const completed = sections.filter((s) => s.content.trim().length > 0 && s.isPublic).length
-  const nextUp = sections.find((s) => !s.content.trim()) ?? sections.find((s) => !s.isPublic)
+  const completed = sections.filter((section) => section.content.trim().length > 0 && section.isPublic).length
+  const nextUp = sections.find((section) => !section.content.trim()) ?? sections.find((section) => !section.isPublic)
   const nextId = nextUp?.id
 
   return (
@@ -25,13 +25,12 @@ export function RoadmapMiniTracker({ sections }: RoadmapMiniTrackerProps) {
       {/* Compact vertical list on small screens */}
       <div className="grid gap-3 md:hidden">
         {sections.map((section, idx) => {
-          const hasContent = section.content.trim().length > 0
           const isNext = nextId === section.id
           return (
             <div
               key={section.id}
               className={cn(
-                "rounded-xl border bg-background/70 p-3",
+                "rounded-xl border bg-background/70 p-3 transition",
                 isNext ? "border-primary/70 shadow-sm" : "border-border/70",
               )}
             >
@@ -52,19 +51,18 @@ export function RoadmapMiniTracker({ sections }: RoadmapMiniTrackerProps) {
         <div className="grid min-w-0 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {sections.map((section, idx) => {
             const isFilled = section.content.trim().length > 0
-            const colors =
-              isFilled && section.isPublic
-                ? "bg-emerald-500 border-emerald-500"
-                : isFilled
-                  ? "bg-amber-500 border-amber-500"
-                  : "bg-muted border-border"
+            const colors = isFilled && section.isPublic
+              ? "bg-emerald-500 border-emerald-500"
+              : isFilled
+                ? "bg-amber-500 border-amber-500"
+                : "bg-muted border-border"
             const isNext = nextId === section.id
 
             return (
               <div
                 key={section.id}
                 className={cn(
-                  "flex min-w-0 flex-col justify-between gap-4 rounded-xl border bg-background/70 px-3 py-3",
+                  "flex min-w-0 flex-col justify-between gap-4 rounded-xl border bg-background/70 px-3 py-3 transition",
                   isNext ? "border-primary/70 shadow-sm" : "border-border/60",
                 )}
               >
@@ -83,7 +81,9 @@ export function RoadmapMiniTracker({ sections }: RoadmapMiniTrackerProps) {
                     </span>
                   ) : null}
                 </div>
-                <p className="text-sm font-semibold text-foreground">{section.title}</p>
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-foreground">{section.title}</p>
+                </div>
               </div>
             )
           })}

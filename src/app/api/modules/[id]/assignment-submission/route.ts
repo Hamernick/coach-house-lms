@@ -137,6 +137,59 @@ function sanitizeAnswers(fields: ModuleAssignmentField[], raw: AnswersPayload): 
         result[key] = Number.isFinite(rounded) ? rounded : clamped
         break
       }
+      case "budget_table": {
+        const fallbackRows = Array.isArray(field.rows) ? field.rows : []
+        const rawRows = Array.isArray(value) ? value : fallbackRows
+        const normalizedRows = (rawRows as Array<Record<string, unknown> | string | null | undefined>)
+          .map((row, index) => {
+            if (typeof row === "string") {
+              const category = row.trim()
+              return {
+                category,
+                description: "",
+                costType: "",
+                unit: "",
+                units: "",
+                costPerUnit: "",
+                totalCost: "",
+              }
+            }
+            if (!row || typeof row !== "object") {
+              return {
+                category: fallbackRows[index]?.category ?? "",
+                description: "",
+                costType: "",
+                unit: "",
+                units: "",
+                costPerUnit: "",
+                totalCost: "",
+              }
+            }
+            const record = row as Record<string, unknown>
+            const fallback = fallbackRows[index]
+            const toString = (val: unknown, fallbackValue = "") =>
+              typeof val === "string" ? val.trim() : typeof val === "number" ? String(val) : fallbackValue
+            return {
+              category: toString(record.category, fallback?.category ?? ""),
+              description: toString(record.description, fallback?.description ?? ""),
+              costType: toString(record.costType, fallback?.costType ?? ""),
+              unit: toString(record.unit, fallback?.unit ?? ""),
+              units: toString(record.units, fallback?.units ?? ""),
+              costPerUnit: toString(record.costPerUnit, fallback?.costPerUnit ?? ""),
+              totalCost: toString(record.totalCost, fallback?.totalCost ?? ""),
+            }
+          })
+          .filter((row) =>
+            Object.values(row).some((val) => typeof val === "string" && val.trim().length > 0),
+          )
+
+        if (normalizedRows.length > 0) {
+          result[key] = normalizedRows
+        } else if (field.required) {
+          missingRequired.push(field.label || key)
+        }
+        break
+      }
       default:
         break
     }

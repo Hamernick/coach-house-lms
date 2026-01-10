@@ -1,4 +1,4 @@
-import type { LessonWizardPayload } from "./types"
+import type { BudgetTableOption, LessonWizardPayload } from "./types"
 import { toNumberOrNull } from "./fields"
 
 function slugify(value: string) {
@@ -53,9 +53,11 @@ export function buildAssignmentSchema(
 
     const placeholder = typeof field.placeholder === "string" ? field.placeholder.trim() : ""
     const description = typeof field.description === "string" ? field.description.trim() : ""
-    const options = Array.isArray(field.options)
-      ? field.options.map((option) => String(option).trim()).filter(Boolean)
-      : []
+    const rawOptions = Array.isArray(field.options) ? field.options : []
+    const optionStrings = rawOptions
+      .filter((option): option is string => typeof option === "string")
+      .map((option) => option.trim())
+      .filter(Boolean)
     const minRaw = toNumberOrNull(field.min)
     const maxRaw = toNumberOrNull(field.max)
     const stepRaw = toNumberOrNull(field.step)
@@ -83,7 +85,7 @@ export function buildAssignmentSchema(
     if (description) entry.description = description
 
     if (normalizedType === "select" || normalizedType === "multi_select") {
-      if (options.length > 0) entry.options = options
+      if (optionStrings.length > 0) entry.options = optionStrings
     }
 
     if (normalizedType === "slider") {
@@ -100,10 +102,39 @@ export function buildAssignmentSchema(
       if (programTemplate) entry.programTemplate = programTemplate
     }
 
+    if (normalizedType === "budget_table") {
+      const rows: BudgetTableOption[] = rawOptions.flatMap((option) => {
+        if (typeof option === "string") {
+          const category = option.trim()
+          if (!category) return []
+          return [{ category }]
+        }
+        if (!option || typeof option !== "object") return []
+        const entryOption = option as BudgetTableOption
+        const category = entryOption.category?.trim() ?? ""
+        if (!category) return []
+        return [{
+          category,
+          description: entryOption.description?.trim() ?? "",
+          costType: entryOption.costType?.trim() ?? "",
+          unit: entryOption.unit?.trim() ?? "",
+        }]
+      })
+      const normalizedRows = rows.map((row) => ({
+        category: row.category,
+        description: row.description ?? "",
+        costType: row.costType ?? "",
+        unit: row.unit ?? "",
+        units: "",
+        costPerUnit: "",
+        totalCost: "",
+      }))
+      if (normalizedRows.length > 0) entry.rows = normalizedRows
+    }
+
     fields.push(entry)
   })
 
   if (fields.length === 0) return null
   return { fields }
 }
-

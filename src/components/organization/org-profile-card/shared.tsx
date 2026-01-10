@@ -2,6 +2,7 @@
 
 import { Children, type ReactNode } from "react"
 import type React from "react"
+import Image from "next/image"
 
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -79,9 +80,35 @@ export function InputWithIcon({
 export function BrandLink({ href }: { href: string }) {
   if (!href) return null
   const normalizedHref = normalizeExternalUrl(href) ?? href
+  const imageBuckets = ["org-media", "program-media", "avatars"]
+  const isImageUrl =
+    /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(normalizedHref) ||
+    (normalizedHref.includes("/storage/v1/object/public/") &&
+      imageBuckets.some((bucket) => normalizedHref.includes(`/${bucket}/`)))
   const slug = inferSocialSlug(normalizedHref)
   const Icon = PROVIDER_ICON[slug] ?? PROVIDER_ICON.generic
   const displayUrl = shortUrl(normalizedHref)
+
+  if (isImageUrl) {
+    return (
+      <div className="flex flex-wrap items-center gap-3">
+        <a
+          href={normalizedHref}
+          target="_blank"
+          rel="noopener"
+          className="relative h-20 w-20 overflow-hidden rounded-xl border border-border/60 bg-muted/30"
+        >
+          <Image
+            src={normalizedHref}
+            alt="Brand asset"
+            fill
+            sizes="80px"
+            className="object-contain"
+          />
+        </a>
+      </div>
+    )
+  }
   return (
     <Glimpse>
       <GlimpseTrigger asChild>

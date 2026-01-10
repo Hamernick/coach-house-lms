@@ -1,7 +1,5 @@
 "use server"
 
-import { randomUUID } from "node:crypto"
-
 import type { PostgrestError } from "@supabase/supabase-js"
 
 import { requireAdmin } from "@/lib/admin/auth"
@@ -20,7 +18,7 @@ import { validateFinalPayload } from "@/lib/lessons/schemas"
 import type { LessonWizardPayload as SharedLessonWizardPayload } from "@/lib/lessons/types"
 import { buildAssignmentSchema, buildResourcePayload } from "@/lib/lessons/builders"
 
-import { ensureUniqueClassSlug, isRlsError, slugify, safeDeleteClass } from "./utils"
+import { ensureUniqueClassSlug, isRlsError, slugify, safeDeleteClass, randomId } from "./utils"
 import { revalidateClassViews } from "./revalidate"
 
 export async function createClassWizardAction(formData: FormData) {
@@ -141,7 +139,7 @@ async function createClassFromLessonWizardPayload(payloadRaw: string) {
   const admin = createSupabaseAdminClient()
 
   const slugBase = slugify(normalizedTitle)
-  let slugCandidate = slugBase.length > 0 ? slugBase : `class-${randomUUID().slice(0, 8)}`
+  let slugCandidate = slugBase.length > 0 ? slugBase : `class-${randomId().slice(0, 8)}`
   if (slugBase.length > 0) slugCandidate = await ensureUniqueClassSlug(supabase, slugBase)
 
   const { data: rows } = await supabase
@@ -200,7 +198,7 @@ async function createClassFromLessonWizardPayload(payloadRaw: string) {
     const moduleInserts: Database["public"]["Tables"]["modules"]["Insert"][] = modules.map((module, index) => {
       const rawModuleTitle = typeof module?.title === "string" ? module.title.trim() : ""
       const normalizedModuleTitle = clampText(rawModuleTitle.length > 0 ? rawModuleTitle : `Module ${index + 1}`, MODULE_TITLE_MAX_LENGTH)
-      const moduleSlug = `${(slugify(normalizedModuleTitle) || "module")}-${randomUUID().slice(0, 6)}`
+      const moduleSlug = `${(slugify(normalizedModuleTitle) || "module")}-${randomId().slice(0, 6)}`
       const contentMarkdown = htmlToMarkdown(module?.body ?? "")
 
       const rawModuleSubtitle = typeof module?.subtitle === "string" ? module.subtitle.trim() : ""

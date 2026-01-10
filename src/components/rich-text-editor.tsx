@@ -1,7 +1,7 @@
 "use client"
 
 import { useEditor, EditorContent } from "@tiptap/react"
-import { forwardRef, useEffect, useRef, useState, type ComponentType } from "react"
+import { forwardRef, useEffect, useRef, useState, type ChangeEvent, type ComponentType, type ReactNode } from "react"
 import StarterKit from "@tiptap/starter-kit"
 import TextAlign from "@tiptap/extension-text-align"
 import Underline from "@tiptap/extension-underline"
@@ -11,6 +11,7 @@ import Highlight from "@tiptap/extension-highlight"
 import CharacterCount from "@tiptap/extension-character-count"
 import HardBreak from "@tiptap/extension-hard-break"
 import HorizontalRule from "@tiptap/extension-horizontal-rule"
+import Image from "@tiptap/extension-image"
 import AlignCenter from "lucide-react/dist/esm/icons/align-center"
 import AlignLeft from "lucide-react/dist/esm/icons/align-left"
 import AlignRight from "lucide-react/dist/esm/icons/align-right"
@@ -20,6 +21,7 @@ import CornerDownLeft from "lucide-react/dist/esm/icons/corner-down-left"
 import Heading1 from "lucide-react/dist/esm/icons/heading-1"
 import Heading2 from "lucide-react/dist/esm/icons/heading-2"
 import Heading3 from "lucide-react/dist/esm/icons/heading-3"
+import ImagePlus from "lucide-react/dist/esm/icons/image-plus"
 import ItalicIcon from "lucide-react/dist/esm/icons/italic"
 import ListIcon from "lucide-react/dist/esm/icons/list"
 import ListOrdered from "lucide-react/dist/esm/icons/list-ordered"
@@ -43,6 +45,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { cn } from "@/lib/utils"
 import { Glimpse, GlimpseContent, GlimpseDescription, GlimpseImage, GlimpseTitle, GlimpseTrigger } from "@/components/kibo-ui/glimpse"
+import { toast } from "@/lib/toast"
 
 interface RichTextEditorProps {
   value: string
@@ -52,6 +55,8 @@ interface RichTextEditorProps {
   mode?: "default" | "compact" | "homework"
   minHeight?: number
   stableScrollbars?: boolean
+  toolbarActions?: ReactNode
+  onImageUpload?: (file: File) => Promise<string>
 }
 
 export function RichTextEditor({
@@ -62,11 +67,16 @@ export function RichTextEditor({
   mode = "default",
   minHeight,
   stableScrollbars = false,
+  toolbarActions,
+  onImageUpload,
 }: RichTextEditorProps) {
   const applyingRef = useRef(false)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const [counts, setCounts] = useState({ words: 0, chars: 0 })
   const [links, setLinks] = useState<string[]>([])
   const [linkMeta, setLinkMeta] = useState<Record<string, { title?: string | null; description?: string | null; image?: string | null }>>({})
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const enableImages = typeof onImageUpload === "function"
   const editorMinHeight = typeof minHeight === "number" && minHeight > 0 ? `${Math.round(minHeight)}px` : undefined
   const editorStyle = editorMinHeight
     ? `min-height: ${editorMinHeight};${stableScrollbars ? " scrollbar-gutter: stable;" : ""}`
@@ -108,6 +118,17 @@ export function RichTextEditor({
         keepMarks: true,
       }),
       HorizontalRule,
+      ...(enableImages
+        ? [
+            Image.configure({
+              inline: false,
+              allowBase64: false,
+              HTMLAttributes: {
+                class: "rounded-lg border border-border/60",
+              },
+            }),
+          ]
+        : []),
     ],
     content: value,
     onUpdate: ({ editor }) => {
@@ -128,9 +149,16 @@ export function RichTextEditor({
           "prose-p:my-3 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-5 prose-ol:pl-5",
           "prose-blockquote:border-l-2 prose-blockquote:border-primary/50 prose-blockquote:pl-4 prose-blockquote:text-muted-foreground",
           "prose-code:bg-muted prose-code:px-1.5 prose-code:py-1 prose-code:rounded-md prose-code:text-sm",
-          "prose-hr:border-border prose-hr:my-6"
+          "prose-hr:border-border prose-hr:my-6 prose-img:my-4 prose-img:rounded-lg prose-img:border prose-img:border-border/60"
         ),
         style: editorStyle,
+      },
+      handleKeyDown: (_view, event) => {
+        if (event.key !== "Enter" || !event.shiftKey) return false
+        if (!editor) return false
+        event.preventDefault()
+        editor.chain().focus().setHardBreak().run()
+        return true
       },
     },
     immediatelyRender: false,
@@ -308,6 +336,25 @@ export function RichTextEditor({
     )
   }
 
+  const handleImagePick = async (event: ChangeEvent<HTMLInputElement>) => {
+    if (!onImageUpload) return
+    const file = event.target.files?.[0]
+    if (!file) return
+    setUploadingImage(true)
+    try {
+      const url = await onImageUpload(file)
+      if (url) {
+        editor.chain().focus().setImage({ src: url, alt: file.name }).run()
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Image upload failed"
+      toast.error(message)
+    } finally {
+      setUploadingImage(false)
+      event.target.value = ""
+    }
+  }
+
   return (
     <div
       className={cn(
@@ -452,7 +499,21 @@ export function RichTextEditor({
         ) : (
           <ToolbarDivider />
         )}
+        {enableImages ? (
+          <>
+            <ToolbarButton
+              icon={ImagePlus}
+              label={uploadingImage ? "Uploading image" : "Insert image"}
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingImage}
+            />
+            <ToolbarDivider />
+          </>
+        ) : null}
         <ToolbarSpacer />
+        {toolbarActions ? (
+          <div className="flex items-center gap-1">{toolbarActions}</div>
+        ) : null}
         <ToolbarButton
           icon={Undo2}
           label="Undo"
@@ -466,6 +527,15 @@ export function RichTextEditor({
           disabled={!editor.can().redo()}
         />
       </div>
+      {enableImages ? (
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="sr-only"
+          onChange={handleImagePick}
+        />
+      ) : null}
       <EditorContent editor={editor} />
       <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
         <span className="hidden sm:inline">

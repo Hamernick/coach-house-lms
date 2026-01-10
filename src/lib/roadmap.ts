@@ -6,6 +6,18 @@ type RoadmapSectionDefinition = {
   placeholder?: string
 }
 
+export type RoadmapHomeworkStatus = "complete" | "in_progress" | "not_started"
+
+export type RoadmapHomeworkLink = {
+  href: string
+  label: string
+  status: RoadmapHomeworkStatus
+  moduleId: string
+  moduleTitle: string
+  classSlug: string
+  moduleIdx: number
+}
+
 export type RoadmapSection = RoadmapSectionDefinition & {
   content: string
   lastUpdated: string | null
@@ -13,6 +25,7 @@ export type RoadmapSection = RoadmapSectionDefinition & {
   layout: "square" | "vertical" | "wide"
   ctaLabel?: string
   ctaUrl?: string
+  homework?: RoadmapHomeworkLink | null
 }
 
 const SECTION_DEFINITIONS: RoadmapSectionDefinition[] = [

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,6 +15,7 @@ import { toast } from "@/lib/toast"
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { ManagerSelect } from "@/components/people/manager-select"
+import { PERSON_CATEGORY_META, PERSON_CATEGORY_OPTIONS } from "@/lib/people/categories"
 
 type Props = {
   triggerClassName?: string
@@ -42,6 +43,34 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
   const [category, setCategory] = React.useState<OrgPerson["category"]>(initial?.category ?? "staff")
   const [image, setImage] = React.useState<string | null>(initial?.image ?? null)
   const [reportsToId, setReportsToId] = React.useState<string | null>(initial?.reportsToId ?? null)
+  const linkedInHref = linkedin.trim()
+    ? (linkedin.startsWith("http") ? linkedin : `https://www.linkedin.com/in/${linkedin.replace(/^\//, "")}`)
+    : ""
+  const steps = [
+    {
+      id: 1,
+      title: "Category",
+      description: "Choose where this person appears across your org profile and lists.",
+    },
+    {
+      id: 2,
+      title: "Details",
+      description: "Add their name, title, and reporting line.",
+    },
+    {
+      id: 3,
+      title: "Profile",
+      description: "Upload a photo and optional contact details.",
+    },
+  ] as const
+  const currentStep = steps[step - 1] ?? steps[0]
+  const canContinue = step === 1 ? Boolean(category) : step === 2 ? Boolean(name.trim()) : true
+  const primaryLabel =
+    step === steps.length
+      ? initial?.id
+        ? (pending ? "Saving…" : "Save Changes")
+        : (pending ? "Adding…" : "Add Person")
+      : "Continue"
 
   function reset() {
     setStep(1)
@@ -80,141 +109,166 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
     })
   }
 
-  const CATEGORY_BADGE: Record<OrgPerson["category"], string> = {
-    staff: "bg-sky-500/15 text-sky-700 dark:text-sky-200 border-sky-500/30",
-    board: "bg-violet-500/15 text-violet-700 dark:text-violet-200 border-violet-500/30",
-    supporter: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-200 border-emerald-500/30",
+  function handlePrimary() {
+    if (step < steps.length) {
+      setStep((value) => Math.min(steps.length, value + 1))
+      return
+    }
+    onSubmit()
+  }
+
+  function handleSecondary() {
+    if (step === 1) {
+      setOpen(false)
+      return
+    }
+    setStep((value) => Math.max(1, value - 1))
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o)=>{ setOpen(o); if (!o) reset() }}>
-      <DialogTrigger asChild>
+    <Sheet open={open} onOpenChange={(o)=>{ setOpen(o); if (!o) reset() }}>
+      <SheetTrigger asChild>
         <Button className={triggerClassName} size="sm">
           <PlusIcon className="size-4" />
           <span className="ml-2">Add</span>
         </Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[640px]">
-        <DialogHeader>
-          <DialogTitle>{initial?.id ? "Edit Person" : "Add Person"}</DialogTitle>
-          <DialogDescription>Build a small profile for org chart and lists.</DialogDescription>
-        </DialogHeader>
-        {/* Stepper */}
-        <ol className="mb-2 flex items-center gap-2 text-xs">
-          {[1, 2, 3].map((s) => (
-            <li key={s} className={`inline-flex h-6 items-center rounded-full border px-2 ${step === s ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'}`}>Step {s}</li>
-          ))}
-        </ol>
-
-        {step === 1 && (
-          <FieldGroup>
-            <Field orientation="responsive">
-              <FieldLabel>Category</FieldLabel>
-              <FieldControl>
-                <Select
-                  value={category}
-                  onValueChange={(v)=>{ setCategory(v as OrgPerson["category"]); if (v !== 'staff') setReportsToId(null) }}
-                >
-                  <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="staff">Staff</SelectItem>
-                    <SelectItem value="board">Board</SelectItem>
-                    <SelectItem value="supporter">Supporters</SelectItem>
-                  </SelectContent>
-                </Select>
-                <div className="mt-2 text-xs">
-                  <span className={`inline-flex items-center gap-2 rounded-md border px-2 py-1 ${CATEGORY_BADGE[category]}`}>
-                    <span className={`inline-block h-2 w-2 rounded-full ${category==='staff'?'bg-sky-500':category==='board'?'bg-violet-500':'bg-emerald-500'}`} />
-                    {category.charAt(0).toUpperCase() + category.slice(1)}
-                  </span>
-                </div>
-              </FieldControl>
-            </Field>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button variant="outline" onClick={()=>setOpen(false)}>Cancel</Button>
-              <Button onClick={()=>setStep(2)} disabled={!category}>Continue</Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="flex w-full flex-col sm:max-w-xl">
+        <SheetHeader className="border-b border-border/60 px-6 pb-4 pt-6 text-left">
+          <SheetTitle>{initial?.id ? "Edit Person" : "Add Person"}</SheetTitle>
+          <SheetDescription>Build a small profile for org chart and lists.</SheetDescription>
+        </SheetHeader>
+        <div className="flex-1 overflow-y-auto px-6 pb-6 pt-5">
+          <div className="mb-6 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>Step {step} of {steps.length}</span>
+              <span className="font-medium text-foreground">{currentStep.title}</span>
             </div>
-          </FieldGroup>
-        )}
+            <div className="mt-2 h-1.5 w-full rounded-full bg-muted">
+              <div
+                className="h-1.5 rounded-full bg-primary"
+                style={{ width: `${Math.round((step / steps.length) * 100)}%` }}
+              />
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">{currentStep.description}</p>
+          </div>
 
-        {step === 2 && (
-          <FieldGroup>
-            <Field orientation="responsive">
-              <FieldLabel htmlFor="p-name">Name</FieldLabel>
-              <FieldControl>
-                <Input id="p-name" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Full name" />
-              </FieldControl>
-            </Field>
-            <Field orientation="responsive">
-              <FieldLabel htmlFor="p-title">Title</FieldLabel>
-              <FieldControl>
-                <Input id="p-title" value={title ?? ""} onChange={(e)=>setTitle(e.target.value)} placeholder="Role or title" />
-              </FieldControl>
-            </Field>
-            {category === 'staff' ? (
+          {step === 1 && (
+            <FieldGroup className="gap-4">
               <Field orientation="responsive">
-                <FieldLabel>Reports to</FieldLabel>
+                <FieldLabel>Category</FieldLabel>
                 <FieldControl>
-                  <ManagerSelect
-                    value={reportsToId}
-                    options={people.filter((p)=> p.category === 'staff' && (!initial?.id || p.id !== initial.id))}
-                    onChange={(val)=> setReportsToId(val)}
-                  />
+                  <Select
+                    value={category}
+                    onValueChange={(v)=>{ setCategory(v as OrgPerson["category"]); if (v !== 'staff') setReportsToId(null) }}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                    <SelectContent>
+                      {PERSON_CATEGORY_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FieldDescription className="mt-2">
+                    This controls which section they show up in across the platform.
+                  </FieldDescription>
+                  <div className="mt-2 text-xs">
+                    <span
+                      className={`inline-flex items-center gap-2 rounded-md border px-2 py-1 ${PERSON_CATEGORY_META[category].badgeClass}`}
+                    >
+                      <span className={`inline-block h-2 w-2 rounded-full ${PERSON_CATEGORY_META[category].dotClass}`} />
+                      {PERSON_CATEGORY_META[category].label}
+                    </span>
+                  </div>
                 </FieldControl>
               </Field>
-            ) : null}
-            <div className="flex justify-between pt-2">
-              <Button variant="outline" onClick={()=>setStep(1)}>Back</Button>
-              <Button onClick={()=>setStep(3)} disabled={!name.trim()}>Continue</Button>
-            </div>
-          </FieldGroup>
-        )}
+            </FieldGroup>
+          )}
 
-        {step === 3 && (
-          <FieldGroup>
-            <Field>
-              <FieldLabel>Profile picture</FieldLabel>
-              <FieldControl>
-                <div className="flex flex-col items-center gap-3 py-1">
-                  <Avatar className="size-20">
+          {step === 2 && (
+            <FieldGroup className="gap-4">
+              <Field orientation="responsive">
+                <FieldLabel htmlFor="p-name">Name</FieldLabel>
+                <FieldControl>
+                  <Input id="p-name" value={name} onChange={(e)=>setName(e.target.value)} placeholder="Full name" />
+                </FieldControl>
+              </Field>
+              <Field orientation="responsive">
+                <FieldLabel htmlFor="p-title">Title</FieldLabel>
+                <FieldControl>
+                  <Input id="p-title" value={title ?? ""} onChange={(e)=>setTitle(e.target.value)} placeholder="Role or title" />
+                </FieldControl>
+              </Field>
+              {category === 'staff' ? (
+                <Field orientation="responsive">
+                  <FieldLabel>Reports to</FieldLabel>
+                  <FieldControl>
+                    <ManagerSelect
+                      value={reportsToId}
+                      options={people.filter((p)=> p.category === 'staff' && (!initial?.id || p.id !== initial.id))}
+                      onChange={(val)=> setReportsToId(val)}
+                    />
+                    <FieldDescription className="mt-2">Optional: set their reporting line.</FieldDescription>
+                  </FieldControl>
+                </Field>
+              ) : null}
+            </FieldGroup>
+          )}
+
+          {step === 3 && (
+            <FieldGroup className="gap-5">
+              <div className="rounded-2xl border border-dashed border-border/70 bg-muted/30 px-4 py-4">
+                <div className="grid gap-4 sm:grid-cols-[96px,1fr] sm:items-center">
+                  <Avatar className="size-20 sm:size-24">
                     <AvatarImage src={image ?? undefined} alt={name} />
                     <AvatarFallback>{name?.[0]?.toUpperCase() ?? "?"}</AvatarFallback>
                   </Avatar>
-                  <div className="text-center">
-                    <Label htmlFor="p-img" className="sr-only">Upload</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="p-img" className="text-sm font-medium">Profile photo</Label>
                     <Input id="p-img" type="file" accept="image/*" onChange={handleFile} />
                     <FieldDescription>Square images work best.</FieldDescription>
                   </div>
                 </div>
-              </FieldControl>
-            </Field>
-            <div className="my-2"><div className="h-px w-full bg-border" /></div>
-            <Field orientation="responsive">
-              <FieldLabel htmlFor="p-linkedin">LinkedIn</FieldLabel>
-              <FieldControl>
-                <InputGroup>
-                  <Input id="p-linkedin" value={linkedin ?? ""} onChange={(e)=>setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/username" />
-                  <InputGroupAddon>
-                    <InputGroupButton type="button" onClick={()=>window.open(linkedin || "https://linkedin.com", "_blank")}>Open</InputGroupButton>
-                  </InputGroupAddon>
-                </InputGroup>
-                <FieldDescription>If set, we’ll auto-fetch their photo on save.</FieldDescription>
-              </FieldControl>
-            </Field>
-            <Field orientation="responsive">
-              <FieldLabel htmlFor="p-email">Email</FieldLabel>
-              <FieldControl>
-                <Input id="p-email" value={email ?? ""} onChange={(e)=>setEmail(e.target.value)} placeholder="name@org.org" />
-                <FieldDescription>Used for contact cards (optional).</FieldDescription>
-              </FieldControl>
-            </Field>
-            <div className="flex justify-between pt-2">
-              <Button variant="outline" onClick={()=>setStep(2)}>Back</Button>
-              <Button onClick={onSubmit} disabled={pending} aria-busy={pending}>{initial?.id ? (pending ? "Saving…" : "Save Changes") : (pending ? "Adding…" : "Add Person")}</Button>
-            </div>
-          </FieldGroup>
-        )}
-      </DialogContent>
-    </Dialog>
+              </div>
+              <Field orientation="responsive">
+                <FieldLabel htmlFor="p-linkedin">LinkedIn</FieldLabel>
+                <FieldControl>
+                  <InputGroup>
+                    <Input id="p-linkedin" value={linkedin ?? ""} onChange={(e)=>setLinkedin(e.target.value)} placeholder="https://linkedin.com/in/username" />
+                    <InputGroupAddon>
+                      <InputGroupButton
+                        type="button"
+                        disabled={!linkedInHref}
+                        onClick={()=>{ if (linkedInHref) window.open(linkedInHref, "_blank") }}
+                      >
+                        Open
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
+                  <FieldDescription>If set, we’ll auto-fetch their photo on save.</FieldDescription>
+                </FieldControl>
+              </Field>
+              <Field orientation="responsive">
+                <FieldLabel htmlFor="p-email">Email</FieldLabel>
+                <FieldControl>
+                  <Input id="p-email" value={email ?? ""} onChange={(e)=>setEmail(e.target.value)} placeholder="name@org.org" />
+                  <FieldDescription>Used for contact cards (optional).</FieldDescription>
+                </FieldControl>
+              </Field>
+            </FieldGroup>
+          )}
+        </div>
+        <SheetFooter className="border-t border-border/60 bg-background/95 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <Button variant="outline" onClick={handleSecondary}>
+            {step === 1 ? "Cancel" : "Back"}
+          </Button>
+          <Button onClick={handlePrimary} disabled={!canContinue || (step === steps.length && pending)} aria-busy={pending}>
+            {primaryLabel}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   )
 }

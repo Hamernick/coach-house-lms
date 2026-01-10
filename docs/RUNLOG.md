@@ -2035,6 +2035,21 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Fix: corrected scroll-parent detection typing so IntersectionObserver roots never receive `window` (`src/components/public/home2-scroll-video.tsx`).
 - Tests: not run.
 
+## 2026-01-10 — Codex session (Roadmap preview typing)
+
+- Fix: added a null `imageUrl` to the fallback program preview so ProgramCard props typecheck (`src/components/roadmap/roadmap-shell.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Scroll text reveal typing)
+
+- Fix: aligned scroll reveal offset typing with Motion's `useScroll` options to satisfy TS (`src/components/ui/scroll-text-reveal.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Lesson wizard options typing)
+
+- Fix: guard lesson wizard field options so budget-table rows are preserved and string trimming only runs on string options (`src/hooks/lessons/use-lesson-wizard.ts`).
+- Tests: not run.
+
 ## 2026-01-10 — Codex session (Deck step frame)
 
 - UI: wrapped the module deck step in the shared StepFrame and passed through `hasDeck` so the inline viewer has a fixed height and respects actual deck availability (`src/components/training/module-detail/module-stepper.tsx`).

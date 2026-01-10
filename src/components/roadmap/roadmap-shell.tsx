@@ -115,6 +115,7 @@ export function RoadmapShell({
   const fallbackProgram = {
     title: "Program preview",
     location: "Add your first program",
+    imageUrl: null,
     statusLabel: "Program",
     chips: ["Outcomes", "Staffing", "Budget"],
     goalCents: 0,

@@ -9,10 +9,11 @@ type ScrollTextRevealProps = {
   words: string
   className?: string
   wordClassName?: string
-  offset?: [string, string]
+  offset?: ScrollOffset
 }
 
 type ProgressValue = ReturnType<typeof useScroll>["scrollYProgress"]
+type ScrollOffset = NonNullable<Parameters<typeof useScroll>[0]>["offset"]
 
 type WordProps = {
   word: string
@@ -42,7 +43,7 @@ export function ScrollTextReveal({
   words,
   className,
   wordClassName,
-  offset = ["start 80%", "center center"],
+  offset = ["start 80%", "center center"] as ScrollOffset,
 }: ScrollTextRevealProps) {
   const ref = React.useRef<HTMLSpanElement | null>(null)
   const containerRef = React.useRef<HTMLElement | null>(null)

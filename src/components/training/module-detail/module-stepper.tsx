@@ -499,26 +499,24 @@ export function ModuleStepper({
                   ) : null
                 case "assignment":
                   return (
-                    <StepFrame fitContent padded>
-                      <AssignmentFormLazy
-                        mode="stepper"
-                        activeSectionId={activeStep.sectionId}
-                        fields={assignmentFields}
-                        initialValues={initialValues}
-                        pending={pending}
-                        onSubmit={onSubmit}
-                        statusLabel={statusLabel}
-                        statusVariant={statusVariant}
-                        statusNote={statusNote}
-                        helperText={helperText}
-                        errorMessage={errorMessage}
-                        updatedAt={updatedAt}
-                        completeOnSubmit={completeOnSubmit}
-                        moduleId={moduleId}
-                        moduleTitle={moduleTitle}
-                        classTitle={classTitle}
-                      />
-                    </StepFrame>
+                    <AssignmentFormLazy
+                      mode="stepper"
+                      activeSectionId={activeStep.sectionId}
+                      fields={assignmentFields}
+                      initialValues={initialValues}
+                      pending={pending}
+                      onSubmit={onSubmit}
+                      statusLabel={statusLabel}
+                      statusVariant={statusVariant}
+                      statusNote={statusNote}
+                      helperText={helperText}
+                      errorMessage={errorMessage}
+                      updatedAt={updatedAt}
+                      completeOnSubmit={completeOnSubmit}
+                      moduleId={moduleId}
+                      moduleTitle={moduleTitle}
+                      classTitle={classTitle}
+                    />
                   )
                 case "complete":
                   return (

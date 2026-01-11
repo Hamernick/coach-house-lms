@@ -139,7 +139,6 @@ function AssignmentFormInner({
   statusVariant = "outline",
   helperText,
   errorMessage,
-  updatedAt,
   completeOnSubmit,
   statusNote,
   moduleId,
@@ -161,7 +160,6 @@ function AssignmentFormInner({
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null)
   const showStatusBadge = statusLabel && statusLabel !== "Submitted"
   const hasMeta = Boolean(showStatusBadge || helperText || errorMessage || statusNote || autoSaving)
-  const [lastSavedShort, setLastSavedShort] = useState<string | null>(null)
   const [budgetColumnWidths, setBudgetColumnWidths] = useState<number[]>(BUDGET_COLUMN_DEFAULTS)
   const [budgetUserSized, setBudgetUserSized] = useState(false)
   const budgetResizeRef = useRef<{ index: number; startX: number; startWidth: number } | null>(null)
@@ -210,29 +208,6 @@ function AssignmentFormInner({
 
     return widths.map((value, idx) => Math.max(BUDGET_COLUMN_MINS[idx], value || BUDGET_COLUMN_MINS[idx]))
   }, [])
-
-  useEffect(() => {
-    if (!updatedAt) {
-      setLastSavedShort(null)
-      return
-    }
-    const saved = new Date(updatedAt)
-    if (Number.isNaN(saved.getTime())) {
-      setLastSavedShort(null)
-      return
-    }
-    const now = new Date()
-    const isToday =
-      saved.getFullYear() === now.getFullYear() &&
-      saved.getMonth() === now.getMonth() &&
-      saved.getDate() === now.getDate()
-    const dayLabel = isToday ? "Today" : `${saved.getMonth() + 1}/${saved.getDate()}`
-    const timeLabel = new Intl.DateTimeFormat("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(saved)
-    setLastSavedShort(`Last saved ${dayLabel}, ${timeLabel}`)
-  }, [updatedAt])
 
   useEffect(() => {
     setValues((prev) => (assignmentValuesEqual(prev, initialValues) ? prev : initialValues))
@@ -1145,9 +1120,6 @@ function AssignmentFormInner({
             )}
           >
             <div className={cn("flex flex-col gap-1", isStepper ? "text-center" : "text-right")}>
-              <p className={cn("min-h-[14px]", !lastSavedShort && "opacity-0")}>
-                {lastSavedShort ?? "Last saved"}
-              </p>
               <div className={cn("min-h-[14px] flex flex-wrap justify-end gap-2", !hasMeta && "opacity-0")}>
                 {helperText ? <p className="text-emerald-600">{helperText}</p> : null}
                 {errorMessage ? <p className="text-rose-500">{errorMessage}</p> : null}

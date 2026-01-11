@@ -16,7 +16,8 @@ Alternatively, you can answer the questions below. Your responses will serve as 
 
 Where are you from? (This can be a place, a community, a family context, or a formative environment.)
 What experiences in your life led to your concern about—and commitment to addressing—the problem you’re working on? (Moments, patterns, or lived experiences that shaped how you see this issue.)
-Why do you believe this work matters now, and why do you feel called to be part of it?
+Why do you believe this work matters now?
+Why do you feel called to be part of it?
 
 1. [done] Need statement
 2. [pending] Remove 2-3 sentences. This can be anything from a few sentences to a full page
@@ -619,6 +620,8 @@ Sample New Member Handbook :  https://docs.google.com/document/d/1ZH-MATqOh65ssJ
 MISC:
 [done] Download button for slide decks isn’t always working.
 [done] Inline deck step now renders inside a fixed frame so slides display in the stepper.
+[done] Assignment step no longer wraps the questions in the StepFrame container.
+[done] Removed the “Last saved” line from assignment forms.
 
 
 

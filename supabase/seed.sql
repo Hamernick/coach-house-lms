@@ -308,10 +308,17 @@ select
         'required', false
       ),
       jsonb_build_object(
-        'name', 'origin_personal_why',
-        'label', 'Why do you believe this work matters now, and why do you feel called to be part of it?',
+        'name', 'origin_why_now',
+        'label', 'Why do you believe this work matters now?',
         'type', 'long_text',
-        'placeholder', 'Describe why this work matters now and why you are called to it.',
+        'placeholder', 'Share why this work is urgent right now.',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'origin_why_called',
+        'label', 'Why do you feel called to be part of it?',
+        'type', 'long_text',
+        'placeholder', 'Describe why you feel called to this work.',
         'required', false
       ),
       jsonb_build_object(

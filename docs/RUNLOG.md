@@ -2050,6 +2050,17 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Fix: guard lesson wizard field options so budget-table rows are preserved and string trimming only runs on string options (`src/hooks/lessons/use-lesson-wizard.ts`).
 - Tests: not run.
 
+## 2026-01-10 — Codex session (Assignment frame cleanup)
+
+- UI: removed the StepFrame wrapper around stepper assignments so questions sit directly in the module layout, and removed the “Last saved” line from assignment forms (`src/components/training/module-detail/module-stepper.tsx`, `src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Origin story split)
+
+- Data: split the origin-story “why” prompt into two distinct questions, preserved any prior answers into both new fields, and updated seeds (`supabase/migrations/20260110191500_split_origin_story_questions.sql`, `supabase/seed.sql`).
+- Docs: updated the checklist copy to reflect the split (`docs/updates_edits.md`).
+- Tests: not run.
+
 ## 2026-01-10 — Codex session (Deck step frame)
 
 - UI: wrapped the module deck step in the shared StepFrame and passed through `hasDeck` so the inline viewer has a fixed height and respects actual deck availability (`src/components/training/module-detail/module-stepper.tsx`).

@@ -267,7 +267,10 @@ export default async function PricingPage() {
   )
 
   return (
-    <main className="relative min-h-screen bg-background [--background:#F4F4F4] dark:[--background:oklch(0.145_0_0)]">
+    <main
+      data-public-surface="pricing"
+      className="relative min-h-screen bg-background [--background:#F4F4F4] dark:[--background:oklch(0.145_0_0)]"
+    >
       <PublicHeader />
       <div className="mx-auto flex w-[min(1000px,92%)] flex-col gap-16 pb-16 pt-24 sm:pt-28 lg:pb-24">
         <section className="mx-auto max-w-3xl text-center">

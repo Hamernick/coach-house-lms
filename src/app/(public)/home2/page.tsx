@@ -269,7 +269,7 @@ export default function HomeTwoPage() {
             <div className={cn(inter.className, "mx-auto w-full max-w-3xl space-y-6 text-left lg:max-w-4xl")}>
               <div className="inline-flex items-center justify-start gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-2 text-xs text-muted-foreground shadow-sm animate-fade-in">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
-                The Coach House Commons
+                The Coach House Platform
               </div>
               <h1 className="text-balance text-3xl font-normal leading-tight tracking-tight text-[#525252] sm:text-4xl lg:text-5xl animate-soft-pop dark:text-[#A1A1A1]">
                 Build{" "}

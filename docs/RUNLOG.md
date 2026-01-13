@@ -2966,3 +2966,8 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 
 - UI: added “Coming soon” pills to select pricing checklist items and matching feature-table rows (Resource map listing, Board member portal, AI enabled NFP development, Fundraising tools) (`src/app/(public)/pricing/page.tsx`).
 - Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing top bar background)
+
+- UI: matched the top overscroll/gap background on `/pricing` to the page surface by overriding `--app-surface` when the pricing page is mounted (`src/app/(public)/pricing/page.tsx`, `src/app/globals.css`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.

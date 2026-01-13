@@ -175,6 +175,21 @@
     color: var(--foreground);
   }
 
+  /* Pricing page: match overscroll/top gap background to the page surface */
+  html:has([data-public-surface="pricing"]) {
+    --app-surface: #f4f4f4;
+  }
+
+  html.dark:has([data-public-surface="pricing"]) {
+    --app-surface: var(--background);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    html:has([data-public-surface="pricing"]):not(.light):not(.dark) {
+      --app-surface: var(--background);
+    }
+  }
+
   /* Dashboard shell: when a sidebar wrapper exists, match overscroll bg to sidebar */
   html:has([data-slot="sidebar-wrapper"]) {
     background-color: var(--sidebar);

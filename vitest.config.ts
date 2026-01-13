@@ -1,7 +1,7 @@
 import path from "node:path"
-import type { UserConfig } from "vitest/config"
+import type { ViteUserConfig } from "vitest/config"
 
-const config: UserConfig = {
+const config: ViteUserConfig = {
   test: {
     include: ["tests/acceptance/**/*.test.ts"],
     environment: "node",

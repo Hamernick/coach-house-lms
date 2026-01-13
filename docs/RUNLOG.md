@@ -2971,3 +2971,11 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 
 - UI: matched the top overscroll/gap background on `/pricing` to the page surface by overriding `--app-surface` when the pricing page is mounted (`src/app/(public)/pricing/page.tsx`, `src/app/globals.css`).
 - Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Unblock Vercel build)
+
+- Fix: corrected `OrgPersonSummary.category` typing for `/api/account/org-people` and tightened Program Wizard `locationType` payload typing (`src/app/api/account/org-people/route.ts`, `src/components/programs/program-wizard.tsx`).
+- Fix: ensured `PublicRoadmapPresentation` GSAP cleanup returns `void` and hardened touch handling types (`src/components/roadmap/public-roadmap-presentation.tsx`).
+- Fix: updated `vitest.config.ts` to use the correct Vitest config type without a runtime import (avoids ESM/CJS config-load crash) (`vitest.config.ts`).
+- Supabase: verified the two search migrations are already applied on the linked project (`20260112194500_add_search_events`, `20260112200000_add_search_index_view`).
+- Checks: `pnpm build`; `pnpm lint`; `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls` (skipped without required env vars).

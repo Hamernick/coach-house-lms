@@ -18,7 +18,7 @@ export default async function UpdatePasswordPage({ searchParams }: UpdatePasswor
         title="Choose a new password"
         description="Passwords must be at least 8 characters."
       >
-        <UpdatePasswordForm redirectTo={redirect ?? "/dashboard"} />
+        <UpdatePasswordForm redirectTo={redirect ?? "/my-organization"} />
       </AuthCard>
     </AuthScreenShell>
   )

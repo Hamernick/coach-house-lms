@@ -74,14 +74,14 @@ async function createDemoContent(studentId) {
       title: "Published Class",
       slug: `published-${suffix}`,
       description: "Visible to students",
-      published: true,
+      is_published: true,
     },
     {
       id: unpublishedClassId,
       title: "Draft Class",
       slug: `draft-${suffix}`,
       description: "Hidden from students",
-      published: false,
+      is_published: false,
     },
   ])
   if (classErr) throw classErr
@@ -150,7 +150,10 @@ async function run() {
 
   // Class visibility
   {
-    const { data, error } = await studentClient.from("classes").select("id, published").order("published", { ascending: false })
+    const { data, error } = await studentClient
+      .from("classes")
+      .select("id, is_published")
+      .order("is_published", { ascending: false })
     const publishedVisible = Array.isArray(data) && data.some((row) => row.id === assets.publishedClassId)
     const draftHidden = Array.isArray(data) && !data.some((row) => row.id === assets.unpublishedClassId)
     results.push({ name: "student sees published class", passed: publishedVisible && !error })
@@ -162,7 +165,7 @@ async function run() {
     const { error } = await studentClient.from("classes").insert({
       title: "Forbidden",
       slug: `forbidden-${suffix}`,
-      published: true,
+      is_published: true,
     })
     results.push({ name: "student cannot insert classes", passed: !!error })
   }

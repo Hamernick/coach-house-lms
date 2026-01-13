@@ -59,7 +59,7 @@ export function LoginForm({ redirectTo, initialError }: LoginFormProps) {
       }
 
       form.reset()
-      router.replace(redirectTo ?? "/dashboard")
+      router.replace(redirectTo ?? "/my-organization")
       router.refresh()
     })
   }

@@ -13,7 +13,7 @@ export function PublicHeader() {
   return (
     <header className="sticky top-4 z-50 mx-auto mt-4 w-[min(1100px,92%)] rounded-2xl border border-border/70 bg-background/50 px-4 py-3 shadow-md backdrop-blur supports-[backdrop-filter]:bg-background/40">
       <nav className="flex items-center justify-between gap-4" aria-label="Primary">
-        <div className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2" aria-label="Coach House home">
           <span className="relative flex h-8 w-8 items-center justify-center">
             <Image
               src="/coach-house-logo-light.png"
@@ -33,7 +33,7 @@ export function PublicHeader() {
             />
           </span>
           <span className={`${inter.className} text-base font-black tracking-tight sm:text-lg`}>Coach House</span>
-        </div>
+        </Link>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <Link href="/pricing" className="hidden sm:inline hover:text-foreground">
             Pricing

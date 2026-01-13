@@ -1,6 +1,9 @@
+import { redirect } from "next/navigation"
+
 import { TrainingShell } from "@/components/training/training-shell"
 import { fetchSidebarTree } from "@/lib/academy"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 
 export default async function TrainingPage() {
   const supabase = await createSupabaseServerClient()
@@ -9,19 +12,20 @@ export default async function TrainingPage() {
     error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError) {
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw userError
   }
 
-  let isAdmin = false
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle<{ role: string | null }>()
-    isAdmin = profile?.role === "admin"
+  if (!user) {
+    redirect("/login?redirect=/training")
   }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<{ role: string | null }>()
+  const isAdmin = profile?.role === "admin"
 
   const classes = await fetchSidebarTree({ includeDrafts: true, forceAdmin: !isAdmin })
   const classDefs = classes.map((klass) => ({

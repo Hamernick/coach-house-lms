@@ -37,7 +37,7 @@ describe("pricing acceptance", () => {
     })
   })
 
-  it("redirects trialing users to dashboard when checkout cannot reach Stripe", async () => {
+  it("redirects trialing users to My Organization when checkout cannot reach Stripe", async () => {
     const { supabase, upsert } = createSupabaseStub()
     createSupabaseServerClientMock.mockReturnValue(supabase)
 
@@ -47,7 +47,7 @@ describe("pricing acceptance", () => {
 
     const destination = await captureRedirect(() => startCheckout(form))
 
-    expect(destination).toBe("/dashboard?subscription=trialing")
+    expect(destination).toBe("/my-organization?subscription=trialing")
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: "user-123",
@@ -65,7 +65,7 @@ describe("pricing acceptance", () => {
       PricingSuccessPage({ searchParams: Promise.resolve({}) })
     )
 
-    expect(destination).toBe("/dashboard?subscription=trialing")
+    expect(destination).toBe("/my-organization?subscription=trialing")
     expect(upsert).toHaveBeenCalledTimes(1)
     const [payload] = upsert.mock.calls[0]
     expect(payload).toMatchObject({

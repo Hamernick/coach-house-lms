@@ -115,34 +115,32 @@ export function SidebarBody({
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              asChild
               size="lg"
-              className="justify-start gap-2"
+              className="justify-start gap-2 text-foreground"
+              type="button"
             >
-              <Link href="/dashboard" className="flex items-center gap-2 text-foreground">
-                <span className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg">
-                  <Image
-                    src="/coach-house-logo-light.png"
-                    alt="Coach House logo"
-                    width={32}
-                    height={32}
-                    className="block h-full w-full dark:hidden"
-                    priority
-                  />
-                  <Image
-                    src="/coach-house-logo-dark.png"
-                    alt="Coach House logo"
-                    width={32}
-                    height={32}
-                    className="hidden h-full w-full dark:block"
-                    priority
-                  />
-                </span>
-                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                  <span className="truncate font-medium tracking-tight">Coach House</span>
-                  <span className="truncate text-xs text-muted-foreground">Platform</span>
-                </div>
-              </Link>
+              <span className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg">
+                <Image
+                  src="/coach-house-logo-light.png"
+                  alt="Coach House logo"
+                  width={32}
+                  height={32}
+                  className="block h-full w-full dark:hidden"
+                  priority
+                />
+                <Image
+                  src="/coach-house-logo-dark.png"
+                  alt="Coach House logo"
+                  width={32}
+                  height={32}
+                  className="hidden h-full w-full dark:block"
+                  priority
+                />
+              </span>
+              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                <span className="truncate font-medium tracking-tight">Coach House</span>
+                <span className="truncate text-xs text-muted-foreground">Platform</span>
+              </div>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

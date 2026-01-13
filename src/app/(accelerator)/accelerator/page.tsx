@@ -2,14 +2,13 @@ import Link from "next/link"
 
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
 
-import { StartBuildingPager, type ModuleGroup, type ModuleCardStatus } from "@/components/accelerator/start-building-pager"
+import { StartBuildingPager } from "@/components/accelerator/start-building-pager"
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
 import { ProgramCard } from "@/components/programs/program-card"
 import { AcceleratorScheduleCard } from "@/components/accelerator/accelerator-schedule-card"
 import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
-import { fetchSidebarTree } from "@/lib/academy"
-import { createSupabaseServerClient } from "@/lib/supabase"
+import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
 
 export const runtime = "edge"
 export const dynamic = "force-dynamic"
@@ -30,9 +29,9 @@ const PROGRAM_TEMPLATES = [
 ]
 
 export default async function AcceleratorOverviewPage() {
-  const { groups, totalModules, completedModules, inProgressModules } = await fetchAcceleratorModuleGroups()
+  const { groups, totalModules, completedModules, inProgressModules, percent } = await fetchAcceleratorProgressSummary()
   const safeCompletedModules = Math.min(completedModules, totalModules)
-  const progressPercent = totalModules > 0 ? Math.round((safeCompletedModules / totalModules) * 100) : 0
+  const progressPercent = percent
   const progressStatus =
     totalModules > 0 && completedModules >= totalModules
       ? "completed"
@@ -48,7 +47,7 @@ export default async function AcceleratorOverviewPage() {
 
   return (
     <div className="space-y-14">
-      <section id="overview" className="grid gap-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+      <section id="overview" className="grid gap-10 py-4 lg:py-6 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <div className="min-w-0 space-y-6 animate-fade-up">
           <div className="space-y-3">
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Overview</p>
@@ -60,7 +59,7 @@ export default async function AcceleratorOverviewPage() {
             </p>
             <div className="max-w-sm space-y-3">
               <div className="flex items-center justify-between text-xs uppercase text-muted-foreground">
-                <span>Completion</span>
+                <span>Progress</span>
                 <span className="text-foreground">{progressPercent}%</span>
               </div>
               <div
@@ -148,98 +147,4 @@ export default async function AcceleratorOverviewPage() {
       </section>
     </div>
   )
-}
-
-async function fetchAcceleratorModuleGroups(): Promise<{
-  groups: ModuleGroup[]
-  totalModules: number
-  completedModules: number
-  inProgressModules: number
-}> {
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-
-  if (userError) {
-    throw userError
-  }
-
-  if (!user) {
-    return { groups: [], totalModules: 0, completedModules: 0, inProgressModules: 0 }
-  }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle<{ role: string | null }>()
-
-  const isAdmin = profile?.role === "admin"
-  const classes = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
-
-  const moduleIds = classes.flatMap((klass) => klass.modules.map((module) => module.id))
-
-  if (moduleIds.length === 0) {
-    return { groups: [], totalModules: 0, completedModules: 0, inProgressModules: 0 }
-  }
-
-  const { data: progressRows, error: progressError } = await supabase
-    .from("module_progress")
-    .select("module_id, status")
-    .eq("user_id", user.id)
-    .in("module_id", moduleIds)
-    .returns<Array<{ module_id: string; status: ModuleCardStatus }>>()
-
-  if (progressError) {
-    throw progressError
-  }
-
-  const progressMap = new Map<string, ModuleCardStatus>()
-  let completedModules = 0
-  let inProgressModules = 0
-
-  for (const row of progressRows ?? []) {
-    const status = row.status
-    progressMap.set(row.module_id, status)
-    if (status === "completed") completedModules += 1
-    if (status === "in_progress") inProgressModules += 1
-  }
-
-  const groups: ModuleGroup[] = classes.map((klass) => {
-    let unlocked = true
-    const modules = klass.modules.map((module) => {
-      const statusFromProgress = progressMap.get(module.id) ?? "not_started"
-      let status: ModuleCardStatus = statusFromProgress
-      if (!unlocked) {
-        status = "locked"
-      }
-      if (unlocked && statusFromProgress === "not_started") {
-        unlocked = false
-      }
-      return {
-        id: module.id,
-        title: module.title,
-        description: module.description ?? null,
-        href: `/accelerator/class/${klass.slug}/module/${module.index}`,
-        status,
-        index: module.index,
-      }
-    })
-
-    return {
-      id: klass.id,
-      title: klass.title,
-      description: klass.description ?? null,
-      modules,
-    }
-  }).filter((group) => group.modules.length > 0)
-
-  return {
-    groups,
-    totalModules: moduleIds.length,
-    completedModules,
-    inProgressModules,
-  }
 }

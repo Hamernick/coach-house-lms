@@ -95,6 +95,7 @@ export function OrgProfileEditor({
   programs = [],
   canEdit = true,
   initialTab,
+  initialProgramId,
 }: OrgProfileCardProps) {
   const normalizedInitial = useMemo(() => normalizeCompanyProfile(initial), [initial])
   const router = useRouter()
@@ -112,10 +113,21 @@ export function OrgProfileEditor({
   const [editOpen, setEditOpen] = useState(false)
   const hasUnsavedChanges = dirty
   const [slugStatus, setSlugStatus] = useState<SlugStatus>(null)
+  const didOpenProgramRef = useRef(false)
 
   useEffect(() => {
     savedCompanyRef.current = savedCompany
   }, [savedCompany])
+
+  useEffect(() => {
+    if (!initialProgramId || !canEdit || didOpenProgramRef.current) return
+    const match = programs.find((program) => program.id === initialProgramId) ?? null
+    if (!match) return
+    setTab("programs")
+    setEditProgram(match)
+    setEditOpen(true)
+    didOpenProgramRef.current = true
+  }, [canEdit, initialProgramId, programs])
 
   const handleTabChange = useCallback((value: string) => {
     if (!TABS.some((tab) => tab.value === value)) return

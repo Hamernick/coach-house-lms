@@ -1,7 +1,8 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo, useState, useEffect } from "react"
 import Image from "next/image"
+import { useSearchParams } from "next/navigation"
 
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -10,6 +11,10 @@ import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
 
 import { CATEGORIES, ITEMS, type MarketplaceCategory } from "./marketplace-data"
+
+function isMarketplaceCategory(value: string | null): value is MarketplaceCategory {
+  return Boolean(value && CATEGORIES.some((category) => category.value === value))
+}
 
 function MarketCard({
   name,
@@ -59,8 +64,20 @@ function MarketCard({
 }
 
 export function MarketplaceClient() {
-  const [query, setQuery] = useState("")
-  const [tab, setTab] = useState<MarketplaceCategory>("top-picks")
+  const searchParams = useSearchParams()
+  const paramQuery = searchParams.get("q") ?? ""
+  const paramCategory = searchParams.get("category")
+  const initialCategory = isMarketplaceCategory(paramCategory) ? paramCategory : "top-picks"
+
+  const [query, setQuery] = useState(paramQuery)
+  const [tab, setTab] = useState<MarketplaceCategory>(initialCategory)
+
+  useEffect(() => {
+    const nextQuery = paramQuery
+    const nextCategory = isMarketplaceCategory(paramCategory) ? paramCategory : "top-picks"
+    setQuery(nextQuery)
+    setTab(nextCategory)
+  }, [paramQuery, paramCategory])
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()

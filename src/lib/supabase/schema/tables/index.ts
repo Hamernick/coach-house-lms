@@ -13,6 +13,7 @@ import type { StripeWebhookEventsTable } from "./stripe_webhook_events"
 import type { ModuleContentTable } from "./module_content"
 import type { OnboardingResponsesTable } from "./onboarding_responses"
 import type { RoadmapEventsTable } from "./roadmap_events"
+import type { SearchEventsTable } from "./search_events"
 
 export type { OrganizationsTable } from "./organizations"
 export type { ModuleAssignmentsTable } from "./module_assignments"
@@ -29,6 +30,7 @@ export type { StripeWebhookEventsTable } from "./stripe_webhook_events"
 export type { ModuleContentTable } from "./module_content"
 export type { OnboardingResponsesTable } from "./onboarding_responses"
 export type { RoadmapEventsTable } from "./roadmap_events"
+export type { SearchEventsTable } from "./search_events"
 
 export type PublicTables = {
   organizations: OrganizationsTable
@@ -46,4 +48,5 @@ export type PublicTables = {
   module_content: ModuleContentTable
   onboarding_responses: OnboardingResponsesTable
   roadmap_events: RoadmapEventsTable
+  search_events: SearchEventsTable
 }

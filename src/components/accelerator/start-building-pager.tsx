@@ -5,25 +5,8 @@ import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2"
 import Lock from "lucide-react/dist/esm/icons/lock"
 
 import { NewsGradientThumb } from "@/components/news/gradient-thumb"
+import type { ModuleCard, ModuleGroup } from "@/lib/accelerator/progress"
 import { cn } from "@/lib/utils"
-
-export type ModuleCardStatus = "locked" | "not_started" | "in_progress" | "completed"
-
-export type ModuleCard = {
-  id: string
-  title: string
-  description: string | null
-  href: string
-  status: ModuleCardStatus
-  index: number
-}
-
-export type ModuleGroup = {
-  id: string
-  title: string
-  description: string | null
-  modules: ModuleCard[]
-}
 
 type StartBuildingPagerProps = {
   groups: ModuleGroup[]
@@ -34,16 +17,12 @@ export function StartBuildingPager({ groups }: StartBuildingPagerProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs uppercase tracking-wide text-muted-foreground">Continue building</p>
-      </div>
-
       <div className="space-y-6">
         {groups.map((group) => (
           <section key={group.id} className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-2">
               <div className="space-y-1">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">{group.title}</p>
+                <h3 className="text-base font-semibold text-foreground">{group.title}</h3>
                 {group.description ? (
                   <p className="text-xs text-muted-foreground">{group.description}</p>
                 ) : null}

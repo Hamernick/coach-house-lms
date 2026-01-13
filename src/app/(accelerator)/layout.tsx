@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 import { redirect } from "next/navigation"
 
 import { createSupabaseServerClient } from "@/lib/supabase"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { fetchSidebarTree } from "@/lib/academy"
 import { AcceleratorShell } from "@/components/accelerator/accelerator-shell"
 
@@ -12,7 +13,7 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
     error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError) {
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw userError
   }
 

@@ -2,6 +2,7 @@ import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import type { Database } from "@/lib/supabase"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,7 +27,7 @@ export async function SubscriptionStatusCard() {
     error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError) {
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw userError
   }
 

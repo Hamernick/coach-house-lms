@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { DocumentsTab } from "@/components/organization/org-profile-card/tabs/documents-tab"
 import type { OrgDocuments } from "@/components/organization/org-profile-card/types"
 import { createSupabaseServerClient } from "@/lib/supabase"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 
 export const dynamic = "force-dynamic"
 
@@ -16,7 +17,7 @@ export default async function MyOrganizationDocumentsPage() {
     error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError) throw userError
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) throw userError
   if (!user) redirect("/login?redirect=/my-organization/documents")
 
   const { data: orgRow } = await supabase
@@ -66,4 +67,3 @@ export default async function MyOrganizationDocumentsPage() {
     </div>
   )
 }
-

@@ -8,6 +8,8 @@ const serverEnvSchema = z.object({
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  STRIPE_ORGANIZATION_PRICE_ID: z.string().min(1).optional(),
+  STRIPE_ACCELERATOR_PRICE_ID: z.string().min(1).optional(),
   NEXT_PUBLIC_MAPBOX_TOKEN: z.string().min(1).optional(),
 })
 
@@ -47,6 +49,8 @@ export const env: ServerEnv = assertEnv(serverEnvSchema, {
   STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
   NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
+  STRIPE_ORGANIZATION_PRICE_ID: process.env.STRIPE_ORGANIZATION_PRICE_ID,
+  STRIPE_ACCELERATOR_PRICE_ID: process.env.STRIPE_ACCELERATOR_PRICE_ID,
   NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
 })
 

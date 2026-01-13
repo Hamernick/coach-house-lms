@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   const type = requestUrl.searchParams.get("type")
   const redirectParam = getSafeRedirect(requestUrl.searchParams.get("redirect"))
 
-  const fallback = type === "recovery" ? "/auth/update-password" : "/dashboard"
+  const fallback = type === "recovery" ? "/auth/update-password" : "/my-organization"
   const destination = new URL(redirectParam ?? fallback, requestUrl.origin)
 
   if (!code) {

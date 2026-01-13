@@ -32,5 +32,20 @@ export type PublicFunctions = {
       completed: number | null
     }[]
   }
+  search_global: {
+    Args: {
+      p_query: string
+      p_user_id: string
+      p_is_admin: boolean
+      p_limit?: number | null
+    }
+    Returns: {
+      id: string
+      label: string
+      subtitle: string | null
+      href: string
+      group_name: string
+      rank: number | null
+    }[]
+  }
 }
-

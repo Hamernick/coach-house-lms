@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
+import { Badge } from "@/components/ui/badge"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -15,6 +16,7 @@ import {
 export function NavMain({
   items,
   label = "Platform",
+  showLiveBadges = false,
 }: {
   items: {
     title: string
@@ -22,6 +24,7 @@ export function NavMain({
     icon?: React.ComponentType<{ className?: string }>
   }[]
   label?: string
+  showLiveBadges?: boolean
 }) {
   const pathname = usePathname()
 
@@ -48,6 +51,14 @@ export function NavMain({
                     <span className="flex-1 break-words leading-snug group-data-[collapsible=icon]:hidden">
                       {item.title}
                     </span>
+                    {showLiveBadges && (item.href === "/my-organization" || item.href === "/my-organization/roadmap") ? (
+                      <Badge
+                        variant="secondary"
+                        className="ml-auto rounded-full border-emerald-500/40 bg-emerald-500/15 text-[11px] text-emerald-700 dark:text-emerald-300 group-data-[collapsible=icon]:hidden"
+                      >
+                        Live
+                      </Badge>
+                    ) : null}
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

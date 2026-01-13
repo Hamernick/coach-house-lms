@@ -1,9 +1,20 @@
 "use client"
 
+import { useEffect, useMemo, useState } from "react"
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group"
+import { InputGroup, InputGroupInput } from "@/components/ui/input-group"
+import { Badge } from "@/components/ui/badge"
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   DialogStackContent,
   DialogStackDescription,
@@ -15,6 +26,13 @@ import {
 
 import type { ProgramWizardFormState } from "../schema"
 import { TagInput } from "../tag-input"
+
+type OrgPersonSummary = {
+  id: string
+  name: string
+  title: string | null
+  category: string
+}
 
 export type FundingStepProps = {
   index?: number
@@ -37,11 +55,45 @@ export function FundingStep({
   isPending,
   onSubmit,
 }: FundingStepProps) {
+  const [people, setPeople] = useState<OrgPersonSummary[]>([])
+  const [peopleLoading, setPeopleLoading] = useState(true)
+
   const update = (patch: Partial<ProgramWizardFormState>) => {
     const next = { ...form, ...patch }
     onEdit(next)
     onScheduleSave(next)
   }
+
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      setPeopleLoading(true)
+      try {
+        const res = await fetch("/api/account/org-people", { method: "GET" })
+        const payload = (await res.json().catch(() => ({}))) as { people?: OrgPersonSummary[] }
+        if (!res.ok) return
+        if (cancelled) return
+        setPeople(Array.isArray(payload.people) ? payload.people : [])
+      } finally {
+        if (!cancelled) setPeopleLoading(false)
+      }
+    }
+
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const selectablePeople = useMemo(
+    () => people.filter((person) => person.id && person.name && person.category !== "supporters"),
+    [people],
+  )
+
+  const selectedPeople = useMemo(() => {
+    const ids = new Set(Array.isArray(form.teamIds) ? form.teamIds : [])
+    return selectablePeople.filter((person) => ids.has(person.id))
+  }, [form.teamIds, selectablePeople])
 
   return (
     <DialogStackContent
@@ -58,22 +110,71 @@ export function FundingStep({
             <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
               <div className="space-y-4">
                 <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                  <div className="text-sm font-medium">Funding goals</div>
-                  <p className="mt-1 text-xs text-muted-foreground">Set your target and current progress.</p>
-                  <div className="mt-4 grid gap-3 md:grid-cols-2">
-                    <CurrencyInput
-                      id="goal"
-                      label="Goal"
-                      value={form.goalUsd ?? 0}
-                      onChange={(value) => update({ goalUsd: value })}
-                    />
-                    <CurrencyInput
-                      id="raised"
-                      label="Raised"
-                      value={form.raisedUsd ?? 0}
-                      onChange={(value) => update({ raisedUsd: value })}
-                    />
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-medium">Team</div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Assign staff or advisors to this program.
+                      </p>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          className="h-8"
+                          disabled={peopleLoading || selectablePeople.length === 0}
+                        >
+                          {selectedPeople.length > 0 ? `${selectedPeople.length} selected` : "Assign"}
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-[min(22rem,var(--radix-dropdown-menu-trigger-width))]">
+                        <DropdownMenuLabel className="text-xs text-muted-foreground">Select people</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {peopleLoading ? (
+                          <p className="px-2 py-3 text-sm text-muted-foreground">Loading…</p>
+                        ) : selectablePeople.length === 0 ? (
+                          <p className="px-2 py-3 text-sm text-muted-foreground">No team members found.</p>
+                        ) : (
+                          selectablePeople.map((person) => {
+                            const current = Array.isArray(form.teamIds) ? form.teamIds : []
+                            const checked = current.includes(person.id)
+                            return (
+                              <DropdownMenuCheckboxItem
+                                key={person.id}
+                                checked={checked}
+                                onSelect={(event) => event.preventDefault()}
+                                onCheckedChange={(nextChecked) => {
+                                  const ids = new Set(current)
+                                  if (nextChecked) ids.add(person.id)
+                                  else ids.delete(person.id)
+                                  update({ teamIds: Array.from(ids) })
+                                }}
+                                className="items-start"
+                              >
+                                <div className="grid min-w-0 gap-0.5">
+                                  <p className="truncate text-sm font-medium text-foreground">{person.name}</p>
+                                  {person.title ? (
+                                    <p className="truncate text-xs text-muted-foreground">{person.title}</p>
+                                  ) : null}
+                                </div>
+                              </DropdownMenuCheckboxItem>
+                            )
+                          })
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
+                  {selectedPeople.length > 0 ? (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {selectedPeople.map((person) => (
+                        <Badge key={person.id} variant="secondary" className="rounded-full px-2 py-0.5 text-xs">
+                          {person.name}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : null}
                 </div>
                 <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
                   <div className="text-sm font-medium">Tags</div>
@@ -146,34 +247,6 @@ export function FundingStep({
         </DialogStackFooter>
       </div>
     </DialogStackContent>
-  )
-}
-
-type CurrencyInputProps = {
-  id: string
-  label: string
-  value: number
-  onChange: (value: number) => void
-}
-
-function CurrencyInput({ id, label, value, onChange }: CurrencyInputProps) {
-  return (
-    <div className="grid gap-1">
-      <Label htmlFor={id}>{label}</Label>
-      <InputGroup>
-        <InputGroupAddon>
-          <InputGroupText>$</InputGroupText>
-        </InputGroupAddon>
-        <InputGroupInput
-          id={id}
-          type="number"
-          inputMode="decimal"
-          value={value}
-          onChange={(event) => onChange(Number(event.currentTarget.value || 0))}
-          placeholder="0.00"
-        />
-      </InputGroup>
-    </div>
   )
 }
 

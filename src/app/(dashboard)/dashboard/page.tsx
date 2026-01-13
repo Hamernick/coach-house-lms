@@ -24,7 +24,7 @@ import { isFreeTierSubscription } from "@/lib/meetings"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
-const ROADMAP_TAB_HREF = "/my-organization?tab=roadmap"
+const ROADMAP_TAB_HREF = "/my-organization/roadmap"
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServerClient()

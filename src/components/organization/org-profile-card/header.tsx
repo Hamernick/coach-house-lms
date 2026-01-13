@@ -203,7 +203,7 @@ export function OrgProfileHeader({
         ) : null}
       </div>
 
-      <div className="relative p-6">
+	      <div className="relative bg-sidebar p-6">
         <div className="absolute -top-12 left-6">
           <div className="flex items-end gap-3">
             <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-border bg-background shadow-sm">

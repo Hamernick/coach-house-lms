@@ -622,6 +622,10 @@ MISC:
 [done] Inline deck step now renders inside a fixed frame so slides display in the stepper.
 [done] Assignment step no longer wraps the questions in the StepFrame container.
 [done] Removed the “Last saved” line from assignment forms.
+[done] Budget table container widened for larger screens.
+[done] Budget table inputs now render borderless/transparent until focused.
+[done] Budget table spans the full accelerator shell width on large screens.
+[done] Budget table inputs render as underline-only fields and table scrolls internally without page horizontal scroll.
 
 
 
@@ -643,6 +647,25 @@ MISC:
         - [done] Increase program builder card row height
         - [done] Add curriculum call scheduling card with meeting cap and upgrade tag
         - [done] Fix accelerator overview nav highlight on /accelerator
+        - [done] Roadmap editor header card removed; title size reduced; saved/updated tags removed.
+        - [done] Roadmap section rail aligned with step dots.
+        - [done] Removed Shift+Enter tip from the roadmap editor footer.
+        - [done] Removed the Section details label from the roadmap editor.
+        - [done] Removed the toolbar background behind the roadmap editor rich text toolbar.
+        - [done] Roadmap templates now display above the title/subtitle inputs with example placeholders.
+        - [done] Roadmap share/view actions moved into a three-dots menu.
+        - [done] Roadmap visibility toggle restyled (Live/Offline) and aligned with the actions row.
+        - [done] Roadmap editor/outline now renders as two responsive cards (stacked on small, side-by-side on large).
+        - [done] Roadmap template guidance uses a dashed icon card per section, and the editor toolbar now sits above the title inputs.
+        - [done] Roadmap editor surface now matches the page background with input-like corner radius.
+        - [done] Roadmap title/subtitle now auto-grow with line breaks and enforce character limits.
+        - [done] Roadmap outline items now stretch full-width inside the outline card.
+        - [done] Roadmap outline card top aligned with the title input on large screens.
+        - [done] Roadmap editor placeholder text now displays when empty.
+        - [done] Roadmap outline titles/subtitles now reflect live draft edits.
+        - [done] Roadmap public view + tracker now treat visibility as global (no per-section publish).
+        - [done] Roadmap sidebar header copy updated from “Sections”.
+        - [done] Fixed public dot-grid background to stay fixed and avoid overscroll gaps.
     6. [pending] Dashboard needs a lot of work
     7. [pending] Integrations need to be added to user settings - calendar sync?
     8. [pending] Map integration for community page, filtering, search

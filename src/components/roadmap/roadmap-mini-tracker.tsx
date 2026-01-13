@@ -7,8 +7,8 @@ type RoadmapMiniTrackerProps = {
 
 export function RoadmapMiniTracker({ sections }: RoadmapMiniTrackerProps) {
   const total = sections.length
-  const completed = sections.filter((section) => section.content.trim().length > 0 && section.isPublic).length
-  const nextUp = sections.find((section) => !section.content.trim()) ?? sections.find((section) => !section.isPublic)
+  const completed = sections.filter((section) => section.content.trim().length > 0).length
+  const nextUp = sections.find((section) => !section.content.trim())
   const nextId = nextUp?.id
 
   return (
@@ -17,7 +17,7 @@ export function RoadmapMiniTracker({ sections }: RoadmapMiniTrackerProps) {
         <div className="space-y-1">
           <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">Roadmap tracker</p>
           <p className="text-xs text-muted-foreground">
-            {completed}/{total} sections published{nextUp ? ` · Next: ${nextUp.title}` : ""}
+            {completed}/{total} sections drafted{nextUp ? ` · Next: ${nextUp.title}` : ""}
           </p>
         </div>
       </div>
@@ -51,11 +51,9 @@ export function RoadmapMiniTracker({ sections }: RoadmapMiniTrackerProps) {
         <div className="grid min-w-0 gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {sections.map((section, idx) => {
             const isFilled = section.content.trim().length > 0
-            const colors = isFilled && section.isPublic
+            const colors = isFilled
               ? "bg-emerald-500 border-emerald-500"
-              : isFilled
-                ? "bg-amber-500 border-amber-500"
-                : "bg-muted border-border"
+              : "bg-muted border-border"
             const isNext = nextId === section.id
 
             return (

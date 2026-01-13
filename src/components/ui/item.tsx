@@ -11,16 +11,16 @@ type ItemProps = React.HTMLAttributes<HTMLDivElement> & {
 export const Item = React.forwardRef<HTMLDivElement, ItemProps>(
   ({ className, asChild, ...props }, ref) => {
     const Comp = asChild ? Slot : "div"
-    return (
-      <Comp
-        ref={ref as unknown as React.Ref<HTMLDivElement>}
-        className={cn(
-          "group relative w-full rounded-lg border bg-card/60 p-3 sm:p-4",
-          "hover:bg-accent/50 transition-colors",
-          "flex items-center gap-3",
-          className,
-        )}
-        {...props}
+	    return (
+	      <Comp
+	        ref={ref as unknown as React.Ref<HTMLDivElement>}
+	        className={cn(
+	          "group relative w-full rounded-lg border bg-[#FAFAFA] p-3 text-foreground dark:bg-[#151515] sm:p-4",
+	          "hover:bg-accent/50 transition-colors",
+	          "flex items-center gap-3",
+	          className,
+	        )}
+	        {...props}
       />
     )
   }

@@ -107,11 +107,14 @@ export function dateRangeChip(start?: string | null, end?: string | null): strin
 
 export function locationSummary(p: {
   location?: string | null
+  location_type?: "in_person" | "online" | null
+  location_url?: string | null
   address_city?: string | null
   address_state?: string | null
   address_country?: string | null
 }): string | null {
   if (p?.location && String(p.location).trim()) return String(p.location)
+  if (p?.location_type === "online") return "Online"
   const city = (p?.address_city && String(p.address_city).trim()) || ""
   const state = (p?.address_state && String(p.address_state).trim()) || ""
   const country = (p?.address_country && String(p.address_country).trim()) || ""

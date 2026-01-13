@@ -5,6 +5,7 @@ import { isFreeTierSubscription } from "@/lib/meetings"
 import { completeOnboardingAction } from "@/app/(dashboard)/onboarding/actions"
 import { fetchSidebarTree } from "@/lib/academy"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
+import { publicSharingEnabled } from "@/lib/feature-flags"
 
 export default async function DashboardLayout({ children, breadcrumbs }: { children: ReactNode; breadcrumbs?: ReactNode }) {
   const supabase = await createSupabaseServerClient()
@@ -24,6 +25,7 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
   let needsOnboarding = false
   let onboardingVariant: "basic" | "accelerator" = "accelerator"
   let acceleratorProgress: number | null = null
+  let showLiveBadges = false
 
   if (user) {
     const { data: profile } = await supabase
@@ -92,6 +94,17 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
     } catch {
       acceleratorProgress = null
     }
+
+    if (publicSharingEnabled) {
+      const { data: orgRow } = await supabase
+        .from("organizations")
+        .select("public_slug, is_public, is_public_roadmap")
+        .eq("user_id", user.id)
+        .maybeSingle<{ public_slug: string | null; is_public: boolean | null; is_public_roadmap: boolean | null }>()
+
+      const hasSlug = Boolean(orgRow?.public_slug && orgRow.public_slug.trim().length > 0)
+      showLiveBadges = hasSlug && Boolean(orgRow?.is_public) && Boolean(orgRow?.is_public_roadmap)
+    }
   }
 
   const sidebarTree = await fetchSidebarTree({ includeDrafts: true, forceAdmin: isAdmin })
@@ -103,6 +116,7 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
       user={{ name: displayName, email: email ?? null, avatar: avatar ?? null }}
       isAdmin={isAdmin}
       acceleratorProgress={acceleratorProgress}
+      showLiveBadges={showLiveBadges}
       onboardingProps={{
         enabled: Boolean(user && needsOnboarding),
         open: needsOnboarding,

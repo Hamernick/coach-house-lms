@@ -66,7 +66,7 @@ const zFormField = z.object({
     const rowOptions = (f.options ?? []).flatMap((option): BudgetTableOption[] => {
       if (typeof option === "string") {
         const category = option.trim()
-        return category ? [{ category }] : []
+        return category ? [{ category, description: "", costType: "", unit: "" }] : []
       }
       const category = option.category?.trim() ?? ""
       if (!category) return []

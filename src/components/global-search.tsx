@@ -47,11 +47,11 @@ export function GlobalSearch({ isAdmin = false, context = "platform", classes = 
       { label: "Dashboard", href: "/dashboard", group: "Pages", keywords: ["home", "overview"] },
       { label: "Accelerator", href: "/accelerator", group: "Pages", keywords: ["classes", "modules"] },
       { label: "My organization", href: "/my-organization", group: "Pages", keywords: ["profile"] },
-      { label: "Roadmap", href: "/my-organization?tab=roadmap", group: "Pages", keywords: ["strategic"] },
+      { label: "Roadmap", href: "/my-organization/roadmap", group: "Pages", keywords: ["strategic"] },
       { label: "Programs", href: "/my-organization?tab=programs", group: "Pages" },
       { label: "People", href: "/my-organization?tab=people", group: "Pages", keywords: ["team", "org chart"] },
       { label: "Supporters", href: "/my-organization?tab=supporters", group: "Pages" },
-      { label: "Documents", href: "/my-organization?tab=documents", group: "Pages" },
+      { label: "Documents", href: "/my-organization/documents", group: "Pages" },
       { label: "Billing", href: "/billing", group: "Pages", keywords: ["subscription", "plan"] },
     ]
 

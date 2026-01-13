@@ -3,23 +3,24 @@
 import type { LucideIcon } from "lucide-react"
 import BuildingIcon from "lucide-react/dist/esm/icons/building-2"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
-import LayoutDashboardIcon from "lucide-react/dist/esm/icons/layout-dashboard"
+import LockIcon from "lucide-react/dist/esm/icons/lock"
 import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
 import ShoppingBagIcon from "lucide-react/dist/esm/icons/shopping-bag"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
+import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 
 import type { SidebarClass } from "@/lib/academy"
 
 export function buildMainNav(isAdmin: boolean): Array<{ title: string; href: string; icon?: LucideIcon }> {
-  const items: Array<{ title: string; href: string; icon?: LucideIcon }> = [
-    { title: "Dashboard", href: "/dashboard", icon: LayoutDashboardIcon },
-  ]
+  const items: Array<{ title: string; href: string; icon?: LucideIcon }> = []
 
   if (!isAdmin) {
     items.push(
       { title: "My Organization", href: "/my-organization", icon: BuildingIcon },
       { title: "People", href: "/people", icon: UsersIcon },
+      { title: "Roadmap", href: "/my-organization/roadmap", icon: WaypointsIcon },
+      { title: "Documents", href: "/my-organization/documents", icon: LockIcon },
     )
   }
 

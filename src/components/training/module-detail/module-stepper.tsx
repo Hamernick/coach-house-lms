@@ -543,6 +543,16 @@ export function ModuleStepper({
                           />
                         </div>
                       </div>
+                      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                        <Button variant="outline" asChild className="rounded-full px-5">
+                          <Link href="/dashboard">Take a break</Link>
+                        </Button>
+                        {nextHref ? (
+                          <Button asChild className="rounded-full px-5">
+                            <Link href={nextHref}>Continue to next lesson</Link>
+                          </Button>
+                        ) : null}
+                      </div>
                       <Item className="mx-auto max-w-md">
                         <ItemMedia>
                           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
@@ -566,16 +576,6 @@ export function ModuleStepper({
                           </Button>
                         </ItemActions>
                       </Item>
-                      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                        <Button variant="outline" asChild className="rounded-full px-5">
-                          <Link href="/dashboard">Take a break</Link>
-                        </Button>
-                        {nextHref ? (
-                          <Button asChild className="rounded-full px-5">
-                            <Link href={nextHref}>Continue to next lesson</Link>
-                          </Button>
-                        ) : null}
-                      </div>
                     </div>
                   )
                 default:

@@ -3,6 +3,8 @@ type RoadmapSectionDefinition = {
   title: string
   subtitle: string
   slug: string
+  titleExample?: string
+  subtitleExample?: string
   placeholder?: string
 }
 
@@ -20,12 +22,17 @@ export type RoadmapHomeworkLink = {
 
 export type RoadmapSection = RoadmapSectionDefinition & {
   content: string
+  imageUrl?: string
   lastUpdated: string | null
   isPublic: boolean
   layout: "square" | "vertical" | "wide"
   ctaLabel?: string
   ctaUrl?: string
   homework?: RoadmapHomeworkLink | null
+  templateTitle: string
+  templateSubtitle: string
+  titleIsTemplate: boolean
+  subtitleIsTemplate: boolean
 }
 
 const SECTION_DEFINITIONS: RoadmapSectionDefinition[] = [
@@ -34,6 +41,8 @@ const SECTION_DEFINITIONS: RoadmapSectionDefinition[] = [
     title: "Introduction",
     slug: "introduction",
     subtitle: "Set the stage for your organization — who you are, the problem you are solving, and why it matters now.",
+    titleExample: "Example: Why we launched Sunshine",
+    subtitleExample: "Example: Who we serve and why the problem is urgent",
     placeholder: "Open with a strong hook and a short overview of the organization.",
   },
   {
@@ -41,6 +50,8 @@ const SECTION_DEFINITIONS: RoadmapSectionDefinition[] = [
     title: "Foundations",
     slug: "foundations",
     subtitle: "Ground readers in your mission, vision, values, and the community need that shaped them.",
+    titleExample: "Example: Mission, vision, and values",
+    subtitleExample: "Example: The community need behind our work",
     placeholder: "Connect your origin story to the change you want to see.",
   },
   {
@@ -48,6 +59,8 @@ const SECTION_DEFINITIONS: RoadmapSectionDefinition[] = [
     title: "Programs & Pilots",
     slug: "programs-and-pilots",
     subtitle: "Describe the experiences, services, and pilot initiatives you are running or planning next.",
+    titleExample: "Example: Current programs and pilots",
+    subtitleExample: "Example: The experiences we run today",
     placeholder: "List the cohorts, curricula, or interventions that prove your model.",
   },
   {
@@ -55,6 +68,8 @@ const SECTION_DEFINITIONS: RoadmapSectionDefinition[] = [
     title: "Funding & Support",
     slug: "funding",
     subtitle: "Share how you are sustaining the work — revenue mix, fundraising goals, and partnerships.",
+    titleExample: "Example: Funding plan",
+    subtitleExample: "Example: How we sustain the work",
     placeholder: "Clarify what support unlocks the next phase.",
   },
   {
@@ -62,6 +77,8 @@ const SECTION_DEFINITIONS: RoadmapSectionDefinition[] = [
     title: "Metrics & Learning",
     slug: "metrics-and-learning",
     subtitle: "Highlight signals of progress, outcomes you track, and what you are learning along the way.",
+    titleExample: "Example: Outcomes and learning",
+    subtitleExample: "Example: What we are measuring right now",
     placeholder: "Call out a few numbers, stories, or milestones that show momentum.",
   },
   {
@@ -69,11 +86,14 @@ const SECTION_DEFINITIONS: RoadmapSectionDefinition[] = [
     title: "Timeline & Next Steps",
     slug: "timeline",
     subtitle: "Outline upcoming milestones so stakeholders can understand how to plug in.",
+    titleExample: "Example: 2024–2025 timeline",
+    subtitleExample: "Example: Upcoming milestones and asks",
     placeholder: "Think in quarters: near-term builds, launches, and decisions.",
   },
 ]
 
 export const ROADMAP_SECTION_IDS = SECTION_DEFINITIONS.map((section) => section.id)
+export const ROADMAP_SECTION_LIMIT = 10
 
 const SECTION_MAP = new Map<string, RoadmapSectionDefinition>(SECTION_DEFINITIONS.map((section) => [section.id, section]))
 
@@ -83,6 +103,7 @@ type StoredSection = {
   subtitle?: unknown
   slug?: unknown
   content?: unknown
+  imageUrl?: unknown
   lastUpdated?: unknown
   isPublic?: unknown
   layout?: unknown
@@ -120,9 +141,21 @@ function buildRoadmapSection(
 ): RoadmapSection {
   const fallbackId = fallback?.id ?? `section-${index + 1}`
   const id = normalizeText(stored?.id) || fallbackId
-  const title = normalizeText(stored?.title) || fallback?.title || "Untitled section"
-  const subtitle = normalizeText(stored?.subtitle) || fallback?.subtitle || ""
+  const storedTitle = normalizeText(stored?.title)
+  const storedSubtitle = normalizeText(stored?.subtitle)
+  const templateTitle = fallback?.title ?? ""
+  const templateSubtitle = fallback?.subtitle || ""
+  const storedTitleIsTemplate = templateTitle.length > 0 && storedTitle === templateTitle.trim()
+  const storedSubtitleIsTemplate = templateSubtitle.length > 0 && storedSubtitle === templateSubtitle.trim()
+  const effectiveStoredTitle = storedTitleIsTemplate ? "" : storedTitle
+  const effectiveStoredSubtitle = storedSubtitleIsTemplate ? "" : storedSubtitle
+  const title = effectiveStoredTitle || templateTitle
+  const subtitle = effectiveStoredSubtitle || templateSubtitle
+  const titleIsTemplate = effectiveStoredTitle.length === 0 && templateTitle.length > 0
+  const subtitleIsTemplate = effectiveStoredSubtitle.length === 0 && templateSubtitle.length > 0
   const content = typeof stored?.content === "string" ? stored.content : ""
+  const imageUrlRaw = normalizeText(stored?.imageUrl)
+  const imageUrl = imageUrlRaw.length > 0 ? imageUrlRaw : undefined
   const lastUpdated =
     typeof stored?.lastUpdated === "string" || stored?.lastUpdated === null ? (stored?.lastUpdated ?? null) : null
   const isPublic = typeof stored?.isPublic === "boolean" ? stored.isPublic : false
@@ -142,13 +175,20 @@ function buildRoadmapSection(
     title,
     subtitle,
     slug,
-    placeholder: fallback?.placeholder ?? "Start writing…",
+    titleExample: fallback?.titleExample,
+    subtitleExample: fallback?.subtitleExample,
+    placeholder: fallback?.placeholder ?? "Start writing...",
     content,
+    imageUrl,
     lastUpdated,
     isPublic,
     layout,
     ctaLabel,
     ctaUrl,
+    templateTitle,
+    templateSubtitle,
+    titleIsTemplate,
+    subtitleIsTemplate,
   }
 }
 
@@ -213,6 +253,7 @@ export function updateRoadmapSection(
     title?: string
     subtitle?: string
     content?: string
+    imageUrl?: string | null
     isPublic?: boolean
     layout?: RoadmapSection["layout"]
     ctaLabel?: string
@@ -232,10 +273,23 @@ export function updateRoadmapSection(
 
   if (existingIndex >= 0) {
     const current = resolved[existingIndex]
+    const templateTitle = current.templateTitle?.trim() ?? ""
+    const templateSubtitle = current.templateSubtitle?.trim() ?? ""
+
     const nextTitleRaw = typeof updates.title === "string" ? updates.title.trim() : current.title
-    const nextTitle = nextTitleRaw || "Untitled section"
-    const nextSubtitle = typeof updates.subtitle === "string" ? updates.subtitle.trim() : current.subtitle
+    const storedTitleIsTemplate = templateTitle.length > 0 && nextTitleRaw === templateTitle
+    const effectiveTitle = storedTitleIsTemplate ? "" : nextTitleRaw
+    const nextTitle = effectiveTitle || templateTitle || ""
+
+    const nextSubtitleRaw = typeof updates.subtitle === "string" ? updates.subtitle.trim() : current.subtitle
+    const storedSubtitleIsTemplate = templateSubtitle.length > 0 && nextSubtitleRaw === templateSubtitle
+    const effectiveSubtitle = storedSubtitleIsTemplate ? "" : nextSubtitleRaw
+    const nextSubtitle = effectiveSubtitle || templateSubtitle || ""
+
     const nextContent = typeof updates.content === "string" ? updates.content : current.content
+    const nextImageUrlRaw =
+      typeof updates.imageUrl === "string" ? updates.imageUrl.trim() : updates.imageUrl === null ? "" : (current.imageUrl ?? "")
+    const nextImageUrl = nextImageUrlRaw.length > 0 ? nextImageUrlRaw : undefined
     const nextIsPublic = typeof updates.isPublic === "boolean" ? updates.isPublic : current.isPublic
     const nextLayout = updates.layout ?? current.layout
     const nextCtaLabel = typeof updates.ctaLabel === "string" ? updates.ctaLabel : current.ctaLabel
@@ -247,20 +301,28 @@ export function updateRoadmapSection(
       title: nextTitle,
       subtitle: nextSubtitle,
       content: nextContent,
+      imageUrl: nextImageUrl,
       isPublic: nextIsPublic,
       layout: nextLayout,
       ctaLabel: nextCtaLabel?.trim() || undefined,
       ctaUrl: nextCtaUrl?.trim() || undefined,
       slug: nextSlug,
       lastUpdated: now,
+      templateTitle,
+      templateSubtitle,
+      titleIsTemplate: effectiveTitle.length === 0 && templateTitle.length > 0,
+      subtitleIsTemplate: effectiveSubtitle.length === 0 && templateSubtitle.length > 0,
     }
 
     nextSections = resolved.map((section, index) => (index === existingIndex ? nextSection : section))
   } else {
     const base = SECTION_MAP.get(targetId) ?? null
-    const nextTitle = normalizeText(updates.title) || base?.title || "New section"
+    const nextTitle = normalizeText(updates.title) || base?.title || ""
     const nextSubtitle = normalizeText(updates.subtitle) || base?.subtitle || ""
     const nextContent = typeof updates.content === "string" ? updates.content : ""
+    const nextImageUrlRaw =
+      typeof updates.imageUrl === "string" ? updates.imageUrl.trim() : updates.imageUrl === null ? "" : ""
+    const nextImageUrl = nextImageUrlRaw.length > 0 ? nextImageUrlRaw : undefined
     const nextIsPublic = typeof updates.isPublic === "boolean" ? updates.isPublic : false
     const nextLayout = updates.layout ?? "square"
     const nextCtaLabel = typeof updates.ctaLabel === "string" ? updates.ctaLabel : undefined
@@ -275,6 +337,7 @@ export function updateRoadmapSection(
           subtitle: nextSubtitle,
           slug: nextSlug,
           content: nextContent,
+          imageUrl: nextImageUrl,
           isPublic: nextIsPublic,
           layout: nextLayout,
           ctaLabel: nextCtaLabel,
@@ -299,6 +362,7 @@ export function updateRoadmapSection(
     subtitle: section.subtitle,
     slug: section.slug,
     content: section.content,
+    imageUrl: section.imageUrl,
     lastUpdated: section.lastUpdated,
     isPublic: section.isPublic,
     layout: section.layout,
@@ -343,6 +407,7 @@ export function removeRoadmapSection(
     subtitle: section.subtitle,
     slug: section.slug,
     content: section.content,
+    imageUrl: section.imageUrl,
     lastUpdated: section.lastUpdated,
     isPublic: section.isPublic,
     layout: section.layout,

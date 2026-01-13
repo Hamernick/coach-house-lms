@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right"
 import Home from "lucide-react/dist/esm/icons/home"
+import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import { useSidebarOpenMap } from "@/components/app-sidebar/hooks"
@@ -119,11 +120,11 @@ export function AcceleratorSidebar({ classes, isAdmin, user }: AcceleratorSideba
           <SidebarMenuItem className="mt-4">
             <SidebarMenuButton
               asChild
-              className="justify-start gap-2 bg-foreground text-background hover:bg-foreground/90 data-[active=true]:bg-foreground data-[active=true]:text-background dark:bg-white dark:text-black dark:hover:bg-white/90"
+              className="justify-start gap-2 bg-sidebar-accent text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-foreground/70 data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground"
             >
-              <Link href="/dashboard" className="flex items-center gap-2">
+              <Link href="/my-organization" className="flex items-center gap-2">
                 <Home className="h-4 w-4" />
-                <span>Return to dashboard</span>
+                <span>Return home</span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
@@ -149,7 +150,10 @@ export function AcceleratorSidebar({ classes, isAdmin, user }: AcceleratorSideba
                       className="flex w-full items-center justify-between"
                       onClick={() => setActiveSection(item.id)}
                     >
-                      <span>{item.label}</span>
+                      <span className="flex items-center gap-2">
+                        {item.id === "roadmap" ? <WaypointsIcon className="h-4 w-4 shrink-0" aria-hidden /> : null}
+                        <span>{item.label}</span>
+                      </span>
                       <ChevronRight className="h-3 w-3 text-muted-foreground" aria-hidden />
                     </Link>
                   </SidebarMenuButton>

@@ -26,6 +26,9 @@ type ProgramRecord = {
   subtitle?: string | null
   description?: string | null
   location?: string | null
+  location_type?: "in_person" | "online" | null
+  location_url?: string | null
+  team_ids?: string[] | null
   address_street?: string | null
   address_city?: string | null
   address_state?: string | null
@@ -123,6 +126,9 @@ export function ProgramWizard({
       subtitle: p.subtitle || "",
       description: p.description || "",
       location: p.location || "",
+      locationType: p.location_type === "online" ? "online" : "in_person",
+      locationUrl: p.location_url || "",
+      teamIds: Array.isArray(p.team_ids) ? p.team_ids : [],
       imageUrl: p.image_url || "",
       startDate: p.start_date || "",
       endDate: p.end_date || "",
@@ -238,19 +244,28 @@ export function ProgramWizard({
 }
 
 function serializePayload(form: ProgramWizardFormState) {
+  const locationType = form.locationType === "online" ? "online" : "in_person"
+  const locationUrl = form.locationUrl?.trim() || null
+  const normalizedLocation =
+    locationType === "online" && (!form.location || !form.location.trim()) ? "Online" : form.location
+  const teamIds = Array.isArray(form.teamIds) ? form.teamIds : []
+
   return {
     title: form.title,
     subtitle: form.subtitle,
     description: form.description,
-    location: form.location,
+    location: normalizedLocation,
+    locationType,
+    locationUrl: locationType === "online" ? locationUrl : null,
+    teamIds,
     imageUrl: form.imageUrl,
     startDate: form.startDate || null,
     endDate: form.endDate || null,
-    addressStreet: form.addressStreet || null,
-    addressCity: form.addressCity || null,
-    addressState: form.addressState || null,
-    addressPostal: form.addressPostal || null,
-    addressCountry: form.addressCountry || null,
+    addressStreet: locationType === "in_person" ? form.addressStreet || null : null,
+    addressCity: locationType === "in_person" ? form.addressCity || null : null,
+    addressState: locationType === "in_person" ? form.addressState || null : null,
+    addressPostal: locationType === "in_person" ? form.addressPostal || null : null,
+    addressCountry: locationType === "in_person" ? form.addressCountry || null : null,
     features: (form.features || []) as string[],
     statusLabel: form.statusLabel,
     ctaLabel: form.ctaLabel || null,

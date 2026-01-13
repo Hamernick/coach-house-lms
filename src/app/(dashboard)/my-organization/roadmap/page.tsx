@@ -2,6 +2,6 @@ import { StrategicRoadmapEditorPage } from "@/components/roadmap/strategic-roadm
 
 export const dynamic = "force-dynamic"
 
-export default async function AcceleratorRoadmapPage() {
-  return <StrategicRoadmapEditorPage redirectTo="/accelerator/roadmap" />
+export default async function MyOrganizationRoadmapPage() {
+  return <StrategicRoadmapEditorPage redirectTo="/my-organization/roadmap" />
 }

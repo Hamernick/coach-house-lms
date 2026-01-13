@@ -53,7 +53,7 @@ export function AcceleratorShell({ children, sidebarTree, isAdmin, user }: Accel
               ) : null}
             </div>
           </header>
-          <main data-accelerator-scroll className="flex-1 min-h-0 overflow-y-auto">
+          <main data-accelerator-scroll className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
             <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 sm:py-10">
               {children}
             </div>

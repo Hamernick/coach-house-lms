@@ -7,10 +7,19 @@ import SunIcon from "lucide-react/dist/esm/icons/sun"
 import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 
 const ORDER: Array<"system" | "light" | "dark"> = ["system", "light", "dark"]
 
-export function PublicThemeToggle() {
+export function PublicThemeToggle({
+  variant = "outline",
+  size = "icon",
+  className,
+}: {
+  variant?: React.ComponentProps<typeof Button>["variant"]
+  size?: React.ComponentProps<typeof Button>["size"]
+  className?: string
+}) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -18,9 +27,9 @@ export function PublicThemeToggle() {
   if (!mounted) {
     return (
       <Button
-        variant="outline"
-        size="icon"
-        className="rounded-full"
+        variant={variant}
+        size={size}
+        className={cn("rounded-full", className)}
         aria-label="Toggle theme"
         title="Toggle theme"
       >
@@ -36,10 +45,10 @@ export function PublicThemeToggle() {
   const Icon = current === "dark" ? MoonIcon : current === "light" ? SunIcon : DeviceDesktopIcon
   return (
     <Button
-      variant="outline"
-      size="icon"
+      variant={variant}
+      size={size}
       onClick={() => setTheme(next)}
-      className="rounded-full"
+      className={cn("rounded-full", className)}
       aria-label={`Toggle theme (currently ${current})`}
       title={`Theme: ${current}`}
     >

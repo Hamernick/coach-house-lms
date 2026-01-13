@@ -9,7 +9,7 @@ import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 import Plus from "lucide-react/dist/esm/icons/plus"
 
-import { RoadmapEditor } from "@/components/roadmap/roadmap-editor"
+import { RoadmapEditor, type RoadmapEditorLayout } from "@/components/roadmap/roadmap-editor"
 import { ProgramCard } from "@/components/programs/program-card"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { toast } from "@/lib/toast"
@@ -23,6 +23,7 @@ type RoadmapShellProps = {
   initialPublic: boolean
   heroUrl: string | null
   showHeader?: boolean
+  headerLayout?: "row" | "column"
   programPreview?: {
     title: string
     location?: string | null
@@ -37,6 +38,7 @@ type RoadmapShellProps = {
   } | null
   showHeroEditor?: boolean
   showProgramPreview?: boolean
+  editorLayout?: RoadmapEditorLayout
   onDirtyChange?: (dirty: boolean) => void
   onRegisterDiscard?: (handler: (() => void) | null) => void
 }
@@ -54,9 +56,11 @@ export function RoadmapShell({
   initialPublic,
   heroUrl: initialHeroUrl,
   showHeader = true,
+  headerLayout = "row",
   programPreview,
   showHeroEditor = true,
   showProgramPreview = false,
+  editorLayout = "default",
   onDirtyChange,
   onRegisterDiscard,
 }: RoadmapShellProps) {
@@ -129,18 +133,16 @@ export function RoadmapShell({
   return (
     <div className="space-y-6">
       {showHeader ? (
-        <header className="space-y-4">
-          <div className="space-y-3 sm:max-w-2xl">
-            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground">
-              <WaypointsIcon className="h-5 w-5" aria-hidden />
-            </span>
-            <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight text-foreground">Strategic roadmap</h1>
-              <p className="text-sm text-muted-foreground">
-                A pitch-ready snapshot of what you are building. Use it to show funders a clear path, proof of progress,
-                and what comes next.
-              </p>
-            </div>
+        <header className={cn("flex gap-4", headerLayout === "column" ? "flex-col items-start" : "flex-wrap items-start")}>
+          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground">
+            <WaypointsIcon className="h-5 w-5" aria-hidden />
+          </span>
+          <div className="min-w-0 space-y-2 sm:max-w-2xl">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Strategic roadmap</h1>
+            <p className="text-sm text-muted-foreground">
+              A pitch-ready snapshot of what you are building. Use it to show funders a clear path, proof of progress,
+              and what comes next.
+            </p>
           </div>
         </header>
       ) : null}
@@ -247,6 +249,7 @@ export function RoadmapShell({
         sections={sections}
         publicSlug={publicSlug}
         roadmapIsPublic={isPublic}
+        layout={editorLayout}
         onRoadmapPublicChange={setIsPublic}
         onDirtyChange={onDirtyChange}
         onRegisterDiscard={onRegisterDiscard}

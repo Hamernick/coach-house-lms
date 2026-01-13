@@ -61,7 +61,7 @@ export function SupportMenu({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger asChild id="support-menu-trigger">
         <Button
           type="button"
           variant={buttonVariant}

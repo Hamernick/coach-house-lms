@@ -4,7 +4,13 @@ import { revalidatePath } from "next/cache"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase"
-import { removeRoadmapSection, updateRoadmapSection, type RoadmapSection } from "@/lib/roadmap"
+import {
+  ROADMAP_SECTION_LIMIT,
+  removeRoadmapSection,
+  resolveRoadmapSections,
+  updateRoadmapSection,
+  type RoadmapSection,
+} from "@/lib/roadmap"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import { ORG_MEDIA_BUCKET, resolveOrgMediaCleanupPath } from "@/lib/storage/org-media"
 
@@ -13,6 +19,7 @@ type SaveInput = {
   title?: string
   subtitle?: string
   content?: string
+  imageUrl?: string | null
   isPublic?: boolean
   layout?: "square" | "vertical" | "wide"
   ctaLabel?: string
@@ -27,6 +34,7 @@ export async function saveRoadmapSectionAction({
   title,
   subtitle,
   content,
+  imageUrl,
   isPublic,
   layout,
   ctaLabel,
@@ -49,23 +57,39 @@ export async function saveRoadmapSectionAction({
 
   const { data: orgRow, error: orgError } = await supabase
     .from("organizations")
-    .select("profile")
+    .select("profile, public_slug")
     .eq("user_id", user.id)
-    .maybeSingle<{ profile: Json | null }>()
+    .maybeSingle<{ profile: Json | null; public_slug: string | null }>()
 
   if (orgError) {
     return { error: orgError.message }
   }
 
   const currentProfile = (orgRow?.profile ?? {}) as Record<string, unknown>
+  const existingSections = resolveRoadmapSections(currentProfile)
+  const normalizedSectionId = typeof sectionId === "string" ? sectionId.trim() : ""
+  const previousSection = normalizedSectionId
+    ? existingSections.find((section) => section.id === normalizedSectionId) ?? null
+    : null
+
+  if (!previousSection && existingSections.length >= ROADMAP_SECTION_LIMIT) {
+    return { error: `Roadmaps support up to ${ROADMAP_SECTION_LIMIT} sections.` }
+  }
   const { nextProfile, section } = updateRoadmapSection(currentProfile, sectionId ?? null, {
     title,
     subtitle,
     content,
+    imageUrl,
     isPublic: allowPublicSharing ? isPublic : false,
     layout,
     ctaLabel,
     ctaUrl,
+  })
+
+  const cleanupPath = resolveOrgMediaCleanupPath({
+    previousUrl: previousSection?.imageUrl ?? null,
+    nextUrl: section.imageUrl ?? null,
+    userId: user.id,
   })
 
   const { error: upsertError } = await supabase
@@ -79,7 +103,14 @@ export async function saveRoadmapSectionAction({
     return { error: upsertError.message }
   }
 
+  if (cleanupPath) {
+    await supabase.storage.from(ORG_MEDIA_BUCKET).remove([cleanupPath])
+  }
+
   revalidatePath("/my-organization")
+  if (orgRow?.public_slug) {
+    revalidatePath(`/${orgRow.public_slug}/roadmap`)
+  }
 
   return { section }
 }
@@ -101,15 +132,17 @@ export async function deleteRoadmapSectionAction(sectionId: string | null | unde
 
   const { data: orgRow, error: orgError } = await supabase
     .from("organizations")
-    .select("profile")
+    .select("profile, public_slug")
     .eq("user_id", user.id)
-    .maybeSingle<{ profile: Json | null }>()
+    .maybeSingle<{ profile: Json | null; public_slug: string | null }>()
 
   if (orgError) {
     return { error: orgError.message }
   }
 
   const currentProfile = (orgRow?.profile ?? {}) as Record<string, unknown>
+  const targetId = typeof sectionId === "string" ? sectionId.trim() : ""
+  const previousSection = targetId ? resolveRoadmapSections(currentProfile).find((section) => section.id === targetId) ?? null : null
   const { nextProfile, removed, error } = removeRoadmapSection(currentProfile, sectionId)
 
   if (error) {
@@ -131,7 +164,20 @@ export async function deleteRoadmapSectionAction(sectionId: string | null | unde
     return { error: upsertError.message }
   }
 
+  const cleanupPath = resolveOrgMediaCleanupPath({
+    previousUrl: previousSection?.imageUrl ?? null,
+    nextUrl: null,
+    userId: user.id,
+  })
+
+  if (cleanupPath) {
+    await supabase.storage.from(ORG_MEDIA_BUCKET).remove([cleanupPath])
+  }
+
   revalidatePath("/my-organization")
+  if (orgRow?.public_slug) {
+    revalidatePath(`/${orgRow.public_slug}/roadmap`)
+  }
 
   return { ok: true }
 }
@@ -157,7 +203,7 @@ export async function setRoadmapPublicAction(nextPublic: boolean): Promise<Toggl
     return { error: "Unauthorized" }
   }
 
-  const { error } = await supabase
+  const { data: orgRow, error } = await supabase
     .from("organizations")
     .upsert({
       user_id: user.id,
@@ -169,6 +215,9 @@ export async function setRoadmapPublicAction(nextPublic: boolean): Promise<Toggl
   }
 
   revalidatePath("/my-organization")
+  if (orgRow?.public_slug) {
+    revalidatePath(`/${orgRow.public_slug}/roadmap`)
+  }
 
   return { ok: true }
 }

@@ -32,6 +32,7 @@ type DashboardShellProps = {
   }
   isAdmin: boolean
   acceleratorProgress?: number | null
+  showLiveBadges?: boolean
   onboardingProps?: OnboardingDialogProps & { enabled: boolean }
 }
 
@@ -42,6 +43,7 @@ export function DashboardShell({
   user,
   isAdmin,
   acceleratorProgress,
+  showLiveBadges = false,
   onboardingProps,
 }: DashboardShellProps) {
   const pathname = usePathname()
@@ -68,6 +70,7 @@ export function DashboardShell({
           user={navUser}
           isAcceleratorActive={isAcceleratorActive}
           acceleratorProgress={acceleratorProgress}
+          showLiveBadges={showLiveBadges}
         />
       </Sidebar>
       <SidebarInset>

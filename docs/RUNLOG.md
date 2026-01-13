@@ -2061,7 +2061,673 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Docs: updated the checklist copy to reflect the split (`docs/updates_edits.md`).
 - Tests: not run.
 
+## 2026-01-10 — Codex session (Completion CTA order)
+
+- UI: moved the “Book a session” completion CTA below the next-step buttons in the module completion card (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Budget table width)
+
+- UI: widened the program budget table container at larger breakpoints so more columns fit without scrolling (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Budget table inputs)
+
+- UI: made budget table inputs visually borderless/transparent until focused (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Budget table full-bleed)
+
+- UI: allow the program budget table to extend edge-to-edge within the accelerator shell on large screens (`src/components/training/module-detail/assignment-form.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Budget table overflow + inputs)
+
+- UI: switched budget table inputs to underline-only styling, added internal horizontal scrolling for the table, and hid horizontal page overflow in the accelerator shell (`src/components/training/module-detail/assignment-form.tsx`, `src/components/accelerator/accelerator-shell.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap editor header)
+
+- UI: removed the roadmap editor header card styling, dropped saved/updated metadata, and reduced the section title size (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap rail alignment)
+
+- UI: offset the roadmap rail to align with the step dot centers (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap input padding)
+
+- UI: added subtle left padding to the roadmap title and subtitle inputs so the text breathes from the edge (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap editor footer)
+
+- UI: removed the Shift+Enter soft-break tip from the rich text editor footer (`src/components/rich-text-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap editor label)
+
+- UI: removed the “Section details” label above the roadmap section editor inputs (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Public grid background)
+
+- UI: fixed public org/roadmap dot-grid backgrounds to be fixed on html/body and removed the per-page grid wrapper backgrounds (`src/components/organization/public-org-body-background.tsx`, `src/app/[org]/page.tsx`, `src/app/[org]/roadmap/page.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap template guidance)
+
+- UI/Data: separated roadmap template titles/subtitles from user inputs, added example placeholders, and updated dirty-state comparisons accordingly (`src/lib/roadmap.ts`, `src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap input placeholders)
+
+- UI: switched roadmap title/subtitle placeholders back to “Title” and “Add a subtitle”, and normalized the editor placeholder to “Start writing...” (`src/components/roadmap/roadmap-editor.tsx`, `src/lib/roadmap.ts`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap actions menu)
+
+- UI: consolidated roadmap share/view actions into a three-dots menu and removed the standalone “View live” button from the visibility toggle (`src/components/roadmap/roadmap-editor.tsx`, `src/components/roadmap/roadmap-visibility-toggle.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap section header copy)
+
+- UI: renamed the roadmap sidebar header label to “Roadmap” (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap toolbar background)
+
+- UI: removed the muted background behind the rich text editor toolbar so it blends into the page (`src/components/rich-text-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap input padding v2)
+
+- UI: increased left padding on roadmap title/subtitle inputs for more breathing room (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
 ## 2026-01-10 — Codex session (Deck step frame)
 
 - UI: wrapped the module deck step in the shared StepFrame and passed through `hasDeck` so the inline viewer has a fixed height and respects actual deck availability (`src/components/training/module-detail/module-stepper.tsx`).
 - Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap visibility row)
+
+- UI: restyled the roadmap visibility toggle to Live/Offline with a dashed item shell and aligned it with the save/actions row (`src/components/roadmap/roadmap-visibility-toggle.tsx`, `src/components/roadmap/roadmap-editor.tsx`).
+- Docs: tracked the roadmap visibility update (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap card layout)
+
+- UI: reworked the roadmap outline + editor into two responsive card containers that stack on small screens and sit side-by-side on larger screens (`src/components/roadmap/roadmap-editor.tsx`).
+- Docs: updated the visual checklist (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap template card + toolbar placement)
+
+- UI: moved the rich-text toolbar above the title inputs, added a dashed template card with section icons, and removed the main editor card wrapper for a more document-like layout (`src/components/rich-text-editor.tsx`, `src/components/roadmap/roadmap-editor.tsx`, `src/app/(accelerator)/accelerator/roadmap/page.tsx`).
+- Docs: logged updates (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap editor surface)
+
+- UI: matched the roadmap editor background to the page and applied input-like corner radius on the ProseMirror surface (`src/components/rich-text-editor.tsx`, `src/components/roadmap/roadmap-editor.tsx`).
+- Docs: tracked the update (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap title/subtitle growth)
+
+- UI: converted roadmap title/subtitle inputs to auto-growing textareas with character limits (`src/components/roadmap/roadmap-editor.tsx`).
+- Docs: updated checklist (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap outline width)
+
+- UI: expanded roadmap outline items to fill the full width of the outline card (`src/components/roadmap/roadmap-editor.tsx`).
+- Docs: updated the visual checklist (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap top alignment)
+
+- UI: aligned the outline card top with the section guidance block on large screens (`src/components/roadmap/roadmap-editor.tsx`).
+- Docs: updated checklist (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap editor placeholder)
+
+- UI: restored TipTap placeholder visibility when the editor is empty (`src/app/globals.css`).
+- Docs: updated checklist (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-10 — Codex session (Roadmap outline alignment + draft sync)
+
+- UI: aligned the outline card with the title input row using a two-row grid layout and tightened column spacing (`src/components/roadmap/roadmap-editor.tsx`).
+- UI: new sections now start blank with template guidance, and outline titles/subtitles reflect draft edits before saving (`src/components/roadmap/roadmap-editor.tsx`).
+- Docs: updated checklist (`docs/updates_edits.md`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap outline actions layout)
+
+- UI: moved the section actions trigger into the outline row container and expanded the row to full width (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap editor background)
+
+- UI: matched TipTap editor background to the word-count footer (`src/components/rich-text-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (TipTap placeholder color)
+
+- UI: matched TipTap empty-state placeholder color to the subtitle textarea tone (`src/app/globals.css`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Item card background)
+
+- UI: set Item card background to #FAFAFA (`src/components/ui/item.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap item background override)
+
+- UI: set roadmap outline card background to #FAFAFA (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap sidebar card background)
+
+- UI: set roadmap sidebar card background to #FAFAFA (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (TipTap editor background match)
+
+- UI: set TipTap editor background to #FAFAFA (`src/components/rich-text-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap selection color)
+
+- UI: matched active roadmap row background/text to sidebar active color (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Sidebar hover contrast)
+
+- UI: softened sidebar menu hover text color to a dark grey using sidebar foreground tokens (`src/components/ui/sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap toolbar shadow)
+
+- UI: softened roadmap editor toolbar shadow (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap autosave + placeholder)
+
+- UX: removed title-required guard for saving, added 10s autosave loop for dirty drafts (`src/components/roadmap/roadmap-editor.tsx`).
+- UI: aligned TipTap placeholder color with textarea placeholder and applied to any empty paragraph (`src/app/globals.css`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap visibility actions)
+
+- UI: removed the mobile section actions dropdown in the roadmap header and added a public link icon button beside the live/offline switch (`src/components/roadmap/roadmap-editor.tsx`, `src/components/roadmap/roadmap-visibility-toggle.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap save label)
+
+- UI: switched the roadmap save button to show “Saved” when there are no unsaved changes (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Public link button placement)
+
+- UI: moved the public link icon button outside the status pill, positioned to the right (`src/components/roadmap/roadmap-visibility-toggle.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (TipTap placeholder grey)
+
+- UI: softened TipTap placeholder text to a grey tone (`src/app/globals.css`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Textarea placeholder)
+
+- UI: softened textarea placeholder color to muted foreground at 70% for consistency (`src/components/ui/textarea.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap placeholder override)
+
+- UI: forced roadmap title/subtitle placeholder color to a consistent grey in both themes (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap dark backgrounds)
+
+- UI: added dark-mode background overrides for roadmap sidebar card and outline item (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap item icon background)
+
+- UI: set the roadmap item icon container background to white (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Sidebar button tokens)
+
+- UI: aligned sidebar menu button base/hover text colors with sidebar tokens for light mode visibility (`src/components/ui/sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Sidebar hover text tone)
+
+- UI: lightened sidebar hover text color to a lighter grey (`src/components/ui/sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Return to dashboard styles)
+
+- UI: aligned the Accelerator sidebar return button to sidebar tokens for light-mode hover contrast (`src/components/accelerator/accelerator-sidebar.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap empty title)
+
+- UI: removed the "Untitled section" fallback in the roadmap outline (`src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Dropdown trigger ids)
+
+- UI: added stable ids to dropdown triggers in support menu and roadmap actions to prevent hydration mismatches (`src/components/support-menu.tsx`, `src/components/roadmap/roadmap-editor.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Roadmap empty title persistence)
+
+- Logic: removed "Untitled section" fallbacks so empty titles persist across refresh (`src/lib/roadmap.ts`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (TipTap placeholder match)
+
+- UI: matched TipTap placeholder color to the subtitle textarea placeholder (`src/app/globals.css`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Public roadmap revalidate)
+
+- Logic: revalidate the public roadmap page after saves/deletes to update the live view immediately (`src/app/(dashboard)/strategic-roadmap/actions.ts`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Public toggle revalidate)
+
+- Logic: revalidate the public roadmap page after public toggle updates (`src/app/(dashboard)/strategic-roadmap/actions.ts`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Public roadmap redesign)
+
+- UI: rebuilt the public roadmap page into a full-screen, scroll-snapping presentation with a left timeline rail and GSAP section transitions (`src/components/roadmap/public-roadmap-presentation.tsx`).
+- UI: replaced the public roadmap page layout to use the new presentation component and removed the card-based list/hero (`src/app/[org]/roadmap/page.tsx`).
+- Tests: not run.
+
+## 2026-01-11 — Codex session (Public roadmap pagination UI)
+
+- UI: replaced the public roadmap scroll+rail layout with a centered, single-section-at-a-time presentation view and fixed bottom up/down controls (wheel/keys/swipe supported) (`src/components/roadmap/public-roadmap-presentation.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-11 — Codex session (Public roadmap toolbar tweaks)
+
+- UI: moved share + theme toggle into the bottom navigation toolbar, aligned buttons horizontally, removed the strategic-roadmap pill, and added a logo badge next to org name/subtitle (`src/components/roadmap/public-roadmap-presentation.tsx`, `src/components/shared/share-button.tsx`, `src/components/organization/public-theme-toggle.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-11 — Codex session (Public roadmap toolbar position)
+
+- UI: moved the public roadmap toolbar (nav/share/theme) from bottom-center to the top-left area (`src/components/roadmap/public-roadmap-presentation.tsx`).
+
+## 2026-01-11 — Codex session (Roadmap sidebar shadow)
+
+- UI: reduced shadow on the roadmap sidebar card (`src/components/roadmap/roadmap-editor.tsx`).
+
+## 2026-01-11 — Codex session (Public roadmap logo)
+
+- UI: display the organization’s uploaded logo on the public roadmap presentation (falls back to Coach House mark if missing) (`src/app/[org]/roadmap/page.tsx`, `src/components/roadmap/public-roadmap-presentation.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-11 — Codex session (Public roadmap header + bottom toolbar)
+
+- UI: moved org logo/name/subtitle into the fixed top-left pill and centered the nav/share/theme toolbar at the bottom (`src/components/roadmap/public-roadmap-presentation.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-11 — Codex session (Sidebar roadmap icon)
+
+- UI: added the roadmap icon next to the Accelerator sidebar Roadmap link (`src/components/accelerator/accelerator-sidebar.tsx`).
+
+## 2026-01-11 — Codex session (Public roadmap header container)
+
+- UI: removed the pill/card styling around the fixed public roadmap org header (kept logo + org name/subtitle) (`src/components/roadmap/public-roadmap-presentation.tsx`).
+
+## 2026-01-11 — Codex session (Remove hero editor)
+
+- UI: removed the "Roadmap hero image" editor card from My Organization → Roadmap by disabling `showHeroEditor` (`src/components/organization/org-profile-card/org-profile-card.tsx`).
+
+## 2026-01-11 — Codex session (Roadmap header lockup)
+
+- UI: refactored the roadmap header to an icon-left "lockup" layout (icon + title + description) (`src/components/roadmap/roadmap-shell.tsx`).
+
+## 2026-01-12 — Codex session (Roadmap/docs routes + public uploads)
+
+- Navigation: moved My Organization Roadmap + Documents into dedicated pages and updated redirects/links (`src/app/(dashboard)/my-organization/page.tsx`, `src/app/(dashboard)/my-organization/roadmap/page.tsx`, `src/app/(dashboard)/my-organization/documents/page.tsx`, `src/app/(dashboard)/strategic-roadmap/page.tsx`, `src/components/global-search.tsx`, `src/app/(dashboard)/dashboard/page.tsx`).
+- Sidebar: removed the Dashboard nav item (shelved in `docs/trashcan/dashboard-sidebar-nav-item.md`), added Roadmap + Documents under People (`src/components/app-sidebar/nav-data.ts`).
+- Public roadmap: adjusted section title styling (h2, higher placement) and logged section view events on slide changes (`src/components/roadmap/public-roadmap-presentation.tsx`).
+- Org profile: renamed “Story & impact” → “About us” and replaced Programs/Reports textareas with public PDF upload dropzones (`src/components/organization/org-profile-card/tabs/company-tab/display-sections.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/story.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/programs-reports.tsx`, `src/app/api/account/org-public-documents/route.ts`).
+- Tests: fixed Vitest config runtime import issue and normalized budget table options to include empty fields (`vitest.config.ts`, `src/lib/lessons/schemas.ts`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped without Supabase env vars).
+
+## 2026-01-12 — Codex session (Org profile content background)
+
+- UI: set My Organization tab content area background to `bg-sidebar` to match the sidebar container (`src/components/organization/org-profile-card/org-profile-card.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Accelerator roadmap editor layout)
+
+- UI: moved the roadmap section list card to the right and centered the editor column on large screens via `editorLayout="centered-right"` (`src/components/roadmap/roadmap-editor.tsx`, `src/components/roadmap/roadmap-shell.tsx`, `src/app/(accelerator)/accelerator/roadmap/page.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Roadmap sections mobile dropdown)
+
+- UI: replaced the stacked mobile roadmap section list with a dropdown selector (keeps “New” button) (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Public roadmap section badge)
+
+- UI: moved the active section title into a small pill badge under the org tagline in the fixed header (`src/components/roadmap/public-roadmap-presentation.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Accelerator roadmap header)
+
+- UI: enabled the in-page Strategic roadmap header/description on the Accelerator roadmap page (`src/app/(accelerator)/accelerator/roadmap/page.tsx`, `src/components/roadmap/roadmap-shell.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Accelerator roadmap header layout)
+
+- UI: stacked the roadmap header icon/title/description vertically for Accelerator Roadmap (`src/components/roadmap/roadmap-shell.tsx`, `src/app/(accelerator)/accelerator/roadmap/page.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Mobile roadmap dropdown sizing)
+
+- UI: increased the mobile roadmap section dropdown trigger height and allowed a 2-line subtitle (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Framework label)
+
+- UI: renamed the roadmap section list header label to “Framework” and added an icon (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Tiptap background tokens)
+
+- UI: updated the RichTextEditor ProseMirror background to match input tokens (`bg-transparent dark:bg-input/30`) (`src/components/rich-text-editor.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Public roadmap badge spacing)
+
+- UI: separated the section badge from the logo/text row and increased spacing below the tagline (`src/components/roadmap/public-roadmap-presentation.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Roadmap editor alignment)
+
+- UI: centered the default RoadmapEditor grid so the Framework card aligns with the “Live” row and sits closer to the editor column (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env).
+- Next: verify alignment on `/my-organization/roadmap` at desktop widths.
+
+## 2026-01-12 — Codex session (Roadmap mobile subtitle truncation)
+
+- UI: changed the mobile section dropdown trigger subtitle to use single-line ellipsis truncation (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Framework card chrome)
+
+- UI: removed the border/background/shadow wrapper around the Framework list in the default roadmap editor layout (keeps it for the centered-right layout) (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Roadmap share actions removed)
+
+- UI: removed the Roadmap editor header “Section actions” dropdown trigger (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Editor word count rounding)
+
+- UI: rounded the bottom corners of the RichTextEditor word/character count footer (and link preview footer when present) (`src/components/rich-text-editor.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Framework rail endcap)
+
+- UI: masked the section list rail so it stops at the center of the last badge (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (My Organization header background)
+
+- UI: matched the OrgProfile header content background to the tabs panel background (`bg-sidebar`) (`src/components/organization/org-profile-card/header.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Item dark mode background)
+
+- UI: fixed `Item` to use `dark:bg-[#151515]` and `text-foreground` so it renders correctly in dark mode (`src/components/ui/item.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Hide Supporters tab)
+
+- UI: removed the Supporters tab trigger (and disallowed `?tab=supporters`) on My Organization for now (`src/components/organization/org-profile-card/org-profile-card.tsx`, `src/app/(dashboard)/my-organization/page.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Roadmap section cover image)
+
+- UI: repurposed the Roadmap editor toolbar “Insert image” button to upload a per-section cover image and show a preview above the toolbar with swap/remove controls (`src/components/roadmap/roadmap-editor.tsx`, `src/components/rich-text-editor.tsx`).
+- Data: persisted `imageUrl` on roadmap sections and cleaned up replaced/removed images (`src/lib/roadmap.ts`, `src/app/(dashboard)/strategic-roadmap/actions.ts`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Roadmap cover image verification)
+
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+- Next: verify in-browser that “Insert image” uploads a cover image, shows the preview above the toolbar, and persists on refresh (including the public page revalidate).
+
+## 2026-01-12 — Codex session (Public roadmap cover images)
+
+- UI: render per-section `imageUrl` cover images on the public roadmap presentation (`src/app/[org]/roadmap/page.tsx`, `src/components/roadmap/public-roadmap-presentation.tsx`).
+- UX: include sections with a cover image even if the rich text body is empty (`src/app/[org]/roadmap/page.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Roadmap editor toolbar placement)
+
+- UI: moved the RichTextEditor toolbar portal target back into the editor column so formatting controls appear above the editor (and the cover image preview sits directly above the toolbar) (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:acceptance`.
+
+## 2026-01-12 — Codex session (Public roadmap section headings)
+
+- UI: show the section title + subtitle above the body content on the public roadmap page (`src/app/[org]/roadmap/page.tsx`, `src/components/roadmap/public-roadmap-presentation.tsx`).
+
+## 2026-01-12 — Codex session (Accelerator roadmap page layout)
+
+- UI: aligned `/accelerator/roadmap` wrapper + RoadmapShell props to match `/my-organization/roadmap` (`src/app/(accelerator)/accelerator/roadmap/page.tsx`).
+
+## 2026-01-12 — Codex session (Public roadmap uses user headings)
+
+- UI: public roadmap uses the user-entered section title/subtitle (not the template defaults) (`src/app/[org]/roadmap/page.tsx`).
+
+## 2026-01-12 — Codex session (Public roadmap content alignment)
+
+- UI: align the main slide content block with the header badge column (`src/components/roadmap/public-roadmap-presentation.tsx`).
+
+## 2026-01-12 — Codex session (Public roadmap section eyebrow)
+
+- UI: moved section title/subtitle into the fixed header as an eyebrow (badge + short description) above the slide body (`src/components/roadmap/public-roadmap-presentation.tsx`).
+
+## 2026-01-12 — Codex session (Public roadmap hides template headings)
+
+- UI: treat template section titles/subtitles as empty on the public roadmap page, even if they were previously persisted (`src/app/[org]/roadmap/page.tsx`).
+
+## 2026-01-12 — Codex session (Roadmap section limit)
+
+- Guardrails: limited roadmaps to 10 sections (UI + server-side check) (`src/components/roadmap/roadmap-editor.tsx`, `src/app/(dashboard)/strategic-roadmap/actions.ts`, `src/lib/roadmap.ts`).
+
+## 2026-01-12 — Codex session (Strategic roadmap page sync)
+
+- Refactor: `/my-organization/roadmap` and `/accelerator/roadmap` now reuse a shared server component so they stay in lockstep (`src/components/roadmap/strategic-roadmap-editor-page.tsx`, `src/app/(dashboard)/my-organization/roadmap/page.tsx`, `src/app/(accelerator)/accelerator/roadmap/page.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Strategic roadmap title sync)
+
+- Fix: recompute `titleIsTemplate`/`subtitleIsTemplate` when saving an existing roadmap section so a newly-entered title stays visible immediately (and stays consistent between `/my-organization/roadmap` and `/accelerator/roadmap`) (`src/lib/roadmap.ts`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Public roadmap headings layout)
+
+- UX: moved section title/subtitle into the slide content (image → eyebrow badge → title → subtitle → body) and kept the top header focused on org info (`src/app/[org]/roadmap/page.tsx`, `src/components/roadmap/public-roadmap-presentation.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Framework vs custom sections)
+
+- Editor: “New” now opens a menu to re-add missing framework sections or create a custom section; custom sections no longer show the framework info card, and the section rail shows framework labels for framework sections (`src/components/roadmap/roadmap-editor.tsx`).
+- Public roadmap: ensured a visible section title above the subtitle by falling back to the framework eyebrow when the user title is empty (`src/components/roadmap/public-roadmap-presentation.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Custom roadmap sections)
+
+- Fix: creating a new custom roadmap section no longer persists a default `"New section"` title when the user leaves the title blank (`src/lib/roadmap.ts`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Public roadmap includes headings)
+
+- UX: public roadmap now includes sections that only have a user title/subtitle (no body yet) so headings can be previewed on the live page (`src/app/[org]/roadmap/page.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Public roadmap badge above image)
+
+- UX: when a section has a cover image, render the framework eyebrow badge directly above the image card (`src/components/roadmap/public-roadmap-presentation.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Roadmap title autosave)
+
+- UX: title/subtitle changes now auto-save after a short pause (and include content when needed) so the public roadmap reflects edits quickly (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Public roadmap blur transitions)
+
+- UI: integrated the shadcn `@react-bits/GradualBlur-JS-CSS` component and added a subtle bottom blur overlay on the public roadmap presentation (`src/components/GradualBlur.jsx`, `src/components/GradualBlur.css`, `src/app/globals.css`, `src/components/roadmap/public-roadmap-presentation.tsx`).
+- UX: slide navigation now animates out/in with an upward reveal + blur-to-clear transition and respects `prefers-reduced-motion` (`src/components/roadmap/public-roadmap-presentation.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (My Organization card background)
+
+- UI: make the org profile card background match the tab panel background (`bg-sidebar`) for consistent light/dark rendering (`src/components/organization/org-profile-card/org-profile-card.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Radix hydration mismatch)
+
+- Fix: stabilize Radix dropdown trigger `id` attributes to prevent hydration mismatch warnings in the strategic roadmap editor (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Program wizard location + team)
+
+- Programs: added `location_type` + `location_url` (in-person vs online link) and `team_ids` to persist the new wizard fields (`supabase/migrations/20260112142000_programs_location_type_url.sql`, `supabase/migrations/20260112142500_programs_team_ids.sql`).
+- Wizard: schedule step now toggles between full address and online meeting link; funding goals UI removed for now; added a team picker that pulls org people from a new API route (`src/components/programs/program-wizard/schema.ts`, `src/components/programs/program-wizard.tsx`, `src/components/programs/program-wizard/steps/schedule-step.tsx`, `src/components/programs/program-wizard/steps/funding-step.tsx`, `src/app/api/account/org-people/route.ts`).
+- Actions: program create/update now persist the new fields and support clearing values (`src/app/(dashboard)/my-organization/programs/actions.ts`).
+- UI: accelerator sidebar “Return to dashboard” now links to `/my-organization` as “Return home”; meeting CTA card restyled into a square tile (`src/components/accelerator/accelerator-sidebar.tsx`, `src/components/accelerator/accelerator-schedule-card.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Accelerator Start Building pager)
+
+- UX: redesigned Accelerator overview “Start building” into a paginated, lesson-style module preview with CTAs + locked/in-progress/completed states (`src/components/accelerator/start-building-pager.tsx`, `src/app/(accelerator)/accelerator/page.tsx`).
+- Logic: derive statuses from org profile, programs, and roadmap progress; later steps lock until the first “not started” step (`src/app/(accelerator)/accelerator/page.tsx`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls` (skipped; missing env vars).
+
+## 2026-01-12 — Codex session (Accelerator program Empty border)
+
+- UI: make the “Create your first program” Empty state use a thicker dashed border to match the intended styling (`src/app/(accelerator)/accelerator/page.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Hide Accelerator support links)
+
+- UI: removed the Help center / Community calls / Documentation / System status tiles from the Accelerator overview for now (`src/app/(accelerator)/accelerator/page.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Roadmap Introduction icon)
+
+- UI: swap the framework “Introduction” icon to `Hand` (waving hello) instead of sparkles (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Sidebar Live badges)
+
+- UI: when both the org public page and public roadmap are live, show a “Live” badge on the right side of the “My Organization” and “Roadmap” sidebar items (`src/app/(dashboard)/layout.tsx`, `src/components/nav-main.tsx`, `src/components/app-sidebar.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Framework header alignment)
+
+- UI: align the “Framework” label + “New” button header row with the “Live” toggle row by tightening top padding and using `leading-none` (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Roadmap top-row alignment)
+
+- UI: in the centered-right roadmap layout, move the Framework header (“Framework” + “New”) into the top grid row so it aligns horizontally with the “Live” toggle row (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-12 — Codex session (Accelerator Start Building icon keys)
+
+- Fix: switched Start Building steps to pass serializable `iconKey` values and map them to lucide icons inside the client component to avoid RSC serialization errors (`src/app/(accelerator)/accelerator/page.tsx`, `src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator Start Building serialization guard)
+
+- Fix: explicitly remapped Start Building steps to a plain serializable shape before passing to the client pager to avoid stray non-serializable props (`src/app/(accelerator)/accelerator/page.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator meeting card layout)
+
+- Layout: moved the meeting card into the overview grid right column and removed the standalone meeting section (`src/app/(accelerator)/accelerator/page.tsx`).
+- UI: removed meeting badges/upsell, added an image placeholder above the meeting header, and renamed the CTA to “Book a call” (`src/components/accelerator/accelerator-schedule-card.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator meeting card height)
+
+- Layout: let the meeting card stretch to the overview grid row height (matching the left column) by removing the square aspect lock and ensuring the right column fills the row (`src/components/accelerator/accelerator-schedule-card.tsx`, `src/app/(accelerator)/accelerator/page.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator Start building subtitle removal)
+
+- UI: removed the “Plan → Publish → Prove” subtitle from the Start building header (`src/app/(accelerator)/accelerator/page.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator Start building header alignment)
+
+- UI: moved the Start building label into the pager header, renamed it “Continue building,” and placed the page count between the pagination buttons (`src/app/(accelerator)/accelerator/page.tsx`, `src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator meeting card icon overlay)
+
+- UI: moved the meeting icon into the image placeholder so it overlays the media block, giving the image more space (`src/components/accelerator/accelerator-schedule-card.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator Next up card removal)
+
+- UI: removed the Next up card container and placed the label/title/CTA directly under the progress bar (`src/app/(accelerator)/accelerator/page.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator overview label)
+
+- UI: renamed the Accelerator overview eyebrow label to “Overview” (`src/app/(accelerator)/accelerator/page.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator progress bar + CTA)
+
+- UI: aligned the Next up CTA with the progress bar width, added segmented module progress with orange/green states, and updated the CTA label to Start/Continue/Complete based on progress (`src/app/(accelerator)/accelerator/page.tsx`).
+- Data: compute module totals and completion/in-progress counts from enrollments, modules, and module_progress to drive the progress bar (`src/app/(accelerator)/accelerator/page.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator meeting card layout refresh)
+
+- UI: restyled the meeting card to match the HomeTwo news card layout, using a gradient media block with overlay icons and click-to-schedule behavior (`src/components/accelerator/accelerator-schedule-card.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator Start Building grid)
+
+- UI: replaced the Start Building pager with a responsive grid (up to 6 columns) and redesigned step cards to mirror the HomeTwo news card style with gradient media blocks (`src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator module grid by class)
+
+- UI: reworked the Start Building section into class-grouped module grids (max 4 columns) with module cards styled like the HomeTwo news tiles (`src/components/accelerator/start-building-pager.tsx`).
+- Data: fetch published classes/modules for the accelerator, map module progress/locks per class, and drive the overview progress totals from those modules (`src/app/(accelerator)/accelerator/page.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Budget table guided layout)
+
+- UX: added quick-add chips, step guidance, and row-level remove actions for budget tables; switched to a stacked card layout on small screens while keeping the resizable table for desktop (`src/components/training/module-detail/assignment-form.tsx`).
+- UI: added an actions column to the budget table and adjusted widths/min sizes to keep the layout balanced (`src/components/training/module-detail/assignment-form.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator progress segment contrast)
+
+- UI: darkened the empty progress segments so unfilled steps read more clearly against the background (`src/app/(accelerator)/accelerator/page.tsx`).
+- Checks: not run (not requested).

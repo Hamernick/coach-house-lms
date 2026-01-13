@@ -34,6 +34,7 @@ export type AppSidebarProps = {
   isAdmin?: boolean
   classes?: SidebarClass[]
   acceleratorProgress?: number | null
+  showLiveBadges?: boolean
   openMap?: Record<string, boolean>
   setOpenMap?: Dispatch<SetStateAction<Record<string, boolean>>>
 }
@@ -43,6 +44,7 @@ export function AppSidebar({
   isAdmin = false,
   classes,
   acceleratorProgress,
+  showLiveBadges = false,
   openMap: controlledOpenMap,
   setOpenMap: controlledSetOpenMap,
 }: AppSidebarProps) {
@@ -71,6 +73,7 @@ export function AppSidebar({
         user={resolvedUser}
         isAcceleratorActive={isAcceleratorActive}
         acceleratorProgress={acceleratorProgress}
+        showLiveBadges={showLiveBadges}
       />
     </aside>
   )
@@ -88,6 +91,7 @@ type SidebarBodyProps = {
   }
   isAcceleratorActive: boolean
   acceleratorProgress?: number | null
+  showLiveBadges?: boolean
 }
 
 export function SidebarBody({
@@ -98,6 +102,7 @@ export function SidebarBody({
   user,
   isAcceleratorActive,
   acceleratorProgress,
+  showLiveBadges = false,
 }: SidebarBodyProps) {
   const progressValue =
     typeof acceleratorProgress === "number" && Number.isFinite(acceleratorProgress)
@@ -144,7 +149,7 @@ export function SidebarBody({
       </SidebarHeader>
 
       <SidebarContent className="gap-4">
-        <NavMain items={buildMainNav(isAdmin)} label="Platform" />
+        <NavMain items={buildMainNav(isAdmin)} label="Platform" showLiveBadges={showLiveBadges} />
         <SidebarGroup>
           <SidebarMenu>
             <SidebarMenuItem>

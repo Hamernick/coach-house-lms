@@ -1,9 +1,7 @@
 import { redirect } from "next/navigation"
 
 import { OrgProfileCard } from "@/components/organization/org-profile-card"
-import type { OrgDocuments, ProfileTab } from "@/components/organization/org-profile-card/types"
-import { resolveRoadmapHeroUrl, resolveRoadmapSections } from "@/lib/roadmap"
-import { resolveRoadmapHomework } from "@/lib/roadmap/homework"
+import type { ProfileTab } from "@/components/organization/org-profile-card/types"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 import { createSupabaseServerClient, type Json } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -19,6 +17,10 @@ export default async function MyOrganizationPage({
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const tabParam = typeof resolvedSearchParams?.tab === "string" ? resolvedSearchParams.tab : ""
+  if (tabParam === "roadmap") redirect("/my-organization/roadmap")
+  if (tabParam === "documents") redirect("/my-organization/documents")
+
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -30,20 +32,16 @@ export default async function MyOrganizationPage({
   // Load organization profile for the current user
   const { data: orgRow } = await supabase
     .from("organizations")
-    .select("ein, profile, public_slug, is_public, is_public_roadmap")
+    .select("ein, profile, public_slug, is_public")
     .eq("user_id", user.id)
     .maybeSingle<{
       ein: string | null
       profile: Record<string, unknown> | null
       public_slug: string | null
       is_public: boolean | null
-      is_public_roadmap: boolean | null
     }>()
 
   let profile = (orgRow?.profile ?? {}) as Record<string, unknown>
-
-  const isRecord = (value: unknown): value is Record<string, unknown> =>
-    Boolean(value) && typeof value === "object" && !Array.isArray(value)
 
   if (orgRow?.profile) {
     const { nextProfile, changed } = cleanupOrgProfileHtml(profile)
@@ -61,7 +59,7 @@ export default async function MyOrganizationPage({
   const { data: programs } = await supabase
     .from("programs")
     .select(
-      "id, title, subtitle, description, location, image_url, duration_label, features, status_label, goal_cents, raised_cents, is_public, created_at, start_date, end_date, address_city, address_state, address_country, cta_label, cta_url",
+      "id, title, subtitle, description, location, location_type, location_url, team_ids, image_url, duration_label, features, status_label, goal_cents, raised_cents, is_public, created_at, start_date, end_date, address_city, address_state, address_country, cta_label, cta_url",
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false })
@@ -131,54 +129,8 @@ export default async function MyOrganizationPage({
     isPublic: publicSharingEnabled ? Boolean(orgRow?.is_public ?? false) : false,
   }
 
-  const allowedTabs: ProfileTab[] = ["company", "programs", "people", "supporters", "roadmap", "documents"]
-  const tabParam = typeof resolvedSearchParams?.tab === "string" ? resolvedSearchParams.tab : ""
+  const allowedTabs: ProfileTab[] = ["company", "programs", "people"]
   const initialTab = allowedTabs.includes(tabParam as ProfileTab) ? (tabParam as ProfileTab) : undefined
-
-  const roadmapHomework = await resolveRoadmapHomework(user.id, supabase)
-  const roadmapSections = resolveRoadmapSections(profile).map((section) => {
-    const withHomework = {
-      ...section,
-      homework: roadmapHomework[section.id] ?? null,
-    }
-    return publicSharingEnabled ? withHomework : { ...withHomework, isPublic: false }
-  })
-  const roadmapIsPublic = publicSharingEnabled ? Boolean(orgRow?.is_public_roadmap) : false
-  const roadmapPublicSlug = orgRow?.public_slug ?? null
-  const roadmapHeroUrl = resolveRoadmapHeroUrl(profile)
-
-  const documentsRaw = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : null
-  const documentKeys: Array<keyof OrgDocuments> = [
-    "verificationLetter",
-    "articlesOfIncorporation",
-    "bylaws",
-    "stateRegistration",
-    "goodStandingCertificate",
-    "w9",
-    "taxExemptCertificate",
-  ]
-
-  const parseDocument = (key: keyof OrgDocuments) => {
-    const raw = documentsRaw && isRecord(documentsRaw[key]) ? (documentsRaw[key] as Record<string, unknown>) : null
-    if (!raw) return null
-    return {
-      name: String(raw["name"] ?? ""),
-      path: String(raw["path"] ?? ""),
-      size: typeof raw["size"] === "number" ? (raw["size"] as number) : null,
-      mime: typeof raw["mime"] === "string" ? (raw["mime"] as string) : null,
-      updatedAt: typeof raw["updatedAt"] === "string" ? (raw["updatedAt"] as string) : null,
-    }
-  }
-
-  const parsedDocuments = documentKeys.reduce((acc, key) => {
-    const parsed = parseDocument(key)
-    if (parsed?.path) {
-      acc[key] = parsed
-    }
-    return acc
-  }, {} as OrgDocuments)
-
-  const documents: OrgDocuments | null = Object.keys(parsedDocuments).length > 0 ? parsedDocuments : null
 
   return (
     <div className="flex flex-col gap-6 px-0 sm:px-2 lg:px-0">
@@ -187,11 +139,6 @@ export default async function MyOrganizationPage({
           initial={initialProfile}
           people={people}
           programs={programs ?? []}
-          documents={documents}
-          roadmapSections={roadmapSections}
-          roadmapPublicSlug={roadmapPublicSlug}
-          roadmapIsPublic={roadmapIsPublic}
-          roadmapHeroUrl={roadmapHeroUrl}
           initialTab={initialTab}
         />
       </section>

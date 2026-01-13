@@ -7,6 +7,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import {
   DialogStackContent,
   DialogStackDescription,
@@ -66,46 +67,83 @@ export function ScheduleStep({ index, form, onOpenChange, onEdit, onScheduleSave
                 </div>
               </div>
               <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
-                <div className="text-sm font-medium">Full address</div>
-                <p className="mt-1 text-xs text-muted-foreground">Use this for directions and logistics.</p>
-                <div className="mt-4 grid gap-4">
-                  <TextInput
-                    id="addressStreet"
-                    label="Street"
-                    value={form.addressStreet}
-                    placeholder="123 Main St"
-                    onChange={(value) => update({ addressStreet: value })}
-                  />
-                  <div className="grid gap-4 sm:grid-cols-3">
-                    <TextInput
-                      id="addressCity"
-                      label="City"
-                      value={form.addressCity}
-                      placeholder="Chicago"
-                      onChange={(value) => update({ addressCity: value })}
-                    />
-                    <TextInput
-                      id="addressState"
-                      label="State"
-                      value={form.addressState}
-                      placeholder="IL"
-                      onChange={(value) => update({ addressState: value })}
-                    />
-                    <TextInput
-                      id="addressPostal"
-                      label="Postal"
-                      value={form.addressPostal}
-                      placeholder="60601"
-                      onChange={(value) => update({ addressPostal: value })}
-                    />
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <div className="text-sm font-medium">Location</div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {form.locationType === "online"
+                        ? "Add a meeting link for online programs."
+                        : "Use this for directions and logistics."}
+                    </p>
                   </div>
-                  <TextInput
-                    id="addressCountry"
-                    label="Country"
-                    value={form.addressCountry}
-                    placeholder="United States"
-                    onChange={(value) => update({ addressCountry: value })}
-                  />
+                  <ToggleGroup
+                    type="single"
+                    variant="outline"
+                    size="sm"
+                    value={form.locationType}
+                    onValueChange={(value) => {
+                      if (!value) return
+                      update({ locationType: value as ProgramWizardFormState["locationType"] })
+                    }}
+                  >
+                    <ToggleGroupItem value="in_person">In person</ToggleGroupItem>
+                    <ToggleGroupItem value="online">Online</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+                <div className="mt-4 grid gap-4">
+                  {form.locationType === "online" ? (
+                    <TextInput
+                      id="locationUrl"
+                      label="Meeting link"
+                      value={form.locationUrl}
+                      placeholder="https://meet.google.com/…"
+                      onChange={(value) => {
+                        const raw = value.trim()
+                        const nextValue = raw ? (raw.startsWith("http://") || raw.startsWith("https://") ? raw : `https://${raw}`) : ""
+                        update({ locationUrl: nextValue })
+                      }}
+                    />
+                  ) : (
+                    <>
+                      <TextInput
+                        id="addressStreet"
+                        label="Street"
+                        value={form.addressStreet}
+                        placeholder="123 Main St"
+                        onChange={(value) => update({ addressStreet: value })}
+                      />
+                      <div className="grid gap-4 sm:grid-cols-3">
+                        <TextInput
+                          id="addressCity"
+                          label="City"
+                          value={form.addressCity}
+                          placeholder="Chicago"
+                          onChange={(value) => update({ addressCity: value })}
+                        />
+                        <TextInput
+                          id="addressState"
+                          label="State"
+                          value={form.addressState}
+                          placeholder="IL"
+                          onChange={(value) => update({ addressState: value })}
+                        />
+                        <TextInput
+                          id="addressPostal"
+                          label="Postal"
+                          value={form.addressPostal}
+                          placeholder="60601"
+                          onChange={(value) => update({ addressPostal: value })}
+                        />
+                      </div>
+                      <TextInput
+                        id="addressCountry"
+                        label="Country"
+                        value={form.addressCountry}
+                        placeholder="United States"
+                        onChange={(value) => update({ addressCountry: value })}
+                      />
+                    </>
+                  )}
                 </div>
               </div>
             </div>

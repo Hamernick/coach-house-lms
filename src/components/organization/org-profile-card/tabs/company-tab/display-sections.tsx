@@ -96,7 +96,7 @@ export function StoryPreview({ company }: CompanyViewProps) {
   }
 
   return (
-    <FormRow title="Story & impact">
+    <FormRow title="About us">
       <div className="grid gap-4 md:grid-cols-2">
         {vision.trim().length > 0 ? (
           <ProfileField label="Vision">

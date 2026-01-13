@@ -11,6 +11,9 @@ export type CreateProgramPayload = {
   subtitle?: string | null
   description?: string | null
   location?: string | null
+  locationType?: "in_person" | "online" | null
+  locationUrl?: string | null
+  teamIds?: string[] | null
   addressStreet?: string | null
   addressCity?: string | null
   addressState?: string | null
@@ -40,6 +43,9 @@ export async function createProgramAction(payload: CreateProgramPayload) {
     subtitle: payload.subtitle ?? null,
     description: payload.description ?? null,
     location: payload.location ?? null,
+    location_type: payload.locationType ?? "in_person",
+    location_url: payload.locationUrl ?? null,
+    team_ids: payload.teamIds ?? [],
     address_street: payload.addressStreet ?? null,
     address_city: payload.addressCity ?? null,
     address_state: payload.addressState ?? null,
@@ -71,6 +77,10 @@ export async function updateProgramAction(id: string, payload: UpdateProgramPayl
   const userId = session.user.id
   const allowPublicSharing = publicSharingEnabled
   const imageTouched = Object.prototype.hasOwnProperty.call(payload, "imageUrl")
+  const hasKey = (key: keyof UpdateProgramPayload) =>
+    Object.prototype.hasOwnProperty.call(payload, key)
+  const pick = <K extends keyof UpdateProgramPayload>(key: K): UpdateProgramPayload[K] | undefined =>
+    hasKey(key) ? payload[key] : undefined
 
   let previousImageUrl: string | null = null
   if (imageTouched) {
@@ -86,27 +96,36 @@ export async function updateProgramAction(id: string, payload: UpdateProgramPayl
     previousImageUrl = existingRow?.image_url ?? null
   }
 
+  const startDate = pick("startDate")
+  const endDate = pick("endDate")
+  const isPublic = pick("isPublic")
+
   const update = {
-    title: payload.title ?? undefined,
-    subtitle: payload.subtitle ?? undefined,
-    description: payload.description ?? undefined,
-    location: payload.location ?? undefined,
-    address_street: payload.addressStreet ?? undefined,
-    address_city: payload.addressCity ?? undefined,
-    address_state: payload.addressState ?? undefined,
-    address_postal: payload.addressPostal ?? undefined,
-    address_country: payload.addressCountry ?? undefined,
+    title: pick("title"),
+    subtitle: pick("subtitle"),
+    description: pick("description"),
+    location: pick("location"),
+    location_type: pick("locationType") ?? undefined,
+    location_url: pick("locationUrl"),
+    team_ids: pick("teamIds") ?? undefined,
+    address_street: pick("addressStreet"),
+    address_city: pick("addressCity"),
+    address_state: pick("addressState"),
+    address_postal: pick("addressPostal"),
+    address_country: pick("addressCountry"),
     image_url: payload.imageUrl === null ? null : payload.imageUrl ?? undefined,
-    duration_label: payload.duration ?? undefined,
-    start_date: payload.startDate ? (new Date(payload.startDate).toISOString() as unknown as any) : undefined,
-    end_date: payload.endDate ? (new Date(payload.endDate).toISOString() as unknown as any) : undefined,
-    features: payload.features ?? undefined,
-    status_label: payload.statusLabel ?? undefined,
-    goal_cents: payload.goalCents ?? undefined,
-    raised_cents: payload.raisedCents ?? undefined,
-    is_public: (allowPublicSharing ? payload.isPublic : false) ?? undefined,
-    cta_label: payload.ctaLabel ?? undefined,
-    cta_url: payload.ctaUrl ?? undefined,
+    duration_label: pick("duration"),
+    start_date:
+      startDate === undefined ? undefined : startDate ? (new Date(startDate).toISOString() as unknown as any) : null,
+    end_date:
+      endDate === undefined ? undefined : endDate ? (new Date(endDate).toISOString() as unknown as any) : null,
+    features: pick("features"),
+    status_label: pick("statusLabel"),
+    goal_cents: pick("goalCents"),
+    raised_cents: pick("raisedCents"),
+    is_public: isPublic === undefined ? undefined : allowPublicSharing ? Boolean(isPublic) : false,
+    cta_label: pick("ctaLabel"),
+    cta_url: pick("ctaUrl"),
   }
 
   const { error } = await (supabase

@@ -1,15 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import Link from "next/link"
+import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
 import CalendarCheck from "lucide-react/dist/esm/icons/calendar-check"
-import Plus from "lucide-react/dist/esm/icons/plus"
+import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
+import { NewsGradientThumb } from "@/components/news/gradient-thumb"
 import { Card, CardContent } from "@/components/ui/card"
 import { toast } from "@/lib/toast"
-import { FREE_TIER_MEETING_LIMIT } from "@/lib/meetings"
+import { cn } from "@/lib/utils"
 
 type AcceleratorScheduleCardProps = {
   host?: "joel" | "paula"
@@ -45,39 +44,48 @@ export function AcceleratorScheduleCard({ host = "joel" }: AcceleratorScheduleCa
   return (
     <Card
       id="quickstart"
-      className="border-dashed border-border/60 bg-muted/20 shadow-sm animate-soft-pop"
+      role="button"
+      tabIndex={0}
+      aria-disabled={pending}
+      onClick={() => {
+        if (pending) return
+        void handleSchedule()
+      }}
+      onKeyDown={(event) => {
+        if (pending) return
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault()
+          void handleSchedule()
+        }
+      }}
+      className={cn(
+        "group mx-auto flex h-full w-full max-w-[520px] flex-col overflow-hidden rounded-[26px] border border-border/60 bg-card/70 p-4 shadow-sm",
+        "transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-md",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+        pending && "cursor-wait opacity-80",
+      )}
     >
-      <CardContent className="flex flex-col gap-4 px-6 py-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
+      <CardContent className="flex h-full flex-col gap-4 p-0">
+        <div className="relative flex-1 overflow-hidden rounded-[22px] shadow-sm">
+          <NewsGradientThumb seed="accelerator-coaching" className="absolute inset-0" />
+          <span className="absolute left-3 top-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-background/80 text-muted-foreground shadow-sm">
             <CalendarCheck className="h-4 w-4" aria-hidden />
           </span>
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="outline" className="text-[11px] text-muted-foreground">
-              {FREE_TIER_MEETING_LIMIT} calls included
-            </Badge>
-            <Badge
-              asChild
-              variant="outline"
-              className="text-[11px] text-muted-foreground border-dashed hover:text-foreground"
-            >
-              <Link href="/billing">
-                <Plus className="h-3 w-3" aria-hidden />
-                Add more
-              </Link>
-            </Badge>
-          </div>
+          <span className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/80 text-muted-foreground shadow-sm transition group-hover:bg-background">
+            {pending ? (
+              <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+            ) : (
+              <ArrowUpRight className="h-4 w-4" aria-hidden />
+            )}
+          </span>
         </div>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="space-y-1">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">Book a meeting</p>
-            <p className="max-w-lg text-sm text-muted-foreground">
-              Schedule a 1:1 to review the curriculum, ask questions, and plan your next steps.
-            </p>
-          </div>
-          <Button type="button" size="sm" onClick={handleSchedule} disabled={pending} className="shrink-0">
-            {pending ? "Opening..." : "Schedule a call"}
-          </Button>
+
+        <div className="space-y-2">
+          <p className="text-[11px] uppercase text-muted-foreground">Book a call</p>
+          <p className="text-sm font-semibold text-foreground">Coaching + guidance</p>
+          <p className="text-xs text-muted-foreground">
+            Schedule a 1:1 with an advisor to review your work, unblock decisions, and map next steps. Additional calls are billed during scheduling.
+          </p>
         </div>
       </CardContent>
     </Card>

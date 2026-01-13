@@ -2,6 +2,7 @@
 
 import { useEditor, EditorContent } from "@tiptap/react"
 import { forwardRef, useEffect, useRef, useState, type ChangeEvent, type ComponentType, type ReactNode } from "react"
+import { createPortal } from "react-dom"
 import StarterKit from "@tiptap/starter-kit"
 import TextAlign from "@tiptap/extension-text-align"
 import Underline from "@tiptap/extension-underline"
@@ -57,6 +58,12 @@ interface RichTextEditorProps {
   stableScrollbars?: boolean
   toolbarActions?: ReactNode
   onImageUpload?: (file: File) => Promise<string>
+  onImageUploaded?: (payload: { url: string; file: File }) => void | Promise<void>
+  insertUploadedImage?: boolean
+  onImagePickerReady?: (open: (() => void) | null) => void
+  toolbarPortalId?: string
+  toolbarClassName?: string
+  editorClassName?: string
 }
 
 export function RichTextEditor({
@@ -69,6 +76,12 @@ export function RichTextEditor({
   stableScrollbars = false,
   toolbarActions,
   onImageUpload,
+  onImageUploaded,
+  insertUploadedImage = true,
+  onImagePickerReady,
+  toolbarPortalId,
+  toolbarClassName,
+  editorClassName,
 }: RichTextEditorProps) {
   const applyingRef = useRef(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -76,6 +89,7 @@ export function RichTextEditor({
   const [links, setLinks] = useState<string[]>([])
   const [linkMeta, setLinkMeta] = useState<Record<string, { title?: string | null; description?: string | null; image?: string | null }>>({})
   const [uploadingImage, setUploadingImage] = useState(false)
+  const [toolbarTarget, setToolbarTarget] = useState<HTMLElement | null>(null)
   const enableImages = typeof onImageUpload === "function"
   const editorMinHeight = typeof minHeight === "number" && minHeight > 0 ? `${Math.round(minHeight)}px` : undefined
   const editorStyle = editorMinHeight
@@ -143,13 +157,14 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class: cn(
-          "block w-full min-w-0 break-words prose prose-sm dark:prose-invert max-w-none min-h-[240px] resize-y px-4 py-3 focus:outline-none",
+          "block w-full min-w-0 break-words prose prose-sm dark:prose-invert max-w-none min-h-[240px] resize-y bg-transparent dark:bg-input/30 px-4 py-3 focus:outline-none",
           overflowClass,
           "prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-h1:font-semibold prose-h2:font-semibold prose-h3:font-medium",
           "prose-p:my-3 prose-ul:list-disc prose-ol:list-decimal prose-ul:pl-5 prose-ol:pl-5",
           "prose-blockquote:border-l-2 prose-blockquote:border-primary/50 prose-blockquote:pl-4 prose-blockquote:text-muted-foreground",
           "prose-code:bg-muted prose-code:px-1.5 prose-code:py-1 prose-code:rounded-md prose-code:text-sm",
-          "prose-hr:border-border prose-hr:my-6 prose-img:my-4 prose-img:rounded-lg prose-img:border prose-img:border-border/60"
+          "prose-hr:border-border prose-hr:my-6 prose-img:my-4 prose-img:rounded-lg prose-img:border prose-img:border-border/60",
+          editorClassName
         ),
         style: editorStyle,
       },
@@ -171,6 +186,12 @@ export function RichTextEditor({
       chars: editor.storage.characterCount?.characters?.() ?? 0,
     })
   }, [editor])
+
+  useEffect(() => {
+    if (!toolbarPortalId) return
+    if (typeof document === "undefined") return
+    setToolbarTarget(document.getElementById(toolbarPortalId))
+  }, [toolbarPortalId])
 
   useEffect(() => {
     if (!editor || !editorMinHeight) return
@@ -221,6 +242,17 @@ export function RichTextEditor({
       cancelled = true
     }
   }, [links, linkMeta])
+
+  useEffect(() => {
+    if (!onImagePickerReady) return
+    if (!enableImages || !editor) {
+      onImagePickerReady(null)
+      return
+    }
+    const open = () => fileInputRef.current?.click()
+    onImagePickerReady(open)
+    return () => onImagePickerReady(null)
+  }, [editor, enableImages, onImagePickerReady])
 
   if (!editor) {
     return null
@@ -344,7 +376,10 @@ export function RichTextEditor({
     try {
       const url = await onImageUpload(file)
       if (url) {
-        editor.chain().focus().setImage({ src: url, alt: file.name }).run()
+        await onImageUploaded?.({ url, file })
+        if (insertUploadedImage) {
+          editor.chain().focus().setImage({ src: url, alt: file.name }).run()
+        }
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Image upload failed"
@@ -355,206 +390,219 @@ export function RichTextEditor({
     }
   }
 
-  return (
+  const toolbar = (
     <div
       className={cn(
-        "w-full min-w-full max-w-full rounded-2xl border bg-card shadow-sm dark:border-border/60 overflow-hidden",
-        className
+        "flex flex-wrap items-center gap-0.5 border-b bg-transparent px-2 py-2 sm:gap-1",
+        toolbarClassName
       )}
     >
-      <div className="flex flex-wrap items-center gap-0.5 border-b bg-muted/40 px-2 py-2 sm:gap-1">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <ToolbarMenuTrigger icon={TypeIcon} label="Text style" valueLabel={textStyleLabel} />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-44">
-            <DropdownMenuRadioGroup
-              value={textStyle}
-              onValueChange={(value) => {
-                if (!value) return
-                if (value === "paragraph") {
-                  editor.chain().focus().setParagraph().run()
-                  return
-                }
-                const level =
-                  value === "heading-1" ? 1 : value === "heading-2" ? 2 : value === "heading-3" ? 3 : null
-                if (level) {
-                  editor.chain().focus().setHeading({ level }).run()
-                }
-              }}
-            >
-              <DropdownMenuRadioItem value="paragraph">
-                <Pilcrow className="h-4 w-4" />
-                Paragraph
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="heading-1">
-                <Heading1 className="h-4 w-4" />
-                Heading 1
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="heading-2">
-                <Heading2 className="h-4 w-4" />
-                Heading 2
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="heading-3">
-                <Heading3 className="h-4 w-4" />
-                Heading 3
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <ToolbarMenuTrigger icon={TypeIcon} label="Text style" valueLabel={textStyleLabel} />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-44">
+          <DropdownMenuRadioGroup
+            value={textStyle}
+            onValueChange={(value) => {
+              if (!value) return
+              if (value === "paragraph") {
+                editor.chain().focus().setParagraph().run()
+                return
+              }
+              const level =
+                value === "heading-1" ? 1 : value === "heading-2" ? 2 : value === "heading-3" ? 3 : null
+              if (level) {
+                editor.chain().focus().setHeading({ level }).run()
+              }
+            }}
+          >
+            <DropdownMenuRadioItem value="paragraph">
+              <Pilcrow className="h-4 w-4" />
+              Paragraph
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="heading-1">
+              <Heading1 className="h-4 w-4" />
+              Heading 1
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="heading-2">
+              <Heading2 className="h-4 w-4" />
+              Heading 2
+            </DropdownMenuRadioItem>
+            <DropdownMenuRadioItem value="heading-3">
+              <Heading3 className="h-4 w-4" />
+              Heading 3
+            </DropdownMenuRadioItem>
+          </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-        <ToolbarDivider />
-        <ToolbarButton
-          icon={BoldIcon}
-          label="Bold"
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          isActive={editor.isActive("bold")}
-        />
-        <ToolbarButton
-          icon={ItalicIcon}
-          label="Italic"
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          isActive={editor.isActive("italic")}
-        />
-        <ToolbarButton
-          icon={UnderlineIcon}
-          label="Underline"
-          onClick={() => editor.chain().focus().toggleUnderline().run()}
-          isActive={editor.isActive("underline")}
-        />
+      <ToolbarDivider />
+      <ToolbarButton
+        icon={BoldIcon}
+        label="Bold"
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        isActive={editor.isActive("bold")}
+      />
+      <ToolbarButton
+        icon={ItalicIcon}
+        label="Italic"
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        isActive={editor.isActive("italic")}
+      />
+      <ToolbarButton
+        icon={UnderlineIcon}
+        label="Underline"
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        isActive={editor.isActive("underline")}
+      />
 
-        <ToolbarDivider />
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <ToolbarMenuTrigger icon={ListIcon} label="Blocks" valueLabel="Blocks" />
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-48">
-            <DropdownMenuItem
-              onSelect={() => editor.chain().focus().toggleBulletList().run()}
-              className={blockItemClass(editor.isActive("bulletList"))}
-            >
-              <ListIcon className="h-4 w-4" />
-              Bulleted list
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => editor.chain().focus().toggleOrderedList().run()}
-              className={blockItemClass(editor.isActive("orderedList"))}
-            >
-              <ListOrdered className="h-4 w-4" />
-              Numbered list
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onSelect={() => editor.chain().focus().toggleBlockquote().run()}
-              className={blockItemClass(editor.isActive("blockquote"))}
-            >
-              <Quote className="h-4 w-4" />
-              Block quote
-            </DropdownMenuItem>
-            {!compact ? (
-              <>
-                <DropdownMenuItem onSelect={() => editor.chain().focus().setHorizontalRule().run()} className="cursor-pointer">
-                  <Minus className="h-4 w-4" />
-                  Horizontal rule
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => editor.chain().focus().setHardBreak().run()} className="cursor-pointer">
-                  <CornerDownLeft className="h-4 w-4" />
-                  Line break
-                </DropdownMenuItem>
-              </>
-            ) : null}
-          </DropdownMenuContent>
-        </DropdownMenu>
+      <ToolbarDivider />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <ToolbarMenuTrigger icon={ListIcon} label="Blocks" valueLabel="Blocks" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-48">
+          <DropdownMenuItem
+            onSelect={() => editor.chain().focus().toggleBulletList().run()}
+            className={blockItemClass(editor.isActive("bulletList"))}
+          >
+            <ListIcon className="h-4 w-4" />
+            Bulleted list
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => editor.chain().focus().toggleOrderedList().run()}
+            className={blockItemClass(editor.isActive("orderedList"))}
+          >
+            <ListOrdered className="h-4 w-4" />
+            Numbered list
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onSelect={() => editor.chain().focus().toggleBlockquote().run()}
+            className={blockItemClass(editor.isActive("blockquote"))}
+          >
+            <Quote className="h-4 w-4" />
+            Block quote
+          </DropdownMenuItem>
+          {!compact ? (
+            <>
+              <DropdownMenuItem onSelect={() => editor.chain().focus().setHorizontalRule().run()} className="cursor-pointer">
+                <Minus className="h-4 w-4" />
+                Horizontal rule
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => editor.chain().focus().setHardBreak().run()} className="cursor-pointer">
+                <CornerDownLeft className="h-4 w-4" />
+                Line break
+              </DropdownMenuItem>
+            </>
+          ) : null}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-        {!compact ? (
-          <>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <ToolbarMenuTrigger icon={AlignLeft} label="Align" valueLabel="Align" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-40">
-                <DropdownMenuRadioGroup
-                  value={alignmentValue}
-                  onValueChange={(value) => {
-                    if (!value) return
-                    editor.chain().focus().setTextAlign(value as "left" | "center" | "right").run()
-                  }}
-                >
-                  <DropdownMenuRadioItem value="left">
-                    <AlignLeft className="h-4 w-4" />
-                    Align left
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="center">
-                    <AlignCenter className="h-4 w-4" />
-                    Align center
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="right">
-                    <AlignRight className="h-4 w-4" />
-                    Align right
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <ToolbarDivider />
-          </>
-        ) : (
+      {!compact ? (
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <ToolbarMenuTrigger icon={AlignLeft} label="Align" valueLabel="Align" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-40">
+              <DropdownMenuRadioGroup
+                value={alignmentValue}
+                onValueChange={(value) => {
+                  if (!value) return
+                  editor.chain().focus().setTextAlign(value as "left" | "center" | "right").run()
+                }}
+              >
+                <DropdownMenuRadioItem value="left">
+                  <AlignLeft className="h-4 w-4" />
+                  Align left
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="center">
+                  <AlignCenter className="h-4 w-4" />
+                  Align center
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem value="right">
+                  <AlignRight className="h-4 w-4" />
+                  Align right
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <ToolbarDivider />
-        )}
-        {enableImages ? (
-          <>
-            <ToolbarButton
-              icon={ImagePlus}
-              label={uploadingImage ? "Uploading image" : "Insert image"}
-              onClick={() => fileInputRef.current?.click()}
-              disabled={uploadingImage}
-            />
-            <ToolbarDivider />
-          </>
-        ) : null}
-        <ToolbarSpacer />
-        {toolbarActions ? (
-          <div className="flex items-center gap-1">{toolbarActions}</div>
-        ) : null}
-        <ToolbarButton
-          icon={Undo2}
-          label="Undo"
-          onClick={() => editor.chain().focus().undo().run()}
-          disabled={!editor.can().undo()}
-        />
-        <ToolbarButton
-          icon={Redo2}
-          label="Redo"
-          onClick={() => editor.chain().focus().redo().run()}
-          disabled={!editor.can().redo()}
-        />
-      </div>
+        </>
+      ) : (
+        <ToolbarDivider />
+      )}
       {enableImages ? (
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          className="sr-only"
-          onChange={handleImagePick}
-        />
+        <>
+          <ToolbarButton
+            icon={ImagePlus}
+            label={uploadingImage ? "Uploading image" : "Insert image"}
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploadingImage}
+          />
+          <ToolbarDivider />
+        </>
       ) : null}
-      <EditorContent editor={editor} />
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-        <span className="hidden sm:inline">
-          Tip: use <kbd className="rounded border border-border bg-muted px-1">Shift</kbd>+
-          <kbd className="rounded border border-border bg-muted px-1">Enter</kbd> for soft breaks.
-        </span>
-        <span className="ml-auto whitespace-nowrap">
-          {counts.words} {counts.words === 1 ? "word" : "words"} • {counts.chars}{" "}
-          {counts.chars === 1 ? "character" : "characters"}
-        </span>
-      </div>
-      {links.length > 0 ? (
-        <div className="flex flex-wrap items-center gap-2 border-t bg-muted/20 px-3 py-2">
-          {links.map((href) => (
-            <LinkPreviewCard key={href} href={href} />
-          ))}
-        </div>
+      <ToolbarSpacer />
+      {toolbarActions ? (
+        <div className="flex items-center gap-1">{toolbarActions}</div>
       ) : null}
+      <ToolbarButton
+        icon={Undo2}
+        label="Undo"
+        onClick={() => editor.chain().focus().undo().run()}
+        disabled={!editor.can().undo()}
+      />
+      <ToolbarButton
+        icon={Redo2}
+        label="Redo"
+        onClick={() => editor.chain().focus().redo().run()}
+        disabled={!editor.can().redo()}
+      />
     </div>
+  )
+
+  return (
+    <>
+      <div
+        className={cn(
+          "w-full min-w-full max-w-full rounded-2xl border bg-card shadow-sm dark:border-border/60 overflow-hidden",
+          className
+        )}
+      >
+        {toolbarPortalId ? null : toolbar}
+        {enableImages ? (
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={handleImagePick}
+          />
+	        ) : null}
+	        <EditorContent editor={editor} />
+	        <div
+	          className={cn(
+	            "flex items-center justify-end gap-2 border-t bg-muted/30 px-3 py-2 text-xs text-muted-foreground",
+	            links.length === 0 && "rounded-b-2xl",
+	          )}
+	        >
+	          <span className="whitespace-nowrap">
+	            {counts.words} {counts.words === 1 ? "word" : "words"} • {counts.chars}{" "}
+	            {counts.chars === 1 ? "character" : "characters"}
+	          </span>
+	        </div>
+	        {links.length > 0 ? (
+	          <div className="flex flex-wrap items-center gap-2 rounded-b-2xl border-t bg-muted/20 px-3 py-2">
+	            {links.map((href) => (
+	              <LinkPreviewCard key={href} href={href} />
+	            ))}
+	          </div>
+	        ) : null}
+      </div>
+      {toolbarPortalId && toolbarTarget ? createPortal(toolbar, toolbarTarget) : null}
+    </>
   )
 }
 

@@ -1,5 +1,4 @@
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
-import type { RoadmapSection } from "@/lib/roadmap"
 
 export type OrgProfile = {
   name?: string | null
@@ -65,6 +64,9 @@ export type OrgProgram = {
   subtitle?: string | null
   description?: string | null
   location?: string | null
+  location_type?: "in_person" | "online" | null
+  location_url?: string | null
+  team_ids?: string[] | null
   image_url?: string | null
   status_label?: string | null
   duration_label?: string | null
@@ -82,7 +84,7 @@ export type OrgProgram = {
   cta_url?: string | null
 }
 
-export type ProfileTab = "company" | "programs" | "people" | "supporters" | "roadmap" | "documents"
+export type ProfileTab = "company" | "programs" | "people" | "supporters"
 
 export type SlugStatus = {
   available: boolean
@@ -95,11 +97,6 @@ export interface OrgProfileCardProps {
   initial: OrgProfile
   people: OrgPersonWithImage[]
   programs?: OrgProgram[]
-  documents?: OrgDocuments | null
   canEdit?: boolean
-  roadmapSections: RoadmapSection[]
-  roadmapPublicSlug: string | null
-  roadmapIsPublic: boolean
-  roadmapHeroUrl?: string | null
   initialTab?: ProfileTab
 }

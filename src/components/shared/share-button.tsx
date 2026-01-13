@@ -5,8 +5,27 @@ import { Button } from "@/components/ui/button"
 import Share from "lucide-react/dist/esm/icons/share"
 import ExternalLink from "lucide-react/dist/esm/icons/external-link"
 import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 
-export function ShareButton({ url, title = "Share", icon = "default" }: { url?: string; title?: string; icon?: "default" | "link" }) {
+export function ShareButton({
+  url,
+  title = "Share",
+  icon = "default",
+  label = "Share",
+  iconOnly = false,
+  buttonVariant = "outline",
+  buttonSize = iconOnly ? "icon" : "sm",
+  className,
+}: {
+  url?: string
+  title?: string
+  icon?: "default" | "link"
+  label?: string
+  iconOnly?: boolean
+  buttonVariant?: React.ComponentProps<typeof Button>["variant"]
+  buttonSize?: React.ComponentProps<typeof Button>["size"]
+  className?: string
+}) {
   const [busy, setBusy] = useState(false)
 
   async function handleShare() {
@@ -36,8 +55,18 @@ export function ShareButton({ url, title = "Share", icon = "default" }: { url?: 
   const Icon = icon === "link" ? ExternalLink : Share
 
   return (
-    <Button type="button" size="sm" variant="outline" onClick={handleShare} disabled={busy} className="inline-flex items-center gap-2">
-      <Icon className="h-4 w-4" /> Share
+    <Button
+      type="button"
+      size={buttonSize}
+      variant={buttonVariant}
+      onClick={handleShare}
+      disabled={busy}
+      className={cn(iconOnly ? "" : "inline-flex items-center gap-2", className)}
+      aria-label={label}
+      title={label}
+    >
+      <Icon className="h-4 w-4" aria-hidden />
+      {iconOnly ? <span className="sr-only">{label}</span> : label}
     </Button>
   )
 }

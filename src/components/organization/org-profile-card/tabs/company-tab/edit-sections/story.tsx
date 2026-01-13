@@ -7,7 +7,7 @@ import type { CompanyEditProps } from "../types"
 
 export function StorySection({ company, onInputChange }: CompanyEditProps) {
   return (
-    <FormRow title="Story & impact" description="What you do and why it matters.">
+    <FormRow title="About us" description="What you do and why it matters.">
       <div className="grid gap-4 md:grid-cols-2">
         <ProfileField label="Vision">
           <Textarea

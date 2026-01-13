@@ -26,15 +26,10 @@ import { CompanyTab } from "./tabs/company-tab"
 import { ProgramsTab } from "./tabs/programs-tab"
 import { PeopleTab } from "./tabs/people-tab"
 import { SupportersTab } from "./tabs/supporters-tab"
-import { DocumentsTab } from "./tabs/documents-tab"
 import BuildingIcon from "lucide-react/dist/esm/icons/building-2"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
-import HeartHandshakeIcon from "lucide-react/dist/esm/icons/heart-handshake"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
-import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
-import LockIcon from "lucide-react/dist/esm/icons/lock"
 
-import { RoadmapShell } from "@/components/roadmap/roadmap-shell"
 import { slugifyLocal } from "./utils"
 import { RESERVED_SLUGS } from "./tabs/company-tab/constants"
 import {
@@ -52,9 +47,6 @@ const TABS: Array<{ value: ProfileTab; label: string; icon: typeof BuildingIcon 
   { value: "company", label: "About", icon: BuildingIcon },
   { value: "programs", label: "Programs", icon: ClipboardListIcon },
   { value: "people", label: "People", icon: UsersIcon },
-  { value: "supporters", label: "Supporters", icon: HeartHandshakeIcon },
-  { value: "roadmap", label: "Roadmap", icon: WaypointsIcon },
-  { value: "documents", label: "Documents", icon: LockIcon },
 ]
 
 function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
@@ -101,12 +93,7 @@ export function OrgProfileEditor({
   initial,
   people,
   programs = [],
-  documents,
   canEdit = true,
-  roadmapSections,
-  roadmapPublicSlug,
-  roadmapIsPublic,
-  roadmapHeroUrl,
   initialTab,
 }: OrgProfileCardProps) {
   const normalizedInitial = useMemo(() => normalizeCompanyProfile(initial), [initial])
@@ -120,12 +107,10 @@ export function OrgProfileEditor({
   const savedCompanyRef = useRef(savedCompany)
   const pendingNavigationRef = useRef<string | null>(null)
   const [confirmDiscardOpen, setConfirmDiscardOpen] = useState(false)
-  const [roadmapDirty, setRoadmapDirty] = useState(false)
-  const roadmapDiscardRef = useRef<(() => void) | null>(null)
   const [errors, setErrors] = useState<OrgProfileErrors>({})
   const [editProgram, setEditProgram] = useState<OrgProgram | null>(null)
   const [editOpen, setEditOpen] = useState(false)
-  const hasUnsavedChanges = dirty || roadmapDirty
+  const hasUnsavedChanges = dirty
   const [slugStatus, setSlugStatus] = useState<SlugStatus>(null)
 
   useEffect(() => {
@@ -217,8 +202,6 @@ export function OrgProfileEditor({
     setErrors({})
     setDirty(false)
     setEditMode(false)
-    roadmapDiscardRef.current?.()
-    setRoadmapDirty(false)
     setSlugStatus(null)
   }, [])
 
@@ -354,10 +337,6 @@ export function OrgProfileEditor({
     setEditOpen(true)
   }, [canEdit])
 
-  const handleRoadmapDiscardRegister = useCallback((handler: (() => void) | null) => {
-    roadmapDiscardRef.current = handler
-  }, [])
-
   const handleCancelEdit = useCallback(() => {
     if (!hasUnsavedChanges) {
       discardChanges()
@@ -387,7 +366,7 @@ export function OrgProfileEditor({
   const tabsIdBase = "org-profile-tabs"
 
   return (
-    <Card className="overflow-hidden bg-card/60 py-0 pb-6">
+    <Card className="overflow-hidden bg-sidebar py-0 pb-6">
       <OrgProfileHeader
         name={company.name || "Organization"}
         tagline={company.tagline || "—"}
@@ -405,7 +384,7 @@ export function OrgProfileEditor({
         onSave={handleSave}
       />
 
-      <CardContent className="p-0">
+      <CardContent className="bg-sidebar p-0">
         <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
           <TabsList className="hidden h-10 w-full items-end justify-start gap-3 rounded-none border-b bg-transparent p-0 pl-6 pr-6 text-muted-foreground sm:inline-flex">
             {TABS.map((item) => (
@@ -503,31 +482,6 @@ export function OrgProfileEditor({
             className="grid gap-8 p-6"
           >
             <SupportersTab editMode={editMode} people={people} />
-          </TabsContent>
-
-          <TabsContent
-            value="roadmap"
-            id={`${tabsIdBase}-content-roadmap`}
-            aria-labelledby={`${tabsIdBase}-trigger-roadmap`}
-            className="grid gap-8 p-6"
-          >
-            <RoadmapShell
-              sections={roadmapSections}
-              publicSlug={roadmapPublicSlug}
-              initialPublic={roadmapIsPublic}
-              heroUrl={roadmapHeroUrl ?? null}
-              onDirtyChange={setRoadmapDirty}
-              onRegisterDiscard={handleRoadmapDiscardRegister}
-            />
-          </TabsContent>
-
-          <TabsContent
-            value="documents"
-            id={`${tabsIdBase}-content-documents`}
-            aria-labelledby={`${tabsIdBase}-trigger-documents`}
-            className="grid gap-8 p-6"
-          >
-            <DocumentsTab documents={documents} editMode={editMode} canEdit={canEdit} />
           </TabsContent>
         </Tabs>
       </CardContent>

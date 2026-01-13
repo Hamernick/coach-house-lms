@@ -29,7 +29,7 @@ type SignUpFormProps = {
   redirectTo?: string
 }
 
-export function SignUpForm({ redirectTo = "/dashboard" }: SignUpFormProps) {
+export function SignUpForm({ redirectTo = "/my-organization" }: SignUpFormProps) {
   const supabase = useSupabaseClient()
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState<string>("")

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { cache } from "react"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase"
 
@@ -17,7 +18,7 @@ async function requireAdminInternal(): Promise<RequireAdminResult> {
     error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError) {
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw userError
   }
 

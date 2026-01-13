@@ -7,6 +7,7 @@ import { createSupabaseServerClient, type Json } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import { normalizePersonCategory } from "@/lib/people/categories"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import type { OrgPerson } from "../people/actions"
 
 export const dynamic = "force-dynamic"
@@ -18,6 +19,7 @@ export default async function MyOrganizationPage({
 }) {
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const tabParam = typeof resolvedSearchParams?.tab === "string" ? resolvedSearchParams.tab : ""
+  const programIdParam = typeof resolvedSearchParams?.programId === "string" ? resolvedSearchParams.programId : ""
   if (tabParam === "roadmap") redirect("/my-organization/roadmap")
   if (tabParam === "documents") redirect("/my-organization/documents")
 
@@ -26,7 +28,7 @@ export default async function MyOrganizationPage({
     data: { user },
     error: userError,
   } = await supabase.auth.getUser()
-  if (userError) throw userError
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) throw userError
   if (!user) redirect("/login?redirect=/my-organization")
 
   // Load organization profile for the current user
@@ -140,6 +142,7 @@ export default async function MyOrganizationPage({
           people={people}
           programs={programs ?? []}
           initialTab={initialTab}
+          initialProgramId={programIdParam || null}
         />
       </section>
     </div>

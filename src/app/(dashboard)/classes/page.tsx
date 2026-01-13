@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { listClasses } from "@/lib/classes"
 import { createSupabaseServerClient } from "@/lib/supabase"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 
 const PAGE_SIZE = 12
 
@@ -23,7 +24,7 @@ export default async function ClassesPage({
     error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError) {
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw userError
   }
 

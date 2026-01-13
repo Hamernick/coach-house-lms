@@ -2731,3 +2731,238 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 
 - UI: darkened the empty progress segments so unfilled steps read more clearly against the background (`src/app/(accelerator)/accelerator/page.tsx`).
 - Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator progress sync)
+
+- Data: aligned accelerator overview and sidebar progress to the shared accelerator progress summary helper (`src/app/(accelerator)/accelerator/page.tsx`, `src/app/(dashboard)/layout.tsx`, `src/lib/accelerator/progress.ts`).
+- UI: switched the start-building grid to consume shared accelerator progress types (`src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator overview spacing tweaks)
+
+- UI: tightened the coaching card padding so the gradient media sits closer to the card edge, and added vertical padding to the overview section for more height (`src/components/accelerator/accelerator-schedule-card.tsx`, `src/app/(accelerator)/accelerator/page.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator progress helper default)
+
+- Fix: defaulted the accelerator progress helper options object to avoid destructuring undefined (`src/lib/accelerator/progress.ts`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Strategic roadmap build fix)
+
+- Fix: returned `public_slug` from the roadmap public toggle upsert to satisfy TypeScript and allow revalidation (`src/app/(dashboard)/strategic-roadmap/actions.ts`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Accelerator meeting card layout)
+
+- UI: removed the card-level click handler, tightened top padding, increased the media block height, and moved the "Book a call" label into a right-aligned action button (`src/components/accelerator/accelerator-schedule-card.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Meeting card padding fix)
+
+- UI: limited the 5px inset to the media block only and restored standard padding for the text/actions (`src/components/accelerator/accelerator-schedule-card.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Launch master doc + brief template)
+
+- Docs: added master process, design rules, search requirements, and docs naming standards to the launch organizer; introduced a task brief template (`docs/organize.md`, `docs/briefs/BRIEF_TEMPLATE.md`).
+- Checks: not run (docs only).
+
+## 2026-01-12 — Codex session (Launch organizer deltas)
+
+- Docs: pulled missing context from the raw notes into the structured sections (2FA, knowledge base, community/map pricing decision, supporter map view, roadmap payments, AI phase 2, and guidance tags) and added a delta section for cleanup (`docs/organize.md`).
+- Checks: not run (docs only).
+
+## 2026-01-12 — Codex session (Global search brief)
+
+- Docs: added a global search brief with scope, gating, data model notes, and rollout plan; extended the brief template to include a Moonshot section (`docs/briefs/global-search.md`, `docs/briefs/BRIEF_TEMPLATE.md`).
+- Checks: not run (docs only).
+
+## 2026-01-12 — Codex session (Global search build)
+
+- Feature: added a server-backed global search endpoint and wired the command palette to query it with debounce; included classes, modules, assignment questions, and programs with gating via RLS (`src/app/api/search/route.ts`, `src/components/global-search.tsx`, `src/lib/search/types.ts`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Global search expansion)
+
+- Feature: extended search results to include marketplace items and public organizations; added program deep links into the programs tab and wired marketplace query params (`src/app/api/search/route.ts`, `src/components/global-search.tsx`, `src/app/(dashboard)/marketplace/ui/marketplace-client.tsx`, `src/components/organization/org-profile-card/org-profile-card.tsx`, `src/components/organization/org-profile-card/types.ts`, `src/app/(dashboard)/my-organization/page.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Global search roadmap + documents)
+
+- Feature: added roadmap section and org document matches to global search results and updated group ordering (`src/app/api/search/route.ts`, `src/components/global-search.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Global search analytics)
+
+- Feature: added search analytics events (open/query/select) with a new search_events table and logging routes (`supabase/migrations/20260112194500_add_search_events.sql`, `src/lib/supabase/schema/tables/search_events.ts`, `src/lib/supabase/schema/tables/index.ts`, `src/app/api/search/event/route.ts`, `src/app/api/search/route.ts`, `src/components/global-search.tsx`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Global search FTS ranking)
+
+- Feature: added weighted FTS indexing + ranking via a search_index view and a search_global RPC, and switched the search API to use ranked results while preserving marketplace matching (`supabase/migrations/20260112200000_add_search_index_view.sql`, `src/lib/supabase/schema/functions.ts`, `src/app/api/search/route.ts`).
+- Checks: not run (not requested).
+
+## 2026-01-12 — Codex session (Search RPC fallback + tests)
+
+- Feature: added a fallback search path when the ranked RPC fails, reusing the prior manual matching across classes/modules/questions/programs/org data (`src/app/api/search/route.ts`).
+- Tests: added basic search route coverage for RPC ranking/filters and fallback behavior (`tests/acceptance/search-route.test.ts`).
+- Docs: noted the admin search analytics view as a Phase 4 task (`docs/organize.md`).
+- Checks: `pnpm db:push`; `pnpm test:acceptance -- search-route` (ran full acceptance suite).
+
+## 2026-01-13 — Codex session (Auth session missing guard)
+
+- Fix: treated Supabase `AuthSessionMissingError` as a logged-out state so authed routes redirect instead of throwing (`src/lib/supabase/auth-errors.ts`, `src/app/(dashboard)/layout.tsx`, `src/app/(accelerator)/layout.tsx`, `src/lib/admin/auth.ts`, `src/app/(dashboard)/dashboard/page.tsx`, `src/app/(dashboard)/classes/page.tsx`, `src/app/(dashboard)/training/page.tsx`, `src/app/(dashboard)/organizations/page.tsx`, `src/app/(dashboard)/my-organization/page.tsx`, `src/app/(dashboard)/my-organization/documents/page.tsx`, `src/app/(dashboard)/class/[slug]/module/[index]/page.tsx`, `src/components/roadmap/strategic-roadmap-editor-page.tsx`, `src/components/dashboard/subscription-status-card.tsx`, `src/app/(dashboard)/onboarding/actions.ts`, `src/lib/accelerator/progress.ts`).
+- Fix: renamed the `module` loop variable to satisfy Next.js ESLint (`src/app/api/search/route.ts`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- search-route`.
+
+## 2026-01-13 — Codex session (Launch gate run + RLS test fix)
+
+- DB: verified the two search migrations are already applied to the linked Supabase project (`pnpm db:push` → “Remote database is up to date.”).
+- Fix: updated the RLS test runner to use `is_published` (the `published` column is dropped by migrations) so tests run instead of erroring (`supabase/tests/rls.test.mjs`).
+- Checks: `pnpm lint`; `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls` (with `.env.local` sourced).
+
+## 2026-01-13 — Codex session (Post-login redirect to My Organization)
+
+- UX: changed the default post-auth landing route from `/dashboard` → `/my-organization` while still honoring explicit `?redirect=` params (`src/components/auth/login-form.tsx`, `src/components/auth/sign-up-form.tsx`, `src/app/(auth)/callback/route.ts`, `src/app/(auth)/update-password/page.tsx`, `src/components/auth/update-password-form.tsx`).
+- Checks: `pnpm lint`; `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls` (with `.env.local` sourced).
+
+## 2026-01-13 — Codex session (Disable sidebar brand link)
+
+- UX: made the sidebar header brand button inert (removed the `/dashboard` link) so clicking “Coach House / Platform” does nothing for now (`src/components/app-sidebar.tsx`).
+- Checks: `pnpm lint`.
+
+## 2026-01-13 — Codex session (Sidebar brand styling)
+
+- UI: improved light-mode visibility of the sidebar brand header by adding a subtle gray logo tile background and switching the “Coach House” label to green (`src/components/app-sidebar.tsx`).
+
+## 2026-01-13 — Codex session (Circular progress styling)
+
+- UI: updated the accelerator sidebar progress ring to use a darker light-mode track and a green progress stroke; reverted the sidebar brand header text styling back to default (`src/components/ui/circular-progress.tsx`, `src/components/app-sidebar.tsx`).
+
+## 2026-01-13 — Codex session (Global search loading state)
+
+- UX: ensured the global search command palette shows an in-flight “Searching…” row (and error row) while results are loading, so it doesn’t appear empty on slow queries (`src/components/global-search.tsx`).
+- UI: darkened the circular progress track in light mode for better contrast (`src/components/ui/circular-progress.tsx`).
+- Checks: `pnpm lint`; `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls` (with `.env.local` sourced).
+
+## 2026-01-13 — Codex session (Pricing page redesign)
+
+- Docs: created a pricing-page brief with screenshot-driven layout notes and the canonical tier spec (`docs/briefs/pricing-page.md`).
+- UI: redesigned `/pricing` to a Cal.com-inspired layout (hero → tier cards with featured plan → callout → feature breakdown table → bottom CTA) and updated tiers to Formation / Organization / The Accelerator (`src/app/(public)/pricing/page.tsx`).
+- UX: aligned pricing checkout fallbacks to the new default landing by redirecting to `/my-organization` (`src/app/(public)/pricing/actions.ts`, `src/app/(public)/pricing/success/page.tsx`).
+- Tests: updated pricing acceptance expectations for the new redirect destination (`tests/acceptance/pricing.test.ts`).
+- Checks: `pnpm lint`; `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls` (with `.env.local` sourced).
+
+## 2026-01-13 — Codex session (Pricing background)
+
+- UI: removed the pricing page dot-grid background and restored the plain background styling (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing typography)
+
+- UI: removed expanded letter-spacing (tracking) from the pricing page overline/eyebrow text styles (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing feature inclusion)
+
+- UI: marked community access as included on the free plan (and in the feature breakdown table) (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing copy tweak)
+
+- Copy: updated the Organization plan board-member feature to “Manage and update your board” (`src/app/(public)/pricing/page.tsx`, `docs/organize.md`, `docs/briefs/pricing-page.md`).
+- Checks: `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing surfaces)
+
+- UI: set the `/pricing` page light-mode background to `#F4F4F4` via token override and restored standard `Card`/`Badge` backgrounds (removed custom black/white overrides) (`src/app/(public)/pricing/page.tsx`).
+- Docs: updated pricing spec notes to reflect Community Access being included in Formation (`docs/organize.md`, `docs/briefs/pricing-page.md`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Public header home link)
+
+- UX: made the public header brand (“Coach House” logo/text) link back to `/` (`src/components/public/public-header.tsx`).
+- Checks: `pnpm lint`.
+
+## 2026-01-13 — Codex session (Pricing free tier card)
+
+- UI: adjusted the Formation (free) tier card styling to match the Cal.com-inspired reference (bigger title, dark CTA with chevron, dashed divider, solid check icons, stronger feature text) (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing free label)
+
+- UI: updated the Formation plan price label to render only “Free” (no “per month” text) (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Launch gates + search migrations)
+
+- DB: verified the two search migrations are applied to the linked Supabase project (`supabase db push --yes` reports “Remote database is up to date”).
+- Checks: `pnpm lint`; `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls` (with `SUPABASE_URL` exported from `.env.local`’s `NEXT_PUBLIC_SUPABASE_URL`).
+
+## 2026-01-13 — Codex session (Pricing CTA copy)
+
+- Copy: changed pricing CTAs from “Start Free” to “Get started” (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing Accelerator border)
+
+- UI: applied a dashed outline border style to the Accelerator tier card (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing feature table header)
+
+- UI: matched the feature breakdown group header row background to the Organization column background tint (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing table alignment)
+
+- UI: forced left alignment for all pricing feature table headers/cells (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing table group icons)
+
+- UI: added icons to the feature breakdown section headers (Platform / Team / AI / Accelerator) (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing free tier rename)
+
+- Copy: renamed the free tier from “Formation” to “Individual” across the pricing page (kept “501(c)(3) Formation Flow” feature text as-is) (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing chips removal)
+
+- UI: removed the “Built for founders…” chip row section from `/pricing` (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing table group header alignment)
+
+- UI: centered the feature breakdown section header icon+label vertically within the rowgroup header cells (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing Accelerator bundle + copy refresh)
+
+- Brief: added a launch-focused brief for the Accelerator bundle + pricing copy updates (`docs/briefs/pricing-accelerator-bundle.md`).
+- UI: moved the Accelerator into a horizontal add-on card mid-page and strengthened the dashed border, plus added Roadmap `Public/Private` pills and refreshed tier copy (`src/app/(public)/pricing/page.tsx`).
+- Stripe: added optional env vars for Stripe price IDs and extended checkout to support an Accelerator bundle that starts the Organization subscription with a 30-day trial (`src/lib/env.ts`, `src/app/(public)/pricing/actions.ts`).
+- Checks: `pnpm lint`; `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls` (with `SUPABASE_URL` exported from `.env.local`’s `NEXT_PUBLIC_SUPABASE_URL`).
+
+## 2026-01-13 — Codex session (Pricing organization checklist)
+
+- UI: made “Fundraising tools and frameworks” its own checklist line item (separate check) in the Organization tier (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing container width)
+
+- UI: reduced the `/pricing` page max content width to tighten the main column (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing copy tweak)
+
+- Copy: changed “Guided 501(c)(3) Formation Flow” to “Guided 501(c)(3) Formation Guidance” (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
+
+## 2026-01-13 — Codex session (Pricing coming soon tags)
+
+- UI: added “Coming soon” pills to select pricing checklist items and matching feature-table rows (Resource map listing, Board member portal, AI enabled NFP development, Fundraising tools) (`src/app/(public)/pricing/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.

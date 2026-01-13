@@ -4,6 +4,7 @@ import { ModuleDetail as TrainingModuleDetail } from "@/components/training/modu
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { getClassModulesForUser } from "@/lib/modules"
 import { buildModuleStates } from "@/lib/module-progress"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 
 type ModuleParams = {
   slug: string
@@ -27,7 +28,7 @@ export default async function ModulePage({
     error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError) {
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw userError
   }
 

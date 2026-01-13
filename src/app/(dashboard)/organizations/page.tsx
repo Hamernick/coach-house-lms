@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { createSupabaseServerClient } from "@/lib/supabase"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 
 export const dynamic = "force-dynamic"
 
@@ -12,7 +13,7 @@ export default async function OrganizationsPage() {
     error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError) throw userError
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) throw userError
   if (!user) redirect("/login?redirect=/organizations")
 
   return (

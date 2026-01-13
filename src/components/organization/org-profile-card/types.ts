@@ -99,4 +99,5 @@ export interface OrgProfileCardProps {
   programs?: OrgProgram[]
   canEdit?: boolean
   initialTab?: ProfileTab
+  initialProgramId?: string | null
 }

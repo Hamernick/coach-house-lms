@@ -60,5 +60,5 @@ export default async function PricingSuccessPage({
     .from("subscriptions" satisfies keyof Database["public"]["Tables"])
     .upsert<SubscriptionInsert>(upsertPayload, { onConflict: "stripe_subscription_id" })
 
-  redirect(`/dashboard?subscription=${status}`)
+  redirect(`/my-organization?subscription=${status}`)
 }

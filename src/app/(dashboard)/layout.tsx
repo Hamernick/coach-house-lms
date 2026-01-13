@@ -1,9 +1,11 @@
 import type { ReactNode } from "react"
 
 import { createSupabaseServerClient } from "@/lib/supabase"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { isFreeTierSubscription } from "@/lib/meetings"
 import { completeOnboardingAction } from "@/app/(dashboard)/onboarding/actions"
 import { fetchSidebarTree } from "@/lib/academy"
+import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 
@@ -14,7 +16,7 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
     error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError) {
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw userError
   }
 
@@ -57,44 +59,6 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
       onboardingVariant = isFreeTier ? "basic" : "accelerator"
     }
 
-    try {
-      const { data: enrollments } = await supabase
-        .from("enrollments")
-        .select("class_id")
-        .eq("user_id", user.id)
-        .returns<Array<{ class_id: string }>>()
-
-      const classIds = (enrollments ?? []).map((entry) => entry.class_id)
-      if (classIds.length === 0) {
-        acceleratorProgress = 0
-      } else {
-        const { data: modules } = await supabase
-          .from("modules")
-          .select("id")
-          .in("class_id", classIds)
-          .eq("is_published", true)
-          .returns<Array<{ id: string }>>()
-
-        const moduleIds = (modules ?? []).map((module) => module.id)
-        const total = moduleIds.length
-        if (total === 0) {
-          acceleratorProgress = 0
-        } else {
-          const { data: progress } = await supabase
-            .from("module_progress")
-            .select("id")
-            .eq("user_id", user.id)
-            .in("module_id", moduleIds)
-            .eq("status", "completed")
-            .returns<Array<{ id: string }>>()
-          const completed = (progress ?? []).length
-          acceleratorProgress = Math.round((completed / total) * 100)
-        }
-      }
-    } catch {
-      acceleratorProgress = null
-    }
-
     if (publicSharingEnabled) {
       const { data: orgRow } = await supabase
         .from("organizations")
@@ -108,6 +72,20 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
   }
 
   const sidebarTree = await fetchSidebarTree({ includeDrafts: true, forceAdmin: isAdmin })
+
+  if (user) {
+    try {
+      const { percent } = await fetchAcceleratorProgressSummary({
+        supabase,
+        userId: user.id,
+        isAdmin,
+        classes: sidebarTree,
+      })
+      acceleratorProgress = percent
+    } catch {
+      acceleratorProgress = null
+    }
+  }
 
   return (
     <DashboardShell

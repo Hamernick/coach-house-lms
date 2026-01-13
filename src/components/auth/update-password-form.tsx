@@ -34,7 +34,7 @@ type UpdatePasswordFormProps = {
   redirectTo?: string
 }
 
-export function UpdatePasswordForm({ redirectTo = "/dashboard" }: UpdatePasswordFormProps) {
+export function UpdatePasswordForm({ redirectTo = "/my-organization" }: UpdatePasswordFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
   const [status, setStatus] = useState<"checking" | "ready" | "no-session">("checking")

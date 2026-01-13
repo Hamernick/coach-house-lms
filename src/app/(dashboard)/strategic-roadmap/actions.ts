@@ -209,6 +209,8 @@ export async function setRoadmapPublicAction(nextPublic: boolean): Promise<Toggl
       user_id: user.id,
       is_public_roadmap: nextPublic,
     })
+    .select("public_slug")
+    .maybeSingle<{ public_slug: string | null }>()
 
   if (error) {
     return { error: error.message }

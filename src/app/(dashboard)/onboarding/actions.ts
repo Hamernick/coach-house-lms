@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { uploadAvatarWithUser } from "@/lib/storage/avatars"
 
 export async function completeOnboardingAction(form: FormData) {
@@ -11,7 +12,7 @@ export async function completeOnboardingAction(form: FormData) {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser()
-  if (userError) throw userError
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) throw userError
   if (!user) redirect("/login?redirect=/dashboard")
 
   const first = String(form.get("firstName") || "").trim()

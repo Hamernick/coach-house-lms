@@ -7,6 +7,7 @@ import { ArrowUpRight, Building2, Globe2, MapPin, Palette } from "lucide-react"
 
 import type { OrgPerson } from "@/app/(dashboard)/people/actions"
 import { normalizePersonCategory } from "@/lib/people/categories"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,7 +33,7 @@ export default async function DashboardPage() {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser()
-  if (userError) throw userError
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) throw userError
   if (!user) redirect("/login?redirect=/dashboard")
 
   const [

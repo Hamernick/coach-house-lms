@@ -6,6 +6,7 @@ import { resolveRoadmapHeroUrl, resolveRoadmapSections } from "@/lib/roadmap"
 import { resolveRoadmapHomework } from "@/lib/roadmap/homework"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 import { createSupabaseServerClient, type Json } from "@/lib/supabase"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 
 type StrategicRoadmapEditorPageProps = {
   redirectTo: string
@@ -18,7 +19,7 @@ export async function StrategicRoadmapEditorPage({ redirectTo }: StrategicRoadma
     error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError) throw userError
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) throw userError
   if (!user) redirect(`/login?redirect=${encodeURIComponent(redirectTo)}`)
 
   const { data: orgRow } = await supabase
@@ -71,4 +72,3 @@ export async function StrategicRoadmapEditorPage({ redirectTo }: StrategicRoadma
     </div>
   )
 }
-

@@ -52,7 +52,7 @@ export function CircularProgress({
           strokeDasharray={circumference}
           strokeDashoffset={0}
           fill="transparent"
-          className={cn("stroke-muted/40", trackClassName)}
+          className={cn("stroke-muted-foreground/35 dark:stroke-muted/40", trackClassName)}
         />
         <circle
           cx={size / 2}
@@ -63,7 +63,7 @@ export function CircularProgress({
           strokeDashoffset={offset}
           fill="transparent"
           strokeLinecap={shape}
-          className={cn("stroke-foreground", progressClassName)}
+          className={cn("stroke-emerald-600 dark:stroke-emerald-400", progressClassName)}
         />
       </svg>
     </div>

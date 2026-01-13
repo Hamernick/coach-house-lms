@@ -244,7 +244,7 @@ export function ProgramWizard({
 }
 
 function serializePayload(form: ProgramWizardFormState) {
-  const locationType = form.locationType === "online" ? "online" : "in_person"
+  const locationType: "in_person" | "online" = form.locationType
   const locationUrl = form.locationUrl?.trim() || null
   const normalizedLocation =
     locationType === "online" && (!form.location || !form.location.trim()) ? "Online" : form.location

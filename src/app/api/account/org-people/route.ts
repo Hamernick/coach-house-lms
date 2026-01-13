@@ -1,13 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
-import { normalizePersonCategory } from "@/lib/people/categories"
+import { normalizePersonCategory, type PersonCategory } from "@/lib/people/categories"
 
 type OrgPersonSummary = {
   id: string
   name: string
   title: string | null
-  category: string
+  category: PersonCategory
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -50,4 +50,3 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({ people }, { status: 200 })
 }
-

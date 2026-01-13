@@ -141,7 +141,9 @@ export function PublicRoadmapPresentation({
         isAnimatingRef.current = false
       },
     })
-    return () => tween.kill()
+    return () => {
+      tween.kill()
+    }
   }, [activeIndex, reduceMotion])
 
   useEffect(() => {
@@ -199,7 +201,7 @@ export function PublicRoadmapPresentation({
       const startY = touchStartYRef.current
       touchStartYRef.current = null
       const endY = event.changedTouches[0]?.clientY
-      if (!Number.isFinite(startY) || !Number.isFinite(endY)) return
+      if (typeof startY !== "number" || typeof endY !== "number") return
       const delta = startY - endY
       if (Math.abs(delta) < 48) return
       requestNav(delta > 0 ? 1 : -1)

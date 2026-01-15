@@ -70,7 +70,7 @@ function StartBuildingCard({ module, onNavigate }: { module: ModuleCard; onNavig
         }
       }}
       className={cn(
-        "group flex min-h-[220px] flex-col rounded-[26px] border border-border/60 bg-card/70 p-4 text-left shadow-sm transition-transform duration-300 ease-out",
+        "group flex min-h-[220px] flex-col rounded-[26px] border border-border/60 bg-surface p-4 text-left shadow-sm transition-transform duration-300 ease-out dark:bg-card/70",
         "hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         locked && "cursor-not-allowed opacity-70 hover:shadow-sm",
       )}

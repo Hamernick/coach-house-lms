@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { OrgChartSkeleton } from "@/components/people/org-chart-skeleton"
 import { PeopleTable } from "@/components/people/people-table"
 import { Separator } from "@/components/ui/separator"
@@ -25,6 +26,56 @@ export default async function PeoplePage() {
 
   const profile = (org?.profile ?? {}) as Record<string, unknown>
   const peopleRaw = (Array.isArray(profile.org_people) ? profile.org_people : []) as OrgPerson[]
+
+  // Ensure the organization owner shows up as the first person in the directory.
+  if (org) {
+    const ownerIndex = peopleRaw.findIndex((person) => person?.id === user.id)
+    const ownerExisting = ownerIndex > -1 ? peopleRaw[ownerIndex] : null
+
+    const { data: profileRow } = await supabase
+      .from("profiles")
+      .select("full_name, headline, avatar_url")
+      .eq("id", user.id)
+      .maybeSingle<{ full_name: string | null; headline: string | null; avatar_url: string | null }>()
+
+    const derivedName =
+      typeof profileRow?.full_name === "string" && profileRow.full_name.trim().length > 0
+        ? profileRow.full_name.trim()
+        : typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name.trim().length > 0
+          ? user.user_metadata.full_name.trim()
+          : null
+
+    const ownerPerson: OrgPerson = {
+      id: user.id,
+      name: derivedName ?? ownerExisting?.name ?? user.email ?? "You",
+      title: profileRow?.headline ?? ownerExisting?.title ?? null,
+      email: user.email ?? ownerExisting?.email ?? null,
+      linkedin: ownerExisting?.linkedin ?? null,
+      category: ownerExisting?.category ?? "staff",
+      image: profileRow?.avatar_url ?? ownerExisting?.image ?? null,
+      reportsToId: ownerExisting?.reportsToId ?? null,
+      pos: ownerExisting?.pos ?? null,
+    }
+
+    const withoutOwner = ownerIndex > -1 ? peopleRaw.filter((person) => person.id !== user.id) : peopleRaw
+    const nextPeople = [ownerPerson, ...withoutOwner]
+
+    const needsSync =
+      ownerIndex !== 0 ||
+      !ownerExisting ||
+      ownerExisting.name !== ownerPerson.name ||
+      (ownerExisting.title ?? null) !== (ownerPerson.title ?? null) ||
+      (ownerExisting.email ?? null) !== (ownerPerson.email ?? null) ||
+      (ownerExisting.image ?? null) !== (ownerPerson.image ?? null)
+
+    if (needsSync) {
+      const nextProfile = { ...profile, org_people: nextPeople }
+      await supabase
+        .from("organizations")
+        .upsert({ user_id: user.id, profile: nextProfile }, { onConflict: "user_id" })
+      peopleRaw.splice(0, peopleRaw.length, ...nextPeople)
+    }
+  }
   const normalizedPeople = peopleRaw.map((person) => ({
     ...person,
     category: normalizePersonCategory(person.category),
@@ -57,6 +108,7 @@ export default async function PeoplePage() {
 
   return (
     <div className="flex flex-col gap-6 px-4 lg:px-6">
+      <PageTutorialButton tutorial="people" />
       <section>
         <Suspense fallback={<OrgChartSkeleton />}>
           <OrgChartCanvasLite people={people} />

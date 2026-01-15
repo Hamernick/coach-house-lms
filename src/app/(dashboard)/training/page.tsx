@@ -4,6 +4,7 @@ import { TrainingShell } from "@/components/training/training-shell"
 import { fetchSidebarTree } from "@/lib/academy"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 export default async function TrainingPage() {
   const supabase = await createSupabaseServerClient()
@@ -13,7 +14,7 @@ export default async function TrainingPage() {
   } = await supabase.auth.getUser()
 
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw userError
+    throw supabaseErrorToError(userError, "Unable to load user.")
   }
 
   if (!user) {

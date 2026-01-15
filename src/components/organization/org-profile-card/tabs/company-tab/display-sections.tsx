@@ -12,8 +12,17 @@ import {
 import type { CompanyViewProps } from "./types"
 import { stripHtml } from "@/lib/markdown/convert"
 
+const FORMATION_STATUS_LABELS: Record<string, string> = {
+  pre_501c3: "Pre-501(c)(3)",
+  in_progress: "In progress",
+  approved: "Approved",
+}
+
 export function IdentityPreview({ company }: CompanyViewProps) {
-  if (!([company.description, company.ein].some((value) => typeof value === "string" && value.trim()))) {
+  const formationLabel =
+    typeof company.formationStatus === "string" ? FORMATION_STATUS_LABELS[company.formationStatus] : ""
+
+  if (!([company.description, company.ein, formationLabel].some((value) => typeof value === "string" && value.trim()))) {
     return null
   }
 
@@ -28,6 +37,11 @@ export function IdentityPreview({ company }: CompanyViewProps) {
         {typeof company.ein === "string" && company.ein.trim() ? (
           <ProfileField label="EIN">
             <FieldText text={company.ein} />
+          </ProfileField>
+        ) : null}
+        {formationLabel ? (
+          <ProfileField label="Formation status">
+            <FieldText text={formationLabel} />
           </ProfileField>
         ) : null}
       </div>

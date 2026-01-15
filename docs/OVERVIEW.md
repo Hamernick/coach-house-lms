@@ -71,7 +71,7 @@ Long‑term it aims at a broader “operating system for nonprofits” (see Road
 
 ### 4.1 Core Entities
 
-- `profiles` — user metadata + role (student/admin).
+- `profiles` — user metadata + role (member/admin).
 - `classes` — accelerator sessions (Strategic Foundations, Mission/Vision/Values, etc.).
 - `modules` — ordered lessons inside classes.
 - `enrollments` — which users are in which classes.
@@ -163,4 +163,3 @@ These roadmap items are captured in more detail in:
 - `docs/RUNLOG-strategic-roadmap.md`
 - `docs/RUNLOG.md`
 - `docs/CODEX_RUNBOOK.md` (stepper and PR‑level tasks)
-

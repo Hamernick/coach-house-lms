@@ -7,6 +7,7 @@ import { resolveRoadmapHomework } from "@/lib/roadmap/homework"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 import { createSupabaseServerClient, type Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 type StrategicRoadmapEditorPageProps = {
   redirectTo: string
@@ -19,7 +20,9 @@ export async function StrategicRoadmapEditorPage({ redirectTo }: StrategicRoadma
     error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError && !isSupabaseAuthSessionMissingError(userError)) throw userError
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
+    throw supabaseErrorToError(userError, "Unable to load user.")
+  }
   if (!user) redirect(`/login?redirect=${encodeURIComponent(redirectTo)}`)
 
   const { data: orgRow } = await supabase
@@ -58,6 +61,16 @@ export async function StrategicRoadmapEditorPage({ redirectTo }: StrategicRoadma
   const roadmapIsPublic = publicSharingEnabled ? Boolean(orgRow?.is_public_roadmap) : false
   const roadmapPublicSlug = orgRow?.public_slug ?? null
   const roadmapHeroUrl = resolveRoadmapHeroUrl(profile)
+  const { data: subscription } = await supabase
+    .from("subscriptions")
+    .select("status, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ status: string | null }>()
+
+  const canPublishPublicRoadmap =
+    subscription?.status === "active" || subscription?.status === "trialing"
 
   return (
     <div className="flex flex-col gap-6 px-4 lg:px-6">
@@ -65,6 +78,7 @@ export async function StrategicRoadmapEditorPage({ redirectTo }: StrategicRoadma
         sections={roadmapSections}
         publicSlug={roadmapPublicSlug}
         initialPublic={roadmapIsPublic}
+        canPublishPublicRoadmap={canPublishPublicRoadmap}
         heroUrl={roadmapHeroUrl ?? null}
         showHeroEditor={false}
         showProgramPreview={false}

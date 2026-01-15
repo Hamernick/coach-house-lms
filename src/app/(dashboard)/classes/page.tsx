@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { listClasses } from "@/lib/classes"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 const PAGE_SIZE = 12
 
@@ -25,7 +26,7 @@ export default async function ClassesPage({
   } = await supabase.auth.getUser()
 
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw userError
+    throw supabaseErrorToError(userError, "Unable to load user.")
   }
 
   if (!user) {
@@ -57,7 +58,7 @@ export default async function ClassesPage({
             </CardHeader>
             <CardContent className="flex flex-wrap items-center gap-2">
               <Button asChild size="sm">
-                <Link href="/dashboard">Go to dashboard</Link>
+                <Link href="/my-organization">Go to My Organization</Link>
               </Button>
             </CardContent>
           </Card>

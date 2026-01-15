@@ -545,7 +545,7 @@ export function ModuleStepper({
                       </div>
                       <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
                         <Button variant="outline" asChild className="rounded-full px-5">
-                          <Link href="/dashboard">Take a break</Link>
+                          <Link href="/my-organization">Take a break</Link>
                         </Button>
                         {nextHref ? (
                           <Button asChild className="rounded-full px-5">

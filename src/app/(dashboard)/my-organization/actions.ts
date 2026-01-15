@@ -16,6 +16,7 @@ type OrgProfilePayload = {
   description?: string | null
   tagline?: string | null
   ein?: string | null
+  formationStatus?: "pre_501c3" | "in_progress" | "approved" | null
   rep?: string | null
   email?: string | null
   phone?: string | null
@@ -97,6 +98,12 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
     // Store EIN in both the column and profile for now (column is canonical)
     if (k === "ein") {
       next[k] = v ?? null
+    } else if (k === "formationStatus") {
+      const trimmed = typeof v === "string" ? v.trim() : ""
+      next[k] =
+        trimmed === "pre_501c3" || trimmed === "in_progress" || trimmed === "approved"
+          ? trimmed
+          : null
     } else {
       if (typeof v === "string") {
         if (urlFields.has(k)) {

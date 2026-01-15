@@ -94,6 +94,7 @@ export function MarketplaceClient() {
     <div className="flex flex-col gap-6">
       <div className="mx-auto w-full max-w-2xl">
         <Input
+          data-tour="marketplace-search"
           placeholder="Search resources"
           value={query}
           onChange={(e) => setQuery(e.currentTarget.value)}
@@ -103,7 +104,10 @@ export function MarketplaceClient() {
       </div>
 
       <Tabs value={tab} onValueChange={(v) => setTab(v as MarketplaceCategory)} className="w-full">
-        <TabsList className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-center gap-1 rounded-none border-b bg-transparent p-0">
+        <TabsList
+          data-tour="marketplace-categories"
+          className="mx-auto flex w-full max-w-4xl flex-wrap items-center justify-center gap-1 rounded-none border-b bg-transparent p-0"
+        >
           {CATEGORIES.map((c) => (
             <TabsTrigger
               key={c.value}

@@ -12,8 +12,11 @@ export default async function AdminUserDetailCrumbs({ params }: { params: Promis
   const label = data?.full_name ?? data?.email ?? id
   return (
     <DashboardBreadcrumbs
-      segments={[{ label: "Admin", href: "/admin" }, { label: "People", href: "/admin/users" }, { label }]}
+      segments={[
+        { label: "Admin", href: "/admin/academy" },
+        { label: "People", href: "/admin/users" },
+        { label },
+      ]}
     />
   )
 }
-

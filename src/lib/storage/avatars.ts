@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { Database } from "@/lib/supabase/types"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { extractPublicObjectPath } from "@/lib/storage/public-url"
 
 export const AVATARS_BUCKET = "avatars"
@@ -12,14 +13,18 @@ async function ensureBucket() {
   if (bucketEnsured) return
   const admin = createSupabaseAdminClient()
   const { data, error } = await admin.storage.getBucket(AVATARS_BUCKET)
-  if (error && error.message !== "The resource was not found") throw error
+  if (error && error.message !== "The resource was not found") {
+    throw supabaseErrorToError(error, "Unable to load avatar bucket.")
+  }
   if (!data) {
     const { error: createError } = await admin.storage.createBucket(AVATARS_BUCKET, {
       public: true,
       fileSizeLimit: `${MAX_BYTES}`,
       allowedMimeTypes: ["image/png", "image/jpeg", "image/webp"],
     })
-    if (createError && createError.message !== "The resource already exists") throw createError
+    if (createError && createError.message !== "The resource already exists") {
+      throw supabaseErrorToError(createError, "Unable to create avatar bucket.")
+    }
   }
   bucketEnsured = true
 }
@@ -38,7 +43,7 @@ export async function uploadAvatarWithUser({
   const objectName = `${userId}/${Date.now()}.${ext}`
   const buf = Buffer.from(await file.arrayBuffer())
   const { error } = await client.storage.from(AVATARS_BUCKET).upload(objectName, buf, { contentType: file.type })
-  if (error) throw error
+  if (error) throw supabaseErrorToError(error, "Unable to upload avatar.")
   const { data: publicUrl } = client.storage.from(AVATARS_BUCKET).getPublicUrl(objectName)
   return publicUrl.publicUrl
 }
@@ -51,7 +56,7 @@ export async function uploadAvatarAdmin({ userId, file }: { userId: string; file
   const objectName = `${userId}/${Date.now()}.${ext}`
   const buf = Buffer.from(await file.arrayBuffer())
   const { error } = await admin.storage.from(AVATARS_BUCKET).upload(objectName, buf, { contentType: file.type })
-  if (error) throw error
+  if (error) throw supabaseErrorToError(error, "Unable to upload avatar.")
   const { data: publicUrl } = admin.storage.from(AVATARS_BUCKET).getPublicUrl(objectName)
   return publicUrl.publicUrl
 }

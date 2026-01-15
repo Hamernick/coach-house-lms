@@ -35,7 +35,7 @@ export default async function AdminUsersPage({
 
   const users = await listAdminUsers({
     search: query,
-    role: roleParam === "admin" || roleParam === "student" ? (roleParam as "admin" | "student" | "all") : "all",
+    role: roleParam === "admin" || roleParam === "member" ? (roleParam as "admin" | "member" | "all") : "all",
     status: statusParam,
   })
 
@@ -56,7 +56,7 @@ export default async function AdminUsersPage({
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
               <option value="all">All roles</option>
-              <option value="student">Student</option>
+              <option value="member">Member</option>
               <option value="admin">Admin</option>
             </select>
           </div>

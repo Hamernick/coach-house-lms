@@ -7,6 +7,7 @@ export type MarketplaceCategory =
   | "web"
   | "social"
   | "community"
+  | "economic-engines"
   | "research"
   | "grants"
   | "accounting"
@@ -31,7 +32,8 @@ export const CATEGORIES: { value: MarketplaceCategory; label: string }[] = [
   { value: "banking", label: "Banking" },
   { value: "web", label: "Web" },
   { value: "social", label: "Social" },
-  { value: "community", label: "Community" },
+  { value: "community", label: "Community Platforms" },
+  { value: "economic-engines", label: "Economic Engines" },
   { value: "research", label: "Research" },
   { value: "grants", label: "Grants" },
   { value: "accounting", label: "Accounting" },
@@ -188,6 +190,35 @@ export const ITEMS: MarketplaceItem[] = [
     byline: "Community",
     image: "https://logo.clearbit.com/discord.com",
     category: ["community"],
+  },
+
+  // Economic engines
+  {
+    id: "substack",
+    name: "Substack",
+    description: "Newsletter publishing with paid subscriptions and community features.",
+    url: "https://substack.com/",
+    byline: "Subscriptions",
+    image: "https://logo.clearbit.com/substack.com",
+    category: ["economic-engines"],
+  },
+  {
+    id: "patreon",
+    name: "Patreon",
+    description: "Membership platform for recurring support from your community.",
+    url: "https://www.patreon.com/",
+    byline: "Memberships",
+    image: "https://logo.clearbit.com/patreon.com",
+    category: ["economic-engines"],
+  },
+  {
+    id: "shopify",
+    name: "Shopify",
+    description: "Ecommerce storefront for merch, products, and donations-adjacent campaigns.",
+    url: "https://www.shopify.com/",
+    byline: "Commerce",
+    image: "https://logo.clearbit.com/shopify.com",
+    category: ["economic-engines"],
   },
 
   // Research

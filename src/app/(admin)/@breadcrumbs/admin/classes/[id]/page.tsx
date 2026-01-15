@@ -13,7 +13,7 @@ export default async function AdminClassDetailCrumbs({ params }: { params: Promi
   return (
     <DashboardBreadcrumbs
       segments={[
-        { label: "Admin", href: "/admin" },
+        { label: "Admin", href: "/admin/academy" },
         { label: "Classes", href: "/admin/classes" },
         { label: title },
       ]}

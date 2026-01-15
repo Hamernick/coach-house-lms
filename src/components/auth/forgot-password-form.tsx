@@ -28,7 +28,7 @@ type ForgotPasswordFormProps = {
   redirectTo?: string
 }
 
-export function ForgotPasswordForm({ redirectTo = "/auth/update-password" }: ForgotPasswordFormProps) {
+export function ForgotPasswordForm({ redirectTo = "/update-password" }: ForgotPasswordFormProps) {
   const supabase = useSupabaseClient()
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState<string>("")

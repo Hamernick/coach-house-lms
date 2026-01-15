@@ -8,9 +8,16 @@ type ForgotPasswordPageProps = {
   searchParams?: Promise<SearchParams>
 }
 
+function getSafeRedirect(value: unknown) {
+  if (typeof value !== "string") return undefined
+  if (!value.startsWith("/")) return undefined
+  if (value.startsWith("//")) return undefined
+  return value
+}
+
 export default async function ForgotPasswordPage({ searchParams }: ForgotPasswordPageProps) {
   const resolved = searchParams ? await searchParams : {}
-  const redirect = typeof resolved.redirect === "string" ? resolved.redirect : undefined
+  const redirect = getSafeRedirect(resolved.redirect)
 
   return (
     <AuthScreenShell>

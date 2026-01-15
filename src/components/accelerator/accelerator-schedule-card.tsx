@@ -46,7 +46,7 @@ export function AcceleratorScheduleCard({ host = "joel" }: AcceleratorScheduleCa
     <Card
       id="quickstart"
       className={cn(
-        "group mx-auto flex h-full w-full max-w-[520px] flex-col overflow-hidden rounded-[26px] border border-border/60 bg-card/70 shadow-sm",
+        "group mx-auto flex h-full w-full max-w-[520px] flex-col overflow-hidden rounded-[26px] border border-border/60 bg-surface shadow-sm dark:bg-card/70",
         "transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-md",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         pending && "cursor-wait opacity-80",

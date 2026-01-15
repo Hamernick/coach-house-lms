@@ -23,7 +23,7 @@ export function BillingPortalButton() {
   }
 
   return (
-    <Button onClick={handleOpenPortal} disabled={isPending} variant="outline">
+    <Button onClick={handleOpenPortal} disabled={isPending} variant="outline" data-tour="billing-primary-action">
       {isPending ? "Opening portal..." : "Open billing portal"}
     </Button>
   )

@@ -55,6 +55,10 @@ function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
     description: source.description ?? "",
     tagline: source.tagline ?? "",
     ein: source.ein ?? "",
+    formationStatus:
+      source.formationStatus === "pre_501c3" || source.formationStatus === "in_progress" || source.formationStatus === "approved"
+        ? source.formationStatus
+        : "in_progress",
     rep: source.rep ?? "",
     email: source.email ?? "",
     phone: source.phone ?? "",
@@ -398,7 +402,10 @@ export function OrgProfileEditor({
 
       <CardContent className="bg-sidebar p-0">
         <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="hidden h-10 w-full items-end justify-start gap-3 rounded-none border-b bg-transparent p-0 pl-6 pr-6 text-muted-foreground sm:inline-flex">
+          <TabsList
+            data-tour="org-profile-tabs"
+            className="hidden h-10 w-full items-end justify-start gap-3 rounded-none border-b bg-transparent p-0 pl-6 pr-6 text-muted-foreground sm:inline-flex"
+          >
             {TABS.map((item) => (
               <TabsTrigger
                 key={item.value}
@@ -419,7 +426,7 @@ export function OrgProfileEditor({
             </div>
             <div className="ml-auto pb-1">
               <Select value={tab} onValueChange={handleTabChange}>
-                <SelectTrigger className="h-9 min-w-[160px] bg-muted/60 text-sm font-medium">
+                <SelectTrigger data-tour="org-profile-tab-picker" className="h-9 min-w-[160px] bg-muted/60 text-sm font-medium">
                   <SelectValue aria-label="Select section" placeholder={currentTabLabel} />
                 </SelectTrigger>
                 <SelectContent align="end">

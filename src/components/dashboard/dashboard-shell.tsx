@@ -1,15 +1,17 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import type { ReactNode } from "react"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useSearchParams } from "next/navigation"
 
 import { SidebarBody } from "@/components/app-sidebar"
 import { useSidebarOpenMap } from "@/components/app-sidebar/hooks"
 import { GlobalSearch } from "@/components/global-search"
 import { OnboardingDialogEntry } from "@/components/onboarding/onboarding-dialog-entry"
+import { OnboardingWelcome } from "@/components/onboarding/onboarding-welcome"
+import { TutorialManager } from "@/components/tutorial/tutorial-manager"
 import type { OnboardingDialogProps } from "@/components/onboarding/onboarding-dialog"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -32,7 +34,9 @@ type DashboardShellProps = {
   }
   isAdmin: boolean
   acceleratorProgress?: number | null
+  showAccelerator?: boolean
   showLiveBadges?: boolean
+  tutorialWelcome?: { platform: boolean; accelerator: boolean }
   onboardingProps?: OnboardingDialogProps & { enabled: boolean }
 }
 
@@ -43,12 +47,17 @@ export function DashboardShell({
   user,
   isAdmin,
   acceleratorProgress,
+  showAccelerator,
   showLiveBadges = false,
+  tutorialWelcome,
   onboardingProps,
 }: DashboardShellProps) {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const welcomeParam = searchParams.get("welcome")
   const { openMap, setOpenMap } = useSidebarOpenMap(pathname ?? "/", sidebarTree)
   const isAcceleratorActive = (pathname ?? "").startsWith("/accelerator")
+  const [forcedOnboardingOpen, setForcedOnboardingOpen] = useState(false)
 
   const navUser = useMemo(
     () => ({
@@ -58,6 +67,20 @@ export function DashboardShell({
     }),
     [user.avatar, user.email, user.name],
   )
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const handler = () => setForcedOnboardingOpen(true)
+    window.addEventListener("coachhouse:onboarding:start", handler)
+    return () => window.removeEventListener("coachhouse:onboarding:start", handler)
+  }, [])
+
+  useEffect(() => {
+    if (welcomeParam === "1") {
+      setForcedOnboardingOpen(false)
+    }
+  }, [welcomeParam])
 
   return (
     <SidebarProvider>
@@ -70,13 +93,19 @@ export function DashboardShell({
           user={navUser}
           isAcceleratorActive={isAcceleratorActive}
           acceleratorProgress={acceleratorProgress}
+          showAccelerator={showAccelerator}
           showLiveBadges={showLiveBadges}
         />
       </Sidebar>
       <SidebarInset>
         <div className="flex min-h-svh flex-col">
           <DashboardHeader breadcrumbs={breadcrumbs} isAdmin={isAdmin} hasUser={Boolean(user.email)} />
-          <main className="flex-1 overflow-y-scroll" role="main" style={{ scrollbarGutter: "stable" }}>
+          <main
+            data-tour-scroll
+            className="flex-1 overflow-y-scroll"
+            role="main"
+            style={{ scrollbarGutter: "stable" }}
+          >
             <div className="@container/main flex flex-1 flex-col gap-4 p-4 md:gap-6 md:p-6">
               {children}
             </div>
@@ -84,8 +113,15 @@ export function DashboardShell({
         </div>
       </SidebarInset>
 
-      <GlobalSearch isAdmin={isAdmin} context="platform" />
-      {onboardingProps?.enabled ? <OnboardingDialogEntry {...onboardingProps} /> : null}
+      <GlobalSearch isAdmin={isAdmin} context={isAcceleratorActive ? "accelerator" : "platform"} showAccelerator={showAccelerator} />
+      <TutorialManager />
+      <OnboardingWelcome
+        tutorial={isAcceleratorActive ? "accelerator" : "platform"}
+        defaultOpen={isAcceleratorActive ? Boolean(tutorialWelcome?.accelerator) : Boolean(tutorialWelcome?.platform)}
+      />
+      {onboardingProps?.enabled ? (
+        <OnboardingDialogEntry {...onboardingProps} open={Boolean(onboardingProps.open || forcedOnboardingOpen)} />
+      ) : null}
     </SidebarProvider>
   )
 }

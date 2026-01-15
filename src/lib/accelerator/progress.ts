@@ -107,7 +107,10 @@ export async function fetchAcceleratorProgressSummary({
       data: { user },
       error: userError,
     } = await supabase.auth.getUser()
-    if (userError && !isSupabaseAuthSessionMissingError(userError)) throw userError
+    if (userError && !isSupabaseAuthSessionMissingError(userError)) {
+      console.error("[accelerator-progress] Unable to load Supabase user.", userError)
+      return { groups: [], totalModules: 0, completedModules: 0, inProgressModules: 0, percent: 0 }
+    }
     if (!user) {
       return { groups: [], totalModules: 0, completedModules: 0, inProgressModules: 0, percent: 0 }
     }
@@ -141,14 +144,14 @@ export async function fetchAcceleratorProgressSummary({
     .returns<Array<{ module_id: string; status: ModuleCardStatus }>>()
 
   if (progressError) {
-    throw progressError
+    console.error("[accelerator-progress] Unable to load module progress.", progressError)
   }
 
   const progressMap = new Map<string, ModuleCardStatus>()
   let completedModules = 0
   let inProgressModules = 0
 
-  for (const row of progressRows ?? []) {
+  for (const row of progressError ? [] : progressRows ?? []) {
     const status = row.status
     progressMap.set(row.module_id, status)
     if (status === "completed") completedModules += 1

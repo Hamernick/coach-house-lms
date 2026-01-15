@@ -128,7 +128,7 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
   return (
     <Sheet open={open} onOpenChange={(o)=>{ setOpen(o); if (!o) reset() }}>
       <SheetTrigger asChild>
-        <Button className={triggerClassName} size="sm">
+        <Button data-tour="people-add" className={triggerClassName} size="sm">
           <PlusIcon className="size-4" />
           <span className="ml-2">Add</span>
         </Button>

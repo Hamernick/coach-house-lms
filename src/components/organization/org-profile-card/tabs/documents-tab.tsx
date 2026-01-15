@@ -43,7 +43,8 @@ const DOCUMENTS: DocumentDefinition[] = [
     kind: "verification-letter",
     key: "verificationLetter",
     title: "501(c)(3) determination letter",
-    description: "Upload the IRS verification letter PDF that confirms your nonprofit status.",
+    description:
+      "Upload the IRS verification letter PDF that confirms your nonprofit status.",
     defaultName: "Verification letter",
   },
   {
@@ -64,7 +65,8 @@ const DOCUMENTS: DocumentDefinition[] = [
     kind: "state-registration",
     key: "stateRegistration",
     title: "State registration",
-    description: "Proof of nonprofit registration or charity filing for your state.",
+    description:
+      "Proof of nonprofit registration or charity filing for your state.",
     defaultName: "State registration",
   },
   {
@@ -116,7 +118,8 @@ function formatUpdatedAt(value?: string | null) {
 }
 
 function validatePdf(file: File) {
-  const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
+  const isPdf =
+    file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
   if (!isPdf) return "Only PDF files are supported."
   if (file.size > MAX_BYTES) return "PDF must be 15 MB or less."
   return null
@@ -148,7 +151,10 @@ function DocumentCard({
   }, [document])
 
   const hasDocument = Boolean(doc?.path)
-  const displayName = useMemo(() => nameDraft.trim().slice(0, MAX_LABEL_LENGTH), [nameDraft])
+  const displayName = useMemo(
+    () => nameDraft.trim().slice(0, MAX_LABEL_LENGTH),
+    [nameDraft]
+  )
   const menuBusy = isUploading || isDeleting || isViewing
 
   const handleUpload = async (file: File) => {
@@ -163,7 +169,10 @@ function DocumentCard({
     setIsUploading(true)
     const toastId = toast.loading("Uploading document…")
     try {
-      const res = await fetch(`/api/account/org-documents?kind=${definition.kind}`, { method: "POST", body: form })
+      const res = await fetch(
+        `/api/account/org-documents?kind=${definition.kind}`,
+        { method: "POST", body: form }
+      )
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err?.error || "Upload failed")
@@ -175,7 +184,9 @@ function DocumentCard({
       setNameDraft(nextDoc.name)
       toast.success("Document saved", { id: toastId })
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Upload failed", { id: toastId })
+      toast.error(error instanceof Error ? error.message : "Upload failed", {
+        id: toastId,
+      })
     } finally {
       setIsUploading(false)
     }
@@ -185,7 +196,9 @@ function DocumentCard({
     if (!doc?.path) return
     setIsViewing(true)
     try {
-      const res = await fetch(`/api/account/org-documents?kind=${definition.kind}`)
+      const res = await fetch(
+        `/api/account/org-documents?kind=${definition.kind}`
+      )
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err?.error || "Unable to open document")
@@ -195,7 +208,9 @@ function DocumentCard({
       if (!url) throw new Error("Unable to open document")
       window.open(url, "_blank", "noopener")
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Unable to open document")
+      toast.error(
+        error instanceof Error ? error.message : "Unable to open document"
+      )
     } finally {
       setIsViewing(false)
     }
@@ -210,11 +225,14 @@ function DocumentCard({
     }
     setIsRenaming(true)
     try {
-      const res = await fetch(`/api/account/org-documents?kind=${definition.kind}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: nextName }),
-      })
+      const res = await fetch(
+        `/api/account/org-documents?kind=${definition.kind}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: nextName }),
+        }
+      )
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err?.error || "Update failed")
@@ -237,7 +255,10 @@ function DocumentCard({
     if (!window.confirm("Remove this document?")) return
     setIsDeleting(true)
     try {
-      const res = await fetch(`/api/account/org-documents?kind=${definition.kind}`, { method: "DELETE" })
+      const res = await fetch(
+        `/api/account/org-documents?kind=${definition.kind}`,
+        { method: "DELETE" }
+      )
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err?.error || "Delete failed")
@@ -253,66 +274,121 @@ function DocumentCard({
   }
 
   return (
-    <div className="rounded-xl border bg-background/60 p-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <span className="inline-flex h-7 w-7 items-center justify-center rounded-full border bg-background">
-              <Lock className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+    <div
+      data-tour={`document-${definition.kind}`}
+      className="bg-background/60 rounded-xl border p-4"
+    >
+      <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,260px)] sm:items-start lg:grid-cols-[minmax(0,1fr)_minmax(0,340px)]">
+        <div className="min-w-0 space-y-3">
+          <div className="flex items-start gap-3">
+            <span className="bg-background mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border">
+              <Lock className="text-muted-foreground h-4 w-4" aria-hidden />
             </span>
-            {definition.title}
-          </div>
-          <p className="text-xs text-muted-foreground">{definition.description}</p>
-        </div>
-        <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground">
-          <Lock className="h-3.5 w-3.5" aria-hidden />
-          Private
-        </div>
-      </div>
-
-      <div className="mt-4 grid gap-4">
-        {hasDocument ? (
-          <div className="grid gap-4 sm:max-w-xs">
-            {canEdit && editMode ? (
-              <input
-                id={replaceInputId}
-                type="file"
-                accept="application/pdf"
-                className="sr-only"
-                onChange={(event) => {
-                  const file = event.currentTarget.files?.[0]
-                  if (!file) return
-                  void handleUpload(file)
-                  event.currentTarget.value = ""
-                }}
-              />
-            ) : null}
-            <div className="relative aspect-square w-36 overflow-hidden rounded-2xl border border-border/60 bg-muted/30">
-              <div className="flex h-full flex-col items-center justify-center gap-2 text-muted-foreground">
-                <FileText className="h-6 w-6" aria-hidden />
-                <span className="text-xs font-medium">PDF</span>
+            <div className="min-w-0 space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="text-foreground text-sm font-semibold">
+                  {definition.title}
+                </h3>
+                <div className="border-border/60 bg-muted/50 text-muted-foreground inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium">
+                  <Lock className="h-3 w-3" aria-hidden />
+                  Private
+                </div>
               </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    className="absolute right-2 top-2 h-8 w-8"
-                    disabled={menuBusy}
-                    aria-label="Document actions"
-                  >
-                    <MoreHorizontal className="h-4 w-4" aria-hidden />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onSelect={() => void handleView()} disabled={isViewing}>
-                    <ExternalLink className="h-4 w-4" />
-                    {isViewing ? "Opening…" : "View"}
-                  </DropdownMenuItem>
-                  {canEdit && editMode ? (
-                    <>
-                      <DropdownMenuItem asChild disabled={isUploading} className="cursor-pointer">
-                        <label htmlFor={replaceInputId} className="flex w-full cursor-pointer items-center gap-2">
+              <p className="text-muted-foreground text-xs">
+                {definition.description}
+              </p>
+            </div>
+          </div>
+
+          {canEdit && editMode && hasDocument ? (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Label htmlFor={nameInputId} className="sr-only">
+                Document title
+              </Label>
+              <Input
+                id={nameInputId}
+                value={nameDraft}
+                onChange={(event) => setNameDraft(event.currentTarget.value)}
+                className="h-9 sm:max-w-xs"
+              />
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleRename}
+                disabled={isRenaming}
+              >
+                <PencilLine className="h-4 w-4" />
+                {isRenaming ? "Saving…" : "Update name"}
+              </Button>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="min-w-0">
+          {hasDocument ? (
+            <div className="border-border/60 bg-muted/20 flex items-center justify-between gap-3 rounded-xl border px-3 py-2">
+              {canEdit && editMode ? (
+                <input
+                  id={replaceInputId}
+                  type="file"
+                  accept="application/pdf"
+                  className="sr-only"
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0]
+                    if (!file) return
+                    void handleUpload(file)
+                    event.currentTarget.value = ""
+                  }}
+                />
+              ) : null}
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="bg-background text-muted-foreground flex size-10 shrink-0 items-center justify-center rounded-lg border">
+                  <FileText className="h-4 w-4" aria-hidden />
+                </div>
+                <div className="min-w-0 space-y-0.5">
+                  <p className="text-foreground truncate text-sm font-medium">
+                    {displayName || doc?.name || definition.defaultName}
+                  </p>
+                  <p className="text-muted-foreground text-xs">
+                    {formatBytes(doc?.size)} · Updated{" "}
+                    {formatUpdatedAt(doc?.updatedAt)}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => void handleView()}
+                  disabled={isViewing}
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  {isViewing ? "Opening…" : "View"}
+                </Button>
+                {canEdit && editMode ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        className="h-9 w-9"
+                        disabled={menuBusy}
+                        aria-label="Document actions"
+                      >
+                        <MoreHorizontal className="h-4 w-4" aria-hidden />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        asChild
+                        disabled={isUploading}
+                        className="cursor-pointer"
+                      >
+                        <label
+                          htmlFor={replaceInputId}
+                          className="flex w-full cursor-pointer items-center gap-2"
+                        >
                           <RefreshCw className="h-4 w-4" />
                           {isUploading ? "Uploading…" : "Replace file"}
                         </label>
@@ -326,91 +402,84 @@ function DocumentCard({
                         <Trash2 className="h-4 w-4" />
                         {isDeleting ? "Removing…" : "Delete"}
                       </DropdownMenuItem>
-                    </>
-                  ) : null}
-                </DropdownMenuContent>
-              </DropdownMenu>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null}
+              </div>
             </div>
-
-            <div className="space-y-1">
-              <p className="text-sm font-semibold">{displayName || doc?.name || definition.defaultName}</p>
-              <p className="text-xs text-muted-foreground">{formatBytes(doc?.size)}</p>
-              <p className="text-xs text-muted-foreground">Updated {formatUpdatedAt(doc?.updatedAt)}</p>
-            </div>
-
-            {canEdit && editMode ? (
-              <div className="grid gap-2">
-                <Label htmlFor={nameInputId} className="text-xs text-muted-foreground">
-                  Document title
-                </Label>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Input
-                    id={nameInputId}
-                    value={nameDraft}
-                    onChange={(event) => setNameDraft(event.currentTarget.value)}
-                    className="max-w-sm"
-                  />
-                  <Button size="sm" variant="outline" onClick={handleRename} disabled={isRenaming}>
-                    <PencilLine className="h-4 w-4" />
-                    {isRenaming ? "Saving…" : "Update name"}
-                  </Button>
+          ) : canEdit && editMode ? (
+            <Dropzone
+              accept={{ "application/pdf": [] }}
+              maxFiles={1}
+              maxSize={MAX_BYTES}
+              disabled={isUploading}
+              onDrop={(accepted) => {
+                const file = accepted[0]
+                if (!file) return
+                void handleUpload(file)
+              }}
+              onError={(error) => {
+                toast.error(error.message || "Upload failed")
+              }}
+              className="bg-muted/20 hover:bg-muted/30 flex-row items-center justify-between gap-4 border-dashed p-4 text-left"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="bg-background text-muted-foreground flex size-10 shrink-0 items-center justify-center rounded-lg border">
+                  <UploadCloud className="h-4 w-4" aria-hidden />
                 </div>
-              </div>
-            ) : null}
-          </div>
-        ) : (
-          <p className="text-sm text-muted-foreground">No document uploaded yet.</p>
-        )}
-
-        {canEdit && editMode && !hasDocument ? (
-          <Dropzone
-            accept={{ "application/pdf": [] }}
-            maxFiles={1}
-            maxSize={MAX_BYTES}
-            disabled={isUploading}
-            onDrop={(accepted) => {
-              const file = accepted[0]
-              if (!file) return
-              void handleUpload(file)
-            }}
-            onError={(error) => {
-              toast.error(error.message || "Upload failed")
-            }}
-            className="border-dashed bg-muted/20 hover:bg-muted/30"
-          >
-            <div className="flex flex-col items-center gap-3 text-center">
-              <div className="flex size-10 items-center justify-center rounded-full border bg-background text-muted-foreground">
-                <UploadCloud className="h-4 w-4" />
-              </div>
-              <div className="space-y-1">
-                <p className="text-sm font-medium">Upload your PDF</p>
-                <p className="text-xs text-muted-foreground">Drag and drop here, or click to upload.</p>
-                <p className="text-xs text-muted-foreground">PDF up to 15 MB.</p>
+                <div className="min-w-0 space-y-0.5">
+                  <p className="text-foreground truncate text-sm font-medium">
+                    Upload PDF
+                  </p>
+                  <p className="text-muted-foreground truncate text-xs">
+                    Drag & drop or click · 15 MB max
+                  </p>
+                </div>
               </div>
               <span
                 className={cn(
                   buttonVariants({ variant: "secondary", size: "sm" }),
-                  isUploading && "pointer-events-none opacity-60",
+                  isUploading && "pointer-events-none opacity-60"
                 )}
               >
-                {isUploading ? "Uploading…" : "Upload file"}
+                {isUploading ? "Uploading…" : "Upload"}
               </span>
+            </Dropzone>
+          ) : (
+            <div className="border-border/60 bg-muted/20 flex items-center justify-between gap-3 rounded-xl border px-3 py-2">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="bg-background text-muted-foreground flex size-10 shrink-0 items-center justify-center rounded-lg border">
+                  <FileText className="h-4 w-4" aria-hidden />
+                </div>
+                <div className="min-w-0 space-y-0.5">
+                  <p className="text-foreground truncate text-sm font-medium">
+                    No document uploaded
+                  </p>
+                  <p className="text-muted-foreground truncate text-xs">
+                    Only organization admins can add documents.
+                  </p>
+                </div>
+              </div>
             </div>
-          </Dropzone>
-        ) : null}
+          )}
+        </div>
       </div>
     </div>
   )
 }
 
-export function DocumentsTab({ documents, editMode, canEdit }: DocumentsTabProps) {
+export function DocumentsTab({
+  documents,
+  editMode,
+  canEdit,
+}: DocumentsTabProps) {
   return (
     <div className="grid gap-6">
       <FormRow
         title="Private documents"
         description="These files are stored privately and will never be shared publicly."
       >
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-3 md:gap-4">
           {DOCUMENTS.map((definition) => (
             <DocumentCard
               key={definition.kind}

@@ -9,19 +9,29 @@ import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
 import LogOutIcon from "lucide-react/dist/esm/icons/log-out"
 import CircleUserIcon from "lucide-react/dist/esm/icons/circle-user"
 import MessageSquareIcon from "lucide-react/dist/esm/icons/message-square"
+import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
+import WrenchIcon from "lucide-react/dist/esm/icons/wrench"
+import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
+import BellIcon from "lucide-react/dist/esm/icons/bell"
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/components/ui/avatar"
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar"
+import { resetAllTutorialsAction } from "@/app/actions/tutorial"
+import { resetOnboardingCompletionAction } from "@/app/actions/admin-testing"
+import { seedTestNotificationsAction } from "@/app/actions/notifications"
+import { toast } from "@/lib/toast"
 const AccountSettingsDialog = dynamic(
   () =>
-    import("@/components/account-settings/account-settings-dialog").then((mod) => ({
-      default: mod.AccountSettingsDialog,
-    })),
-  { loading: () => null, ssr: false },
+    import("@/components/account-settings/account-settings-dialog").then(
+      (mod) => ({
+        default: mod.AccountSettingsDialog,
+      })
+    ),
+  { loading: () => null, ssr: false }
 )
 
 type NavUserProps = {
@@ -34,16 +44,41 @@ type NavUserProps = {
   showDivider?: boolean
 }
 
-export function NavUser({ user, isAdmin = false, showDivider = true }: NavUserProps) {
+export function NavUser({
+  user,
+  isAdmin = false,
+  showDivider = true,
+}: NavUserProps) {
   const router = useRouter()
-  const [isPending, startTransition] = useTransition()
+  const [signOutPending, startSignOutTransition] = useTransition()
+  const [adminPending, startAdminTransition] = useTransition()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement | null>(null)
 
+  function dispatchTutorialStart(tutorial?: string) {
+    if (typeof window === "undefined") return
+    window.dispatchEvent(
+      new CustomEvent(
+        "coachhouse:tutorial:start",
+        tutorial ? { detail: { tutorial } } : undefined
+      )
+    )
+  }
+
+  function dispatchOnboardingStart() {
+    if (typeof window === "undefined") return
+    window.dispatchEvent(new CustomEvent("coachhouse:onboarding:start"))
+  }
+
+  function handleReplayTutorial() {
+    setMenuOpen(false)
+    dispatchTutorialStart("platform")
+  }
+
   function handleSignOut() {
     setMenuOpen(false)
-    startTransition(async () => {
+    startSignOutTransition(async () => {
       await fetch("/api/auth/signout", { method: "POST" })
       router.replace("/login")
       router.refresh()
@@ -80,7 +115,7 @@ export function NavUser({ user, isAdmin = false, showDivider = true }: NavUserPr
   const avatarFallback = displayName.charAt(0).toUpperCase() || "U"
 
   return (
-    <div className={showDivider ? "border-t border-border/60 pt-2" : ""}>
+    <div className={showDivider ? "border-border/60 border-t pt-2" : ""}>
       <div ref={containerRef} className="relative">
         <SidebarMenu>
           <SidebarMenuItem>
@@ -89,17 +124,26 @@ export function NavUser({ user, isAdmin = false, showDivider = true }: NavUserPr
               className="mt-0 justify-start gap-3 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
               aria-haspopup="menu"
               aria-expanded={menuOpen}
+              data-tour="account-menu"
               onClick={() => setMenuOpen((prev) => !prev)}
             >
               <Avatar className="h-8 w-8 rounded-lg grayscale group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
-                {user.avatar ? <AvatarImage src={user.avatar} alt={displayName} /> : null}
-                <AvatarFallback className="rounded-lg">{avatarFallback}</AvatarFallback>
+                {user.avatar ? (
+                  <AvatarImage src={user.avatar} alt={displayName} />
+                ) : null}
+                <AvatarFallback className="rounded-lg">
+                  {avatarFallback}
+                </AvatarFallback>
               </Avatar>
               <div className="flex min-w-0 flex-1 flex-col text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate font-medium text-foreground">{displayName}</span>
-                <span className="truncate text-xs text-muted-foreground">{displayEmail}</span>
+                <span className="text-foreground truncate font-medium">
+                  {displayName}
+                </span>
+                <span className="text-muted-foreground truncate text-xs">
+                  {displayEmail}
+                </span>
               </div>
-              <MoreVerticalIcon className="size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+              <MoreVerticalIcon className="text-muted-foreground size-4 group-data-[collapsible=icon]:hidden" />
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
@@ -107,22 +151,38 @@ export function NavUser({ user, isAdmin = false, showDivider = true }: NavUserPr
         {menuOpen ? (
           <div
             role="menu"
-            className="absolute bottom-full right-0 z-20 mb-2 w-60 rounded-lg border border-border bg-popover p-2 text-sm shadow-lg"
+            className="border-border bg-popover absolute right-0 bottom-full z-20 mb-2 w-60 rounded-lg border p-2 text-sm shadow-lg"
           >
             <div className="flex items-center gap-2 rounded-md px-2 py-1.5">
               <Avatar className="h-8 w-8 rounded-lg">
-                {user.avatar ? <AvatarImage src={user.avatar} alt={displayName} /> : null}
-                <AvatarFallback className="rounded-lg">{avatarFallback}</AvatarFallback>
+                {user.avatar ? (
+                  <AvatarImage src={user.avatar} alt={displayName} />
+                ) : null}
+                <AvatarFallback className="rounded-lg">
+                  {avatarFallback}
+                </AvatarFallback>
               </Avatar>
               <div className="flex flex-col text-left text-sm leading-tight">
-                <span className="truncate font-medium text-foreground">{displayName}</span>
-                <span className="truncate text-xs text-muted-foreground">{displayEmail}</span>
+                <span className="text-foreground truncate font-medium">
+                  {displayName}
+                </span>
+                <span className="text-muted-foreground truncate text-xs">
+                  {displayEmail}
+                </span>
               </div>
             </div>
-            <div className="my-2 h-px bg-border/60" />
+            <div className="bg-border/60 my-2 h-px" />
             <button
               type="button"
-              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition hover:bg-muted"
+              className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+              onClick={handleReplayTutorial}
+            >
+              <SparklesIcon className="size-4" />
+              Replay tutorial
+            </button>
+            <button
+              type="button"
+              className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
               onClick={() => {
                 setMenuOpen(false)
                 setSettingsOpen(true)
@@ -133,7 +193,7 @@ export function NavUser({ user, isAdmin = false, showDivider = true }: NavUserPr
             </button>
             <a
               href="mailto:contact@coachhousesolutions.org?subject=Coach%20House%20Feedback"
-              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition hover:bg-muted"
+              className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
               onClick={() => setMenuOpen(false)}
             >
               <MessageSquareIcon className="size-4" />
@@ -142,25 +202,163 @@ export function NavUser({ user, isAdmin = false, showDivider = true }: NavUserPr
             {!isAdmin ? (
               <Link
                 href="/billing"
-                className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition hover:bg-muted"
+                className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
                 onClick={() => setMenuOpen(false)}
               >
                 <CreditCardIcon className="size-4" />
                 Billing
               </Link>
             ) : null}
-            <div className="my-2 h-px bg-border/60" />
+            {isAdmin ? (
+              <>
+                <div className="bg-border/60 my-2 h-px" />
+                <div className="text-muted-foreground px-2 py-1 text-xs font-medium">
+                  Testing
+                </div>
+                <button
+                  type="button"
+                  className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    dispatchOnboardingStart()
+                  }}
+                >
+                  <WrenchIcon className="size-4" />
+                  Open onboarding
+                </button>
+                <button
+                  type="button"
+                  className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    dispatchTutorialStart("platform")
+                  }}
+                >
+                  <SparklesIcon className="size-4" />
+                  Start Platform tutorial
+                </button>
+                <button
+                  type="button"
+                  className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+                  onClick={() => {
+                    setMenuOpen(false)
+                    dispatchTutorialStart("accelerator")
+                  }}
+                >
+                  <SparklesIcon className="size-4" />
+                  Start Accelerator tutorial
+                </button>
+                <Link
+                  href="/my-organization?welcome=1"
+                  className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <SparklesIcon className="size-4" />
+                  Show Platform welcome
+                </Link>
+                <Link
+                  href="/accelerator?welcome=1"
+                  className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <SparklesIcon className="size-4" />
+                  Show Accelerator welcome
+                </Link>
+                <button
+                  type="button"
+                  disabled={adminPending}
+                  className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition disabled:opacity-60"
+                  onClick={() => {
+                    if (adminPending) return
+                    setMenuOpen(false)
+                    startAdminTransition(async () => {
+                      await resetAllTutorialsAction()
+                      if (typeof window !== "undefined") {
+                        const tutorials = [
+                          "platform",
+                          "dashboard",
+                          "my-organization",
+                          "roadmap",
+                          "documents",
+                          "billing",
+                          "accelerator",
+                          "people",
+                          "marketplace",
+                        ]
+                        for (const tutorial of tutorials) {
+                          window.localStorage.removeItem(
+                            `coachhouse_tutorial_completed_${tutorial}`
+                          )
+                          window.localStorage.removeItem(
+                            `coachhouse_tutorial_dismissed_${tutorial}`
+                          )
+                        }
+                        window.localStorage.removeItem(
+                          "coachhouse_tour_completed"
+                        )
+                      }
+                      router.refresh()
+                    })
+                  }}
+                >
+                  <RotateCcwIcon className="size-4" />
+                  Reset tutorials
+                </button>
+                <button
+                  type="button"
+                  disabled={adminPending}
+                  className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition disabled:opacity-60"
+                  onClick={() => {
+                    if (adminPending) return
+                    setMenuOpen(false)
+                    startAdminTransition(async () => {
+                      await resetOnboardingCompletionAction()
+                      if (typeof window !== "undefined") {
+                        window.localStorage.removeItem("onboardingDraftV2")
+                      }
+                      dispatchOnboardingStart()
+                      router.refresh()
+                    })
+                  }}
+                >
+                  <RotateCcwIcon className="size-4" />
+                  Reset onboarding
+                </button>
+                <button
+                  type="button"
+                  disabled={adminPending}
+                  className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition disabled:opacity-60"
+                  onClick={() => {
+                    if (adminPending) return
+                    setMenuOpen(false)
+                    startAdminTransition(async () => {
+                      const result = await seedTestNotificationsAction()
+                      if ("error" in result) {
+                        toast.error(result.error)
+                        return
+                      }
+                      toast.success("Test notifications created.")
+                      router.refresh()
+                    })
+                  }}
+                >
+                  <BellIcon className="size-4" />
+                  Seed notifications
+                </button>
+              </>
+            ) : null}
+            <div className="bg-border/60 my-2 h-px" />
             <button
               type="button"
-              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-destructive transition hover:bg-destructive/10"
+              className="text-destructive hover:bg-destructive/10 flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
               onClick={() => {
-                if (!isPending) {
+                if (!signOutPending) {
                   handleSignOut()
                 }
               }}
             >
               <LogOutIcon className="size-4" />
-              {isPending ? "Signing out..." : "Log out"}
+              {signOutPending ? "Signing out..." : "Log out"}
             </button>
           </div>
         ) : null}

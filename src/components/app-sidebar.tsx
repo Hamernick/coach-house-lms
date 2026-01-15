@@ -34,6 +34,7 @@ export type AppSidebarProps = {
   isAdmin?: boolean
   classes?: SidebarClass[]
   acceleratorProgress?: number | null
+  showAccelerator?: boolean
   showLiveBadges?: boolean
   openMap?: Record<string, boolean>
   setOpenMap?: Dispatch<SetStateAction<Record<string, boolean>>>
@@ -44,6 +45,7 @@ export function AppSidebar({
   isAdmin = false,
   classes,
   acceleratorProgress,
+  showAccelerator,
   showLiveBadges = false,
   openMap: controlledOpenMap,
   setOpenMap: controlledSetOpenMap,
@@ -73,6 +75,7 @@ export function AppSidebar({
         user={resolvedUser}
         isAcceleratorActive={isAcceleratorActive}
         acceleratorProgress={acceleratorProgress}
+        showAccelerator={showAccelerator}
         showLiveBadges={showLiveBadges}
       />
     </aside>
@@ -91,6 +94,7 @@ type SidebarBodyProps = {
   }
   isAcceleratorActive: boolean
   acceleratorProgress?: number | null
+  showAccelerator?: boolean
   showLiveBadges?: boolean
 }
 
@@ -102,12 +106,15 @@ export function SidebarBody({
   user,
   isAcceleratorActive,
   acceleratorProgress,
+  showAccelerator,
   showLiveBadges = false,
 }: SidebarBodyProps) {
   const progressValue =
     typeof acceleratorProgress === "number" && Number.isFinite(acceleratorProgress)
       ? Math.max(0, Math.min(100, Math.round(acceleratorProgress)))
       : null
+
+  const shouldShowAccelerator = Boolean(isAdmin || showAccelerator)
 
   return (
     <>
@@ -148,37 +155,37 @@ export function SidebarBody({
 
       <SidebarContent className="gap-4">
         <NavMain items={buildMainNav(isAdmin)} label="Platform" showLiveBadges={showLiveBadges} />
-        <SidebarGroup>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isAcceleratorActive}>
-                <Link href="/accelerator" className="flex w-full items-center gap-2">
-                  <Rocket className="size-4" />
-                  <span>Accelerator</span>
-                  {progressValue !== null ? (
-                    <span className="ml-auto flex items-center gap-2 group-data-[collapsible=icon]:hidden">
-                      <CircularProgress
-                        value={progressValue}
-                        size={26}
-                        strokeWidth={3}
-                        aria-label={`Accelerator progress ${progressValue}%`}
-                      />
-                    </span>
-                  ) : null}
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
+        {shouldShowAccelerator ? (
+          <SidebarGroup>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isAcceleratorActive}>
+                  <Link href="/accelerator" className="flex w-full items-center gap-2">
+                    <Rocket className="size-4" />
+                    <span>Accelerator</span>
+                    {progressValue !== null ? (
+                      <span className="ml-auto flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+                        <CircularProgress
+                          value={progressValue}
+                          size={26}
+                          strokeWidth={3}
+                          aria-label={`Accelerator progress ${progressValue}%`}
+                        />
+                      </span>
+                    ) : null}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        ) : null}
       </SidebarContent>
 
       <SidebarFooter className="mt-auto gap-4">
-        {!isAdmin ? (
-          <div className="space-y-4 pt-2">
-            <NavDocuments items={RESOURCE_NAV} label="Resources" />
-            <NavSecondary items={SECONDARY_NAV} />
-          </div>
-        ) : null}
+        <div className="space-y-4 pt-2">
+          <NavDocuments items={RESOURCE_NAV} label="Resources" />
+          <NavSecondary items={SECONDARY_NAV} />
+        </div>
         <NavUser user={user} isAdmin={isAdmin} />
       </SidebarFooter>
     </>

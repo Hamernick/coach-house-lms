@@ -19,7 +19,7 @@ export async function GET(request: Request) {
 
   const users = await listAdminUsers({
     search,
-    role: role === "admin" || role === "student" ? (role as "admin" | "student" | "all") : "all",
+    role: role === "admin" || role === "member" ? (role as "admin" | "member" | "all") : "all",
     status: status && status !== "all" ? status : undefined,
   })
 

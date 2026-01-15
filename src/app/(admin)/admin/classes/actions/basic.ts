@@ -6,6 +6,7 @@ import type { PostgrestError } from "@supabase/supabase-js"
 
 import { requireAdmin } from "@/lib/admin/auth"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
 
@@ -49,7 +50,7 @@ export async function createClassAction() {
     error = response.error
   }
 
-  if (error) throw error
+  if (error) throw supabaseErrorToError(error, "Unable to create class.")
 
   const classId = data?.id ?? null
   if (classId) {
@@ -78,7 +79,7 @@ export async function deleteClassAction(formData: FormData) {
     error = res.error as typeof error
   }
 
-  if (error) throw error
+  if (error) throw supabaseErrorToError(error, "Unable to delete class.")
   revalidateClassViews()
 }
 
@@ -102,7 +103,7 @@ export async function setClassPublishedAction(classId: string, published: boolea
     error = res.error as typeof error
   }
 
-  if (error) throw error
+  if (error) throw supabaseErrorToError(error, "Unable to update class.")
 
   const { data: classMeta } = await supabase
     .from("classes" satisfies keyof Database["public"]["Tables"]) 
@@ -160,7 +161,7 @@ export async function moveClassPositionAction(formData: FormData) {
         .eq("id", u.id)
       updateError = adminResponse.error
     }
-    if (updateError) throw updateError
+    if (updateError) throw supabaseErrorToError(updateError, "Unable to update class order.")
   }
 
   revalidateClassViews({ classId })
@@ -187,7 +188,7 @@ export async function reorderClassesAction(orderedIds: string[]) {
         .eq("id", u.id)
       updateError = adminResponse.error
     }
-    if (updateError) throw updateError
+    if (updateError) throw supabaseErrorToError(updateError, "Unable to reorder classes.")
   }
 
   revalidateClassViews()

@@ -11,6 +11,7 @@ import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { PeopleCompositionRadialCard } from "@/components/dashboard/people-composition-radial-card"
 import { DashboardCalendarCard } from "@/components/dashboard/dashboard-calendar-card"
 import { DashboardCheckInCard } from "@/components/dashboard/dashboard-checkin-card"
@@ -22,6 +23,7 @@ import { createSupabaseServerClient, type Json } from "@/lib/supabase"
 import type { Database } from "@/lib/supabase/types"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import { isFreeTierSubscription } from "@/lib/meetings"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
@@ -33,8 +35,10 @@ export default async function DashboardPage() {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser()
-  if (userError && !isSupabaseAuthSessionMissingError(userError)) throw userError
-  if (!user) redirect("/login?redirect=/dashboard")
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
+    throw supabaseErrorToError(userError, "Unable to load user.")
+  }
+  if (!user) redirect("/login?redirect=/my-organization")
 
   const [
     { data: orgRow },
@@ -151,8 +155,9 @@ export default async function DashboardPage() {
 
   return (
     <div className="w-full space-y-6 md:-m-2">
+      <PageTutorialButton tutorial="dashboard" />
       <section className="grid gap-4 xl:grid-cols-[1.6fr_1fr]">
-        <Card className="border-border/70 bg-card/70">
+        <Card className="border-border/70 bg-card/70" data-tour="dashboard-overview">
           <CardHeader className="pb-3">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="space-y-1">
@@ -170,7 +175,7 @@ export default async function DashboardPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-3" data-tour="dashboard-stats">
               <StatTile label="Programs" value={programsCount ?? 0} />
               <StatTile label="People" value={peopleCount} />
               <StatTile label="Roadmap drafted" value={`${roadmapCompleteCount}/${sections.length}`} />
@@ -190,7 +195,7 @@ export default async function DashboardPage() {
               </div>
             ) : null}
           </CardContent>
-          <CardFooter className="flex flex-wrap gap-2 border-t border-border/60">
+          <CardFooter className="flex flex-wrap gap-2 border-t border-border/60" data-tour="dashboard-actions">
             <Button asChild size="sm">
               <Link href="/my-organization">Edit profile</Link>
             </Button>

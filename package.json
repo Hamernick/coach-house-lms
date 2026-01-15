@@ -17,6 +17,7 @@
     "check:perf": "node scripts/check-performance-budgets.mjs",
     "db:push": "supabase db push",
     "create:admin": "node scripts/create-admin-user.mjs",
+    "promote:admin": "node scripts/promote-user-to-admin.mjs",
     "verify:settings": "node scripts/verify-account-settings.mjs",
     "import:curriculum": "node scripts/import-curriculum.mjs"
   },

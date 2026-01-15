@@ -3,6 +3,7 @@ import { formatDistanceToNow } from "date-fns"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 import type { Database } from "@/lib/supabase"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -28,7 +29,7 @@ export async function SubscriptionStatusCard() {
   } = await supabase.auth.getUser()
 
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw userError
+    throw supabaseErrorToError(userError, "Unable to load user.")
   }
 
   if (!user) {

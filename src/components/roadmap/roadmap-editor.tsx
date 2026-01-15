@@ -67,6 +67,7 @@ type RoadmapEditorProps = {
   sections: RoadmapSection[]
   publicSlug: string | null
   roadmapIsPublic: boolean
+  canPublishPublicRoadmap?: boolean
   layout?: RoadmapEditorLayout
   onRoadmapPublicChange?: (next: boolean) => void
   onDirtyChange?: (dirty: boolean) => void
@@ -158,6 +159,7 @@ export function RoadmapEditor({
   sections: initialSections,
   publicSlug,
   roadmapIsPublic,
+  canPublishPublicRoadmap = false,
   layout = "default",
   onRoadmapPublicChange,
   onDirtyChange,
@@ -891,6 +893,7 @@ export function RoadmapEditor({
               <RoadmapVisibilityToggle
                 initialPublic={roadmapIsPublic}
                 publicSlug={publicSlug}
+                canPublishPublicRoadmap={canPublishPublicRoadmap}
                 onPublicChange={onRoadmapPublicChange}
                 showViewAction={false}
               />

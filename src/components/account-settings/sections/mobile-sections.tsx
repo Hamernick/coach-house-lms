@@ -4,9 +4,8 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import type { AccountSettingsMobilePage, AccountSettingsTabKey } from "../types"
-import { OrganizationStageSelect } from "./section-helpers"
+import { OrganizationAccessManager } from "./organization-access-manager"
 
 export const TAB_LABELS: Record<AccountSettingsTabKey, string> = {
   profile: "Profile",
@@ -21,7 +20,7 @@ export const MOBILE_LINKS: Array<{
   description?: string
 }> = [
   { key: "profile", description: "Personal details, photo" },
-  { key: "organization", description: "Project info" },
+  { key: "organization", description: "Team access & permissions" },
   { key: "communications", description: "Emails & notifications" },
   { key: "security", description: "Password" },
   { key: "danger", description: "Delete account" },
@@ -89,14 +88,6 @@ export function MobileSubpage({
   newPassword,
   confirmPassword,
   orgName,
-  orgDesc,
-  website,
-  social,
-  applyingAs,
-  stage,
-  problem,
-  mission,
-  goals,
   isUploadingAvatar,
   onAvatarFileSelected,
   onFirstNameChange,
@@ -106,15 +97,6 @@ export function MobileSubpage({
   onNewsletterOptInChange,
   onNewPasswordChange,
   onConfirmPasswordChange,
-  onOrgNameChange,
-  onOrgDescChange,
-  onWebsiteChange,
-  onSocialChange,
-  onApplyingAsChange,
-  onStageChange,
-  onProblemChange,
-  onMissionChange,
-  onGoalsChange,
   onDeleteAccount,
 }: {
   tab: AccountSettingsTabKey
@@ -129,14 +111,6 @@ export function MobileSubpage({
   newPassword: string
   confirmPassword: string
   orgName: string
-  orgDesc: string
-  website: string
-  social: string
-  applyingAs: "individual" | "organization" | ""
-  stage: string
-  problem: string
-  mission: string
-  goals: string
   isUploadingAvatar: boolean
   onAvatarFileSelected: (file?: File | null) => void
   onFirstNameChange: (value: string) => void
@@ -146,15 +120,6 @@ export function MobileSubpage({
   onNewsletterOptInChange: (value: boolean) => void
   onNewPasswordChange: (value: string) => void
   onConfirmPasswordChange: (value: string) => void
-  onOrgNameChange: (value: string) => void
-  onOrgDescChange: (value: string) => void
-  onWebsiteChange: (value: string) => void
-  onSocialChange: (value: string) => void
-  onApplyingAsChange: (value: "individual" | "organization") => void
-  onStageChange: (value: string) => void
-  onProblemChange: (value: string) => void
-  onMissionChange: (value: string) => void
-  onGoalsChange: (value: string) => void
   onDeleteAccount: () => void
 }) {
   return (
@@ -164,18 +129,17 @@ export function MobileSubpage({
           <header>
             <h3 className="text-sm font-semibold text-muted-foreground">Profile</h3>
           </header>
-          <div className="grid max-w-xl gap-4">
-            <div className="flex flex-col items-center justify-center gap-3">
+          <div className="max-w-xl space-y-6">
+            <div className="flex flex-col items-center gap-3 rounded-2xl border border-border/70 bg-background/60 p-4">
               <div
-                className="relative size-24 overflow-hidden rounded-full border border-border bg-card"
+                className="relative size-16 overflow-hidden rounded-full border border-border bg-card"
                 aria-busy={isUploadingAvatar}
               >
                 {avatarUrl ? (
-                  <Image src={avatarUrl} alt="Avatar" fill className="object-cover" sizes="96px" />
+                  <Image src={avatarUrl} alt="Avatar" fill className="object-cover" sizes="64px" />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-muted-foreground">
-                    {(firstName.charAt(0) || "A").toUpperCase()}
-                    {(lastName.charAt(0) || "A").toUpperCase()}
+                    {`${(firstName.charAt(0) || "A").toUpperCase()}${(lastName.charAt(0) || "A").toUpperCase()}`}
                   </div>
                 )}
                 {isUploadingAvatar ? (
@@ -184,67 +148,51 @@ export function MobileSubpage({
                   </div>
                 ) : null}
               </div>
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="avatarUploadMobile"
-                  className={
-                    isUploadingAvatar ? "cursor-pointer pointer-events-none opacity-60" : "cursor-pointer"
-                  }
-                >
-                  <input
-                    id="avatarUploadMobile"
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(event) =>
-                      onAvatarFileSelected(event.currentTarget.files?.[0] ?? null)
-                    }
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={isUploadingAvatar}
-                    asChild
-                  >
-                    <span className="inline-flex items-center gap-2">
-                      {isUploadingAvatar ? (
-                        <Loader2 className="size-4 animate-spin" aria-hidden />
-                      ) : null}
-                      {isUploadingAvatar ? "Uploading..." : "Add photo"}
-                    </span>
-                  </Button>
-                </label>
+              <Label htmlFor="avatarUploadMobile" className="text-xs text-muted-foreground">
+                Upload a profile picture (optional)
+              </Label>
+              <Input
+                id="avatarUploadMobile"
+                type="file"
+                accept="image/*"
+                className="max-w-xs"
+                disabled={isUploadingAvatar}
+                onChange={(event) => onAvatarFileSelected(event.currentTarget.files?.[0] ?? null)}
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="m-first">First name</Label>
+                <Input
+                  id="m-first"
+                  value={firstName}
+                  onChange={(event) => onFirstNameChange(event.currentTarget.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="m-last">Last name</Label>
+                <Input
+                  id="m-last"
+                  value={lastName}
+                  onChange={(event) => onLastNameChange(event.currentTarget.value)}
+                />
               </div>
             </div>
-            <Separator className="my-4" />
-            <div className="grid gap-2">
-              <Label htmlFor="m-first">First name</Label>
-              <Input
-                id="m-first"
-                value={firstName}
-                onChange={(event) => onFirstNameChange(event.currentTarget.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="m-last">Last name</Label>
-              <Input
-                id="m-last"
-                value={lastName}
-                onChange={(event) => onLastNameChange(event.currentTarget.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="m-phone">Phone</Label>
-              <Input
-                id="m-phone"
-                value={phone}
-                onChange={(event) => onPhoneChange(event.currentTarget.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="m-email">Email</Label>
-              <Input id="m-email" value={email} disabled />
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <Label htmlFor="m-phone">Phone</Label>
+                <Input
+                  id="m-phone"
+                  value={phone}
+                  onChange={(event) => onPhoneChange(event.currentTarget.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="m-email">Email</Label>
+                <Input id="m-email" value={email} disabled />
+              </div>
             </div>
           </div>
         </div>
@@ -255,109 +203,7 @@ export function MobileSubpage({
           <header>
             <h3 className="text-sm font-semibold text-muted-foreground">Organization</h3>
           </header>
-          <div className="grid max-w-xl gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="m-orgName">Organization/Project Name</Label>
-              <Input
-                id="m-orgName"
-                value={orgName}
-                onChange={(event) => onOrgNameChange(event.currentTarget.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="m-orgDesc">Description</Label>
-              <textarea
-                id="m-orgDesc"
-                className="min-h-24 w-full rounded-md border bg-transparent p-2 text-sm"
-                value={orgDesc}
-                onChange={(event) => onOrgDescChange(event.currentTarget.value)}
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="grid gap-2">
-                <Label htmlFor="m-website">Website</Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">http://</span>
-                  <Input
-                    id="m-website"
-                    className="flex-1"
-                    value={website}
-                    onChange={(event) => onWebsiteChange(event.currentTarget.value)}
-                  />
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="m-social">Social username</Label>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">@</span>
-                  <Input
-                    id="m-social"
-                    className="flex-1"
-                    value={social}
-                    onChange={(event) => onSocialChange(event.currentTarget.value)}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label>Applying as</Label>
-              <div className="mt-1 flex gap-4">
-                <label className="inline-flex items-center gap-2 text-sm">
-                  <input
-                    type="radio"
-                    name="m-applyingAs"
-                    value="individual"
-                    checked={applyingAs === "individual"}
-                    onChange={() => onApplyingAsChange("individual")}
-                    className="h-4 w-4"
-                  />
-                  Individual
-                </label>
-                <label className="inline-flex items-center gap-2 text-sm">
-                  <input
-                    type="radio"
-                    name="m-applyingAs"
-                    value="organization"
-                    checked={applyingAs === "organization"}
-                    onChange={() => onApplyingAsChange("organization")}
-                    className="h-4 w-4"
-                  />
-                  Organization
-                </label>
-              </div>
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="m-stage">Stage</Label>
-              <OrganizationStageSelect id="m-stage" value={stage} onChange={onStageChange} />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="m-problem">Problem</Label>
-              <textarea
-                id="m-problem"
-                className="min-h-24 w-full rounded-md border bg-transparent p-2 text-sm"
-                value={problem}
-                onChange={(event) => onProblemChange(event.currentTarget.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="m-mission">Mission</Label>
-              <textarea
-                id="m-mission"
-                className="min-h-24 w-full rounded-md border bg-transparent p-2 text-sm"
-                value={mission}
-                onChange={(event) => onMissionChange(event.currentTarget.value)}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="m-goals">Goals</Label>
-              <textarea
-                id="m-goals"
-                className="min-h-24 w-full rounded-md border bg-transparent p-2 text-sm"
-                value={goals}
-                onChange={(event) => onGoalsChange(event.currentTarget.value)}
-              />
-            </div>
-          </div>
+          <OrganizationAccessManager organizationName={orgName} />
         </div>
       )}
 

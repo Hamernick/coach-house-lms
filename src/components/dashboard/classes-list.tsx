@@ -12,8 +12,8 @@ export function ClassesList({ items }: { items: ClassSummary[] }) {
       <DashboardEmptyState
         title="No classes yet"
         description="Create a class from the admin area to populate this list."
-        actionLabel="Go to dashboard"
-        onActionHref="/dashboard"
+        actionLabel="Go to My Organization"
+        onActionHref="/my-organization"
       />
     )
   }

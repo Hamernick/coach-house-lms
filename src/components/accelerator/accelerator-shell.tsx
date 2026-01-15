@@ -3,6 +3,8 @@
 import type { ReactNode } from "react"
 import { AcceleratorSidebar } from "@/components/accelerator/accelerator-sidebar"
 import { GlobalSearch } from "@/components/global-search"
+import { TutorialManager } from "@/components/tutorial/tutorial-manager"
+import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { Separator } from "@/components/ui/separator"
 import { Sidebar, SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { NotificationsMenu } from "@/components/notifications/notifications-menu"
@@ -53,14 +55,16 @@ export function AcceleratorShell({ children, sidebarTree, isAdmin, user }: Accel
               ) : null}
             </div>
           </header>
-          <main data-accelerator-scroll className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
+          <main data-accelerator-scroll data-tour-scroll className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden">
             <div className="mx-auto flex w-full min-w-0 max-w-6xl flex-col gap-10 px-4 py-8 sm:px-6 sm:py-10">
               {children}
             </div>
           </main>
         </div>
       </SidebarInset>
-      <GlobalSearch isAdmin={isAdmin} context="accelerator" classes={sidebarTree} />
+      <GlobalSearch isAdmin={isAdmin} context="accelerator" classes={sidebarTree} showAccelerator />
+      <TutorialManager />
+      <PageTutorialButton tutorial="accelerator" />
     </SidebarProvider>
   )
 }

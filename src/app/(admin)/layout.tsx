@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/admin/auth"
 import { cn } from "@/lib/utils"
 
 const NAV_ITEMS = [
-  { href: "/admin", label: "Dashboard" },
+  { href: "/admin/academy", label: "Academy" },
   { href: "/admin/classes", label: "Classes" },
   { href: "/admin/users", label: "People" },
   { href: "/admin/settings", label: "Settings" },
@@ -19,7 +19,7 @@ export default async function AdminLayout({ children, breadcrumbs }: { children:
       <header className="border-b bg-card/40 backdrop-blur">
         <div className="mx-auto w-full max-w-6xl px-4 py-2">
           <div className="flex h-12 items-center justify-between">
-            <Link href="/dashboard" className="text-base font-semibold">
+            <Link href="/admin/academy" className="text-base font-semibold">
               Coach House Admin
             </Link>
             <nav className="flex items-center gap-3 text-sm text-muted-foreground">

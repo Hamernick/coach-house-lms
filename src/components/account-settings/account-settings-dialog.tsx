@@ -76,14 +76,6 @@ export function AccountSettingsDialog({
     errors,
     avatarUrl,
     orgName,
-    orgDesc,
-    website,
-    social,
-    applyingAs,
-    stage,
-    problem,
-    mission,
-    goals,
     email,
     handleSave,
     handleUpdatePassword,
@@ -94,15 +86,6 @@ export function AccountSettingsDialog({
     handleFirstNameChange,
     handleLastNameChange,
     handlePhoneChange,
-    handleOrgNameChange,
-    handleOrgDescChange,
-    handleWebsiteChange,
-    handleSocialChange,
-    handleApplyingAsChange,
-    handleStageChange,
-    handleProblemChange,
-    handleMissionChange,
-    handleGoalsChange,
     handleNewPasswordChange,
     handleConfirmPasswordChange,
     applyAvatarUrl,
@@ -157,14 +140,6 @@ export function AccountSettingsDialog({
         phone={phone}
         email={email}
         orgName={orgName}
-        orgDesc={orgDesc}
-        website={website}
-        social={social}
-        applyingAs={applyingAs}
-        stage={stage}
-        problem={problem}
-        mission={mission}
-        goals={goals}
         avatarUrl={avatarUrl}
         isUploadingAvatar={isUploadingAvatar}
         errors={errors}
@@ -177,15 +152,6 @@ export function AccountSettingsDialog({
         onFirstNameChange={handleFirstNameChange}
         onLastNameChange={handleLastNameChange}
         onPhoneChange={handlePhoneChange}
-        onOrgNameChange={handleOrgNameChange}
-        onOrgDescChange={handleOrgDescChange}
-        onWebsiteChange={handleWebsiteChange}
-        onSocialChange={handleSocialChange}
-        onApplyingAsChange={handleApplyingAsChange}
-        onStageChange={handleStageChange}
-        onProblemChange={handleProblemChange}
-        onMissionChange={handleMissionChange}
-        onGoalsChange={handleGoalsChange}
         onNewPasswordChange={handleNewPasswordChange}
         onConfirmPasswordChange={handleConfirmPasswordChange}
       />

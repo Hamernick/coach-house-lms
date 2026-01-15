@@ -1,5 +1,5 @@
 # Launch Sprint Organizer — Coach House LMS
-Last updated: 2026-01-12
+Last updated: 2026-01-14
 
 Purpose: turn all launch notes into a clean, deduped, step-by-step checklist so we can say “go” and execute fast.
 
@@ -165,7 +165,7 @@ SWOT:
 - Strengths: robust RSC architecture; deep LMS + org-profile integration; admin tooling + public pages already built; test harness exists.
 - Weaknesses: marketing clarity and pricing positioning; CSP/security sweep missing; DB schema docs empty; JSON profile makes reporting harder.
 - Challenges: real Stripe gating; content quality alignment with accelerator; performance on heavy client widgets.
-- Opportunities: unique “homework → public story” pipeline; community map + shareable roadmaps; AI assist for homework; funder-ready outputs as differentiator.
+- Opportunities: unique “homework → public story” pipeline; community map + shareable roadmaps; AI assist for homework; funder-ready outputs as differentiator. 
 
 Sources to read:
 - AGENTS.md
@@ -178,8 +178,24 @@ Sources to read:
 
 ---
 
+## Done (Since 2026-01-14)
+- [x] Removed `/dashboard` from user-facing navigation + command palette; default “home” is `/my-organization`.
+- [x] Global search: added loading indicator + icons + thumbnails where available (Marketplace logos, org logos).
+- [x] Tutorial system: fixed render-phase setState warning; stabilized first-run welcome modal + highlight tour.
+- [x] Pricing: fixed the “white bar” gap above the sticky header on `/pricing` (background now consistent).
+- [x] UI: improved light-mode CircularProgress track contrast (kept progress stroke green).
+- [x] Launch planning: added Electives add-ons workstream + P0 brief; deferred Stripe setup as “TODO last” with a concrete checklist.
+- [x] Tooling: added `pnpm promote:admin` to promote an existing Supabase user for testing.
+- [x] Supabase: pushed security scan fixes + `student`→`member` role rename migrations; RLS tests pass again.
+- [x] Supabase: prepared RLS lints cleanup migrations (`auth_rls_initplan` + `multiple_permissive_policies`) for the remaining Supabase lints CSV warnings (apply to target env and re-export lints).
+- [x] Admin: restore Platform + Resources sidebar items (admins can now navigate beyond Accelerator).
+- [x] UI: matched `/accelerator` overview card surfaces to the `/pricing` light-mode surface token (`--surface`).
+
+---
+
 ## Open Questions / Decisions (Must Answer Before “Go”)
 - Pricing + tiers: confirm Free vs Organization ($20/mo) + Accelerator add-on ($499 one-time) and included features.
+- Electives add-ons: confirm which Electives ship at launch + pricing ($100 each, $25 w/ Accelerator) + where they’re surfaced (Accelerator overview, Billing/Settings, checkout).
 - AI provider: Gemini vs OpenAI; pricing model (pass-through vs margin); monthly credits; rate limiting.
 - Fundraise naming: not “campaign” or “round” — pick a new term (metric? drive? goal?).
 - Donation processing: Stripe Connect as primary? second option?
@@ -203,12 +219,25 @@ Use this sequence when you say “go”.
 - [ ] Define board member role + invite flow.
 - [ ] Decide what is publicly visible at launch (org page, roadmap, map).
 
+DB readiness (P0/P1)
+- [ ] Apply latest Supabase migrations (including lints cleanup + FK indexes) and re-run Supabase scan export.
+- [ ] Defer INFO “unused index” + auth connection setting until post-launch unless perf issues appear.
+
 2) Payments & access gating
-- [ ] Stripe products/prices finalized for Platform Free / Organization / Accelerator.
+- [ ] Stripe products/prices finalized for Platform Free / Organization / Accelerator. (TODO last)
+- [ ] Stripe products/prices finalized for Electives add-ons (standard + Accelerator-discounted prices).
 - [ ] Webhook + subscription sync verified end-to-end.
 - [ ] Access gating enforced for paid features (accelerator, coaching, AI credits).
-- [ ] Billing portal flows: upgrade/downgrade/cancel/resubscribe.
+- [ ] Billing portal flows: upgrade/downgrade/cancel/resubscribe. (TODO last)
+- [ ] Electives entitlements enforced (routes, sidebar, search) and purchasable/manageable in-app (lifetime access).
 - [ ] Stripe Connect for donations (orgs can accept donations on public profile).
+
+Stripe setup (manual) — TODO last:
+- [ ] Create Stripe prices: Organization (recurring), Accelerator (one-time), Electives (standard + discounted).
+- [ ] Enable Stripe Customer Portal configuration (plan changes, cancel/resume, payment methods).
+- [ ] Create webhook endpoint to `/api/stripe/webhook` and subscribe to required events.
+- [ ] Set Vercel env vars (prod): `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_ORGANIZATION_PRICE_ID`, `STRIPE_ACCELERATOR_PRICE_ID`, plus elective price IDs.
+- [ ] Smoke test: org checkout → roadmap publish unlock; accelerator checkout → accelerator unlock + org trial; portal cancel → roadmap publish disables; lifetime entitlements remain.
 
 3) Onboarding + profiles (fast, personal, minimal)
 - [ ] Simplify onboarding: free vs organization vs accelerator.
@@ -230,6 +259,7 @@ Use this sequence when you say “go”.
 - [ ] Integrate program creation wizard into modules at the right points.
 - [ ] Auto‑populate org profile + first program + fundraising artifacts from module completion.
 - [ ] Board members can view budget/financial artifacts.
+- [ ] Electives add-ons promoted on Accelerator overview + available for purchase during/after Accelerator (discounted pricing for Accelerator owners).
 
 6) Coaching & meetings (paid)
 - [ ] Meeting booking via Google Calendar (no custom calendar build).
@@ -251,6 +281,8 @@ Use this sequence when you say “go”.
 
 9) QA + launch
 - [ ] Run pnpm lint + test:snapshots + test:acceptance + test:rls.
+- [ ] Create an admin test account for verification (either `pnpm create:admin` or `TARGET_EMAIL=<your email> pnpm promote:admin`).
+- [ ] Supabase Auth settings: add `/auth/callback` to allowed redirect URLs (email signup/reset links now use it).
 - [ ] Smoke test: auth, onboarding, paid signup, accelerator unlock, map, public org page, donation link.
 
 ---
@@ -311,12 +343,27 @@ Use this sequence when you say “go”.
 - Populate marketplace with free + discounted tools/resources/books/people.
 - Partnerships/coupon codes so we get credit.
 - Clear tagging + categories + search.
+- Quick win: add Marketplace categories “Economic Engines” + “Community Platforms” and seed Substack + a few starters.
 - Consistent way to populate all pictures on marketplace cards.
 - Add a library tab (book links needed).
 - Public development docs site / open knowledge base (formation, compliance, fundraising, ops), linked contextually from the platform.
 - Public, searchable map of nonprofits (location/cause/program type filters).
 - Link map to org pages + donation flow.
 - Supporter-friendly map view: full-screen map, circle image pins, and minimalist card/drawer profile.
+
+### F) Electives Add-Ons (Paid)
+- Sell Electives modules as lifetime add-ons (per-elective purchases) with two price points:
+  - $100 each (no Accelerator purchase).
+  - $25 each (Accelerator purchasers).
+- Promote Electives during Accelerator checkout (select add-ons before redirecting to Stripe) and on the Accelerator overview page.
+- Enforce server-side gating for elective modules:
+  - Locked modules don’t render paid content.
+  - Locked modules are hidden/marked in the sidebar and excluded from search results.
+- Add minimal “Add-ons” management in Billing/Settings:
+  - Show purchased Electives + Accelerator status.
+  - “Buy more electives” flow (during/after Accelerator).
+- Lifetime access: Electives + Accelerator remain accessible even if Organization subscription is canceled.
+- Brief: `docs/briefs/electives-addons.md`
 
 ### F) Payments & Subscriptions
 - Subscription management.
@@ -485,6 +532,11 @@ Phase 4 — Admin tooling + analytics
 
 ## Inbox (New Notes)
 (Add new raw notes here before organizing.)
+- Onboarding simplification: admin-only toggles + test entry points in the account menu (SidebarFooter) for replaying onboarding/tutorials (must be invisible to non-admins).
+- Tutorial/accelerator onboarding: overlay should not cover the highlighted element; highlight card should include a rounded-rectangle media slot (icon/image) and fix any sharp-corner artifacts in the highlight mask.
+- Onboarding dialog UI polish: radio option text layout (avoid squished text), avatar upload needs an optional “remove” before continuing, input placeholders should ellipsize, and dialog max-width needs a final pass.
+- `/admin` navigation runtime error currently renders raw Supabase error objects (`{code, details, hint, message}`) — ensure all server actions/components throw `Error` instances (wrap Supabase errors).
+- Clarify/confirm onboarding vs billing: where plan selection + Stripe checkout live, and why onboarding submit no longer triggers checkout.
 
 ## Raw Notes Delta (Captured Items)
 These were either missing or needed clearer placement; they are now folded into the sections above.

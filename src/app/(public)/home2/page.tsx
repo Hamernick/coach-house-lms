@@ -124,7 +124,7 @@ const PRODUCT_HIGHLIGHTS = [
     icon: <GraduationCap className="h-5 w-5" aria-hidden />,
   },
   {
-    href: "/dashboard",
+    href: "/my-organization",
     eyebrow: "Platform",
     title: "Nonprofit platform",
     description: "Your home base for roadmap, org profile, program builder, and progress tracking.",

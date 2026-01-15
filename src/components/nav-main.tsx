@@ -37,6 +37,12 @@ export function NavMain({
         <SidebarMenu>
           {items.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+            const tourId =
+              item.href === "/my-organization"
+                ? "nav-my-organization"
+                : item.href === "/my-organization/roadmap"
+                  ? "nav-roadmap"
+                  : undefined
 
             return (
               <SidebarMenuItem key={item.title}>
@@ -46,7 +52,7 @@ export function NavMain({
                   tooltip={item.title}
                   className="justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
                 >
-                  <Link href={item.href} title={item.title}>
+                  <Link href={item.href} title={item.title} data-tour={tourId}>
                     {item.icon ? <item.icon className="size-4 shrink-0" /> : null}
                     <span className="flex-1 break-words leading-snug group-data-[collapsible=icon]:hidden">
                       {item.title}

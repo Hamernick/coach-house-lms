@@ -18,6 +18,7 @@ export function MobileSidebar({
   isAdmin,
   classes,
   acceleratorProgress,
+  showAccelerator,
   showLiveBadges,
   openMap,
   setOpenMap,
@@ -47,6 +48,7 @@ export function MobileSidebar({
           classes={classes}
           acceleratorProgress={acceleratorProgress}
           isAcceleratorActive={isAcceleratorActive}
+          showAccelerator={showAccelerator}
           showLiveBadges={showLiveBadges}
           openMap={openMap}
           setOpenMap={(next) => {

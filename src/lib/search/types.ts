@@ -5,4 +5,5 @@ export type SearchResult = {
   group: string
   keywords?: string[]
   subtitle?: string
+  image?: string
 }

@@ -7,6 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase/types"
 import { LESSON_SUBTITLE_MAX_LENGTH, LESSON_TITLE_MAX_LENGTH, MODULE_TITLE_MAX_LENGTH, clampText } from "@/lib/lessons/limits"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { revalidateClassViews } from "../actions"
 import { randomId } from "../actions/utils"
 
@@ -63,7 +64,7 @@ export async function updateClassDetailsAction(formData: FormData) {
     error = res.error as typeof error
   }
 
-  if (error) throw error
+  if (error) throw supabaseErrorToError(error, "Unable to update class.")
 
   const prevSlug = before?.slug ?? null
   const nextSlug = slug.trim()
@@ -93,9 +94,7 @@ export async function createModuleAction(formData: FormData) {
     .limit(1)
     .maybeSingle()
 
-  if (idxError) {
-    throw idxError
-  }
+  if (idxError) throw supabaseErrorToError(idxError, "Unable to create module.")
 
   const currentMaxIdx = (maxIdxData as { idx: number } | null)?.idx ?? 0
   const nextIdx = currentMaxIdx + 1
@@ -118,9 +117,7 @@ export async function createModuleAction(formData: FormData) {
     .select("id")
     .single<{ id: string }>()
 
-  if (error) {
-    throw error
-  }
+  if (error) throw supabaseErrorToError(error, "Unable to create module.")
 
   await revalidateClassViews({ classId })
 
@@ -141,9 +138,7 @@ export async function reorderModulesAction(classId: string, orderedIds: string[]
     .limit(1)
     .maybeSingle<{ idx: number | null }>()
 
-  if (maxError) {
-    throw maxError
-  }
+  if (maxError) throw supabaseErrorToError(maxError, "Unable to reorder modules.")
 
   const currentMaxIdx = maxRow?.idx ?? 0
   const tempBase = currentMaxIdx + orderedIds.length + 1
@@ -159,7 +154,7 @@ export async function reorderModulesAction(classId: string, orderedIds: string[]
 
   const bumpFailed = bumpResponses.find((response) => response.error)
   if (bumpFailed?.error) {
-    throw bumpFailed.error
+    throw supabaseErrorToError(bumpFailed.error, "Unable to reorder modules.")
   }
 
   const updateResponses = await Promise.all(
@@ -173,7 +168,7 @@ export async function reorderModulesAction(classId: string, orderedIds: string[]
 
   const failed = updateResponses.find((response) => response.error)
   if (failed?.error) {
-    throw failed.error
+    throw supabaseErrorToError(failed.error, "Unable to reorder modules.")
   }
 
   const { data: classRow } = await supabase
@@ -204,9 +199,7 @@ export async function deleteModuleAction(formData: FormData) {
     .delete()
     .eq("id", moduleId)
 
-  if (error) {
-    throw error
-  }
+  if (error) throw supabaseErrorToError(error, "Unable to delete module.")
 
   await revalidateClassViews({
     classId,
@@ -225,9 +218,7 @@ export async function setModulePublishedAction(moduleId: string, classId: string
     .update(publishPayload)
     .eq("id", moduleId)
 
-  if (error) {
-    throw error
-  }
+  if (error) throw supabaseErrorToError(error, "Unable to update module publish state.")
 
   const [{ data: moduleMeta }, { data: classMeta }] = await Promise.all([
     supabase
@@ -267,7 +258,7 @@ export async function enrollUserByEmailAction(formData: FormData) {
 
   // Find user by email via admin API
   const { data: userList, error: listErr } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 })
-  if (listErr) throw listErr
+  if (listErr) throw supabaseErrorToError(listErr, "Unable to look up user.")
 
   const user = userList.users.find((u) => (u.email ?? "").toLowerCase() === email.toLowerCase())
   if (!user) {
@@ -285,7 +276,7 @@ export async function enrollUserByEmailAction(formData: FormData) {
     .from("enrollments" satisfies keyof Database["public"]["Tables"])
     .upsert(insertPayload, { onConflict: "user_id,class_id" })
 
-  if (error) throw error
+  if (error) throw supabaseErrorToError(error, "Unable to enroll user.")
 
   console.log("ADMIN_AUDIT", JSON.stringify({ action: "enroll_user", classId, userId: user.id, email }))
 
@@ -309,7 +300,7 @@ export async function unenrollUserAction(formData: FormData) {
     .eq("class_id", classId)
     .eq("user_id", userId)
 
-  if (error) throw error
+  if (error) throw supabaseErrorToError(error, "Unable to unenroll user.")
 
   console.log("ADMIN_AUDIT", JSON.stringify({ action: "unenroll_user", classId, userId }))
 
@@ -344,7 +335,7 @@ export async function createEnrollmentInviteAction(formData: FormData) {
     .from("enrollment_invites" satisfies keyof Database["public"]["Tables"])
     .insert(insertPayload)
 
-  if (error) throw error
+  if (error) throw supabaseErrorToError(error, "Unable to create invite.")
 
   console.log("ADMIN_AUDIT", JSON.stringify({ action: "create_enrollment_invite", classId, email, expiresAt }))
 

@@ -29,6 +29,7 @@ export const organizationProfileSchema = z.object({
     .regex(/^[0-9]{2}-?[0-9]{7}$/i, "EIN must be 9 digits (e.g., 12-3456789)")
     .optional()
     .or(z.literal("")),
+  formationStatus: z.enum(["pre_501c3", "in_progress", "approved"]).optional(),
   rep: z.string().max(120).optional().or(z.literal("")),
   email: z.string().email("Must be a valid email").optional().or(z.literal("")),
   phone: z.string().max(60).optional().or(z.literal("")),

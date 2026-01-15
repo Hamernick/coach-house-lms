@@ -9,12 +9,13 @@ import { requireAdmin } from "@/lib/admin/auth"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 export async function changeUserRoleAction(formData: FormData) {
   const userId = formData.get("userId")
   const nextRole = formData.get("role")
 
-  if (typeof userId !== "string" || (nextRole !== "student" && nextRole !== "admin")) {
+  if (typeof userId !== "string" || (nextRole !== "member" && nextRole !== "admin")) {
     return
   }
 
@@ -31,7 +32,7 @@ export async function changeUserRoleAction(formData: FormData) {
     .eq("id", userId)
 
   if (error) {
-    throw error
+    throw supabaseErrorToError(error, "Unable to update user role.")
   }
 
   revalidatePath("/admin/users")
@@ -50,7 +51,7 @@ export async function revokeSessionsAction(formData: FormData) {
 
   const { error } = await admin.auth.admin.signOut(userId)
   if (error) {
-    throw error
+    throw supabaseErrorToError(error, "Unable to revoke sessions.")
   }
 
   revalidatePath(`/admin/users/${userId}`)
@@ -73,7 +74,7 @@ export async function generateMagicLinkAction(formData: FormData) {
   })
 
   if (error) {
-    throw error
+    throw supabaseErrorToError(error, "Unable to generate magic link.")
   }
 
   const link = data?.properties?.action_link

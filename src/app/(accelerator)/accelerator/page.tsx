@@ -117,7 +117,7 @@ export default async function AcceleratorOverviewPage() {
         <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
           <div className="snap-start shrink-0 w-[260px] sm:w-[300px] lg:w-[340px] h-[420px] sm:h-[480px]">
             <Empty
-              className="h-full rounded-3xl border-2 border-dashed border-border/60 bg-card/40"
+              className="h-full rounded-3xl border-2 border-dashed border-border/60 bg-surface dark:bg-card/40"
               title="Create your first program"
               description="Start from scratch or customize a template to reflect real staffing, outcomes, and funding needs."
               actions={<ProgramWizardLazy triggerLabel="Create program" />}
@@ -139,7 +139,7 @@ export default async function AcceleratorOverviewPage() {
                 ctaHref="/my-organization?tab=programs"
                 ctaTarget="_self"
                 patternId={template.patternId}
-                className="h-full max-w-none"
+                className="h-full max-w-none bg-surface dark:bg-card"
               />
             </div>
           ))}

@@ -6,6 +6,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
 import { inferProviderSlug } from "@/lib/lessons/providers"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 import {
   type ClassModuleResult,
@@ -74,10 +75,10 @@ export async function getClassModulesForUser({
           .select(`id, title, description, published, modules ( id, idx, slug, title, description, published )`)
           .eq("slug", classSlug)
           .maybeSingle()
-        if (err2) throw err2
+        if (err2) throw supabaseErrorToError(err2, "Unable to load class.")
         classRow = fallback
       } else {
-        throw error
+        throw supabaseErrorToError(error, "Unable to load class.")
       }
     } else {
       classRow = data
@@ -183,7 +184,7 @@ export async function getClassModulesForUser({
   if (contentError) {
     const code = (contentError as { code?: string }).code
     if (code !== "42P01" && code !== "42703") {
-      throw contentError
+      throw supabaseErrorToError(contentError, "Unable to load module content.")
     }
   } else {
     for (const row of contentRows ?? []) {
@@ -220,7 +221,7 @@ export async function getClassModulesForUser({
   if (assignmentError) {
     const code = (assignmentError as { code?: string }).code
     if (code !== "42P01" && code !== "42703") {
-      throw assignmentError
+      throw supabaseErrorToError(assignmentError, "Unable to load module assignment.")
     }
   } else {
     for (const row of assignmentRows ?? []) {
@@ -238,7 +239,7 @@ export async function getClassModulesForUser({
   if (submissionError) {
     const code = (submissionError as { code?: string }).code
     if (code !== "42P01" && code !== "42703") {
-      throw submissionError
+      throw supabaseErrorToError(submissionError, "Unable to load assignment submission.")
     }
   } else {
     for (const row of submissionRows ?? []) {
@@ -322,7 +323,7 @@ export async function getClassModulesForUser({
         progressMap: {},
       }
     }
-    throw progressError
+    throw supabaseErrorToError(progressError, "Unable to load module progress.")
   }
 
   const progressRecords = progressRows ?? []

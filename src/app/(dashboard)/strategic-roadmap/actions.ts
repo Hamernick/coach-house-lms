@@ -203,6 +203,25 @@ export async function setRoadmapPublicAction(nextPublic: boolean): Promise<Toggl
     return { error: "Unauthorized" }
   }
 
+  const { data: subscription, error: subscriptionError } = await supabase
+    .from("subscriptions")
+    .select("status, created_at")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ status: string | null }>()
+
+  if (subscriptionError) {
+    return { error: subscriptionError.message }
+  }
+
+  const canPublishPublicRoadmap =
+    subscription?.status === "active" || subscription?.status === "trialing"
+
+  if (!canPublishPublicRoadmap) {
+    return { error: "Upgrade to Organization to publish your roadmap." }
+  }
+
   const { data: orgRow, error } = await supabase
     .from("organizations")
     .upsert({

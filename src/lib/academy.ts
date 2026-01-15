@@ -1,5 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 export type SidebarModule = {
   id: string
@@ -78,10 +79,10 @@ export async function fetchSidebarTree({
         const { data: fallback, error: err2 } = await client
           .from("classes")
           .select("id, slug, title, description, published, position, modules ( id, title, description, idx, published )")
-        if (err2) throw err2
+        if (err2) throw supabaseErrorToError(err2, "Unable to load classes.")
         classes = fallback as unknown as ClassRow[]
       } else {
-        throw error
+        throw supabaseErrorToError(error, "Unable to load classes.")
       }
     } else {
       classes = data as unknown as ClassRow[]

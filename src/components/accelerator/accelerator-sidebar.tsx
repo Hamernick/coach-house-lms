@@ -99,7 +99,7 @@ export function AcceleratorSidebar({ classes, isAdmin, user }: AcceleratorSideba
               size="lg"
               className="justify-start gap-3 text-sidebar-foreground hover:bg-sidebar-accent data-[active=true]:bg-sidebar-accent"
             >
-              <Link href="/dashboard" className="flex items-center gap-3">
+              <Link href="/my-organization" className="flex items-center gap-3">
                 <span className="flex size-9 items-center justify-center overflow-hidden rounded-lg bg-sidebar-accent">
                   <Image
                     src="/coach-house-logo-dark.png"
@@ -136,7 +136,7 @@ export function AcceleratorSidebar({ classes, isAdmin, user }: AcceleratorSideba
           <SidebarGroupLabel className="text-xs uppercase tracking-wide text-muted-foreground">
             Get started
           </SidebarGroupLabel>
-          <SidebarGroupContent>
+          <SidebarGroupContent data-tour="accelerator-get-started">
             <SidebarMenu>
               {STARTER_LINKS.map((item) => (
                 <SidebarMenuItem key={item.label}>

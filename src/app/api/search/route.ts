@@ -128,6 +128,83 @@ function formatSearchRow(row: SearchRow): SearchResult {
   }
 }
 
+async function attachOrganizationImages({
+  supabase,
+  userId,
+  results,
+}: {
+  supabase: SupabaseClient
+  userId: string
+  results: SearchResult[]
+}) {
+  const slugs = new Set<string>()
+  let needsSelf = false
+
+  for (const result of results) {
+    if (result.image) continue
+    if (result.href === "/my-organization") {
+      needsSelf = true
+      continue
+    }
+
+    if (result.group === "Community") {
+      const match = result.href.match(/^\/([^/]+)$/)
+      if (match?.[1]) slugs.add(match[1])
+    }
+  }
+
+  let selfLogoUrl: string | undefined
+  if (needsSelf) {
+    const { data: orgRow } = await supabase
+      .from("organizations")
+      .select("profile")
+      .eq("user_id", userId)
+      .maybeSingle<{ profile: Record<string, unknown> | null }>()
+
+    const profile = orgRow?.profile ?? {}
+    const logoUrl = extractProfileValue(profile, "logoUrl")
+    selfLogoUrl = logoUrl || undefined
+  }
+
+  const logoBySlug = new Map<string, string>()
+  if (slugs.size > 0) {
+    const { data: orgRows } = await supabase
+      .from("organizations")
+      .select("public_slug, profile")
+      .in("public_slug", Array.from(slugs))
+      .returns<Array<{ public_slug: string | null; profile: Record<string, unknown> | null }>>()
+
+    for (const org of orgRows ?? []) {
+      if (!org.public_slug) continue
+      const profile = org.profile ?? {}
+      const logoUrl = extractProfileValue(profile, "logoUrl")
+      if (logoUrl) {
+        logoBySlug.set(org.public_slug, logoUrl)
+      }
+    }
+  }
+
+  if (!selfLogoUrl && logoBySlug.size === 0) {
+    return results
+  }
+
+  return results.map((result) => {
+    if (result.image) return result
+    if (result.href === "/my-organization" && selfLogoUrl) {
+      return { ...result, image: selfLogoUrl }
+    }
+    if (result.group === "Community") {
+      const match = result.href.match(/^\/([^/]+)$/)
+      const slug = match?.[1]
+      const logoUrl = slug ? logoBySlug.get(slug) : undefined
+      if (logoUrl) {
+        return { ...result, image: logoUrl }
+      }
+    }
+    return result
+  })
+}
+
 async function fetchIsAdmin(supabase: SupabaseClient, userId: string) {
   const { data: profile } = await supabase
     .from("profiles")
@@ -257,12 +334,14 @@ async function addFallbackResults({
     const mission = extractProfileValue(profile, "mission")
     const description = extractProfileValue(profile, "description")
     if (matchesQuery([name, tagline, mission, description], tokens)) {
+      const logoUrl = extractProfileValue(profile, "logoUrl")
       pushResult({
         id: `org-self-${userOrg.user_id}`,
         label: name || "My organization",
         subtitle: "Your organization",
         href: "/my-organization",
         group: "My organization",
+        image: logoUrl || undefined,
         keywords: [tagline, mission, description].filter(Boolean),
       })
     }
@@ -321,12 +400,14 @@ async function addFallbackResults({
     const state = extractProfileValue(profile, "address_state")
     if (matchesQuery([name, tagline, mission, description, org.public_slug ?? "", city, state], tokens)) {
       const location = [city, state].filter(Boolean).join(", ")
+      const logoUrl = extractProfileValue(profile, "logoUrl")
       pushResult({
         id: `org-public-${org.user_id}`,
         label: name || org.public_slug || "Organization",
         subtitle: tagline || location || "Community organization",
         href: `/${org.public_slug}`,
         group: "Community",
+        image: logoUrl || undefined,
         keywords: [org.public_slug ?? "", tagline, location].filter(Boolean),
       })
     }
@@ -350,6 +431,20 @@ export async function GET(request: Request) {
     return NextResponse.json({ results: [] }, { status: 401 })
   }
 
+  const isAdmin = await fetchIsAdmin(supabase, user.id)
+  let hasAcceleratorAccess = isAdmin
+  if (!isAdmin) {
+    const { data: purchase } = await supabase
+      .from("accelerator_purchases")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle<{ id: string }>()
+
+    hasAcceleratorAccess = Boolean(purchase)
+  }
+
   const tokens = normalizeQuery(rawQuery)
   const results: SearchResult[] = []
   const seen = new Set<string>()
@@ -365,7 +460,7 @@ export async function GET(request: Request) {
     .rpc("search_global", {
       p_query: rawQuery,
       p_user_id: user.id,
-      p_is_admin: false,
+      p_is_admin: isAdmin,
       p_limit: MAX_RESULTS,
     })
     .returns<SearchRow[]>()
@@ -376,7 +471,6 @@ export async function GET(request: Request) {
       pushResult(formatSearchRow(row))
     }
   } else {
-    const isAdmin = await fetchIsAdmin(supabase, user.id)
     await addFallbackResults({ supabase, userId: user.id, isAdmin, tokens, pushResult })
   }
 
@@ -398,10 +492,15 @@ export async function GET(request: Request) {
         subtitle: item.byline ?? categoryLabel ?? undefined,
         href: buildMarketplaceHref(primaryCategory, item.name),
         group: "Marketplace",
+        image: item.image,
         keywords: [item.description, item.byline ?? "", ...(searchableCategories ?? [])].filter(Boolean),
       })
     }
   }
+
+  const filtered = hasAcceleratorAccess
+    ? results
+    : results.filter((item) => !item.href.startsWith("/accelerator"))
 
   try {
     const trimmed = rawQuery.slice(0, 200)
@@ -411,11 +510,12 @@ export async function GET(request: Request) {
       query: trimmed,
       query_length: trimmed.length,
       context: searchParams.get("context"),
-      result_count: results.length,
+      result_count: filtered.length,
     })
   } catch {
     // Best-effort analytics; ignore failures.
   }
 
-  return NextResponse.json({ results })
+  const enriched = await attachOrganizationImages({ supabase, userId: user.id, results: filtered })
+  return NextResponse.json({ results: enriched })
 }

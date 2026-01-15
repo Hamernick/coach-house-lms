@@ -27,9 +27,10 @@ type SignUpValues = z.infer<typeof schema>
 
 type SignUpFormProps = {
   redirectTo?: string
+  loginHref?: string
 }
 
-export function SignUpForm({ redirectTo = "/my-organization" }: SignUpFormProps) {
+export function SignUpForm({ redirectTo = "/my-organization", loginHref }: SignUpFormProps) {
   const supabase = useSupabaseClient()
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState<string>("")
@@ -119,7 +120,7 @@ export function SignUpForm({ redirectTo = "/my-organization" }: SignUpFormProps)
       </Form>
       <div className="text-center text-sm text-muted-foreground">
         Already have an account? {" "}
-        <Link href="/login" className="hover:text-foreground">
+        <Link href={loginHref ?? "/login"} className="hover:text-foreground">
           Sign in
         </Link>
       </div>

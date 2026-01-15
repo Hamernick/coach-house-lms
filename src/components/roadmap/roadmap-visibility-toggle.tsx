@@ -14,12 +14,14 @@ import { publicSharingEnabled } from "@/lib/feature-flags"
 export function RoadmapVisibilityToggle({
   initialPublic,
   publicSlug,
+  canPublishPublicRoadmap = false,
   onPublicChange,
   showViewAction = true,
   className,
 }: {
   initialPublic: boolean
   publicSlug: string | null
+  canPublishPublicRoadmap?: boolean
   onPublicChange?: (next: boolean) => void
   showViewAction?: boolean
   className?: string
@@ -35,6 +37,10 @@ export function RoadmapVisibilityToggle({
 
   const handleToggle = useCallback(
     (next: boolean) => {
+      if (!canPublishPublicRoadmap) {
+        toast.error("Upgrade to Organization to publish your roadmap")
+        return
+      }
       if (!sharePath) {
         toast.error("Set a public slug from My Organization first")
         return
@@ -52,7 +58,7 @@ export function RoadmapVisibilityToggle({
         onPublicChange?.(next)
       })
     },
-    [isPublic, sharePath, onPublicChange],
+    [canPublishPublicRoadmap, isPublic, sharePath, onPublicChange],
   )
 
   const isLive = isPublic && Boolean(sharePath) && sharingEnabled
@@ -61,7 +67,10 @@ export function RoadmapVisibilityToggle({
 
   return (
     <div className={cn("flex flex-wrap items-center gap-3", className)}>
-      <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/60 px-3 py-2">
+      <div
+        data-tour="roadmap-visibility-toggle"
+        className="flex items-center gap-2 rounded-full border border-border/70 bg-background/60 px-3 py-2"
+      >
         {isLive ? (
           <span className="h-2 w-2 rounded-full bg-rose-500" aria-hidden />
         ) : (
@@ -70,11 +79,21 @@ export function RoadmapVisibilityToggle({
         <span className="text-xs font-semibold text-foreground">{statusLabel}</span>
         <Switch
           checked={isPublic && Boolean(sharePath) && sharingEnabled}
-          disabled={isPending || !sharePath || !sharingEnabled}
+          disabled={isPending || !sharePath || !sharingEnabled || !canPublishPublicRoadmap}
           onCheckedChange={handleToggle}
           aria-label="Toggle roadmap visibility"
         />
+        {!canPublishPublicRoadmap ? (
+          <span className="hidden rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:inline">
+            Upgrade
+          </span>
+        ) : null}
       </div>
+      {!canPublishPublicRoadmap ? (
+        <Button asChild size="sm" variant="outline" className="h-9 rounded-full">
+          <Link href="/pricing">Upgrade to publish</Link>
+        </Button>
+      ) : null}
       {showPublicLink ? (
         <Button
           asChild

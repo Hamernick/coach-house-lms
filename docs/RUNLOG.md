@@ -2876,7 +2876,7 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 
 ## 2026-01-13 — Codex session (Pricing surfaces)
 
-- UI: set the `/pricing` page light-mode background to `#F4F4F4` via token override and restored standard `Card`/`Badge` backgrounds (removed custom black/white overrides) (`src/app/(public)/pricing/page.tsx`).
+- UI: set the `/pricing` page light-mode background to the `--surface` token via token override and restored standard `Card`/`Badge` backgrounds (removed custom black/white overrides) (`src/app/(public)/pricing/page.tsx`).
 - Docs: updated pricing spec notes to reflect Community Access being included in Formation (`docs/organize.md`, `docs/briefs/pricing-page.md`).
 - Checks: `pnpm lint`; `pnpm test:acceptance -- pricing`.
 
@@ -2983,3 +2983,242 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2026-01-13 — Codex session (Homepage hero pill copy)
 
 - Copy: replaced “The Coach House Commons” with “The Coach House Platform” on the `/` prototype hero pill (`src/app/(public)/home2/page.tsx`).
+
+## 2026-01-14 — Codex session (Stripe gating + Accelerator entitlement)
+
+- Stripe: added one-time Accelerator checkout path and success callback handling (`src/app/(public)/pricing/actions.ts`, `src/app/(public)/pricing/success/page.tsx`).
+- Supabase: added `accelerator_purchases` (RLS) and removed the `subscriptions_self_update` policy (`supabase/migrations/20260114170000_add_accelerator_purchases.sql`, `supabase/migrations/20260114170500_lock_subscriptions_updates.sql`).
+- Supabase: pushed both migrations to the linked remote project (`supabase db push`).
+- Gating: hide/block Accelerator UI/routes/search unless entitled (admins bypass) (`src/app/(accelerator)/layout.tsx`, `src/components/app-sidebar.tsx`, `src/components/global-search.tsx`, `src/app/api/search/route.ts`).
+- Roadmap: disable public-roadmap publish toggle + server action unless subscription is `active|trialing` (`src/components/roadmap/roadmap-visibility-toggle.tsx`, `src/app/(dashboard)/strategic-roadmap/actions.ts`).
+- Fix: removed a brittle type predicate in `/api/account/org-people` that broke Vercel typechecking (`src/app/api/account/org-people/route.ts`).
+- Checks: `pnpm build`; `pnpm lint`; `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls` (skipped without required env vars).
+
+## 2026-01-14 — Codex session (Onboarding v2 brief)
+
+- Docs: drafted a launch-ready onboarding + plan selection + welcome + highlight-tour brief with screenshot notes and flow strategy (`docs/briefs/onboarding.md`).
+- Docs: expanded the brief to cover account setup fields, notification prefs, skippable 2FA prompt, replayable tutorial entry, and social-login (P1) considerations (`docs/briefs/onboarding.md`).
+
+## 2026-01-14 — Codex session (Onboarding v2 implementation + auth plumbing)
+
+- Onboarding: replaced the onboarding dialog with a 3-step stepper (org → account → plan), plus avatar crop, slug availability check, draft resume, and optional Stripe checkout for Organization plan (`src/components/onboarding/onboarding-dialog.tsx`, `src/app/(dashboard)/onboarding/actions.ts`).
+- Tutorial: added a welcome modal + highlight tour overlay with “Replay tutorial” in the account menu; wired tour targets in nav + global search (`src/components/onboarding/onboarding-welcome.tsx`, `src/components/tutorial/highlight-tour.tsx`, `src/components/tutorial/tutorial-manager.tsx`, `src/components/nav-main.tsx`, `src/components/nav-user.tsx`, `src/components/global-search.tsx`, `src/components/dashboard/dashboard-shell.tsx`).
+- Auth: preserved pricing plan params through signup/login via safe redirects; added `/auth/callback` route (and shared handler) so Supabase email links land correctly; fixed password recovery fallback to `/update-password` (`src/app/(auth)/sign-up/page.tsx`, `src/app/(auth)/login/page.tsx`, `src/app/(auth)/forgot-password/page.tsx`, `src/app/(auth)/update-password/page.tsx`, `src/app/auth/callback/route.ts`, `src/app/(auth)/callback/route.ts`, `src/lib/supabase/auth-callback.ts`, `src/components/auth/login-form.tsx`, `src/components/auth/sign-up-form.tsx`, `src/components/auth/forgot-password-form.tsx`).
+- Routing: aligned legacy onboarding/admin redirects to land on `/my-organization` (`src/app/(dashboard)/onboarding/page.tsx`, `src/lib/admin/auth.ts`, `src/lib/auth.ts`).
+- Supabase: revoked `subscriptions` mutations for `anon`/`authenticated` (service-role/webhooks only) and pushed the migration; updated the RLS runner to auto-load `.env.local` so `pnpm test:rls` runs locally (`supabase/migrations/20260114183000_revoke_subscription_mutations.sql`, `supabase/tests/rls.test.mjs`).
+- Tests: updated onboarding acceptance redirect expectation (`tests/acceptance/onboarding.test.ts`); ran `pnpm build`, `pnpm lint`, `pnpm test:snapshots`, `pnpm test:acceptance -- search-route`, `pnpm test:rls`.
+
+## 2026-01-14 — Codex session (Formation status field)
+
+- Onboarding: added “Formation status” selection in step 1 and persist it into `organizations.profile.formationStatus` (`src/components/onboarding/onboarding-dialog.tsx`, `src/app/(dashboard)/onboarding/actions.ts`).
+- My org: surfaced + editable “Formation status” in the org profile Identity section; added safe server-side normalization (`src/app/(dashboard)/my-organization/page.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/identity.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/display-sections.tsx`, `src/app/(dashboard)/my-organization/actions.ts`).
+- Types/validation: added `FormationStatus` + schema validation (`src/components/organization/org-profile-card/types.ts`, `src/components/organization/org-profile-card/validation.ts`).
+- Checks: `pnpm build`, `pnpm lint`, `pnpm test:acceptance -- onboarding`, `pnpm test:rls`.
+
+## 2026-01-14 — Codex session (Onboarding brief tour steps)
+
+- Docs: expanded the onboarding brief with a concrete “highlight tour” step list (gating + mobile behaviors) to guide implementation + QA (`docs/briefs/onboarding.md`).
+- Docs: updated the global search brief status + “current state” to reflect the shipped MVP implementation (`docs/briefs/global-search.md`).
+- Supabase: confirmed `supabase db push --dry-run` reports “Remote database is up to date.”
+- Ops: still needed — add `/auth/callback` to Supabase Auth allowed redirect URLs (email signup/reset links now use it).
+
+## 2026-01-14 — Codex session (Stripe webhook robustness + Accelerator bundle)
+
+- Brief: updated Stripe gating brief to include the Accelerator → 30-day Organization trial bundle (`docs/briefs/stripe-gating.md`).
+- Stripe: made webhook idempotency retry-safe by tracking `processed` state in `stripe_webhook_events.payload` (prevents “logged but not processed” drops) (`src/app/api/stripe/webhook/route.ts`).
+- Stripe: on Accelerator purchase, auto-start an Organization subscription with a 30-day trial (uses Stripe idempotency key based on checkout session) (`src/app/api/stripe/webhook/route.ts`, `src/app/(public)/pricing/success/page.tsx`).
+- Checks: `pnpm lint`; `pnpm test:snapshots`; `pnpm test:acceptance -- search-route`; `pnpm test:rls`.
+
+## 2026-01-14 — Codex session (Tutorial system + page tours)
+
+- Tutorial: persisted per-tutorial completion/dismissal in Supabase Auth user metadata (`src/app/actions/tutorial.ts`).
+- Tutorial: updated highlight tour to distinguish finish vs dismiss, and expanded `TutorialManager` to support multiple tours (`src/components/tutorial/highlight-tour.tsx`, `src/components/tutorial/tutorial-manager.tsx`).
+- Intro: redesigned the first-run welcome modal to match the Cal.com-style intro (dark card + rings) and made it auto-show for users who completed onboarding but haven’t completed/dismissed the platform tour (`src/components/onboarding/onboarding-welcome.tsx`, `src/app/(dashboard)/layout.tsx`, `src/components/dashboard/dashboard-shell.tsx`).
+- UI: added per-page “Tutorial” buttons (header portal) and wired tour targets across My Organization, Roadmap, Documents, People, Marketplace, and Accelerator (`src/components/tutorial/page-tutorial-button.tsx`, `src/app/(dashboard)/my-organization/page.tsx`, `src/app/(dashboard)/my-organization/roadmap/page.tsx`, `src/app/(dashboard)/my-organization/documents/page.tsx`, `src/app/(dashboard)/people/page.tsx`, `src/app/(dashboard)/marketplace/page.tsx`, `src/components/accelerator/accelerator-shell.tsx`).
+- Checks: `pnpm lint`; `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls`.
+
+## 2026-01-14 — Codex session (Fix highlight tour setState warning)
+
+- Fix: removed a render-phase state update by avoiding `finish()` inside the `setIndex()` updater in `HighlightTour` (prevents “Cannot update a component while rendering a different component” console error) (`src/components/tutorial/highlight-tour.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-14 — Codex session (Dashboard + Billing tutorials)
+
+- Tutorial: added Dashboard + Billing tutorial steps, buttons, and stable tour anchors (`src/components/tutorial/tutorial-manager.tsx`, `src/app/(dashboard)/dashboard/page.tsx`, `src/app/(dashboard)/billing/page.tsx`, `src/app/(dashboard)/billing/billing-portal-button.tsx`).
+- Build: `pnpm build` now passes again (fixes missing tutorial keys that broke typechecking).
+- Checks: `pnpm lint`; `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls`.
+
+## 2026-01-14 — Codex session (My Organization default landing + roadmap upgrade hint)
+
+- Routing: made public “Platform” CTA and unauth `/dashboard` login redirect land on `/my-organization` by default (`src/app/(public)/home2/page.tsx`, `src/app/(dashboard)/dashboard/page.tsx`).
+- UI: updated “back” links away from `/dashboard` (errors, accelerator header link, training “Take a break”, empty classes state) (`src/app/error.tsx`, `src/app/(dashboard)/error.tsx`, `src/components/accelerator/accelerator-sidebar.tsx`, `src/components/training/module-detail/module-stepper.tsx`, `src/app/(dashboard)/classes/page.tsx`).
+- Roadmap: added a small inline “Upgrade” badge inside the publish toggle pill for free-tier users (`src/components/roadmap/roadmap-visibility-toggle.tsx`).
+- Supabase: confirmed `supabase db push --dry-run` reports “Remote database is up to date.”
+- Checks: `pnpm lint` (warnings only); `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls`.
+
+## 2026-01-14 — Codex session (Remove `/dashboard` from global search + UI)
+
+- Search: removed the `/dashboard` “Pages” entry from the command palette and stabilized analytics logging via `useCallback` (`src/components/global-search.tsx`).
+- UI: removed remaining UI links pointing at `/dashboard` (admin header + empty states) (`src/app/(admin)/layout.tsx`, `src/components/dashboard/classes-list.tsx`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:acceptance -- search-route`.
+
+## 2026-01-14 — Codex session (Electives add-ons launch planning)
+
+- Docs: added a P0 brief for Electives paid add-ons (pricing, Stripe integration, entitlements, gating, and billing UX) (`docs/briefs/electives-addons.md`).
+- Launch plan: added Electives add-ons to Open Questions, P0 launch checklist (Payments + Accelerator), and Workstreams (`docs/organize.md`).
+
+## 2026-01-14 — Codex session (Search loading + tutorial manager fix + pricing header gap)
+
+- Search: updated the command palette empty state to show a spinning “Searching…” indicator while remote results load (`src/components/global-search.tsx`).
+- Search: added per-result icons plus thumbnails for Marketplace + org results when available (`src/components/global-search.tsx`, `src/app/api/search/route.ts`, `src/lib/search/types.ts`).
+- Tutorial: removed `useTransition()` from `TutorialManager` to avoid a render-phase state update warning when finishing tours (`src/components/tutorial/tutorial-manager.tsx`).
+- Tutorial: guarded `window` access in `HighlightTour` memos to avoid SSR pitfalls (`src/components/tutorial/highlight-tour.tsx`).
+- UI: increased the CircularProgress track contrast in light mode (`src/components/ui/circular-progress.tsx`).
+- Pricing: prevented header margin collapse from showing body background by adding a tiny top padding on `/pricing` (`src/app/(public)/pricing/page.tsx`).
+- Tooling: added `pnpm promote:admin` to promote an existing Supabase user to admin for testing (`scripts/promote-user-to-admin.mjs`, `package.json`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls`; `pnpm build`.
+
+## 2026-01-14 — Codex session (Supabase security scan fixes + role rename rollout)
+
+- Supabase: pushed `search_index` hardening + `student` → `member` enum rename to the remote DB (`supabase/migrations/20260114210000_security_scan_fixes.sql`, `supabase/migrations/20260114211000_rename_student_role_to_member.sql`).
+- Tests: fixed acceptance mocks to support `.in()` filters used by the search route enrichment (`tests/acceptance/search-route.test.ts`).
+- RLS tests: added coverage that `authenticated` users cannot select `search_index` directly (RPC-only contract) (`supabase/tests/rls.test.mjs`).
+- Docs: updated internal docs to use “member” terminology instead of “student” (`docs/OVERVIEW.md`, `docs/CODEX_RUNBOOK.md`, `docs/briefs/global-search.md`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls`; `pnpm build`.
+
+## 2026-01-15 — Codex session (Admin “super user” sidebar links)
+
+- UI: show Platform + Resources nav items for admins (previously admins only saw Accelerator), and add an “Admin” link to `/admin` (`src/components/app-sidebar/nav-data.ts`, `src/components/app-sidebar.tsx`).
+- UI: added `surface` color token (`--surface`, slightly lighter than `#F4F4F4`) and applied it to Accelerator overview cards in light mode (Start Building cards, coaching card, program templates, and empty state) (`src/app/globals.css`, `src/components/accelerator/start-building-pager.tsx`, `src/components/accelerator/accelerator-schedule-card.tsx`, `src/app/(accelerator)/accelerator/page.tsx`).
+- Pricing: refactored the `/pricing` background override to use the new `surface` token (keeps token conventions and reusability) (`src/app/(public)/pricing/page.tsx`, `src/app/globals.css`).
+- Fix: avoid throwing raw Supabase errors (object `{ code, details, hint, message }`) from Accelerator progress fetch; log and fall back to default progress instead of crashing `/accelerator` (`src/lib/accelerator/progress.ts`).
+- Checks: `pnpm build`.
+
+## 2026-01-15 — Codex session (Supabase lints CSV cleanup: RLS perf)
+
+- Supabase: added migrations to address the remaining Supabase lints CSV warnings:
+  - `auth_rls_initplan` (wrap `auth.*` in `(select auth.*())`) (`supabase/migrations/20260115193000_fix_auth_rls_initplan_policies.sql`).
+  - `multiple_permissive_policies` (consolidate policies to one-per-action) (`supabase/migrations/20260115194500_consolidate_rls_policies.sql`).
+- Checks: `pnpm lint`; `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls`; `pnpm build`.
+
+## 2026-01-15 — Codex session (Supabase lints CSV cleanup: FK indexes)
+
+- Supabase: added missing covering indexes for FK columns flagged by Supabase lints (`unindexed_foreign_keys`) (`supabase/migrations/20260115200000_add_missing_fk_indexes.sql`).
+- Docs: recorded the remaining INFO lints (unused indexes + auth connection setting) as post-launch follow-ups (`docs/briefs/supabase-security-scan.md`, `docs/organize.md`).
+
+## 2026-01-15 — Codex session (Onboarding simplification + admin test menu + accelerator tour)
+
+- Brief: added a focused P0 brief for onboarding simplification + test toggles (`docs/briefs/onboarding-simplification.md`).
+- Onboarding: removed the plan-selection step from the onboarding modal and removed Stripe checkout from onboarding submit (`src/components/onboarding/onboarding-dialog.tsx`, `src/app/(dashboard)/onboarding/actions.ts`).
+- Tutorials: added an Accelerator-specific welcome modal (route-aware) and updated dashboard shell wiring for Platform vs Accelerator (`src/components/onboarding/onboarding-welcome.tsx`, `src/components/dashboard/dashboard-shell.tsx`, `src/app/(dashboard)/layout.tsx`).
+- Admin QA: added admin-only “Testing” actions to the account menu (open onboarding, start tours, show welcomes, reset onboarding/tutorial state) (`src/components/nav-user.tsx`, `src/app/actions/tutorial.ts`, `src/app/actions/admin-testing.ts`).
+- Tour UX: highlight overlay no longer blocks/dims the highlighted element; tooltip now includes an icon tile per step (`src/components/tutorial/highlight-tour.tsx`, `src/components/tutorial/tutorial-manager.tsx`).
+- Tour UX: switched the spotlight overlay to an SVG even-odd mask so the hole corners match the rounded highlight ring (`src/components/tutorial/highlight-tour.tsx`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls`.
+
+## 2026-01-15 — Codex session (Fix `/admin` runtime error)
+
+- Admin dashboard: fixed recent enrollments query by removing the invalid `enrollments → profiles` FK embed (no FK exists); fetch profile emails via a second query instead (`src/lib/admin/kpis.ts`).
+- Admin auth: avoid throwing raw Supabase error objects (redirect on auth failure; wrap DB errors in `Error`) (`src/lib/admin/auth.ts`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:acceptance`; `pnpm build`.
+
+## 2026-01-15 — Codex session (Dialog a11y: required titles)
+
+- A11y: added `DialogTitle`/`DialogDescription` to onboarding dialogs to satisfy Radix accessibility requirements and remove console error (`src/components/onboarding/onboarding-dialog.tsx`, `src/components/onboarding/onboarding-welcome.tsx`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls`.
+
+## 2026-01-15 — Codex session (Onboarding formation status layout)
+
+- UI: changed Formation Status option cards to stack text under the check indicator to avoid squished labels on small widths (`src/components/onboarding/onboarding-dialog.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-15 — Codex session (Onboarding avatar removal)
+
+- UI: added a “Remove photo” action after selecting/cropping an avatar so users can clear the file input before finishing onboarding (`src/components/onboarding/onboarding-dialog.tsx`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:acceptance`.
+
+## 2026-01-15 — Codex session (Input placeholder ellipsis)
+
+- UI: added `truncate` to the shared Input styles so long placeholder/value text shows an ellipsis instead of hard clipping (`src/components/ui/input.tsx`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:acceptance`.
+
+## 2026-01-15 — Codex session (Onboarding dialog width + snapshot baseline)
+
+- UI: increased onboarding dialog max width to reduce squishing on desktop (`src/components/onboarding/onboarding-dialog.tsx`).
+- A11y: added `DialogTitle`/`DialogDescription` to the avatar crop dialog to avoid Radix warnings (`src/components/onboarding/onboarding-dialog.tsx`).
+- Snapshots: updated the baseline to reflect the Input truncation style change (`pnpm snapshots:update`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls`.
+
+## 2026-01-15 — Codex session (Account settings profile layout)
+
+- UI: restyled the Account Settings → Profile section to match onboarding (rounded card, shadcn file input, tighter grids) (`src/components/account-settings/sections/desktop/profile.tsx`, `src/components/account-settings/sections/mobile-sections.tsx`).
+- UX: avatar upload no longer marks Account Settings as “dirty” (since it saves immediately) (`src/components/account-settings/account-settings-dialog-state.ts`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:acceptance`.
+
+## 2026-01-15 — Codex session (Organization access: invites + roles)
+
+- Supabase: added `organization_member_role`, `organization_memberships`, and `organization_invites` (RLS enabled; owner-managed) (`supabase/migrations/20260115203000_add_organization_access.sql`).
+- App: added server actions to list/create/revoke invites + manage member roles (`src/app/actions/organization-access.ts`).
+- UI: replaced Account Settings → Organization with a team access manager and a link back to `/my-organization` for profile editing (`src/components/account-settings/sections/desktop/organization.tsx`, `src/components/account-settings/sections/organization-access-manager.tsx`, `src/components/account-settings/sections/mobile-sections.tsx`).
+- UX: added `/join-organization` invite acceptance route (`src/app/(auth)/join-organization/page.tsx`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls`.
+
+## 2026-01-15 — Codex session (Notifications: real inbox + archive)
+
+- Brief: added a focused brief for the notifications system (`docs/briefs/notifications.md`).
+- Supabase: added `notifications` table + RLS and fixed `public.is_admin()` so admin policies evaluate correctly (`supabase/migrations/20260115210000_add_notifications.sql`, `supabase/migrations/20260115213000_fix_is_admin_function.sql`).
+- App: added server actions for list/read/archive/unarchive/archive-all plus an admin-only seed action (`src/app/actions/notifications.ts`).
+- UI: wired the bell popover to Supabase-backed notifications, added skeleton loading + per-item archive controls, and exposed an admin-only “Seed notifications” button in the account menu (`src/components/notifications/notifications-menu.tsx`, `src/components/nav-user.tsx`).
+- UI: switched the bell unread indicator dot to `bg-destructive` (red) instead of `bg-primary` (`src/components/notifications/notifications-menu.tsx`).
+- RLS tests: added coverage for notification isolation + admin access (`supabase/tests/rls.test.mjs`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls`.
+
+## 2026-01-15 — Codex session (Documents tab: horizontal upload rows)
+
+- UI: redesigned the My Organization → Documents cards into compact horizontal rows (details on the left, upload/preview on the right) and switched the list to a single-column stack for easier scanning (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-15 — Codex session (Onboarding dialog width tweak)
+
+- UI: reduced the onboarding dialog max width (was feeling too wide after the previous adjustment) (`src/components/onboarding/onboarding-dialog.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-15 — Codex session (Fix raw Supabase errors in RSC)
+
+- Errors: added `supabaseErrorToError()` and stopped throwing raw Supabase error objects from server actions/components (fixes the generic `{code, details, hint, message}` Next.js runtime error) (`src/lib/supabase/errors.ts`, `src/app/(admin)/admin/classes/[id]/actions.ts`, `src/app/(admin)/admin/classes/actions/basic.ts`, `src/lib/modules/service.ts`).
+- API: wrapped Supabase errors thrown from route handlers so failures are `Error` instances (`src/app/api/stripe/webhook/route.ts`, `src/app/api/account/avatar/route.ts`).
+- UX: password update now shows toast success/error instead of throwing (prevents unhandled promise rejections) (`src/components/account-settings/account-settings-dialog-state.ts`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:snapshots`; `pnpm test:acceptance`; `pnpm test:rls`.
+
+## 2026-01-15 — Codex session (Remove `/admin` entry route)
+
+- Nav: updated the platform sidebar + search to link admins to `/admin/academy` instead of `/admin` (`src/components/app-sidebar/nav-data.ts`, `src/components/global-search.tsx`).
+- Admin: removed the `/admin` page and updated admin top-nav + breadcrumbs to use `/admin/academy` as the entry point (`src/app/(admin)/layout.tsx`, `src/app/(admin)/@breadcrumbs/admin/page.tsx`, `src/app/(admin)/@breadcrumbs/admin/academy/page.tsx`, `src/app/(admin)/@breadcrumbs/admin/classes/page.tsx`, `src/app/(admin)/@breadcrumbs/admin/classes/[id]/page.tsx`, `src/app/(admin)/@breadcrumbs/admin/users/page.tsx`, `src/app/(admin)/@breadcrumbs/admin/users/[id]/page.tsx`, `src/app/(admin)/admin/page.tsx`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:acceptance`.
+
+## 2026-01-15 — Codex session (Roadmap header alignment)
+
+- UI: aligned the Strategic Roadmap page header with the Roadmap editor’s framework rail on large screens (`src/components/roadmap/roadmap-shell.tsx`).
+- Checks: `pnpm lint` (warnings only).
+
+## 2026-01-15 — Codex session (People: org chart always visible)
+
+- UI: removed the “Open chart” CTA card so the organization chart canvas is always rendered on `/people` (`src/components/people/org-chart-canvas-lite.tsx`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:acceptance`.
+
+## 2026-01-15 — Codex session (Profile data sync + no `/dashboard` auth redirects)
+
+- Onboarding: seeded the organization owner as the first `org_people` entry on onboarding completion (`src/app/(dashboard)/onboarding/actions.ts`).
+- People: ensured the owner is always present/first and syncs name/title/photo from `profiles` (`src/app/(dashboard)/people/page.tsx`).
+- Auth: redirected signed-in users away from `/login` and `/sign-up` to `/my-organization` (and normalized any `/dashboard` redirect params) (`src/app/(auth)/login/page.tsx`, `src/app/(auth)/sign-up/page.tsx`, `src/proxy.ts`).
+- Notifications: removed the remaining seeded notification link to `/dashboard` (`src/app/actions/notifications.ts`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:acceptance`.
+
+## 2026-01-15 — Codex session (Edge runtime: remove `node:crypto`)
+
+- Fix: removed `node:crypto` usage from organization access server actions (Edge-safe token generation via Web Crypto) (`src/app/actions/organization-access.ts`).
+- Checks: `pnpm lint` (warnings only); `pnpm test:acceptance`.
+
+## 2026-01-15 — Codex session (Add `notes.md`)
+
+- Docs: added a minimal `notes.md` summary of done vs TODO from `docs/organize.md`.

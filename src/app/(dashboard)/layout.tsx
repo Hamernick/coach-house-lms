@@ -2,7 +2,7 @@ import type { ReactNode } from "react"
 
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
-import { isFreeTierSubscription } from "@/lib/meetings"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { completeOnboardingAction } from "@/app/(dashboard)/onboarding/actions"
 import { fetchSidebarTree } from "@/lib/academy"
 import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
@@ -17,7 +17,7 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
   } = await supabase.auth.getUser()
 
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw userError
+    throw supabaseErrorToError(userError, "Unable to load user.")
   }
 
   let displayName: string | null = null
@@ -25,9 +25,11 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
   let avatar: string | null = null
   let isAdmin = false
   let needsOnboarding = false
-  let onboardingVariant: "basic" | "accelerator" = "accelerator"
   let acceleratorProgress: number | null = null
   let showLiveBadges = false
+  let showAccelerator = false
+  let tutorialWelcomePlatform = false
+  let tutorialWelcomeAccelerator = false
 
   if (user) {
     const { data: profile } = await supabase
@@ -45,19 +47,17 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
 
     avatar = profile?.avatar_url ?? (typeof user.user_metadata?.avatar_url === "string" ? (user.user_metadata.avatar_url as string) : null)
 
-    const completed = Boolean((user.user_metadata as Record<string, unknown> | null)?.onboarding_completed)
+    const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
+    const completed = Boolean(userMeta?.onboarding_completed)
     // Admins never see onboarding; students see it until completed
     needsOnboarding = !isAdmin && !completed
 
-    if (needsOnboarding) {
-      const { data: subscription } = await supabase
-        .from("subscriptions")
-        .select("status, metadata")
-        .eq("user_id", user.id)
-        .maybeSingle<{ status: string | null; metadata: Record<string, string | null> | null }>()
-      const isFreeTier = isFreeTierSubscription(subscription ?? null)
-      onboardingVariant = isFreeTier ? "basic" : "accelerator"
-    }
+    const tutorialsCompleted = Array.isArray(userMeta?.tutorials_completed)
+      ? (userMeta?.tutorials_completed as unknown[]).filter((t): t is string => typeof t === "string")
+      : []
+    const tutorialsDismissed = Array.isArray(userMeta?.tutorials_dismissed)
+      ? (userMeta?.tutorials_dismissed as unknown[]).filter((t): t is string => typeof t === "string")
+      : []
 
     if (publicSharingEnabled) {
       const { data: orgRow } = await supabase
@@ -69,6 +69,28 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
       const hasSlug = Boolean(orgRow?.public_slug && orgRow.public_slug.trim().length > 0)
       showLiveBadges = hasSlug && Boolean(orgRow?.is_public) && Boolean(orgRow?.is_public_roadmap)
     }
+
+    if (isAdmin) {
+      showAccelerator = true
+    } else {
+      const { data: purchase } = await supabase
+        .from("accelerator_purchases")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .limit(1)
+        .maybeSingle<{ id: string }>()
+
+      showAccelerator = Boolean(purchase)
+    }
+
+    const welcomeEligible = !needsOnboarding && !isAdmin && completed
+    tutorialWelcomePlatform = welcomeEligible && !tutorialsCompleted.includes("platform") && !tutorialsDismissed.includes("platform")
+    tutorialWelcomeAccelerator =
+      welcomeEligible &&
+      showAccelerator &&
+      !tutorialsCompleted.includes("accelerator") &&
+      !tutorialsDismissed.includes("accelerator")
   }
 
   const sidebarTree = await fetchSidebarTree({ includeDrafts: true, forceAdmin: isAdmin })
@@ -94,13 +116,14 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
       user={{ name: displayName, email: email ?? null, avatar: avatar ?? null }}
       isAdmin={isAdmin}
       acceleratorProgress={acceleratorProgress}
+      showAccelerator={showAccelerator}
       showLiveBadges={showLiveBadges}
+      tutorialWelcome={{ platform: tutorialWelcomePlatform, accelerator: tutorialWelcomeAccelerator }}
       onboardingProps={{
-        enabled: Boolean(user && needsOnboarding),
+        enabled: Boolean(user),
         open: needsOnboarding,
         defaultEmail: email,
         onSubmit: completeOnboardingAction,
-        variant: onboardingVariant,
       }}
     >
       {children}

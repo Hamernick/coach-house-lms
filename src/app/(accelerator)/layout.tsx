@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { fetchSidebarTree } from "@/lib/academy"
 import { AcceleratorShell } from "@/components/accelerator/accelerator-shell"
 
@@ -14,7 +15,7 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   } = await supabase.auth.getUser()
 
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw userError
+    throw supabaseErrorToError(userError, "Unable to load user.")
   }
 
   if (!user) {
@@ -40,6 +41,20 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   }
 
   avatar = profile?.avatar_url ?? (typeof user.user_metadata?.avatar_url === "string" ? (user.user_metadata.avatar_url as string) : null)
+
+  if (!isAdmin) {
+    const { data: purchase } = await supabase
+      .from("accelerator_purchases")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle<{ id: string }>()
+
+    if (!purchase) {
+      redirect("/pricing?upgrade=accelerator")
+    }
+  }
 
   const sidebarTree = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
 

@@ -73,7 +73,7 @@ export default async function AdminUserDetailPage({
                     defaultValue={detail.role}
                     className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
                   >
-                    <option value="student">Student</option>
+                    <option value="member">Member</option>
                     <option value="admin">Admin</option>
                   </select>
                 </div>

@@ -301,7 +301,7 @@ export function OrgProfileHeader({
               </Button>
             </>
             ) : (
-              <Button size="sm" onClick={onEnterEdit}>
+              <Button size="sm" onClick={onEnterEdit} data-tour="org-profile-edit">
                 Edit
               </Button>
             )

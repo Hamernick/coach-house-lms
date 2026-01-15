@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/admin/auth"
 import { uploadModuleDeck, removeModuleDeck } from "@/lib/storage/decks"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 import {
   MODULE_SUBTITLE_MAX_LENGTH,
   MODULE_TITLE_MAX_LENGTH,
@@ -107,7 +108,7 @@ export async function updateModuleDetailsAction(formData: FormData) {
     .eq("id", moduleId)
 
   if (error) {
-    throw error
+    throw supabaseErrorToError(error, "Unable to update module.")
   }
 
   await revalidateModuleViews(supabase, moduleId, classId)
@@ -141,7 +142,7 @@ export async function deleteModuleFromDetailAction(formData: FormData) {
     .eq("id", moduleId)
 
   if (error) {
-    throw error
+    throw supabaseErrorToError(error, "Unable to delete module.")
   }
 
   await revalidateClassViews({
@@ -188,7 +189,7 @@ export async function uploadModuleDeckAction(formData: FormData) {
     .maybeSingle<Pick<Database["public"]["Tables"]["modules"]["Row"], "deck_path">>()
 
   if (error) {
-    throw error
+    throw supabaseErrorToError(error, "Unable to load module deck state.")
   }
 
   const deckPath = await uploadModuleDeck({
@@ -208,7 +209,7 @@ export async function uploadModuleDeckAction(formData: FormData) {
     .eq("id", moduleId)
 
   if (updateError) {
-    throw updateError
+    throw supabaseErrorToError(updateError, "Unable to update module deck.")
   }
 
   await revalidateModuleViews(supabase, moduleId, classId)
@@ -232,7 +233,7 @@ export async function removeModuleDeckAction(formData: FormData) {
     .maybeSingle<Pick<Database["public"]["Tables"]["modules"]["Row"], "deck_path">>()
 
   if (error) {
-    throw error
+    throw supabaseErrorToError(error, "Unable to load module deck state.")
   }
 
   if (data?.deck_path) {
@@ -249,7 +250,7 @@ export async function removeModuleDeckAction(formData: FormData) {
     .eq("id", moduleId)
 
   if (updateError) {
-    throw updateError
+    throw supabaseErrorToError(updateError, "Unable to update module deck.")
   }
 
   await revalidateModuleViews(supabase, moduleId, classId)
@@ -285,7 +286,7 @@ export async function updateModuleAssignmentAction(formData: FormData) {
     .from("module_assignments" satisfies keyof Database["public"]["Tables"])
     .upsert(upsertPayload)
 
-  if (error) throw error
+  if (error) throw supabaseErrorToError(error, "Unable to update module assignment.")
 
   await revalidateModuleViews(supabase, moduleId)
 }
@@ -342,7 +343,7 @@ export async function updateModuleContentAction(formData: FormData) {
   }
   const { error } = await client.from("module_content").upsert(upsertPayload, { onConflict: "module_id" })
 
-  if (error) throw error
+  if (error) throw supabaseErrorToError(error, "Unable to update module content.")
 
   await revalidateModuleViews(supabase, moduleId)
 }
@@ -354,6 +355,6 @@ export async function generateSignedUrlAction(bucket: string, path: string) {
   const supabase = await createSupabaseServerClient()
 
   const { data, error } = await supabase.storage.from(bucket).createSignedUrl(path, 60 * 60)
-  if (error) throw error
+  if (error) throw supabaseErrorToError(error, "Unable to create signed URL.")
   return data.signedUrl as string
 }

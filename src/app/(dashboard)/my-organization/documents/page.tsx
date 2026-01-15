@@ -1,9 +1,11 @@
 import { redirect } from "next/navigation"
 
+import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { DocumentsTab } from "@/components/organization/org-profile-card/tabs/documents-tab"
 import type { OrgDocuments } from "@/components/organization/org-profile-card/types"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 export const dynamic = "force-dynamic"
 
@@ -17,7 +19,9 @@ export default async function MyOrganizationDocumentsPage() {
     error: userError,
   } = await supabase.auth.getUser()
 
-  if (userError && !isSupabaseAuthSessionMissingError(userError)) throw userError
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
+    throw supabaseErrorToError(userError, "Unable to load user.")
+  }
   if (!user) redirect("/login?redirect=/my-organization/documents")
 
   const { data: orgRow } = await supabase
@@ -57,6 +61,7 @@ export default async function MyOrganizationDocumentsPage() {
 
   return (
     <div className="flex flex-col gap-6 px-4 lg:px-6">
+      <PageTutorialButton tutorial="documents" />
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
         <p className="text-sm text-muted-foreground">

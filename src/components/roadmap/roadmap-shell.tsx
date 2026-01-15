@@ -21,6 +21,7 @@ type RoadmapShellProps = {
   sections: RoadmapSection[]
   publicSlug: string | null
   initialPublic: boolean
+  canPublishPublicRoadmap?: boolean
   heroUrl: string | null
   showHeader?: boolean
   headerLayout?: "row" | "column"
@@ -54,6 +55,7 @@ export function RoadmapShell({
   sections,
   publicSlug,
   initialPublic,
+  canPublishPublicRoadmap = false,
   heroUrl: initialHeroUrl,
   showHeader = true,
   headerLayout = "row",
@@ -133,7 +135,13 @@ export function RoadmapShell({
   return (
     <div className="space-y-6">
       {showHeader ? (
-        <header className={cn("flex gap-4", headerLayout === "column" ? "flex-col items-start" : "flex-wrap items-start")}>
+        <header
+          className={cn(
+            "flex gap-4",
+            headerLayout === "column" ? "flex-col items-start" : "flex-wrap items-start",
+            "lg:mx-auto lg:max-w-[1064px] lg:pl-4 xl:max-w-[1096px]",
+          )}
+        >
           <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground">
             <WaypointsIcon className="h-5 w-5" aria-hidden />
           </span>
@@ -249,6 +257,7 @@ export function RoadmapShell({
         sections={sections}
         publicSlug={publicSlug}
         roadmapIsPublic={isPublic}
+        canPublishPublicRoadmap={canPublishPublicRoadmap}
         layout={editorLayout}
         onRoadmapPublicChange={setIsPublic}
         onDirtyChange={onDirtyChange}

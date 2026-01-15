@@ -6,6 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import { env } from "@/lib/env"
 import { createSupabaseAdminClient } from "@/lib/supabase"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 import type { Database } from "@/lib/supabase"
 
 export const runtime = "nodejs"
@@ -41,26 +42,92 @@ async function upsertSubscription({
   await uncheckedAdmin.from("subscriptions").upsert(payload, { onConflict: "stripe_subscription_id" })
 }
 
-async function logEvent(event: Stripe.Event) {
+async function upsertAcceleratorPurchase({
+  userId,
+  checkoutSessionId,
+  paymentIntentId,
+  customerId,
+  status,
+}: {
+  userId: string
+  checkoutSessionId: string
+  paymentIntentId?: string | null
+  customerId?: string | null
+  status: Database["public"]["Tables"]["accelerator_purchases"]["Row"]["status"]
+}) {
   const admin = createSupabaseAdminClient()
-  const { data: existing } = await admin
-    .from("stripe_webhook_events")
-    .select("id")
-    .eq("id", event.id)
-    .maybeSingle()
+  const uncheckedAdmin = admin as SupabaseClient<any>
+  const payload: Database["public"]["Tables"]["accelerator_purchases"]["Insert"] = {
+    user_id: userId,
+    stripe_checkout_session_id: checkoutSessionId,
+    stripe_payment_intent_id: paymentIntentId ?? null,
+    stripe_customer_id: customerId ?? null,
+    status,
+  }
 
-  if (existing) {
+  await uncheckedAdmin
+    .from("accelerator_purchases")
+    .upsert(payload, { onConflict: "stripe_checkout_session_id" })
+}
+
+type WebhookEventPayload = {
+  stripe_event: unknown
+  processed: boolean
+  received_at: string
+  processed_at?: string
+  failed_at?: string
+  error?: string
+}
+
+function toWebhookPayload(event: Stripe.Event, patch: Partial<WebhookEventPayload>): WebhookEventPayload {
+  return {
+    stripe_event: event,
+    processed: false,
+    received_at: new Date().toISOString(),
+    ...patch,
+  }
+}
+
+async function shouldProcessEvent(event: Stripe.Event): Promise<boolean> {
+  const admin = createSupabaseAdminClient()
+  const uncheckedAdmin = admin as SupabaseClient<any>
+
+  const initialPayload = toWebhookPayload(event, { processed: false })
+
+  const { error: insertError } = await uncheckedAdmin.from("stripe_webhook_events").insert({
+    id: event.id,
+    type: event.type,
+    payload: initialPayload as unknown as Database["public"]["Tables"]["stripe_webhook_events"]["Insert"]["payload"],
+  })
+
+  if (!insertError) {
+    return true
+  }
+
+  // Duplicate key => we need to see if it was actually processed, or if a previous attempt failed.
+  if (insertError.code !== "23505") {
+    throw supabaseErrorToError(insertError, "Stripe webhook: unable to store event.")
+  }
+
+  const { data: existing, error } = await admin
+    .from("stripe_webhook_events")
+    .select("payload")
+    .eq("id", event.id)
+    .maybeSingle<{ payload: unknown }>()
+
+  if (error) {
+    throw supabaseErrorToError(error, "Stripe webhook: unable to load event.")
+  }
+
+  const payload = existing?.payload as Partial<WebhookEventPayload> | null | undefined
+  const processed = payload?.processed
+
+  // Back-compat: if the payload isn't in our new format, treat it as processed.
+  if (processed === undefined) {
     return false
   }
 
-  const uncheckedAdmin = admin as SupabaseClient<any>
-  await uncheckedAdmin.from("stripe_webhook_events").insert({
-    id: event.id,
-    type: event.type,
-    payload: event as unknown as Database["public"]["Tables"]["stripe_webhook_events"]["Insert"]["payload"],
-  })
-
-  return true
+  return processed === false
 }
 
 function extractUserIdFromMetadata(metadata: Stripe.Metadata) {
@@ -86,6 +153,65 @@ function toStatus(value: string): Database["public"]["Enums"]["subscription_stat
   return "trialing"
 }
 
+async function maybeStartOrganizationTrial({
+  userId,
+  customerId,
+  idempotencyKey,
+}: {
+  userId: string
+  customerId: string
+  idempotencyKey: string
+}) {
+  const organizationPriceId = env.STRIPE_ORGANIZATION_PRICE_ID
+
+  if (!stripe || !organizationPriceId) {
+    return
+  }
+
+  const admin = createSupabaseAdminClient()
+  const { data: existing, error } = await admin
+    .from("subscriptions")
+    .select("id, status")
+    .eq("user_id", userId)
+    .in("status", ["active", "trialing"])
+    .limit(1)
+    .maybeSingle<{ id: string; status: string }>()
+
+  if (error) {
+    throw supabaseErrorToError(error, "Stripe webhook: unable to load subscription.")
+  }
+
+  if (existing) {
+    return
+  }
+
+  const subscription = await stripe.subscriptions.create(
+    {
+      customer: customerId,
+      items: [{ price: organizationPriceId }],
+      trial_period_days: 30,
+      metadata: {
+        user_id: userId,
+        planName: "Organization",
+        context: "accelerator_bundle",
+      },
+    },
+    { idempotencyKey },
+  )
+
+  const periodUnix = (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end ?? null
+  const currentPeriodEnd = periodUnix ? new Date(periodUnix * 1000).toISOString() : null
+
+  await upsertSubscription({
+    userId,
+    customerId,
+    subscriptionId: subscription.id,
+    status: toStatus(subscription.status),
+    currentPeriodEnd,
+    metadata: { planName: "Organization", context: "accelerator_bundle" },
+  })
+}
+
 export async function POST(request: NextRequest) {
   const secret = env.STRIPE_WEBHOOK_SECRET
 
@@ -109,9 +235,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
 
-  const inserted = await logEvent(event)
-  if (!inserted) {
-    return NextResponse.json({ received: true, duplicate: true }, { status: 200 })
+  try {
+    const shouldProcess = await shouldProcessEvent(event)
+    if (!shouldProcess) return NextResponse.json({ received: true, duplicate: true }, { status: 200 })
+  } catch (error) {
+    console.error("Stripe webhook idempotency check failed", error)
+    return NextResponse.json({ received: true, error: "processing_failed" }, { status: 500 })
   }
 
   try {
@@ -119,6 +248,28 @@ export async function POST(request: NextRequest) {
       const session = event.data.object as Stripe.Checkout.Session
       const subscriptionId = typeof session.subscription === "string" ? session.subscription : undefined
       const userId = session.client_reference_id ?? undefined
+
+      if (session.mode === "payment" && session.metadata?.kind === "accelerator") {
+        const resolvedUserId = userId ?? extractUserIdFromMetadata(session.metadata) ?? undefined
+        if (resolvedUserId) {
+          const customerId = typeof session.customer === "string" ? session.customer : null
+          await upsertAcceleratorPurchase({
+            userId: resolvedUserId,
+            checkoutSessionId: session.id,
+            paymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
+            customerId,
+            status: "active",
+          })
+
+          if (customerId) {
+            await maybeStartOrganizationTrial({
+              userId: resolvedUserId,
+              customerId,
+              idempotencyKey: `accelerator_bundle_${session.id}`,
+            })
+          }
+        }
+      }
 
       if (subscriptionId && userId) {
         await upsertSubscription({
@@ -142,7 +293,8 @@ export async function POST(request: NextRequest) {
           subscriptionId: subscription.id,
           status: toStatus(subscription.status),
           currentPeriodEnd: (() => {
-            const periodUnix = (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end ?? null
+            const periodUnix =
+              (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end ?? null
             return periodUnix ? new Date(periodUnix * 1000).toISOString() : null
           })(),
           metadata: subscription.metadata as Record<string, string> | null,
@@ -151,7 +303,36 @@ export async function POST(request: NextRequest) {
     }
   } catch (error) {
     console.error("Failed to process Stripe webhook", error)
+    try {
+      const admin = createSupabaseAdminClient()
+      const uncheckedAdmin = admin as SupabaseClient<any>
+      await uncheckedAdmin
+        .from("stripe_webhook_events")
+        .update({
+          payload: toWebhookPayload(event, {
+            processed: false,
+            failed_at: new Date().toISOString(),
+            error: error instanceof Error ? error.message : "processing_failed",
+          }) as unknown as Database["public"]["Tables"]["stripe_webhook_events"]["Update"]["payload"],
+        })
+        .eq("id", event.id)
+    } catch (cleanupError) {
+      console.error("Unable to cleanup failed webhook lock", cleanupError)
+    }
     return NextResponse.json({ received: true, error: "processing_failed" }, { status: 500 })
+  }
+
+  try {
+    const admin = createSupabaseAdminClient()
+    const uncheckedAdmin = admin as SupabaseClient<any>
+    await uncheckedAdmin
+      .from("stripe_webhook_events")
+      .update({
+        payload: toWebhookPayload(event, { processed: true, processed_at: new Date().toISOString() }) as unknown as Database["public"]["Tables"]["stripe_webhook_events"]["Update"]["payload"],
+      })
+      .eq("id", event.id)
+  } catch (error) {
+    console.error("Unable to mark Stripe webhook processed", error)
   }
 
   return NextResponse.json({ received: true }, { status: 200 })

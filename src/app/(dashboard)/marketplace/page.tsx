@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 
+import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { MarketplaceClientShell } from "./marketplace-shell"
 
 export const dynamic = "force-dynamic"
@@ -11,6 +12,7 @@ export const metadata: Metadata = {
 export default async function MarketplacePage() {
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 px-6 lg:px-8">
+      <PageTutorialButton tutorial="marketplace" />
       <section className="text-center mt-4">
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Marketplace</h1>
         <p className="mx-auto mt-2 max-w-2xl text-sm text-muted-foreground">

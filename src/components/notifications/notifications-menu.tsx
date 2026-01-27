@@ -422,7 +422,7 @@ function NotificationsList({
                   </p>
                   {item.unread ? (
                     <span
-                      className="bg-primary h-2 w-2 rounded-full"
+                      className="bg-destructive h-2 w-2 shrink-0 rounded-full"
                       aria-hidden
                     />
                   ) : null}

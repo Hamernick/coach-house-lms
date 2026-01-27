@@ -33,7 +33,7 @@ export default async function OnboardingPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="px-4 lg:px-6">
+      <section>
         <Card className="border bg-card/60">
           <CardHeader>
             <CardTitle>Welcome to Coach House</CardTitle>

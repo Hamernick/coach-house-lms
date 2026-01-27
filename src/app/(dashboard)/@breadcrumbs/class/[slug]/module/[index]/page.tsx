@@ -1,4 +1,4 @@
-import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { AppBreadcrumbs } from "@/components/app-shell/breadcrumbs"
 import { createSupabaseServerClient } from "@/lib/supabase"
 
 export default async function ModuleCrumbs({ params }: { params: Promise<{ slug: string; index: string }> }) {
@@ -11,5 +11,5 @@ export default async function ModuleCrumbs({ params }: { params: Promise<{ slug:
     .maybeSingle<{ title: string | null }>()
   const classTitle = data?.title ?? "Class"
   const idx = Number.parseInt(index, 10)
-  return <DashboardBreadcrumbs segments={[{ label: classTitle, href: `/class/${slug}/module/1` }, { label: Number.isFinite(idx) ? `Module ${idx}` : "Module" }]} />
+  return <AppBreadcrumbs segments={[{ label: classTitle, href: `/class/${slug}/module/1` }, { label: Number.isFinite(idx) ? `Module ${idx}` : "Module" }]} />
 }

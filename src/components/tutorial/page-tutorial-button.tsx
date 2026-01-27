@@ -1,6 +1,6 @@
 "use client"
 
-import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
+import BookOpenIcon from "lucide-react/dist/esm/icons/book-open"
 
 import { HeaderActionsPortal } from "@/components/header-actions-portal"
 import { Button } from "@/components/ui/button"
@@ -14,7 +14,7 @@ export function PageTutorialButton({
   label?: string
 }) {
   return (
-    <HeaderActionsPortal>
+    <HeaderActionsPortal slot="right">
       <Button
         type="button"
         size="sm"
@@ -25,10 +25,9 @@ export function PageTutorialButton({
           window.dispatchEvent(new CustomEvent("coachhouse:tutorial:start", { detail: { tutorial } }))
         }}
       >
-        <SparklesIcon className="size-4" aria-hidden />
+        <BookOpenIcon className="size-4" aria-hidden />
         <span className="hidden sm:inline">{label}</span>
       </Button>
     </HeaderActionsPortal>
   )
 }
-

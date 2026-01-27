@@ -43,18 +43,57 @@ export async function listAdminUsers({
 
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
-    .select("id, full_name, role, enrollments ( id ), subscriptions ( status, created_at )")
+    .select("id, full_name, role")
     .in("id", userIds)
     .returns<Array<{
       id: string
       full_name: string | null
       role: string | null
-      enrollments?: { id: string }[] | null
-      subscriptions?: { status: string | null; created_at: string | null }[] | null
     }>>()
 
   if (profilesError) {
     throw supabaseErrorToError(profilesError, "Unable to load profiles.")
+  }
+
+  const { data: enrollmentRows, error: enrollmentsError } = await supabase
+    .from("enrollments")
+    .select("user_id")
+    .in("user_id", userIds)
+    .returns<Array<{ user_id: string }>>()
+
+  if (enrollmentsError) {
+    const code = (enrollmentsError as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      throw supabaseErrorToError(enrollmentsError, "Unable to load enrollments.")
+    }
+  }
+
+  const enrollmentCounts = new Map<string, number>()
+  for (const row of enrollmentsError ? [] : enrollmentRows ?? []) {
+    enrollmentCounts.set(row.user_id, (enrollmentCounts.get(row.user_id) ?? 0) + 1)
+  }
+
+  const { data: subscriptionRows, error: subscriptionsError } = await supabase
+    .from("subscriptions")
+    .select("user_id, status, created_at")
+    .in("user_id", userIds)
+    .returns<Array<{ user_id: string; status: string | null; created_at: string | null }>>()
+
+  if (subscriptionsError) {
+    const code = (subscriptionsError as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      throw supabaseErrorToError(subscriptionsError, "Unable to load subscriptions.")
+    }
+  }
+
+  const latestSubscriptionByUser = new Map<string, { status: string | null; created_at: string | null }>()
+  for (const row of subscriptionsError ? [] : subscriptionRows ?? []) {
+    const current = latestSubscriptionByUser.get(row.user_id)
+    const currentTime = current ? new Date(current.created_at ?? "1970-01-01").getTime() : -1
+    const rowTime = new Date(row.created_at ?? "1970-01-01").getTime()
+    if (!current || rowTime > currentTime) {
+      latestSubscriptionByUser.set(row.user_id, row)
+    }
   }
 
   const profileRecords = profiles ?? []
@@ -66,11 +105,7 @@ export async function listAdminUsers({
   return users
     .map((user) => {
       const profile = profileMap.get(user.id)
-      const latestSubscription = profile?.subscriptions
-        ? [...profile.subscriptions].sort((a, b) =>
-            new Date(b.created_at ?? "1970").getTime() - new Date(a.created_at ?? "1970").getTime()
-          )[0]
-        : undefined
+      const latestSubscription = latestSubscriptionByUser.get(user.id) ?? null
 
       const summary: AdminUserSummary = {
         id: user.id,
@@ -78,7 +113,7 @@ export async function listAdminUsers({
         fullName: profile?.full_name ?? user.user_metadata?.full_name ?? null,
         role: (profile?.role ?? "member") as "member" | "admin",
         lastSignInAt: user.last_sign_in_at ?? null,
-        enrollmentCount: profile?.enrollments?.length ?? 0,
+        enrollmentCount: enrollmentCounts.get(user.id) ?? 0,
         subscriptionStatus: latestSubscription?.status ?? null,
       }
 

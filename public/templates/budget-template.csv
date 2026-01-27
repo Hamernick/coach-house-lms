@@ -1,0 +1,4 @@
+Expense Category,Description,Cost Type,Unit,# of Units,Cost per Unit,Total Estimated Cost
+Staffing,Program coordinator,Fixed,Month,6,3000,
+Program materials,Workshop kits,Variable,Participant,40,15,
+Evaluation,Survey tools,Fixed,Month,6,100,

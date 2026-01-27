@@ -124,7 +124,7 @@ export async function fetchSidebarTree({
     return {
       id: klass.id,
       slug: klass.slug,
-      title: klass.title,
+      title: klass.slug === "electives" ? "Formation" : klass.title,
       description: ("description" in klass ? klass.description ?? null : null),
       published: classPublished,
       position: typeof klass.position === "number" ? klass.position : null,

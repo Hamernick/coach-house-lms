@@ -3,6 +3,7 @@
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import Image from "next/image"
 import Cropper from "react-easy-crop"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
@@ -601,10 +602,13 @@ export function OnboardingDialog({
                 <div className="border-border/70 bg-background/60 flex flex-col items-center gap-3 rounded-2xl border p-4">
                   <div className="border-border bg-card relative size-16 overflow-hidden rounded-full border">
                     {avatarPreview ? (
-                      <img
+                      <Image
                         src={avatarPreview}
                         alt="Avatar preview"
+                        width={64}
+                        height={64}
                         className="h-full w-full object-cover"
+                        unoptimized
                       />
                     ) : (
                       <div className="text-muted-foreground flex h-full w-full items-center justify-center text-sm font-semibold">

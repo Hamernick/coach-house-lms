@@ -5,10 +5,12 @@ import { createSupabaseServerClient } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { OrgChartSkeleton } from "@/components/people/org-chart-skeleton"
-import { PeopleTable } from "@/components/people/people-table"
+import { PeopleTableShell } from "@/components/people/people-table"
 import { Separator } from "@/components/ui/separator"
 import { OrgChartCanvasLite } from "@/components/people/org-chart-canvas-lite"
+import { ClientOnly } from "@/components/client-only"
 import { normalizePersonCategory } from "@/lib/people/categories"
+import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
 import type { OrgPerson } from "./actions"
 
 export const dynamic = "force-dynamic"
@@ -18,20 +20,20 @@ export default async function PeoplePage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/login?redirect=/people")
 
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  const canEdit = canEditOrganization(role)
+
   const { data: org } = await supabase
     .from("organizations")
     .select("profile")
-    .eq("user_id", user.id)
+    .eq("user_id", orgId)
     .maybeSingle<{ profile: Record<string, unknown> | null }>()
 
   const profile = (org?.profile ?? {}) as Record<string, unknown>
   const peopleRaw = (Array.isArray(profile.org_people) ? profile.org_people : []) as OrgPerson[]
 
-  // Ensure the organization owner shows up as the first person in the directory.
+  // Keep the signed-in user present + synced inside the active org directory.
   if (org) {
-    const ownerIndex = peopleRaw.findIndex((person) => person?.id === user.id)
-    const ownerExisting = ownerIndex > -1 ? peopleRaw[ownerIndex] : null
-
     const { data: profileRow } = await supabase
       .from("profiles")
       .select("full_name, headline, avatar_url")
@@ -45,34 +47,49 @@ export default async function PeoplePage() {
           ? user.user_metadata.full_name.trim()
           : null
 
-    const ownerPerson: OrgPerson = {
+    const membershipCategory = role === "board" ? "governing_board" : "staff"
+    const selfIndex = peopleRaw.findIndex((person) => person?.id === user.id)
+    const selfExisting = selfIndex > -1 ? peopleRaw[selfIndex] : null
+
+    const nextSelf: OrgPerson = {
       id: user.id,
-      name: derivedName ?? ownerExisting?.name ?? user.email ?? "You",
-      title: profileRow?.headline ?? ownerExisting?.title ?? null,
-      email: user.email ?? ownerExisting?.email ?? null,
-      linkedin: ownerExisting?.linkedin ?? null,
-      category: ownerExisting?.category ?? "staff",
-      image: profileRow?.avatar_url ?? ownerExisting?.image ?? null,
-      reportsToId: ownerExisting?.reportsToId ?? null,
-      pos: ownerExisting?.pos ?? null,
+      name: derivedName ?? selfExisting?.name ?? user.email ?? "You",
+      title: profileRow?.headline ?? selfExisting?.title ?? null,
+      email: user.email ?? selfExisting?.email ?? null,
+      linkedin: selfExisting?.linkedin ?? null,
+      category: selfExisting?.category ?? membershipCategory,
+      image: profileRow?.avatar_url ?? selfExisting?.image ?? null,
+      reportsToId: selfExisting?.reportsToId ?? null,
+      pos: selfExisting?.pos ?? null,
     }
 
-    const withoutOwner = ownerIndex > -1 ? peopleRaw.filter((person) => person.id !== user.id) : peopleRaw
-    const nextPeople = [ownerPerson, ...withoutOwner]
+    const nextPeople = [...peopleRaw]
+    if (selfIndex > -1) nextPeople[selfIndex] = nextSelf
+    else nextPeople.push(nextSelf)
+
+    // Ensure the org owner is first (orgId is the owner id).
+    const ownerIndex = nextPeople.findIndex((person) => person?.id === orgId)
+    if (ownerIndex > 0) {
+      const [owner] = nextPeople.splice(ownerIndex, 1)
+      nextPeople.unshift(owner)
+    }
 
     const needsSync =
-      ownerIndex !== 0 ||
-      !ownerExisting ||
-      ownerExisting.name !== ownerPerson.name ||
-      (ownerExisting.title ?? null) !== (ownerPerson.title ?? null) ||
-      (ownerExisting.email ?? null) !== (ownerPerson.email ?? null) ||
-      (ownerExisting.image ?? null) !== (ownerPerson.image ?? null)
+      selfIndex === -1 ||
+      (selfExisting?.name ?? null) !== (nextSelf.name ?? null) ||
+      (selfExisting?.title ?? null) !== (nextSelf.title ?? null) ||
+      (selfExisting?.email ?? null) !== (nextSelf.email ?? null) ||
+      (selfExisting?.image ?? null) !== (nextSelf.image ?? null) ||
+      (selfExisting?.category ?? null) !== (nextSelf.category ?? null) ||
+      (ownerIndex > 0)
 
     if (needsSync) {
       const nextProfile = { ...profile, org_people: nextPeople }
-      await supabase
-        .from("organizations")
-        .upsert({ user_id: user.id, profile: nextProfile }, { onConflict: "user_id" })
+      if (canEdit) {
+        await supabase
+          .from("organizations")
+          .upsert({ user_id: orgId, profile: nextProfile }, { onConflict: "user_id" })
+      }
       peopleRaw.splice(0, peopleRaw.length, ...nextPeople)
     }
   }
@@ -107,18 +124,26 @@ export default async function PeoplePage() {
   // Flat list drives both canvas and table; table filters internally
 
   return (
-    <div className="flex flex-col gap-6 px-4 lg:px-6">
+    <div className="flex flex-col gap-5 pb-8">
       <PageTutorialButton tutorial="people" />
       <section>
         <Suspense fallback={<OrgChartSkeleton />}>
-          <OrgChartCanvasLite people={people} />
+          <OrgChartCanvasLite people={people} canEdit={canEdit} />
         </Suspense>
       </section>
 
       <section>
         <h2 className="text-lg font-semibold">People</h2>
         <Separator className="my-3" />
-        <PeopleTable people={people} />
+        <ClientOnly
+          fallback={
+            <div className="rounded-md border border-border/60 bg-card/60 p-6 text-sm text-muted-foreground">
+              Loading people…
+            </div>
+          }
+        >
+          <PeopleTableShell people={people} canEdit={canEdit} />
+        </ClientOnly>
       </section>
     </div>
   )

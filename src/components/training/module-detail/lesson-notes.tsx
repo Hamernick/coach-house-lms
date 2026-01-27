@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import FileText from "lucide-react/dist/esm/icons/file-text"
 import BookOpen from "lucide-react/dist/esm/icons/book-open"
 import ReactMarkdown from "react-markdown"
@@ -9,7 +8,7 @@ import remarkGfm from "remark-gfm"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { toast } from "@/lib/toast"
+import { useCoachingBooking } from "@/hooks/use-coaching-booking"
 
 interface LessonNotesProps {
   title: string
@@ -17,32 +16,8 @@ interface LessonNotesProps {
 }
 
 export function LessonNotes({ title, content }: LessonNotesProps) {
-  const [pending, setPending] = useState(false)
+  const { schedule, pending } = useCoachingBooking()
   const showCoachingCta = content.includes("Use a coaching session to develop your origin story.")
-
-  const handleSchedule = async () => {
-    if (pending) return
-    setPending(true)
-    try {
-      const response = await fetch("/api/meetings/schedule?host=joel", { method: "GET" })
-      const payload = (await response.json().catch(() => ({}))) as { error?: string; url?: string }
-      if (!response.ok) {
-        toast.error(payload.error ?? "Unable to schedule a meeting right now.")
-        return
-      }
-      if (!payload.url) {
-        toast.error("Scheduling link unavailable.")
-        return
-      }
-      window.open(payload.url, "_blank", "noopener,noreferrer")
-      toast.success("Opening your scheduling link.")
-    } catch (error) {
-      console.error(error)
-      toast.error("Unable to schedule a meeting right now.")
-    } finally {
-      setPending(false)
-    }
-  }
 
   return (
     <Card className="gap-0">
@@ -65,7 +40,7 @@ export function LessonNotes({ title, content }: LessonNotesProps) {
             <p className="text-sm text-muted-foreground">
               Want help drafting your origin story? Book a coaching session.
             </p>
-            <Button type="button" size="sm" onClick={handleSchedule} disabled={pending}>
+            <Button type="button" size="sm" onClick={() => void schedule()} disabled={pending}>
               {pending ? "Opening..." : "Book a session"}
             </Button>
           </div>

@@ -55,7 +55,7 @@ export async function createClassAction() {
   const classId = data?.id ?? null
   if (classId) {
     revalidateClassViews({ classId })
-    redirect(`/admin/classes/${classId}`)
+    redirect("/internal")
   }
 }
 

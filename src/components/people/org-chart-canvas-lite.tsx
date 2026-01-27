@@ -1,10 +1,9 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense } from "react"
 import dynamic from "next/dynamic"
 
-import type { OrgPerson } from "@/app/(dashboard)/people/actions"
-import { Button } from "@/components/ui/button"
+import type { OrgPerson } from "@/actions/people"
 import { OrgChartSkeleton } from "@/components/people/org-chart-skeleton"
 
 const OrgChartCanvas = dynamic(() => import("./org-chart-canvas").then((mod) => mod.OrgChartCanvas), {
@@ -12,22 +11,11 @@ const OrgChartCanvas = dynamic(() => import("./org-chart-canvas").then((mod) => 
   loading: () => <OrgChartSkeleton />,
 })
 
-export function OrgChartCanvasLite({ people }: { people: OrgPerson[] }) {
-  const [showExtras, setShowExtras] = useState(false)
-
+export function OrgChartCanvasLite({ people, canEdit = true }: { people: OrgPerson[]; canEdit?: boolean }) {
   return (
     <div data-tour="people-org-chart" className="space-y-3">
-      <div className="flex justify-end px-4 pt-3">
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => setShowExtras((value) => !value)}
-        >
-          {showExtras ? "Hide" : "Show"} map details
-        </Button>
-      </div>
       <Suspense fallback={<OrgChartSkeleton />}>
-        <OrgChartCanvas people={people} extras={showExtras} />
+        <OrgChartCanvas people={people} extras={false} canEdit={canEdit} />
       </Suspense>
     </div>
   )

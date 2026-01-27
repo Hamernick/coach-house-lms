@@ -1,7 +1,17 @@
 # Launch Sprint Organizer — Coach House LMS
-Last updated: 2026-01-14
+Last updated: 2026-01-16
 
 Purpose: turn all launch notes into a clean, deduped, step-by-step checklist so we can say “go” and execute fast.
+
+---
+
+## NOW (Next 3)
+When starting a Codex session, do these in order (brief → implement → run 4 tests → RUNLOG).
+
+- [x] `docs/briefs/coaching-booking.md` — Standardize booking cards + 3 calendar links (free x4 → discounted; plus full-price).
+- [x] `docs/briefs/budget-table-ux.md` — Redesign budget table UX + CSV template download + 3-step mini guide.
+- [ ] `docs/briefs/notifications.md` — Update/expand notifications to cover key platform events (accelerator, coaching, roadmap/docs).
+- [ ] `docs/briefs/roadmap-formation.md` — Roadmap landing + Formation free track + gating.
 
 ---
 
@@ -59,6 +69,7 @@ Task briefs:
 Decision tracking:
 - Keep unresolved decisions in “Open Questions / Decisions.”
 - When resolved, record the answer in the relevant task brief and update the master list.
+- For Codex: start with `docs/GO.md` and keep `docs/briefs/INDEX.md` current.
 
 ---
 
@@ -169,9 +180,11 @@ SWOT:
 
 Sources to read:
 - AGENTS.md
+- docs/GO.md
 - docs/OVERVIEW.md
 - docs/TODO_PRIORITIZED.md
 - docs/RUNLOG.md
+- docs/briefs/INDEX.md
 - runlog.md
 - docs/CODEX_RUNBOOK.md
 - src/app/(public)/home2/page.tsx
@@ -182,6 +195,7 @@ Sources to read:
 - [x] Removed `/dashboard` from user-facing navigation + command palette; default “home” is `/my-organization`.
 - [x] Global search: added loading indicator + icons + thumbnails where available (Marketplace logos, org logos).
 - [x] Tutorial system: fixed render-phase setState warning; stabilized first-run welcome modal + highlight tour.
+- [x] Tutorial: added Accelerator Welcome + Return home tour step; made welcome + tour tooltip theme-aware (light/dark).
 - [x] Pricing: fixed the “white bar” gap above the sticky header on `/pricing` (background now consistent).
 - [x] UI: improved light-mode CircularProgress track contrast (kept progress stroke green).
 - [x] Launch planning: added Electives add-ons workstream + P0 brief; deferred Stripe setup as “TODO last” with a concrete checklist.
@@ -189,19 +203,32 @@ Sources to read:
 - [x] Supabase: pushed security scan fixes + `student`→`member` role rename migrations; RLS tests pass again.
 - [x] Supabase: prepared RLS lints cleanup migrations (`auth_rls_initplan` + `multiple_permissive_policies`) for the remaining Supabase lints CSV warnings (apply to target env and re-export lints).
 - [x] Admin: restore Platform + Resources sidebar items (admins can now navigate beyond Accelerator).
+- [x] Org access: membership-aware org pages (staff/board) + invite gating + active-org resolver (RLS + app updates).
 - [x] UI: matched `/accelerator` overview card surfaces to the `/pricing` light-mode surface token (`--surface`).
 
 ---
 
 ## Open Questions / Decisions (Must Answer Before “Go”)
-- Pricing + tiers: confirm Free vs Organization ($20/mo) + Accelerator add-on ($499 one-time) and included features.
-- Electives add-ons: confirm which Electives ship at launch + pricing ($100 each, $25 w/ Accelerator) + where they’re surfaced (Accelerator overview, Billing/Settings, checkout).
-- AI provider: Gemini vs OpenAI; pricing model (pass-through vs margin); monthly credits; rate limiting.
-- Fundraise naming: not “campaign” or “round” — pick a new term (metric? drive? goal?).
+All decisions live here. When resolved, move to “Locked” and update the relevant brief + checklist items.
+
+### Locked (2026-01-16)
+- Accelerator pricing: $499 one-time or $58/mo for 6 months (bundles Accelerator + Organization; auto switches to $20/mo afterward).
+- Accelerator access: single-user license (only the purchaser; not transferable to other org members).
+- Coaching scheduling: 3 Google Calendar links (free x4 → discounted paid; plus full-price paid link).
+- Doc sharing: EIN/990/W9/wire info via signed links.
+
+### BLOCKS IMPLEMENTATION (resolve before building that feature)
+- Pricing tiers: finalize Platform + Organization features + AI credits policy.
+- Electives vs Formation: decide whether “Electives 1–3” become the free 501(c)(3) formation flow for all users (vs paid add-ons).
+- AI provider + credits packaging: Gemini vs OpenAI, token packs/subscription, buy-more UX, usage limits.
 - Donation processing: Stripe Connect as primary? second option?
-- Board member role: exact permissions (document-only, view-only dashboard) and invite flow.
+- Board portal: exact permissions + meeting minutes/docs + “schedule a meeting” surfaces.
+- “Verified org profile”: definition + who gets it + how it shows up (badge + visibility).
 - Onboarding variants: what questions for free vs org vs accelerator?
-- Public roadmap visibility: default off/on? gating?
+
+### Not blocking / can defer (ship ops-first)
+- Accelerator installment cancel behavior: handle manually (ops-first) for launch.
+- Fundraise naming: not “campaign” or “round” — pick a new term (metric? drive? goal?).
 - Community access: exact unlock rules for Discord/WhatsApp + events.
 - Map + marketplace: scope for launch (map only? map + minimal profiles?).
 - “LINK” mention: clarify what payment processor/link service this refers to.
@@ -213,18 +240,21 @@ Use this sequence when you say “go”.
 
 1) Define scope & decisions (blockers)
 - [ ] Confirm pricing tiers + features + AI credits policy.
+- [ ] Confirm Accelerator installment cancel behavior (ops-first at launch).
+- [ ] Decide “Electives 1–3” placement (free formation flow vs paid add-ons).
 - [ ] Decide AI provider + monetization stance.
 - [ ] Name the fundraise feature + define its UX entry point.
 - [ ] Decide donation payment processor(s).
 - [ ] Define board member role + invite flow.
-- [ ] Decide what is publicly visible at launch (org page, roadmap, map).
+- [ ] Decide what is publicly visible at launch (org page, roadmap, map) + “verified profile” rules.
 
 DB readiness (P0/P1)
 - [ ] Apply latest Supabase migrations (including lints cleanup + FK indexes) and re-run Supabase scan export.
 - [ ] Defer INFO “unused index” + auth connection setting until post-launch unless perf issues appear.
 
 2) Payments & access gating
-- [ ] Stripe products/prices finalized for Platform Free / Organization / Accelerator. (TODO last)
+- [ ] Stripe products/prices finalized for Platform Free / Organization / Accelerator (one-time + installment). (TODO last)
+- [ ] Installment plan behavior: $58/mo x6, includes Accelerator + Organization, then reverts to $20/mo.
 - [ ] Stripe products/prices finalized for Electives add-ons (standard + Accelerator-discounted prices).
 - [ ] Webhook + subscription sync verified end-to-end.
 - [ ] Access gating enforced for paid features (accelerator, coaching, AI credits).
@@ -242,6 +272,8 @@ Stripe setup (manual) — TODO last:
 3) Onboarding + profiles (fast, personal, minimal)
 - [ ] Simplify onboarding: free vs organization vs accelerator.
 - [ ] Entity formation status flow (pre‑501c3 / in progress / approved).
+- [ ] Formation flow: make “Electives 1–3” the default starting path for all accounts (prompt upgrade; no dead ends).
+- [ ] Add a formation tracker outside `/accelerator` (platform-first; tied to 501c3 status + docs + roadmap).
 - [ ] Founder profile + org profile creation.
 - [ ] Minimalist in‑app tutorials/tooltips where needed (short, fast).
 - [ ] Add quick guidance tags/cards with counts when highlighting UI flows.
@@ -252,17 +284,25 @@ Stripe setup (manual) — TODO last:
 - [ ] Resource/community map (public, searchable, filters by location/cause/type).
 - [ ] Map UI: full‑screen, clickable pins (circle image + thin white border), open profile as card/drawer.
 - [ ] On org cards, show progress bar tied to funding goals.
+- [ ] Documents sharing: EIN/990/W9/wire info share page/link (ultra-minimal; text/email a link).
 
 5) Accelerator integration (paid)
 - [ ] Ensure 9‑week, 42‑module structure aligns to build‑as‑you‑go logic.
 - [ ] Progress tracking across profiles/accelerator/database/notifications.
 - [ ] Integrate program creation wizard into modules at the right points.
 - [ ] Auto‑populate org profile + first program + fundraising artifacts from module completion.
+- [ ] System map: document user journeys + data mapping (accelerator → roadmap → org profile → public surfaces), with gaps + easy wins.
+- [ ] Roadmap v2: internal doc templates (Origin → Need → Mission/Vision/Values → Theory of Change → Program → Evaluation → People → Budget → Fundraising → Communications → Board Strategy → Next Actions).
+- [ ] Budget module: redesign the budget table for usability (responsive) + CSV template download + 3-step mini guide.
+- [ ] Module UX: fix end-of-module “Continue”, TipTap focus/cursor quirks, and “Take a break” routing.
+- [ ] Module notes: toggleable notes during lessons + surface notes later on the overview page.
 - [ ] Board members can view budget/financial artifacts.
 - [ ] Electives add-ons promoted on Accelerator overview + available for purchase during/after Accelerator (discounted pricing for Accelerator owners).
 
 6) Coaching & meetings (paid)
 - [ ] Meeting booking via Google Calendar (no custom calendar build).
+- [ ] Standardize booking cards across the app (minimal; consistent CTA + pricing context).
+- [ ] Integrate coaching entitlements into scheduling flow (free x4 per Accelerator purchaser → discounted link; plus full-price link; cancellations/no-shows handled manually).
 - [ ] Guardrails: link usage limits / guidelines for free calls.
 - [ ] Coach directory placement (People page? “Network” category?).
 - [ ] Calendar + notifications sync (later priority) with ability to add events.
@@ -316,6 +356,11 @@ Stripe setup (manual) — TODO last:
 - 9‑week structure, 42 modules.
 - Progress tracking across profiles/accelerator/database/progression/notifications.
 - Build‑as‑you‑go logic: integrate program creation wizard into modules at the right points.
+- System map: user journeys + data mapping (accelerator → roadmap/org profile/public) with gaps + obvious wins.
+- Roadmap v2 (Accelerator-first): richer default templates + tighter linkage to accelerator progress + public org profile.
+- Budget table UX: responsive layout, lightweight editing, CSV template download, 3-step mini guide.
+- Module UX: end-of-module continue; “take a break” goes back to accelerator overview; fix module re-entry/progression bugs.
+- Notes: toggleable per-module notes + overview index/search (needs layout decision first).
 - Completing modules auto‑populates:
   - Org profile (placeholders chosen based on lesson context).
   - First program.
@@ -326,10 +371,30 @@ Stripe setup (manual) — TODO last:
   - Budget + financial artifacts (visible to board members).
   - Compliance checklist.
 
+Roadmap v2 template subtitles (draft)
+- Origin Story — The roots of the work: what happened, what you saw, and why this mission matters now.
+- Need — The problem and who it impacts, grounded in lived experience + evidence.
+- Mission, Vision, Values — The change you exist to create and the principles guiding decisions.
+- Theory of Change — Your If → Then → So logic chain from activities to outcomes (and key assumptions).
+- Program — What you deliver, how it works, and what participants experience.
+- Evaluation — How you measure outcomes, learn quickly, and improve.
+- People — Team structure, roles, governance, and the capacity you need next.
+- Budget — The financial model: costs, runway, and what funding unlocks.
+- Fundraising — The plan to secure support: goals, targets, timeline, and asks.
+  - Strategy — Target funders + relationship plan + cadence.
+  - Presentation — Pitch narrative + deck + proof.
+  - Treasure Map + CRM plan — Prospect list + tracking + follow-ups.
+- Communications — Messaging + channels + cadence for staying visible.
+- Board Strategy — How you recruit, manage, and activate the board to support governance + fundraising.
+  - Calendar — Meeting cadence + milestones.
+  - Handbook — Roles, expectations, onboarding, and norms.
+- Next Actions — The next 30–90 days: priorities, owners, and specific support asks.
+
 ### C) Coaching & Human Support (Paid)
 - 1:1 coaching system.
 - Coach directory (People page? preloaded? “Network” category).
 - Meeting booking with Google Calendar (avoid building full calendar).
+- Standardize booking cards (same component everywhere) + 3 calendar links (free x4 → discounted; plus full-price).
 - Guidelines/limits on link usage (avoid uncharged scheduling).
 - Later priority: scheduling/availability, session notes (private), dashboard integration, group coaching/office hours, calendar, registration, replay archive.
 
@@ -355,6 +420,7 @@ Stripe setup (manual) — TODO last:
 - Sell Electives modules as lifetime add-ons (per-elective purchases) with two price points:
   - $100 each (no Accelerator purchase).
   - $25 each (Accelerator purchasers).
+- Decision: make Electives 1–3 the free formation flow for all users (changes this workstream).
 - Promote Electives during Accelerator checkout (select add-ons before redirecting to Stripe) and on the Accelerator overview page.
 - Enforce server-side gating for elective modules:
   - Locked modules don’t render paid content.
@@ -395,7 +461,8 @@ Stripe setup (manual) — TODO last:
 - Reinstate social media assets.
 
 ### I) Notifications
-- Build a notifications component (minimalist).
+- Rebuild notifications (system-wide): define events, delivery rules, and a single UX pattern for inbox/archive + unread counts.
+- Cover accelerator events (progress, next steps), coaching bookings, roadmap/document changes, and admin/testing seeds.
 
 ### J) AI (Paid Option)
 - AI writing assist: use org context (excluding sensitive data) to draft answers.
@@ -404,6 +471,7 @@ Stripe setup (manual) — TODO last:
 - Allow opt‑out of AI.
 - Monetization: decide pass‑through vs margin; rate limiting; monthly credits; unused credits donation idea (evaluate).
 - “AI recommendations” panel: 2 recommendations at a time; optional save to mini kanban.
+- Frameworks tool: context-aware roadmap suggestions from org data with inline “Keep” + word-count button, popover actions (insert/copy/edit/reset), and short template examples (no AI label).
 - Phase 2 AI: grant discovery, funding opportunity matching, donor/partner identification, funder readiness scoring, gap analysis.
 
 ### K) Admin / Ops
@@ -415,6 +483,7 @@ Stripe setup (manual) — TODO last:
 ---
 
 ## Pricing Page Requirements (Must Match)
+NOTE: Accelerator has two payment options ($499 once or $58/mo for 6 months, then $20/mo). Update this section once the Stripe implementation details are finalized.
 Card 1: The Platform (Free)
 - Title: Formation
 - Price: $0 / month
@@ -423,6 +492,7 @@ Card 1: The Platform (Free)
   - 1 Admin Seat (Founder only)
   - 501(c)(3) Formation Flow (Guided)
   - Private Roadmap (Internal planning)
+  - Public organization profile (you control what’s public)
   - Resource Map Listing (Get discovered)
   - Community Access (Discord & WhatsApp)
   - Stripe Connect (Accept donations)
@@ -445,13 +515,14 @@ Card 2: The Platform (Growth)
 
 Card 3: The Accelerator (Add‑On)
 - Title: The Accelerator
-- Price: $499 (One‑time)
+- Price: $499 (one‑time) or $58 / month for 6 months (includes Organization; then $20/mo)
 - Subtitle: The 9‑week playbook to funder‑readiness.
 - Features:
   - 42‑Module Curriculum (Lifetime access)
   - Strategic Templates (Budgets, Narratives)
-  - Single User License (Locked to one founder)
-  - Expert Coaching Sessions (Discounted access)
+  - Single-user license (locked to the purchaser)
+  - 4 coaching sessions included
+  - Discounted coaching after included sessions
   - Priority Support
   - Can be added to Free or Organization plans
 - CTA: “Enroll in Accelerator”
@@ -530,13 +601,88 @@ Phase 4 — Admin tooling + analytics
 
 ---
 
+## UI Backlog (Batchable)
+
+Accelerator
+- [ ] Remove the “Published Class” card block from the Accelerator overview flow (shown in the Overview page list).
+- [ ] Fix module “Continue” at the end of lessons (reported at end of Module 4).
+- [ ] Fix TipTap focus/cursor behavior (line jumps when clicking into the editor).
+- [ ] “Take a break” returns to the Accelerator overview (not `/my-organization`).
+- [ ] Fix module re-entry/progression issues when navigating across modules.
+- [ ] Update session gradients (unique gradient per session).
+- [ ] Add per-module notes (toggleable) + surface notes on the Accelerator overview (ask Caleb for layout first).
+
+UI polish
+- [ ] Don’t truncate Item secondary text; allow wrapping (`src/components/ui/item.tsx`).
+
+Legacy admin cleanup
+- [ ] Remove legacy “manual module/session creation wizard” UI surfaces (draft modules + edit buttons on class/module pages).
+- [ ] Ensure admin editing flows live in the main app shell (not legacy accelerator-only pages).
+
 ## Inbox (New Notes)
 (Add new raw notes here before organizing.)
+- LMS data refresh: update classes/modules in DB to match current accelerator content (all/published), and ensure sidebar/module lists reflect the latest curriculum.
+- Frameworks feature: placeholder text becomes a suggestion generated from org data; inline “Keep” action and a word-count button (dot-separated) open a popover with insert/copy/edit/reset; do not mention AI; supports undo.
 - Onboarding simplification: admin-only toggles + test entry points in the account menu (SidebarFooter) for replaying onboarding/tutorials (must be invisible to non-admins).
-- Tutorial/accelerator onboarding: overlay should not cover the highlighted element; highlight card should include a rounded-rectangle media slot (icon/image) and fix any sharp-corner artifacts in the highlight mask.
 - Onboarding dialog UI polish: radio option text layout (avoid squished text), avatar upload needs an optional “remove” before continuing, input placeholders should ellipsize, and dialog max-width needs a final pass.
-- `/admin` navigation runtime error currently renders raw Supabase error objects (`{code, details, hint, message}`) — ensure all server actions/components throw `Error` instances (wrap Supabase errors).
 - Clarify/confirm onboarding vs billing: where plan selection + Stripe checkout live, and why onboarding submit no longer triggers checkout.
+- Public header wordmark: use regular Inter bold for “Coach House” and align wordmark height to the logo height on pricing/public header.
+- Reduce top gap above left rail group content and top gap above page content in shell (notably in News).
+- Remove “PLATFORM” subtitle from the brand lockup (platform + accelerator).
+- Brand logo click should route to `/my-organization` (not `/dashboard`).
+- Page tutorial button: swap icon to a more tutorial-related icon.
+- Global search button: make it longer + centered on large screens, shift right as space tightens, and collapse to icon-only on small screens.
+- Increase the gap below the app shell (double current).
+- Left nav labels should remain single-line (fix “My Organization” wrapping).
+- Accelerator “Roadmap” link should include a right-side icon; remove the duplicate accelerator roadmap item and keep the `/my-organization/roadmap` nav item as primary for now.
+- Strategic roadmap framework card (framework list) should move into the right rail.
+- Accelerator right rail should not show the track + module list block in the main content area (confirm removal or relocation).
+- Ensure left/right rail toggles work on mobile.
+- App shell should support card-like header/footer structure inside the main content container (verify or add).
+- App shell gutter should apply only when rails are closed, not when rails are open.
+- My Organization hero background block should be taller.
+- Add separators between My Organization sections (Identity, Contact, Address, etc.).
+- ProgramCard sizes: standardize into three fixed variants (list item, medium, full) with consistent height/width.
+- Admin page should be for org admins managing members/roles/invites (not internal staff admin dashboard).
+- My Organization Documents page should always be centered single-column layout.
+- Sidebar progress indicator: make the CircularProgress circle smaller.
+- Mobile header breadcrumbs: align left so the current page label doesn't overlap the search icon; ensure header/top-rail layout is correct across all pages.
+- People page: remove the "SEARCH" and "CATEGORY" rail labels above the search and category inputs.
+- Accelerator overview: add proper top/bottom padding around the main content section.
+- Accelerator: merge the duplicate TRACK dropdowns into one control that drives the module list shown on the overview grid (do not edit until planned; prior attempt needs correction).
+- Accelerator overview: remove extra left/right padding in the coaching/guidance card section.
+- Accelerator overview: add more space above the “Next up” callout block.
+- Accelerator: use the track dropdown variant with icons (not the plain one), but preserve full functionality so it controls both the overview grid and module page contents.
+- Accelerator StartBuildingCard: reduce the top margin and tighten spacing between the CTA/title/description text blocks.
+- Fix console error: flushSync called inside lifecycle from `src/components/rich-text-editor.tsx:275` when `setContent` runs; needs scheduler/microtask-safe update.
+- Tiptap editor: Cmd/Ctrl+A should select only editor content (not the whole page) in Strategic Roadmap editor.
+- Roadmap calendar: replace TipTap editor with shadcn-based calendar UI for creating recurring/categorized events (titles, start/end, assign to admin/staff/board). Include quick-add presets (Board meetings, reporting, key dates) with create/update/delete, and notify only accepted board/admin members. Plan to surface on dashboard later.
+- Roadmap board section: replace TipTap editor with document upload for board roles, policies, and onboarding materials.
+- Communication tools map: redesign into an interactive drag-and-drop, grid-based inventory UI with tool library, custom tool creation, channels/messaging, copy/images placement, and audience dropdowns (preset + CRUD). Right rail should host draggable options beneath main nav; main canvas shows flow layout.
+- Accelerator inputs → roadmap sync: identify accelerator steps/questions that should update roadmap sections; when submitted, trigger notifications + nav badge/dot on Roadmap item(s) that clears on open.
+- Roadmap “Treasure Map / CRM Plan” section: replace plain editor with interactive treasure map/CRM planning UI.
+- Roadmap “Budget” section: add the interactive accelerator budget table/template UI and re-layout into a dashboard-like budgeting workspace.
+- Roadmap “People” section: replace editor with the same UI as `/people` so roadmap and people experience stay in sync.
+- Sidebar nav order: move “Roadmap” to sit directly below “Accelerator.”
+- Roadmap “Mission, Vision, Values”: split into three separate editors with one shared toolbar; update layout to fit all three and stay responsive.
+- Roadmap “Theory of Change”: split into three editors for If / Then / So framing, with responsive layout (not a single column).
+- Roadmap “Program” section: make it interactive like the program builder wizard and show program cards.
+- Admin invite form: fix layout so the Invite button never overlaps the role dropdown.
+- People page layout: move the main table block into a row layout positioned to the left of the “People” heading (needs layout clarification).
+- People page: remove “Show map details” toggle button and make the map details section always visible.
+- Header buttons: make the right-rail toggle button use the same container style as the left sidebar trigger.
+- Fix People page runtime error: Label is not defined in pagination controls.
+- In collapsed left-rail state, keep the logo mark container visible while hiding the text.
+- Strategic roadmap template: add new prebuilt sections (ordered) + new right-rail TOC design with animated indicator (per screenshots). Add as a separate route for the template.
+- Internal admin (staff-only) should move to a separate route (new path TBD), keep org admin at `/admin`.
+- Roadmap landing page (non-module entry). Use provided design. Variable roadmap experience depending on org status (registered 501c3 vs pre-status).
+- Create **Formation** class from current Electives modules (Financial Handbook → Filing 1023), reordered as needed; free-access for all. Gate other classes unless paid accelerator. Add clear upsell UI but keep layout clean.
+- Embed roadmap checkpoints directly into module steps (Option 1). Sync wording/DB for roadmap homework links; checkpoint dialog already live.
+- Ensure module completion persists from DB into sidebar; lock/unlock consistent after refresh (follow-up verification).
+- Onboarding competitor screenshots: analyze vs ours and adjust onboarding flow accordingly.
+- People page React Flow: fix dragging/reposition; remove helper overlay; clear canvas pills/labels; display people-only nodes; rebuild hierarchy using best-practice React Flow patterns.
+- Homepage tweaks: hero wordmark “Coach House” in Inter Bold; change hero line to “Tools to build, Coaches to train.” Hide video section for now. Redesign core-offering cards into a bento grid with inline icons/snippets (programmatic UI highlights/case snippets, no gradients).
+- Pricing: add accelerator tiers — $349 (no coaching) and $499 (includes 4 coaching sessions); update gating/checkout.
 
 ## Raw Notes Delta (Captured Items)
 These were either missing or needed clearer placement; they are now folded into the sections above.

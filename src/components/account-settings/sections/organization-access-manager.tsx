@@ -13,6 +13,8 @@ import {
   listOrganizationAccessAction,
   removeOrganizationMemberAction,
   revokeOrganizationInviteAction,
+  setOrganizationAdminsCanInviteAction,
+  setOrganizationStaffCanManageCalendarAction,
   updateOrganizationMemberRoleAction,
   type OrganizationAccessInvite,
   type OrganizationAccessMember,
@@ -28,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Switch } from "@/components/ui/switch"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
@@ -76,6 +79,11 @@ export function OrganizationAccessManager({
   const [loading, setLoading] = useState(true)
   const [members, setMembers] = useState<OrganizationAccessMember[]>([])
   const [invites, setInvites] = useState<OrganizationAccessInvite[]>([])
+  const [adminsCanInvite, setAdminsCanInvite] = useState(false)
+  const [staffCanManageCalendar, setStaffCanManageCalendar] = useState(false)
+  const [canInvite, setCanInvite] = useState(false)
+  const [canManageMembers, setCanManageMembers] = useState(false)
+  const [canManageSettings, setCanManageSettings] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
 
   const [inviteEmail, setInviteEmail] = useState("")
@@ -98,11 +106,21 @@ export function OrganizationAccessManager({
       setLoadError(res.error)
       setMembers([])
       setInvites([])
+      setAdminsCanInvite(false)
+      setStaffCanManageCalendar(false)
+      setCanInvite(false)
+      setCanManageMembers(false)
+      setCanManageSettings(false)
       setLoading(false)
       return
     }
     setMembers(res.members)
     setInvites(res.invites)
+    setAdminsCanInvite(Boolean(res.adminsCanInvite))
+    setStaffCanManageCalendar(Boolean(res.staffCanManageCalendar))
+    setCanInvite(Boolean(res.canInvite))
+    setCanManageMembers(Boolean(res.canManageMembers))
+    setCanManageSettings(Boolean(res.canManageSettings))
     setLoading(false)
   }
 
@@ -147,64 +165,124 @@ export function OrganizationAccessManager({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_180px_auto] sm:items-end">
-          <div className="grid gap-2">
-            <Label htmlFor="orgInviteEmail">Email</Label>
-            <Input
-              id="orgInviteEmail"
-              type="email"
-              placeholder="name@example.com"
-              value={inviteEmail}
-              onChange={(event) => setInviteEmail(event.currentTarget.value)}
+        {canManageSettings ? (
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border/70 bg-background/40 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">Allow org admins to invite</p>
+              <p className="text-sm text-muted-foreground">
+                When enabled, teammates with the <span className="font-medium text-foreground">Admin</span> role can create and revoke invite links.
+              </p>
+            </div>
+            <Switch
+              checked={adminsCanInvite}
               disabled={pending}
+              onCheckedChange={(next) => {
+                startTransition(async () => {
+                  const toastId = toast.loading("Updating invite permissions…")
+                  const res = await setOrganizationAdminsCanInviteAction(Boolean(next))
+                  if ("error" in res) {
+                    toast.error(res.error, { id: toastId })
+                    return
+                  }
+                  toast.success("Updated", { id: toastId })
+                  await load()
+                })
+              }}
+              aria-label="Allow org admins to invite"
             />
           </div>
-          <div className="grid gap-2">
-            <Label>Role</Label>
-            <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as OrganizationMemberRole)} disabled={pending}>
-              <SelectTrigger className="w-full">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {INVITEABLE_ROLES.map((role) => (
-                  <SelectItem key={role} value={role}>
-                    {ROLE_LABELS[role]}
-                    {ROLE_HELP[role] ? <span className="text-xs text-muted-foreground"> — {ROLE_HELP[role]}</span> : null}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button
-            type="button"
-            disabled={pending || inviteEmail.trim().length === 0}
-            onClick={() => {
-              if (pending) return
-              startTransition(async () => {
-                const toastId = toast.loading("Creating invite…")
-                const res = await createOrganizationInviteAction({ email: inviteEmail, role: inviteRole })
-                if ("error" in res) {
-                  toast.error(res.error, { id: toastId })
-                  return
-                }
+        ) : null}
 
-                const link = inviteUrlBase ? `${inviteUrlBase}/join-organization?token=${res.invite.token}` : `/join-organization?token=${res.invite.token}`
-                try {
-                  await copyToClipboard(link)
-                  toast.success("Invite link copied", { id: toastId })
-                } catch {
-                  toast.success("Invite created", { id: toastId })
-                }
-                setInviteEmail("")
-                await load()
-              })
-            }}
-            className="gap-2"
-          >
-            {pending ? <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden /> : <UserPlusIcon className="h-4 w-4" aria-hidden />}
-            Invite
-          </Button>
-        </div>
+        {canManageSettings ? (
+          <div className="mt-3 flex flex-col gap-3 rounded-xl border border-border/70 bg-background/40 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-foreground">Allow staff to manage the roadmap calendar</p>
+              <p className="text-sm text-muted-foreground">
+                When enabled, teammates with the <span className="font-medium text-foreground">Staff</span> role can add and edit calendar events.
+              </p>
+            </div>
+            <Switch
+              checked={staffCanManageCalendar}
+              disabled={pending}
+              onCheckedChange={(next) => {
+                startTransition(async () => {
+                  const toastId = toast.loading("Updating calendar permissions…")
+                  const res = await setOrganizationStaffCanManageCalendarAction(Boolean(next))
+                  if ("error" in res) {
+                    toast.error(res.error, { id: toastId })
+                    return
+                  }
+                  toast.success("Updated", { id: toastId })
+                  await load()
+                })
+              }}
+              aria-label="Allow staff to manage the roadmap calendar"
+            />
+          </div>
+        ) : null}
+
+        {canInvite ? (
+          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_180px_auto] sm:items-end">
+            <div className="grid gap-2">
+              <Label htmlFor="orgInviteEmail">Email</Label>
+              <Input
+                id="orgInviteEmail"
+                type="email"
+                placeholder="name@example.com"
+                value={inviteEmail}
+                onChange={(event) => setInviteEmail(event.currentTarget.value)}
+                disabled={pending}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Role</Label>
+              <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as OrganizationMemberRole)} disabled={pending}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {INVITEABLE_ROLES.map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {ROLE_LABELS[role]}
+                      {ROLE_HELP[role] ? <span className="text-xs text-muted-foreground"> — {ROLE_HELP[role]}</span> : null}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              type="button"
+              disabled={pending || inviteEmail.trim().length === 0}
+              onClick={() => {
+                if (pending) return
+                startTransition(async () => {
+                  const toastId = toast.loading("Creating invite…")
+                  const res = await createOrganizationInviteAction({ email: inviteEmail, role: inviteRole })
+                  if ("error" in res) {
+                    toast.error(res.error, { id: toastId })
+                    return
+                  }
+
+                  const link = inviteUrlBase ? `${inviteUrlBase}/join-organization?token=${res.invite.token}` : `/join-organization?token=${res.invite.token}`
+                  try {
+                    await copyToClipboard(link)
+                    toast.success("Invite link copied", { id: toastId })
+                  } catch {
+                    toast.success("Invite created", { id: toastId })
+                  }
+                  setInviteEmail("")
+                  await load()
+                })
+              }}
+              className="gap-2"
+            >
+              {pending ? <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden /> : <UserPlusIcon className="h-4 w-4" aria-hidden />}
+              Invite
+            </Button>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-muted-foreground">Invites are managed by the organization owner.</p>
+        )}
       </div>
 
       <div className="rounded-2xl border border-border/70 bg-background/60 p-4">
@@ -255,7 +333,7 @@ export function OrganizationAccessManager({
                           <span className="rounded-full border border-border/70 bg-muted/40 px-2 py-1 text-xs text-muted-foreground">
                             {ROLE_LABELS.owner}
                           </span>
-                        ) : (
+                        ) : canManageMembers ? (
                           <Select
                             value={member.role}
                             onValueChange={(value) => {
@@ -282,9 +360,13 @@ export function OrganizationAccessManager({
                               ))}
                             </SelectContent>
                           </Select>
+                        ) : (
+                          <span className="rounded-full border border-border/70 bg-muted/40 px-2 py-1 text-xs text-muted-foreground">
+                            {ROLE_LABELS[member.role]}
+                          </span>
                         )}
 
-                        {!isOwner ? (
+                        {canManageMembers && !isOwner ? (
                           <Button
                             type="button"
                             variant="ghost"
@@ -316,79 +398,81 @@ export function OrganizationAccessManager({
               <p className="text-sm text-muted-foreground">No members yet.</p>
             )}
 
-            <div className="space-y-3">
-              <div>
-                <p className="text-sm font-medium text-foreground">Pending invites</p>
-                <p className="mt-1 text-sm text-muted-foreground">Copy an invite link or revoke it.</p>
-              </div>
-              {hasInvites ? (
-                <div className="space-y-3">
-                  {invites.map((invite) => {
-                    const expired = new Date(invite.expiresAt).getTime() < Date.now()
-                    const link = inviteUrlBase ? `${inviteUrlBase}/join-organization?token=${invite.token}` : `/join-organization?token=${invite.token}`
-                    return (
-                      <div
-                        key={invite.id}
-                        className="flex flex-col gap-3 rounded-xl border border-border/70 bg-background/40 p-3 sm:flex-row sm:items-center sm:justify-between"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-medium text-foreground">{invite.email}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {ROLE_LABELS[invite.role]} • Expires {formatDate(invite.expiresAt)}
-                            {expired ? <span className="ml-2 text-destructive">Expired</span> : null}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            disabled={pending}
-                            onClick={() => {
-                              startTransition(async () => {
-                                try {
-                                  await copyToClipboard(link)
-                                  toast.success("Invite link copied")
-                                } catch {
-                                  toast.error("Unable to copy invite link")
-                                }
-                              })
-                            }}
-                            className="gap-2"
-                          >
-                            <CopyIcon className="h-4 w-4" aria-hidden />
-                            Copy link
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            disabled={pending}
-                            onClick={() => {
-                              startTransition(async () => {
-                                const res = await revokeOrganizationInviteAction(invite.id)
-                                if ("error" in res) {
-                                  toast.error(res.error)
-                                  return
-                                }
-                                toast.success("Invite revoked")
-                                await load()
-                              })
-                            }}
-                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                          >
-                            <Trash2Icon className="h-4 w-4" aria-hidden />
-                            Revoke
-                          </Button>
-                        </div>
-                      </div>
-                    )
-                  })}
+            {canInvite ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Pending invites</p>
+                  <p className="mt-1 text-sm text-muted-foreground">Copy an invite link or revoke it.</p>
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">No pending invites.</p>
-              )}
-            </div>
+                {hasInvites ? (
+                  <div className="space-y-3">
+                    {invites.map((invite) => {
+                      const expired = new Date(invite.expiresAt).getTime() < Date.now()
+                      const link = inviteUrlBase ? `${inviteUrlBase}/join-organization?token=${invite.token}` : `/join-organization?token=${invite.token}`
+                      return (
+                        <div
+                          key={invite.id}
+                          className="flex flex-col gap-3 rounded-xl border border-border/70 bg-background/40 p-3 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-medium text-foreground">{invite.email}</p>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {ROLE_LABELS[invite.role]} • Expires {formatDate(invite.expiresAt)}
+                              {expired ? <span className="ml-2 text-destructive">Expired</span> : null}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              disabled={pending}
+                              onClick={() => {
+                                startTransition(async () => {
+                                  try {
+                                    await copyToClipboard(link)
+                                    toast.success("Invite link copied")
+                                  } catch {
+                                    toast.error("Unable to copy invite link")
+                                  }
+                                })
+                              }}
+                              className="gap-2"
+                            >
+                              <CopyIcon className="h-4 w-4" aria-hidden />
+                              Copy link
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              disabled={pending}
+                              onClick={() => {
+                                startTransition(async () => {
+                                  const res = await revokeOrganizationInviteAction(invite.id)
+                                  if ("error" in res) {
+                                    toast.error(res.error)
+                                    return
+                                  }
+                                  toast.success("Invite revoked")
+                                  await load()
+                                })
+                              }}
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2Icon className="h-4 w-4" aria-hidden />
+                              Revoke
+                            </Button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No pending invites.</p>
+                )}
+              </div>
+            ) : null}
           </div>
         )}
       </div>

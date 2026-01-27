@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 import { normalizePersonCategory, type PersonCategory } from "@/lib/people/categories"
+import { resolveActiveOrganization } from "@/lib/organization/active-org"
 
 type OrgPersonSummary = {
   id: string
@@ -26,10 +27,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error?.message ?? "Unauthorized" }, { status: 401 })
   }
 
+  const { orgId } = await resolveActiveOrganization(supabase, user.id)
+
   const { data: orgRow, error: orgErr } = await supabase
     .from("organizations")
     .select("profile")
-    .eq("user_id", user.id)
+    .eq("user_id", orgId)
     .maybeSingle<{ profile: Record<string, unknown> | null }>()
 
   if (orgErr) {

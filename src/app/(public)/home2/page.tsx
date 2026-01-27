@@ -11,7 +11,6 @@ import Notebook from "lucide-react/dist/esm/icons/notebook"
 import PanelTop from "lucide-react/dist/esm/icons/panel-top"
 
 import { Home2PhotoStrip } from "@/components/public/home2-photo-strip"
-import { Home2ScrollVideo } from "@/components/public/home2-scroll-video"
 import { NewsGradientThumb } from "@/components/news/gradient-thumb"
 import { PublicHeader } from "@/components/public/public-header"
 import { SectionReveal } from "@/components/public/section-reveal"
@@ -30,8 +29,9 @@ const heading = Sora({
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
   variable: "--font-inter",
+  display: "swap",
 })
 
 const body = Space_Grotesk({
@@ -69,18 +69,18 @@ const STUDIO_BLOCKS = [
 const PROCESS_STEPS = [
   {
     step: "01",
-    title: "Shape the story",
-    body: "Clarify the mission, original need, and theory of change with guided prompts.",
+    title: "Formation",
+    body: "Clarify your mission, governance, and core narrative with guided prompts.",
   },
   {
     step: "02",
-    title: "Design the roadmap",
-    body: "Translate strategy into initiatives, timing, and measurable outcomes.",
+    title: "Roadmap",
+    body: "Turn strategy into initiatives, timing, and measurable outcomes.",
   },
   {
     step: "03",
-    title: "Launch with confidence",
-    body: "Publish your org profile, program plan, and roadmap when you're ready.",
+    title: "Funding readiness",
+    body: "Package programs, proof, and reporting so funders can say yes.",
   },
 ]
 
@@ -114,28 +114,34 @@ function WhatsAppLogo({ className }: { className?: string }) {
   )
 }
 
-const PRODUCT_HIGHLIGHTS = [
-  {
-    href: "/accelerator",
-    eyebrow: "Core offering",
-    title: "Accelerator + coaching",
-    description: "Step-by-step curriculum with assignments, progress, and 1:1 expert sessions.",
-    seed: "news-accelerator",
-    icon: <GraduationCap className="h-5 w-5" aria-hidden />,
-  },
+type HighlightSize = "l" | "m" | "s" | "xs"
+
+type Highlight = {
+  href: string
+  eyebrow: string
+  title: string
+  description: string
+  seed: string
+  icon: React.ReactNode
+  external?: boolean
+  size: HighlightSize
+}
+
+const PRODUCT_HIGHLIGHTS: Highlight[] = [
   {
     href: "/my-organization",
     eyebrow: "Platform",
     title: "Nonprofit platform",
-    description: "Your home base for roadmap, org profile, program builder, and progress tracking.",
+    description: "Roadmap, org profile, program builder, progress tracking, and reporting in one workspace.",
     seed: "news-platform",
     icon: <PanelTop className="h-5 w-5" aria-hidden />,
+    size: "m",
   },
   {
     href: "/community#groups",
     eyebrow: "Community",
-    title: "Discord + WhatsApp groups",
-    description: "Connect with founders, share wins, and get real-time help from the community.",
+    title: "Discord + WhatsApp",
+    description: "Connect with founders, share wins, and get real-time help.",
     seed: "news-community",
     icon: (
       <span className="flex items-center gap-1">
@@ -143,15 +149,16 @@ const PRODUCT_HIGHLIGHTS = [
         <WhatsAppLogo className="h-4 w-4 text-[#25D366]" />
       </span>
     ),
+    size: "s",
   },
   {
-    href: "https://coach-house.gitbook.io/coach-house",
-    eyebrow: "Documentation",
-    title: "Development documentation",
-    description: "Implementation guides, platform references, and technical runbooks.",
-    seed: "news-docs",
-    icon: <Notebook className="h-5 w-5" aria-hidden />,
-    external: true,
+    href: "/accelerator",
+    eyebrow: "Curriculum",
+    title: "Accelerator + coaching",
+    description: "Guided assignments, pacing, and 1:1 sessions to keep you shipping every week.",
+    seed: "news-accelerator",
+    icon: <GraduationCap className="h-5 w-5" aria-hidden />,
+    size: "l",
   },
   {
     href: "/community#map",
@@ -160,6 +167,17 @@ const PRODUCT_HIGHLIGHTS = [
     description: "Explore the network of nonprofits building alongside Coach House.",
     seed: "news-map",
     icon: <MapIcon className="h-5 w-5" aria-hidden />,
+    size: "xs",
+  },
+  {
+    href: "https://coach-house.gitbook.io/coach-house",
+    eyebrow: "Documentation",
+    title: "Documentation",
+    description: "Implementation guides, platform references, and runbooks.",
+    seed: "news-docs",
+    icon: <Notebook className="h-5 w-5" aria-hidden />,
+    external: true,
+    size: "xs",
   },
 ]
 
@@ -264,7 +282,7 @@ export default function HomeTwoPage() {
       <PublicHeader />
 
       <div className="relative overflow-x-hidden">
-        <div className="mx-auto flex w-[min(1240px,92%)] flex-col gap-0 pb-24 pt-24 md:pb-28 md:pt-28">
+        <div className="mx-auto flex w-[min(1100px,92%)] flex-col gap-0 pb-24 pt-24 md:pb-28 md:pt-28">
           <SectionReveal className="grid min-h-[70vh] place-items-center py-0 md:py-0">
             <div className={cn(inter.className, "mx-auto w-full max-w-3xl space-y-6 text-left lg:max-w-4xl")}>
               <div className="inline-flex items-center justify-start gap-2 rounded-full border border-border/60 bg-card/70 px-4 py-2 text-xs text-muted-foreground shadow-sm animate-fade-in">
@@ -298,83 +316,69 @@ export default function HomeTwoPage() {
             </div>
           </SectionReveal>
 
-          <SectionReveal className="space-y-10 py-12 md:py-14">
-            <Home2ScrollVideo
-              className="animate-fade-in"
-              videoSrc={HOME2_VIDEO_SRC}
-              posterSrc={HOME2_VIDEO_POSTER}
-            />
-          </SectionReveal>
-
-          <SectionReveal className="pt-12 pb-28 md:pt-14 md:pb-32">
-            <div className="mx-auto flex max-w-4xl flex-col items-center gap-5 text-center">
+          <SectionReveal className="py-24 md:py-28">
+            <div className="flex w-full max-w-4xl flex-col items-start gap-6 text-left">
               <ScrollReveal
                 textClassName={cn(
                   inter.className,
                   "text-balance text-3xl font-semibold leading-tight text-foreground sm:text-4xl lg:text-5xl",
                 )}
               >
-                {"Changing the world is hard, but it shouldn't be."}
+                {"We help non-profits raise money."}
               </ScrollReveal>
             </div>
           </SectionReveal>
 
-          <SectionReveal className="grid gap-10 md:grid-cols-2 py-28 md:py-36">
-            {PRODUCT_HIGHLIGHTS.map((item) => (
-              <Link
-                key={item.title}
-                href={item.href}
-                className="group space-y-3"
-                target={item.external ? "_blank" : undefined}
-                rel={item.external ? "noreferrer" : undefined}
-              >
-                <div className="relative">
-                  <NewsGradientThumb
-                    seed={item.seed}
-                    className="aspect-[5/3] w-full rounded-[24px] shadow-lg transition-transform duration-300 ease-out group-hover:-translate-y-1 group-hover:shadow-xl"
-                  />
-                  <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                    <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-background/80 text-foreground shadow-sm backdrop-blur">
-                      {item.icon}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-[11px] uppercase text-muted-foreground">{item.eyebrow}</p>
-                    <p className="text-sm font-semibold">{item.title}</p>
-                    <p className="text-sm text-muted-foreground">{item.description}</p>
-                  </div>
-                  <ArrowUpRight className="h-4 w-4 text-muted-foreground" aria-hidden />
-                </div>
-              </Link>
-            ))}
-          </SectionReveal>
+          
 
-          <SectionReveal className="grid gap-12 lg:grid-cols-[0.6fr_1fr] lg:items-start py-28 md:py-36">
-            <div className="space-y-4">
-              <p className="text-xs uppercase text-muted-foreground">Everything in one place</p>
-              <h2 className={cn(heading.className, "text-3xl font-semibold")}>
-                A strategic home for every nonprofit decision.
-              </h2>
+          <SectionReveal className="grid gap-12 lg:grid-cols-[0.55fr_1.05fr] lg:items-start py-28 md:py-36">
+            <div className="space-y-3 max-w-md">
+              <h2 className={cn(heading.className, "text-3xl font-semibold")}>What we do</h2>
               <p className="text-sm text-muted-foreground">
-                Use the platform as a living strategy board. Every entry becomes part of your published story.
+                The platform, curriculum, community, and docs you need to launch and fund your nonprofit.
               </p>
             </div>
-            <div className="grid gap-4 md:grid-cols-3">
-              {STUDIO_BLOCKS.map((block, index) => (
-                <Card
-                  key={block.title}
-                  className="rounded-[28px] border border-border/60 bg-card/70 p-5 shadow-sm transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-md animate-fade-up"
-                  style={{ animationDelay: `${index * 80}ms` }}
-                >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                    <block.icon className="h-5 w-5" aria-hidden />
-                  </div>
-                  <h3 className="mt-4 text-base font-semibold">{block.title}</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">{block.body}</p>
-                </Card>
-              ))}
+            <div className="grid grid-flow-row-dense gap-4 sm:grid-cols-6 md:grid-cols-12 auto-rows-[180px]">
+              {PRODUCT_HIGHLIGHTS.map((item) => {
+                const sizeClass =
+                  item.title === "Nonprofit platform"
+                    ? "sm:col-span-6 md:col-span-12"
+                    : item.title === "Discord + WhatsApp"
+                      ? "sm:col-span-6 md:col-span-8"
+                    : item.title === "Community map"
+                      ? "sm:col-span-6 md:col-span-4"
+                    : item.title === "Accelerator + coaching"
+                      ? "sm:col-span-6 md:col-span-8"
+                    : item.title === "Documentation"
+                          ? "sm:col-span-6 md:col-span-4"
+                          : "sm:col-span-6 md:col-span-12"
+                return (
+                  <Link
+                    key={item.title}
+                    href={item.href}
+                    className={cn(
+                      "group relative flex h-full flex-col overflow-hidden rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-sm transition duration-300 ease-out hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                      "col-span-full",
+                      sizeClass,
+                    )}
+                  >
+                    <span className="pointer-events-none absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground/70 shadow-sm ring-1 ring-border/40 transition group-hover:bg-background/80 group-hover:text-muted-foreground">
+                      <ArrowUpRight className="h-4 w-4" aria-hidden />
+                    </span>
+                    <div className="flex h-full flex-col justify-between">
+                      <div className="flex flex-col items-start gap-3">
+                        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                          {item.icon}
+                        </div>
+                        <div className="space-y-1 text-left">
+                          <p className="text-base font-semibold leading-tight text-foreground">{item.title}</p>
+                          <p className="text-sm text-muted-foreground line-clamp-3">{item.description}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           </SectionReveal>
 

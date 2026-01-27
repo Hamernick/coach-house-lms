@@ -50,7 +50,7 @@ ItemTitle.displayName = "ItemTitle"
 
 export const ItemDescription = React.forwardRef<HTMLParagraphElement, React.HTMLAttributes<HTMLParagraphElement>>(
   ({ className, ...props }, ref) => (
-    <p ref={ref} className={cn("text-xs text-muted-foreground truncate", className)} {...props} />
+    <p ref={ref} className={cn("text-sm text-muted-foreground break-words", className)} {...props} />
   )
 )
 ItemDescription.displayName = "ItemDescription"

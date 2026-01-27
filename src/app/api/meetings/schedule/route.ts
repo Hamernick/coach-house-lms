@@ -1,23 +1,27 @@
 import { NextResponse } from "next/server"
 
+import { env } from "@/lib/env"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase"
-import { FREE_TIER_MEETING_LIMIT, isFreeTierSubscription } from "@/lib/meetings"
+import {
+  COACHING_INCLUDED_SESSION_LIMIT,
+  getCoachingRemainingSessions,
+  resolveCoachingTier,
+  type CoachingTier,
+} from "@/lib/meetings"
+import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
+import { createNotification } from "@/lib/notifications"
 
-const HOSTS: Record<string, string> = {
-  joel: process.env.NEXT_PUBLIC_MEETING_JOEL_URL ?? "",
-  paula: process.env.NEXT_PUBLIC_MEETING_PAULA_URL ?? "",
+const LEGACY_MEETING_URL =
+  process.env.NEXT_PUBLIC_MEETING_JOEL_URL ?? process.env.NEXT_PUBLIC_MEETING_PAULA_URL ?? ""
+
+const MEETING_LINKS: Record<CoachingTier, string> = {
+  free: env.NEXT_PUBLIC_MEETING_FREE_URL ?? LEGACY_MEETING_URL,
+  discounted: env.NEXT_PUBLIC_MEETING_DISCOUNTED_URL ?? LEGACY_MEETING_URL,
+  full: env.NEXT_PUBLIC_MEETING_FULL_URL ?? LEGACY_MEETING_URL,
 }
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const host = searchParams.get("host") ?? ""
-  const scheduleUrl = HOSTS[host]
-
-  if (!scheduleUrl) {
-    return NextResponse.json({ error: "Scheduling link unavailable." }, { status: 400 })
-  }
-
+export async function GET(_request: Request) {
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -32,10 +36,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  if (!canEditOrganization(role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
   const { data: orgRow, error: orgError } = await supabase
     .from("organizations")
     .select("profile")
-    .eq("user_id", user.id)
+    .eq("user_id", orgId)
     .maybeSingle<{ profile: Record<string, unknown> | null }>()
 
   if (orgError) {
@@ -43,37 +52,61 @@ export async function GET(request: Request) {
   }
 
   const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
-  const meetingCount = typeof profile.meeting_requests === "number" ? profile.meeting_requests : 0
+  const freeSessionsUsed = typeof profile.meeting_requests === "number" ? profile.meeting_requests : 0
 
-  const { data: subscription } = await supabase
-    .from("subscriptions")
-    .select("status, metadata, created_at")
+  const { data: acceleratorPurchase, error: acceleratorError } = await supabase
+    .from("accelerator_purchases")
+    .select("id")
     .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
+    .eq("status", "active")
     .limit(1)
-    .maybeSingle<{ status: string | null; metadata: Json | null }>()
+    .maybeSingle<{ id: string }>()
 
-  const freeTier = isFreeTierSubscription(subscription ?? null)
-  if (freeTier && meetingCount >= FREE_TIER_MEETING_LIMIT) {
-    return NextResponse.json({ error: "Free tier meeting limit reached." }, { status: 403 })
+  if (acceleratorError) {
+    return NextResponse.json({ error: acceleratorError.message }, { status: 500 })
+  }
+
+  const hasAccelerator = Boolean(acceleratorPurchase)
+  const tier = resolveCoachingTier({ hasAccelerator, freeSessionsUsed })
+  const scheduleUrl = MEETING_LINKS[tier]
+
+  if (!scheduleUrl) {
+    return NextResponse.json({ error: "Scheduling link unavailable." }, { status: 400 })
   }
 
   const nextProfile = {
     ...profile,
-    meeting_requests: meetingCount + 1,
+    meeting_requests:
+      tier === "free" ? Math.min(freeSessionsUsed + 1, COACHING_INCLUDED_SESSION_LIMIT) : freeSessionsUsed,
     meeting_requests_last: new Date().toISOString(),
   }
 
   const { error: upsertError } = await supabase
     .from("organizations")
-    .upsert({ user_id: user.id, profile: nextProfile as Json })
+    .upsert({ user_id: orgId, profile: nextProfile as Json })
 
   if (upsertError) {
     return NextResponse.json({ error: upsertError.message }, { status: 500 })
   }
 
+  const notifyResult = await createNotification(supabase, {
+    userId: user.id,
+    title: "Coaching link opened",
+    description: "Your scheduling link is ready. Pick a time that works best.",
+    tone: "info",
+    type: "coaching_requested",
+    actorId: user.id,
+    metadata: { tier },
+  })
+  if ("error" in notifyResult) {
+    console.error("Failed to create coaching notification", notifyResult.error)
+  }
+
+  const remaining = hasAccelerator ? getCoachingRemainingSessions(nextProfile.meeting_requests) : null
+
   return NextResponse.json({
     url: scheduleUrl,
-    remaining: freeTier ? Math.max(0, FREE_TIER_MEETING_LIMIT - (meetingCount + 1)) : null,
+    tier,
+    remaining,
   })
 }

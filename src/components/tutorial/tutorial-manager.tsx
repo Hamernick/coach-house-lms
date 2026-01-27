@@ -5,6 +5,7 @@ import Building2Icon from "lucide-react/dist/esm/icons/building-2"
 import CircleUserIcon from "lucide-react/dist/esm/icons/circle-user"
 import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
 import FileTextIcon from "lucide-react/dist/esm/icons/file-text"
+import HomeIcon from "lucide-react/dist/esm/icons/home"
 import LayersIcon from "lucide-react/dist/esm/icons/layers"
 import RocketIcon from "lucide-react/dist/esm/icons/rocket"
 import RouteIcon from "lucide-react/dist/esm/icons/route"
@@ -120,25 +121,11 @@ const TOUR_STEPS: Record<TutorialKey, HighlightTourStep[]> = {
   ],
   roadmap: [
     {
-      id: "roadmap-add-section",
-      selector: "#roadmap-add-section-trigger",
-      title: "Add sections",
-      description: "Add a framework or custom section — keep it lightweight, then refine as you go.",
-      icon: <LayersIcon className="h-5 w-5" aria-hidden />,
-    },
-    {
       id: "roadmap-section-picker",
       selector: "#roadmap-section-picker-trigger",
       title: "Jump between sections",
       description: "Use the section picker to move around quickly, especially on mobile.",
       icon: <RouteIcon className="h-5 w-5" aria-hidden />,
-    },
-    {
-      id: "roadmap-publish",
-      selector: '[data-tour="roadmap-visibility-toggle"]',
-      title: "Publish (Organization)",
-      description: "When you’re ready, publish your roadmap so funders can view it. Free accounts keep it private.",
-      icon: <RocketIcon className="h-5 w-5" aria-hidden />,
     },
   ],
   documents: [
@@ -175,10 +162,17 @@ const TOUR_STEPS: Record<TutorialKey, HighlightTourStep[]> = {
       icon: <RocketIcon className="h-5 w-5" aria-hidden />,
     },
     {
+      id: "accelerator-return-home",
+      selector: '[data-tour="nav-my-organization"]',
+      title: "Return home",
+      description: "Jump back to your organization workspace any time.",
+      icon: <HomeIcon className="h-5 w-5" aria-hidden />,
+    },
+    {
       id: "accelerator-search",
       selector: '[data-tour="global-search-button"]',
       title: "Search",
-      description: "Search Accelerator modules and jump right into a lesson.",
+      description: "Press CMD+K to find information in your account quickly.",
       icon: <SearchIcon className="h-5 w-5" aria-hidden />,
     },
     {

@@ -1,29 +1,31 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, useCallback, type ReactNode } from "react"
 import dynamic from "next/dynamic"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
 import CalendarCheck from "lucide-react/dist/esm/icons/calendar-check"
-import CheckIcon from "lucide-react/dist/esm/icons/check"
-import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left"
-import ChevronRight from "lucide-react/dist/esm/icons/chevron-right"
+import FolderOpen from "lucide-react/dist/esm/icons/folder-open"
 import Sparkles from "lucide-react/dist/esm/icons/sparkles"
 
 import { Button } from "@/components/ui/button"
+import { StepperRail, type StepperRailStep } from "@/components/ui/stepper-rail"
+import { ShellContentHeaderPortal } from "@/components/app-shell/shell-content-portal"
 import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item"
-import { NotificationsMenu } from "@/components/notifications/notifications-menu"
-import { SupportMenu } from "@/components/support-menu"
-import { ThemeToggle } from "@/components/theme-toggle"
-import { toast } from "@/lib/toast"
+import { Separator } from "@/components/ui/separator"
+import { useRouter } from "next/navigation"
+import { useCoachingBooking } from "@/hooks/use-coaching-booking"
+import { getTrackIcon } from "@/lib/accelerator/track-icons"
 import { cn } from "@/lib/utils"
 import { LessonNotes } from "./lesson-notes"
 import { VideoSection } from "./video-section"
 import { ResourcesCard } from "../resources-card"
-import { DeckViewer } from "./deck-viewer"
+import { DeckResourceCard } from "../deck-resource-card"
 import { buildAssignmentSections } from "./assignment-sections"
 import type { ModuleAssignmentField, ModuleResource } from "../types"
 import type { AssignmentValues } from "./utils"
+import { markModuleCompleteAction } from "@/app/actions/module-progress"
+import type { RoadmapSectionStatus } from "@/lib/roadmap"
 
 const AssignmentFormLazy = dynamic(
   () => import("./assignment-form").then((mod) => mod.AssignmentForm),
@@ -40,15 +42,21 @@ const AssignmentFormLazy = dynamic(
   },
 )
 
-const SUPPORT_EMAIL = "contact@coachhousesolutions.org"
-
 type Step =
-  | { id: string; label: string; type: "video" }
-  | { id: string; label: string; type: "deck" }
-  | { id: string; label: string; type: "notes" }
-  | { id: string; label: string; type: "resources" }
-  | { id: string; label: string; type: "assignment"; sectionId: string; description?: string }
-  | { id: string; label: string; type: "complete" }
+  | { id: string; label: string; type: "video"; stepIndex?: number }
+  | { id: string; label: string; type: "notes"; stepIndex?: number }
+  | { id: string; label: string; type: "resources"; stepIndex?: number }
+  | {
+      id: string
+      label: string
+      type: "assignment"
+      sectionId: string
+      description?: string
+      roadmap?: boolean
+      assignmentIndex?: number
+      stepIndex?: number
+    }
+  | { id: string; label: string; type: "complete"; stepIndex?: number }
 
 type StepStatus = "not_started" | "in_progress" | "complete"
 
@@ -65,6 +73,7 @@ type ModuleStepperProps = {
   resources?: ModuleResource[]
   assignmentFields: ModuleAssignmentField[]
   initialValues: AssignmentValues
+  roadmapStatusBySectionId?: Record<string, RoadmapSectionStatus>
   pending: boolean
   onSubmit: (values: AssignmentValues, options?: { silent?: boolean }) => void
   statusLabel?: string | null
@@ -75,9 +84,12 @@ type ModuleStepperProps = {
   updatedAt?: string | null
   completeOnSubmit: boolean
   nextHref?: string | null
+  breakHref?: string
+  nextLocked?: boolean
   moduleIndex: number | null
   moduleCount: number
-  isAdmin?: boolean
+  stepperPlacement?: "header" | "body"
+  showModuleHeading?: boolean
 }
 
 type StepFrameProps = {
@@ -136,6 +148,7 @@ export function ModuleStepper({
   resources,
   assignmentFields,
   initialValues,
+  roadmapStatusBySectionId,
   pending,
   onSubmit,
   statusLabel,
@@ -146,97 +159,153 @@ export function ModuleStepper({
   updatedAt,
   completeOnSubmit,
   nextHref,
+  breakHref = "/my-organization",
+  nextLocked = false,
   moduleIndex,
   moduleCount,
-  isAdmin = false,
+  stepperPlacement = "body",
+  showModuleHeading = true,
 }: ModuleStepperProps) {
+  const router = useRouter()
   const { tabSections } = useMemo(() => buildAssignmentSections(assignmentFields), [assignmentFields])
-  const railRef = useRef<HTMLDivElement | null>(null)
-  const stepRefs = useRef<(HTMLButtonElement | null)[]>([])
   const celebratePlayedRef = useRef(false)
-  const [railOverflow, setRailOverflow] = useState(false)
-  const [railFade, setRailFade] = useState({ left: false, right: false })
+  const contentCacheRef = useRef<Record<string, ReactNode>>({})
+  const completionMarkedRef = useRef(false)
 
   const steps = useMemo(() => {
     const list: Step[] = []
+    let assignmentIndex = 0
     if (embedUrl || videoUrl || fallbackUrl) {
       list.push({ id: "video", label: "Lesson video", type: "video" })
-    }
-    if (hasDeck) {
-      list.push({ id: "deck", label: "Slide deck", type: "deck" })
     }
     if (lessonNotesContent) {
       list.push({ id: "notes", label: "Lesson notes", type: "notes" })
     }
-    if (resources && resources.length > 0) {
+    if ((resources && resources.length > 0) || hasDeck) {
       list.push({ id: "resources", label: "Resources", type: "resources" })
     }
     if (assignmentFields.length > 0) {
       tabSections.forEach((section, index) => {
         if (section.fields.length === 0) return
+        const isRoadmap = section.fields.some((field) => Boolean(field.roadmapSectionId))
+        assignmentIndex += 1
         list.push({
           id: `assignment-${section.id}`,
           label: section.title ?? `Step ${index + 1}`,
           type: "assignment",
           sectionId: section.id,
           description: section.description,
+          roadmap: isRoadmap,
+          assignmentIndex,
         })
       })
     }
     list.push({ id: "complete", label: "Congratulations", type: "complete" })
-    return list
+    return list.map((step, index) => ({ ...step, stepIndex: index + 1 }))
   }, [assignmentFields.length, embedUrl, fallbackUrl, hasDeck, lessonNotesContent, resources, tabSections, videoUrl])
 
   const [activeIndex, setActiveIndex] = useState(0)
-  const [schedulePending, setSchedulePending] = useState(false)
+  const { schedule, pending: schedulePending } = useCoachingBooking()
+  const ModuleIcon = getTrackIcon(classTitle)
   const activeStep = steps[activeIndex]
   const totalSteps = steps.length
-  const stepDescription = activeStep?.type === "assignment" ? activeStep.description : null
   const moduleProgressIndex = moduleIndex != null ? moduleIndex + 1 : null
   const progressPercent =
     moduleCount > 0 && moduleProgressIndex != null
       ? Math.round((moduleProgressIndex / moduleCount) * 100)
       : 0
-  const railProgress =
-    totalSteps > 1 ? Math.round((activeIndex / (totalSteps - 1)) * 100) : 0
-
-  const deckShellActions = useMemo(
-    () => (
-      <>
-        <NotificationsMenu />
-        <ThemeToggle />
-        {!isAdmin ? (
-          <SupportMenu
-            email={SUPPORT_EMAIL}
-            host="joel"
-            buttonVariant="ghost"
-            buttonSize="sm"
-            buttonClassName="h-8 px-2 text-xs font-medium"
-          />
-        ) : null}
-      </>
-    ),
-    [isAdmin],
-  )
+  const useHeaderStepper = stepperPlacement === "header"
+  const stepperPageSize = 5
+  const stepperVariant = useHeaderStepper ? "header" : "default"
+  const [hydrated, setHydrated] = useState(false)
+  const railSteps = useMemo<StepperRailStep[]>(() => {
+    return steps.map((step, index) => {
+      const isLast = index === steps.length - 1
+      const status: StepStatus =
+        index < activeIndex || (isLast && index === activeIndex)
+          ? "complete"
+          : index === activeIndex
+            ? "in_progress"
+            : "not_started"
+      const isRoadmapStep = step.type === "assignment" && step.roadmap
+      return {
+        id: step.id,
+        label: step.label,
+        status,
+        roadmap: isRoadmapStep,
+        stepIndex: step.stepIndex,
+      }
+    })
+  }, [activeIndex, steps])
 
   useEffect(() => {
-    setActiveIndex((prev) => Math.min(Math.max(prev, 0), Math.max(steps.length - 1, 0)))
+    if (typeof window === "undefined") return
+    const detail = { activeIndex, totalSteps }
+    window.dispatchEvent(new CustomEvent("coachhouse:module-step:update", { detail }))
+  }, [activeIndex, totalSteps])
+
+  useEffect(() => {
+    setHydrated(true)
+  }, [])
+
+  useEffect(() => {
+    contentCacheRef.current = {}
+    completionMarkedRef.current = false
+    setActiveIndex((prev) => {
+      if (typeof window === "undefined") return 0
+      const stored = window.sessionStorage.getItem(`module-step-${moduleId}`)
+      const parsed = stored != null ? Number.parseInt(stored, 10) : NaN
+      const next = Number.isFinite(parsed) && parsed >= 0 && parsed < steps.length ? parsed : 0
+      return Math.min(next, steps.length - 1)
+    })
+  }, [moduleId, steps.length])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    try {
+      window.sessionStorage.setItem(`module-step-${moduleId}`, String(activeIndex))
+    } catch {
+      // ignore storage failures
+    }
+  }, [activeIndex, moduleId])
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const handlePrev = () => {
+      setActiveIndex((prev) => Math.max(prev - 1, 0))
+    }
+    const handleNext = () => {
+      setActiveIndex((prev) => Math.min(prev + 1, steps.length - 1))
+    }
+    window.addEventListener("coachhouse:module-step:prev", handlePrev as EventListener)
+    window.addEventListener("coachhouse:module-step:next", handleNext as EventListener)
+    return () => {
+      window.removeEventListener("coachhouse:module-step:prev", handlePrev as EventListener)
+      window.removeEventListener("coachhouse:module-step:next", handleNext as EventListener)
+    }
   }, [steps.length])
 
   useEffect(() => {
-    const target = stepRefs.current[activeIndex]
-    if (!target) return
-    const prefersReducedMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches
-    try {
-      target.scrollIntoView({
-        behavior: prefersReducedMotion ? "auto" : "smooth",
-        inline: "center",
-        block: "nearest",
-      })
-    } catch {
-      // ignore scroll failures
+    if (activeStep?.type === "complete" && !completionMarkedRef.current) {
+      completionMarkedRef.current = true
+      void markModuleCompleteAction(moduleId)
+      try {
+        window.sessionStorage.setItem(`module-complete-${moduleId}`, "true")
+      } catch {
+        // ignore
+      }
     }
-  }, [activeIndex])
+  }, [activeStep?.id, activeStep?.type, moduleId])
+
+  const handleContinue = useCallback(async () => {
+    if (!nextHref) return
+    try {
+      await markModuleCompleteAction(moduleId)
+    } catch {
+      // non-blocking
+    }
+    router.push(nextHref)
+  }, [moduleId, nextHref, router])
 
   useEffect(() => {
     celebratePlayedRef.current = false
@@ -265,326 +334,227 @@ export function ModuleStepper({
     }
   }, [activeStep?.type])
 
-  const handleSchedule = async () => {
-    if (schedulePending) return
-    setSchedulePending(true)
-    try {
-      const response = await fetch("/api/meetings/schedule?host=joel", { method: "GET" })
-      const payload = (await response.json().catch(() => ({}))) as { error?: string; url?: string }
-      if (!response.ok) {
-        toast.error(payload.error ?? "Unable to schedule a meeting right now.")
-        return
-      }
-      if (!payload.url) {
-        toast.error("Scheduling link unavailable.")
-        return
-      }
-      window.open(payload.url, "_blank", "noopener,noreferrer")
-      toast.success("Opening your scheduling link.")
-    } catch (error) {
-      console.error(error)
-      toast.error("Unable to schedule a meeting right now.")
-    } finally {
-      setSchedulePending(false)
-    }
-  }
 
-  useEffect(() => {
-    const el = railRef.current
-    if (!el) return
-
-    const updateFade = () => {
-      const maxScroll = el.scrollWidth - el.clientWidth
-      const hasOverflow = maxScroll > 4
-      setRailOverflow(hasOverflow)
-      setRailFade({
-        left: el.scrollLeft > 6,
-        right: el.scrollLeft < maxScroll - 6,
-      })
-    }
-
-    updateFade()
-    el.addEventListener("scroll", updateFade, { passive: true })
-
-    let observer: ResizeObserver | null = null
-    if (typeof ResizeObserver !== "undefined") {
-      observer = new ResizeObserver(updateFade)
-      observer.observe(el)
-    } else {
-      window.addEventListener("resize", updateFade)
-    }
-
-    return () => {
-      el.removeEventListener("scroll", updateFade)
-      observer?.disconnect()
-      if (!observer) {
-        window.removeEventListener("resize", updateFade)
-      }
-    }
-  }, [steps.length])
+  const stepperRail = (
+    <StepperRail
+      steps={railSteps}
+      activeIndex={activeIndex}
+      onChange={setActiveIndex}
+      pageSize={stepperPageSize}
+      variant={stepperVariant}
+    />
+  )
 
   return (
-    <section className="mx-auto flex w-full max-w-3xl flex-col gap-8 py-6">
-      <div className="space-y-3 text-center">
-        <div className="space-y-1 text-center" aria-live="polite">
-          <p className="text-sm font-semibold text-foreground">{moduleTitle}</p>
-          {moduleSubtitle ? (
-            <p className="text-xs text-muted-foreground">{moduleSubtitle}</p>
-          ) : null}
-        </div>
-        {stepDescription ? (
-          <p className="text-sm text-muted-foreground whitespace-pre-line">{stepDescription}</p>
-        ) : null}
-        <div className="relative w-full">
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="absolute left-0 top-1/2 z-30 h-9 w-9 -translate-y-1/2 rounded-full"
-            onClick={() => setActiveIndex((prev) => Math.max(prev - 1, 0))}
-            disabled={activeIndex <= 0}
-            aria-label="Previous step"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div
-            ref={railRef}
-            className="relative w-full overflow-x-auto pb-2 pt-2 scroll-px-[var(--rail-pad)]"
-            style={{ ["--dot-size" as string]: "32px", ["--rail-pad" as string]: "56px" }}
-          >
-            {railOverflow ? (
-              <>
-                <div
-                  aria-hidden
-                  className={cn(
-                    "pointer-events-none absolute inset-y-0 left-0 z-20 w-8 bg-gradient-to-r from-background via-background/80 to-transparent transition-opacity",
-                    railFade.left ? "opacity-100" : "opacity-0",
-                  )}
-                />
-                <div
-                  aria-hidden
-                  className={cn(
-                    "pointer-events-none absolute inset-y-0 right-0 z-20 w-8 bg-gradient-to-l from-background via-background/80 to-transparent transition-opacity",
-                    railFade.right ? "opacity-100" : "opacity-0",
-                  )}
-                />
-              </>
-            ) : null}
-            <div
-              className="relative mx-auto flex w-max items-center justify-center gap-4 px-[var(--rail-pad)] py-2 md:gap-5"
-            >
-              <div className="absolute left-[calc(var(--rail-pad)+var(--dot-size)/2)] right-[calc(var(--rail-pad)+var(--dot-size)/2)] top-1/2 h-[3px] -translate-y-1/2 rounded-full bg-border/60">
-                <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-purple-500 via-blue-500 to-sky-400"
-                  animate={{ width: `${railProgress}%` }}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
-                />
+    <>
+      {useHeaderStepper ? (
+        <ShellContentHeaderPortal>
+          <header className="flex min-w-0 flex-wrap items-center gap-3">
+            <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground">
+                <ModuleIcon className="h-4 w-4" aria-hidden />
+              </span>
+              <div className="min-w-0 flex-1 flex-col gap-0.5 text-left">
+                <p className="truncate text-sm font-semibold text-foreground">{moduleTitle}</p>
+                {moduleSubtitle ? (
+                  <p className="truncate text-xs text-muted-foreground">{moduleSubtitle}</p>
+                ) : null}
               </div>
-            {steps.map((step, idx) => {
-              const isActive = idx === activeIndex
-              const status: StepStatus =
-                idx < activeIndex ? "complete" : isActive ? "in_progress" : "not_started"
-              const styles =
-                status === "complete"
-                  ? {
-                      border: "border-emerald-500",
-                      text: "text-emerald-500",
-                      icon: <CheckIcon className="h-4 w-4" />,
-                      dashed: false,
-                    }
-                  : status === "in_progress"
-                    ? {
-                        border: "border-amber-500",
-                        text: "text-amber-500",
-                        icon: <span className="text-[11px] font-semibold">{idx + 1}</span>,
-                        dashed: true,
-                      }
-                    : {
-                        border: "border-muted-foreground/60",
-                        text: "text-muted-foreground",
-                        icon: <span className="text-[11px] font-semibold">{idx + 1}</span>,
-                        dashed: false,
-                      }
-              return (
-                <button
-                  key={step.id}
-                  type="button"
-                  title={step.label}
-                  aria-label={`Go to ${step.label}`}
-                  aria-current={isActive ? "step" : undefined}
-                  onClick={() => setActiveIndex(idx)}
-                  ref={(el) => {
-                    stepRefs.current[idx] = el
-                  }}
-                  className={cn(
-                    "relative z-10 flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 bg-background transition scroll-mx-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-                    styles.border,
-                    status === "not_started" && "hover:border-foreground/40",
-                  )}
-                  style={{ borderStyle: styles.dashed ? "dashed" : "solid" }}
-                >
-                  <span className={cn("flex h-5 w-5 items-center justify-center", styles.text)}>
-                    {styles.icon}
-                  </span>
-                </button>
-              )
-            })}
-          </div>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="absolute right-0 top-1/2 z-30 h-9 w-9 -translate-y-1/2 rounded-full"
-            onClick={() => setActiveIndex((prev) => Math.min(prev + 1, steps.length - 1))}
-            disabled={activeIndex >= steps.length - 1}
-            aria-label="Next step"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
+            </div>
+            <div className="flex w-full min-w-0 items-center justify-center lg:ml-auto lg:w-auto lg:max-w-[560px] lg:justify-end">
+              {stepperRail}
+            </div>
+          </header>
+        </ShellContentHeaderPortal>
+      ) : null}
 
-      <div className="min-h-[360px]">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeStep?.id ?? "empty"}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -12 }}
-            transition={{ duration: 0.3, ease: "easeOut" }}
-          >
-            {(() => {
-              if (!activeStep) {
-                return (
-                  <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 p-8 text-sm text-muted-foreground">
-                    Nothing to display yet.
-                  </div>
-                )
-              }
-              switch (activeStep.type) {
-                case "video":
+      <section className="mx-auto flex w-full max-w-3xl flex-col gap-8 py-6">
+        <div className="space-y-3 text-left">
+          {!useHeaderStepper && showModuleHeading ? (
+            <div className="space-y-1" aria-live="polite">
+              <p className="text-sm font-semibold text-foreground">{moduleTitle}</p>
+              {moduleSubtitle ? (
+                <p className="text-xs text-muted-foreground">{moduleSubtitle}</p>
+              ) : null}
+            </div>
+          ) : null}
+          {/* Hide step descriptions to avoid duplicating field helper copy */}
+          {!useHeaderStepper ? stepperRail : null}
+        </div>
+
+        <div
+          className={cn(
+            "min-h-[360px]",
+            activeStep?.type === "assignment" && "flex min-h-[calc(100vh-320px)]",
+          )}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeStep?.id ?? "empty"}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className={cn(activeStep?.type === "assignment" && "flex min-h-0 flex-1")}
+            >
+              {(() => {
+                if (!activeStep) {
                   return (
-                    <StepFrame>
-                      <VideoSection
-                        embedUrl={embedUrl}
-                        videoUrl={videoUrl}
-                        fallbackUrl={fallbackUrl}
-                        variant="frame"
-                        className="h-full w-full"
-                      />
-                    </StepFrame>
-                  )
-                case "deck":
-                  return (
-                    <StepFrame>
-                      <DeckViewer
-                        moduleId={moduleId}
-                        hasDeck={hasDeck}
-                        variant="frame"
-                        className="h-full w-full"
-                        showPreviewTrigger={false}
-                        inlinePreview
-                        shellActions={deckShellActions}
-                      />
-                    </StepFrame>
-                  )
-                case "notes":
-                  return lessonNotesContent ? (
-                    <LessonNotes title={moduleTitle} content={lessonNotesContent} />
-                  ) : null
-                case "resources":
-                  return resources && resources.length > 0 ? (
-                    <ResourcesCard resources={resources} />
-                  ) : null
-                case "assignment":
-                  return (
-                    <AssignmentFormLazy
-                      mode="stepper"
-                      activeSectionId={activeStep.sectionId}
-                      fields={assignmentFields}
-                      initialValues={initialValues}
-                      pending={pending}
-                      onSubmit={onSubmit}
-                      statusLabel={statusLabel}
-                      statusVariant={statusVariant}
-                      statusNote={statusNote}
-                      helperText={helperText}
-                      errorMessage={errorMessage}
-                      updatedAt={updatedAt}
-                      completeOnSubmit={completeOnSubmit}
-                      moduleId={moduleId}
-                      moduleTitle={moduleTitle}
-                      classTitle={classTitle}
-                    />
-                  )
-                case "complete":
-                  return (
-                    <div className="space-y-6 rounded-2xl border border-dashed border-border/70 bg-muted/20 px-6 py-10">
-                      <div className="flex items-center justify-center">
-                        <CelebrationIcon />
-                      </div>
-                      <div className="space-y-2 text-center">
-                        <h3 className="text-2xl font-semibold text-foreground">Congratulations</h3>
-                        <p className="text-sm text-muted-foreground">
-                          You finished this module. Take a break or keep building momentum.
-                        </p>
-                      </div>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-                          <span>
-                            {moduleProgressIndex != null ? moduleProgressIndex : 0} of {moduleCount} modules
-                          </span>
-                        </div>
-                        <div className="mx-auto h-2 w-full max-w-md rounded-full border border-dashed border-border/70 bg-muted/30">
-                          <div
-                            className="h-full rounded-full bg-primary/70 transition-[width]"
-                            style={{ width: `${progressPercent}%` }}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                        <Button variant="outline" asChild className="rounded-full px-5">
-                          <Link href="/my-organization">Take a break</Link>
-                        </Button>
-                        {nextHref ? (
-                          <Button asChild className="rounded-full px-5">
-                            <Link href={nextHref}>Continue to next lesson</Link>
-                          </Button>
-                        ) : null}
-                      </div>
-                      <Item className="mx-auto max-w-md">
-                        <ItemMedia>
-                          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
-                            <CalendarCheck className="h-4 w-4" aria-hidden />
-                          </span>
-                        </ItemMedia>
-                        <ItemContent>
-                          <ItemTitle>Book a session</ItemTitle>
-                          <ItemDescription>
-                            Review this module, ask questions, or plan next steps.
-                          </ItemDescription>
-                        </ItemContent>
-                        <ItemActions>
-                          <Button
-                            type="button"
-                            size="sm"
-                            onClick={handleSchedule}
-                            disabled={schedulePending}
-                          >
-                            {schedulePending ? "Opening..." : "Book a session"}
-                          </Button>
-                        </ItemActions>
-                      </Item>
+                    <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 p-8 text-sm text-muted-foreground">
+                      Nothing to display yet.
                     </div>
                   )
-                default:
-                  return null
-              }
-            })()}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-    </section>
+                }
+
+              const cacheableTypes = new Set<Step["type"]>(["video", "resources", "notes", "complete"])
+                const cached = cacheableTypes.has(activeStep.type)
+                  ? contentCacheRef.current[activeStep.id]
+                  : null
+
+                const content =
+                  cached ??
+                  (() => {
+                    switch (activeStep.type) {
+                      case "video":
+                        return (
+                          <StepFrame>
+                            <VideoSection
+                              embedUrl={embedUrl}
+                              videoUrl={videoUrl}
+                              fallbackUrl={fallbackUrl}
+                              variant="frame"
+                              className="h-full w-full"
+                            />
+                          </StepFrame>
+                        )
+                      case "notes":
+                        return lessonNotesContent ? (
+                          <LessonNotes title={moduleTitle} content={lessonNotesContent} />
+                        ) : null
+                      case "resources":
+                        return (
+                          <div className="space-y-6">
+                            <div className="flex flex-col items-start gap-2 text-left sm:items-center sm:text-center">
+                              <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-border/60 bg-muted/40 text-muted-foreground">
+                                <FolderOpen className="h-5 w-5" aria-hidden />
+                              </span>
+                              <div className="space-y-1">
+                                <h3 className="text-sm font-semibold text-foreground">Resources</h3>
+                                <p className="text-xs text-muted-foreground">
+                                  Links and downloads that support this lesson.
+                                </p>
+                              </div>
+                            </div>
+                            <Separator className="bg-border/60" />
+                            <ResourcesCard resources={resources ?? []}>
+                              <DeckResourceCard moduleId={moduleId} hasDeck={hasDeck} />
+                            </ResourcesCard>
+                          </div>
+                        )
+                      case "assignment":
+                        if (!hydrated) return null
+                        return (
+                          <AssignmentFormLazy
+                            mode="stepper"
+                            activeSectionId={activeStep.sectionId}
+                            fields={assignmentFields}
+                            initialValues={initialValues}
+                            roadmapStatusBySectionId={roadmapStatusBySectionId}
+                            pending={pending}
+                            onSubmit={onSubmit}
+                            statusLabel={statusLabel}
+                            statusVariant={statusVariant}
+                            statusNote={statusNote}
+                            helperText={helperText}
+                            errorMessage={errorMessage}
+                            updatedAt={updatedAt}
+                            completeOnSubmit={completeOnSubmit}
+                            moduleId={moduleId}
+                            moduleTitle={moduleTitle}
+                            classTitle={classTitle}
+                          />
+                        )
+                      case "complete":
+                        return (
+                          <div className="space-y-6 rounded-2xl border border-dashed border-border/70 bg-muted/20 px-6 py-10">
+                            <div className="flex items-center justify-center">
+                              <CelebrationIcon />
+                            </div>
+                            <div className="space-y-2 text-center">
+                              <h3 className="text-2xl font-semibold text-foreground">Congratulations</h3>
+                              <p className="text-sm text-muted-foreground">
+                                You finished this module. Take a break or keep building momentum.
+                              </p>
+                            </div>
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                                <span>
+                                  {moduleProgressIndex != null ? moduleProgressIndex : 0} of {moduleCount} modules
+                                </span>
+                              </div>
+                              <div className="mx-auto h-2 w-full max-w-md rounded-full border border-dashed border-border/70 bg-muted/30">
+                                <div
+                                  className="h-full rounded-full bg-primary/70 transition-[width]"
+                                  style={{ width: `${progressPercent}%` }}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                              <Button variant="outline" asChild className="rounded-full px-5">
+                                <Link href={breakHref}>Take a break</Link>
+                              </Button>
+                              {nextHref ? (
+                                nextLocked ? (
+                                  <Button variant="outline" className="rounded-full px-5" disabled>
+                                    Next lesson locked
+                                  </Button>
+                                ) : (
+                                  <Button className="rounded-full px-5" onClick={handleContinue}>
+                                    Continue to next lesson
+                                  </Button>
+                                )
+                              ) : null}
+                            </div>
+                            <Item className="mx-auto max-w-md">
+                              <ItemMedia>
+                                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-muted/60 text-muted-foreground">
+                                  <CalendarCheck className="h-4 w-4" aria-hidden />
+                                </span>
+                              </ItemMedia>
+                              <ItemContent>
+                                <ItemTitle>Book a session</ItemTitle>
+                                <ItemDescription>
+                                  Review this module, ask questions, or plan next steps.
+                                </ItemDescription>
+                              </ItemContent>
+                              <ItemActions>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onClick={() => void schedule()}
+                                  disabled={schedulePending}
+                                >
+                                  {schedulePending ? "Opening..." : "Book a session"}
+                                </Button>
+                              </ItemActions>
+                            </Item>
+                          </div>
+                        )
+                      default:
+                        return null
+                    }
+                  })()
+
+                if (!cached && cacheableTypes.has(activeStep.type)) {
+                  contentCacheRef.current[activeStep.id] = content
+                }
+
+                return content
+              })()}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </section>
+    </>
   )
 }

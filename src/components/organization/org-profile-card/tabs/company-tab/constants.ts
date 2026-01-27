@@ -11,6 +11,7 @@ export const RESERVED_SLUGS = new Set([
   "dashboard",
   "people",
   "my-organization",
+  "internal",
   "_next",
   "public",
   "favicon",

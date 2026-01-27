@@ -122,7 +122,6 @@ export async function POST(_req: Request, props: { params: Promise<{ id: string 
   await revalidateClassViews({
     classId,
     classSlug,
-    additionalTargets: [`/admin/classes/${classId}`],
   })
 
   return NextResponse.json({ moduleId }, { status: 201 })

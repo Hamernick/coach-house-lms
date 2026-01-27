@@ -1,7 +1,7 @@
 "use client"
 
 import { Fragment } from "react"
-import type { OrgPerson } from "@/app/(dashboard)/people/actions"
+import type { OrgPerson } from "@/actions/people"
 
 import { PersonItem } from "@/components/people/person-item"
 import { cn } from "@/lib/utils"

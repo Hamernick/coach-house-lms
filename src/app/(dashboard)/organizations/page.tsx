@@ -20,7 +20,7 @@ export default async function OrganizationsPage() {
   if (!user) redirect("/login?redirect=/organizations")
 
   return (
-    <div className="flex flex-col gap-6 px-4 lg:px-6">
+    <div className="flex flex-col gap-6">
       <section>
         <Card className="bg-card/60">
           <CardHeader>

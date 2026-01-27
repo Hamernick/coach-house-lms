@@ -31,15 +31,19 @@ import {
   CommandSeparator,
 } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 import type { SidebarClass } from "@/lib/academy"
 import type { SearchResult } from "@/lib/search/types"
 
 type GlobalSearchProps = {
   isAdmin?: boolean
+  showOrgAdmin?: boolean
   context?: "platform" | "accelerator"
   classes?: SidebarClass[]
   showAccelerator?: boolean
 }
+
+const SEARCH_MIN_WIDTH = 240
 
 function formatClassTitle(title: string) {
   const match = title.match(/^Session\s+[A-Za-z]\d+\s*[\u2013-]\s*(.+)$/i)
@@ -71,11 +75,13 @@ function getResultIcon(item: SearchResult) {
   if (group === "my organization") return Building2Icon
 
   if (href.startsWith("/billing")) return CreditCardIcon
+  if (href.startsWith("/internal")) return ShieldIcon
+  if (href.startsWith("/admin")) return ShieldIcon
   if (href.startsWith("/people")) return UsersIcon
   if (href.startsWith("/community")) return MapPinIcon
   if (href.startsWith("/marketplace")) return ShoppingBagIcon
   if (href.startsWith("/accelerator")) return RocketIcon
-  if (href.startsWith("/my-organization/roadmap")) return RouteIcon
+  if (href.startsWith("/roadmap")) return RouteIcon
   if (href.startsWith("/my-organization")) return Building2Icon
 
   return ArrowUpRight
@@ -103,17 +109,49 @@ function SearchResultLeadingVisual({ item }: { item: SearchResult }) {
 
 export function GlobalSearch({
   isAdmin = false,
+  showOrgAdmin = false,
   context = "platform",
   classes = [],
   showAccelerator = false,
 }: GlobalSearchProps) {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [remoteItems, setRemoteItems] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [compact, setCompact] = useState(false)
   const enableAccelerator = Boolean(isAdmin || showAccelerator)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const node = document.getElementById("site-header-actions-center")
+    if (!node) return
+
+    const update = () => {
+      const width = node.getBoundingClientRect().width
+      const next = width < SEARCH_MIN_WIDTH
+      setCompact((prev) => (prev === next ? prev : next))
+    }
+
+    update()
+
+    let observer: ResizeObserver | null = null
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(update)
+      observer.observe(node)
+    } else {
+      window.addEventListener("resize", update)
+    }
+
+    return () => {
+      observer?.disconnect()
+      if (!observer) {
+        window.removeEventListener("resize", update)
+      }
+    }
+  }, [])
 
   const logEvent = useCallback(
     (payload: {
@@ -141,6 +179,7 @@ export function GlobalSearch({
   )
 
   const baseItems = useMemo<SearchResult[]>(() => {
+    const showOrgAdminLink = showOrgAdmin
     return [
       ...(enableAccelerator
         ? [
@@ -154,7 +193,7 @@ export function GlobalSearch({
           ]
         : []),
       { id: "page-organization", label: "My organization", href: "/my-organization", group: "Pages", keywords: ["profile"] },
-      { id: "page-roadmap", label: "Roadmap", href: "/my-organization/roadmap", group: "Pages", keywords: ["strategic"] },
+      { id: "page-roadmap", label: "Roadmap", href: "/roadmap", group: "Pages", keywords: ["strategic"] },
       { id: "page-programs", label: "Programs", href: "/my-organization?tab=programs", group: "Pages" },
       { id: "page-people", label: "People", href: "/people", group: "Pages", keywords: ["team", "org chart"] },
       { id: "page-supporters", label: "Supporters", href: "/my-organization?tab=supporters", group: "Pages" },
@@ -162,27 +201,25 @@ export function GlobalSearch({
       { id: "page-billing", label: "Billing", href: "/billing", group: "Pages", keywords: ["subscription", "plan"] },
       { id: "page-community", label: "Community", href: "/community", group: "Pages", keywords: ["map", "network"] },
       { id: "page-marketplace", label: "Marketplace", href: "/marketplace", group: "Pages", keywords: ["tools", "resources"] },
-    ]
-  }, [enableAccelerator])
-
-  const adminItems = useMemo<SearchResult[]>(
-    () =>
-      isAdmin
+      ...(showOrgAdminLink
         ? [
-            { id: "admin-academy", label: "Admin academy", href: "/admin/academy", group: "Admin" },
-            { id: "admin-users", label: "Admin users", href: "/admin/users", group: "Admin" },
-            { id: "admin-settings", label: "Admin settings", href: "/admin/settings", group: "Admin" },
+            {
+              id: "page-admin",
+              label: "Admin",
+              href: "/admin",
+              group: "Pages",
+              keywords: ["access", "invites", "roles"],
+            } satisfies SearchResult,
           ]
-        : [],
-    [isAdmin],
-  )
+        : []),
+    ]
+  }, [enableAccelerator, showOrgAdmin])
 
   const acceleratorItems = useMemo<SearchResult[]>(
     () =>
       context === "accelerator" && enableAccelerator
         ? [
             { id: "accelerator-overview", label: "Accelerator overview", href: "/accelerator#overview", group: "Accelerator", keywords: ["overview"] },
-            { id: "accelerator-roadmap", label: "Accelerator roadmap", href: "/accelerator/roadmap", group: "Accelerator", keywords: ["roadmap"] },
           ]
         : [],
     [context, enableAccelerator],
@@ -194,11 +231,12 @@ export function GlobalSearch({
       .filter((klass) => (isAdmin ? true : klass.published))
       .flatMap((klass) => {
         const classTitle = formatClassTitle(klass.title)
+        const firstModuleIndex = klass.modules[0]?.index ?? 1
         const classItem: SearchResult = {
           id: `class-${klass.id}`,
           label: classTitle,
           subtitle: "Class",
-          href: `/accelerator/class/${klass.slug}`,
+          href: `/accelerator/class/${klass.slug}/module/${firstModuleIndex}`,
           group: "Classes",
           keywords: [klass.slug, klass.title],
         }
@@ -218,12 +256,12 @@ export function GlobalSearch({
 
   const items = useMemo(() => {
     const merged = new Map<string, SearchResult>()
-    for (const item of [...acceleratorItems, ...acceleratorClasses, ...baseItems, ...adminItems, ...remoteItems]) {
+    for (const item of [...acceleratorItems, ...acceleratorClasses, ...baseItems, ...remoteItems]) {
       merged.set(item.id, item)
     }
     const values = Array.from(merged.values())
     return enableAccelerator ? values : values.filter((item) => !item.href.startsWith("/accelerator"))
-  }, [acceleratorClasses, acceleratorItems, adminItems, baseItems, enableAccelerator, remoteItems])
+  }, [acceleratorClasses, acceleratorItems, baseItems, enableAccelerator, remoteItems])
 
   const grouped = useMemo(() => {
     const map = new Map<string, SearchResult[]>()
@@ -320,32 +358,55 @@ export function GlobalSearch({
     return () => window.removeEventListener("keydown", handler)
   }, [])
 
+  const showCompact = isMobile || compact
+  const showCenterCompact = showCompact && !isMobile
+
   return (
     <>
-      <HeaderActionsPortal>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setOpen(true)}
-          data-tour="global-search-button"
-          className="hidden min-w-[190px] items-center justify-between gap-2 pl-3 pr-3 text-xs text-muted-foreground sm:inline-flex"
-        >
-          <span className="flex items-center gap-2">
-            <SearchIcon className="h-4 w-4 text-muted-foreground" />
-            <span className="text-foreground">Search</span>
-          </span>
-          <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
-            CMD+K
-          </span>
-        </Button>
+      {!showCompact ? (
+        <HeaderActionsPortal slot="center">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setOpen(true)}
+            data-tour="global-search-button"
+            className={cn(
+              "hidden min-w-[240px] w-full max-w-[520px] items-center justify-between gap-2 pl-3 pr-3 text-xs text-muted-foreground md:inline-flex lg:max-w-[600px]",
+            )}
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <SearchIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="truncate text-foreground">Search</span>
+            </span>
+            <span className="shrink-0 whitespace-nowrap rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+              CMD+K
+            </span>
+          </Button>
+        </HeaderActionsPortal>
+      ) : showCenterCompact ? (
+        <HeaderActionsPortal slot="center">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setOpen(true)}
+            data-tour="global-search-button"
+            className="hidden md:inline-flex"
+            aria-label="Open search"
+          >
+            <SearchIcon className="h-4 w-4" />
+          </Button>
+        </HeaderActionsPortal>
+      ) : null}
+      <HeaderActionsPortal slot="right">
         <Button
           type="button"
           variant="ghost"
           size="icon"
           onClick={() => setOpen(true)}
           data-tour="global-search-button"
-          className="inline-flex sm:hidden"
+          className="inline-flex md:hidden"
           aria-label="Open search"
         >
           <SearchIcon className="h-4 w-4" />
@@ -355,7 +416,7 @@ export function GlobalSearch({
       <CommandDialog
         open={open}
         onOpenChange={setOpen}
-        className="max-w-xl overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/95 p-2 shadow-2xl"
+        className="w-[calc(100%-2rem)] max-w-[calc(100%-2rem)] max-h-[calc(100dvh-9rem)] overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/95 p-2 shadow-2xl sm:max-h-[calc(100dvh-4rem)] sm:max-w-xl"
         commandClassName="bg-transparent text-white/90 [&_[cmdk-group-heading]]:px-5 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.2em] [&_[cmdk-group-heading]]:text-white/40 **:data-[slot=command-input-wrapper]:mx-3 **:data-[slot=command-input-wrapper]:my-3 **:data-[slot=command-input-wrapper]:h-12 **:data-[slot=command-input-wrapper]:rounded-2xl **:data-[slot=command-input-wrapper]:border **:data-[slot=command-input-wrapper]:border-white/10 **:data-[slot=command-input-wrapper]:bg-white/5 **:data-[slot=command-input-wrapper]:px-4 **:data-[slot=command-input-wrapper]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)] **:data-[slot=command-input]:text-[15px] **:data-[slot=command-input]:text-white **:data-[slot=command-input]:placeholder:text-white/40"
         showCloseButton={false}
       >

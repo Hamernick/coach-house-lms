@@ -19,7 +19,7 @@ import ReactFlow, {
 } from "reactflow"
 import "reactflow/dist/style.css"
 
-import type { OrgPerson } from "@/app/(dashboard)/people/actions"
+import type { OrgPerson } from "@/actions/people"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useTheme } from "next-themes"
 import { PERSON_CATEGORY_META, type PersonCategory } from "@/lib/people/categories"
@@ -27,7 +27,7 @@ import { cn } from "@/lib/utils"
 // Removed toast notifications for drag operations per UX request
 
 type ViewPerson = OrgPerson & { displayImage?: string | null }
-type Props = { people: ViewPerson[]; extras?: boolean }
+type Props = { people: ViewPerson[]; extras?: boolean; canEdit?: boolean }
 
 function initials(name?: string | null) {
   if (!name) return "?"
@@ -39,6 +39,8 @@ function initials(name?: string | null) {
 const CATEGORY_STRIP: Record<PersonCategory, string> = Object.fromEntries(
   Object.entries(PERSON_CATEGORY_META).map(([key, value]) => [key, value.stripClass]),
 ) as Record<PersonCategory, string>
+
+const ORG_CHART_PADDING = 60
 
 const PersonNode = memo(function PersonNode({
   data,
@@ -67,24 +69,10 @@ const PersonNode = memo(function PersonNode({
   )
 })
 
-const LaneLabelNode = memo(function LaneLabelNode({
-  data,
-}: {
-  data: { label: string; count: number; dotClass: string }
-}) {
-  return (
-    <div className="pointer-events-none flex items-center gap-2 rounded-full border border-border/60 bg-background/90 px-3 py-1 text-[11px] font-semibold text-muted-foreground shadow-sm">
-      <span className={cn("h-2 w-2 rounded-full", data.dotClass)} />
-      <span className="text-foreground">{data.label}</span>
-      <span className="text-muted-foreground">{data.count}</span>
-    </div>
-  )
-})
-
 // Stable node type map (module scope) to avoid creating a new object per render
-const ORG_NODE_TYPES = Object.freeze({ person: PersonNode, laneLabel: LaneLabelNode })
+const ORG_NODE_TYPES = Object.freeze({ person: PersonNode })
 
-function OrgChartCanvasComponent({ people, extras = false }: Props) {
+function OrgChartCanvasComponent({ people, extras = false, canEdit = true }: Props) {
   const { resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
@@ -111,18 +99,13 @@ function OrgChartCanvasComponent({ people, extras = false }: Props) {
 
     const xGap = 240
     const yGap = 120
-    const lanePadding = 60
+    const lanePadding = ORG_CHART_PADDING
     const laneGap = 80
-    const categoryOrder: PersonCategory[] = [
-      "governing_board",
-      "advisory_board",
-      "supporters",
-      "staff",
-      "volunteers",
-    ]
+    const categoryOrder: PersonCategory[] = ["governing_board", "staff", "advisory_board", "supporters", "volunteers"]
 
     const laneLayout = new Map<PersonCategory, { baseY: number; levels: Map<number, ViewPerson[]> }>()
-    let cursorY = 0
+    const topPadding = ORG_CHART_PADDING
+    let cursorY = topPadding
 
     for (const cat of categoryOrder) {
       const list = grouped[cat]
@@ -161,7 +144,6 @@ function OrgChartCanvasComponent({ people, extras = false }: Props) {
     for (const cat of categoryOrder) {
       const list = grouped[cat]
       if (list.length === 0) continue
-      const meta = PERSON_CATEGORY_META[cat]
       const map = new Map<string, ViewPerson>()
       list.forEach((p) => map.set(p.id, p))
 
@@ -169,17 +151,7 @@ function OrgChartCanvasComponent({ people, extras = false }: Props) {
       const baseY = layout?.baseY ?? 0
       const levels = layout?.levels ?? new Map<number, ViewPerson[]>()
 
-      nodes.push({
-        id: `lane-${cat}`,
-        position: { x: 0, y: baseY - 36 },
-        data: { label: meta.label, count: list.length, dotClass: meta.dotClass },
-        type: "laneLabel",
-        draggable: false,
-        selectable: false,
-      })
-
-      // Add nodes by level with positions
-      const startX = 60
+      const startX = ORG_CHART_PADDING
       for (const [d, arr] of Array.from(levels.entries()).sort((a, b) => a[0] - b[0])) {
         arr.forEach((p, i) => {
           const x = (p as any).pos?.x ?? startX + i * xGap
@@ -211,6 +183,7 @@ function OrgChartCanvasComponent({ people, extras = false }: Props) {
 
   const onNodeDragStop: NodeDragHandler = useCallback(async (event, node) => {
     void event
+    if (!canEdit) return
     try {
       setGraph((prev) => ({
         nodes: prev.nodes.map((n) => (n.id === node.id ? { ...n, position: node.position } : n)),
@@ -226,7 +199,7 @@ function OrgChartCanvasComponent({ people, extras = false }: Props) {
       // Silently ignore; UI stays responsive
       console.error("Save position failed", e)
     }
-  }, [])
+  }, [canEdit])
 
   // Smooth live dragging: apply changes as React Flow emits them
   const onNodesChange = useCallback((changes: NodeChange[]) => {
@@ -255,19 +228,21 @@ function OrgChartCanvasComponent({ people, extras = false }: Props) {
           onlyRenderVisibleElements
           proOptions={{ hideAttribution: true }}
           nodeTypes={ORG_NODE_TYPES}
+          nodesDraggable={canEdit}
           nodesConnectable={false}
           elementsSelectable={false}
           selectNodesOnDrag={false}
           panOnDrag
+          translateExtent={[
+            [-ORG_CHART_PADDING, -ORG_CHART_PADDING],
+            [ORG_CHART_PADDING, ORG_CHART_PADDING],
+          ]}
           className="org-flow"
           style={{ width: "100%", height: "100%" }}
           onNodeDragStop={onNodeDragStop}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
         >
-          <Panel position="top-left" className="pointer-events-none rounded-xl border border-border/60 bg-background/80 px-3 py-2 text-xs text-muted-foreground shadow-sm backdrop-blur">
-            Drag to reposition · Scroll to zoom
-          </Panel>
           {extras ? <Controls position="top-right" showInteractive={false} /> : null}
           {extras ? <MiniMap pannable zoomable /> : null}
           {extras ? <Background color={isDark ? "#1f2937" : "#e5e7eb"} gap={16} /> : null}

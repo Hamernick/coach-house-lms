@@ -2,6 +2,128 @@
 
 Purpose: Track changes we’re making outside the formal PR stepper.
 
+## 2026-01-27 — Codex session (roadmap landing polish)
+
+- Roadmap landing: added section icon squares above each card, removed phase eyebrow labels, removed public roadmap link, and moved pagination controls above the rail; StepperRail now supports a roadmap variant with spread-out icon squares (`src/components/roadmap/roadmap-landing.tsx`, `src/components/ui/stepper-rail.tsx`).
+- Roadmap page: removed the duplicate “Open roadmap editor” link below the landing header (`src/app/(dashboard)/roadmap/page.tsx`).
+- Tests: `pnpm lint`.
+
+## 2026-01-27 — Codex session (roadmap rail content)
+
+- Roadmap landing: moved title/subtitle into the rail steps so the icon squares and copy live in a single row, and wired step clicks to route into sections (`src/components/roadmap/roadmap-landing.tsx`, `src/components/ui/stepper-rail.tsx`).
+- Tests: `pnpm lint`.
+
+## 2026-01-27 — Codex session (roadmap landing stepper)
+
+- Roadmap landing: removed eyebrow, retitled to “Launch Roadmap”, and swapped the timeline to the shared StepperRail with 4-step pagination and card grid (`src/components/roadmap/roadmap-landing.tsx`, `src/components/ui/stepper-rail.tsx`).
+- Module stepper: now renders the rail via StepperRail to keep roadmap checkpoint icons consistent (`src/components/training/module-detail/module-stepper.tsx`).
+- Tests: `pnpm lint`.
+
+## 2026-01-27 — Codex session (roadmap checkpoints in modules)
+
+- Module UX: render roadmap-linked prompts with Roadmap-style header/status/editor chrome and editable status selector using explicit `roadmap_section` flags (`src/components/training/module-detail/assignment-form.tsx`, `src/lib/roadmap.ts`, `src/lib/modules/types.ts`, `src/lib/modules/assignment.ts`).
+- Module UX: stepper uses roadmap flags instead of org_key and shows a green Waypoints icon for completed roadmap steps (`src/components/training/module-detail/module-stepper.tsx`).
+- Data: added migration to tag roadmap-linked assignment fields (`supabase/migrations/20260127223000_add_roadmap_section_markers.sql`).
+- Lint fixes: resolved conditional hooks and missing imports in the sidebar classes section; cleaned up icon a11y and module variable naming; aligned roadmap editor deps; corrected accelerator copy (`src/components/app-sidebar/classes-section.tsx`, `src/components/tiptap/toolbars/image-placeholder-toolbar.tsx`, `src/lib/modules/service.ts`, `src/components/roadmap/roadmap-editor.tsx`, `src/app/(accelerator)/accelerator/page.tsx`, `src/components/global-search.tsx`).
+
+## 2026-01-27 — Codex session (roadmap mapping audit)
+
+- Audited roadmap-to-module linkage sources (`docs/progression-system-map.md`, `src/lib/roadmap.ts`, `src/lib/roadmap/homework.ts`) after reviewing `AGENTS.md` and `docs/organize.md`; confirmed only six roadmap sections are wired to module homework; no code changes.
+- Next: draft a brief + full mapping table if you want copy-aligned prompts for every roadmap section.
+- Drafted `docs/briefs/roadmap-module-mapping.md` and indexed it for implementation sequencing.
+
+## 2026-01-27 — Codex session (roadmap mapping implementation)
+
+- Roadmap: removed the Strategic Roadmap section definition, filtered legacy strategic-roadmap entries, and updated TOC grouping to reflect section-only roadmap content (`src/lib/roadmap.ts`, `src/components/roadmap/roadmap-editor.tsx`, `src/components/roadmap/roadmap-icons.tsx`, `src/components/roadmap/roadmap-outline-card.tsx`).
+- Roadmap: default edit fallback now targets `/roadmap/origin-story` (`src/app/(dashboard)/roadmap/page.tsx`).
+- Roadmap homework: remapped section IDs to module targets across the curriculum and added index fallbacks (`src/lib/roadmap/homework.ts`).
+- Curriculum mapping: documented new section mappings and checklist counts, and removed Strategic Roadmap as a section (`docs/progression-system-map.md`).
+- Data: added migration to align module prompt copy to roadmap sections, add missing prompts, and remove the origin-story org_key sync (`supabase/migrations/20260127210000_map_roadmap_module_prompts.sql`).
+
+## 2026-01-27 — Codex session (Bento grid ordering)
+
+- Marketing: moved the full-width community highlight card to the top of the Home Two bento grid so the longest tile leads the layout (`src/app/(public)/home2/page.tsx`).
+- Marketing: swapped bento tile sizing so the nonprofit platform leads, placed the community card beneath it, moved the arrow to a subtle top-right badge, and refreshed the process copy to Formation → Roadmap → Funding readiness (`src/app/(public)/home2/page.tsx`).
+- Module UX: limited roadmap flag icons to assignment steps that map to roadmap-linked org profile fields and removed the checkpoint dialog (`src/components/training/module-detail/module-stepper.tsx`).
+- Module UX: removed the non-roadmap dot so non-roadmap steps render as empty circles (`src/components/training/module-detail/module-stepper.tsx`).
+- Module UX: skipped rendering the stepper icon wrapper when no icon is present to keep non-roadmap steps fully empty (`src/components/training/module-detail/module-stepper.tsx`).
+- Module UX: numbered non-roadmap assignment steps in the module stepper while keeping roadmap flags for org-linked prompts (`src/components/training/module-detail/module-stepper.tsx`).
+- Module UX: replaced roadmap flags with the Strategic Roadmap (Waypoints) icon (`src/components/training/module-detail/module-stepper.tsx`).
+- Module UX: initialize module stepper state on the server-safe default to avoid hydration mismatches before syncing from session storage (`src/components/training/module-detail/module-stepper.tsx`).
+- Module UX: numbered all steps (video/notes/resources/assignments/complete), used Waypoints only for roadmap-linked assignment steps, and removed boilerplate from the roadmap mapping set (`src/components/training/module-detail/module-stepper.tsx`).
+
+## 2026-01-19 — Codex session (Shell polish, progress integrity, admin rebuild)
+
+- Shell: tightened AppShell spacing, removed header separator, synced right-rail width to sidebar, and slimmed sidebar width for a more unified rail layout (`src/components/app-shell.tsx`, `src/components/ui/sidebar.tsx`).
+- Shell: hid the header brand on collapsed rail, added a collapsed-state rail toggle in the left nav, and reintroduced a right-edge gap when no right rail is present with symmetric mobile padding (`src/components/app-shell.tsx`, `src/components/app-sidebar.tsx`).
+- Shell: moved the collapsed-state expand toggle into the top rail with a separator ahead of breadcrumbs (`src/components/app-shell.tsx`, `src/components/app-sidebar.tsx`).
+- Shell: animated the header brand/toggle transitions and applied an inverted theme toggle style to the sidebar trigger button (`src/components/app-shell.tsx`).
+- Shell: restored the left collapsed toggle styling to the neutral button treatment (`src/components/app-shell.tsx`).
+- Modules: moved module-level back/next navigation into the right rail below the module list (`src/components/app-sidebar/classes-section.tsx`).
+- Admin: avoid schema-cache join errors by fetching enrollments/subscriptions separately for the admin users list (`src/lib/admin/users.ts`).
+- Shell: fixed right-rail toggle to respect user collapse/expand and stopped auto-reopening while keeping auto-close when content disappears (`src/components/app-shell.tsx`).
+- Accelerator: “Next up” CTA now routes directly to the next module instead of class landing pages (`src/app/(accelerator)/accelerator/page.tsx`).
+- Shell: aligned left/right header toggles to the shell container edges and moved header actions into the centered rail (`src/components/app-shell.tsx`).
+- Shell: swapped header toggle icons to panel-left/panel-right open/close variants (`src/components/ui/sidebar.tsx`, `src/components/app-shell.tsx`).
+- UI: tightened accelerator/community/news spacing for the unified shell layout (`src/app/(accelerator)/accelerator/page.tsx`, `src/app/(dashboard)/community/loading.tsx`, `src/app/(dashboard)/news/*/page.tsx`).
+- UI: removed the nested Card chrome from the My Organization profile container so it renders directly in the shell (`src/components/organization/org-profile-card/org-profile-card.tsx`).
+- Shell: slightly widened the left rail so “My Organization” stays on one line (`src/components/ui/sidebar.tsx`).
+- Progress: merged assignment submissions into module progress mapping for accelerator and class views, fixed “Next Up” selection + accelerator class link, and revalidated accelerator routes on progress changes (`src/lib/accelerator/progress.ts`, `src/lib/modules/service.ts`, `src/app/(accelerator)/accelerator/page.tsx`, `src/app/(admin)/admin/classes/actions/utils.ts`).
+- Notifications: class-completion notification now uses module progress + submissions for accuracy (`src/app/api/modules/[id]/assignment-submission/route.ts`).
+- Admin: rebuilt admin dashboard/progress/subscriptions pages, added data helpers, updated admin nav/search, and refreshed breadcrumbs + date formatting (`src/app/(admin)/admin/page.tsx`, `src/app/(admin)/admin/progress/page.tsx`, `src/app/(admin)/admin/subscriptions/page.tsx`, `src/lib/admin/progress.ts`, `src/lib/admin/subscriptions.ts`, `src/components/app-sidebar.tsx`, `src/components/app-sidebar/nav-data.ts`, `src/components/global-search.tsx`, `src/app/(admin)/@breadcrumbs/admin/**`, `src/app/(admin)/admin/users/page.tsx`, `src/app/(admin)/admin/users/[id]/page.tsx`).
+
+## 2026-01-16 — Codex session (Budget table UX + CSV template)
+
+- Brief: added and completed the budget table UX brief (`docs/briefs/budget-table-ux.md`).
+- UI: redesigned the budget table header/toolkit with a 3-step guide, quick add categories, subtotal panel, and CSV download (`src/components/training/module-detail/assignment-form.tsx`).
+- UI: removed the accelerator full-bleed offset so the budget table stays centered and avoids clipping (`src/components/training/module-detail/assignment-form.tsx`).
+- UI: made the budget table description textarea fill its table cell and match dark-mode cell color (`src/components/training/module-detail/assignment-form.tsx`).
+- UI: moved the budget steps into the description callout and rebuilt the subtotal row as a horizontal single-column block under the intro (`src/components/training/module-detail/assignment-form.tsx`).
+- UI: made the desktop budget table full-bleed within the app shell so it reaches both edges (`src/components/training/module-detail/assignment-form.tsx`).
+- Fix: moved budget guide definitions above the callout to avoid a TDZ runtime error (`src/components/training/module-detail/assignment-form.tsx`).
+- UI: removed quick-add categories, unified budget card radii, and matched the subtotal panel to the sidebar background (`src/components/training/module-detail/assignment-form.tsx`).
+- UI: matched the budget table description textarea height to the row so it fills the cell without extra gap (`src/components/training/module-detail/assignment-form.tsx`).
+- Fix: stop budget rows from disappearing by only resetting values when the module or saved data changes (`src/components/training/module-detail/assignment-form.tsx`).
+- UI: updated the subtotal actions to “Add Item” and a download icon button (`src/components/training/module-detail/assignment-form.tsx`).
+- UI: expanded the budget table cell sizing so inputs and textareas fill each cell and wrap with centered alignment (`src/components/training/module-detail/assignment-form.tsx`).
+- UI: removed the mobile card layout so the budget table is used on all screen sizes (`src/components/training/module-detail/assignment-form.tsx`).
+- Assets: added a downloadable CSV template for offline budgeting (`public/templates/budget-template.csv`).
+- Docs: updated brief index and NOW checklist (`docs/briefs/INDEX.md`, `docs/organize.md`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance` (punycode warnings), `pnpm test:rls`.
+
+## 2026-01-16 — Codex session (Coaching booking standardization)
+
+- Brief: added and completed the coaching booking brief (`docs/briefs/coaching-booking.md`).
+- Meetings: shifted scheduling to Accelerator entitlements (free → discounted → full) with new env-based links and legacy fallback (`src/app/api/meetings/schedule/route.ts`, `src/lib/meetings.ts`, `src/lib/env.ts`).
+- UI: standardized booking CTAs + pricing context and centralized scheduling logic in a shared hook (`src/hooks/use-coaching-booking.ts`, `src/components/dashboard/dashboard-checkin-card.tsx`, `src/components/accelerator/accelerator-schedule-card.tsx`, `src/components/training/module-detail/module-stepper.tsx`, `src/components/training/module-detail/lesson-notes.tsx`, `src/components/support-menu.tsx`, `src/app/(dashboard)/dashboard/page.tsx`).
+- Docs: updated brief index + NOW checklist (`docs/briefs/INDEX.md`, `docs/organize.md`).
+- Checks: `pnpm lint` (warnings only), `pnpm test:snapshots`, `pnpm test:acceptance` (punycode warnings), `pnpm test:rls`.
+
+## 2026-01-15
+
+- Org access: Added P0 brief for multi-account org access (`docs/briefs/multi-account-org-access.md`).
+- Supabase: Pushed membership-aware RLS + invite gating (owner toggle for `admins_can_invite`) + storage policies via `20260115220000_multi_account_org_access.sql` (`supabase/migrations/20260115220000_multi_account_org_access.sql`).
+- App: Added active-org resolver and refactored org pages/actions/APIs to use `orgId` (members can view; staff/admin can edit; board read-only) (`src/lib/organization/active-org.ts`, `src/app/(dashboard)/my-organization/page.tsx`, `src/app/(dashboard)/people/page.tsx`, `src/components/roadmap/roadmap-editor.tsx`, `src/app/actions/organization-access.ts`).
+- Search + helpers: Ensured org context uses active org for search, homework assist, meeting requests, and people position reset (`src/app/api/search/route.ts`, `src/app/api/homework/assist/route.ts`, `src/app/api/meetings/schedule/route.ts`, `src/app/api/people/position/reset/route.ts`).
+- Tests: Expanded RLS test coverage for org memberships (staff vs board), invite toggle behavior, and staff/board subscription visibility (`supabase/tests/rls.test.mjs`). Ran `pnpm lint && pnpm test:snapshots && pnpm test:acceptance && pnpm test:rls`.
+- Follow-up: No org switcher UI yet; membership selection is “first membership wins” until we add an org picker.
+
+## 2026-01-16
+
+- Tutorial: Fixed highlight overlay corner mismatch by deriving cutout radius from the highlighted element (prevents the “sharp corner” overlay artifact) (`src/components/tutorial/highlight-tour.tsx`).
+- Accelerator: Added the same Welcome/tutorial modal behavior used on the platform shell, driven by user metadata state (`src/app/(accelerator)/layout.tsx`, `src/components/accelerator/accelerator-shell.tsx`).
+- Admin: Added `/admin` index redirect to `/admin/academy` and updated auth redirect target (`src/app/(admin)/admin/page.tsx`, `src/lib/admin/auth.ts`).
+- Notifications: Made the per-item unread dot use `bg-destructive` so it’s consistently red (`src/components/notifications/notifications-menu.tsx`).
+- Validation: Ran `pnpm lint && pnpm test:snapshots && pnpm test:acceptance && pnpm test:rls`.
+- Tutorial: Updated Accelerator Welcome checklist copy, added a Return home callout, and inserted a matching tour step (`src/components/onboarding/onboarding-welcome.tsx`, `src/components/tutorial/tutorial-manager.tsx`, `src/components/accelerator/accelerator-sidebar.tsx`).
+- Welcome: Hid the platform “Upgrade when you’re ready to publish” checklist item when the org has an active/trialing subscription (`src/app/(dashboard)/layout.tsx`, `src/components/dashboard/dashboard-shell.tsx`, `src/components/onboarding/onboarding-welcome.tsx`).
+- UI: Made the Welcome modal + tutorial tooltip theme-aware (light/dark) by swapping hard-coded dark colors for shadcn tokens (`src/components/onboarding/onboarding-welcome.tsx`, `src/components/tutorial/highlight-tour.tsx`).
+- Validation: Ran `pnpm lint && pnpm test:snapshots && pnpm test:acceptance && pnpm test:rls`.
+- Planning: Captured meeting notes into `docs/organize.md` as structured decisions + launch checklist tasks + batchable UI backlog items.
+- Planning: Updated `docs/organize.md` with clarified decisions (Accelerator $499 one-time vs $58/mo installment, coaching scheduling via 3 calendar links, doc sharing via signed links).
+- Planning: Locked Accelerator installment details (6 months; bundles Organization; single-user license; cancellations/no-shows handled manually for now) in `docs/organize.md`.
+- Docs: Added `docs/GO.md`, added `docs/briefs/INDEX.md`, and added a `docs/organize.md` “NOW (Next 3)” block + explicit “BLOCKS IMPLEMENTATION” decision list.
+
 ## 2025-12-15
 
 - Dashboard: Moved the calendar up beside the Command Center hero, removed the “Calendar / This month.” header wrapper, and resized the calendar to a mid-compact footprint (`src/app/(dashboard)/dashboard/page.tsx`, `src/components/dashboard/dashboard-calendar-card.tsx`, `src/app/(dashboard)/dashboard/loading.tsx`).
@@ -3222,3 +3344,1663 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 ## 2026-01-15 — Codex session (Add `notes.md`)
 
 - Docs: added a minimal `notes.md` summary of done vs TODO from `docs/organize.md`.
+
+## 2026-01-16 — Codex session (Remove legacy class creation/publishing UI)
+
+- Accelerator: removed the old class progress grid from the overview page (`src/app/(accelerator)/accelerator/page.tsx`) and deleted the legacy pager component (`src/components/accelerator/start-building-pager.tsx`).
+- Training: stripped edit/publish wizard controls from class + module views (`src/components/training/class-overview.tsx`, `src/components/training/class-overview/module-card.tsx`, `src/components/training/module-detail.tsx`, `src/components/training/module-detail/module-header.tsx`).
+- Sidebar/Admin: removed the create/publish popover and draft actions from the accelerator sidebar + admin academy header (`src/components/app-sidebar/classes-section.tsx`, `src/app/(admin)/admin/academy/page.tsx`).
+- Cleanup: deleted legacy lesson wizard UI + hooks (`src/components/admin/lesson-creation-wizard.tsx`, `src/components/admin/lesson-wizard/*`, `src/hooks/lessons/use-lesson-wizard.ts`).
+- Checks: not run (UI-only removals).
+
+## 2026-01-16 — Codex session (Budget table cells fill height)
+
+- Budget table: made table controls fill cell height and align center, with absolute cell wrappers and full-height inputs/selects (`src/components/training/module-detail/assignment-form.tsx`).
+- Budget table: textarea auto-resize now respects cell height to avoid bottom gaps (`src/components/training/module-detail/assignment-form.tsx`).
+- Checks: not run (UI-only styling updates).
+
+## 2026-01-16 — Codex session (Budget table padding + unit dropdown)
+
+- Budget table: added a 10px inset on the full-bleed table frame so it no longer touches the app shell edges (`src/components/training/module-detail/assignment-form.tsx`).
+- Budget table: replaced Unit with a select + custom input (select sets unit, custom input allows overrides) and kept full-height layout (`src/components/training/module-detail/assignment-form.tsx`).
+- Checks: not run (UI-only styling changes).
+
+## 2026-01-16 — Codex session (Budget table background uniformity)
+
+- Budget table: aligned drag/textarea/action cells to use the same dark-mode background as the inputs (`src/components/training/module-detail/assignment-form.tsx`).
+- Checks: not run (UI-only styling updates).
+
+## 2026-01-16 — Codex session (Budget table shrink + unit suggestions + rebuild brief)
+
+- Budget table: fixed textarea resize to shrink correctly by using min-height instead of row height (`src/components/training/module-detail/assignment-form.tsx`).
+- Budget table: replaced the unit select+input combo with a single input + datalist suggestions (no duplicate controls) and kept preset options (`src/components/training/module-detail/assignment-form.tsx`).
+- Docs: added a TanStack rebuild brief and indexed it (`docs/briefs/budget-table-rebuild.md`, `docs/briefs/INDEX.md`).
+- Checks: not run (UI + docs).
+
+## 2026-01-16 — Codex session (Budget table rebuild integration + uniform surface)
+
+- Budget table: wired the TanStack-based table component into assignments and updated the full-bleed frame calc for a consistent 10px shell inset (`src/components/training/module-detail/assignment-form.tsx`).
+- Budget table: unified table surface/backgrounds and ensured cell content renders on the same surface across controls (`src/components/training/module-detail/budget-table.tsx`).
+- API: preserve blank budget table rows so newly added items don't get stripped on autosave (`src/app/api/modules/[id]/assignment-submission/route.ts`).
+- UI: matched the budget description card radius and increased subtotal spacing (`src/components/training/module-detail/assignment-form.tsx`).
+- Checks: not run (UI-only changes).
+
+## 2026-01-16 — Codex session (Notifications brief refresh)
+
+- Docs: refreshed the notifications brief to cover system-wide event triggers and launch-ready scope (`docs/briefs/notifications.md`).
+- Docs: marked the notifications brief as active in the brief index (`docs/briefs/INDEX.md`).
+- Checks: not run (docs-only changes).
+
+## 2026-01-16 — Codex session (Restore accelerator module cards)
+
+- Accelerator overview: restored the module cards/categories section while filtering out the legacy LMS class (`src/app/(accelerator)/accelerator/page.tsx`, `src/lib/accelerator/progress.ts`).
+- UI: reintroduced the module card grid component (`src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (UI-only changes).
+
+## 2026-01-16 — Codex session (Notifications event triggers)
+
+- Notifications: added shared helper + schema extensions for event metadata (`src/lib/notifications.ts`, `supabase/migrations/20260116130000_extend_notifications.sql`, `src/lib/supabase/schema/tables/notifications.ts`).
+- Notifications: emit events for module completion, coaching link opens, roadmap adds/publish, and document uploads (`src/app/api/modules/[id]/assignment-submission/route.ts`, `src/app/api/meetings/schedule/route.ts`, `src/app/(dashboard)/strategic-roadmap/actions.ts`, `src/app/api/account/org-documents/route.ts`, `src/app/api/account/org-public-documents/route.ts`).
+- Checks: not run (server/UI wiring changes).
+
+## 2026-01-16 — Codex session (Notifications event map doc)
+
+- Docs: documented active notifications and high-signal proposals (`docs/notifications-events.md`).
+- Checks: not run (docs-only).
+
+## 2026-01-16 — Codex session (Accelerator card image spacing)
+
+- UI: aligned accelerator module card image container spacing/radius with the coaching card pattern (`src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-16 — Codex session (Accelerator card image clipping)
+
+- UI: clipped module card media within the rounded card container to prevent overflow (`src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-16 — Codex session (Accelerator card image sizing)
+
+- UI: adjusted module card media sizing to avoid overflow/clipping while keeping the inset spacing (`src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-16 — Codex session (Curriculum header centering)
+
+- UI: centered and spaced the accelerator curriculum header block (`src/app/(accelerator)/accelerator/page.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-16 — Codex session (Curriculum group picker + search)
+
+- UI: show one accelerator group at a time with search + track selector controls (`src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-16 — Codex session (Curriculum search/selector icons)
+
+- UI: added icons to the module search and track selector, and tightened the search width (`src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-16 — Codex session (Accelerator sidebar class nav hidden)
+
+- UI: hid accelerator class navigation in the sidebar to prioritize overview navigation (`src/components/accelerator/accelerator-sidebar.tsx`).
+- UI: matched search input width to module card sizing breakpoints (`src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-16 — Codex session (Accelerator auto-collapse sidebar)
+
+- UI: auto-collapsed the accelerator sidebar on module pages and styled the trigger with a bordered container (`src/components/accelerator/accelerator-shell.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-16 — Codex session (Coaching button contrast)
+
+- UI: made the coaching schedule button black-on-white in light mode while preserving dark mode styling (`src/components/accelerator/accelerator-schedule-card.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-18 — Codex session (Accelerator select hydration mismatch)
+
+- UI: render a non-hydrating placeholder for the track select until mount to avoid Radix Select SSR ID mismatches (`src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-18 — Codex session (AGENTS UI quality rubric)
+
+- Docs: merged UI quality rubric (interaction, animation, layout, a11y, perf, theming, hydration, design rules) into `AGENTS.md` without duplicating existing guidance.
+- Checks: not run (docs-only).
+
+## 2026-01-18 — Codex session (UI rubric punctuation)
+
+- Docs: aligned UI rubric placeholders and curly quote examples with the canonical ellipsis and curly quote characters (`AGENTS.md`).
+- Checks: not run (docs-only).
+
+## 2026-01-18 — Codex session (Accelerator card backgrounds)
+
+- UI: removed custom surface backgrounds on accelerator schedule and module cards to use default card background tokens (`src/components/accelerator/accelerator-schedule-card.tsx`, `src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-18 — Codex session (Accelerator next class + completion notification)
+
+- UI: compute accelerator Next up card from the first incomplete class group instead of hardcoded text (`src/app/(accelerator)/accelerator/page.tsx`).
+- Data: include class slug in accelerator module groups (`src/lib/accelerator/progress.ts`).
+- Notifications: on module completion, check class completion and create a class completion notification when all class modules are done (`src/app/api/modules/[id]/assignment-submission/route.ts`).
+- Checks: not run (UI/logic-only).
+
+## 2026-01-18 — Codex session (Unified app shell brief)
+
+- Docs: added unified app shell brief and indexed it (`docs/briefs/app-shell-unification.md`, `docs/briefs/INDEX.md`).
+- Checks: not run (docs-only).
+
+## 2026-01-18 — Codex session (Unified shell scope updates)
+
+- Docs: updated app shell brief to include public shell usage, dashboard scope, and sign-in top bar requirement (`docs/briefs/app-shell-unification.md`).
+- Checks: not run (docs-only).
+
+## 2026-01-18 — Codex session (Unified app shell scaffold)
+
+- UI: added shared AppShell with fixed center scroll container, top bar, and right-rail support (`src/components/app-shell.tsx`, `src/components/app-shell/right-rail.tsx`).
+- UI: unified left-rail nav to include accelerator links, admin section links, and optional class list; hide account menu when signed out (`src/components/app-sidebar.tsx`).
+- Routing: moved community and news routes into the dashboard group to inherit the unified shell (`src/app/(dashboard)/community`, `src/app/(dashboard)/news`).
+- Layouts: switched dashboard, accelerator, and admin layouts to use AppShell (`src/app/(dashboard)/layout.tsx`, `src/app/(accelerator)/layout.tsx`, `src/app/(admin)/layout.tsx`).
+- Checks: not run (layout-only).
+
+## 2026-01-18 — Codex session (Unified shell rollout continued)
+
+- UI: moved marketplace, people, and accelerator module controls into the right rail (`src/app/(dashboard)/marketplace/ui/marketplace-client.tsx`, `src/components/people/people-table.tsx`, `src/components/accelerator/start-building-pager.tsx`).
+- UI: refit community + news pages to AppShell content-only layout and removed legacy headers (`src/app/(dashboard)/community/page.tsx`, `src/app/(dashboard)/community/loading.tsx`, `src/app/(dashboard)/news/page.tsx`, `src/app/(dashboard)/news/how-we-think-about-AI/page.tsx`, `src/app/(dashboard)/news/funding-roadmaps/page.tsx`, `src/app/(dashboard)/news/formation-to-funding/page.tsx`, `src/app/(dashboard)/news/grassroots-discovery/page.tsx`).
+- Layout: expanded AppShell max width when the left rail collapses and cleaned extra padding across dashboard/org/classes/training pages (`src/components/app-shell.tsx`, `src/app/(dashboard)/dashboard/page.tsx`, `src/app/(dashboard)/my-organization/page.tsx`, `src/app/(dashboard)/my-organization/documents/page.tsx`, `src/app/(dashboard)/classes/page.tsx`, `src/app/(dashboard)/classes/loading.tsx`, `src/app/(dashboard)/class/[slug]/page.tsx`, `src/app/(dashboard)/class/[slug]/module/[index]/page.tsx`, `src/app/(dashboard)/organizations/page.tsx`, `src/app/(dashboard)/onboarding/page.tsx`, `src/app/(dashboard)/training/page.tsx`, `src/components/roadmap/strategic-roadmap-editor-page.tsx`).
+- Data: limited sidebar drafts to admins (`src/app/(dashboard)/layout.tsx`, `src/app/(dashboard)/training/page.tsx`).
+- Checks: not run (UI/layout-only).
+
+## 2026-01-18 — Codex session (Remove legacy admin academy/classes/settings)
+
+- UI: removed admin Academy/Classes/Settings nav entries and retargeted admin landing to users (`src/components/app-sidebar.tsx`, `src/components/app-sidebar/nav-data.ts`, `src/components/global-search.tsx`, `src/app/(admin)/admin/page.tsx`, `src/lib/admin/auth.ts`).
+- UI: deleted legacy admin academy/classes/settings pages and components, plus related breadcrumbs (`src/app/(admin)/admin/academy`, `src/app/(admin)/admin/settings`, `src/app/(admin)/admin/classes/page.tsx`, `src/app/(admin)/admin/classes/_components`, `src/app/(admin)/admin/classes/[id]/page.tsx`, `src/app/(admin)/admin/classes/[id]/loading.tsx`, `src/app/(admin)/admin/classes/[id]/_components`, `src/app/(admin)/admin/classes/[id]/actions.ts`, `src/app/(admin)/@breadcrumbs/admin/academy`, `src/app/(admin)/@breadcrumbs/admin/classes`, `src/app/(admin)/@breadcrumbs/admin/classes/[id]`).
+- Cleanup: removed revalidation targets pointing at deleted admin routes and updated stray redirects/CTAs (`src/app/(admin)/admin/classes/actions/utils.ts`, `src/app/(admin)/admin/classes/actions/revalidate.ts`, `src/app/api/admin/classes/[id]/publish/route.ts`, `src/app/api/admin/classes/[id]/modules/route.ts`, `src/app/(admin)/admin/classes/actions/basic.ts`, `src/app/(admin)/admin/modules/[id]/actions.ts`, `src/components/dashboard/classes-overview.tsx`).
+- Checks: not run (routing/nav cleanup).
+
+## 2026-01-18 — Codex session (Clamp AppShell to viewport)
+
+- Layout: clamp AppShell container to viewport height and prevent body overflow (`src/components/app-shell.tsx`).
+- Checks: not run (layout-only).
+
+## 2026-01-18 — Codex session (AppShell background tuning)
+
+- UI: darkened rail backgrounds and header panel to emphasize the center shell (`src/components/app-shell.tsx`).
+- Checks: not run (styling-only).
+
+## 2026-01-18 — Codex session (AppShell surface palette)
+
+- UI: defined AppShell-local surface variables and updated rail/header/container backgrounds and borders to match the dark reference palette (`src/components/app-shell.tsx`).
+- Checks: not run (styling-only).
+
+## 2026-01-18 — Codex session (Shell rail alignment polish)
+
+- UI: unified shell background/overscroll colors, tightened shell spacing, and narrowed left/right rails to match the reference layout (`src/components/app-shell.tsx`, `src/components/ui/sidebar.tsx`, `src/app/globals.css`).
+- Checks: not run (layout-only).
+
+## 2026-01-18 — Codex session (Shell width fix)
+
+- UI: ensured the AppShell wrapper fills the provider width to prevent the layout from shrinking and leaving unused space (`src/components/app-shell.tsx`).
+- Checks: not run (layout-only).
+
+## 2026-01-18 — Codex session (Accelerator classes rail move)
+
+- UI: moved accelerator class/module nav into the right rail via multi-slot rail support and filtered legacy Published Class entries (`src/components/app-shell/right-rail.tsx`, `src/components/app-shell.tsx`, `src/components/app-sidebar/classes-section.tsx`, `src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-18 — Codex session (Right rail store stabilization)
+
+- UI: switched right-rail slots to an external store to prevent render loops while preserving live updates in rail content (`src/components/app-shell/right-rail.tsx`, `src/components/app-shell.tsx`).
+- Checks: not run (runtime fix).
+
+## 2026-01-18 — Codex session (Remove accelerator module search control)
+
+- UI: removed the accelerator module search input from the right rail while keeping track selection and module list intact (`src/components/accelerator/start-building-pager.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-18 — Codex session (Class selector for modules)
+
+- UI: replaced the accelerator class list with a dropdown selector and a single module list, removing the multi-class sidebar list (`src/components/app-sidebar/classes-section.tsx`, `src/components/app-sidebar.tsx`, `src/components/app-shell.tsx`, `src/components/dashboard/dashboard-shell.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-18 — Codex session (Header alignment pass)
+
+- UI: reorganized the AppShell header into rail/middle/action columns so the brand/toggle align with the left rail and the title area centers over the main content (`src/components/app-shell.tsx`).
+- Checks: not run (layout-only).
+
+## 2026-01-18 — Codex session (Shell rail borders removed)
+
+- UI: removed visible borders from the top rail and left/right rails to match the unified surface treatment (`src/components/app-shell.tsx`).
+- Checks: not run (styling-only).
+
+## 2026-01-18 — Codex session (Shell spacing + rail responsiveness)
+
+- UI: tightened accelerator/community/marketplace/news/people/modules spacing and aligned roadmap header width for the unified shell (`src/app/(accelerator)/accelerator/page.tsx`, `src/components/accelerator/start-building-pager.tsx`, `src/app/(dashboard)/community/page.tsx`, `src/app/(dashboard)/marketplace/page.tsx`, `src/app/(dashboard)/people/page.tsx`, `src/app/(dashboard)/news/page.tsx`, `src/components/training/class-overview.tsx`, `src/components/training/module-detail.tsx`, `src/components/roadmap/roadmap-shell.tsx`, `src/components/roadmap/strategic-roadmap-editor-page.tsx`).
+- UI: made the right rail persist down to `md` sizes and auto-close on mobile to prevent off-canvas overlays on resize (`src/components/app-shell.tsx`).
+- Checks: not run (layout-only).
+
+## 2026-01-20 — Codex session (Header right-rail alignment)
+
+- UI: aligned the top-rail right padding with right-rail and no-rail states so the right toggle matches the shell container edge (`src/components/app-shell.tsx`).
+- Checks: not run (layout-only).
+
+## 2026-01-20 — Codex session (Shell gutter restore)
+
+- UI: restored the shell gutter between the viewport/rails and the main container, keeping header alignment in sync (`src/components/app-shell.tsx`).
+- Checks: not run (layout-only).
+
+## 2026-01-20 — Codex session (Track selector in right rail)
+
+- UI: updated the right-rail class selector to a Track dropdown and removed the class description block so it drives the module list (`src/components/app-sidebar/classes-section.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (App shell contract + checklist)
+
+- Docs: added the unified app shell contract and QA checklist, and linked them from the unification brief and overview (`docs/app-shell.md`, `docs/app-shell-checklist.md`, `docs/briefs/app-shell-unification.md`, `docs/OVERVIEW.md`).
+- Checks: not run (docs-only).
+
+## 2026-01-20 — Codex session (Shell spacing standardization)
+
+- UI: standardized rail spacing tokens, reduced redundant label styling, and aligned rail padding across header/rails/right rail (`src/components/app-shell.tsx`, `src/components/app-shell/right-rail.tsx`, `src/components/ui/sidebar.tsx`, `src/components/app-sidebar.tsx`, `src/components/nav-main.tsx`, `src/components/nav-documents.tsx`, `src/components/nav-secondary.tsx`, `src/components/app-sidebar/module-stepper.tsx`).
+- Docs: documented rail spacing tokens in the app shell contract (`docs/app-shell.md`).
+- Checks: not run (layout-only).
+
+## 2026-01-20 — Codex session (Remove legacy shells)
+
+- Cleanup: removed unused legacy shell/sidebar components now superseded by AppShell (`src/components/accelerator/accelerator-shell.tsx`, `src/components/accelerator/accelerator-sidebar.tsx`, `src/components/dashboard/dashboard-shell.tsx`, `src/components/app-sidebar/mobile-sidebar.tsx`).
+- Checks: not run (cleanup-only).
+
+## 2026-01-20 — Codex session (Right-rail labeling + spacing)
+
+- UI: introduced a shared rail label component and aligned right-rail control spacing to shell tokens (`src/components/ui/rail-label.tsx`, `src/components/app-sidebar/classes-section.tsx`, `src/components/accelerator/start-building-pager.tsx`, `src/components/people/people-table.tsx`, `src/app/(dashboard)/marketplace/ui/marketplace-client.tsx`).
+- Checks: not run (layout-only).
+
+## 2026-01-20 — Codex session (Org admin + accelerator redirects)
+
+- UI: refined shell padding, rail width, and accelerator module cards to align with the unified container; removed nested rounding on My Organization header (`src/components/app-shell.tsx`, `src/components/ui/sidebar.tsx`, `src/app/(accelerator)/accelerator/page.tsx`, `src/components/organization/org-profile-card/header.tsx`).
+- UI: standardized ProgramCard usage and hardened accelerator module cards to use Link semantics (`src/components/programs/program-card.tsx`, `src/components/organization/org-profile-card/tabs/programs-tab.tsx`, `src/components/organization/org-profile-card/public-card.tsx`, `src/components/roadmap/roadmap-shell.tsx`, `src/components/accelerator/start-building-pager.tsx`).
+- Admin: repurposed `/admin` to organization access management, removed internal admin subroutes, and aligned nav/search gating (`src/app/(admin)/layout.tsx`, `src/app/(admin)/admin/page.tsx`, `src/app/(admin)/@breadcrumbs/admin/page.tsx`, `src/components/app-sidebar.tsx`, `src/components/app-sidebar/nav-data.ts`, `src/components/global-search.tsx`).
+- Routing: redirect accelerator class landing to the next module and update search/notification links to avoid class pages (`src/app/(accelerator)/accelerator/class/[slug]/page.tsx`, `src/app/api/search/route.ts`, `src/components/global-search.tsx`, `src/app/api/modules/[id]/assignment-submission/route.ts`).
+- Checks: not run (manual changes only).
+
+## 2026-01-20 — Codex session (Roadmap TOC + shell polish)
+
+- Roadmap: replaced section definitions with the new strategic roadmap outline, merged stored sections safely, and rebuilt the right-rail TOC with grouped items + animated indicator; added a template route under `/my-organization/roadmap/template` (`src/lib/roadmap.ts`, `src/components/roadmap/roadmap-editor.tsx`, `src/app/(dashboard)/my-organization/roadmap/template/page.tsx`).
+- Shell/nav: removed the Platform label, tweaked rail width + group padding, tightened top content padding, and doubled the shell bottom gap; updated global search button width and dropped the accelerator roadmap entry (`src/components/app-sidebar.tsx`, `src/components/nav-main.tsx`, `src/components/ui/sidebar.tsx`, `src/components/app-shell.tsx`, `src/components/global-search.tsx`).
+- Branding/UI: public header wordmark now uses default Inter and aligns to logo height; tutorial button icon updated (`src/components/public/public-header.tsx`, `src/components/tutorial/page-tutorial-button.tsx`).
+- Dashboard links: roadmap CTAs now route to `/my-organization/roadmap`; test notification updated to the same (`src/app/(dashboard)/dashboard/page.tsx`, `src/app/actions/notifications.ts`).
+- My Organization: increased header height and strengthened edit-mode section separators (`src/components/organization/org-profile-card/header.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/edit-mode.tsx`).
+- Checks: not run (UI/layout changes).
+
+## 2026-01-20 — Codex session (Remove rail border)
+
+- UI: removed left/right rail container borders so the shell rails blend with the background (`src/components/ui/sidebar.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Admin split + layout fixes)
+
+- My Organization: removed the header background block so the org profile doesn’t look like a nested card (`src/components/organization/org-profile-card/header.tsx`).
+- Documents: switched the documents section to a centered single-column layout with a stacked header (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`).
+- Nav: enforced single-line accelerator label + non-wrapping nav badges (`src/components/app-sidebar.tsx`, `src/components/nav-main.tsx`).
+- Search: widened the global search button for better large-screen alignment (`src/components/global-search.tsx`).
+- Admin: added a staff-only `/internal` route with its own layout/breadcrumbs, updated admin redirects, reserved slug, and protected routing, plus surfaced links in nav/search (`src/app/(internal)/layout.tsx`, `src/app/(internal)/internal/page.tsx`, `src/app/(internal)/@breadcrumbs/internal/page.tsx`, `src/app/(internal)/@breadcrumbs/default.tsx`, `src/components/app-sidebar/nav-data.ts`, `src/components/global-search.tsx`, `src/components/organization/org-profile-card/tabs/company-tab/constants.ts`, `src/lib/admin/auth.ts`, `src/proxy.ts`, `src/app/(admin)/admin/classes/actions/basic.ts`, `src/app/(admin)/admin/modules/[id]/actions.ts`).
+- Checks: not run (UI/layout-only).
+
+## 2026-01-20 — Codex session (Hide staff admin nav)
+
+- Nav/Search: removed the Staff Admin entry from the sidebar and search results (`src/components/app-sidebar/nav-data.ts`, `src/components/global-search.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Brand label nowrap)
+
+- Header: forced the Coach House wordmark to stay single-line during sidebar collapse animation (`src/components/app-shell.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap menu width)
+
+- Roadmap: widened the “Add section” dropdown menu so labels stay single-line (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap TOC indicator timing)
+
+- Roadmap: deferred TOC indicator measurement to the next frame so it aligns with the selected item after right-rail updates (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Header search responsiveness)
+
+- Header: centered the actions slot and made the global search switch to icon-only based on available header width to avoid overlaps (`src/components/app-shell.tsx`, `src/components/global-search.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap publish CTA cleanup)
+
+- Roadmap: removed the offline/upgrade/slug helper labels from the visibility toggle, keeping only the switch + live state and view links (`src/components/roadmap/roadmap-visibility-toggle.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap header + visibility toggle cleanup)
+
+- Roadmap: removed the visibility toggle strip from the editor toolbar, leaving just the Save action (`src/components/roadmap/roadmap-editor.tsx`).
+- Roadmap: hid the Strategic roadmap header in the editor/template pages while keeping an SR-only h1 for semantics (`src/components/roadmap/roadmap-shell.tsx`, `src/components/roadmap/strategic-roadmap-editor-page.tsx`, `src/app/(dashboard)/my-organization/roadmap/template/page.tsx`).
+- Roadmap: dropped unused publish-state props + subscription query now that the toggle is removed (`src/components/roadmap/roadmap-shell.tsx`, `src/components/roadmap/strategic-roadmap-editor-page.tsx`).
+- Tutorials: removed the roadmap publish step since the visibility toggle is gone (`src/components/tutorial/tutorial-manager.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap add-section removal)
+
+- Roadmap: removed the “New” add-section dropdown from the right-rail TOC header and cleaned up unused add-section helpers (`src/components/roadmap/roadmap-editor.tsx`).
+- Tutorials: removed the add-section walkthrough step since the trigger is gone (`src/components/tutorial/tutorial-manager.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap TOC header + section removal)
+
+- Roadmap: retitled the right-rail header to “Strategic Roadmap” with the roadmap icon and filtered the strategic_roadmap section out of the editable TOC list (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap section actions removal)
+
+- Roadmap: removed per-section action menus (no more delete controls) so sections are no longer addable/removable from the TOC (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap save button in toolbar)
+
+- Roadmap: moved the Save/Saved button into the rich-text toolbar, positioned after Redo (`src/components/roadmap/roadmap-editor.tsx`).
+- Rich text editor: added trailing toolbar actions slot so callers can place buttons to the right of Undo/Redo (`src/components/rich-text-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Item description size)
+
+- UI: increased Item description text size for roadmap item subtitles (`src/components/ui/item.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap editor height + scroll)
+
+- Roadmap: capped the rich-text editor height so it stays in view and scrolls internally instead of expanding, and disabled manual resize (`src/components/roadmap/roadmap-editor.tsx`).
+- Rich text editor: added optional max height + resize lock support to enforce fixed editor heights (`src/components/rich-text-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap title/subtitle removal)
+
+- Roadmap: removed the per-section title/subtitle inputs from the editor body (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Nav active + footer divider)
+
+- Nav: compute active sidebar item by longest matching path so Roadmap doesn’t double-highlight My Organization (`src/components/nav-main.tsx`).
+- Sidebar: removed the user menu divider line in the main app sidebar (`src/components/app-sidebar.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Nav user menu portal)
+
+- Nav user: portaled the account menu to the document body and positioned it relative to the trigger so it can overflow the sidebar without clipping (`src/components/nav-user.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Nav live badge removal)
+
+- Nav: removed the Live badge support from the left-rail nav (`src/components/nav-main.tsx`, `src/components/app-shell.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap editor fill height)
+
+- Roadmap: shortened the editor min height, removed the fixed max height, and made the editor card stretch to the bottom with an even gap below while disabling bottom rounding on the contenteditable area (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap editor layout + rounding)
+
+- Roadmap: reduced the editor min height, removed the fixed max height, and made the editor card fill the remaining space with a matching bottom gap; removed bottom rounding on the contenteditable area (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Remove roadmap test sections)
+
+- Roadmap: added a cleanup pass to remove legacy "test"/"testing" sections from stored roadmap data and persist the cleaned profile (`src/lib/roadmap.ts`, `src/components/roadmap/strategic-roadmap-editor-page.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Header actions overlap)
+
+- Header: detect header action overflow to toggle compact search and tag header actions with `data-compact` for responsive layout (`src/components/global-search.tsx`, `src/components/app-shell.tsx`).
+- Header actions: hide the tutorial label in compact mode and ensure the search label truncates cleanly (`src/components/tutorial/page-tutorial-button.tsx`, `src/components/global-search.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Header actions rework)
+
+- Header actions: split center/right slots and convert the header actions area to a grid container for stable centering without JS (`src/components/app-shell.tsx`, `src/components/header-actions-portal.tsx`).
+- Search: removed ResizeObserver compact logic and switched to container-query-driven search sizing to avoid flicker/overlap (`src/components/global-search.tsx`).
+- Tutorial: restored original button styling and mounted it into the right header slot (`src/components/tutorial/page-tutorial-button.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Header rail layout states)
+
+- Header: restructured the top rail into a three-column grid so the center actions stay centered, and moved the right actions into the right column for consistent alignment across rail open/close states (`src/components/app-shell.tsx`).
+- Search: split the full search (center) and compact icon (right) into separate header slots, toggled via container queries for responsive layout without JS flicker (`src/components/global-search.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap section hero)
+
+- Roadmap editor: replaced the dashed section banner with a centered icon + h1 + subtitle header and added breathing room from the top (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap editor height fill)
+
+- Roadmap layout: converted the roadmap shell and editor page wrapper to flex/min-h-0 so the editor can stretch to the bottom with consistent shell padding (`src/components/roadmap/roadmap-shell.tsx`, `src/components/roadmap/strategic-roadmap-editor-page.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap editor stretch)
+
+- Roadmap shell: ensure the roadmap layout can fill the scroll viewport by using a full-height flex column (`src/components/roadmap/roadmap-shell.tsx`).
+- Roadmap editor: removed the fixed min height and made the rich text editor container/content stretch to fill the remaining space (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Editor footer radius)
+
+- Rich text editor: matched the footer rounding to the editor content and removed the separating border (`src/components/rich-text-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap save button styling)
+
+- Roadmap editor: styled the save state button as a ghost action with muted text and disabled it when no changes are pending (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap editor height fix)
+
+- Roadmap editor: removed min-height overrides on the contenteditable area so the editor renders at its default height and remains editable (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Revert editor height)
+
+- Roadmap editor: restored the contenteditable height overrides for the rich text editor (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap prompt + count)
+
+- Roadmap editor: moved the prompt text outside the editor and removed the editor placeholder so the typing area starts below the word count bar (`src/components/roadmap/roadmap-editor.tsx`).
+- Rich text editor: left-aligned the word/character count bar (`src/components/rich-text-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap editor prompt header)
+
+- Rich text editor: added an optional header slot rendered above the word count bar for static prompts (`src/components/rich-text-editor.tsx`).
+- Roadmap editor: moved the prompt into the editor header slot so the typing area starts below the word count bar (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap editor header/count styling)
+
+- Rich text editor: added customizable header/count/content classes and made the editor body flex-fill so the typing area extends beneath the word count bar (`src/components/rich-text-editor.tsx`).
+- Roadmap editor: styled the header/count backgrounds and set the dark editor background to #171717 (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Editor padding + fill)
+
+- Roadmap editor: added header bottom padding, rounded the count bar, and made the typing area fill the remaining height with the dark #171717 background (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Editor corner fix)
+
+- Roadmap editor: clipped the typing area to rounded corners and removed the count bar rounding to prevent sharp corners showing behind (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Shadcn tiptap import)
+
+- Added the shadcn tiptap basic files (skipped overwriting existing UI components) and kept our layout intact.
+- Rich text editor: incorporated shadcn tiptap extensions (text style/color/typography/subscript/superscript) without changing the toolbar UI (`src/components/rich-text-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Tiptap import fix)
+
+- Rich text editor: switched TextStyle to a named import to fix the build error (`src/components/rich-text-editor.tsx`).
+- Checks: not run.
+
+## 2026-01-20 — Codex session (Frameworks brief + editor placeholder)
+
+- Docs: added the frameworks brief and indexed it; tracked the frameworks feature in the organizer (`docs/briefs/frameworks.md`, `docs/briefs/INDEX.md`, `docs/organize.md`).
+- Roadmap editor: restored editor placeholder text using section examples and enabled TipTap placeholder styling via empty-node classes (`src/components/roadmap/roadmap-editor.tsx`, `src/components/rich-text-editor.tsx`).
+- Cleanup: removed the shadcn tiptap demo route (`src/app/text-editor/page.tsx`).
+- Checks: not run (UI/doc-only).
+
+## 2026-01-20 — Codex session (Roadmap editor scroll)
+
+- Roadmap editor: forced the TipTap body to flex-fill and scroll within the card to prevent the editor from expanding past its container (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap editor rounding)
+
+- Roadmap editor: removed rounding from the typing surface and constrained it to its container height so the editor scrolls inside the card (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (TipTap extensions alignment)
+
+- Rich text editor: aligned StarterKit list HTML attributes and link-on-paste behavior to the shadcn tiptap defaults without changing UI; kept placeholder behavior scoped to the root node (`src/components/rich-text-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap editor scroll container)
+
+- Roadmap editor: moved scrolling to the editor body wrapper and pinned the page column to full height so pasted content scrolls within the card; typing surface stays square at the bottom (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap editor scroll target)
+
+- Roadmap editor: moved scrolling onto the contenteditable element so the editor scrolls when the cursor is over the typing area; the card wrapper stays rounded and the typing surface remains square (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Toolbar dropdown fix)
+
+- Rich text editor: simplified toolbar dropdown triggers to use Radix DropdownMenuTrigger directly to restore text style/blocks/align menus without changing styling (`src/components/rich-text-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Tutorial selectors)
+
+- Tutorial: pointed the accelerator “Return home” step at the existing My Organization nav target; added a tour anchor to the accelerator CTA and roadmap TOC so tutorial steps resolve in the new layout (`src/components/tutorial/tutorial-manager.tsx`, `src/app/(accelerator)/accelerator/page.tsx`, `src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Text style menu fix)
+
+- Rich text editor: replaced the text style radio group with direct menu items to ensure heading level commands fire reliably; styling remains the same (`src/components/rich-text-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap placeholders)
+
+- Rich text editor: allow placeholders to render in read-only mode so template views still show prompts (`src/components/rich-text-editor.tsx`).
+- Roadmap editor: fall back to section placeholders when subtitle examples are missing to ensure every section has prompt copy (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap section header fallback)
+
+- Roadmap editor: render the section header block for custom sections like Foundations by falling back to the section’s title/subtitle when template copy is missing (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap custom placeholders)
+
+- Roadmap data: derive unique placeholder text for custom roadmap sections from their subtitle or title so every section has a distinct prompt (`src/lib/roadmap.ts`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (TipTap caret + placeholder behavior)
+
+- Rich text editor: focus the editor when clicking the header/count area and prevent placeholders from persisting after adding extra empty lines; added caret cursor styling and placeholder visibility control (`src/components/rich-text-editor.tsx`, `src/app/globals.css`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap light-mode tones)
+
+- Roadmap editor: set three light-grey tones for header, count bar, and editor body to mirror the dark-mode layering (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (DropdownMenu radio import)
+
+- Rich text editor: restored DropdownMenuRadioGroup/Item imports to fix the align menu runtime error (`src/components/rich-text-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (TipTap placeholder per section)
+
+- Rich text editor: keep the placeholder text in sync with prop changes so each roadmap section shows its own prompt (`src/components/rich-text-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap light-mode swap)
+
+- Roadmap editor: swapped the light-mode backgrounds between the word-count bar and the typing surface to make the content area lighter (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (TipTap placeholder scope)
+
+- Rich text editor: scope placeholder display to empty editors only so placeholders don’t appear after text is present (`src/app/globals.css`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap placeholders + inline images)
+
+- Roadmap editor: prioritize section prompt placeholders for the editor body and switch image uploads to insert inline content instead of rendering a separate image header (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (TipTap placeholder visibility restore)
+
+- Rich text editor: show placeholder text again by removing the root-class requirement while keeping the hidden-placeholder guard (`src/app/globals.css`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (TipTap placeholder gating)
+
+- Rich text editor: gate placeholder rendering on a computed empty state so placeholders only show when the document is empty and disappear after heading changes create trailing empty blocks (`src/components/rich-text-editor.tsx`, `src/app/globals.css`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Remove legacy roadmap section)
+
+- Roadmap data: filter out the legacy Foundations section from stored roadmap entries so it no longer appears in the TOC (`src/lib/roadmap.ts`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (TipTap image controls)
+
+- Rich text editor: swapped to the shadcn ImageExtension and ensured a paragraph is created after inline image insertion so typing continues; image uploads now flow through the real uploader (`src/components/rich-text-editor.tsx`, `src/hooks/use-image-upload.ts`, `src/components/tiptap/extensions/image.tsx`).
+- TipTap extensions: wired image upload hooks to accept real upload handlers in the image and placeholder node views (`src/components/tiptap/extensions/image.tsx`, `src/components/tiptap/extensions/image-placeholder.tsx`, `src/hooks/use-image-upload.ts`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (TipTap heading sizes)
+
+- Rich text editor: increased H1/H2/H3 sizes and weight so heading levels are visually distinct and H1 is bold enough (`src/components/rich-text-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (TipTap heading behavior)
+
+- Rich text editor: switch heading menu actions to toggleHeading and add explicit .tiptap h1/h2/h3 styling so H1 is visibly bold and large (`src/components/rich-text-editor.tsx`, `src/app/globals.css`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Ordered list indent)
+
+- Rich text editor: move ordered list markers inside with extra padding to prevent clipping and restore indentation (`src/components/rich-text-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap image upload UX + private bucket)
+
+- Rich text editor: insert images with an inline loading state and drop a paragraph after insertion so typing/scrolling continues; upload placeholders are removed on failure (`src/components/rich-text-editor.tsx`, `src/components/tiptap/extensions/image.tsx`).
+- Roadmap editor: route inline image uploads through a private roadmap bucket (`src/components/roadmap/roadmap-editor.tsx`, `src/app/api/account/org-media/route.ts`, `src/lib/organization/org-media.ts`).
+- Storage: added a private `roadmap-media` bucket with org-scoped RLS policies for read/write (`supabase/migrations/20260120190000_roadmap_media_bucket.sql`).
+- Checks: not run (UI + migration).
+
+## 2026-01-20 — Codex session (Roadmap editor scroll + image upload overlay)
+
+- Image upload: add a pulsing inline upload overlay that doesn't block scrolling while uploads finish (`src/components/tiptap/extensions/image.tsx`).
+- Roadmap editor: move scrolling to the editor content container to prevent clipping after image inserts (`src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Ordered list indent fix)
+
+- Rich text editor: force list markers inside with explicit padding so ordered lists indent and markers are not clipped (`src/app/globals.css`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (List marker alignment)
+
+- Rich text editor: ensure list item text sits on the same line as markers by zeroing list paragraph margins and rendering inline (`src/app/globals.css`).
+- Checks: not run (UI-only).
+
+## 2026-01-20 — Codex session (Roadmap placeholders)
+
+- Roadmap: add short prompts for section headers and expand editor placeholder copy into multi-sentence guidance per section (`src/lib/roadmap.ts`, `src/components/roadmap/roadmap-editor.tsx`).
+- Checks: not run (UI-only).
+
+## 2026-01-22 — Codex session (Roadmap route)
+
+- Routing: add `/roadmap` page and redirect `/my-organization/roadmap` to the new route; update nav/search/notifications/dashboard links to `/roadmap` (`src/app/(dashboard)/roadmap/page.tsx`, `src/app/(dashboard)/my-organization/roadmap/page.tsx`, `src/components/app-sidebar/nav-data.ts`, `src/components/nav-main.tsx`, `src/components/global-search.tsx`, `src/app/api/search/route.ts`, `src/app/(dashboard)/dashboard/page.tsx`, `src/app/actions/notifications.ts`).
+- Roadmap actions: revalidate `/roadmap` after edits; reserve the `roadmap` slug (`src/app/(dashboard)/strategic-roadmap/actions.ts`, `src/app/api/public/organizations/slug-available/route.ts`).
+- Worked: route change and redirects implemented; links now point to `/roadmap`.
+- Didn't: tests not run.
+- Next: verify `/roadmap` loads and `/my-organization/roadmap` redirects; run `pnpm lint && pnpm test:snapshots && pnpm test:acceptance` if needed.
+
+## 2026-01-22 — Codex session (Accelerator program builder hide)
+
+- Accelerator overview: hide the Program Builder section behind a feature toggle for now (`src/app/(accelerator)/accelerator/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Mobile shell cleanup)
+
+- App shell: move sidebar toggles to a mobile footer bar, hide header toggles on mobile, and add bottom padding for the new footer (`src/components/app-shell.tsx`).
+- Sidebar: add inner padding to the mobile sheet so content doesn't touch edges (`src/components/ui/sidebar.tsx`).
+- Accelerator: render the curriculum track selector inline on mobile to remove duplicate right-rail dropdowns (`src/components/accelerator/start-building-pager.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Module step rail controls)
+
+- Accelerator right rail: swap module nav buttons for step navigation controls with chevron icons and wire them to the module stepper via custom events (`src/components/app-sidebar/classes-section.tsx`, `src/components/training/module-detail/module-stepper.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Right rail padding)
+
+- App shell: add explicit padding to the mobile right-rail sheet and revert unintended left sheet padding (`src/components/app-shell.tsx`, `src/components/ui/sidebar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Mobile header/search spacing)
+
+- App shell: hide brand text on mobile and add labels to the mobile footer nav buttons (`src/components/app-shell.tsx`).
+- Global search: constrain command dialog width on mobile for viewport gutter (`src/components/global-search.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Command palette height)
+
+- Global search: cap command dialog height on mobile so it clears the footer (`src/components/global-search.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Shell header/footer slots)
+
+- App shell: add content header/footer slots inside the main shell container for card-like page framing (`src/components/app-shell.tsx`, `src/components/app-shell/shell-content-portal.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Shell content padding)
+
+- App shell: increase top/bottom padding inside the main content column for all pages (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Shell body spacing)
+
+- App shell: increase top/bottom padding inside the content body to keep cards off the shell edges (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Shell body padding bump)
+
+- App shell: increase content body padding to create a clear gap above/below page cards (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Shell body padding follow-up)
+
+- App shell: increase content body padding and let the body flex to keep a clear gap above/below page cards (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Shell scroll spacing)
+
+- App shell: make the scroll container a column flex layout and increase bottom padding to ensure visible gap below page cards (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Documents tab bottom padding)
+
+- Documents: add bottom padding to the documents list section so the scroll ends below the last card (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Admin column layout)
+
+- Admin nav: rename sidebar item to “Admin” for org admins and platform admins (`src/components/app-sidebar/nav-data.ts`).
+- Org admin page: align layout to the centered single-column design (`src/app/(admin)/admin/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Community/Accelerator column layout)
+
+- Community + Accelerator pages: apply the centered single-column layout wrapper to match other shell pages (`src/app/(dashboard)/community/page.tsx`, `src/app/(accelerator)/accelerator/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Revert Accelerator layout)
+
+- Accelerator overview: revert the centered single-column wrapper change per request (`src/app/(accelerator)/accelerator/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Marketplace column layout)
+
+- Marketplace: apply the centered column layout, remove the redundant eyebrow label, and move search/category filters under the page header (`src/app/(dashboard)/marketplace/page.tsx`, `src/app/(dashboard)/marketplace/ui/marketplace-client.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Marketplace results columns)
+
+- Marketplace: reduce the results grid to two columns across breakpoints (`src/app/(dashboard)/marketplace/ui/marketplace-client.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Marketplace featured carousel)
+
+- Marketplace: show featured recommendations one at a time with dot controls and autoplay (prefers-reduced-motion aware) (`src/app/(dashboard)/marketplace/ui/marketplace-client.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Marketplace header icon)
+
+- Marketplace: center the page header and add the icon badge container above the title (`src/app/(dashboard)/marketplace/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Marketplace category width)
+
+- Marketplace: make the category select trigger full width within its column (`src/app/(dashboard)/marketplace/ui/marketplace-client.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Marketplace card banner)
+
+- Marketplace cards: add a rounded banner image container above the card details and stack the content below (`src/app/(dashboard)/marketplace/ui/marketplace-client.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Marketplace image fallbacks)
+
+- Marketplace cards: add local banner fallback per item and swap to it when remote logos fail; hide the initial when images load (`src/app/(dashboard)/marketplace/ui/marketplace-client.tsx`).
+- Assets: generate placeholder banner/logo SVGs for each marketplace item (`public/marketplace/banners/*`, `public/marketplace/logos/*`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Sidebar progress size)
+
+- Sidebar: reduce accelerator progress indicator size to fit tighter in the nav row (`src/components/app-sidebar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Breadcrumb overflow)
+
+- Breadcrumbs: prevent overflow on mobile by enforcing nowrap/truncation and min-width constraints so header content doesn't overlap actions (`src/components/ui/breadcrumb.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Breadcrumb overlap fix)
+
+- Header: clamp breadcrumb container and enforce truncation so the title can't overlap right-side actions on mobile (`src/components/app-shell.tsx`, `src/components/ui/breadcrumb.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Header mobile grid)
+
+- Header: switch mobile layout to two-column grid and hide the center slot under 640px to prevent breadcrumb overlap with right actions (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Header layout rollback)
+
+- Header: restore desktop grid structure, keep center slot visible, and reduce rail width on mobile to prevent breadcrumb overlap (`src/components/app-shell.tsx`).
+- Breadcrumbs: revert earlier truncation/nowrap changes to restore original desktop layout (`src/components/ui/breadcrumb.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (People filters labels)
+
+- People page: remove visible SEARCH/CATEGORY rail labels and add aria-labels for accessibility (`src/components/people/people-table.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (People category width)
+
+- People page: make the category select trigger full width to match the search input (`src/components/people/people-table.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (People page bottom padding)
+
+- People page: add extra bottom padding so the table/pagination isn't flush against the shell bottom (`src/app/(dashboard)/people/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Org chart details)
+
+- People page: remove the map details toggle and always show org chart extras (`src/components/people/org-chart-canvas-lite.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Org chart controls panel)
+
+- People org chart: remove the controls panel border/background so the panel container is invisible (`src/app/globals.css`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Org chart top padding)
+
+- People org chart: add top padding to match side spacing by offsetting the lane layout start position (`src/components/people/org-chart-canvas.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Org chart padding constant)
+
+- People org chart: introduce a shared padding constant to fix the translateExtent ReferenceError (`src/components/people/org-chart-canvas.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Header/mobile fixes + People hydration)
+
+- Header: switch header action grid to 2-column on small screens and hide center slot until >=640px to prevent breadcrumb overlap (`src/components/app-shell.tsx`).
+- Breadcrumbs: enforce single-line, truncated breadcrumb labels in dashboard header (`src/components/dashboard/breadcrumbs.tsx`).
+- People page: render the table/client rail only after mount to avoid Radix hydration ID mismatches; add a lightweight loading fallback (`src/app/(dashboard)/people/page.tsx`).
+- People table: add extra bottom padding for pagination spacing (`src/components/people/people-table.tsx`).
+- Org chart: align left padding for lane labels and node columns with the shared padding constant (`src/components/people/org-chart-canvas.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Header/breadcrumb stability)
+
+- Header: make the desktop header grid always 3 columns at md+ to stop mobile tweaks from collapsing the desktop layout (`src/components/app-shell.tsx`).
+- Breadcrumbs: scope truncation/nowrap to mobile and restore wrapping/visibility on sm+ (`src/components/dashboard/breadcrumbs.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Header/rail alignment + sidebar animation)
+
+- Header: align logo padding with rail item padding so the logo and sidebar items share a vertical axis in collapsed state (`src/components/app-shell.tsx`).
+- Sidebar: smooth collapse/expand transitions with ease-in-out and longer duration for gap + container (`src/components/ui/sidebar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Header stability brief)
+
+- Added header stability brief using the standard template (`docs/briefs/app-shell-header-stability.md`).
+- Updated brief index (`docs/briefs/INDEX.md`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Header stability refactor)
+
+- Header: center the logo within the collapsed rail and remove container-query header classes (`src/components/app-shell.tsx`).
+- Sidebar: set collapsed rail padding variables at the provider level and center menu items; smooth menu button transitions (`src/components/ui/sidebar.tsx`).
+- Header actions: replace container-query visibility with explicit `md` breakpoints (`src/components/global-search.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (Collapsed rail spacing)
+
+- App shell: remove extra left gutter when the sidebar is collapsed so the rail sits tight to the shell (`src/components/app-shell.tsx`).
+- Sidebar: center collapsed menu buttons and remove extra gap within the icon rail (`src/components/ui/sidebar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-22 — Codex session (App shell container)
+
+- App shell: remove the extra centering wrapper so the main shell spans the full available width without left/right gaps (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Accelerator shell polish)
+
+- Synced accelerator Track selectors via `?track=` and kept icon variant (`src/components/accelerator/start-building-pager.tsx`, `src/components/app-sidebar/classes-section.tsx`, `src/hooks/use-track-param.ts`).
+- App shell: unified sidebar/right-rail toggle styles and added header subnav slot (`src/components/app-shell.tsx`, `src/components/header-subnav-portal.tsx`).
+- Module pages: moved stepper into header subnav and left-aligned header copy (`src/components/training/module-detail.tsx`, `src/components/training/module-detail/module-stepper.tsx`, `src/components/training/module-detail/module-header.tsx`).
+- Fix module stepper fragment close + nesting (`src/components/training/module-detail/module-stepper.tsx`).
+- Suppress duplicate Track rail control on `/accelerator` (`src/components/accelerator/start-building-pager.tsx`, `src/app/(accelerator)/accelerator/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Rail label + right rail width)
+
+- Right rail: remove the visible Track label while keeping it available to screen readers (`src/components/app-sidebar/classes-section.tsx`).
+- Right rail: match mobile sheet width to the left rail by removing the max-width cap (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Right rail padding)
+
+- Right rail: remove top padding above the Track selector on desktop (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Header alignment + right rail animation)
+
+- Header: align collapsed rail toggles with the shell edge by removing collapsed inset and using full-width header max (`src/components/app-shell.tsx`).
+- Right rail: fade content out before collapsing width to avoid squished text (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Shell body padding)
+
+- Shell content: reduce bottom padding by matching top/bottom padding in the main content body (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Module continue lock)
+
+- Module completion: disable “Continue to next lesson” when the next module is still locked/unpublished (`src/app/(dashboard)/class/[slug]/module/[index]/page.tsx`, `src/components/training/module-detail.tsx`, `src/components/training/module-detail/module-stepper.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Take a break routing)
+
+- Module completion: route “Take a break” back to `/accelerator` when in accelerator context, keep `/my-organization` otherwise (`src/components/training/module-detail.tsx`, `src/components/training/module-detail/module-stepper.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (TipTap focus)
+
+- RichTextEditor: prevent wrapper focus handler from stealing cursor when clicking inside contenteditable (`src/components/rich-text-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (StartBuildingCard spacing)
+
+- Tightened vertical spacing between module card text elements (`src/components/accelerator/start-building-pager.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Accelerator overview polish)
+
+- Overview: filter out legacy “Published Class” groups, add more vertical padding, and increase spacing above Next up (`src/app/(accelerator)/accelerator/page.tsx`).
+- Coaching card: remove extra horizontal padding by letting the card fill the column width (`src/components/accelerator/accelerator-schedule-card.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Module re-entry reset)
+
+- Module stepper: reset active step to the first step when navigating to a different module (`src/components/training/module-detail/module-stepper.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (TipTap select-all)
+
+- RichTextEditor: Cmd/Ctrl+A now selects only editor content instead of the whole page (`src/components/rich-text-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Item description wrap)
+
+- Item UI: allow secondary text to wrap instead of truncating (`src/components/ui/item.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Sidebar progress size)
+
+- Sidebar: reduce Accelerator CircularProgress size for tighter nav (`src/components/app-sidebar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (RichTextEditor setContent)
+
+- RichTextEditor: defer setContent to the next animation frame to avoid lifecycle flushSync warnings (`src/components/rich-text-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Accelerator progress errors)
+
+- Accelerator progress: suppress expected missing-table errors to avoid noisy console logs (`src/lib/accelerator/progress.ts`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Sidebar nav order)
+
+- Sidebar: move Roadmap (and Documents) to render below Accelerator by splitting primary/secondary nav groups (`src/components/app-sidebar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Global search width)
+
+- Header: let the search bar run wider and bias right alignment on tighter widths (`src/components/app-shell.tsx`, `src/components/global-search.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Tutorial icon)
+
+- Tutorial button: switch to a book icon for clearer affordance (`src/components/tutorial/page-tutorial-button.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Accelerator curriculum label)
+
+- Accelerator overview: remove the “Curriculum” label above Modules & sessions (`src/app/(accelerator)/accelerator/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Accelerator curriculum alignment)
+
+- Accelerator overview: left-align the Modules & sessions header block (`src/app/(accelerator)/accelerator/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (StartBuildingCard top spacing)
+
+- Accelerator module cards: reduce top spacing above the CTA label (`src/components/accelerator/start-building-pager.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (StartBuildingCard top spacing tweak)
+
+- Accelerator module cards: further reduce spacing above the status label (`src/components/accelerator/start-building-pager.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Accelerator title)
+
+- Accelerator overview: rename header to “Idea to Impact Accelerator” (`src/app/(accelerator)/accelerator/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Accelerator intro copy)
+
+- Accelerator overview: updated intro paragraph copy to the new welcome statement (`src/app/(accelerator)/accelerator/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Track picker wrap)
+
+- Right-rail track picker: allow two-line selection label to avoid truncation (`src/components/app-sidebar/classes-section.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Accelerator layout + sidebar order)
+
+- Accelerator overview: constrain layout width with even padding; removed redundant section padding (`src/app/(accelerator)/accelerator/page.tsx`).
+- Sidebar: keep Accelerator nav in original position and move Roadmap below it (`src/components/app-sidebar.tsx`).
+- Select: added multiline trigger option and applied to track picker (`src/components/ui/select.tsx`, `src/components/app-sidebar/classes-section.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Track picker layout)
+
+- Track picker: two-line label/value layout with multiline trigger sizing and aligned chevron (`src/components/ui/select.tsx`, `src/components/app-sidebar/classes-section.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Hide AI The Need module)
+
+- Accelerator overview: hide the “AI The Need” module card in the overview grid (`src/components/accelerator/start-building-pager.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Track stepper alignment)
+
+- Right-rail module stepper: align badge column to the track picker icon by padding the list (`src/components/app-sidebar/classes-section.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Accelerator card status alignment)
+
+- Accelerator overview cards: move the status pill into the CTA row so it aligns with the CTA label (`src/components/accelerator/start-building-pager.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Track dropdown icons)
+
+- Track pickers: add per-track icons in the dropdown list and show the selected icon in triggers (`src/components/app-sidebar/classes-section.tsx`, `src/components/accelerator/start-building-pager.tsx`, `src/lib/accelerator/track-icons.ts`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Track label hidden)
+
+- Right-rail track picker: remove visible “Track” label while keeping the sr-only label and multi-line value layout (`src/components/app-sidebar/classes-section.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Track dropdown icons cleanup)
+
+- Track dropdowns: hide the right-side indicator so only the left track icons appear (`src/components/ui/select.tsx`, `src/components/app-sidebar/classes-section.tsx`, `src/components/accelerator/start-building-pager.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Track dropdown alignment)
+
+- Track dropdowns: render a single left icon via SelectItem icon slot; center multiline triggers for single-line values (`src/components/ui/select.tsx`, `src/components/app-sidebar/classes-section.tsx`, `src/components/accelerator/start-building-pager.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Track picker line spacing)
+
+- Track picker: tighten multiline line-height to reduce vertical gap (`src/components/ui/select.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Module stepper header wrapper)
+
+- Module stepper: wrap header stepper rail in a semantic header container in the app shell subnav (`src/components/training/module-detail/module-stepper.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Module stepper body header)
+
+- Module pages: render the stepper inside the content body and keep headings in the body (`src/components/training/module-detail.tsx`, `src/components/training/module-detail/module-stepper.tsx`).
+- App shell: remove the border around the main content container (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Right rail controls removal)
+
+- Right rail: removed the module stepper prev/next control buttons under the list (`src/components/app-sidebar/classes-section.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (App shell border restore)
+
+- App shell: restored the main content container border to keep the rounded shell visible (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Module header + stepper placement)
+
+- Module pages: move the stepper into the content header slot within the shell body (`src/components/training/module-detail/module-stepper.tsx`, `src/components/training/module-detail.tsx`).
+- Module header: reduce title/subtitle sizing in the body (`src/components/training/module-detail/module-header.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Sidebar nav spacing)
+
+- Sidebar: tighten spacing between Accelerator and Roadmap nav items (`src/components/app-sidebar.tsx`, `src/components/nav-main.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Sidebar nav spacing fix)
+
+- Sidebar: pull Roadmap group closer to Accelerator while keeping separate groups (`src/components/app-sidebar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (App shell cleanup brief)
+
+- Docs: drafted cleanup brief for removing `/dashboard`, unifying sidebar/app shell, and DRY module pages (`docs/briefs/app-shell-structure-cleanup.md`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (App shell cleanup inventory)
+
+- Inventory: mapped sidebar duplication (`src/components/ui/sidebar.tsx` vs `src/components/ui/sidebar/`), `/dashboard` route dependencies, and `(dashboard)` action imports used by shared components.
+- Worked: confirmed module routes and app shell layout entry points.
+- Didn't: no code changes; ready to propose consolidation and removal diffs.
+
+## 2026-01-24 — Codex session (Sidebar module consolidation)
+
+- Sidebar: moved the canonical implementation into `src/components/ui/sidebar/` and removed the conflicting `src/components/ui/sidebar.tsx`; aligned sidebar constants to the in-use dimensions (`src/components/ui/sidebar/constants.ts`, `src/components/ui/sidebar/context.tsx`, `src/components/ui/sidebar/layout.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Dashboard removal + shared actions cleanup)
+
+- Actions: moved shared server actions out of `(dashboard)` into `src/actions` and updated imports (`src/actions/people.ts`, `src/actions/roadmap.ts`, `src/actions/organization.ts`, `src/actions/programs.ts`).
+- Routes/components: removed `/dashboard` route + related API/data/components and moved marketplace data to `src/lib/marketplace/data.ts`; moved breadcrumbs + pagination into app-shell/ui (`src/components/app-shell/breadcrumbs.tsx`, `src/components/ui/pagination-controls.tsx`).
+- Cleanup: removed `/dashboard` redirect handling and revalidation targets; updated protected routes and breadcrumb stories.
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Sidebar menu top alignment tweak)
+
+- Sidebar: remove main nav group vertical padding by using a `py-0` override so the menu can sit flush with the sidebar container (`src/components/nav-main.tsx`, `src/components/app-sidebar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Accelerator/Roadmap group)
+
+- Sidebar: group Accelerator + Roadmap together with standard item spacing and add a larger gap from the main nav group via group padding (`src/components/app-sidebar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Sidebar top alignment)
+
+- Sidebar: reduce top padding so the main nav aligns with the content body (`src/components/app-sidebar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Sidebar/content top alignment)
+
+- Sidebar: remove top padding and override main nav group top padding for top alignment (`src/components/app-sidebar.tsx`).
+- App shell: remove top padding on the content flex wrapper to eliminate the small top gap (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Sidebar group gap removal)
+
+- Sidebar: remove group vertical padding for the top nav section to eliminate the gap (`src/components/nav-main.tsx`, `src/components/app-sidebar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Sidebar group spacing control)
+
+- Sidebar: set content gap to zero and control group spacing via explicit padding (`src/components/app-sidebar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (NavMain cn import)
+
+- Fix runtime error by importing `cn` in `src/components/nav-main.tsx`.
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Accelerator card spacing)
+
+- Accelerator overview cards: tighten the image-to-CTA spacing to center the CTA/status row between image and title (`src/components/accelerator/start-building-pager.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-23 — Codex session (Accelerator card spacing tune)
+
+- Accelerator overview cards: nudge CTA/status row down slightly for more even vertical balance (`src/components/accelerator/start-building-pager.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Sidebar brand runtime fix)
+
+- App shell: add `SidebarBrand` component to restore the logo/title link in the sidebar header and stop the runtime error (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap icon fix)
+
+- Sidebar: swap the Accelerator group Roadmap icon back to the Waypoints icon for consistency (`src/components/app-sidebar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Module right-rail tool tray)
+
+- Module pages: add a right-rail tool tray with notes, resources, coaching, AI access, and return-home actions (`src/components/training/module-right-rail.tsx`, `src/components/training/module-detail.tsx`).
+- Notes: add a per-module local notes hook stored in localStorage (`src/hooks/use-module-notes.ts`).
+- Right rail: widen module-page rail slightly and use a dedicated rail width variable (`src/components/app-shell.tsx`).
+- Resources: add a stacked layout option for right-rail rendering (`src/components/training/resources-card.tsx`).
+- Brief: document scope for the tool tray (`docs/briefs/module-right-rail-tool-tray.md`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Accelerator roadmap outline + stepper style)
+
+- Accelerator overview: add a Strategic Roadmap outline card next to the schedule card (`src/app/(accelerator)/accelerator/page.tsx`, `src/components/roadmap/roadmap-outline-card.tsx`).
+- Module stepper: render the active step with a solid border instead of dashed (`src/components/training/module-detail/module-stepper.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Header wrap + dashboard cleanup)
+
+- App shell: allow header actions to wrap on small screens to prevent overlaps (`src/components/app-shell.tsx`).
+- Tooling: cleared `.next` to drop stale dashboard route references.
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Module header + right-rail alignment tweaks)
+
+- Module header: tighten title/subtitle spacing and align with module content width (`src/components/training/module-detail/module-header.tsx`).
+- Module stepper header: reduce height and right-align the header stepper (`src/components/training/module-detail/module-stepper.tsx`, `src/components/app-shell.tsx`).
+- Right rail: align module tool tray section to the bottom of the rail (`src/components/training/module-detail.tsx`, `src/components/app-shell/right-rail.tsx`).
+- Notes panel: remove the notes description line (`src/components/training/module-right-rail.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Module notes persistence)
+
+- Notes: store user-scoped module notes in `module_progress.notes` with server actions and a debounced client hook (`src/app/actions/module-notes.ts`, `src/hooks/use-module-notes.ts`).
+- Brief: update module rail brief to reflect DB persistence (`docs/briefs/module-right-rail-tool-tray.md`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Module header placement)
+
+- Module header: render title/subtitle in the app header on desktop, keep body header on mobile (`src/components/training/module-detail/module-header.tsx`, `src/components/training/module-detail.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Header stepper alignment)
+
+- Stepper header: right-align and tighten dot spacing for the header stepper (`src/components/training/module-detail/module-stepper.tsx`).
+- Shell header: reduce content header padding height (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Stepper navigation spacing)
+
+- Stepper header: move prev/next buttons closer to the step group with consistent spacing (`src/components/training/module-detail/module-stepper.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Header subtitle placement)
+
+- Module subtitle: move into the shell content header on desktop so it sits left of the stepper (`src/components/training/module-detail/module-stepper.tsx`, `src/components/training/module-detail/module-header.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Module subtitle copy fix)
+
+- Content: fix grammar and punctuation for the intro module subtitle (`supabase/seed.sql`, `supabase/migrations/20260124193000_fix_intro_module_subtitle.sql`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Module header icon)
+
+- Module header: add the track icon in a rounded card to the left of the title/subtitle in the shell header (`src/components/training/module-detail/module-stepper.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Select trigger alignment)
+
+- Select trigger: auto-align center for single-line values and top-align for wrapped values (`src/components/ui/select.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Track picker padding)
+
+- Track picker: remove top padding in the select trigger so the track label sits higher (`src/components/app-sidebar/classes-section.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Track picker alignment)
+
+- Track picker: restore balanced padding so the trigger keeps equal top/bottom space while the text aligns with the icon (`src/components/app-sidebar/classes-section.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Module stepper pagination)
+
+- Module stepper: paginate step dots in sets of five with animated page shifts, keeping prev/next buttons intact (`src/components/training/module-detail/module-stepper.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Global search width)
+
+- Header: make the global search button shrink within a flexible center column to avoid overlap on smaller screens (`src/components/global-search.tsx`, `src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Header stepper centering)
+
+- Module header: hide title block until large screens and center the stepper when the title is hidden (`src/components/training/module-detail/module-stepper.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Accelerator auto-collapse)
+
+- Sidebar: auto-collapse the left rail on accelerator routes while still allowing manual toggle (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Header alignment + sidebar toggle)
+
+- Header: align left/right header actions to the same padding as shell content and keep accelerator auto-collapse from blocking manual toggles (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Header alignment + search collapse)
+
+- Shell padding: unify header/body padding via `--shell-content-pad` so header toggles align with content (`src/components/app-shell.tsx`).
+- Sidebar: ensure accelerator auto-collapse runs once and doesn't fight manual toggles (`src/components/app-shell.tsx`).
+- Search: collapse to icon when the header center slot is too narrow; enforce min/max widths on the full button (`src/components/global-search.tsx`).
+- Right rail: raise z-index to avoid top-edge clipping behind the header (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Header alignment + search visibility)
+
+- Header: remove inner max-width so the toggle aligns with the shell content edge (`src/components/app-shell.tsx`).
+- Search: show a compact icon in the center slot on tighter desktop widths and keep the mobile icon-only control visible (`src/components/global-search.tsx`).
+- Accelerator: widen the right rail slightly (`src/components/app-shell.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Select multiline alignment)
+
+- Select trigger: align multiline text to the top and nudge icons down when wrapping so the icons match the first line (`src/components/ui/select.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Accelerator overview swap)
+
+- Accelerator overview: replace the coaching card with a compact next-module card and remove the in-page Next up block; change "Overview" to "Welcome" (`src/app/(accelerator)/accelerator/page.tsx`, `src/components/accelerator/accelerator-next-module-card.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap right-rail carousel)
+
+- Roadmap outline: convert the right-rail card to a horizontal, paginated carousel while keeping the roadmap navigation CTA (`src/components/roadmap/roadmap-outline-card.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Accelerator roadmap strip)
+
+- Brief: add `docs/briefs/accelerator-roadmap-strip.md` and index it (`docs/briefs/INDEX.md`).
+- Accelerator overview: move the roadmap summary to a full-width horizontal strip and tighten overview spacing (`src/app/(accelerator)/accelerator/page.tsx`, `src/components/roadmap/roadmap-outline-card.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Accelerator curriculum header)
+
+- Accelerator overview: remove the Modules & sessions heading block above the curriculum pager (`src/app/(accelerator)/accelerator/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Accelerator overview spacing)
+
+- Accelerator overview: tighten intro copy to two stacked blocks, cap line length, and increase vertical spacing between page sections (`src/app/(accelerator)/accelerator/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Accelerator roadmap strip + routes)
+
+- Roadmap strip: remove CTA, switch count to "X of Y completed", add section icons, status dots, taller clickable cards, and link to `/roadmap/[slug]` (`src/components/roadmap/roadmap-outline-card.tsx`).
+- Roadmap routing: add `/roadmap/[slug]` page and support initial section selection in the editor shell (`src/app/(dashboard)/roadmap/[slug]/page.tsx`, `src/components/roadmap/strategic-roadmap-editor-page.tsx`, `src/components/roadmap/roadmap-shell.tsx`, `src/components/roadmap/roadmap-editor.tsx`).
+- Shared roadmap icon map for consistent section icons (`src/components/roadmap/roadmap-icons.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Select trigger radius)
+
+- Select triggers: increase rounding to match header toggle button styling across the app (`src/components/ui/select.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Accelerator next module card)
+
+- Accelerator next module card: remove the uppercase "Start"/CTA label line above the title (`src/components/accelerator/accelerator-next-module-card.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap strip spacing)
+
+- Roadmap outline: add top padding to separate the strip from the content above (`src/components/roadmap/roadmap-outline-card.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Accelerator next module width)
+
+- Accelerator next module card: cap width to keep the card from stretching too wide (`src/components/accelerator/accelerator-next-module-card.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap strip card width)
+
+- Roadmap outline: cap section card width to avoid oversized links (`src/components/roadmap/roadmap-outline-card.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap strip responsive paging)
+
+- Roadmap outline: adjust page size based on viewport width so smaller screens show 2–3 items instead of 4 (`src/components/roadmap/roadmap-outline-card.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap strip min width)
+
+- Roadmap outline: add a min width and prevent icon tile shrink to avoid squished cards on narrow viewports (`src/components/roadmap/roadmap-outline-card.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Accelerator spacing pass)
+
+- Accelerator overview: reduce overall vertical spacing and tighten the overview section gap (`src/app/(accelerator)/accelerator/page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap header status)
+
+- Roadmap sections: add persisted status field, save support, and header control for not started/in progress/complete; auto-mark in progress when content begins (`src/lib/roadmap.ts`, `src/actions/roadmap.ts`, `src/components/roadmap/roadmap-editor.tsx`).
+- Roadmap overview: use status for completion counts and dots (`src/components/roadmap/roadmap-outline-card.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap header layout + status select)
+
+- Roadmap header: align icon to the left of the title/subtitle, stretch it to match header height, and replace the status pill/button with a status dropdown (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap rail status + snap)
+
+- Roadmap rail: add status dots per item, snap scrolling with auto section selection on scroll stop, and data hooks for scroll sync (`src/components/roadmap/roadmap-editor.tsx`).
+- Roadmap header: stretch icon to match title block height (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap header icon square)
+
+- Roadmap header: prevent icon container from shrinking so it stays square relative to the header block (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap header square icon)
+
+- Roadmap header: measure title/subtitle block height and size the icon tile to match so it stays perfectly square (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap header icon sizing fix)
+
+- Roadmap header: fix hook ordering to avoid accessing header title/subtitle before initialization (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap header icon sizing tweak)
+
+- Roadmap header: size icon tile directly to the text block height (no enforced minimum) and simplify styling to match shadcn item feel (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap header icon rounding)
+
+- Roadmap header: restore rounded-2xl corners on the icon tile (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap header sizing reset)
+
+- Roadmap header: remove dynamic sizing, restore bordered icon tile, and align text to top without extra vertical padding (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap header icon sizing revisit)
+
+- Roadmap header: reintroduce measured icon sizing based on the title/subtitle block height while keeping visible border/background (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap header square layout)
+
+- Roadmap header: switch to a grid layout so the icon square stretches to the text block height without JS sizing (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap header responsive layout)
+
+- Roadmap header: stack icon above text on small screens and use measured square size on desktop via CSS variable (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap rail scroll undo)
+
+- Roadmap rail: remove list scroll snapping/auto-selection and restore non-scrollable TOC list container (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap rail snap scroll)
+
+- Roadmap rail: restore scroll-driven selection with snap and hidden scrollbars in the TOC list (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap rail scroll undo again)
+
+- Roadmap rail: remove scroll-driven selection and restore static TOC list container (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap calendar brief)
+
+- Brief: draft roadmap calendar replacement (new events table, permissions, recurrence drawer, shadcn calendar UI) (`docs/briefs/roadmap-calendar.md`).
+- Brief index: add roadmap calendar entry (`docs/briefs/INDEX.md`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap calendar brief updates)
+
+- Brief: update roadmap calendar spec for role-based assignments, notifications, UTC storage + locale display, and org ICS feed tokenization (`docs/briefs/roadmap-calendar.md`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap calendar feed decision)
+
+- Brief: record ICS feed decision (single org-level feed includes all events) (`docs/briefs/roadmap-calendar.md`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap calendar build)
+
+- Roadmap calendar: add public/internal event + feed tables with RLS, staff calendar permission toggle, and Supabase schema types (`supabase/migrations/20260124220000_roadmap_calendar_events.sql`, `src/lib/supabase/schema/tables/organization_access_settings.ts`, `src/lib/supabase/schema/tables/roadmap_calendar_*`, `src/lib/supabase/schema/tables/index.ts`).
+- Calendar actions + notifications: CRUD, feed tokens, notifications on create/update/delete (`src/actions/roadmap-calendar.ts`, `src/lib/roadmap/calendar.ts`).
+- Board Calendar UI: new left-presets + month grid + day list, public/internal toggle, event drawer, feed links; swap for board_calendar section (`src/components/roadmap/roadmap-calendar.tsx`, `src/components/roadmap/roadmap-editor.tsx`).
+- Admin setting: add staff calendar management toggle (`src/app/actions/organization-access.ts`, `src/components/account-settings/sections/organization-access-manager.tsx`).
+- ICS feed endpoint for public/internal calendars (`src/app/api/roadmap/calendar.ics/route.ts`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap calendar layout polish)
+
+- Board calendar layout: remove nested cards, align with editor container width, adjust responsive columns, and drop uppercase tracking styles (`src/components/roadmap/roadmap-calendar.tsx`, `src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap calendar layout match)
+
+- Roadmap calendar: match Cal.com layout with left overview + centered month grid + right day list, move quick add to right, add 12h/24h toggle, and normalize typography/styles (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap calendar layout fixes)
+
+- Calendar layout: remove read-only note, stabilize header wrapping, and tighten calendar grid layout to reduce overlap (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-24 — Codex session (Roadmap calendar restructure)
+
+- Calendar layout: remove outer card, shift presets into dropdown, drop public/internal + 12/24 toggles, and reflow columns for guided layout (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Roadmap section routing)
+
+- Roadmap TOC: switch section items to Link-based navigation so URLs include section slugs (`src/components/roadmap/roadmap-editor.tsx`).
+- Added `/accelerator/roadmap/[slug]` route to persist selection on refresh (`src/app/(accelerator)/accelerator/roadmap/[slug]/page.tsx`).
+- Brief: added roadmap section routing brief + updated brief index (`docs/briefs/roadmap-section-routing.md`, `docs/briefs/INDEX.md`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Roadmap slug persistence fix)
+
+- Roadmap section routing: sync active section to slug changes and add slug/id fallback in initial section resolution (`src/components/roadmap/roadmap-editor.tsx`, `src/components/roadmap/strategic-roadmap-editor-page.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Roadmap TOC slug sync + Select hydration)
+
+- Roadmap TOC: sync active section to URL slug on client to prevent fallback to Origin Story when navigating or refreshing (`src/components/roadmap/roadmap-editor.tsx`).
+- Select trigger: suppress hydration warning caused by Radix aria-controls id mismatch (`src/components/ui/select.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Roadmap loading skeletons)
+
+- Roadmap: added a shared shell skeleton and route-level loading UI to prevent Origin Story flashes on navigation (`src/components/roadmap/roadmap-shell-skeleton.tsx`, `src/app/(dashboard)/roadmap/loading.tsx`, `src/app/(dashboard)/roadmap/[slug]/loading.tsx`, `src/app/(accelerator)/accelerator/roadmap/loading.tsx`, `src/app/(accelerator)/accelerator/roadmap/[slug]/loading.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Roadmap calendar layout + seeding)
+
+- Calendar layout: equal-width three-column grid, removed feed rotation, and replaced feed block with a shadcn Item-style share button (`src/components/roadmap/roadmap-calendar.tsx`).
+- Dev-only seed data: auto-create a larger set of demo events for scale testing (guarded by localStorage, non-production only) (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Roadmap calendar default styling)
+
+- Calendar: reverted to default shadcn calendar styles, added event dot indicator, and widened roadmap calendar layout for equal columns (`src/components/roadmap/roadmap-calendar.tsx`, `src/components/roadmap/roadmap-editor.tsx`).
+- Demo data: increased dev-only seed volume and bumped seed key (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Roadmap calendar card color)
+
+- Calendar: set the month grid container to black with a subtle border for stronger contrast (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Roadmap calendar event row + share hidden)
+
+- Calendar events: reflowed day list entries into stacked text and removed the status dot for a cleaner layout (`src/components/roadmap/roadmap-calendar.tsx`).
+- Calendar share: hid the share card and removed unused imports (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Roadmap calendar timezone item)
+
+- Calendar: restyled the time zone block as a shadcn Item with icon (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Roadmap calendar timezone dropdown)
+
+- Calendar: added time zone dropdown using a shadcn Item-style trigger with chevron and persisted selection in localStorage; formatting now honors the selected time zone (`src/components/roadmap/roadmap-calendar.tsx`).
+- Calendar layout: allow the calendar section to use full-width layout (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Roadmap calendar styling polish)
+
+- Roadmap header spacing: reduced title/subtitle gap and matched top padding for the calendar section (`src/components/roadmap/roadmap-editor.tsx`).
+- Calendar styling: kept default layout but enforced readable colors on the black card, added event dot contrast, and prevented hover from flipping to black (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Swap to calendar-01)
+
+- Calendar: replaced the month grid with the shadcn `calendar-01` component and reattached event/date interactions + dot indicators (`src/components/calendar-01.tsx`, `src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Calendar centering)
+
+- Calendar: centered the calendar-01 instance within its column to remove extra right-side space (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Calendar width)
+
+- Calendar: removed max width/centering so the calendar fills its column (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Calendar padding)
+
+- Calendar: removed internal padding so left/right spacing matches the container (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Calendar width enforcement)
+
+- Calendar: forced full-width layout by overriding root/table/week/day classes and removing internal padding (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Calendar-01 defaults)
+
+- Calendar: removed custom grid overrides, set root to full width, and hid nav buttons in calendar-01 instance (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Calendar-01 defaults restored)
+
+- Calendar: removed custom class overrides so calendar-01 uses shadcn defaults and nav buttons stay inside the calendar; centered the calendar in its column (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Calendar day list order)
+
+- Calendar: moved the date/time line below the event title in the day list cards (`src/components/roadmap/roadmap-calendar.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (Roadmap header skeleton)
+
+- Roadmap: added a hydration-safe skeleton for the section header to prevent Origin Story text flashes on refresh (`src/components/roadmap/roadmap-editor.tsx`).
+- Didn't: tests not run.
+
+## 2026-01-26 — Codex session (curriculum alignment)
+- Data: added a curriculum alignment migration to upsert the current accelerator classes/modules and archive legacy session/elective slugs (`supabase/migrations/20260126152000_align_accelerator_curriculum.sql`).
+- App: updated roadmap homework mappings to the new class slugs (`src/lib/roadmap/homework.ts`).
+
+## 2026-01-26 — Codex session (progression system map)
+- Docs: added full accelerator/roadmap progression map with display vs DB status and org_key sync (`docs/progression-system-map.md`).
+
+## 2026-01-26 — Codex session (progression map audit checklist)
+- Docs: added a per-module UI audit checklist to track displayed vs expected questions (`docs/progression-system-map.md`).
+
+## 2026-01-26 — Codex session (module resources overhaul)
+- Module resources: removed the dedicated slide-deck step, added a centered resources header + divider, and rendered resources (plus deck card) in the resources step (`src/components/training/module-detail/module-stepper.tsx`, `src/components/training/deck-resource-card.tsx`).
+- Right rail: included the deck card in the resources panel and wired the new prop (`src/components/training/module-right-rail.tsx`, `src/components/training/module-detail.tsx`).
+
+## 2026-01-26 — Codex quick fix (resources header)
+- Resources step now shows a distinct “Resources” header/icon instead of duplicating the module title (`src/components/training/module-detail/module-stepper.tsx`).
+
+## 2026-01-26 — Codex tweak (resources card sizing)
+- Resource cards are now consistent height and the deck resource opens externally; kept square sizing in grids and min-height for stacked lists (`src/components/training/resources-card.tsx`, `src/components/training/deck-resource-card.tsx`, `src/components/training/module-detail/deck-viewer.tsx`).
+
+## 2026-01-26 — Codex fix (notes upsert + intro copy)
+- Notes: fixed module notes save failures by upserting on `(user_id,module_id)` (`src/app/actions/module-notes.ts`).
+- Content: corrected intro module subtitle punctuation via migration (`supabase/migrations/20260126173000_fix_intro_module_copy.sql`).
+
+## 2026-01-26 — Codex iteration (module stepper caching & unlock)
+- Stepper: cached video/resources/notes content, preserved active step via sessionStorage, and marked modules complete on finish/continue; continue button now calls the completion action (`src/components/training/module-detail/module-stepper.tsx`, `src/app/actions/module-progress.ts`).
+- Resources: single resource card centers in grid; deck card padding tightened (`src/components/training/resources-card.tsx`, `src/components/training/module-detail/deck-viewer.tsx`).
+- Tests: `npm test` hit snapshot drift (Design System/Breadcrumb). Snapshots not updated.
+
+## 2026-01-26 — Codex fix (duplicate subtitle)
+- Suppressed duplicate module subtitles by removing subtitle rendering in the module header (`src/components/training/module-detail.tsx`).

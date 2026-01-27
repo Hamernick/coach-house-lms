@@ -28,7 +28,7 @@ export default async function TrainingPage() {
     .maybeSingle<{ role: string | null }>()
   const isAdmin = profile?.role === "admin"
 
-  const classes = await fetchSidebarTree({ includeDrafts: true, forceAdmin: !isAdmin })
+  const classes = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
   const classDefs = classes.map((klass) => ({
     id: klass.id,
     title: klass.title,
@@ -45,7 +45,7 @@ export default async function TrainingPage() {
   }))
 
   return (
-    <div className="px-4 lg:px-6">
+    <div className="w-full">
       <TrainingShell classes={classDefs} isAdmin={isAdmin} />
     </div>
   )

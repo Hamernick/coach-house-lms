@@ -21,6 +21,7 @@ export type ModuleGroup = {
   id: string
   title: string
   description: string | null
+  slug: string
   modules: ModuleCard[]
 }
 
@@ -38,6 +39,15 @@ type ProgressOptions = {
   isAdmin?: boolean
   classes?: SidebarClass[]
   basePath?: string
+}
+
+const LEGACY_CLASS_TITLES = new Set(["published class"])
+const LEGACY_CLASS_SLUGS = new Set(["published-class"])
+
+function isLegacyClass(klass: SidebarClass): boolean {
+  const title = klass.title.trim().toLowerCase()
+  const slug = klass.slug.trim().toLowerCase()
+  return LEGACY_CLASS_TITLES.has(title) || LEGACY_CLASS_SLUGS.has(slug)
 }
 
 function normalizeClassesForProgress(classes: SidebarClass[], isAdmin: boolean): SidebarClass[] {
@@ -85,6 +95,7 @@ function buildModuleGroups({
         id: klass.id,
         title: klass.title,
         description: klass.description ?? null,
+        slug: klass.slug,
         modules,
       }
     })
@@ -130,36 +141,96 @@ export async function fetchAcceleratorProgressSummary({
     classes ?? (await fetchSidebarTree({ includeDrafts: Boolean(resolvedIsAdmin), forceAdmin: Boolean(resolvedIsAdmin) }))
 
   const normalizedClasses = normalizeClassesForProgress(classSource, Boolean(resolvedIsAdmin))
-  const moduleIds = normalizedClasses.flatMap((klass) => klass.modules.map((module) => module.id))
+  const filteredClasses = normalizedClasses.filter((klass) => !isLegacyClass(klass))
+  const moduleIds = filteredClasses.flatMap((klass) => klass.modules.map((module) => module.id))
 
   if (moduleIds.length === 0) {
     return { groups: [], totalModules: 0, completedModules: 0, inProgressModules: 0, percent: 0 }
   }
 
-  const { data: progressRows, error: progressError } = await supabase
-    .from("module_progress")
-    .select("module_id, status")
-    .eq("user_id", resolvedUserId)
-    .in("module_id", moduleIds)
-    .returns<Array<{ module_id: string; status: ModuleCardStatus }>>()
+  const [progressResult, submissionResult, assignmentResult] = await Promise.all([
+    supabase
+      .from("module_progress")
+      .select("module_id, status")
+      .eq("user_id", resolvedUserId)
+      .in("module_id", moduleIds)
+      .returns<Array<{ module_id: string; status: ModuleCardStatus }>>(),
+    supabase
+      .from("assignment_submissions")
+      .select("module_id, status")
+      .eq("user_id", resolvedUserId)
+      .in("module_id", moduleIds)
+      .returns<Array<{ module_id: string; status: string | null }>>(),
+    supabase
+      .from("module_assignments")
+      .select("module_id, complete_on_submit")
+      .in("module_id", moduleIds)
+      .returns<Array<{ module_id: string; complete_on_submit: boolean | null }>>(),
+  ])
 
-  if (progressError) {
-    console.error("[accelerator-progress] Unable to load module progress.", progressError)
+  if (progressResult.error) {
+    const code = (progressResult.error as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      console.error("[accelerator-progress] Unable to load module progress.", progressResult.error)
+    }
+  }
+  if (submissionResult.error) {
+    const code = (submissionResult.error as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      console.error("[accelerator-progress] Unable to load assignment submissions.", submissionResult.error)
+    }
+  }
+  if (assignmentResult.error) {
+    const code = (assignmentResult.error as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      console.error("[accelerator-progress] Unable to load module assignments.", assignmentResult.error)
+    }
   }
 
   const progressMap = new Map<string, ModuleCardStatus>()
+  const progressStatusByModuleId = new Map<string, ModuleCardStatus>()
+  const submissionStatusByModuleId = new Map<string, string>()
+  const completeOnSubmit = new Set<string>()
+
+  for (const row of progressResult.error ? [] : progressResult.data ?? []) {
+    progressStatusByModuleId.set(row.module_id, row.status)
+  }
+
+  for (const row of submissionResult.error ? [] : submissionResult.data ?? []) {
+    if (!row.status) continue
+    submissionStatusByModuleId.set(row.module_id, row.status)
+  }
+
+  for (const row of assignmentResult.error ? [] : assignmentResult.data ?? []) {
+    if (row.complete_on_submit) {
+      completeOnSubmit.add(row.module_id)
+    }
+  }
+
   let completedModules = 0
   let inProgressModules = 0
 
-  for (const row of progressError ? [] : progressRows ?? []) {
-    const status = row.status
-    progressMap.set(row.module_id, status)
+  for (const moduleId of moduleIds) {
+    const progressStatus = progressStatusByModuleId.get(moduleId)
+    if (progressStatus && progressStatus !== "not_started") {
+      progressMap.set(moduleId, progressStatus)
+      if (progressStatus === "completed") completedModules += 1
+      if (progressStatus === "in_progress") inProgressModules += 1
+      continue
+    }
+
+    const submissionStatus = submissionStatusByModuleId.get(moduleId)
+    if (!submissionStatus) continue
+
+    const completed = completeOnSubmit.has(moduleId) && submissionStatus !== "revise"
+    const status: ModuleCardStatus = completed ? "completed" : "in_progress"
+    progressMap.set(moduleId, status)
     if (status === "completed") completedModules += 1
     if (status === "in_progress") inProgressModules += 1
   }
 
   const groups = buildModuleGroups({
-    classes: normalizedClasses,
+    classes: filteredClasses,
     progressMap,
     basePath,
   })

@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { FormRow } from "@/components/organization/org-profile-card/shared"
 import { Dropzone } from "@/components/ui/shadcn-io/dropzone"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
@@ -474,23 +473,26 @@ export function DocumentsTab({
   canEdit,
 }: DocumentsTabProps) {
   return (
-    <div className="grid gap-6">
-      <FormRow
-        title="Private documents"
-        description="These files are stored privately and will never be shared publicly."
-      >
-        <div className="grid gap-3 md:gap-4">
-          {DOCUMENTS.map((definition) => (
-            <DocumentCard
-              key={definition.kind}
-              definition={definition}
-              document={documents?.[definition.key] ?? null}
-              editMode={editMode}
-              canEdit={canEdit}
-            />
-          ))}
-        </div>
-      </FormRow>
-    </div>
+    <section className="space-y-4 pb-6" aria-labelledby="documents-title">
+      <header className="space-y-1">
+        <h2 id="documents-title" className="text-base font-semibold text-foreground">
+          Private documents
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          These files are stored privately and will never be shared publicly.
+        </p>
+      </header>
+      <div className="grid gap-3 md:gap-4">
+        {DOCUMENTS.map((definition) => (
+          <DocumentCard
+            key={definition.kind}
+            definition={definition}
+            document={documents?.[definition.key] ?? null}
+            editMode={editMode}
+            canEdit={canEdit}
+          />
+        ))}
+      </div>
+    </section>
   )
 }

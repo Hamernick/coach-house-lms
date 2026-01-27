@@ -2,9 +2,9 @@
 
 import * as React from "react"
 
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
-import { TooltipProvider } from "@/components/ui/tooltip"
 
 import {
   SIDEBAR_COOKIE_MAX_AGE,
@@ -31,6 +31,7 @@ export function useSidebar(): SidebarContextValue {
   if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider.")
   }
+
   return context
 }
 
@@ -51,9 +52,9 @@ export function SidebarProvider({
 }: SidebarProviderProps) {
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
+
   const [_open, _setOpen] = React.useState(defaultOpen)
   const open = openProp ?? _open
-
   const setOpen = React.useCallback(
     (value: boolean | ((value: boolean) => boolean)) => {
       const openState = typeof value === "function" ? value(open) : value
@@ -74,7 +75,7 @@ export function SidebarProvider({
 
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key === SIDEBAR_KEYBOARD_SHORTCUT) {
+      if (event.key === SIDEBAR_KEYBOARD_SHORTCUT && (event.metaKey || event.ctrlKey)) {
         event.preventDefault()
         toggleSidebar()
       }
@@ -104,6 +105,7 @@ export function SidebarProvider({
       <TooltipProvider delayDuration={0}>
         <div
           data-slot="sidebar-wrapper"
+          data-state={state}
           style={
             {
               "--sidebar-width": SIDEBAR_WIDTH,
@@ -113,6 +115,7 @@ export function SidebarProvider({
           }
           className={cn(
             "group/sidebar-wrapper has-data-[variant=inset]:bg-sidebar flex min-h-svh w-full",
+            "data-[state=collapsed]:[--shell-rail-padding:0.75rem] data-[state=collapsed]:[--shell-rail-item-padding:0.5rem]",
             className,
           )}
           {...props}

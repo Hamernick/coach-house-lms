@@ -1,61 +1,33 @@
 "use client"
 
-import { useTransition } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
-import EyeIcon from "lucide-react/dist/esm/icons/eye"
-import EyeOffIcon from "lucide-react/dist/esm/icons/eye-off"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
-import PencilIcon from "lucide-react/dist/esm/icons/pencil"
-import Trash2Icon from "lucide-react/dist/esm/icons/trash-2"
-import { toast } from "@/lib/toast"
-
-import { deleteModuleAction } from "@/app/(admin)/admin/classes/[id]/actions"
 import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Item, ItemActions, ItemContent, ItemDescription, ItemFooter, ItemMedia, ItemTitle } from "@/components/ui/item"
+import { Item, ItemContent, ItemDescription, ItemFooter, ItemMedia, ItemTitle } from "@/components/ui/item"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
 
 import type { ClassDef } from "../types"
 
 type ModuleCardProps = {
-  classId: string
   classSlug: string | null
   isAdmin: boolean
-  showAdminActions?: boolean
   module: ClassDef["modules"][number]
   moduleIndex: number
   lockedForLearners: boolean
   basePath?: string
   onStartModule?: (moduleId: string) => void
-  onEditModule?: (moduleId: string) => void
-  onTogglePublish?: (moduleId: string, next: boolean) => Promise<void>
 }
 
 export function ModuleCard({
-  classId,
   classSlug,
   isAdmin,
-  showAdminActions = false,
   module,
   moduleIndex,
   lockedForLearners,
   basePath = "",
   onStartModule,
-  onEditModule,
-  onTogglePublish,
 }: ModuleCardProps) {
-  const router = useRouter()
-  const [publishPending, startPublish] = useTransition()
-
   const dashboardHref = classSlug ? `${basePath}/class/${classSlug}/module/${moduleIndex}` : null
   const locked = isAdmin ? false : lockedForLearners
   const status = lockedForLearners ? "locked" : module.status ?? "not_started"
@@ -74,8 +46,6 @@ export function ModuleCard({
             : 0,
     ),
   )
-  const isPublished = module.published !== false
-
   const ctaLabel = locked
     ? "Complete previous modules"
     : completed
@@ -84,24 +54,6 @@ export function ModuleCard({
         ? "Continue learning"
         : "Start module"
   const primaryLabel = isAdmin ? "View module" : ctaLabel
-
-  const handlePublishToggle = (next: boolean) => {
-    if (!onTogglePublish) {
-      return
-    }
-
-    startPublish(async () => {
-      const toastId = toast.loading(next ? "Publishing module…" : "Unpublishing module…")
-      try {
-        await onTogglePublish(module.id, next)
-        toast.success(next ? "Module published" : "Module unpublished", { id: toastId })
-        router.refresh()
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to update module"
-        toast.error(message, { id: toastId })
-      }
-    })
-  }
 
   const hasSubtitle = Boolean(module.subtitle)
 
@@ -132,66 +84,6 @@ export function ModuleCard({
             ) : null}
           </ItemContent>
         </div>
-        {isAdmin && showAdminActions ? (
-          <ItemActions className="items-start gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVerticalIcon className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem
-                  disabled={publishPending}
-                  onSelect={(event) => {
-                    event.preventDefault()
-                    handlePublishToggle(!isPublished)
-                  }}
-                >
-                  {isPublished ? (
-                    <>
-                      <EyeOffIcon className="mr-2 h-4 w-4" aria-hidden />
-                      <span>Unpublish module</span>
-                    </>
-                  ) : (
-                    <>
-                      <EyeIcon className="mr-2 h-4 w-4" aria-hidden />
-                      <span>Publish module</span>
-                    </>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onSelect={(event) => {
-                    event.preventDefault()
-                    onEditModule?.(module.id)
-                  }}
-                >
-                  <PencilIcon className="mr-2 h-4 w-4" aria-hidden />
-                  <span>Edit module</span>
-                </DropdownMenuItem>
-                <form
-                  action={deleteModuleAction}
-                  className="contents"
-                  onSubmit={(event) => {
-                    if (!confirm("Delete module?")) {
-                      event.preventDefault()
-                    }
-                  }}
-                >
-                  <input type="hidden" name="moduleId" value={module.id} />
-                  <input type="hidden" name="classId" value={classId} />
-                  <DropdownMenuItem asChild className="text-destructive focus:text-destructive">
-                    <button type="submit" className="flex w-full items-center gap-2 text-destructive focus:text-destructive">
-                      <Trash2Icon className="h-4 w-4" aria-hidden />
-                      <span>Delete module</span>
-                    </button>
-                  </DropdownMenuItem>
-                </form>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </ItemActions>
-        ) : null}
       </div>
 
       <ItemFooter className="mt-auto space-y-3 pt-3">

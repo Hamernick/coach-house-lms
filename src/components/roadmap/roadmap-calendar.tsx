@@ -227,7 +227,10 @@ export function RoadmapCalendar() {
         endsAt: end.toISOString(),
         allDay: index % 9 === 0,
         status: "active" as const,
-        assignedRoles: index % 5 === 0 ? (["admin", "staff", "board"] as RoadmapCalendarAssignedRole[]) : ["admin"],
+        assignedRoles:
+          index % 5 === 0
+            ? (["admin", "staff", "board"] as RoadmapCalendarAssignedRole[])
+            : (["admin"] as RoadmapCalendarAssignedRole[]),
         recurrence: index % 11 === 0 ? ({ frequency: "monthly" } as RoadmapCalendarRecurrence) : null,
       }
     })

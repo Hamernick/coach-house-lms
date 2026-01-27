@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import type { Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import type { ProfilesTable } from "@/lib/supabase/schema/tables"
@@ -148,11 +149,13 @@ export async function completeOnboardingAction(form: FormData) {
     }),
   ]
 
+  const profilePayload = { ...nextProfile, org_people: nextPeople } as Json
+
   await supabase.from("organizations").upsert(
     {
       user_id: user.id,
       public_slug: normalizedSlug,
-      profile: { ...nextProfile, org_people: nextPeople },
+      profile: profilePayload,
     },
     { onConflict: "user_id" },
   )

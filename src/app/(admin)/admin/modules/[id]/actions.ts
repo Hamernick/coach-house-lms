@@ -114,6 +114,28 @@ export async function updateModuleDetailsAction(formData: FormData) {
   await revalidateModuleViews(supabase, moduleId, classId)
 }
 
+export async function setModulePublishedAction(moduleId: string, classId: string, published: boolean) {
+  if (!moduleId || !classId) return
+
+  await requireAdmin()
+  const supabase = await createSupabaseServerClient()
+
+  const updatePayload: Database["public"]["Tables"]["modules"]["Update"] = {
+    is_published: published,
+  }
+
+  const { error } = await supabase
+    .from("modules" satisfies keyof Database["public"]["Tables"])
+    .update(updatePayload)
+    .eq("id", moduleId)
+
+  if (error) {
+    throw supabaseErrorToError(error, "Unable to update module.")
+  }
+
+  await revalidateModuleViews(supabase, moduleId, classId)
+}
+
 export async function deleteModuleFromDetailAction(formData: FormData) {
   const moduleId = formData.get("moduleId")
   const classId = formData.get("classId")

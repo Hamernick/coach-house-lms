@@ -15,3 +15,5 @@
 - Marketing: homepage; pricing.
 - QA: lint+snapshots+acceptance+RLS; auth callback URLs; smoke tests.
 - Docs/refactor: package mgr; README/OVERVIEW; DB_SCHEMA; security doc; big-file refactors; design-pattern; analytics/admin dash.
+
+

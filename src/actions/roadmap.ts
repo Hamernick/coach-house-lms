@@ -207,22 +207,6 @@ export async function deleteRoadmapSectionAction(sectionId: string | null | unde
     revalidatePath(`/${orgRow.public_slug}/roadmap`)
   }
 
-  const notifyResult = await createNotification(supabase, {
-    userId: user.id,
-    title: nextPublic ? "Roadmap published" : "Roadmap unpublished",
-    description: nextPublic
-      ? "Your public roadmap is now live."
-      : "Your public roadmap is no longer visible.",
-    href: "/my-organization",
-    tone: nextPublic ? "success" : "info",
-    type: nextPublic ? "roadmap_published" : "roadmap_unpublished",
-    actorId: user.id,
-    metadata: { isPublic: nextPublic },
-  })
-  if ("error" in notifyResult) {
-    console.error("Failed to create roadmap visibility notification", notifyResult.error)
-  }
-
   return { ok: true }
 }
 

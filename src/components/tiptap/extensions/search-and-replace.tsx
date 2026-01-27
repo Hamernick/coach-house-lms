@@ -269,6 +269,12 @@ export interface SearchAndReplaceStorage {
   lastCaseSensitiveState: boolean;
 }
 
+declare module "@tiptap/core" {
+  interface Storage {
+    searchAndReplace: SearchAndReplaceStorage;
+  }
+}
+
 export const SearchAndReplace = Extension.create<
   SearchAndReplaceOptions,
   SearchAndReplaceStorage

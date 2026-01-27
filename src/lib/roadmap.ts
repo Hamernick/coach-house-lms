@@ -407,7 +407,7 @@ export function resolveRoadmapSections(profile: Record<string, unknown> | null |
   if (Array.isArray(rawSections)) {
     const entries = rawSections
       .map((entry) => (isRecord(entry) ? (entry as StoredSection) : null))
-      .filter(Boolean)
+      .filter((entry): entry is StoredSection => Boolean(entry))
 
     const storedById = new Map<string, StoredSection>()
     const customEntries: StoredSection[] = []

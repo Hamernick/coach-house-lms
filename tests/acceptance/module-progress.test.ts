@@ -15,6 +15,9 @@ describe("module unlocking", () => {
     durationMinutes: null,
     published: true,
     hasDeck: false,
+    resources: [],
+    assignment: null,
+    assignmentSubmission: null,
     ...overrides,
   })
 

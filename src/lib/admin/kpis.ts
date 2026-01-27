@@ -28,6 +28,7 @@ export type AdminRecentEnrollment = {
 export type AdminRecentPayment = {
   id: string
   userId: string
+  userEmail: string
   amount: number
   currency: string
   status: string
@@ -178,12 +179,33 @@ export async function fetchRecentPayments(limit = 5): Promise<AdminRecentPayment
   }
 
   const rows = (data ?? []) as unknown as SubscriptionPaymentRow[]
+  const uniqueUserIds = Array.from(new Set(rows.map((row) => row.user_id)))
+  const emailByUserId = new Map<string, string>()
+
+  if (uniqueUserIds.length > 0) {
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, email")
+      .in("id", uniqueUserIds)
+      .returns<Array<{ id: string; email: string | null }>>()
+
+    if (profilesError) {
+      console.error("[admin] Unable to load profile emails for recent payments.", profilesError)
+    } else {
+      for (const profile of profiles ?? []) {
+        if (profile.email) {
+          emailByUserId.set(profile.id, profile.email)
+        }
+      }
+    }
+  }
 
   return rows.map((row) => {
     const amountInfo = extractAmount(row.metadata)
     return {
       id: row.id,
       userId: row.user_id,
+      userEmail: emailByUserId.get(row.user_id) ?? row.user_id,
       amount: amountInfo?.amount ?? 0,
       currency: amountInfo?.currency ?? "usd",
       status: row.status ?? "unknown",

@@ -155,7 +155,7 @@ export async function deleteModuleFromDetailAction(formData: FormData) {
         : []),
     ],
   })
-  redirect(`/admin/classes/${classId}`)
+  redirect("/internal")
 }
 
 export async function uploadModuleDeckAction(formData: FormData) {

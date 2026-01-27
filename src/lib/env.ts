@@ -10,6 +10,9 @@ const serverEnvSchema = z.object({
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
   STRIPE_ORGANIZATION_PRICE_ID: z.string().min(1).optional(),
   STRIPE_ACCELERATOR_PRICE_ID: z.string().min(1).optional(),
+  NEXT_PUBLIC_MEETING_FREE_URL: z.string().min(1).optional(),
+  NEXT_PUBLIC_MEETING_DISCOUNTED_URL: z.string().min(1).optional(),
+  NEXT_PUBLIC_MEETING_FULL_URL: z.string().min(1).optional(),
   NEXT_PUBLIC_MAPBOX_TOKEN: z.string().min(1).optional(),
 })
 
@@ -51,6 +54,9 @@ export const env: ServerEnv = assertEnv(serverEnvSchema, {
   STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
   STRIPE_ORGANIZATION_PRICE_ID: process.env.STRIPE_ORGANIZATION_PRICE_ID,
   STRIPE_ACCELERATOR_PRICE_ID: process.env.STRIPE_ACCELERATOR_PRICE_ID,
+  NEXT_PUBLIC_MEETING_FREE_URL: process.env.NEXT_PUBLIC_MEETING_FREE_URL,
+  NEXT_PUBLIC_MEETING_DISCOUNTED_URL: process.env.NEXT_PUBLIC_MEETING_DISCOUNTED_URL,
+  NEXT_PUBLIC_MEETING_FULL_URL: process.env.NEXT_PUBLIC_MEETING_FULL_URL,
   NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
 })
 

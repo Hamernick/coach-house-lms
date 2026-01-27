@@ -3,6 +3,7 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { resolveActiveOrganization } from "@/lib/organization/active-org"
 
 export type OrganizationMemberRole = "owner" | "admin" | "staff" | "board" | "member"
 
@@ -26,7 +27,16 @@ export type OrganizationAccessInvite = {
 type OrganizationAccessResult = { ok: true } | { error: string }
 
 type OrganizationAccessListResult =
-  | { ok: true; members: OrganizationAccessMember[]; invites: OrganizationAccessInvite[] }
+  | {
+      ok: true
+      members: OrganizationAccessMember[]
+      invites: OrganizationAccessInvite[]
+      adminsCanInvite: boolean
+      staffCanManageCalendar: boolean
+      canInvite: boolean
+      canManageMembers: boolean
+      canManageSettings: boolean
+    }
   | { error: string }
 
 type CreateInviteResult =
@@ -78,46 +88,69 @@ export async function listOrganizationAccessAction(): Promise<OrganizationAccess
   if (error && !isSupabaseAuthSessionMissingError(error)) return { error: "Unable to load user." }
   if (!user) return { error: "Not authenticated." }
 
-  const ownerEmail = resolveUserEmail(user)
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  const { data: profileRow } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<{ role: string | null }>()
+  const isPlatformAdmin = profileRow?.role === "admin"
+
+  const canManageMembers = isPlatformAdmin || orgId === user.id
+  const canManageSettings = isPlatformAdmin || orgId === user.id
+
+  const { data: settingsRow } = await supabase
+    .from("organization_access_settings")
+    .select("admins_can_invite, staff_can_manage_calendar")
+    .eq("org_id", orgId)
+    .maybeSingle<{ admins_can_invite: boolean; staff_can_manage_calendar: boolean }>()
+
+  const adminsCanInvite = Boolean(settingsRow?.admins_can_invite)
+  const staffCanManageCalendar = Boolean(settingsRow?.staff_can_manage_calendar)
+  const canInvite = isPlatformAdmin || orgId === user.id || (role === "admin" && adminsCanInvite)
+
+  const ownerEmail = orgId === user.id ? resolveUserEmail(user) : null
   const members: OrganizationAccessMember[] = [
     {
-      id: user.id,
+      id: orgId,
       email: ownerEmail,
       role: "owner",
-      joinedAt: user.created_at ?? null,
+      joinedAt: orgId === user.id ? (user.created_at ?? null) : null,
     },
   ]
 
-  const [{ data: memberships, error: membershipsError }, { data: invites, error: invitesError }] = await Promise.all([
+  const [{ data: memberships, error: membershipsError }, invitesResult] = await Promise.all([
     supabase
       .from("organization_memberships")
       .select("member_id, member_email, role, created_at")
-      .eq("org_id", user.id)
+      .eq("org_id", orgId)
       .order("created_at", { ascending: true })
       .returns<Array<{ member_id: string; member_email: string; role: OrganizationMemberRole; created_at: string }>>(),
-    supabase
-      .from("organization_invites")
-      .select("id, email, role, token, expires_at, accepted_at, created_at")
-      .eq("org_id", user.id)
-      .order("created_at", { ascending: false })
-      .returns<
-        Array<{
-          id: string
-          email: string
-          role: OrganizationMemberRole
-          token: string
-          expires_at: string
-          accepted_at: string | null
-          created_at: string
-        }>
-      >(),
+    canInvite
+      ? supabase
+          .from("organization_invites")
+          .select("id, email, role, token, expires_at, accepted_at, created_at")
+          .eq("org_id", orgId)
+          .order("created_at", { ascending: false })
+          .returns<
+            Array<{
+              id: string
+              email: string
+              role: OrganizationMemberRole
+              token: string
+              expires_at: string
+              accepted_at: string | null
+              created_at: string
+            }>
+          >()
+      : Promise.resolve({ data: [] as Array<{ id: string; email: string; role: OrganizationMemberRole; token: string; expires_at: string; accepted_at: string | null; created_at: string }>, error: null }),
   ])
 
   if (membershipsError) return { error: "Unable to load members." }
-  if (invitesError) return { error: "Unable to load invites." }
+  if (invitesResult.error) return { error: "Unable to load invites." }
 
   for (const membership of memberships ?? []) {
-    if (membership.member_id === user.id) continue
+    if (membership.member_id === orgId) continue
     members.push({
       id: membership.member_id,
       email: membership.member_email,
@@ -126,7 +159,7 @@ export async function listOrganizationAccessAction(): Promise<OrganizationAccess
     })
   }
 
-  const normalizedInvites: OrganizationAccessInvite[] = (invites ?? []).map((invite) => ({
+  const normalizedInvites: OrganizationAccessInvite[] = (invitesResult.data ?? []).map((invite) => ({
     id: invite.id,
     email: invite.email,
     role: invite.role,
@@ -136,7 +169,16 @@ export async function listOrganizationAccessAction(): Promise<OrganizationAccess
     acceptedAt: invite.accepted_at,
   }))
 
-  return { ok: true, members, invites: normalizedInvites }
+  return {
+    ok: true,
+    members,
+    invites: normalizedInvites,
+    adminsCanInvite,
+    staffCanManageCalendar,
+    canInvite,
+    canManageMembers,
+    canManageSettings,
+  }
 }
 
 export async function createOrganizationInviteAction({
@@ -155,24 +197,47 @@ export async function createOrganizationInviteAction({
   if (error && !isSupabaseAuthSessionMissingError(error)) return { error: "Unable to load user." }
   if (!user) return { error: "Not authenticated." }
 
+  const { orgId, role: memberRole } = await resolveActiveOrganization(supabase, user.id)
+  const { data: profileRow } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<{ role: string | null }>()
+  const isPlatformAdmin = profileRow?.role === "admin"
+  const { data: settingsRow } = await supabase
+    .from("organization_access_settings")
+    .select("admins_can_invite")
+    .eq("org_id", orgId)
+    .maybeSingle<{ admins_can_invite: boolean }>()
+  const adminsCanInvite = Boolean(settingsRow?.admins_can_invite)
+  const canInvite = isPlatformAdmin || orgId === user.id || (memberRole === "admin" && adminsCanInvite)
+  if (!canInvite) return { error: "You don’t have permission to invite teammates." }
+
   const normalizedEmail = normalizeEmail(email)
   if (!isValidEmail(normalizedEmail)) return { error: "Enter a valid email address." }
   if (!INVITE_ROLES.includes(role)) return { error: "Invalid role." }
 
-  const { data: existingMember, error: memberCheckError } = await supabase
+  let adminClient: ReturnType<typeof createSupabaseAdminClient> | null = null
+  try {
+    adminClient = createSupabaseAdminClient()
+  } catch {
+    adminClient = null
+  }
+
+  const membershipClient = adminClient ?? supabase
+  const { data: existingMember } = await membershipClient
     .from("organization_memberships")
     .select("member_id")
-    .eq("org_id", user.id)
+    .eq("org_id", orgId)
     .eq("member_email", normalizedEmail)
     .maybeSingle<{ member_id: string }>()
 
-  if (memberCheckError) return { error: "Unable to validate members." }
   if (existingMember) return { error: "That email is already a member of your organization." }
 
   const { data: existingInvite, error: inviteCheckError } = await supabase
     .from("organization_invites")
     .select("id, email, role, token, expires_at, accepted_at, created_at")
-    .eq("org_id", user.id)
+    .eq("org_id", orgId)
     .eq("email", normalizedEmail)
     .is("accepted_at", null)
     .order("created_at", { ascending: false })
@@ -209,7 +274,7 @@ export async function createOrganizationInviteAction({
   const { data: createdInvite, error: insertError } = await supabase
     .from("organization_invites")
     .insert({
-      org_id: user.id,
+      org_id: orgId,
       email: normalizedEmail,
       role,
       token,
@@ -253,11 +318,27 @@ export async function revokeOrganizationInviteAction(inviteId: string): Promise<
   if (error && !isSupabaseAuthSessionMissingError(error)) return { error: "Unable to load user." }
   if (!user) return { error: "Not authenticated." }
 
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  const { data: profileRow } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<{ role: string | null }>()
+  const isPlatformAdmin = profileRow?.role === "admin"
+  const { data: settingsRow } = await supabase
+    .from("organization_access_settings")
+    .select("admins_can_invite")
+    .eq("org_id", orgId)
+    .maybeSingle<{ admins_can_invite: boolean }>()
+  const adminsCanInvite = Boolean(settingsRow?.admins_can_invite)
+  const canInvite = isPlatformAdmin || orgId === user.id || (role === "admin" && adminsCanInvite)
+  if (!canInvite) return { error: "You don’t have permission to manage invites." }
+
   const { error: deleteError } = await supabase
     .from("organization_invites")
     .delete()
     .eq("id", inviteId)
-    .eq("org_id", user.id)
+    .eq("org_id", orgId)
 
   if (deleteError) return { error: "Unable to revoke invite." }
   return { ok: true }
@@ -272,12 +353,14 @@ export async function removeOrganizationMemberAction(memberId: string): Promise<
 
   if (error && !isSupabaseAuthSessionMissingError(error)) return { error: "Unable to load user." }
   if (!user) return { error: "Not authenticated." }
-  if (memberId === user.id) return { error: "You can’t remove the organization owner." }
+  const { orgId } = await resolveActiveOrganization(supabase, user.id)
+  if (orgId !== user.id) return { error: "Only the organization owner can manage members." }
+  if (memberId === orgId) return { error: "You can’t remove the organization owner." }
 
   const { error: deleteError } = await supabase
     .from("organization_memberships")
     .delete()
-    .eq("org_id", user.id)
+    .eq("org_id", orgId)
     .eq("member_id", memberId)
 
   if (deleteError) return { error: "Unable to remove member." }
@@ -299,16 +382,60 @@ export async function updateOrganizationMemberRoleAction({
 
   if (error && !isSupabaseAuthSessionMissingError(error)) return { error: "Unable to load user." }
   if (!user) return { error: "Not authenticated." }
-  if (memberId === user.id) return { error: "You can’t change the organization owner role." }
+  const { orgId } = await resolveActiveOrganization(supabase, user.id)
+  if (orgId !== user.id) return { error: "Only the organization owner can manage members." }
+  if (memberId === orgId) return { error: "You can’t change the organization owner role." }
   if (!INVITE_ROLES.includes(role)) return { error: "Invalid role." }
 
   const { error: updateError } = await supabase
     .from("organization_memberships")
     .update({ role })
-    .eq("org_id", user.id)
+    .eq("org_id", orgId)
     .eq("member_id", memberId)
 
   if (updateError) return { error: "Unable to update role." }
+  return { ok: true }
+}
+
+export async function setOrganizationAdminsCanInviteAction(next: boolean): Promise<OrganizationAccessResult> {
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error && !isSupabaseAuthSessionMissingError(error)) return { error: "Unable to load user." }
+  if (!user) return { error: "Not authenticated." }
+
+  const { orgId } = await resolveActiveOrganization(supabase, user.id)
+  if (orgId !== user.id) return { error: "Only the organization owner can change this setting." }
+
+  const { error: upsertError } = await supabase
+    .from("organization_access_settings")
+    .upsert({ org_id: orgId, admins_can_invite: Boolean(next) }, { onConflict: "org_id" })
+
+  if (upsertError) return { error: upsertError.message ?? "Unable to update setting." }
+  return { ok: true }
+}
+
+export async function setOrganizationStaffCanManageCalendarAction(next: boolean): Promise<OrganizationAccessResult> {
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error && !isSupabaseAuthSessionMissingError(error)) return { error: "Unable to load user." }
+  if (!user) return { error: "Not authenticated." }
+
+  const { orgId } = await resolveActiveOrganization(supabase, user.id)
+  if (orgId !== user.id) return { error: "Only the organization owner can change this setting." }
+
+  const { error: upsertError } = await supabase
+    .from("organization_access_settings")
+    .upsert({ org_id: orgId, staff_can_manage_calendar: Boolean(next) }, { onConflict: "org_id" })
+
+  if (upsertError) return { error: upsertError.message ?? "Unable to update setting." }
   return { ok: true }
 }
 
@@ -389,6 +516,52 @@ export async function acceptOrganizationInviteAction(token: string): Promise<Acc
   if (acceptError) {
     return { error: "Joined, but failed to mark invite accepted." }
   }
+
+  // Best-effort: ensure the invited member appears in the org directory.
+  try {
+    const [{ data: orgRow }, { data: invitedProfile }] = await Promise.all([
+      adminClient
+        .from("organizations")
+        .select("profile")
+        .eq("user_id", invite.org_id)
+        .maybeSingle<{ profile: Record<string, unknown> | null }>(),
+      adminClient
+        .from("profiles")
+        .select("full_name, headline, avatar_url")
+        .eq("id", user.id)
+        .maybeSingle<{ full_name: string | null; headline: string | null; avatar_url: string | null }>(),
+    ])
+
+    const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
+    const people = Array.isArray(profile.org_people) ? (profile.org_people as Array<Record<string, unknown>>) : []
+    const already = people.some((person) => typeof person?.id === "string" && person.id === user.id)
+
+    if (!already) {
+      const category = invite.role === "board" ? "governing_board" : "staff"
+      const fullName =
+        (typeof invitedProfile?.full_name === "string" && invitedProfile.full_name.trim().length > 0
+          ? invitedProfile.full_name.trim()
+          : typeof user.user_metadata?.full_name === "string" && user.user_metadata.full_name.trim().length > 0
+            ? String(user.user_metadata.full_name).trim()
+            : null) ?? user.email ?? "Teammate"
+
+      people.push({
+        id: user.id,
+        name: fullName,
+        title: invitedProfile?.headline ?? null,
+        email: email,
+        linkedin: null,
+        category,
+        image: invitedProfile?.avatar_url ?? null,
+        reportsToId: null,
+        pos: null,
+      })
+
+      await adminClient
+        .from("organizations")
+        .upsert({ user_id: invite.org_id, profile: { ...profile, org_people: people } }, { onConflict: "user_id" })
+    }
+  } catch {}
 
   return { ok: true, orgId: invite.org_id }
 }

@@ -1,59 +1,37 @@
 "use client"
 
-import { useMemo } from "react"
-import dynamic from "next/dynamic"
+import { useEffect, useMemo } from "react"
 import { usePathname } from "next/navigation"
 import Lock from "lucide-react/dist/esm/icons/lock"
-import Loader2 from "lucide-react/dist/esm/icons/loader-2"
-import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { RightRailSlot } from "@/components/app-shell/right-rail"
 
-import { createClassWizardAction, updateClassWizardAction } from "@/app/(admin)/admin/classes/actions"
 import { ModuleHeader } from "./module-detail/module-header"
 import { ModuleStepper } from "./module-detail/module-stepper"
+import { ModuleRightRail } from "./module-right-rail"
 import type { ClassDef, Module } from "./types"
 import { getInlineVideoUrl, getVideoEmbedUrl } from "./module-detail/utils"
-import { useLessonWizard } from "./module-detail/use-lesson-wizard"
 import { useAssignmentSubmission } from "./module-detail/use-assignment-submission"
-
-const LessonCreationWizardLazy = dynamic(
-  () =>
-    import("@/components/admin/lesson-creation-wizard").then(
-      (mod) => mod.LessonCreationWizard,
-    ),
-  {
-    ssr: false,
-    loading: () => (
-      <Button disabled variant="secondary" className="gap-2">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Loading editor…
-      </Button>
-    ),
-  },
-)
+import type { RoadmapSectionStatus } from "@/lib/roadmap"
 
 export function ModuleDetail({
   c,
   m,
   isAdmin = false,
+  nextLocked = false,
+  roadmapStatusBySectionId,
+  completedModuleIds = [],
 }: {
   c: ClassDef
   m: Module
   isAdmin?: boolean
+  nextLocked?: boolean
+  roadmapStatusBySectionId?: Record<string, RoadmapSectionStatus>
+  completedModuleIds?: string[]
 }) {
   const assignmentFields = useMemo(() => m.assignment?.fields ?? [], [m.assignment?.fields])
   const completeOnSubmit = Boolean(m.assignment?.completeOnSubmit)
   const lockedForLearners = Boolean(m.locked)
-  const {
-    wizardOpen,
-    wizardPayload,
-    wizardLoading,
-    wizardError,
-    wizardFocusModuleId,
-    handleCreateModule,
-    handleOpenChange,
-    loadWizardPayload,
-  } = useLessonWizard({ classId: c.id, moduleId: m.id })
 
   const {
     formSeed,
@@ -71,6 +49,7 @@ export function ModuleDetail({
 
   const pathname = usePathname()
   const basePath = pathname?.startsWith("/accelerator") ? "/accelerator" : ""
+  const breakHref = basePath ? "/accelerator" : "/my-organization"
 
   const embedUrl = getVideoEmbedUrl(m.videoUrl)
   const inlineVideoUrl = getInlineVideoUrl(m.videoUrl)
@@ -82,18 +61,28 @@ export function ModuleDetail({
   )
   const nextModule = currentModuleIndex >= 0 ? c.modules[currentModuleIndex + 1] : null
   const nextHref = nextModule && c.slug ? `${basePath}/class/${c.slug}/module/${currentModuleIndex + 2}` : null
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    completedModuleIds.forEach((id) => {
+      try {
+        window.sessionStorage.setItem(`module-complete-${id}`, "true")
+      } catch {
+        /* ignore */
+      }
+    })
+  }, [completedModuleIds])
 
   return (
-    <div className="space-y-6">
-      <ModuleHeader
-        title={m.title}
-        subtitle={m.subtitle}
-        isAdmin={isAdmin}
-        wizardError={wizardError}
-        wizardLoading={wizardLoading}
-        onEdit={() => void loadWizardPayload(m.id)}
-        titlePlacement="header"
+    <div className="space-y-5">
+      <RightRailSlot priority={5} align="bottom">
+      <ModuleRightRail
+        moduleId={m.id}
+        resources={resources}
+        breakHref={breakHref}
+        hasDeck={Boolean(m.hasDeck)}
       />
+    </RightRailSlot>
+      <ModuleHeader title={m.title} subtitle={undefined} titlePlacement="header" showMobileBody={false} />
 
       {isAdmin && lockedForLearners ? (
         <Alert className="border-amber-500/40 bg-amber-500/10 text-amber-900 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-100">
@@ -111,6 +100,8 @@ export function ModuleDetail({
         moduleTitle={m.title}
         moduleSubtitle={m.subtitle ?? null}
         classTitle={c.title}
+        stepperPlacement="header"
+        showModuleHeading={false}
         embedUrl={embedUrl}
         videoUrl={inlineVideoUrl}
         fallbackUrl={m.videoUrl ?? null}
@@ -119,6 +110,7 @@ export function ModuleDetail({
         resources={resources}
         assignmentFields={assignmentFields}
         initialValues={formSeed}
+        roadmapStatusBySectionId={roadmapStatusBySectionId}
         pending={isSubmitting}
         onSubmit={handleSubmit}
         statusLabel={statusMeta?.label ?? null}
@@ -129,34 +121,12 @@ export function ModuleDetail({
         updatedAt={lastSavedAt}
         completeOnSubmit={completeOnSubmit}
         nextHref={nextHref}
+        nextLocked={nextLocked}
+        breakHref={breakHref}
         moduleIndex={currentModuleIndex >= 0 ? currentModuleIndex : null}
         moduleCount={c.modules.length}
-        isAdmin={isAdmin}
       />
 
-      {isAdmin ? (
-        <LessonCreationWizardLazy
-          open={wizardOpen}
-          mode={wizardPayload ? "edit" : "create"}
-          classId={c.id}
-          initialPayload={wizardPayload}
-          focusModuleId={wizardFocusModuleId ?? m.id}
-          loading={wizardLoading}
-          onCreateModule={handleCreateModule}
-          onOpenChange={handleOpenChange}
-          onSubmit={async (formData) => {
-            const payloadRaw = formData.get("payload")
-            const classIdValue = formData.get("classId") ?? c.id
-            if (typeof payloadRaw !== "string" || typeof classIdValue !== "string") {
-              return { error: "Invalid lesson payload" }
-            }
-            if (wizardPayload) {
-              return updateClassWizardAction(classIdValue, payloadRaw)
-            }
-            return createClassWizardAction(formData)
-          }}
-        />
-      ) : null}
     </div>
   )
 }

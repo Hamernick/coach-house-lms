@@ -112,6 +112,7 @@ This is how **learning outputs** gradually build the org profile.
 - Tailwind + shadcn/ui components.
 - Dashboard shell based on shadcn `dashboard-01`:
   - Inset card shell, collapsible sidebar, independent scrolling for nav.
+- Unified app shell contract for layout, slots, and rail placement: `docs/app-shell.md`.
 - Layout language:
   - Cards with clear headers + content.
   - Lesson pages: video → notes → resources → homework → next module.

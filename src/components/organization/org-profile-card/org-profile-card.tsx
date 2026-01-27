@@ -12,12 +12,11 @@ import {
 import { toast } from "@/lib/toast"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
 import { useRouter } from "next/navigation"
-import { updateOrganizationProfileAction } from "@/app/(dashboard)/my-organization/actions"
+import { updateOrganizationProfileAction } from "@/actions/organization"
 
 import type { OrgProfile, OrgProfileCardProps, OrgProfileErrors, OrgProgram, ProfileTab, SlugStatus } from "./types"
 import { organizationProfileSchema } from "./validation"
@@ -382,7 +381,7 @@ export function OrgProfileEditor({
   const tabsIdBase = "org-profile-tabs"
 
   return (
-    <Card className="overflow-hidden bg-sidebar py-0 pb-6">
+    <div className="overflow-hidden pb-6">
       <OrgProfileHeader
         name={company.name || "Organization"}
         tagline={company.tagline || "—"}
@@ -400,7 +399,7 @@ export function OrgProfileEditor({
         onSave={handleSave}
       />
 
-      <CardContent className="bg-sidebar p-0">
+      <div className="p-0">
         <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
           <TabsList
             data-tour="org-profile-tabs"
@@ -503,7 +502,7 @@ export function OrgProfileEditor({
             <SupportersTab editMode={editMode} people={people} />
           </TabsContent>
         </Tabs>
-      </CardContent>
+      </div>
 
       <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
         <AlertDialogContent>
@@ -537,7 +536,7 @@ export function OrgProfileEditor({
       {canEdit && editProgram ? (
         <ProgramWizardLazy mode="edit" program={editProgram} open={editOpen} onOpenChange={setEditOpen} />
       ) : null}
-    </Card>
+    </div>
   )
 }
 

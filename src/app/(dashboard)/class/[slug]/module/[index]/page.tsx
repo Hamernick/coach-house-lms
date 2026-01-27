@@ -6,6 +6,8 @@ import { getClassModulesForUser } from "@/lib/modules"
 import { buildModuleStates } from "@/lib/module-progress"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
+import { resolveActiveOrganization } from "@/lib/organization/active-org"
+import { resolveRoadmapSections, type RoadmapSectionStatus } from "@/lib/roadmap"
 
 type ModuleParams = {
   slug: string
@@ -44,6 +46,50 @@ export default async function ModulePage({
     .maybeSingle<{ role: string | null }>()
   const isAdmin = (profile?.role ?? "").toLowerCase() === "admin"
 
+  let hasAcceleratorAccess = isAdmin
+  const { orgId } = await resolveActiveOrganization(supabase, user.id)
+
+  const { data: orgRow } = await supabase
+    .from("organizations")
+    .select("profile")
+    .eq("user_id", orgId)
+    .maybeSingle<{ profile: Record<string, unknown> | null }>()
+  const roadmapStatusBySectionId = resolveRoadmapSections(orgRow?.profile ?? {}).reduce(
+    (acc, section) => {
+      acc[section.id] = (section.status ?? "not_started") as RoadmapSectionStatus
+      return acc
+    },
+    {} as Record<string, RoadmapSectionStatus>,
+  )
+
+  if (!hasAcceleratorAccess) {
+    const { data: purchase } = await supabase
+      .from("accelerator_purchases")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle<{ id: string }>()
+    hasAcceleratorAccess = Boolean(purchase)
+  }
+
+  if (!hasAcceleratorAccess) {
+    const { data: subscription } = await supabase
+      .from("subscriptions")
+      .select("status")
+      .eq("user_id", orgId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ status: string | null }>()
+    const active = subscription?.status === "active" || subscription?.status === "trialing"
+    hasAcceleratorAccess = active
+  }
+
+  const isFormation = slug === "electives"
+  if (!hasAcceleratorAccess && !isAdmin && !isFormation) {
+    redirect("/pricing?plan=accelerator")
+  }
+
   const classContext = await getClassModulesForUser({
     classSlug: slug,
     userId: user.id,
@@ -62,6 +108,9 @@ export default async function ModulePage({
   if (!resolvedState) {
     notFound()
   }
+  const currentStateIndex = moduleStates.findIndex((state) => state.module.id === resolvedState.module.id)
+  const nextState = currentStateIndex >= 0 ? moduleStates[currentStateIndex + 1] ?? null : null
+  const nextLocked = !isAdmin && nextState ? nextState.locked || !nextState.module.published : false
 
   const classDef = {
     id: classContext.classId,
@@ -97,12 +146,18 @@ export default async function ModulePage({
     locked: resolvedState.locked,
     hasDeck: resolvedState.module.hasDeck,
   }
+  const completedModuleIds = moduleStates.filter((state) => state.completed).map((state) => state.module.id)
 
   return (
-    <div className="px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-5xl">
-        <TrainingModuleDetail c={classDef} m={moduleDef} isAdmin={isAdmin} />
-      </div>
+    <div className="w-full">
+      <TrainingModuleDetail
+        c={classDef}
+        m={moduleDef}
+        isAdmin={isAdmin}
+        nextLocked={nextLocked}
+        roadmapStatusBySectionId={roadmapStatusBySectionId}
+        completedModuleIds={completedModuleIds}
+      />
     </div>
   )
 }

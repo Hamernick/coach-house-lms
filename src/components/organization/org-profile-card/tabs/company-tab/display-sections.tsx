@@ -211,16 +211,24 @@ export function BrandKitPreview({ company }: CompanyViewProps) {
 }
 
 export function ViewModeSections(props: CompanyViewProps) {
+  const sections = [
+    <IdentityPreview {...props} key="identity" />,
+    <ContactPreview {...props} key="contact" />,
+    <AddressPreview {...props} key="address" />,
+    <StoryPreview {...props} key="story" />,
+    <WebsitePreview {...props} key="website" />,
+    <NewsletterPreview {...props} key="newsletter" />,
+    <SocialPreview {...props} key="social" />,
+    <BrandKitPreview {...props} key="brand-kit" />,
+  ].filter(Boolean)
+
   return (
-    <div className="grid gap-6">
-      <IdentityPreview {...props} />
-      <ContactPreview {...props} />
-      <AddressPreview {...props} />
-      <StoryPreview {...props} />
-      <WebsitePreview {...props} />
-      <NewsletterPreview {...props} />
-      <SocialPreview {...props} />
-      <BrandKitPreview {...props} />
+    <div className="divide-y divide-border/60">
+      {sections.map((section, index) => (
+        <div key={index} className="py-6 first:pt-0 last:pb-0">
+          {section}
+        </div>
+      ))}
     </div>
   )
 }

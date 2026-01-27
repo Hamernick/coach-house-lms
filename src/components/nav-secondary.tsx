@@ -30,9 +30,7 @@ export function NavSecondary({
 
   return (
     <SidebarGroup className={className}>
-      <SidebarGroupLabel className="px-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {label}
-      </SidebarGroupLabel>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
@@ -47,7 +45,9 @@ export function NavSecondary({
                   title={item.title}
                 >
                   <item.icon className="size-4 shrink-0" />
-                  <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
+                  <span className="min-w-0 truncate whitespace-nowrap group-data-[collapsible=icon]:hidden">
+                    {item.title}
+                  </span>
                 </a>
               </SidebarMenuButton>
             </SidebarMenuItem>

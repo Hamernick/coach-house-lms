@@ -1,5 +1,5 @@
-import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { AppBreadcrumbs } from "@/components/app-shell/breadcrumbs"
 
 export default function BillingCrumbs() {
-  return <DashboardBreadcrumbs segments={[{ label: "Billing" }]} />
+  return <AppBreadcrumbs segments={[{ label: "Billing" }]} />
 }

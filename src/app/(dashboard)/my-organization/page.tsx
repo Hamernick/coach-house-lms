@@ -4,13 +4,14 @@ import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { OrgProfileCard } from "@/components/organization/org-profile-card"
 import type { FormationStatus, ProfileTab } from "@/components/organization/org-profile-card/types"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
+import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
 import { createSupabaseServerClient, type Json } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import { normalizePersonCategory } from "@/lib/people/categories"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
-import type { OrgPerson } from "../people/actions"
+import type { OrgPerson } from "@/actions/people"
 
 export const dynamic = "force-dynamic"
 
@@ -22,7 +23,7 @@ export default async function MyOrganizationPage({
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const tabParam = typeof resolvedSearchParams?.tab === "string" ? resolvedSearchParams.tab : ""
   const programIdParam = typeof resolvedSearchParams?.programId === "string" ? resolvedSearchParams.programId : ""
-  if (tabParam === "roadmap") redirect("/my-organization/roadmap")
+  if (tabParam === "roadmap") redirect("/roadmap")
   if (tabParam === "documents") redirect("/my-organization/documents")
 
   const supabase = await createSupabaseServerClient()
@@ -35,11 +36,14 @@ export default async function MyOrganizationPage({
   }
   if (!user) redirect("/login?redirect=/my-organization")
 
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  const canEdit = canEditOrganization(role)
+
   // Load organization profile for the current user
   const { data: orgRow } = await supabase
     .from("organizations")
     .select("ein, profile, public_slug, is_public")
-    .eq("user_id", user.id)
+    .eq("user_id", orgId)
     .maybeSingle<{
       ein: string | null
       profile: Record<string, unknown> | null
@@ -54,7 +58,7 @@ export default async function MyOrganizationPage({
     if (changed) {
       const { error: cleanupError } = await supabase
         .from("organizations")
-        .upsert({ user_id: user.id, profile: nextProfile as Json }, { onConflict: "user_id" })
+        .upsert({ user_id: orgId, profile: nextProfile as Json }, { onConflict: "user_id" })
       if (!cleanupError) {
         profile = nextProfile
       }
@@ -67,7 +71,7 @@ export default async function MyOrganizationPage({
     .select(
       "id, title, subtitle, description, location, location_type, location_url, team_ids, image_url, duration_label, features, status_label, goal_cents, raised_cents, is_public, created_at, start_date, end_date, address_city, address_state, address_country, cta_label, cta_url",
     )
-    .eq("user_id", user.id)
+    .eq("user_id", orgId)
     .order("created_at", { ascending: false })
 
   const peopleRaw = (Array.isArray(profile.org_people) ? profile.org_people : []) as OrgPerson[]
@@ -145,7 +149,7 @@ export default async function MyOrganizationPage({
   const initialTab = allowedTabs.includes(tabParam as ProfileTab) ? (tabParam as ProfileTab) : undefined
 
   return (
-    <div className="flex flex-col gap-6 px-0 sm:px-2 lg:px-0">
+    <div className="flex flex-col gap-6">
       <PageTutorialButton tutorial="my-organization" />
       <section>
         <OrgProfileCard
@@ -154,6 +158,7 @@ export default async function MyOrganizationPage({
           programs={programs ?? []}
           initialTab={initialTab}
           initialProgramId={programIdParam || null}
+          canEdit={canEdit}
         />
       </section>
     </div>

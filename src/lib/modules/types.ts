@@ -47,6 +47,7 @@ export type ModuleAssignmentField = {
   step?: number | null
   programTemplate?: string
   orgKey?: string
+  roadmapSectionId?: string
   assistContext?: string
   rows?: BudgetTableRow[]
 }

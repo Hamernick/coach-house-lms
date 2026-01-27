@@ -25,19 +25,40 @@ type HighlightTourProps = {
   initialStep?: number
 }
 
-type Rect = { top: number; left: number; width: number; height: number }
+type Rect = { top: number; left: number; width: number; height: number; radius: number }
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value))
 }
 
+function parseRadius(value: string) {
+  const normalized = value.split(" ")[0] ?? value
+  const parsed = Number.parseFloat(normalized)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function resolveBorderRadius(el: Element) {
+  if (typeof window === "undefined") return 0
+  if (!(el instanceof HTMLElement)) return 0
+  const styles = window.getComputedStyle(el)
+  return Math.max(
+    parseRadius(styles.borderTopLeftRadius),
+    parseRadius(styles.borderTopRightRadius),
+    parseRadius(styles.borderBottomRightRadius),
+    parseRadius(styles.borderBottomLeftRadius),
+    0,
+  )
+}
+
 function getRect(el: Element, padding: number): Rect {
   const rect = el.getBoundingClientRect()
+  const baseRadius = resolveBorderRadius(el)
+  const radius = Math.max(16, baseRadius + padding)
   const top = Math.max(0, rect.top - padding)
   const left = Math.max(0, rect.left - padding)
   const width = Math.min(window.innerWidth - left, rect.width + padding * 2)
   const height = Math.min(window.innerHeight - top, rect.height + padding * 2)
-  return { top, left, width, height }
+  return { top, left, width, height, radius }
 }
 
 function buildRoundedRectPath({ left, top, width, height }: Rect, radius: number) {
@@ -187,7 +208,7 @@ export function HighlightTour({
     if (viewportWidth <= 0 || viewportHeight <= 0) return null
 
     const outer = `M 0 0 H ${viewportWidth} V ${viewportHeight} H 0 Z`
-    const inner = buildRoundedRectPath(targetRect, 16)
+    const inner = buildRoundedRectPath(targetRect, targetRect.radius)
     return `${outer} ${inner}`
   }, [targetRect])
 
@@ -234,7 +255,13 @@ export function HighlightTour({
                 "pointer-events-none absolute rounded-2xl border border-white/40 shadow-[0_0_0_2px_rgba(255,255,255,0.08)]",
                 prefersReducedMotion ? "" : "transition-[top,left,width,height] duration-200",
               )}
-              style={targetRect}
+              style={{
+                top: targetRect.top,
+                left: targetRect.left,
+                width: targetRect.width,
+                height: targetRect.height,
+                borderRadius: `${targetRect.radius}px`,
+              }}
               aria-hidden
             />
           ) : null}
@@ -242,40 +269,53 @@ export function HighlightTour({
       ) : null}
 
       <div
-        className="pointer-events-auto absolute rounded-2xl border border-white/10 bg-neutral-950/95 p-5 text-white shadow-2xl"
+        className="pointer-events-auto absolute rounded-2xl border border-border/60 bg-background/95 p-5 text-foreground shadow-2xl supports-[backdrop-filter]:bg-background/80 supports-[backdrop-filter]:backdrop-blur"
         style={tooltipStyle}
         role="dialog"
         aria-label="Tutorial"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-start gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5">
-              {step.icon ? <span className="text-white">{step.icon}</span> : <span className="h-5 w-5 rounded-lg bg-white/10" aria-hidden />}
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-muted/50">
+              {step.icon ? <span className="text-foreground">{step.icon}</span> : <span className="h-5 w-5 rounded-lg bg-muted" aria-hidden />}
             </div>
             <div>
-              <p className="text-xs font-medium text-white/50">
+              <p className="text-xs font-medium text-muted-foreground">
                 {index + 1} / {steps.length}
               </p>
-              <h3 className="mt-1 text-lg font-semibold text-white">{step.title}</h3>
+              <h3 className="mt-1 text-lg font-semibold text-foreground">{step.title}</h3>
             </div>
           </div>
-          <Button type="button" variant="ghost" size="icon" onClick={dismiss} className="text-white/70 hover:text-white">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={dismiss}
+            className="text-muted-foreground hover:text-foreground"
+          >
             <XIcon className="h-4 w-4" aria-hidden />
           </Button>
         </div>
-        <p className="mt-2 text-sm text-white/70">{targetFound ? step.description : "This step isn’t available on this screen. Continue to keep going."}</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {targetFound ? step.description : "This step isn’t available on this screen. Continue to keep going."}
+        </p>
         <div className="mt-4 flex items-center justify-between gap-2">
-          <Button type="button" variant="ghost" onClick={dismiss} className="text-white/70 hover:text-white">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={dismiss}
+            className="text-muted-foreground hover:text-foreground"
+          >
             Skip
           </Button>
           <div className="flex items-center gap-2">
             {showPrev ? (
-              <Button type="button" variant="outline" onClick={goPrev} className="border-white/15 bg-transparent text-white hover:bg-white/10">
+              <Button type="button" variant="outline" onClick={goPrev}>
                 <ChevronLeftIcon className="mr-1 h-4 w-4" aria-hidden />
                 Back
               </Button>
             ) : null}
-            <Button type="button" onClick={goNext} className="bg-white text-black hover:bg-white/90">
+            <Button type="button" onClick={goNext}>
               {isLast ? "Done" : "Next"}
               <ChevronRightIcon className="ml-1 h-4 w-4" aria-hidden />
             </Button>

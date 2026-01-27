@@ -2,9 +2,8 @@
 
 import { useCallback, useMemo, useState, useTransition } from "react"
 import { EyeOff, ExternalLink } from "lucide-react"
-import Link from "next/link"
 
-import { setRoadmapPublicAction } from "@/app/(dashboard)/strategic-roadmap/actions"
+import { setRoadmapPublicAction } from "@/actions/roadmap"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "@/lib/toast"
@@ -62,7 +61,6 @@ export function RoadmapVisibilityToggle({
   )
 
   const isLive = isPublic && Boolean(sharePath) && sharingEnabled
-  const statusLabel = isLive ? "Live" : "Offline"
   const showPublicLink = Boolean(sharePath)
 
   return (
@@ -76,24 +74,14 @@ export function RoadmapVisibilityToggle({
         ) : (
           <EyeOff className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
         )}
-        <span className="text-xs font-semibold text-foreground">{statusLabel}</span>
+        {isLive ? <span className="text-xs font-semibold text-foreground">Live</span> : null}
         <Switch
           checked={isPublic && Boolean(sharePath) && sharingEnabled}
           disabled={isPending || !sharePath || !sharingEnabled || !canPublishPublicRoadmap}
           onCheckedChange={handleToggle}
           aria-label="Toggle roadmap visibility"
         />
-        {!canPublishPublicRoadmap ? (
-          <span className="hidden rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground sm:inline">
-            Upgrade
-          </span>
-        ) : null}
       </div>
-      {!canPublishPublicRoadmap ? (
-        <Button asChild size="sm" variant="outline" className="h-9 rounded-full">
-          <Link href="/pricing">Upgrade to publish</Link>
-        </Button>
-      ) : null}
       {showPublicLink ? (
         <Button
           asChild
@@ -123,12 +111,6 @@ export function RoadmapVisibilityToggle({
             <ExternalLink className="h-4 w-4" aria-hidden />
             <span>View live</span>
           </a>
-        </Button>
-      ) : null}
-
-      {!sharePath && sharingEnabled ? (
-        <Button asChild size="sm" variant="outline">
-          <Link href="/my-organization">Set slug</Link>
         </Button>
       ) : null}
 

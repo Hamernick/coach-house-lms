@@ -262,6 +262,7 @@ export function OrgProfilePublicCard({ profile, people, programs = [] }: OrgProf
               {programs.map((program) => (
                 <ProgramCard
                   key={program.id}
+                  variant="medium"
                   title={program.title ?? "Untitled program"}
                   org={profile.name || undefined}
                   location={locationSummary(program) || undefined}

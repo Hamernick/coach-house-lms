@@ -10,7 +10,7 @@ import { Field, FieldControl, FieldDescription, FieldGroup, FieldLabel } from "@
 import { InputGroup, InputGroupAddon, InputGroupButton } from "@/components/ui/input-group"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import PlusIcon from "lucide-react/dist/esm/icons/plus"
-import { upsertPersonAction, type OrgPerson } from "@/app/(dashboard)/people/actions"
+import { upsertPersonAction, type OrgPerson } from "@/actions/people"
 import { toast } from "@/lib/toast"
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"

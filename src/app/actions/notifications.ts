@@ -2,8 +2,9 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import type { NotificationTone } from "@/lib/notifications"
 
-export type NotificationTone = "warning" | "info" | "success"
+export type { NotificationTone } from "@/lib/notifications"
 
 export type AppNotification = {
   id: string
@@ -240,7 +241,7 @@ export async function seedTestNotificationsAction(): Promise<NotificationActionR
       user_id: user.id,
       title: "Strategic roadmap draft needs a pass",
       description: "Finish the Timeline section to unlock sharing.",
-      href: "/accelerator/roadmap",
+      href: "/roadmap",
       tone: "warning",
       created_at: new Date(now).toISOString(),
     },

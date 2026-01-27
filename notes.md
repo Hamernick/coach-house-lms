@@ -1,5 +1,6 @@
 # DONE (docs/organize.md)
 - Built: auth; pricing; Stripe webhook+subs; LMS (classes/modules/unlocks); assignments; org/profile/programs/roadmap/public; community map; admin CRUD; tests/CI.
+
 - 2026-01-14+: /dashboard hidden; search polish; tutorial stable; pricing header fix; progress contrast; electives workstream+brief; promote:admin; RLS fixes+lints prep; admin sidebar restore; accelerator surface match.
 
 # TODO (docs/organize.md)

@@ -16,9 +16,6 @@ export async function revalidateClassViews({
   for (const args of SHARED_REVALIDATE_TARGETS) {
     revalidatePath(...args)
   }
-  if (classId) {
-    revalidatePath(`/admin/classes/${classId}`)
-  }
   for (const target of additionalTargets) {
     revalidatePath(target)
   }

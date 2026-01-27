@@ -48,6 +48,9 @@ const adminClient = createClient(url, serviceRole, {
 const suffix = randomUUID().slice(0, 8)
 const memberEmail = `member-${suffix}@example.com`
 const adminEmail = `admin-${suffix}@example.com`
+const staffEmail = `staff-${suffix}@example.com`
+const boardEmail = `board-${suffix}@example.com`
+const orgAdminEmail = `org-admin-${suffix}@example.com`
 const password = `TempPass!${suffix}`
 
 async function ensureProfile(id, role, fullName) {
@@ -83,10 +86,43 @@ async function createUsers() {
   })
   if (adminError) throw adminError
 
+  const {
+    data: { user: staff },
+    error: staffError,
+  } = await adminClient.auth.admin.createUser({
+    email: staffEmail,
+    password,
+    email_confirm: true,
+  })
+  if (staffError) throw staffError
+
+  const {
+    data: { user: board },
+    error: boardError,
+  } = await adminClient.auth.admin.createUser({
+    email: boardEmail,
+    password,
+    email_confirm: true,
+  })
+  if (boardError) throw boardError
+
+  const {
+    data: { user: orgAdmin },
+    error: orgAdminError,
+  } = await adminClient.auth.admin.createUser({
+    email: orgAdminEmail,
+    password,
+    email_confirm: true,
+  })
+  if (orgAdminError) throw orgAdminError
+
   await ensureProfile(member.id, "member", "Test Member")
   await ensureProfile(admin.id, "admin", "Test Admin")
+  await ensureProfile(staff.id, "member", "Test Staff")
+  await ensureProfile(board.id, "member", "Test Board")
+  await ensureProfile(orgAdmin.id, "member", "Test Org Admin")
 
-  return { member, admin }
+  return { member, admin, staff, board, orgAdmin }
 }
 
 async function createDemoContent(memberId) {
@@ -145,7 +181,7 @@ async function createDemoContent(memberId) {
 }
 
 async function run() {
-  const { member, admin } = await createUsers()
+  const { member, admin, staff, board, orgAdmin } = await createUsers()
   const assets = await createDemoContent(member.id)
 
   const memberClient = createClient(url, anonKey, {
@@ -154,12 +190,24 @@ async function run() {
   const adminSessionClient = createClient(url, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
+  const staffClient = createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+  const boardClient = createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+  const orgAdminClient = createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
 
   await memberClient.auth.signInWithPassword({ email: memberEmail, password })
   await adminSessionClient.auth.signInWithPassword({
     email: adminEmail,
     password,
   })
+  await staffClient.auth.signInWithPassword({ email: staffEmail, password })
+  await boardClient.auth.signInWithPassword({ email: boardEmail, password })
+  await orgAdminClient.auth.signInWithPassword({ email: orgAdminEmail, password })
 
   const results = []
 
@@ -323,6 +371,200 @@ async function run() {
     })
   }
 
+  let orgAccessReady = false
+
+  // Organization membership access (multi-account org access)
+  {
+    const { error: membershipError } = await adminClient
+      .from("organization_memberships")
+      .insert([
+        {
+          org_id: member.id,
+          member_id: staff.id,
+          role: "staff",
+          member_email: staffEmail,
+        },
+        {
+          org_id: member.id,
+          member_id: board.id,
+          role: "board",
+          member_email: boardEmail,
+        },
+        {
+          org_id: member.id,
+          member_id: orgAdmin.id,
+          role: "admin",
+          member_email: orgAdminEmail,
+        },
+      ])
+    orgAccessReady = !membershipError
+    results.push({
+      name: "org access memberships created",
+      passed: orgAccessReady,
+    })
+
+    if (orgAccessReady) {
+      const { data: staffOrg, error: staffOrgError } = await staffClient
+        .from("organizations")
+        .select("user_id")
+        .eq("user_id", member.id)
+        .maybeSingle()
+      results.push({
+        name: "staff can read org via membership",
+        passed: !!staffOrg && !staffOrgError,
+      })
+
+      const { data: boardOrg, error: boardOrgError } = await boardClient
+        .from("organizations")
+        .select("user_id")
+        .eq("user_id", member.id)
+        .maybeSingle()
+      results.push({
+        name: "board can read org via membership",
+        passed: !!boardOrg && !boardOrgError,
+      })
+
+      await staffClient
+        .from("organizations")
+        .update({ profile: { name: "Updated by staff" } })
+        .eq("user_id", member.id)
+
+      const { data: staffUpdatedOrg } = await adminClient
+        .from("organizations")
+        .select("profile")
+        .eq("user_id", member.id)
+        .maybeSingle()
+      results.push({
+        name: "staff can update org profile",
+        passed: staffUpdatedOrg?.profile?.name === "Updated by staff",
+      })
+
+      await boardClient
+        .from("organizations")
+        .update({ profile: { name: "Updated by board" } })
+        .eq("user_id", member.id)
+
+      const { data: boardUpdatedOrg } = await adminClient
+        .from("organizations")
+        .select("profile")
+        .eq("user_id", member.id)
+        .maybeSingle()
+      results.push({
+        name: "board cannot update org profile",
+        passed: boardUpdatedOrg?.profile?.name === "Updated by staff",
+      })
+    }
+  }
+
+  // Programs write access for members
+  if (orgAccessReady) {
+    const { data: createdProgram, error: staffProgramError } = await staffClient
+      .from("programs")
+      .insert({ user_id: member.id, title: `Staff Program ${suffix}` })
+      .select("id")
+      .maybeSingle()
+    results.push({
+      name: "staff can insert programs for org",
+      passed: !!createdProgram && !staffProgramError,
+    })
+
+    const { data: deniedProgram, error: boardProgramError } = await boardClient
+      .from("programs")
+      .insert({ user_id: member.id, title: `Board Program ${suffix}` })
+      .select("id")
+    results.push({
+      name: "board cannot insert programs for org",
+      passed:
+        !!boardProgramError ||
+        (Array.isArray(deniedProgram) && deniedProgram.length === 0),
+    })
+
+    const { data: boardPrograms } = await boardClient
+      .from("programs")
+      .select("id")
+      .eq("user_id", member.id)
+    results.push({
+      name: "board can read org programs",
+      passed: Array.isArray(boardPrograms) && boardPrograms.length >= 1,
+    })
+  }
+
+  // Org-admin invite gating (admins_can_invite toggle)
+  if (orgAccessReady) {
+    const expiresAt = new Date(Date.now() + 3600_000).toISOString()
+
+    const { error: deniedInviteError } = await orgAdminClient
+      .from("organization_invites")
+      .insert({
+        org_id: member.id,
+        email: `invitee-denied-${suffix}@example.com`,
+        role: "board",
+        token: `tok_denied_${suffix}`,
+        expires_at: expiresAt,
+      })
+    results.push({
+      name: "org admin cannot invite by default",
+      passed: !!deniedInviteError,
+    })
+
+    const { error: ownerEnableError } = await memberClient
+      .from("organization_access_settings")
+      .upsert(
+        { org_id: member.id, admins_can_invite: true },
+        { onConflict: "org_id" }
+      )
+    results.push({
+      name: "owner can enable org-admin invites",
+      passed: !ownerEnableError,
+    })
+
+    const { data: allowedInvite, error: allowedInviteError } =
+      await orgAdminClient
+        .from("organization_invites")
+        .insert({
+          org_id: member.id,
+          email: `invitee-allowed-${suffix}@example.com`,
+          role: "board",
+          token: `tok_allowed_${suffix}`,
+          expires_at: expiresAt,
+        })
+        .select("id")
+        .maybeSingle()
+    results.push({
+      name: "org admin can invite when enabled",
+      passed: !!allowedInvite && !allowedInviteError,
+    })
+
+    const { error: staffInviteError } = await staffClient
+      .from("organization_invites")
+      .insert({
+        org_id: member.id,
+        email: `invitee-staff-${suffix}@example.com`,
+        role: "board",
+        token: `tok_staff_${suffix}`,
+        expires_at: expiresAt,
+      })
+    results.push({
+      name: "staff cannot invite even when enabled",
+      passed: !!staffInviteError,
+    })
+
+    await orgAdminClient
+      .from("organization_access_settings")
+      .update({ admins_can_invite: false })
+      .eq("org_id", member.id)
+
+    const { data: settingsRow } = await memberClient
+      .from("organization_access_settings")
+      .select("admins_can_invite")
+      .eq("org_id", member.id)
+      .maybeSingle()
+    results.push({
+      name: "org admin cannot change invite setting",
+      passed: settingsRow?.admins_can_invite === true,
+    })
+  }
+
   // Attachments visibility and invites admin-only
   {
     // Admin attaches a resource to the module
@@ -382,6 +624,26 @@ async function run() {
     results.push({
       name: "member can read own subscription",
       passed: !!data && !subscriptionError,
+    })
+
+    const { data: staffSub } = await staffClient
+      .from("subscriptions")
+      .select("id")
+      .eq("id", subId)
+      .maybeSingle()
+    results.push({
+      name: "staff can read org subscription",
+      passed: !!staffSub,
+    })
+
+    const { data: boardSub } = await boardClient
+      .from("subscriptions")
+      .select("id")
+      .eq("id", subId)
+      .maybeSingle()
+    results.push({
+      name: "board cannot read org subscription",
+      passed: !boardSub,
     })
 
     const { error: updateError } = await memberClient
@@ -525,6 +787,7 @@ async function run() {
     .delete()
     .eq("module_id", assets.moduleId)
   await adminClient.from("attachments").delete().eq("scope_id", assets.moduleId)
+  await adminClient.from("programs").delete().eq("user_id", member.id)
   await adminClient.from("organizations").delete().eq("user_id", member.id)
   await adminClient.from("enrollments").delete().eq("user_id", member.id)
   await adminClient
@@ -542,6 +805,9 @@ async function run() {
     .in("user_id", [member.id, admin.id])
   await adminClient.auth.admin.deleteUser(member.id)
   await adminClient.auth.admin.deleteUser(admin.id)
+  await adminClient.auth.admin.deleteUser(staff.id)
+  await adminClient.auth.admin.deleteUser(board.id)
+  await adminClient.auth.admin.deleteUser(orgAdmin.id)
 
   if (failed.length > 0) {
     console.error(`RLS tests failed (${failed.length}).`)

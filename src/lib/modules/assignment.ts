@@ -156,6 +156,15 @@ export function parseAssignmentFields(schema: unknown): ModuleAssignmentField[] 
           : ""
     const orgKey = orgKeyRaw.trim().length > 0 ? orgKeyRaw.trim() : undefined
 
+    const roadmapSectionRaw =
+      typeof (field as { roadmap_section?: unknown }).roadmap_section === "string"
+        ? (field as { roadmap_section: string }).roadmap_section
+        : typeof (field as { roadmapSection?: unknown }).roadmapSection === "string"
+          ? (field as { roadmapSection: string }).roadmapSection
+          : ""
+    const roadmapSectionId =
+      roadmapSectionRaw.trim().length > 0 ? roadmapSectionRaw.trim() : undefined
+
     const assistContextRaw =
       typeof (field as { assist_context?: unknown }).assist_context === "string"
         ? (field as { assist_context: string }).assist_context
@@ -201,6 +210,7 @@ export function parseAssignmentFields(schema: unknown): ModuleAssignmentField[] 
     }
 
     if (orgKey) assignmentField.orgKey = orgKey
+    if (roadmapSectionId) assignmentField.roadmapSectionId = roadmapSectionId
     if (assistContext) assignmentField.assistContext = assistContext
 
     normalized.push(assignmentField)

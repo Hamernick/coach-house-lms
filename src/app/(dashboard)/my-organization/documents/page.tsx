@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { DocumentsTab } from "@/components/organization/org-profile-card/tabs/documents-tab"
 import type { OrgDocuments } from "@/components/organization/org-profile-card/types"
+import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
@@ -24,10 +25,13 @@ export default async function MyOrganizationDocumentsPage() {
   }
   if (!user) redirect("/login?redirect=/my-organization/documents")
 
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  const canEdit = canEditOrganization(role)
+
   const { data: orgRow } = await supabase
     .from("organizations")
     .select("profile")
-    .eq("user_id", user.id)
+    .eq("user_id", orgId)
     .maybeSingle<{ profile: Record<string, unknown> | null }>()
 
   const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
@@ -60,7 +64,7 @@ export default async function MyOrganizationDocumentsPage() {
   const documents = hasAnyDocument ? parsedDocuments : null
 
   return (
-    <div className="flex flex-col gap-6 px-4 lg:px-6">
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
       <PageTutorialButton tutorial="documents" />
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
@@ -68,7 +72,7 @@ export default async function MyOrganizationDocumentsPage() {
           Upload private PDF files for your organization. These are never shared publicly.
         </p>
       </div>
-      <DocumentsTab documents={documents} editMode canEdit />
+      <DocumentsTab documents={documents} editMode={canEdit} canEdit={canEdit} />
     </div>
   )
 }

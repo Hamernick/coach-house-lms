@@ -20,19 +20,11 @@ function getSafeRedirect(value: unknown) {
   return value
 }
 
-function normalizeRedirectForSignedInUser(value: string | undefined) {
-  if (!value) return undefined
-  if (value === "/dashboard" || value.startsWith("/dashboard/")) {
-    return "/my-organization"
-  }
-  return value
-}
-
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const resolved = searchParams ? await searchParams : {}
 
   const redirectParam = getSafeRedirect(resolved.redirect)
-  const redirectForSignedInUser = normalizeRedirectForSignedInUser(redirectParam)
+  const redirectForSignedInUser = redirectParam
   const error = typeof resolved.error === "string" ? resolved.error : null
 
   const plan = typeof resolved.plan === "string" ? resolved.plan : undefined

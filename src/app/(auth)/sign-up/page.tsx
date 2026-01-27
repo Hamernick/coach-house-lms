@@ -32,7 +32,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
     throw supabaseErrorToError(error, "Unable to load user.")
   }
   if (user) {
-    const destination = redirect === "/dashboard" || redirect?.startsWith("/dashboard/") ? "/my-organization" : (redirect ?? "/my-organization")
+    const destination = redirect ?? "/my-organization"
     redirectTo(destination)
   }
 

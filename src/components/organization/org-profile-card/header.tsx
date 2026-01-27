@@ -125,7 +125,7 @@ export function OrgProfileHeader({
 
   return (
     <>
-      <div className="relative h-36 w-full overflow-hidden rounded-b-xl border-b bg-background">
+      <div className="relative h-52 w-full overflow-hidden border-b bg-background">
         {headerUrl ? (
           <Image src={headerUrl} alt="" fill className="object-cover" sizes="100vw" />
         ) : null}
@@ -203,7 +203,7 @@ export function OrgProfileHeader({
         ) : null}
       </div>
 
-	      <div className="relative bg-sidebar p-6">
+      <div className="relative bg-background p-6">
         <div className="absolute -top-12 left-6">
           <div className="flex items-end gap-3">
             <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-border bg-background shadow-sm">

@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
-import { PaginationControls } from "@/components/dashboard/pagination-controls"
+import { PaginationControls } from "@/components/ui/pagination-controls"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { listClasses } from "@/lib/classes"
@@ -40,8 +40,7 @@ export default async function ClassesPage({
 
   return (
     <div className="flex flex-col gap-6">
-      
-      <section className="space-y-3 px-4 lg:px-6">
+      <section className="space-y-3">
         <div>
           <h2 className="text-2xl font-semibold">Your classes</h2>
           <p className="text-sm text-muted-foreground">

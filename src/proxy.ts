@@ -6,13 +6,13 @@ import { env } from "@/lib/env"
 import type { Database } from "@/lib/supabase/types"
 
 const PROTECTED_PREFIXES = [
-  "/dashboard",
   "/class",
   "/academy",
   "/classes",
   "/organizations",
   "/billing",
   "/admin",
+  "/internal",
   "/onboarding",
 ]
 const AUTH_ROUTES = new Set(["/login", "/sign-up", "/forgot-password"])

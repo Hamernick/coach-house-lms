@@ -6,7 +6,7 @@ import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 
 import { Button } from "@/components/ui/button"
 
-import { setModulePublishedAction } from "../../../classes/[id]/actions"
+import { setModulePublishedAction } from "../actions"
 
 export function ModulePublishButton({
   moduleId,

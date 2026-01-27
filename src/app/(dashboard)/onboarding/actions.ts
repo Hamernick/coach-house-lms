@@ -149,13 +149,13 @@ export async function completeOnboardingAction(form: FormData) {
     }),
   ]
 
-  const profilePayload = { ...nextProfile, org_people: nextPeople } as Json
+  const orgProfilePayload = { ...nextProfile, org_people: nextPeople } as Json
 
   await supabase.from("organizations").upsert(
     {
       user_id: user.id,
       public_slug: normalizedSlug,
-      profile: profilePayload,
+      profile: orgProfilePayload,
     },
     { onConflict: "user_id" },
   )

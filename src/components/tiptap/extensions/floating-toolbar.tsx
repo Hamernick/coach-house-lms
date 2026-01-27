@@ -35,10 +35,19 @@ export function FloatingToolbar({ editor }: { editor: Editor | null }) {
       e.preventDefault();
     };
 
-    const el = editor.options.element;
-    el.addEventListener("contextmenu", handleContextMenu);
+    const editorElement = editor.options.element;
+    const target =
+      editorElement instanceof Element
+        ? editorElement
+        : typeof editorElement === "object" &&
+            editorElement &&
+            "mount" in editorElement
+          ? editorElement.mount
+          : null;
+    if (!target) return;
+    target.addEventListener("contextmenu", handleContextMenu);
 
-    return () => el.removeEventListener("contextmenu", handleContextMenu);
+    return () => target.removeEventListener("contextmenu", handleContextMenu);
   }, [editor, isMobile]);
 
   if (!editor) return null;

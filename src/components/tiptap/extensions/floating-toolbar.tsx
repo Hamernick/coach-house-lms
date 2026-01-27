@@ -1,6 +1,7 @@
 "use client";
 
-import { BubbleMenu, type Editor } from "@tiptap/react";
+import * as TiptapReact from "@tiptap/react";
+import type { Editor } from "@tiptap/core";
 import { BoldToolbar } from "../toolbars/bold";
 import { ItalicToolbar } from "../toolbars/italic";
 import { UnderlineToolbar } from "../toolbars/underline";
@@ -18,6 +19,10 @@ import { ImagePlaceholderToolbar } from "../toolbars/image-placeholder-toolbar";
 import { AlignmentTooolbar } from "../toolbars/alignment";
 import { BlockquoteToolbar } from "../toolbars/blockquote";
 import { useEffect } from "react";
+
+const BubbleMenu = (
+  TiptapReact as unknown as { BubbleMenu: React.ComponentType<any> }
+).BubbleMenu;
 
 export function FloatingToolbar({ editor }: { editor: Editor | null }) {
   const isMobile = useMediaQuery("(max-width: 640px)");

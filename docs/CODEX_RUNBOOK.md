@@ -226,12 +226,12 @@ feat(step {id}): {title}
   * PR: https://github.com/Hamernick/coach-house-lms/pull/31
 
 
-* [x] **S23** — Student navigation pages
+* [x] **S23** — Member navigation pages
 
   * Implement `/classes`, `/schedule`, `/settings` with responsive layouts, placeholder data (fetch stubs), and links from sidebar.
   * **Accept**: routes accessible; empty/loading states present; settings surfaces marketing/newsletter toggles.
   * **Changelog**:
-    * Added student navigation routes under `(dashboard)`: `/classes`, `/schedule`, and `/settings`, each protected by SSR auth.
+    * Added member navigation routes under `(dashboard)`: `/classes`, `/schedule`, and `/settings`, each protected by SSR auth.
     * `/classes`: paginated grid of enrolled classes via Supabase RSC fetch with empty state and breadcrumb; links into canonical module route.
     * `/schedule`: responsive card list showing placeholder upcoming events with types and formatted times.
     * `/settings`: profile form (full name) plus marketing/newsletter opt-in checkboxes backed by Supabase user metadata; server actions with revalidation and success notice.
@@ -243,7 +243,7 @@ feat(step {id}): {title}
   * Flesh out `/admin` landing (KPIs + recent activity) using existing data services.
   * **Accept**: admin homepage populated with cards/table/skeletons.
   * **Changelog**:
-    * Added Admin landing at `/admin` rendering KPI cards (Total Students, Active Subscriptions, 30‑day Revenue) via `fetchAdminKpis`.
+    * Added Admin landing at `/admin` rendering KPI cards (Total Members, Active Subscriptions, 30‑day Revenue) via `fetchAdminKpis`.
     * Implemented recent lists: enrollments and payments using `fetchRecentEnrollments`/`fetchRecentPayments` with loading skeletons.
     * Wired locale-aware number/currency formatting and breadcrumb.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/36
@@ -270,14 +270,14 @@ feat(step {id}): {title}
 
 * [x] **S27 — Shell & nav rename**
   * Rename “Nonprofit”→“Organizations”.
-  * Student nav: **Dashboard · Organizations · People · Settings**.
+  * Member nav: **Dashboard · Organizations · People · Settings**.
   * Admin nav: **Dashboard · Classes · People · Settings**.
   * Remove **Explore/Schedule/Submissions** (nav, routes, links).
   * Hide **Admin** for non-admins (SSR role in `(dashboard)/layout`).
   * Fix all guards to `/login?redirect=…`.
-  * **Accept:** students never see Admin; `/schedule` removed; no dead links; build/tests pass. types regen clean; drift check clean.
+  * **Accept:** members never see Admin; `/schedule` removed; no dead links; build/tests pass. types regen clean; drift check clean.
   * **Changelog:**
-    * Sidebar updated to student nav: Dashboard, Organizations, People, Settings.
+    * Sidebar updated to member nav: Dashboard, Organizations, People, Settings.
     * Admin header nav now: Dashboard, Classes, People, Settings.
     * Schedule removed (route and nav); no Explore/Submissions anywhere.
     * Admin link hidden for non-admins; shown only when user role=admin.
@@ -306,7 +306,7 @@ feat(step {id}): {title}
     * Types: extended Supabase typings; RLS tests expanded (skip when env absent).
   * PR: https://github.com/Hamernick/coach-house-lms/pull/44
 
-* [x] **S29 — Dashboard (student)**
+* [x] **S29 — Dashboard (member)**
   * Add **ProgressOverview** (truth from `module_progress`).
   * Add **NextUpCard** (uses `next_unlocked_module`).
   * Add **OrganizationsPreview** (reads `organizations.profile`; chips deep-link to module).
@@ -346,12 +346,12 @@ feat(step {id}): {title}
 * [x] **S32 — People management**
   * **Admin → People (global):** users table (create/search).
   * **Admin → Class → People tab:** enroll/unenroll/invite; role badges; audit entry.
-  * **Student → People:** read-only classmates/mentors list.
+  * **Member → People:** read-only classmates/mentors list.
   * **Accept:** admin can add/remove learners for any class; audit written; tests pass.
   * **Changelog:**
     * Admin → People: global users table (search/filters) exists; export CSV.
     * Admin → Class → People: enroll/unenroll by email; invite tokens with expiry; enrolled list shown.
-    * Student → People: enrolled classes listed; classmates placeholder pending RLS extension.
+    * Member → People: enrolled classes listed; classmates placeholder pending RLS extension.
     * Audit: server logs structured admin actions (enroll/unenroll/invite) for traceability.
   * PR: https://github.com/Hamernick/coach-house-lms/pull/48
 

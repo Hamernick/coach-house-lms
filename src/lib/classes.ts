@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 export type ClassSummary = {
   id: string
@@ -51,7 +52,7 @@ export async function listClasses({
     .returns<ClassRowForList[]>()
 
   if (error) {
-    throw error
+    throw supabaseErrorToError(error, "Unable to load classes.")
   }
 
   const items: ClassSummary[] = (data ?? []).map((row) => {
@@ -96,7 +97,7 @@ export async function getClassById(id: string) {
     }>()
 
   if (error) {
-    throw error
+    throw supabaseErrorToError(error, "Unable to load class.")
   }
 
   return data

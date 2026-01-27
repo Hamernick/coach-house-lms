@@ -25,22 +25,45 @@ type RpcRow = {
   rank: number | null
 }
 
-function buildSupabaseStub({ rpcData, rpcError }: { rpcData?: RpcRow[]; rpcError?: unknown } = {}) {
+function buildSupabaseStub({
+  rpcData,
+  rpcError,
+  isAdmin = false,
+  hasAcceleratorPurchase = false,
+}: {
+  rpcData?: RpcRow[]
+  rpcError?: unknown
+  isAdmin?: boolean
+  hasAcceleratorPurchase?: boolean
+} = {}) {
   const returns = vi.fn().mockResolvedValue({ data: [], error: null })
-  const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null })
   const insert = vi.fn().mockResolvedValue({ error: null })
 
   const chain = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    in: vi.fn().mockReturnThis(),
     not: vi.fn().mockReturnThis(),
     limit: vi.fn().mockReturnThis(),
     returns,
-    maybeSingle,
     insert,
   }
 
-  const from = vi.fn(() => chain)
+  const config = { isAdmin, hasAcceleratorPurchase }
+
+  const from = vi.fn((table: string) => {
+    const maybeSingle = vi.fn().mockImplementation(async () => {
+      if (table === "profiles") {
+        return { data: { role: config.isAdmin ? "admin" : null }, error: null }
+      }
+      if (table === "accelerator_purchases") {
+        return { data: config.hasAcceleratorPurchase ? { id: "purchase-1" } : null, error: null }
+      }
+      return { data: null, error: null }
+    })
+
+    return { ...chain, maybeSingle }
+  })
 
   const rpcReturns = vi.fn().mockResolvedValue({
     data: rpcData ?? [],
@@ -91,7 +114,7 @@ describe("search route", () => {
       },
     ]
 
-    const { supabaseStub, rpcReturns } = buildSupabaseStub({ rpcData })
+    const { supabaseStub, rpcReturns } = buildSupabaseStub({ rpcData, hasAcceleratorPurchase: true })
     createSupabaseServerClientMock.mockResolvedValue(supabaseStub)
 
     const res = await GET(new Request("http://localhost/api/search?q=theory"))
@@ -117,8 +140,48 @@ describe("search route", () => {
     ])
   })
 
+  it("filters accelerator results when the user lacks access", async () => {
+    const rpcData: RpcRow[] = [
+      {
+        id: "module:2",
+        label: "Theory of Change",
+        subtitle: "Strategic Foundations",
+        href: "/accelerator/class/strategic-foundations/module/1",
+        group_name: "Modules",
+        rank: 0.8,
+      },
+      {
+        id: "community:1",
+        label: "Open Source Org",
+        subtitle: "Education",
+        href: "/open-source-org",
+        group_name: "Community",
+        rank: 0.7,
+      },
+    ]
+
+    const { supabaseStub } = buildSupabaseStub({ rpcData, hasAcceleratorPurchase: false })
+    createSupabaseServerClientMock.mockResolvedValue(supabaseStub)
+
+    const res = await GET(new Request("http://localhost/api/search?q=theory"))
+    const json = await res.json()
+
+    expect(json.results).toEqual([
+      {
+        id: "community:1",
+        label: "Open Source Org",
+        subtitle: "Education",
+        href: "/open-source-org",
+        group: "Community",
+      },
+    ])
+  })
+
   it("falls back to manual search when the RPC fails", async () => {
-    const { supabaseStub } = buildSupabaseStub({ rpcError: { message: "missing function" } })
+    const { supabaseStub } = buildSupabaseStub({
+      rpcError: { message: "missing function" },
+      hasAcceleratorPurchase: true,
+    })
     createSupabaseServerClientMock.mockResolvedValue(supabaseStub)
     fetchSidebarTreeMock.mockResolvedValue([
       {

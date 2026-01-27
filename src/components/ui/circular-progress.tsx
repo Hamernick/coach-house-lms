@@ -52,7 +52,7 @@ export function CircularProgress({
           strokeDasharray={circumference}
           strokeDashoffset={0}
           fill="transparent"
-          className={cn("stroke-muted-foreground/35 dark:stroke-muted/40", trackClassName)}
+          className={cn("stroke-muted-foreground/55 dark:stroke-muted/40", trackClassName)}
         />
         <circle
           cx={size / 2}

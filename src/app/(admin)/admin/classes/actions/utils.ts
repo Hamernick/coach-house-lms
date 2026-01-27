@@ -59,11 +59,10 @@ export function extractSummary(subtitle: string, body: string) {
 }
 
 export const SHARED_REVALIDATE_TARGETS: Array<Parameters<typeof revalidatePath>> = [
-  ["/admin/academy"],
-  ["/admin/classes"],
-  ["/dashboard", "layout"],
-  ["/dashboard"],
+  ["/classes"],
   ["/training"],
+  ["/accelerator"],
+  ["/accelerator/roadmap"],
 ]
 
 export async function safeDeleteClass(

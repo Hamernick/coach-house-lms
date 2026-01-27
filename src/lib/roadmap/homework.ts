@@ -7,86 +7,208 @@ const ROADMAP_HOMEWORK_TARGETS: Record<
   string,
   Array<{ classSlug: string; moduleSlug?: string; moduleIdx?: number; label: string }>
 > = {
-  introduction: [
+  origin_story: [
     {
       classSlug: "strategic-foundations",
       moduleSlug: "start-with-your-why",
-      label: "Start with your why",
+      label: "Origin story",
     },
     {
       classSlug: "strategic-foundations",
       moduleIdx: 2,
-      label: "Start with your why",
+      label: "Origin story",
     },
   ],
-  foundations: [
+  need: [
     {
-      classSlug: "mission-vision-values",
-      moduleSlug: "mission",
-      label: "Mission statement",
+      classSlug: "strategic-foundations",
+      moduleSlug: "what-is-the-need",
+      label: "Need statement",
     },
     {
-      classSlug: "mission-vision-values",
-      moduleIdx: 1,
-      label: "Mission statement",
-    },
-  ],
-  programs_and_pilots: [
-    {
-      classSlug: "piloting-programs",
-      moduleSlug: "designing-your-pilot",
-      label: "Designing your pilot",
-    },
-    {
-      classSlug: "program-design-pilot",
-      moduleIdx: 2,
-      label: "Pilot planning",
-    },
-  ],
-  funding: [
-    {
-      classSlug: "budgeting-financial-basics",
-      moduleSlug: "budgeting-for-a-program",
-      label: "Budgeting for a program",
-    },
-    {
-      classSlug: "budgeting-financial-basics",
-      moduleIdx: 1,
-      label: "Budgeting for a program",
-    },
-    {
-      classSlug: "fundraising-fundamentals",
-      moduleIdx: 5,
-      label: "Fundraising pipeline",
-    },
-  ],
-  metrics_and_learning: [
-    {
-      classSlug: "evaluation-data-tracking",
-      moduleIdx: 1,
-      label: "Evaluation 101",
-    },
-    {
-      classSlug: "evaluation-data-tracking",
-      moduleIdx: 5,
-      label: "Measures + outcomes",
-    },
-  ],
-  timeline: [
-    {
-      classSlug: "budgeting-financial-basics",
-      moduleSlug: "multi-year-budgeting",
-      label: "Multi-year budgeting",
-    },
-    {
-      classSlug: "budgeting-financial-basics",
+      classSlug: "strategic-foundations",
       moduleIdx: 3,
-      label: "Multi-year budgeting",
+      label: "Need statement",
+    },
+  ],
+  mission_vision_values: [
+    {
+      classSlug: "mission-vision-values",
+      moduleSlug: "values",
+      label: "Mission, vision, values summary",
+    },
+    {
+      classSlug: "mission-vision-values",
+      moduleIdx: 3,
+      label: "Mission, vision, values summary",
+    },
+  ],
+  theory_of_change: [
+    {
+      classSlug: "theory-of-change",
+      moduleSlug: "theory-of-change",
+      label: "Theory of Change summary",
     },
     {
       classSlug: "theory-of-change",
-      moduleSlug: "systems-thinking",
-      label: "Systems thinking",
+      moduleIdx: 1,
+      label: "Theory of Change summary",
+    },
+  ],
+  program: [
+    {
+      classSlug: "piloting-programs",
+      moduleSlug: "designing-your-pilot",
+      label: "Program summary",
+    },
+    {
+      classSlug: "piloting-programs",
+      moduleIdx: 3,
+      label: "Program summary",
+    },
+  ],
+  evaluation: [
+    {
+      classSlug: "piloting-programs",
+      moduleSlug: "evaluation",
+      label: "Evaluation summary",
+    },
+    {
+      classSlug: "piloting-programs",
+      moduleIdx: 4,
+      label: "Evaluation summary",
+    },
+  ],
+  people: [
+    {
+      classSlug: "piloting-programs",
+      moduleSlug: "designing-your-pilot",
+      label: "People & roles",
+    },
+    {
+      classSlug: "piloting-programs",
+      moduleIdx: 3,
+      label: "People & roles",
+    },
+  ],
+  budget: [
+    {
+      classSlug: "session-s5-budgets-program",
+      moduleSlug: "budgeting-for-a-program",
+      label: "Budget summary",
+    },
+    {
+      classSlug: "session-s5-budgets-program",
+      moduleIdx: 1,
+      label: "Budget summary",
+    },
+  ],
+  fundraising: [
+    {
+      classSlug: "session-s7-mindset",
+      moduleSlug: "channels",
+      label: "Fundraising overview",
+    },
+    {
+      classSlug: "session-s7-mindset",
+      moduleIdx: 5,
+      label: "Fundraising overview",
+    },
+  ],
+  fundraising_strategy: [
+    {
+      classSlug: "session-s7-mindset",
+      moduleSlug: "donor-journey",
+      label: "Fundraising strategy & targets",
+    },
+    {
+      classSlug: "session-s7-mindset",
+      moduleIdx: 4,
+      label: "Fundraising strategy & targets",
+    },
+  ],
+  fundraising_presentation: [
+    {
+      classSlug: "session-s7-mindset",
+      moduleSlug: "storytelling-and-the-ask",
+      label: "Fundraising presentation",
+    },
+    {
+      classSlug: "session-s7-mindset",
+      moduleIdx: 6,
+      label: "Fundraising presentation",
+    },
+  ],
+  fundraising_crm_plan: [
+    {
+      classSlug: "session-s7-mindset",
+      moduleSlug: "treasure-mapping",
+      label: "CRM plan & pipeline",
+    },
+    {
+      classSlug: "session-s7-mindset",
+      moduleIdx: 3,
+      label: "CRM plan & pipeline",
+    },
+  ],
+  communications: [
+    {
+      classSlug: "session-s8-comms-as-mission",
+      moduleSlug: "comprehensive-plan",
+      label: "Communications plan",
+    },
+    {
+      classSlug: "session-s8-comms-as-mission",
+      moduleIdx: 3,
+      label: "Communications plan",
+    },
+  ],
+  board_strategy: [
+    {
+      classSlug: "session-s9-intro-to-boards",
+      moduleSlug: "intro-to-boards",
+      label: "Board strategy",
+    },
+    {
+      classSlug: "session-s9-intro-to-boards",
+      moduleIdx: 1,
+      label: "Board strategy",
+    },
+  ],
+  board_calendar: [
+    {
+      classSlug: "session-s9-intro-to-boards",
+      moduleSlug: "annual-calendar",
+      label: "Board calendar",
+    },
+    {
+      classSlug: "session-s9-intro-to-boards",
+      moduleIdx: 5,
+      label: "Board calendar",
+    },
+  ],
+  board_handbook: [
+    {
+      classSlug: "session-s9-intro-to-boards",
+      moduleSlug: "policy-4-board-self-governance",
+      label: "Board handbook",
+    },
+    {
+      classSlug: "session-s9-intro-to-boards",
+      moduleIdx: 4,
+      label: "Board handbook",
+    },
+  ],
+  next_actions: [
+    {
+      classSlug: "session-s9-intro-to-boards",
+      moduleSlug: "agendas-minutes-resolutions",
+      label: "Next actions",
+    },
+    {
+      classSlug: "session-s9-intro-to-boards",
+      moduleIdx: 6,
+      label: "Next actions",
     },
   ],
 }

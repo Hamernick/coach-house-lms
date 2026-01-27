@@ -6,6 +6,7 @@ import type { Json } from "@/lib/supabase/schema/json"
 import { markModuleCompleted, parseAssignmentFields, type ModuleAssignmentField } from "@/lib/modules"
 import { revalidateClassViews } from "@/app/(admin)/admin/classes/actions"
 import { sanitizeOrgProfileText, shouldStripOrgProfileHtml } from "@/lib/organization/profile-cleanup"
+import { createNotification } from "@/lib/notifications"
 
 type SubmissionStatus = Database["public"]["Enums"]["submission_status"]
 
@@ -179,12 +180,16 @@ function sanitizeAnswers(fields: ModuleAssignmentField[], raw: AnswersPayload): 
               totalCost: toString(record.totalCost, fallback?.totalCost ?? ""),
             }
           })
-          .filter((row) =>
-            Object.values(row).some((val) => typeof val === "string" && val.trim().length > 0),
-          )
+
+        const hasContent = normalizedRows.some((row) =>
+          Object.values(row).some((val) => typeof val === "string" && val.trim().length > 0),
+        )
 
         if (normalizedRows.length > 0) {
           result[key] = normalizedRows
+          if (field.required && !hasContent) {
+            missingRequired.push(field.label || key)
+          }
         } else if (field.required) {
           missingRequired.push(field.label || key)
         }
@@ -231,9 +236,15 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
   const { data: moduleMeta, error: moduleError } = await supabase
     .from("modules" satisfies keyof Database["public"]["Tables"])
-    .select("id, idx, class_id, classes ( slug )")
+    .select("id, idx, title, class_id, classes ( slug, title )")
     .eq("id", moduleId)
-    .maybeSingle<{ id: string; idx: number | null; class_id: string; classes: { slug: string | null } | null }>()
+    .maybeSingle<{
+      id: string
+      idx: number | null
+      title: string
+      class_id: string
+      classes: { slug: string | null; title: string | null } | null
+    }>()
 
   if (moduleError) {
     return NextResponse.json({ error: moduleError.message }, { status: 500 })
@@ -256,6 +267,9 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   if (!assignmentRow) {
     return NextResponse.json({ error: "Assignment not found" }, { status: 404 })
   }
+
+  const slug = moduleMeta.classes?.slug ?? null
+  const modulePath = slug && typeof moduleMeta.idx === "number" ? `/class/${slug}/module/${moduleMeta.idx}` : null
 
   const fields = parseAssignmentFields(assignmentRow.schema)
   const { answers: sanitizedAnswers, missingRequired } = sanitizeAnswers(fields, answersRaw)
@@ -342,14 +356,128 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   if (assignmentRow.complete_on_submit) {
     try {
       await markModuleCompleted({ moduleId, userId: user.id })
+      const notifyResult = await createNotification(supabase, {
+        userId: user.id,
+        title: "Module completed",
+        description: moduleMeta.title ? `You completed ${moduleMeta.title}.` : "You completed a module.",
+        href: modulePath,
+        tone: "success",
+        type: "module_completed",
+        actorId: user.id,
+        metadata: { moduleId },
+      })
+      if ("error" in notifyResult) {
+        console.error("Failed to create module completion notification", notifyResult.error)
+      }
+
+      const { data: classModules, error: classModulesError } = await supabase
+        .from("modules" satisfies keyof Database["public"]["Tables"])
+        .select("id")
+        .eq("class_id", moduleMeta.class_id)
+        .eq("is_published", true)
+
+      if (classModulesError) {
+        console.error("Failed to load class modules for completion check", classModulesError)
+      } else if (classModules?.length) {
+        const classModuleIds = classModules.map((module) => module.id)
+        const [progressResult, submissionResult, assignmentResult] = await Promise.all([
+          supabase
+            .from("module_progress")
+            .select("module_id, status")
+            .eq("user_id", user.id)
+            .in("module_id", classModuleIds)
+            .returns<Array<{ module_id: string; status: string | null }>>(),
+          supabase
+            .from("assignment_submissions")
+            .select("module_id, status")
+            .eq("user_id", user.id)
+            .in("module_id", classModuleIds)
+            .returns<Array<{ module_id: string; status: string | null }>>(),
+          supabase
+            .from("module_assignments")
+            .select("module_id, complete_on_submit")
+            .in("module_id", classModuleIds)
+            .returns<Array<{ module_id: string; complete_on_submit: boolean | null }>>(),
+        ])
+
+        if (progressResult.error) {
+          console.error("Failed to load class progress for completion check", progressResult.error)
+        }
+        if (submissionResult.error) {
+          console.error("Failed to load class submissions for completion check", submissionResult.error)
+        }
+        if (assignmentResult.error) {
+          console.error("Failed to load class assignments for completion check", assignmentResult.error)
+        }
+
+        const progressStatusByModuleId = new Map<string, string>()
+        for (const row of progressResult.error ? [] : progressResult.data ?? []) {
+          if (row.status) progressStatusByModuleId.set(row.module_id, row.status)
+        }
+
+        const submissionStatusByModuleId = new Map<string, string>()
+        for (const row of submissionResult.error ? [] : submissionResult.data ?? []) {
+          if (row.status) submissionStatusByModuleId.set(row.module_id, row.status)
+        }
+
+        const completeOnSubmit = new Set<string>()
+        for (const row of assignmentResult.error ? [] : assignmentResult.data ?? []) {
+          if (row.complete_on_submit) {
+            completeOnSubmit.add(row.module_id)
+          }
+        }
+
+        const completedModuleIds = new Set<string>()
+        for (const moduleId of classModuleIds) {
+          const progressStatus = progressStatusByModuleId.get(moduleId)
+          if (progressStatus === "completed") {
+            completedModuleIds.add(moduleId)
+            continue
+          }
+          const submissionStatus = submissionStatusByModuleId.get(moduleId)
+          if (submissionStatus && completeOnSubmit.has(moduleId) && submissionStatus !== "revise") {
+            completedModuleIds.add(moduleId)
+          }
+        }
+
+        const classCompleted = completedModuleIds.size === classModuleIds.length
+        if (classCompleted) {
+          const { data: existingNotifications, error: existingError } = await supabase
+            .from("notifications")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("type", "class_completed")
+            .contains("metadata", { classId: moduleMeta.class_id })
+            .limit(1)
+
+          if (existingError) {
+            console.error("Failed to check class completion notifications", existingError)
+          } else if (!existingNotifications?.length) {
+            const classTitle = moduleMeta.classes?.title?.trim() || "Class"
+            const classSlug = moduleMeta.classes?.slug ?? null
+            const classHref = modulePath ?? (classSlug ? `/class/${classSlug}/module/1` : null)
+            const classNotifyResult = await createNotification(supabase, {
+              userId: user.id,
+              title: "Class completed",
+              description: `You completed ${classTitle}.`,
+              href: classHref,
+              tone: "success",
+              type: "class_completed",
+              actorId: user.id,
+              metadata: { classId: moduleMeta.class_id, classTitle },
+            })
+            if ("error" in classNotifyResult) {
+              console.error("Failed to create class completion notification", classNotifyResult.error)
+            }
+          }
+        }
+      }
     } catch (completionError) {
       // Surface as non-fatal so submission still succeeds
       console.error("Failed to mark module complete", completionError)
     }
   }
 
-  const slug = moduleMeta.classes?.slug ?? null
-  const modulePath = slug && typeof moduleMeta.idx === "number" ? `/class/${slug}/module/${moduleMeta.idx}` : null
   await revalidateClassViews({
     classId: moduleMeta.class_id,
     classSlug: slug,

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 
 import { env } from "@/lib/env"
+import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 
 import { BillingPortalButton } from "./billing-portal-button"
 
@@ -11,6 +12,7 @@ const PORTAL_READY = Boolean(env.STRIPE_SECRET_KEY)
 export default function BillingPlaceholderPage() {
   return (
     <div className="space-y-6 px-4 py-6 lg:px-6">
+      <PageTutorialButton tutorial="billing" />
       <Card className="border-dashed bg-card/70">
         <CardHeader>
           <CardTitle>Billing management</CardTitle>
@@ -29,6 +31,7 @@ export default function BillingPlaceholderPage() {
             )}
             <a
               href="mailto:support@coachhouse.io"
+              data-tour="billing-support"
               className="font-medium text-primary underline-offset-4 hover:underline"
             >
               {" "}support@coachhouse.io
@@ -38,7 +41,7 @@ export default function BillingPlaceholderPage() {
           {PORTAL_READY ? (
             <BillingPortalButton />
           ) : (
-            <Button asChild variant="outline" className="self-start">
+            <Button asChild variant="outline" className="self-start" data-tour="billing-primary-action">
               <Link href="/pricing">View plans</Link>
             </Button>
           )}

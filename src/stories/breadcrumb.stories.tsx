@@ -16,12 +16,12 @@ const breadcrumbStories = {
   tags: ["design-system"],
   states: [
     {
-      name: "Dashboard",
+      name: "My Organization",
       render: () => (
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+              <BreadcrumbLink href="/my-organization">My Organization</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
@@ -43,7 +43,7 @@ const breadcrumbStories = {
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/dashboard">Dashboard</BreadcrumbLink>
+              <BreadcrumbLink href="/my-organization">My Organization</BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbEllipsis />

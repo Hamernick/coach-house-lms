@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server"
 
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 import type { Database } from "@/lib/supabase"
+import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
+import { createNotification } from "@/lib/notifications"
 
 const BUCKET = "org-documents"
 const MAX_BYTES = 15 * 1024 * 1024
@@ -40,11 +42,11 @@ function sanitizeFilename(name: string) {
   return cleaned.length > 0 ? cleaned : "document.pdf"
 }
 
-async function loadProfile(supabase: ReturnType<typeof createSupabaseRouteHandlerClient>, userId: string) {
+async function loadProfile(supabase: ReturnType<typeof createSupabaseRouteHandlerClient>, orgId: string) {
   const { data: orgRow, error } = await supabase
     .from("organizations")
     .select("profile")
-    .eq("user_id", userId)
+    .eq("user_id", orgId)
     .maybeSingle<{ profile: Record<string, unknown> | null }>()
 
   if (error) {
@@ -82,7 +84,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const profile = await loadProfile(supabase, user.id)
+    const { orgId } = await resolveActiveOrganization(supabase, user.id)
+    const profile = await loadProfile(supabase, orgId)
     const documents = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : {}
     const doc = documents[key]
     if (!isRecord(doc) || typeof doc.path !== "string") {
@@ -130,7 +133,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const profile = await loadProfile(supabase, user.id)
+    const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+    if (!canEditOrganization(role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const profile = await loadProfile(supabase, orgId)
     const documents = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : {}
     const existing = documents[key]
     const existingPath = isRecord(existing) && typeof existing.path === "string" ? existing.path : null
@@ -140,7 +148,7 @@ export async function POST(request: NextRequest) {
     }
 
     const safeName = sanitizeFilename(file.name)
-    const objectName = `${user.id}/${key}/${Date.now()}-${safeName}`
+    const objectName = `${orgId}/${key}/${Date.now()}-${safeName}`
     const buf = Buffer.from(await file.arrayBuffer())
 
     const { error: uploadError } = await supabase.storage.from(BUCKET).upload(objectName, buf, { contentType: file.type })
@@ -161,7 +169,7 @@ export async function POST(request: NextRequest) {
       .from("organizations")
       .upsert(
         {
-          user_id: user.id,
+          user_id: orgId,
           profile: nextProfile as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
         },
         { onConflict: "user_id" },
@@ -169,6 +177,20 @@ export async function POST(request: NextRequest) {
 
     if (upsertError) {
       return NextResponse.json({ error: upsertError.message }, { status: 500 })
+    }
+
+    const notifyResult = await createNotification(supabase, {
+      userId: user.id,
+      title: "Document uploaded",
+      description: `${file.name} added to your documents.`,
+      href: "/my-organization/documents",
+      tone: "success",
+      type: "document_uploaded",
+      actorId: user.id,
+      metadata: { kind: key, filename: file.name },
+    })
+    if ("error" in notifyResult) {
+      console.error("Failed to create document notification", notifyResult.error)
     }
 
     return NextResponse.json({ document: doc }, { status: 200 })
@@ -201,7 +223,12 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const profile = await loadProfile(supabase, user.id)
+    const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+    if (!canEditOrganization(role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const profile = await loadProfile(supabase, orgId)
     const documents = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : {}
     const current = documents[key]
     if (!isRecord(current) || typeof current.path !== "string") {
@@ -221,7 +248,7 @@ export async function PATCH(request: NextRequest) {
       .from("organizations")
       .upsert(
         {
-          user_id: user.id,
+          user_id: orgId,
           profile: nextProfile as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
         },
         { onConflict: "user_id" },
@@ -255,7 +282,12 @@ export async function DELETE(request: NextRequest) {
   }
 
   try {
-    const profile = await loadProfile(supabase, user.id)
+    const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+    if (!canEditOrganization(role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const profile = await loadProfile(supabase, orgId)
     const documents = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : {}
     const current = documents[key]
     const path = isRecord(current) && typeof current.path === "string" ? current.path : null
@@ -269,7 +301,7 @@ export async function DELETE(request: NextRequest) {
       .from("organizations")
       .upsert(
         {
-          user_id: user.id,
+          user_id: orgId,
           profile: nextProfile as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
         },
         { onConflict: "user_id" },

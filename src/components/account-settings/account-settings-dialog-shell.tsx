@@ -38,14 +38,6 @@ type AccountSettingsDialogShellProps = {
   phone: string
   email: string
   orgName: string
-  orgDesc: string
-  website: string
-  social: string
-  applyingAs: "individual" | "organization" | ""
-  stage: string
-  problem: string
-  mission: string
-  goals: string
   avatarUrl: string | null
   isUploadingAvatar: boolean
   errors: Partial<Record<AccountSettingsErrorKey, string>>
@@ -58,15 +50,6 @@ type AccountSettingsDialogShellProps = {
   onFirstNameChange: (value: string) => void
   onLastNameChange: (value: string) => void
   onPhoneChange: (value: string) => void
-  onOrgNameChange: (value: string) => void
-  onOrgDescChange: (value: string) => void
-  onWebsiteChange: (value: string) => void
-  onSocialChange: (value: string) => void
-  onApplyingAsChange: (value: "individual" | "organization") => void
-  onStageChange: (value: string) => void
-  onProblemChange: (value: string) => void
-  onMissionChange: (value: string) => void
-  onGoalsChange: (value: string) => void
   onNewPasswordChange: (value: string) => void
   onConfirmPasswordChange: (value: string) => void
 }
@@ -92,14 +75,6 @@ export function AccountSettingsDialogShell({
   phone,
   email,
   orgName,
-  orgDesc,
-  website,
-  social,
-  applyingAs,
-  stage,
-  problem,
-  mission,
-  goals,
   avatarUrl,
   isUploadingAvatar,
   errors,
@@ -112,15 +87,6 @@ export function AccountSettingsDialogShell({
   onFirstNameChange,
   onLastNameChange,
   onPhoneChange,
-  onOrgNameChange,
-  onOrgDescChange,
-  onWebsiteChange,
-  onSocialChange,
-  onApplyingAsChange,
-  onStageChange,
-  onProblemChange,
-  onMissionChange,
-  onGoalsChange,
   onNewPasswordChange,
   onConfirmPasswordChange,
 }: AccountSettingsDialogShellProps) {
@@ -232,24 +198,6 @@ export function AccountSettingsDialogShell({
                 {tab === "organization" && (
                   <OrganizationSection
                     orgName={orgName}
-                    orgDesc={orgDesc}
-                    website={website}
-                    social={social}
-                    applyingAs={applyingAs}
-                    stage={stage}
-                    problem={problem}
-                    mission={mission}
-                    goals={goals}
-                    errors={errors}
-                    onOrgNameChange={onOrgNameChange}
-                    onOrgDescChange={onOrgDescChange}
-                    onWebsiteChange={onWebsiteChange}
-                    onSocialChange={onSocialChange}
-                    onApplyingAsChange={onApplyingAsChange}
-                    onStageChange={onStageChange}
-                    onProblemChange={onProblemChange}
-                    onMissionChange={onMissionChange}
-                    onGoalsChange={onGoalsChange}
                   />
                 )}
 
@@ -309,14 +257,6 @@ export function AccountSettingsDialogShell({
             newPassword={newPassword}
             confirmPassword={confirmPassword}
             orgName={orgName}
-            orgDesc={orgDesc}
-            website={website}
-            social={social}
-            applyingAs={applyingAs}
-            stage={stage}
-            problem={problem}
-            mission={mission}
-            goals={goals}
             isUploadingAvatar={isUploadingAvatar}
             onAvatarFileSelected={onAvatarFileSelected}
             onFirstNameChange={onFirstNameChange}
@@ -326,15 +266,6 @@ export function AccountSettingsDialogShell({
             onNewsletterOptInChange={onNewsletterOptInChange}
             onNewPasswordChange={onNewPasswordChange}
             onConfirmPasswordChange={onConfirmPasswordChange}
-            onOrgNameChange={onOrgNameChange}
-            onOrgDescChange={onOrgDescChange}
-            onWebsiteChange={onWebsiteChange}
-            onSocialChange={onSocialChange}
-            onApplyingAsChange={onApplyingAsChange}
-            onStageChange={onStageChange}
-            onProblemChange={onProblemChange}
-            onMissionChange={onMissionChange}
-            onGoalsChange={onGoalsChange}
             onDeleteAccount={onDeleteAccount}
           />
         </div>
@@ -342,4 +273,3 @@ export function AccountSettingsDialogShell({
     </Dialog>
   )
 }
-

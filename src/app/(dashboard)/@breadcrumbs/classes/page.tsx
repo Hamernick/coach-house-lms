@@ -1,5 +1,5 @@
-import { DashboardBreadcrumbs } from "@/components/dashboard/breadcrumbs"
+import { AppBreadcrumbs } from "@/components/app-shell/breadcrumbs"
 
 export default function ClassesCrumbs() {
-  return <DashboardBreadcrumbs segments={[{ label: "Classes" }]} />
+  return <AppBreadcrumbs segments={[{ label: "Classes" }]} />
 }

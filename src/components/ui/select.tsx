@@ -29,17 +29,69 @@ function SelectValue({
 function SelectTrigger({
   className,
   size = "default",
+  multiline = false,
   children,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Trigger> & {
   size?: "sm" | "default"
+  multiline?: boolean
 }) {
+  const triggerRef = React.useRef<React.ElementRef<typeof SelectPrimitive.Trigger>>(null)
+  const [wraps, setWraps] = React.useState(false)
+
+  const measureWraps = React.useCallback(() => {
+    if (!multiline || !triggerRef.current) {
+      return
+    }
+    const valueEl = triggerRef.current.querySelector<HTMLElement>("[data-slot='select-value']")
+    if (!valueEl) {
+      return
+    }
+    const computed = window.getComputedStyle(valueEl)
+    const lineHeight = Number.parseFloat(computed.lineHeight)
+    if (Number.isFinite(lineHeight) && lineHeight > 0) {
+      const height = valueEl.getBoundingClientRect().height
+      const lines = Math.round(height / lineHeight)
+      setWraps(lines > 1)
+      return
+    }
+    setWraps(valueEl.scrollHeight - 1 > valueEl.clientHeight)
+  }, [multiline])
+
+  React.useLayoutEffect(() => {
+    if (!multiline) {
+      setWraps(false)
+      return
+    }
+    measureWraps()
+    if (typeof ResizeObserver === "undefined" || !triggerRef.current) {
+      return
+    }
+    const observer = new ResizeObserver(() => measureWraps())
+    observer.observe(triggerRef.current)
+    const valueEl = triggerRef.current.querySelector<HTMLElement>("[data-slot='select-value']")
+    if (valueEl) {
+      observer.observe(valueEl)
+    }
+    return () => observer.disconnect()
+  }, [measureWraps, multiline, children])
+
+  const alignmentClass = multiline ? (wraps ? "items-start" : "items-center") : "items-center"
+
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
       data-size={size}
+      data-wraps={multiline ? String(wraps) : undefined}
+      suppressHydrationWarning
+      ref={triggerRef}
       className={cn(
-        "border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit items-center justify-between gap-2 rounded-md border bg-transparent px-3 py-2 text-sm whitespace-nowrap shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit justify-between gap-2 rounded-lg border bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 *:data-[slot=select-value]:flex *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        alignmentClass,
+        !multiline &&
+          "whitespace-nowrap data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:items-center *:data-[slot=select-value]:line-clamp-1",
+        multiline &&
+          "min-h-11 data-[wraps=true]:[&>svg]:mt-0.5 *:data-[slot=select-value]:items-start *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:flex-1 *:data-[slot=select-value]:whitespace-normal *:data-[slot=select-value]:break-words *:data-[slot=select-value]:leading-tight *:data-[slot=select-value]:text-left *:data-[slot=select-value]:line-clamp-2",
         className
       )}
       {...props}
@@ -103,22 +155,28 @@ function SelectLabel({
 function SelectItem({
   className,
   children,
+  hideIndicator = false,
+  icon,
   ...props
-}: React.ComponentProps<typeof SelectPrimitive.Item>) {
+}: React.ComponentProps<typeof SelectPrimitive.Item> & { hideIndicator?: boolean; icon?: React.ReactNode }) {
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pl-2 text-sm outline-hidden select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
+        hideIndicator ? "pr-2" : "pr-8",
         className
       )}
       {...props}
     >
-      <span className="absolute right-2 flex size-3.5 items-center justify-center">
-        <SelectPrimitive.ItemIndicator>
-          <CheckIcon className="size-4" />
-        </SelectPrimitive.ItemIndicator>
-      </span>
+      {icon ? <span className="text-muted-foreground">{icon}</span> : null}
+      {!hideIndicator ? (
+        <span className="absolute right-2 flex size-3.5 items-center justify-center">
+          <SelectPrimitive.ItemIndicator>
+            <CheckIcon className="size-4" />
+          </SelectPrimitive.ItemIndicator>
+        </span>
+      ) : null}
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
   )

@@ -3,11 +3,16 @@ import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 
 import { requireServerSession } from "@/lib/auth"
+import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
 
 export async function POST(request: Request) {
   try {
     const { supabase, session } = await requireServerSession("/people")
     const userId = session.user.id
+    const { orgId, role } = await resolveActiveOrganization(supabase, userId)
+    if (!canEditOrganization(role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
     const body = await request.json().catch(() => ({})) as { id?: string; x?: number; y?: number }
     const { id, x, y } = body || {}
     if (!id || typeof x !== "number" || typeof y !== "number") {
@@ -17,7 +22,7 @@ export async function POST(request: Request) {
     const { data: orgRow, error: orgErr } = await supabase
       .from("organizations")
       .select("profile")
-      .eq("user_id", userId)
+      .eq("user_id", orgId)
       .maybeSingle<{ profile: Record<string, unknown> | null }>()
     if (orgErr) return NextResponse.json({ error: orgErr.message }, { status: 500 })
 
@@ -34,7 +39,7 @@ export async function POST(request: Request) {
     const nextProfile = { ...profile, org_people: next }
     const { error: upsertErr } = await supabase
       .from("organizations")
-      .upsert({ user_id: userId, profile: nextProfile }, { onConflict: "user_id" })
+      .upsert({ user_id: orgId, profile: nextProfile }, { onConflict: "user_id" })
     if (upsertErr) return NextResponse.json({ error: upsertErr.message }, { status: 500 })
 
     revalidatePath("/people")

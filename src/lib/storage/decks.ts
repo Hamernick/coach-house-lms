@@ -1,6 +1,7 @@
 import { Buffer } from "node:buffer"
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 const DECKS_BUCKET = "accelerator-slide-decks"
 const MAX_BYTES = 15 * 1024 * 1024 // 15MB safety cap
@@ -17,7 +18,7 @@ async function ensureDecksBucket() {
   const { data, error } = await admin.storage.getBucket(DECKS_BUCKET)
 
   if (error && error.message !== "The resource was not found") {
-    throw error
+    throw supabaseErrorToError(error, "Unable to load decks bucket.")
   }
 
   if (!data) {
@@ -28,7 +29,7 @@ async function ensureDecksBucket() {
     })
 
     if (createError && createError.message !== "The resource already exists") {
-      throw createError
+      throw supabaseErrorToError(createError, "Unable to create decks bucket.")
     }
   }
 
@@ -62,7 +63,7 @@ export async function uploadModuleDeck({
   })
 
   if (error) {
-    throw error
+    throw supabaseErrorToError(error, "Unable to upload deck.")
   }
 
   if (previousPath) {
@@ -91,7 +92,7 @@ export async function createModuleDeckSignedUrl(path: string, expiresInSeconds =
     .createSignedUrl(path, expiresInSeconds)
 
   if (error) {
-    throw error
+    throw supabaseErrorToError(error, "Unable to create deck link.")
   }
 
   return data.signedUrl

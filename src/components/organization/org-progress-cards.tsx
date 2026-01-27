@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Item, ItemActions, ItemContent, ItemDescription, ItemFooter, ItemTitle } from "@/components/ui/item"
 import Link from "next/link"
 import { createSupabaseServerClient } from "@/lib/supabase"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 type ClassProgress = {
   classId: string
@@ -20,7 +21,7 @@ async function fetchClassProgressForUser(userId: string): Promise<ClassProgress[
     .order("created_at", { ascending: false })
     .returns<Array<{ created_at: string; classes: { id: string; title: string | null; slug: string | null } | null }>>()
 
-  if (error) throw error
+  if (error) throw supabaseErrorToError(error, "Unable to load enrollments.")
 
   const classes = (enrollments ?? [])
     .map((row) => ({ id: row.classes?.id ?? "", title: row.classes?.title ?? "Untitled Class", slug: row.classes?.slug ?? "" }))

@@ -30,8 +30,8 @@ export function ScrollReveal({
   blurStrength = 4,
   containerClassName,
   textClassName,
-  rotationEnd = "bottom bottom",
-  wordAnimationEnd = "bottom bottom",
+  rotationEnd = "bottom 40%",
+  wordAnimationEnd = "bottom 40%",
 }: ScrollRevealProps) {
   const containerRef = useRef<HTMLHeadingElement | null>(null)
 
@@ -80,14 +80,15 @@ export function ScrollReveal({
     const ctx = gsap.context(() => {
       gsap.fromTo(
         el,
-        { transformOrigin: "0% 50%", rotate: baseRotation },
+        { transformOrigin: "0% 50%", rotate: baseRotation, opacity: 0.9 },
         {
           ease: "none",
           rotate: 0,
+          opacity: 1,
           scrollTrigger: {
             trigger: el,
             scroller,
-            start: "top bottom",
+            start: "top 90%",
             end: rotationEnd,
             scrub: true,
           },
@@ -104,7 +105,7 @@ export function ScrollReveal({
           scrollTrigger: {
             trigger: el,
             scroller,
-            start: "top bottom-=20%",
+            start: "top 90%",
             end: wordAnimationEnd,
             scrub: true,
           },

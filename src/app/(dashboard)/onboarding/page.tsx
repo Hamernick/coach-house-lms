@@ -17,7 +17,7 @@ export default async function OnboardingPage() {
   // If already completed, do not show onboarding
   const completed = Boolean((session.user.user_metadata as Record<string, unknown> | null)?.onboarding_completed)
   if (completed) {
-    redirect("/dashboard")
+    redirect("/my-organization")
   }
 
   const { data: profile } = await supabase
@@ -33,7 +33,7 @@ export default async function OnboardingPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <section className="px-4 lg:px-6">
+      <section>
         <Card className="border bg-card/60">
           <CardHeader>
             <CardTitle>Welcome to Coach House</CardTitle>
@@ -41,7 +41,7 @@ export default async function OnboardingPage() {
           </CardHeader>
           <CardContent>
             <form action={completeOnboarding} className="space-y-6">
-              <input type="hidden" name="redirect" value="/dashboard" />
+              <input type="hidden" name="redirect" value="/my-organization" />
               <div className="grid gap-2">
                 <Label htmlFor="fullName">Full name</Label>
                 <Input id="fullName" name="fullName" defaultValue={profile?.full_name ?? ""} placeholder="Your name" />
@@ -85,7 +85,7 @@ async function completeOnboarding(formData: FormData) {
 
   const { supabase, session } = await requireServerSession("/onboarding")
 
-  const redirectTo = typeof formData.get("redirect") === "string" ? (formData.get("redirect") as string) : "/dashboard"
+  const redirectTo = typeof formData.get("redirect") === "string" ? (formData.get("redirect") as string) : "/my-organization"
   const skipped = formData.get("skip") === "1"
 
   const fullName = formData.get("fullName")
@@ -113,6 +113,6 @@ async function completeOnboarding(formData: FormData) {
     },
   })
 
-  revalidatePath("/dashboard")
+  revalidatePath("/my-organization")
   redirect(redirectTo)
 }

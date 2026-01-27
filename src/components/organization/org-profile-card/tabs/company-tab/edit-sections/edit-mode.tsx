@@ -17,23 +17,22 @@ export function EditModeSections(props: CompanyEditProps) {
   return (
     <div className="grid gap-6">
       <PublicPageSettings {...props} />
-      <Separator className="my-1" />
+      <Separator className="my-2 bg-border/60" />
       <IdentitySection {...props} />
-      <Separator className="my-1" />
+      <Separator className="my-2 bg-border/60" />
       <ContactSection {...props} />
-      <Separator className="my-1" />
+      <Separator className="my-2 bg-border/60" />
       <AddressSection {...props} />
-      <Separator className="my-1" />
+      <Separator className="my-2 bg-border/60" />
       <StorySection {...props} />
-      <Separator className="my-1" />
+      <Separator className="my-2 bg-border/60" />
       <ProgramsReportsSection {...props} />
-      <Separator className="my-1" />
+      <Separator className="my-2 bg-border/60" />
       <PresenceSection {...props} />
-      <Separator className="my-1" />
+      <Separator className="my-2 bg-border/60" />
       <SocialSection {...props} />
-      <Separator className="my-1" />
+      <Separator className="my-2 bg-border/60" />
       <BrandKitSection {...props} />
     </div>
   )
 }
-

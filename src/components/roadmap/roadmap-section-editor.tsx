@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 import { formatDistanceToNow } from "date-fns"
 import { Globe2, Lock, PencilLine, RotateCcw, Share2 } from "lucide-react"
 
-import { saveRoadmapSectionAction } from "@/app/(dashboard)/strategic-roadmap/actions"
+import { saveRoadmapSectionAction } from "@/actions/roadmap"
 import { RichTextEditor } from "@/components/rich-text-editor"
 import { RoadmapShareDrawer } from "@/components/roadmap/roadmap-share-drawer"
 import { Button } from "@/components/ui/button"

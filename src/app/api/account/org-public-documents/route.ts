@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 import type { Database } from "@/lib/supabase"
 import { ORG_MEDIA_BUCKET } from "@/lib/storage/org-media"
+import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
+import { createNotification } from "@/lib/notifications"
 
 const MAX_BYTES = 15 * 1024 * 1024
 const ALLOWED = new Set(["application/pdf"])
@@ -120,7 +122,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const { profile } = await loadOrgRow(supabase, user.id)
+    const { orgId } = await resolveActiveOrganization(supabase, user.id)
+    const { profile } = await loadOrgRow(supabase, orgId)
     return NextResponse.json({ attachments: getAttachments(profile) }, { status: 200 })
   } catch (err: unknown) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Failed to load uploads" }, { status: 500 })
@@ -156,11 +159,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { profile, publicSlug } = await loadOrgRow(supabase, user.id)
+    const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+    if (!canEditOrganization(role)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
+
+    const { profile, publicSlug } = await loadOrgRow(supabase, orgId)
     const currentAttachments = getAttachments(profile)[kind]
 
     const safeName = sanitizeFilename(file.name)
-    const objectName = `${user.id}/public-documents/${kind}/${Date.now()}-${safeName}`
+    const objectName = `${orgId}/public-documents/${kind}/${Date.now()}-${safeName}`
     const buf = Buffer.from(await file.arrayBuffer())
 
     const { error: uploadError } = await supabase.storage.from(ORG_MEDIA_BUCKET).upload(objectName, buf, {
@@ -187,7 +195,7 @@ export async function POST(request: NextRequest) {
       .from("organizations")
       .upsert(
         {
-          user_id: user.id,
+          user_id: orgId,
           profile: nextProfile as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
         },
         { onConflict: "user_id" },
@@ -196,6 +204,20 @@ export async function POST(request: NextRequest) {
     if (upsertError) {
       await supabase.storage.from(ORG_MEDIA_BUCKET).remove([objectName])
       return NextResponse.json({ error: upsertError.message }, { status: 500 })
+    }
+
+    const notifyResult = await createNotification(supabase, {
+      userId: user.id,
+      title: "Public document uploaded",
+      description: `${file.name} added to public ${kind}.`,
+      href: "/my-organization",
+      tone: "info",
+      type: "public_document_uploaded",
+      actorId: user.id,
+      metadata: { kind, filename: file.name },
+    })
+    if ("error" in notifyResult) {
+      console.error("Failed to create public document notification", notifyResult.error)
     }
 
     revalidateOrgPaths(publicSlug)
@@ -227,13 +249,18 @@ export async function DELETE(request: NextRequest) {
   if (!path) {
     return NextResponse.json({ error: "Missing file path" }, { status: 400 })
   }
-  const expectedPrefix = `${user.id}/public-documents/${kind}/`
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  if (!canEditOrganization(role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  const expectedPrefix = `${orgId}/public-documents/${kind}/`
   if (!path.startsWith(expectedPrefix)) {
     return NextResponse.json({ error: "Invalid file path" }, { status: 400 })
   }
 
   try {
-    const { profile, publicSlug } = await loadOrgRow(supabase, user.id)
+    const { profile, publicSlug } = await loadOrgRow(supabase, orgId)
     const currentAttachments = getAttachments(profile)[kind]
     const nextList = currentAttachments.filter((doc) => doc.path !== path)
     if (nextList.length === currentAttachments.length) {
@@ -247,7 +274,7 @@ export async function DELETE(request: NextRequest) {
       .from("organizations")
       .upsert(
         {
-          user_id: user.id,
+          user_id: orgId,
           profile: nextProfile as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
         },
         { onConflict: "user_id" },
@@ -263,4 +290,3 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "Delete failed" }, { status: 500 })
   }
 }
-

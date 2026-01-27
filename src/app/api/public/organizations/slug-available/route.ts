@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
   }
 
   const reserved = new Set([
-    'admin','api','login','signup','pricing','billing','class','dashboard','people','my-organization','_next','public','favicon','assets'
+    'admin','api','login','signup','pricing','billing','class','dashboard','people','my-organization','roadmap','_next','public','favicon','assets'
   ])
   if (reserved.has(normalized)) {
     return NextResponse.json({ available: false, slug: normalized, error: "Reserved URL" }, { status: 200 })

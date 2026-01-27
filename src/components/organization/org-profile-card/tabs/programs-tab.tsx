@@ -60,6 +60,7 @@ export function ProgramsTab({ programs, companyName, editMode, onProgramEdit }: 
               {programs.map((program) => (
                 <ProgramCard
                   key={program.id}
+                  variant="medium"
                   title={program.title ?? "Untitled program"}
                   org={companyName || undefined}
                   location={locationSummary(program) || undefined}
@@ -93,13 +94,14 @@ export function ProgramsTab({ programs, companyName, editMode, onProgramEdit }: 
             {hasPrograms ? (
               <div className="grid items-start justify-start gap-6" style={{ gridTemplateColumns: "repeat(auto-fit, 380px)" }}>
                 {programs.map((program) => (
-                  <ProgramCard
-                    key={program.id}
-                    title={program.title ?? "Untitled program"}
-                    org={companyName || undefined}
-                    location={locationSummary(program) || undefined}
-                    imageUrl={program.image_url || undefined}
-                    statusLabel={program.status_label || (program.is_public ? undefined : "Private") || undefined}
+                <ProgramCard
+                  key={program.id}
+                  variant="medium"
+                  title={program.title ?? "Untitled program"}
+                  org={companyName || undefined}
+                  location={locationSummary(program) || undefined}
+                  imageUrl={program.image_url || undefined}
+                  statusLabel={program.status_label || (program.is_public ? undefined : "Private") || undefined}
                     chips={[
                       dateRangeChip(program.start_date, program.end_date) || program.duration_label,
                       ...(Array.isArray(program.features) ? program.features : []),

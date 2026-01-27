@@ -6,6 +6,7 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
 import { inferProviderSlug } from "@/lib/lessons/providers"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 import {
   type ClassModuleResult,
@@ -74,10 +75,10 @@ export async function getClassModulesForUser({
           .select(`id, title, description, published, modules ( id, idx, slug, title, description, published )`)
           .eq("slug", classSlug)
           .maybeSingle()
-        if (err2) throw err2
+        if (err2) throw supabaseErrorToError(err2, "Unable to load class.")
         classRow = fallback
       } else {
-        throw error
+        throw supabaseErrorToError(error, "Unable to load class.")
       }
     } else {
       classRow = data
@@ -183,7 +184,7 @@ export async function getClassModulesForUser({
   if (contentError) {
     const code = (contentError as { code?: string }).code
     if (code !== "42P01" && code !== "42703") {
-      throw contentError
+      throw supabaseErrorToError(contentError, "Unable to load module content.")
     }
   } else {
     for (const row of contentRows ?? []) {
@@ -220,7 +221,7 @@ export async function getClassModulesForUser({
   if (assignmentError) {
     const code = (assignmentError as { code?: string }).code
     if (code !== "42P01" && code !== "42703") {
-      throw assignmentError
+      throw supabaseErrorToError(assignmentError, "Unable to load module assignment.")
     }
   } else {
     for (const row of assignmentRows ?? []) {
@@ -238,7 +239,7 @@ export async function getClassModulesForUser({
   if (submissionError) {
     const code = (submissionError as { code?: string }).code
     if (code !== "42P01" && code !== "42703") {
-      throw submissionError
+      throw supabaseErrorToError(submissionError, "Unable to load assignment submission.")
     }
   } else {
     for (const row of submissionRows ?? []) {
@@ -302,33 +303,38 @@ export async function getClassModulesForUser({
     .returns<Array<{ module_id: string; status: string }>>()
 
   if (progressError) {
-    // If progress table doesn't exist yet in a local env, default to empty
-    if (
-      (progressError as { code?: string }).code === "42P01" ||
-      (progressError as { code?: string }).code === "42703"
-    ) {
-      return {
-        classId: classRecord.id,
-        classTitle: classRecord.title,
-        classDescription: classRecord.description ?? null,
-        classSubtitle: (classRecord as { subtitle?: string | null }).subtitle ?? null,
-        classPublished:
-          "is_published" in classRecord
-            ? Boolean((classRecord as { is_published?: boolean | null }).is_published)
-            : Boolean((classRecord as { published?: boolean | null }).published ?? true),
-        classVideoUrl,
-        classResources,
-        modules,
-        progressMap: {},
-      }
+    const code = (progressError as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      throw supabaseErrorToError(progressError, "Unable to load module progress.")
     }
-    throw progressError
   }
 
-  const progressRecords = progressRows ?? []
-  const progressMap: Record<string, ModuleProgressStatus> = {}
+  const progressRecords = progressError ? [] : progressRows ?? []
+  const progressStatusByModuleId = new Map<string, ModuleProgressStatus>()
   for (const row of progressRecords) {
-    progressMap[row.module_id] = row.status as ModuleProgressStatus
+    progressStatusByModuleId.set(row.module_id, row.status as ModuleProgressStatus)
+  }
+
+  const assignmentMetaByModuleId = new Map<string, ModuleAssignment | null>()
+  for (const moduleRecord of modules) {
+    assignmentMetaByModuleId.set(moduleRecord.id, moduleRecord.assignment ?? null)
+  }
+
+  const progressMap: Record<string, ModuleProgressStatus> = {}
+  for (const moduleRecord of modules) {
+    const progressStatus = progressStatusByModuleId.get(moduleRecord.id)
+    if (progressStatus && progressStatus !== "not_started") {
+      progressMap[moduleRecord.id] = progressStatus
+      continue
+    }
+
+    const submission = submissionByModuleId.get(moduleRecord.id)
+    if (!submission) continue
+
+    const assignment = assignmentMetaByModuleId.get(moduleRecord.id)
+    const completeOnSubmit = Boolean(assignment?.completeOnSubmit)
+    progressMap[moduleRecord.id] =
+      completeOnSubmit && submission.status !== "revise" ? "completed" : "in_progress"
   }
 
   return {

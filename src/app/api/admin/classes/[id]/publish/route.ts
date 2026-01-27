@@ -45,11 +45,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
     .eq("id", classId)
     .maybeSingle<{ slug: string | null }>()
 
-  revalidatePath("/admin/academy")
-  revalidatePath("/admin/classes")
-  revalidatePath(`/admin/classes/${classId}`)
-  revalidatePath("/dashboard", "layout")
-  revalidatePath("/dashboard")
+  revalidatePath("/classes")
   revalidatePath("/training")
   if (classRow?.slug) {
     revalidatePath(`/class/${classRow.slug}`)

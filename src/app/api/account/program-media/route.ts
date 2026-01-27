@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
+import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
 
 const BUCKET = "program-media"
 const MAX_BYTES = 20 * 1024 * 1024
@@ -16,6 +17,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error?.message ?? "Unauthorized" }, { status: 401 })
   }
 
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  if (!canEditOrganization(role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
   const form = await request.formData()
   const file = form.get("file")
   if (!(file instanceof File)) {
@@ -29,7 +35,7 @@ export async function POST(request: NextRequest) {
   }
 
   const ext = file.type.split("/").pop() || "png"
-  const objectName = `${user.id}/cover/${Date.now()}.${ext}`
+  const objectName = `${orgId}/cover/${Date.now()}.${ext}`
   const buf = Buffer.from(await file.arrayBuffer())
 
   const { error: uploadErr } = await supabase.storage.from(BUCKET).upload(objectName, buf, { contentType: file.type })
@@ -39,4 +45,3 @@ export async function POST(request: NextRequest) {
   const { data: publicUrl } = supabase.storage.from(BUCKET).getPublicUrl(objectName)
   return NextResponse.json({ url: publicUrl.publicUrl }, { status: 200 })
 }
-

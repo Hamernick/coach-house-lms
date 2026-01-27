@@ -15,13 +15,13 @@ export default function DashboardError({ error, reset }: { error: Error; reset: 
       <div>
         <h1 className="text-2xl font-semibold">We hit a snag loading your dashboard</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Try again in a moment or head back to the dashboard overview.
+          Try again in a moment or head back to My Organization.
         </p>
       </div>
       <div className="flex items-center gap-2">
         <Button onClick={() => reset()}>Retry</Button>
         <Button asChild variant="outline">
-          <Link href="/dashboard">Dashboard</Link>
+          <Link href="/my-organization">My Organization</Link>
         </Button>
       </div>
     </div>

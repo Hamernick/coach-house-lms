@@ -4,6 +4,7 @@ import { TrainingShell } from "@/components/training/training-shell"
 import { fetchSidebarTree } from "@/lib/academy"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 export default async function TrainingPage() {
   const supabase = await createSupabaseServerClient()
@@ -13,7 +14,7 @@ export default async function TrainingPage() {
   } = await supabase.auth.getUser()
 
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw userError
+    throw supabaseErrorToError(userError, "Unable to load user.")
   }
 
   if (!user) {
@@ -27,7 +28,7 @@ export default async function TrainingPage() {
     .maybeSingle<{ role: string | null }>()
   const isAdmin = profile?.role === "admin"
 
-  const classes = await fetchSidebarTree({ includeDrafts: true, forceAdmin: !isAdmin })
+  const classes = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
   const classDefs = classes.map((klass) => ({
     id: klass.id,
     title: klass.title,
@@ -44,7 +45,7 @@ export default async function TrainingPage() {
   }))
 
   return (
-    <div className="px-4 lg:px-6">
+    <div className="w-full">
       <TrainingShell classes={classDefs} isAdmin={isAdmin} />
     </div>
   )

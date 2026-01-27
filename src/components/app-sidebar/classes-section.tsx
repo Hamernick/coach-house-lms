@@ -1,86 +1,25 @@
 "use client"
 
-import { Fragment, useMemo, useTransition, type Dispatch, type SetStateAction } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import dynamic from "next/dynamic"
-import ChevronRight from "lucide-react/dist/esm/icons/chevron-right"
-import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap"
-import Layers from "lucide-react/dist/esm/icons/layers"
-import Target from "lucide-react/dist/esm/icons/target"
-import GitBranch from "lucide-react/dist/esm/icons/git-branch"
-import Rocket from "lucide-react/dist/esm/icons/rocket"
-import Coins from "lucide-react/dist/esm/icons/coins"
-import Calculator from "lucide-react/dist/esm/icons/calculator"
-import HandCoins from "lucide-react/dist/esm/icons/hand-coins"
-import Megaphone from "lucide-react/dist/esm/icons/megaphone"
-import Gavel from "lucide-react/dist/esm/icons/gavel"
-import Sparkles from "lucide-react/dist/esm/icons/sparkles"
-import CheckIcon from "lucide-react/dist/esm/icons/check"
-import Loader2 from "lucide-react/dist/esm/icons/loader-2"
-import MoreVertical from "lucide-react/dist/esm/icons/more-vertical"
 
-import { deleteClassAction, setClassPublishedAction } from "@/app/(admin)/admin/classes/actions"
-import { deleteModuleAction } from "@/app/(admin)/admin/classes/[id]/actions"
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import {
-  SidebarGroup,
-  SidebarGroupAction,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuAction,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarSeparator,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
-} from "@/components/ui/sidebar"
-import { toast } from "@/lib/toast"
-import { cn } from "@/lib/utils"
+
+import { RailLabel } from "@/components/ui/rail-label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useTrackParam } from "@/hooks/use-track-param"
 import type { SidebarClass } from "@/lib/academy"
-import { ModuleStepper, type StepStatus, type StepItem } from "./module-stepper"
+import { getTrackIcon } from "@/lib/accelerator/track-icons"
+import { cn } from "@/lib/utils"
+import { ModuleStepper, type StepItem, type StepStatus } from "./module-stepper"
 
-const CreateEntityPopover = dynamic(
-  () => import("@/components/admin/create-entity-popover").then((mod) => mod.CreateEntityPopover),
-  {
-    ssr: false,
-    loading: () => (
-      <Button
-        size="icon"
-        variant="ghost"
-        aria-label="Create"
-        className="h-7 w-7 rounded-md border-0 bg-transparent"
-        disabled
-      >
-        <Loader2 className="h-3 w-3 animate-spin" />
-      </Button>
-    ),
-  },
-)
+const LEGACY_CLASS_TITLES = new Set(["published class"])
+const LEGACY_CLASS_SLUGS = new Set(["published-class"])
 
-function getClassIcon(slug: string) {
-  const normalized = slug.toLowerCase()
-  if (normalized.includes("strategic-foundations")) return Layers
-  if (normalized.includes("mission-vision-values")) return Target
-  if (normalized.includes("theory-of-change")) return GitBranch
-  if (normalized.includes("piloting-programs")) return Rocket
-  if (normalized.includes("bookkeeping") || normalized.includes("financial")) return Calculator
-  if (normalized.includes("budget")) return Coins
-  if (normalized.includes("fundraising") || normalized.includes("mindset")) return HandCoins
-  if (normalized.includes("comms") || normalized.includes("communication")) return Megaphone
-  if (normalized.includes("boards")) return Gavel
-  if (normalized.includes("electives")) return Sparkles
-  return GraduationCap
+function isLegacyClass(klass: SidebarClass): boolean {
+  const title = klass.title.trim().toLowerCase()
+  const slug = klass.slug.trim().toLowerCase()
+  return LEGACY_CLASS_TITLES.has(title) || LEGACY_CLASS_SLUGS.has(slug)
 }
 
 function formatClassTitle(title: string) {
@@ -89,373 +28,239 @@ function formatClassTitle(title: string) {
   return title
 }
 
-type ModuleStatus = "not_started" | "in_progress" | "complete"
+function deriveModuleStatus({
+  activeIndex,
+  moduleIndex,
+  isAdmin,
+  isCompleted,
+  priorCompleted,
+}: {
+  activeIndex: number | null
+  moduleIndex: number
+  isAdmin: boolean
+  isCompleted: boolean
+  priorCompleted: boolean
+}): StepStatus {
+  if (isAdmin) {
+    if (isCompleted) return "complete"
+    if (activeIndex === moduleIndex) return "in_progress"
+    if (moduleIndex < (activeIndex ?? 1)) return "complete"
+    return "not_started"
+  }
 
-function deriveModuleStatus(activeIndex: number | null, moduleIndex: number): ModuleStatus {
-  if (activeIndex == null) return "not_started"
-  if (moduleIndex < activeIndex) return "complete"
-  if (moduleIndex === activeIndex) return "in_progress"
+  if (isCompleted) return "complete"
+  if (!priorCompleted) return "locked"
+  if (activeIndex === moduleIndex) return "in_progress"
   return "not_started"
 }
 
-function ModuleBadge({ status, label, className }: { status: ModuleStatus; label: number; className?: string }) {
-  const styles =
-    status === "complete"
-      ? {
-          border: "border-emerald-500",
-          text: "text-emerald-500",
-          icon: <CheckIcon className="h-3 w-3" />,
-          dashed: false,
-        }
-      : status === "in_progress"
-        ? {
-            border: "border-amber-500",
-            text: "text-amber-500",
-            icon: <span className="text-[10px] font-semibold">{label}</span>,
-            dashed: true,
-          }
-        : {
-            border: "border-muted-foreground/60",
-            text: "text-muted-foreground",
-            icon: <span className="text-[10px] font-semibold">{label}</span>,
-            dashed: false,
-          }
+function getClassKey(klass: SidebarClass) {
+  return klass.slug || klass.id
+}
 
-  return (
-    <span
-      aria-hidden
-      className={cn(
-        "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 bg-sidebar",
-        styles.border,
-        className,
-      )}
-      style={{ borderStyle: styles.dashed ? "dashed" : "solid" }}
-    >
-      <span
-        className={cn(
-          "flex h-4 w-4 items-center justify-center rounded-full bg-transparent text-center leading-none",
-          styles.text,
-        )}
-      >
-        {styles.icon}
-      </span>
-    </span>
-  )
+function getActiveClassKey({
+  classes,
+  pathname,
+  basePath,
+}: {
+  classes: SidebarClass[]
+  pathname: string
+  basePath: string
+}) {
+  for (const klass of classes) {
+    if (!klass.slug) continue
+    const classHref = `${basePath}/class/${klass.slug}`
+    if (pathname === classHref || pathname.startsWith(`${classHref}/`)) {
+      return getClassKey(klass)
+    }
+  }
+  return null
 }
 
 export type ClassesSectionProps = {
   classes?: SidebarClass[]
   isAdmin: boolean
-  openMap: Record<string, boolean>
-  setOpenMap: Dispatch<SetStateAction<Record<string, boolean>>>
   basePath?: string
+  alignHeader?: boolean
+  hasAcceleratorAccess?: boolean
+  formationStatus?: string | null
 }
 
 export function ClassesSection({
   classes = [],
   isAdmin,
-  openMap,
-  setOpenMap,
   basePath,
+  alignHeader = false,
+  hasAcceleratorAccess = false,
+  formationStatus = null,
 }: ClassesSectionProps) {
-  const pathname = usePathname()
+  const pathname = usePathname() ?? ""
   const router = useRouter()
   const normalizedBase = basePath?.replace(/\/$/, "") ?? ""
+  const [isMounted, setIsMounted] = useState(false)
 
-  const publishedClasses = useMemo(() => classes.filter((klass) => klass.published), [classes])
-  const draftClasses = useMemo(() => (isAdmin ? classes.filter((klass) => !klass.published) : []), [classes, isAdmin])
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  const visibleClasses = useMemo(() => {
+    const base = classes
+      .filter((klass) => klass.published && !isLegacyClass(klass))
+      .map((klass) => (klass.slug === "electives" ? { ...klass, title: "Formation" } : klass))
+    base.sort((a, b) => {
+      if (a.slug === "electives") return -1
+      if (b.slug === "electives") return 1
+      const pa = typeof a.position === "number" ? a.position : Number.MAX_SAFE_INTEGER
+      const pb = typeof b.position === "number" ? b.position : Number.MAX_SAFE_INTEGER
+      return pa - pb
+    })
+    return base
+  }, [classes])
+
+  const activeKey = useMemo(
+    () => getActiveClassKey({ classes: visibleClasses, pathname, basePath: normalizedBase }),
+    [normalizedBase, pathname, visibleClasses],
+  )
+  const trackKeys = useMemo(() => visibleClasses.map((klass) => getClassKey(klass)), [visibleClasses])
+  const formationKey = useMemo(
+    () => visibleClasses.find((klass) => klass.slug === "electives")?.slug ?? null,
+    [visibleClasses],
+  )
+  const fallbackKey = activeKey ?? (formationStatus === "pre_501c3" ? formationKey : activeKey)
+  const { selectedKey, setSelectedKey } = useTrackParam({ keys: trackKeys, fallbackKey })
+
+  const selectedClass =
+    visibleClasses.find((klass) => getClassKey(klass) === selectedKey) ?? visibleClasses[0] ?? null
+  const SelectedTrackIcon = getTrackIcon(selectedClass?.slug || selectedClass?.title)
+
+  const modules = useMemo(
+    () => (selectedClass?.modules.filter((module) => module.published) ?? []),
+    [selectedClass],
+  )
+  const activeModulePosition =
+    selectedClass
+      ? modules.findIndex(
+          (module) => `${normalizedBase}/class/${selectedClass.slug}/module/${module.index}` === pathname,
+        )
+      : -1
+  const activeIdx = activeModulePosition >= 0 ? modules[activeModulePosition]?.index ?? null : null
+  const completedMap = new Map<string, boolean>()
+  if (typeof window !== "undefined") {
+    modules.forEach((module) => {
+      try {
+        const val = window.sessionStorage.getItem(`module-complete-${module.id}`)
+        completedMap.set(module.id, val === "true")
+      } catch {
+        completedMap.set(module.id, false)
+      }
+    })
+  }
+  const steps: StepItem[] = (() => {
+    if (!selectedClass) return []
+    const classLockedByPlan = !isAdmin && !hasAcceleratorAccess && selectedClass.slug !== "electives"
+    let priorCompleted = true
+    return modules.map((module) => {
+      const moduleHref = `${normalizedBase}/class/${selectedClass.slug}/module/${module.index}`
+      const isCompleted = completedMap.get(module.id) === true
+      const status = deriveModuleStatus({
+        activeIndex: activeIdx,
+        moduleIndex: module.index,
+        isAdmin,
+        isCompleted,
+        priorCompleted: priorCompleted && !classLockedByPlan,
+      })
+      const finalStatus = classLockedByPlan ? ("locked" as StepStatus) : status
+      if (!isCompleted) {
+        priorCompleted = false
+      }
+      return {
+        id: module.id,
+        href: moduleHref,
+        title: module.title,
+        status: finalStatus,
+        active: pathname === moduleHref,
+      }
+    })
+  })()
 
   if (classes.length === 0) {
     return null
   }
 
-  return (
-    <SidebarGroup className="px-0">
-      <SidebarGroupLabel className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        <GraduationCap className="size-4" />
-        <span>Accelerator</span>
-      </SidebarGroupLabel>
-      {isAdmin ? (
-        <SidebarGroupAction asChild>
-          <CreateEntityPopover classes={classes.map((klass) => ({ id: klass.id, title: klass.title }))} />
-        </SidebarGroupAction>
-      ) : null}
-      <SidebarGroupContent>
-        {publishedClasses.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-border/60 px-3 py-4 text-xs text-muted-foreground">
-            No published classes yet. Publish a class to make it visible to learners.
-          </p>
-        ) : (
-        <ClassList
-          classes={publishedClasses}
-          pathname={pathname}
-          routerPrefetch={router.prefetch.bind(router)}
-          openMap={openMap}
-          setOpenMap={setOpenMap}
-          variant="published"
-          isAdmin={isAdmin}
-          basePath={normalizedBase}
-        />
-      )}
+  if (visibleClasses.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-border/60 px-3 py-4 text-xs text-muted-foreground">
+        {isAdmin ? "No published sessions yet." : "No accelerator sessions yet."}
+      </div>
+    )
+  }
 
-        {isAdmin && draftClasses.length > 0 ? (
-          <div className="mt-4 space-y-2">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Unpublished</p>
-            <ClassList
-              classes={draftClasses}
-              pathname={pathname}
-              routerPrefetch={router.prefetch.bind(router)}
-              openMap={openMap}
-              setOpenMap={setOpenMap}
-              variant="draft"
-              isAdmin={isAdmin}
-              basePath={normalizedBase}
-            />
+  if (!selectedClass) {
+    return null
+  }
+
+  return (
+    <div className="space-y-[var(--shell-rail-gap,1rem)]">
+      <div className={cn("space-y-2", alignHeader && "pt-2")}>
+        <RailLabel htmlFor="track-picker" className="sr-only">
+          Track
+        </RailLabel>
+        {isMounted ? (
+          <Select value={selectedKey} onValueChange={setSelectedKey}>
+            <SelectTrigger id="track-picker" multiline className="w-full py-2">
+              <SelectedTrackIcon className="h-4 w-4 text-muted-foreground" aria-hidden />
+              <SelectValue
+                placeholder="Select a track"
+                className="min-w-0 flex-1 text-left text-sm font-medium text-foreground"
+              />
+            </SelectTrigger>
+            <SelectContent>
+              {visibleClasses.map((klass) => {
+                const key = getClassKey(klass)
+                const TrackIcon = getTrackIcon(klass.slug || klass.title)
+                return (
+                  <SelectItem
+                    key={key}
+                    value={key}
+                    hideIndicator
+                    icon={<TrackIcon className="h-4 w-4" aria-hidden />}
+                    className="gap-3 py-2"
+                  >
+                    {formatClassTitle(klass.title)}
+                  </SelectItem>
+                )
+              })}
+            </SelectContent>
+          </Select>
+        ) : (
+          <div className="flex h-10 w-full items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground shadow-xs">
+            {formatClassTitle(selectedClass.title)}
+          </div>
+        )}
+        {!hasAcceleratorAccess && selectedClass.slug !== "electives" ? (
+          <div className="flex items-center justify-between rounded-lg border border-dashed border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            <span>Unlock this track with Accelerator.</span>
+            <Link
+              href="/pricing?plan=accelerator"
+              className="text-foreground underline-offset-4 hover:underline"
+            >
+              View plans
+            </Link>
           </div>
         ) : null}
-      </SidebarGroupContent>
-    </SidebarGroup>
-  )
-}
+      </div>
 
-type ClassListProps = {
-  classes: SidebarClass[]
-  pathname: string
-  routerPrefetch: (href: string) => void
-  openMap: Record<string, boolean>
-  setOpenMap: Dispatch<SetStateAction<Record<string, boolean>>>
-  variant: "published" | "draft"
-  isAdmin: boolean
-  basePath?: string
-}
-
-function ClassList({
-  classes,
-  pathname,
-  routerPrefetch,
-  openMap,
-  setOpenMap,
-  variant,
-  isAdmin,
-  basePath = "",
-}: ClassListProps) {
-  return (
-    <SidebarMenu className="gap-0.5">
-      {classes.map((klass) => {
-        const nodeKey = klass.slug || klass.id
-        const classTitle = formatClassTitle(klass.title)
-        const modules = klass.modules.filter((module) => (variant === "published" ? module.published : !module.published))
-        const isOpen = Boolean(openMap[nodeKey])
-        const classHref = `${basePath}/class/${klass.slug}`
-        const isActive = pathname === classHref
-        const isCurrentClass = isActive || pathname.startsWith(`${classHref}/`)
-        const ClassIcon = getClassIcon(klass.slug)
-        const isElectives = klass.slug?.toLowerCase().includes("electives")
-
-        const toggleNode = () => {
-          setOpenMap((previous) => ({
-            ...previous,
-            [nodeKey]: !previous[nodeKey],
-          }))
-        }
-
-        return (
-          <Fragment key={klass.id}>
-            {isElectives ? <SidebarSeparator className="my-2" /> : null}
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                asChild
-                isActive={isActive}
-                tooltip={classTitle}
-                className="h-auto min-h-8 items-center pr-12 justify-start gap-2 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:min-h-0 group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
-              >
-                <Link
-                  href={classHref}
-                  onMouseEnter={() => routerPrefetch(classHref)}
-                  title={classTitle}
-                  className="flex w-full items-center gap-2 group-data-[collapsible=icon]:w-auto group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:gap-0"
-                >
-                  <ClassIcon className="size-4 shrink-0" />
-                  <span className="min-w-0 flex-1 break-words whitespace-normal! overflow-visible! text-clip! text-sm font-medium leading-tight text-pretty group-data-[collapsible=icon]:hidden">
-                    {classTitle}
-                  </span>
-                </Link>
-              </SidebarMenuButton>
-              {modules.length > 0 ? (
-                <SidebarMenuAction
-                  type="button"
-                  onClick={toggleNode}
-                  aria-label={isOpen ? "Collapse modules" : "Expand modules"}
-                  className="right-2"
-                >
-                  <ChevronRight
-                    className={cn("size-4 transition-transform", isOpen && "rotate-90")}
-                  />
-            </SidebarMenuAction>
-          ) : null}
-          {variant === "draft" && isAdmin ? <ClassDraftActions classId={klass.id} /> : null}
-          {modules.length > 0 ? (
-            <SidebarMenuSub
-              data-open={isOpen ? "true" : "false"}
-              className={cn(
-                "overflow-hidden transition-all duration-200 ease-out",
-                isOpen ? "max-h-[1000px] opacity-100 mt-1 py-0.5" : "max-h-0 opacity-0 py-0",
-              )}
-            >
-              {(() => {
-                const activeIdx =
-                  modules.find((m) => `${basePath}/class/${klass.slug}/module/${m.index}` === pathname)?.index ?? null
-                const steps: StepItem[] = modules.map((module, idx) => {
-                  const moduleHref = `${basePath}/class/${klass.slug}/module/${module.index}`
-                  const moduleActive = pathname === moduleHref
-                  const status: StepStatus = deriveModuleStatus(activeIdx, module.index)
-                  return {
-                    id: module.id,
-                    href: moduleHref,
-                    title: module.title,
-                    status,
-                    active: moduleActive,
-                  }
-                })
-                return <ModuleStepper steps={steps} onHover={(href) => routerPrefetch(href)} />
-              })()}
-            </SidebarMenuSub>
-          ) : null}
-              {modules.length > 0 && isCurrentClass ? (
-                <div className="hidden group-data-[collapsible=icon]:mt-1 group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
-                  <div className="relative flex flex-col items-center gap-1 animate-in fade-in slide-in-from-top-1 duration-200">
-                    <div
-                      aria-hidden
-                      className="bg-sidebar-border/70 pointer-events-none absolute inset-y-1 left-1/2 z-0 w-px -translate-x-1/2"
-                    />
-                    {modules.map((module) => {
-                      const moduleHref = `${basePath}/class/${klass.slug}/module/${module.index}`
-                  const moduleActive = pathname === moduleHref
-                  const activeIdx =
-                        modules.find((m) => `${basePath}/class/${klass.slug}/module/${m.index}` === pathname)?.index ?? null
-                      const status = deriveModuleStatus(activeIdx, module.index)
-
-                      return (
-                          <SidebarMenuButton
-                            key={`${klass.id}-${module.id}-collapsed-icon`}
-                            asChild
-                            size="sm"
-                            isActive={moduleActive}
-                            tooltip={module.title}
-                            className="relative z-10 h-7 w-7 rounded-full p-0"
-                          >
-                            <Link
-                              href={moduleHref}
-                              onMouseEnter={() => routerPrefetch(moduleHref)}
-                              title={module.title}
-                          className="flex h-7 w-7 items-center justify-center"
-                          >
-                            <ModuleBadge status={status} label={module.index} />
-                          </Link>
-                        </SidebarMenuButton>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : null}
-            </SidebarMenuItem>
-          </Fragment>
-        )
-      })}
-    </SidebarMenu>
-  )
-}
-
-function ClassDraftActions({ classId }: { classId: string }) {
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <SidebarMenuAction showOnHover className="right-1">
-          <MoreVertical className="size-4" />
-          <span className="sr-only">Class actions</span>
-        </SidebarMenuAction>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuLabel>Class</DropdownMenuLabel>
-        <DropdownMenuItem
-          onSelect={async () => {
-            const toastId = toast.loading("Publishing class…")
-            try {
-              await setClassPublishedAction(classId, true)
-              toast.success("Class published", { id: toastId })
-            } catch (error) {
-              const message = error instanceof Error ? error.message : "Failed to update class"
-              toast.error(message, { id: toastId })
-            }
-          }}
-        >
-          Publish class
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-destructive focus:text-destructive"
-          onSelect={async () => {
-            if (!confirm("Delete class?")) return
-            const toastId = toast.loading("Deleting class…")
-            try {
-              const formData = new FormData()
-              formData.append("classId", classId)
-              await deleteClassAction(formData)
-              toast.success("Class deleted", { id: toastId })
-            } catch (error) {
-              const message = error instanceof Error ? error.message : "Failed to delete class"
-              toast.error(message, { id: toastId })
-            }
-          }}
-        >
-          Delete class
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
-}
-
-function ModuleDraftActions({ moduleId, classId }: { moduleId: string; classId: string }) {
-  const router = useRouter()
-  const [pending, startTransition] = useTransition()
-
-  return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          size="icon"
-          variant="ghost"
-          className="flex size-7 items-center justify-center text-muted-foreground transition hover:text-foreground"
-          disabled={pending}
-        >
-          {pending ? <Loader2 className="size-4 animate-spin" /> : <MoreVertical className="size-4" />}
-          <span className="sr-only">Module actions</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
-        <DropdownMenuLabel>Module actions</DropdownMenuLabel>
-        <DropdownMenuItem asChild>
-          <Link href={`/admin/modules/${moduleId}`}>Edit module</Link>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="text-destructive focus:text-destructive"
-          onSelect={(event) => {
-            event.preventDefault()
-            if (!confirm("Delete this module?")) return
-            startTransition(async () => {
-              const formData = new FormData()
-              formData.append("moduleId", moduleId)
-              formData.append("classId", classId)
-              await deleteModuleAction(formData)
-              router.refresh()
-            })
-          }}
-        >
-          Delete module
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+      {modules.length > 0 ? (
+        <div className="space-y-3">
+          <ul className="space-y-2 pl-3">
+            <ModuleStepper steps={steps} onHover={(href) => router.prefetch(href)} />
+          </ul>
+        </div>
+      ) : (
+        <div className="rounded-lg border border-dashed border-border/60 px-3 py-4 text-xs text-muted-foreground">
+          No modules available yet.
+        </div>
+      )}
+    </div>
   )
 }

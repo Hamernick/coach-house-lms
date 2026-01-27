@@ -1,12 +1,13 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
 
-import { PaginationControls } from "@/components/dashboard/pagination-controls"
+import { PaginationControls } from "@/components/ui/pagination-controls"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { listClasses } from "@/lib/classes"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 const PAGE_SIZE = 12
 
@@ -25,7 +26,7 @@ export default async function ClassesPage({
   } = await supabase.auth.getUser()
 
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw userError
+    throw supabaseErrorToError(userError, "Unable to load user.")
   }
 
   if (!user) {
@@ -39,8 +40,7 @@ export default async function ClassesPage({
 
   return (
     <div className="flex flex-col gap-6">
-      
-      <section className="space-y-3 px-4 lg:px-6">
+      <section className="space-y-3">
         <div>
           <h2 className="text-2xl font-semibold">Your classes</h2>
           <p className="text-sm text-muted-foreground">
@@ -57,7 +57,7 @@ export default async function ClassesPage({
             </CardHeader>
             <CardContent className="flex flex-wrap items-center gap-2">
               <Button asChild size="sm">
-                <Link href="/dashboard">Go to dashboard</Link>
+                <Link href="/my-organization">Go to My Organization</Link>
               </Button>
             </CardContent>
           </Card>

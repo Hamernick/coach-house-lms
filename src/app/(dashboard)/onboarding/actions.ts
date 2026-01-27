@@ -4,7 +4,37 @@ import { redirect } from "next/navigation"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
+import type { ProfilesTable } from "@/lib/supabase/schema/tables"
 import { uploadAvatarWithUser } from "@/lib/storage/avatars"
+
+const RESERVED_SLUGS = new Set([
+  "admin",
+  "api",
+  "login",
+  "signup",
+  "pricing",
+  "billing",
+  "class",
+  "dashboard",
+  "people",
+  "my-organization",
+  "_next",
+  "public",
+  "favicon",
+  "assets",
+])
+
+function slugify(input: string): string {
+  const base = input
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9\\s-]/g, "")
+    .trim()
+    .replace(/\\s+/g, "-")
+    .replace(/-+/g, "-")
+  return base.slice(0, 60).replace(/^-+|-+$/g, "")
+}
 
 export async function completeOnboardingAction(form: FormData) {
   const supabase = await createSupabaseServerClient()
@@ -12,38 +42,53 @@ export async function completeOnboardingAction(form: FormData) {
     data: { user },
     error: userError,
   } = await supabase.auth.getUser()
-  if (userError && !isSupabaseAuthSessionMissingError(userError)) throw userError
-  if (!user) redirect("/login?redirect=/dashboard")
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
+    throw supabaseErrorToError(userError, "Unable to load user.")
+  }
+  if (!user) redirect("/login?redirect=/my-organization")
 
   const first = String(form.get("firstName") || "").trim()
   const last = String(form.get("lastName") || "").trim()
   const phone = String(form.get("phone") || "").trim()
   const email = String(form.get("email") || "").trim()
-  const optInUpdates = form.get("optInUpdates") ? true : false
-  const orgName = String(form.get("orgName") || "").trim()
-  const orgDesc = String(form.get("orgDesc") || "").trim()
-  const website = String(form.get("website") || "").trim()
-  const social = String(form.get("social") || "").trim()
-  const stage = String(form.get("stage") || "").trim()
-  const problem = String(form.get("problem") || "").trim()
-  const mission = String(form.get("mission") || "").trim()
-  const goals = String(form.get("goals") || "").trim()
-  const notes = String(form.get("confidenceNotes") || "").trim()
-  const followUpLater = form.get("followUpLater") === "on"
-  const variant = String(form.get("onboardingVariant") || "accelerator")
+  const title = String(form.get("title") || "").trim()
+  const linkedin = String(form.get("linkedin") || "").trim()
+  const marketingOptIn = Boolean(form.get("optInUpdates"))
+  const newsletterOptIn = Boolean(form.get("newsletterOptIn"))
 
-  const toScore = (value: FormDataEntryValue | null) => {
-    if (typeof value !== "string") return null
-    const parsed = Number(value)
-    if (!Number.isFinite(parsed)) return null
-    const clamped = Math.round(parsed)
-    if (clamped < 1 || clamped > 10) return null
-    return clamped
+  const formationStatusRaw = String(form.get("formationStatus") || "").trim()
+  const formationStatus =
+    formationStatusRaw === "pre_501c3" || formationStatusRaw === "in_progress" || formationStatusRaw === "approved"
+      ? formationStatusRaw
+      : null
+
+  const orgName = String(form.get("orgName") || "").trim()
+  const orgSlugRaw = String(form.get("orgSlug") || "").trim()
+  const normalizedSlug = slugify(orgSlugRaw || orgName)
+
+  if (!orgName) {
+    redirect("/my-organization?onboarding=1&error=missing_org_name")
+  }
+  if (!normalizedSlug) {
+    redirect("/my-organization?onboarding=1&error=missing_org_slug")
+  }
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) {
+    redirect(`/my-organization?onboarding=1&error=invalid_org_slug&slug=${encodeURIComponent(normalizedSlug)}`)
+  }
+  if (RESERVED_SLUGS.has(normalizedSlug)) {
+    redirect(`/my-organization?onboarding=1&error=reserved_org_slug&slug=${encodeURIComponent(normalizedSlug)}`)
   }
 
-  const confidenceOperating = toScore(form.get("confidenceOperating"))
-  const confidenceFunding = toScore(form.get("confidenceFunding"))
-  const confidenceFunders = toScore(form.get("confidenceFunders"))
+  const { count: slugCount, error: slugError } = await supabase
+    .from("organizations")
+    .select("user_id", { count: "exact", head: true })
+    .ilike("public_slug", normalizedSlug)
+    .neq("user_id", user.id)
+
+  if (slugError) throw supabaseErrorToError(slugError, "Unable to validate organization URL.")
+  if ((slugCount ?? 0) > 0) {
+    redirect(`/my-organization?onboarding=1&error=slug_taken&slug=${encodeURIComponent(normalizedSlug)}`)
+  }
 
   let avatarUrl: string | null = null
   const avatar = form.get("avatar")
@@ -51,85 +96,78 @@ export async function completeOnboardingAction(form: FormData) {
     avatarUrl = await uploadAvatarWithUser({ client: supabase, userId: user.id, file: avatar })
   }
 
-  // Update profile full name, avatar, and marketing preferences
-  await supabase
-    .from("profiles")
-    .upsert(
-      {
-        id: user.id,
-        full_name: [first, last].filter(Boolean).join(" "),
-        avatar_url: avatarUrl,
-        marketing_opt_in: optInUpdates,
-      },
-      { onConflict: "id" },
-    )
+  const fullName = [first, last].filter(Boolean).join(" ").trim()
 
-  const hasOrgDetails =
-    variant !== "basic" &&
-    [orgName, orgDesc, website, social, stage, problem, mission, goals].some((value) => value.length > 0)
+  const profilePayload: ProfilesTable["Insert"] = { id: user.id }
+  if (fullName.length > 0) profilePayload.full_name = fullName
+  if (avatarUrl) profilePayload.avatar_url = avatarUrl
+  if (title.length > 0) profilePayload.headline = title
+  if (user.email) profilePayload.email = user.email
 
-  if (hasOrgDetails) {
-    // Upsert organization rollup from onboarding responses
-    await supabase
-      .from("organizations")
-      .upsert(
-        {
-          user_id: user.id,
-          profile: {
-            name: orgName,
-            description: orgDesc,
-            website,
-            social,
-            stage,
-            problem,
-            mission,
-            goals,
-          },
-        },
-        { onConflict: "user_id" }
-      )
+  await supabase.from("profiles").upsert(profilePayload, { onConflict: "id" })
+
+  const { data: existingOrg, error: existingOrgError } = await supabase
+    .from("organizations")
+    .select("profile")
+    .eq("user_id", user.id)
+    .maybeSingle<{ profile: Record<string, unknown> | null }>()
+
+  if (existingOrgError) throw supabaseErrorToError(existingOrgError, "Unable to load organization profile.")
+
+  const nextProfile = {
+    ...(existingOrg?.profile ?? {}),
+    name: orgName,
+    ...(formationStatus ? { formationStatus } : {}),
+    ...(linkedin.length > 0 ? { linkedin } : {}),
   }
 
-  // Update user metadata with onboarding fields
+  const existingPeopleRaw = Array.isArray((existingOrg?.profile ?? {})?.org_people)
+    ? ((existingOrg?.profile ?? {})?.org_people as Array<Record<string, unknown>>)
+    : []
+  const nextOwnerPerson = {
+    id: user.id,
+    name: fullName || email || user.email || "You",
+    title: title.length > 0 ? title : null,
+    email: email.length > 0 ? email : (user.email ?? null),
+    linkedin: linkedin.length > 0 ? linkedin : null,
+    category: "staff",
+    image: avatarUrl,
+    reportsToId: null,
+    pos: null,
+  }
+  const nextPeople = [
+    nextOwnerPerson,
+    ...existingPeopleRaw.filter((person) => {
+      if (!person || typeof person !== "object") return false
+      const id = typeof person.id === "string" ? person.id : null
+      if (id && id === user.id) return false
+      const personEmail = typeof person.email === "string" ? person.email.toLowerCase() : null
+      const ownerEmail = (nextOwnerPerson.email ?? "").toLowerCase()
+      if (personEmail && ownerEmail && personEmail === ownerEmail) return false
+      return true
+    }),
+  ]
+
+  await supabase.from("organizations").upsert(
+    {
+      user_id: user.id,
+      public_slug: normalizedSlug,
+      profile: { ...nextProfile, org_people: nextPeople },
+    },
+    { onConflict: "user_id" },
+  )
+
+  // Update user metadata with onboarding + preference fields.
   await supabase.auth.updateUser({
     data: {
       onboarding_completed: true,
-      marketing_opt_in: optInUpdates,
-      phone,
-      email,
-      ...(hasOrgDetails
-        ? {
-            // A small echo in user_metadata is fine for client-side caching,
-            // but the source of truth is organizations.profile (server-owned)
-            organization: {
-              name: orgName,
-              description: orgDesc,
-              website,
-              social,
-              stage,
-              problem,
-              mission,
-              goals,
-            },
-          }
-        : {}),
+      onboarding_completed_at: new Date().toISOString(),
+      marketing_opt_in: marketingOptIn,
+      newsletter_opt_in: newsletterOptIn,
+      phone: phone.length > 0 ? phone : null,
+      email: email.length > 0 ? email : null,
     },
   })
 
-  if (variant !== "basic" && confidenceOperating && confidenceFunding && confidenceFunders) {
-    await supabase
-      .from("onboarding_responses")
-      .upsert(
-        {
-          user_id: user.id,
-          org_id: user.id,
-          confidence_operating: confidenceOperating,
-          confidence_funding: confidenceFunding,
-          confidence_funders: confidenceFunders,
-          notes: notes.length > 0 ? notes : null,
-          follow_up: followUpLater,
-        },
-        { onConflict: "user_id" }
-      )
-  }
+  redirect("/my-organization?welcome=1")
 }

@@ -58,7 +58,7 @@ const TIERS: PricingTier[] = [
     subtitle: "For founders forming their entity.",
     priceLine: "Free",
     ctaLabel: "Get started",
-    ctaHref: "/sign-up",
+    ctaHref: "/sign-up?plan=individual",
     featureHeading: "Free, forever",
     features: [
       "1 Admin Seat (Founder only)",
@@ -78,7 +78,7 @@ const TIERS: PricingTier[] = [
     priceLine: "$20",
     priceNote: "per month",
     ctaLabel: "Upgrade Organization",
-    ctaHref: "/sign-up",
+    ctaHref: "/sign-up?plan=organization",
     featured: true,
     badge: "Recommended",
     featureHeading: "Everything in Individual, plus",
@@ -99,7 +99,7 @@ const TIERS: PricingTier[] = [
     priceLine: "$499",
     priceNote: "one-time",
     ctaLabel: "Enroll in Accelerator",
-    ctaHref: "/sign-up",
+    ctaHref: "/sign-up?plan=individual&addon=accelerator",
     featureHeading: "Add-on includes",
     features: [
       "42-Module Curriculum (Lifetime access)",
@@ -262,14 +262,12 @@ function FeatureStateIcon({ state, featured }: { state: FeatureState; featured?:
 
 export default async function PricingPage() {
   const canCheckoutOrganization = Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_ORGANIZATION_PRICE_ID)
-  const canCheckoutAccelerator = Boolean(
-    env.STRIPE_SECRET_KEY && env.STRIPE_ORGANIZATION_PRICE_ID && env.STRIPE_ACCELERATOR_PRICE_ID,
-  )
+  const canCheckoutAccelerator = Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_ACCELERATOR_PRICE_ID)
 
   return (
     <main
       data-public-surface="pricing"
-      className="relative min-h-screen bg-background [--background:#F4F4F4] dark:[--background:oklch(0.145_0_0)]"
+      className="relative min-h-screen bg-background pt-px [--background:var(--surface)]"
     >
       <PublicHeader />
       <div className="mx-auto flex w-[min(1000px,92%)] flex-col gap-16 pb-16 pt-24 sm:pt-28 lg:pb-24">
@@ -404,15 +402,12 @@ export default async function PricingPage() {
                     ) : null}
                   </div>
                   <p className="text-balance text-sm text-muted-foreground sm:text-base">{ACCELERATOR_TIER.subtitle}</p>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Includes the Platform free for your first month when you enroll.
-                  </p>
                 </div>
                 {canCheckoutAccelerator ? (
                   <form action={startCheckout} className="w-full sm:w-fit">
-                    <input type="hidden" name="checkoutMode" value="accelerator_bundle" />
-                    <input type="hidden" name="planName" value="Accelerator bundle" />
-                    <input type="hidden" name="priceId" value={env.STRIPE_ORGANIZATION_PRICE_ID ?? ""} />
+                    <input type="hidden" name="checkoutMode" value="accelerator" />
+                    <input type="hidden" name="planName" value="Accelerator" />
+                    <input type="hidden" name="priceId" value={env.STRIPE_ACCELERATOR_PRICE_ID ?? ""} />
                     <Button type="submit" className="w-full rounded-full sm:w-fit">
                       {ACCELERATOR_TIER.ctaLabel}
                     </Button>
@@ -448,7 +443,7 @@ export default async function PricingPage() {
           </p>
           <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row">
             <Button asChild className="rounded-full">
-              <Link href="/sign-up">Get started</Link>
+              <Link href="/sign-up?plan=individual">Get started</Link>
             </Button>
             <Button asChild variant="outline" className="rounded-full">
               <a href="mailto:contact@coachhousesolutions.org?subject=Coach%20House%20Features">Talk to us</a>
@@ -563,7 +558,7 @@ export default async function PricingPage() {
                 Ready to start building?
               </h2>
               <Button asChild className="rounded-full px-8">
-                <Link href="/sign-up">Get started</Link>
+                <Link href="/sign-up?plan=individual">Get started</Link>
               </Button>
             </div>
           </Card>

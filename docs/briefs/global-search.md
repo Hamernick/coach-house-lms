@@ -1,5 +1,5 @@
 # Global Search Overhaul
-Status: Draft
+Status: In Review (MVP shipped)
 Owner:
 Priority: P0
 Target release: Launch
@@ -11,11 +11,16 @@ Target release: Launch
 - Ensure results are correctly gated by role and publication status.
 
 ## Current State
-- `src/components/global-search.tsx` provides a Command dialog with a static list of pages.
-- Accelerator context adds classes/modules from sidebar data.
-- Limited gating (published flag only) and no DB-driven content search.
-- No coverage for assignment questions, org/profile content, roadmap, marketplace, or map items.
-- No analytics on queries or click-through.
+Update (2026-01-14):
+- DB-driven search is implemented via `src/app/api/search/route.ts` using Postgres search objects (see migrations below).
+- Command palette is wired to the API and shows a loading state while searching.
+- Query analytics are captured in `search_events`.
+- Accelerator results are filtered out when the user is not entitled (server-side + client-side).
+
+Known gaps / opportunities:
+- Expand indexed sources (and re-check access rules as we add new types).
+- Improve ranking/scoring and UI grouping labels once the taxonomy is stable.
+- Add click-through tracking (query → result click) if needed for KPI analysis.
 
 ## Scope
 In scope:
@@ -83,7 +88,7 @@ Out of scope:
 
 ## Test Plan
 - Unit: search endpoint filtering + visibility rules.
-- Integration: results for admin vs student vs board member.
+- Integration: results for admin vs member vs board member.
 - Manual QA: Cmd/Ctrl+K, empty states, routing, mobile keyboard.
 
 ## Rollout Plan
@@ -101,3 +106,10 @@ Out of scope:
 
 ## Moonshot
 - Semantic search + AI assistant: natural language queries that return ranked results, suggested next steps, and “continue where you left off” prompts, using embeddings + per-org context (without leaking private data).
+
+## Reference (MVP objects)
+- Migrations:
+  - `supabase/migrations/20260112194500_add_search_events.sql`
+  - `supabase/migrations/20260112200000_add_search_index_view.sql`
+- API route: `src/app/api/search/route.ts`
+- Client UI: `src/components/global-search.tsx`

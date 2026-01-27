@@ -85,6 +85,7 @@ type DeckViewerProps = {
   showPreviewTrigger?: boolean
   inlinePreview?: boolean
   shellActions?: React.ReactNode
+  openExternally?: boolean
 }
 
 export function DeckViewer({
@@ -97,6 +98,7 @@ export function DeckViewer({
   showPreviewTrigger = true,
   inlinePreview = true,
   shellActions,
+  openExternally = false,
 }: DeckViewerProps) {
   const isFrame = variant === "frame"
   const [deckUrl, setDeckUrl] = useState<string | null>(null)
@@ -342,17 +344,21 @@ export function DeckViewer({
       const viewport = pdfPage.getViewport({ scale: coverScale })
       const context = canvas.getContext("2d")
       if (!context) return
-      canvas.width = viewport.width
-      canvas.height = viewport.height
-      canvas.style.width = `${viewport.width}px`
-      canvas.style.height = `${viewport.height}px`
+      const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1
+      canvas.width = Math.max(1, Math.floor(viewport.width * dpr))
+      canvas.height = Math.max(1, Math.floor(viewport.height * dpr))
+      canvas.style.width = `${targetWidth}px`
+      canvas.style.height = `${targetHeight}px`
       canvas.style.position = "absolute"
-      canvas.style.top = "50%"
-      canvas.style.left = "50%"
-      canvas.style.transform = "translate(-50%, -50%)"
+      canvas.style.top = "0"
+      canvas.style.left = "0"
+      canvas.style.transform = ""
       canvas.style.borderRadius = "inherit"
       canvas.style.pointerEvents = "none"
       context.clearRect(0, 0, canvas.width, canvas.height)
+      if (dpr !== 1) {
+        context.scale(dpr, dpr)
+      }
       await pdfPage.render({ canvasContext: context, viewport }).promise
       setPreviewReady(true)
     } catch (err) {
@@ -579,6 +585,12 @@ export function DeckViewer({
         isFrame ? framePreviewClass : "aspect-[16/9] rounded-xl border border-border/40"
       }`}
     >
+      <div
+        className={`absolute inset-0 rounded-xl bg-muted/30 animate-pulse transition-opacity ${
+          previewReady || previewError ? "opacity-0" : "opacity-100"
+        }`}
+        aria-hidden
+      />
       <canvas ref={previewCanvasRef} className="absolute inset-0" />
       {!previewReady && !previewError ? (
         <div className="absolute inset-0 flex items-center justify-center text-xs text-muted-foreground">
@@ -599,10 +611,19 @@ export function DeckViewer({
       className={`group relative w-full text-left transition ${
         isFrame
           ? "h-full overflow-hidden rounded-2xl"
-          : "rounded-2xl border border-border/40 bg-card/80 p-3 shadow-sm hover:shadow-md"
+          : "rounded-2xl border border-border/40 bg-card/80 px-3 py-2.5 shadow-sm hover:shadow-md"
       } ${className ?? ""}`}
+      onClick={
+        openExternally && deckUrl
+          ? (event) => {
+              event.preventDefault()
+              window.open(deckUrl!, "_blank", "noopener")
+            }
+          : undefined
+      }
+      disabled={openExternally && !deckUrl}
     >
-      <div className={`flex flex-col gap-3 ${isFrame ? "h-full" : ""}`}>
+      <div className={`flex flex-col gap-1.5 ${isFrame ? "h-full" : ""}`}>
         {preview}
         {!isFrame ? (
           <div className="space-y-2">
@@ -620,6 +641,10 @@ export function DeckViewer({
       </div>
     </button>
   )
+
+  if (openExternally) {
+    return triggerButton
+  }
 
   return (
     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

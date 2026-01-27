@@ -3,16 +3,21 @@
 import { useEffect, useMemo, useState } from "react"
 import { createPortal } from "react-dom"
 
-export function HeaderActionsPortal({ children }: { children: React.ReactNode }) {
+type HeaderActionsPortalProps = {
+  children: React.ReactNode
+  slot?: "center" | "right"
+}
+
+export function HeaderActionsPortal({ children, slot = "center" }: HeaderActionsPortalProps) {
   const [mountNode, setMountNode] = useState<HTMLElement | null>(null)
   const content = useMemo(() => children, [children])
 
   useEffect(() => {
-    const el = document.getElementById("site-header-actions")
+    const targetId = slot === "right" ? "site-header-actions-right" : "site-header-actions-center"
+    const el = document.getElementById(targetId)
     setMountNode(el as HTMLElement | null)
-  }, [])
+  }, [slot])
 
   if (!mountNode) return null
   return createPortal(content, mountNode)
 }
-

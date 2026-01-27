@@ -1,10 +1,8 @@
-import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 import Image from "next/image"
+import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import type { AccountSettingsErrorKey } from "../../types"
 
 export type ProfileSectionProps = {
@@ -34,21 +32,25 @@ export function ProfileSection({
   onLastNameChange,
   onPhoneChange,
 }: ProfileSectionProps) {
+  const initials = `${(firstName.charAt(0) || "A").toUpperCase()}${(lastName.charAt(0) || "A").toUpperCase()}`
+
   return (
     <div className="space-y-6">
       <header>
         <h3 className="text-lg font-semibold">Profile</h3>
         <p className="text-sm text-muted-foreground">Update your personal details.</p>
       </header>
-      <div className="grid max-w-xl gap-4">
-        <div className="flex flex-col items-center justify-center gap-3">
-          <div className="relative size-24 overflow-hidden rounded-full border border-border bg-card sm:size-28" aria-busy={isUploadingAvatar}>
+      <div className="max-w-2xl space-y-6">
+        <div className="flex flex-col items-center gap-3 rounded-2xl border border-border/70 bg-background/60 p-4">
+          <div
+            className="relative size-16 overflow-hidden rounded-full border border-border bg-card sm:size-20"
+            aria-busy={isUploadingAvatar}
+          >
             {avatarUrl ? (
-              <Image src={avatarUrl} alt="Avatar" fill className="object-cover" sizes="112px" />
+              <Image src={avatarUrl} alt="Avatar" fill className="object-cover" sizes="80px" />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-muted-foreground">
-                {(firstName.charAt(0) || "A").toUpperCase()}
-                {(lastName.charAt(0) || "A").toUpperCase()}
+                {initials}
               </div>
             )}
             {isUploadingAvatar ? (
@@ -57,26 +59,20 @@ export function ProfileSection({
               </div>
             ) : null}
           </div>
-          <div className="flex items-center gap-2">
-            <label htmlFor="avatarUpload" className={isUploadingAvatar ? "cursor-pointer pointer-events-none opacity-60" : "cursor-pointer"}>
-              <input
-                id="avatarUpload"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(event) => onAvatarFileSelected(event.currentTarget.files?.[0] ?? null)}
-              />
-              <Button type="button" variant="outline" size="sm" disabled={isUploadingAvatar} asChild>
-                <span className="inline-flex items-center gap-2">
-                  {isUploadingAvatar ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
-                  {isUploadingAvatar ? "Uploading..." : "Add photo"}
-                </span>
-              </Button>
-            </label>
-          </div>
+          <Label htmlFor="avatarUpload" className="text-xs text-muted-foreground">
+            Upload a profile picture (optional)
+          </Label>
+          <Input
+            id="avatarUpload"
+            type="file"
+            accept="image/*"
+            className="max-w-xs"
+            disabled={isUploadingAvatar}
+            onChange={(event) => onAvatarFileSelected(event.currentTarget.files?.[0] ?? null)}
+          />
         </div>
-        <Separator className="my-4" />
-        <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+
+        <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="first">First name</Label>
             <Input id="first" value={firstName} aria-invalid={Boolean(errors?.firstName)} onChange={(event) => onFirstNameChange(event.currentTarget.value)} />
@@ -88,14 +84,17 @@ export function ProfileSection({
             {errors?.lastName ? <p className="text-xs text-destructive">{errors.lastName}</p> : null}
           </div>
         </div>
-        <div className="mt-2 grid gap-2">
-          <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" value={phone} aria-invalid={Boolean(errors?.phone)} onChange={(event) => onPhoneChange(event.currentTarget.value)} />
-          {errors?.phone ? <p className="text-xs text-destructive">{errors.phone}</p> : null}
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="email">Email</Label>
-          <Input id="email" value={email} disabled />
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-2">
+            <Label htmlFor="phone">Phone</Label>
+            <Input id="phone" value={phone} aria-invalid={Boolean(errors?.phone)} onChange={(event) => onPhoneChange(event.currentTarget.value)} />
+            {errors?.phone ? <p className="text-xs text-destructive">{errors.phone}</p> : null}
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input id="email" value={email} disabled />
+          </div>
         </div>
       </div>
     </div>

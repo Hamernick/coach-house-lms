@@ -6,13 +6,13 @@ import { env } from "@/lib/env"
 import type { Database } from "@/lib/supabase/types"
 
 const PROTECTED_PREFIXES = [
-  "/dashboard",
   "/class",
   "/academy",
   "/classes",
   "/organizations",
   "/billing",
   "/admin",
+  "/internal",
   "/onboarding",
 ]
 const AUTH_ROUTES = new Set(["/login", "/sign-up", "/forgot-password"])
@@ -54,7 +54,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && isAuthRoute) {
-    const redirectResponse = NextResponse.redirect(new URL("/dashboard", request.url))
+    const redirectResponse = NextResponse.redirect(new URL("/my-organization", request.url))
     copyCookies(response, redirectResponse)
     return redirectResponse
   }

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { generateHomeworkSuggestion } from "@/lib/homework/assist"
+import { resolveActiveOrganization } from "@/lib/organization/active-org"
 
 type AssistRequestBody = {
   moduleId?: string
@@ -27,6 +28,8 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const { orgId } = await resolveActiveOrganization(supabase, user.id)
 
   let body: AssistRequestBody
   try {
@@ -62,7 +65,7 @@ export async function POST(request: Request) {
   const { data: orgRow, error: orgError } = await supabase
     .from("organizations")
     .select("profile")
-    .eq("user_id", user.id)
+    .eq("user_id", orgId)
     .maybeSingle<{ profile: Record<string, unknown> | null }>()
 
   if (orgError) {

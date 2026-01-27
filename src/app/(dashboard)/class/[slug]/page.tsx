@@ -60,9 +60,9 @@ export default async function ClassLandingPage({ params }: { params: Promise<Par
     : null
 
   return (
-    <div className="mx-auto w-full max-w-5xl px-6 lg:px-8 space-y-8">
+    <div className="space-y-8">
       {c ? (
-        <ClassOverview c={c} isAdmin={profile?.role === 'admin'} />
+        <ClassOverview c={c} isAdmin={profile?.role === "admin"} />
       ) : (
         <div className="rounded-lg border bg-card/60 p-6 text-sm text-muted-foreground">Class not found.</div>
       )}

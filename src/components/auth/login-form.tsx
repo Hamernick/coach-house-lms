@@ -29,9 +29,10 @@ type LoginFormValues = z.infer<typeof schema>
 type LoginFormProps = {
   redirectTo?: string
   initialError?: string | null
+  signUpHref?: string
 }
 
-export function LoginForm({ redirectTo, initialError }: LoginFormProps) {
+export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
   const [errorMessage, setErrorMessage] = useState<string | null>(initialError ?? null)
@@ -105,7 +106,7 @@ export function LoginForm({ redirectTo, initialError }: LoginFormProps) {
         </form>
       </Form>
       <div className="flex justify-between text-sm text-muted-foreground">
-        <Link href="/sign-up" className="hover:text-foreground">
+        <Link href={signUpHref ?? "/sign-up"} className="hover:text-foreground">
           Need an account? Sign up
         </Link>
         <Link href="/forgot-password" className="hover:text-foreground">

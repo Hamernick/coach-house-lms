@@ -1,12 +1,13 @@
 "use client"
 
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 
 import { FormRow, ProfileField } from "@/components/organization/org-profile-card/shared"
 import type { CompanyEditProps } from "../types"
 
-export function IdentitySection({ company, errors, onInputChange }: CompanyEditProps) {
+export function IdentitySection({ company, errors, onInputChange, onUpdate, onDirty }: CompanyEditProps) {
   return (
     <FormRow title="Identity" description="Basic details that represent your organization.">
       <div className="grid gap-4 md:grid-cols-2">
@@ -51,6 +52,26 @@ export function IdentitySection({ company, errors, onInputChange }: CompanyEditP
           />
           {errors.ein ? <p className="text-xs text-destructive">{errors.ein}</p> : null}
           <p className="text-xs text-muted-foreground">Format: 12-3456789</p>
+        </ProfileField>
+        <ProfileField label="Formation status">
+          <Select
+            value={company.formationStatus || "in_progress"}
+            onValueChange={(value) => {
+              if (value !== "pre_501c3" && value !== "in_progress" && value !== "approved") return
+              onUpdate({ formationStatus: value })
+              onDirty()
+            }}
+          >
+            <SelectTrigger data-tour="org-formation-status" className="bg-background">
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pre_501c3">Pre-501(c)(3)</SelectItem>
+              <SelectItem value="in_progress">In progress</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">Used to tailor your formation checklist and map listing steps.</p>
         </ProfileField>
       </div>
     </FormRow>

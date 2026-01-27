@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { uploadAvatarWithUser, uploadAvatarAdmin, resolveAvatarCleanupPath, AVATARS_BUCKET } from "@/lib/storage/avatars"
 
 export async function POST(request: NextRequest) {
@@ -44,7 +45,7 @@ export async function POST(request: NextRequest) {
     const { error: upsertError } = await supabase
       .from("profiles")
       .upsert({ id: user.id, avatar_url: avatarUrl }, { onConflict: "id" })
-    if (upsertError) throw upsertError
+    if (upsertError) throw supabaseErrorToError(upsertError, "Unable to save profile photo.")
 
     const cleanupPath = resolveAvatarCleanupPath({ previousUrl: previousAvatarUrl, nextUrl: avatarUrl, userId: user.id })
     if (cleanupPath) {

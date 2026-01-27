@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server"
 
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 import { normalizePersonCategory, type PersonCategory } from "@/lib/people/categories"
+import { resolveActiveOrganization } from "@/lib/organization/active-org"
 
 type OrgPersonSummary = {
   id: string
@@ -26,10 +27,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: error?.message ?? "Unauthorized" }, { status: 401 })
   }
 
+  const { orgId } = await resolveActiveOrganization(supabase, user.id)
+
   const { data: orgRow, error: orgErr } = await supabase
     .from("organizations")
     .select("profile")
-    .eq("user_id", user.id)
+    .eq("user_id", orgId)
     .maybeSingle<{ profile: Record<string, unknown> | null }>()
 
   if (orgErr) {
@@ -40,13 +43,15 @@ export async function GET(request: NextRequest) {
   const raw = Array.isArray(profile.org_people) ? profile.org_people : []
   const people = raw
     .filter((entry): entry is Record<string, unknown> => isRecord(entry))
-    .map((entry) => ({
-      id: typeof entry.id === "string" ? entry.id : "",
-      name: typeof entry.name === "string" ? entry.name : "",
-      title: typeof entry.title === "string" ? entry.title : null,
-      category: normalizePersonCategory(typeof entry.category === "string" ? entry.category : ""),
-    }))
-    .filter((person): person is OrgPersonSummary => Boolean(person.id && person.name))
+    .map(
+      (entry): OrgPersonSummary => ({
+        id: typeof entry.id === "string" ? entry.id : "",
+        name: typeof entry.name === "string" ? entry.name : "",
+        title: typeof entry.title === "string" ? entry.title : null,
+        category: normalizePersonCategory(typeof entry.category === "string" ? entry.category : ""),
+      }),
+    )
+    .filter((person) => Boolean(person.id && person.name))
 
   return NextResponse.json({ people }, { status: 200 })
 }

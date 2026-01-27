@@ -6,7 +6,7 @@ import { PublicThemeToggle } from "@/components/organization/public-theme-toggle
 import { ShareButton } from "@/components/shared/share-button"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { publicSharingEnabled } from "@/lib/feature-flags"
-import type { OrgPerson } from "@/app/(dashboard)/people/actions"
+import type { OrgPerson } from "@/actions/people"
 
 export const revalidate = 300
 

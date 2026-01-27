@@ -1,7 +1,7 @@
 const ORG_MEDIA_MAX_BYTES = 10 * 1024 * 1024
 const ORG_MEDIA_ALLOWED = new Set(["image/png", "image/jpeg", "image/webp", "image/svg+xml"])
 
-export type OrgMediaKind = "logo" | "header" | "roadmap" | "cover"
+export type OrgMediaKind = "logo" | "header" | "roadmap" | "roadmap-inline" | "cover"
 
 export function validateOrgMediaFile(file: File): string | null {
   if (!ORG_MEDIA_ALLOWED.has(file.type)) {

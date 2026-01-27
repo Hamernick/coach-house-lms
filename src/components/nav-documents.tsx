@@ -30,9 +30,7 @@ export function NavDocuments({
 
   return (
     <SidebarGroup className="mt-4">
-      <SidebarGroupLabel className="px-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {label}
-      </SidebarGroupLabel>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => (
@@ -48,7 +46,7 @@ export function NavDocuments({
                   {...(item.external ? { target: "_blank", rel: "noreferrer" } : null)}
                 >
                   <item.icon className="size-4 shrink-0" />
-                  <span className="flex-1 break-words leading-snug group-data-[collapsible=icon]:hidden">
+                  <span className="flex-1 min-w-0 truncate whitespace-nowrap leading-snug group-data-[collapsible=icon]:hidden">
                     {item.name}
                   </span>
                   {item.external ? (

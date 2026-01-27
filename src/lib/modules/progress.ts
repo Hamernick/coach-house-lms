@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 import type { ModuleProgressInsert } from "./types"
 
 export async function markModuleCompleted({
@@ -25,7 +26,6 @@ export async function markModuleCompleted({
     .upsert(upsertPayload)
 
   if (error) {
-    throw error
+    throw supabaseErrorToError(error, "Unable to update module progress.")
   }
 }
-

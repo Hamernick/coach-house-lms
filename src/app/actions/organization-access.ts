@@ -2,6 +2,7 @@
 
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import type { Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 
@@ -557,9 +558,10 @@ export async function acceptOrganizationInviteAction(token: string): Promise<Acc
         pos: null,
       })
 
+      const profilePayload = { ...profile, org_people: people } as Json
       await adminClient
         .from("organizations")
-        .upsert({ user_id: invite.org_id, profile: { ...profile, org_people: people } }, { onConflict: "user_id" })
+        .upsert({ user_id: invite.org_id, profile: profilePayload }, { onConflict: "user_id" })
     }
   } catch {}
 

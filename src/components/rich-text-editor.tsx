@@ -198,7 +198,7 @@ export function RichTextEditor({
         ? [
             ImageExtension.configure({
               uploadImage: onImageUpload,
-            }),
+            } as Record<string, unknown>),
           ]
         : []),
     ],

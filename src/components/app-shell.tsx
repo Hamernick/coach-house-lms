@@ -43,6 +43,7 @@ type AppShellProps = {
   } | null
   isAdmin: boolean
   showOrgAdmin?: boolean
+  showLiveBadges?: boolean
   acceleratorProgress?: number | null
   showAccelerator?: boolean
   hasActiveSubscription?: boolean

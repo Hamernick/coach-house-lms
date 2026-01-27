@@ -26,6 +26,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Editor } from "@tiptap/core";
+import type { EditorState } from "prosemirror-state";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDebounce } from "@/hooks/use-debounce";
 
@@ -306,7 +307,7 @@ export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
   return (
     <FloatingMenu
       editor={editor}
-      shouldShow={({ state }) => {
+      shouldShow={({ state }: { state: EditorState }) => {
         if (!editor) return false;
 
         const { $from } = state.selection;

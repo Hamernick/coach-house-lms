@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { createModuleAction } from "@/app/(admin)/admin/classes/[id]/actions"
+import { POST as createModuleRoute } from "@/app/api/admin/classes/[id]/modules/route"
 import {
-  captureRedirect,
   createSupabaseServerClientServerMock,
   revalidatePathMock,
   requireAdminMock,
@@ -50,9 +49,16 @@ describe("admin module management", () => {
     const form = new FormData()
     form.set("classId", "class-42")
 
-    const destination = await captureRedirect(() => createModuleAction(form))
+    const response = await createModuleRoute(
+      new Request("http://localhost/api/admin/classes/class-42/modules", {
+        method: "POST",
+      }),
+      { params: Promise.resolve({ id: "class-42" }) },
+    )
+    const payload = await response.json()
 
-    expect(destination).toBe("/admin/modules/module-new")
+    expect(response.status).toBe(201)
+    expect(payload).toMatchObject({ moduleId: "module-new" })
     expect(modulesTable.maybeSingle).toHaveBeenCalled()
     expect(modulesTable.insert).toHaveBeenCalledTimes(1)
     expect(insertedPayloads[0]).toMatchObject({

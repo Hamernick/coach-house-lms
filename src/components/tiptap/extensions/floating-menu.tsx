@@ -26,7 +26,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import type { Editor } from "@tiptap/core";
-import type { EditorState } from "prosemirror-state";
+import type { EditorState } from "@tiptap/pm/state";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDebounce } from "@/hooks/use-debounce";
 

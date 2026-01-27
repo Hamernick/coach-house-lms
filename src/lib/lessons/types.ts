@@ -57,7 +57,7 @@ export type FormField = {
 
 export type ModuleDefinition = {
   id: string
-  moduleId?: string
+  moduleId?: string | null
   title: string
   subtitle: string
   body: string
@@ -73,7 +73,7 @@ export interface LessonWizardPayload {
   videoUrl: string
   links: Array<{ title: string; url: string; provider?: ProviderSlug }>
   modules: Array<{
-    moduleId?: string
+    moduleId?: string | null
     title: string
     subtitle: string
     body: string

@@ -38,8 +38,13 @@ import { useImageUpload } from "@/hooks/use-image-upload";
 
 export const ImageExtension = Image.extend({
   addOptions() {
+    const parent = this.parent?.()
     return {
-      ...this.parent?.(),
+      ...parent,
+      inline: parent?.inline ?? false,
+      allowBase64: parent?.allowBase64 ?? false,
+      HTMLAttributes: parent?.HTMLAttributes ?? {},
+      resize: parent?.resize ?? false,
       uploadImage: null,
     };
   },

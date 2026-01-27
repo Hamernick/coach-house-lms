@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
+import { toast } from "@/lib/toast"
 import type {
   AccountSettingsErrorKey,
   AccountSettingsMobilePage,
@@ -39,14 +40,6 @@ type ReturnType = {
   errors: Partial<Record<AccountSettingsErrorKey, string>>
   avatarUrl: string | null
   orgName: string
-  orgDesc: string
-  website: string
-  social: string
-  applyingAs: "individual" | "organization" | ""
-  stage: string
-  problem: string
-  mission: string
-  goals: string
   email: string
   handleSave: () => Promise<void>
   handleUpdatePassword: () => Promise<void>
@@ -57,15 +50,6 @@ type ReturnType = {
   handleFirstNameChange: (value: string) => void
   handleLastNameChange: (value: string) => void
   handlePhoneChange: (value: string) => void
-  handleOrgNameChange: (value: string) => void
-  handleOrgDescChange: (value: string) => void
-  handleWebsiteChange: (value: string) => void
-  handleSocialChange: (value: string) => void
-  handleApplyingAsChange: (value: "individual" | "organization") => void
-  handleStageChange: (value: string) => void
-  handleProblemChange: (value: string) => void
-  handleMissionChange: (value: string) => void
-  handleGoalsChange: (value: string) => void
   handleNewPasswordChange: (value: string) => void
   handleConfirmPasswordChange: (value: string) => void
   applyAvatarUrl: (url: string) => void
@@ -102,20 +86,11 @@ export function useAccountSettingsDialogState({
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
 
   const [orgName, setOrgName] = useState("")
-  const [orgDesc, setOrgDesc] = useState("")
-  const [website, setWebsite] = useState("")
-  const [social, setSocial] = useState("")
-  const [applyingAs, setApplyingAs] = useState<"individual" | "organization" | "">("")
-  const [stage, setStage] = useState("")
-  const [problem, setProblem] = useState("")
-  const [mission, setMission] = useState("")
-  const [goals, setGoals] = useState("")
 
   const email = defaultEmail ?? ""
   const initialFirstRef = useRef("")
   const initialLastRef = useRef("")
   const initialPhoneRef = useRef("")
-  const initialOrgRef = useRef<Record<string, unknown>>({})
   const initialMarketingRef = useRef(defaultMarketingOptIn)
   const initialNewsletterRef = useRef(defaultNewsletterOptIn)
 
@@ -149,47 +124,6 @@ export function useAccountSettingsDialogState({
     setPhone(value)
     markDirty()
     clearError("phone")
-  }
-  const handleOrgNameChange = (value: string) => {
-    setOrgName(value)
-    markDirty()
-    clearError("orgName")
-  }
-  const handleOrgDescChange = (value: string) => {
-    setOrgDesc(value)
-    markDirty()
-    clearError("orgDesc")
-  }
-  const handleApplyingAsChange = (value: "individual" | "organization") => {
-    setApplyingAs(value)
-    markDirty()
-    clearError("applyingAs")
-  }
-  const handleStageChange = (value: string) => {
-    setStage(value)
-    markDirty()
-    clearError("stage")
-  }
-  const handleProblemChange = (value: string) => {
-    setProblem(value)
-    markDirty()
-    clearError("problem")
-  }
-  const handleMissionChange = (value: string) => {
-    setMission(value)
-    markDirty()
-  }
-  const handleGoalsChange = (value: string) => {
-    setGoals(value)
-    markDirty()
-  }
-  const handleWebsiteChange = (value: string) => {
-    setWebsite(value)
-    markDirty()
-  }
-  const handleSocialChange = (value: string) => {
-    setSocial(value)
-    markDirty()
   }
   const handleMarketingOptInChange = (value: boolean) => {
     setMarketingOptIn(value)
@@ -268,6 +202,17 @@ export function useAccountSettingsDialogState({
           : defaultNewsletterOptIn
 
       if (data?.user?.id) {
+        const activeOrgId = await (async () => {
+          const { data: membership } = await supabase
+            .from("organization_memberships")
+            .select("org_id, created_at")
+            .eq("member_id", data.user.id)
+            .order("created_at", { ascending: true })
+            .limit(1)
+            .maybeSingle<{ org_id: string; created_at: string }>()
+          return membership?.org_id ?? data.user.id
+        })()
+
         const { data: profileRow } = await supabase
           .from("profiles")
           .select("avatar_url")
@@ -278,24 +223,10 @@ export function useAccountSettingsDialogState({
         const { data: orgRow } = await supabase
           .from("organizations")
           .select("profile")
-          .eq("user_id", data.user.id)
+          .eq("user_id", activeOrgId)
           .maybeSingle<{ profile: Record<string, unknown> | null }>()
         const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
         setOrgName(String(profile.name ?? ""))
-        setOrgDesc(String(profile.description ?? ""))
-        setWebsite(String(profile.website ?? ""))
-        setSocial(String(profile.social ?? ""))
-        const rawApplyingAs = (profile.applying_as as string) ?? ""
-        setApplyingAs(
-          rawApplyingAs === "individual" || rawApplyingAs === "organization"
-            ? (rawApplyingAs as "individual" | "organization")
-            : ""
-        )
-        setStage(String(profile.stage ?? ""))
-        setProblem(String(profile.problem ?? ""))
-        setMission(String(profile.mission ?? ""))
-        setGoals(String(profile.goals ?? ""))
-        initialOrgRef.current = profile
       }
     }
 
@@ -351,27 +282,6 @@ export function useAccountSettingsDialogState({
         }
       }
 
-      if (userId && tab === "organization") {
-        const nextProfile = {
-          name: orgName,
-          description: orgDesc,
-          website,
-          social,
-          applying_as: applyingAs,
-          stage,
-          problem,
-          mission,
-          goals,
-        }
-        const changed = JSON.stringify(nextProfile) !== JSON.stringify(initialOrgRef.current || {})
-        if (changed) {
-          await supabase
-            .from("organizations")
-            .upsert({ user_id: userId, profile: nextProfile }, { onConflict: "user_id" })
-          initialOrgRef.current = nextProfile
-        }
-      }
-
       dirtyRef.current = false
       setDirty(false)
 
@@ -397,9 +307,13 @@ export function useAccountSettingsDialogState({
     setIsUpdatingPassword(true)
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword })
-      if (error) throw error
+      if (error) {
+        toast.error(error.message || "Unable to update password.")
+        return
+      }
       setNewPassword("")
       setConfirmPassword("")
+      toast.success("Password updated.")
     } finally {
       setIsUpdatingPassword(false)
     }
@@ -431,7 +345,6 @@ export function useAccountSettingsDialogState({
 
   const applyAvatarUrl = (url: string) => {
     setAvatarUrl(url)
-    markDirty()
   }
 
   return {
@@ -455,14 +368,6 @@ export function useAccountSettingsDialogState({
     errors,
     avatarUrl,
     orgName,
-    orgDesc,
-    website,
-    social,
-    applyingAs,
-    stage,
-    problem,
-    mission,
-    goals,
     email,
     handleSave,
     handleUpdatePassword,
@@ -473,15 +378,6 @@ export function useAccountSettingsDialogState({
     handleFirstNameChange,
     handleLastNameChange,
     handlePhoneChange,
-    handleOrgNameChange,
-    handleOrgDescChange,
-    handleWebsiteChange,
-    handleSocialChange,
-    handleApplyingAsChange,
-    handleStageChange,
-    handleProblemChange,
-    handleMissionChange,
-    handleGoalsChange,
     handleNewPasswordChange,
     handleConfirmPasswordChange,
     applyAvatarUrl,

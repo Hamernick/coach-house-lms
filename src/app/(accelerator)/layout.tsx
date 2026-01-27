@@ -3,8 +3,10 @@ import { redirect } from "next/navigation"
 
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { fetchSidebarTree } from "@/lib/academy"
-import { AcceleratorShell } from "@/components/accelerator/accelerator-shell"
+import { AppShell } from "@/components/app-shell"
+import { resolveActiveOrganization } from "@/lib/organization/active-org"
 
 export default async function AcceleratorLayout({ children }: { children: ReactNode }) {
   const supabase = await createSupabaseServerClient()
@@ -14,7 +16,7 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   } = await supabase.auth.getUser()
 
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw userError
+    throw supabaseErrorToError(userError, "Unable to load user.")
   }
 
   if (!user) {
@@ -25,6 +27,8 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   let email: string | null = user.email ?? null
   let avatar: string | null = null
   let isAdmin = false
+  let tutorialWelcome = false
+  let showOrgAdmin = false
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -41,15 +45,46 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
 
   avatar = profile?.avatar_url ?? (typeof user.user_metadata?.avatar_url === "string" ? (user.user_metadata.avatar_url as string) : null)
 
+  const { role } = await resolveActiveOrganization(supabase, user.id)
+  showOrgAdmin = role === "owner" || role === "admin" || isAdmin
+
+  const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
+  const onboardingCompleted = Boolean(userMeta?.onboarding_completed)
+  const tutorialsCompleted = Array.isArray(userMeta?.tutorials_completed)
+    ? (userMeta?.tutorials_completed as unknown[]).filter((t): t is string => typeof t === "string")
+    : []
+  const tutorialsDismissed = Array.isArray(userMeta?.tutorials_dismissed)
+    ? (userMeta?.tutorials_dismissed as unknown[]).filter((t): t is string => typeof t === "string")
+    : []
+  tutorialWelcome = !isAdmin && onboardingCompleted && !tutorialsCompleted.includes("accelerator") && !tutorialsDismissed.includes("accelerator")
+
+  if (!isAdmin) {
+    const { data: purchase } = await supabase
+      .from("accelerator_purchases")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle<{ id: string }>()
+
+    if (!purchase) {
+      redirect("/pricing?upgrade=accelerator")
+    }
+  }
+
   const sidebarTree = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
 
   return (
-    <AcceleratorShell
+    <AppShell
       sidebarTree={sidebarTree}
       isAdmin={isAdmin}
+      showOrgAdmin={showOrgAdmin}
+      tutorialWelcome={{ platform: false, accelerator: tutorialWelcome }}
       user={{ name: displayName, email: email ?? null, avatar: avatar ?? null }}
+      showAccelerator={true}
+      context="accelerator"
     >
       {children}
-    </AcceleratorShell>
+    </AppShell>
   )
 }

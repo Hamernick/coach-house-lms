@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
-import { Badge } from "@/components/ui/badge"
+import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
 import {
   SidebarGroup,
   SidebarGroupContent,
@@ -12,11 +12,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 
 export function NavMain({
   items,
-  label = "Platform",
-  showLiveBadges = false,
+  label,
+  className,
 }: {
   items: {
     title: string
@@ -24,19 +25,31 @@ export function NavMain({
     icon?: React.ComponentType<{ className?: string }>
   }[]
   label?: string
-  showLiveBadges?: boolean
+  className?: string
 }) {
   const pathname = usePathname()
+  const activeHref = pathname
+    ? items.reduce<string | null>((current, item) => {
+        const matches = pathname === item.href || pathname.startsWith(`${item.href}/`)
+        if (!matches) return current
+        if (!current || item.href.length > current.length) return item.href
+        return current
+      }, null)
+    : null
 
   return (
-    <SidebarGroup>
-      <SidebarGroupLabel className="px-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-        {label}
-      </SidebarGroupLabel>
+    <SidebarGroup className={cn("py-0", className)}>
+      {label ? <SidebarGroupLabel>{label}</SidebarGroupLabel> : null}
       <SidebarGroupContent>
         <SidebarMenu>
           {items.map((item) => {
-            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
+            const isActive = item.href === activeHref
+            const tourId =
+              item.href === "/my-organization"
+                ? "nav-my-organization"
+                : item.href === "/roadmap"
+                  ? "nav-roadmap"
+                  : undefined
 
             return (
               <SidebarMenuItem key={item.title}>
@@ -46,19 +59,16 @@ export function NavMain({
                   tooltip={item.title}
                   className="justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
                 >
-                  <Link href={item.href} title={item.title}>
+                  <Link href={item.href} title={item.title} data-tour={tourId}>
                     {item.icon ? <item.icon className="size-4 shrink-0" /> : null}
-                    <span className="flex-1 break-words leading-snug group-data-[collapsible=icon]:hidden">
+                    <span className="flex-1 min-w-0 truncate whitespace-nowrap leading-snug group-data-[collapsible=icon]:hidden">
                       {item.title}
                     </span>
-                    {showLiveBadges && (item.href === "/my-organization" || item.href === "/my-organization/roadmap") ? (
-                      <Badge
-                        variant="secondary"
-                        className="ml-auto rounded-full border-emerald-500/40 bg-emerald-500/15 text-[11px] text-emerald-700 dark:text-emerald-300 group-data-[collapsible=icon]:hidden"
-                      >
-                        Live
-                      </Badge>
-                    ) : null}
+                    <span className="ml-auto flex shrink-0 items-center gap-2 group-data-[collapsible=icon]:hidden">
+                      {item.href === "/roadmap" ? (
+                        <ArrowUpRightIcon className="size-3.5 text-muted-foreground" aria-hidden />
+                      ) : null}
+                    </span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>

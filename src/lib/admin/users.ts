@@ -1,12 +1,13 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 export type AdminUserSummary = {
   id: string
   email: string
   fullName: string | null
-  role: "student" | "admin"
+  role: "member" | "admin"
   lastSignInAt: string | null
   enrollmentCount: number
   subscriptionStatus: string | null
@@ -14,7 +15,7 @@ export type AdminUserSummary = {
 
 export type AdminUserListParams = {
   search?: string
-  role?: "student" | "admin" | "all"
+  role?: "member" | "admin" | "all"
   status?: string
   perPage?: number
 }
@@ -29,7 +30,7 @@ export async function listAdminUsers({
   const { data: userList, error } = await admin.auth.admin.listUsers({ page: 1, perPage })
 
   if (error) {
-    throw error
+    throw supabaseErrorToError(error, "Unable to load users.")
   }
 
   const users = userList.users
@@ -42,18 +43,57 @@ export async function listAdminUsers({
 
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
-    .select("id, full_name, role, enrollments ( id ), subscriptions ( status, created_at )")
+    .select("id, full_name, role")
     .in("id", userIds)
     .returns<Array<{
       id: string
       full_name: string | null
       role: string | null
-      enrollments?: { id: string }[] | null
-      subscriptions?: { status: string | null; created_at: string | null }[] | null
     }>>()
 
   if (profilesError) {
-    throw profilesError
+    throw supabaseErrorToError(profilesError, "Unable to load profiles.")
+  }
+
+  const { data: enrollmentRows, error: enrollmentsError } = await supabase
+    .from("enrollments")
+    .select("user_id")
+    .in("user_id", userIds)
+    .returns<Array<{ user_id: string }>>()
+
+  if (enrollmentsError) {
+    const code = (enrollmentsError as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      throw supabaseErrorToError(enrollmentsError, "Unable to load enrollments.")
+    }
+  }
+
+  const enrollmentCounts = new Map<string, number>()
+  for (const row of enrollmentsError ? [] : enrollmentRows ?? []) {
+    enrollmentCounts.set(row.user_id, (enrollmentCounts.get(row.user_id) ?? 0) + 1)
+  }
+
+  const { data: subscriptionRows, error: subscriptionsError } = await supabase
+    .from("subscriptions")
+    .select("user_id, status, created_at")
+    .in("user_id", userIds)
+    .returns<Array<{ user_id: string; status: string | null; created_at: string | null }>>()
+
+  if (subscriptionsError) {
+    const code = (subscriptionsError as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      throw supabaseErrorToError(subscriptionsError, "Unable to load subscriptions.")
+    }
+  }
+
+  const latestSubscriptionByUser = new Map<string, { status: string | null; created_at: string | null }>()
+  for (const row of subscriptionsError ? [] : subscriptionRows ?? []) {
+    const current = latestSubscriptionByUser.get(row.user_id)
+    const currentTime = current ? new Date(current.created_at ?? "1970-01-01").getTime() : -1
+    const rowTime = new Date(row.created_at ?? "1970-01-01").getTime()
+    if (!current || rowTime > currentTime) {
+      latestSubscriptionByUser.set(row.user_id, row)
+    }
   }
 
   const profileRecords = profiles ?? []
@@ -65,19 +105,15 @@ export async function listAdminUsers({
   return users
     .map((user) => {
       const profile = profileMap.get(user.id)
-      const latestSubscription = profile?.subscriptions
-        ? [...profile.subscriptions].sort((a, b) =>
-            new Date(b.created_at ?? "1970").getTime() - new Date(a.created_at ?? "1970").getTime()
-          )[0]
-        : undefined
+      const latestSubscription = latestSubscriptionByUser.get(user.id) ?? null
 
       const summary: AdminUserSummary = {
         id: user.id,
         email: user.email ?? "",
         fullName: profile?.full_name ?? user.user_metadata?.full_name ?? null,
-        role: (profile?.role ?? "student") as "student" | "admin",
+        role: (profile?.role ?? "member") as "member" | "admin",
         lastSignInAt: user.last_sign_in_at ?? null,
-        enrollmentCount: profile?.enrollments?.length ?? 0,
+        enrollmentCount: enrollmentCounts.get(user.id) ?? 0,
         subscriptionStatus: latestSubscription?.status ?? null,
       }
 
@@ -99,7 +135,7 @@ export type AdminUserDetail = {
   id: string
   email: string
   fullName: string | null
-  role: "student" | "admin"
+  role: "member" | "admin"
   lastSignInAt: string | null
   createdAt: string
   enrollments: Array<{
@@ -128,7 +164,7 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
 
   const { data: userData, error: userError } = await admin.auth.admin.getUserById(userId)
   if (userError) {
-    throw userError
+    throw supabaseErrorToError(userError, "Unable to load user.")
   }
 
   if (!userData?.user) {
@@ -144,7 +180,7 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     .maybeSingle<{ id: string; full_name: string | null; role: string | null; created_at: string }>()
 
   if (profileError) {
-    throw profileError
+    throw supabaseErrorToError(profileError, "Unable to load profile.")
   }
 
   if (!profile) {
@@ -166,7 +202,7 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     }>>()
 
   if (enrollmentsError) {
-    throw enrollmentsError
+    throw supabaseErrorToError(enrollmentsError, "Unable to load enrollments.")
   }
 
   const { data: progress, error: progressError } = await supabase
@@ -183,7 +219,7 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     }>>()
 
   if (progressError) {
-    throw progressError
+    throw supabaseErrorToError(progressError, "Unable to load module progress.")
   }
 
   const { data: subscription, error: subscriptionError } = await supabase
@@ -195,7 +231,7 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     .maybeSingle<{ status: string | null; current_period_end: string | null; metadata: unknown }>()
 
   if (subscriptionError) {
-    throw subscriptionError
+    throw supabaseErrorToError(subscriptionError, "Unable to load subscription.")
   }
 
   const subscriptionRecord = subscription
@@ -206,7 +242,7 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     fullName:
       profileRecord.full_name ??
       (typeof userData.user.user_metadata?.full_name === "string" ? userData.user.user_metadata.full_name : null),
-    role: (profileRecord.role ?? "student") as "student" | "admin",
+    role: (profileRecord.role ?? "member") as "member" | "admin",
     createdAt: profileRecord.created_at,
     lastSignInAt: userData.user.last_sign_in_at ?? null,
     enrollments: (enrollments ?? []).map((item) => ({

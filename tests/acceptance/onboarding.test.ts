@@ -8,7 +8,7 @@ describe("onboarding gate", () => {
     vi.resetModules()
   })
 
-  it("redirects to dashboard when onboarding already completed", async () => {
+  it("redirects to my organization when onboarding already completed", async () => {
     const supabase = {
       from: () => ({
         select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { full_name: null, headline: null } }) }) }),
@@ -31,7 +31,7 @@ describe("onboarding gate", () => {
     // Re-import after mock
     const { default: Page } = await import("@/app/(dashboard)/onboarding/page")
     const destination = await captureRedirect(() => Page())
-    expect(destination).toBe("/dashboard")
+    expect(destination).toBe("/my-organization")
   })
 
   // Rendering path is covered in E2E; this suite focuses on gating redirect.

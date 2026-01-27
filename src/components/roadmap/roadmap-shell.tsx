@@ -14,13 +14,13 @@ import { ProgramCard } from "@/components/programs/program-card"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { toast } from "@/lib/toast"
 import { uploadOrgMedia, validateOrgMediaFile } from "@/lib/organization/org-media"
-import { setRoadmapHeroImageAction } from "@/app/(dashboard)/strategic-roadmap/actions"
+import { setRoadmapHeroImageAction } from "@/actions/roadmap"
 import { cn } from "@/lib/utils"
 
 type RoadmapShellProps = {
   sections: RoadmapSection[]
   publicSlug: string | null
-  initialPublic: boolean
+  canEdit?: boolean
   heroUrl: string | null
   showHeader?: boolean
   headerLayout?: "row" | "column"
@@ -39,6 +39,7 @@ type RoadmapShellProps = {
   showHeroEditor?: boolean
   showProgramPreview?: boolean
   editorLayout?: RoadmapEditorLayout
+  initialSectionId?: string | null
   onDirtyChange?: (dirty: boolean) => void
   onRegisterDiscard?: (handler: (() => void) | null) => void
 }
@@ -53,7 +54,7 @@ const DOT_PATTERN_CLASSES = [
 export function RoadmapShell({
   sections,
   publicSlug,
-  initialPublic,
+  canEdit = true,
   heroUrl: initialHeroUrl,
   showHeader = true,
   headerLayout = "row",
@@ -61,17 +62,18 @@ export function RoadmapShell({
   showHeroEditor = true,
   showProgramPreview = false,
   editorLayout = "default",
+  initialSectionId = null,
   onDirtyChange,
   onRegisterDiscard,
 }: RoadmapShellProps) {
   const heroInputId = useId()
   const heroInputRef = useRef<HTMLInputElement | null>(null)
-  const [isPublic, setIsPublic] = useState(initialPublic)
   const [heroUrl, setHeroUrl] = useState(initialHeroUrl ?? "")
   const [isUploadingHero, setIsUploadingHero] = useState(false)
   const [isSavingHero, setIsSavingHero] = useState(false)
 
   const saveHero = async (nextUrl: string | null, toastId?: string | number) => {
+    if (!canEdit) return
     setIsSavingHero(true)
     try {
       const result = await setRoadmapHeroImageAction(nextUrl)
@@ -96,6 +98,7 @@ export function RoadmapShell({
   }
 
   const handleHeroUpload = async (file: File) => {
+    if (!canEdit) return
     const error = validateOrgMediaFile(file)
     if (error) {
       toast.error(error)
@@ -131,129 +134,140 @@ export function RoadmapShell({
   const programCard = programPreview ?? fallbackProgram
 
   return (
-    <div className="space-y-6">
-      {showHeader ? (
-        <header className={cn("flex gap-4", headerLayout === "column" ? "flex-col items-start" : "flex-wrap items-start")}>
-          <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground">
-            <WaypointsIcon className="h-5 w-5" aria-hidden />
-          </span>
-          <div className="min-w-0 space-y-2 sm:max-w-2xl">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">Strategic roadmap</h1>
-            <p className="text-sm text-muted-foreground">
-              A pitch-ready snapshot of what you are building. Use it to show funders a clear path, proof of progress,
-              and what comes next.
-            </p>
-          </div>
-        </header>
-      ) : null}
-
-      {showHeroEditor ? (
-        <section className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm sm:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <h2 className="text-lg font-semibold">Roadmap hero image</h2>
-              <p className="text-sm text-muted-foreground">Shown on the public roadmap page header. Dot grid is used if empty.</p>
+    <>
+      {!showHeader ? <h1 className="sr-only">Strategic roadmap</h1> : null}
+      <div className="flex min-h-full flex-1 flex-col gap-5">
+        {showHeader ? (
+          <header
+            className={cn(
+              "flex gap-4",
+              headerLayout === "column" ? "flex-col items-start" : "flex-wrap items-start",
+            )}
+          >
+            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground">
+              <WaypointsIcon className="h-5 w-5" aria-hidden />
+            </span>
+            <div className="min-w-0 space-y-2 sm:max-w-2xl">
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground">Strategic roadmap</h1>
+              <p className="text-sm text-muted-foreground">
+                A pitch-ready snapshot of what you are building. Use it to show funders a clear path, proof of progress,
+                and what comes next.
+              </p>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <input
-                id={heroInputId}
-                ref={heroInputRef}
-                type="file"
-                accept="image/*"
-                className="sr-only"
-                onChange={(event) => {
-                  const file = event.currentTarget.files?.[0]
-                  if (!file) return
-                  void handleHeroUpload(file)
-                  event.currentTarget.value = ""
-                }}
-              />
-              <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-2 py-1">
-                <button
-                  type="button"
-                  className={cn(swatchBase, !isHeroImage && "ring-2 ring-foreground/40")}
-                  aria-label="Use dot grid background"
-                  aria-pressed={!isHeroImage}
-                  disabled={isUploadingHero || isSavingHero}
-                  onClick={() => {
-                    if (isHeroImage) void saveHero(null)
+          </header>
+        ) : null}
+
+        {showHeroEditor ? (
+          <section className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm sm:p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <h2 className="text-lg font-semibold">Roadmap hero image</h2>
+                <p className="text-sm text-muted-foreground">
+                  Shown on the public roadmap page header. Dot grid is used if empty.
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <input
+                  id={heroInputId}
+                  ref={heroInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  disabled={!canEdit}
+                  onChange={(event) => {
+                    const file = event.currentTarget.files?.[0]
+                    if (!file) return
+                    void handleHeroUpload(file)
+                    event.currentTarget.value = ""
                   }}
-                >
-                  <span className={cn(DOT_PATTERN_CLASSES)} />
-                  <span className="pointer-events-none absolute inset-0 bg-background [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
-                </button>
-                <button
-                  type="button"
-                  className={cn(swatchBase, isHeroImage && "ring-2 ring-foreground/40")}
-                  aria-label="Use hero image"
-                  aria-pressed={isHeroImage}
-                  disabled={isUploadingHero || isSavingHero}
-                  onClick={() => {
-                    if (isHeroImage) return
-                    heroInputRef.current?.click()
-                  }}
-                >
-                  {isHeroImage ? (
-                    <Image src={heroUrl} alt="" fill className="object-cover" sizes="40px" />
-                  ) : (
-                    <ImageIcon className="h-4 w-4 text-muted-foreground" aria-hidden />
-                  )}
-                </button>
-                <button
-                  type="button"
-                  className={swatchBase}
-                  aria-label="Upload hero image"
-                  disabled={isUploadingHero || isSavingHero}
-                  onClick={() => heroInputRef.current?.click()}
-                >
-                  {isUploadingHero || isSavingHero ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden />
-                  ) : (
-                    <Plus className="h-4 w-4 text-muted-foreground" aria-hidden />
-                  )}
-                </button>
+                />
+                <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-2 py-1">
+                  <button
+                    type="button"
+                    className={cn(swatchBase, !isHeroImage && "ring-2 ring-foreground/40")}
+                    aria-label="Use dot grid background"
+                    aria-pressed={!isHeroImage}
+                    disabled={!canEdit || isUploadingHero || isSavingHero}
+                    onClick={() => {
+                      if (isHeroImage) void saveHero(null)
+                    }}
+                  >
+                    <span className={cn(DOT_PATTERN_CLASSES)} />
+                    <span className="pointer-events-none absolute inset-0 bg-background [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(swatchBase, isHeroImage && "ring-2 ring-foreground/40")}
+                    aria-label="Use hero image"
+                    aria-pressed={isHeroImage}
+                    disabled={!canEdit || isUploadingHero || isSavingHero}
+                    onClick={() => {
+                      if (isHeroImage) return
+                      heroInputRef.current?.click()
+                    }}
+                  >
+                    {isHeroImage ? (
+                      <Image src={heroUrl} alt="" fill className="object-cover" sizes="40px" />
+                    ) : (
+                      <ImageIcon className="h-4 w-4 text-muted-foreground" aria-hidden />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    className={swatchBase}
+                    aria-label="Upload hero image"
+                    disabled={!canEdit || isUploadingHero || isSavingHero}
+                    onClick={() => heroInputRef.current?.click()}
+                  >
+                    {isUploadingHero || isSavingHero ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden />
+                    ) : (
+                      <Plus className="h-4 w-4 text-muted-foreground" aria-hidden />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-          <div className="relative mt-4 h-40 w-full overflow-hidden rounded-xl border border-border/50 sm:h-48">
-            {heroUrl ? <Image src={heroUrl} alt="" fill className="object-cover" sizes="100vw" /> : null}
-            {!heroUrl ? (
-              <>
-                <div className={cn(DOT_PATTERN_CLASSES)} />
-                <div className="pointer-events-none absolute inset-0 bg-background [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
-              </>
-            ) : null}
-          </div>
-        </section>
-      ) : null}
+            <div className="relative mt-4 h-40 w-full overflow-hidden rounded-xl border border-border/50 sm:h-48">
+              {heroUrl ? <Image src={heroUrl} alt="" fill className="object-cover" sizes="100vw" /> : null}
+              {!heroUrl ? (
+                <>
+                  <div className={cn(DOT_PATTERN_CLASSES)} />
+                  <div className="pointer-events-none absolute inset-0 bg-background [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+                </>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
 
-      {showProgramPreview ? (
-        <div className="flex">
-          <ProgramCard
-            title={programCard.title}
-            location={programCard.location ?? undefined}
-            imageUrl={programCard.imageUrl ?? undefined}
-            statusLabel={programCard.statusLabel ?? undefined}
-            chips={programCard.chips ?? undefined}
-            goalCents={programCard.goalCents ?? 0}
-            raisedCents={programCard.raisedCents ?? 0}
-            ctaLabel={programCard.ctaLabel ?? undefined}
-            ctaHref={programCard.ctaHref ?? undefined}
-            ctaTarget={programCard.ctaTarget ?? undefined}
-            className="w-full max-w-[420px] h-auto"
-          />
-        </div>
-      ) : null}
+        {showProgramPreview ? (
+          <div className="flex">
+            <ProgramCard
+              title={programCard.title}
+              location={programCard.location ?? undefined}
+              imageUrl={programCard.imageUrl ?? undefined}
+              statusLabel={programCard.statusLabel ?? undefined}
+              chips={programCard.chips ?? undefined}
+              goalCents={programCard.goalCents ?? 0}
+              raisedCents={programCard.raisedCents ?? 0}
+              ctaLabel={programCard.ctaLabel ?? undefined}
+              ctaHref={programCard.ctaHref ?? undefined}
+              ctaTarget={programCard.ctaTarget ?? undefined}
+              variant="medium"
+            />
+          </div>
+        ) : null}
 
-      <RoadmapEditor
-        sections={sections}
-        publicSlug={publicSlug}
-        roadmapIsPublic={isPublic}
-        layout={editorLayout}
-        onRoadmapPublicChange={setIsPublic}
-        onDirtyChange={onDirtyChange}
-        onRegisterDiscard={onRegisterDiscard}
-      />
-    </div>
+        <RoadmapEditor
+          sections={sections}
+          publicSlug={publicSlug}
+          layout={editorLayout}
+          initialSectionId={initialSectionId}
+          onDirtyChange={onDirtyChange}
+          onRegisterDiscard={onRegisterDiscard}
+          canEdit={canEdit}
+        />
+      </div>
+    </>
   )
 }

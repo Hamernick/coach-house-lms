@@ -12,12 +12,11 @@ import {
 import { toast } from "@/lib/toast"
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
 import { useRouter } from "next/navigation"
-import { updateOrganizationProfileAction } from "@/app/(dashboard)/my-organization/actions"
+import { updateOrganizationProfileAction } from "@/actions/organization"
 
 import type { OrgProfile, OrgProfileCardProps, OrgProfileErrors, OrgProgram, ProfileTab, SlugStatus } from "./types"
 import { organizationProfileSchema } from "./validation"
@@ -55,6 +54,10 @@ function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
     description: source.description ?? "",
     tagline: source.tagline ?? "",
     ein: source.ein ?? "",
+    formationStatus:
+      source.formationStatus === "pre_501c3" || source.formationStatus === "in_progress" || source.formationStatus === "approved"
+        ? source.formationStatus
+        : "in_progress",
     rep: source.rep ?? "",
     email: source.email ?? "",
     phone: source.phone ?? "",
@@ -378,7 +381,7 @@ export function OrgProfileEditor({
   const tabsIdBase = "org-profile-tabs"
 
   return (
-    <Card className="overflow-hidden bg-sidebar py-0 pb-6">
+    <div className="overflow-hidden pb-6">
       <OrgProfileHeader
         name={company.name || "Organization"}
         tagline={company.tagline || "—"}
@@ -396,9 +399,12 @@ export function OrgProfileEditor({
         onSave={handleSave}
       />
 
-      <CardContent className="bg-sidebar p-0">
+      <div className="p-0">
         <Tabs value={tab} onValueChange={handleTabChange} className="w-full">
-          <TabsList className="hidden h-10 w-full items-end justify-start gap-3 rounded-none border-b bg-transparent p-0 pl-6 pr-6 text-muted-foreground sm:inline-flex">
+          <TabsList
+            data-tour="org-profile-tabs"
+            className="hidden h-10 w-full items-end justify-start gap-3 rounded-none border-b bg-transparent p-0 pl-6 pr-6 text-muted-foreground sm:inline-flex"
+          >
             {TABS.map((item) => (
               <TabsTrigger
                 key={item.value}
@@ -419,7 +425,7 @@ export function OrgProfileEditor({
             </div>
             <div className="ml-auto pb-1">
               <Select value={tab} onValueChange={handleTabChange}>
-                <SelectTrigger className="h-9 min-w-[160px] bg-muted/60 text-sm font-medium">
+                <SelectTrigger data-tour="org-profile-tab-picker" className="h-9 min-w-[160px] bg-muted/60 text-sm font-medium">
                   <SelectValue aria-label="Select section" placeholder={currentTabLabel} />
                 </SelectTrigger>
                 <SelectContent align="end">
@@ -496,7 +502,7 @@ export function OrgProfileEditor({
             <SupportersTab editMode={editMode} people={people} />
           </TabsContent>
         </Tabs>
-      </CardContent>
+      </div>
 
       <AlertDialog open={confirmDiscardOpen} onOpenChange={setConfirmDiscardOpen}>
         <AlertDialogContent>
@@ -530,7 +536,7 @@ export function OrgProfileEditor({
       {canEdit && editProgram ? (
         <ProgramWizardLazy mode="edit" program={editProgram} open={editOpen} onOpenChange={setEditOpen} />
       ) : null}
-    </Card>
+    </div>
   )
 }
 

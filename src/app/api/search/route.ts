@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server"
 
 import { fetchSidebarTree } from "@/lib/academy"
-import { CATEGORIES, ITEMS, type MarketplaceCategory } from "@/app/(dashboard)/marketplace/ui/marketplace-data"
+import { CATEGORIES, ITEMS, type MarketplaceCategory } from "@/lib/marketplace/data"
 import { parseAssignmentFields } from "@/lib/modules"
 import { resolveRoadmapSections } from "@/lib/roadmap"
+import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import type { SearchResult } from "@/lib/search/types"
 import { createSupabaseServerClient } from "@/lib/supabase"
 
@@ -128,6 +129,83 @@ function formatSearchRow(row: SearchRow): SearchResult {
   }
 }
 
+async function attachOrganizationImages({
+  supabase,
+  orgId,
+  results,
+}: {
+  supabase: SupabaseClient
+  orgId: string
+  results: SearchResult[]
+}) {
+  const slugs = new Set<string>()
+  let needsSelf = false
+
+  for (const result of results) {
+    if (result.image) continue
+    if (result.href === "/my-organization") {
+      needsSelf = true
+      continue
+    }
+
+    if (result.group === "Community") {
+      const match = result.href.match(/^\/([^/]+)$/)
+      if (match?.[1]) slugs.add(match[1])
+    }
+  }
+
+  let selfLogoUrl: string | undefined
+  if (needsSelf) {
+    const { data: orgRow } = await supabase
+      .from("organizations")
+      .select("profile")
+      .eq("user_id", orgId)
+      .maybeSingle<{ profile: Record<string, unknown> | null }>()
+
+    const profile = orgRow?.profile ?? {}
+    const logoUrl = extractProfileValue(profile, "logoUrl")
+    selfLogoUrl = logoUrl || undefined
+  }
+
+  const logoBySlug = new Map<string, string>()
+  if (slugs.size > 0) {
+    const { data: orgRows } = await supabase
+      .from("organizations")
+      .select("public_slug, profile")
+      .in("public_slug", Array.from(slugs))
+      .returns<Array<{ public_slug: string | null; profile: Record<string, unknown> | null }>>()
+
+    for (const org of orgRows ?? []) {
+      if (!org.public_slug) continue
+      const profile = org.profile ?? {}
+      const logoUrl = extractProfileValue(profile, "logoUrl")
+      if (logoUrl) {
+        logoBySlug.set(org.public_slug, logoUrl)
+      }
+    }
+  }
+
+  if (!selfLogoUrl && logoBySlug.size === 0) {
+    return results
+  }
+
+  return results.map((result) => {
+    if (result.image) return result
+    if (result.href === "/my-organization" && selfLogoUrl) {
+      return { ...result, image: selfLogoUrl }
+    }
+    if (result.group === "Community") {
+      const match = result.href.match(/^\/([^/]+)$/)
+      const slug = match?.[1]
+      const logoUrl = slug ? logoBySlug.get(slug) : undefined
+      if (logoUrl) {
+        return { ...result, image: logoUrl }
+      }
+    }
+    return result
+  })
+}
+
 async function fetchIsAdmin(supabase: SupabaseClient, userId: string) {
   const { data: profile } = await supabase
     .from("profiles")
@@ -137,15 +215,100 @@ async function fetchIsAdmin(supabase: SupabaseClient, userId: string) {
   return profile?.role === "admin"
 }
 
+async function addActiveOrganizationResults({
+  supabase,
+  orgId,
+  tokens,
+  pushResult,
+}: {
+  supabase: SupabaseClient
+  orgId: string
+  tokens: string[]
+  pushResult: (result: SearchResult) => void
+}) {
+  const { data: programs } = await supabase
+    .from("programs")
+    .select("id, title, subtitle, status_label")
+    .eq("user_id", orgId)
+    .returns<Array<{ id: string; title: string | null; subtitle: string | null; status_label: string | null }>>()
+
+  for (const program of programs ?? []) {
+    if (matchesQuery([program.title ?? null, program.subtitle ?? null, program.status_label ?? null], tokens)) {
+      pushResult({
+        id: `program:${program.id}`,
+        label: program.title ?? "Untitled program",
+        subtitle: program.subtitle ?? program.status_label ?? undefined,
+        href: `/my-organization?tab=programs&programId=${program.id}`,
+        group: "Programs",
+      })
+    }
+  }
+
+  const { data: userOrg } = await supabase
+    .from("organizations")
+    .select("profile")
+    .eq("user_id", orgId)
+    .maybeSingle<{ profile: Record<string, unknown> | null }>()
+
+  if (!userOrg?.profile) return
+
+  const profile = userOrg.profile ?? {}
+  const name = extractProfileValue(profile, "name")
+  const tagline = extractProfileValue(profile, "tagline")
+  const mission = extractProfileValue(profile, "mission")
+  const description = extractProfileValue(profile, "description")
+
+  if (matchesQuery([name, tagline, mission, description], tokens)) {
+    pushResult({
+      id: `org:${orgId}`,
+      label: name || "My organization",
+      subtitle: "Your organization",
+      href: "/my-organization",
+      group: "My organization",
+    })
+  }
+
+  const roadmapSections = resolveRoadmapSections(profile)
+  for (const section of roadmapSections) {
+    if (matchesQuery([section.title, section.subtitle, section.content], tokens)) {
+      const sectionKey = section.slug || section.id
+      pushResult({
+        id: `roadmap:${orgId}:${sectionKey}`,
+        label: section.title,
+        subtitle: section.subtitle,
+        href: `/roadmap#${sectionKey}`,
+        group: "Roadmap",
+      })
+    }
+  }
+
+  const documents = isRecord(profile["documents"]) ? (profile["documents"] as Record<string, unknown>) : {}
+  for (const [key, value] of Object.entries(documents)) {
+    if (!isRecord(value)) continue
+    const label = DOCUMENT_LABELS[key] ?? key
+    const name = typeof value.name === "string" ? value.name : ""
+    if (matchesQuery([label, name, key], tokens)) {
+      pushResult({
+        id: `doc:${orgId}:${key}`,
+        label: name || label,
+        subtitle: label,
+        href: "/my-organization/documents",
+        group: "Documents",
+        keywords: [key, label].filter(Boolean),
+      })
+    }
+  }
+}
+
 async function addFallbackResults({
   supabase,
-  userId,
+  orgId,
   isAdmin,
   tokens,
   pushResult,
 }: {
   supabase: SupabaseClient
-  userId: string
+  orgId: string
   isAdmin: boolean
   tokens: string[]
   pushResult: (result: SearchResult) => void
@@ -154,11 +317,12 @@ async function addFallbackResults({
   for (const klass of classes) {
     const classTitle = formatClassTitle(klass.title)
     if (matchesQuery([classTitle, klass.description ?? null, klass.slug], tokens)) {
+      const firstModuleIndex = klass.modules[0]?.index ?? 1
       pushResult({
         id: `class-${klass.id}`,
         label: classTitle,
         subtitle: "Class",
-        href: `/accelerator/class/${klass.slug}`,
+        href: `/accelerator/class/${klass.slug}/module/${firstModuleIndex}`,
         group: "Classes",
         keywords: [klass.slug],
       })
@@ -224,13 +388,13 @@ async function addFallbackResults({
   const { data: programs } = await supabase
     .from("programs")
     .select("id, title, subtitle, status_label")
-    .eq("user_id", userId)
+    .eq("user_id", orgId)
     .returns<Array<{ id: string; title: string | null; subtitle: string | null; status_label: string | null }>>()
 
   for (const program of programs ?? []) {
     if (matchesQuery([program.title ?? null, program.subtitle ?? null, program.status_label ?? null], tokens)) {
       pushResult({
-        id: `program-${program.id}`,
+        id: `program:${program.id}`,
         label: program.title ?? "Untitled program",
         subtitle: program.subtitle ?? program.status_label ?? undefined,
         href: `/my-organization?tab=programs&programId=${program.id}`,
@@ -242,7 +406,7 @@ async function addFallbackResults({
   const { data: userOrg } = await supabase
     .from("organizations")
     .select("user_id, public_slug, is_public, profile")
-    .eq("user_id", userId)
+    .eq("user_id", orgId)
     .maybeSingle<{
       user_id: string
       public_slug: string | null
@@ -257,12 +421,14 @@ async function addFallbackResults({
     const mission = extractProfileValue(profile, "mission")
     const description = extractProfileValue(profile, "description")
     if (matchesQuery([name, tagline, mission, description], tokens)) {
+      const logoUrl = extractProfileValue(profile, "logoUrl")
       pushResult({
-        id: `org-self-${userOrg.user_id}`,
+        id: `org:${userOrg.user_id}`,
         label: name || "My organization",
         subtitle: "Your organization",
         href: "/my-organization",
         group: "My organization",
+        image: logoUrl || undefined,
         keywords: [tagline, mission, description].filter(Boolean),
       })
     }
@@ -270,11 +436,12 @@ async function addFallbackResults({
     const roadmapSections = resolveRoadmapSections(profile)
     for (const section of roadmapSections) {
       if (matchesQuery([section.title, section.subtitle, section.content], tokens)) {
+        const sectionKey = section.slug || section.id
         pushResult({
-          id: `roadmap-${section.id}`,
+          id: `roadmap:${userOrg.user_id}:${sectionKey}`,
           label: section.title,
           subtitle: section.subtitle,
-          href: `/my-organization/roadmap#${section.slug}`,
+          href: `/roadmap#${sectionKey}`,
           group: "Roadmap",
           keywords: [section.content].filter(Boolean),
         })
@@ -288,7 +455,7 @@ async function addFallbackResults({
       const name = typeof value.name === "string" ? value.name : ""
       if (matchesQuery([label, name, key], tokens)) {
         pushResult({
-          id: `doc-${key}`,
+          id: `doc:${userOrg.user_id}:${key}`,
           label: name || label,
           subtitle: label,
           href: "/my-organization/documents",
@@ -321,12 +488,14 @@ async function addFallbackResults({
     const state = extractProfileValue(profile, "address_state")
     if (matchesQuery([name, tagline, mission, description, org.public_slug ?? "", city, state], tokens)) {
       const location = [city, state].filter(Boolean).join(", ")
+      const logoUrl = extractProfileValue(profile, "logoUrl")
       pushResult({
         id: `org-public-${org.user_id}`,
         label: name || org.public_slug || "Organization",
         subtitle: tagline || location || "Community organization",
         href: `/${org.public_slug}`,
         group: "Community",
+        image: logoUrl || undefined,
         keywords: [org.public_slug ?? "", tagline, location].filter(Boolean),
       })
     }
@@ -350,6 +519,22 @@ export async function GET(request: Request) {
     return NextResponse.json({ results: [] }, { status: 401 })
   }
 
+  const { orgId } = await resolveActiveOrganization(supabase, user.id)
+
+  const isAdmin = await fetchIsAdmin(supabase, user.id)
+  let hasAcceleratorAccess = isAdmin
+  if (!isAdmin) {
+    const { data: purchase } = await supabase
+      .from("accelerator_purchases")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle<{ id: string }>()
+
+    hasAcceleratorAccess = Boolean(purchase)
+  }
+
   const tokens = normalizeQuery(rawQuery)
   const results: SearchResult[] = []
   const seen = new Set<string>()
@@ -365,7 +550,7 @@ export async function GET(request: Request) {
     .rpc("search_global", {
       p_query: rawQuery,
       p_user_id: user.id,
-      p_is_admin: false,
+      p_is_admin: isAdmin,
       p_limit: MAX_RESULTS,
     })
     .returns<SearchRow[]>()
@@ -375,9 +560,11 @@ export async function GET(request: Request) {
       if (shouldOmitSearchRow(row)) continue
       pushResult(formatSearchRow(row))
     }
+    if (orgId !== user.id) {
+      await addActiveOrganizationResults({ supabase, orgId, tokens, pushResult })
+    }
   } else {
-    const isAdmin = await fetchIsAdmin(supabase, user.id)
-    await addFallbackResults({ supabase, userId: user.id, isAdmin, tokens, pushResult })
+    await addFallbackResults({ supabase, orgId, isAdmin, tokens, pushResult })
   }
 
   for (const item of ITEMS) {
@@ -398,10 +585,15 @@ export async function GET(request: Request) {
         subtitle: item.byline ?? categoryLabel ?? undefined,
         href: buildMarketplaceHref(primaryCategory, item.name),
         group: "Marketplace",
+        image: item.image,
         keywords: [item.description, item.byline ?? "", ...(searchableCategories ?? [])].filter(Boolean),
       })
     }
   }
+
+  const filtered = hasAcceleratorAccess
+    ? results
+    : results.filter((item) => !item.href.startsWith("/accelerator"))
 
   try {
     const trimmed = rawQuery.slice(0, 200)
@@ -411,11 +603,12 @@ export async function GET(request: Request) {
       query: trimmed,
       query_length: trimmed.length,
       context: searchParams.get("context"),
-      result_count: results.length,
+      result_count: filtered.length,
     })
   } catch {
     // Best-effort analytics; ignore failures.
   }
 
-  return NextResponse.json({ results })
+  const enriched = await attachOrganizationImages({ supabase, orgId, results: filtered })
+  return NextResponse.json({ results: enriched })
 }

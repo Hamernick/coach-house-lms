@@ -1,13 +1,6 @@
 import Image from "next/image"
 import Link from "next/link"
-import { Inter } from "next/font/google"
-
 import { PublicThemeToggle } from "@/components/organization/public-theme-toggle"
-
-const inter = Inter({
-  subsets: ["latin"],
-  weight: ["400", "600", "700", "900"],
-})
 
 export function PublicHeader() {
   return (
@@ -32,7 +25,9 @@ export function PublicHeader() {
               priority
             />
           </span>
-          <span className={`${inter.className} text-base font-black tracking-tight sm:text-lg`}>Coach House</span>
+          <span className="flex h-8 items-center text-base font-semibold leading-none tracking-tight sm:text-lg font-[Inter]">
+            Coach House
+          </span>
         </Link>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
           <Link href="/pricing" className="hidden sm:inline hover:text-foreground">

@@ -2,9 +2,8 @@
 
 import { useCallback, useMemo, useState, useTransition } from "react"
 import { EyeOff, ExternalLink } from "lucide-react"
-import Link from "next/link"
 
-import { setRoadmapPublicAction } from "@/app/(dashboard)/strategic-roadmap/actions"
+import { setRoadmapPublicAction } from "@/actions/roadmap"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { toast } from "@/lib/toast"
@@ -14,12 +13,14 @@ import { publicSharingEnabled } from "@/lib/feature-flags"
 export function RoadmapVisibilityToggle({
   initialPublic,
   publicSlug,
+  canPublishPublicRoadmap = false,
   onPublicChange,
   showViewAction = true,
   className,
 }: {
   initialPublic: boolean
   publicSlug: string | null
+  canPublishPublicRoadmap?: boolean
   onPublicChange?: (next: boolean) => void
   showViewAction?: boolean
   className?: string
@@ -35,6 +36,10 @@ export function RoadmapVisibilityToggle({
 
   const handleToggle = useCallback(
     (next: boolean) => {
+      if (!canPublishPublicRoadmap) {
+        toast.error("Upgrade to Organization to publish your roadmap")
+        return
+      }
       if (!sharePath) {
         toast.error("Set a public slug from My Organization first")
         return
@@ -52,25 +57,27 @@ export function RoadmapVisibilityToggle({
         onPublicChange?.(next)
       })
     },
-    [isPublic, sharePath, onPublicChange],
+    [canPublishPublicRoadmap, isPublic, sharePath, onPublicChange],
   )
 
   const isLive = isPublic && Boolean(sharePath) && sharingEnabled
-  const statusLabel = isLive ? "Live" : "Offline"
   const showPublicLink = Boolean(sharePath)
 
   return (
     <div className={cn("flex flex-wrap items-center gap-3", className)}>
-      <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/60 px-3 py-2">
+      <div
+        data-tour="roadmap-visibility-toggle"
+        className="flex items-center gap-2 rounded-full border border-border/70 bg-background/60 px-3 py-2"
+      >
         {isLive ? (
           <span className="h-2 w-2 rounded-full bg-rose-500" aria-hidden />
         ) : (
           <EyeOff className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
         )}
-        <span className="text-xs font-semibold text-foreground">{statusLabel}</span>
+        {isLive ? <span className="text-xs font-semibold text-foreground">Live</span> : null}
         <Switch
           checked={isPublic && Boolean(sharePath) && sharingEnabled}
-          disabled={isPending || !sharePath || !sharingEnabled}
+          disabled={isPending || !sharePath || !sharingEnabled || !canPublishPublicRoadmap}
           onCheckedChange={handleToggle}
           aria-label="Toggle roadmap visibility"
         />
@@ -104,12 +111,6 @@ export function RoadmapVisibilityToggle({
             <ExternalLink className="h-4 w-4" aria-hidden />
             <span>View live</span>
           </a>
-        </Button>
-      ) : null}
-
-      {!sharePath && sharingEnabled ? (
-        <Button asChild size="sm" variant="outline">
-          <Link href="/my-organization">Set slug</Link>
         </Button>
       ) : null}
 

@@ -3,7 +3,7 @@
 import { Children, cloneElement, useCallback, useContext, useEffect, useMemo, useRef, useState, useTransition, type ReactElement, type ReactNode } from "react"
 import Plus from "lucide-react/dist/esm/icons/plus"
 
-import { createProgramAction, updateProgramAction } from "@/app/(dashboard)/my-organization/programs/actions"
+import { createProgramAction, updateProgramAction } from "@/actions/programs"
 import { DialogStack } from "@/components/kibo-ui/dialog-stack"
 import { DialogStackContext } from "@/components/kibo-ui/dialog-stack/context"
 import { Button } from "@/components/ui/button"

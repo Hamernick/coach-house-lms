@@ -1,47 +1,73 @@
-import Link from "next/link"
 import type { ReactNode } from "react"
 
-import { requireAdmin } from "@/lib/admin/auth"
-import { cn } from "@/lib/utils"
+import { redirect } from "next/navigation"
 
-const NAV_ITEMS = [
-  { href: "/admin", label: "Dashboard" },
-  { href: "/admin/classes", label: "Classes" },
-  { href: "/admin/users", label: "People" },
-  { href: "/admin/settings", label: "Settings" },
-]
+import { fetchSidebarTree } from "@/lib/academy"
+import { AppShell } from "@/components/app-shell"
+import { createSupabaseServerClient } from "@/lib/supabase"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
+import { resolveActiveOrganization } from "@/lib/organization/active-org"
 
 export default async function AdminLayout({ children, breadcrumbs }: { children: ReactNode; breadcrumbs: ReactNode }) {
-  await requireAdmin()
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
+    throw supabaseErrorToError(userError, "Unable to load user.")
+  }
+  if (!user) {
+    redirect("/login?redirect=/admin")
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("full_name, avatar_url")
+    .eq("id", user.id)
+    .maybeSingle<{ full_name: string | null; avatar_url: string | null }>()
+
+  const displayName = profile?.full_name ?? (user?.user_metadata?.full_name as string | undefined) ?? null
+  const email = user?.email ?? null
+  const avatar = profile?.avatar_url ?? (user?.user_metadata?.avatar_url as string | undefined) ?? null
+
+  const { data: roleRow } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<{ role: string | null }>()
+  const isAdmin = roleRow?.role === "admin"
+  const { role } = await resolveActiveOrganization(supabase, user.id)
+  const showOrgAdmin = role === "owner" || role === "admin" || isAdmin
+  let showAccelerator = isAdmin
+
+  if (!isAdmin) {
+    const { data: purchase } = await supabase
+      .from("accelerator_purchases")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("status", "active")
+      .limit(1)
+      .maybeSingle<{ id: string }>()
+
+    showAccelerator = Boolean(purchase)
+  }
+
+  const sidebarTree = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b bg-card/40 backdrop-blur">
-        <div className="mx-auto w-full max-w-6xl px-4 py-2">
-          <div className="flex h-12 items-center justify-between">
-            <Link href="/dashboard" className="text-base font-semibold">
-              Coach House Admin
-            </Link>
-            <nav className="flex items-center gap-3 text-sm text-muted-foreground">
-              {NAV_ITEMS.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "rounded-md px-3 py-2 font-medium hover:bg-accent hover:text-accent-foreground"
-                  )}
-                >
-                  {item.label}
-                </Link>
-              ))}
-            </nav>
-          </div>
-          <div className="flex items-center text-sm text-muted-foreground">
-            {breadcrumbs}
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto w-full max-w-6xl px-4 py-8">{children}</main>
-    </div>
+    <AppShell
+      breadcrumbs={breadcrumbs}
+      sidebarTree={sidebarTree}
+      user={{ name: displayName, email, avatar }}
+      isAdmin={isAdmin}
+      showOrgAdmin={showOrgAdmin}
+      showAccelerator={showAccelerator}
+      context="platform"
+    >
+      {children}
+    </AppShell>
   )
 }

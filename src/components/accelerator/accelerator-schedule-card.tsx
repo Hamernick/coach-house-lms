@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
 import CalendarCheck from "lucide-react/dist/esm/icons/calendar-check"
 import Loader2 from "lucide-react/dist/esm/icons/loader-2"
@@ -8,45 +7,17 @@ import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 import { NewsGradientThumb } from "@/components/news/gradient-thumb"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { toast } from "@/lib/toast"
+import { useCoachingBooking } from "@/hooks/use-coaching-booking"
 import { cn } from "@/lib/utils"
 
-type AcceleratorScheduleCardProps = {
-  host?: "joel" | "paula"
-}
-
-export function AcceleratorScheduleCard({ host = "joel" }: AcceleratorScheduleCardProps) {
-  const [pending, setPending] = useState(false)
-
-  const handleSchedule = async () => {
-    setPending(true)
-    try {
-      const response = await fetch(`/api/meetings/schedule?host=${host}`, { method: "GET" })
-      const payload = (await response.json().catch(() => ({}))) as { error?: string; url?: string }
-      if (!response.ok) {
-        const message = payload.error ?? "Unable to schedule a meeting right now."
-        toast.error(message)
-        return
-      }
-      if (!payload.url) {
-        toast.error("Scheduling link unavailable.")
-        return
-      }
-      window.open(payload.url, "_blank", "noopener,noreferrer")
-      toast.success("Opening your scheduling link.")
-    } catch (error) {
-      console.error(error)
-      toast.error("Unable to schedule a meeting right now.")
-    } finally {
-      setPending(false)
-    }
-  }
+export function AcceleratorScheduleCard() {
+  const { schedule, pending } = useCoachingBooking()
 
   return (
     <Card
       id="quickstart"
       className={cn(
-        "group mx-auto flex h-full w-full max-w-[520px] flex-col overflow-hidden rounded-[26px] border border-border/60 bg-card/70 shadow-sm",
+        "group flex h-full w-full flex-col overflow-hidden rounded-[26px] border border-border/60 shadow-sm",
         "transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-md",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
         pending && "cursor-wait opacity-80",
@@ -67,7 +38,10 @@ export function AcceleratorScheduleCard({ host = "joel" }: AcceleratorScheduleCa
           <div className="space-y-1">
             <p className="text-sm font-semibold text-foreground">Coaching + guidance</p>
             <p className="text-xs text-muted-foreground">
-              Schedule a 1:1 with an advisor to review your work, unblock decisions, and map next steps. Additional calls are billed during scheduling.
+              Schedule a 1:1 with an advisor to review your work, unblock decisions, and map next steps.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              4 sessions included with Accelerator, then discounted.
             </p>
           </div>
           <div className="flex justify-end">
@@ -75,12 +49,12 @@ export function AcceleratorScheduleCard({ host = "joel" }: AcceleratorScheduleCa
               type="button"
               size="sm"
               variant="secondary"
-              className="gap-2"
+              className="gap-2 bg-foreground text-background hover:bg-foreground/90 dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-secondary/80"
               disabled={pending}
-              onClick={() => void handleSchedule()}
+              onClick={() => void schedule()}
             >
               {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : null}
-              Book a call
+              Book a session
             </Button>
           </div>
         </div>

@@ -1,10 +1,10 @@
 "use client"
 
 import Link from "next/link"
-import Image from "next/image"
-import { useMemo, type Dispatch, type SetStateAction } from "react"
+import { useMemo } from "react"
 import { usePathname } from "next/navigation"
 import Rocket from "lucide-react/dist/esm/icons/rocket"
+import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
@@ -13,10 +13,9 @@ import { NavUser } from "@/components/nav-user"
 import type { SidebarClass } from "@/lib/academy"
 import { CircularProgress } from "@/components/ui/circular-progress"
 
-import { useSidebarOpenMap } from "@/components/app-sidebar/hooks"
+import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import { RESOURCE_NAV, SECONDARY_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
 import {
-  SidebarHeader,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
@@ -32,21 +31,23 @@ export type AppSidebarProps = {
     avatar?: string | null
   }
   isAdmin?: boolean
+  showOrgAdmin?: boolean
   classes?: SidebarClass[]
   acceleratorProgress?: number | null
-  showLiveBadges?: boolean
-  openMap?: Record<string, boolean>
-  setOpenMap?: Dispatch<SetStateAction<Record<string, boolean>>>
+  showAccelerator?: boolean
+  hasAcceleratorAccess?: boolean
+  formationStatus?: string | null
 }
 
 export function AppSidebar({
   user,
   isAdmin = false,
+  showOrgAdmin = false,
   classes,
   acceleratorProgress,
-  showLiveBadges = false,
-  openMap: controlledOpenMap,
-  setOpenMap: controlledSetOpenMap,
+  showAccelerator,
+  hasAcceleratorAccess,
+  formationStatus,
 }: AppSidebarProps) {
   const resolvedUser = useMemo(
     () => ({
@@ -58,22 +59,20 @@ export function AppSidebar({
   )
 
   const pathname = usePathname()
-  const fallback = useSidebarOpenMap(pathname ?? "/", classes)
-  const openMap = controlledOpenMap ?? fallback.openMap
-  const setOpenMap = controlledSetOpenMap ?? fallback.setOpenMap
   const isAcceleratorActive = (pathname ?? "").startsWith("/accelerator")
 
   return (
-    <aside className="hidden h-full w-72 shrink-0 border-r border-border/70 bg-sidebar px-3 py-6 md:flex md:flex-col md:gap-6">
+    <aside className="hidden h-full w-72 shrink-0 border-r border-border/70 bg-sidebar px-3 pb-6 pt-0 md:flex md:flex-col md:gap-6">
       <SidebarBody
         isAdmin={isAdmin}
         classes={classes}
-        openMap={openMap}
-        setOpenMap={setOpenMap}
         user={resolvedUser}
         isAcceleratorActive={isAcceleratorActive}
         acceleratorProgress={acceleratorProgress}
-        showLiveBadges={showLiveBadges}
+        showAccelerator={showAccelerator}
+        showOrgAdmin={showOrgAdmin}
+        hasAcceleratorAccess={hasAcceleratorAccess}
+        formationStatus={formationStatus}
       />
     </aside>
   )
@@ -82,8 +81,6 @@ export function AppSidebar({
 type SidebarBodyProps = {
   isAdmin: boolean
   classes?: SidebarClass[]
-  openMap: Record<string, boolean>
-  setOpenMap: Dispatch<SetStateAction<Record<string, boolean>>>
   user: {
     name: string | null
     email: string | null
@@ -91,95 +88,93 @@ type SidebarBodyProps = {
   }
   isAcceleratorActive: boolean
   acceleratorProgress?: number | null
-  showLiveBadges?: boolean
+  showAccelerator?: boolean
+  showClasses?: boolean
+  classesBasePath?: string
+  showOrgAdmin?: boolean
+  hasAcceleratorAccess?: boolean
+  formationStatus?: string | null
 }
 
 export function SidebarBody({
   isAdmin,
   classes,
-  openMap,
-  setOpenMap,
   user,
   isAcceleratorActive,
   acceleratorProgress,
-  showLiveBadges = false,
+  showAccelerator,
+  showClasses = false,
+  classesBasePath,
+  showOrgAdmin = false,
+  hasAcceleratorAccess = false,
+  formationStatus = null,
 }: SidebarBodyProps) {
+  const pathname = usePathname()
   const progressValue =
     typeof acceleratorProgress === "number" && Number.isFinite(acceleratorProgress)
       ? Math.max(0, Math.min(100, Math.round(acceleratorProgress)))
       : null
 
+  const shouldShowAccelerator = Boolean(isAdmin || showAccelerator)
+  const hasUser = Boolean(user.email)
+  const mainNavItems = buildMainNav({ isAdmin, showOrgAdmin })
+  const mainNavItemsWithoutRoadmap = mainNavItems.filter((item) => item.href !== "/roadmap")
+  const isRoadmapActive = pathname ? pathname === "/roadmap" || pathname.startsWith("/roadmap/") : false
   return (
     <>
-      <SidebarHeader className="p-2">
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              size="lg"
-              className="justify-start gap-2 text-foreground"
-              type="button"
-            >
-              <span className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg">
-                <Image
-                  src="/coach-house-logo-light.png"
-                  alt="Coach House logo"
-                  width={32}
-                  height={32}
-                  className="block h-full w-full dark:hidden"
-                  priority
-                />
-                <Image
-                  src="/coach-house-logo-dark.png"
-                  alt="Coach House logo"
-                  width={32}
-                  height={32}
-                  className="hidden h-full w-full dark:block"
-                  priority
-                />
-              </span>
-              <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                <span className="truncate font-medium tracking-tight">Coach House</span>
-                <span className="truncate text-xs text-muted-foreground">Platform</span>
-              </div>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-
-      <SidebarContent className="gap-4">
-        <NavMain items={buildMainNav(isAdmin)} label="Platform" showLiveBadges={showLiveBadges} />
-        <SidebarGroup>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={isAcceleratorActive}>
-                <Link href="/accelerator" className="flex w-full items-center gap-2">
-                  <Rocket className="size-4" />
-                  <span>Accelerator</span>
-                  {progressValue !== null ? (
-                    <span className="ml-auto flex items-center gap-2 group-data-[collapsible=icon]:hidden">
-                      <CircularProgress
-                        value={progressValue}
-                        size={26}
-                        strokeWidth={3}
-                        aria-label={`Accelerator progress ${progressValue}%`}
-                      />
+      <SidebarContent className="gap-0">
+        <NavMain items={mainNavItemsWithoutRoadmap} className="py-0" />
+        {shouldShowAccelerator ? (
+          <SidebarGroup className="pt-3 pb-1">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={Boolean(pathname?.startsWith("/accelerator"))}>
+                  <Link href="/accelerator" className="flex w-full min-w-0 items-center gap-2">
+                    <Rocket className="size-4" />
+                    <span className="min-w-0 flex-1 truncate whitespace-nowrap">Accelerator</span>
+                    {progressValue !== null ? (
+                      <span className="ml-auto flex shrink-0 items-center gap-2 group-data-[collapsible=icon]:hidden">
+                        <CircularProgress
+                          value={progressValue}
+                          size={16}
+                          strokeWidth={2}
+                          aria-label={`Accelerator progress ${progressValue}%`}
+                        />
+                      </span>
+                    ) : null}
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isRoadmapActive} tooltip="Roadmap">
+                  <Link href="/roadmap" title="Roadmap" data-tour="nav-roadmap">
+                    <WaypointsIcon className="size-4 shrink-0" aria-hidden />
+                    <span className="flex-1 min-w-0 truncate whitespace-nowrap leading-snug group-data-[collapsible=icon]:hidden">
+                      Roadmap
                     </span>
-                  ) : null}
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarGroup>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        ) : null}
+        {shouldShowAccelerator && showClasses ? (
+          <ClassesSection
+            classes={classes}
+            isAdmin={isAdmin}
+            basePath={classesBasePath}
+            hasAcceleratorAccess={hasAcceleratorAccess}
+            formationStatus={formationStatus}
+          />
+        ) : null}
       </SidebarContent>
 
-      <SidebarFooter className="mt-auto gap-4">
-        {!isAdmin ? (
-          <div className="space-y-4 pt-2">
-            <NavDocuments items={RESOURCE_NAV} label="Resources" />
-            <NavSecondary items={SECONDARY_NAV} />
-          </div>
-        ) : null}
-        <NavUser user={user} isAdmin={isAdmin} />
+      <SidebarFooter className="mt-auto">
+        <div className="space-y-4 pt-2">
+          <NavDocuments items={RESOURCE_NAV} label="Resources" />
+          <NavSecondary items={SECONDARY_NAV} />
+        </div>
+        {hasUser ? <NavUser user={user} isAdmin={isAdmin} showDivider={false} /> : null}
       </SidebarFooter>
     </>
   )

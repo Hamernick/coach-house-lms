@@ -1,14 +1,12 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react"
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, useTransition } from "react"
 import dynamic from "next/dynamic"
 import { motion } from "framer-motion"
 import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ArrowRight from "lucide-react/dist/esm/icons/arrow-right"
-import GripVertical from "lucide-react/dist/esm/icons/grip-vertical"
-import Loader2 from "lucide-react/dist/esm/icons/loader-2"
+import Download from "lucide-react/dist/esm/icons/download"
+import Info from "lucide-react/dist/esm/icons/info"
 import Plus from "lucide-react/dist/esm/icons/plus"
-import Sparkles from "lucide-react/dist/esm/icons/sparkles"
-import Trash2 from "lucide-react/dist/esm/icons/trash-2"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -21,10 +19,13 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Textarea } from "@/components/ui/textarea"
-import { toast } from "@/lib/toast"
+import { BudgetTable } from "./budget-table"
+import { ROADMAP_SECTION_ICONS } from "@/components/roadmap/roadmap-icons"
+import { RoadmapSectionPanel } from "@/components/roadmap/roadmap-section-panel"
 import { cn } from "@/lib/utils"
+import { getRoadmapSectionDefinition, type RoadmapSectionDefinition, type RoadmapSectionStatus } from "@/lib/roadmap"
+import { toast } from "@/lib/toast"
+import { saveRoadmapSectionAction } from "@/actions/roadmap"
 
 import type { ModuleAssignmentField, BudgetTableRow } from "../types"
 import { buildAssignmentSections } from "./assignment-sections"
@@ -40,7 +41,7 @@ const RichTextEditorLazy = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="min-h-[160px] rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
+      <div className="min-h-[240px] rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
         Loading editor…
       </div>
     ),
@@ -52,6 +53,7 @@ type AssignmentFormProps = {
   initialValues: AssignmentValues
   pending: boolean
   onSubmit: (values: AssignmentValues, options?: { silent?: boolean }) => void
+  roadmapStatusBySectionId?: Record<string, RoadmapSectionStatus>
   mode?: "standard" | "stepper"
   activeSectionId?: string
   statusLabel?: string | null
@@ -72,9 +74,6 @@ type AssignmentFormProps = {
 }
 
 type TabStepStatus = "not_started" | "in_progress" | "complete"
-
-const BUDGET_COLUMN_DEFAULTS = [200, 300, 150, 150, 100, 130, 170, 70]
-const BUDGET_COLUMN_MINS = [150, 210, 120, 110, 80, 100, 120, 60]
 
 function TabStepBadge({ status, label }: { status: TabStepStatus; label: number }) {
   const styles =
@@ -115,6 +114,90 @@ function TabStepBadge({ status, label }: { status: TabStepStatus; label: number 
   )
 }
 
+type RoadmapCheckpointFieldProps = {
+  field: ModuleAssignmentField
+  definition: RoadmapSectionDefinition
+  value: string
+  pending: boolean
+  autoSaving: boolean
+  roadmapStatusBySectionId?: Record<string, RoadmapSectionStatus>
+  onChange: (next: string) => void
+}
+
+function RoadmapCheckpointField({
+  field,
+  definition,
+  value,
+  pending,
+  autoSaving,
+  roadmapStatusBySectionId,
+  onChange,
+}: RoadmapCheckpointFieldProps) {
+  const SectionIcon = ROADMAP_SECTION_ICONS[definition.id] ?? ROADMAP_SECTION_ICONS.origin_story
+  const inferredStatus: RoadmapSectionStatus = value.trim().length > 0 ? "in_progress" : "not_started"
+  const [status, setStatus] = useState<RoadmapSectionStatus>(
+    roadmapStatusBySectionId?.[definition.id] ?? inferredStatus,
+  )
+  const [statusPending, startStatusTransition] = useTransition()
+  const toolbarId = useId()
+
+  useEffect(() => {
+    setStatus(roadmapStatusBySectionId?.[definition.id] ?? inferredStatus)
+  }, [definition.id, inferredStatus, roadmapStatusBySectionId])
+
+  const handleStatusChange = (nextValue: string) => {
+    const nextStatus = nextValue as RoadmapSectionStatus
+    if (nextStatus === status) return
+    setStatus(nextStatus)
+    startStatusTransition(async () => {
+      const result = await saveRoadmapSectionAction({
+        sectionId: definition.id,
+        status: nextStatus,
+      })
+      if ("error" in result) {
+        toast.error(result.error)
+        setStatus(roadmapStatusBySectionId?.[definition.id] ?? inferredStatus)
+      }
+    })
+  }
+
+  const saveLabel = statusPending || pending || autoSaving ? "Saving…" : "Saved"
+
+  return (
+    <RoadmapSectionPanel
+      title={definition.title}
+      subtitle={definition.subtitle}
+      icon={SectionIcon}
+      status={status}
+      canEdit
+      onStatusChange={handleStatusChange}
+      statusSelectDisabled={statusPending}
+      toolbarSlotId={toolbarId}
+      editorProps={{
+        value,
+        onChange,
+        placeholder: definition.placeholder ?? field.placeholder,
+        header: definition.prompt ?? field.label,
+        headerClassName: "bg-[#f4f4f5] px-4 pt-4 pb-3 text-sm text-muted-foreground dark:bg-[#1f1f1f]",
+        countClassName: "bg-[#e6e6e6] px-4 py-2 text-xs text-muted-foreground dark:bg-[#1c1c1c]",
+        contentClassName:
+          "flex-1 min-h-0 overflow-y-auto overscroll-contain bg-[#ededed] dark:bg-[#171717] rounded-none",
+        toolbarClassName:
+          "rounded-xl border border-border/60 bg-background/80 shadow-[0_1px_1px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_1px_rgba(0,0,0,0.24)]",
+        className: "flex h-full min-h-0 flex-1 flex-col bg-card dark:bg-[#1f1f1f]",
+        editorClassName: "flex-1 min-h-0 h-full overflow-visible rounded-none bg-transparent dark:bg-[#171717]",
+        disableResize: true,
+        toolbarPortalId: toolbarId,
+        toolbarTrailingActions: (
+          <Button type="button" size="sm" variant="ghost" className="gap-2 text-muted-foreground" disabled>
+            {saveLabel}
+          </Button>
+        ),
+      }}
+    />
+  )
+}
+
 export function AssignmentForm(props: AssignmentFormProps) {
   if (props.fields.length === 0) {
     return (
@@ -135,6 +218,7 @@ function AssignmentFormInner({
   initialValues,
   pending,
   onSubmit,
+  roadmapStatusBySectionId,
   mode = "standard",
   activeSectionId,
   statusLabel,
@@ -156,66 +240,38 @@ function AssignmentFormInner({
   const pathname = usePathname()
   const isAcceleratorShell = (pathname ?? "").startsWith("/accelerator")
   const [values, setValues] = useState<AssignmentValues>(initialValues)
-  const [activeAssistField, setActiveAssistField] = useState<string | null>(null)
-  const [isAssistPending, startAssistTransition] = useTransition()
+  const initialValuesRef = useRef(initialValues)
+  const moduleIdRef = useRef(moduleId)
+  const valuesRef = useRef(values)
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [indicator, setIndicator] = useState({ top: 0, height: 0 })
   const [autoSaving, setAutoSaving] = useState(false)
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null)
   const showStatusBadge = statusLabel && statusLabel !== "Submitted"
   const hasMeta = Boolean(showStatusBadge || helperText || errorMessage || statusNote || autoSaving)
-  const [budgetColumnWidths, setBudgetColumnWidths] = useState<number[]>(BUDGET_COLUMN_DEFAULTS)
-  const [budgetUserSized, setBudgetUserSized] = useState(false)
-  const budgetResizeRef = useRef<{ index: number; startX: number; startWidth: number } | null>(null)
-  const budgetTableRef = useRef<HTMLDivElement | null>(null)
-  const [draggingRow, setDraggingRow] = useState<number | null>(null)
-
-  const fitBudgetColumns = useCallback((containerWidth: number) => {
-    if (!containerWidth || containerWidth <= 0) return BUDGET_COLUMN_DEFAULTS
-    const target = containerWidth
-    const minTotal = BUDGET_COLUMN_MINS.reduce((sum, value) => sum + value, 0)
-    if (target <= minTotal) {
-      return [...BUDGET_COLUMN_MINS]
-    }
-    const base = BUDGET_COLUMN_DEFAULTS
-    const widths = new Array(base.length).fill(0) as number[]
-    let remaining = target
-    let remainingIndexes = base.map((_, index) => index)
-    let guard = 0
-
-    while (remainingIndexes.length > 0 && guard < 8) {
-      guard += 1
-      const baseSum = remainingIndexes.reduce((sum, idx) => sum + base[idx], 0)
-      if (baseSum <= 0) break
-      let changed = false
-      remainingIndexes = remainingIndexes.filter((idx) => {
-        const scaled = Math.floor((base[idx] / baseSum) * remaining)
-        if (scaled < BUDGET_COLUMN_MINS[idx]) {
-          widths[idx] = BUDGET_COLUMN_MINS[idx]
-          remaining -= widths[idx]
-          changed = true
-          return false
-        }
-        return true
-      })
-      if (!changed) {
-        remainingIndexes.forEach((idx) => {
-          widths[idx] = Math.max(
-            BUDGET_COLUMN_MINS[idx],
-            Math.floor((base[idx] / baseSum) * remaining),
-          )
-        })
-        break
-      }
-      if (remaining <= 0) break
-    }
-
-    return widths.map((value, idx) => Math.max(BUDGET_COLUMN_MINS[idx], value || BUDGET_COLUMN_MINS[idx]))
-  }, [])
+  useEffect(() => {
+    valuesRef.current = values
+  }, [values])
 
   useEffect(() => {
-    setValues((prev) => (assignmentValuesEqual(prev, initialValues) ? prev : initialValues))
-  }, [initialValues])
+    const moduleChanged = moduleIdRef.current !== moduleId
+    if (moduleChanged) {
+      moduleIdRef.current = moduleId
+      initialValuesRef.current = initialValues
+      setValues(initialValues)
+      return
+    }
+
+    if (assignmentValuesEqual(initialValuesRef.current, initialValues)) {
+      return
+    }
+
+    const canReplace = assignmentValuesEqual(valuesRef.current, initialValuesRef.current)
+    initialValuesRef.current = initialValues
+    if (canReplace) {
+      setValues(initialValues)
+    }
+  }, [initialValues, moduleId])
 
   // Restore autosaved draft if present
   useEffect(() => {
@@ -233,49 +289,6 @@ function AssignmentFormInner({
     }
   }, [moduleId])
 
-  useEffect(() => {
-    const handleMove = (event: MouseEvent) => {
-      if (!budgetResizeRef.current) return
-      const { index, startX, startWidth } = budgetResizeRef.current
-      const delta = event.clientX - startX
-      const minWidth = BUDGET_COLUMN_MINS[index] ?? 120
-      setBudgetColumnWidths((prev) => {
-        const next = [...prev]
-        next[index] = Math.max(minWidth, startWidth + delta)
-        return next
-      })
-    }
-    const handleUp = () => {
-      if (!budgetResizeRef.current) return
-      budgetResizeRef.current = null
-      document.body.style.cursor = ""
-      document.body.style.userSelect = ""
-    }
-    window.addEventListener("mousemove", handleMove)
-    window.addEventListener("mouseup", handleUp)
-    return () => {
-      window.removeEventListener("mousemove", handleMove)
-      window.removeEventListener("mouseup", handleUp)
-      document.body.style.cursor = ""
-      document.body.style.userSelect = ""
-    }
-  }, [])
-
-  useEffect(() => {
-    if (budgetUserSized) return
-    const node = budgetTableRef.current
-    if (!node || typeof ResizeObserver === "undefined") return
-    const update = () => {
-      const width = node.clientWidth
-      if (!width) return
-      setBudgetColumnWidths(fitBudgetColumns(width))
-    }
-    update()
-    const observer = new ResizeObserver(() => update())
-    observer.observe(node)
-    return () => observer.disconnect()
-  }, [budgetUserSized, fitBudgetColumns])
-
   const updateValue = useCallback((name: string, value: AssignmentValues[string]) => {
     setValues((prev) => ({ ...prev, [name]: value }))
   }, [])
@@ -284,69 +297,9 @@ function AssignmentFormInner({
     onSubmit(values)
   }, [onSubmit, values])
 
-  const startBudgetResize = useCallback(
-    (index: number, event: React.MouseEvent<HTMLDivElement>) => {
-      event.preventDefault()
-      event.stopPropagation()
-      setBudgetUserSized(true)
-      budgetResizeRef.current = {
-        index,
-        startX: event.clientX,
-        startWidth: budgetColumnWidths[index] ?? BUDGET_COLUMN_DEFAULTS[index] ?? 160,
-      }
-      document.body.style.cursor = "col-resize"
-      document.body.style.userSelect = "none"
-    },
-    [budgetColumnWidths],
-  )
-
-  const handleAssist = useCallback(
-    (field: ModuleAssignmentField) => {
-      if (!moduleId) return
-      const current = (values[field.name] as string) ?? ""
-      setActiveAssistField(field.name)
-      startAssistTransition(async () => {
-        try {
-          const response = await fetch("/api/homework/assist", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              moduleId,
-              fieldName: field.name,
-              fieldLabel: field.label,
-              promptContext: field.assistContext ?? field.orgKey ?? field.name,
-              classTitle,
-              moduleTitle,
-              currentAnswer: current,
-            }),
-          })
-          if (!response.ok) {
-            const payload = (await response.json().catch(() => ({}))) as { error?: string }
-            toast.error(payload?.error ?? "Unable to generate suggestion")
-            return
-          }
-          const payload = (await response.json()) as { suggestion?: string }
-          if (!payload?.suggestion) {
-            toast.error("Assist tool returned an empty draft")
-            return
-          }
-          updateValue(field.name, payload.suggestion)
-          toast.success("Draft inserted — edit before submitting")
-        } catch (error) {
-          console.error(error)
-          toast.error("Assist tool is unavailable right now")
-        } finally {
-          setActiveAssistField(null)
-        }
-      })
-    },
-    [classTitle, moduleId, moduleTitle, updateValue, values],
-  )
-
   const renderField = useCallback(
-    (field: ModuleAssignmentField, options?: { hideLabel?: boolean; hideAssist?: boolean }) => {
+    (field: ModuleAssignmentField, options?: { hideLabel?: boolean }) => {
       const hideLabel = Boolean(options?.hideLabel)
-      const hideAssist = Boolean(options?.hideAssist)
       const labelText = field.required ? `${field.label} *` : field.label
       const labelClassName = cn(
         "text-base font-semibold leading-tight select-text",
@@ -375,44 +328,47 @@ function AssignmentFormInner({
             </div>
           )
         case "long_text":
-          return (
-            <div key={field.name} className="space-y-3">
-              <Label
-                htmlFor={fieldId}
-                className={cn(labelClassName, "w-full")}
-              >
-                {labelText}
-              </Label>
-              {field.description ? (
-                <p className="text-left text-xs text-muted-foreground whitespace-pre-line">{field.description}</p>
-              ) : null}
-              <RichTextEditorLazy
-                value={(values[field.name] as string) ?? ""}
-                onChange={(next) => updateValue(field.name, next)}
-                placeholder={field.placeholder}
-                mode="homework"
-                toolbarActions={
-                  !hideAssist && moduleId ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleAssist(field)}
-                      disabled={isAssistPending && activeAssistField === field.name}
-                      className="h-7 gap-1 px-2 text-xs"
-                    >
-                      {isAssistPending && activeAssistField === field.name ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3.5 w-3.5" />
-                      )}
-                      Assist
-                    </Button>
-                  ) : null
-                }
-              />
-            </div>
-          )
+          {
+            const value = (values[field.name] as string) ?? ""
+            if (field.roadmapSectionId) {
+              const roadmapDefinition = getRoadmapSectionDefinition(field.roadmapSectionId)
+              if (roadmapDefinition) {
+                return (
+                  <RoadmapCheckpointField
+                    key={field.name}
+                    field={field}
+                    definition={roadmapDefinition}
+                    value={value}
+                    pending={pending}
+                    autoSaving={autoSaving}
+                    roadmapStatusBySectionId={roadmapStatusBySectionId}
+                    onChange={(next) => updateValue(field.name, next)}
+                  />
+                )
+              }
+            }
+            return (
+              <div key={field.name} className="space-y-3">
+                <Label
+                  htmlFor={fieldId}
+                  className={cn(labelClassName, "w-full")}
+                >
+                  {labelText}
+                </Label>
+                {field.description ? (
+                  <p className="text-left text-xs text-muted-foreground whitespace-pre-line">{field.description}</p>
+                ) : null}
+                <div className="min-h-[320px]">
+                  <RichTextEditorLazy
+                    value={value}
+                    onChange={(next) => updateValue(field.name, next)}
+                    placeholder={field.placeholder}
+                    mode="homework"
+                  />
+                </div>
+              </div>
+            )
+          }
         case "select": {
           const normalizedOptions = normalizeOptions(field.options ?? [])
           return (
@@ -498,6 +454,16 @@ function AssignmentFormInner({
             totalCost: row.totalCost ?? "",
           }))
           const costTypeOptions = ["Fixed", "Variable", "Fixed or Variable"]
+          const unitOptions = [
+            "Session / Hour",
+            "Participant / Session",
+            "Participant / Event",
+            "Event / Month",
+            "Participant / Trip",
+            "Program / Participant",
+            "Program / Session",
+          ]
+          const unitListId = `${field.name}-unit-options`
           const parseNumber = (value: string) => {
             if (!value) return 0
             const cleaned = value.replace(/[^0-9.-]/g, "")
@@ -519,72 +485,52 @@ function AssignmentFormInner({
           const displayLabel = formattedLabel
             ? formattedLabel.replace(/\b\w/g, (char) => char.toUpperCase())
             : labelText
+          const budgetTableFrameClass =
+            "relative left-1/2 ml-[calc(-50vw+10px)] w-[calc(100vw-20px)] sm:ml-[calc(-50vw+var(--sidebar-width,0px)/2+10px)] sm:w-[calc(100vw-var(--sidebar-width,0px)-20px)]"
+          const budgetTemplateHref = "/templates/budget-template.csv"
+          const budgetGuideSteps = [
+            {
+              title: "List line items",
+              description: "Add each expense category you expect to fund.",
+            },
+            {
+              title: "Add units and costs",
+              description: "Choose fixed or variable and fill in the math.",
+            },
+            {
+              title: "Review your subtotal",
+              description: "Totals auto-calc so you can iterate quickly.",
+            },
+          ]
           const descriptionBlock = field.description ? (
-            <div className="rounded-lg border border-dashed border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground leading-relaxed">
-              {field.description}
+            <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-4 text-xs text-muted-foreground space-y-3">
+              <div className="flex items-start gap-3">
+                <span className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background/60 text-muted-foreground">
+                  <Info className="h-4 w-4" aria-hidden />
+                </span>
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold text-foreground">Program Expense Exercise</p>
+                  <p className="leading-relaxed">{field.description}</p>
+                </div>
+              </div>
+              <ol className="grid gap-2">
+                {budgetGuideSteps.map((step, index) => (
+                  <li key={`${field.name}-guide-${step.title}`} className="flex gap-2">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/60 text-[11px] font-semibold text-muted-foreground">
+                      {index + 1}
+                    </span>
+                    <div className="space-y-0.5">
+                      <p className="text-xs font-semibold text-foreground">{step.title}</p>
+                      <p className="text-[11px] text-muted-foreground">{step.description}</p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
             </div>
           ) : null
-          const tableInputClass =
-            "h-8 w-full min-w-0 rounded-none border-0 border-b border-transparent bg-transparent px-1 text-xs shadow-none focus-visible:border-border/60 focus-visible:outline-none focus-visible:ring-0"
-          const tableSelectClass =
-            "h-8 w-full min-w-0 rounded-none border-0 border-b border-transparent bg-transparent px-1 text-xs shadow-none focus:border-border/60 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0"
-          const tableNumberClass =
-            "h-8 w-full min-w-0 rounded-none border-0 border-b border-transparent bg-transparent px-1 text-right text-xs tabular-nums shadow-none focus-visible:border-border/60 focus-visible:outline-none focus-visible:ring-0"
-          const tableMoneyClass =
-            "h-8 w-full min-w-0 rounded-none border-0 border-b border-transparent bg-transparent pl-3 pr-1 text-right text-xs tabular-nums shadow-none focus-visible:border-border/60 focus-visible:outline-none focus-visible:ring-0"
-          const tableTextareaClass =
-            "min-h-8 w-full min-w-0 resize-none rounded-none border-0 border-b border-transparent bg-transparent px-1 py-1.5 text-xs leading-snug shadow-none focus-visible:border-border/60 focus-visible:outline-none focus-visible:ring-0"
-          const budgetShellClass = isAcceleratorShell
-            ? "lg:relative lg:left-1/2 lg:ml-[calc(-50vw+var(--sidebar-width)/2)] lg:w-[calc(100vw-var(--sidebar-width))]"
-            : ""
-          const quickAddCategories = [
-            "Staffing",
-            "Facilities",
-            "Program materials",
-            "Travel",
-            "Evaluation",
-            "Admin",
-          ]
 
           const addRow = (seed?: Partial<BudgetTableRow>) => {
             updateValue(field.name, [...ensureRows, { ...blankRow, ...seed }])
-          }
-
-          const removeRow = (rowIndex: number) => {
-            const nextRows = [...ensureRows]
-            nextRows.splice(rowIndex, 1)
-            if (nextRows.length === 0) nextRows.push(blankRow)
-            updateValue(field.name, nextRows)
-          }
-
-          const moveRow = (fromIndex: number, toIndex: number) => {
-            if (fromIndex === toIndex || fromIndex < 0 || toIndex < 0) return
-            const nextRows = [...ensureRows]
-            const [moved] = nextRows.splice(fromIndex, 1)
-            nextRows.splice(toIndex, 0, moved)
-            updateValue(field.name, nextRows)
-          }
-
-          const handleRowDragStart = (rowIndex: number, event: React.DragEvent<HTMLButtonElement>) => {
-            setDraggingRow(rowIndex)
-            event.dataTransfer.effectAllowed = "move"
-            event.dataTransfer.setData("text/plain", String(rowIndex))
-          }
-
-          const handleRowDrop = (rowIndex: number, event: React.DragEvent<HTMLTableRowElement>) => {
-            event.preventDefault()
-            const payload = event.dataTransfer.getData("text/plain")
-            const fromIndex = Number.parseInt(payload, 10)
-            if (Number.isNaN(fromIndex)) {
-              setDraggingRow(null)
-              return
-            }
-            moveRow(fromIndex, rowIndex)
-            setDraggingRow(null)
-          }
-
-          const handleRowDragEnd = () => {
-            setDraggingRow(null)
           }
 
           const updateRow = (rowIndex: number, patch: Partial<BudgetTableRow>) => {
@@ -596,394 +542,57 @@ function AssignmentFormInner({
           }
 
           return (
-            <div key={field.name} className="space-y-2">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="max-w-2xl space-y-2">
-                  <Label className={labelClassName}>{displayLabel}</Label>
-                  {descriptionBlock}
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                  <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-1">
-                    Auto-calculated
-                  </span>
-                  <span className="rounded-full border border-border/60 bg-muted/40 px-2 py-1 font-semibold text-foreground">
-                    Subtotal ${formatMoney(subtotal)}
-                  </span>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => addRow()}
-                    aria-label="Add row"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
+            <div key={field.name} className="space-y-4">
+              <div className="space-y-2">
+                <Label className={labelClassName}>{displayLabel}</Label>
+                {descriptionBlock}
               </div>
-              <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-3 text-xs text-muted-foreground space-y-2">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Quick add line items
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {quickAddCategories.map((label) => (
-                    <Button
-                      key={`${field.name}-quick-${label}`}
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-7 rounded-full px-3 text-[11px]"
-                      onClick={() => addRow({ category: label })}
-                    >
-                      {label}
-                    </Button>
-                  ))}
-                </div>
-                <div className="flex flex-wrap gap-2 text-[11px]">
-                  <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5">
-                    1. Add line items
-                  </span>
-                  <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5">
-                    2. Choose cost type
-                  </span>
-                  <span className="rounded-full border border-border/60 bg-background/60 px-2 py-0.5">
-                    3. Totals auto-calc
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-3 sm:hidden">
-                {ensureRows.map((row, rowIndex) => (
-                  <div
-                    key={`${field.name}-card-${rowIndex}`}
-                    className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                        Line item {rowIndex + 1}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-semibold tabular-nums text-foreground">
-                          ${formatMoney(totals[rowIndex] ?? 0)}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7"
-                          onClick={() => removeRow(rowIndex)}
-                          aria-label="Remove row"
-                          disabled={ensureRows.length <= 1}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 grid gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                          Expense Category
-                        </Label>
-                        <Input
-                          value={row.category}
-                          placeholder="Expense category"
-                          className="h-9"
-                          onChange={(event) => updateRow(rowIndex, { category: event.currentTarget.value })}
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                          Description
-                        </Label>
-                        <Textarea
-                          value={row.description}
-                          placeholder="Description"
-                          rows={2}
-                          className="min-h-[72px]"
-                          onChange={(event) => updateRow(rowIndex, { description: event.currentTarget.value })}
-                        />
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-1">
-                          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                            Cost Type
-                          </Label>
-                          <Select
-                            value={row.costType || undefined}
-                            onValueChange={(next) => updateRow(rowIndex, { costType: next })}
-                          >
-                            <SelectTrigger className="h-9">
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {costTypeOptions.map((option) => (
-                                <SelectItem key={`${field.name}-${rowIndex}-card-${option}`} value={option}>
-                                  {option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                            Unit
-                          </Label>
-                          <Input
-                            value={row.unit}
-                            placeholder="Unit"
-                            className="h-9"
-                            onChange={(event) => updateRow(rowIndex, { unit: event.currentTarget.value })}
-                          />
-                        </div>
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <div className="space-y-1">
-                          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                            # of Units
-                          </Label>
-                          <Input
-                            value={row.units}
-                            placeholder="0"
-                            type="number"
-                            inputMode="numeric"
-                            min={0}
-                            step={1}
-                            className="h-9 text-right tabular-nums"
-                            onChange={(event) => updateRow(rowIndex, { units: event.currentTarget.value })}
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                            Cost per Unit
-                          </Label>
-                          <div className="relative">
-                            <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                              $
-                            </span>
-                            <Input
-                              value={row.costPerUnit}
-                              placeholder="0.00"
-                              type="number"
-                              inputMode="decimal"
-                              min={0}
-                              step={0.01}
-                              className="h-9 pl-6 text-right tabular-nums"
-                              onChange={(event) => updateRow(rowIndex, { costPerUnit: event.currentTarget.value })}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/40 px-3 py-2">
-                        <span className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                          Total Estimated Cost
-                        </span>
-                        <span className="text-sm font-semibold tabular-nums text-foreground">
-                          ${formatMoney(totals[rowIndex] ?? 0)}
-                        </span>
-                      </div>
-                    </div>
+              <div className="rounded-xl border border-border/60 bg-sidebar p-4 text-xs">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-3">
+                    <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Subtotal
+                    </span>
+                    <span className="text-base font-semibold tabular-nums text-foreground">
+                      ${formatMoney(subtotal)}
+                    </span>
+                    <p className="text-[11px] text-muted-foreground">
+                      Totals update as you edit units and costs.
+                    </p>
                   </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-10 w-full"
-                  onClick={() => addRow()}
-                >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Add line item
-                </Button>
+                  <div className="flex flex-wrap gap-2 sm:justify-end">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      className="w-full sm:w-auto"
+                      onClick={() => addRow()}
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Item
+                    </Button>
+                    <Button asChild variant="outline" size="sm" className="w-full sm:w-auto gap-2">
+                      <a href={budgetTemplateHref} download>
+                        <Download className="h-4 w-4" aria-hidden />
+                        Download
+                      </a>
+                    </Button>
+                  </div>
+                </div>
               </div>
-              <div
-                ref={budgetTableRef}
-                className={cn(
-                  "hidden rounded-xl border border-border/60 bg-card/70 overflow-x-auto overflow-y-hidden overscroll-x-contain w-full max-w-none sm:block sm:-mx-4 sm:w-[calc(100%+2rem)] lg:-mx-10 lg:w-[calc(100%+5rem)] xl:-mx-16 xl:w-[calc(100%+8rem)] 2xl:-mx-24 2xl:w-[calc(100%+12rem)]",
-                  budgetShellClass,
-                )}
-              >
-                <Table className="w-full table-fixed text-xs min-w-[1040px]">
-                  <colgroup>
-                    {budgetColumnWidths.map((width, index) => (
-                      <col key={`${field.name}-col-${index}`} style={{ width: `${width}px` }} />
-                    ))}
-                  </colgroup>
-                  <TableHeader className="bg-muted/40">
-                    <TableRow className="border-b border-border/60">
-                      {[
-                        "Expense Category",
-                        "Description / What This Covers",
-                        "Cost Type",
-                        "Unit (if variable)",
-                        "# of Units",
-                        "Cost per Unit",
-                        "Total Estimated Cost",
-                        "Actions",
-                      ].map((label, index) => {
-                        return (
-                          <TableHead
-                            key={`${field.name}-head-${index}`}
-                            className={cn(
-                              "relative h-auto py-2 text-[11px] font-semibold text-muted-foreground align-middle whitespace-normal leading-snug",
-                              index > 0 ? "border-l border-border/40" : "",
-                              index === 6 ? "text-right" : "",
-                            )}
-                          >
-                            <span>{label}</span>
-                            <div
-                              role="separator"
-                              aria-orientation="vertical"
-                              className={cn(
-                                "absolute right-0 top-0 h-full w-2 cursor-col-resize",
-                                index === 7 && "hidden",
-                              )}
-                              onMouseDown={(event) => startBudgetResize(index, event)}
-                            />
-                          </TableHead>
-                        )
-                      })}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ensureRows.map((row, rowIndex) => (
-                      <TableRow
-                        key={`${field.name}-row-${rowIndex}`}
-                        className={cn("hover:bg-muted/30", draggingRow === rowIndex && "opacity-70")}
-                        onDragOver={(event) => event.preventDefault()}
-                        onDrop={(event) => handleRowDrop(rowIndex, event)}
-                        onDragEnd={handleRowDragEnd}
-                      >
-                        <TableCell className="px-2 py-1.5 align-top">
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              className="cursor-grab text-muted-foreground hover:text-foreground"
-                              draggable
-                              onDragStart={(event) => handleRowDragStart(rowIndex, event)}
-                              aria-label="Reorder row"
-                            >
-                              <GripVertical className="h-4 w-4" />
-                            </button>
-                            <Input
-                              value={row.category}
-                              placeholder="Expense category"
-                              className={tableInputClass}
-                              onChange={(event) => updateRow(rowIndex, { category: event.currentTarget.value })}
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell className="px-2 py-1.5 align-top border-l border-border/40 whitespace-normal">
-                          <Textarea
-                            value={row.description}
-                            placeholder="Description"
-                            rows={1}
-                            className={tableTextareaClass}
-                            onChange={(event) => updateRow(rowIndex, { description: event.currentTarget.value })}
-                            onInput={(event) => {
-                              const target = event.currentTarget
-                              target.style.height = "auto"
-                              target.style.height = `${target.scrollHeight}px`
-                            }}
-                          />
-                        </TableCell>
-                        <TableCell className="px-2 py-1.5 align-top border-l border-border/40">
-                          <Select
-                            value={row.costType || undefined}
-                            onValueChange={(next) => updateRow(rowIndex, { costType: next })}
-                          >
-                            <SelectTrigger className={tableSelectClass}>
-                              <SelectValue placeholder="Select" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {costTypeOptions.map((option) => (
-                                <SelectItem key={`${field.name}-${rowIndex}-${option}`} value={option}>
-                                  {option}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                        <TableCell className="px-2 py-1.5 align-top border-l border-border/40">
-                          <Input
-                            value={row.unit}
-                            placeholder="Unit"
-                            className={tableInputClass}
-                            onChange={(event) => updateRow(rowIndex, { unit: event.currentTarget.value })}
-                          />
-                        </TableCell>
-                        <TableCell className="px-2 py-1.5 align-top border-l border-border/40">
-                          <Input
-                            value={row.units}
-                            placeholder="0"
-                            type="number"
-                            inputMode="numeric"
-                            min={0}
-                            step={1}
-                            className={tableNumberClass}
-                            onChange={(event) => updateRow(rowIndex, { units: event.currentTarget.value })}
-                          />
-                        </TableCell>
-                        <TableCell className="px-2 py-1.5 align-top border-l border-border/40">
-                          <div className="relative w-full min-w-0">
-                            <span className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
-                              $
-                            </span>
-                            <Input
-                              value={row.costPerUnit}
-                              placeholder="0.00"
-                              type="number"
-                              inputMode="decimal"
-                              min={0}
-                              step={0.01}
-                              className={tableMoneyClass}
-                              onChange={(event) => updateRow(rowIndex, { costPerUnit: event.currentTarget.value })}
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell className="px-2 py-1.5 align-top border-l border-border/40">
-                          <div className="relative w-full min-w-0">
-                            <span className="pointer-events-none absolute left-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground">
-                              $
-                            </span>
-                            <Input
-                              value={formatMoney(totals[rowIndex] ?? 0)}
-                              readOnly
-                              className={cn(tableMoneyClass, "font-semibold")}
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell className="px-2 py-1.5 align-top border-l border-border/40">
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => removeRow(rowIndex)}
-                            aria-label="Remove row"
-                            disabled={ensureRows.length <= 1}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                  <TableFooter>
-                    <TableRow className="bg-muted/40">
-                      <TableCell
-                        colSpan={6}
-                        className="px-2 py-2 text-[11px] font-medium uppercase text-muted-foreground rounded-bl-xl"
-                      >
-                        <span className="sr-only">Subtotal: direct costs</span>
-                      </TableCell>
-                      <TableCell className="px-2 py-2 text-right text-xs font-semibold tabular-nums border-l border-border/60 bg-transparent">
-                        ${formatMoney(subtotal)}
-                      </TableCell>
-                      <TableCell className="px-2 py-2 border-l border-border/60 rounded-br-xl" />
-                    </TableRow>
-                  </TableFooter>
-                </Table>
-              </div>
+
+              <BudgetTable
+                rows={ensureRows}
+                blankRow={blankRow}
+                totals={totals}
+                subtotal={subtotal}
+                costTypeOptions={costTypeOptions}
+                unitOptions={unitOptions}
+                unitListId={unitListId}
+                formatMoney={formatMoney}
+                onUpdateRow={updateRow}
+                onRowsChange={(nextRows) => updateValue(field.name, nextRows)}
+                frameClassName={budgetTableFrameClass}
+              />
             </div>
           )
         }
@@ -1022,48 +631,21 @@ function AssignmentFormInner({
                   {field.programTemplate}
                 </p>
               ) : null}
-              <RichTextEditorLazy
-                value={(values[field.name] as string) ?? ""}
-                onChange={(next) => updateValue(field.name, next)}
-                placeholder={field.placeholder ?? "Outline your plan"}
-                mode="homework"
-                toolbarActions={
-                  !hideAssist && moduleId ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleAssist(field)}
-                      disabled={isAssistPending && activeAssistField === field.name}
-                      className="h-7 gap-1 px-2 text-xs"
-                    >
-                      {isAssistPending && activeAssistField === field.name ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Sparkles className="h-3.5 w-3.5" />
-                      )}
-                      Assist
-                    </Button>
-                  ) : null
-                }
-              />
+              <div className="min-h-[320px]">
+                <RichTextEditorLazy
+                  value={(values[field.name] as string) ?? ""}
+                  onChange={(next) => updateValue(field.name, next)}
+                  placeholder={field.placeholder ?? "Outline your plan"}
+                  mode="homework"
+                />
+              </div>
             </div>
           )
         default:
           return null
       }
     },
-    [
-      activeAssistField,
-      budgetColumnWidths,
-      draggingRow,
-      handleAssist,
-      isAssistPending,
-      moduleId,
-      startBudgetResize,
-      updateValue,
-      values,
-    ],
+    [autoSaving, pending, roadmapStatusBySectionId, updateValue, values],
   )
 
   const { baseSections, tabSections } = useMemo(() => buildAssignmentSections(fields), [fields])
@@ -1228,7 +810,7 @@ function AssignmentFormInner({
   )
 
   const containerClass = isStepper
-    ? "space-y-6"
+    ? "flex min-h-0 flex-1 flex-col gap-6"
     : progressPlacement === "header" || !showProgressPanel
       ? "space-y-6"
       : "grid items-start gap-6 md:grid-cols-[minmax(260px,_320px)_minmax(0,_1fr)]"
@@ -1259,7 +841,7 @@ function AssignmentFormInner({
         progressPanel
       ) : null}
 
-      <div className="space-y-3 self-start">
+      <div className={cn("space-y-3 self-start", isStepper && "flex min-h-0 flex-1 flex-col self-stretch")}>
         {isStepper ? (
           (() => {
             const activeSection =

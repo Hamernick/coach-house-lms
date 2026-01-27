@@ -7,6 +7,7 @@
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -50,6 +51,7 @@
   --font-geist-mono: "JetBrains Mono", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", monospace;
   --radius: 0.65rem;
   --app-surface: var(--background);
+  --surface: oklch(0.97 0 0);
   color-scheme: light;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -87,6 +89,7 @@
 
 .dark {
   --app-surface: var(--background);
+  --surface: oklch(0.145 0 0);
   color-scheme: dark;
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);
@@ -124,6 +127,7 @@
 @media (prefers-color-scheme: dark) {
   :root:not(.light):not(.dark) {
     --app-surface: var(--background);
+    --surface: oklch(0.145 0 0);
     color-scheme: dark;
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
@@ -177,7 +181,7 @@
 
   /* Pricing page: match overscroll/top gap background to the page surface */
   html:has([data-public-surface="pricing"]) {
-    --app-surface: #f4f4f4;
+    --app-surface: var(--surface);
   }
 
   html.dark:has([data-public-surface="pricing"]) {
@@ -190,13 +194,15 @@
     }
   }
 
-  /* Dashboard shell: when a sidebar wrapper exists, match overscroll bg to sidebar */
-  html:has([data-slot="sidebar-wrapper"]) {
-    background-color: var(--sidebar);
+  /* Dashboard shell: when the shell exists, keep overscroll bg aligned with the shell surface */
+  html:has([data-shell-root]) {
+    --sidebar: var(--background);
+    --sidebar-border: var(--border);
+    background-color: var(--background);
   }
 
-  body:has([data-slot="sidebar-wrapper"]) {
-    background-color: var(--sidebar);
+  body:has([data-shell-root]) {
+    background-color: var(--background);
   }
 
   body:has([data-public-grid]) {
@@ -211,12 +217,47 @@
     background-size: 36px 36px;
   }
 
-  .tiptap p.is-editor-empty::before {
+  .tiptap[data-editor-empty="true"] p.is-editor-empty:first-child::before {
     color: #9ca3af;
     content: attr(data-placeholder);
     float: left;
     height: 0;
     pointer-events: none;
+  }
+
+  .tiptap[data-editor-empty="true"][data-placeholder-hidden="true"] p.is-editor-empty::before {
+    content: "";
+    display: none;
+  }
+
+  .tiptap h1 {
+    font-size: 1.875rem;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  .tiptap h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  .tiptap h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .tiptap ol,
+  .tiptap ul {
+    list-style-position: inside;
+    padding-left: 1.5rem;
+  }
+
+  .tiptap li > p {
+    margin: 0;
+    display: inline;
   }
 }
 
@@ -355,6 +396,12 @@
   display: inline-flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.org-flow .react-flow__panel.react-flow__controls {
+  border: none;
+  box-shadow: none;
+  background: transparent;
 }
 
 .org-flow .react-flow__controls-button {

@@ -1,11 +1,25 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
+import BookOpenIcon from "lucide-react/dist/esm/icons/book-open"
+import Building2Icon from "lucide-react/dist/esm/icons/building-2"
+import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
+import FileTextIcon from "lucide-react/dist/esm/icons/file-text"
+import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
+import LayersIcon from "lucide-react/dist/esm/icons/layers"
+import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
+import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
+import RocketIcon from "lucide-react/dist/esm/icons/rocket"
+import RouteIcon from "lucide-react/dist/esm/icons/route"
 import SearchIcon from "lucide-react/dist/esm/icons/search"
+import ShieldIcon from "lucide-react/dist/esm/icons/shield"
+import ShoppingBagIcon from "lucide-react/dist/esm/icons/shopping-bag"
+import UsersIcon from "lucide-react/dist/esm/icons/users"
 
 import { HeaderActionsPortal } from "@/components/header-actions-portal"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
   CommandDialog,
@@ -17,14 +31,19 @@ import {
   CommandSeparator,
 } from "@/components/ui/command"
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 import type { SidebarClass } from "@/lib/academy"
 import type { SearchResult } from "@/lib/search/types"
 
 type GlobalSearchProps = {
   isAdmin?: boolean
+  showOrgAdmin?: boolean
   context?: "platform" | "accelerator"
   classes?: SidebarClass[]
+  showAccelerator?: boolean
 }
+
+const SEARCH_MIN_WIDTH = 240
 
 function formatClassTitle(title: string) {
   const match = title.match(/^Session\s+[A-Za-z]\d+\s*[\u2013-]\s*(.+)$/i)
@@ -32,42 +51,149 @@ function formatClassTitle(title: string) {
   return title
 }
 
-export function GlobalSearch({ isAdmin = false, context = "platform", classes = [] }: GlobalSearchProps) {
+function getInitials(label: string) {
+  const words = label.trim().split(/\s+/).filter(Boolean)
+  if (words.length === 0) return "?"
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase()
+  return `${words[0][0] ?? ""}${words[1][0] ?? ""}`.toUpperCase()
+}
+
+function getResultIcon(item: SearchResult) {
+  const href = item.href
+  const group = item.group.toLowerCase()
+
+  if (group === "admin") return ShieldIcon
+  if (group === "accelerator") return RocketIcon
+  if (group === "classes") return BookOpenIcon
+  if (group === "modules") return LayersIcon
+  if (group === "questions") return HelpCircleIcon
+  if (group === "documents") return FileTextIcon
+  if (group === "roadmap") return RouteIcon
+  if (group === "programs") return LayersIcon
+  if (group === "community") return MapPinIcon
+  if (group === "marketplace") return ShoppingBagIcon
+  if (group === "my organization") return Building2Icon
+
+  if (href.startsWith("/billing")) return CreditCardIcon
+  if (href.startsWith("/internal")) return ShieldIcon
+  if (href.startsWith("/admin")) return ShieldIcon
+  if (href.startsWith("/people")) return UsersIcon
+  if (href.startsWith("/community")) return MapPinIcon
+  if (href.startsWith("/marketplace")) return ShoppingBagIcon
+  if (href.startsWith("/accelerator")) return RocketIcon
+  if (href.startsWith("/roadmap")) return RouteIcon
+  if (href.startsWith("/my-organization")) return Building2Icon
+
+  return ArrowUpRight
+}
+
+function SearchResultLeadingVisual({ item }: { item: SearchResult }) {
+  const Icon = getResultIcon(item)
+  const initials = getInitials(item.label)
+
+  return (
+    <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/40 transition group-data-[selected=true]:border-white/20 group-data-[selected=true]:text-white">
+      {item.image ? (
+        <Avatar className="h-9 w-9 rounded-full">
+          <AvatarImage src={item.image} alt="" className="object-cover" />
+          <AvatarFallback className="rounded-full bg-white/10 text-[11px] font-semibold text-white/70">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+      ) : (
+        <Icon className="h-4 w-4" aria-hidden />
+      )}
+    </span>
+  )
+}
+
+export function GlobalSearch({
+  isAdmin = false,
+  showOrgAdmin = false,
+  context = "platform",
+  classes = [],
+  showAccelerator = false,
+}: GlobalSearchProps) {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState("")
   const [remoteItems, setRemoteItems] = useState<SearchResult[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [compact, setCompact] = useState(false)
+  const enableAccelerator = Boolean(isAdmin || showAccelerator)
 
-  const logEvent = (payload: {
-    eventType: "open" | "select"
-    query?: string
-    resultId?: string
-    resultGroup?: string
-    resultHref?: string
-  }) => {
-    const body = {
-      eventType: payload.eventType,
-      query: payload.query?.slice(0, 200),
-      resultId: payload.resultId,
-      resultGroup: payload.resultGroup,
-      resultHref: payload.resultHref,
-      context,
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const node = document.getElementById("site-header-actions-center")
+    if (!node) return
+
+    const update = () => {
+      const width = node.getBoundingClientRect().width
+      const next = width < SEARCH_MIN_WIDTH
+      setCompact((prev) => (prev === next ? prev : next))
     }
-    void fetch("/api/search/event", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    })
-  }
+
+    update()
+
+    let observer: ResizeObserver | null = null
+    if (typeof ResizeObserver !== "undefined") {
+      observer = new ResizeObserver(update)
+      observer.observe(node)
+    } else {
+      window.addEventListener("resize", update)
+    }
+
+    return () => {
+      observer?.disconnect()
+      if (!observer) {
+        window.removeEventListener("resize", update)
+      }
+    }
+  }, [])
+
+  const logEvent = useCallback(
+    (payload: {
+      eventType: "open" | "select"
+      query?: string
+      resultId?: string
+      resultGroup?: string
+      resultHref?: string
+    }) => {
+      const body = {
+        eventType: payload.eventType,
+        query: payload.query?.slice(0, 200),
+        resultId: payload.resultId,
+        resultGroup: payload.resultGroup,
+        resultHref: payload.resultHref,
+        context,
+      }
+      void fetch("/api/search/event", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      })
+    },
+    [context],
+  )
 
   const baseItems = useMemo<SearchResult[]>(() => {
+    const showOrgAdminLink = showOrgAdmin
     return [
-      { id: "page-dashboard", label: "Dashboard", href: "/dashboard", group: "Pages", keywords: ["home", "overview"] },
-      { id: "page-accelerator", label: "Accelerator", href: "/accelerator", group: "Pages", keywords: ["classes", "modules"] },
+      ...(enableAccelerator
+        ? [
+            {
+              id: "page-accelerator",
+              label: "Accelerator",
+              href: "/accelerator",
+              group: "Pages",
+              keywords: ["classes", "modules"],
+            } satisfies SearchResult,
+          ]
+        : []),
       { id: "page-organization", label: "My organization", href: "/my-organization", group: "Pages", keywords: ["profile"] },
-      { id: "page-roadmap", label: "Roadmap", href: "/my-organization/roadmap", group: "Pages", keywords: ["strategic"] },
+      { id: "page-roadmap", label: "Roadmap", href: "/roadmap", group: "Pages", keywords: ["strategic"] },
       { id: "page-programs", label: "Programs", href: "/my-organization?tab=programs", group: "Pages" },
       { id: "page-people", label: "People", href: "/people", group: "Pages", keywords: ["team", "org chart"] },
       { id: "page-supporters", label: "Supporters", href: "/my-organization?tab=supporters", group: "Pages" },
@@ -75,43 +201,42 @@ export function GlobalSearch({ isAdmin = false, context = "platform", classes = 
       { id: "page-billing", label: "Billing", href: "/billing", group: "Pages", keywords: ["subscription", "plan"] },
       { id: "page-community", label: "Community", href: "/community", group: "Pages", keywords: ["map", "network"] },
       { id: "page-marketplace", label: "Marketplace", href: "/marketplace", group: "Pages", keywords: ["tools", "resources"] },
-    ]
-  }, [])
-
-  const adminItems = useMemo<SearchResult[]>(
-    () =>
-      isAdmin
+      ...(showOrgAdminLink
         ? [
-            { id: "admin-dashboard", label: "Admin dashboard", href: "/admin", group: "Admin" },
-            { id: "admin-users", label: "Admin users", href: "/admin/users", group: "Admin" },
-            { id: "admin-settings", label: "Admin settings", href: "/admin/settings", group: "Admin" },
+            {
+              id: "page-admin",
+              label: "Admin",
+              href: "/admin",
+              group: "Pages",
+              keywords: ["access", "invites", "roles"],
+            } satisfies SearchResult,
           ]
-        : [],
-    [isAdmin],
-  )
+        : []),
+    ]
+  }, [enableAccelerator, showOrgAdmin])
 
   const acceleratorItems = useMemo<SearchResult[]>(
     () =>
-      context === "accelerator"
+      context === "accelerator" && enableAccelerator
         ? [
             { id: "accelerator-overview", label: "Accelerator overview", href: "/accelerator#overview", group: "Accelerator", keywords: ["overview"] },
-            { id: "accelerator-roadmap", label: "Accelerator roadmap", href: "/accelerator/roadmap", group: "Accelerator", keywords: ["roadmap"] },
           ]
         : [],
-    [context],
+    [context, enableAccelerator],
   )
 
   const acceleratorClasses = useMemo<SearchResult[]>(() => {
-    if (classes.length === 0) return []
+    if (!enableAccelerator || classes.length === 0) return []
     return classes
       .filter((klass) => (isAdmin ? true : klass.published))
       .flatMap((klass) => {
         const classTitle = formatClassTitle(klass.title)
+        const firstModuleIndex = klass.modules[0]?.index ?? 1
         const classItem: SearchResult = {
           id: `class-${klass.id}`,
           label: classTitle,
           subtitle: "Class",
-          href: `/accelerator/class/${klass.slug}`,
+          href: `/accelerator/class/${klass.slug}/module/${firstModuleIndex}`,
           group: "Classes",
           keywords: [klass.slug, klass.title],
         }
@@ -127,15 +252,16 @@ export function GlobalSearch({ isAdmin = false, context = "platform", classes = 
           }))
         return [classItem, ...moduleItems]
       })
-  }, [classes, isAdmin])
+  }, [classes, enableAccelerator, isAdmin])
 
   const items = useMemo(() => {
     const merged = new Map<string, SearchResult>()
-    for (const item of [...acceleratorItems, ...acceleratorClasses, ...baseItems, ...adminItems, ...remoteItems]) {
+    for (const item of [...acceleratorItems, ...acceleratorClasses, ...baseItems, ...remoteItems]) {
       merged.set(item.id, item)
     }
-    return Array.from(merged.values())
-  }, [acceleratorClasses, acceleratorItems, adminItems, baseItems, remoteItems])
+    const values = Array.from(merged.values())
+    return enableAccelerator ? values : values.filter((item) => !item.href.startsWith("/accelerator"))
+  }, [acceleratorClasses, acceleratorItems, baseItems, enableAccelerator, remoteItems])
 
   const grouped = useMemo(() => {
     const map = new Map<string, SearchResult[]>()
@@ -179,7 +305,7 @@ export function GlobalSearch({ isAdmin = false, context = "platform", classes = 
     } else {
       logEvent({ eventType: "open" })
     }
-  }, [open])
+  }, [logEvent, open])
 
   useEffect(() => {
     if (!open) return
@@ -232,30 +358,55 @@ export function GlobalSearch({ isAdmin = false, context = "platform", classes = 
     return () => window.removeEventListener("keydown", handler)
   }, [])
 
+  const showCompact = isMobile || compact
+  const showCenterCompact = showCompact && !isMobile
+
   return (
     <>
-      <HeaderActionsPortal>
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={() => setOpen(true)}
-          className="hidden min-w-[190px] items-center justify-between gap-2 pl-3 pr-3 text-xs text-muted-foreground sm:inline-flex"
-        >
-          <span className="flex items-center gap-2">
-            <SearchIcon className="h-4 w-4 text-muted-foreground" />
-            <span className="text-foreground">Search</span>
-          </span>
-          <span className="rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
-            CMD+K
-          </span>
-        </Button>
+      {!showCompact ? (
+        <HeaderActionsPortal slot="center">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setOpen(true)}
+            data-tour="global-search-button"
+            className={cn(
+              "hidden min-w-[240px] w-full max-w-[520px] items-center justify-between gap-2 pl-3 pr-3 text-xs text-muted-foreground md:inline-flex lg:max-w-[600px]",
+            )}
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <SearchIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="truncate text-foreground">Search</span>
+            </span>
+            <span className="shrink-0 whitespace-nowrap rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+              CMD+K
+            </span>
+          </Button>
+        </HeaderActionsPortal>
+      ) : showCenterCompact ? (
+        <HeaderActionsPortal slot="center">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setOpen(true)}
+            data-tour="global-search-button"
+            className="hidden md:inline-flex"
+            aria-label="Open search"
+          >
+            <SearchIcon className="h-4 w-4" />
+          </Button>
+        </HeaderActionsPortal>
+      ) : null}
+      <HeaderActionsPortal slot="right">
         <Button
           type="button"
           variant="ghost"
           size="icon"
           onClick={() => setOpen(true)}
-          className="inline-flex sm:hidden"
+          data-tour="global-search-button"
+          className="inline-flex md:hidden"
           aria-label="Open search"
         >
           <SearchIcon className="h-4 w-4" />
@@ -265,7 +416,7 @@ export function GlobalSearch({ isAdmin = false, context = "platform", classes = 
       <CommandDialog
         open={open}
         onOpenChange={setOpen}
-        className="max-w-xl overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/95 p-2 shadow-2xl"
+        className="w-[calc(100%-2rem)] max-w-[calc(100%-2rem)] max-h-[calc(100dvh-9rem)] overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/95 p-2 shadow-2xl sm:max-h-[calc(100dvh-4rem)] sm:max-w-xl"
         commandClassName="bg-transparent text-white/90 [&_[cmdk-group-heading]]:px-5 [&_[cmdk-group-heading]]:pt-2 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:text-[11px] [&_[cmdk-group-heading]]:font-semibold [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:tracking-[0.2em] [&_[cmdk-group-heading]]:text-white/40 **:data-[slot=command-input-wrapper]:mx-3 **:data-[slot=command-input-wrapper]:my-3 **:data-[slot=command-input-wrapper]:h-12 **:data-[slot=command-input-wrapper]:rounded-2xl **:data-[slot=command-input-wrapper]:border **:data-[slot=command-input-wrapper]:border-white/10 **:data-[slot=command-input-wrapper]:bg-white/5 **:data-[slot=command-input-wrapper]:px-4 **:data-[slot=command-input-wrapper]:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.02)] **:data-[slot=command-input]:text-[15px] **:data-[slot=command-input]:text-white **:data-[slot=command-input]:placeholder:text-white/40"
         showCloseButton={false}
       >
@@ -275,14 +426,16 @@ export function GlobalSearch({ isAdmin = false, context = "platform", classes = 
           onValueChange={setQuery}
         />
         <CommandList className="max-h-[320px] px-2 pb-2">
-          <CommandEmpty className="py-6 text-sm text-white/50">No matches found.</CommandEmpty>
-          {isLoading && query.trim().length >= 2 ? (
-            <CommandGroup heading="Searching">
-              <CommandItem disabled value={query} className="opacity-60">
+          <CommandEmpty className="py-6 text-sm text-white/50">
+            {isLoading && query.trim().length >= 2 ? (
+              <span className="inline-flex items-center gap-2">
+                <LoaderCircleIcon className="h-4 w-4 animate-spin" aria-hidden />
                 Searching…
-              </CommandItem>
-            </CommandGroup>
-          ) : null}
+              </span>
+            ) : (
+              "No matches found."
+            )}
+          </CommandEmpty>
           {error ? (
             <CommandGroup heading="Status">
               <CommandItem disabled value={query} className="opacity-60">
@@ -313,9 +466,7 @@ export function GlobalSearch({ isAdmin = false, context = "platform", classes = 
                       "data-[selected=true]:bg-white/10 data-[selected=true]:text-white",
                     )}
                   >
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/40 transition group-data-[selected=true]:border-white/20 group-data-[selected=true]:text-white">
-                      <ArrowUpRight className="h-4 w-4" />
-                    </span>
+                    <SearchResultLeadingVisual item={item} />
                     <span className="flex-1">
                       <span className="block">{item.label}</span>
                       {item.subtitle ? (

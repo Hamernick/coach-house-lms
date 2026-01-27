@@ -1,5 +1,15 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
+function formatSupabaseError(error: unknown) {
+  if (error instanceof Error) return error.message
+  if (!error || typeof error !== "object") return String(error)
+  const record = error as Record<string, unknown>
+  const code = typeof record.code === "string" ? record.code : null
+  const message = typeof record.message === "string" ? record.message : null
+  const details = typeof record.details === "string" ? record.details : null
+  return [code, message, details].filter(Boolean).join(" — ") || "Unknown error"
+}
+
 export type AdminKpis = {
   totalStudents: number
   activeSubscriptions: number
@@ -18,6 +28,7 @@ export type AdminRecentEnrollment = {
 export type AdminRecentPayment = {
   id: string
   userId: string
+  userEmail: string
   amount: number
   currency: string
   status: string
@@ -36,7 +47,6 @@ type EnrollmentRow = {
   user_id: string
   created_at: string
   classes?: { title: string | null } | null
-  profiles?: { email: string | null } | null
 }
 
 type SubscriptionPaymentRow = {
@@ -77,10 +87,10 @@ export async function fetchAdminKpis(): Promise<AdminKpis> {
   ])
 
   if (profileError) {
-    throw profileError
+    throw new Error(`Unable to load profiles count: ${formatSupabaseError(profileError)}`)
   }
   if (subsError) {
-    throw subsError
+    throw new Error(`Unable to load subscriptions: ${formatSupabaseError(subsError)}`)
   }
 
   const profileSummary = profileCount as unknown as { count: number | null } | null
@@ -115,29 +125,41 @@ export async function fetchRecentEnrollments(limit = 5): Promise<AdminRecentEnro
 
   const { data, error } = await supabase
     .from("enrollments")
-    .select(
-      [
-        "id",
-        "user_id",
-        "created_at",
-        "classes ( title )",
-        // Be explicit about the FK to avoid ambiguity
-        "profiles:profiles!enrollments_user_id_fkey ( email )",
-      ].join(", ")
-    )
+    .select("id, user_id, created_at, classes ( title )")
     .order("created_at", { ascending: false })
     .limit(limit)
+    .returns<Array<{ id: string; user_id: string; created_at: string; classes: { title: string | null } | null }>>()
 
   if (error) {
-    throw error
+    throw new Error(`Unable to load enrollments: ${formatSupabaseError(error)}`)
   }
 
-  const rows = (data ?? []) as unknown as EnrollmentRow[]
+  const rows = (data ?? []) as EnrollmentRow[]
+  const uniqueUserIds = Array.from(new Set(rows.map((row) => row.user_id)))
+  const emailByUserId = new Map<string, string>()
+
+  if (uniqueUserIds.length > 0) {
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, email")
+      .in("id", uniqueUserIds)
+      .returns<Array<{ id: string; email: string | null }>>()
+
+    if (profilesError) {
+      console.error("[admin] Unable to load profile emails for recent enrollments.", profilesError)
+    } else {
+      for (const profile of profiles ?? []) {
+        if (profile.email) {
+          emailByUserId.set(profile.id, profile.email)
+        }
+      }
+    }
+  }
 
   return rows.map((row) => ({
     id: row.id,
     userId: row.user_id,
-    userEmail: row.profiles?.email ?? row.user_id,
+    userEmail: emailByUserId.get(row.user_id) ?? row.user_id,
     classTitle: row.classes?.title ?? "Unknown class",
     enrolledAt: row.created_at,
   }))
@@ -153,16 +175,37 @@ export async function fetchRecentPayments(limit = 5): Promise<AdminRecentPayment
     .limit(limit)
 
   if (error) {
-    throw error
+    throw new Error(`Unable to load payments: ${formatSupabaseError(error)}`)
   }
 
   const rows = (data ?? []) as unknown as SubscriptionPaymentRow[]
+  const uniqueUserIds = Array.from(new Set(rows.map((row) => row.user_id)))
+  const emailByUserId = new Map<string, string>()
+
+  if (uniqueUserIds.length > 0) {
+    const { data: profiles, error: profilesError } = await supabase
+      .from("profiles")
+      .select("id, email")
+      .in("id", uniqueUserIds)
+      .returns<Array<{ id: string; email: string | null }>>()
+
+    if (profilesError) {
+      console.error("[admin] Unable to load profile emails for recent payments.", profilesError)
+    } else {
+      for (const profile of profiles ?? []) {
+        if (profile.email) {
+          emailByUserId.set(profile.id, profile.email)
+        }
+      }
+    }
+  }
 
   return rows.map((row) => {
     const amountInfo = extractAmount(row.metadata)
     return {
       id: row.id,
       userId: row.user_id,
+      userEmail: emailByUserId.get(row.user_id) ?? row.user_id,
       amount: amountInfo?.amount ?? 0,
       currency: amountInfo?.currency ?? "usd",
       status: row.status ?? "unknown",

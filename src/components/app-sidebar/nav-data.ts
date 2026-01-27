@@ -6,24 +6,30 @@ import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
 import LockIcon from "lucide-react/dist/esm/icons/lock"
 import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
+import ShieldIcon from "lucide-react/dist/esm/icons/shield"
 import ShoppingBagIcon from "lucide-react/dist/esm/icons/shopping-bag"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
 import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 
 import type { SidebarClass } from "@/lib/academy"
 
-export function buildMainNav(isAdmin: boolean): Array<{ title: string; href: string; icon?: LucideIcon }> {
-  const items: Array<{ title: string; href: string; icon?: LucideIcon }> = []
+export function buildMainNav({
+  isAdmin,
+  showOrgAdmin,
+}: {
+  isAdmin: boolean
+  showOrgAdmin: boolean
+}): Array<{ title: string; href: string; icon?: LucideIcon }> {
+  const items: Array<{ title: string; href: string; icon?: LucideIcon }> = [
+    { title: "My Organization", href: "/my-organization", icon: BuildingIcon },
+    { title: "People", href: "/people", icon: UsersIcon },
+    { title: "Roadmap", href: "/roadmap", icon: WaypointsIcon },
+    { title: "Documents", href: "/my-organization/documents", icon: LockIcon },
+  ]
 
-  if (!isAdmin) {
-    items.push(
-      { title: "My Organization", href: "/my-organization", icon: BuildingIcon },
-      { title: "People", href: "/people", icon: UsersIcon },
-      { title: "Roadmap", href: "/my-organization/roadmap", icon: WaypointsIcon },
-      { title: "Documents", href: "/my-organization/documents", icon: LockIcon },
-    )
+  if (showOrgAdmin) {
+    items.push({ title: "Admin", href: "/admin", icon: ShieldIcon })
   }
-
   return items
 }
 

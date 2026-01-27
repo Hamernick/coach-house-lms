@@ -1,494 +1,899 @@
 "use client"
 
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
-import NextImage from "next/image"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import Image from "next/image"
 import Cropper from "react-easy-crop"
+import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
+import CheckIcon from "lucide-react/dist/esm/icons/check"
+import Trash2Icon from "lucide-react/dist/esm/icons/trash-2"
+
+import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { cn } from "@/lib/utils"
+
+type FormationStatus = "pre_501c3" | "in_progress" | "approved"
+
+const FORMATION_OPTIONS: Array<{
+  value: FormationStatus
+  label: string
+  description: string
+}> = [
+  {
+    value: "pre_501c3",
+    label: "Pre-501(c)(3)",
+    description: "Just getting started.",
+  },
+  {
+    value: "in_progress",
+    label: "In progress",
+    description: "Formation is underway.",
+  },
+  {
+    value: "approved",
+    label: "Approved",
+    description: "We have a determination letter.",
+  },
+]
 
 export type OnboardingDialogProps = {
   open: boolean
   defaultEmail?: string | null
   onSubmit: (form: FormData) => Promise<void>
-  variant?: "basic" | "accelerator"
 }
 
-export function OnboardingDialog({ open, defaultEmail, onSubmit, variant = "accelerator" }: OnboardingDialogProps) {
+type Step = {
+  id: "org" | "account"
+  title: string
+  description: string
+}
+
+const STEPS: Step[] = [
+  {
+    id: "org",
+    title: "Create your organization",
+    description:
+      "This is your nonprofit’s workspace. You can change this later.",
+  },
+  {
+    id: "account",
+    title: "Set up your account",
+    description: "A few details so we can personalize your workspace.",
+  },
+]
+
+const RESERVED_SLUGS = new Set([
+  "admin",
+  "api",
+  "login",
+  "signup",
+  "pricing",
+  "billing",
+  "class",
+  "dashboard",
+  "people",
+  "my-organization",
+  "_next",
+  "public",
+  "favicon",
+  "assets",
+])
+
+function slugify(input: string): string {
+  const base = input
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9\\s-]/g, "")
+    .trim()
+    .replace(/\\s+/g, "-")
+    .replace(/-+/g, "-")
+  return base.slice(0, 60).replace(/^-+|-+$/g, "")
+}
+
+function resolveOnboardingError(raw: string | null) {
+  switch (raw) {
+    case "missing_org_name":
+      return "Enter an organization name to continue."
+    case "missing_org_slug":
+      return "Enter an organization URL to continue."
+    case "invalid_org_slug":
+      return "That organization URL is invalid. Use letters, numbers, and hyphens."
+    case "reserved_org_slug":
+      return "That URL is reserved. Try something else."
+    case "slug_taken":
+      return "That URL is already taken. Try another."
+    default:
+      return null
+  }
+}
+
+export function OnboardingDialog({
+  open,
+  defaultEmail,
+  onSubmit,
+}: OnboardingDialogProps) {
+  const searchParams = useSearchParams()
   const [step, setStep] = useState(0)
-  const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [serverError, setServerError] = useState<string | null>(null)
+  const [slugEdited, setSlugEdited] = useState(false)
+  const [slugStatus, setSlugStatus] = useState<
+    "idle" | "checking" | "available" | "unavailable"
+  >("idle")
+  const [slugValue, setSlugValue] = useState("")
+  const [slugHint, setSlugHint] = useState<string | null>(null)
+  const [formationStatus, setFormationStatus] =
+    useState<FormationStatus>("in_progress")
+
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
-  const formRef = useRef<HTMLFormElement>(null)
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [confidenceOperating, setConfidenceOperating] = useState(6)
-  const [confidenceFunding, setConfidenceFunding] = useState(5)
-  const [confidenceFunders, setConfidenceFunders] = useState(5)
-  const [followUpLater, setFollowUpLater] = useState(false)
-  const [cropOpen, setCropOpen] = useState(false)
   const [rawImageUrl, setRawImageUrl] = useState<string | null>(null)
+  const [cropOpen, setCropOpen] = useState(false)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
-  const [croppedArea, setCroppedArea] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
+  const [croppedArea, setCroppedArea] = useState<{
+    x: number
+    y: number
+    width: number
+    height: number
+  } | null>(null)
 
-  const steps = variant === "basic" ? BASIC_STEPS : FULL_STEPS
+  const [submitting, setSubmitting] = useState(false)
+  const formRef = useRef<HTMLFormElement | null>(null)
 
-  // Load saved draft on mount
-  useOnboardingDraft(formRef, setStep, steps.length - 1, setAvatarPreview, setFirstName, setLastName, {
-    setOperatingScore: setConfidenceOperating,
-    setFundingScore: setConfidenceFunding,
-    setFundersScore: setConfidenceFunders,
-    setFollowUp: setFollowUpLater,
-  })
+  const currentStep = STEPS[Math.max(0, Math.min(step, STEPS.length - 1))]
+  const progress = useMemo(
+    () => Math.round(((step + 1) / STEPS.length) * 100),
+    [step]
+  )
 
-  function saveDraft(
+  const saveDraft = (
     extra?: Partial<{
-      avatar: string | null
       step: number
-      values: Record<string, string>
-      flags: Partial<{ optInUpdates: boolean; followUpLater: boolean }>
-    }>,
-  ) {
+      formationStatus: FormationStatus
+      slugEdited: boolean
+      avatar: string | null
+    }>
+  ) => {
     if (typeof window === "undefined" || !formRef.current) return
     const data = new FormData(formRef.current)
-    const draft: {
-      step: number
-      values: Record<string, string>
-      flags: { optInUpdates: boolean; followUpLater: boolean }
-      avatar: string | null
-    } = {
+    const payload = {
       step,
+      formationStatus,
+      slugEdited,
+      avatar: avatarPreview,
       values: Object.fromEntries(
         [
+          "orgName",
+          "orgSlug",
           "firstName",
           "lastName",
           "phone",
           "email",
-          "orgName",
-          "orgDesc",
-          "website",
-          "social",
-          "stage",
-          "problem",
-          "mission",
-          "goals",
-          "confidenceOperating",
-          "confidenceFunding",
-          "confidenceFunders",
-          "confidenceNotes",
+          "title",
+          "linkedin",
         ].map((k) => [k, String(data.get(k) ?? "")])
       ),
       flags: {
         optInUpdates: Boolean(data.get("optInUpdates")),
-        followUpLater: Boolean(data.get("followUpLater")),
+        newsletterOptIn: Boolean(data.get("newsletterOptIn")),
       },
-      avatar: avatarPreview,
     }
-    if (extra?.values) {
-      draft.values = { ...draft.values, ...extra.values }
+
+    const merged = {
+      ...payload,
+      ...(extra ?? {}),
     }
-    if (extra?.flags) {
-      draft.flags = { ...draft.flags, ...extra.flags }
-    }
-    if (extra?.avatar !== undefined) draft.avatar = extra.avatar
-    if (typeof extra?.step === "number") draft.step = extra.step
-    window.localStorage.setItem("onboardingDraft", JSON.stringify(draft))
+
+    window.localStorage.setItem("onboardingDraftV2", JSON.stringify(merged))
   }
 
-  function next() {
-    setStep((s) => {
-      const n = Math.min(s + 1, steps.length - 1)
-      saveDraft({ step: n })
-      return n
-    })
-  }
-  function prev() {
-    setStep((s) => {
-      const n = Math.max(s - 1, 0)
-      saveDraft({ step: n })
-      return n
-    })
-  }
+  useEffect(() => {
+    if (!open) return
 
-  function validate(form: FormData, s: number): boolean {
-    const newErrors: Record<string, string> = {}
-    const currentStep = steps[s]?.id ?? "profile"
-    if (currentStep === "profile") {
-      if (!String(form.get("firstName") || "").trim()) newErrors.firstName = "First name is required"
-      if (!String(form.get("lastName") || "").trim()) newErrors.lastName = "Last name is required"
-      if (!String(form.get("phone") || "").trim()) newErrors.phone = "Phone is required"
-      const email = String(form.get("email") || "").trim()
-      if (!email) newErrors.email = "Email is required"
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) newErrors.email = "Enter a valid email"
-    } else if (currentStep === "organization") {
-      if (!String(form.get("orgName") || "").trim()) newErrors.orgName = "Organization/Project name is required"
-      if (!String(form.get("orgDesc") || "").trim()) newErrors.orgDesc = "Description is required"
-    } else if (currentStep === "work") {
-      if (!String(form.get("stage") || "").trim()) newErrors.stage = "Select your stage"
-      if (!String(form.get("problem") || "").trim()) newErrors.problem = "Problem statement is required"
-    } else if (currentStep === "confidence") {
-      const confidenceFields: Array<{ key: keyof typeof newErrors; name: string }> = [
-        { key: "confidenceOperating", name: "confidenceOperating" },
-        { key: "confidenceFunding", name: "confidenceFunding" },
-        { key: "confidenceFunders", name: "confidenceFunders" },
-      ]
-      confidenceFields.forEach(({ key, name }) => {
-        const raw = Number(form.get(name) ?? NaN)
-        if (!Number.isFinite(raw)) {
-          newErrors[key as string] = "Please choose a value from 1–10"
+    const msg = resolveOnboardingError(searchParams.get("error"))
+    setServerError(msg)
+  }, [open, searchParams])
+
+  useEffect(() => {
+    if (!open) return
+    if (typeof window === "undefined") return
+    const raw = window.localStorage.getItem("onboardingDraftV2")
+    if (!raw) return
+
+    try {
+      const draft = JSON.parse(raw) as {
+        step?: number
+        formationStatus?: FormationStatus
+        slugEdited?: boolean
+        avatar?: string | null
+        values?: Record<string, string>
+        flags?: { optInUpdates?: boolean; newsletterOptIn?: boolean }
+      }
+
+      if (typeof draft.step === "number") {
+        setStep(Math.max(0, Math.min(STEPS.length - 1, draft.step)))
+      }
+      if (
+        draft.formationStatus === "pre_501c3" ||
+        draft.formationStatus === "in_progress" ||
+        draft.formationStatus === "approved"
+      ) {
+        setFormationStatus(draft.formationStatus)
+      }
+      setSlugEdited(Boolean(draft.slugEdited))
+      if (draft.avatar) setAvatarPreview(draft.avatar)
+
+      const form = formRef.current
+      if (!form || !draft.values) return
+
+      for (const [key, value] of Object.entries(draft.values)) {
+        const el = form.querySelector(`[name="${key}"]`) as
+          | HTMLInputElement
+          | HTMLTextAreaElement
+          | null
+        if (!el) continue
+        el.value = value
+      }
+
+      const slug = draft.values.orgSlug ?? ""
+      if (slug) {
+        setSlugValue(slugify(slug))
+        setSlugHint(null)
+      }
+
+      if (draft.flags?.optInUpdates !== undefined) {
+        const cb = form.querySelector(
+          'input[name="optInUpdates"][type="checkbox"]'
+        ) as HTMLInputElement | null
+        if (cb) cb.checked = Boolean(draft.flags.optInUpdates)
+      }
+      if (draft.flags?.newsletterOptIn !== undefined) {
+        const cb = form.querySelector(
+          'input[name="newsletterOptIn"][type="checkbox"]'
+        ) as HTMLInputElement | null
+        if (cb) cb.checked = Boolean(draft.flags.newsletterOptIn)
+      }
+    } catch {
+      // ignore
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) return
+    const normalized = slugify(slugValue)
+    if (!normalized) {
+      setSlugStatus("idle")
+      setSlugHint(null)
+      return
+    }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalized)) {
+      setSlugStatus("unavailable")
+      setSlugHint("Use letters, numbers, and hyphens.")
+      return
+    }
+    if (RESERVED_SLUGS.has(normalized)) {
+      setSlugStatus("unavailable")
+      setSlugHint("That URL is reserved.")
+      return
+    }
+
+    let mounted = true
+    const controller = new AbortController()
+    setSlugStatus("checking")
+    setSlugHint(null)
+
+    const id = window.setTimeout(() => {
+      void fetch(
+        `/api/public/organizations/slug-available?slug=${encodeURIComponent(normalized)}`,
+        {
+          method: "GET",
+          signal: controller.signal,
         }
-      })
+      )
+        .then(async (res) => {
+          const payload = (await res.json().catch(() => ({}))) as {
+            available?: boolean
+            error?: string
+            slug?: string
+          }
+          if (!mounted) return
+          if (!res.ok) {
+            setSlugStatus("unavailable")
+            setSlugHint(payload.error ?? "Unable to check URL right now.")
+            return
+          }
+          if (payload.available) {
+            setSlugStatus("available")
+            setSlugHint(null)
+          } else {
+            setSlugStatus("unavailable")
+            setSlugHint(payload.error ?? "That URL is not available.")
+          }
+        })
+        .catch((error: unknown) => {
+          if (!mounted) return
+          if (error instanceof Error && error.name === "AbortError") return
+          setSlugStatus("unavailable")
+          setSlugHint("Unable to check URL right now.")
+        })
+    }, 350)
+
+    return () => {
+      mounted = false
+      controller.abort()
+      window.clearTimeout(id)
     }
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
+  }, [open, slugValue])
+
+  const validateStep = (idx: number) => {
+    if (!formRef.current) return false
+    const form = new FormData(formRef.current)
+    const nextErrors: Record<string, string> = {}
+    const active = STEPS[idx]?.id
+
+    if (active === "org") {
+      const orgName = String(form.get("orgName") ?? "").trim()
+      const orgSlug = slugify(String(form.get("orgSlug") ?? "").trim())
+      if (!orgName) nextErrors.orgName = "Organization name is required"
+      if (!orgSlug) nextErrors.orgSlug = "Organization URL is required"
+      if (slugStatus !== "available")
+        nextErrors.orgSlug = slugHint ?? "Choose an available URL"
+    }
+
+    if (active === "account") {
+      const firstName = String(form.get("firstName") ?? "").trim()
+      const lastName = String(form.get("lastName") ?? "").trim()
+      if (!firstName) nextErrors.firstName = "First name is required"
+      if (!lastName) nextErrors.lastName = "Last name is required"
+    }
+
+    setErrors(nextErrors)
+    return Object.keys(nextErrors).length === 0
   }
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault()
-    const form = new FormData(e.currentTarget)
-    if (step < steps.length - 1) {
-      if (!validate(form, step)) return
-      return next()
-    }
-    if (!validate(form, step)) return
-    // Attach cropped avatar if present
-    if (avatarPreview && rawImageUrl && croppedArea) {
-      const blob = await getCroppedBlob(rawImageUrl, croppedArea)
-      if (blob) form.set("avatar", new File([blob], "avatar.png", { type: blob.type || "image/png" }))
-    }
-    setSubmitting(true)
-    await onSubmit(form)
-    setSubmitting(false)
-    if (typeof window !== "undefined") {
-      window.localStorage.removeItem("onboardingDraft")
-    }
+  const next = () => {
+    setServerError(null)
+    if (!validateStep(step)) return
+    setStep((prev) => {
+      const value = Math.min(prev + 1, STEPS.length - 1)
+      saveDraft({ step: value })
+      return value
+    })
   }
+
+  const prev = () => {
+    setServerError(null)
+    setStep((prev) => {
+      const value = Math.max(prev - 1, 0)
+      saveDraft({ step: value })
+      return value
+    })
+  }
+
+  const removeAvatar = () => {
+    if (avatarPreview) {
+      URL.revokeObjectURL(avatarPreview)
+    }
+    if (rawImageUrl) {
+      URL.revokeObjectURL(rawImageUrl)
+    }
+    setAvatarPreview(null)
+    setRawImageUrl(null)
+    setCroppedArea(null)
+    setCropOpen(false)
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
+
+    const input = formRef.current?.querySelector(
+      'input[name="avatar"]'
+    ) as HTMLInputElement | null
+    if (input) {
+      input.value = ""
+      try {
+        const transfer = new DataTransfer()
+        input.files = transfer.files
+      } catch {
+        // ignore
+      }
+    }
+
+    saveDraft({ avatar: null })
+  }
+
+  const stepLabel = `Step ${step + 1} of ${STEPS.length}`
 
   return (
     <Dialog open={open}>
-      <DialogContent className="max-h-[92vh] w-[min(760px,92%)] overflow-y-auto rounded-2xl p-0 sm:p-0">
-        <form ref={formRef} onSubmit={handleSubmit} className="space-y-0">
-          <div className="border-b px-6 py-4">
-            <p className="text-xs text-muted-foreground">Step {step + 1} of {steps.length}</p>
-            <h2 className="mt-1 text-xl font-semibold">{steps[step].title}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">{steps[step].description}</p>
-            {/* Progress dots */}
-            <div className="mt-3 flex items-center gap-1.5">
-              {steps.map((_, i) => (
-                <span
-                  key={i}
-                  className={
-                    "inline-block rounded-full transition " +
-                    (i === step ? "size-2.5 bg-primary" : "size-2 bg-muted-foreground/50")
-                  }
-                />
-              ))}
+      <DialogContent className="border-border bg-card/80 max-h-[92vh] w-[min(720px,92%)] overflow-hidden rounded-3xl border p-0 shadow-2xl backdrop-blur">
+        <form
+          ref={formRef}
+          action={onSubmit}
+          className="space-y-0"
+          onChange={() => saveDraft()}
+          onSubmit={(event) => {
+            if (step !== STEPS.length - 1) {
+              event.preventDefault()
+              next()
+              return
+            }
+            if (!validateStep(step)) {
+              event.preventDefault()
+              return
+            }
+
+            setSubmitting(true)
+            saveDraft({ step })
+            if (typeof window !== "undefined") {
+              window.localStorage.removeItem("onboardingDraftV2")
+            }
+          }}
+        >
+          <div className="border-border/70 border-b px-6 py-5">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <p className="text-muted-foreground text-xs font-medium">
+                  {stepLabel}
+                </p>
+                <DialogTitle asChild>
+                  <h2 className="text-foreground mt-1 text-2xl font-semibold">
+                    {currentStep.title}
+                  </h2>
+                </DialogTitle>
+                <DialogDescription asChild>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    {currentStep.description}
+                  </p>
+                </DialogDescription>
+              </div>
+              <div className="hidden sm:flex sm:flex-col sm:items-end sm:gap-2">
+                <div className="bg-muted h-1.5 w-44 overflow-hidden rounded-full">
+                  <div
+                    className="bg-primary h-full rounded-full"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <span className="text-muted-foreground text-xs">
+                  {progress}%
+                </span>
+              </div>
             </div>
           </div>
-          <div className="space-y-5 p-6" onChange={() => saveDraft()}>
-            <input type="hidden" name="onboardingVariant" value={variant} />
-            {step === 0 && (
-              <>
-                <div className="flex flex-col items-center gap-3">
-                  <div className="relative size-28 overflow-hidden rounded-full border border-border bg-card">
+
+          <div className="space-y-6 p-6">
+            <input
+              type="hidden"
+              name="formationStatus"
+              value={formationStatus}
+            />
+
+            {serverError ? (
+              <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-xl border px-4 py-3 text-sm">
+                {serverError}
+              </div>
+            ) : null}
+
+            {step === 0 ? (
+              <div className="space-y-5">
+                <div className="grid gap-2">
+                  <Label htmlFor="orgName">Organization name</Label>
+                  <Input
+                    id="orgName"
+                    name="orgName"
+                    placeholder="Acme Inc."
+                    aria-invalid={Boolean(errors.orgName)}
+                    onChange={(event) => {
+                      const value = event.currentTarget.value
+                      if (!slugEdited) {
+                        const nextSlug = slugify(value)
+                        setSlugValue(nextSlug)
+                        const input = formRef.current?.querySelector(
+                          'input[name="orgSlug"]'
+                        ) as HTMLInputElement | null
+                        if (input) input.value = nextSlug
+                      }
+                    }}
+                  />
+                  {errors.orgName ? (
+                    <p className="text-destructive text-xs">{errors.orgName}</p>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="orgSlug">Organization URL</Label>
+                  <div className="border-border/70 bg-background flex items-center gap-2 rounded-xl border px-3 py-1.5">
+                    <span className="text-muted-foreground text-sm">
+                      coachhouse.org/
+                    </span>
+                    <Input
+                      id="orgSlug"
+                      name="orgSlug"
+                      placeholder="acme"
+                      className="h-9 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+                      aria-invalid={Boolean(errors.orgSlug)}
+                      onChange={(event) => {
+                        setSlugEdited(true)
+                        const normalized = slugify(event.currentTarget.value)
+                        setSlugValue(normalized)
+                        event.currentTarget.value = normalized
+                      }}
+                    />
+                    {slugStatus === "available" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                        <CheckIcon className="h-3 w-3" aria-hidden />
+                        Available
+                      </span>
+                    ) : slugStatus === "checking" ? (
+                      <span className="bg-muted text-muted-foreground rounded-full px-2 py-1 text-[11px] font-medium">
+                        Checking…
+                      </span>
+                    ) : null}
+                  </div>
+                  {errors.orgSlug ? (
+                    <p className="text-destructive text-xs">{errors.orgSlug}</p>
+                  ) : null}
+                  {!errors.orgSlug && slugHint ? (
+                    <p className="text-muted-foreground text-xs">{slugHint}</p>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Formation status</Label>
+                  <div
+                    role="radiogroup"
+                    aria-label="Formation status"
+                    className="grid gap-2 sm:grid-cols-3"
+                  >
+                    {FORMATION_OPTIONS.map((option) => {
+                      const selected = formationStatus === option.value
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          onClick={() => {
+                            setFormationStatus(option.value)
+                            saveDraft({ formationStatus: option.value })
+                          }}
+                          className={cn(
+                            "flex flex-col gap-2 rounded-2xl border p-3 text-left transition",
+                            selected
+                              ? "border-primary/60 bg-primary/5"
+                              : "border-border/70 bg-background/60 hover:bg-background"
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "flex h-5 w-5 items-center justify-center rounded-full border",
+                              selected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border text-transparent"
+                            )}
+                            aria-hidden
+                          >
+                            <CheckIcon className="h-3 w-3" />
+                          </span>
+                          <span className="w-full">
+                            <span className="text-foreground block text-sm font-medium">
+                              {option.label}
+                            </span>
+                            <span className="text-muted-foreground mt-0.5 block text-xs">
+                              {option.description}
+                            </span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 1 ? (
+              <div className="space-y-5">
+                <div className="border-border/70 bg-background/60 flex flex-col items-center gap-3 rounded-2xl border p-4">
+                  <div className="border-border bg-card relative size-16 overflow-hidden rounded-full border">
                     {avatarPreview ? (
-                      <NextImage
+                      <Image
                         src={avatarPreview}
                         alt="Avatar preview"
-                        fill
-                        className="object-cover"
+                        width={64}
+                        height={64}
+                        className="h-full w-full object-cover"
                         unoptimized
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-muted-foreground">
-                        {(firstName[0] ?? "A").toUpperCase()}
-                        {(lastName[0] ?? "A").toUpperCase()}
+                      <div className="text-muted-foreground flex h-full w-full items-center justify-center text-sm font-semibold">
+                        CH
                       </div>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground">Upload a profile picture (optional)</div>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input id="firstName" name="firstName" required aria-invalid={Boolean(errors.firstName)} onChange={(e) => setFirstName(e.currentTarget.value)} />
-                    {errors.firstName ? <p className="mt-1 text-xs text-destructive">{errors.firstName}</p> : null}
+                  <div className="text-muted-foreground text-xs">
+                    Upload a profile picture (optional)
                   </div>
-                  <div>
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input id="lastName" name="lastName" required aria-invalid={Boolean(errors.lastName)} onChange={(e) => setLastName(e.currentTarget.value)} />
-                    {errors.lastName ? <p className="mt-1 text-xs text-destructive">{errors.lastName}</p> : null}
-                  </div>
-                </div>
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor="phone">Phone</Label>
-                    <Input id="phone" name="phone" type="tel" required aria-invalid={Boolean(errors.phone)} />
-                    {errors.phone ? <p className="mt-1 text-xs text-destructive">{errors.phone}</p> : null}
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" name="email" type="email" defaultValue={defaultEmail ?? undefined} required aria-invalid={Boolean(errors.email)} />
-                    {errors.email ? <p className="mt-1 text-xs text-destructive">{errors.email}</p> : null}
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-[120px_1fr] sm:items-end">
-                  <div>
-                    <Label htmlFor="avatar">Profile picture</Label>
-                    <Input
-                      id="avatar"
-                      name="avatar"
-                      type="file"
-                      accept="image/*"
-                      onChange={(ev) => {
-                        const f = ev.currentTarget.files?.[0]
-                        if (f) {
-                          const url = URL.createObjectURL(f)
-                          setRawImageUrl(url)
-                          setCropOpen(true)
-                        }
-                      }}
-                    />
-                  </div>
-                  <label className="inline-flex items-center gap-2 text-sm">
-                    <input type="checkbox" name="optInUpdates" defaultChecked className="h-4 w-4" />
-                    Sign up for news and updates
-                  </label>
-                </div>
-              </>
-            )}
-            {variant === "accelerator" && step === 1 && (
-              <>
-                <div>
-                  <Label htmlFor="orgName">Organization/Project Name</Label>
-                  <Input id="orgName" name="orgName" required aria-invalid={Boolean(errors.orgName)} />
-                  {errors.orgName ? <p className="mt-1 text-xs text-destructive">{errors.orgName}</p> : null}
-                </div>
-                <div>
-                  <Label htmlFor="orgDesc">Description</Label>
-                  <Textarea id="orgDesc" name="orgDesc" required placeholder="Tell us about what you're building" aria-invalid={Boolean(errors.orgDesc)} />
-                  {errors.orgDesc ? <p className="mt-1 text-xs text-destructive">{errors.orgDesc}</p> : null}
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <Label htmlFor="website">Website</Label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">http://</span>
-                      <Input id="website" name="website" placeholder="example.com" className="flex-1" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="social">Social Media Username</Label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-muted-foreground">@</span>
-                      <Input id="social" name="social" placeholder="yourhandle" className="flex-1" />
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-            {variant === "accelerator" && step === 2 && (
-              <>
-                <div>
-                  <Label htmlFor="stage">Stage of your work</Label>
-                  <select id="stage" name="stage" required aria-invalid={Boolean(errors.stage)} className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    <option value="">Select a stage</option>
-                    <option value="Idea">Idea</option>
-                    <option value="Early">Early</option>
-                    <option value="Active">Active</option>
-                    <option value="Growth">Growth</option>
-                    <option value="Other">Other</option>
-                  </select>
-                  {errors.stage ? <p className="mt-1 text-xs text-destructive">{errors.stage}</p> : null}
-                </div>
-                <div>
-                  <Label htmlFor="problem">What problem are you trying to solve?</Label>
-                  <Textarea id="problem" name="problem" required placeholder="1-2 sentences" aria-invalid={Boolean(errors.problem)} />
-                  {errors.problem ? <p className="mt-1 text-xs text-destructive">{errors.problem}</p> : null}
-                </div>
-                <div>
-                  <Label htmlFor="mission">What’s your mission or vision?</Label>
-                  <Textarea id="mission" name="mission" placeholder="It's ok if you aren't sure yet!" />
-                </div>
-                <div>
-                  <Label htmlFor="goals">What do you hope to get out of this accelerator?</Label>
-                  <Textarea id="goals" name="goals" />
-                </div>
-              </>
-            )}
-            {variant === "accelerator" && step === 3 && (
-              <>
-                <div className="rounded-xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm text-primary">
-                  Capture a quick “before” snapshot so we can celebrate how your confidence grows during the accelerator.
-                </div>
-                {[
-                  {
-                    id: "confidenceOperating",
-                    label: "Operating as an organization",
-                    description: "How ready do you feel to run the day-to-day operations of your organization?",
-                    value: confidenceOperating,
-                    setter: setConfidenceOperating,
-                  },
-                  {
-                    id: "confidenceFunding",
-                    label: "Being ready for funding",
-                    description: "How confident are you in your financial model, budget, and readiness to accept funding?",
-                    value: confidenceFunding,
-                    setter: setConfidenceFunding,
-                  },
-                  {
-                    id: "confidenceFunders",
-                    label: "Finding & communicating with funders",
-                    description: "How confident are you when it comes to identifying funders and telling your story to them?",
-                    value: confidenceFunders,
-                    setter: setConfidenceFunders,
-                  },
-                ].map(({ id, label, description, value, setter }) => (
-                  <div key={id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor={id}>{label}</Label>
-                      <span className="text-sm font-semibold text-foreground">{value}/10</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{description}</p>
-                    <input
-                      type="range"
-                      min={1}
-                      max={10}
-                      step={1}
-                      id={id}
-                      name={id}
-                      value={value}
-                      onChange={(event) => {
-                        const next = Number(event.currentTarget.value)
-                        setter(next)
-                        saveDraft({ values: { [id]: String(next) } })
-                      }}
-                      className="mt-2 w-full accent-primary"
-                    />
-                    {errors[id] ? <p className="text-xs text-destructive">{errors[id]}</p> : null}
-                  </div>
-                ))}
-                <div className="space-y-2">
-                  <Label htmlFor="confidenceNotes">Context (optional)</Label>
-                  <Textarea
-                    id="confidenceNotes"
-                    name="confidenceNotes"
-                    placeholder="Share any context or notes about your confidence levels."
-                  />
-                </div>
-                <label className="flex items-start gap-3 text-sm">
-                  <input
-                    type="checkbox"
-                    name="followUpLater"
-                    className="mt-1 h-4 w-4 accent-primary"
-                    checked={followUpLater}
-                    onChange={(event) => {
-                      setFollowUpLater(event.currentTarget.checked)
-                      saveDraft({
-                        flags: { followUpLater: event.currentTarget.checked },
-                      })
+                  <Input
+                    id="avatar"
+                    name="avatar"
+                    type="file"
+                    accept="image/*"
+                    className="max-w-xs"
+                    onChange={(ev) => {
+                      const file = ev.currentTarget.files?.[0]
+                      if (!file) return
+                      const url = URL.createObjectURL(file)
+                      setRawImageUrl(url)
+                      setCrop({ x: 0, y: 0 })
+                      setZoom(1)
+                      setCroppedArea(null)
+                      setCropOpen(true)
                     }}
                   />
-                  <span className="text-muted-foreground">
-                    Remind me later to share a follow-up confidence snapshot.
-                  </span>
-                </label>
-              </>
-            )}
+                  {avatarPreview ? (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={submitting}
+                      onClick={removeAvatar}
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2Icon className="h-4 w-4" aria-hidden />
+                      Remove photo
+                    </Button>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label htmlFor="firstName">First name</Label>
+                    <Input
+                      id="firstName"
+                      name="firstName"
+                      aria-invalid={Boolean(errors.firstName)}
+                    />
+                    {errors.firstName ? (
+                      <p className="text-destructive text-xs">
+                        {errors.firstName}
+                      </p>
+                    ) : null}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="lastName">Last name</Label>
+                    <Input
+                      id="lastName"
+                      name="lastName"
+                      aria-invalid={Boolean(errors.lastName)}
+                    />
+                    {errors.lastName ? (
+                      <p className="text-destructive text-xs">
+                        {errors.lastName}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label htmlFor="email">Email</Label>
+                    <Input
+                      id="email"
+                      name="email"
+                      type="email"
+                      defaultValue={defaultEmail ?? undefined}
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="phone">Phone (optional)</Label>
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      placeholder="(555) 555-5555"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid gap-2">
+                    <Label htmlFor="title">Title (optional)</Label>
+                    <Input
+                      id="title"
+                      name="title"
+                      placeholder="Founder, Executive Director, etc."
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="linkedin">LinkedIn (optional)</Label>
+                    <Input
+                      id="linkedin"
+                      name="linkedin"
+                      placeholder="https://linkedin.com/in/…"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-border/70 bg-background/60 space-y-3 rounded-2xl border p-4">
+                  <label className="flex items-start gap-3 text-sm">
+                    <input
+                      type="checkbox"
+                      name="optInUpdates"
+                      defaultChecked
+                      className="mt-1 h-4 w-4"
+                    />
+                    <span className="space-y-0.5">
+                      <span className="text-foreground block font-medium">
+                        Product updates
+                      </span>
+                      <span className="text-muted-foreground block text-xs">
+                        Tips, release notes, and announcements.
+                      </span>
+                    </span>
+                  </label>
+                  <label className="flex items-start gap-3 text-sm">
+                    <input
+                      type="checkbox"
+                      name="newsletterOptIn"
+                      defaultChecked
+                      className="mt-1 h-4 w-4"
+                    />
+                    <span className="space-y-0.5">
+                      <span className="text-foreground block font-medium">
+                        Newsletter
+                      </span>
+                      <span className="text-muted-foreground block text-xs">
+                        Curated learning resources and community updates.
+                      </span>
+                    </span>
+                  </label>
+                  <div className="border-border/70 bg-muted/40 text-muted-foreground rounded-xl border px-3 py-2 text-xs">
+                    Two‑factor authentication: we’ll prompt you to enable it
+                    from Account settings after launch.
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
-          <div className="flex items-center justify-between border-t px-6 py-4">
-            <Button type="button" variant="ghost" onClick={prev} disabled={step === 0 || submitting}>
-              Back
-            </Button>
+
+          <div className="border-border/70 bg-background/40 flex flex-wrap items-center justify-between gap-3 border-t px-6 py-4">
             <div className="flex items-center gap-2">
-              <Button type="submit" disabled={submitting}>
-                {step === steps.length - 1 ? (submitting ? "Submitting…" : "Finish") : "Continue"}
+              {step > 0 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={prev}
+                  disabled={submitting}
+                >
+                  Back
+                </Button>
+              ) : (
+                <span className="text-muted-foreground text-xs">
+                  You’ll be able to change this later.
+                </span>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type={step === STEPS.length - 1 ? "submit" : "button"}
+                onClick={step === STEPS.length - 1 ? undefined : next}
+                disabled={
+                  submitting || (step === 0 && slugStatus !== "available")
+                }
+                className={cn(step === STEPS.length - 1 ? "gap-2" : "gap-2")}
+              >
+                {step === STEPS.length - 1 ? (
+                  <>
+                    Finish
+                    <ArrowRightIcon className="h-4 w-4" aria-hidden />
+                  </>
+                ) : (
+                  <>
+                    Continue
+                    <ArrowRightIcon className="h-4 w-4" aria-hidden />
+                  </>
+                )}
               </Button>
             </div>
           </div>
         </form>
-      </DialogContent>
-      {/* Cropper dialog */}
-      <Dialog open={cropOpen}>
-        <DialogContent className="w-[min(720px,92%)] rounded-2xl p-0 sm:p-0">
-          <div className="space-y-0">
-            <div className="border-b px-6 py-4">
-              <h3 className="text-lg font-semibold">Adjust your profile picture</h3>
-              <p className="mt-1 text-sm text-muted-foreground">Zoom and position the image, then apply.</p>
-            </div>
-            <div className="relative h-[320px] w-full">
-              {rawImageUrl ? (
-                <Cropper
-                  image={rawImageUrl}
-                  crop={crop}
-                  zoom={zoom}
-                  aspect={1}
-                  cropShape="round"
-                  showGrid={false}
-                  onCropChange={setCrop}
-                  onZoomChange={setZoom}
-                  onCropComplete={(_, area) => setCroppedArea(area)}
+
+        <Dialog open={cropOpen} onOpenChange={setCropOpen}>
+          <DialogContent className="w-[min(720px,92%)] overflow-hidden rounded-2xl p-0 sm:p-0">
+            <div className="space-y-0">
+              <div className="border-b px-6 py-4">
+                <DialogTitle asChild>
+                  <h3 className="text-lg font-semibold">Adjust your photo</h3>
+                </DialogTitle>
+                <DialogDescription asChild>
+                  <p className="text-muted-foreground mt-1 text-sm">
+                    Zoom and position the image, then apply.
+                  </p>
+                </DialogDescription>
+              </div>
+              <div className="relative h-[320px] w-full bg-black/5">
+                {rawImageUrl ? (
+                  <Cropper
+                    image={rawImageUrl}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={1}
+                    cropShape="round"
+                    showGrid={false}
+                    onCropChange={setCrop}
+                    onZoomChange={setZoom}
+                    onCropComplete={(_, area) => setCroppedArea(area)}
+                  />
+                ) : null}
+              </div>
+              <div className="flex items-center justify-between border-t px-6 py-4">
+                <input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.05}
+                  value={zoom}
+                  onChange={(event) =>
+                    setZoom(Number(event.currentTarget.value))
+                  }
+                  className="accent-primary h-1 w-40"
                 />
-              ) : null}
-            </div>
-            <div className="flex items-center justify-between border-t px-6 py-4">
-              <input type="range" min={1} max={3} step={0.05} value={zoom} onChange={(e) => setZoom(Number(e.currentTarget.value))} className="h-1 w-40 accent-primary" />
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" onClick={() => setCropOpen(false)}>Cancel</Button>
-                <Button
-                  type="button"
-                  onClick={async () => {
-                    if (rawImageUrl && croppedArea) {
-                      const blob = await getCroppedBlob(rawImageUrl, croppedArea)
-                      if (blob) setAvatarPreview(URL.createObjectURL(blob))
-                    }
-                    setCropOpen(false)
-                    saveDraft({ avatar: avatarPreview })
-                  }}
-                >Apply</Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setCropOpen(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={async () => {
+                      if (rawImageUrl && croppedArea) {
+                        const blob = await getCroppedBlob(
+                          rawImageUrl,
+                          croppedArea
+                        )
+                        if (blob) {
+                          const url = URL.createObjectURL(blob)
+                          setAvatarPreview(url)
+                          saveDraft({ avatar: url })
+
+                          const file = new File([blob], "avatar.png", {
+                            type: blob.type || "image/png",
+                          })
+                          const input = formRef.current?.querySelector(
+                            'input[name="avatar"]'
+                          ) as HTMLInputElement | null
+                          if (input) {
+                            const transfer = new DataTransfer()
+                            transfer.items.add(file)
+                            input.files = transfer.files
+                          }
+                        }
+                      }
+                      setCropOpen(false)
+                    }}
+                  >
+                    Apply
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      </DialogContent>
     </Dialog>
   )
 }
-
-const BASIC_STEPS = [
-  {
-    id: "profile",
-    title: "Tell us about you",
-    description: "Basic details to set up your profile.",
-  },
-]
-
-const FULL_STEPS = [
-  {
-    id: "profile",
-    title: "Tell us about you",
-    description: "Basic details to set up your profile.",
-  },
-  {
-    id: "organization",
-    title: "Your organization or project",
-    description: "Help us understand what you’re building.",
-  },
-  {
-    id: "work",
-    title: "Your work and goals",
-    description: "Share your stage, focus, and goals.",
-  },
-  {
-    id: "confidence",
-    title: "Confidence snapshot",
-    description: "Rate how ready you feel heading into the accelerator.",
-  },
-]
 
 async function getCroppedBlob(
   imageSrc: string,
@@ -501,7 +906,8 @@ async function getCroppedBlob(
       const canvas = document.createElement("canvas")
       canvas.width = size
       canvas.height = size
-      const ctx = canvas.getContext("2d")!
+      const ctx = canvas.getContext("2d")
+      if (!ctx) return resolve(null)
       ctx.fillStyle = "#fff"
       ctx.fillRect(0, 0, size, size)
       ctx.drawImage(
@@ -520,94 +926,4 @@ async function getCroppedBlob(
     img.onerror = () => resolve(null)
     img.src = imageSrc
   })
-}
-
-// Load & apply draft from localStorage on mount
-if (typeof window !== "undefined") {
-  // noop to ensure file is treated as client-only
-}
-
-export function useOnboardingDraft(
-  formRef: React.RefObject<HTMLFormElement | null>,
-  setStep: (n: number) => void,
-  maxStep: number,
-  setAvatarPreview: (url: string | null) => void,
-  setFirst: (v: string) => void,
-  setLast: (v: string) => void,
-  extras?: {
-    setOperatingScore?: (value: number) => void
-    setFundingScore?: (value: number) => void
-    setFundersScore?: (value: number) => void
-    setFollowUp?: (value: boolean) => void
-  },
-) {
-  const { setOperatingScore, setFundingScore, setFundersScore, setFollowUp } = extras ?? {}
-
-  useEffect(() => {
-    if (typeof window === "undefined") return
-    const raw = window.localStorage.getItem("onboardingDraft")
-    if (!raw) return
-    try {
-      const draft = JSON.parse(raw) as {
-        step?: number
-        avatar?: string | null
-        values?: Record<string, string>
-        flags?: { optInUpdates?: boolean; followUpLater?: boolean }
-      }
-      if (typeof draft.step === "number") {
-        const clampedStep = Math.max(0, Math.min(maxStep, draft.step))
-        setStep(clampedStep)
-      }
-      if (draft.avatar) setAvatarPreview(draft.avatar)
-      const form = formRef.current
-      if (form && draft.values) {
-        for (const [k, v] of Object.entries(draft.values)) {
-          const el = form.querySelector(`[name="${k}"]`) as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement | null
-          if (!el) continue
-          if ((el as HTMLInputElement).type === "radio") {
-            const radio = form.querySelector(`input[name="${k}"][value="${CSS.escape(v)}"]`) as HTMLInputElement | null
-            if (radio) radio.checked = true
-          } else {
-            ;(el as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement).value = v
-          }
-        }
-        if (draft.flags?.optInUpdates !== undefined) {
-          const cb = form.querySelector('input[name="optInUpdates"][type="checkbox"]') as HTMLInputElement | null
-          if (cb) cb.checked = Boolean(draft.flags.optInUpdates)
-        }
-        if (draft.flags?.followUpLater !== undefined) {
-          const followCb = form.querySelector('input[name="followUpLater"][type="checkbox"]') as HTMLInputElement | null
-          if (followCb) followCb.checked = Boolean(draft.flags.followUpLater)
-          setFollowUp?.(Boolean(draft.flags.followUpLater))
-        }
-        setFirst(draft.values?.firstName ?? "")
-        setLast(draft.values?.lastName ?? "")
-        const parseScore = (value?: string) => {
-          if (!value) return undefined
-          const parsed = Number(value)
-          if (!Number.isFinite(parsed)) return undefined
-          return parsed
-        }
-        const op = parseScore(draft.values?.confidenceOperating)
-        const funding = parseScore(draft.values?.confidenceFunding)
-        const funders = parseScore(draft.values?.confidenceFunders)
-        if (typeof op === "number") setOperatingScore?.(op)
-        if (typeof funding === "number") setFundingScore?.(funding)
-        if (typeof funders === "number") setFundersScore?.(funders)
-      }
-    } catch {
-      // ignore
-    }
-  }, [
-    formRef,
-    maxStep,
-    setAvatarPreview,
-    setFirst,
-    setFundingScore,
-    setFundersScore,
-    setLast,
-    setOperatingScore,
-    setStep,
-    setFollowUp,
-  ])
 }

@@ -1,10 +1,13 @@
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
 
+export type FormationStatus = "pre_501c3" | "in_progress" | "approved"
+
 export type OrgProfile = {
   name?: string | null
   description?: string | null
   tagline?: string | null
   ein?: string | null
+  formationStatus?: FormationStatus | null
   rep?: string | null
   email?: string | null
   phone?: string | null

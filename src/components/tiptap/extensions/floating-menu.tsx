@@ -15,7 +15,7 @@ import {
   CodeSquare,
   TextQuote
 } from "lucide-react";
-import { FloatingMenu } from "@tiptap/react";
+import * as TiptapReact from "@tiptap/react";
 import {
   Command,
   CommandEmpty,
@@ -396,3 +396,4 @@ export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
     </FloatingMenu>
   );
 }
+const FloatingMenu = (TiptapReact as unknown as { FloatingMenu: React.ComponentType<any> }).FloatingMenu;

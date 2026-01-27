@@ -11,7 +11,7 @@ import { OrgChartCanvasLite } from "@/components/people/org-chart-canvas-lite"
 import { ClientOnly } from "@/components/client-only"
 import { normalizePersonCategory } from "@/lib/people/categories"
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
-import type { OrgPerson } from "./actions"
+import type { OrgPerson } from "@/actions/people"
 
 export const dynamic = "force-dynamic"
 

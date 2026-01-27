@@ -22,7 +22,7 @@ type RoadmapSectionPanelProps = {
   showHeader?: boolean
   headerVariant?: "default" | "calendar"
   headerIconSize?: number | null
-  headerTextRef?: RefObject<HTMLDivElement>
+  headerTextRef?: RefObject<HTMLDivElement | null>
   contentMaxWidth?: string
   toolbarSlotId?: string
   body?: ReactNode

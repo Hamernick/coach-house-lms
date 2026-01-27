@@ -46,8 +46,8 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   if (selectedAddon) fallbackParams.set("addon", selectedAddon)
 
   const fallbackQuery = fallbackParams.toString()
-  const redirectTo = redirect ?? (fallbackQuery ? `/my-organization?${fallbackQuery}` : "/my-organization")
-  const loginHref = `/login?redirect=${encodeURIComponent(redirectTo)}`
+  const redirectTarget = redirect ?? (fallbackQuery ? `/my-organization?${fallbackQuery}` : "/my-organization")
+  const loginHref = `/login?redirect=${encodeURIComponent(redirectTarget)}`
 
   return (
     <AuthScreenShell>
@@ -55,7 +55,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
         title="Create your account"
         description="Join Coach House to access premium learning paths."
       >
-        <SignUpForm redirectTo={redirectTo} loginHref={loginHref} />
+        <SignUpForm redirectTo={redirectTarget} loginHref={loginHref} />
       </AuthCard>
     </AuthScreenShell>
   )

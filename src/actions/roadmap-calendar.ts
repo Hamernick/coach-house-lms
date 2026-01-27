@@ -78,27 +78,42 @@ function createFeedToken() {
   return `${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`
 }
 
-function normalizeCalendarInput(input: RoadmapCalendarEventInput) {
+type CalendarInputResult =
+  | { ok: false; error: string }
+  | {
+      ok: true
+      title: string
+      description: string | null
+      startsAt: string
+      endsAt: string | null
+      allDay: boolean
+      recurrence: RoadmapCalendarRecurrence | null
+      status: "active" | "canceled"
+      assignedRoles: RoadmapCalendarAssignedRole[]
+    }
+
+function normalizeCalendarInput(input: RoadmapCalendarEventInput): CalendarInputResult {
   const title = input.title?.trim()
-  if (!title) return { error: "Event title is required." } as const
+  if (!title) return { ok: false, error: "Event title is required." }
 
   const startsAt = new Date(input.startsAt)
   if (Number.isNaN(startsAt.getTime())) {
-    return { error: "Start date is invalid." } as const
+    return { ok: false, error: "Start date is invalid." }
   }
 
   const endsAt = input.endsAt ? new Date(input.endsAt) : null
   if (endsAt && Number.isNaN(endsAt.getTime())) {
-    return { error: "End date is invalid." } as const
+    return { ok: false, error: "End date is invalid." }
   }
   if (endsAt && endsAt.getTime() < startsAt.getTime()) {
-    return { error: "End date must be after the start date." } as const
+    return { ok: false, error: "End date must be after the start date." }
   }
 
   const assignedRoles = normalizeAssignedRoles(input.assignedRoles)
   const recurrence = normalizeRecurrence(input.recurrence)
 
   return {
+    ok: true,
     title,
     description: input.description?.trim() ?? null,
     startsAt: startsAt.toISOString(),
@@ -249,7 +264,7 @@ export async function createRoadmapCalendarEvent({
   if (!canManageCalendar) return { error: "Forbidden." }
 
   const normalized = normalizeCalendarInput(event)
-  if ("error" in normalized) return normalized
+  if (!normalized.ok) return { error: normalized.error }
 
   const table = CALENDAR_TABLES[calendarType].events
 
@@ -322,7 +337,7 @@ export async function updateRoadmapCalendarEvent({
     assignedRoles: updates.assignedRoles ?? normalizeAssignedRoles(existing.assigned_roles ?? []),
   })
 
-  if ("error" in normalized) return normalized
+  if (!normalized.ok) return { error: normalized.error }
 
   const { data, error: updateError } = await supabase
     .from(table)

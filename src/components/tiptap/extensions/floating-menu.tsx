@@ -276,11 +276,20 @@ export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
     if (!editor?.options.element) return;
 
     const editorElement = editor.options.element;
+    const target =
+      editorElement instanceof Element
+        ? editorElement
+        : typeof editorElement === "object" &&
+            editorElement &&
+            "mount" in editorElement
+          ? editorElement.mount
+          : null;
+    if (!target) return;
+
     const handleEditorKeyDown = (e: Event) => handleKeyDown(e as KeyboardEvent);
 
-    editorElement.addEventListener("keydown", handleEditorKeyDown);
-    return () =>
-      editorElement.removeEventListener("keydown", handleEditorKeyDown);
+    target.addEventListener("keydown", handleEditorKeyDown);
+    return () => target.removeEventListener("keydown", handleEditorKeyDown);
   }, [handleKeyDown, editor]);
 
   // Add new effect for resetting selectedIndex

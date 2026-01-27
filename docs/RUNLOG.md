@@ -18,6 +18,13 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Calendar: fixed feed token result narrowing to return `{ error }` only when present (`src/actions/roadmap-calendar.ts`).
 - Tests: `pnpm lint`.
 
+## 2026-01-27 — Codex session (roadmap delete notification)
+
+- Roadmap: removed an invalid public-share notification from section delete action (fixed TS error) (`src/actions/roadmap.ts`).
+
+## 2026-01-27 — Codex session (roadmap header width)
+
+- Roadmap: restored header max-width alignment to match editor body by applying the same `contentMaxWidth` container (`src/components/roadmap/roadmap-section-panel.tsx`).
 ## 2026-01-27 — Codex session (roadmap landing stepper)
 
 - Roadmap landing: removed eyebrow, retitled to “Launch Roadmap”, and swapped the timeline to the shared StepperRail with 4-step pagination and card grid (`src/components/roadmap/roadmap-landing.tsx`, `src/components/ui/stepper-rail.tsx`).

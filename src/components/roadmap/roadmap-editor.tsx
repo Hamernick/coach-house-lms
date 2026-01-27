@@ -75,8 +75,8 @@ const TOC_GROUPS = [
 ]
 
 const TOC_GROUP_PARENT_BY_CHILD = new Map<string, string>([
-  ...FUNDRAISING_CHILD_IDS.map((id) => [id, "fundraising"]),
-  ...BOARD_CHILD_IDS.map((id) => [id, "board_strategy"]),
+  ...(FUNDRAISING_CHILD_IDS.map((id) => [id, "fundraising"] as const)),
+  ...(BOARD_CHILD_IDS.map((id) => [id, "board_strategy"] as const)),
 ])
 
 type RoadmapDraftStorage = {

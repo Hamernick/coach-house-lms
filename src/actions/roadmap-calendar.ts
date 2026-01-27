@@ -431,8 +431,8 @@ export async function getRoadmapCalendarFeedTokens(): Promise<FeedTokenResult> {
     ensureFeedToken({ supabase, orgId, calendarType: "internal" }),
   ])
 
-  if (publicToken.error) return publicToken
-  if (internalToken.error) return internalToken
+  if ("error" in publicToken) return { error: publicToken.error }
+  if ("error" in internalToken) return { error: internalToken.error }
 
   return {
     ok: true,

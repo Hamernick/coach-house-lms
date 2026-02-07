@@ -6596,3 +6596,17 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - Created endpoint for `https://coachhouse.vercel.app/api/stripe/webhook`.
   - Removed prior webhook endpoint pointing at `coach-house-lms.vercel.app` to avoid failed retries/noise.
 - Reminder: sync `NEXT_PUBLIC_SITE_URL` and `STRIPE_WEBHOOK_SECRET` in Vercel project environment variables, then redeploy.
+
+## 2026-02-07 — Codex hotfix pass (Vercel build blockers)
+- Fixed Accelerator overview TypeScript inference bug causing Vercel failure:
+  - Added explicit typing for local `seed` objects in `src/app/(accelerator)/accelerator/page.tsx` to avoid implicit `any` in nullish-coalescing initializer.
+- Fixed organizations profile upsert typing in people position API:
+  - Cast profile payload to Supabase `Json` before upsert in `src/app/api/people/position/route.ts`.
+- Fixed Stripe invoice typing compatibility with current Stripe SDK:
+  - Replaced `invoice.subscription` usage with `invoice.parent?.subscription_details?.subscription` in `src/app/api/stripe/webhook/route.ts`.
+- Fixed duplicate prop declaration in `src/components/app-shell.tsx` (`showLiveBadges`).
+- Fixed module ordering type inference in `src/lib/accelerator/module-order.ts` by widening rank maps to `Map<string, number>`.
+
+- Validation:
+  - `pnpm exec eslint src/app/(accelerator)/accelerator/page.tsx src/app/api/people/position/route.ts src/app/api/stripe/webhook/route.ts src/components/app-shell.tsx src/lib/accelerator/module-order.ts` ✅
+  - `pnpm build` ✅

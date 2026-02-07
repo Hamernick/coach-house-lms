@@ -1,10 +1,10 @@
 import { isElectiveAddOnModuleSlug, isElectiveAddOnModuleTitle } from "@/lib/accelerator/elective-modules"
 
 const CORE_FORMATION_MODULE_SLUG_ORDER = ["naming-your-nfp", "nfp-registration", "filing-1023"] as const
-const CORE_FORMATION_SLUG_RANK = new Map(
+const CORE_FORMATION_SLUG_RANK: Map<string, number> = new Map(
   CORE_FORMATION_MODULE_SLUG_ORDER.map((slug, index) => [slug, index]),
 )
-const CORE_FORMATION_TITLE_RANK = new Map(
+const CORE_FORMATION_TITLE_RANK: Map<string, number> = new Map(
   [
     ["naming your nfp", 0],
     ["nfp registration", 1],

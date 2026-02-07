@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 
+import type { Json } from "@/lib/supabase"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
 
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
   const nextProfile = {
     ...profile,
     org_people: people,
-  }
+  } as Json
 
   const { error: upsertError } = await supabase
     .from("organizations")

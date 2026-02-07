@@ -272,7 +272,13 @@ async function handleAcceleratorMonthlyInstallmentInvoice(invoice: Stripe.Invoic
 
   const billingReason = invoice.billing_reason ?? ""
 
-  const subscriptionId = typeof invoice.subscription === "string" ? invoice.subscription : null
+  const parentSubscription = invoice.parent?.subscription_details?.subscription
+  const subscriptionId =
+    typeof parentSubscription === "string"
+      ? parentSubscription
+      : parentSubscription && typeof parentSubscription === "object" && "id" in parentSubscription
+        ? String(parentSubscription.id)
+        : null
   if (!subscriptionId) return
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId)

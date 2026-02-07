@@ -24,12 +24,20 @@ Status legend:
 | `docs/briefs/roadmap-module-mapping.md` | active | Caleb | 2026-01-27 | Map every roadmap section to module prompts; align copy; add missing prompts. |
 | `docs/briefs/roadmap-checkpoints-module-ui.md` | active | Caleb | 2026-01-27 | Render roadmap-linked module prompts with roadmap layout + stepper icon rules. |
 | `docs/briefs/roadmap-calendar.md` | active | Caleb | 2026-01-24 | Replace Roadmap Calendar editor with interactive calendar + recurrence. |
+| `docs/briefs/accelerator-launch-system-unification.md` | active | Caleb + Codex | 2026-02-06 | Master launch brief for shell system rules, canvas auth/onboarding, role-aware UX, bento `/my-organization`, notifications, roadmap-module bridge, and security hardening. |
+| `docs/briefs/accelerator-launch-mvp-sprint.md` | active | Caleb + Codex | 2026-02-06 | Step-by-step MVP sprint queue (`S01`-`S14`) with dependencies, cut line, and launch gates. |
+| `docs/briefs/accelerator-launch-active-worklog.md` | active | Caleb + Codex | 2026-02-07 | Live phase tracker for open accelerator launch work: org snapshot strip, checkpoint rail, roadmap+lessons integration, and remaining launch-critical backlog. |
+| `docs/briefs/accelerator-readiness-criteria-and-journey.md` | active | Caleb + Codex | 2026-02-07 | V1 evidence-based Fundable/Verified criteria, journey map, gamification/flywheel model, and implementation backlog. |
+| `docs/briefs/accelerator-billing-lifecycle-qa-matrix.md` | active | Caleb + Codex | 2026-02-06 | WS-J QA matrix for one-time 180-day window, monthly installment metering, cancellation, and `$20/mo` rollover transitions. |
+| `docs/briefs/my-organization-bento-rules.md` | active | Caleb + Codex | 2026-02-06 | Layout contract for stretch behavior and per-card span/min-height rules on `/my-organization`. |
+| `docs/briefs/ui-unification-refactor-evaluation.md` | active | Codex | 2026-02-06 | Assessment + phased plan to unify visual system, tokens, and shell patterns. |
 | `docs/briefs/roadmap-section-routing.md` | done | Caleb | 2026-01-26 | Persist roadmap section selection via slug routes. |
 | `docs/briefs/frameworks.md` | active | Caleb | 2026-01-20 | Frameworks: context-aware roadmap suggestions + popover actions; AI provider TBD. |
-| `docs/briefs/stripe-gating.md` | needs_update | Caleb | 2026-01-15 | Update for Accelerator `$58/mo x6` installment + single-user license rules. |
+| `docs/briefs/stripe-gating.md` | active | Caleb + Codex | 2026-02-06 | Updated billing + entitlement contract for Accelerator one-time (180-day included), monthly installment metering, and rollover logic. |
 | `docs/briefs/pricing-page.md` | needs_update | Caleb | 2026-01-13 | Update copy/features for new Accelerator payment option + “public org profile” in free tier. |
 | `docs/briefs/pricing-accelerator-bundle.md` | needs_update | Caleb | 2026-01-13 | Update (installment option replaces older bundle notes). |
 | `docs/briefs/electives-addons.md` | blocked | Caleb | 2026-01-15 | Blocked on “Electives 1–3 = free formation flow?” decision. |
+| `docs/briefs/elective-entitlement-scenarios.md` | done | Codex | 2026-02-06 | Implemented v1 matrix for formation vs elective vs accelerator access, checkout modes, and route guards. |
 | `docs/briefs/global-search.md` | done | Caleb | 2026-01-15 | v1 shipped; revisit only if new scope added. |
 | `docs/briefs/multi-account-org-access.md` | done | Caleb | 2026-01-15 | v1 shipped (RLS + active org resolver). |
 | `docs/briefs/roles-permissions.md` | done | Caleb | 2026-01-15 | Keep aligned with org membership + board/staff rules. |

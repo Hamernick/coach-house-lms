@@ -4,6 +4,7 @@ import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 export type SidebarModule = {
   id: string
+  slug?: string | null
   index: number
   title: string
   description: string | null
@@ -56,6 +57,7 @@ export async function fetchSidebarTree({
     position?: number | null
     modules: Array<{
       id: string
+      slug?: string | null
       title: string
       description?: string | null
       index_in_class?: number | null
@@ -67,18 +69,25 @@ export async function fetchSidebarTree({
 
   let classes: ClassRow[] | null = null
 
+  const slugifyModuleTitle = (title: string) =>
+    title
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "")
+
   {
     const { data, error } = await client
       .from("classes")
       .select(
-        "id, slug, title, description, is_published, position, modules ( id, title, description, index_in_class, idx, is_published )"
+        "id, slug, title, description, is_published, position, modules ( id, slug, title, description, index_in_class, idx, is_published )"
       )
 
     if (error) {
       if ((error as { code?: string }).code === "42703") {
         const { data: fallback, error: err2 } = await client
           .from("classes")
-          .select("id, slug, title, description, published, position, modules ( id, title, description, idx, published )")
+          .select("id, slug, title, description, published, position, modules ( id, slug, title, description, idx, published )")
         if (err2) throw supabaseErrorToError(err2, "Unable to load classes.")
         classes = fallback as unknown as ClassRow[]
       } else {
@@ -105,6 +114,7 @@ export async function fetchSidebarTree({
 
       return {
         id: mod.id,
+        slug: mod.slug ?? (slugifyModuleTitle(mod.title) || mod.id),
         index: rawIndex ?? 1,
         title: mod.title,
         description: mod.description ?? null,

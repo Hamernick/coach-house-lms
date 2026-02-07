@@ -56,35 +56,35 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   return (
     <div className="grid min-h-svh lg:grid-cols-2">
-      <div className="flex flex-col gap-4 p-6 md:p-10">
-        <div className="flex justify-center gap-2 md:justify-start">
-          <Link href="/" className="flex items-center gap-2 font-medium">
-            <span className="relative flex size-9 items-center justify-center">
-              <Image
-                src="/coach-house-logo-light.png"
-                alt="Coach House logo"
-                width={36}
-                height={36}
-                className="block dark:hidden"
-                priority
-              />
-              <Image
-                src="/coach-house-logo-dark.png"
-                alt="Coach House logo"
-                width={36}
-                height={36}
-                className="hidden dark:block"
-                priority
-              />
-            </span>
-            <span className="flex flex-col leading-none">
-              <span className="text-base font-extrabold tracking-tight">Coach</span>
-              <span className="-mt-2 text-base font-extrabold tracking-tight">House</span>
-            </span>
-          </Link>
-        </div>
+      <div className="flex flex-col p-6 md:p-10">
         <div className="flex flex-1 items-center justify-center">
           <div className="w-full max-w-sm space-y-6">
+            <div className="flex justify-center md:justify-start">
+              <Link href="/" className="flex items-center gap-2 font-medium">
+                <span className="relative flex size-9 items-center justify-center">
+                  <Image
+                    src="/coach-house-logo-light.png"
+                    alt="Coach House logo"
+                    width={36}
+                    height={36}
+                    className="block dark:hidden"
+                    priority
+                  />
+                  <Image
+                    src="/coach-house-logo-dark.png"
+                    alt="Coach House logo"
+                    width={36}
+                    height={36}
+                    className="hidden dark:block"
+                    priority
+                  />
+                </span>
+                <span className="flex flex-col leading-none">
+                  <span className="text-base font-extrabold tracking-tight">Coach</span>
+                  <span className="-mt-2 text-base font-extrabold tracking-tight">House</span>
+                </span>
+              </Link>
+            </div>
             <div className="space-y-2 text-center md:text-left">
               <h1 className="text-3xl font-semibold tracking-tight">Sign in</h1>
               <p className="text-sm text-muted-foreground">

@@ -8,6 +8,7 @@ import CalendarCheckIcon from "lucide-react/dist/esm/icons/calendar-check"
 import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
 import HomeIcon from "lucide-react/dist/esm/icons/home"
 
+import { CoachingAvatarGroup } from "@/components/coaching/coaching-avatar-group"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Textarea } from "@/components/ui/textarea"
@@ -16,6 +17,7 @@ import { DeckResourceCard } from "@/components/training/deck-resource-card"
 import type { ModuleResource } from "@/components/training/types"
 import { useCoachingBooking } from "@/hooks/use-coaching-booking"
 import { useModuleNotes } from "@/hooks/use-module-notes"
+import type { CoachingTier } from "@/lib/meetings"
 import { cn } from "@/lib/utils"
 
 const SUPPORT_EMAIL = "contact@coachhousesolutions.org"
@@ -49,18 +51,24 @@ export function ModuleRightRail({ moduleId, resources, breakHref, hasDeck }: Mod
 }
 
 function ModuleNotesPanel({ moduleId }: { moduleId: string }) {
-  const { value, setValue } = useModuleNotes(moduleId)
+  const { value, setValue, saveNow, isSaving } = useModuleNotes(moduleId)
 
   return (
     <Card className="rounded-2xl border-border/60 bg-muted/10 shadow-none">
       <CardHeader className="px-4 pb-2 pt-4">
         <CardTitle className="text-base">Notes</CardTitle>
+        {isSaving ? (
+          <CardDescription className="text-xs text-muted-foreground">Saving…</CardDescription>
+        ) : null}
       </CardHeader>
       <CardContent className="px-4 pb-4 pt-0">
         <Textarea
           name={`module-notes-${moduleId}`}
           value={value}
           onChange={(event) => setValue(event.target.value)}
+          onBlur={() => {
+            void saveNow()
+          }}
           placeholder="Capture key ideas, quotes, or next steps…"
           className="min-h-[180px] resize-none text-sm"
           spellCheck
@@ -99,10 +107,14 @@ function ModuleResourcesPanel({
 
 function ModuleCoachPanel() {
   const { schedule, pending } = useCoachingBooking()
+  const [tier, setTier] = useState<CoachingTier | null>(null)
   const [remaining, setRemaining] = useState<number | null>(null)
 
   const handleSchedule = async () => {
     const payload = await schedule()
+    if (payload?.tier) {
+      setTier(payload.tier)
+    }
     if (payload?.remaining === null || typeof payload?.remaining === "number") {
       setRemaining(payload?.remaining ?? null)
     }
@@ -117,13 +129,29 @@ function ModuleCoachPanel() {
         </CardDescription>
       </CardHeader>
       <CardContent className="px-4 pb-4 pt-0 space-y-3">
+        <div className="rounded-xl border border-border/60 bg-background/70 px-3 py-2">
+          <CoachingAvatarGroup size="sm" />
+        </div>
         <Button type="button" size="sm" onClick={handleSchedule} disabled={pending} className="w-full">
           {pending ? "Opening…" : "Schedule a session"}
         </Button>
-        {typeof remaining === "number" && remaining > 0 ? (
+        {tier === "free" && typeof remaining === "number" && remaining > 0 ? (
           <p className="text-xs text-muted-foreground">
             {remaining} included session{remaining === 1 ? "" : "s"} remaining.
           </p>
+        ) : null}
+        {tier === "free" && remaining === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            Included sessions complete. Your next bookings use the discounted calendar.
+          </p>
+        ) : null}
+        {tier === "discounted" ? (
+          <p className="text-xs text-muted-foreground">
+            Included sessions complete. You are now booking at the discounted coaching rate.
+          </p>
+        ) : null}
+        {tier === "full" ? (
+          <p className="text-xs text-muted-foreground">Coaching booking opened in a new tab.</p>
         ) : null}
       </CardContent>
     </Card>

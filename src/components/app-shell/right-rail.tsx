@@ -49,7 +49,18 @@ function createRightRailStore(): RightRailStore {
       if (priorityDelta !== 0) return priorityDelta
       return a.order - b.order
     })
-    if (ordered.length === 1) return ordered[0]?.content ?? null
+    if (ordered.length === 1) {
+      const only = ordered[0]
+      if (!only) return null
+      if (only.align === "bottom") {
+        return (
+          <div className="flex min-h-full flex-col">
+            <div className="mt-auto">{only.content}</div>
+          </div>
+        )
+      }
+      return only.content ?? null
+    }
     const topEntries = ordered.filter((entry) => entry.align !== "bottom")
     const bottomEntries = ordered.filter((entry) => entry.align === "bottom")
     return (

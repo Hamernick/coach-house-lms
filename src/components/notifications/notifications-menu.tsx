@@ -1,20 +1,15 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Bell from "lucide-react/dist/esm/icons/bell"
 import MessageCircle from "lucide-react/dist/esm/icons/message-circle"
 import AlertTriangle from "lucide-react/dist/esm/icons/alert-triangle"
 import Sparkles from "lucide-react/dist/esm/icons/sparkles"
-import ArchiveIcon from "lucide-react/dist/esm/icons/archive"
-import InboxIcon from "lucide-react/dist/esm/icons/inbox"
 
 import {
-  archiveAllNotificationsAction,
-  archiveNotificationAction,
   listNotificationsAction,
   markNotificationReadAction,
-  unarchiveNotificationAction,
   type AppNotification,
   type NotificationTone,
 } from "@/app/actions/notifications"
@@ -27,7 +22,6 @@ import {
 } from "@/components/ui/popover"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
@@ -91,9 +85,7 @@ export function NotificationsMenu() {
   const [mounted, setMounted] = useState(false)
   const [loading, setLoading] = useState(false)
   const [inboxItems, setInboxItems] = useState<NotificationItem[]>([])
-  const [archiveItems, setArchiveItems] = useState<NotificationItem[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [pending, startTransition] = useTransition()
 
   const unreadCount = useMemo(
     () => inboxItems.filter((item) => item.unread).length,
@@ -116,7 +108,6 @@ export function NotificationsMenu() {
     }
 
     setInboxItems(result.inbox.map(toNotificationItem))
-    setArchiveItems(result.archive.map(toNotificationItem))
     setLoading(false)
   }, [])
 
@@ -174,60 +165,6 @@ export function NotificationsMenu() {
     }
   }
 
-  function handleArchiveItem(notificationId: string) {
-    setInboxItems((prevInbox) => {
-      const nextInbox = prevInbox.filter((item) => item.id !== notificationId)
-      const archived = prevInbox.find((item) => item.id === notificationId)
-      if (archived) {
-        setArchiveItems((prevArchive) => [archived, ...prevArchive])
-      }
-      return nextInbox
-    })
-
-    startTransition(async () => {
-      const result = await archiveNotificationAction(notificationId)
-      if ("error" in result) {
-        toast.error(result.error)
-        await refreshNotifications()
-      }
-    })
-  }
-
-  function handleUnarchiveItem(notificationId: string) {
-    setArchiveItems((prevArchive) => {
-      const nextArchive = prevArchive.filter(
-        (item) => item.id !== notificationId
-      )
-      const restored = prevArchive.find((item) => item.id === notificationId)
-      if (restored) {
-        setInboxItems((prevInbox) => [restored, ...prevInbox])
-      }
-      return nextArchive
-    })
-
-    startTransition(async () => {
-      const result = await unarchiveNotificationAction(notificationId)
-      if ("error" in result) {
-        toast.error(result.error)
-        await refreshNotifications()
-      }
-    })
-  }
-
-  function handleArchiveAll() {
-    if (inboxItems.length === 0) return
-    setArchiveItems((prevArchive) => [...inboxItems, ...prevArchive])
-    setInboxItems([])
-
-    startTransition(async () => {
-      const result = await archiveAllNotificationsAction()
-      if ("error" in result) {
-        toast.error(result.error)
-        await refreshNotifications()
-      }
-    })
-  }
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -256,62 +193,19 @@ export function NotificationsMenu() {
           ) : null}
         </div>
 
-        <Tabs defaultValue="inbox" className="w-full">
-          <TabsList className="border-border/60 w-full justify-start gap-2 rounded-none border-b bg-transparent px-2 py-1">
-            <TabsTrigger value="inbox" className="gap-2">
-              Inbox
-              <Badge variant="secondary" className="rounded-full">
-                {inboxItems.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="archive" className="gap-2">
-              Archive
-              <Badge variant="secondary" className="rounded-full">
-                {archiveItems.length}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="inbox" className="p-0">
-            <NotificationsList
-              items={inboxItems}
-              loading={loading}
-              error={loadError}
-              onRetry={() => void refreshNotifications()}
-              actionLabel="Archive"
-              actionIcon={ArchiveIcon}
-              actionDisabled={pending}
-              onPrimaryAction={handleOpenItem}
-              onSecondaryAction={handleArchiveItem}
-            />
-          </TabsContent>
-          <TabsContent value="archive" className="p-0">
-            <NotificationsList
-              items={archiveItems}
-              loading={loading}
-              error={loadError}
-              onRetry={() => void refreshNotifications()}
-              emptyLabel="Archive is empty"
-              actionLabel="Unarchive"
-              actionIcon={InboxIcon}
-              actionDisabled={pending}
-              onPrimaryAction={handleOpenItem}
-              onSecondaryAction={handleUnarchiveItem}
-            />
-          </TabsContent>
-        </Tabs>
-
-        <div className="border-border/60 border-t px-4 py-2">
-          <Button
-            type="button"
-            variant="ghost"
-            className="w-full justify-center text-xs"
-            disabled={pending || inboxItems.length === 0}
-            onClick={handleArchiveAll}
-          >
-            Archive all
-          </Button>
+        <div className="border-border/60 flex items-center justify-between border-b px-4 py-2">
+          <p className="text-xs font-medium text-muted-foreground">Inbox</p>
+          <Badge variant="secondary" className="rounded-full">
+            {inboxItems.length}
+          </Badge>
         </div>
+        <NotificationsList
+          items={inboxItems}
+          loading={loading}
+          error={loadError}
+          onRetry={() => void refreshNotifications()}
+          onPrimaryAction={handleOpenItem}
+        />
       </PopoverContent>
     </Popover>
   )
@@ -323,22 +217,14 @@ function NotificationsList({
   error,
   onRetry,
   emptyLabel = "Inbox is empty",
-  actionLabel,
-  actionIcon: ActionIcon,
-  actionDisabled,
   onPrimaryAction,
-  onSecondaryAction,
 }: {
   items: NotificationItem[]
   loading: boolean
   error: string | null
   onRetry?: () => void
   emptyLabel?: string
-  actionLabel: string
-  actionIcon: typeof ArchiveIcon
-  actionDisabled: boolean
   onPrimaryAction: (item: NotificationItem) => void
-  onSecondaryAction: (notificationId: string) => void
 }) {
   if (loading) {
     return (
@@ -435,17 +321,6 @@ function NotificationsList({
                 </p>
               </div>
             </button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled={actionDisabled}
-              className="text-muted-foreground mt-1 h-8 w-8 opacity-0 transition group-hover:opacity-100 disabled:opacity-40"
-              aria-label={actionLabel}
-              onClick={() => onSecondaryAction(item.id)}
-            >
-              <ActionIcon className="h-4 w-4" aria-hidden />
-            </Button>
           </div>
         ))}
       </div>

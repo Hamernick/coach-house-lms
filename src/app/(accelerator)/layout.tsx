@@ -7,6 +7,7 @@ import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { fetchSidebarTree } from "@/lib/academy"
 import { AppShell } from "@/components/app-shell"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
+import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 
 export default async function AcceleratorLayout({ children }: { children: ReactNode }) {
   const supabase = await createSupabaseServerClient()
@@ -45,8 +46,15 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
 
   avatar = profile?.avatar_url ?? (typeof user.user_metadata?.avatar_url === "string" ? (user.user_metadata.avatar_url as string) : null)
 
-  const { role } = await resolveActiveOrganization(supabase, user.id)
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   showOrgAdmin = role === "owner" || role === "admin" || isAdmin
+
+  const entitlements = await fetchLearningEntitlements({
+    supabase,
+    userId: user.id,
+    orgUserId: orgId,
+    isAdmin,
+  })
 
   const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
   const onboardingCompleted = Boolean(userMeta?.onboarding_completed)
@@ -58,18 +66,8 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
     : []
   tutorialWelcome = !isAdmin && onboardingCompleted && !tutorialsCompleted.includes("accelerator") && !tutorialsDismissed.includes("accelerator")
 
-  if (!isAdmin) {
-    const { data: purchase } = await supabase
-      .from("accelerator_purchases")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .limit(1)
-      .maybeSingle<{ id: string }>()
-
-    if (!purchase) {
-      redirect("/pricing?upgrade=accelerator")
-    }
+  if (!entitlements.hasAcceleratorAccess && !entitlements.hasElectiveAccess) {
+    redirect("/pricing?upgrade=accelerator")
   }
 
   const sidebarTree = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
@@ -82,6 +80,9 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
       tutorialWelcome={{ platform: false, accelerator: tutorialWelcome }}
       user={{ name: displayName, email: email ?? null, avatar: avatar ?? null }}
       showAccelerator={true}
+      hasAcceleratorAccess={entitlements.hasAcceleratorAccess}
+      hasElectiveAccess={entitlements.hasElectiveAccess}
+      ownedElectiveModuleSlugs={entitlements.ownedElectiveModuleSlugs}
       context="accelerator"
     >
       {children}

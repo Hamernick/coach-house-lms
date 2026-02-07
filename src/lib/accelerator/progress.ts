@@ -4,17 +4,20 @@ import type { SidebarClass } from "@/lib/academy"
 import { fetchSidebarTree } from "@/lib/academy"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import type { Json } from "@/lib/supabase/schema/json"
 import type { Database } from "@/lib/supabase/types"
 
-export type ModuleCardStatus = "locked" | "not_started" | "in_progress" | "completed"
+export type ModuleCardStatus = "not_started" | "in_progress" | "completed"
 
 export type ModuleCard = {
   id: string
+  slug: string
   title: string
   description: string | null
   href: string
   status: ModuleCardStatus
   index: number
+  hasNotes: boolean
 }
 
 export type ModuleGroup = {
@@ -63,31 +66,27 @@ function normalizeClassesForProgress(classes: SidebarClass[], isAdmin: boolean):
 function buildModuleGroups({
   classes,
   progressMap,
+  notesMap,
   basePath,
 }: {
   classes: SidebarClass[]
   progressMap: Map<string, ModuleCardStatus>
+  notesMap: Map<string, boolean>
   basePath: string
 }): ModuleGroup[] {
   return classes
     .map((klass) => {
-      let unlocked = true
       const modules = klass.modules.map((module) => {
-        const statusFromProgress = progressMap.get(module.id) ?? "not_started"
-        let status: ModuleCardStatus = statusFromProgress
-        if (!unlocked) {
-          status = "locked"
-        }
-        if (unlocked && statusFromProgress === "not_started") {
-          unlocked = false
-        }
+        const status = progressMap.get(module.id) ?? "not_started"
         return {
           id: module.id,
+          slug: module.slug ?? module.id,
           title: module.title,
           description: module.description ?? null,
           href: `${basePath}/class/${klass.slug}/module/${module.index}`,
           status,
           index: module.index,
+          hasNotes: notesMap.get(module.id) === true,
         }
       })
 
@@ -100,6 +99,18 @@ function buildModuleGroups({
       }
     })
     .filter((group) => group.modules.length > 0)
+}
+
+function hasSavedNotes(value: Json | null | undefined): boolean {
+  if (typeof value === "string") return value.trim().length > 0
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false
+  const content = (value as Record<string, unknown>).content
+  return typeof content === "string" && content.trim().length > 0
+}
+
+function normalizeModuleProgressStatus(value: string | null | undefined): ModuleCardStatus {
+  if (value === "completed" || value === "in_progress") return value
+  return "not_started"
 }
 
 export async function fetchAcceleratorProgressSummary({
@@ -151,10 +162,10 @@ export async function fetchAcceleratorProgressSummary({
   const [progressResult, submissionResult, assignmentResult] = await Promise.all([
     supabase
       .from("module_progress")
-      .select("module_id, status")
+      .select("module_id, status, notes")
       .eq("user_id", resolvedUserId)
       .in("module_id", moduleIds)
-      .returns<Array<{ module_id: string; status: ModuleCardStatus }>>(),
+      .returns<Array<{ module_id: string; status: ModuleCardStatus; notes: Json | null }>>(),
     supabase
       .from("assignment_submissions")
       .select("module_id, status")
@@ -188,12 +199,14 @@ export async function fetchAcceleratorProgressSummary({
   }
 
   const progressMap = new Map<string, ModuleCardStatus>()
+  const notesMap = new Map<string, boolean>()
   const progressStatusByModuleId = new Map<string, ModuleCardStatus>()
   const submissionStatusByModuleId = new Map<string, string>()
   const completeOnSubmit = new Set<string>()
 
   for (const row of progressResult.error ? [] : progressResult.data ?? []) {
-    progressStatusByModuleId.set(row.module_id, row.status)
+    progressStatusByModuleId.set(row.module_id, normalizeModuleProgressStatus(row.status))
+    notesMap.set(row.module_id, hasSavedNotes(row.notes))
   }
 
   for (const row of submissionResult.error ? [] : submissionResult.data ?? []) {
@@ -232,6 +245,7 @@ export async function fetchAcceleratorProgressSummary({
   const groups = buildModuleGroups({
     classes: filteredClasses,
     progressMap,
+    notesMap,
     basePath,
   })
 

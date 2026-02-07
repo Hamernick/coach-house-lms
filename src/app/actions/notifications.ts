@@ -18,7 +18,7 @@ export type AppNotification = {
 }
 
 type NotificationsListResult =
-  | { ok: true; inbox: AppNotification[]; archive: AppNotification[] }
+  | { ok: true; inbox: AppNotification[] }
   | { error: string }
 
 type NotificationActionResult = { ok: true } | { error: string }
@@ -79,54 +79,31 @@ export async function listNotificationsAction(): Promise<NotificationsListResult
   const selectColumns =
     "id,title,description,href,tone,created_at,read_at,archived_at" as const
 
-  const [inboxResult, archiveResult] = await Promise.all([
-    supabase
-      .from("notifications")
-      .select(selectColumns)
-      .eq("user_id", user.id)
-      .is("archived_at", null)
-      .order("created_at", { ascending: false })
-      .limit(50)
-      .returns<
-        Array<{
-          id: string
-          title: string
-          description: string
-          href: string | null
-          tone: string | null
-          created_at: string
-          read_at: string | null
-          archived_at: string | null
-        }>
-      >(),
-    supabase
-      .from("notifications")
-      .select(selectColumns)
-      .eq("user_id", user.id)
-      .not("archived_at", "is", null)
-      .order("created_at", { ascending: false })
-      .limit(50)
-      .returns<
-        Array<{
-          id: string
-          title: string
-          description: string
-          href: string | null
-          tone: string | null
-          created_at: string
-          read_at: string | null
-          archived_at: string | null
-        }>
-      >(),
-  ])
+  const inboxResult = await supabase
+    .from("notifications")
+    .select(selectColumns)
+    .eq("user_id", user.id)
+    .is("archived_at", null)
+    .order("created_at", { ascending: false })
+    .limit(50)
+    .returns<
+      Array<{
+        id: string
+        title: string
+        description: string
+        href: string | null
+        tone: string | null
+        created_at: string
+        read_at: string | null
+        archived_at: string | null
+      }>
+    >()
 
   if (inboxResult.error) return { error: "Unable to load notifications." }
-  if (archiveResult.error) return { error: "Unable to load notifications." }
 
   return {
     ok: true,
     inbox: (inboxResult.data ?? []).map(normalizeNotificationRow),
-    archive: (archiveResult.data ?? []).map(normalizeNotificationRow),
   }
 }
 

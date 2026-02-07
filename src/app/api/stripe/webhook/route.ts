@@ -7,6 +7,16 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { env } from "@/lib/env"
 import { createSupabaseAdminClient } from "@/lib/supabase"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
+import {
+  ACCELERATOR_MONTHLY_INSTALLMENT_LIMIT,
+  ACCELERATOR_PLATFORM_INCLUDED_TRIAL_DAYS,
+} from "@/lib/accelerator/billing"
+import {
+  parseInstallmentCount,
+  resolveNextInstallmentProgress,
+  shouldRollToOrganizationPlan,
+} from "@/lib/accelerator/billing-lifecycle"
+import { isElectiveAddOnModuleSlug } from "@/lib/accelerator/elective-modules"
 import type { Database } from "@/lib/supabase"
 
 export const runtime = "nodejs"
@@ -47,12 +57,14 @@ async function upsertAcceleratorPurchase({
   checkoutSessionId,
   paymentIntentId,
   customerId,
+  coachingIncluded,
   status,
 }: {
   userId: string
   checkoutSessionId: string
   paymentIntentId?: string | null
   customerId?: string | null
+  coachingIncluded: boolean
   status: Database["public"]["Tables"]["accelerator_purchases"]["Row"]["status"]
 }) {
   const admin = createSupabaseAdminClient()
@@ -62,12 +74,44 @@ async function upsertAcceleratorPurchase({
     stripe_checkout_session_id: checkoutSessionId,
     stripe_payment_intent_id: paymentIntentId ?? null,
     stripe_customer_id: customerId ?? null,
+    coaching_included: coachingIncluded,
     status,
   }
 
   await uncheckedAdmin
     .from("accelerator_purchases")
     .upsert(payload, { onConflict: "stripe_checkout_session_id" })
+}
+
+async function upsertElectivePurchase({
+  userId,
+  moduleSlug,
+  checkoutSessionId,
+  paymentIntentId,
+  customerId,
+  status,
+}: {
+  userId: string
+  moduleSlug: string
+  checkoutSessionId: string
+  paymentIntentId?: string | null
+  customerId?: string | null
+  status: Database["public"]["Tables"]["elective_purchases"]["Row"]["status"]
+}) {
+  const admin = createSupabaseAdminClient()
+  const uncheckedAdmin = admin as SupabaseClient<any>
+  const payload: Database["public"]["Tables"]["elective_purchases"]["Insert"] = {
+    user_id: userId,
+    module_slug: moduleSlug,
+    stripe_checkout_session_id: checkoutSessionId,
+    stripe_payment_intent_id: paymentIntentId ?? null,
+    stripe_customer_id: customerId ?? null,
+    status,
+  }
+
+  await uncheckedAdmin
+    .from("elective_purchases")
+    .upsert(payload, { onConflict: "user_id,module_slug" })
 }
 
 type WebhookEventPayload = {
@@ -153,14 +197,23 @@ function toStatus(value: string): Database["public"]["Enums"]["subscription_stat
   return "trialing"
 }
 
-async function maybeStartOrganizationTrial({
+function getCurrentPeriodEndIso(subscription: Stripe.Subscription) {
+  const periodUnix = (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end ?? null
+  return periodUnix ? new Date(periodUnix * 1000).toISOString() : null
+}
+
+async function maybeStartOrganizationSubscription({
   userId,
   customerId,
   idempotencyKey,
+  trialPeriodDays,
+  context,
 }: {
   userId: string
   customerId: string
   idempotencyKey: string
+  trialPeriodDays?: number
+  context: "accelerator_bundle_one_time" | "accelerator_rollover"
 }) {
   const organizationPriceId = env.STRIPE_ORGANIZATION_PRICE_ID
 
@@ -185,19 +238,21 @@ async function maybeStartOrganizationTrial({
     return
   }
 
-  const subscription = await stripe.subscriptions.create(
-    {
-      customer: customerId,
-      items: [{ price: organizationPriceId }],
-      trial_period_days: 30,
-      metadata: {
-        user_id: userId,
-        planName: "Organization",
-        context: "accelerator_bundle",
-      },
+  const subscriptionParams: Stripe.SubscriptionCreateParams = {
+    customer: customerId,
+    items: [{ price: organizationPriceId }],
+    metadata: {
+      user_id: userId,
+      planName: "Organization",
+      context,
     },
-    { idempotencyKey },
-  )
+  }
+
+  if (trialPeriodDays && trialPeriodDays > 0) {
+    subscriptionParams.trial_period_days = trialPeriodDays
+  }
+
+  const subscription = await stripe.subscriptions.create(subscriptionParams, { idempotencyKey })
 
   const periodUnix = (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end ?? null
   const currentPeriodEnd = periodUnix ? new Date(periodUnix * 1000).toISOString() : null
@@ -208,7 +263,56 @@ async function maybeStartOrganizationTrial({
     subscriptionId: subscription.id,
     status: toStatus(subscription.status),
     currentPeriodEnd,
-    metadata: { planName: "Organization", context: "accelerator_bundle" },
+    metadata: { planName: "Organization", context },
+  })
+}
+
+async function handleAcceleratorMonthlyInstallmentInvoice(invoice: Stripe.Invoice) {
+  if (!stripe) return
+
+  const billingReason = invoice.billing_reason ?? ""
+
+  const subscriptionId = typeof invoice.subscription === "string" ? invoice.subscription : null
+  if (!subscriptionId) return
+
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+  const metadata = subscription.metadata as Record<string, string | undefined>
+  const installmentProgress = resolveNextInstallmentProgress({
+    billingReason,
+    metadata,
+    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    fallbackLimit: ACCELERATOR_MONTHLY_INSTALLMENT_LIMIT,
+  })
+  if (!installmentProgress.eligible) return
+
+  const userId = extractUserIdFromMetadata(subscription.metadata)
+  if (!userId) return
+
+  const { installmentLimit, nextInstallmentsPaid, shouldSetCancelAtPeriodEnd } = installmentProgress
+
+  let effectiveSubscription = subscription
+  const needsMetadataUpdate =
+    metadata.accelerator_installment_limit !== String(installmentLimit) ||
+    metadata.accelerator_installments_paid !== String(nextInstallmentsPaid)
+
+  if (needsMetadataUpdate || shouldSetCancelAtPeriodEnd) {
+    effectiveSubscription = await stripe.subscriptions.update(subscription.id, {
+      metadata: {
+        ...metadata,
+        accelerator_installment_limit: String(installmentLimit),
+        accelerator_installments_paid: String(nextInstallmentsPaid),
+      },
+      ...(shouldSetCancelAtPeriodEnd ? { cancel_at_period_end: true } : {}),
+    })
+  }
+
+  await upsertSubscription({
+    userId,
+    customerId: typeof effectiveSubscription.customer === "string" ? effectiveSubscription.customer : null,
+    subscriptionId: effectiveSubscription.id,
+    status: toStatus(effectiveSubscription.status),
+    currentPeriodEnd: getCurrentPeriodEndIso(effectiveSubscription),
+    metadata: effectiveSubscription.metadata as Record<string, string> | null,
   })
 }
 
@@ -253,21 +357,48 @@ export async function POST(request: NextRequest) {
         const resolvedUserId = userId ?? extractUserIdFromMetadata(session.metadata) ?? undefined
         if (resolvedUserId) {
           const customerId = typeof session.customer === "string" ? session.customer : null
+          const variant =
+            session.metadata?.accelerator_variant === "without_coaching"
+              ? "without_coaching"
+              : "with_coaching"
+          const coachingIncluded =
+            session.metadata?.coaching_included != null
+              ? session.metadata.coaching_included === "true"
+              : variant === "with_coaching"
           await upsertAcceleratorPurchase({
             userId: resolvedUserId,
             checkoutSessionId: session.id,
             paymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
             customerId,
+            coachingIncluded,
             status: "active",
           })
 
           if (customerId) {
-            await maybeStartOrganizationTrial({
+            await maybeStartOrganizationSubscription({
               userId: resolvedUserId,
               customerId,
               idempotencyKey: `accelerator_bundle_${session.id}`,
+              trialPeriodDays: ACCELERATOR_PLATFORM_INCLUDED_TRIAL_DAYS,
+              context: "accelerator_bundle_one_time",
             })
           }
+        }
+      }
+
+      if (session.mode === "payment" && session.metadata?.kind === "elective") {
+        const resolvedUserId = userId ?? extractUserIdFromMetadata(session.metadata) ?? undefined
+        const moduleSlug = session.metadata?.elective_module_slug ?? ""
+
+        if (resolvedUserId && isElectiveAddOnModuleSlug(moduleSlug)) {
+          await upsertElectivePurchase({
+            userId: resolvedUserId,
+            moduleSlug,
+            checkoutSessionId: session.id,
+            paymentIntentId: typeof session.payment_intent === "string" ? session.payment_intent : null,
+            customerId: typeof session.customer === "string" ? session.customer : null,
+            status: "active",
+          })
         }
       }
 
@@ -277,9 +408,17 @@ export async function POST(request: NextRequest) {
           customerId: typeof session.customer === "string" ? session.customer : null,
           subscriptionId,
           status: toStatus(session.status ?? "trialing"),
-          metadata: { planName: session.metadata?.planName ?? null },
+          metadata:
+            session.metadata && Object.keys(session.metadata).length > 0
+              ? (session.metadata as Record<string, string>)
+              : { planName: session.metadata?.planName ?? null },
         })
       }
+    }
+
+    if (event.type === "invoice.paid") {
+      const invoice = event.data.object as Stripe.Invoice
+      await handleAcceleratorMonthlyInstallmentInvoice(invoice)
     }
 
     if (event.type.startsWith("customer.subscription")) {
@@ -292,13 +431,26 @@ export async function POST(request: NextRequest) {
           customerId: typeof subscription.customer === "string" ? subscription.customer : null,
           subscriptionId: subscription.id,
           status: toStatus(subscription.status),
-          currentPeriodEnd: (() => {
-            const periodUnix =
-              (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end ?? null
-            return periodUnix ? new Date(periodUnix * 1000).toISOString() : null
-          })(),
+          currentPeriodEnd: getCurrentPeriodEndIso(subscription),
           metadata: subscription.metadata as Record<string, string> | null,
         })
+
+        if (
+          typeof subscription.customer === "string" &&
+          shouldRollToOrganizationPlan({
+            eventType: event.type,
+            subscriptionStatus: subscription.status,
+            metadata: subscription.metadata as Record<string, string | undefined>,
+            fallbackLimit: ACCELERATOR_MONTHLY_INSTALLMENT_LIMIT,
+          })
+        ) {
+          await maybeStartOrganizationSubscription({
+            userId,
+            customerId: subscription.customer,
+            idempotencyKey: `accelerator_rollover_${subscription.id}_${event.id}`,
+            context: "accelerator_rollover",
+          })
+        }
       }
     }
   } catch (error) {

@@ -7,6 +7,8 @@ import { buildModuleStates } from "@/lib/module-progress"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
+import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
+import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
 import { resolveRoadmapSections, type RoadmapSectionStatus } from "@/lib/roadmap"
 
 type ModuleParams = {
@@ -46,7 +48,6 @@ export default async function ModulePage({
     .maybeSingle<{ role: string | null }>()
   const isAdmin = (profile?.role ?? "").toLowerCase() === "admin"
 
-  let hasAcceleratorAccess = isAdmin
   const { orgId } = await resolveActiveOrganization(supabase, user.id)
 
   const { data: orgRow } = await supabase
@@ -62,33 +63,12 @@ export default async function ModulePage({
     {} as Record<string, RoadmapSectionStatus>,
   )
 
-  if (!hasAcceleratorAccess) {
-    const { data: purchase } = await supabase
-      .from("accelerator_purchases")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .limit(1)
-      .maybeSingle<{ id: string }>()
-    hasAcceleratorAccess = Boolean(purchase)
-  }
-
-  if (!hasAcceleratorAccess) {
-    const { data: subscription } = await supabase
-      .from("subscriptions")
-      .select("status")
-      .eq("user_id", orgId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle<{ status: string | null }>()
-    const active = subscription?.status === "active" || subscription?.status === "trialing"
-    hasAcceleratorAccess = active
-  }
-
-  const isFormation = slug === "electives"
-  if (!hasAcceleratorAccess && !isAdmin && !isFormation) {
-    redirect("/pricing?plan=accelerator")
-  }
+  const entitlements = await fetchLearningEntitlements({
+    supabase,
+    userId: user.id,
+    orgUserId: orgId,
+    isAdmin,
+  })
 
   const classContext = await getClassModulesForUser({
     classSlug: slug,
@@ -110,7 +90,26 @@ export default async function ModulePage({
   }
   const currentStateIndex = moduleStates.findIndex((state) => state.module.id === resolvedState.module.id)
   const nextState = currentStateIndex >= 0 ? moduleStates[currentStateIndex + 1] ?? null : null
-  const nextLocked = !isAdmin && nextState ? nextState.locked || !nextState.module.published : false
+  const nextLocked = !isAdmin && nextState ? !nextState.module.published : false
+
+  const isFormationClass = slug === "electives"
+  if (!entitlements.hasAcceleratorAccess && !isAdmin && !isFormationClass) {
+    redirect("/pricing?plan=accelerator")
+  }
+
+  if (!isAdmin && isFormationClass) {
+    const moduleSlug = resolvedState.module.slug.trim().toLowerCase()
+    const requiresElectivePurchase = isElectiveAddOnModule({
+      slug: moduleSlug,
+      title: resolvedState.module.title,
+    })
+    const hasElectiveAccess =
+      entitlements.hasAcceleratorAccess ||
+      entitlements.ownedElectiveModuleSlugs.includes(moduleSlug)
+    if (requiresElectivePurchase && !hasElectiveAccess) {
+      redirect(`/pricing?plan=electives&module=${encodeURIComponent(moduleSlug)}`)
+    }
+  }
 
   const classDef = {
     id: classContext.classId,

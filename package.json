@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "npx @react-grab/opencode@latest && next dev",
+    "dev": "next dev",
+    "dev:opencode": "NEXT_PUBLIC_ENABLE_REACT_GRAB=1 next dev",
+    "dev:grab": "NEXT_PUBLIC_ENABLE_REACT_GRAB=1 next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -18,6 +20,8 @@
     "db:push": "supabase db push",
     "create:admin": "node scripts/create-admin-user.mjs",
     "promote:admin": "node scripts/promote-user-to-admin.mjs",
+    "seed:full-account": "node scripts/seed-full-account.mjs",
+    "seed:validate": "node scripts/seed-full-account.mjs --dry-run true",
     "verify:settings": "node scripts/verify-account-settings.mjs",
     "import:curriculum": "node scripts/import-curriculum.mjs"
   },

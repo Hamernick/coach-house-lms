@@ -1,53 +1,92 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from "next/server"
-import { revalidatePath } from "next/cache"
 
-import { requireServerSession } from "@/lib/auth"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
 
-export async function POST(request: Request) {
-  try {
-    const { supabase, session } = await requireServerSession("/people")
-    const userId = session.user.id
-    const { orgId, role } = await resolveActiveOrganization(supabase, userId)
-    if (!canEditOrganization(role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-    const body = await request.json().catch(() => ({})) as { id?: string; x?: number; y?: number }
-    const { id, x, y } = body || {}
-    if (!id || typeof x !== "number" || typeof y !== "number") {
-      return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
-    }
-
-    const { data: orgRow, error: orgErr } = await supabase
-      .from("organizations")
-      .select("profile")
-      .eq("user_id", orgId)
-      .maybeSingle<{ profile: Record<string, unknown> | null }>()
-    if (orgErr) return NextResponse.json({ error: orgErr.message }, { status: 500 })
-
-    const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
-    const arr = Array.isArray(profile.org_people) ? (profile.org_people as any[]) : []
-    const idx = arr.findIndex((p) => p && p.id === id)
-    if (idx < 0) return NextResponse.json({ error: "Person not found" }, { status: 404 })
-
-    const next = [...arr]
-    const person = { ...(next[idx] || {}) }
-    person.pos = { x, y }
-    next[idx] = person
-
-    const nextProfile = { ...profile, org_people: next }
-    const { error: upsertErr } = await supabase
-      .from("organizations")
-      .upsert({ user_id: orgId, profile: nextProfile }, { onConflict: "user_id" })
-    if (upsertErr) return NextResponse.json({ error: upsertErr.message }, { status: 500 })
-
-    revalidatePath("/people")
-    revalidatePath("/my-organization")
-
-    return NextResponse.json({ ok: true })
-  } catch {
-    return NextResponse.json({ error: "Unexpected error" }, { status: 500 })
-  }
+type PositionPayload = {
+  id?: unknown
+  x?: unknown
+  y?: unknown
 }
- 
+
+function toFiniteNumber(value: unknown): number | null {
+  if (typeof value !== "number") return null
+  if (!Number.isFinite(value)) return null
+  return value
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+}
+
+export async function POST(request: Request) {
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+
+  if (userError || !user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const payload = (await request.json().catch(() => null)) as PositionPayload | null
+  const personId = typeof payload?.id === "string" ? payload.id.trim() : ""
+  const x = toFiniteNumber(payload?.x)
+  const y = toFiniteNumber(payload?.y)
+
+  if (!personId || x == null || y == null) {
+    return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
+  }
+
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  if (!canEditOrganization(role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  const { data: orgRow, error: orgError } = await supabase
+    .from("organizations")
+    .select("profile")
+    .eq("user_id", orgId)
+    .maybeSingle<{ profile: Record<string, unknown> | null }>()
+
+  if (orgError) {
+    return NextResponse.json({ error: "Unable to load organization." }, { status: 500 })
+  }
+
+  const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
+  const people = Array.isArray(profile.org_people)
+    ? profile.org_people.filter((entry): entry is Record<string, unknown> => isRecord(entry))
+    : []
+
+  const personIndex = people.findIndex((entry) => entry.id === personId)
+  if (personIndex < 0) {
+    return NextResponse.json({ error: "Person not found." }, { status: 404 })
+  }
+
+  people[personIndex] = {
+    ...people[personIndex],
+    pos: { x, y },
+  }
+
+  const nextProfile = {
+    ...profile,
+    org_people: people,
+  }
+
+  const { error: upsertError } = await supabase
+    .from("organizations")
+    .upsert(
+      {
+        user_id: orgId,
+        profile: nextProfile,
+      },
+      { onConflict: "user_id" },
+    )
+
+  if (upsertError) {
+    return NextResponse.json({ error: "Unable to save position." }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true })
+}

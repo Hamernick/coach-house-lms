@@ -157,6 +157,7 @@ export async function deletePersonAction(id: string) {
   const userId = session.user.id
   const { orgId, role } = await resolveActiveOrganization(supabase, userId)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
+  if (id === userId) return { error: "You cannot remove your own profile from People." }
   const { data: orgRow, error: orgErr } = await supabase
     .from("organizations")
     .select("profile")
@@ -167,12 +168,15 @@ export async function deletePersonAction(id: string) {
   const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
   const arr = Array.isArray(profile.org_people) ? (profile.org_people as OrgPerson[]) : []
   const target = arr.find((p) => p.id === id)
+  if (!target) return { error: "Person not found." }
   const cleanupPath = resolvePeopleAvatarCleanupPath(
     typeof target?.image === "string" ? target.image : null,
     null,
-    userId,
+    orgId,
   )
-  const next = arr.filter((p) => p.id !== id)
+  const next = arr
+    .filter((p) => p.id !== id)
+    .map((p) => (p.reportsToId === id ? { ...p, reportsToId: null } : p))
   const nextProfile = { ...profile, org_people: next }
   const { error: upsertErr } = await supabase
     .from("organizations")

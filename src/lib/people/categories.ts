@@ -29,6 +29,18 @@ export const PERSON_CATEGORY_META = {
     stripClass: "bg-rose-500",
     dotClass: "bg-rose-500",
   },
+  contractors: {
+    label: "Contractors",
+    badgeClass: "bg-cyan-500/15 text-cyan-700 dark:text-cyan-200 border-cyan-500/30",
+    stripClass: "bg-cyan-500",
+    dotClass: "bg-cyan-500",
+  },
+  vendors: {
+    label: "Vendors",
+    badgeClass: "bg-orange-500/15 text-orange-700 dark:text-orange-200 border-orange-500/30",
+    stripClass: "bg-orange-500",
+    dotClass: "bg-orange-500",
+  },
 } as const
 
 export type PersonCategory = keyof typeof PERSON_CATEGORY_META
@@ -45,6 +57,10 @@ export function normalizePersonCategory(input: string | null | undefined): Perso
   if (value.includes("advisory")) return "advisory_board"
   if (value.includes("governing")) return "governing_board"
   if (value.startsWith("board")) return "governing_board"
+  if (value.includes("contractor")) return "contractors"
+  if (value.includes("consultant")) return "contractors"
+  if (value.includes("vendor")) return "vendors"
+  if (value.includes("supplier")) return "vendors"
   if (value.includes("supporter")) return "supporters"
   if (value.includes("foundation")) return "supporters"
   if (value.includes("corporate")) return "supporters"

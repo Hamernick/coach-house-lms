@@ -136,14 +136,12 @@ export default async function AcceleratorOverviewPage() {
       const electiveModules = group.modules.filter((module) => isElectiveAddOnModule(module))
 
       if (formationModules.length > 0) {
-        const seed =
-          formationTrack ??
-          ({
-            ...group,
-            title: "Formation",
-            slug: "formation",
-            modules: [],
-          } satisfies (typeof groups)[number])
+        const seed: (typeof groups)[number] = formationTrack ?? {
+          ...group,
+          title: "Formation",
+          slug: "formation",
+          modules: [],
+        }
 
         formationTrack = {
           ...seed,
@@ -156,14 +154,12 @@ export default async function AcceleratorOverviewPage() {
         : electiveModules.filter((module) => ownedElectiveModuleSlugSet.has(module.slug.trim().toLowerCase()))
 
       if (accessibleElectiveModules.length > 0) {
-        const seed =
-          electivesTrack ??
-          ({
-            ...group,
-            title: "Electives",
-            slug: "electives",
-            modules: [],
-          } satisfies (typeof groups)[number])
+        const seed: (typeof groups)[number] = electivesTrack ?? {
+          ...group,
+          title: "Electives",
+          slug: "electives",
+          modules: [],
+        }
 
         electivesTrack = {
           ...seed,

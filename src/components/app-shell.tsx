@@ -46,7 +46,6 @@ type AppShellProps = {
   showLiveBadges?: boolean
   acceleratorProgress?: number | null
   showAccelerator?: boolean
-  showLiveBadges?: boolean
   hasActiveSubscription?: boolean
   hasAcceleratorAccess?: boolean
   hasElectiveAccess?: boolean

@@ -6631,3 +6631,12 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm exec eslint src/app/(public)/page.tsx src/app/(public)/home2/page.tsx` ✅
   - `pnpm build` ✅
+
+## 2026-02-07 — Codex UI pass (home-canvas offerings layout tightening)
+- Removed the top divider line above the home-canvas sidebar `Sign up` button (`src/components/public/home-canvas-preview.tsx`).
+- Refined `Home2OfferingsSection` for the home-canvas stacked layout (`src/components/public/home2-sections.tsx`):
+  - intro title/subtitle rendered above grid,
+  - consistent row sizing,
+  - documentation card spans upward into prior row,
+  - narrowed centered max width to `760px` to match surrounding section balance.
+- Validation: `pnpm exec eslint src/components/public/home-canvas-preview.tsx src/components/public/home2-sections.tsx` ✅

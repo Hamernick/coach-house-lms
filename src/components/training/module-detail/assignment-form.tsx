@@ -186,6 +186,7 @@ function RoadmapCheckpointField({
           "rounded-xl border border-border/60 bg-background/80 shadow-[0_1px_1px_rgba(0,0,0,0.06)] dark:shadow-[0_1px_1px_rgba(0,0,0,0.24)]",
         className: "flex h-full min-h-0 flex-1 flex-col bg-card dark:bg-[#1f1f1f]",
         editorClassName: "flex-1 min-h-0 h-full overflow-visible rounded-none bg-transparent dark:bg-[#171717]",
+        minHeight: 560,
         disableResize: true,
         toolbarPortalId: toolbarId,
         toolbarTrailingActions: (
@@ -246,6 +247,7 @@ function AssignmentFormInner({
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [indicator, setIndicator] = useState({ top: 0, height: 0 })
   const [autoSaving, setAutoSaving] = useState(false)
+  const richTextMinHeight = isAcceleratorShell ? 560 : 420
   const autoSaveTimer = useRef<NodeJS.Timeout | null>(null)
   const showStatusBadge = statusLabel && statusLabel !== "Submitted"
   const hasMeta = Boolean(showStatusBadge || helperText || errorMessage || statusNote || autoSaving)
@@ -358,12 +360,13 @@ function AssignmentFormInner({
                 {field.description ? (
                   <p className="text-left text-xs text-muted-foreground whitespace-pre-line">{field.description}</p>
                 ) : null}
-                <div className="min-h-[320px]">
+                <div className={cn(isAcceleratorShell ? "min-h-[560px]" : "min-h-[420px]")}>
                   <RichTextEditorLazy
                     value={value}
                     onChange={(next) => updateValue(field.name, next)}
                     placeholder={field.placeholder}
                     mode="homework"
+                    minHeight={richTextMinHeight}
                   />
                 </div>
               </div>
@@ -631,12 +634,13 @@ function AssignmentFormInner({
                   {field.programTemplate}
                 </p>
               ) : null}
-              <div className="min-h-[320px]">
+              <div className={cn(isAcceleratorShell ? "min-h-[560px]" : "min-h-[420px]")}>
                 <RichTextEditorLazy
                   value={(values[field.name] as string) ?? ""}
                   onChange={(next) => updateValue(field.name, next)}
                   placeholder={field.placeholder ?? "Outline your plan"}
                   mode="homework"
+                  minHeight={richTextMinHeight}
                 />
               </div>
             </div>
@@ -645,7 +649,7 @@ function AssignmentFormInner({
           return null
       }
     },
-    [autoSaving, pending, roadmapStatusBySectionId, updateValue, values],
+    [autoSaving, isAcceleratorShell, pending, richTextMinHeight, roadmapStatusBySectionId, updateValue, values],
   )
 
   const { baseSections, tabSections } = useMemo(() => buildAssignmentSections(fields), [fields])
@@ -810,7 +814,7 @@ function AssignmentFormInner({
   )
 
   const containerClass = isStepper
-    ? "flex min-h-0 flex-1 flex-col gap-6"
+    ? "flex h-full min-h-0 flex-1 flex-col gap-6"
     : progressPlacement === "header" || !showProgressPanel
       ? "space-y-6"
       : "grid items-start gap-6 md:grid-cols-[minmax(260px,_320px)_minmax(0,_1fr)]"
@@ -847,9 +851,15 @@ function AssignmentFormInner({
             const activeSection =
               tabSections.find((section) => section.id === activeSectionKey) ?? tabSections[0]
             if (!activeSection) return null
+            const stretchSingleField =
+              activeSection.fields.length === 1 && activeSection.fields[0]?.type === "long_text"
             return (
-              <div className="space-y-6">
-                {activeSection.fields.map((field) => renderField(field))}
+              <div className={cn("space-y-6", stretchSingleField && "flex h-full min-h-0 flex-1 flex-col")}>
+                {activeSection.fields.map((field) => (
+                  <div key={field.name} className={cn(stretchSingleField && "min-h-0 flex-1")}>
+                    {renderField(field)}
+                  </div>
+                ))}
               </div>
             )
           })()

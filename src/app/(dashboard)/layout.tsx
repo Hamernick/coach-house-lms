@@ -7,8 +7,10 @@ import { completeOnboardingAction } from "@/app/(dashboard)/onboarding/actions"
 import { fetchSidebarTree } from "@/lib/academy"
 import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
 import { AppShell } from "@/components/app-shell"
+import { FrameEscape } from "@/components/navigation/frame-escape"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
+import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import type { Json } from "@/lib/supabase"
 
 export default async function DashboardLayout({ children, breadcrumbs }: { children: ReactNode; breadcrumbs?: ReactNode }) {
@@ -33,6 +35,9 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
   let tutorialWelcomePlatform = false
   let tutorialWelcomeAccelerator = false
   let hasActiveSubscription = false
+  let hasAcceleratorAccess = false
+  let hasElectiveAccess = false
+  let ownedElectiveModuleSlugs: string[] = []
   let showOrgAdmin = false
   let formationStatus: string | null = null
 
@@ -96,33 +101,17 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
       showLiveBadges = hasSlug && Boolean(orgRow?.is_public) && Boolean(orgRow?.is_public_roadmap)
     }
 
-    if (isAdmin) {
-      showAccelerator = true
-    } else {
-      const { data: purchase } = await supabase
-        .from("accelerator_purchases")
-        .select("id")
-        .eq("user_id", user.id)
-        .eq("status", "active")
-        .limit(1)
-        .maybeSingle<{ id: string }>()
-
-      showAccelerator = Boolean(purchase)
-    }
-
-    if (!isAdmin) {
-      const { data: subscription, error: subscriptionError } = await supabase
-        .from("subscriptions")
-        .select("status")
-        .eq("user_id", orgId)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle<{ status: string | null }>()
-
-      if (!subscriptionError) {
-        hasActiveSubscription = subscription?.status === "active" || subscription?.status === "trialing"
-      }
-    }
+    const entitlements = await fetchLearningEntitlements({
+      supabase,
+      userId: user.id,
+      orgUserId: orgId,
+      isAdmin,
+    })
+    hasActiveSubscription = entitlements.hasActiveSubscription
+    hasAcceleratorAccess = entitlements.hasAcceleratorAccess
+    hasElectiveAccess = entitlements.hasElectiveAccess
+    ownedElectiveModuleSlugs = entitlements.ownedElectiveModuleSlugs
+    showAccelerator = hasAcceleratorAccess || hasElectiveAccess
 
     const welcomeEligible = !needsOnboarding && !isAdmin && completed
     tutorialWelcomePlatform = welcomeEligible && !tutorialsCompleted.includes("platform") && !tutorialsDismissed.includes("platform")
@@ -150,27 +139,33 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
   }
 
   return (
-    <AppShell
-      breadcrumbs={breadcrumbs}
-      sidebarTree={sidebarTree}
-      user={{ name: displayName, email: email ?? null, avatar: avatar ?? null }}
-      isAdmin={isAdmin}
-      showOrgAdmin={showOrgAdmin}
-      acceleratorProgress={acceleratorProgress}
-      showAccelerator={showAccelerator}
-      showLiveBadges={showLiveBadges}
-      hasActiveSubscription={hasActiveSubscription}
-      tutorialWelcome={{ platform: tutorialWelcomePlatform, accelerator: tutorialWelcomeAccelerator }}
-      onboardingProps={{
-        enabled: Boolean(user),
-        open: needsOnboarding,
-        defaultEmail: email,
-        onSubmit: completeOnboardingAction,
-      }}
-      formationStatus={formationStatus}
-      context="platform"
-    >
-      {children}
-    </AppShell>
+    <>
+      <FrameEscape />
+      <AppShell
+        breadcrumbs={breadcrumbs}
+        sidebarTree={sidebarTree}
+        user={{ name: displayName, email: email ?? null, avatar: avatar ?? null }}
+        isAdmin={isAdmin}
+        showOrgAdmin={showOrgAdmin}
+        acceleratorProgress={acceleratorProgress}
+        showAccelerator={showAccelerator}
+        showLiveBadges={showLiveBadges}
+        hasActiveSubscription={hasActiveSubscription}
+        hasAcceleratorAccess={hasAcceleratorAccess}
+        hasElectiveAccess={hasElectiveAccess}
+        ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
+        tutorialWelcome={{ platform: tutorialWelcomePlatform, accelerator: tutorialWelcomeAccelerator }}
+        onboardingProps={{
+          enabled: Boolean(user),
+          open: needsOnboarding,
+          defaultEmail: email,
+          onSubmit: completeOnboardingAction,
+        }}
+        formationStatus={formationStatus}
+        context="platform"
+      >
+        {children}
+      </AppShell>
+    </>
   )
 }

@@ -4,7 +4,6 @@ import Link from "next/link"
 import { useMemo } from "react"
 import { usePathname } from "next/navigation"
 import Rocket from "lucide-react/dist/esm/icons/rocket"
-import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
@@ -36,6 +35,8 @@ export type AppSidebarProps = {
   acceleratorProgress?: number | null
   showAccelerator?: boolean
   hasAcceleratorAccess?: boolean
+  hasElectiveAccess?: boolean
+  ownedElectiveModuleSlugs?: string[]
   formationStatus?: string | null
 }
 
@@ -47,6 +48,8 @@ export function AppSidebar({
   acceleratorProgress,
   showAccelerator,
   hasAcceleratorAccess,
+  hasElectiveAccess,
+  ownedElectiveModuleSlugs,
   formationStatus,
 }: AppSidebarProps) {
   const resolvedUser = useMemo(
@@ -72,6 +75,8 @@ export function AppSidebar({
         showAccelerator={showAccelerator}
         showOrgAdmin={showOrgAdmin}
         hasAcceleratorAccess={hasAcceleratorAccess}
+        hasElectiveAccess={hasElectiveAccess}
+        ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
         formationStatus={formationStatus}
       />
     </aside>
@@ -93,6 +98,8 @@ type SidebarBodyProps = {
   classesBasePath?: string
   showOrgAdmin?: boolean
   hasAcceleratorAccess?: boolean
+  hasElectiveAccess?: boolean
+  ownedElectiveModuleSlugs?: string[]
   formationStatus?: string | null
 }
 
@@ -107,6 +114,8 @@ export function SidebarBody({
   classesBasePath,
   showOrgAdmin = false,
   hasAcceleratorAccess = false,
+  hasElectiveAccess = false,
+  ownedElectiveModuleSlugs = [],
   formationStatus = null,
 }: SidebarBodyProps) {
   const pathname = usePathname()
@@ -118,18 +127,20 @@ export function SidebarBody({
   const shouldShowAccelerator = Boolean(isAdmin || showAccelerator)
   const hasUser = Boolean(user.email)
   const mainNavItems = buildMainNav({ isAdmin, showOrgAdmin })
-  const mainNavItemsWithoutRoadmap = mainNavItems.filter((item) => item.href !== "/roadmap")
-  const isRoadmapActive = pathname ? pathname === "/roadmap" || pathname.startsWith("/roadmap/") : false
   return (
     <>
       <SidebarContent className="gap-0">
-        <NavMain items={mainNavItemsWithoutRoadmap} className="py-0" />
+        <NavMain items={mainNavItems} className="py-0" />
         {shouldShowAccelerator ? (
           <SidebarGroup className="pt-3 pb-1">
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={Boolean(pathname?.startsWith("/accelerator"))}>
-                  <Link href="/accelerator" className="flex w-full min-w-0 items-center gap-2">
+                  <Link
+                    href="/accelerator"
+                    data-tour="nav-accelerator"
+                    className="flex w-full min-w-0 items-center gap-2"
+                  >
                     <Rocket className="size-4" />
                     <span className="min-w-0 flex-1 truncate whitespace-nowrap">Accelerator</span>
                     {progressValue !== null ? (
@@ -145,16 +156,6 @@ export function SidebarBody({
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isRoadmapActive} tooltip="Roadmap">
-                  <Link href="/roadmap" title="Roadmap" data-tour="nav-roadmap">
-                    <WaypointsIcon className="size-4 shrink-0" aria-hidden />
-                    <span className="flex-1 min-w-0 truncate whitespace-nowrap leading-snug group-data-[collapsible=icon]:hidden">
-                      Roadmap
-                    </span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroup>
         ) : null}
@@ -164,6 +165,8 @@ export function SidebarBody({
             isAdmin={isAdmin}
             basePath={classesBasePath}
             hasAcceleratorAccess={hasAcceleratorAccess}
+            hasElectiveAccess={hasElectiveAccess}
+            ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
             formationStatus={formationStatus}
           />
         ) : null}

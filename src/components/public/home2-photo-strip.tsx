@@ -14,10 +14,18 @@ type PhotoItem = {
 type Home2PhotoStripProps = {
   items: PhotoItem[]
   className?: string
+  centerToViewport?: boolean
 }
 
-export function Home2PhotoStrip({ items, className }: Home2PhotoStripProps) {
+export function Home2PhotoStrip({
+  items,
+  className,
+  centerToViewport = true,
+}: Home2PhotoStripProps) {
   const scrollerRef = useRef<HTMLDivElement>(null)
+  const edgeSpacer = centerToViewport
+    ? "calc(50vw - var(--first-card) / 2)"
+    : "calc(50% - var(--first-card) / 2)"
 
   useEffect(() => {
     const scroller = scrollerRef.current
@@ -149,11 +157,11 @@ export function Home2PhotoStrip({ items, className }: Home2PhotoStripProps) {
           "[--first-card:14rem] sm:[--first-card:16rem] lg:[--first-card:18rem]",
         )}
         style={{
-          scrollPaddingLeft: "calc(50vw - var(--first-card) / 2)",
-          scrollPaddingRight: "calc(50vw - var(--first-card) / 2)",
+          scrollPaddingLeft: edgeSpacer,
+          scrollPaddingRight: edgeSpacer,
         }}
       >
-        <div className="shrink-0" style={{ width: "calc(50vw - var(--first-card) / 2)" }} aria-hidden />
+        <div className="shrink-0" style={{ width: edgeSpacer }} aria-hidden />
         {items.map((item) => (
           <div
             key={item.id}
@@ -166,7 +174,7 @@ export function Home2PhotoStrip({ items, className }: Home2PhotoStripProps) {
             style={item.imageUrl ? { backgroundImage: `url(${item.imageUrl})` } : undefined}
           />
         ))}
-        <div className="shrink-0" style={{ width: "calc(50vw - var(--first-card) / 2)" }} aria-hidden />
+        <div className="shrink-0" style={{ width: edgeSpacer }} aria-hidden />
       </div>
     </div>
   )

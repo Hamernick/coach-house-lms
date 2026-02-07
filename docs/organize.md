@@ -1,5 +1,5 @@
 # Launch Sprint Organizer — Coach House LMS
-Last updated: 2026-01-16
+Last updated: 2026-02-07
 
 Purpose: turn all launch notes into a clean, deduped, step-by-step checklist so we can say “go” and execute fast.
 
@@ -12,6 +12,25 @@ When starting a Codex session, do these in order (brief → implement → run 4 
 - [x] `docs/briefs/budget-table-ux.md` — Redesign budget table UX + CSV template download + 3-step mini guide.
 - [ ] `docs/briefs/notifications.md` — Update/expand notifications to cover key platform events (accelerator, coaching, roadmap/docs).
 - [ ] `docs/briefs/roadmap-formation.md` — Roadmap landing + Formation free track + gating.
+
+## Active Top 5 (Current Execution Queue)
+Use this as the operational queue for incremental Codex passes.
+
+1. End-to-end demo journey seed completeness:
+   - Ensure one deterministic “tour account” covers settings, org profile, team, programs, roadmap, calendar, notifications, module progress, and notes.
+   - Keep dry-run fixture validation strict and CI-safe.
+2. Accelerator progression UX unification:
+   - Finish card alignment/system consistency across deliverables + modules.
+   - Keep ordering deterministic (Formation first; electives after core formation path).
+3. Readiness criteria operationalization:
+   - Keep `Fundable`/`Verified` evidence-based with explicit missing criteria links.
+   - Tie funding goal + document evidence + formation completion to real persisted data.
+4. Calendar and shell behavior parity:
+   - Align accelerator-facing calendar/layout tokens with `/my-organization`.
+   - Keep home-canvas section handoff/scroll behavior deterministic at panel boundaries.
+5. Launch QA hardening + documentation:
+   - Continue acceptance coverage for onboarding/entitlement/billing transitions.
+   - Keep `docs/briefs/*`, `docs/organize.md`, and `docs/RUNLOG.md` current each session.
 
 ---
 
@@ -185,7 +204,7 @@ Sources to read:
 - docs/TODO_PRIORITIZED.md
 - docs/RUNLOG.md
 - docs/briefs/INDEX.md
-- runlog.md
+- deprecated/docs/runlog-legacy-2025-02.md (legacy archive; historical context only)
 - docs/CODEX_RUNBOOK.md
 - src/app/(public)/home2/page.tsx
 
@@ -212,7 +231,7 @@ Sources to read:
 All decisions live here. When resolved, move to “Locked” and update the relevant brief + checklist items.
 
 ### Locked (2026-01-16)
-- Accelerator pricing: $499 one-time or $58/mo for 6 months (bundles Accelerator + Organization; auto switches to $20/mo afterward).
+- Accelerator pricing: Pro $499 one-time or $49.90/mo for 10 months; Base $349 one-time or $34.90/mo for 10 months (bundles Accelerator + Organization; auto switches to $20/mo afterward).
 - Accelerator access: single-user license (only the purchaser; not transferable to other org members).
 - Coaching scheduling: 3 Google Calendar links (free x4 → discounted paid; plus full-price paid link).
 - Doc sharing: EIN/990/W9/wire info via signed links.
@@ -254,7 +273,7 @@ DB readiness (P0/P1)
 
 2) Payments & access gating
 - [ ] Stripe products/prices finalized for Platform Free / Organization / Accelerator (one-time + installment). (TODO last)
-- [ ] Installment plan behavior: $58/mo x6, includes Accelerator + Organization, then reverts to $20/mo.
+- [ ] Installment plan behavior: Pro $49.90/mo x10 and Base $34.90/mo x10, includes Accelerator + Organization, then reverts to $20/mo.
 - [ ] Stripe products/prices finalized for Electives add-ons (standard + Accelerator-discounted prices).
 - [ ] Webhook + subscription sync verified end-to-end.
 - [ ] Access gating enforced for paid features (accelerator, coaching, AI credits).
@@ -483,7 +502,7 @@ Roadmap v2 template subtitles (draft)
 ---
 
 ## Pricing Page Requirements (Must Match)
-NOTE: Accelerator has two payment options ($499 once or $58/mo for 6 months, then $20/mo). Update this section once the Stripe implementation details are finalized.
+NOTE: Accelerator has two payment options per tier ($499 once or $49.90/mo for 10 months; $349 once or $34.90/mo for 10 months, then $20/mo). Update this section once the Stripe implementation details are finalized.
 Card 1: The Platform (Free)
 - Title: Formation
 - Price: $0 / month
@@ -515,7 +534,7 @@ Card 2: The Platform (Growth)
 
 Card 3: The Accelerator (Add‑On)
 - Title: The Accelerator
-- Price: $499 (one‑time) or $58 / month for 6 months (includes Organization; then $20/mo)
+- Price: $499 (one‑time) or $49.90 / month for 10 months; $349 (one-time) or $34.90 / month for 10 months (includes Organization; then $20/mo)
 - Subtitle: The 9‑week playbook to funder‑readiness.
 - Features:
   - 42‑Module Curriculum (Lifetime access)

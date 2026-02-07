@@ -4,11 +4,11 @@ import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 export const dynamic = "force-dynamic"
 
 type RoadmapSectionPageProps = {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
 export default async function RoadmapSectionPage({ params }: RoadmapSectionPageProps) {
-  const slug = params.slug
+  const { slug } = await params
   return (
     <>
       <PageTutorialButton tutorial="roadmap" />

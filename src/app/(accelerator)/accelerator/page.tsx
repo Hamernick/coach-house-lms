@@ -1,13 +1,20 @@
 import { Empty } from "@/components/ui/empty"
 import { ProgramCard } from "@/components/programs/program-card"
-import { AcceleratorNextModuleCard } from "@/components/accelerator/accelerator-next-module-card"
-import { StartBuildingPager } from "@/components/accelerator/start-building-pager"
+import { AcceleratorOrgSnapshotStrip } from "@/components/accelerator/accelerator-org-snapshot-strip"
+import { AcceleratorWelcomeBanner } from "@/components/accelerator/accelerator-welcome-banner"
 import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
 import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
 import { RoadmapOutlineCard } from "@/components/roadmap/roadmap-outline-card"
+import { AcceleratorOverviewRightRail } from "@/components/accelerator/accelerator-overview-right-rail"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import { resolveRoadmapSections } from "@/lib/roadmap"
+import { resolveRoadmapHomework } from "@/lib/roadmap/homework"
+import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
+import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
+import { resolveAcceleratorReadiness } from "@/lib/accelerator/readiness"
+import { buildReadinessChecklist } from "@/lib/accelerator/readiness-checklist"
+import { sortAcceleratorModules } from "@/lib/accelerator/module-order"
 
 export const runtime = "edge"
 export const dynamic = "force-dynamic"
@@ -27,6 +34,27 @@ const PROGRAM_TEMPLATES = [
   },
 ]
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
+}
+
+function dedupeModulesById<T extends { id: string }>(modules: T[]) {
+  const seen = new Set<string>()
+  return modules.filter((module) => {
+    if (seen.has(module.id)) return false
+    seen.add(module.id)
+    return true
+  })
+}
+
+const CORE_ROADMAP_SECTION_IDS = new Set([
+  "origin_story",
+  "need",
+  "mission_vision_values",
+  "theory_of_change",
+  "program",
+])
+
 export default async function AcceleratorOverviewPage() {
   const supabase = await createSupabaseServerClient()
   const {
@@ -35,7 +63,7 @@ export default async function AcceleratorOverviewPage() {
 
   if (!user) {
     return (
-      <div className="mx-auto w-full max-w-5xl space-y-8 p-6 lg:p-8">
+      <div className="mx-auto w-full max-w-6xl space-y-8 p-6 lg:p-8">
         <Empty title="Sign in to continue" description="Your accelerator workspace is ready when you are." />
       </div>
     )
@@ -51,105 +79,253 @@ export default async function AcceleratorOverviewPage() {
   ])
   const isAdmin = profileResult.data?.role === "admin"
 
-  const [progressSummary, orgResult] = await Promise.all([
+  const [progressSummary, orgResult, roadmapHomework, entitlements, programsResult] = await Promise.all([
     fetchAcceleratorProgressSummary({ supabase, userId: user.id, isAdmin }),
     supabase
       .from("organizations")
-      .select("profile")
+      .select("profile, public_slug")
       .eq("user_id", activeOrg.orgId)
-      .maybeSingle<{ profile: Record<string, unknown> | null }>(),
+      .maybeSingle<{ profile: Record<string, unknown> | null; public_slug: string | null }>(),
+    resolveRoadmapHomework(user.id, supabase),
+    fetchLearningEntitlements({
+      supabase,
+      userId: user.id,
+      orgUserId: activeOrg.orgId,
+      isAdmin,
+    }),
+    supabase
+      .from("programs")
+      .select("id, goal_cents")
+      .eq("user_id", activeOrg.orgId)
+      .returns<Array<{ id: string; goal_cents: number | null }>>(),
   ])
 
-  const { groups, totalModules, completedModules, inProgressModules, percent } = progressSummary
-  const roadmapSections = resolveRoadmapSections(orgResult.data?.profile ?? null)
-  const visibleGroups = groups.filter((group) => {
-    const title = group.title.trim().toLowerCase()
-    const slug = group.slug.trim().toLowerCase()
-    return title !== "published class" && slug !== "published-class"
+  const { groups } = progressSummary
+  const roadmapSections = resolveRoadmapSections(orgResult.data?.profile ?? null).map((section) => ({
+    ...section,
+    homework: roadmapHomework[section.id] ?? null,
+  }))
+  const ownedElectiveModuleSlugSet = new Set(
+    entitlements.ownedElectiveModuleSlugs.map((slug) => slug.trim().toLowerCase()),
+  )
+  const visibleGroups = (() => {
+    const baseGroups = groups.filter((group) => {
+      const title = group.title.trim().toLowerCase()
+      const slug = group.slug.trim().toLowerCase()
+      return title !== "published class" && slug !== "published-class"
+    })
+
+    const transformed: Array<(typeof groups)[number]> = []
+    let formationTrack: (typeof groups)[number] | null = null
+    let electivesTrack: (typeof groups)[number] | null = null
+
+    for (const group of baseGroups) {
+      const normalizedSlug = group.slug.trim().toLowerCase()
+      const normalizedTitle = group.title.trim().toLowerCase()
+      const isFormationSource =
+        normalizedSlug === "electives" || normalizedSlug === "formation" || normalizedTitle === "formation"
+
+      if (!isFormationSource) {
+        if (entitlements.hasAcceleratorAccess) {
+          transformed.push(group)
+        }
+        continue
+      }
+
+      const formationModules = group.modules.filter((module) => !isElectiveAddOnModule(module))
+      const electiveModules = group.modules.filter((module) => isElectiveAddOnModule(module))
+
+      if (formationModules.length > 0) {
+        const seed =
+          formationTrack ??
+          ({
+            ...group,
+            title: "Formation",
+            slug: "formation",
+            modules: [],
+          } satisfies (typeof groups)[number])
+
+        formationTrack = {
+          ...seed,
+          modules: [...seed.modules, ...formationModules],
+        }
+      }
+
+      const accessibleElectiveModules = entitlements.hasAcceleratorAccess
+        ? electiveModules
+        : electiveModules.filter((module) => ownedElectiveModuleSlugSet.has(module.slug.trim().toLowerCase()))
+
+      if (accessibleElectiveModules.length > 0) {
+        const seed =
+          electivesTrack ??
+          ({
+            ...group,
+            title: "Electives",
+            slug: "electives",
+            modules: [],
+          } satisfies (typeof groups)[number])
+
+        electivesTrack = {
+          ...seed,
+          modules: [...seed.modules, ...accessibleElectiveModules],
+        }
+      }
+    }
+
+    if (formationTrack) {
+      formationTrack = {
+        ...formationTrack,
+        modules: sortAcceleratorModules(dedupeModulesById(formationTrack.modules)),
+      }
+    }
+
+    if (electivesTrack) {
+      electivesTrack = {
+        ...electivesTrack,
+        modules: sortAcceleratorModules(dedupeModulesById(electivesTrack.modules)),
+      }
+    }
+
+    const ordered: Array<(typeof groups)[number]> = []
+    if (formationTrack) ordered.push(formationTrack)
+    ordered.push(...transformed)
+    if (electivesTrack) ordered.push(electivesTrack)
+    return ordered.filter((group) => group.modules.length > 0)
+  })()
+  const timelineModules = visibleGroups.flatMap((group, groupIndex) =>
+    group.modules.map((module, moduleIndex) => ({
+      ...module,
+      groupTitle: group.title,
+      sequence: groupIndex * 1000 + moduleIndex,
+    })),
+  )
+  const orgProfile = isRecord(orgResult.data?.profile) ? orgResult.data.profile : {}
+  const organizationTitle = String(orgProfile["name"] ?? "").trim()
+  const city = String(orgProfile["address_city"] ?? "").trim()
+  const state = String(orgProfile["address_state"] ?? "").trim()
+  const locationSubtitle = [city, state].filter(Boolean).join(", ")
+  const organizationSubtitle = String(orgProfile["tagline"] ?? "").trim() || locationSubtitle || null
+  const logoUrl = String(orgProfile["logoUrl"] ?? "").trim() || null
+  const headerUrl = String(orgProfile["headerUrl"] ?? "").trim() || null
+  const peopleCount = Math.max(1, Array.isArray(orgProfile["org_people"]) ? orgProfile["org_people"].length : 0)
+  const programs = programsResult.data ?? []
+  const programsCount = programs.length
+  const fundingGoalCents = programs.reduce((sum, program) => sum + (program.goal_cents ?? 0), 0)
+  const formationStatusRaw = String(orgProfile["formationStatus"] ?? "in_progress")
+  const formationLabel =
+    formationStatusRaw === "approved"
+      ? "Approved"
+      : formationStatusRaw === "pre_501c3"
+        ? "Pre-501(c)(3)"
+        : "In progress"
+
+  const isRoadmapSectionComplete = (section: (typeof roadmapSections)[number]) => {
+    if (section.status === "complete") return true
+    if (section.content.trim().length > 0) return true
+    return section.homework?.status === "complete"
+  }
+
+  const roadmapCompletedCount = roadmapSections.filter(isRoadmapSectionComplete).length
+  const readiness = resolveAcceleratorReadiness({
+    profile: orgProfile,
+    modules: visibleGroups.flatMap((group) =>
+      group.modules.map((module) => ({
+        slug: module.slug,
+        status: module.status,
+      })),
+    ),
+    roadmapSections,
+    programs,
+    peopleCount,
   })
-  const safeCompletedModules = Math.min(completedModules, totalModules)
-  const progressPercent = percent
+  const readinessStateLabel = readiness.verified ? "Verified" : readiness.fundable ? "Fundable" : "Building"
+  const readinessTargetLabel = readiness.verified ? null : readiness.fundable ? "Verified" : "Fundable"
+  const formationGroup = visibleGroups.find((group) => group.slug.trim().toLowerCase() === "formation") ?? null
+  const nextIncompleteFormationModule =
+    formationGroup?.modules.find((module) => module.status !== "completed") ?? formationGroup?.modules[0] ?? null
+  const nextCoreRoadmapSection =
+    roadmapSections.find((section) => CORE_ROADMAP_SECTION_IDS.has(section.id) && !isRoadmapSectionComplete(section)) ?? null
+  const nextCoreRoadmapHref = nextCoreRoadmapSection
+    ? `/accelerator/roadmap/${nextCoreRoadmapSection.slug ?? nextCoreRoadmapSection.id}`
+    : null
+  const readinessChecklist = buildReadinessChecklist({
+    reasons: readinessTargetLabel === "Verified" ? readiness.verifiedMissing : readiness.fundableMissing,
+    nextFormationModuleHref: nextIncompleteFormationModule?.href,
+    nextCoreRoadmapHref,
+    maxItems: 3,
+  })
+
+  const lessonGroupProgress = visibleGroups.reduce(
+    (acc, group) => {
+      if (group.modules.length === 0) return acc
+
+      const moduleIds = new Set(group.modules.map((module) => module.id))
+      const moduleIndexes = new Set(group.modules.map((module) => module.index))
+      const modulesComplete = group.modules.every((module) => module.status === "completed")
+      const linkedSections = roadmapSections.filter((section) => {
+        const homework = section.homework
+        if (!homework) return false
+        if (moduleIds.has(homework.moduleId)) return true
+        return moduleIndexes.has(homework.moduleIdx)
+      })
+      const deliverablesComplete = linkedSections.every(isRoadmapSectionComplete)
+
+      return {
+        total: acc.total + 1,
+        complete: acc.complete + (modulesComplete && deliverablesComplete ? 1 : 0),
+      }
+    },
+    { complete: 0, total: 0 },
+  )
+
   const showProgramBuilder = false
   const nextGroup =
     visibleGroups.find((group) => group.modules.some((module) => module.status !== "completed")) ?? null
   const nextModule =
-    nextGroup?.modules.find((module) => module.status !== "completed" && module.status !== "locked") ??
-    nextGroup?.modules.find((module) => module.status !== "locked") ??
+    nextGroup?.modules.find((module) => module.status !== "completed") ??
     nextGroup?.modules[0] ??
     null
-  const progressStatus =
-    totalModules > 0 && completedModules >= totalModules
-      ? "completed"
-      : completedModules > 0 || inProgressModules > 0
-        ? "in_progress"
-        : "not_started"
-  const progressSegments = Math.max(1, totalModules)
-  const filledSegments =
-    progressStatus === "completed"
-      ? progressSegments
-      : Math.min(safeCompletedModules + (inProgressModules > 0 ? 1 : 0), progressSegments)
+  const continueHref = nextModule?.href ?? "/accelerator"
+  const continueModuleLabel = nextModule?.title ?? "Continue in Accelerator"
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-8 p-6 lg:p-8">
+    <div className="mx-auto w-full max-w-6xl space-y-8 p-6 lg:p-8">
+      <AcceleratorOverviewRightRail
+        sections={roadmapSections.map((section) => ({
+          id: section.id,
+          title: section.title,
+          slug: section.slug,
+          status: section.status,
+        }))}
+      />
       <section id="overview" className="space-y-6">
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-          <div className="flex min-w-0 animate-fade-up flex-col gap-4 lg:h-full">
-            <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Welcome</p>
-              <h1 className="text-balance text-3xl font-semibold text-foreground sm:text-4xl">
-                Idea to Impact Accelerator
-              </h1>
-              <div className="max-w-[52ch] space-y-2 text-sm text-muted-foreground">
-                <p>
-                  Welcome to the idea to impact nonprofit accelerator. We built this from 25+ years of experience developing nonprofits to help you build yours.
-                </p>
-                <p>
-                  This is designed to help you rapidly build the core foundations of your organization, step by step, and leave with a clear, sustainable plan to launch, fund, and grow.
-                </p>
-              </div>
-            </div>
-            <div className="max-w-sm space-y-2 lg:mt-auto">
-              <div className="flex items-center justify-between text-xs uppercase text-muted-foreground">
-                <span>Progress</span>
-                <span className="text-foreground">{progressPercent}%</span>
-              </div>
-              <div
-                className="grid gap-1"
-                style={{ gridTemplateColumns: `repeat(${progressSegments}, minmax(0, 1fr))` }}
-                aria-hidden
-              >
-                {Array.from({ length: progressSegments }).map((_, index) => {
-                  const isFilled = index < filledSegments
-                  const fillClass =
-                    progressStatus === "completed"
-                      ? "bg-emerald-500"
-                      : progressStatus === "in_progress"
-                        ? "bg-amber-500"
-                        : "bg-muted/60"
-                  return (
-                    <span
-                      key={`progress-segment-${index}`}
-                      className={`h-2 rounded-full ${isFilled ? fillClass : "bg-muted/70"}`}
-                    />
-                  )
-                })}
-              </div>
-            </div>
-          </div>
+        <AcceleratorWelcomeBanner userId={user.id} />
 
-          <div className="flex h-full w-full flex-col gap-6">
-            <AcceleratorNextModuleCard module={nextModule} />
-          </div>
-        </div>
+        <AcceleratorOrgSnapshotStrip
+          organizationTitle={organizationTitle}
+          organizationSubtitle={organizationSubtitle}
+          logoUrl={logoUrl}
+          headerUrl={headerUrl}
+          fundingGoalCents={fundingGoalCents}
+          formationLabel={formationLabel}
+          programsCount={programsCount}
+          peopleCount={peopleCount}
+          progressPercent={readiness.progressPercent}
+          deliverablesComplete={roadmapCompletedCount}
+          deliverablesTotal={roadmapSections.length}
+          moduleGroupsComplete={lessonGroupProgress.complete}
+          moduleGroupsTotal={lessonGroupProgress.total}
+          fundableCheckpoint={readiness.fundableCheckpoint}
+          verifiedCheckpoint={readiness.verifiedCheckpoint}
+          readinessStateLabel={readinessStateLabel}
+          readinessTargetLabel={readinessTargetLabel}
+          readinessChecklist={readinessChecklist}
+          continueHref={continueHref}
+          continueModuleLabel={continueModuleLabel}
+        />
 
-        <RoadmapOutlineCard sections={roadmapSections} />
+        <RoadmapOutlineCard sections={roadmapSections} modules={timelineModules} />
       </section>
-
-      {visibleGroups.length > 0 ? (
-        <section id="curriculum" className="space-y-5">
-          <StartBuildingPager groups={visibleGroups} showRailControls={false} />
-        </section>
-      ) : null}
 
       {showProgramBuilder ? (
         <section id="roadmap" className="space-y-3">

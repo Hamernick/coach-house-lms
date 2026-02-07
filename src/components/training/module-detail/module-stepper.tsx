@@ -8,6 +8,7 @@ import CalendarCheck from "lucide-react/dist/esm/icons/calendar-check"
 import FolderOpen from "lucide-react/dist/esm/icons/folder-open"
 import Sparkles from "lucide-react/dist/esm/icons/sparkles"
 
+import { CoachingAvatarGroup } from "@/components/coaching/coaching-avatar-group"
 import { Button } from "@/components/ui/button"
 import { StepperRail, type StepperRailStep } from "@/components/ui/stepper-rail"
 import { ShellContentHeaderPortal } from "@/components/app-shell/shell-content-portal"
@@ -15,6 +16,7 @@ import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle }
 import { Separator } from "@/components/ui/separator"
 import { useRouter } from "next/navigation"
 import { useCoachingBooking } from "@/hooks/use-coaching-booking"
+import type { CoachingTier } from "@/lib/meetings"
 import { getTrackIcon } from "@/lib/accelerator/track-icons"
 import { cn } from "@/lib/utils"
 import { LessonNotes } from "./lesson-notes"
@@ -206,6 +208,8 @@ export function ModuleStepper({
 
   const [activeIndex, setActiveIndex] = useState(0)
   const { schedule, pending: schedulePending } = useCoachingBooking()
+  const [coachingTier, setCoachingTier] = useState<CoachingTier | null>(null)
+  const [coachingRemaining, setCoachingRemaining] = useState<number | null>(null)
   const ModuleIcon = getTrackIcon(classTitle)
   const activeStep = steps[activeIndex]
   const totalSteps = steps.length
@@ -306,6 +310,17 @@ export function ModuleStepper({
     }
     router.push(nextHref)
   }, [moduleId, nextHref, router])
+
+  const handleSchedule = useCallback(async () => {
+    const payload = await schedule()
+    if (!payload) return
+    if (payload.tier) {
+      setCoachingTier(payload.tier)
+    }
+    if (payload.remaining === null || typeof payload.remaining === "number") {
+      setCoachingRemaining(payload.remaining ?? null)
+    }
+  }, [schedule])
 
   useEffect(() => {
     celebratePlayedRef.current = false
@@ -526,12 +541,35 @@ export function ModuleStepper({
                                 <ItemDescription>
                                   Review this module, ask questions, or plan next steps.
                                 </ItemDescription>
+                                <div className="pt-2">
+                                  <CoachingAvatarGroup size="sm" />
+                                </div>
+                                {coachingTier === "free" && typeof coachingRemaining === "number" && coachingRemaining > 0 ? (
+                                  <p className="pt-2 text-xs text-muted-foreground">
+                                    {coachingRemaining} included session{coachingRemaining === 1 ? "" : "s"} remaining.
+                                  </p>
+                                ) : null}
+                                {coachingTier === "free" && coachingRemaining === 0 ? (
+                                  <p className="pt-2 text-xs text-muted-foreground">
+                                    Included sessions complete. Your next bookings use the discounted calendar.
+                                  </p>
+                                ) : null}
+                                {coachingTier === "discounted" ? (
+                                  <p className="pt-2 text-xs text-muted-foreground">
+                                    Included sessions complete. You are now booking at the discounted coaching rate.
+                                  </p>
+                                ) : null}
+                                {coachingTier === "full" ? (
+                                  <p className="pt-2 text-xs text-muted-foreground">
+                                    Coaching booking opened in a new tab.
+                                  </p>
+                                ) : null}
                               </ItemContent>
                               <ItemActions>
                                 <Button
                                   type="button"
                                   size="sm"
-                                  onClick={() => void schedule()}
+                                  onClick={() => void handleSchedule()}
                                   disabled={schedulePending}
                                 >
                                   {schedulePending ? "Opening..." : "Book a session"}

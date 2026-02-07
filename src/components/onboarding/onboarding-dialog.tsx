@@ -48,6 +48,7 @@ export type OnboardingDialogProps = {
   open: boolean
   defaultEmail?: string | null
   onSubmit: (form: FormData) => Promise<void>
+  presentation?: "dialog" | "inline"
 }
 
 type Step = {
@@ -119,6 +120,7 @@ export function OnboardingDialog({
   open,
   defaultEmail,
   onSubmit,
+  presentation = "dialog",
 }: OnboardingDialogProps) {
   const searchParams = useSearchParams()
   const [step, setStep] = useState(0)
@@ -409,489 +411,516 @@ export function OnboardingDialog({
   }
 
   const stepLabel = `Step ${step + 1} of ${STEPS.length}`
+  const isInline = presentation === "inline"
 
-  return (
-    <Dialog open={open}>
-      <DialogContent className="border-border bg-card/80 max-h-[92vh] w-[min(720px,92%)] overflow-hidden rounded-3xl border p-0 shadow-2xl backdrop-blur">
-        <form
-          ref={formRef}
-          action={onSubmit}
-          className="space-y-0"
-          onChange={() => saveDraft()}
-          onSubmit={(event) => {
-            if (step !== STEPS.length - 1) {
-              event.preventDefault()
-              next()
-              return
-            }
-            if (!validateStep(step)) {
-              event.preventDefault()
-              return
-            }
+  const content = (
+    <>
+      <form
+        ref={formRef}
+        action={onSubmit}
+        className="space-y-0"
+        onChange={() => saveDraft()}
+        onSubmit={(event) => {
+          if (step !== STEPS.length - 1) {
+            event.preventDefault()
+            next()
+            return
+          }
+          if (!validateStep(step)) {
+            event.preventDefault()
+            return
+          }
 
-            setSubmitting(true)
-            saveDraft({ step })
-            if (typeof window !== "undefined") {
-              window.localStorage.removeItem("onboardingDraftV2")
-            }
-          }}
-        >
-          <div className="border-border/70 border-b px-6 py-5">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-muted-foreground text-xs font-medium">
-                  {stepLabel}
-                </p>
+          setSubmitting(true)
+          saveDraft({ step })
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem("onboardingDraftV2")
+          }
+        }}
+      >
+        <div className="border-border/70 border-b px-6 py-5">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-muted-foreground text-xs font-medium">
+                {stepLabel}
+              </p>
+              {isInline ? (
+                <h2 className="text-foreground mt-1 text-2xl font-semibold">
+                  {currentStep.title}
+                </h2>
+              ) : (
                 <DialogTitle asChild>
                   <h2 className="text-foreground mt-1 text-2xl font-semibold">
                     {currentStep.title}
                   </h2>
                 </DialogTitle>
+              )}
+              {isInline ? (
+                <p className="text-muted-foreground mt-1 text-sm">
+                  {currentStep.description}
+                </p>
+              ) : (
                 <DialogDescription asChild>
                   <p className="text-muted-foreground mt-1 text-sm">
                     {currentStep.description}
                   </p>
                 </DialogDescription>
+              )}
+            </div>
+            <div className="hidden sm:flex sm:flex-col sm:items-end sm:gap-2">
+              <div className="bg-muted h-1.5 w-44 overflow-hidden rounded-full">
+                <div
+                  className="bg-primary h-full rounded-full"
+                  style={{ width: `${progress}%` }}
+                />
               </div>
-              <div className="hidden sm:flex sm:flex-col sm:items-end sm:gap-2">
-                <div className="bg-muted h-1.5 w-44 overflow-hidden rounded-full">
-                  <div
-                    className="bg-primary h-full rounded-full"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <span className="text-muted-foreground text-xs">
-                  {progress}%
-                </span>
-              </div>
+              <span className="text-muted-foreground text-xs">
+                {progress}%
+              </span>
             </div>
           </div>
+        </div>
 
-          <div className="space-y-6 p-6">
-            <input
-              type="hidden"
-              name="formationStatus"
-              value={formationStatus}
-            />
+        <div className="space-y-6 p-6">
+          <input
+            type="hidden"
+            name="formationStatus"
+            value={formationStatus}
+          />
 
-            {serverError ? (
-              <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-xl border px-4 py-3 text-sm">
-                {serverError}
+          {serverError ? (
+            <div className="border-destructive/30 bg-destructive/10 text-destructive rounded-xl border px-4 py-3 text-sm">
+              {serverError}
+            </div>
+          ) : null}
+
+          {step === 0 ? (
+            <div className="space-y-5">
+              <div className="grid gap-2">
+                <Label htmlFor="orgName">Organization name</Label>
+                <Input
+                  id="orgName"
+                  name="orgName"
+                  placeholder="Acme Inc."
+                  aria-invalid={Boolean(errors.orgName)}
+                  onChange={(event) => {
+                    const value = event.currentTarget.value
+                    if (!slugEdited) {
+                      const nextSlug = slugify(value)
+                      setSlugValue(nextSlug)
+                      const input = formRef.current?.querySelector(
+                        'input[name="orgSlug"]'
+                      ) as HTMLInputElement | null
+                      if (input) input.value = nextSlug
+                    }
+                  }}
+                />
+                {errors.orgName ? (
+                  <p className="text-destructive text-xs">{errors.orgName}</p>
+                ) : null}
               </div>
-            ) : null}
 
-            {step === 0 ? (
-              <div className="space-y-5">
-                <div className="grid gap-2">
-                  <Label htmlFor="orgName">Organization name</Label>
+              <div className="grid gap-2">
+                <Label htmlFor="orgSlug">Organization URL</Label>
+                <div className="border-border/70 bg-background flex items-center gap-2 rounded-xl border px-3 py-1.5">
+                  <span className="text-muted-foreground text-sm">
+                    coachhouse.org/
+                  </span>
                   <Input
-                    id="orgName"
-                    name="orgName"
-                    placeholder="Acme Inc."
-                    aria-invalid={Boolean(errors.orgName)}
+                    id="orgSlug"
+                    name="orgSlug"
+                    placeholder="acme"
+                    className="h-9 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+                    aria-invalid={Boolean(errors.orgSlug)}
                     onChange={(event) => {
-                      const value = event.currentTarget.value
-                      if (!slugEdited) {
-                        const nextSlug = slugify(value)
-                        setSlugValue(nextSlug)
-                        const input = formRef.current?.querySelector(
-                          'input[name="orgSlug"]'
-                        ) as HTMLInputElement | null
-                        if (input) input.value = nextSlug
-                      }
+                      setSlugEdited(true)
+                      const normalized = slugify(event.currentTarget.value)
+                      setSlugValue(normalized)
+                      event.currentTarget.value = normalized
                     }}
                   />
-                  {errors.orgName ? (
-                    <p className="text-destructive text-xs">{errors.orgName}</p>
-                  ) : null}
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="orgSlug">Organization URL</Label>
-                  <div className="border-border/70 bg-background flex items-center gap-2 rounded-xl border px-3 py-1.5">
-                    <span className="text-muted-foreground text-sm">
-                      coachhouse.org/
+                  {slugStatus === "available" ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                      <CheckIcon className="h-3 w-3" aria-hidden />
+                      Available
                     </span>
-                    <Input
-                      id="orgSlug"
-                      name="orgSlug"
-                      placeholder="acme"
-                      className="h-9 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
-                      aria-invalid={Boolean(errors.orgSlug)}
-                      onChange={(event) => {
-                        setSlugEdited(true)
-                        const normalized = slugify(event.currentTarget.value)
-                        setSlugValue(normalized)
-                        event.currentTarget.value = normalized
-                      }}
-                    />
-                    {slugStatus === "available" ? (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
-                        <CheckIcon className="h-3 w-3" aria-hidden />
-                        Available
-                      </span>
-                    ) : slugStatus === "checking" ? (
-                      <span className="bg-muted text-muted-foreground rounded-full px-2 py-1 text-[11px] font-medium">
-                        Checking…
-                      </span>
-                    ) : null}
-                  </div>
-                  {errors.orgSlug ? (
-                    <p className="text-destructive text-xs">{errors.orgSlug}</p>
-                  ) : null}
-                  {!errors.orgSlug && slugHint ? (
-                    <p className="text-muted-foreground text-xs">{slugHint}</p>
+                  ) : slugStatus === "checking" ? (
+                    <span className="bg-muted text-muted-foreground rounded-full px-2 py-1 text-[11px] font-medium">
+                      Checking…
+                    </span>
                   ) : null}
                 </div>
+                {errors.orgSlug ? (
+                  <p className="text-destructive text-xs">{errors.orgSlug}</p>
+                ) : null}
+                {!errors.orgSlug && slugHint ? (
+                  <p className="text-muted-foreground text-xs">{slugHint}</p>
+                ) : null}
+              </div>
 
-                <div className="grid gap-2">
-                  <Label>Formation status</Label>
-                  <div
-                    role="radiogroup"
-                    aria-label="Formation status"
-                    className="grid gap-2 sm:grid-cols-3"
-                  >
-                    {FORMATION_OPTIONS.map((option) => {
-                      const selected = formationStatus === option.value
-                      return (
-                        <button
-                          key={option.value}
-                          type="button"
-                          role="radio"
-                          aria-checked={selected}
-                          onClick={() => {
-                            setFormationStatus(option.value)
-                            saveDraft({ formationStatus: option.value })
-                          }}
+              <div className="grid gap-2">
+                <Label>Formation status</Label>
+                <div
+                  role="radiogroup"
+                  aria-label="Formation status"
+                  className="grid gap-2 sm:grid-cols-3"
+                >
+                  {FORMATION_OPTIONS.map((option) => {
+                    const selected = formationStatus === option.value
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() => {
+                          setFormationStatus(option.value)
+                          saveDraft({ formationStatus: option.value })
+                        }}
+                        className={cn(
+                          "flex flex-col gap-2 rounded-2xl border p-3 text-left transition",
+                          selected
+                            ? "border-primary/60 bg-primary/5"
+                            : "border-border/70 bg-background/60 hover:bg-background"
+                        )}
+                      >
+                        <span
                           className={cn(
-                            "flex flex-col gap-2 rounded-2xl border p-3 text-left transition",
+                            "flex h-5 w-5 items-center justify-center rounded-full border",
                             selected
-                              ? "border-primary/60 bg-primary/5"
-                              : "border-border/70 bg-background/60 hover:bg-background"
+                              ? "border-primary bg-primary text-primary-foreground"
+                              : "border-border text-transparent"
                           )}
+                          aria-hidden
                         >
-                          <span
-                            className={cn(
-                              "flex h-5 w-5 items-center justify-center rounded-full border",
-                              selected
-                                ? "border-primary bg-primary text-primary-foreground"
-                                : "border-border text-transparent"
-                            )}
-                            aria-hidden
-                          >
-                            <CheckIcon className="h-3 w-3" />
+                          <CheckIcon className="h-3 w-3" />
+                        </span>
+                        <span className="w-full">
+                          <span className="text-foreground block text-sm font-medium">
+                            {option.label}
                           </span>
-                          <span className="w-full">
-                            <span className="text-foreground block text-sm font-medium">
-                              {option.label}
-                            </span>
-                            <span className="text-muted-foreground mt-0.5 block text-xs">
-                              {option.description}
-                            </span>
+                          <span className="text-muted-foreground mt-0.5 block text-xs">
+                            {option.description}
                           </span>
-                        </button>
-                      )
-                    })}
-                  </div>
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
-            ) : null}
+            </div>
+          ) : null}
 
-            {step === 1 ? (
-              <div className="space-y-5">
-                <div className="border-border/70 bg-background/60 flex flex-col items-center gap-3 rounded-2xl border p-4">
-                  <div className="border-border bg-card relative size-16 overflow-hidden rounded-full border">
-                    {avatarPreview ? (
-                      <Image
-                        src={avatarPreview}
-                        alt="Avatar preview"
-                        width={64}
-                        height={64}
-                        className="h-full w-full object-cover"
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="text-muted-foreground flex h-full w-full items-center justify-center text-sm font-semibold">
-                        CH
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-muted-foreground text-xs">
-                    Upload a profile picture (optional)
-                  </div>
-                  <Input
-                    id="avatar"
-                    name="avatar"
-                    type="file"
-                    accept="image/*"
-                    className="max-w-xs"
-                    onChange={(ev) => {
-                      const file = ev.currentTarget.files?.[0]
-                      if (!file) return
-                      const url = URL.createObjectURL(file)
-                      setRawImageUrl(url)
-                      setCrop({ x: 0, y: 0 })
-                      setZoom(1)
-                      setCroppedArea(null)
-                      setCropOpen(true)
-                    }}
-                  />
+          {step === 1 ? (
+            <div className="space-y-5">
+              <div className="border-border/70 bg-background/60 flex flex-col items-center gap-3 rounded-2xl border p-4">
+                <div className="border-border bg-card relative size-16 overflow-hidden rounded-full border">
                   {avatarPreview ? (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      disabled={submitting}
-                      onClick={removeAvatar}
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <Trash2Icon className="h-4 w-4" aria-hidden />
-                      Remove photo
-                    </Button>
+                    <Image
+                      src={avatarPreview}
+                      alt="Avatar preview"
+                      width={64}
+                      height={64}
+                      className="h-full w-full object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="text-muted-foreground flex h-full w-full items-center justify-center text-sm font-semibold">
+                      CH
+                    </div>
+                  )}
+                </div>
+                <div className="text-muted-foreground text-xs">
+                  Upload a profile picture (optional)
+                </div>
+                <Input
+                  id="avatar"
+                  name="avatar"
+                  type="file"
+                  accept="image/*"
+                  className="max-w-xs"
+                  onChange={(ev) => {
+                    const file = ev.currentTarget.files?.[0]
+                    if (!file) return
+                    const url = URL.createObjectURL(file)
+                    setRawImageUrl(url)
+                    setCrop({ x: 0, y: 0 })
+                    setZoom(1)
+                    setCroppedArea(null)
+                    setCropOpen(true)
+                  }}
+                />
+                {avatarPreview ? (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={submitting}
+                    onClick={removeAvatar}
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    <Trash2Icon className="h-4 w-4" aria-hidden />
+                    Remove photo
+                  </Button>
+                ) : null}
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="firstName">First name</Label>
+                  <Input
+                    id="firstName"
+                    name="firstName"
+                    aria-invalid={Boolean(errors.firstName)}
+                  />
+                  {errors.firstName ? (
+                    <p className="text-destructive text-xs">
+                      {errors.firstName}
+                    </p>
                   ) : null}
                 </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="grid gap-2">
-                    <Label htmlFor="firstName">First name</Label>
-                    <Input
-                      id="firstName"
-                      name="firstName"
-                      aria-invalid={Boolean(errors.firstName)}
-                    />
-                    {errors.firstName ? (
-                      <p className="text-destructive text-xs">
-                        {errors.firstName}
-                      </p>
-                    ) : null}
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="lastName">Last name</Label>
-                    <Input
-                      id="lastName"
-                      name="lastName"
-                      aria-invalid={Boolean(errors.lastName)}
-                    />
-                    {errors.lastName ? (
-                      <p className="text-destructive text-xs">
-                        {errors.lastName}
-                      </p>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      defaultValue={defaultEmail ?? undefined}
-                      placeholder="you@example.com"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="phone">Phone (optional)</Label>
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      placeholder="(555) 555-5555"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="grid gap-2">
-                    <Label htmlFor="title">Title (optional)</Label>
-                    <Input
-                      id="title"
-                      name="title"
-                      placeholder="Founder, Executive Director, etc."
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="linkedin">LinkedIn (optional)</Label>
-                    <Input
-                      id="linkedin"
-                      name="linkedin"
-                      placeholder="https://linkedin.com/in/…"
-                    />
-                  </div>
-                </div>
-
-                <div className="border-border/70 bg-background/60 space-y-3 rounded-2xl border p-4">
-                  <label className="flex items-start gap-3 text-sm">
-                    <input
-                      type="checkbox"
-                      name="optInUpdates"
-                      defaultChecked
-                      className="mt-1 h-4 w-4"
-                    />
-                    <span className="space-y-0.5">
-                      <span className="text-foreground block font-medium">
-                        Product updates
-                      </span>
-                      <span className="text-muted-foreground block text-xs">
-                        Tips, release notes, and announcements.
-                      </span>
-                    </span>
-                  </label>
-                  <label className="flex items-start gap-3 text-sm">
-                    <input
-                      type="checkbox"
-                      name="newsletterOptIn"
-                      defaultChecked
-                      className="mt-1 h-4 w-4"
-                    />
-                    <span className="space-y-0.5">
-                      <span className="text-foreground block font-medium">
-                        Newsletter
-                      </span>
-                      <span className="text-muted-foreground block text-xs">
-                        Curated learning resources and community updates.
-                      </span>
-                    </span>
-                  </label>
-                  <div className="border-border/70 bg-muted/40 text-muted-foreground rounded-xl border px-3 py-2 text-xs">
-                    Two‑factor authentication: we’ll prompt you to enable it
-                    from Account settings after launch.
-                  </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="lastName">Last name</Label>
+                  <Input
+                    id="lastName"
+                    name="lastName"
+                    aria-invalid={Boolean(errors.lastName)}
+                  />
+                  {errors.lastName ? (
+                    <p className="text-destructive text-xs">
+                      {errors.lastName}
+                    </p>
+                  ) : null}
                 </div>
               </div>
-            ) : null}
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    defaultValue={defaultEmail ?? undefined}
+                    placeholder="you@example.com"
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="phone">Phone (optional)</Label>
+                  <Input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    placeholder="(555) 555-5555"
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="title">Title (optional)</Label>
+                  <Input
+                    id="title"
+                    name="title"
+                    placeholder="Founder, Executive Director, etc."
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="linkedin">LinkedIn (optional)</Label>
+                  <Input
+                    id="linkedin"
+                    name="linkedin"
+                    placeholder="https://linkedin.com/in/…"
+                  />
+                </div>
+              </div>
+
+              <div className="border-border/70 bg-background/60 space-y-3 rounded-2xl border p-4">
+                <label className="flex items-start gap-3 text-sm">
+                  <input
+                    type="checkbox"
+                    name="optInUpdates"
+                    defaultChecked
+                    className="mt-1 h-4 w-4"
+                  />
+                  <span className="space-y-0.5">
+                    <span className="text-foreground block font-medium">
+                      Product updates
+                    </span>
+                    <span className="text-muted-foreground block text-xs">
+                      Tips, release notes, and announcements.
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 text-sm">
+                  <input
+                    type="checkbox"
+                    name="newsletterOptIn"
+                    defaultChecked
+                    className="mt-1 h-4 w-4"
+                  />
+                  <span className="space-y-0.5">
+                    <span className="text-foreground block font-medium">
+                      Newsletter
+                    </span>
+                    <span className="text-muted-foreground block text-xs">
+                      Curated learning resources and community updates.
+                    </span>
+                  </span>
+                </label>
+                <div className="border-border/70 bg-muted/40 text-muted-foreground rounded-xl border px-3 py-2 text-xs">
+                  Two‑factor authentication: we’ll prompt you to enable it
+                  from Account settings after launch.
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="border-border/70 bg-background/40 flex flex-wrap items-center justify-between gap-3 border-t px-6 py-4">
+          <div className="flex items-center gap-2">
+            {step > 0 ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={prev}
+                disabled={submitting}
+              >
+                Back
+              </Button>
+            ) : (
+              <span className="text-muted-foreground text-xs">
+                You’ll be able to change this later.
+              </span>
+            )}
           </div>
 
-          <div className="border-border/70 bg-background/40 flex flex-wrap items-center justify-between gap-3 border-t px-6 py-4">
-            <div className="flex items-center gap-2">
-              {step > 0 ? (
+          <div className="flex items-center gap-2">
+            <Button
+              type={step === STEPS.length - 1 ? "submit" : "button"}
+              onClick={step === STEPS.length - 1 ? undefined : next}
+              disabled={
+                submitting || (step === 0 && slugStatus !== "available")
+              }
+              className={cn(step === STEPS.length - 1 ? "gap-2" : "gap-2")}
+            >
+              {step === STEPS.length - 1 ? (
+                <>
+                  Finish
+                  <ArrowRightIcon className="h-4 w-4" aria-hidden />
+                </>
+              ) : (
+                <>
+                  Continue
+                  <ArrowRightIcon className="h-4 w-4" aria-hidden />
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+      </form>
+
+      <Dialog open={cropOpen} onOpenChange={setCropOpen}>
+        <DialogContent className="w-[min(720px,92%)] overflow-hidden rounded-2xl p-0 sm:p-0">
+          <div className="space-y-0">
+            <div className="border-b px-6 py-4">
+              <DialogTitle asChild>
+                <h3 className="text-lg font-semibold">Adjust your photo</h3>
+              </DialogTitle>
+              <DialogDescription asChild>
+                <p className="text-muted-foreground mt-1 text-sm">
+                  Zoom and position the image, then apply.
+                </p>
+              </DialogDescription>
+            </div>
+            <div className="relative h-[320px] w-full bg-black/5">
+              {rawImageUrl ? (
+                <Cropper
+                  image={rawImageUrl}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={1}
+                  cropShape="round"
+                  showGrid={false}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={(_, area) => setCroppedArea(area)}
+                />
+              ) : null}
+            </div>
+            <div className="flex items-center justify-between border-t px-6 py-4">
+              <input
+                type="range"
+                min={1}
+                max={3}
+                step={0.05}
+                value={zoom}
+                onChange={(event) =>
+                  setZoom(Number(event.currentTarget.value))
+                }
+                className="accent-primary h-1 w-40"
+              />
+              <div className="flex items-center gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={prev}
-                  disabled={submitting}
+                  onClick={() => setCropOpen(false)}
                 >
-                  Back
+                  Cancel
                 </Button>
-              ) : (
-                <span className="text-muted-foreground text-xs">
-                  You’ll be able to change this later.
-                </span>
-              )}
-            </div>
+                <Button
+                  type="button"
+                  onClick={async () => {
+                    if (rawImageUrl && croppedArea) {
+                      const blob = await getCroppedBlob(
+                        rawImageUrl,
+                        croppedArea
+                      )
+                      if (blob) {
+                        const url = URL.createObjectURL(blob)
+                        setAvatarPreview(url)
+                        saveDraft({ avatar: url })
 
-            <div className="flex items-center gap-2">
-              <Button
-                type={step === STEPS.length - 1 ? "submit" : "button"}
-                onClick={step === STEPS.length - 1 ? undefined : next}
-                disabled={
-                  submitting || (step === 0 && slugStatus !== "available")
-                }
-                className={cn(step === STEPS.length - 1 ? "gap-2" : "gap-2")}
-              >
-                {step === STEPS.length - 1 ? (
-                  <>
-                    Finish
-                    <ArrowRightIcon className="h-4 w-4" aria-hidden />
-                  </>
-                ) : (
-                  <>
-                    Continue
-                    <ArrowRightIcon className="h-4 w-4" aria-hidden />
-                  </>
-                )}
-              </Button>
-            </div>
-          </div>
-        </form>
-
-        <Dialog open={cropOpen} onOpenChange={setCropOpen}>
-          <DialogContent className="w-[min(720px,92%)] overflow-hidden rounded-2xl p-0 sm:p-0">
-            <div className="space-y-0">
-              <div className="border-b px-6 py-4">
-                <DialogTitle asChild>
-                  <h3 className="text-lg font-semibold">Adjust your photo</h3>
-                </DialogTitle>
-                <DialogDescription asChild>
-                  <p className="text-muted-foreground mt-1 text-sm">
-                    Zoom and position the image, then apply.
-                  </p>
-                </DialogDescription>
-              </div>
-              <div className="relative h-[320px] w-full bg-black/5">
-                {rawImageUrl ? (
-                  <Cropper
-                    image={rawImageUrl}
-                    crop={crop}
-                    zoom={zoom}
-                    aspect={1}
-                    cropShape="round"
-                    showGrid={false}
-                    onCropChange={setCrop}
-                    onZoomChange={setZoom}
-                    onCropComplete={(_, area) => setCroppedArea(area)}
-                  />
-                ) : null}
-              </div>
-              <div className="flex items-center justify-between border-t px-6 py-4">
-                <input
-                  type="range"
-                  min={1}
-                  max={3}
-                  step={0.05}
-                  value={zoom}
-                  onChange={(event) =>
-                    setZoom(Number(event.currentTarget.value))
-                  }
-                  className="accent-primary h-1 w-40"
-                />
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setCropOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="button"
-                    onClick={async () => {
-                      if (rawImageUrl && croppedArea) {
-                        const blob = await getCroppedBlob(
-                          rawImageUrl,
-                          croppedArea
-                        )
-                        if (blob) {
-                          const url = URL.createObjectURL(blob)
-                          setAvatarPreview(url)
-                          saveDraft({ avatar: url })
-
-                          const file = new File([blob], "avatar.png", {
-                            type: blob.type || "image/png",
-                          })
-                          const input = formRef.current?.querySelector(
-                            'input[name="avatar"]'
-                          ) as HTMLInputElement | null
-                          if (input) {
-                            const transfer = new DataTransfer()
-                            transfer.items.add(file)
-                            input.files = transfer.files
-                          }
+                        const file = new File([blob], "avatar.png", {
+                          type: blob.type || "image/png",
+                        })
+                        const input = formRef.current?.querySelector(
+                          'input[name="avatar"]'
+                        ) as HTMLInputElement | null
+                        if (input) {
+                          const transfer = new DataTransfer()
+                          transfer.items.add(file)
+                          input.files = transfer.files
                         }
                       }
-                      setCropOpen(false)
-                    }}
-                  >
-                    Apply
-                  </Button>
-                </div>
+                    }
+                    setCropOpen(false)
+                  }}
+                >
+                  Apply
+                </Button>
               </div>
             </div>
-          </DialogContent>
-        </Dialog>
-      </DialogContent>
-    </Dialog>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+
+  return (
+    isInline ? (
+      <div className="mx-auto w-full max-w-4xl">
+        <section className="border-border bg-card/80 max-h-[92vh] overflow-hidden rounded-3xl border p-0 shadow-2xl backdrop-blur">
+          {content}
+        </section>
+      </div>
+    ) : (
+      <Dialog open={open}>
+        <DialogContent className="border-border bg-card/80 max-h-[92vh] w-[min(720px,92%)] overflow-hidden rounded-3xl border p-0 shadow-2xl backdrop-blur">
+          {content}
+        </DialogContent>
+      </Dialog>
+    )
   )
 }
 

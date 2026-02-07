@@ -11,6 +11,7 @@ import {
 } from "@/components/organization/org-profile-card/shared"
 import type { CompanyViewProps } from "./types"
 import { stripHtml } from "@/lib/markdown/convert"
+import { cn } from "@/lib/utils"
 
 const FORMATION_STATUS_LABELS: Record<string, string> = {
   pre_501c3: "Pre-501(c)(3)",
@@ -21,25 +22,30 @@ const FORMATION_STATUS_LABELS: Record<string, string> = {
 export function IdentityPreview({ company }: CompanyViewProps) {
   const formationLabel =
     typeof company.formationStatus === "string" ? FORMATION_STATUS_LABELS[company.formationStatus] : ""
+  const hasDescription = typeof company.description === "string" && company.description.trim().length > 0
+  const hasEin = typeof company.ein === "string" && company.ein.trim().length > 0
+  const showFormation =
+    Boolean(formationLabel) &&
+    (hasDescription || hasEin || company.formationStatus === "approved" || company.formationStatus === "pre_501c3")
 
-  if (!([company.description, company.ein, formationLabel].some((value) => typeof value === "string" && value.trim()))) {
+  if (!(hasDescription || hasEin || showFormation)) {
     return null
   }
 
   return (
     <FormRow title="Identity">
       <div className="grid gap-4 md:grid-cols-2">
-        {typeof company.description === "string" && company.description.trim() ? (
+        {hasDescription ? (
           <ProfileField label="Description">
             <FieldText text={company.description} multiline />
           </ProfileField>
         ) : null}
-        {typeof company.ein === "string" && company.ein.trim() ? (
+        {hasEin ? (
           <ProfileField label="EIN">
             <FieldText text={company.ein} />
           </ProfileField>
         ) : null}
-        {formationLabel ? (
+        {showFormation ? (
           <ProfileField label="Formation status">
             <FieldText text={formationLabel} />
           </ProfileField>
@@ -212,21 +218,33 @@ export function BrandKitPreview({ company }: CompanyViewProps) {
 
 export function ViewModeSections(props: CompanyViewProps) {
   const sections = [
-    <IdentityPreview {...props} key="identity" />,
-    <ContactPreview {...props} key="contact" />,
-    <AddressPreview {...props} key="address" />,
-    <StoryPreview {...props} key="story" />,
-    <WebsitePreview {...props} key="website" />,
-    <NewsletterPreview {...props} key="newsletter" />,
-    <SocialPreview {...props} key="social" />,
-    <BrandKitPreview {...props} key="brand-kit" />,
-  ].filter(Boolean)
+    { id: "identity", node: IdentityPreview(props) },
+    { id: "contact", node: ContactPreview(props) },
+    { id: "address", node: AddressPreview(props) },
+    { id: "story", node: StoryPreview(props) },
+    { id: "website", node: WebsitePreview(props) },
+    { id: "newsletter", node: NewsletterPreview(props) },
+    { id: "social", node: SocialPreview(props) },
+    { id: "brand-kit", node: BrandKitPreview(props) },
+  ].filter((section) => Boolean(section.node))
+
+  if (sections.length === 0) {
+    return (
+      <div className="mx-auto flex min-h-[220px] w-full max-w-3xl items-center justify-center">
+        <div className="w-full rounded-xl border border-dashed border-border/60 bg-muted/20 px-6 py-8 text-center text-sm text-muted-foreground">
+          No organization details yet. Add company information to populate this section.
+        </div>
+      </div>
+    )
+  }
+
+  const hasIdentity = sections.some((section) => section.id === "identity")
 
   return (
-    <div className="divide-y divide-border/60">
+    <div className={cn("mx-auto w-full max-w-4xl", hasIdentity ? "divide-y divide-border/60" : "space-y-6")}>
       {sections.map((section, index) => (
-        <div key={index} className="py-6 first:pt-0 last:pb-0">
-          {section}
+        <div key={section.id} className={cn("py-6", index === 0 && "pt-0", index === sections.length - 1 && "pb-0")}>
+          {section.node}
         </div>
       ))}
     </div>

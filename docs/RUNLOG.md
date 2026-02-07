@@ -2,6 +2,163 @@
 
 Purpose: Track changes we’re making outside the formal PR stepper.
 
+## 2026-02-07 — Codex session (demo-seed realism + fixture guardrails)
+
+- Executed targeted full-account seed against staging Supabase for `caleb@bandto.com` with mixed progress and coaching variant (`pnpm seed:full-account --email caleb@bandto.com --variant with_coaching --progress mixed`), after dry-run fixture verification (`org_people_seeded: 161`).
+- Seed run result: existing user updated (`created_user: no`) and account/org fixtures refreshed with deterministic launch dataset (`user_id: f59693c3-f357-4811-9348-dd93559d3c7e`, `public_slug: launch-qa-account-f59693`, `accelerator_variant: with_coaching`).
+- Seed correction: executed targeted full-account seed for `caleb.hamernick@gmail.com` (existing user, no password rotation) with mixed progress/coaching variant (`pnpm seed:full-account --email caleb.hamernick@gmail.com --variant with_coaching --progress mixed`), resulting in refreshed launch dataset (`user_id: 807cda53-4787-4e9a-896c-2c623a367327`, `public_slug: launch-qa-account-807cda`, `created_user: no`).
+- Seed script safety fix: existing-user runs no longer force password updates unless `--password` is explicitly provided; new-user path still generates a strong temporary password when omitted (`scripts/seed-full-account.mjs`).
+- Seed script: upgraded full-account fixture consistency checks with roadmap status counts, required-core content depth checks, and stricter document shape validation (`scripts/seed-full-account.mjs`).
+- Seed script: made profile seeding idempotent for existing users (role/headline/timezone/email/full name now upserted, not create-only) and propagated timezone to seeded member profiles (`scripts/seed-full-account.mjs`).
+- Seed script: added idempotent onboarding response write (update-or-insert) and organization access settings seeding (`admins_can_invite`, `staff_can_manage_calendar`) with backward-compatible table-missing handling (`scripts/seed-full-account.mjs`).
+- Seed script: fixed calendar seed rows to include real duration windows instead of zero-length start/end timestamps (`scripts/seed-full-account.mjs`).
+- Tests: extended dry-run acceptance coverage to assert roadmap status reporting in the fixture output (`tests/acceptance/seed-full-account-dry-run.test.ts`).
+- Docs: marked incremental queue item complete for this pass (`docs/briefs/accelerator-launch-active-worklog.md`).
+- Docs: expanded readiness/journey spec with an operational evidence matrix, journey gap analysis, connection map, game-theory levers, and v1 completion checklist (`docs/briefs/accelerator-readiness-criteria-and-journey.md`, `docs/organize.md`, `docs/briefs/INDEX.md`).
+- UX: removed residual `Locked` rendering from accelerator/sidebar progression surfaces by normalizing to `Not started` while preserving entitlement redirects at route level (`src/components/app-sidebar/classes-section.tsx`, `src/components/accelerator/accelerator-next-module-card.tsx`).
+- WS-D QA pass: expanded tier-path acceptance coverage for checkout + onboarding:
+  - pricing fallback routing for org/accelerator/elective modes (`tests/acceptance/pricing.test.ts`);
+  - organization/elective checkout Stripe metadata assertions (`tests/acceptance/pricing-accelerator-checkout-metadata.test.ts`);
+  - onboarding gate assertions for both completed and incomplete states (`tests/acceptance/onboarding.test.ts`).
+- WS-D QA pass (continued): added route-level Stripe webhook acceptance coverage for lifecycle-critical scenarios (`tests/acceptance/stripe-webhook-route.test.ts`):
+  - early monthly cancellation does not roll to Organization plan;
+  - completed-installment cancellation does roll to Organization plan;
+  - one-time accelerator purchase does not create duplicate Organization subscription when one is already active.
+- WS-D QA pass (continued): expanded webhook route coverage (`tests/acceptance/stripe-webhook-route.test.ts`) for:
+  - duplicate already-processed event idempotency short-circuit path;
+  - `invoice.paid` monthly installment progression and `cancel_at_period_end` toggle at installment limit.
+- WS-D QA pass (continued): added additional webhook edge-path coverage (`tests/acceptance/stripe-webhook-route.test.ts`) for:
+  - duplicate event retry behavior when stored payload is still `processed=false`;
+  - non-cycle invoice no-op path (no installment progression side effects).
+- WS-D QA pass (continued): expanded webhook boundary/error coverage (`tests/acceptance/stripe-webhook-route.test.ts`) for:
+  - missing stripe signature returns `400`;
+  - non-duplicate idempotency lock failure returns `500 processing_failed`.
+- WS-D QA pass (continued): added `customer.subscription.updated` transition assertions (`tests/acceptance/stripe-webhook-route.test.ts`):
+  - `status=canceled` + completed installments triggers Organization rollover;
+  - `status=active` does not trigger rollover.
+- UI parity: updated accelerator board calendar layout/surface spacing to better match `/my-organization` calendar card rhythm (rounded container, internal panel cards, and consistent padding tokens) without changing behavior (`src/components/roadmap/roadmap-calendar.tsx`).
+- QA hygiene: silenced expected webhook error-path console output in acceptance tests using a scoped `console.error` spy, keeping test logs clean while preserving behavior assertions (`tests/acceptance/stripe-webhook-route.test.ts`).
+- WS-D QA pass (continued): added webhook subscription-mode checkout assertion (`checkout.session.completed` with `mode=subscription` upserts local subscription row with expected metadata) in `tests/acceptance/stripe-webhook-route.test.ts`.
+- WS-D QA pass (continued): added additional webhook edge assertions in `tests/acceptance/stripe-webhook-route.test.ts`:
+  - `customer.subscription.updated` with `status=past_due` does not roll to Organization plan;
+  - one-time accelerator checkout without `customer` does not create Organization subscription.
+- WS-D execution prep: added a concrete staging/pre-prod live verification runbook for billing lifecycle scenarios (`docs/briefs/accelerator-billing-lifecycle-qa-matrix.md`), including setup, scenario order, expected artifacts, and sign-off steps.
+- Seed hardening: refactored full-account seed script to use centralized deterministic builders for org people/profile and added required org-profile key/shape validation to dry-run fixture checks (`scripts/seed-full-account.mjs`).
+- Type hardening: removed `locked` from accelerator module progress source typing and normalized progress parsing to `not_started|in_progress|completed`, then cleaned residual lock branches in module card surfaces (`src/lib/accelerator/progress.ts`, `src/app/(dashboard)/my-organization/page.tsx`, `src/components/roadmap/roadmap-rail-card.tsx`, `src/components/accelerator/start-building-pager.tsx`, `src/components/accelerator/accelerator-next-module-card.tsx`).
+- WS-D QA pass (continued): extended checkout metadata assertions for accelerator monthly `without_coaching` variant (`tests/acceptance/pricing-accelerator-checkout-metadata.test.ts`).
+- Docs: updated QA matrix and active launch worklog to reflect the new coverage increment (`docs/briefs/accelerator-billing-lifecycle-qa-matrix.md`, `docs/briefs/accelerator-launch-active-worklog.md`).
+- Docs: updated WS-D status to in-progress with clear remaining scope (live Stripe/Supabase execution pass) in the active launch worklog (`docs/briefs/accelerator-launch-active-worklog.md`).
+- Ordering hardening: refined accelerator module ordering logic so known elective add-ons cannot be promoted by legacy elective-class index fallback, while preserving Formation-first fallback behavior for legacy unlabeled modules (`src/lib/accelerator/module-order.ts`).
+- Tests: extended ordering acceptance coverage with reversed-legacy index scenario assertions to lock Formation-first behavior ahead of paid electives (`tests/acceptance/accelerator-module-order.test.ts`).
+- Module UX: increased accelerator module rich-text assignment editor minimum height to match roadmap-depth expectations for long-form responses (`src/components/training/module-detail/assignment-form.tsx`).
+- Org chart UX: added explicit interaction mode toggle (default `Pan`, optional `Move nodes`) and expanded canvas translate extent bounds so large org charts remain pannable and easier to reposition (`src/components/people/org-chart-canvas.tsx`).
+- Pricing copy pass: refined Accelerator billing switch language (`Pay once` / `Pay monthly`) and updated included-feature copy to clearly describe Pro coaching flow (4 included sessions, then discounted link) and platform continuation terms across both option cards and the feature comparison table (`src/components/public/accelerator-option-card.tsx`, `src/components/public/pricing-surface.tsx`).
+- Org chart stability pass: removed the `Pan` / `Move nodes` mode switch and disabled node dragging to avoid heavy runtime state churn; chart now uses deterministic hierarchy layout (reports-to relationships globally ordered), with explicit recenter control and optimized pan/zoom behavior (`src/components/people/org-chart-canvas.tsx`).
+- Org chart overflow handling: added a safe canvas cap (`MAX_CANVAS_NODES=80`) and introduced below-canvas overflow cards grouped by category when records exceed chart density limits, so non-fit people are still cleanly organized and visible (`src/components/people/org-chart-canvas.tsx`).
+- Validation:
+  - `pnpm lint` (pass)
+  - `pnpm lint src/components/app-sidebar/classes-section.tsx src/components/accelerator/accelerator-next-module-card.tsx` (pass)
+  - `pnpm lint tests/acceptance/pricing.test.ts tests/acceptance/pricing-accelerator-checkout-metadata.test.ts tests/acceptance/onboarding.test.ts` (pass)
+  - `pnpm test:acceptance` (pass, 48 passed / 1 skipped)
+  - `pnpm test:acceptance tests/acceptance/pricing.test.ts tests/acceptance/pricing-accelerator-checkout-metadata.test.ts tests/acceptance/onboarding.test.ts` (pass, 10 passed)
+  - `pnpm lint tests/acceptance/stripe-webhook-route.test.ts` (pass)
+  - `pnpm test:acceptance tests/acceptance/stripe-webhook-route.test.ts` (pass, 3 passed)
+  - `pnpm lint tests/acceptance/stripe-webhook-route.test.ts` (pass)
+  - `pnpm test:acceptance tests/acceptance/stripe-webhook-route.test.ts` (pass, 5 passed)
+  - `pnpm lint tests/acceptance/stripe-webhook-route.test.ts` (pass)
+  - `pnpm test:acceptance tests/acceptance/stripe-webhook-route.test.ts` (pass, 7 passed)
+  - `pnpm lint tests/acceptance/stripe-webhook-route.test.ts` (pass)
+  - `pnpm test:acceptance tests/acceptance/stripe-webhook-route.test.ts` (pass, 9 passed)
+  - `pnpm lint tests/acceptance/stripe-webhook-route.test.ts` (pass)
+  - `pnpm test:acceptance tests/acceptance/stripe-webhook-route.test.ts` (pass, 11 passed)
+  - `pnpm test:acceptance` (pass, 53 passed / 1 skipped)
+  - `pnpm test:acceptance` (pass, 56 passed / 1 skipped)
+  - `pnpm test:acceptance` (pass, 58 passed / 1 skipped)
+  - `pnpm test:acceptance` (pass, 60 passed / 1 skipped)
+  - `pnpm test:acceptance` (pass, 62 passed / 1 skipped)
+  - `pnpm test:acceptance` (pass, 64 passed / 1 skipped)
+  - `pnpm lint` (pass)
+  - `pnpm lint src/components/roadmap/roadmap-calendar.tsx` (pass)
+  - `pnpm test:acceptance` (pass, 64 passed / 1 skipped)
+  - `pnpm lint tests/acceptance/stripe-webhook-route.test.ts` (pass)
+  - `pnpm test:acceptance tests/acceptance/stripe-webhook-route.test.ts` (pass, 11 passed)
+  - `pnpm test:acceptance` (pass, 64 passed / 1 skipped)
+  - `pnpm lint tests/acceptance/stripe-webhook-route.test.ts` (pass)
+  - `pnpm test:acceptance tests/acceptance/stripe-webhook-route.test.ts` (pass, 12 passed)
+  - `pnpm test:acceptance` (pass, 65 passed / 1 skipped)
+  - `pnpm lint tests/acceptance/stripe-webhook-route.test.ts` (pass)
+  - `pnpm test:acceptance tests/acceptance/stripe-webhook-route.test.ts` (pass, 14 passed)
+  - `pnpm test:acceptance` (pass, 67 passed / 1 skipped)
+  - `pnpm lint scripts/seed-full-account.mjs tests/acceptance/seed-full-account-dry-run.test.ts` (pass)
+  - `pnpm test:acceptance tests/acceptance/seed-full-account-dry-run.test.ts` (pass)
+  - `pnpm seed:validate` (pass)
+  - `pnpm test:acceptance` (pass, 67 passed / 1 skipped)
+  - `pnpm lint src/lib/accelerator/progress.ts 'src/app/(dashboard)/my-organization/page.tsx' src/components/roadmap/roadmap-rail-card.tsx src/components/accelerator/start-building-pager.tsx src/components/accelerator/accelerator-next-module-card.tsx` (pass)
+  - `pnpm test:acceptance` (pass, 67 passed / 1 skipped)
+  - `pnpm lint` (pass)
+  - `pnpm test:snapshots` (pass, snapshots match)
+  - `pnpm lint tests/acceptance/pricing-accelerator-checkout-metadata.test.ts` (pass)
+  - `pnpm test:acceptance tests/acceptance/pricing-accelerator-checkout-metadata.test.ts` (pass, 5 passed)
+  - `pnpm lint src/lib/accelerator/module-order.ts tests/acceptance/accelerator-module-order.test.ts src/components/training/module-detail/assignment-form.tsx` (pass)
+  - `pnpm test:acceptance tests/acceptance/accelerator-module-order.test.ts` (pass, 4 passed)
+  - `pnpm lint src/components/people/org-chart-canvas.tsx` (pass)
+  - `pnpm lint src/components/public/accelerator-option-card.tsx src/components/public/pricing-surface.tsx` (pass)
+  - `pnpm test:acceptance tests/acceptance/pricing.test.ts tests/acceptance/pricing-accelerator-checkout-metadata.test.ts` (pass, 9 passed)
+  - `pnpm lint src/components/people/org-chart-canvas.tsx src/components/people/org-chart-canvas-lite.tsx 'src/app/(dashboard)/people/page.tsx'` (pass)
+  - `pnpm test:acceptance` (pass, 68 passed / 1 skipped)
+  - `pnpm test:acceptance tests/acceptance/module-progress.test.ts` (pass)
+  - `pnpm test:snapshots` (pass, snapshots match)
+  - `pnpm test:rls` (fails in this environment: DNS `ENOTFOUND vswzhuwjtgzrkxknrmxu.supabase.co`)
+
+## 2026-02-03 — Codex session (react-grab performance setup)
+
+- React-grab now loads only when explicitly enabled in development via `NEXT_PUBLIC_ENABLE_REACT_GRAB=1` (disabled by default), reducing baseline dev sluggishness (`src/app/layout.tsx`).
+- Updated script loading to pinned CDN versions with non-blocking strategies (`afterInteractive` + `lazyOnload`) instead of always loading before interactive (`src/app/layout.tsx`).
+- Updated npm scripts so React-grab mode no longer depends on the failing `npx @react-grab/opencode` install path: `npm run dev:opencode` and `npm run dev:grab` both start dev with the env flag set (`package.json`).
+- Moved react-grab injection into a client loader that skips iframe/embed contexts (`window.top !== window.self` and `?embed=1`) so canvas pages with embedded pricing/login no longer initialize react-grab twice (`src/components/dev/react-grab-loader.tsx`, `src/app/layout.tsx`).
+- Tests: `npm run lint -- "src/app/layout.tsx"`.
+
+## 2026-02-03 — Codex session (public home canvas preview)
+
+- Refactored homepage sections into shared components so both the existing `/` home2 page and canvas preview reuse the same real content blocks (`src/components/public/home2-sections.tsx`, `src/app/(public)/home2/page.tsx`).
+- Rebuilt `/home-canvas` to use internal shell styling with one section visible at a time, animated panel transitions, and off-frame sections hidden (`src/components/public/home-canvas-preview.tsx`).
+- Added in-canvas panels for full `/pricing` and `/login` page content via embedded same-origin previews (`src/components/public/home-canvas-preview.tsx`).
+- Sidebar section switching now uses in-canvas link targets + click handlers; removed the extra rail section label and added touch-swipe (up/down) navigation between sections (`src/components/public/home-canvas-preview.tsx`).
+- Follow-up fixes: removed top header border in the canvas inset, dropped preview-only font override, fixed section state reset bug that blocked nav switching, and added drag/swipe gesture handling through Framer Motion (`src/components/public/home-canvas-preview.tsx`).
+- Header alignment pass: matched the preview header structure to app-shell alignment (trigger + separator + title rail), and removed the uppercase eyebrow label text (`src/components/public/home-canvas-preview.tsx`).
+- Mobile header pass: forced a single-row top rail layout so trigger/title/theme controls stay horizontally aligned on small screens (`src/components/public/home-canvas-preview.tsx`).
+- Removed extra top/bottom canvas wrapper padding under the header to eliminate the visual gap between top rail and content panel (`src/components/public/home-canvas-preview.tsx`).
+- Impact section fix: disabled ScrollReveal blur animation inside canvas mode so “We help non-profits raise money.” renders fully sharp immediately (`src/components/public/home2-sections.tsx`, `src/components/public/home-canvas-preview.tsx`).
+- Gesture behavior pass: removed drag-follow movement so swipe no longer drags the canvas/top rail; section switching now stays snap-based with hidden panel transitions only (`src/components/public/home-canvas-preview.tsx`).
+- Offerings panel alignment: centered the “What we do” section block within the canvas viewport instead of anchoring it toward the top (`src/components/public/home-canvas-preview.tsx`).
+- Offerings card grid now uses the requested 3-column span pattern (hero card spans 3x2 with supporting cards in fixed row/col positions) for `Home2OfferingsSection` (`src/components/public/home2-sections.tsx`).
+- Canvas inset spacing tweak: removed left wrapper gutter and restored bottom gap below the content panel (`src/components/public/home-canvas-preview.tsx`).
+- Canvas inset spacing tweak #2: increased bottom gap to match the right-side content gutter by using the shared shell padding token (`src/components/public/home-canvas-preview.tsx`).
+- Section alignment pass: centered additional canvas panels (`process`, `news`, `team`) vertically in the viewport using a consistent `min-h-full` + centered wrapper pattern (`src/components/public/home-canvas-preview.tsx`).
+- Mobile canvas spacing pass: restored balanced left/top/right/bottom outer padding on small screens while preserving desktop-specific gutter behavior (`src/components/public/home-canvas-preview.tsx`).
+- Team carousel fix: updated `Home2PhotoStrip` to support container-centered spacers (instead of viewport-centered spacers) and enabled that mode for canvas rendering so cards appear correctly in the Team section (`src/components/public/home2-photo-strip.tsx`, `src/components/public/home2-sections.tsx`).
+- Embedded page panel simplification: removed the extra header row/card chrome in pricing/sign-in canvas views so the page content renders directly in the main canvas area (`src/components/public/home-canvas-preview.tsx`).
+- Pricing embed mode: added `?embed=1` handling to hide `PublicHeader` and tighten top spacing when rendered inside the canvas iframe; canvas pricing panel now loads `/pricing?embed=1` (`src/app/(public)/pricing/page.tsx`, `src/components/public/home-canvas-preview.tsx`).
+- Home-canvas header update: moved sign-in access into the right side of the top rail and removed the sidebar sign-in section item (`src/components/public/home-canvas-preview.tsx`).
+- Home-canvas auth entry update: sign-in button now performs a full-page navigation to `/login` (no in-canvas embedding); existing `/login` behavior still redirects signed-in users into the app (`src/components/public/home-canvas-preview.tsx`, `src/app/(auth)/login/page.tsx`).
+- Tests: `npm run lint -- "src/app/(public)/home2/page.tsx" "src/components/public/home2-sections.tsx" "src/components/public/home-canvas-preview.tsx" "src/app/(public)/home-canvas/page.tsx"`.
+
+## 2026-02-03 — Codex fix (roadmap params promise)
+
+- Roadmap section page: await route params to satisfy Next.js async params requirement (`src/app/(dashboard)/roadmap/[slug]/page.tsx`).
+- Tests: not run.
+
+## 2026-01-27 — Codex session (presentation deck)
+
+- Added an 8-slide, full-screen `/presentation` deck with keyboard + button navigation, product demo facsimiles, and a final CTA linking to the live homepage (`src/app/(public)/presentation/page.tsx`, `src/components/presentation/presentation-deck.tsx`).
+- Updated the deck to an investor-style product update with launch blockers + roadmap, removed nested card wrappers, added logo header, and integrated the Paper Design dithering shader as an isolated orb accent (`src/components/presentation/presentation-deck.tsx`).
+- Refined the intro slide to a black split layout with the orb on the right, reduced uppercase/tracking styles, and simplified the header tone (`src/components/presentation/presentation-deck.tsx`).
+- Enlarged the orb, removed its container chrome, centered the intro layout grouping, and removed the header right-side label (`src/components/presentation/presentation-deck.tsx`).
+- Increased orb size again, set shader canvas to 640×640, and tightened the intro text/orb spacing (`src/components/presentation/presentation-deck.tsx`).
+- Removed orb cropping by dropping the circular container and scaling it responsively while tightening the intro gap (`src/components/presentation/presentation-deck.tsx`).
+- Deleted the `/presentation` page and its deck component after the meeting and removed the shader dependency (`src/app/(public)/presentation/page.tsx`, `src/components/presentation/presentation-deck.tsx`, `package.json`).
+- Tests: `pnpm lint`.
+
 ## 2026-01-27 — Codex session (roadmap landing polish)
 
 - Roadmap landing: added section icon squares above each card, removed phase eyebrow labels, removed public roadmap link, and moved pagination controls above the rail; StepperRail now supports a roadmap variant with spread-out icon squares (`src/components/roadmap/roadmap-landing.tsx`, `src/components/ui/stepper-rail.tsx`).
@@ -5016,3 +5173,1417 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 
 ## 2026-01-26 — Codex fix (duplicate subtitle)
 - Suppressed duplicate module subtitles by removing subtitle rendering in the module header (`src/components/training/module-detail.tsx`).
+
+## 2026-02-03 — Codex fix (react-grab dev default)
+- React Grab loader now defaults to enabled in development unless explicitly disabled with `NEXT_PUBLIC_ENABLE_REACT_GRAB=0`; this restores `/home-canvas` behavior when running plain `npm run dev` (`src/components/dev/react-grab-loader.tsx`).
+- Validation: `npm run lint -- src/components/dev/react-grab-loader.tsx`.
+
+## 2026-02-03 — Codex copy refresh (home-canvas labels)
+- Replaced internal section labels on `/home-canvas` with marketing-forward copy for the sidebar and top rail: `Welcome`, `Why Coach House`, `What You Get`, `Latest Stories`, `Meet the Team`, `Get Started`, and `Plans & Pricing` (`src/components/public/home-canvas-preview.tsx`).
+- Validation: `npm run lint -- src/components/public/home-canvas-preview.tsx`.
+
+## 2026-02-03 — Codex UX tweak (compact labels + scroll hint)
+- Shortened `/home-canvas` section labels for cleaner marketing nav: `Welcome`, `Why Us`, `Platform`, `Stories`, `Team`, `Start`, and `Pricing` (`src/components/public/home-canvas-preview.tsx`).
+- Added a bottom-right in-canvas helper chip (`Scroll` + icon) that auto-fades and dismisses after wheel/swipe/keyboard scroll interactions (`src/components/public/home-canvas-preview.tsx`).
+- Validation: `npm run lint -- src/components/public/home-canvas-preview.tsx`.
+
+## 2026-02-03 — Codex UI tweak (sidebar nav position + pricing icon)
+- Shifted the `/home-canvas` sidebar nav button group down slightly as a group by adding top padding to `SidebarContent` (`src/components/public/home-canvas-preview.tsx`).
+- Replaced the pricing nav icon from `ReceiptText` to `CircleDollarSign` to better match pricing semantics (`src/components/public/home-canvas-preview.tsx`).
+- Validation: `npm run lint -- src/components/public/home-canvas-preview.tsx`.
+
+## 2026-02-03 — Codex fix (team photo strip clipping in canvas)
+- Added `imageFit` support to `Home2PhotoStrip` and switched the `/home-canvas` team section to `contain` so portraits are no longer cropped/clipped in the card tiles (`src/components/public/home2-photo-strip.tsx`, `src/components/public/home2-sections.tsx`).
+- Validation: `npm run lint -- src/components/public/home2-photo-strip.tsx src/components/public/home2-sections.tsx`.
+
+## 2026-02-03 — Codex nav update (sidebar sign-up CTA)
+- Added a separate lower sidebar group on `/home-canvas` with a `Sign up` CTA button (white background, black text/icon), visually separated from the main section nav (`src/components/public/home-canvas-preview.tsx`).
+- Validation: `npm run lint -- src/components/public/home-canvas-preview.tsx`.
+
+## 2026-02-03 — Codex auth + embed navigation fixes
+- Added a `FrameEscape` client utility and mounted it in auth and dashboard layouts so auth/app routes loaded inside an iframe immediately promote to top-level navigation (`src/components/navigation/frame-escape.tsx`, `src/app/(auth)/layout.tsx`, `src/app/(dashboard)/layout.tsx`).
+- Updated public header sign-in link to target top-level browsing context to avoid in-canvas auth rendering (`src/components/public/public-header.tsx`).
+- Login page layout adjusted so the Coach House logo block now sits directly above the sign-in heading/content block (`src/app/(auth)/login/page.tsx`).
+- Reverted temporary `imageFit` prop usage on team photo strip wiring (`src/components/public/home2-sections.tsx`, `src/components/public/home2-photo-strip.tsx`).
+- Validation: `npm run lint -- src/components/navigation/frame-escape.tsx src/app/(auth)/layout.tsx src/app/(dashboard)/layout.tsx src/components/public/public-header.tsx src/app/(auth)/login/page.tsx src/components/public/home2-photo-strip.tsx src/components/public/home2-sections.tsx`.
+
+## 2026-02-03 — Codex canvas auth routing update
+- Updated `/home-canvas` so `Sign in` and `Sign up` now render inside the canvas as embedded auth screens instead of navigating away (`src/components/public/home-canvas-preview.tsx`).
+- Added hidden canvas sections for `login`/`signup`, wired top-rail `Sign in` and sidebar CTA `Sign up` to switch sections in-canvas (`src/components/public/home-canvas-preview.tsx`).
+- Removed auth-layout iframe escape and restored normal public header sign-in targeting so auth can render within embedded contexts when needed (`src/app/(auth)/layout.tsx`, `src/components/public/public-header.tsx`).
+- Validation: `npm run lint -- src/components/public/home-canvas-preview.tsx src/app/(auth)/layout.tsx src/components/public/public-header.tsx`.
+
+## 2026-02-06 — Codex docs refactor (AGENTS progressive disclosure)
+- Refactored `AGENTS.md` into a concise root contract (33 lines) and moved detailed guidance into `docs/agent/product-scope.md`, `docs/agent/architecture-security.md`, `docs/agent/workflow-quality.md`, and `docs/agent/ui-rubric.md`.
+- Preserved all critical requirements while removing duplication and making navigation explicit via links.
+- Validation: verified new files exist and root length is under 50 lines.
+
+## 2026-02-06 — Codex cleanup (deprecated archive + UI refactor eval)
+- Archived disconnected/legacy artifacts under `deprecated/**`: `src/app/dashboard-01-demo/**`, `components/shadcn-studio/tabs/tabs-29.tsx`, prior `docs/trashcan/**`, root `runlog.md` (moved to `deprecated/docs/runlog-legacy-2025-02.md`), and empty root artifact `coach-house-lms@0.1.0`.
+- Added `deprecated/README.md` to define archive rules and list what was moved in this pass.
+- Added UI refactor evaluation + phased unification plan at `docs/briefs/ui-unification-refactor-evaluation.md` and indexed it in `docs/briefs/INDEX.md`.
+- Normalized stale runlog references in docs to canonical `docs/RUNLOG.md` (`docs/NEXTJS_RUNBOOK.md`, `docs/organize.md`).
+
+## 2026-02-06 — Codex planning brief (accelerator launch system unification)
+- Added `docs/briefs/accelerator-launch-system-unification.md` to consolidate launch-critical system work: shell naming/rules, design-system engineering, canvas signup/onboarding, role/stage UX, `/my-organization` bento redesign, notifications coverage, module-roadmap UI bridge, and security/Next.js conformance.
+- Captured the MPF messaging/positioning/lifecycle framework inside the brief as canonical product context for implementation.
+- Indexed the new brief in `docs/briefs/INDEX.md`.
+
+## 2026-02-06 — Codex planning update (launch unification + MVP sprint)
+- Expanded `docs/briefs/accelerator-launch-system-unification.md` with missing launch workstreams: coaching entitlement UX, home-canvas content hardening (hide Team + real News links), Find map/search/filter/save MVP, and React Flow org-chart v2 runtime/performance spec.
+- Added system visualizations for onboarding, coaching entitlement routing, and module/roadmap progression spine.
+- Added `docs/briefs/accelerator-launch-mvp-sprint.md` with ordered `S01`-`S14` implementation queue, dependency sequencing, and MVP cut line.
+- Updated `docs/briefs/INDEX.md` to include the new sprint brief.
+
+## 2026-02-06 — Codex implementation pass (home-canvas launch hygiene + coaching UX)
+- Home-canvas: removed hidden-home sections from navigation source so `team` and `process` are no longer reachable in canvas nav/query routing (`src/components/public/home-canvas-preview.tsx`).
+- Public News cards: added external-link support and switched non-hosted article cards to Substack publication links, while keeping the hosted AI article internal (`src/components/public/home2-sections.tsx`).
+- Coaching UX: improved schedule success messaging by tier (`free`/`discounted`/`full`) and added post-click entitlement feedback on the accelerator schedule card (`src/hooks/use-coaching-booking.ts`, `src/components/accelerator/accelerator-schedule-card.tsx`).
+- Env template: added missing coaching booking URLs and Substack publication URL placeholders for launch setup (`.env.example`).
+- Validation: `npm run lint -- src/components/public/home-canvas-preview.tsx src/components/public/home2-sections.tsx src/hooks/use-coaching-booking.ts src/components/accelerator/accelerator-schedule-card.tsx`.
+
+## 2026-02-06 — Codex implementation pass (my-organization bento workspace shell)
+- Redesigned `/my-organization` into a launch-oriented bento workspace with six cards: profile snapshot, notifications, upcoming calendar, documents, team snapshot, and quick actions (`src/app/(dashboard)/my-organization/page.tsx`).
+- Added server-loaded previews for org-scoped notifications and upcoming internal roadmap events; surfaced doc counts from profile metadata for at-a-glance status (`src/app/(dashboard)/my-organization/page.tsx`).
+- Preserved existing full editor flow behind `?view=editor` (and automatically when `tab`/`programId` query params are present) so existing deep links and edit workflows keep working (`src/app/(dashboard)/my-organization/page.tsx`).
+- Validation: `npm run lint -- 'src/app/(dashboard)/my-organization/page.tsx'`.
+- Sprint tracking: added explicit `S01`-`S14` execution states to the MVP queue to support live launch burndown (`docs/briefs/accelerator-launch-mvp-sprint.md`).
+
+## 2026-02-06 — Codex implementation pass (shell collapse/focus stability)
+- Sidebar interaction polish: removed width/height/padding animation on sidebar menu buttons in favor of color/opacity/transform transitions to prevent icon/text squish during collapse (`src/components/ui/sidebar/layout.tsx`).
+- Focus visibility hardening: added inset focus rings on sidebar labels/buttons/actions so keyboard focus no longer clips against collapsed/overflowing rails (`src/components/ui/sidebar/layout.tsx`).
+- Right-rail motion cleanup: removed delayed width/opacity sequencing to reduce overlap/jitter when opening or closing details rail (`src/components/app-shell.tsx`).
+- Validation: `npm run lint -- src/components/ui/sidebar/layout.tsx src/components/app-shell.tsx`.
+
+## 2026-02-06 — Codex implementation pass (module notes persistence + elective rail split)
+- Module notes durability: upgraded notes persistence from debounce-only to multi-trigger saves (`onBlur`, unmount flush, page-hide keepalive) so quick navigation/refresh no longer drops recent text (`src/hooks/use-module-notes.ts`, `src/components/training/module-right-rail.tsx`).
+- Added `POST /api/modules/[id]/notes` for keepalive-safe note writes during page lifecycle transitions (`src/app/api/modules/[id]/notes/route.ts`).
+- Accelerator rail tracks: split the prior combined Formation/electives content into separate virtual tracks in the left rail. `Financial Handbook`, `Due Diligence`, and `Retention and Security` now appear under `Electives` with an add-on unlock message when access is missing (`src/components/app-sidebar/classes-section.tsx`).
+- Validation: `npm run lint -- src/components/app-sidebar/classes-section.tsx src/hooks/use-module-notes.ts src/components/training/module-right-rail.tsx src/app/api/modules/[id]/notes/route.ts`.
+
+## 2026-02-06 — Codex implementation pass (program builder v1 + 6-step brief wizard)
+- Added `programs.wizard_snapshot` JSONB persistence for structured program-builder data (`supabase/migrations/20260206183000_programs_wizard_snapshot.sql`, `src/actions/programs.ts`, `src/components/organization/org-profile-card/types.ts`, `src/app/(dashboard)/my-organization/page.tsx`).
+- Replaced the prior 3-step modal flow with a 6-step + review Program Wizard matching launch spec: Name, Type/Format, Audience/Outcomes, Pilot/Staffing, When/Where, Budget/Feasibility, and Review/Generate; includes step validation, progress indicator, create-draft local autosave, edit autosave, feasibility metrics, and copyable program brief (`src/components/programs/program-wizard.tsx`, `src/components/programs/program-wizard/schema.ts`).
+- Upgraded `/my-organization` Program Builder surface to support empty/list/manage-multiple states with a list + inspector pattern and direct edit/open controls (`src/components/organization/program-builder-dashboard-card.tsx`, `src/app/(dashboard)/my-organization/page.tsx`).
+- Type-safety cleanup for my-organization doc counts/team snapshot rendering (`src/app/(dashboard)/my-organization/page.tsx`).
+- Validation: `pnpm exec eslint src/components/programs/program-wizard.tsx src/components/programs/program-wizard/schema.ts src/components/organization/program-builder-dashboard-card.tsx src/app/(dashboard)/my-organization/page.tsx src/actions/programs.ts src/components/organization/org-profile-card/types.ts`.
+
+## 2026-02-06 — Codex implementation pass (incremental demo seeding for Program Builder)
+- Added `seedNextDemoProgramAction` to create one demo program stage per click (`Planned` -> `In progress` -> `Completed` -> `Applications Open` -> `Paused`) for the current org so states can be reviewed incrementally in `/my-organization` (`src/actions/programs.ts`).
+- Added `Seed next stage` control to Program Builder card header with toast feedback and refresh after each seed (`src/components/organization/program-builder-dashboard-card.tsx`).
+- Validation: `pnpm exec eslint src/actions/programs.ts src/components/organization/program-builder-dashboard-card.tsx`.
+
+## 2026-02-06 — Codex implementation pass (one-click full workspace demo seed)
+- Added `seedDemoWorkspaceAction` to populate launch demo data in one run for the active org/user: remaining demo programs, team members (`org_people`), notifications, internal roadmap calendar events, class enrollments, and module progress rows (`src/actions/demo-workspace.ts`).
+- Added `Seed demo workspace` control in Program Builder card header to execute full data seeding and refresh the workspace (`src/components/organization/program-builder-dashboard-card.tsx`).
+- Kept `Seed next stage` for gradual program-state demos.
+- Validation: `pnpm exec eslint src/actions/demo-workspace.ts src/components/organization/program-builder-dashboard-card.tsx`.
+
+## 2026-02-06 — Codex implementation pass (my-organization bento refinements + activity/roadmap UX)
+- Removed duplicated documents CTA patterns from dashboard surface and moved `Edit organization` to bottom-anchored action in profile card (`src/app/(dashboard)/my-organization/page.tsx`).
+- Switched notifications card to `Activity` with green activity dot and revised badge styling: unread `New` now green; read/other states use neutral light-gray/dark text styling (`src/app/(dashboard)/my-organization/page.tsx`).
+- Calendar card now includes both `Open calendar` and `Add event` actions (`/roadmap/board-calendar`) in addition to upcoming items (`src/app/(dashboard)/my-organization/page.tsx`).
+- Replaced documents KPI card with conditional `Launch roadmap` mini-card showing first three formation modules and status badges; card auto-hides when all three are completed (`src/app/(dashboard)/my-organization/page.tsx`).
+- Editor UX cleanup: when `view=editor`/tab deep links are used, page now shows editor-focused view (no bento stacked above) (`src/app/(dashboard)/my-organization/page.tsx`).
+- Program Builder card: empty state now uses shared `Empty` component style and active preview now uses existing `ProgramCard` presentation to align with prior program display language while retaining new wizard data (`src/components/organization/program-builder-dashboard-card.tsx`).
+- Validation: `pnpm exec eslint src/app/(dashboard)/my-organization/page.tsx src/components/organization/program-builder-dashboard-card.tsx`.
+
+## 2026-02-06 — Codex implementation pass (bento stretch contract + card layout rules)
+- Added an explicit bento contract for `/my-organization` with per-card span/min-height/stretch rules in code: `src/components/organization/my-organization-bento-rules.ts`.
+- Updated `/my-organization` to consume the shared rule map for card class assignment and grid sizing (`md` 2-col, `xl` 12-col with `auto-rows minmax`) so cards stretch consistently and avoid ad-hoc layout drift (`src/app/(dashboard)/my-organization/page.tsx`).
+- Documented the rule set and card behavior in `docs/briefs/my-organization-bento-rules.md` and indexed it in `docs/briefs/INDEX.md`.
+- Validation: `pnpm exec eslint src/app/(dashboard)/my-organization/page.tsx src/components/organization/my-organization-bento-rules.ts src/components/roadmap/roadmap-calendar.tsx`.
+
+## 2026-02-06 — Codex implementation pass (profile mini-editor + anti-squish pass)
+- Refined `/my-organization` bento sizing to reduce over-tall cards and added conditional class resolution for states where Launch Roadmap is hidden (`src/components/organization/my-organization-bento-rules.ts`).
+- Reworked profile card into a compact “mini editor” surface: renamed internal copy (`Organization hub`), replaced fallback title/copy, added About/Programs/People quick links with completion snapshots, and kept actions anchored at the bottom (`src/app/(dashboard)/my-organization/page.tsx`).
+- Added anti-squish classes for compact badges/chips (`shrink-0 whitespace-nowrap`) across Activity and Launch Roadmap statuses plus Program Builder list status pills (`src/app/(dashboard)/my-organization/page.tsx`, `src/components/organization/program-builder-dashboard-card.tsx`).
+- Validation: `pnpm exec eslint 'src/app/(dashboard)/my-organization/page.tsx' src/components/organization/my-organization-bento-rules.ts src/components/organization/program-builder-dashboard-card.tsx`.
+
+## 2026-02-06 — Codex implementation pass (roadmap rail packaging + accelerator swap prep)
+- Added reusable `RoadmapRailCard` container component that maps roadmap sections into a paged icon-rail with progress summary and section navigation (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Updated `/roadmap` landing to use the packaged rail component so the roadmap navigator is modular and ready for reuse (`src/components/roadmap/roadmap-landing.tsx`).
+- Replaced legacy `RoadmapOutlineCard` internals with a wrapper around `RoadmapRailCard`, preparing accelerator overview for direct drop-in parity with roadmap navigation (`src/components/roadmap/roadmap-outline-card.tsx`).
+- Tuned roadmap rail track alignment to center better behind icon cards by increasing roadmap icon token size and offsetting rail line placement (`src/components/ui/stepper-rail.tsx`).
+- Validation: `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx src/components/roadmap/roadmap-landing.tsx src/components/roadmap/roadmap-outline-card.tsx src/components/ui/stepper-rail.tsx`.
+
+## 2026-02-06 — Codex implementation pass (sidebar roadmap hidden + TOC icon tiles)
+- Hid direct `/roadmap` item from the dashboard sidebar navigation while keeping accelerator entry and existing roadmap routes intact (`src/components/app-sidebar.tsx`, `src/components/app-sidebar/nav-data.ts`).
+- Added roadmap section icon tiles to the left side of section links in the roadmap editor TOC rail (including grouped child items) to match the roadmap card visual language (`src/components/roadmap/roadmap-editor.tsx`).
+- Updated tutorial targeting to point platform onboarding at the accelerator nav item so tours no longer depend on a hidden roadmap nav selector (`src/components/app-sidebar.tsx`, `src/components/tutorial/tutorial-manager.tsx`).
+- Validation: `pnpm exec eslint src/components/app-sidebar/nav-data.ts src/components/app-sidebar.tsx src/components/roadmap/roadmap-editor.tsx src/components/tutorial/tutorial-manager.tsx`.
+
+## 2026-02-06 — Codex implementation pass (roadmap TOC icon-size correction)
+- Replaced oversized roadmap TOC icon tiles with compact icon-only markers for section links (grouped and child rows) and tightened link spacing to fit the rail cleanly (`src/components/roadmap/roadmap-editor.tsx`).
+- Validation: `pnpm exec eslint src/components/roadmap/roadmap-editor.tsx`.
+
+## 2026-02-06 — Codex fix (roadmap rich-text autosave gating)
+- Fixed roadmap editor autosave debounce to trigger on any dirty draft (`isDirty`) instead of title/subtitle-only changes, so body typing in `RichTextEditor` now persists to DB without requiring manual save (`src/components/roadmap/roadmap-editor.tsx`).
+- Removed now-unused `headingsDirty` memo after correcting the save gate.
+- Validation: `pnpm exec eslint src/components/roadmap/roadmap-editor.tsx`.
+
+## 2026-02-06 — Codex fix (roadmap section switch skeleton flash)
+- Prevented full route navigation when clicking roadmap TOC section links; now switches active section client-side and updates URL via `history.replaceState`, which removes loading skeleton flashes between section clicks (`src/components/roadmap/roadmap-editor.tsx`).
+- Preserved normal browser behavior for modifier/middle clicks (new tab/window still works).
+- Validation: `pnpm exec eslint src/components/roadmap/roadmap-editor.tsx`.
+
+## 2026-02-06 — Codex hotfix (roadmap TOC click regression)
+- Fixed TOC click no-op regression by removing stale pathname->activeId resync logic that was overriding client-side section switches after `preventDefault` link handling (`src/components/roadmap/roadmap-editor.tsx`).
+- Validation: `pnpm exec eslint src/components/roadmap/roadmap-editor.tsx`.
+
+## 2026-02-06 — Codex tweak (lighter accelerator in-progress badge)
+- Updated the `In progress` status chip in `AcceleratorNextModuleCard` to a lighter light-mode palette (`border-amber-200 bg-amber-50 text-amber-700`) while preserving existing dark-mode styling (`src/components/accelerator/accelerator-next-module-card.tsx`).
+- Validation: `pnpm exec eslint src/components/accelerator/accelerator-next-module-card.tsx`.
+
+## 2026-02-06 — Codex fix (roadmap rail center snapping)
+- Updated `StepperRail` roadmap variant to measure real icon center positions and map the progress track/fill to those measured anchors, eliminating in-between stop positions when stepping next/prev (`src/components/ui/stepper-rail.tsx`).
+- Added resize-aware recalculation so alignment stays correct after layout changes.
+- Validation: `pnpm exec eslint src/components/ui/stepper-rail.tsx`.
+
+## 2026-02-06 — Codex tweak (roadmap icon status colors)
+- Updated roadmap rail icons in `StepperRail` to reflect section status color: in-progress icons now amber and completed icons now emerald (not-started remains muted); added matching subtle border tint on icon tiles (`src/components/ui/stepper-rail.tsx`).
+- Validation: `pnpm exec eslint src/components/ui/stepper-rail.tsx`.
+
+## 2026-02-06 — Codex implementation pass (S04/S05 canvas auth + inline onboarding)
+- Home-canvas auth stabilization: replaced iframe-based `/login` and `/sign-up` previews with native in-canvas auth panels using existing `LoginForm`/`SignUpForm`, while keeping pricing embedded (`src/components/public/home-canvas-preview.tsx`).
+- Added canvas-local auth handoff links so login/signup can switch sections without leaving canvas (`/home-canvas?section=login|signup`) (`src/components/public/home-canvas-preview.tsx`).
+- Removed onboarding modal dependency in app shell by rendering onboarding inline inside the main canvas/content surface when onboarding is required (`src/components/app-shell.tsx`).
+- Extended onboarding component to support both dialog and inline presentation modes from the same flow (`src/components/onboarding/onboarding-dialog.tsx`).
+- Validation: `pnpm exec eslint src/components/public/home-canvas-preview.tsx src/components/onboarding/onboarding-dialog.tsx src/components/app-shell.tsx`.
+
+## 2026-02-06 — Codex fix pass (roadmap switch/save stabilization + rail/badge polish)
+- Reworked roadmap TOC interaction to button-based client switching (no route navigation), while still updating URL via `history.replaceState`; this removes section-click skeleton reload behavior and restores reliable side-rail switching (`src/components/roadmap/roadmap-editor.tsx`).
+- Added explicit draft flush on section switch and component teardown by saving the currently active section before moving away, reducing data loss when users switch sections quickly (`src/components/roadmap/roadmap-editor.tsx`).
+- Unified save paths via `saveSectionById` so manual save, autosave, and switch-flush share the same write logic (`src/components/roadmap/roadmap-editor.tsx`).
+- Fixed roadmap rail progress stop alignment by indexing measured icon centers per visible step and falling back safely when refs are temporarily missing (`src/components/ui/stepper-rail.tsx`).
+- Reduced roadmap icon-card visual bulk and centered roadmap step content; updated roadmap progress fill to amber→emerald gradient for status clarity (`src/components/ui/stepper-rail.tsx`).
+- Lightened `In progress`/`Completed` status chips in `AcceleratorNextModuleCard` for better light-mode contrast tuning (`src/components/accelerator/accelerator-next-module-card.tsx`).
+- Validation: `pnpm exec eslint src/components/roadmap/roadmap-editor.tsx src/components/ui/stepper-rail.tsx src/components/accelerator/accelerator-next-module-card.tsx`.
+
+## 2026-02-06 — Codex UI pass (my-organization calendar split view + bento override fix)
+- Removed hardcoded `xl:col-span-12` from `ProgramBuilderDashboardCard` so bento placement rules can control sizing/positioning cleanly (`src/components/organization/program-builder-dashboard-card.tsx`).
+- Redesigned My Organization calendar card into a split preview inspired by booking UI: left event summary panel (duration chips, location/timezone) plus right monthly grid with highlighted event days and selected day state (`src/app/(dashboard)/my-organization/page.tsx`).
+- Added server-side month/grid derivation for calendar rendering (`src/app/(dashboard)/my-organization/page.tsx`).
+- Tightened bento sizing contract to reduce over-tall two-column cards and give calendar enough height for the new split layout (`src/components/organization/my-organization-bento-rules.ts`).
+- Validation: `pnpm exec eslint 'src/app/(dashboard)/my-organization/page.tsx' src/components/organization/my-organization-bento-rules.ts src/components/organization/program-builder-dashboard-card.tsx`.
+
+## 2026-02-06 — Codex fix (accelerator track param collision)
+- Fixed `/accelerator` sidebar track flicker by separating URL params for independent track selectors:
+  - Sidebar ClassesSection now uses `classTrack`.
+  - Start Building pager now uses `moduleTrack`.
+- Root cause was both components writing to the same `track` query param through `useTrackParam`, causing post-hydration replacements that switched the selected rail unexpectedly.
+- Files: `src/components/app-sidebar/classes-section.tsx`, `src/components/accelerator/start-building-pager.tsx`.
+- Validation: `pnpm exec eslint src/components/app-sidebar/classes-section.tsx src/components/accelerator/start-building-pager.tsx`.
+
+## 2026-02-06 — Codex fix (accelerator roadmap next/prev route target)
+- Fixed roadmap rail navigation context so Accelerator overview no longer routes to `/roadmap/*` when clicking next/prev or step items.
+- Added configurable `hrefBase` to `RoadmapRailCard` and set `RoadmapOutlineCard` to use `/accelerator/roadmap`.
+- Files: `src/components/roadmap/roadmap-rail-card.tsx`, `src/components/roadmap/roadmap-outline-card.tsx`.
+- Validation: `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx src/components/roadmap/roadmap-outline-card.tsx`.
+
+## 2026-02-06 — Codex fix (activity notifications clear on open)
+- Added `readNotification` + `next` query handling on `/my-organization` to mark a notification as read server-side, then redirect to the requested internal destination.
+- Updated Activity card links to route through that read-and-forward flow.
+- Result: unread items stay green (`New`) and clear when opened.
+- File: `src/app/(dashboard)/my-organization/page.tsx`.
+- Validation: `pnpm exec eslint 'src/app/(dashboard)/my-organization/page.tsx'`.
+
+## 2026-02-06 — Codex implementation pass (accelerator right-rail workspace + snake roadmap grid)
+- Added `AcceleratorOverviewRightRail` to `/accelerator` right rail with:
+  - module switching,
+  - per-module note editing/saving,
+  - coach scheduling,
+  - AI hidden,
+  - no return-home CTA (replaced with "Open selected module").
+- Wired overview right rail data from accelerator groups/modules (`src/app/(accelerator)/accelerator/page.tsx`, `src/components/accelerator/accelerator-overview-right-rail.tsx`).
+- Scoped default accelerator `ClassesSection` right rail out of overview and roadmap routes so it no longer appears where not requested (`src/components/app-shell.tsx`).
+- Converted accelerator roadmap block to snake-grid layout with all section cards visible, curved/turning connector rail, per-card status, and unlock text; kept next/prev paginator controls (`src/components/roadmap/roadmap-rail-card.tsx`, `src/components/roadmap/roadmap-outline-card.tsx`).
+- Added roadmap homework mapping on accelerator overview so unlock labels can reference actual modules (`src/app/(accelerator)/accelerator/page.tsx`).
+- Validation: `pnpm exec eslint src/components/app-shell.tsx src/components/roadmap/roadmap-rail-card.tsx src/components/roadmap/roadmap-outline-card.tsx src/components/accelerator/accelerator-overview-right-rail.tsx 'src/app/(accelerator)/accelerator/page.tsx'`.
+
+## 2026-02-06 — Codex fix (accelerator right-rail clipping + session switcher restore)
+- Simplified `/accelerator` overview right rail to coach-only content and removed the module dropdown/UI stack that was overflowing/clipping the rail container (`src/components/accelerator/accelerator-overview-right-rail.tsx`).
+- Restored lesson/session switching in-page on accelerator overview by showing Start Building controls inline when rail controls are disabled (`src/components/accelerator/start-building-pager.tsx`).
+- Added lightweight per-module notes presence indicator (`Notes` chip) on accelerator module cards and sourced `hasNotes` from `module_progress.notes` in progress summary mapping (`src/components/accelerator/start-building-pager.tsx`, `src/lib/accelerator/progress.ts`).
+- Validation: `pnpm lint src/components/accelerator/accelerator-overview-right-rail.tsx src/components/accelerator/start-building-pager.tsx src/lib/accelerator/progress.ts`.
+
+## 2026-02-06 — Codex fix (first visible module incorrectly locked)
+- Fixed accelerator overview module lock display after hidden-module filtering: when `AI The Need` is removed from card display, lock states are now normalized over the visible list so the first visible module does not appear locked by a hidden prerequisite (`src/components/accelerator/start-building-pager.tsx`).
+- Validation: `pnpm lint src/components/accelerator/start-building-pager.tsx`.
+
+## 2026-02-06 — Codex tweak (coach rail pinned to bottom)
+- Moved accelerator overview coach scheduling rail slot to bottom alignment so it anchors at the bottom of the right sidebar (`src/components/accelerator/accelerator-overview-right-rail.tsx`).
+- Validation: `pnpm lint src/components/accelerator/accelerator-overview-right-rail.tsx`.
+
+## 2026-02-06 — Codex fix (right rail bottom align for single slot)
+- Fixed `RightRailSlot align="bottom"` behavior when only one slot is mounted: single-slot snapshots now respect bottom alignment instead of always rendering at top (`src/components/app-shell/right-rail.tsx`).
+- This unblocks coach scheduling card positioning at the bottom on `/accelerator`.
+- Validation: `pnpm lint src/components/app-shell/right-rail.tsx`.
+
+## 2026-02-06 — Codex restore (ClassesSection on /accelerator right rail)
+- Restored `ClassesSection` mounting in the right sidebar on `/accelerator` by removing the overview-route exclusion from `showAcceleratorRail` route guard (`src/components/app-shell.tsx`).
+- Roadmap route exclusion remains intact.
+- Validation: `pnpm lint src/components/app-shell.tsx`.
+
+## 2026-02-06 — Codex tweak (lesson-session selector moved right)
+- Reordered accelerator module header layout so inline lesson-session selector renders on the right side of the track title/description block (`src/components/accelerator/start-building-pager.tsx`).
+- Kept compact selector width (`220px`) and responsive wrapping behavior.
+- Validation: `pnpm lint src/components/accelerator/start-building-pager.tsx`.
+
+## 2026-02-06 — Codex implementation (dual accelerator pricing + coaching entitlement split)
+- Added dual Accelerator SKU support:
+  - `$499` Accelerator + Coaching (`with_coaching`) with 4 included coaching credits.
+  - `$349` Accelerator Core (`without_coaching`) with no included coaching credits.
+- Pricing UI now exposes two accelerator purchase options and sends explicit `acceleratorVariant` in checkout payload (`src/app/(public)/pricing/page.tsx`, `src/app/(public)/pricing/actions.ts`).
+- Checkout metadata now records `accelerator_variant` + `coaching_included` for payment-mode accelerator sessions (`src/app/(public)/pricing/actions.ts`).
+- Persisted coaching entitlement on purchases by adding `coaching_included` to `accelerator_purchases` inserts in webhook + success fallback paths (`src/app/api/stripe/webhook/route.ts`, `src/app/(public)/pricing/success/page.tsx`).
+- Added migration + schema typing for `accelerator_purchases.coaching_included` (`supabase/migrations/20260206224000_add_coaching_included_to_accelerator_purchases.sql`, `src/lib/supabase/schema/tables/accelerator_purchases.ts`).
+- Updated coaching scheduling logic so only purchases with `coaching_included=true` get free/discounted coaching routing; non-coaching accelerator purchases route to full-rate links. Added backward-compatible fallback for environments before the migration (`src/app/api/meetings/schedule/route.ts`, `src/lib/meetings.ts`).
+- Added env support for separate price IDs and kept legacy fallback:
+  - `STRIPE_ACCELERATOR_WITH_COACHING_PRICE_ID`
+  - `STRIPE_ACCELERATOR_WITHOUT_COACHING_PRICE_ID`
+  - legacy `STRIPE_ACCELERATOR_PRICE_ID` still maps to with-coaching when present (`src/lib/env.ts`, `.env.example`).
+- Validation:
+  - `pnpm lint src/lib/env.ts src/lib/meetings.ts src/lib/supabase/schema/tables/accelerator_purchases.ts 'src/app/(public)/pricing/actions.ts' 'src/app/(public)/pricing/page.tsx' src/app/api/stripe/webhook/route.ts 'src/app/(public)/pricing/success/page.tsx' src/app/api/meetings/schedule/route.ts`
+  - `pnpm test:acceptance -- pricing` (fails due pre-existing unrelated suite import error in `tests/acceptance/admin-crud.test.ts`: missing `@/app/(admin)/admin/classes/[id]/actions`; pricing tests pass).
+
+## 2026-02-06 — Codex pricing tweak (separate accelerator cards + Base naming)
+- Reworked Accelerator pricing presentation into two separate cards (`Accelerator + Coaching` and `Accelerator Base`) instead of nested option boxes inside one card (`src/app/(public)/pricing/page.tsx`).
+- Renamed all user-facing and checkout fallback naming from `Core` to `Base` for the no-coaching option (`src/app/(public)/pricing/page.tsx`, `src/app/(public)/pricing/actions.ts`).
+- Validation: `pnpm lint 'src/app/(public)/pricing/page.tsx' 'src/app/(public)/pricing/actions.ts'`.
+
+## 2026-02-06 — Codex pricing polish (accelerator CTA shape)
+- Updated Accelerator option card CTAs from pill buttons to rounded-corner rectangle buttons (`rounded-xl`) for both submit and fallback-link states (`src/app/(public)/pricing/page.tsx`).
+- Validation: `pnpm lint 'src/app/(public)/pricing/page.tsx'`.
+
+## 2026-02-06 — Codex fix (`/my-organization` bento overlap containment)
+- Fixed cross-card overlap on `/my-organization` by hardening the Program Builder card against overflow:
+  - Added `min-w-0` + `overflow-hidden` on the card shell and active detail pane.
+  - Switched the internal two-column layout to `minmax(0, ...)` tracks.
+  - Forced embedded `ProgramCard` sizing to fluid (`w-full !max-w-none !min-h-0`) so it cannot spill into adjacent bento cards.
+  (`src/components/organization/program-builder-dashboard-card.tsx`).
+- Added a global shrink guard for bento cards by appending `min-w-0` in class resolution (`src/components/organization/my-organization-bento-rules.ts`).
+- Validation: `pnpm exec eslint src/components/organization/program-builder-dashboard-card.tsx src/components/organization/my-organization-bento-rules.ts 'src/app/(dashboard)/my-organization/page.tsx'`.
+
+## 2026-02-06 — Codex layout pass (dashboard anti-squish)
+- Rebalanced dashboard density so complex cards stop compressing at laptop widths:
+  - `/my-organization` bento now promotes to 3 columns only at `2xl` (was `xl`), with all positional span rules moved to `2xl` (`src/components/organization/my-organization-bento-rules.ts`).
+  - `/my-organization` calendar split panel now uses side-by-side columns only at `2xl` (`src/app/(dashboard)/my-organization/page.tsx`).
+  - Program Builder list/detail split now activates only at `2xl` (`src/components/organization/program-builder-dashboard-card.tsx`).
+- Rebalanced `/accelerator` layout density:
+  - Widened page cap from `max-w-5xl` to `max-w-6xl` (`src/app/(accelerator)/accelerator/page.tsx`).
+  - Hero split (welcome + next module card) now activates at `2xl` instead of `lg` (`src/app/(accelerator)/accelerator/page.tsx`).
+  - Module card grid reduced on laptop widths (`sm:2`, `xl:3`, `2xl:4`) and lesson-session selector width made less rigid (`src/components/accelerator/start-building-pager.tsx`).
+  - Slightly reduced accelerator right-rail width to return canvas space (`src/components/app-shell.tsx`).
+- Validation: `pnpm exec eslint 'src/components/organization/my-organization-bento-rules.ts' 'src/app/(dashboard)/my-organization/page.tsx' 'src/components/organization/program-builder-dashboard-card.tsx' 'src/app/(accelerator)/accelerator/page.tsx' 'src/components/accelerator/start-building-pager.tsx' 'src/components/app-shell.tsx'`.
+
+## 2026-02-06 — Codex layout pass (`/my-organization` structural unsquish + chrome flattening)
+- Upgraded bento allocation from 2-column-at-XL to explicit 12-column placement at `xl` so Program Builder gets primary width on common desktop sizes (`src/components/organization/my-organization-bento-rules.ts`).
+- Redesigned `Organization workspace` card as a mini editor-inspired summary:
+  - Added compact hero/cover strip + logo slot.
+  - Replaced nested mini-cards with lighter segmented rows and compact quick links.
+  (`src/app/(dashboard)/my-organization/page.tsx`).
+- Flattened nested-card UI inside activity/calendar/launch/team cards:
+  - moved from stacked bordered cards to single-container lists with dividers,
+  - simplified calendar internals and reduced day-cell compression by switching to square compact cells and 1-letter weekday labels.
+  (`src/app/(dashboard)/my-organization/page.tsx`).
+- Reworked Program Builder internals to remove card-within-card presentation:
+  - removed embedded `ProgramCard` in the dashboard card,
+  - switched to list + detail panel layout with lighter row/list styling and inline metrics/outcomes.
+  (`src/components/organization/program-builder-dashboard-card.tsx`).
+- Company view mode identity/separator behavior:
+  - hide Identity when only default empty state is present,
+  - disable divider-line treatment when identity section is absent.
+  (`src/components/organization/org-profile-card/tabs/company-tab/display-sections.tsx`).
+- Validation: `pnpm exec eslint 'src/components/organization/my-organization-bento-rules.ts' 'src/app/(dashboard)/my-organization/page.tsx' 'src/components/organization/program-builder-dashboard-card.tsx' 'src/components/organization/org-profile-card/tabs/company-tab/display-sections.tsx'`.
+
+## 2026-02-06 — Codex tweak (workspace mini-header spacing)
+- Increased mini workspace summary header height and top content padding so the title sits farther below the floating logo tile (`src/app/(dashboard)/my-organization/page.tsx`).
+- Validation: `pnpm exec eslint 'src/app/(dashboard)/my-organization/page.tsx'`.
+
+## 2026-02-06 — Codex tweak (my-organization calendar day-cell border removal)
+- Removed borders from calendar day cells and empty placeholders in the `/my-organization` calendar card for a cleaner, flatter visual style while preserving selected/event emphasis via background contrast (`src/app/(dashboard)/my-organization/page.tsx`).
+- Validation: `pnpm exec eslint 'src/app/(dashboard)/my-organization/page.tsx'`.
+
+## 2026-02-06 — Codex nav update (locked Fundraising item)
+- Added `Fundraising` to the left sidebar main navigation as a locked item with `Coming soon` badge and lock affordance; item is visible but non-navigable (`src/components/app-sidebar/nav-data.ts`, `src/components/nav-main.tsx`).
+- Validation: `pnpm exec eslint src/components/app-sidebar/nav-data.ts src/components/nav-main.tsx`.
+
+## 2026-02-06 — Codex nav tweak (fundraising lock icon removed)
+- Removed the extra lock icon from the locked `Fundraising` sidebar item while keeping disabled behavior + `Coming soon` badge (`src/components/nav-main.tsx`).
+- Validation: `pnpm exec eslint src/components/nav-main.tsx`.
+
+## 2026-02-06 — Codex UI tweak (workspace header badge removed)
+- Removed the `Organization hub` badge from the `/my-organization` workspace card header (`src/app/(dashboard)/my-organization/page.tsx`).
+- Validation: `pnpm exec eslint 'src/app/(dashboard)/my-organization/page.tsx'`.
+
+## 2026-02-06 — Codex UI tweak (workspace hero background parity + badge alignment)
+- Updated the mini workspace card hero strip to use org-header styling parity (header image when present + gradient overlay + grid pattern treatment) instead of a flat gradient bar (`src/app/(dashboard)/my-organization/page.tsx`).
+- Moved the `% complete` badge alignment to the right side of the workspace card header (`src/app/(dashboard)/my-organization/page.tsx`).
+- Validation: `pnpm exec eslint 'src/app/(dashboard)/my-organization/page.tsx'`.
+
+## 2026-02-06 — Codex layout reshape (`/my-organization` 6-col bento + smaller calendar)
+- Reworked the workspace bento grid to align with a 6-column template structure at desktop widths, including a full-width top card and rebalanced spans for team/program builder/activity/calendar/action cards (`src/components/organization/my-organization-bento-rules.ts`).
+- Reduced calendar card dominance by shrinking its span/min-height and tightening internal content density (removed session-duration chip row, compacted metadata chips, reduced day-cell minimum size) (`src/app/(dashboard)/my-organization/page.tsx`).
+- Validation: `pnpm exec eslint src/components/organization/my-organization-bento-rules.ts 'src/app/(dashboard)/my-organization/page.tsx'`.
+
+## 2026-02-06 — Codex people delete guardrail fix (in progress hardening)
+- Hardened people deletion path to prevent deleting the signed-in user, return a clear `Person not found` error, clean subordinate `reportsToId` references when a manager is removed, and use org-scoped avatar cleanup path (`src/actions/people.ts`).
+- Validation: `pnpm exec eslint src/actions/people.ts 'src/app/(dashboard)/people/page.tsx'`.
+
+## 2026-02-06 — Codex bento re-map (`/my-organization` profile/team 50-50 + actions rail)
+- Updated desktop bento placement so `Organization workspace` and `Team snapshot` now share the top row at 50/50 width (`xl:col-span-3` each).
+- Moved `Workspace actions` into the previous team rail footprint (`xl:col-span-1 xl:row-span-3`) to match requested placement.
+- Validation: `pnpm exec eslint src/components/organization/my-organization-bento-rules.ts`.
+
+## 2026-02-06 — Codex UI copy pass (my-organization card title simplification)
+- Simplified `/my-organization` card titles to concise labels:
+  - `Organization`, `Activity`, `Calendar`, `Roadmap`, `Team`, `Actions`
+  - Program builder card title changed to `Programs`
+  (`src/app/(dashboard)/my-organization/page.tsx`, `src/components/organization/program-builder-dashboard-card.tsx`).
+- Validation: `pnpm exec eslint 'src/app/(dashboard)/my-organization/page.tsx' src/components/organization/program-builder-dashboard-card.tsx`.
+
+## 2026-02-06 — Codex bento packing fix (no holes + actions left rail)
+- Switched `/my-organization` desktop bento to explicit coordinates (`xl:col-start` + `xl:row-start`) with `xl:grid-flow-dense` to eliminate open placement gaps between cards (`src/components/organization/my-organization-bento-rules.ts`).
+- Anchored `Actions` to the left rail area (`col-start-1`, `row-start-3`) and preserved `Organization` + `Team` as 50/50 top row.
+- Reduced `Actions` card internal squish by making action buttons a single-column stack (`src/app/(dashboard)/my-organization/page.tsx`).
+- Validation: `pnpm exec eslint src/components/organization/my-organization-bento-rules.ts 'src/app/(dashboard)/my-organization/page.tsx'`.
+
+## 2026-02-06 — Codex team card footer alignment (manage people)
+- Moved `Manage people` from middle content to `CardFooter` so it stays anchored at the bottom of the Team card.
+- Made Team list scrollable with a max height to prevent card overgrowth (`max-h-56 overflow-y-auto`).
+- File: `src/app/(dashboard)/my-organization/page.tsx`
+- Validation: `pnpm exec eslint 'src/app/(dashboard)/my-organization/page.tsx'`.
+
+## 2026-02-06 — Codex scroll-end spacing normalization (my-organization)
+- Added explicit bottom spacer blocks (`h-5 md:h-6`) in both `/my-organization` workspace and editor views so scrolling to the end reveals visible end-gap matching the top stack spacing.
+- Removed wrapper `pb-*` in those views and used deterministic spacer nodes for consistent scroll-end behavior.
+- File: `src/app/(dashboard)/my-organization/page.tsx`
+- Validation: `pnpm exec eslint 'src/app/(dashboard)/my-organization/page.tsx'`.
+
+## 2026-02-06 — Codex entitlement wiring (Formation vs Electives vs Accelerator)
+- Implemented elective add-on entitlements end-to-end:
+  - Added `elective_purchases` migration + RLS (`supabase/migrations/20260207010000_add_elective_purchases.sql`).
+  - Added Supabase table types (`src/lib/supabase/schema/tables/elective_purchases.ts`, `src/lib/supabase/schema/tables/index.ts`).
+  - Added shared entitlement resolver for accelerator/subscription/elective access (`src/lib/accelerator/entitlements.ts`).
+- Unified track handling and module partitioning:
+  - Sidebar and accelerator pager now split Formation vs Electives via module slug/title helpers (`src/lib/accelerator/elective-modules.ts`, `src/components/app-sidebar/classes-section.tsx`, `src/components/accelerator/start-building-pager.tsx`, `src/lib/academy.ts`, `src/lib/accelerator/progress.ts`).
+  - Track selector remains `track-picker` + `classTrack`.
+- Added checkout + persistence for elective purchases:
+  - New checkout mode `elective` in pricing action (`src/app/(public)/pricing/actions.ts`).
+  - Added elective cards/CTAs on pricing page (`src/app/(public)/pricing/page.tsx`).
+  - Persisted purchases in success page + webhook (`src/app/(public)/pricing/success/page.tsx`, `src/app/api/stripe/webhook/route.ts`).
+  - Added required env vars (`src/lib/env.ts`, `.env.example`).
+- Enforced server-side access:
+  - Module route now gates non-formation tracks by accelerator access and elective modules by per-module entitlement (`src/app/(dashboard)/class/[slug]/module/[index]/page.tsx`).
+  - Accelerator shell now allows elective-only users while still locking accelerator-only tracks (`src/app/(accelerator)/layout.tsx`, `src/app/(accelerator)/accelerator/page.tsx`, `src/components/app-shell.tsx`, `src/components/app-sidebar.tsx`, `src/components/app-sidebar/classes-section.tsx`).
+  - Search access check now uses shared entitlement resolver (`src/app/api/search/route.ts`).
+- Added QA scenario matrix doc (`docs/briefs/elective-entitlement-scenarios.md`) and indexed it (`docs/briefs/INDEX.md`).
+- Validation:
+  - `pnpm eslint src/components/app-sidebar/classes-section.tsx 'src/app/(public)/pricing/actions.ts' 'src/app/(public)/pricing/page.tsx' 'src/app/(dashboard)/layout.tsx' 'src/app/(accelerator)/layout.tsx' 'src/app/(dashboard)/class/[slug]/module/[index]/page.tsx' src/app/api/stripe/webhook/route.ts 'src/app/(public)/pricing/success/page.tsx' src/lib/academy.ts src/lib/accelerator/progress.ts src/lib/accelerator/entitlements.ts src/components/app-shell.tsx src/components/app-sidebar.tsx src/app/api/search/route.ts src/lib/env.ts src/lib/supabase/schema/tables/index.ts src/lib/supabase/schema/tables/elective_purchases.ts src/lib/accelerator/elective-modules.ts src/components/accelerator/start-building-pager.tsx`
+
+## 2026-02-06 — Codex pricing/gating update (monthly accelerator + elective catalog remap)
+- Added monthly checkout support for both accelerator tiers:
+  - `acceleratorBilling=one_time|monthly` in pricing checkout actions (`src/app/(public)/pricing/actions.ts`).
+  - Monthly Stripe price env vars added (`src/lib/env.ts`, `.env.example`).
+  - Pricing UI now presents both `Pay in full` and `Pay monthly` CTAs for each accelerator tier (`src/app/(public)/pricing/page.tsx`).
+- Updated elective catalog and free Formation split:
+  - Electives now: `Retention and Security`, `Due Diligence`, `Financial Handbook`.
+  - Formation/free modules now: `Naming your NFP`, `NFP Registration`, `Filing 1023`.
+  - Source mapping updated in `src/lib/accelerator/elective-modules.ts`.
+- Updated elective DB constraint migration to new module slugs and added a follow-up migration to normalize environments where the earlier slug set was applied (`supabase/migrations/20260207010000_add_elective_purchases.sql`, `supabase/migrations/20260207013000_update_elective_catalog.sql`).
+- Extended subscription metadata handling for accelerator monthly:
+  - Pricing success page now treats accelerator subscriptions as accelerator purchase success redirect and persists full metadata (`src/app/(public)/pricing/success/page.tsx`).
+  - Webhook subscription upsert now stores full session metadata payload (`src/app/api/stripe/webhook/route.ts`).
+  - Coaching schedule eligibility now also checks active accelerator subscription metadata for coaching-included tiers (`src/app/api/meetings/schedule/route.ts`).
+- Updated scenario doc to reflect new elective list + monthly mode (`docs/briefs/elective-entitlement-scenarios.md`).
+- Validation:
+  - `pnpm eslint src/lib/accelerator/elective-modules.ts 'src/app/(public)/pricing/actions.ts' src/lib/env.ts 'src/app/(public)/pricing/page.tsx' 'src/app/(public)/pricing/success/page.tsx' src/app/api/stripe/webhook/route.ts src/app/api/meetings/schedule/route.ts`
+
+## 2026-02-06 — Codex home-canvas pricing de-iframe (native panel)
+- Removed iframe-based pricing embed from home-canvas preview and replaced it with native in-app pricing section rendering (`src/components/public/home-canvas-preview.tsx`).
+- Removed internal `embedPath`/`EmbeddedPagePanel` usage from canvas nav flow; pricing now renders as a first-class panel in the same layout system.
+- Verified no remaining `pricing?embed=1` usage in home-canvas flow.
+- Validation:
+  - `pnpm eslint src/components/public/home-canvas-preview.tsx`
+  - `rg -n "pricing\\?embed=1|/pricing\\?embed|iframe" src/app src/components | head -n 200`
+
+## 2026-02-06 — Codex home-canvas pricing parity (shared surface, no iframe, no mock)
+- Replaced duplicated `/pricing` route implementation with a shared `PricingSurface` server component (`src/components/public/pricing-surface.tsx`) and made `/pricing` a thin wrapper (`src/app/(public)/pricing/page.tsx`).
+- Wired `/home-canvas` to render the exact same `PricingSurface` in embedded mode instead of the simplified fallback panel (`src/app/(public)/home-canvas/page.tsx`, `src/components/public/home-canvas-preview.tsx`).
+- Removed route-level exports from the shared component and moved checkout action import to canonical path (`@/app/(public)/pricing/actions`) to keep one source of truth.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/pricing-surface.tsx' 'src/app/(public)/pricing/page.tsx' 'src/app/(public)/home-canvas/page.tsx' 'src/components/public/home-canvas-preview.tsx'`
+
+## 2026-02-06 — Codex accelerator progression phase pass (org strip + roadmap/lessons merge)
+- Added a live phase tracker brief for current launch scope and open items:
+  - `docs/briefs/accelerator-launch-active-worklog.md`
+  - Indexed in `docs/briefs/INDEX.md`.
+- Added new top-of-page accelerator org snapshot strip with horizontal layout (identity/media left, status/actions right) and checkpoint progress rail:
+  - `Fundable` + `Verified` checkpoint pills and checkpoint dots.
+  - Orange -> green checkpoint color behavior and final blue verified checkpoint styling.
+  - File: `src/components/accelerator/accelerator-org-snapshot-strip.tsx`.
+- Wired snapshot strip into `/accelerator` and sourced organization/profile/program-count/roadmap-completion metrics from live data:
+  - File: `src/app/(accelerator)/accelerator/page.tsx`.
+- Refactored roadmap progression to be the primary container and embedded lessons/modules within the same surface:
+  - `RoadmapRailCard` now supports `lessons` content slot.
+  - Added stronger winding connector path behind deliverable cards with active progress path rendering.
+  - Added Deliverables/Lessons labeling and per-deliverable lesson linkage copy.
+  - Files: `src/components/roadmap/roadmap-rail-card.tsx`, `src/components/roadmap/roadmap-outline-card.tsx`.
+- Updated `StartBuildingPager` with `embedded` mode for tighter in-card lesson rendering:
+  - File: `src/components/accelerator/start-building-pager.tsx`.
+- Validation:
+  - `pnpm exec eslint 'src/app/(accelerator)/accelerator/page.tsx' 'src/components/accelerator/accelerator-org-snapshot-strip.tsx' 'src/components/roadmap/roadmap-rail-card.tsx' 'src/components/roadmap/roadmap-outline-card.tsx' 'src/components/accelerator/start-building-pager.tsx'`
+
+## 2026-02-06 — Codex queue update (coaching avatar-group design task)
+- Added new queued workstream in `docs/briefs/accelerator-launch-active-worklog.md`:
+  - `WS-H Coaching CTA avatar-group design pass`.
+- Captured requested component source (`mynaui avatargroups2`), target surfaces, content requirements (placeholder + two existing team images), and guardrails.
+
+## 2026-02-06 — Codex accelerator checkpoint rail track color
+- UI: restored the background rail behind the `Fundable`/`Verified` checkpoint progress bar to a neutral gray so the unfilled track is not orange-tinted (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`).
+- Validation:
+  - `pnpm lint -- src/components/accelerator/accelerator-org-snapshot-strip.tsx`
+
+## 2026-02-06 — Codex accelerator org strip CTA + container flattening
+- UI: replaced the secondary org strip action from `Open company tab` to `Continue`, and wired it to the computed next accelerator module path (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`, `src/app/(accelerator)/accelerator/page.tsx`).
+- UI: removed the org-header `% complete` badge and flattened the readiness progress + About/Programs/People sections by removing their bordered card containers (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`).
+- Validation:
+  - `pnpm lint -- 'src/components/accelerator/accelerator-org-snapshot-strip.tsx' 'src/app/(accelerator)/accelerator/page.tsx'`
+
+## 2026-02-06 — Codex accelerator org strip outer wrapper removal
+- UI: removed the outer styled parent container (`section` with overflow/border/background/shadow) from `AcceleratorOrgSnapshotStrip`, promoting the inner grid as the root element (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`).
+- Validation:
+  - `pnpm lint -- src/components/accelerator/accelerator-org-snapshot-strip.tsx`
+
+## 2026-02-06 — Codex accelerator org strip full-width fill after wrapper removal
+- UI: removed leftover root/inner gutter padding (`p-4`/`lg:p-5` and `px-1`) from `AcceleratorOrgSnapshotStrip` so child components expand into the full available space now that the outer container is gone (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`).
+- Validation:
+  - `pnpm lint -- src/components/accelerator/accelerator-org-snapshot-strip.tsx`
+
+## 2026-02-06 — Codex accelerator unification pass (org identity + roadmap/module merge)
+- Data/UI: removed preset org strip fallback copy on `/accelerator`; org identity now uses live org profile fields only (name plus optional tagline, otherwise city/state), and omits subtitle when absent (`src/app/(accelerator)/accelerator/page.tsx`, `src/components/accelerator/accelerator-org-snapshot-strip.tsx`).
+- UI: restyled the org identity/media block to follow the same card language as module surfaces (media-first card shell, floating logo, compact text stack) while preserving existing org-strip controls and stats (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`).
+- Layout: folded the standalone next-module surface into the top of `RoadmapRailCard` and removed the separate `AcceleratorNextModuleCard` block from the overview page (`src/app/(accelerator)/accelerator/page.tsx`, `src/components/roadmap/roadmap-rail-card.tsx`).
+- Layout: merged deliverables and all modules into one unified timeline list inside `RoadmapRailCard`, hid the old separate Lessons container, and kept each card family’s existing visual style while adding a subtle connector path behind the combined grid (`src/components/roadmap/roadmap-rail-card.tsx`, `src/components/roadmap/roadmap-outline-card.tsx`).
+- Sequencing: timeline ordering now follows deliverable order with linked module inserts via `homework.moduleIdx`, then appends any unmatched modules for deterministic chronology (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Queue update: added `WS-I Home-canvas pricing scroll unification` to active worklog for the pricing-section internal scroll + section-handoff bug (`docs/briefs/accelerator-launch-active-worklog.md`).
+- Validation:
+  - `pnpm lint -- 'src/app/(accelerator)/accelerator/page.tsx' src/components/accelerator/accelerator-org-snapshot-strip.tsx src/components/roadmap/roadmap-outline-card.tsx src/components/roadmap/roadmap-rail-card.tsx`
+
+## 2026-02-06 — Codex org strip overlap/CTA refinement
+- UI: increased org identity card lower-body height/padding and shifted text stack to eliminate logo/title overlap; tightened subtitle spacing under title (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`).
+- UI: moved `Edit organization` from footer into a top-right overlaid icon action on the identity media card (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`).
+- UI/Data: made the bottom continue CTA explicit with next lesson context (`Lesson N • Track`) plus module title detail, sourced from computed `nextModule`/`nextGroup` in accelerator page data (`src/app/(accelerator)/accelerator/page.tsx`, `src/components/accelerator/accelerator-org-snapshot-strip.tsx`).
+- Validation:
+  - `pnpm lint -- 'src/app/(accelerator)/accelerator/page.tsx' src/components/accelerator/accelerator-org-snapshot-strip.tsx`
+
+## 2026-02-06 — Codex pricing label rename (Accelerator Pro)
+- UI copy: renamed the accelerator coaching option card title from `Accelerator + Coaching` to `Accelerator Pro` (`src/components/public/pricing-surface.tsx`).
+- Checkout metadata fallback: aligned accelerator with-coaching fallback `planName` to `Accelerator Pro` for consistency (`src/app/(public)/pricing/actions.ts`).
+- Validation:
+  - `pnpm lint -- src/components/public/pricing-surface.tsx 'src/app/(public)/pricing/actions.ts'`
+
+## 2026-02-06 — Codex accelerator pricing toggle pass (single CTA + monthly visibility)
+- Pricing UI: replaced dual accelerator CTA buttons with a per-card billing switch (`One-time` / `Monthly`) in the card header, and now renders only one checkout CTA at a time based on selected billing mode (`src/components/public/accelerator-option-card.tsx`, `src/components/public/pricing-surface.tsx`).
+- Pricing copy: replaced `Pay in full` / `Pay monthly` with clearer action labels (`Get one-time access`, `Start monthly plan`) and updated displayed price/note by selected billing mode.
+- Monthly visibility: monthly mode now explicitly displays a monthly price line and billing-context helper text on-card (`src/components/public/accelerator-option-card.tsx`, `src/components/public/pricing-surface.tsx`).
+- Queue update: added `WS-J Accelerator billing lifecycle automation` to active worklog for backend enforcement of 6-month included access + `$20/month` rollover rules (`docs/briefs/accelerator-launch-active-worklog.md`).
+- Validation:
+  - `pnpm lint -- src/components/public/pricing-surface.tsx src/components/public/accelerator-option-card.tsx`
+
+## 2026-02-06 — Codex queue update (Pro coaching included-link URL)
+- Queue: added explicit Accelerator Pro included-session booking URL and routing requirement to `WS-J`:
+  - `https://calendar.app.google/EKs5A4iaXFAbFSp57`
+  - use included link for first 4 Pro sessions, then switch to discounted link.
+  (`docs/briefs/accelerator-launch-active-worklog.md`).
+
+## 2026-02-06 — Codex pricing copy update (Pro coaching link in includes + feature matrix)
+- Pricing cards: added explicit Accelerator Pro “Includes” line for the Pro coaching booking link (`calendar.app.google/EKs5A4iaXFAbFSp57`) and first-4-session usage (`src/components/public/pricing-surface.tsx`).
+- Feature breakdown: added a `Pro only` matrix row noting Pro booking-link usage and discounted-link switch after included sessions (`src/components/public/pricing-surface.tsx`).
+- Validation:
+  - `pnpm lint -- src/components/public/pricing-surface.tsx`
+
+## 2026-02-06 — Codex home-canvas pricing scroll boundary fix (WS-I)
+- Scroll behavior: fixed `/home-canvas?section=pricing` to allow full in-panel vertical scrolling while only switching canvas sections at top/bottom boundaries (`src/components/public/home-canvas-preview.tsx`).
+- Touch behavior: pricing panel now uses `touchAction: pan-y`; non-pricing panels keep horizontal gesture behavior to prevent accidental section jumps.
+- Embedded sizing: updated shared `PricingSurface` embedded mode from `min-h-screen` to `min-h-full` to prevent clipping/scroll lock inside home-canvas panel (`src/components/public/pricing-surface.tsx`).
+- Validation:
+  - `pnpm lint -- src/components/public/home-canvas-preview.tsx src/components/public/pricing-surface.tsx`
+
+## 2026-02-06 — Codex coaching avatar-group integration pass (WS-H)
+- Added reusable coaching visual component with one placeholder avatar + two homepage team avatars (Paula/Joel), including accessible group labeling (`src/components/coaching/coaching-avatar-group.tsx`).
+- Applied avatar-group treatment to accelerator coaching CTA surfaces:
+  - accelerator overview right-rail coach card (`src/components/accelerator/accelerator-overview-right-rail.tsx`)
+  - module right-rail coach panel (`src/components/training/module-right-rail.tsx`)
+  - inline lesson coaching upsell CTA (`src/components/training/module-detail/lesson-notes.tsx`)
+  - accelerator schedule card parity pass (`src/components/accelerator/accelerator-schedule-card.tsx`)
+  - Accelerator Pro pricing option (also used in home-canvas pricing surface) (`src/components/public/accelerator-option-card.tsx`)
+- Kept booking/entitlement routing intact; this pass is visual + copy-state only.
+- Validation:
+  - `pnpm lint -- src/components/coaching/coaching-avatar-group.tsx src/components/accelerator/accelerator-overview-right-rail.tsx src/components/training/module-right-rail.tsx src/components/accelerator/accelerator-schedule-card.tsx src/components/training/module-detail/lesson-notes.tsx src/components/public/accelerator-option-card.tsx src/components/public/home-canvas-preview.tsx src/components/public/pricing-surface.tsx`
+
+## 2026-02-06 — Codex billing lifecycle backend slice (WS-J)
+- Webhook lifecycle: replaced fixed 30-day post-accelerator trial helper with configurable organization-subscription provisioning (`maybeStartOrganizationSubscription`) in Stripe webhook handling (`src/app/api/stripe/webhook/route.ts`).
+- One-time accelerator flow: `checkout.session.completed` for accelerator one-time now creates the Organization subscription with a 180-day trial to represent included platform access (`context=accelerator_bundle_one_time`).
+- Monthly accelerator rollover: on `customer.subscription.updated` (canceled) or `customer.subscription.deleted` for accelerator monthly subscriptions, webhook now starts Organization `$20/month` continuation if no active/trialing subscription exists (`context=accelerator_rollover`).
+- Safety: preserved idempotent behavior via existing webhook-event lock table and existing active-subscription existence guard before provisioning a new organization subscription.
+- Validation:
+  - `pnpm lint -- src/app/api/stripe/webhook/route.ts 'src/app/(public)/pricing/actions.ts' src/lib/meetings.ts`
+
+## 2026-02-06 — Codex WS-J installment metering + rollover hardening
+- Added shared billing constants for accelerator lifecycle rules (`src/lib/accelerator/billing.ts`):
+  - `ACCELERATOR_PLATFORM_INCLUDED_TRIAL_DAYS = 180`
+  - `ACCELERATOR_MONTHLY_INSTALLMENT_LIMIT = 6`
+- Checkout metadata: accelerator monthly Stripe checkout now stamps deterministic installment metadata on both checkout session and subscription creation payload (`src/app/(public)/pricing/actions.ts`):
+  - `accelerator_installment_limit`
+  - `accelerator_installments_paid`
+- Webhook lifecycle hardening (`src/app/api/stripe/webhook/route.ts`):
+  - one-time accelerator Organization trial now uses shared 180-day constant;
+  - added `invoice.paid` handler for accelerator monthly installment metering;
+  - increments `accelerator_installments_paid` for eligible subscription invoices (`subscription_create`/`subscription_cycle`);
+  - sets `cancel_at_period_end=true` automatically once installment limit is reached;
+  - keeps existing cancellation/deletion rollover to Organization `$20/month` path and idempotency guards.
+- Worklog/docs updates:
+  - updated `WS-J` implementation notes in `docs/briefs/accelerator-launch-active-worklog.md`;
+  - added `docs/briefs/accelerator-billing-lifecycle-qa-matrix.md`;
+  - refreshed `docs/briefs/stripe-gating.md` to current lifecycle contracts;
+  - updated `docs/briefs/INDEX.md` statuses/entries.
+- Validation:
+  - `pnpm lint -- src/app/api/stripe/webhook/route.ts 'src/app/(public)/pricing/actions.ts' src/lib/accelerator/billing.ts`
+
+## 2026-02-06 — Codex test-suite stabilization pass (acceptance + snapshots)
+- Fixed acceptance test breakages caused by stale path/mocks:
+  - added compatibility admin action export for `createModuleAction` at `src/app/(admin)/admin/classes/[id]/actions.ts` (preserves expected redirect/revalidate behavior used by acceptance suite).
+  - made entitlement subscription query tolerant of test doubles without `.order()` while preserving production ordering when available (`src/lib/accelerator/entitlements.ts`).
+- Snapshot baseline reconciled to current UI state:
+  - updated `tests/snapshots/design-system.json` via `pnpm snapshots:update`.
+- Validation run results:
+  - `pnpm lint -- src/lib/accelerator/entitlements.ts 'src/app/(admin)/admin/classes/[id]/actions.ts'`
+  - `pnpm test:acceptance` ✅ (11 passed, 1 skipped)
+  - `pnpm test:snapshots` ✅ (baseline matches)
+  - `pnpm test:rls` ❌ blocked in this environment (`ENOTFOUND vswzhuwjtgzrkxknrmxu.supabase.co`)
+
+## 2026-02-06 — Codex WS-H coaching CTA expansion (module completion step)
+- Extended coaching avatar-group treatment into module completion flow (`src/components/training/module-detail/module-stepper.tsx`):
+  - added `CoachingAvatarGroup` to the “Book a session” completion card;
+  - added tier-aware helper copy (`free`/`discounted`/`full`) using schedule response payload;
+  - switched completion CTA to shared `handleSchedule` callback to retain booking behavior while surfacing remaining-session feedback.
+- Validation:
+  - `pnpm lint -- src/components/training/module-detail/module-stepper.tsx`
+  - `pnpm test:acceptance` ✅
+  - `pnpm test:snapshots` ✅
+
+## 2026-02-06 — Codex WS-J rollover eligibility tightening
+- Updated Stripe webhook rollover guard so Organization `$20/month` continuation only triggers when Accelerator monthly installment term is complete (`accelerator_installments_paid >= accelerator_installment_limit`) and subscription is canceled/deleted (`src/app/api/stripe/webhook/route.ts`).
+- This prevents automatic rollover on early cancellation before completing the intended installment term.
+- Synced lifecycle docs/worklog:
+  - `docs/briefs/accelerator-launch-active-worklog.md`
+  - `docs/briefs/stripe-gating.md`
+  - `docs/briefs/accelerator-billing-lifecycle-qa-matrix.md`
+- Validation:
+  - `pnpm lint -- src/app/api/stripe/webhook/route.ts`
+
+## 2026-02-06 — Codex Pro included booking-link default wiring
+- Coaching schedule API now defaults free/included booking tier to the provided Pro calendar URL when no env override is set (`src/app/api/meetings/schedule/route.ts`):
+  - `https://calendar.app.google/EKs5A4iaXFAbFSp57`
+- Existing env override precedence is preserved (`NEXT_PUBLIC_MEETING_FREE_URL` still wins when present).
+- Synced worklog/brief docs:
+  - `docs/briefs/accelerator-launch-active-worklog.md`
+  - `docs/briefs/stripe-gating.md`
+- Validation:
+  - `pnpm lint -- src/app/api/meetings/schedule/route.ts`
+  - `pnpm test:acceptance` ✅
+
+## 2026-02-06 — Codex coaching schedule route acceptance coverage
+- Added acceptance tests for `/api/meetings/schedule` tier routing + session counters (`tests/acceptance/coaching-schedule-route.test.ts`):
+  - verifies free tier uses the Pro included default URL (`https://calendar.app.google/EKs5A4iaXFAbFSp57`) when no env override is configured;
+  - verifies discounted routing after included-session limit exhaustion;
+  - verifies full-tier routing for users without included coaching.
+- Test harness notes:
+  - used hoisted Vitest mocks for `createSupabaseServerClient`, `resolveActiveOrganization`, `canEditOrganization`, `createNotification`, and env injection.
+- Validation:
+  - `pnpm test:acceptance` ✅
+  - `pnpm test:snapshots` ✅
+
+## 2026-02-06 — Codex env hardening + booking defaults polish
+- Env validation robustness: optional env vars now tolerate blank-string placeholders by normalizing `"" -> undefined` (`src/lib/env.ts`), preventing unnecessary runtime env parse failures.
+- `.env.example` updated to include the provided Pro included booking link as the default free coaching URL (`.env.example`).
+- Validation:
+  - `pnpm lint -- src/lib/env.ts src/app/api/meetings/schedule/route.ts tests/acceptance/coaching-schedule-route.test.ts`
+  - `pnpm test:acceptance` ✅
+  - `pnpm test:snapshots` ✅
+
+## 2026-02-06 — Codex WS-J helper extraction + lifecycle test coverage
+- Extracted reusable billing lifecycle helpers to `src/lib/accelerator/billing-lifecycle.ts`:
+  - installment parsing
+  - monthly installment progression computation
+  - rollover eligibility guard based on installment completion + cancellation event
+- Updated webhook implementation to consume helper functions (`src/app/api/stripe/webhook/route.ts`) while preserving existing side effects.
+- Added acceptance-level unit coverage for lifecycle rules (`tests/acceptance/accelerator-billing-lifecycle.test.ts`) including:
+  - installment parsing fallbacks
+  - cancel-at-period-end behavior at installment limit
+  - non-cycle invoice exclusion
+  - rollover blocked before term completion
+- Validation:
+  - `pnpm lint -- src/lib/accelerator/billing-lifecycle.ts src/app/api/stripe/webhook/route.ts tests/acceptance/accelerator-billing-lifecycle.test.ts`
+  - `pnpm test:acceptance` ✅
+  - `pnpm test:snapshots` ✅
+
+## 2026-02-06 — Codex accelerator checkout redirect + metadata test coverage
+- Fixed a server-action checkout control-flow bug in `startCheckout` (`src/app/(public)/pricing/actions.ts`):
+  - redirect exceptions are now rethrown (including test redirect sentinel), preventing valid Stripe checkout redirects from being swallowed by generic fallback handling.
+- Added acceptance coverage for accelerator checkout creation metadata (`tests/acceptance/pricing-accelerator-checkout-metadata.test.ts`):
+  - monthly path asserts installment metadata is present (`accelerator_installment_limit`, `accelerator_installments_paid`) and correct price selection;
+  - one-time path asserts variant/coaching metadata and absence of installment fields.
+- Validation:
+  - `pnpm lint -- 'src/app/(public)/pricing/actions.ts' tests/acceptance/pricing-accelerator-checkout-metadata.test.ts`
+  - `pnpm test:acceptance` ✅
+  - `pnpm test:snapshots` ✅
+
+## 2026-02-06 — Codex validation status checkpoint (post WS-J/WS-H test expansion)
+- Validation snapshot after latest changes:
+  - `pnpm lint` on all touched files ✅
+  - `pnpm test:acceptance` ✅ (14 files passed, 1 skipped)
+  - `pnpm test:snapshots` ✅
+  - `pnpm test:rls` ❌ blocked by network/DNS in current environment (`ENOTFOUND vswzhuwjtgzrkxknrmxu.supabase.co`)
+
+## 2026-02-06 — Codex WS-I scroll logic extraction + test coverage
+- Refactored home-canvas section handoff logic into a dedicated helper (`src/components/public/home-canvas-scroll.ts`) used by `src/components/public/home-canvas-preview.tsx`.
+- Preserved behavior while making it deterministic and testable:
+  - wheel threshold + boundary handoff
+  - swipe threshold + vertical-intent gating
+  - animation lockout protection
+- Added acceptance-level logic tests (`tests/acceptance/home-canvas-scroll-logic.test.ts`) for:
+  - non-scrollable panel transitions
+  - scrollable mid/boundary behavior
+  - threshold/animation guards for wheel and swipe
+- Validation:
+  - `pnpm lint -- src/components/public/home-canvas-scroll.ts src/components/public/home-canvas-preview.tsx tests/acceptance/home-canvas-scroll-logic.test.ts`
+  - `pnpm test:acceptance` ✅
+  - `pnpm test:snapshots` ✅
+
+## 2026-02-06 — Codex accelerator UI polish + WS-J legacy rollover compatibility
+- Accelerator org snapshot polish (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`):
+  - increased identity card footer spacing to avoid logo/title overlap;
+  - tightened title/subtitle spacing and line-height;
+  - moved progress base rail to neutral gray and set the post-fundable segment to neutral until verified.
+- My Organization workspace CTA/copy alignment (`src/app/(dashboard)/my-organization/page.tsx`):
+  - removed generic fallback copy (`Organization workspace`, fixed helper sentence);
+  - subtitle now prefers tagline, then city/state (hidden when neither exists);
+  - replaced `Open company tab` action with accelerator continuation CTA (`Continue - Lesson {n}`) targeting the computed next module href.
+- Pricing accelerator card copy refinement:
+  - updated one-time/monthly CTA labels to `Continue with one-time` / `Continue with monthly` (`src/components/public/pricing-surface.tsx`);
+  - clarified billing detail copy in mode switch card and kept one active checkout button (`src/components/public/accelerator-option-card.tsx`).
+- WS-J helper coverage:
+  - added legacy monthly-cancellation rollover coverage for subscriptions missing installment metadata (`tests/acceptance/accelerator-billing-lifecycle.test.ts`).
+- Synced active queue notes:
+  - updated checkpoint rail spec + WS-J legacy behavior note in `docs/briefs/accelerator-launch-active-worklog.md`.
+- Validation:
+  - `pnpm lint 'src/components/accelerator/accelerator-org-snapshot-strip.tsx' 'src/app/(dashboard)/my-organization/page.tsx' 'src/components/public/pricing-surface.tsx' 'src/components/public/accelerator-option-card.tsx' 'tests/acceptance/accelerator-billing-lifecycle.test.ts' 'src/lib/accelerator/billing-lifecycle.ts'`
+  - `pnpm test:acceptance tests/acceptance/accelerator-billing-lifecycle.test.ts tests/acceptance/pricing-accelerator-checkout-metadata.test.ts tests/acceptance/home-canvas-scroll-logic.test.ts tests/acceptance/coaching-schedule-route.test.ts` ✅
+  - `pnpm test:acceptance` ✅ (15 files passed, 1 skipped)
+  - `pnpm test:snapshots` ✅
+  - `pnpm test:rls` ❌ blocked by DNS/network in this environment (`ENOTFOUND vswzhuwjtgzrkxknrmxu.supabase.co`)
+
+## 2026-02-06 — Codex WS-J QA-matrix edge test expansion
+- Expanded acceptance coverage for billing lifecycle helper edge cases (`tests/acceptance/accelerator-billing-lifecycle.test.ts`):
+  - no rollover on non-cancellation subscription events even when installment count is complete;
+  - installment progression capping at configured limit without requesting duplicate cancel-at-period-end updates.
+- Updated QA matrix with an explicit automated-coverage snapshot and remaining manual/integration gaps (`docs/briefs/accelerator-billing-lifecycle-qa-matrix.md`).
+- Validation:
+  - `pnpm test:acceptance tests/acceptance/accelerator-billing-lifecycle.test.ts` ✅
+  - `pnpm test:acceptance` ✅ (15 files passed, 1 skipped)
+
+## 2026-02-07 — Codex coaching card copy/layout cleanup
+- Removed the extra `"Coach team"` text label from `CoachingAvatarGroup` so the component renders avatar-only (`src/components/coaching/coaching-avatar-group.tsx`).
+- Updated accelerator overview right-rail coaching card layout so avatars are centered above the `Coach scheduling` title and removed the inner bordered avatar container (`src/components/accelerator/accelerator-overview-right-rail.tsx`).
+- Rewrote coaching card copy for clarity and brevity:
+  - stronger description copy,
+  - CTA text `Book coaching`,
+  - clearer included/discounted/full booking state messaging.
+- Validation:
+  - `pnpm lint src/components/coaching/coaching-avatar-group.tsx src/components/accelerator/accelerator-overview-right-rail.tsx` ✅
+
+## 2026-02-07 — Codex accelerator bento standardization + roadmap badge cleanup
+- Removed the `NextModuleBanner` block from the roadmap surface to reduce duplicate hierarchy and keep one unified timeline list (`src/components/roadmap/roadmap-rail-card.tsx`, `src/components/roadmap/roadmap-outline-card.tsx`, `src/app/(accelerator)/accelerator/page.tsx`).
+- Standardized timeline card layout for cleaner bento fit:
+  - unified grid row baseline (`auto-rows` raised to 220px),
+  - wrappers/cards now stretch to full row height,
+  - deliverable cards aligned to the same card-shell rhythm as module cards.
+  (`src/components/roadmap/roadmap-rail-card.tsx`)
+- Changed long top-right module text badge (`Mission, Vision & Values`, etc.) to an icon-only badge and moved it to bottom-right of the media container (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Updated accelerator strip continue CTA behavior:
+  - removed extra detail line that rendered values like `Mission`,
+  - converted CTA row to left title + right icon container `Continue`,
+  - removed `Lesson {n}` prefix from CTA label source (uses module title directly).
+  (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`, `src/app/(accelerator)/accelerator/page.tsx`)
+- Validation:
+  - `pnpm lint src/components/roadmap/roadmap-rail-card.tsx src/components/roadmap/roadmap-outline-card.tsx src/components/accelerator/accelerator-org-snapshot-strip.tsx 'src/app/(accelerator)/accelerator/page.tsx'` ✅
+
+## 2026-02-07 — Codex roadmap rail label cleanup
+- Removed the timeline header labels from `RoadmapRailCard`:
+  - `DELIVERABLES + MODULES`
+  - `{completed}/{total} deliverables complete`
+  (`src/components/roadmap/roadmap-rail-card.tsx`)
+- Validation:
+  - `pnpm lint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex roadmap lesson filter restoration
+- Restored a lesson filter dropdown in the top-right corner of the `Strategic Roadmap` header for snake-grid layout (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Filter behavior:
+  - `All lessons` shows full timeline;
+  - selecting a lesson filters timeline to that lesson card plus deliverables linked to that module index.
+- Preserved existing roadmap navigation behavior and connector rendering for the currently visible filtered set.
+- Validation:
+  - `pnpm lint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex roadmap filter stabilization (group-based + fixed right anchor)
+- Reworked roadmap picker from per-module to lesson-group filtering (`Formation`, `Electives`, etc.) using grouped module metadata in `RoadmapRailCard` (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Updated dropdown UI to match existing track-picker pattern:
+  - fixed-width trigger (`220px`) anchored to the top-right (`ml-auto`) so selection text does not shift layout;
+  - icons in trigger + options via `getTrackIcon`;
+  - concise option labels (`All groups` + group names) with no long module titles.
+- Validation:
+  - `pnpm lint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex accelerator track rail hidden (temporary)
+- Hid the accelerator `ClassesSection`/`TRACK` rail block in `AppShell` by gating `showAcceleratorRail` behind a temporary flag (`showAcceleratorTrackRail = false`) while preserving the rest of right-rail behavior (`src/components/app-shell.tsx`).
+- Validation:
+  - `pnpm lint src/components/app-shell.tsx` ✅
+
+## 2026-02-07 — Codex roadmap picker alignment/copy fix
+- Updated `lesson-group-picker` trigger so selected value text is left-aligned and ellipsized (no clipping/centering drift on short or long labels) by applying `SelectValue` sizing/alignment classes (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Renamed picker default option/placeholder from `All groups` to `All Modules` (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Validation:
+  - `pnpm lint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex accelerator welcome dismissible banner
+- Replaced the static in-page accelerator welcome block with a dismissible banner component rendered above the org snapshot strip (`src/components/accelerator/accelerator-welcome-banner.tsx`, `src/app/(accelerator)/accelerator/page.tsx`).
+- Banner behavior:
+  - dismiss button in top-right;
+  - per-user local persistence via `localStorage` (`accelerator-overview-welcome-dismissed:v1:{userId}`) so dismissed state stays hidden for that user.
+- Validation:
+  - `pnpm lint src/components/accelerator/accelerator-welcome-banner.tsx 'src/app/(accelerator)/accelerator/page.tsx'` ✅
+
+## 2026-02-07 — Codex org snapshot counter correction (Programs/People)
+- Updated `AcceleratorOrgSnapshotStrip` stat tiles so `Programs` and `People` display numeric counters instead of percentages (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`).
+- Removed unused `programCompletion` / `peopleCompletion` wiring from accelerator overview page to keep props aligned (`src/app/(accelerator)/accelerator/page.tsx`).
+- Kept `%` only where intended: readiness progress and About completeness.
+- Validation:
+  - `pnpm lint src/components/accelerator/accelerator-org-snapshot-strip.tsx 'src/app/(accelerator)/accelerator/page.tsx'` ✅
+
+## 2026-02-07 — Codex accelerator pricing CTA cleanup + overview shadow flattening
+- Pricing accelerator option cards now use a single CTA label (`Continue`) for both billing modes while retaining billing switch behavior and mode-specific price/plan metadata submission (`src/components/public/accelerator-option-card.tsx`, `src/components/public/pricing-surface.tsx`).
+- Removed drop-shadow styling from accelerator overview surface cards/elements so the page reads flatter and more unified:
+  - org snapshot strip card/elements (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`)
+  - roadmap deliverable/module cards and internal media badges (`src/components/roadmap/roadmap-rail-card.tsx`)
+- Validation:
+  - `pnpm test:acceptance tests/acceptance/home-canvas-scroll-logic.test.ts tests/acceptance/accelerator-billing-lifecycle.test.ts tests/acceptance/pricing-accelerator-checkout-metadata.test.ts tests/acceptance/coaching-schedule-route.test.ts` ✅
+  - `pnpm lint src/components/accelerator/accelerator-org-snapshot-strip.tsx src/components/roadmap/roadmap-rail-card.tsx src/components/public/accelerator-option-card.tsx src/components/public/pricing-surface.tsx` ✅
+
+## 2026-02-07 — Codex accelerator welcome banner redesign (icon + light surface)
+- Redesigned `AcceleratorWelcomeBanner` layout for cleaner hierarchy and spacing (`src/components/accelerator/accelerator-welcome-banner.tsx`).
+- Added rounded-square icon container in the banner header (`Rocket` icon).
+- Switched banner surface to a light-grey container (`bg-zinc-100/80` in light mode, darker adaptive tint in dark mode).
+- Updated dismiss control styling to match the new banner visual language (rounded square, bordered background).
+- Validation:
+  - `pnpm lint src/components/accelerator/accelerator-welcome-banner.tsx` ✅
+
+## 2026-02-07 — Codex right-rail bottom gap removal (accelerator surface)
+- Removed desktop right-rail shell bottom padding so bottom-aligned rail cards sit flush with no extra gap (`src/components/app-shell.tsx`).
+- Change: `ShellRightRail` inner container `pb-4` -> `pb-0`.
+- Validation:
+  - `pnpm lint src/components/app-shell.tsx` ✅
+
+## 2026-02-07 — Codex right-rail vertical offset tweak
+- Shifted desktop right-rail content down slightly by increasing top padding on the shared `ShellRightRail` scroll container (`src/components/app-shell.tsx`).
+- Change: `pt-0` -> `pt-2`.
+- Validation:
+  - `pnpm lint src/components/app-shell.tsx` ✅
+
+## 2026-02-07 — Codex right-rail vertical offset increase
+- Increased desktop right-rail top offset further for the roadmap/coaching stack (`src/components/app-shell.tsx`).
+- Change: `pt-2` -> `pt-4`.
+- Validation:
+  - `pnpm lint src/components/app-shell.tsx` ✅
+
+## 2026-02-07 — Codex org snapshot logo seam alignment
+- Adjusted org logo badge vertical position to better center it on the header/body seam and prevent overlap drift (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`).
+- Change: logo badge offset `top-[-22px]` -> `top-[-28px]`.
+- Validation:
+  - `pnpm lint src/components/accelerator/accelerator-org-snapshot-strip.tsx` ✅
+
+## 2026-02-07 — Codex coaching toast copy cleanup (full-tier)
+- Replaced the full-tier coaching toast message to avoid exposing internal pricing/link-tier language (`src/hooks/use-coaching-booking.ts`).
+- Change: `Opening the full-rate coaching booking link.` -> `Opening your coaching booking link.`
+- Validation:
+  - `pnpm lint src/hooks/use-coaching-booking.ts` ✅
+
+## 2026-02-07 — Codex module assignment editor height parity
+- Increased module-stepper assignment editor height behavior to match roadmap-style vertical space (`src/components/training/module-detail/assignment-form.tsx`).
+- Changes:
+  - roadmap checkpoint rich-text editor now sets `minHeight: 420`;
+  - stepper assignment container now uses `h-full` so inner editor can stretch;
+  - single-field long-text stepper sections now render as a full-height flex column (`flex-1`) instead of a short stacked block.
+- Validation:
+  - `pnpm lint src/components/training/module-detail/assignment-form.tsx` ✅
+
+## 2026-02-07 — Codex people metric default floor
+- Updated accelerator snapshot `People` metric to default to `1` when no team entries exist (`src/app/(accelerator)/accelerator/page.tsx`).
+- Change: `peopleCount` now uses `Math.max(1, computedCount)`.
+- Validation:
+  - `pnpm lint 'src/app/(accelerator)/accelerator/page.tsx'` ✅
+
+## 2026-02-07 — Codex roadmap module badge hide
+- Hid the `Module {n}` media overlay badge on roadmap module cards in the accelerator overview timeline (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Validation:
+  - `pnpm lint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex roadmap module media icon reposition + locked label cleanup
+- Replaced the module media icon treatment in roadmap cards:
+  - moved from bottom-right circular badge to centered rounded-rectangle badge in the image area;
+  - badge icon now resolves from the module’s associated track icon (`getTrackIcon(module.groupTitle ?? module.title)`).
+  (`src/components/roadmap/roadmap-rail-card.tsx`)
+- Removed redundant uppercase `LOCKED` helper text line from module card header row while preserving locked status badge semantics (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Validation:
+  - `pnpm lint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex roadmap ordering fix + subtitle copy cleanup
+- Fixed accelerator roadmap timeline ordering in `RoadmapRailCard` so module cards render in deterministic sequence first, with linked deliverables placed immediately after their corresponding module instead of front-loading deliverables (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Updated lesson-group filtering to prefer `homework.moduleId` linkage (with `moduleIdx` fallback) for accurate deliverable filtering in grouped views (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Removed the appended completion suffix (`x of y complete`) from the roadmap subtitle line (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Updated roadmap subtitle copy to: `Track progress and open each section to continue building your organization.` (`src/components/roadmap/roadmap-outline-card.tsx`).
+- Validation:
+  - `pnpm lint src/components/roadmap/roadmap-rail-card.tsx src/components/roadmap/roadmap-outline-card.tsx` ✅
+
+## 2026-02-07 — Codex roadmap cleanup (rail removal + pinned CTA + module ordering hardening)
+- Removed the decorative background rail/path rendering behind accelerator roadmap cards to simplify the visual surface (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Pinned module-card footer action copy (`Open module`) to a stable bottom-left position regardless of content height by converting card body layout to a full-height flex column (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Hardened accelerator overview module ordering so Formation/Electives are normalized across source groups, deduped, and explicitly ordered:
+  - core Formation modules are forced first (`Naming your NFP`, `NFP Registration`, `Filing 1023`) with slug/title fallback,
+  - paid Electives are sorted by elective catalog order and appended after main tracks.
+  (`src/app/(accelerator)/accelerator/page.tsx`)
+- Validation:
+  - `pnpm exec eslint 'src/components/roadmap/roadmap-rail-card.tsx' 'src/app/(accelerator)/accelerator/page.tsx'` ✅
+
+## 2026-02-07 — Codex roadmap media container height correction
+- Restored a taller module media area in accelerator roadmap cards so the image container no longer appears compressed after recent layout changes (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Change: module media wrapper updated from `aspect-[5/3]` to `aspect-[4/3]` with `min-h-[170px]` to keep consistent card proportions across viewport widths.
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex roadmap media size rollback
+- Reverted roadmap module media container sizing to the prior design in `src/components/roadmap/roadmap-rail-card.tsx`.
+- Change: restored `aspect-[5/3]` and removed the temporary `min-h-[170px]` override.
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex roadmap media ratio tuning (restore pre-shortened feel)
+- Updated accelerator roadmap module media container from `aspect-[5/3]` to `aspect-[3/2]` to restore the prior visual height without reintroducing the overly tall variant (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex roadmap card footer spacing fix
+- Reworked module-card footer action positioning in accelerator roadmap cards to eliminate forced vertical slack introduced by `mt-auto` + full-height content (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Changes:
+  - module media ratio set to `aspect-[4/3]` (taller than `5/3`);
+  - content stack no longer uses `h-full`;
+  - `Open module` is now absolutely positioned at the bottom-left of the content block (`absolute bottom-4 left-4`);
+  - module card minimum height reduced from `220px` to `200px` to avoid unnecessary empty space on short-content cards.
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex roadmap card alignment pass (deliverable vs module)
+- Updated accelerator roadmap deliverable card layout to visually align with module card content structure in `RoadmapRailCard` (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Changes on deliverable cards:
+  - normalized card minimum height to `200px` to match module cards;
+  - switched top row to a compact left helper label + right status badge layout;
+  - aligned title/subtitle spacing with module card text stack;
+  - pinned lesson footer metadata to bottom-left via absolute positioning (`bottom-4 left-4`) to match module footer behavior.
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex track lock-state recompute fix (formation first module)
+- Fixed incorrect `locked` statuses in accelerator overview timeline when visible tracks are split/filtered from source classes (`src/app/(accelerator)/accelerator/page.tsx`).
+- Root cause: lock progression was inherited from pre-filter class ordering, so hidden modules could force visible first modules (for example, `Naming your NFP`) to appear locked.
+- Added `relockModulesWithinTrack(...)` and applied it after dedupe/sort for both `Formation` and `Electives` tracks, treating inherited `locked` as `not_started` before recomputing progression within the visible track.
+- Validation:
+  - `pnpm exec eslint 'src/app/(accelerator)/accelerator/page.tsx'` ✅
+
+## 2026-02-07 — Codex roadmap footer CTA consistency pass
+- Standardized bottom-left footer CTA treatment across accelerator roadmap module and deliverable cards in `RoadmapRailCard` (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Deliverable cards now use the same anchored CTA pattern as module cards (icon + short action label), replacing lesson-specific footer metadata.
+- Change on deliverables: `Lesson ...` footer -> `Open deliverable` with `ArrowUpRight` icon.
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex module card status-row cleanup + locked badge overlay
+- Removed module helper label text (`REVIEW`/`CONTINUE`/`START`) from accelerator roadmap module cards to reduce redundancy (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Moved the `Locked` status pill from the text stack into the module media area as a top-right overlay badge.
+- Unlocked module cards keep their status pill in the text area header row; locked cards now show status only in the media overlay.
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex module status badge placement unification
+- Unified module status badge placement in accelerator roadmap cards so `Locked`, `In progress`, and `Completed` all render in the same top-right media overlay position (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Removed the extra in-body module status row to avoid split positioning and visual drift.
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx 'src/app/(accelerator)/accelerator/page.tsx'` ✅
+
+## 2026-02-07 — Codex deliverable card spacing stabilization
+- Added an invisible spacer block to deliverable cards in `RoadmapRailCard` to preserve module-aligned vertical rhythm after removing visible deliverable media overlays (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Spacer mirrors the module media dimensions (`aspect-[4/3]` + matching margins), while remaining hidden (`invisible`) and non-semantic (`aria-hidden`).
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex deliverable icon + badge position reset (module parity)
+- Restored visible top media container treatment for deliverable cards so the roadmap icon (e.g., Compass) is centered inside the card container like module cards (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Moved deliverable status badge (`In progress` / `Complete`) to top-right media overlay to match module badge placement.
+- Removed deliverable in-body status row after overlay unification.
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex lesson-group progress metric (replace 5/17 deliverables counter)
+- Replaced accelerator snapshot completion counter logic from raw roadmap deliverables (`x/17`) to lesson-group completion semantics in `AcceleratorOverviewPage` (`src/app/(accelerator)/accelerator/page.tsx`).
+- A lesson group now counts complete only when:
+  - all modules in that group are `completed`, and
+  - all roadmap deliverables linked to modules in that group are complete.
+- Wired new values into org snapshot strip via `moduleGroupsComplete`/`moduleGroupsTotal` (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`).
+- Updated snapshot copy:
+  - subcopy now reports `x/y lesson groups complete`;
+  - summary row label changed from `Modules completed` to `Lesson groups completed`.
+- Validation:
+  - `pnpm exec eslint 'src/app/(accelerator)/accelerator/page.tsx' src/components/accelerator/accelerator-org-snapshot-strip.tsx src/components/roadmap/roadmap-rail-card.tsx src/lib/accelerator/progress.ts src/lib/module-progress.ts src/components/accelerator/start-building-pager.tsx 'src/app/(dashboard)/class/[slug]/module/[index]/page.tsx'` ✅
+
+## 2026-02-07 — Codex copy tweak (lesson groups -> lessons)
+- Updated accelerator snapshot progress copy to use `lessons` instead of `lesson groups` in `AcceleratorOrgSnapshotStrip` (`src/components/accelerator/accelerator-org-snapshot-strip.tsx`).
+- Changes:
+  - `x/y lesson groups complete` -> `x/y lessons complete`
+  - `Lesson groups completed` -> `Lessons completed`
+- Validation:
+  - `pnpm exec eslint src/components/accelerator/accelerator-org-snapshot-strip.tsx` ✅
+
+## 2026-02-07 — Codex coaching CTA copy tweak (right rail)
+- Updated accelerator right-rail coaching CTA label from `Book coaching` to `Book a session` (`src/components/accelerator/accelerator-overview-right-rail.tsx`).
+- Validation:
+  - `pnpm exec eslint src/components/accelerator/accelerator-overview-right-rail.tsx` ✅
+
+## 2026-02-07 — Codex accelerator roadmap rail CTA + overview copy update
+- Added a right-rail navigation CTA in roadmap editor views under `/accelerator/roadmap*` to jump back to accelerator home (`/accelerator`) (`src/components/roadmap/roadmap-editor.tsx`).
+- CTA placement: bottom of the roadmap TOC rail, full-width outlined button with home icon.
+- Updated accelerator overview roadmap card copy to accelerator-specific language:
+  - title `Strategic Roadmap` -> `Accelerator Progress`
+  - subtitle `Track progress and open each section to continue building your organization.` -> `Track lessons and deliverables as you move through the accelerator.`
+  (`src/components/roadmap/roadmap-outline-card.tsx`)
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-editor.tsx src/components/roadmap/roadmap-outline-card.tsx` ✅
+
+## 2026-02-07 — Codex roadmap media grid-pattern integration
+- Added `GridPattern` overlays to accelerator roadmap card media containers (deliverable + module cards) in `RoadmapRailCard` to match the visual system used in `AcceleratorOrgSnapshotStrip` (`src/components/roadmap/roadmap-rail-card.tsx`).
+- Kept existing centered icon container and top-right status badge layering intact.
+- Implementation details:
+  - shared `ROADMAP_MEDIA_SQUARES` pattern seed;
+  - unique `patternId` per card (`roadmap-deliverable-media-{id}` / `roadmap-module-media-{id}`);
+  - masked + skewed pattern styling aligned with snapshot visual treatment.
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+
+## 2026-02-07 — Codex notifications + accelerator rail + module order stabilization
+- Removed Notifications archive UI surface and converted the popover to inbox-only display in `src/components/notifications/notifications-menu.tsx`.
+  - Deleted `Archive` tab trigger and archive list content.
+  - Removed `Archive all` footer action.
+  - Kept read-state behavior on notification open.
+- Stabilized accelerator roadmap module ordering in `src/components/roadmap/roadmap-rail-card.tsx`.
+  - Enforced core formation modules first: `Naming your NFP`, `NFP Registration`, `Filing 1023` (slug-based ordering).
+  - Forced elective upsell modules to the end: `Financial Handbook`, `Due Diligence`, `Retention and Security`.
+  - Maintained sequence/index ordering for all other modules.
+- Hardened lesson-group filter trigger layout in `src/components/roadmap/roadmap-rail-card.tsx`.
+  - Fixed width so the select stays anchored at the right.
+  - Forced left text alignment + truncation behavior for long labels.
+- Added accelerator sidebar jump list in `src/components/accelerator/accelerator-overview-right-rail.tsx`.
+  - New top right-rail card lists modules with status pills and direct links.
+  - Preserved coaching card as bottom slot.
+- Removed full-rate coaching phrasing from user-facing coaching hints.
+  - `src/components/accelerator/accelerator-overview-right-rail.tsx`
+  - `src/components/accelerator/accelerator-schedule-card.tsx`
+  - `src/components/training/module-right-rail.tsx`
+  - `src/components/training/module-detail/module-stepper.tsx`
+- Validation:
+  - `pnpm exec eslint src/components/notifications/notifications-menu.tsx src/components/roadmap/roadmap-rail-card.tsx src/components/accelerator/accelerator-overview-right-rail.tsx src/components/accelerator/accelerator-schedule-card.tsx src/components/training/module-right-rail.tsx src/components/training/module-detail/module-stepper.tsx` ✅
+
+## 2026-02-07 — Codex module assignment editor height parity pass
+- Increased roadmap-linked assignment editor minimum height from `420` to `560` in `RoadmapCheckpointField` within `src/components/training/module-detail/assignment-form.tsx` to better match strategic-roadmap editing ergonomics.
+- Increased non-roadmap rich text field containers in accelerator module pages:
+  - `long_text` and `custom_program` editors now use `min-h-[460px]` in accelerator shell (`/accelerator/*`) and `min-h-[360px]` elsewhere.
+- Goal: remove cramped editor feel on `/accelerator/class/.../module/...` assignment surfaces.
+- Validation:
+  - `pnpm exec eslint src/components/training/module-detail/assignment-form.tsx` ✅
+
+## 2026-02-07 — Codex full-account seed expansion (case-study completeness)
+- Expanded `scripts/seed-full-account.mjs` to seed a realistic end-to-end case-study dataset instead of baseline placeholder data only.
+- Added seeded organization document metadata (`verification letter`, `articles`, `bylaws`, `state registration`, `good standing`, `W9`) under `organizations.profile.documents`.
+- Added seeded strategic roadmap content under `organizations.profile.roadmap.sections` with mixed statuses (`complete`, `in_progress`, `not_started`) across key sections to support realistic accelerator and roadmap walkthroughs.
+- Added additional profile realism fields (`ein`, `rep`) to improve settings/account/org demo fidelity.
+- Added assignment submission seeding (`assignment_submissions`) tied to module progression so homework and completion surfaces have concrete data (`accepted`/`submitted` states).
+- Validation:
+  - `pnpm exec eslint scripts/seed-full-account.mjs` ✅
+
+## 2026-02-07 — Codex readiness criteria + journey brief kickoff
+- Added `docs/briefs/accelerator-readiness-criteria-and-journey.md` as the v1 contract for:
+  - evidence-based `Fundable` / `Verified` criteria,
+  - founder journey map,
+  - gamification/flywheel model,
+  - implementation backlog for deterministic readiness calculation.
+- Indexed the brief in `docs/briefs/INDEX.md`.
+- Updated active launch worklog (`docs/briefs/accelerator-launch-active-worklog.md`):
+  - bumped `Last updated` to `2026-02-07`;
+  - added WS-K workstream for readiness criteria + journey optimization.
+
+## 2026-02-07 — Codex readiness scoring integration (accelerator overview)
+- Added deterministic readiness scoring utility at `src/lib/accelerator/readiness.ts`.
+  - Computes `Fundable`/`Verified` state from real evidence sources:
+    - formation module completion,
+    - roadmap core section completion,
+    - document presence,
+    - program funding-goal setup,
+    - formation status,
+    - team baseline.
+  - Produces a derived readiness progress percentage + checkpoint thresholds (`70` / `90`).
+- Wired accelerator overview to use readiness-derived progress/checkpoints instead of raw roadmap completion percent in `src/app/(accelerator)/accelerator/page.tsx`.
+- Validation:
+  - `pnpm exec eslint src/lib/accelerator/readiness.ts 'src/app/(accelerator)/accelerator/page.tsx'` ✅
+
+## 2026-02-07 — Codex incremental pass (INC-01/INC-02/INC-03)
+- Added incremental execution queue tracking in `docs/briefs/accelerator-launch-active-worklog.md` and moved statuses to explicit `done/in progress/queued`.
+
+### INC-01 — Readiness missing-criteria checklist UI (done)
+- Added mapped readiness CTA links in accelerator overview page:
+  - `src/app/(accelerator)/accelerator/page.tsx`
+- Extended snapshot strip props + UI to show "Next to reach Fundable/Verified" linked checklist:
+  - `src/components/accelerator/accelerator-org-snapshot-strip.tsx`
+- Checklist items are deduped and capped to top 3 highest-signal actions.
+
+### INC-02 — Accelerator calendar parity spacing pass (done)
+- Normalized roadmap calendar shell spacing/margins and card chrome toward `/my-organization` calendar visual tokens:
+  - reduced outer offset padding,
+  - unified border/background treatments,
+  - tightened section padding,
+  - made embedded calendar width behavior explicit.
+- File:
+  - `src/components/roadmap/roadmap-calendar.tsx`
+
+### INC-03 — Scroll logic QA + lock-model acceptance alignment (in progress)
+- Acceptance test run confirms shared home-canvas scroll logic suite is passing:
+  - `tests/acceptance/home-canvas-scroll-logic.test.ts`
+- Updated acceptance test expectation to align with current non-locking module navigation model:
+  - `tests/acceptance/module-progress.test.ts`
+
+- Validation:
+  - `pnpm exec eslint 'src/app/(accelerator)/accelerator/page.tsx' src/components/accelerator/accelerator-org-snapshot-strip.tsx src/components/roadmap/roadmap-calendar.tsx` ✅
+  - `pnpm test:acceptance` ✅ (15 passed, 1 skipped)
+
+## 2026-02-07 — Codex incremental pass (INC-05 readiness state visibility)
+- Added explicit readiness state pill in accelerator snapshot progress header (`Building` / `Fundable` / `Verified`).
+- Wiring updates:
+  - `src/app/(accelerator)/accelerator/page.tsx`: pass derived `readinessStateLabel` to snapshot strip.
+  - `src/components/accelerator/accelerator-org-snapshot-strip.tsx`: render state pill with semantic styling.
+- Updated incremental queue status in `docs/briefs/accelerator-launch-active-worklog.md`:
+  - `INC-05` moved to `in progress`.
+- Validation:
+  - `pnpm exec eslint 'src/app/(accelerator)/accelerator/page.tsx' src/components/accelerator/accelerator-org-snapshot-strip.tsx` ✅
+
+## 2026-02-07 — Codex incremental pass (INC-05 admin readiness audit)
+- Added admin-only readiness audit panel on `/accelerator` to expose deterministic scoring state and missing criteria.
+- Panel includes:
+  - current readiness state (`Building`/`Fundable`/`Verified`),
+  - current score (`x/100`),
+  - Fundable gap list,
+  - Verified gap list.
+- File:
+  - `src/app/(accelerator)/accelerator/page.tsx`
+- Updated incremental queue status in `docs/briefs/accelerator-launch-active-worklog.md`:
+  - `INC-05` moved to `done`.
+- Validation:
+  - `pnpm exec eslint 'src/app/(accelerator)/accelerator/page.tsx'` ✅
+
+## 2026-02-07 — Codex incremental pass (INC-04 seed fixture verification, dry-run)
+- Added safe `--dry-run` mode to `scripts/seed-full-account.mjs` for deterministic fixture validation without Supabase writes.
+- Dry-run now reports:
+  - email/role/variant/progress/onboarding preview,
+  - roadmap section count,
+  - seeded document count,
+  - duplicate roadmap id/slug checks.
+- Executed dry-run verification:
+  - `node scripts/seed-full-account.mjs --dry-run true --email launch.qa@example.com --variant with_coaching --progress mixed` ✅
+- Updated incremental queue status in `docs/briefs/accelerator-launch-active-worklog.md`:
+  - `INC-04` moved to `in progress`.
+- Validation:
+  - `pnpm exec eslint scripts/seed-full-account.mjs` ✅
+
+## 2026-02-07 — Codex incremental completion pass (INC-03 + INC-04)
+
+### INC-04 — Full-case seed fixture consistency hardening (done)
+- Expanded `scripts/seed-full-account.mjs` dry-run validation with stricter integrity checks:
+  - duplicate roadmap id/slug detection,
+  - required roadmap section presence validation,
+  - allowed status validation (`not_started` / `in_progress` / `complete`),
+  - required document key presence (`verificationLetter`),
+  - basic seeded document shape checks (`name`/`path`).
+- Added acceptance test for dry-run behavior:
+  - `tests/acceptance/seed-full-account-dry-run.test.ts`
+
+### INC-03 — Scroll boundary QA coverage expansion (done)
+- Expanded home-canvas scroll logic acceptance coverage:
+  - near-edge float handoff behavior,
+  - explicit unavailable-metrics behavior (wheel blocked, swipe handoff).
+- File:
+  - `tests/acceptance/home-canvas-scroll-logic.test.ts`
+
+- Validation:
+  - `pnpm exec eslint scripts/seed-full-account.mjs tests/acceptance/seed-full-account-dry-run.test.ts tests/acceptance/home-canvas-scroll-logic.test.ts` ✅
+  - `pnpm test:acceptance -- tests/acceptance/seed-full-account-dry-run.test.ts tests/acceptance/home-canvas-scroll-logic.test.ts` ✅
+
+- Queue status update in `docs/briefs/accelerator-launch-active-worklog.md`:
+  - `INC-03` -> done
+  - `INC-04` -> done
+
+## 2026-02-07 — Codex full acceptance sweep after incremental queue completion
+- Ran full acceptance test suite after completing INC-01 through INC-05 updates.
+- Result: all active acceptance tests passing.
+- Command:
+  - `pnpm test:acceptance` ✅
+- Summary:
+  - `16` files passed, `1` file skipped
+  - `41` tests passed, `1` test skipped
+
+## 2026-02-07 — Codex readiness transition acceptance coverage
+- Added acceptance tests for readiness engine transitions (`Building` -> `Fundable` -> `Verified`):
+  - `tests/acceptance/accelerator-readiness.test.ts`
+- Coverage validates:
+  - missing hard requirements stay in `Building`,
+  - fundable threshold/requirements promote to `Fundable`,
+  - verified mandatory artifacts + score threshold promote to `Verified`.
+- Validation:
+  - `pnpm exec eslint tests/acceptance/accelerator-readiness.test.ts` ✅
+  - `pnpm test:acceptance -- tests/acceptance/accelerator-readiness.test.ts` ✅
+
+## 2026-02-07 — Codex next incremental queue extension
+- Extended incremental queue in `docs/briefs/accelerator-launch-active-worklog.md` with next items:
+  - `INC-06`: browser smoke on home-canvas pricing handoff,
+  - `INC-07`: seed-script dry-run CI guardrail,
+  - `INC-08`: readiness checklist deep-link refinement.
+
+## 2026-02-07 — Codex readiness checklist deep-link refinement (INC-08 start)
+- Updated readiness checklist link generation so `Complete formation lessons` now routes to the next incomplete Formation module dynamically, instead of a static module-1 fallback.
+- File:
+  - `src/app/(accelerator)/accelerator/page.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/app/(accelerator)/accelerator/page.tsx'` ✅
+
+## 2026-02-07 — Codex incremental completion pass (INC-07 + INC-08)
+
+### INC-08 — Readiness checklist deep-link refinement (done)
+- Added shared resolver utility for readiness checklist CTA generation:
+  - `src/lib/accelerator/readiness-checklist.ts`
+- Updated accelerator overview to use shared resolver and dynamic deep links:
+  - `Complete formation lessons` -> next incomplete Formation module link
+  - `Complete core roadmap sections` -> next incomplete core roadmap section link
+- File updated:
+  - `src/app/(accelerator)/accelerator/page.tsx`
+- Added acceptance coverage for mapping behavior, fallbacks, dedupe, and cap:
+  - `tests/acceptance/readiness-checklist.test.ts`
+
+### INC-07 — Seed validation guardrail command + docs (done)
+- Added package script:
+  - `pnpm seed:validate` -> `node scripts/seed-full-account.mjs --dry-run true`
+- Updated workflow runbook utilities to include seed fixture validation command:
+  - `docs/agent/workflow-quality.md`
+- Dry-run command confirmed passing.
+
+- Validation:
+  - `pnpm exec eslint src/lib/accelerator/readiness-checklist.ts 'src/app/(accelerator)/accelerator/page.tsx' tests/acceptance/readiness-checklist.test.ts` ✅
+  - `pnpm test:acceptance -- tests/acceptance/readiness-checklist.test.ts tests/acceptance/seed-full-account-dry-run.test.ts` ✅
+  - `pnpm seed:validate` ✅
+
+- Queue status update in `docs/briefs/accelerator-launch-active-worklog.md`:
+  - `INC-07` -> done
+  - `INC-08` -> done
+
+## 2026-02-07 — Codex incremental completion pass (INC-06 behavior contract)
+- Added explicit home-canvas section behavior resolver:
+  - `src/components/public/home-canvas-behavior.ts`
+  - pricing is the only scrollable section (`pan-y`), all others are non-scrollable (`pan-x`).
+- Updated `/home-canvas` preview to use shared behavior contract instead of inline `activeSection === "pricing"` checks:
+  - `src/components/public/home-canvas-preview.tsx`
+- Added acceptance coverage for section behavior contract:
+  - `tests/acceptance/home-canvas-behavior.test.ts`
+- Existing scroll handoff tests remain green and now validate against this explicit behavior layer:
+  - `tests/acceptance/home-canvas-scroll-logic.test.ts`
+- Validation:
+  - `pnpm exec eslint src/components/public/home-canvas-behavior.ts src/components/public/home-canvas-preview.tsx tests/acceptance/home-canvas-behavior.test.ts` ✅
+  - `pnpm test:acceptance -- tests/acceptance/home-canvas-behavior.test.ts tests/acceptance/home-canvas-scroll-logic.test.ts` ✅
+
+- Queue status update in `docs/briefs/accelerator-launch-active-worklog.md`:
+  - `INC-06` -> done
+
+## 2026-02-07 — Codex incremental completion pass (INC-26 roadmap ordering + notifications cleanup)
+- Added shared accelerator module ordering helper:
+  - `src/lib/accelerator/module-order.ts`
+  - Enforces deterministic sequencing:
+    - Formation core modules first (`naming-your-nfp`, `nfp-registration`, `filing-1023`),
+    - add-on electives (`financial-handbook`, `due-diligence`, `retention-and-security`) after core path.
+- Wired roadmap timeline card ordering to shared helper:
+  - `src/components/roadmap/roadmap-rail-card.tsx`
+- Removed unnecessary archive query path from notifications list action (UI is inbox-only):
+  - `src/app/actions/notifications.ts`
+- Fixed accelerator snapshot lessons metric so it no longer falls back to deliverables when lesson totals are unavailable:
+  - `src/components/accelerator/accelerator-org-snapshot-strip.tsx`
+- Added regression coverage for ordering contract:
+  - `tests/acceptance/accelerator-module-order.test.ts`
+
+- Validation:
+  - `pnpm test:acceptance -- tests/acceptance/accelerator-module-order.test.ts` ✅
+  - `pnpm lint` ✅
+
+## 2026-02-07 — Codex follow-up pass (INC-27 ordering unification)
+- Removed duplicate module ordering logic from accelerator overview page and switched server-side grouping sort to shared helper:
+  - `src/app/(accelerator)/accelerator/page.tsx`
+  - now uses `sortAcceleratorModules` from `src/lib/accelerator/module-order.ts`
+- Outcome: Formation-first/electives-last ordering is now single-sourced across both page composition and roadmap card rendering.
+
+- Validation:
+  - `pnpm test:acceptance` ✅ (`21` passed files, `1` skipped; `71` passed tests, `1` skipped)
+  - `pnpm lint` ✅
+
+## 2026-02-07 — Codex QA follow-up (snapshot + RLS)
+- Additional validation run after INC-27:
+  - `pnpm test:snapshots` ✅
+  - `pnpm test:rls` ❌ blocked by network/DNS (`getaddrinfo ENOTFOUND vswzhuwjtgzrkxknrmxu.supabase.co`)
+
+## 2026-02-07 — Codex micro pass (roadmap title copy)
+- Updated accelerator roadmap surface title from `Accelerator Progress` to `The Framework`.
+- File:
+  - `src/components/roadmap/roadmap-outline-card.tsx`
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-outline-card.tsx` ✅
+
+## 2026-02-07 — Codex micro pass (accelerator right-rail roadmap list)
+- Replaced accelerator overview right-rail top card content from module list to roadmap section navigation.
+- New top rail content now matches Strategic Roadmap section links (`Origin Story`, `Need`, etc.) and links to `/accelerator/roadmap/<slug>`.
+- Files:
+  - `src/components/accelerator/accelerator-overview-right-rail.tsx`
+  - `src/app/(accelerator)/accelerator/page.tsx`
+- Validation:
+  - `pnpm exec eslint src/components/accelerator/accelerator-overview-right-rail.tsx 'src/app/(accelerator)/accelerator/page.tsx'` ✅
+
+## 2026-02-07 — Codex micro pass (pin Back To Accelerator in right rail)
+- Moved `Back To Accelerator` from the roadmap TOC panel body into a dedicated bottom-aligned right-rail slot.
+- File:
+  - `src/components/roadmap/roadmap-editor.tsx`
+- Implementation detail:
+  - Added `RightRailSlot` with `align="bottom"` for the button when in accelerator roadmap view.
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-editor.tsx` ✅
+
+## 2026-02-07 — Codex micro pass (remove accelerator readiness audit panel)
+- Removed the `READINESS AUDIT` admin panel block from accelerator overview (the section with score/fundable/verified gaps).
+- File:
+  - `src/app/(accelerator)/accelerator/page.tsx`
+- Cleanup:
+  - Removed unused `cn` import from the same file.
+- Validation:
+  - `pnpm exec eslint 'src/app/(accelerator)/accelerator/page.tsx'` ✅
+
+## 2026-02-07 — Codex micro pass (remove lesson-count coaching copy)
+- Removed the dynamic `X lessons still open` text from accelerator coaching card description.
+- Cleaned up now-unused `modules` prop/plumbing from accelerator overview right rail.
+- Files:
+  - `src/components/accelerator/accelerator-overview-right-rail.tsx`
+  - `src/app/(accelerator)/accelerator/page.tsx`
+- Validation:
+  - `pnpm exec eslint src/components/accelerator/accelerator-overview-right-rail.tsx 'src/app/(accelerator)/accelerator/page.tsx'` ✅
+
+## 2026-02-07 — Codex incremental completion pass (INC-28 org chart quality + seeding scale)
+- Rebuilt `/people` org chart canvas behavior and layout engine:
+  - `src/components/people/org-chart-canvas.tsx`
+  - Added deterministic non-overlapping hierarchical layout by category lane and reporting depth.
+  - Enabled practical navigation controls: drag-to-pan, pan-on-scroll, snap-to-grid, wider zoom bounds.
+  - Added top-left `Auto-layout` control and fit-view behavior tuned for large datasets.
+  - Improved canvas extent handling to prevent lockups from overly tight viewport bounds.
+- Added real position persistence endpoint used by drag-stop saves:
+  - `src/app/api/people/position/route.ts`
+  - Stores `{x,y}` positions back into `organizations.profile.org_people` with authz checks.
+- Expanded seeded people volume to support stress testing and realistic org-chart density (100+):
+  - `src/actions/demo-workspace.ts` (`DEMO_PEOPLE` now generated as a large deterministic hierarchy)
+  - `scripts/seed-full-account.mjs` (`buildOrgPeople` now generates 100+ deterministic members across staff/board/advisory/volunteers/supporters)
+  - Dry-run output now reports `org_people_seeded` count.
+- Updated seed dry-run acceptance check for new output:
+  - `tests/acceptance/seed-full-account-dry-run.test.ts`
+
+- Validation:
+  - `pnpm exec eslint src/components/people/org-chart-canvas.tsx src/app/api/people/position/route.ts src/actions/demo-workspace.ts scripts/seed-full-account.mjs tests/acceptance/seed-full-account-dry-run.test.ts` ✅
+  - `pnpm test:acceptance -- tests/acceptance/seed-full-account-dry-run.test.ts` ✅
+
+## 2026-02-07 — Codex micro pass (org chart cleanup + hierarchy lanes)
+- Removed unrequested org chart overlays:
+  - Removed top-left status `Panel` (`Recenter / X visible / Pan and zoom enabled / Edit people…`).
+  - Removed `Additional team members` overflow section under the canvas.
+- Updated org chart layout model in `src/components/people/org-chart-canvas.tsx`:
+  - Uses all people passed from `/people` (no first-80 truncation behavior).
+  - Derives a lead node from staff/leadership titles when manager links are incomplete.
+  - Renders categories in clearer hierarchy:
+    - Board/advisory at top.
+    - Lead centered under board.
+    - Staff tree descending below lead by reporting depth.
+    - Volunteers below staff.
+    - Supporters on the bottom foundation row.
+    - Contractors/vendors grouped into side lanes on the primary staff row.
+  - Keeps ReactFlow controls, fit-view behavior, and panning/zooming.
+- Expanded people category taxonomy for future grouping needs in `src/lib/people/categories.ts`:
+  - Added `contractors` and `vendors` categories (labels + badge/strip styles + normalization rules).
+
+- Validation:
+  - `pnpm exec eslint src/components/people/org-chart-canvas.tsx src/lib/people/categories.ts` ✅
+- Follow-up tweak: org-chart rows now wrap into stacked chunked rows (supporters/board/general wrap sizes) so large categories no longer render as one long horizontal line; retains hierarchy ordering and edge wiring (`src/components/people/org-chart-canvas.tsx`).
+- Validation: `pnpm exec eslint src/components/people/org-chart-canvas.tsx` ✅
+- UI cleanup: removed document rename inputs/buttons (`Update name`) from private documents cards; cards now show stored file name only with view/replace/delete actions (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`).
+- Validation: `pnpm exec eslint src/components/organization/org-profile-card/tabs/documents-tab.tsx` ✅
+
+## 2026-02-07 — Codex pricing lifecycle update (exact monthly totals)
+- Updated Accelerator monthly lifecycle to 10-installment term so monthly totals can match one-time totals exactly:
+  - `ACCELERATOR_MONTHLY_INSTALLMENT_LIMIT` changed from `6` to `10` (`src/lib/accelerator/billing.ts`).
+- Updated pricing UI monthly amounts:
+  - Accelerator Pro monthly: `$49.90` (10 installments = $499)
+  - Accelerator Base monthly: `$34.90` (10 installments = $349)
+  - (`src/components/public/pricing-surface.tsx`).
+- Updated monthly plan copy to reflect the 10-payment schedule (`src/components/public/accelerator-option-card.tsx`).
+- Updated acceptance tests for installment metadata/lifecycle expectations (`tests/acceptance/pricing-accelerator-checkout-metadata.test.ts`, `tests/acceptance/accelerator-billing-lifecycle.test.ts`, `tests/acceptance/stripe-webhook-route.test.ts`).
+- Updated pricing/billing docs to match new installment policy (`docs/briefs/stripe-gating.md`, `docs/briefs/accelerator-billing-lifecycle-qa-matrix.md`, `docs/organize.md`).
+
+- Validation:
+  - `pnpm exec eslint src/lib/accelerator/billing.ts src/components/public/pricing-surface.tsx src/components/public/accelerator-option-card.tsx tests/acceptance/pricing-accelerator-checkout-metadata.test.ts tests/acceptance/accelerator-billing-lifecycle.test.ts tests/acceptance/stripe-webhook-route.test.ts` ✅
+  - `pnpm test:acceptance tests/acceptance/pricing-accelerator-checkout-metadata.test.ts tests/acceptance/accelerator-billing-lifecycle.test.ts tests/acceptance/stripe-webhook-route.test.ts` ✅ (26 tests passed)
+
+## 2026-02-07 — Codex ops pass (Stripe test catalog bootstrap)
+- Added `scripts/setup-stripe-test-prices.sh` to create full Stripe test-mode catalog for launch pricing and write resulting `price_...` IDs into `.env.local`:
+  - Organization `$20/mo`
+  - Accelerator Pro `$499` one-time + `$49.90/mo`
+  - Accelerator Base `$349` one-time + `$34.90/mo`
+  - Electives (`Retention and Security`, `Due Diligence`, `Financial Handbook`) at `$50` one-time.
+- Script also stores tier descriptions and customer memo text in product metadata for dashboard reference.
+- Executed script successfully and populated local Stripe price env vars in `.env.local`.
+- Added `scripts/setup-stripe-webhook.sh` to create Stripe webhook endpoints for a provided HTTPS URL and automatically update local `STRIPE_WEBHOOK_SECRET`.
+
+- Validation:
+  - `chmod +x scripts/setup-stripe-test-prices.sh scripts/setup-stripe-webhook.sh` ✅
+  - `pnpm exec eslint scripts/setup-stripe-test-prices.sh scripts/setup-stripe-webhook.sh` (files ignored by ESLint config; no script lint errors emitted) ⚠️
+
+## 2026-02-07 — Codex ops pass (temporary domain + Stripe webhook target)
+- Updated local app base URL to use temporary Vercel domain for Stripe redirect/webhook consistency:
+  - `NEXT_PUBLIC_SITE_URL=https://coach-house-lms.vercel.app` (`.env.local`).
+- Created Stripe webhook endpoint targeting production temp domain:
+  - `https://coach-house-lms.vercel.app/api/stripe/webhook`.
+  - Endpoint created via `scripts/setup-stripe-webhook.sh` and local `STRIPE_WEBHOOK_SECRET` rotated in `.env.local`.
+- Notes:
+  - Keep `http://localhost:3000` only for local dev assumptions; deploy/runtime envs should use the Vercel URL until custom domain is connected.

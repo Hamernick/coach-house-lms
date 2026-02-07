@@ -2,7 +2,6 @@ import Link from "next/link"
 
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
 import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2"
-import Lock from "lucide-react/dist/esm/icons/lock"
 
 import { NewsGradientThumb } from "@/components/news/gradient-thumb"
 import { Button } from "@/components/ui/button"
@@ -34,11 +33,10 @@ export function AcceleratorNextModuleCard({ module }: { module: ModuleCard | nul
     )
   }
 
-  const locked = module.status === "locked"
   const inProgress = module.status === "in_progress"
   const completed = module.status === "completed"
-  const statusLabel = locked ? "Locked" : completed ? "Completed" : inProgress ? "In progress" : "Not started"
-  const ctaLabel = locked ? "Locked" : completed ? "Review" : inProgress ? "Continue" : "Start"
+  const statusLabel = completed ? "Completed" : inProgress ? "In progress" : "Not started"
+  const ctaLabel = completed ? "Review" : inProgress ? "Continue" : "Start"
 
   return (
     <Card
@@ -46,7 +44,6 @@ export function AcceleratorNextModuleCard({ module }: { module: ModuleCard | nul
         "group flex h-full w-full max-w-[420px] flex-col overflow-hidden rounded-[26px] border border-border/60 shadow-sm",
         "transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-md",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-        locked && "cursor-not-allowed opacity-80",
       )}
     >
       <CardContent className="flex h-full flex-col gap-0 p-0 first:pt-0">
@@ -58,19 +55,17 @@ export function AcceleratorNextModuleCard({ module }: { module: ModuleCard | nul
           <span
             className={cn(
               "absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border border-border/60 bg-background/70 px-2 py-1 text-[11px] font-medium text-muted-foreground shadow-sm",
-              inProgress && "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-              completed && "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+              inProgress &&
+                "border-amber-300 bg-amber-50/95 text-amber-700 dark:border-amber-500/35 dark:bg-amber-500/12 dark:text-amber-200",
+              completed && "border-emerald-300 bg-emerald-50/95 text-emerald-700 dark:border-emerald-500/35 dark:bg-emerald-500/12 dark:text-emerald-200",
             )}
           >
-            {locked ? <Lock className="h-3.5 w-3.5" aria-hidden /> : null}
             {completed ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> : null}
             <span>{statusLabel}</span>
           </span>
-          {!locked ? (
-            <span className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/80 text-muted-foreground shadow-sm transition group-hover:bg-background">
-              <ArrowUpRight className="h-4 w-4" aria-hidden />
-            </span>
-          ) : null}
+          <span className="absolute bottom-3 right-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/80 text-muted-foreground shadow-sm transition group-hover:bg-background">
+            <ArrowUpRight className="h-4 w-4" aria-hidden />
+          </span>
         </div>
 
         <div className="space-y-2 px-4 pb-4">
@@ -83,15 +78,9 @@ export function AcceleratorNextModuleCard({ module }: { module: ModuleCard | nul
             ) : null}
           </div>
           <div className="flex justify-end">
-            {locked ? (
-              <Button type="button" size="sm" variant="secondary" disabled>
-                Locked
-              </Button>
-            ) : (
-              <Button asChild size="sm" variant="secondary">
-                <Link href={module.href}>{ctaLabel}</Link>
-              </Button>
-            )}
+            <Button asChild size="sm" variant="secondary">
+              <Link href={module.href}>{ctaLabel}</Link>
+            </Button>
           </div>
         </div>
       </CardContent>

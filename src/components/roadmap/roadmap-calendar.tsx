@@ -5,10 +5,12 @@ import * as SelectPrimitive from "@radix-ui/react-select"
 import { endOfMonth, isSameDay, isWithinInterval, startOfMonth } from "date-fns"
 import CalendarPlusIcon from "lucide-react/dist/esm/icons/calendar-plus"
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
+import Clock3Icon from "lucide-react/dist/esm/icons/clock-3"
 import GlobeIcon from "lucide-react/dist/esm/icons/globe-2"
 import PencilIcon from "lucide-react/dist/esm/icons/pencil"
 import Trash2Icon from "lucide-react/dist/esm/icons/trash-2"
 import RepeatIcon from "lucide-react/dist/esm/icons/repeat"
+import VideoIcon from "lucide-react/dist/esm/icons/video"
 
 import {
   createRoadmapCalendarEvent,
@@ -19,7 +21,6 @@ import {
 import { Button } from "@/components/ui/button"
 import Calendar01 from "@/components/calendar-01"
 import { CalendarDayButton } from "@/components/ui/calendar"
-import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
@@ -35,6 +36,7 @@ import {
   formatCalendarRecurrence,
   type RoadmapCalendarAssignedRole,
   type RoadmapCalendarEvent,
+  type RoadmapCalendarEventInput,
   type RoadmapCalendarRecurrence,
   type RoadmapCalendarType,
 } from "@/lib/roadmap/calendar"
@@ -46,6 +48,7 @@ const ROLE_OPTIONS: Array<{ id: RoadmapCalendarAssignedRole; label: string }> = 
 ]
 
 const DEMO_SEED_KEY = "roadmap-calendar-seeded-v2"
+const DURATION_OPTIONS = [15, 30, 45, 60] as const
 
 type EventDraft = {
   title: string
@@ -69,6 +72,10 @@ function CalendarDayWithDot({
       modifiers={modifiers}
       className={cn(
         className,
+        "h-full rounded-md text-xs font-medium data-[selected-single=true]:!bg-zinc-800 data-[selected-single=true]:!text-white dark:data-[selected-single=true]:!bg-zinc-100 dark:data-[selected-single=true]:!text-zinc-900",
+        modifiers?.hasEvent
+          ? "bg-zinc-100 text-zinc-900 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+          : "text-zinc-500 hover:bg-zinc-100/60 dark:text-zinc-400 dark:hover:bg-zinc-800/50",
         modifiers?.hasEvent
           ? "after:absolute after:bottom-1 after:left-1/2 after:h-1 after:w-1 after:-translate-x-1/2 after:rounded-full after:bg-foreground/70 data-[selected-single=true]:after:bg-background"
           : ""
@@ -97,6 +104,23 @@ function fromDatetimeLocal(value: string) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ""
   return date.toISOString()
+}
+
+function addMinutesToDatetimeLocal(value: string, minutes: number) {
+  if (!value) return ""
+  const start = new Date(value)
+  if (Number.isNaN(start.getTime())) return ""
+  start.setMinutes(start.getMinutes() + minutes)
+  return toDatetimeLocal(start.toISOString())
+}
+
+function eventDurationMinutes(event: RoadmapCalendarEvent) {
+  if (!event.endsAt) return null
+  const start = new Date(event.startsAt)
+  const end = new Date(event.endsAt)
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return null
+  const minutes = Math.round((end.getTime() - start.getTime()) / (1000 * 60))
+  return minutes > 0 ? minutes : null
 }
 
 function buildDraft({
@@ -147,6 +171,7 @@ export function RoadmapCalendar() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<RoadmapCalendarEvent | null>(null)
   const [draft, setDraft] = useState<EventDraft>(() => buildDraft({}))
+  const [selectedDuration, setSelectedDuration] = useState<number>(45)
   const [timeZone, setTimeZone] = useState("")
   const [timeZoneOptions, setTimeZoneOptions] = useState<string[]>([])
 
@@ -170,10 +195,26 @@ export function RoadmapCalendar() {
 
   const eventDays = useMemo(() => events.map((event) => new Date(event.startsAt)), [events])
   const nextEvent = upcomingEvents[0] ?? null
+  const selectedEvent = dayEvents[0] ?? nextEvent
+  const selectedEventDuration = selectedEvent ? eventDurationMinutes(selectedEvent) : null
+  const monthLabel = useMemo(
+    () =>
+      new Intl.DateTimeFormat(undefined, {
+        month: "long",
+        year: "numeric",
+      }).format(month),
+    [month],
+  )
 
   const resetDraft = (event?: RoadmapCalendarEvent | null, baseDate?: Date) => {
     setDraft(buildDraft({ event, baseDate }))
   }
+
+  useEffect(() => {
+    if (!selectedEventDuration) return
+    if (!DURATION_OPTIONS.includes(selectedEventDuration as (typeof DURATION_OPTIONS)[number])) return
+    setSelectedDuration(selectedEventDuration)
+  }, [selectedEventDuration])
 
   useEffect(() => {
     const range = getMonthRange(month)
@@ -214,7 +255,7 @@ export function RoadmapCalendar() {
     if (window.localStorage.getItem(DEMO_SEED_KEY)) return
 
     const now = new Date()
-    const seeds = Array.from({ length: 60 }).map((_, index) => {
+    const seeds: RoadmapCalendarEventInput[] = Array.from({ length: 60 }).map((_, index) => {
       const start = new Date(now)
       start.setDate(now.getDate() + index * 3)
       start.setHours(9 + (index % 6), 0, 0, 0)
@@ -247,10 +288,12 @@ export function RoadmapCalendar() {
   }, [calendarType, canManageCalendar, events.length, isLoading, startTransition])
 
   const handleOpenCreate = (presetTitle?: string) => {
-    resetDraft(null, selectedDate)
-    if (presetTitle) {
-      setDraft((prev) => ({ ...prev, title: presetTitle }))
+    const nextDraft = buildDraft({ baseDate: selectedDate })
+    if (presetTitle) nextDraft.title = presetTitle
+    if (!nextDraft.allDay && nextDraft.startsAt) {
+      nextDraft.endsAt = addMinutesToDatetimeLocal(nextDraft.startsAt, selectedDuration)
     }
+    setDraft(nextDraft)
     setEditingEvent(null)
     setDrawerOpen(true)
   }
@@ -370,7 +413,7 @@ export function RoadmapCalendar() {
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
-      <div className="flex flex-col gap-2 px-2 pb-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 px-0 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-foreground">Board calendar</p>
           <p className="text-xs text-muted-foreground">Track public and internal milestones in one place.</p>
@@ -395,8 +438,8 @@ export function RoadmapCalendar() {
         </DropdownMenu>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 divide-y divide-border/35 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)] lg:divide-y-0 lg:divide-x">
-        <div className="min-w-0 space-y-5 p-5">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 rounded-xl border border-border/60 bg-background/20 p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="min-w-0 space-y-4 rounded-lg border border-border/60 bg-background/30 p-3">
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">Next event</p>
             {nextEvent ? (
@@ -418,7 +461,7 @@ export function RoadmapCalendar() {
                 <p className="text-sm text-muted-foreground">No upcoming events yet.</p>
               ) : (
                 upcomingEvents.map((event) => (
-                  <div key={event.id} className="rounded-lg border border-border/40 bg-background/40 px-3 py-2">
+                  <div key={event.id} className="rounded-lg border border-border/60 bg-background/20 px-3 py-2">
                     <p className="text-sm font-medium text-foreground">{event.title}</p>
                     <p className="text-xs text-muted-foreground">
                       {formatWeekday(event.startsAt)} · {formatTimeRange(event)}
@@ -431,7 +474,7 @@ export function RoadmapCalendar() {
 
           <Select value={timeZone} onValueChange={setTimeZone}>
             <SelectPrimitive.Trigger asChild>
-              <Item asChild className="border-border/40 bg-background/30">
+              <Item asChild className="border-border/60 bg-background/20">
                 <button type="button" className="w-full text-left">
                   <ItemMedia>
                     <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/50 bg-muted/40 text-muted-foreground">
@@ -460,7 +503,7 @@ export function RoadmapCalendar() {
           {null}
         </div>
 
-        <div className="min-w-0 p-5">
+        <div className="min-w-0 rounded-lg border border-border/60 bg-background/30 p-3">
           <Calendar01
             mode="single"
             selected={selectedDate}
@@ -468,12 +511,12 @@ export function RoadmapCalendar() {
             onMonthChange={setMonth}
             onSelect={(date) => setSelectedDate(date ?? undefined)}
             modifiers={{ hasEvent: eventDays }}
-            className="mx-auto"
+            className="mx-auto w-full"
             components={{ DayButton: CalendarDayWithDot }}
           />
         </div>
 
-        <div className="flex min-h-0 flex-col p-5">
+        <div className="flex min-h-0 flex-col rounded-lg border border-border/60 bg-background/30 p-3">
           <div className="space-y-1">
             <p className="text-sm font-semibold text-foreground">
               {selectedDate ? formatDate(selectedDate.toISOString(), { weekday: "long" }) : "Events"}
@@ -497,7 +540,7 @@ export function RoadmapCalendar() {
                 return (
                   <div
                     key={event.id}
-                    className="flex items-start justify-between gap-3 rounded-xl border border-border/40 bg-background/40 px-4 py-3"
+                    className="flex items-start justify-between gap-3 rounded-xl border border-border/60 bg-background/20 px-4 py-3"
                   >
                     <div className="min-w-0 space-y-1">
                       <p className="text-sm font-medium text-foreground">{event.title}</p>

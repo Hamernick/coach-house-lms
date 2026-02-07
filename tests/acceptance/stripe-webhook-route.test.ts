@@ -1,0 +1,696 @@
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+const {
+  createSupabaseAdminClientMock,
+  constructEventMock,
+  subscriptionsCreateMock,
+  subscriptionsRetrieveMock,
+  subscriptionsUpdateMock,
+} = vi.hoisted(() => ({
+  createSupabaseAdminClientMock: vi.fn(),
+  constructEventMock: vi.fn(),
+  subscriptionsCreateMock: vi.fn(),
+  subscriptionsRetrieveMock: vi.fn(),
+  subscriptionsUpdateMock: vi.fn(),
+}))
+
+vi.mock("@/lib/supabase", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/supabase")>("@/lib/supabase")
+  return {
+    ...actual,
+    createSupabaseAdminClient: createSupabaseAdminClientMock,
+  }
+})
+
+vi.mock("@/lib/env", () => ({
+  env: {
+    STRIPE_SECRET_KEY: "sk_test_webhook",
+    STRIPE_WEBHOOK_SECRET: "whsec_test_webhook",
+    STRIPE_ORGANIZATION_PRICE_ID: "price_org",
+    STRIPE_ACCELERATOR_WITH_COACHING_PRICE_ID: undefined,
+    STRIPE_ACCELERATOR_WITHOUT_COACHING_PRICE_ID: undefined,
+    STRIPE_ACCELERATOR_WITH_COACHING_MONTHLY_PRICE_ID: undefined,
+    STRIPE_ACCELERATOR_WITHOUT_COACHING_MONTHLY_PRICE_ID: undefined,
+    STRIPE_ACCELERATOR_PRICE_ID: undefined,
+    STRIPE_ELECTIVE_RETENTION_AND_SECURITY_PRICE_ID: undefined,
+    STRIPE_ELECTIVE_DUE_DILIGENCE_PRICE_ID: undefined,
+    STRIPE_ELECTIVE_FINANCIAL_HANDBOOK_PRICE_ID: undefined,
+    NEXT_PUBLIC_MEETING_FREE_URL: undefined,
+    NEXT_PUBLIC_MEETING_DISCOUNTED_URL: undefined,
+    NEXT_PUBLIC_MEETING_FULL_URL: undefined,
+  },
+}))
+
+class StripeMock {
+  webhooks = {
+    constructEvent: constructEventMock,
+  }
+
+  subscriptions = {
+    create: subscriptionsCreateMock,
+    retrieve: subscriptionsRetrieveMock,
+    update: subscriptionsUpdateMock,
+  }
+}
+
+vi.mock("stripe", () => ({
+  default: StripeMock,
+}))
+
+function createAdminSupabaseStub(options?: {
+  existingActiveSubscription?: boolean
+  eventInsertError?: { code: string } | null
+  existingEventProcessed?: boolean
+}) {
+  const existingActiveSubscription = options?.existingActiveSubscription ?? false
+  const eventInsertError = options?.eventInsertError ?? null
+  const existingEventProcessed = options?.existingEventProcessed ?? false
+
+  const stripeEventsInsert = vi.fn().mockResolvedValue({ error: eventInsertError })
+  const stripeEventsSelectMaybeSingle = vi
+    .fn()
+    .mockResolvedValue({ data: { payload: { processed: existingEventProcessed } }, error: null })
+  const stripeEventsUpdateEq = vi.fn().mockResolvedValue({ error: null })
+  const stripeEventsUpdate = vi.fn().mockReturnValue({
+    eq: stripeEventsUpdateEq,
+  })
+
+  const subscriptionsUpsert = vi.fn().mockResolvedValue({ error: null })
+  const subscriptionsMaybeSingle = vi.fn().mockResolvedValue({
+    data: existingActiveSubscription ? { id: "sub_existing", status: "active" } : null,
+    error: null,
+  })
+
+  const subscriptionsTable = {
+    select: vi.fn().mockReturnValue({
+      eq: vi.fn().mockReturnValue({
+        in: vi.fn().mockReturnValue({
+          limit: vi.fn().mockReturnValue({
+            maybeSingle: subscriptionsMaybeSingle,
+          }),
+        }),
+      }),
+    }),
+    upsert: subscriptionsUpsert,
+  }
+
+  const acceleratorPurchasesUpsert = vi.fn().mockResolvedValue({ error: null })
+
+  const from = vi.fn((table: string) => {
+    if (table === "stripe_webhook_events") {
+      return {
+        insert: stripeEventsInsert,
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: stripeEventsSelectMaybeSingle,
+          }),
+        }),
+        update: stripeEventsUpdate,
+      }
+    }
+    if (table === "subscriptions") return subscriptionsTable
+    if (table === "accelerator_purchases") return { upsert: acceleratorPurchasesUpsert }
+    if (table === "elective_purchases") return { upsert: vi.fn().mockResolvedValue({ error: null }) }
+    throw new Error(`Unexpected table: ${table}`)
+  })
+
+  return {
+    admin: { from },
+    calls: {
+      subscriptionsCreate: subscriptionsCreateMock,
+      subscriptionsRetrieve: subscriptionsRetrieveMock,
+      subscriptionsUpdate: subscriptionsUpdateMock,
+      subscriptionsUpsert,
+      acceleratorPurchasesUpsert,
+    },
+  }
+}
+
+async function runWebhook() {
+  const { POST } = await import("@/app/api/stripe/webhook/route")
+  const request = new Request("http://localhost/api/stripe/webhook", {
+    method: "POST",
+    headers: { "stripe-signature": "sig_test" },
+    body: "{}",
+  })
+  return POST(request as unknown as Request)
+}
+
+describe("stripe webhook route acceptance", () => {
+  let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+  })
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore()
+  })
+
+  it("returns 400 when stripe signature header is missing", async () => {
+    const { admin } = createAdminSupabaseStub()
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    const { POST } = await import("@/app/api/stripe/webhook/route")
+    const request = new Request("http://localhost/api/stripe/webhook", {
+      method: "POST",
+      body: "{}",
+    })
+    const response = await POST(request as unknown as Request)
+    const payload = await response.json()
+
+    expect(response.status).toBe(400)
+    expect(payload).toMatchObject({ error: "Missing signature" })
+    expect(constructEventMock).not.toHaveBeenCalled()
+  })
+
+  it("does not roll over to organization plan for early monthly cancellation", async () => {
+    const { admin, calls } = createAdminSupabaseStub({ existingActiveSubscription: false })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    constructEventMock.mockReturnValue({
+      id: "evt_early_cancel",
+      type: "customer.subscription.deleted",
+      data: {
+        object: {
+          id: "sub_accel_early",
+          status: "canceled",
+          customer: "cus_early",
+          metadata: {
+            user_id: "user_early",
+            kind: "accelerator",
+            accelerator_billing: "monthly",
+            accelerator_installment_limit: "10",
+            accelerator_installments_paid: "3",
+          },
+        },
+      },
+    })
+
+    const response = await runWebhook()
+
+    expect(response.status).toBe(200)
+    expect(calls.subscriptionsCreate).not.toHaveBeenCalled()
+    expect(calls.subscriptionsUpsert).toHaveBeenCalled()
+  })
+
+  it("rolls over to organization plan when monthly installments are complete and canceled", async () => {
+    const { admin, calls } = createAdminSupabaseStub({ existingActiveSubscription: false })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    subscriptionsCreateMock.mockResolvedValue({
+      id: "sub_org_rollover",
+      status: "trialing",
+      customer: "cus_done",
+      current_period_end: 1_900_000_000,
+      metadata: {
+        user_id: "user_done",
+        planName: "Organization",
+        context: "accelerator_rollover",
+      },
+    })
+
+    constructEventMock.mockReturnValue({
+      id: "evt_complete_cancel",
+      type: "customer.subscription.deleted",
+      data: {
+        object: {
+          id: "sub_accel_done",
+          status: "canceled",
+          customer: "cus_done",
+          metadata: {
+            user_id: "user_done",
+            kind: "accelerator",
+            accelerator_billing: "monthly",
+            accelerator_installment_limit: "10",
+            accelerator_installments_paid: "10",
+          },
+        },
+      },
+    })
+
+    const response = await runWebhook()
+
+    expect(response.status).toBe(200)
+    expect(calls.subscriptionsCreate).toHaveBeenCalledTimes(1)
+    expect(calls.subscriptionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customer: "cus_done",
+        items: [{ price: "price_org" }],
+        metadata: expect.objectContaining({
+          user_id: "user_done",
+          context: "accelerator_rollover",
+        }),
+      }),
+      expect.objectContaining({
+        idempotencyKey: expect.stringContaining("accelerator_rollover_sub_accel_done"),
+      }),
+    )
+  })
+
+  it("rolls over on customer.subscription.updated when status transitions to canceled after completed installments", async () => {
+    const { admin, calls } = createAdminSupabaseStub({ existingActiveSubscription: false })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    subscriptionsCreateMock.mockResolvedValue({
+      id: "sub_org_rollover_updated",
+      status: "trialing",
+      customer: "cus_updated",
+      current_period_end: 1_900_000_000,
+      metadata: {
+        user_id: "user_updated",
+        planName: "Organization",
+        context: "accelerator_rollover",
+      },
+    })
+
+    constructEventMock.mockReturnValue({
+      id: "evt_updated_canceled",
+      type: "customer.subscription.updated",
+      data: {
+        object: {
+          id: "sub_accel_updated",
+          status: "canceled",
+          customer: "cus_updated",
+          metadata: {
+            user_id: "user_updated",
+            kind: "accelerator",
+            accelerator_billing: "monthly",
+            accelerator_installment_limit: "10",
+            accelerator_installments_paid: "10",
+          },
+        },
+      },
+    })
+
+    const response = await runWebhook()
+
+    expect(response.status).toBe(200)
+    expect(calls.subscriptionsCreate).toHaveBeenCalledTimes(1)
+    expect(calls.subscriptionsCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        customer: "cus_updated",
+        metadata: expect.objectContaining({
+          user_id: "user_updated",
+          context: "accelerator_rollover",
+        }),
+      }),
+      expect.objectContaining({
+        idempotencyKey: expect.stringContaining("accelerator_rollover_sub_accel_updated"),
+      }),
+    )
+  })
+
+  it("does not roll over on customer.subscription.updated when status remains active", async () => {
+    const { admin, calls } = createAdminSupabaseStub({ existingActiveSubscription: false })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    constructEventMock.mockReturnValue({
+      id: "evt_updated_active",
+      type: "customer.subscription.updated",
+      data: {
+        object: {
+          id: "sub_accel_active",
+          status: "active",
+          customer: "cus_active",
+          metadata: {
+            user_id: "user_active",
+            kind: "accelerator",
+            accelerator_billing: "monthly",
+            accelerator_installment_limit: "10",
+            accelerator_installments_paid: "10",
+          },
+        },
+      },
+    })
+
+    const response = await runWebhook()
+
+    expect(response.status).toBe(200)
+    expect(calls.subscriptionsCreate).not.toHaveBeenCalled()
+    expect(calls.subscriptionsUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user_active",
+        stripe_subscription_id: "sub_accel_active",
+        status: "active",
+      }),
+      expect.objectContaining({ onConflict: "stripe_subscription_id" }),
+    )
+  })
+
+  it("does not roll over on customer.subscription.updated with past_due status", async () => {
+    const { admin, calls } = createAdminSupabaseStub({ existingActiveSubscription: false })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    constructEventMock.mockReturnValue({
+      id: "evt_updated_past_due",
+      type: "customer.subscription.updated",
+      data: {
+        object: {
+          id: "sub_accel_past_due",
+          status: "past_due",
+          customer: "cus_past_due",
+          metadata: {
+            user_id: "user_past_due",
+            kind: "accelerator",
+            accelerator_billing: "monthly",
+            accelerator_installment_limit: "10",
+            accelerator_installments_paid: "10",
+          },
+        },
+      },
+    })
+
+    const response = await runWebhook()
+
+    expect(response.status).toBe(200)
+    expect(calls.subscriptionsCreate).not.toHaveBeenCalled()
+    expect(calls.subscriptionsUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user_past_due",
+        stripe_subscription_id: "sub_accel_past_due",
+        status: "past_due",
+      }),
+      expect.objectContaining({ onConflict: "stripe_subscription_id" }),
+    )
+  })
+
+  it("does not create duplicate organization subscription when one-time accelerator buyer already has active org plan", async () => {
+    const { admin, calls } = createAdminSupabaseStub({ existingActiveSubscription: true })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    constructEventMock.mockReturnValue({
+      id: "evt_one_time_existing_org",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_accel_1",
+          mode: "payment",
+          client_reference_id: "user_existing",
+          customer: "cus_existing",
+          payment_intent: "pi_existing",
+          metadata: {
+            kind: "accelerator",
+            accelerator_variant: "with_coaching",
+            coaching_included: "true",
+            accelerator_billing: "one_time",
+          },
+        },
+      },
+    })
+
+    const response = await runWebhook()
+
+    expect(response.status).toBe(200)
+    expect(calls.acceleratorPurchasesUpsert).toHaveBeenCalledTimes(1)
+    expect(calls.subscriptionsCreate).not.toHaveBeenCalled()
+  })
+
+  it("upserts subscription rows for checkout.session.completed in subscription mode", async () => {
+    const { admin, calls } = createAdminSupabaseStub({ existingActiveSubscription: false })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    constructEventMock.mockReturnValue({
+      id: "evt_checkout_subscription_mode",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_subscription_mode",
+          mode: "subscription",
+          status: "active",
+          client_reference_id: "user_sub_mode",
+          subscription: "sub_accelerator_monthly",
+          customer: "cus_sub_mode",
+          metadata: {
+            kind: "accelerator",
+            user_id: "user_sub_mode",
+            planName: "Accelerator Pro",
+            accelerator_billing: "monthly",
+          },
+        },
+      },
+    })
+
+    const response = await runWebhook()
+
+    expect(response.status).toBe(200)
+    expect(calls.subscriptionsUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user_sub_mode",
+        stripe_subscription_id: "sub_accelerator_monthly",
+        stripe_customer_id: "cus_sub_mode",
+        status: "active",
+        metadata: expect.objectContaining({
+          kind: "accelerator",
+          accelerator_billing: "monthly",
+        }),
+      }),
+      expect.objectContaining({ onConflict: "stripe_subscription_id" }),
+    )
+  })
+
+  it("does not create organization subscription for one-time accelerator checkout when customer is missing", async () => {
+    const { admin, calls } = createAdminSupabaseStub({ existingActiveSubscription: false })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    constructEventMock.mockReturnValue({
+      id: "evt_one_time_no_customer",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_one_time_no_customer",
+          mode: "payment",
+          client_reference_id: "user_no_customer",
+          payment_intent: "pi_no_customer",
+          metadata: {
+            kind: "accelerator",
+            accelerator_variant: "with_coaching",
+            coaching_included: "true",
+            accelerator_billing: "one_time",
+          },
+        },
+      },
+    })
+
+    const response = await runWebhook()
+
+    expect(response.status).toBe(200)
+    expect(calls.acceleratorPurchasesUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user_no_customer",
+        stripe_customer_id: null,
+      }),
+      expect.objectContaining({ onConflict: "stripe_checkout_session_id" }),
+    )
+    expect(calls.subscriptionsCreate).not.toHaveBeenCalled()
+  })
+
+  it("returns duplicate response and skips side effects for already-processed webhook events", async () => {
+    const { admin, calls } = createAdminSupabaseStub({
+      eventInsertError: { code: "23505" },
+      existingEventProcessed: true,
+    })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    constructEventMock.mockReturnValue({
+      id: "evt_duplicate",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_duplicate",
+          mode: "payment",
+          client_reference_id: "user_duplicate",
+          customer: "cus_duplicate",
+          payment_intent: "pi_duplicate",
+          metadata: {
+            kind: "accelerator",
+            accelerator_variant: "with_coaching",
+            coaching_included: "true",
+            accelerator_billing: "one_time",
+          },
+        },
+      },
+    })
+
+    const response = await runWebhook()
+    const payload = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(payload).toMatchObject({ duplicate: true, received: true })
+    expect(calls.acceleratorPurchasesUpsert).not.toHaveBeenCalled()
+    expect(calls.subscriptionsCreate).not.toHaveBeenCalled()
+    expect(calls.subscriptionsUpsert).not.toHaveBeenCalled()
+  })
+
+  it("reprocesses duplicate event when previous attempt was unprocessed", async () => {
+    const { admin, calls } = createAdminSupabaseStub({
+      eventInsertError: { code: "23505" },
+      existingEventProcessed: false,
+    })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    constructEventMock.mockReturnValue({
+      id: "evt_retry_unprocessed",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_retry_unprocessed",
+          mode: "payment",
+          client_reference_id: "user_retry",
+          customer: "cus_retry",
+          payment_intent: "pi_retry",
+          metadata: {
+            kind: "accelerator",
+            accelerator_variant: "with_coaching",
+            coaching_included: "true",
+            accelerator_billing: "one_time",
+          },
+        },
+      },
+    })
+
+    const response = await runWebhook()
+    const payload = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(payload).toMatchObject({ received: true })
+    expect(calls.acceleratorPurchasesUpsert).toHaveBeenCalledTimes(1)
+  })
+
+  it("returns 500 when webhook idempotency lock write fails with non-duplicate error", async () => {
+    const { admin } = createAdminSupabaseStub({
+      eventInsertError: { code: "XX000" },
+    })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    constructEventMock.mockReturnValue({
+      id: "evt_lock_failure",
+      type: "invoice.paid",
+      data: {
+        object: {
+          id: "in_lock_failure",
+          billing_reason: "subscription_cycle",
+          subscription: "sub_lock_failure",
+        },
+      },
+    })
+
+    const response = await runWebhook()
+    const payload = await response.json()
+
+    expect(response.status).toBe(500)
+    expect(payload).toMatchObject({ received: true, error: "processing_failed" })
+  })
+
+  it("increments monthly installment metadata and enables cancel-at-period-end on limit", async () => {
+    const { admin, calls } = createAdminSupabaseStub({ existingActiveSubscription: false })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    calls.subscriptionsRetrieve.mockResolvedValue({
+      id: "sub_accel_invoice",
+      customer: "cus_invoice",
+      status: "active",
+      cancel_at_period_end: false,
+      current_period_end: 1_900_000_000,
+      metadata: {
+        kind: "accelerator",
+        user_id: "user_invoice",
+        accelerator_billing: "monthly",
+        accelerator_installment_limit: "10",
+        accelerator_installments_paid: "9",
+      },
+    })
+
+    calls.subscriptionsUpdate.mockResolvedValue({
+      id: "sub_accel_invoice",
+      customer: "cus_invoice",
+      status: "active",
+      cancel_at_period_end: true,
+      current_period_end: 1_900_000_000,
+      metadata: {
+        kind: "accelerator",
+        user_id: "user_invoice",
+        accelerator_billing: "monthly",
+        accelerator_installment_limit: "10",
+        accelerator_installments_paid: "10",
+      },
+    })
+
+    constructEventMock.mockReturnValue({
+      id: "evt_invoice_cycle",
+      type: "invoice.paid",
+      data: {
+        object: {
+          id: "in_cycle",
+          billing_reason: "subscription_cycle",
+          subscription: "sub_accel_invoice",
+        },
+      },
+    })
+
+    const response = await runWebhook()
+
+    expect(response.status).toBe(200)
+    expect(calls.subscriptionsRetrieve).toHaveBeenCalledWith("sub_accel_invoice")
+    expect(calls.subscriptionsUpdate).toHaveBeenCalledWith(
+      "sub_accel_invoice",
+      expect.objectContaining({
+        cancel_at_period_end: true,
+        metadata: expect.objectContaining({
+          accelerator_installment_limit: "10",
+          accelerator_installments_paid: "10",
+        }),
+      }),
+    )
+    expect(calls.subscriptionsUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user_invoice",
+        stripe_subscription_id: "sub_accel_invoice",
+        metadata: expect.objectContaining({
+          accelerator_installments_paid: "10",
+        }),
+      }),
+      expect.objectContaining({ onConflict: "stripe_subscription_id" }),
+    )
+  })
+
+  it("does not progress installments for non-cycle invoices", async () => {
+    const { admin, calls } = createAdminSupabaseStub({ existingActiveSubscription: false })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    calls.subscriptionsRetrieve.mockResolvedValue({
+      id: "sub_accel_manual",
+      customer: "cus_manual",
+      status: "active",
+      cancel_at_period_end: false,
+      current_period_end: 1_900_000_000,
+      metadata: {
+        kind: "accelerator",
+        user_id: "user_manual",
+        accelerator_billing: "monthly",
+        accelerator_installment_limit: "10",
+        accelerator_installments_paid: "2",
+      },
+    })
+
+    constructEventMock.mockReturnValue({
+      id: "evt_invoice_manual",
+      type: "invoice.paid",
+      data: {
+        object: {
+          id: "in_manual",
+          billing_reason: "manual",
+          subscription: "sub_accel_manual",
+        },
+      },
+    })
+
+    const response = await runWebhook()
+
+    expect(response.status).toBe(200)
+    expect(calls.subscriptionsRetrieve).toHaveBeenCalledWith("sub_accel_manual")
+    expect(calls.subscriptionsUpdate).not.toHaveBeenCalled()
+    expect(calls.subscriptionsUpsert).not.toHaveBeenCalled()
+  })
+})

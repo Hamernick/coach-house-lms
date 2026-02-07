@@ -15,7 +15,7 @@ import {
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
-  title: "Home Two",
+  title: "Home Two (Legacy)",
   description: "Alternate home page prototype inspired by Molly Studio.",
 }
 

@@ -1,6 +1,7 @@
 # Brief Index
 
 Keep this file up to date so Codex can pick up without re-triage.
+Canonical launch status board: `docs/organize.md`.
 
 Status legend:
 - `active`: expected to be implemented next / still current

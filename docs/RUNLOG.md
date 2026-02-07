@@ -6610,3 +6610,24 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm exec eslint src/app/(accelerator)/accelerator/page.tsx src/app/api/people/position/route.ts src/app/api/stripe/webhook/route.ts src/components/app-shell.tsx src/lib/accelerator/module-order.ts` ✅
   - `pnpm build` ✅
+
+## 2026-02-07 — Codex pass (root landing swap + docs consolidation + audit)
+- Public root (`/`) now renders the current home-canvas surface instead of the old home2 wrapper:
+  - Updated `src/app/(public)/page.tsx` to use `HomeCanvasPreview` + embedded `PricingSurface` and preserve `?section=` behavior.
+- Archived previous root/home2 landing pattern for design-history reference:
+  - Added `deprecated/artifacts/public-pages/root-home2-legacy.tsx`.
+  - Marked `/home2` metadata title as legacy (`Home Two (Legacy)`) in `src/app/(public)/home2/page.tsx`.
+- Docs consolidation:
+  - Archived previous verbose launch organizer to `deprecated/docs/organize-legacy-2026-02-07.md`.
+  - Replaced `docs/organize.md` with compact launch board (`Done` + `Pending` + concise triage + refactor queue).
+  - Added `docs/README.md` as docs entrypoint and linked canonical launch docs.
+  - Updated `docs/briefs/INDEX.md` to reference `docs/organize.md` as canonical launch board.
+- Added focused engineering audit queue in `docs/organize.md`:
+  - large-file split targets,
+  - calendar UI unification,
+  - stale `/roadmap` link cleanup,
+  - public-home variant consolidation.
+
+- Validation:
+  - `pnpm exec eslint src/app/(public)/page.tsx src/app/(public)/home2/page.tsx` ✅
+  - `pnpm build` ✅

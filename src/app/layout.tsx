@@ -3,8 +3,8 @@ import type { ReactNode } from "react"
 import "./globals.css"
 
 import { Inter, JetBrains_Mono } from "next/font/google"
-import Script from "next/script"
 
+import { ReactGrabLoader } from "@/components/dev/react-grab-loader"
 import { AppProviders } from "@/components/providers/app-providers"
 import { getLocale } from "@/lib/locale.server"
 
@@ -43,25 +43,12 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale()
   const language = locale.split("-")[0] ?? "en"
+
   return (
     <html lang={language} suppressHydrationWarning>
-      <head>
-        {process.env.NODE_ENV === "development" && (
-          <>
-            <Script
-              src="//unpkg.com/react-grab/dist/index.global.js"
-              crossOrigin="anonymous"
-              strategy="beforeInteractive"
-              data-enabled="true"
-            />
-            <Script
-              src="//unpkg.com/@react-grab/opencode/dist/client.global.js"
-              strategy="lazyOnload"
-            />
-          </>
-        )}
-      </head>
+      <head />
       <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background font-sans antialiased`}>
+        <ReactGrabLoader />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

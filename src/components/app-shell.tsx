@@ -46,7 +46,11 @@ type AppShellProps = {
   showLiveBadges?: boolean
   acceleratorProgress?: number | null
   showAccelerator?: boolean
+  showLiveBadges?: boolean
   hasActiveSubscription?: boolean
+  hasAcceleratorAccess?: boolean
+  hasElectiveAccess?: boolean
+  ownedElectiveModuleSlugs?: string[]
   tutorialWelcome?: { platform: boolean; accelerator: boolean }
   onboardingProps?: OnboardingDialogProps & { enabled: boolean }
   context?: "platform" | "accelerator" | "public"
@@ -127,6 +131,9 @@ function AppShellInner({
   acceleratorProgress,
   showAccelerator,
   hasActiveSubscription,
+  hasAcceleratorAccess,
+  hasElectiveAccess,
+  ownedElectiveModuleSlugs = [],
   tutorialWelcome,
   onboardingProps,
   context,
@@ -138,10 +145,16 @@ function AppShellInner({
   const hasUser = Boolean(user?.email)
   const derivedContext = context ?? (pathname?.startsWith("/accelerator") ? "accelerator" : "platform")
   const isAcceleratorContext = derivedContext === "accelerator"
+  const isAcceleratorRoadmapRoute = Boolean(pathname?.startsWith("/accelerator/roadmap"))
   const isModulePage = pathname?.includes("/module/")
   const showClasses = Boolean(pathname?.includes("/class/"))
   const showLeftClasses = showClasses && !isAcceleratorContext
-  const showAcceleratorRail = isAcceleratorContext && sidebarTree.length > 0
+  const showAcceleratorTrackRail = false
+  const showAcceleratorRail =
+    showAcceleratorTrackRail &&
+    isAcceleratorContext &&
+    !isAcceleratorRoadmapRoute &&
+    sidebarTree.length > 0
 
   const [forcedOnboardingOpen, setForcedOnboardingOpen] = useState(false)
   const [rightOpen, setRightOpen] = useState(false)
@@ -206,7 +219,10 @@ function AppShellInner({
   const classesBasePath = isAcceleratorContext ? "/accelerator" : ""
   const tutorialKey = isAcceleratorContext ? "accelerator" : "platform"
   const tutorialOpen = isAcceleratorContext ? Boolean(tutorialWelcome?.accelerator) : Boolean(tutorialWelcome?.platform)
-  const hasAcceleratorAccess = Boolean(hasActiveSubscription || showAccelerator || isAdmin)
+  const resolvedHasAcceleratorAccess =
+    hasAcceleratorAccess ?? Boolean(hasActiveSubscription || showAccelerator || isAdmin)
+  const resolvedHasElectiveAccess = hasElectiveAccess ?? resolvedHasAcceleratorAccess
+  const onboardingOpen = Boolean(onboardingProps?.open || forcedOnboardingOpen)
 
   const brandHref = hasUser ? (isAcceleratorContext ? "/accelerator" : "/my-organization") : "/"
 
@@ -221,8 +237,8 @@ function AppShellInner({
           "[--shell-gutter:1.25rem] [--shell-content-pad:1rem] sm:[--shell-content-pad:1.25rem] lg:[--shell-content-pad:1.5rem] [--shell-rail-padding:0.75rem] [--shell-rail-item-padding:0.5rem] [--shell-rail-gap:1rem]",
           "[--shell-right-rail-width:var(--sidebar-width)]",
           "[--sidebar:var(--background)] [--sidebar-foreground:var(--foreground)] [--sidebar-border:var(--border)]",
-          isAcceleratorContext && "[--shell-right-rail-width:17rem]",
-          isModulePage && "[--shell-right-rail-width:18rem]",
+          isAcceleratorContext && "[--shell-right-rail-width:16rem]",
+          isModulePage && "[--shell-right-rail-width:17rem]",
         )}
       >
       <SidebarAutoCollapse active={isAcceleratorContext} />
@@ -232,7 +248,9 @@ function AppShellInner({
             classes={sidebarTree}
             isAdmin={isAdmin}
             basePath={classesBasePath}
-            hasAcceleratorAccess={hasAcceleratorAccess}
+            hasAcceleratorAccess={resolvedHasAcceleratorAccess}
+            hasElectiveAccess={resolvedHasElectiveAccess}
+            ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
             formationStatus={formationStatus}
           />
         </RightRailSlot>
@@ -256,7 +274,9 @@ function AppShellInner({
             showAccelerator={showAccelerator}
             showClasses={showLeftClasses}
             classesBasePath={classesBasePath}
-            hasAcceleratorAccess={hasAcceleratorAccess}
+            hasAcceleratorAccess={resolvedHasAcceleratorAccess}
+            hasElectiveAccess={resolvedHasElectiveAccess}
+            ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
             formationStatus={formationStatus}
           />
         </Sidebar>
@@ -303,7 +323,15 @@ function AppShellInner({
                         data-shell-content-body
                         className="flex min-h-0 flex-1 flex-col gap-6 px-[var(--shell-content-pad)] py-[var(--shell-content-pad)]"
                       >
-                        {children}
+                        {onboardingProps?.enabled && onboardingOpen ? (
+                          <OnboardingDialogEntry
+                            {...onboardingProps}
+                            open
+                            presentation="inline"
+                          />
+                        ) : (
+                          children
+                        )}
                       </div>
                       <div
                         id="shell-content-footer"
@@ -341,9 +369,6 @@ function AppShellInner({
           defaultOpen={tutorialOpen}
           hasActiveSubscription={hasActiveSubscription}
         />
-      ) : null}
-      {onboardingProps?.enabled ? (
-        <OnboardingDialogEntry {...onboardingProps} open={Boolean(onboardingProps.open || forcedOnboardingOpen)} />
       ) : null}
     </SidebarProvider>
   )
@@ -547,16 +572,15 @@ function ShellRightRail({
       className={cn(
         "relative z-30 hidden h-full shrink-0 flex-col overflow-hidden bg-[var(--shell-bg)] md:flex",
         "transition-[width] duration-200 ease-out motion-reduce:transition-none",
-        "data-[state=closed]:delay-150 data-[state=open]:delay-0",
         open ? "w-[var(--shell-right-rail-width)]" : "w-0 pointer-events-none",
       )}
     >
       <div
         data-state={open ? "open" : "closed"}
         className={cn(
-          "h-full w-full overflow-y-auto px-[var(--shell-rail-padding)] pb-4 pt-0",
+          "h-full w-full overflow-y-auto px-[var(--shell-rail-padding)] pb-0 pt-4",
           "transition-opacity duration-150 ease-out motion-reduce:transition-none",
-          "data-[state=closed]:opacity-0 data-[state=open]:opacity-100 data-[state=open]:delay-150",
+          "data-[state=closed]:opacity-0 data-[state=open]:opacity-100",
         )}
       >
         {content}

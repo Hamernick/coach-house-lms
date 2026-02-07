@@ -52,10 +52,10 @@ const TOUR_STEPS: Record<TutorialKey, HighlightTourStep[]> = {
       icon: <Building2Icon className="h-5 w-5" aria-hidden />,
     },
     {
-      id: "nav-roadmap",
-      selector: '[data-tour="nav-roadmap"]',
-      title: "Roadmap",
-      description: "Use the roadmap to plan your fundraising and operations work. It’s private by default.",
+      id: "nav-accelerator",
+      selector: '[data-tour="nav-accelerator"]',
+      title: "Accelerator",
+      description: "Jump straight into your core class flow and continue where you left off.",
       icon: <RouteIcon className="h-5 w-5" aria-hidden />,
     },
     {

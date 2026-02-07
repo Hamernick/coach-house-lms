@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { AnimatePresence, motion } from "framer-motion"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left"
@@ -42,10 +42,16 @@ export function StepperRail({
   className,
 }: StepperRailProps) {
   const railRef = useRef<HTMLDivElement | null>(null)
+  const railItemsRef = useRef<HTMLDivElement | null>(null)
   const stepRefs = useRef<(HTMLButtonElement | null)[]>([])
   const [railOverflow, setRailOverflow] = useState(false)
   const [railFade, setRailFade] = useState({ left: false, right: false })
   const [mounted, setMounted] = useState(false)
+  const [roadmapLine, setRoadmapLine] = useState<{
+    startPct: number
+    endPct: number
+    progressPct: number
+  } | null>(null)
 
   const totalSteps = steps.length
   const safeActiveIndex = Math.min(Math.max(activeIndex, 0), Math.max(totalSteps - 1, 0))
@@ -61,7 +67,7 @@ export function StepperRail({
 
   const isRoadmap = variant === "roadmap"
   const stepperLayout = isRoadmap
-    ? { railPad: "0px", dotSize: "44px", buttonSize: "h-9 w-9", railPadding: "py-1" }
+    ? { railPad: "0px", dotSize: "40px", buttonSize: "h-9 w-9", railPadding: "py-1" }
     : variant === "header"
       ? { railPad: "24px", dotSize: "32px", buttonSize: "h-9 w-9", railPadding: "py-0.5" }
       : { railPad: "56px", dotSize: "32px", buttonSize: "h-9 w-9", railPadding: "py-2" }
@@ -74,8 +80,58 @@ export function StepperRail({
     : cn("w-max", railAlignment, railGap)
   const railItemsClass = isRoadmap ? "items-start" : "items-center"
   const railLineClass = isRoadmap
-    ? "top-[calc(var(--dot-size)/2)]"
+    ? "top-[calc(var(--dot-size)/2+1px)]"
     : "top-1/2"
+
+  const updateRoadmapLine = useCallback(() => {
+    if (!isRoadmap) return
+    const railItems = railItemsRef.current
+    if (!railItems) return
+    const itemsRect = railItems.getBoundingClientRect()
+    if (itemsRect.width <= 0) return
+
+    const centers: Array<number | null> = Array.from({ length: visibleCount }, () => null)
+    for (let idx = 0; idx < visibleCount; idx += 1) {
+      const globalIndex = pageStart + idx
+      const step = stepRefs.current[globalIndex]
+      if (!step) continue
+      const iconNode =
+        step.querySelector<HTMLElement>("[data-stepper-roadmap-icon='true']") ??
+        step
+      const iconRect = iconNode.getBoundingClientRect()
+      centers[idx] = iconRect.left + iconRect.width / 2 - itemsRect.left
+    }
+
+    const validCenters = centers.filter((value): value is number => typeof value === "number")
+
+    if (validCenters.length === 0) {
+      setRoadmapLine(null)
+      return
+    }
+
+    const start = validCenters[0]
+    const end = validCenters[validCenters.length - 1]
+    const activeCenterIndex = Math.min(Math.max(visibleIndex, 0), centers.length - 1)
+    const active =
+      centers[activeCenterIndex] ??
+      validCenters[Math.min(activeCenterIndex, validCenters.length - 1)] ??
+      start
+    const startPct = (start / itemsRect.width) * 100
+    const endPct = ((itemsRect.width - end) / itemsRect.width) * 100
+    const progressPct = end > start ? ((active - start) / (end - start)) * 100 : 0
+
+    setRoadmapLine((prev) => {
+      if (
+        prev &&
+        Math.abs(prev.startPct - startPct) < 0.1 &&
+        Math.abs(prev.endPct - endPct) < 0.1 &&
+        Math.abs(prev.progressPct - progressPct) < 0.1
+      ) {
+        return prev
+      }
+      return { startPct, endPct, progressPct }
+    })
+  }, [isRoadmap, pageStart, visibleCount, visibleIndex])
 
   useEffect(() => {
     setMounted(true)
@@ -133,6 +189,37 @@ export function StepperRail({
   }, [isRoadmap, mounted, pageStart, visibleCount])
 
   useEffect(() => {
+    if (!mounted || !isRoadmap) return
+    const frame = requestAnimationFrame(() => {
+      updateRoadmapLine()
+    })
+
+    const railItems = railItemsRef.current
+    if (!railItems || typeof ResizeObserver === "undefined") {
+      const onResize = () => updateRoadmapLine()
+      window.addEventListener("resize", onResize)
+      return () => {
+        cancelAnimationFrame(frame)
+        window.removeEventListener("resize", onResize)
+      }
+    }
+
+    const observer = new ResizeObserver(() => {
+      updateRoadmapLine()
+    })
+    observer.observe(railItems)
+    for (let idx = 0; idx < visibleCount; idx += 1) {
+      const step = stepRefs.current[pageStart + idx]
+      if (step) observer.observe(step)
+    }
+
+    return () => {
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+    }
+  }, [isRoadmap, mounted, pageStart, updateRoadmapLine, visibleCount, visibleIndex])
+
+  useEffect(() => {
     pageStartRef.current = pageStart
   }, [pageStart])
 
@@ -182,6 +269,7 @@ export function StepperRail({
         <AnimatePresence initial={false} mode="wait">
           <motion.div
             key={pageStart}
+            ref={railItemsRef}
             className={cn("relative flex px-[var(--rail-pad)] py-1", railItemsClass, railInnerClass)}
             initial={{ opacity: 0, x: pageDirection * 12 }}
             animate={{ opacity: 1, x: 0 }}
@@ -193,10 +281,23 @@ export function StepperRail({
                 "absolute left-[calc(var(--rail-pad)+var(--dot-size)/2)] right-[calc(var(--rail-pad)+var(--dot-size)/2)] h-[3px] -translate-y-1/2 rounded-full bg-border/60",
                 railLineClass,
               )}
+              style={
+                isRoadmap && roadmapLine
+                  ? { left: `${roadmapLine.startPct}%`, right: `${roadmapLine.endPct}%` }
+                  : undefined
+              }
             >
               <motion.div
-                className="h-full rounded-full bg-gradient-to-r from-purple-500 via-blue-500 to-sky-400"
-                animate={{ width: `${railProgress}%` }}
+                className={cn(
+                  "h-full rounded-full",
+                  "bg-gradient-to-r from-purple-500 via-blue-500 to-sky-400",
+                )}
+                animate={{
+                  width:
+                    isRoadmap && roadmapLine
+                      ? `${roadmapLine.progressPct}%`
+                      : `${railProgress}%`,
+                }}
                 transition={{ duration: 0.35, ease: "easeOut" }}
               />
             </div>
@@ -230,7 +331,13 @@ export function StepperRail({
               const iconNode = isRoadmap
                 ? step.icon ?? <Waypoints className="h-5 w-5" aria-hidden />
                 : styles.icon
-              const iconTextClass = isRoadmap ? "text-muted-foreground" : styles.text
+              const roadmapIconTextClass =
+                step.status === "complete"
+                  ? "text-emerald-600 dark:text-emerald-300"
+                  : step.status === "in_progress"
+                    ? "text-amber-600 dark:text-amber-300"
+                    : "text-muted-foreground"
+              const iconTextClass = isRoadmap ? roadmapIconTextClass : styles.text
               return (
                 <button
                   key={step.id}
@@ -254,7 +361,17 @@ export function StepperRail({
                   )}
                 >
                   {isRoadmap ? (
-                    <div className="flex h-11 w-11 items-center justify-center rounded-xl border border-border/60 bg-background text-muted-foreground shadow-sm">
+                    <div
+                      data-stepper-roadmap-icon="true"
+                      className={cn(
+                        "flex h-[var(--dot-size)] w-[var(--dot-size)] items-center justify-center rounded-lg border bg-background shadow-sm",
+                        step.status === "complete"
+                          ? "border-emerald-500/35"
+                          : step.status === "in_progress"
+                            ? "border-amber-500/35"
+                            : "border-border/60",
+                      )}
+                    >
                       {iconNode ? (
                         <span className={cn("flex h-5 w-5 items-center justify-center", iconTextClass)}>
                           {iconNode}
@@ -268,9 +385,9 @@ export function StepperRail({
                   ) : null}
                   {isRoadmap ? (
                     <span className="space-y-1 text-left">
-                      <span className="line-clamp-2 text-base font-semibold text-foreground">{step.label}</span>
+                      <span className="line-clamp-2 text-sm font-semibold text-foreground">{step.label}</span>
                       {step.description ? (
-                        <span className="line-clamp-3 text-sm text-muted-foreground">{step.description}</span>
+                        <span className="line-clamp-3 text-xs text-muted-foreground">{step.description}</span>
                       ) : null}
                     </span>
                   ) : null}

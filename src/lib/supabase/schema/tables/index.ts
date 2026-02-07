@@ -19,6 +19,7 @@ import type { RoadmapCalendarPublicFeedsTable } from "./roadmap_calendar_public_
 import type { RoadmapCalendarInternalFeedsTable } from "./roadmap_calendar_internal_feeds"
 import type { SearchEventsTable } from "./search_events"
 import type { AcceleratorPurchasesTable } from "./accelerator_purchases"
+import type { ElectivePurchasesTable } from "./elective_purchases"
 import type { OrganizationMembershipsTable } from "./organization_memberships"
 import type { OrganizationInvitesTable } from "./organization_invites"
 import type { OrganizationAccessSettingsTable } from "./organization_access_settings"
@@ -45,6 +46,7 @@ export type { RoadmapCalendarPublicFeedsTable } from "./roadmap_calendar_public_
 export type { RoadmapCalendarInternalFeedsTable } from "./roadmap_calendar_internal_feeds"
 export type { SearchEventsTable } from "./search_events"
 export type { AcceleratorPurchasesTable } from "./accelerator_purchases"
+export type { ElectivePurchasesTable } from "./elective_purchases"
 export type { OrganizationMembershipsTable } from "./organization_memberships"
 export type { OrganizationInvitesTable } from "./organization_invites"
 export type { OrganizationAccessSettingsTable } from "./organization_access_settings"
@@ -72,6 +74,7 @@ export type PublicTables = {
   roadmap_calendar_internal_feeds: RoadmapCalendarInternalFeedsTable
   search_events: SearchEventsTable
   accelerator_purchases: AcceleratorPurchasesTable
+  elective_purchases: ElectivePurchasesTable
   organization_memberships: OrganizationMembershipsTable
   organization_invites: OrganizationInvitesTable
   organization_access_settings: OrganizationAccessSettingsTable

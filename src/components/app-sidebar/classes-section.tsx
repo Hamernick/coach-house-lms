@@ -4,17 +4,23 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 
-
 import { RailLabel } from "@/components/ui/rail-label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useTrackParam } from "@/hooks/use-track-param"
 import type { SidebarClass } from "@/lib/academy"
+import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
 import { getTrackIcon } from "@/lib/accelerator/track-icons"
 import { cn } from "@/lib/utils"
 import { ModuleStepper, type StepItem, type StepStatus } from "./module-stepper"
 
 const LEGACY_CLASS_TITLES = new Set(["published class"])
 const LEGACY_CLASS_SLUGS = new Set(["published-class"])
+type SidebarTrack = SidebarClass & {
+  trackKey: string
+  routeSlug: string
+  displayTitle: string
+  lockState: "open" | "requires_accelerator" | "requires_elective"
+}
 
 function isLegacyClass(klass: SidebarClass): boolean {
   const title = klass.title.trim().toLowerCase()
@@ -33,13 +39,11 @@ function deriveModuleStatus({
   moduleIndex,
   isAdmin,
   isCompleted,
-  priorCompleted,
 }: {
   activeIndex: number | null
   moduleIndex: number
   isAdmin: boolean
   isCompleted: boolean
-  priorCompleted: boolean
 }): StepStatus {
   if (isAdmin) {
     if (isCompleted) return "complete"
@@ -49,7 +53,6 @@ function deriveModuleStatus({
   }
 
   if (isCompleted) return "complete"
-  if (!priorCompleted) return "locked"
   if (activeIndex === moduleIndex) return "in_progress"
   return "not_started"
 }
@@ -58,23 +61,84 @@ function getClassKey(klass: SidebarClass) {
   return klass.slug || klass.id
 }
 
-function getActiveClassKey({
-  classes,
+function getActiveTrackKey({
+  tracks,
   pathname,
   basePath,
 }: {
-  classes: SidebarClass[]
+  tracks: SidebarTrack[]
   pathname: string
   basePath: string
 }) {
-  for (const klass of classes) {
-    if (!klass.slug) continue
-    const classHref = `${basePath}/class/${klass.slug}`
+  for (const track of tracks) {
+    const classHref = `${basePath}/class/${track.routeSlug}`
     if (pathname === classHref || pathname.startsWith(`${classHref}/`)) {
-      return getClassKey(klass)
+      const marker = `${classHref}/module/`
+      if (pathname.startsWith(marker)) {
+        const nextPart = pathname.slice(marker.length).split("/")[0]
+        const moduleIndex = Number.parseInt(nextPart ?? "", 10)
+        if (Number.isFinite(moduleIndex) && track.modules.some((module) => module.index === moduleIndex)) {
+          return track.trackKey
+        }
+      }
+      return track.trackKey
     }
   }
   return null
+}
+
+function buildVisibleTracks(classes: SidebarClass[]) {
+  const baseClasses = classes
+    .filter((klass) => klass.published && !isLegacyClass(klass))
+    .sort((a, b) => {
+      if (a.slug === "electives") return -1
+      if (b.slug === "electives") return 1
+      const pa = typeof a.position === "number" ? a.position : Number.MAX_SAFE_INTEGER
+      const pb = typeof b.position === "number" ? b.position : Number.MAX_SAFE_INTEGER
+      return pa - pb
+    })
+
+  const tracks: SidebarTrack[] = []
+
+  for (const klass of baseClasses) {
+    if (klass.slug !== "electives") {
+      tracks.push({
+        ...klass,
+        trackKey: getClassKey(klass),
+        routeSlug: klass.slug,
+        displayTitle: formatClassTitle(klass.title),
+        lockState: "requires_accelerator",
+      })
+      continue
+    }
+
+    const formationModules = klass.modules.filter((module) => !isElectiveAddOnModule(module))
+    const electiveModules = klass.modules.filter((module) => isElectiveAddOnModule(module))
+
+    tracks.push({
+      ...klass,
+      title: "Formation",
+      modules: formationModules,
+      trackKey: "formation",
+      routeSlug: klass.slug,
+      displayTitle: "Formation",
+      lockState: "open",
+    })
+
+    if (electiveModules.length > 0) {
+      tracks.push({
+        ...klass,
+        title: "Electives",
+        modules: electiveModules,
+        trackKey: "electives",
+        routeSlug: klass.slug,
+        displayTitle: "Electives",
+        lockState: "requires_elective",
+      })
+    }
+  }
+
+  return tracks
 }
 
 export type ClassesSectionProps = {
@@ -83,6 +147,8 @@ export type ClassesSectionProps = {
   basePath?: string
   alignHeader?: boolean
   hasAcceleratorAccess?: boolean
+  hasElectiveAccess?: boolean
+  ownedElectiveModuleSlugs?: string[]
   formationStatus?: string | null
 }
 
@@ -92,6 +158,8 @@ export function ClassesSection({
   basePath,
   alignHeader = false,
   hasAcceleratorAccess = false,
+  hasElectiveAccess = false,
+  ownedElectiveModuleSlugs = [],
   formationStatus = null,
 }: ClassesSectionProps) {
   const pathname = usePathname() ?? ""
@@ -103,44 +171,40 @@ export function ClassesSection({
     setIsMounted(true)
   }, [])
 
-  const visibleClasses = useMemo(() => {
-    const base = classes
-      .filter((klass) => klass.published && !isLegacyClass(klass))
-      .map((klass) => (klass.slug === "electives" ? { ...klass, title: "Formation" } : klass))
-    base.sort((a, b) => {
-      if (a.slug === "electives") return -1
-      if (b.slug === "electives") return 1
-      const pa = typeof a.position === "number" ? a.position : Number.MAX_SAFE_INTEGER
-      const pb = typeof b.position === "number" ? b.position : Number.MAX_SAFE_INTEGER
-      return pa - pb
-    })
-    return base
-  }, [classes])
+  const visibleTracks = useMemo(() => buildVisibleTracks(classes), [classes])
+  const ownedElectiveModuleSlugSet = useMemo(
+    () => new Set(ownedElectiveModuleSlugs.map((slug) => slug.trim().toLowerCase())),
+    [ownedElectiveModuleSlugs],
+  )
+  const canAccessElectives = hasAcceleratorAccess || hasElectiveAccess
 
   const activeKey = useMemo(
-    () => getActiveClassKey({ classes: visibleClasses, pathname, basePath: normalizedBase }),
-    [normalizedBase, pathname, visibleClasses],
+    () => getActiveTrackKey({ tracks: visibleTracks, pathname, basePath: normalizedBase }),
+    [normalizedBase, pathname, visibleTracks],
   )
-  const trackKeys = useMemo(() => visibleClasses.map((klass) => getClassKey(klass)), [visibleClasses])
+  const trackKeys = useMemo(() => visibleTracks.map((track) => track.trackKey), [visibleTracks])
   const formationKey = useMemo(
-    () => visibleClasses.find((klass) => klass.slug === "electives")?.slug ?? null,
-    [visibleClasses],
+    () => visibleTracks.find((track) => track.trackKey === "formation")?.trackKey ?? null,
+    [visibleTracks],
   )
   const fallbackKey = activeKey ?? (formationStatus === "pre_501c3" ? formationKey : activeKey)
-  const { selectedKey, setSelectedKey } = useTrackParam({ keys: trackKeys, fallbackKey })
+  const { selectedKey, setSelectedKey } = useTrackParam({
+    keys: trackKeys,
+    fallbackKey,
+    paramName: "classTrack",
+  })
 
-  const selectedClass =
-    visibleClasses.find((klass) => getClassKey(klass) === selectedKey) ?? visibleClasses[0] ?? null
-  const SelectedTrackIcon = getTrackIcon(selectedClass?.slug || selectedClass?.title)
+  const selectedTrack = visibleTracks.find((track) => track.trackKey === selectedKey) ?? visibleTracks[0] ?? null
+  const SelectedTrackIcon = getTrackIcon(selectedTrack?.trackKey || selectedTrack?.displayTitle)
 
   const modules = useMemo(
-    () => (selectedClass?.modules.filter((module) => module.published) ?? []),
-    [selectedClass],
+    () => (selectedTrack?.modules.filter((module) => module.published) ?? []),
+    [selectedTrack],
   )
   const activeModulePosition =
-    selectedClass
+    selectedTrack
       ? modules.findIndex(
-          (module) => `${normalizedBase}/class/${selectedClass.slug}/module/${module.index}` === pathname,
+          (module) => `${normalizedBase}/class/${selectedTrack.routeSlug}/module/${module.index}` === pathname,
         )
       : -1
   const activeIdx = activeModulePosition >= 0 ? modules[activeModulePosition]?.index ?? null : null
@@ -156,23 +220,26 @@ export function ClassesSection({
     })
   }
   const steps: StepItem[] = (() => {
-    if (!selectedClass) return []
-    const classLockedByPlan = !isAdmin && !hasAcceleratorAccess && selectedClass.slug !== "electives"
-    let priorCompleted = true
+    if (!selectedTrack) return []
+    const classLockedByPlan = !isAdmin &&
+      ((selectedTrack.lockState === "requires_accelerator" && !hasAcceleratorAccess) ||
+        (selectedTrack.lockState === "requires_elective" && !canAccessElectives))
     return modules.map((module) => {
-      const moduleHref = `${normalizedBase}/class/${selectedClass.slug}/module/${module.index}`
+      const moduleHref = `${normalizedBase}/class/${selectedTrack.routeSlug}/module/${module.index}`
       const isCompleted = completedMap.get(module.id) === true
+      const moduleLockedByElective =
+        !isAdmin &&
+        !hasAcceleratorAccess &&
+        selectedTrack.trackKey === "electives" &&
+        isElectiveAddOnModule(module) &&
+        !ownedElectiveModuleSlugSet.has((module.slug ?? "").trim().toLowerCase())
       const status = deriveModuleStatus({
         activeIndex: activeIdx,
         moduleIndex: module.index,
         isAdmin,
         isCompleted,
-        priorCompleted: priorCompleted && !classLockedByPlan,
       })
-      const finalStatus = classLockedByPlan ? ("locked" as StepStatus) : status
-      if (!isCompleted) {
-        priorCompleted = false
-      }
+      const finalStatus = classLockedByPlan || moduleLockedByElective ? ("not_started" as StepStatus) : status
       return {
         id: module.id,
         href: moduleHref,
@@ -187,7 +254,7 @@ export function ClassesSection({
     return null
   }
 
-  if (visibleClasses.length === 0) {
+  if (visibleTracks.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border/60 px-3 py-4 text-xs text-muted-foreground">
         {isAdmin ? "No published sessions yet." : "No accelerator sessions yet."}
@@ -195,7 +262,7 @@ export function ClassesSection({
     )
   }
 
-  if (!selectedClass) {
+  if (!selectedTrack) {
     return null
   }
 
@@ -209,24 +276,20 @@ export function ClassesSection({
           <Select value={selectedKey} onValueChange={setSelectedKey}>
             <SelectTrigger id="track-picker" multiline className="w-full py-2">
               <SelectedTrackIcon className="h-4 w-4 text-muted-foreground" aria-hidden />
-              <SelectValue
-                placeholder="Select a track"
-                className="min-w-0 flex-1 text-left text-sm font-medium text-foreground"
-              />
+              <SelectValue placeholder="Select a track" className="min-w-0 flex-1 text-left text-sm font-medium text-foreground" />
             </SelectTrigger>
             <SelectContent>
-              {visibleClasses.map((klass) => {
-                const key = getClassKey(klass)
-                const TrackIcon = getTrackIcon(klass.slug || klass.title)
+              {visibleTracks.map((track) => {
+                const TrackIcon = getTrackIcon(track.trackKey || track.displayTitle)
                 return (
                   <SelectItem
-                    key={key}
-                    value={key}
+                    key={track.trackKey}
+                    value={track.trackKey}
                     hideIndicator
                     icon={<TrackIcon className="h-4 w-4" aria-hidden />}
                     className="gap-3 py-2"
                   >
-                    {formatClassTitle(klass.title)}
+                    {track.displayTitle}
                   </SelectItem>
                 )
               })}
@@ -234,10 +297,35 @@ export function ClassesSection({
           </Select>
         ) : (
           <div className="flex h-10 w-full items-center rounded-md border border-input bg-transparent px-3 text-sm text-muted-foreground shadow-xs">
-            {formatClassTitle(selectedClass.title)}
+            {selectedTrack.displayTitle}
           </div>
         )}
-        {!hasAcceleratorAccess && selectedClass.slug !== "electives" ? (
+        {!canAccessElectives && selectedTrack.trackKey === "electives" ? (
+          <div className="flex items-center justify-between rounded-lg border border-dashed border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            <span>Electives are optional add-ons.</span>
+            <Link
+              href="/pricing?plan=electives"
+              className="text-foreground underline-offset-4 hover:underline"
+            >
+              Unlock
+            </Link>
+          </div>
+        ) : null}
+        {canAccessElectives &&
+        !hasAcceleratorAccess &&
+        selectedTrack.trackKey === "electives" &&
+        ownedElectiveModuleSlugSet.size < modules.length ? (
+          <div className="flex items-center justify-between rounded-lg border border-dashed border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+            <span>Some electives are not included yet.</span>
+            <Link
+              href="/pricing?plan=electives"
+              className="text-foreground underline-offset-4 hover:underline"
+            >
+              Buy more
+            </Link>
+          </div>
+        ) : null}
+        {!hasAcceleratorAccess && selectedTrack.lockState === "requires_accelerator" && selectedTrack.trackKey !== "electives" ? (
           <div className="flex items-center justify-between rounded-lg border border-dashed border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
             <span>Unlock this track with Accelerator.</span>
             <Link

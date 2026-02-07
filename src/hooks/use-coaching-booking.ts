@@ -12,6 +12,22 @@ type CoachingSchedulePayload = {
   remaining?: number | null
 }
 
+function getTierSuccessMessage(payload: CoachingSchedulePayload) {
+  if (payload.tier === "free") {
+    if (typeof payload.remaining === "number") {
+      return `${payload.remaining} included session${payload.remaining === 1 ? "" : "s"} remaining after this booking.`
+    }
+    return "Opening your included coaching session booking link."
+  }
+  if (payload.tier === "discounted") {
+    return "Included sessions used. Opening your discounted coaching booking link."
+  }
+  if (payload.tier === "full") {
+    return "Opening your coaching booking link."
+  }
+  return "Opening your scheduling link."
+}
+
 export function useCoachingBooking() {
   const [pending, setPending] = useState(false)
 
@@ -30,7 +46,7 @@ export function useCoachingBooking() {
         return null
       }
       window.open(payload.url, "_blank", "noopener,noreferrer")
-      toast.success("Opening your scheduling link.")
+      toast.success(getTierSuccessMessage(payload))
       return payload
     } catch (error) {
       console.error(error)

@@ -346,7 +346,11 @@ export function Home2ImpactSection({ staticText = false }: { staticText?: boolea
   )
 }
 
-export function Home2OfferingsSection() {
+type Home2OfferingsSectionProps = {
+  layout?: "split" | "stacked"
+}
+
+export function Home2OfferingsSection({ layout = "split" }: Home2OfferingsSectionProps) {
   const layoutByIndex: Record<number, string> = {
     0: "md:col-span-3 md:row-span-2",
     1: "md:col-start-1 md:row-start-3",
@@ -354,22 +358,69 @@ export function Home2OfferingsSection() {
     3: "md:col-start-1 md:row-start-4 md:col-span-2",
     4: "md:col-start-2 md:row-start-3",
   }
+  const stackedLayoutByIndex: Record<number, string> = {
+    0: "md:col-span-3",
+    1: "md:col-start-1 md:row-start-2",
+    2: "md:col-start-2 md:row-start-2",
+    3: "md:col-span-2 md:col-start-1 md:row-start-3",
+    4: "md:col-start-3 md:row-start-2 md:row-span-2",
+  }
+
+  if (layout === "stacked") {
+    return (
+      <div className="w-full max-w-[760px] space-y-4">
+        <div className="max-w-md space-y-2 text-left">
+          <h2 className={cn(heading.className, "text-3xl font-semibold")}>What we do</h2>
+          <p className="text-sm text-muted-foreground">
+            The platform, curriculum, community, and docs you need to launch and fund your nonprofit.
+          </p>
+        </div>
+        <div className="grid w-full gap-4 md:grid-cols-3 md:auto-rows-[176px]">
+          {PRODUCT_HIGHLIGHTS.map((item, index) => (
+            <Link
+              key={item.title}
+              href={item.href}
+              className={cn(
+                "group relative flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-sm transition duration-300 ease-out hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                stackedLayoutByIndex[index],
+              )}
+            >
+              <span className="pointer-events-none absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground/70 shadow-sm ring-1 ring-border/40 transition group-hover:bg-background/80 group-hover:text-muted-foreground">
+                <ArrowUpRight className="h-4 w-4" aria-hidden />
+              </span>
+              <div className="flex h-full flex-col justify-between">
+                <div className="flex flex-col items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                    {item.icon}
+                  </div>
+                  <div className="space-y-1 text-left">
+                    <p className="line-clamp-2 text-base font-semibold leading-tight text-foreground">{item.title}</p>
+                    <p className="line-clamp-3 text-sm text-muted-foreground">{item.description}</p>
+                  </div>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <>
-      <div className="max-w-md space-y-3">
+      <div className="max-w-md space-y-2">
         <h2 className={cn(heading.className, "text-3xl font-semibold")}>What we do</h2>
         <p className="text-sm text-muted-foreground">
           The platform, curriculum, community, and docs you need to launch and fund your nonprofit.
         </p>
       </div>
-      <div className="grid w-full gap-4 md:grid-cols-3 md:auto-rows-[minmax(136px,auto)]">
+      <div className="grid w-full gap-4 md:grid-cols-3 md:auto-rows-[152px]">
         {PRODUCT_HIGHLIGHTS.map((item, index) => (
           <Link
             key={item.title}
             href={item.href}
             className={cn(
-              "group relative flex h-full min-h-[152px] flex-col overflow-hidden rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-sm transition duration-300 ease-out hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+              "group relative flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-sm transition duration-300 ease-out hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
               layoutByIndex[index],
             )}
           >

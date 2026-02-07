@@ -153,8 +153,8 @@ function HomeSectionPanel({ sectionId }: { sectionId: Home2SectionId }) {
   if (sectionId === "offerings") {
     return (
       <div className="mx-auto flex min-h-full w-full max-w-[1100px] items-center px-4 py-6 md:px-6 lg:px-8">
-        <div className="grid w-full gap-10 lg:grid-cols-[0.55fr_1.05fr] lg:items-center">
-          <Home2OfferingsSection />
+        <div className="mx-auto flex w-full justify-center">
+          <Home2OfferingsSection layout="stacked" />
         </div>
       </div>
     )
@@ -404,7 +404,7 @@ export function HomeCanvasPreview({ initialSection, pricingPanel }: HomeCanvasPr
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-            <SidebarGroup className="mt-2 border-t border-border/70 pt-3">
+            <SidebarGroup className="mt-2 pt-3">
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>

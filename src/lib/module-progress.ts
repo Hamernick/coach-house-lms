@@ -13,23 +13,17 @@ export function buildModuleStates(
 ): ModuleState[] {
   const ordered = [...modules].sort((a, b) => a.idx - b.idx)
   const states: ModuleState[] = []
-  let allPreviousCompleted = true
 
   for (const record of ordered) {
     const status = progressMap[record.id] ?? "not_started"
     const completed = status === "completed"
-    const locked = !allPreviousCompleted
 
     states.push({
       module: record,
       completed,
-      locked,
+      locked: false,
       status,
     })
-
-    if (!completed) {
-      allPreviousCompleted = false
-    }
   }
 
   return states

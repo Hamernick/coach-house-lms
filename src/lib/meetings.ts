@@ -5,10 +5,10 @@ export const COACHING_INCLUDED_SESSION_LIMIT = 4
 export type CoachingTier = "free" | "discounted" | "full"
 
 export function resolveCoachingTier(options: {
-  hasAccelerator: boolean
+  hasIncludedCoaching: boolean
   freeSessionsUsed: number
 }): CoachingTier {
-  if (!options.hasAccelerator) return "full"
+  if (!options.hasIncludedCoaching) return "full"
   if (options.freeSessionsUsed < COACHING_INCLUDED_SESSION_LIMIT) return "free"
   return "discounted"
 }

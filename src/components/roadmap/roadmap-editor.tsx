@@ -5,6 +5,7 @@ import { formatDistanceToNowStrict } from "date-fns"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
+import HouseIcon from "lucide-react/dist/esm/icons/house"
 import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
 import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 
@@ -23,6 +24,23 @@ const ROADMAP_SECTION_ORDER = new Map<string, number>(ROADMAP_SECTION_IDS.map((i
 
 function isFrameworkSection(section: RoadmapSection) {
   return ROADMAP_SECTION_ORDER.has(section.id)
+}
+
+function RoadmapTocIcon({
+  sectionId,
+  active,
+  compact = false,
+}: {
+  sectionId: string
+  active: boolean
+  compact?: boolean
+}) {
+  const Icon = ROADMAP_SECTION_ICONS[sectionId] ?? SparklesIcon
+  return (
+    <span aria-hidden className={cn("flex shrink-0 items-center justify-center", active ? "text-foreground" : "text-muted-foreground")}>
+      <Icon className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden />
+    </span>
+  )
 }
 
 type RoadmapEditorProps = {
@@ -158,7 +176,11 @@ export function RoadmapEditor({
   const sectionsListRef = useRef<HTMLDivElement | null>(null)
   const headerTextRef = useRef<HTMLDivElement | null>(null)
   const imagePickerRef = useRef<(() => void) | null>(null)
+  const sectionsRef = useRef(sections)
+  const draftsRef = useRef(drafts)
+  const activeIdRef = useRef(activeId)
   const pathname = usePathname()
+  const isAcceleratorRoadmapView = Boolean(pathname?.startsWith("/accelerator/roadmap"))
   const basePath = useMemo(() => {
     if (!pathname) return "/roadmap"
     if (pathname.startsWith("/accelerator/roadmap")) return "/accelerator/roadmap"
@@ -167,13 +189,18 @@ export function RoadmapEditor({
     return "/roadmap"
   }, [pathname])
   const getSectionHref = useCallback((slug: string) => `${basePath}/${slug}`, [basePath])
-  const pathSlug = useMemo(() => {
-    if (!pathname) return ""
-    const parts = pathname.split("/").filter(Boolean)
-    const roadmapIndex = parts.indexOf("roadmap")
-    if (roadmapIndex === -1 || roadmapIndex >= parts.length - 1) return ""
-    return parts[roadmapIndex + 1] ?? ""
-  }, [pathname])
+
+  useEffect(() => {
+    sectionsRef.current = sections
+  }, [sections])
+
+  useEffect(() => {
+    draftsRef.current = drafts
+  }, [drafts])
+
+  useEffect(() => {
+    activeIdRef.current = activeId
+  }, [activeId])
 
   const tocItems = useMemo(() => {
     const sectionMap = new Map(sections.map((section) => [section.id, section]))
@@ -259,13 +286,6 @@ export function RoadmapEditor({
       setActiveId(sections[0].id)
     }
   }, [activeId, sections])
-
-  useEffect(() => {
-    if (!pathSlug) return
-    const match = sections.find((section) => section.slug === pathSlug || section.id === pathSlug)
-    if (!match || match.id === activeId) return
-    setActiveId(match.id)
-  }, [activeId, pathSlug, sections])
 
   useEffect(() => {
     const parentId = TOC_GROUP_PARENT_BY_CHILD.get(activeId)
@@ -384,6 +404,86 @@ export function RoadmapEditor({
     [],
   )
 
+  const saveSectionById = useCallback(
+    ({
+      sectionId,
+      showToast,
+    }: {
+      sectionId: string
+      showToast: boolean
+    }) => {
+      if (!canEdit) return
+      if (!sectionId) return
+      if (savingId || isPending) return
+
+      const section = sectionsRef.current.find((entry) => entry.id === sectionId)
+      if (!section) return
+      const draft = draftsRef.current[sectionId] ?? createDraft(section)
+      const baseline = getBaseline(section)
+      const sectionDirty =
+        draft.title !== baseline.title ||
+        draft.subtitle !== baseline.subtitle ||
+        draft.content !== baseline.content ||
+        draft.imageUrl !== baseline.imageUrl
+      if (!sectionDirty) return
+
+      const shouldMarkInProgress =
+        section.status === "not_started" &&
+        (draft.content.trim().length > 0 || draft.title.trim().length > 0 || draft.subtitle.trim().length > 0)
+
+      setSavingId(section.id)
+      startTransition(async () => {
+        const result = await saveRoadmapSectionAction({
+          sectionId: section.id,
+          title: draft.title,
+          subtitle: draft.subtitle,
+          content: draft.content,
+          imageUrl: draft.imageUrl,
+          status: shouldMarkInProgress ? "in_progress" : undefined,
+        })
+
+        if ("error" in result) {
+          if (showToast) toast.error(result.error)
+          setSavingId(null)
+          return
+        }
+
+        const nextSection = result.section
+        setSections((prev) => {
+          const index = prev.findIndex((entry) => entry.id === nextSection.id)
+          if (index === -1) return [...prev, nextSection]
+          return prev.map((entry, idx) => (idx === index ? nextSection : entry))
+        })
+        setDrafts((prev) => ({
+          ...prev,
+          [nextSection.id]: createDraft(nextSection),
+        }))
+        setSavingId(null)
+        if (showToast) toast.success("Section saved")
+      })
+    },
+    [canEdit, getBaseline, isPending, savingId],
+  )
+
+  const flushActiveSectionDraft = useCallback(() => {
+    const sectionId = activeIdRef.current
+    if (!sectionId) return
+    saveSectionById({ sectionId, showToast: false })
+  }, [saveSectionById])
+
+  const handleSectionSelect = useCallback(
+    (next: { id: string; slug: string }) => {
+      if (next.id === activeIdRef.current) return
+      flushActiveSectionDraft()
+      setActiveId(next.id)
+      if (typeof window === "undefined") return
+      const nextHref = getSectionHref(next.slug)
+      if (window.location.pathname === nextHref) return
+      window.history.replaceState(window.history.state, "", nextHref)
+    },
+    [flushActiveSectionDraft, getSectionHref],
+  )
+
   const isDirty = useMemo(() => {
     if (!activeSection || !activeDraft) return false
     const baseline = getBaseline(activeSection)
@@ -393,12 +493,6 @@ export function RoadmapEditor({
       activeDraft.content !== baseline.content ||
       activeDraft.imageUrl !== baseline.imageUrl
     )
-  }, [activeDraft, activeSection, getBaseline])
-
-  const headingsDirty = useMemo(() => {
-    if (!activeSection || !activeDraft) return false
-    const baseline = getBaseline(activeSection)
-    return activeDraft.title !== baseline.title || activeDraft.subtitle !== baseline.subtitle
   }, [activeDraft, activeSection, getBaseline])
 
   const bodyDirty = useMemo(() => {
@@ -483,97 +577,25 @@ export function RoadmapEditor({
     }))
   }
 
-  const saveSection = useCallback(
-    ({ showToast }: { showToast: boolean }) => {
-      if (!canEdit) return
-      if (!activeSection || !activeDraft) return
-      if (savingId || isPending) return
-      const shouldMarkInProgress =
-        activeSection.status === "not_started" &&
-        (activeDraft.content.trim().length > 0 ||
-          activeDraft.title.trim().length > 0 ||
-          activeDraft.subtitle.trim().length > 0)
-      setSavingId(activeSection.id)
-      startTransition(async () => {
-        const result = await saveRoadmapSectionAction({
-          sectionId: activeSection.id,
-          title: activeDraft.title,
-          subtitle: activeDraft.subtitle,
-          content: activeDraft.content,
-          imageUrl: activeDraft.imageUrl,
-          status: shouldMarkInProgress ? "in_progress" : undefined,
-        })
-
-        if ("error" in result) {
-          if (showToast) toast.error(result.error)
-          setSavingId(null)
-          return
-        }
-
-        const nextSection = result.section
-        setSections((prev) => {
-          const index = prev.findIndex((section) => section.id === nextSection.id)
-          if (index === -1) {
-            return [...prev, nextSection]
-          }
-          return prev.map((section, idx) => (idx === index ? nextSection : section))
-        })
-        setDrafts((prev) => ({
-          ...prev,
-          [nextSection.id]: createDraft(nextSection),
-        }))
-        setSavingId(null)
-        if (showToast) toast.success("Section saved")
-      })
-    },
-    [activeDraft, activeSection, canEdit, isPending, savingId],
-  )
-
   const handleSave = () => {
     if (!canEdit) return
-    saveSection({ showToast: true })
+    if (!activeSection) return
+    saveSectionById({ sectionId: activeSection.id, showToast: true })
   }
 
   useEffect(() => {
     if (!canEdit) return
     if (!activeSection || !activeDraft) return
-      if (!headingsDirty) return
-      if (savingId || isPending) return
+    if (!isDirty) return
+    if (savingId || isPending) return
 
     const timeout = window.setTimeout(() => {
       if (savingId || isPending) return
-      const shouldMarkInProgress =
-        activeSection.status === "not_started" &&
-        (activeDraft.content.trim().length > 0 ||
-          activeDraft.title.trim().length > 0 ||
-          activeDraft.subtitle.trim().length > 0)
-      setSavingId(activeSection.id)
-      startTransition(async () => {
-        const result = await saveRoadmapSectionAction({
-          sectionId: activeSection.id,
-          title: activeDraft.title,
-          subtitle: activeDraft.subtitle,
-          ...(bodyDirty ? { content: activeDraft.content, imageUrl: activeDraft.imageUrl } : {}),
-          status: shouldMarkInProgress ? "in_progress" : undefined,
-        })
-
-        if ("error" in result) {
-          setSavingId(null)
-          return
-        }
-
-        const nextSection = result.section
-        setSections((prev) => prev.map((section) => (section.id === nextSection.id ? nextSection : section)))
-        setDrafts((prev) => ({
-          ...prev,
-          [nextSection.id]: createDraft(nextSection),
-        }))
-        setSavingId(null)
-      })
+      saveSectionById({ sectionId: activeSection.id, showToast: false })
     }, bodyDirty ? 2500 : 1200)
 
     return () => window.clearTimeout(timeout)
-  }, [activeDraft, activeSection, bodyDirty, canEdit, headingsDirty, isPending, savingId])
+  }, [activeDraft, activeSection, bodyDirty, canEdit, isDirty, isPending, saveSectionById, savingId])
 
   useEffect(() => {
     if (!canEdit) return
@@ -581,10 +603,17 @@ export function RoadmapEditor({
     if (!isDirty) return
     const interval = window.setInterval(() => {
       if (!isDirty || isPending || savingId) return
-      saveSection({ showToast: false })
+      saveSectionById({ sectionId: activeSection.id, showToast: false })
     }, 10000)
     return () => window.clearInterval(interval)
-  }, [activeDraft, activeSection, canEdit, isDirty, isPending, saveSection, savingId])
+  }, [activeDraft, activeSection, canEdit, isDirty, isPending, saveSectionById, savingId])
+
+  useEffect(() => {
+    if (!canEdit) return
+    return () => {
+      flushActiveSectionDraft()
+    }
+  }, [canEdit, flushActiveSectionDraft])
 
   const handleImageUpload = useCallback(async (file: File) => {
     const error = validateOrgMediaFile(file)
@@ -676,7 +705,8 @@ export function RoadmapEditor({
             return (
               <div key={item.section.id} className="space-y-1 snap-start snap-always">
                 <div className="group flex items-center gap-2">
-                  <Link
+                  <button
+                    type="button"
                     data-toc-item
                     data-active={isActive}
                     data-toc-id={item.section.id}
@@ -685,12 +715,14 @@ export function RoadmapEditor({
                       "flex min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition-colors",
                       isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                     )}
-                    href={getSectionHref(item.section.slug)}
-                    onClick={() => setActiveId(item.section.id)}
+                    onClick={() => handleSectionSelect({ id: item.section.id, slug: item.section.slug })}
                   >
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium">{displayTitle}</span>
+                    <span className="flex min-w-0 flex-1 items-center gap-2">
+                      <RoadmapTocIcon sectionId={item.section.id} active={isActive} />
+                      <span className="min-w-0 flex-1 truncate text-sm font-medium">{displayTitle}</span>
+                    </span>
                     <span aria-hidden className={cn("h-2 w-2 shrink-0 rounded-full", itemStatusClass)} />
-                  </Link>
+                  </button>
                   <button
                     type="button"
                     className={cn(
@@ -725,7 +757,8 @@ export function RoadmapEditor({
                             : "bg-border"
                       return (
                         <div key={child.id} className="group flex items-center gap-2 snap-start snap-always">
-                          <Link
+                          <button
+                            type="button"
                             data-toc-item
                             data-active={childIsActive}
                             data-toc-id={child.id}
@@ -734,12 +767,14 @@ export function RoadmapEditor({
                               "flex min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-2 py-1.5 pl-6 text-left transition-colors",
                               childIsActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                             )}
-                            href={getSectionHref(child.slug)}
-                            onClick={() => setActiveId(child.id)}
+                            onClick={() => handleSectionSelect({ id: child.id, slug: child.slug })}
                           >
-                            <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{childDisplayTitle}</span>
+                            <span className="flex min-w-0 flex-1 items-center gap-2">
+                              <RoadmapTocIcon sectionId={child.id} active={childIsActive} compact />
+                              <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{childDisplayTitle}</span>
+                            </span>
                             <span aria-hidden className={cn("h-2 w-2 shrink-0 rounded-full", childStatusClass)} />
-                          </Link>
+                          </button>
                         </div>
                       )
                     })
@@ -764,7 +799,8 @@ export function RoadmapEditor({
 
           return (
             <div key={item.section.id} className="group flex items-center gap-2 snap-start snap-always">
-              <Link
+              <button
+                type="button"
                 data-toc-item
                 data-active={isActive}
                 data-toc-id={item.section.id}
@@ -773,12 +809,14 @@ export function RoadmapEditor({
                   "flex min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition-colors",
                   isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
-                href={getSectionHref(item.section.slug)}
-                onClick={() => setActiveId(item.section.id)}
+                onClick={() => handleSectionSelect({ id: item.section.id, slug: item.section.slug })}
               >
-                <span className="min-w-0 flex-1 truncate text-sm font-medium">{displayTitle}</span>
+                <span className="flex min-w-0 flex-1 items-center gap-2">
+                  <RoadmapTocIcon sectionId={item.section.id} active={isActive} />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{displayTitle}</span>
+                </span>
                 <span aria-hidden className={cn("h-2 w-2 shrink-0 rounded-full", itemStatusClass)} />
-              </Link>
+              </button>
             </div>
           )
         })}
@@ -789,6 +827,16 @@ export function RoadmapEditor({
   return (
     <>
         <RightRailSlot>{tocPanel}</RightRailSlot>
+        {isAcceleratorRoadmapView ? (
+          <RightRailSlot priority={10} align="bottom">
+            <Button asChild variant="outline" size="sm" className="w-full justify-start gap-2">
+              <Link href="/accelerator">
+                <HouseIcon className="h-4 w-4" aria-hidden />
+                Back To Accelerator
+              </Link>
+            </Button>
+          </RightRailSlot>
+        ) : null}
         <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-6 overflow-hidden">
           <RoadmapSectionPanel
             title={headerTitle}

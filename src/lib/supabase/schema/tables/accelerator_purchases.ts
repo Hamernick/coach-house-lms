@@ -5,6 +5,7 @@ export type AcceleratorPurchasesTable = {
     stripe_checkout_session_id: string | null
     stripe_payment_intent_id: string | null
     stripe_customer_id: string | null
+    coaching_included: boolean
     status: "active" | "refunded"
     created_at: string
     updated_at: string
@@ -15,6 +16,7 @@ export type AcceleratorPurchasesTable = {
     stripe_checkout_session_id?: string | null
     stripe_payment_intent_id?: string | null
     stripe_customer_id?: string | null
+    coaching_included?: boolean
     status?: "active" | "refunded"
     created_at?: string
     updated_at?: string
@@ -25,6 +27,7 @@ export type AcceleratorPurchasesTable = {
     stripe_checkout_session_id?: string | null
     stripe_payment_intent_id?: string | null
     stripe_customer_id?: string | null
+    coaching_included?: boolean
     status?: "active" | "refunded"
     created_at?: string
     updated_at?: string
@@ -38,4 +41,3 @@ export type AcceleratorPurchasesTable = {
     },
   ]
 }
-

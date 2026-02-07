@@ -1,17 +1,31 @@
 "use client"
 
+import { useState } from "react"
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
 import CalendarCheck from "lucide-react/dist/esm/icons/calendar-check"
 import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 
+import { CoachingAvatarGroup } from "@/components/coaching/coaching-avatar-group"
 import { NewsGradientThumb } from "@/components/news/gradient-thumb"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { useCoachingBooking } from "@/hooks/use-coaching-booking"
+import type { CoachingTier } from "@/lib/meetings"
 import { cn } from "@/lib/utils"
 
 export function AcceleratorScheduleCard() {
   const { schedule, pending } = useCoachingBooking()
+  const [tier, setTier] = useState<CoachingTier | null>(null)
+  const [remaining, setRemaining] = useState<number | null>(null)
+
+  const handleSchedule = async () => {
+    const payload = await schedule()
+    if (!payload) return
+    if (payload.tier) setTier(payload.tier)
+    if (payload.remaining === null || typeof payload.remaining === "number") {
+      setRemaining(payload.remaining ?? null)
+    }
+  }
 
   return (
     <Card
@@ -43,6 +57,29 @@ export function AcceleratorScheduleCard() {
             <p className="text-xs text-muted-foreground">
               4 sessions included with Accelerator, then discounted.
             </p>
+            <div className="pt-1">
+              <CoachingAvatarGroup size="md" />
+            </div>
+            {tier === "free" && typeof remaining === "number" && remaining > 0 ? (
+              <p className="text-xs text-muted-foreground">
+                {remaining} included session{remaining === 1 ? "" : "s"} remaining.
+              </p>
+            ) : null}
+            {tier === "free" && remaining === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Included sessions complete. Next bookings unlock the discounted calendar.
+              </p>
+            ) : null}
+            {tier === "discounted" ? (
+              <p className="text-xs text-muted-foreground">
+                Included sessions complete. You are now booking at the discounted coaching rate.
+              </p>
+            ) : null}
+            {tier === "full" ? (
+              <p className="text-xs text-muted-foreground">
+                Coaching booking opened in a new tab.
+              </p>
+            ) : null}
           </div>
           <div className="flex justify-end">
             <Button
@@ -51,7 +88,7 @@ export function AcceleratorScheduleCard() {
               variant="secondary"
               className="gap-2 bg-foreground text-background hover:bg-foreground/90 dark:bg-secondary dark:text-secondary-foreground dark:hover:bg-secondary/80"
               disabled={pending}
-              onClick={() => void schedule()}
+              onClick={() => void handleSchedule()}
             >
               {pending ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> : null}
               Book a session

@@ -53,7 +53,7 @@ Docs: Getting Started index, configuration overview nextjs.org
 
 Audit each route: prefer static with revalidation; mark truly dynamic routes explicitly.
 Marketing surfaces (e.g., `/pricing`) should lean on ISR, while authed dashboards stay `cache: "no-store"` to respect Supabase session reads.
-Record per-route caching decisions in `/docs/runlog.md` and include revalidate intervals for `/pricing`, `/community`, and any other static marketing pages so the perf budget stays enforceable.
+Record per-route caching decisions in `/docs/RUNLOG.md` and include revalidate intervals for `/pricing`, `/community`, and any other static marketing pages so the perf budget stays enforceable.
 
 
 Adopt tag-based revalidation for CMS/data updates.
@@ -133,7 +133,7 @@ Learn: Optimizing images lesson (paired with fonts) nextjs.org
 Prefer Edge for read-heavy, compute-light routes; fall back to Node when incompatible dependencies exist.
 Docs: App Router (runtime capabilities overview) nextjs.org
 Evaluate `/src/app/(public)/community/page.tsx` and other marketing pages for Edge runtime eligibility; document any Node holds (e.g., Supabase admin mutations) directly in the route file comments.
-Record runtime decisions in `/docs/runlog.md`: marketing/community stay on Edge with static data fetchers; Node-only for admin dashboards, Supabase-authenticated routes, and any handler relying on Node APIs (Stripe webhooks, file uploads).
+Record runtime decisions in `/docs/RUNLOG.md`: marketing/community stay on Edge with static data fetchers; Node-only for admin dashboards, Supabase-authenticated routes, and any handler relying on Node APIs (Stripe webhooks, file uploads).
 
 
 

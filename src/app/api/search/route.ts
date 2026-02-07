@@ -5,6 +5,7 @@ import { CATEGORIES, ITEMS, type MarketplaceCategory } from "@/lib/marketplace/d
 import { parseAssignmentFields } from "@/lib/modules"
 import { resolveRoadmapSections } from "@/lib/roadmap"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
+import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import type { SearchResult } from "@/lib/search/types"
 import { createSupabaseServerClient } from "@/lib/supabase"
 
@@ -522,18 +523,13 @@ export async function GET(request: Request) {
   const { orgId } = await resolveActiveOrganization(supabase, user.id)
 
   const isAdmin = await fetchIsAdmin(supabase, user.id)
-  let hasAcceleratorAccess = isAdmin
-  if (!isAdmin) {
-    const { data: purchase } = await supabase
-      .from("accelerator_purchases")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .limit(1)
-      .maybeSingle<{ id: string }>()
-
-    hasAcceleratorAccess = Boolean(purchase)
-  }
+  const entitlements = await fetchLearningEntitlements({
+    supabase,
+    userId: user.id,
+    orgUserId: orgId,
+    isAdmin,
+  })
+  const hasAcceleratorAccess = entitlements.hasAcceleratorAccess || entitlements.hasElectiveAccess
 
   const tokens = normalizeQuery(rawQuery)
   const results: SearchResult[] = []

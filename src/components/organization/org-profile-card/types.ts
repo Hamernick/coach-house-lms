@@ -85,6 +85,7 @@ export type OrgProgram = {
   address_country?: string | null
   cta_label?: string | null
   cta_url?: string | null
+  wizard_snapshot?: Record<string, unknown> | null
 }
 
 export type ProfileTab = "company" | "programs" | "people" | "supporters"

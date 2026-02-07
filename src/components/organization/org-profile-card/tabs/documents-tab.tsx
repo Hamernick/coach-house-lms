@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useId, useMemo, useState } from "react"
+import { useEffect, useId, useState } from "react"
 import Lock from "lucide-react/dist/esm/icons/lock"
 import FileText from "lucide-react/dist/esm/icons/file-text"
 import UploadCloud from "lucide-react/dist/esm/icons/upload-cloud"
@@ -8,7 +8,6 @@ import Trash2 from "lucide-react/dist/esm/icons/trash-2"
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw"
 import ExternalLink from "lucide-react/dist/esm/icons/external-link"
 import MoreHorizontal from "lucide-react/dist/esm/icons/more-horizontal"
-import PencilLine from "lucide-react/dist/esm/icons/pencil-line"
 import { formatDistanceToNow } from "date-fns"
 
 import { Button, buttonVariants } from "@/components/ui/button"
@@ -19,14 +18,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Dropzone } from "@/components/ui/shadcn-io/dropzone"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 import type { OrgDocuments, OrgDocument } from "../types"
 
-const MAX_LABEL_LENGTH = 120
 const MAX_BYTES = 15 * 1024 * 1024
 
 type DocumentDefinition = {
@@ -136,24 +132,16 @@ function DocumentCard({
   canEdit: boolean
 }) {
   const replaceInputId = useId()
-  const nameInputId = useId()
   const [doc, setDoc] = useState<OrgDocument | null>(document)
   const [isUploading, setIsUploading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [isRenaming, setIsRenaming] = useState(false)
   const [isViewing, setIsViewing] = useState(false)
-  const [nameDraft, setNameDraft] = useState(document?.name ?? "")
 
   useEffect(() => {
     setDoc(document ?? null)
-    setNameDraft(document?.name ?? "")
   }, [document])
 
   const hasDocument = Boolean(doc?.path)
-  const displayName = useMemo(
-    () => nameDraft.trim().slice(0, MAX_LABEL_LENGTH),
-    [nameDraft]
-  )
   const menuBusy = isUploading || isDeleting || isViewing
 
   const handleUpload = async (file: File) => {
@@ -180,7 +168,6 @@ function DocumentCard({
       const nextDoc = payload?.document as OrgDocument | undefined
       if (!nextDoc?.path) throw new Error("Upload failed")
       setDoc(nextDoc)
-      setNameDraft(nextDoc.name)
       toast.success("Document saved", { id: toastId })
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Upload failed", {
@@ -215,40 +202,6 @@ function DocumentCard({
     }
   }
 
-  const handleRename = async () => {
-    if (!doc?.path) return
-    const nextName = displayName.trim()
-    if (!nextName) {
-      toast.error("Document title is required")
-      return
-    }
-    setIsRenaming(true)
-    try {
-      const res = await fetch(
-        `/api/account/org-documents?kind=${definition.kind}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: nextName }),
-        }
-      )
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err?.error || "Update failed")
-      }
-      const payload = await res.json()
-      const nextDoc = payload?.document as OrgDocument | undefined
-      if (!nextDoc?.path) throw new Error("Update failed")
-      setDoc(nextDoc)
-      setNameDraft(nextDoc.name)
-      toast.success("Document updated")
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Update failed")
-    } finally {
-      setIsRenaming(false)
-    }
-  }
-
   const handleDelete = async () => {
     if (!doc?.path) return
     if (!window.confirm("Remove this document?")) return
@@ -263,7 +216,6 @@ function DocumentCard({
         throw new Error(err?.error || "Delete failed")
       }
       setDoc(null)
-      setNameDraft("")
       toast.success("Document removed")
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Delete failed")
@@ -299,28 +251,6 @@ function DocumentCard({
             </div>
           </div>
 
-          {canEdit && editMode && hasDocument ? (
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <Label htmlFor={nameInputId} className="sr-only">
-                Document title
-              </Label>
-              <Input
-                id={nameInputId}
-                value={nameDraft}
-                onChange={(event) => setNameDraft(event.currentTarget.value)}
-                className="h-9 sm:max-w-xs"
-              />
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={handleRename}
-                disabled={isRenaming}
-              >
-                <PencilLine className="h-4 w-4" />
-                {isRenaming ? "Saving…" : "Update name"}
-              </Button>
-            </div>
-          ) : null}
         </div>
 
         <div className="min-w-0">
@@ -346,7 +276,7 @@ function DocumentCard({
                 </div>
                 <div className="min-w-0 space-y-0.5">
                   <p className="text-foreground truncate text-sm font-medium">
-                    {displayName || doc?.name || definition.defaultName}
+                    {doc?.name?.trim() || definition.defaultName}
                   </p>
                   <p className="text-muted-foreground text-xs">
                     {formatBytes(doc?.size)} · Updated{" "}

@@ -6587,3 +6587,12 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - Endpoint created via `scripts/setup-stripe-webhook.sh` and local `STRIPE_WEBHOOK_SECRET` rotated in `.env.local`.
 - Notes:
   - Keep `http://localhost:3000` only for local dev assumptions; deploy/runtime envs should use the Vercel URL until custom domain is connected.
+
+## 2026-02-07 — Codex ops pass (domain rename follow-up: coachhouse.vercel.app)
+- Confirmed old temporary domain `coach-house-lms.vercel.app` is no longer active (HTTP 404) and new domain `coachhouse.vercel.app` is active (HTTP 200).
+- Updated local runtime base URL:
+  - `NEXT_PUBLIC_SITE_URL=https://coachhouse.vercel.app` (`.env.local`).
+- Rotated Stripe webhook target to new domain and refreshed signing secret in local env:
+  - Created endpoint for `https://coachhouse.vercel.app/api/stripe/webhook`.
+  - Removed prior webhook endpoint pointing at `coach-house-lms.vercel.app` to avoid failed retries/noise.
+- Reminder: sync `NEXT_PUBLIC_SITE_URL` and `STRIPE_WEBHOOK_SECRET` in Vercel project environment variables, then redeploy.

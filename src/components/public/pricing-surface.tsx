@@ -68,18 +68,21 @@ const TIERS: PricingTier[] = [
     id: "formation",
     eyebrow: "The Platform (Free)",
     title: "Individual",
-    subtitle: "For founders forming their entity.",
+    subtitle:
+      "For founders and nonprofit organizations who want to be part of a shared ecosystem that values clarity, collaboration, and long-term fundability.",
     priceLine: "Free",
     ctaLabel: "Get started",
     ctaHref: "/sign-up?plan=individual",
-    featureHeading: "Free, forever",
+    featureHeading: "Includes",
     features: [
-      "1 Admin Seat (Founder only)",
-      "Guided 501(c)(3) Formation Guidance",
-      { label: "Roadmap", badge: "Private" },
-      "Resource Map Listing (Get discovered)",
-      "Community Access (Discord & WhatsApp)",
-      "Stripe Connect (Accept and track donations)",
+      "1 Admin Seat (founder only)",
+      "Guided 501(c)(3) formation",
+      "Strategic Roadmap",
+      "Organizational Profile",
+      "Resource Map Listing",
+      "Community Access",
+      "Member Forum",
+      "Stripe Connect",
       "Secure Document Storage",
     ],
   },
@@ -87,7 +90,8 @@ const TIERS: PricingTier[] = [
     id: "organization",
     eyebrow: "The Platform (Growth)",
     title: "Organization",
-    subtitle: "For teams building momentum and funding.",
+    subtitle:
+      "For organizations that want to deepen their understanding of impact, strengthen how they communicate their work, and grow real programs through learning, iteration, and collaboration.",
     priceLine: "$20",
     priceNote: "per month",
     ctaLabel: "Upgrade Organization",
@@ -97,11 +101,39 @@ const TIERS: PricingTier[] = [
     featureHeading: "Everything in Individual, plus",
     features: [
       "Unlimited Admin & Staff Seats",
+      "Asynchronous Accelerator Access",
+      "Fiscal Sponsorship Opportunities",
+      "Fundability Lens: Readiness Review",
+      "Weekly Topic Tuesdays",
+      "Weekly Ask the ED",
+      "Coach House Through-Line Verification",
       { label: "Board Member Portal", badge: "Coming soon" },
-      { label: "Roadmap", badge: "Public" },
-      { label: "Fundraising tools and frameworks", badge: "Coming soon" },
-      { label: "AI enabled NFP development", badge: "Coming soon" },
-      { label: "Fundraising tools", badge: "Coming soon" },
+    ],
+  },
+  {
+    id: "operations",
+    eyebrow: "The Platform (Support)",
+    title: "Operations Support",
+    subtitle:
+      "For nonprofit leaders who want to focus on impact, not back-office complexity, by sharing infrastructure, receiving guidance, and getting reliable operational support.",
+    priceLine: "$58",
+    priceNote: "per month",
+    ctaLabel: "Contact for Operations Support",
+    ctaHref: "mailto:contact@coachhousesolutions.org?subject=Tier%203%20Interest",
+    featureHeading: "Everything in Organization, plus",
+    features: [
+      "One hour monthly 1:1 Coaching",
+      "Fiscal Sponsees: Monkeypod Subscription (CRM, grant management, financial software, mass email, online fundraising campaigns)",
+      "Payroll Operations (via Gusto; additional payroll fee per employee)",
+      "Back Office Support for Organization plans (fee for service as needed)",
+      "Coaching (45 min sessions @ $75)",
+      "Bookkeeping (starting at 1 hour per month)",
+      "Accounting",
+      "Grantwriting",
+      "Communications, PR, and Marketing management",
+      "Website Build",
+      "Board Orientation",
+      "Donor Visit Prep",
     ],
   },
   {
@@ -287,9 +319,9 @@ type FeatureState = "included" | "not-included" | "na"
 type FeatureRow = {
   label: string
   labelBadge?: string
-  formation: FeatureState
-  organization: FeatureState
-  accelerator: FeatureState
+  tier1: FeatureState
+  tier2: FeatureState
+  tier3: FeatureState
 }
 type FeatureGroup = {
   title: string
@@ -300,51 +332,77 @@ const FEATURE_GROUPS: FeatureGroup[] = [
   {
     title: "Platform foundations",
     rows: [
-      { label: "Guided 501(c)(3) Formation Guidance", formation: "included", organization: "included", accelerator: "na" },
-      { label: "Private roadmap (internal planning)", formation: "included", organization: "included", accelerator: "na" },
-      { label: "Resource map listing", labelBadge: "Coming soon", formation: "included", organization: "included", accelerator: "na" },
-      { label: "Stripe Connect (accept and track donations)", formation: "included", organization: "included", accelerator: "na" },
-      { label: "Secure document storage", formation: "included", organization: "included", accelerator: "na" },
+      { label: "Guided 501(c)(3) formation", tier1: "included", tier2: "included", tier3: "included" },
+      { label: "Strategic roadmap", tier1: "included", tier2: "included", tier3: "included" },
+      { label: "Organizational profile", tier1: "included", tier2: "included", tier3: "included" },
+      { label: "Resource map listing", tier1: "included", tier2: "included", tier3: "included" },
+      { label: "Stripe Connect", tier1: "included", tier2: "included", tier3: "included" },
+      { label: "Secure document storage", tier1: "included", tier2: "included", tier3: "included" },
     ],
   },
   {
     title: "Team + community",
     rows: [
-      { label: "1 Admin Seat (Founder only)", formation: "included", organization: "na", accelerator: "na" },
-      { label: "Unlimited admin + staff seats", formation: "not-included", organization: "included", accelerator: "na" },
-      { label: "Board member portal", formation: "not-included", organization: "included", accelerator: "na" },
-      { label: "Shareable public roadmap", formation: "not-included", organization: "included", accelerator: "na" },
-      { label: "Community access (Discord + WhatsApp)", formation: "included", organization: "included", accelerator: "na" },
+      { label: "1 Admin Seat (founder only)", tier1: "included", tier2: "not-included", tier3: "not-included" },
+      { label: "Unlimited admin + staff seats", tier1: "not-included", tier2: "included", tier3: "included" },
+      { label: "Community access (Discord + WhatsApp)", tier1: "included", tier2: "included", tier3: "included" },
+      { label: "Member forum", tier1: "included", tier2: "included", tier3: "included" },
+      {
+        label: "Board member portal",
+        labelBadge: "Coming soon",
+        tier1: "not-included",
+        tier2: "included",
+        tier3: "included",
+      },
     ],
   },
   {
-    title: "AI + fundraising tools",
+    title: "Learning + readiness",
     rows: [
-      { label: "AI enabled NFP development", labelBadge: "Coming soon", formation: "not-included", organization: "included", accelerator: "na" },
-      { label: "Fundraising tools", labelBadge: "Coming soon", formation: "not-included", organization: "included", accelerator: "na" },
+      { label: "Asynchronous accelerator access", tier1: "not-included", tier2: "included", tier3: "included" },
+      { label: "Fiscal sponsorship opportunities", tier1: "not-included", tier2: "included", tier3: "included" },
+      { label: "Fundability Lens: readiness review", tier1: "not-included", tier2: "included", tier3: "included" },
+      { label: "Weekly Topic Tuesdays", tier1: "not-included", tier2: "included", tier3: "included" },
+      { label: "Weekly Ask the ED", tier1: "not-included", tier2: "included", tier3: "included" },
+      { label: "Coach House through-line verification", tier1: "not-included", tier2: "included", tier3: "included" },
     ],
   },
   {
-    title: "Accelerator add-on",
+    title: "Operations + delivery support",
     rows: [
-      { label: "42-module curriculum (lifetime access)", formation: "not-included", organization: "not-included", accelerator: "included" },
-      { label: "Strategic templates (budgets, narratives)", formation: "not-included", organization: "not-included", accelerator: "included" },
-      { label: "Single-user license", formation: "not-included", organization: "not-included", accelerator: "included" },
-      { label: "4 included coaching sessions on Pro tier", formation: "not-included", organization: "not-included", accelerator: "included" },
       {
-        label: "Pro booking flow (first 4 included, then discounted link)",
-        labelBadge: "Pro only",
-        formation: "not-included",
-        organization: "not-included",
-        accelerator: "included",
+        label: "One hour monthly 1:1 coaching",
+        tier1: "not-included",
+        tier2: "not-included",
+        tier3: "included",
       },
       {
-        label: "Platform continuation after accelerator term ($20/month unless canceled)",
-        formation: "not-included",
-        organization: "not-included",
-        accelerator: "included",
+        label: "Monkeypod subscription for fiscal sponsees",
+        tier1: "not-included",
+        tier2: "not-included",
+        tier3: "included",
       },
-      { label: "Priority support", formation: "not-included", organization: "not-included", accelerator: "included" },
+      {
+        label: "Payroll operations via Gusto",
+        labelBadge: "Additional payroll fee",
+        tier1: "not-included",
+        tier2: "not-included",
+        tier3: "included",
+      },
+      { label: "Back-office support", labelBadge: "Fee-for-service", tier1: "not-included", tier2: "included", tier3: "included" },
+      { label: "Coaching add-on (45 min @ $75)", tier1: "not-included", tier2: "included", tier3: "included" },
+      { label: "Bookkeeping", tier1: "not-included", tier2: "included", tier3: "included" },
+      { label: "Accounting", tier1: "not-included", tier2: "included", tier3: "included" },
+      { label: "Grantwriting", tier1: "not-included", tier2: "included", tier3: "included" },
+      {
+        label: "Communications, PR, and marketing management",
+        tier1: "not-included",
+        tier2: "included",
+        tier3: "included",
+      },
+      { label: "Website build", tier1: "not-included", tier2: "included", tier3: "included" },
+      { label: "Board orientation", tier1: "not-included", tier2: "included", tier3: "included" },
+      { label: "Donor visit prep", tier1: "not-included", tier2: "included", tier3: "included" },
     ],
   },
 ]
@@ -352,8 +410,8 @@ const FEATURE_GROUPS: FeatureGroup[] = [
 const FEATURE_GROUP_ICONS: Record<string, React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>> = {
   "Platform foundations": Layers,
   "Team + community": Users,
-  "AI + fundraising tools": Sparkles,
-  "Accelerator add-on": Rocket,
+  "Learning + readiness": Sparkles,
+  "Operations + delivery support": Rocket,
 }
 
 function FeatureStateIcon({ state, featured }: { state: FeatureState; featured?: boolean }) {
@@ -421,14 +479,15 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
             for nonprofit builders
           </h1>
           <p className="mt-5 text-balance text-base text-muted-foreground sm:text-lg">
-            Start free to form your nonprofit, upgrade when your team grows, and add the Accelerator when you’re ready
-            to become funder-ready.
+            Start with Individual for free, upgrade to Organization as your team grows, and scale with Operations
+            Support when you need deeper infrastructure.
           </p>
         </section>
 
-        <section className="grid gap-6 md:grid-cols-2">
+        <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {PLATFORM_TIERS.map((tier) => {
             const isFormation = tier.id === "formation"
+            const isMailtoCta = tier.ctaHref.startsWith("mailto:")
 
             return (
               <Card
@@ -440,14 +499,14 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
               >
                 <CardHeader className={cn("p-6", isFormation ? "space-y-6" : "space-y-5")}>
                   <div className="flex items-center justify-between gap-4">
-                  <p
-                    className={cn(
+                    <p
+                      className={cn(
                         "font-semibold",
                         isFormation ? "text-sm text-foreground" : "text-xs uppercase text-muted-foreground",
                       )}
-                  >
-                    {tier.eyebrow}
-                  </p>
+                    >
+                      {tier.eyebrow}
+                    </p>
                     {tier.badge ? (
                       <Badge variant="secondary" className="rounded-full text-xs">
                         {tier.badge}
@@ -497,10 +556,17 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
                       className={cn("w-full", isFormation ? "rounded-xl" : "rounded-full")}
                       variant={isFormation ? "default" : tier.featured ? "default" : "secondary"}
                     >
-                      <Link href={tier.ctaHref} className="flex items-center justify-center gap-2">
-                        <span>{tier.ctaLabel}</span>
-                        {isFormation ? <ChevronRight className="h-4 w-4" aria-hidden /> : null}
-                      </Link>
+                      {isMailtoCta ? (
+                        <a href={tier.ctaHref} className="flex items-center justify-center gap-2">
+                          <span>{tier.ctaLabel}</span>
+                          {isFormation ? <ChevronRight className="h-4 w-4" aria-hidden /> : null}
+                        </a>
+                      ) : (
+                        <Link href={tier.ctaHref} className="flex items-center justify-center gap-2">
+                          <span>{tier.ctaLabel}</span>
+                          {isFormation ? <ChevronRight className="h-4 w-4" aria-hidden /> : null}
+                        </Link>
+                      )}
                     </Button>
                   )}
                 </CardHeader>
@@ -626,7 +692,7 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
           </Badge>
           <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">Feature breakdown</h2>
           <p className="mt-4 text-balance text-sm text-muted-foreground sm:text-base">
-            Compare Individual vs Organization, and see what’s included when you add the Accelerator.
+            Compare Individual, Organization, and Operations Support at a glance.
           </p>
           <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row">
             <Button asChild className="rounded-full">
@@ -656,7 +722,7 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
                     Organization
                   </th>
                   <th scope="col" className="px-6 py-4 text-xs font-semibold uppercase text-muted-foreground">
-                    Accelerator (Add-on)
+                    Operations Support
                   </th>
                 </tr>
               </thead>
@@ -695,20 +761,20 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
                           </th>
                           <td className="px-6 py-4">
                             <span className="inline-flex items-center gap-2 text-muted-foreground">
-                              <FeatureStateIcon state={row.formation} />
-                              <span className="sr-only">{row.formation}</span>
+                              <FeatureStateIcon state={row.tier1} />
+                              <span className="sr-only">{row.tier1}</span>
                             </span>
                           </td>
                           <td className="px-6 py-4 bg-foreground/5 dark:bg-background/5">
                             <span className="inline-flex items-center gap-2 text-muted-foreground">
-                              <FeatureStateIcon state={row.organization} />
-                              <span className="sr-only">{row.organization}</span>
+                              <FeatureStateIcon state={row.tier2} />
+                              <span className="sr-only">{row.tier2}</span>
                             </span>
                           </td>
                           <td className="px-6 py-4">
                             <span className="inline-flex items-center gap-2 text-muted-foreground">
-                              <FeatureStateIcon state={row.accelerator} />
-                              <span className="sr-only">{row.accelerator}</span>
+                              <FeatureStateIcon state={row.tier3} />
+                              <span className="sr-only">{row.tier3}</span>
                             </span>
                           </td>
                         </tr>
@@ -721,8 +787,8 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
           </div>
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border/60 px-6 py-4 text-xs text-muted-foreground">
             <p>
-              <span className="font-semibold text-foreground">Note:</span> The Accelerator is an add-on and can be
-              purchased alongside Individual or Organization.
+              <span className="font-semibold text-foreground">Note:</span> Operations Support includes shared
+              infrastructure, and fee-for-service items can be added as needed.
             </p>
             <div className="flex items-center gap-4">
               <span className="inline-flex items-center gap-2">

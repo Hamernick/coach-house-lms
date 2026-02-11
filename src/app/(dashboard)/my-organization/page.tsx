@@ -2,9 +2,6 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import Image from "next/image"
 
-import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
-import BellIcon from "lucide-react/dist/esm/icons/bell"
-import BuildingIcon from "lucide-react/dist/esm/icons/building-2"
 import CalendarCheckIcon from "lucide-react/dist/esm/icons/calendar-check"
 import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
 import CircleDotIcon from "lucide-react/dist/esm/icons/circle-dot"
@@ -15,13 +12,12 @@ import UsersIcon from "lucide-react/dist/esm/icons/users"
 import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { OrgProfileCard } from "@/components/organization/org-profile-card"
 import { ProgramBuilderDashboardCard } from "@/components/organization/program-builder-dashboard-card"
+import { MyOrganizationAddEventSheetButton } from "@/components/organization/my-organization-add-event-sheet-button"
 import {
-  MY_ORGANIZATION_BENTO_CARD_RULES,
   MY_ORGANIZATION_BENTO_GRID_CLASS,
   resolveMyOrganizationBentoCardClass,
 } from "@/components/organization/my-organization-bento-rules"
 import type { FormationStatus, ProfileTab } from "@/components/organization/org-profile-card/types"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern/index"
@@ -30,6 +26,8 @@ import { canEditOrganization, resolveActiveOrganization } from "@/lib/organizati
 import { createSupabaseServerClient, type Json } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { fetchAcceleratorProgressSummary, type ModuleCardStatus } from "@/lib/accelerator/progress"
+import { sortAcceleratorModules } from "@/lib/accelerator/module-order"
+import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import { normalizePersonCategory } from "@/lib/people/categories"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
@@ -38,16 +36,6 @@ import type { OrgPerson } from "@/actions/people"
 import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
-
-type NotificationPreview = {
-  id: string
-  title: string
-  description: string
-  href: string | null
-  tone: "warning" | "info" | "success" | null
-  read_at: string | null
-  created_at: string
-}
 
 type UpcomingEvent = {
   id: string
@@ -87,42 +75,16 @@ function safeDateLabel(value: string, withTime = false) {
   }).format(date)
 }
 
-function completionPercent(fields: string[]) {
-  if (fields.length === 0) return 0
-  const completed = fields.filter((value) => value.trim().length > 0).length
-  return Math.round((completed / fields.length) * 100)
-}
+const COMPACT_USD = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  notation: "compact",
+  maximumFractionDigits: 0,
+})
 
-function activityBadge(item: NotificationPreview) {
-  if (!item.read_at) {
-    return {
-      label: "New",
-      className:
-        "rounded-full border border-emerald-200 bg-emerald-100 text-[10px] font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-500/15 dark:text-emerald-200",
-    }
-  }
-
-  if (item.tone === "warning") {
-    return {
-      label: "Attention",
-      className:
-        "rounded-full border border-zinc-300 bg-zinc-100 text-[10px] font-medium text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100",
-    }
-  }
-
-  if (item.tone === "success") {
-    return {
-      label: "Done",
-      className:
-        "rounded-full border border-zinc-300 bg-zinc-100 text-[10px] font-medium text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100",
-    }
-  }
-
-  return {
-    label: "Read",
-    className:
-      "rounded-full border border-zinc-300 bg-zinc-100 text-[10px] font-medium text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100",
-  }
+function formatFundingGoal(cents: number) {
+  if (!Number.isFinite(cents) || cents <= 0) return "Not set"
+  return COMPACT_USD.format(cents / 100)
 }
 
 function formationModuleStatusLabel(status: ModuleCardStatus) {
@@ -156,9 +118,6 @@ export default async function MyOrganizationPage({
   const viewParam = typeof resolvedSearchParams?.view === "string" ? resolvedSearchParams.view : ""
   const tabParam = typeof resolvedSearchParams?.tab === "string" ? resolvedSearchParams.tab : ""
   const programIdParam = typeof resolvedSearchParams?.programId === "string" ? resolvedSearchParams.programId : ""
-  const readNotificationParam =
-    typeof resolvedSearchParams?.readNotification === "string" ? resolvedSearchParams.readNotification.trim() : ""
-  const nextParam = typeof resolvedSearchParams?.next === "string" ? resolvedSearchParams.next.trim() : ""
   if (tabParam === "roadmap") redirect("/roadmap")
   if (tabParam === "documents") redirect("/my-organization/documents")
 
@@ -175,20 +134,6 @@ export default async function MyOrganizationPage({
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   const canEdit = canEditOrganization(role)
   const showEditor = viewParam === "editor" || Boolean(tabParam) || Boolean(programIdParam)
-
-  if (readNotificationParam) {
-    await supabase
-      .from("notifications")
-      .update({ read_at: new Date().toISOString() })
-      .eq("id", readNotificationParam)
-      .eq("user_id", user.id)
-      .eq("org_id", orgId)
-      .is("archived_at", null)
-      .is("read_at", null)
-
-    const safeNextHref = nextParam.startsWith("/") ? nextParam : "/my-organization"
-    redirect(safeNextHref)
-  }
 
   // Load organization profile for the current user
   const { data: orgRow } = await supabase
@@ -226,16 +171,6 @@ export default async function MyOrganizationPage({
     .order("created_at", { ascending: false })
 
   const nowIso = new Date().toISOString()
-  const { data: notifications } = await supabase
-    .from("notifications")
-    .select("id,title,description,href,tone,read_at,created_at")
-    .eq("user_id", user.id)
-    .eq("org_id", orgId)
-    .is("archived_at", null)
-    .order("created_at", { ascending: false })
-    .limit(5)
-    .returns<NotificationPreview[]>()
-
   const { data: upcomingEvents } = await supabase
     .from("roadmap_calendar_internal_events")
     .select("id,title,starts_at,ends_at,all_day")
@@ -285,7 +220,6 @@ export default async function MyOrganizationPage({
     if (parsed.getFullYear() !== calendarYear || parsed.getMonth() !== calendarMonth) return null
     return parsed.getDate()
   })()
-  const timezoneLabel = Intl.DateTimeFormat().resolvedOptions().timeZone || "Local"
 
   const acceleratorProgress = await fetchAcceleratorProgressSummary({
     supabase,
@@ -294,18 +228,20 @@ export default async function MyOrganizationPage({
     basePath: "/accelerator",
   })
 
-  const formationGroup =
-    acceleratorProgress.groups.find((group) => group.title.trim().toLowerCase() === "formation") ??
-    acceleratorProgress.groups.find((group) => group.slug.trim().toLowerCase() === "electives") ??
-    acceleratorProgress.groups[0] ??
-    null
-  const formationPreviewModules = formationGroup?.modules.slice(0, 3) ?? []
-  const formationCompletedCount = formationPreviewModules.filter((module) => module.status === "completed").length
+  const sortedRoadmapModules = sortAcceleratorModules(
+    acceleratorProgress.groups.flatMap((group) => group.modules),
+  )
+  const freeRoadmapModules = sortedRoadmapModules.filter((module) => !isElectiveAddOnModule(module))
+  const paidRoadmapModules = sortedRoadmapModules.filter((module) => isElectiveAddOnModule(module))
+  const freePreviewModules = freeRoadmapModules.slice(0, 3)
+  const paidPreviewModules = paidRoadmapModules.slice(0, 3)
+  const visibleRoadmapModules = [...freePreviewModules, ...paidPreviewModules]
+  const formationCompletedCount = visibleRoadmapModules.filter((module) => module.status === "completed").length
   const showLaunchRoadmapCard =
-    formationPreviewModules.length > 0 && formationCompletedCount < formationPreviewModules.length
+    freeRoadmapModules.length > 0 && freeRoadmapModules.some((module) => module.status !== "completed")
   const nextFormationModule =
-    formationPreviewModules.find((module) => module.status !== "completed") ??
-    formationPreviewModules[0] ??
+    freeRoadmapModules.find((module) => module.status !== "completed") ??
+    freeRoadmapModules[0] ??
     null
   const nextFormationHref = nextFormationModule?.href ?? "/accelerator"
 
@@ -382,29 +318,10 @@ export default async function MyOrganizationPage({
 
   const allowedTabs: ProfileTab[] = ["company", "programs", "people"]
   const initialTab = allowedTabs.includes(tabParam as ProfileTab) ? (tabParam as ProfileTab) : undefined
-  const profileCompletion = completionPercent([
-    initialProfile.name,
-    initialProfile.tagline,
-    initialProfile.description,
-    initialProfile.mission,
-    initialProfile.need,
-    initialProfile.programs,
-    initialProfile.email,
-    initialProfile.phone,
-    initialProfile.addressCity,
-    initialProfile.addressState,
-  ])
-  const aboutCompletion = completionPercent([
-    initialProfile.name,
-    initialProfile.tagline,
-    initialProfile.description,
-    initialProfile.mission,
-    initialProfile.need,
-    initialProfile.addressCity,
-    initialProfile.addressState,
-  ])
-  const programCompletion = programs && programs.length > 0 ? 100 : 0
-  const peopleCompletion = people.length > 0 ? 100 : 0
+  const programRows = (programs ?? []) as Array<{ goal_cents: number | null }>
+  const programsCount = programRows.length
+  const fundingGoalCents = programRows.reduce((sum, program) => sum + (program.goal_cents ?? 0), 0)
+  const peopleCount = Math.max(1, people.length)
   const organizationTitle = initialProfile.name.trim() || "Organization"
   const locationSubtitle = [initialProfile.addressCity.trim(), initialProfile.addressState.trim()]
     .filter(Boolean)
@@ -416,6 +333,7 @@ export default async function MyOrganizationPage({
   const continueInAcceleratorLabel = nextFormationModule
     ? `Continue - Lesson ${nextFormationModule.index}`
     : "Continue in Accelerator"
+  const showTeamCard = false
 
   if (showEditor) {
     return (
@@ -456,18 +374,11 @@ export default async function MyOrganizationPage({
           data-bento-card="profile"
           className={cn(
             resolveMyOrganizationBentoCardClass("profile", { showLaunchRoadmapCard }),
+            !showTeamCard && "xl:col-span-6",
             "flex flex-col",
           )}
         >
           <CardHeader className="pb-1">
-            <div className="flex items-center justify-end gap-2">
-              <Badge
-                variant="outline"
-                className="shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-[11px]"
-              >
-                {profileCompletion}% complete
-              </Badge>
-            </div>
             <CardTitle className="text-xl">Organization</CardTitle>
             {organizationSubtitle ? <CardDescription className="line-clamp-2">{organizationSubtitle}</CardDescription> : null}
           </CardHeader>
@@ -506,25 +417,25 @@ export default async function MyOrganizationPage({
 
             <div className="grid grid-cols-3 gap-1 rounded-lg border border-border/60 bg-background/30 p-1">
               <Link
-                href="/my-organization?view=editor&tab=company"
+                href="/my-organization?view=editor&tab=programs"
                 className="rounded-md px-2 py-2 transition hover:bg-muted/40"
               >
-                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">About</p>
-                <p className="mt-1 text-sm font-semibold tabular-nums">{aboutCompletion}%</p>
+                <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Funding goal</p>
+                <p className="mt-1 text-sm font-semibold tabular-nums">{formatFundingGoal(fundingGoalCents)}</p>
               </Link>
               <Link
                 href="/my-organization?view=editor&tab=programs"
                 className="rounded-md px-2 py-2 transition hover:bg-muted/40"
               >
                 <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Programs</p>
-                <p className="mt-1 text-sm font-semibold tabular-nums">{programCompletion}%</p>
+                <p className="mt-1 text-sm font-semibold tabular-nums">{programsCount}</p>
               </Link>
               <Link
                 href="/my-organization?view=editor&tab=people"
                 className="rounded-md px-2 py-2 transition hover:bg-muted/40"
               >
                 <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">People</p>
-                <p className="mt-1 text-sm font-semibold tabular-nums">{peopleCompletion}%</p>
+                <p className="mt-1 text-sm font-semibold tabular-nums">{peopleCount}</p>
               </Link>
             </div>
 
@@ -547,12 +458,6 @@ export default async function MyOrganizationPage({
                 <dt className="text-muted-foreground text-xs uppercase tracking-wide">Team members</dt>
                 <dd className="font-medium tabular-nums">{people.length}</dd>
               </div>
-              <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-                <dt className="text-muted-foreground text-xs uppercase tracking-wide">Public link</dt>
-                <dd className="max-w-[55%] truncate text-right font-medium">
-                  {initialProfile.publicSlug ? `/${initialProfile.publicSlug}` : "Not set"}
-                </dd>
-              </div>
             </dl>
             <div className="mt-auto grid gap-2 pt-1 sm:grid-cols-2">
               <Button asChild size="sm" className="h-9">
@@ -566,54 +471,6 @@ export default async function MyOrganizationPage({
         </Card>
 
         <Card
-          data-bento-card="activity"
-          className={resolveMyOrganizationBentoCardClass("activity", { showLaunchRoadmapCard })}
-        >
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <BellIcon className="h-4 w-4" aria-hidden />
-              Activity
-              <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
-            </CardTitle>
-            <CardDescription>Latest updates for your organization workspace.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {notifications && notifications.length > 0 ? (
-              <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-background/20">
-                {notifications.map((item) => {
-                  const destinationHref =
-                    item.href && item.href.trim().length > 0 && item.href.startsWith("/")
-                      ? item.href
-                      : "/my-organization"
-                  const href = `/my-organization?readNotification=${encodeURIComponent(item.id)}&next=${encodeURIComponent(
-                    destinationHref,
-                  )}`
-                  const badge = activityBadge(item)
-                  return (
-                    <li key={item.id}>
-                      <Link href={href} className="group block px-3 py-3 transition hover:bg-muted/35">
-                        <div className="flex items-start justify-between gap-3">
-                          <p className="min-w-0 flex-1 truncate text-sm font-medium">{item.title}</p>
-                          <span className={`${badge.className} shrink-0 whitespace-nowrap px-2 py-0.5`}>
-                            {badge.label}
-                          </span>
-                        </div>
-                        <p className="text-muted-foreground mt-1 line-clamp-2 text-xs">{item.description}</p>
-                        <p className="text-muted-foreground mt-2 text-[11px]">{safeDateLabel(item.created_at, true)}</p>
-                      </Link>
-                    </li>
-                  )
-                })}
-              </ul>
-            ) : (
-              <p className="text-muted-foreground rounded-lg border border-dashed p-3 text-sm">
-                No activity yet. Updates from roadmap, assignments, and team actions appear here.
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card
           data-bento-card="calendar"
           className={resolveMyOrganizationBentoCardClass("calendar", { showLaunchRoadmapCard })}
         >
@@ -622,11 +479,9 @@ export default async function MyOrganizationPage({
               <CalendarCheckIcon className="h-4 w-4" aria-hidden />
               Calendar
             </CardTitle>
-            <CardDescription>Internal roadmap events.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-1">
-              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Next event</p>
               <p className="text-base font-semibold text-foreground">{nextCalendarEvent?.title ?? "No upcoming events"}</p>
               <p className="text-sm text-muted-foreground">
                 {nextCalendarEvent
@@ -635,15 +490,6 @@ export default async function MyOrganizationPage({
                     : safeDateLabel(nextCalendarEvent.starts_at, true)
                   : "Add your first internal milestone to populate this view."}
               </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-1.5">
-              <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground">
-                Google Meet
-              </span>
-              <span className="inline-flex items-center rounded-md bg-muted px-2 py-1 text-[11px] font-medium text-muted-foreground">
-                {timezoneLabel}
-              </span>
             </div>
 
             <div className="rounded-lg border border-border/60 bg-background/20 p-3">
@@ -680,13 +526,8 @@ export default async function MyOrganizationPage({
                 })}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-2 pt-1">
-              <Button asChild variant="outline" size="sm" className="h-9">
-                <Link href="/roadmap/board-calendar">Open calendar</Link>
-              </Button>
-              <Button asChild size="sm" className="h-9">
-                <Link href="/roadmap/board-calendar">Add event</Link>
-              </Button>
+            <div className="pt-1">
+              <MyOrganizationAddEventSheetButton />
             </div>
           </CardContent>
         </Card>
@@ -699,32 +540,63 @@ export default async function MyOrganizationPage({
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <RocketIcon className="h-4 w-4" aria-hidden />
-                Roadmap
+                Formation Status
               </CardTitle>
               <CardDescription>Core 501(c)(3) formation milestones.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-background/20">
-                {formationPreviewModules.map((module) => (
-                  <li key={module.id}>
-                    <Link href={module.href} className="block px-3 py-2.5 transition hover:bg-muted/35">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex min-w-0 items-start gap-2">
-                          {formationModuleStatusIcon(module.status)}
-                          <p className="line-clamp-2 text-sm font-medium">{module.title}</p>
-                        </div>
-                        <span
-                          className={`shrink-0 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium ${formationModuleStatusClass(module.status)}`}
-                        >
-                          {formationModuleStatusLabel(module.status)}
-                        </span>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+            <CardContent className="space-y-3">
+              {freePreviewModules.length > 0 ? (
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Free modules</p>
+                  <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-background/20">
+                    {freePreviewModules.map((module) => (
+                      <li key={module.id}>
+                        <Link href={module.href} className="block px-3 py-2.5 transition hover:bg-muted/35">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex min-w-0 items-start gap-2">
+                              {formationModuleStatusIcon(module.status)}
+                              <p className="line-clamp-2 text-sm font-medium">{module.title}</p>
+                            </div>
+                            <span
+                              className={`shrink-0 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium ${formationModuleStatusClass(module.status)}`}
+                            >
+                              {formationModuleStatusLabel(module.status)}
+                            </span>
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {paidPreviewModules.length > 0 ? (
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Paid electives</p>
+                  <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-background/20">
+                    {paidPreviewModules.map((module) => (
+                      <li key={module.id}>
+                        <Link href={module.href} className="block px-3 py-2.5 transition hover:bg-muted/35">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="flex min-w-0 items-start gap-2">
+                              {formationModuleStatusIcon(module.status)}
+                              <p className="line-clamp-2 text-sm font-medium">{module.title}</p>
+                            </div>
+                            <span
+                              className={`shrink-0 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium ${formationModuleStatusClass(module.status)}`}
+                            >
+                              {formationModuleStatusLabel(module.status)}
+                            </span>
+                          </div>
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
               <p className="text-muted-foreground text-xs">
-                {formationCompletedCount}/{formationPreviewModules.length} complete
+                {formationCompletedCount}/{visibleRoadmapModules.length} complete
               </p>
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <Button asChild variant="outline" size="sm" className="h-9">
@@ -743,80 +615,44 @@ export default async function MyOrganizationPage({
           className={resolveMyOrganizationBentoCardClass("programBuilder", { showLaunchRoadmapCard })}
         />
 
-        <Card
-          data-bento-card="team"
-          className={resolveMyOrganizationBentoCardClass("team", { showLaunchRoadmapCard })}
-        >
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <UsersIcon className="h-4 w-4" aria-hidden />
-              Team
-            </CardTitle>
-            <CardDescription>People currently listed on your profile.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-1 flex-col">
-            {people.length > 0 ? (
-              <ul className="max-h-56 overflow-y-auto divide-y divide-border/60 rounded-lg border border-border/60 bg-background/20">
-                {people.slice(0, 4).map((person, index) => (
-                  <li key={`${person.name}-${index}`} className="px-3 py-2.5">
-                    <p className="truncate text-sm font-medium">{person.name || "Unnamed teammate"}</p>
-                    <p className="text-muted-foreground truncate text-xs">
-                      {person.title || person.category || "Role pending"}
-                    </p>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-muted-foreground rounded-lg border border-dashed p-3 text-sm">
-                Add teammates to power your org chart and board transparency.
-              </p>
-            )}
-          </CardContent>
-          <CardFooter className="mt-auto pt-0">
-            <Button asChild variant="outline" size="sm" className="h-9 w-full">
-              <Link href="/people">Manage people</Link>
-            </Button>
-          </CardFooter>
-        </Card>
+        {showTeamCard ? (
+          <Card
+            data-bento-card="team"
+            className={resolveMyOrganizationBentoCardClass("team", { showLaunchRoadmapCard })}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <UsersIcon className="h-4 w-4" aria-hidden />
+                Team
+              </CardTitle>
+              <CardDescription>People currently listed on your profile.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-1 flex-col">
+              {people.length > 0 ? (
+                <ul className="max-h-56 overflow-y-auto divide-y divide-border/60 rounded-lg border border-border/60 bg-background/20">
+                  {people.slice(0, 4).map((person, index) => (
+                    <li key={`${person.name}-${index}`} className="px-3 py-2.5">
+                      <p className="truncate text-sm font-medium">{person.name || "Unnamed teammate"}</p>
+                      <p className="text-muted-foreground truncate text-xs">
+                        {person.title || person.category || "Role pending"}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-muted-foreground rounded-lg border border-dashed p-3 text-sm">
+                  Add teammates to power your org chart and board transparency.
+                </p>
+              )}
+            </CardContent>
+            <CardFooter className="mt-auto pt-0">
+              <Button asChild variant="outline" size="sm" className="h-9 w-full">
+                <Link href="/people">Manage people</Link>
+              </Button>
+            </CardFooter>
+          </Card>
+        ) : null}
 
-        <Card
-          data-bento-card="workspace-actions"
-          className={resolveMyOrganizationBentoCardClass("workspaceActions", { showLaunchRoadmapCard })}
-        >
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <RocketIcon className="h-4 w-4" aria-hidden />
-              Actions
-            </CardTitle>
-            <CardDescription>Quick access for launch-critical workflows.</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-2">
-            <Button asChild variant="outline" className="h-10 justify-between">
-              <Link href="/roadmap">
-                Strategic roadmap
-                <ArrowUpRightIcon className="h-3.5 w-3.5" aria-hidden />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="h-10 justify-between">
-              <Link href="/accelerator">
-                Accelerator
-                <ArrowUpRightIcon className="h-3.5 w-3.5" aria-hidden />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="h-10 justify-between">
-              <Link href="/my-organization/documents">
-                Board documents
-                <ArrowUpRightIcon className="h-3.5 w-3.5" aria-hidden />
-              </Link>
-            </Button>
-            <Button asChild variant="outline" className="h-10 justify-between">
-              <Link href="/my-organization?view=editor&tab=programs">
-                Programs tab
-                <ArrowUpRightIcon className="h-3.5 w-3.5" aria-hidden />
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
       </section>
       <div aria-hidden className="h-5 shrink-0 md:h-6" />
     </div>

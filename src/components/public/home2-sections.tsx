@@ -6,15 +6,17 @@ import type { ComponentType, ReactNode } from "react"
 
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
 import CalendarCheck from "lucide-react/dist/esm/icons/calendar-check"
+import CircleDollarSign from "lucide-react/dist/esm/icons/circle-dollar-sign"
 import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap"
+import Hand from "lucide-react/dist/esm/icons/hand"
 import Layers from "lucide-react/dist/esm/icons/layers"
 import MapIcon from "lucide-react/dist/esm/icons/map"
 import Notebook from "lucide-react/dist/esm/icons/notebook"
 import PanelTop from "lucide-react/dist/esm/icons/panel-top"
-import Sparkles from "lucide-react/dist/esm/icons/sparkles"
 import Target from "lucide-react/dist/esm/icons/target"
 
 import { Home2PhotoStrip } from "@/components/public/home2-photo-strip"
+import { FiscalSponsorshipDialog } from "@/components/public/fiscal-sponsorship-dialog"
 import { NewsGradientThumb } from "@/components/news/gradient-thumb"
 import { Button } from "@/components/ui/button"
 import { FlipWords } from "@/components/ui/flip-words"
@@ -51,7 +53,7 @@ export type Home2SectionNavItem = {
 }
 
 export const HOME2_SECTION_NAV: Home2SectionNavItem[] = [
-  { id: "hero", label: "Hero", icon: Sparkles },
+  { id: "hero", label: "Hero", icon: Hand },
   { id: "impact", label: "Impact", icon: Target },
   { id: "offerings", label: "Offerings", icon: PanelTop },
   { id: "process", label: "Process", icon: Layers },
@@ -95,22 +97,24 @@ function WhatsAppLogo({ className }: { className?: string }) {
 type HighlightSize = "l" | "m" | "s" | "xs"
 
 type Highlight = {
-  href: string
+  href?: string
   eyebrow: string
   title: string
   description: string
   seed: string
   icon: ReactNode
   external?: boolean
+  badge?: string
   size: HighlightSize
+  modal?: "fiscal-sponsorship"
 }
 
 const PRODUCT_HIGHLIGHTS: Highlight[] = [
   {
     href: "/my-organization",
     eyebrow: "Platform",
-    title: "Nonprofit platform",
-    description: "Roadmap, org profile, program builder, progress tracking, and reporting in one workspace.",
+    title: "Platform",
+    description: "Strategic roadmap, organization profile, and funding-readiness tools in one shared workspace.",
     seed: "news-platform",
     icon: <PanelTop className="h-5 w-5" aria-hidden />,
     size: "m",
@@ -118,7 +122,7 @@ const PRODUCT_HIGHLIGHTS: Highlight[] = [
   {
     href: "/community#groups",
     eyebrow: "Community",
-    title: "Discord + WhatsApp",
+    title: "Community",
     description: "Connect with founders, share wins, and get real-time help.",
     seed: "news-community",
     icon: (
@@ -139,12 +143,22 @@ const PRODUCT_HIGHLIGHTS: Highlight[] = [
     size: "l",
   },
   {
+    eyebrow: "Support",
+    title: "Fiscal Sponsorship",
+    description: "Access shared operational infrastructure while you build programs and funding readiness.",
+    seed: "news-fiscal-sponsorship",
+    icon: <CircleDollarSign className="h-5 w-5" aria-hidden />,
+    modal: "fiscal-sponsorship",
+    size: "s",
+  },
+  {
     href: "/community#map",
     eyebrow: "NFP map",
     title: "Community map",
     description: "Explore the network of nonprofits building alongside Coach House.",
     seed: "news-map",
     icon: <MapIcon className="h-5 w-5" aria-hidden />,
+    badge: "Coming soon",
     size: "xs",
   },
   {
@@ -326,7 +340,7 @@ export function Home2ImpactSection({ staticText = false }: { staticText?: boolea
             "text-balance text-3xl font-semibold leading-tight text-foreground sm:text-4xl lg:text-5xl",
           )}
         >
-          We help non-profits raise money.
+          Find, Build, and Fund nonprofits.
         </h2>
       </div>
     )
@@ -340,7 +354,7 @@ export function Home2ImpactSection({ staticText = false }: { staticText?: boolea
           "text-balance text-3xl font-semibold leading-tight text-foreground sm:text-4xl lg:text-5xl",
         )}
       >
-        {"We help non-profits raise money."}
+        {"Find, Build, and Fund nonprofits."}
       </ScrollReveal>
     </div>
   )
@@ -354,16 +368,18 @@ export function Home2OfferingsSection({ layout = "split" }: Home2OfferingsSectio
   const layoutByIndex: Record<number, string> = {
     0: "md:col-span-3 md:row-span-2",
     1: "md:col-start-1 md:row-start-3",
-    2: "md:col-start-3 md:row-start-3 md:row-span-2",
+    2: "md:col-start-3 md:row-start-3",
     3: "md:col-start-1 md:row-start-4 md:col-span-2",
     4: "md:col-start-2 md:row-start-3",
+    5: "md:col-start-3 md:row-start-4",
   }
   const stackedLayoutByIndex: Record<number, string> = {
     0: "md:col-span-3",
     1: "md:col-start-1 md:row-start-2",
-    2: "md:col-start-2 md:row-start-2",
+    2: "md:col-start-3 md:row-start-2",
     3: "md:col-span-2 md:col-start-1 md:row-start-3",
-    4: "md:col-start-3 md:row-start-2 md:row-span-2",
+    4: "md:col-start-2 md:row-start-2",
+    5: "md:col-start-3 md:row-start-3",
   }
 
   if (layout === "stacked") {
@@ -372,34 +388,13 @@ export function Home2OfferingsSection({ layout = "split" }: Home2OfferingsSectio
         <div className="max-w-md space-y-2 text-left">
           <h2 className={cn(heading.className, "text-3xl font-semibold")}>What we do</h2>
           <p className="text-sm text-muted-foreground">
-            The platform, curriculum, community, and docs you need to launch and fund your nonprofit.
+            The platform, fiscal sponsorship, curriculum, community, and docs you need to launch and fund your
+            nonprofit.
           </p>
         </div>
         <div className="grid w-full gap-4 md:grid-cols-3 md:auto-rows-[176px]">
           {PRODUCT_HIGHLIGHTS.map((item, index) => (
-            <Link
-              key={item.title}
-              href={item.href}
-              className={cn(
-                "group relative flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-sm transition duration-300 ease-out hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                stackedLayoutByIndex[index],
-              )}
-            >
-              <span className="pointer-events-none absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground/70 shadow-sm ring-1 ring-border/40 transition group-hover:bg-background/80 group-hover:text-muted-foreground">
-                <ArrowUpRight className="h-4 w-4" aria-hidden />
-              </span>
-              <div className="flex h-full flex-col justify-between">
-                <div className="flex flex-col items-start gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                    {item.icon}
-                  </div>
-                  <div className="space-y-1 text-left">
-                    <p className="line-clamp-2 text-base font-semibold leading-tight text-foreground">{item.title}</p>
-                    <p className="line-clamp-3 text-sm text-muted-foreground">{item.description}</p>
-                  </div>
-                </div>
-              </div>
-            </Link>
+            <HighlightCard key={item.title} item={item} className={stackedLayoutByIndex[index]} />
           ))}
         </div>
       </div>
@@ -411,37 +406,74 @@ export function Home2OfferingsSection({ layout = "split" }: Home2OfferingsSectio
       <div className="max-w-md space-y-2">
         <h2 className={cn(heading.className, "text-3xl font-semibold")}>What we do</h2>
         <p className="text-sm text-muted-foreground">
-          The platform, curriculum, community, and docs you need to launch and fund your nonprofit.
+          The platform, fiscal sponsorship, curriculum, community, and docs you need to launch and fund your nonprofit.
         </p>
       </div>
       <div className="grid w-full gap-4 md:grid-cols-3 md:auto-rows-[152px]">
         {PRODUCT_HIGHLIGHTS.map((item, index) => (
-          <Link
-            key={item.title}
-            href={item.href}
-            className={cn(
-              "group relative flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-sm transition duration-300 ease-out hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-              layoutByIndex[index],
-            )}
-          >
-            <span className="pointer-events-none absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground/70 shadow-sm ring-1 ring-border/40 transition group-hover:bg-background/80 group-hover:text-muted-foreground">
-              <ArrowUpRight className="h-4 w-4" aria-hidden />
-            </span>
-            <div className="flex h-full flex-col justify-between">
-              <div className="flex flex-col items-start gap-3">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
-                  {item.icon}
-                </div>
-                <div className="space-y-1 text-left">
-                  <p className="text-base font-semibold leading-tight text-foreground">{item.title}</p>
-                  <p className="line-clamp-3 text-sm text-muted-foreground">{item.description}</p>
-                </div>
-              </div>
-            </div>
-          </Link>
+          <HighlightCard key={item.title} item={item} className={layoutByIndex[index]} />
         ))}
       </div>
     </>
+  )
+}
+
+function HighlightCard({ item, className }: { item: Highlight; className?: string }) {
+  const baseClassName = cn(
+    "group relative flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-sm transition duration-300 ease-out hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+    className,
+  )
+  const content = (
+    <>
+      <span className="pointer-events-none absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground/70 shadow-sm ring-1 ring-border/40 transition group-hover:bg-background/80 group-hover:text-muted-foreground">
+        <ArrowUpRight className="h-4 w-4" aria-hidden />
+      </span>
+      <div className="flex h-full flex-col justify-between">
+        <div className="flex flex-col items-start gap-3">
+          <div className="flex w-full items-end justify-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+              {item.icon}
+            </div>
+            {item.badge ? (
+              <span className="inline-flex shrink-0 self-end rounded-full border border-border/70 bg-muted/60 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                {item.badge}
+              </span>
+            ) : null}
+          </div>
+          <div className="space-y-1 text-left">
+            <p className="line-clamp-2 text-base font-semibold leading-tight text-foreground">{item.title}</p>
+            <p className="line-clamp-3 text-sm text-muted-foreground">{item.description}</p>
+          </div>
+        </div>
+      </div>
+    </>
+  )
+
+  if (item.modal === "fiscal-sponsorship") {
+    return (
+      <FiscalSponsorshipDialog
+        trigger={
+          <button type="button" className={cn(baseClassName, "w-full touch-manipulation text-left")}>
+            {content}
+          </button>
+        }
+      />
+    )
+  }
+
+  if (!item.href) {
+    return <div className={baseClassName}>{content}</div>
+  }
+
+  return (
+    <Link
+      href={item.href}
+      target={item.external ? "_blank" : undefined}
+      rel={item.external ? "noreferrer noopener" : undefined}
+      className={baseClassName}
+    >
+      {content}
+    </Link>
   )
 }
 

@@ -1,12 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { memo, useDeferredValue, useMemo, useRef, useState, useTransition } from "react"
-import { useVirtualizer } from "@tanstack/react-virtual"
+import { memo, useDeferredValue, useMemo, useState, useTransition } from "react"
 import {
   ColumnDef,
   getCoreRowModel,
-  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
@@ -48,9 +46,14 @@ function initials(name?: string | null) {
   return `${parts[0][0] ?? ""}${parts[1][0] ?? ""}`.toUpperCase()
 }
 
+function canAssignManager(_category: OrgPerson["category"]) {
+  return true
+}
+
 type PeopleTableShellProps = {
   people: PersonRow[]
   canEdit?: boolean
+  controlsPlacement?: "rail" | "inline"
 }
 
 type PeopleTableProps = PeopleTableShellProps & {
@@ -63,24 +66,32 @@ type PeopleTableControlsProps = PeopleTableShellProps & {
   onGlobalFilterChange: (value: string) => void
   categoryFilter: OrgPerson["category"] | "all"
   onCategoryFilterChange: (value: OrgPerson["category"] | "all") => void
+  layout?: "rail" | "inline"
 }
 
-export function PeopleTableShell({ people, canEdit = true }: PeopleTableShellProps) {
+export function PeopleTableShell({
+  people,
+  canEdit = true,
+  controlsPlacement = "rail",
+}: PeopleTableShellProps) {
   const [globalFilter, setGlobalFilter] = useState("")
   const [categoryFilter, setCategoryFilter] = useState<OrgPerson["category"] | "all">("all")
 
+  const controls = (
+    <PeopleTableControls
+      people={people}
+      canEdit={canEdit}
+      globalFilter={globalFilter}
+      onGlobalFilterChange={setGlobalFilter}
+      categoryFilter={categoryFilter}
+      onCategoryFilterChange={setCategoryFilter}
+      layout={controlsPlacement}
+    />
+  )
+
   return (
     <>
-      <RightRailSlot>
-        <PeopleTableControls
-          people={people}
-          canEdit={canEdit}
-          globalFilter={globalFilter}
-          onGlobalFilterChange={setGlobalFilter}
-          categoryFilter={categoryFilter}
-          onCategoryFilterChange={setCategoryFilter}
-        />
-      </RightRailSlot>
+      {controlsPlacement === "rail" ? <RightRailSlot>{controls}</RightRailSlot> : controls}
       <PeopleTable people={people} canEdit={canEdit} globalFilter={globalFilter} categoryFilter={categoryFilter} />
     </>
   )
@@ -93,10 +104,18 @@ function PeopleTableControls({
   onGlobalFilterChange,
   categoryFilter,
   onCategoryFilterChange,
+  layout = "rail",
 }: PeopleTableControlsProps) {
+  const isInline = layout === "inline"
+
   return (
-    <div className="space-y-[var(--shell-rail-gap,1rem)]">
-      <div className="space-y-2">
+    <div
+      className={cn(
+        "space-y-[var(--shell-rail-gap,1rem)]",
+        isInline && "mb-3 flex flex-wrap items-center gap-2 space-y-0",
+      )}
+    >
+      <div className={cn("space-y-2", isInline && "min-w-[220px] flex-1 space-y-0")}>
         <Input
           id="people-search"
           placeholder="Search people…"
@@ -106,7 +125,7 @@ function PeopleTableControls({
           aria-label="Search people"
         />
       </div>
-      <div className="space-y-2">
+      <div className={cn("space-y-2", isInline && "w-full min-w-[190px] space-y-0 sm:w-[220px]")}>
         <Select
           value={categoryFilter}
           onValueChange={(value) => {
@@ -129,8 +148,11 @@ function PeopleTableControls({
         </Select>
       </div>
       {canEdit ? (
-        <div className="pt-2">
-          <CreatePersonDialog triggerClassName="h-10 w-full justify-center" people={people} />
+        <div className={cn("pt-2", isInline && "ml-auto pt-0")}>
+          <CreatePersonDialog
+            triggerClassName={cn("h-10 w-full justify-center", isInline && "w-auto px-4")}
+            people={people}
+          />
         </div>
       ) : null}
     </div>
@@ -246,7 +268,7 @@ function PeopleTableComponent({
       header: "Reports To",
       cell: ({ row }) => {
         const p = row.original
-        if (p.category !== "staff") {
+        if (!canAssignManager(p.category)) {
           return <span className="text-muted-foreground">—</span>
         }
 
@@ -255,11 +277,10 @@ function PeopleTableComponent({
           return manager ? <span className="text-sm text-foreground">{manager.name}</span> : <span className="text-muted-foreground">—</span>
         }
 
-        const options = filtered.filter((x) => x.id !== p.id && x.category === "staff")
         return (
           <ManagerSelect
             value={p.reportsToId ?? null}
-            options={options}
+            options={people.filter((x) => x.id !== p.id)}
             onChange={(val) => {
               startTransition(async () => {
                 const toastId = toast.loading("Updating manager…")
@@ -376,45 +397,29 @@ function PeopleTableComponent({
     }
 
     return cols
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- filtered ensures Manager options stay current
-  }, [filtered, canEdit])
+  }, [canEdit, people, router])
 
   const table = useReactTable({
     data: filtered,
     columns,
     state: {
       sorting,
-      globalFilter,
       rowSelection: selection,
     },
     onSortingChange: setSorting,
     onRowSelectionChange: setSelection,
     getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getRowId: (row) => row.id,
   })
 
-  const parentRef = useRef<HTMLDivElement>(null)
   const rows = table.getRowModel().rows
-  const enableVirtual = rows.length > 200
-  const virtualizer = useVirtualizer({
-    count: enableVirtual ? rows.length : 0,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 52,
-    overscan: 8,
-  })
-  const virtualRows = enableVirtual ? virtualizer.getVirtualItems() : []
-  const totalSize = enableVirtual ? virtualizer.getTotalSize() : 0
-  const paddingTop = enableVirtual && virtualRows.length > 0 ? virtualRows[0].start : 0
-  const paddingBottom = enableVirtual && virtualRows.length > 0 ? totalSize - virtualRows[virtualRows.length - 1].end : 0
 
   return (
     <div className="flex flex-col gap-3 pb-8">
-      {/* Table (virtualized rows) */}
       <div className="rounded-md border">
-        <div ref={parentRef} className="max-h-[60vh] overflow-auto will-change-auto">
+        <div className="max-h-[60vh] overflow-auto will-change-auto">
         <Table>
           <TableHeader className="bg-muted/50">
                 {table.getHeaderGroups().map((headerGroup) => (
@@ -436,31 +441,6 @@ function PeopleTableComponent({
                       No people found.
                     </TableCell>
                   </TableRow>
-                ) : enableVirtual ? (
-                  <>
-                    {paddingTop > 0 ? (
-                      <TableRow aria-hidden>
-                        <TableCell colSpan={columns.length} className="p-0" style={{ height: paddingTop }} />
-                      </TableRow>
-                    ) : null}
-                    {virtualRows.map((vRow) => {
-                      const row = rows[vRow.index]
-                      return (
-                        <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
-                          {row.getVisibleCells().map((cell) => (
-                            <TableCell key={cell.id}>
-                              {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                            </TableCell>
-                          ))}
-                        </TableRow>
-                      )
-                    })}
-                    {paddingBottom > 0 ? (
-                      <TableRow aria-hidden>
-                        <TableCell colSpan={columns.length} className="p-0" style={{ height: paddingBottom }} />
-                      </TableRow>
-                    ) : null}
-                  </>
                 ) : (
                   rows.map((row) => (
                     <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
@@ -481,11 +461,11 @@ function PeopleTableComponent({
       <div className="flex items-center justify-between px-1 text-sm text-muted-foreground">
         <div>{canEdit ? (
           <>
-            {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} selected
+            {table.getFilteredSelectedRowModel().rows.length} of {filtered.length} selected
           </>
         ) : (
           <>
-            {table.getFilteredRowModel().rows.length} {table.getFilteredRowModel().rows.length === 1 ? "person" : "people"}
+            {filtered.length} {filtered.length === 1 ? "person" : "people"}
           </>
         )}</div>
         <div className="flex items-center gap-2">

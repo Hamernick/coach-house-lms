@@ -1,11 +1,9 @@
 export type MyOrganizationBentoCardId =
   | "profile"
-  | "activity"
   | "calendar"
   | "launchRoadmap"
   | "programBuilder"
   | "team"
-  | "workspaceActions"
 
 type MyOrganizationBentoCardRule = {
   className: string
@@ -21,35 +19,26 @@ export const MY_ORGANIZATION_BENTO_CARD_RULES: Record<
   MyOrganizationBentoCardRule
 > = {
   profile: {
-    className: "h-full min-h-[280px] md:min-h-[300px] xl:col-span-3 xl:col-start-1 xl:row-span-2 xl:row-start-1",
+    className: "h-full min-h-[280px] md:col-span-2 md:min-h-[300px] xl:col-span-3 xl:col-start-1 xl:row-span-2 xl:row-start-1",
     description: "Identity summary + bottom-anchored edit action.",
   },
-  activity: {
-    className: "h-full min-h-[190px] md:min-h-[210px] xl:col-span-3 xl:col-start-2 xl:row-span-1 xl:row-start-5",
-    description: "Recent notifications/activity feed with compact state badges.",
-  },
   calendar: {
-    className: "h-full min-h-[260px] xl:col-span-2 xl:col-start-5 xl:row-span-2 xl:row-start-3",
-    classNameWhenLaunchRoadmapHidden: "h-full min-h-[260px] xl:col-span-2 xl:col-start-5 xl:row-span-3 xl:row-start-3",
+    className: "h-full min-h-[260px] xl:col-span-3 xl:col-start-1 xl:row-span-1 xl:row-start-3",
+    classNameWhenLaunchRoadmapHidden: "h-full min-h-[260px] xl:col-span-6 xl:col-start-1 xl:row-span-1 xl:row-start-3",
     description: "Upcoming events + open/add event controls.",
   },
   launchRoadmap: {
-    className: "h-full min-h-[220px] xl:col-span-2 xl:col-start-5 xl:row-span-1 xl:row-start-5",
+    className: "h-full min-h-[220px] xl:col-span-3 xl:col-start-4 xl:row-span-1 xl:row-start-3",
     description: "Temporary 3-module formation checkpoint card.",
   },
   programBuilder: {
-    className: "h-full min-h-[360px] md:min-h-[380px] xl:col-span-3 xl:col-start-2 xl:row-span-2 xl:row-start-3",
+    className: "h-full min-h-[360px] md:col-span-2 md:min-h-[380px] xl:col-span-6 xl:col-start-1 xl:row-span-2 xl:row-start-4",
     description: "Primary builder surface; central high-priority card.",
   },
   team: {
     className: "h-full min-h-[220px] xl:col-span-3 xl:col-start-4 xl:row-span-2 xl:row-start-1",
     classNameWhenLaunchRoadmapHidden: "h-full min-h-[220px] xl:col-span-3 xl:col-start-4 xl:row-span-2 xl:row-start-1",
     description: "Team snapshot and org-chart entry point.",
-  },
-  workspaceActions: {
-    className: "h-full min-h-[220px] xl:col-span-1 xl:col-start-1 xl:row-span-3 xl:row-start-3",
-    classNameWhenLaunchRoadmapHidden: "h-full min-h-[220px] xl:col-span-1 xl:col-start-1 xl:row-span-3 xl:row-start-3",
-    description: "Launch-critical shortcuts and operational links.",
   },
 }
 

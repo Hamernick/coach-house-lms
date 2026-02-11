@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { PasswordInput } from "@/components/auth/password-input"
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -89,7 +90,7 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input {...field} type="password" autoComplete="current-password" />
+                  <PasswordInput {...field} autoComplete="current-password" />
                 </FormControl>
                 <FormMessage />
               </FormItem>

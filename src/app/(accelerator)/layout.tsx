@@ -67,7 +67,7 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   tutorialWelcome = !isAdmin && onboardingCompleted && !tutorialsCompleted.includes("accelerator") && !tutorialsDismissed.includes("accelerator")
 
   if (!entitlements.hasAcceleratorAccess && !entitlements.hasElectiveAccess) {
-    redirect("/pricing?upgrade=accelerator")
+    redirect("/my-organization?paywall=accelerator&upgrade=accelerator&source=accelerator")
   }
 
   const sidebarTree = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })

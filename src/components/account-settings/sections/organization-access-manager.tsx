@@ -222,8 +222,8 @@ export function OrganizationAccessManager({
         ) : null}
 
         {canInvite ? (
-          <div className="mt-4 grid gap-3 sm:grid-cols-[1fr_180px_auto] sm:items-end">
-            <div className="grid gap-2">
+          <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,260px)_auto] lg:items-end">
+            <div className="grid min-w-0 gap-2">
               <Label htmlFor="orgInviteEmail">Email</Label>
               <Input
                 id="orgInviteEmail"
@@ -234,10 +234,10 @@ export function OrganizationAccessManager({
                 disabled={pending}
               />
             </div>
-            <div className="grid gap-2">
+            <div className="grid min-w-0 gap-2">
               <Label>Role</Label>
               <Select value={inviteRole} onValueChange={(value) => setInviteRole(value as OrganizationMemberRole)} disabled={pending}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full min-w-0">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -274,7 +274,7 @@ export function OrganizationAccessManager({
                   await load()
                 })
               }}
-              className="gap-2"
+              className="gap-2 lg:self-end"
             >
               {pending ? <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden /> : <UserPlusIcon className="h-4 w-4" aria-hidden />}
               Invite

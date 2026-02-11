@@ -35,6 +35,10 @@ function normalizeCategory(input: string): OrgPerson["category"] {
   return normalizePersonCategory(input)
 }
 
+function canAssignManager(_category: OrgPerson["category"]) {
+  return true
+}
+
 async function fetchLinkedInImage(url: string): Promise<string | null> {
   try {
     const u = url.startsWith("http") ? url : `https://www.linkedin.com/in/${url.replace(/^\//, "")}`
@@ -121,7 +125,10 @@ export async function upsertPersonAction(person: Omit<OrgPerson, "id"> & { id?: 
     linkedin: person.linkedin?.trim() || null,
     category: normalizedCategory,
     image,
-    reportsToId: normalizedCategory === "staff" ? (person.reportsToId ?? null) : null,
+    reportsToId:
+      canAssignManager(normalizedCategory) && person.reportsToId && person.reportsToId !== id
+        ? person.reportsToId
+        : null,
     pos: null,
   }
 

@@ -7,7 +7,6 @@ import {
   Home2CtaSection,
   Home2HeroSection,
   Home2ImpactSection,
-  Home2NewsSection,
   Home2OfferingsSection,
   Home2ProcessSection,
   Home2TeamSection,
@@ -50,10 +49,6 @@ export default function HomeTwoPage() {
 
           <SectionReveal className="grid gap-10 py-28 md:py-36 lg:grid-cols-[1fr_1.1fr]">
             <Home2ProcessSection />
-          </SectionReveal>
-
-          <SectionReveal className="grid gap-10 py-28 md:py-36 sm:grid-cols-2 lg:grid-cols-4">
-            <Home2NewsSection />
           </SectionReveal>
 
           <SectionReveal className="relative">

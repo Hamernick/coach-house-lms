@@ -16,6 +16,13 @@ const KIND_KEY_MAP = {
   "good-standing-certificate": "goodStandingCertificate",
   "w9": "w9",
   "tax-exempt-certificate": "taxExemptCertificate",
+  "uei-confirmation": "ueiConfirmation",
+  "sam-active-status": "samActiveStatus",
+  "grants-gov-registration": "grantsGovRegistration",
+  "gata-pre-qualification": "gataPreQualification",
+  "ein-confirmation-letter": "einConfirmationLetter",
+  "irs-990s": "irs990s",
+  "audited-financials": "auditedFinancials",
 } as const
 
 type DocumentKey = (typeof KIND_KEY_MAP)[keyof typeof KIND_KEY_MAP]

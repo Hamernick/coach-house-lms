@@ -161,6 +161,7 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
           defaultEmail: email,
           onSubmit: completeOnboardingAction,
         }}
+        onboardingLocked={needsOnboarding}
         formationStatus={formationStatus}
         context="platform"
       >

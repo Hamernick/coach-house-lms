@@ -57,6 +57,13 @@ export type OrgDocuments = {
   goodStandingCertificate?: OrgDocument | null
   w9?: OrgDocument | null
   taxExemptCertificate?: OrgDocument | null
+  ueiConfirmation?: OrgDocument | null
+  samActiveStatus?: OrgDocument | null
+  grantsGovRegistration?: OrgDocument | null
+  gataPreQualification?: OrgDocument | null
+  einConfirmationLetter?: OrgDocument | null
+  irs990s?: OrgDocument | null
+  auditedFinancials?: OrgDocument | null
 }
 
 export type OrgProfileErrors = Record<string, string>

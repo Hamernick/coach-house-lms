@@ -142,7 +142,7 @@ export default async function PeoplePage() {
             </div>
           }
         >
-          <PeopleTableShell people={people} canEdit={canEdit} />
+          <PeopleTableShell people={people} canEdit={canEdit} controlsPlacement="inline" />
         </ClientOnly>
       </section>
     </div>

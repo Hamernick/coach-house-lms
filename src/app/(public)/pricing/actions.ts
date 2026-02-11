@@ -210,6 +210,7 @@ export async function startCheckout(formData: FormData) {
           accelerator_billing: acceleratorBilling,
         },
         payment_intent_data: {
+          receipt_email: user.email ?? undefined,
           metadata: {
             kind: "accelerator",
             user_id: userId,
@@ -251,6 +252,7 @@ export async function startCheckout(formData: FormData) {
           elective_module_slug: electiveModuleSlug,
         },
         payment_intent_data: {
+          receipt_email: user.email ?? undefined,
           metadata: {
             kind: "elective",
             user_id: userId,

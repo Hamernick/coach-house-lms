@@ -26,6 +26,10 @@ type Props = {
   people?: OrgPerson[]
 }
 
+function canAssignManager(_category: OrgPerson["category"]) {
+  return true
+}
+
 export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: controlledOpen, onOpenChange, people = [] }: Props) {
   const router = useRouter()
   const [uncontrolledOpen, setUncontrolledOpen] = React.useState(false)
@@ -72,9 +76,30 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
         : (pending ? "Adding…" : "Add Person")
       : "Continue"
 
-  function reset() {
+  const resetForm = React.useCallback(() => {
     setStep(1)
-  }
+    setName(initial?.name ?? "")
+    setTitle(initial?.title ?? "")
+    setEmail(initial?.email ?? "")
+    setLinkedin(initial?.linkedin ?? "")
+    setCategory(initial?.category ?? "staff")
+    setImage(initial?.image ?? null)
+    setReportsToId(initial?.reportsToId ?? null)
+  }, [
+    initial?.category,
+    initial?.email,
+    initial?.image,
+    initial?.linkedin,
+    initial?.name,
+    initial?.reportsToId,
+    initial?.title,
+  ])
+
+  React.useEffect(() => {
+    if (open) {
+      resetForm()
+    }
+  }, [open, resetForm])
 
   function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]
@@ -99,7 +124,7 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
       })
       if (!('error' in res)) {
         setOpen(false)
-        reset()
+        resetForm()
         onSaved?.(res.id)
         toast.success(initial?.id ? "Person updated" : "Person added", { id: toastId })
         router.refresh()
@@ -120,13 +145,20 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
   function handleSecondary() {
     if (step === 1) {
       setOpen(false)
+      resetForm()
       return
     }
     setStep((value) => Math.max(1, value - 1))
   }
 
   return (
-    <Sheet open={open} onOpenChange={(o)=>{ setOpen(o); if (!o) reset() }}>
+    <Sheet
+      open={open}
+      onOpenChange={(o)=>{
+        setOpen(o)
+        if (!o) resetForm()
+      }}
+    >
       <SheetTrigger asChild>
         <Button data-tour="people-add" className={triggerClassName} size="sm">
           <PlusIcon className="size-4" />
@@ -160,7 +192,11 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
                 <FieldControl>
                   <Select
                     value={category}
-                    onValueChange={(v)=>{ setCategory(v as OrgPerson["category"]); if (v !== 'staff') setReportsToId(null) }}
+                    onValueChange={(v)=>{
+                      const nextCategory = v as OrgPerson["category"]
+                      setCategory(nextCategory)
+                      if (!canAssignManager(nextCategory)) setReportsToId(null)
+                    }}
                   >
                     <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                     <SelectContent>
@@ -201,13 +237,13 @@ export function CreatePersonDialog({ triggerClassName, initial, onSaved, open: c
                   <Input id="p-title" value={title ?? ""} onChange={(e)=>setTitle(e.target.value)} placeholder="Role or title" />
                 </FieldControl>
               </Field>
-              {category === 'staff' ? (
+              {canAssignManager(category) ? (
                 <Field orientation="responsive">
                   <FieldLabel>Reports to</FieldLabel>
                   <FieldControl>
                     <ManagerSelect
                       value={reportsToId}
-                      options={people.filter((p)=> p.category === 'staff' && (!initial?.id || p.id !== initial.id))}
+                      options={people.filter((p) => !initial?.id || p.id !== initial.id)}
                       onChange={(val)=> setReportsToId(val)}
                     />
                     <FieldDescription className="mt-2">Optional: set their reporting line.</FieldDescription>

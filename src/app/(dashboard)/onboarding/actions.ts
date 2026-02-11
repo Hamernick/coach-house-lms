@@ -51,7 +51,7 @@ export async function completeOnboardingAction(form: FormData) {
   const first = String(form.get("firstName") || "").trim()
   const last = String(form.get("lastName") || "").trim()
   const phone = String(form.get("phone") || "").trim()
-  const email = String(form.get("email") || "").trim()
+  const publicEmail = String(form.get("publicEmail") || "").trim()
   const title = String(form.get("title") || "").trim()
   const linkedin = String(form.get("linkedin") || "").trim()
   const marketingOptIn = Boolean(form.get("optInUpdates"))
@@ -127,9 +127,9 @@ export async function completeOnboardingAction(form: FormData) {
     : []
   const nextOwnerPerson = {
     id: user.id,
-    name: fullName || email || user.email || "You",
+    name: fullName || user.email || "You",
     title: title.length > 0 ? title : null,
-    email: email.length > 0 ? email : (user.email ?? null),
+    email: publicEmail.length > 0 ? publicEmail : null,
     linkedin: linkedin.length > 0 ? linkedin : null,
     category: "staff",
     image: avatarUrl,
@@ -168,7 +168,6 @@ export async function completeOnboardingAction(form: FormData) {
       marketing_opt_in: marketingOptIn,
       newsletter_opt_in: newsletterOptIn,
       phone: phone.length > 0 ? phone : null,
-      email: email.length > 0 ? email : null,
     },
   })
 

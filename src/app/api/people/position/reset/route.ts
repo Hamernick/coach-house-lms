@@ -15,11 +15,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
     const body = await request.json().catch(() => ({})) as { category?: string }
-    const categoryRaw = body?.category
-    const category = normalizePersonCategory(typeof categoryRaw === "string" ? categoryRaw : "")
-    if (!category) {
-      return NextResponse.json({ error: "Invalid category" }, { status: 400 })
-    }
+    const hasCategory = typeof body?.category === "string" && body.category.trim().length > 0
+    const category = hasCategory ? normalizePersonCategory(body.category) : null
 
     const { data: orgRow, error: orgErr } = await supabase
       .from("organizations")
@@ -30,11 +27,12 @@ export async function POST(request: Request) {
 
     const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
     const arr = Array.isArray(profile.org_people) ? (profile.org_people as any[]) : []
-    const next = arr.map((p) =>
-      normalizePersonCategory(typeof p?.category === "string" ? p.category : "") === category
+    const next = arr.map((p) => {
+      if (!hasCategory) return { ...p, pos: null }
+      return normalizePersonCategory(typeof p?.category === "string" ? p.category : "") === category
         ? { ...p, pos: null, category }
         : p
-    )
+    })
     const nextProfile = { ...profile, org_people: next }
 
     const { error: upsertErr } = await supabase

@@ -6,11 +6,7 @@ import { useRouter } from "next/navigation"
 import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
 import FolderPlusIcon from "lucide-react/dist/esm/icons/folder-plus"
-import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
-import { useTransition } from "react"
 
-import { seedNextDemoProgramAction } from "@/actions/programs"
-import { seedDemoWorkspaceAction } from "@/actions/demo-workspace"
 import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,7 +15,6 @@ import { Empty } from "@/components/ui/empty"
 import type { OrgProgram } from "@/components/organization/org-profile-card/types"
 import { dateRangeChip, locationSummary } from "@/components/organization/org-profile-card/utils"
 import { cn } from "@/lib/utils"
-import { toast } from "@/lib/toast"
 
 type ProgramBuilderDashboardCardProps = {
   programs: OrgProgram[]
@@ -72,8 +67,6 @@ function parseProgramChips(program: OrgProgram): string[] {
 
 export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuilderDashboardCardProps) {
   const router = useRouter()
-  const [seedPending, startSeedTransition] = useTransition()
-  const [seedWorkspacePending, startSeedWorkspaceTransition] = useTransition()
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [selectedProgram, setSelectedProgram] = useState<OrgProgram | null>(null)
@@ -121,7 +114,7 @@ export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuil
 
   return (
     <>
-      <Card className={cn("min-w-0 overflow-hidden", className)}>
+      <Card className={cn("flex h-full min-w-0 flex-col overflow-hidden", className)}>
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
@@ -136,52 +129,6 @@ export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuil
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
-                variant="outline"
-                size="sm"
-                className="h-9"
-                disabled={seedWorkspacePending}
-                onClick={() => {
-                  startSeedWorkspaceTransition(async () => {
-                    const result = await seedDemoWorkspaceAction()
-                    if ("error" in result) {
-                      toast.error(result.error)
-                      return
-                    }
-                    toast.success(
-                      `Workspace seeded: +${result.seededPrograms} programs, +${result.seededTeam} team, +${result.seededCalendarEvents} events, +${result.seededProgressRows} progress rows.`,
-                    )
-                    router.refresh()
-                  })
-                }}
-              >
-                <SparklesIcon className="h-4 w-4" aria-hidden />
-                {seedWorkspacePending ? "Seeding workspace..." : "Seed demo workspace"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="h-9"
-                disabled={seedPending}
-                onClick={() => {
-                  startSeedTransition(async () => {
-                    const result = await seedNextDemoProgramAction()
-                    if ("error" in result) {
-                      toast.error(result.error)
-                      return
-                    }
-                    toast.success(
-                      `Seeded ${result.statusLabel}. ${result.remaining} demo stage${result.remaining === 1 ? "" : "s"} left.`,
-                    )
-                    router.refresh()
-                  })
-                }}
-              >
-                <SparklesIcon className="h-4 w-4" aria-hidden />
-                {seedPending ? "Seeding..." : "Seed next stage"}
-              </Button>
-              <Button
-                type="button"
                 size="sm"
                 className="h-9"
                 onClick={() => {
@@ -194,10 +141,10 @@ export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuil
             </div>
           </div>
         </CardHeader>
-        <CardContent className="min-w-0">
+        <CardContent className="flex min-h-0 min-w-0 flex-1">
           {sortedPrograms.length === 0 ? (
             <Empty
-              className="rounded-xl"
+              className="h-full rounded-xl"
               size="sm"
               title="No programs to display"
               description="Programs you create will appear here."

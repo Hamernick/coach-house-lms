@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
+import { resolveAuthCallbackUrl } from "@/components/auth/auth-callback-url"
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
 import { Button } from "@/components/ui/button"
 import {
@@ -45,10 +46,7 @@ export function ForgotPasswordForm({ redirectTo = "/update-password" }: ForgotPa
     setStatus("idle")
     setMessage("")
     startTransition(async () => {
-      const origin = typeof window === "undefined" ? undefined : window.location.origin
-      const emailRedirectTo = origin
-        ? `${origin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`
-        : undefined
+      const emailRedirectTo = resolveAuthCallbackUrl(redirectTo)
 
       const { error } = await supabase.auth.resetPasswordForEmail(values.email, {
         redirectTo: emailRedirectTo,

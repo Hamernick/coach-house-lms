@@ -3,8 +3,9 @@
 import Image from "next/image"
 import Link from "next/link"
 import { AnimatePresence, motion } from "framer-motion"
-import ChevronsUpDown from "lucide-react/dist/esm/icons/chevrons-up-down"
+import ArrowDownIcon from "lucide-react/dist/esm/icons/arrow-down"
 import CircleDollarSign from "lucide-react/dist/esm/icons/circle-dollar-sign"
+import ExternalLink from "lucide-react/dist/esm/icons/external-link"
 import LogIn from "lucide-react/dist/esm/icons/log-in"
 import UserPlus from "lucide-react/dist/esm/icons/user-plus"
 import {
@@ -20,14 +21,13 @@ import {
 } from "react"
 
 import { PublicThemeToggle } from "@/components/organization/public-theme-toggle"
-import { LoginForm } from "@/components/auth/login-form"
+import { LoginPanel } from "@/components/auth/login-panel"
 import { SignUpForm } from "@/components/auth/sign-up-form"
+import { CaseStudyAutofillFab } from "@/components/dev/case-study-autofill-fab"
 import {
   HOME2_SECTION_NAV,
-  Home2CtaSection,
   Home2HeroSection,
   Home2ImpactSection,
-  Home2NewsSection,
   Home2OfferingsSection,
   Home2ProcessSection,
   Home2TeamSection,
@@ -39,7 +39,6 @@ import { Button } from "@/components/ui/button"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarHeader,
@@ -67,11 +66,9 @@ const CANVAS_LABEL_OVERRIDES: Partial<Record<Home2SectionId, string>> = {
   impact: "Why Us",
   offerings: "Platform",
   process: "Journey",
-  news: "Stories",
-  cta: "Start",
 }
 
-const HIDDEN_HOME_SECTIONS = new Set<Home2SectionId>(["process", "team"])
+const HIDDEN_HOME_SECTIONS = new Set<Home2SectionId>(["process", "news", "team", "cta"])
 
 const CANVAS_NAV: CanvasNavItem[] = [
   ...HOME2_SECTION_NAV.filter((item) => !HIDDEN_HOME_SECTIONS.has(item.id)).map((item) => ({
@@ -88,9 +85,19 @@ const HIDDEN_CANVAS_SECTION_IDS = new Set<CanvasSectionId>(["login", "signup"])
 const VISIBLE_CANVAS_NAV = CANVAS_NAV.filter((item) => !HIDDEN_CANVAS_SECTION_IDS.has(item.id))
 
 const HOME_SECTION_IDS = new Set<Home2SectionId>(HOME2_SECTION_NAV.map((item) => item.id))
+const ABOUT_LINK_HREF = "https://www.coachhousesolutions.org/"
+const WHEEL_INTENT_THRESHOLD = 90
+const WHEEL_INTENT_RESET_MS = 180
+const SECTION_WHEEL_LOCK_MS = 750
+const OPEN_DIALOG_SELECTOR = "[data-slot='dialog-content'][data-state='open']"
 
 function isHomeSectionId(sectionId: CanvasSectionId): sectionId is Home2SectionId {
   return HOME_SECTION_IDS.has(sectionId as Home2SectionId)
+}
+
+function hasOpenDialog(): boolean {
+  if (typeof document === "undefined") return false
+  return Boolean(document.querySelector(OPEN_DIALOG_SELECTOR))
 }
 
 function parseInitialSection(raw?: string): CanvasSectionId {
@@ -105,28 +112,29 @@ type HomeCanvasPreviewProps = {
 
 function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
   const isLogin = mode === "login"
-  const heading = isLogin ? "Sign in" : "Create account"
-  const description = isLogin
-    ? "Access your workspace and continue where you left off."
-    : "Join Coach House and start building your organization workspace."
+  const heading = "Create account"
+  const description = "Join Coach House and start building your organization workspace."
 
   return (
     <div className="mx-auto grid min-h-full w-full max-w-[1100px] place-items-center px-4 py-6 md:px-6 lg:px-8">
       <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card/60 p-5 sm:p-6">
-        <div className="mb-5 space-y-1">
-          <h2 className="text-2xl font-semibold tracking-tight text-foreground">{heading}</h2>
-          <p className="text-sm text-muted-foreground">{description}</p>
-        </div>
         {isLogin ? (
-          <LoginForm
+          <LoginPanel
             redirectTo="/my-organization"
+            className="max-w-none space-y-5"
             signUpHref="/home-canvas?section=signup"
           />
         ) : (
-          <SignUpForm
-            redirectTo="/my-organization"
-            loginHref="/home-canvas?section=login"
-          />
+          <>
+            <div className="mb-5 space-y-1">
+              <h2 className="text-2xl font-semibold tracking-tight text-foreground">{heading}</h2>
+              <p className="text-sm text-muted-foreground">{description}</p>
+            </div>
+            <SignUpForm
+              redirectTo="/my-organization"
+              loginHref="/home-canvas?section=login"
+            />
+          </>
         )}
       </div>
     </div>
@@ -170,16 +178,6 @@ function HomeSectionPanel({ sectionId }: { sectionId: Home2SectionId }) {
     )
   }
 
-  if (sectionId === "news") {
-    return (
-      <div className="mx-auto flex min-h-full w-full max-w-[1100px] items-center px-4 py-6 md:px-6 lg:px-8">
-        <div className="grid w-full gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <Home2NewsSection compact />
-        </div>
-      </div>
-    )
-  }
-
   if (sectionId === "team") {
     return (
       <div className="mx-auto flex min-h-full w-full max-w-[1100px] items-center px-4 py-6 md:px-6 lg:px-8">
@@ -191,10 +189,8 @@ function HomeSectionPanel({ sectionId }: { sectionId: Home2SectionId }) {
   }
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-[1100px] items-center justify-center px-4 py-6 md:px-6 lg:px-8">
-      <div className="w-full max-w-4xl">
-        <Home2CtaSection />
-      </div>
+    <div className="mx-auto grid min-h-full w-full max-w-[1100px] place-items-center px-4 py-6 md:px-6 lg:px-8">
+      <Home2HeroSection />
     </div>
   )
 }
@@ -208,6 +204,12 @@ export function HomeCanvasPreview({ initialSection, pricingPanel }: HomeCanvasPr
   const touchStartRef = useRef<{ x: number; y: number } | null>(null)
   const activeSectionRef = useRef<CanvasSectionId>(resolvedInitialSection)
   const isAnimatingRef = useRef(false)
+  const wheelIntentRef = useRef<{ direction: -1 | 1 | null; total: number; lastTs: number }>({
+    direction: null,
+    total: 0,
+    lastTs: 0,
+  })
+  const sectionWheelLockUntilRef = useRef(0)
 
   const activeLabel = useMemo(
     () => CANVAS_NAV.find((item) => item.id === activeSection)?.label ?? "Welcome",
@@ -239,10 +241,16 @@ export function HomeCanvasPreview({ initialSection, pricingPanel }: HomeCanvasPr
       activeSectionRef.current = nextSection
       setActiveSection(nextSection)
       isAnimatingRef.current = true
+      wheelIntentRef.current = { direction: null, total: 0, lastTs: 0 }
+      const now = typeof performance !== "undefined" ? performance.now() : Date.now()
+      sectionWheelLockUntilRef.current = now + SECTION_WHEEL_LOCK_MS
       scheduleAnimationEnd()
 
       if (typeof window !== "undefined") {
-        window.history.replaceState(null, "", `/home-canvas?section=${nextSection}`)
+        const nextUrl = new URL(window.location.href)
+        nextUrl.pathname = nextUrl.pathname === "/home-canvas" ? "/" : nextUrl.pathname
+        nextUrl.searchParams.set("section", nextSection)
+        window.history.replaceState(null, "", `${nextUrl.pathname}${nextUrl.search}`)
       }
     },
     [scheduleAnimationEnd],
@@ -283,20 +291,48 @@ export function HomeCanvasPreview({ initialSection, pricingPanel }: HomeCanvasPr
 
   const handleWheel = useCallback(
     (event: WheelEvent<HTMLDivElement>) => {
+      if (hasOpenDialog()) {
+        event.preventDefault()
+        return
+      }
+
       const activePanel = panelRefs.current[activeSection]
+      const panelMetrics = activePanel
+        ? {
+            scrollTop: activePanel.scrollTop,
+            scrollHeight: activePanel.scrollHeight,
+            clientHeight: activePanel.clientHeight,
+          }
+        : null
       const delta = resolveWheelSectionDelta({
         deltaY: event.deltaY,
         isAnimating: isAnimatingRef.current,
-        panel: activePanel
-          ? {
-              scrollTop: activePanel.scrollTop,
-              scrollHeight: activePanel.scrollHeight,
-              clientHeight: activePanel.clientHeight,
-            }
-          : null,
+        panel: panelMetrics,
       })
       if (!delta) return
 
+      const now = typeof performance !== "undefined" ? performance.now() : Date.now()
+      if (now < sectionWheelLockUntilRef.current) {
+        event.preventDefault()
+        return
+      }
+
+      const wheelIntent = wheelIntentRef.current
+      const wheelDirection: -1 | 1 = event.deltaY >= 0 ? 1 : -1
+      const isStaleGesture = now - wheelIntent.lastTs > WHEEL_INTENT_RESET_MS
+      if (isStaleGesture || wheelIntent.direction !== wheelDirection) {
+        wheelIntent.direction = wheelDirection
+        wheelIntent.total = 0
+      }
+      wheelIntent.total += Math.abs(event.deltaY)
+      wheelIntent.lastTs = now
+      if (wheelIntent.total < WHEEL_INTENT_THRESHOLD) {
+        event.preventDefault()
+        return
+      }
+
+      // Reset intent once we commit to a section change so momentum doesn't skip sections.
+      wheelIntentRef.current = { direction: null, total: 0, lastTs: 0 }
       event.preventDefault()
       goToAdjacentSection(delta)
     },
@@ -304,6 +340,7 @@ export function HomeCanvasPreview({ initialSection, pricingPanel }: HomeCanvasPr
   )
 
   const handleTouchStart = useCallback((event: TouchEvent<HTMLDivElement>) => {
+    if (hasOpenDialog()) return
     const touch = event.touches[0]
     if (!touch) return
     touchStartRef.current = { x: touch.clientX, y: touch.clientY }
@@ -311,6 +348,7 @@ export function HomeCanvasPreview({ initialSection, pricingPanel }: HomeCanvasPr
 
   const handleTouchEnd = useCallback(
     (event: TouchEvent<HTMLDivElement>) => {
+      if (hasOpenDialog()) return
       const start = touchStartRef.current
       touchStartRef.current = null
       if (!start) return
@@ -422,9 +460,21 @@ export function HomeCanvasPreview({ initialSection, pricingPanel }: HomeCanvasPr
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
+            <SidebarGroup className="pt-1">
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <a href={ABOUT_LINK_HREF} target="_blank" rel="noreferrer noopener">
+                        <ExternalLink className="h-4 w-4" aria-hidden />
+                        <span>About</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
           </SidebarContent>
-
-          <SidebarFooter />
         </Sidebar>
 
         <SidebarInset className="h-full min-h-0 overflow-hidden bg-[var(--shell-bg)]">
@@ -510,16 +560,19 @@ export function HomeCanvasPreview({ initialSection, pricingPanel }: HomeCanvasPr
                 </motion.div>
               </AnimatePresence>
               <div
-                className="pointer-events-none absolute right-4 bottom-4 z-20 flex items-center gap-1.5 rounded-full border border-[color:var(--shell-border)] bg-background/90 px-3 py-1.5 text-xs font-medium text-muted-foreground shadow-sm backdrop-blur supports-[backdrop-filter]:bg-background/70"
+                className="pointer-events-none absolute right-4 bottom-4 z-20"
                 aria-hidden
               >
-                <ChevronsUpDown className="h-3.5 w-3.5" />
-                <span>Scroll</span>
+                <div className="bg-background/95 text-foreground border-border/80 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-sm backdrop-blur">
+                  <ArrowDownIcon className="text-muted-foreground h-3.5 w-3.5 animate-bounce" />
+                  <span className="text-muted-foreground">Scroll down</span>
+                </div>
               </div>
             </div>
           </div>
         </SidebarInset>
       </div>
+      <CaseStudyAutofillFab allowToken />
     </SidebarProvider>
   )
 }

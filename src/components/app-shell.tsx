@@ -11,10 +11,12 @@ import PanelRightOpenIcon from "lucide-react/dist/esm/icons/panel-right-open"
 
 import { SidebarBody } from "@/components/app-sidebar"
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
+import { CaseStudyAutofillFab } from "@/components/dev/case-study-autofill-fab"
 import { GlobalSearch } from "@/components/global-search"
 import { OnboardingDialogEntry } from "@/components/onboarding/onboarding-dialog-entry"
 import { OnboardingWelcome } from "@/components/onboarding/onboarding-welcome"
 import { NotificationsMenu } from "@/components/notifications/notifications-menu"
+import { PaywallOverlay } from "@/components/paywall/paywall-overlay"
 import { SupportMenu } from "@/components/support-menu"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { TutorialManager } from "@/components/tutorial/tutorial-manager"
@@ -52,6 +54,7 @@ type AppShellProps = {
   ownedElectiveModuleSlugs?: string[]
   tutorialWelcome?: { platform: boolean; accelerator: boolean }
   onboardingProps?: OnboardingDialogProps & { enabled: boolean }
+  onboardingLocked?: boolean
   context?: "platform" | "accelerator" | "public"
   formationStatus?: string | null
 }
@@ -135,6 +138,7 @@ function AppShellInner({
   ownedElectiveModuleSlugs = [],
   tutorialWelcome,
   onboardingProps,
+  onboardingLocked = false,
   context,
   formationStatus,
 }: AppShellProps) {
@@ -161,9 +165,6 @@ function AppShellInner({
   const isMobile = useIsMobile()
   const rightRailPreferenceRef = useRef<"open" | "closed" | null>(null)
   const wasMobileRef = useRef(isMobile)
-  const contentPadding = isMobile
-    ? "pb-[calc(4.5rem+env(safe-area-inset-bottom))]"
-    : "pb-4"
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -222,6 +223,17 @@ function AppShellInner({
     hasAcceleratorAccess ?? Boolean(hasActiveSubscription || showAccelerator || isAdmin)
   const resolvedHasElectiveAccess = hasElectiveAccess ?? resolvedHasAcceleratorAccess
   const onboardingOpen = Boolean(onboardingProps?.open || forcedOnboardingOpen)
+  const onboardingInlineMode = Boolean(onboardingProps?.enabled && onboardingOpen)
+  const contentPadding = isMobile
+    ? onboardingInlineMode
+      ? "pb-[calc(5rem+env(safe-area-inset-bottom))]"
+      : "pb-[calc(4.5rem+env(safe-area-inset-bottom))]"
+    : "pb-4"
+  const contentHorizontalPadding = isMobile
+    ? onboardingInlineMode
+      ? "px-0"
+      : "px-[var(--shell-gutter)]"
+    : "pl-[var(--shell-outer-gutter)]"
 
   const brandHref = hasUser ? (isAcceleratorContext ? "/accelerator" : "/my-organization") : "/"
 
@@ -277,6 +289,7 @@ function AppShellInner({
             hasElectiveAccess={resolvedHasElectiveAccess}
             ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
             formationStatus={formationStatus}
+            onboardingLocked={onboardingLocked}
           />
         </Sidebar>
 
@@ -291,6 +304,7 @@ function AppShellInner({
             breadcrumbs={breadcrumbs}
             hasUser={hasUser}
             isAdmin={isAdmin}
+            onboardingLocked={onboardingLocked}
             rightOpen={rightOpen}
             onRightOpenChange={handleRightOpenChangeUser}
           />
@@ -299,12 +313,17 @@ function AppShellInner({
               className={cn(
                 "flex min-h-0 flex-1 gap-0",
                 contentPadding,
-                isMobile ? "px-[var(--shell-gutter)]" : "pl-[var(--shell-outer-gutter)]",
+                contentHorizontalPadding,
                 !isMobile && (!hasRightRail || !rightOpen) && "pr-[var(--shell-gutter)]",
               )}
             >
               <div className="flex min-h-0 w-full flex-1 flex-col">
-                <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-[28px] border border-[color:var(--shell-border)] bg-[var(--shell-bg)] shadow-none">
+                <div
+                  className={cn(
+                    "flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--shell-bg)] shadow-none",
+                    isMobile ? "rounded-none border-0" : "rounded-[28px] border border-[color:var(--shell-border)]",
+                  )}
+                >
                   <div
                     data-shell-scroll
                     data-tour-scroll
@@ -320,7 +339,12 @@ function AppShellInner({
                       />
                       <div
                         data-shell-content-body
-                        className="flex min-h-0 flex-1 flex-col gap-6 px-[var(--shell-content-pad)] py-[var(--shell-content-pad)]"
+                        data-shell-mode={onboardingInlineMode ? "onboarding" : "default"}
+                        className={cn(
+                          "flex min-h-0 flex-1 flex-col gap-6 px-[var(--shell-content-pad)] py-[var(--shell-content-pad)]",
+                          onboardingInlineMode &&
+                            "gap-0 px-0 py-0 md:items-center md:justify-center md:px-[var(--shell-content-pad)] md:py-16",
+                        )}
                       >
                         {onboardingProps?.enabled && onboardingOpen ? (
                           <OnboardingDialogEntry
@@ -352,7 +376,7 @@ function AppShellInner({
       </div>
 
       <AppShellMobileNav rightOpen={rightOpen} onRightOpenChange={handleRightOpenChangeUser} />
-      {hasUser ? (
+      {hasUser && !onboardingLocked ? (
         <GlobalSearch
           isAdmin={isAdmin}
           showOrgAdmin={showOrgAdmin}
@@ -361,6 +385,8 @@ function AppShellInner({
           showAccelerator={showAccelerator}
         />
       ) : null}
+      <CaseStudyAutofillFab userEmail={navUser.email} />
+      <PaywallOverlay />
       <TutorialManager />
       {hasUser ? (
         <OnboardingWelcome
@@ -377,6 +403,7 @@ type AppShellHeaderProps = {
   breadcrumbs?: ReactNode
   hasUser: boolean
   isAdmin: boolean
+  onboardingLocked: boolean
   rightOpen: boolean
   onRightOpenChange: (open: boolean) => void
 }
@@ -385,11 +412,13 @@ function AppShellHeader({
   breadcrumbs,
   hasUser,
   isAdmin,
+  onboardingLocked,
   rightOpen,
   onRightOpenChange,
 }: AppShellHeaderProps) {
   const hasRightRail = useRightRailPresence()
   const { isMobile } = useSidebar()
+  const isCompactMobileHeader = isMobile && onboardingLocked
   const showHeaderToggles = !isMobile
   const shellMaxWidth = "100%"
   const toggleButtonClass =
@@ -407,9 +436,12 @@ function AppShellHeader({
       }
     >
       <div
-        className="flex min-h-14 min-w-0 items-center py-2 transition-[padding] duration-200 ease-out motion-reduce:transition-none md:py-0 pl-[var(--shell-content-pad)] pr-[calc(var(--shell-content-pad)+var(--shell-right-rail))]"
+        className={cn(
+          "flex min-h-14 min-w-0 items-center py-2 transition-[padding] duration-200 ease-out motion-reduce:transition-none md:py-0 pl-[var(--shell-content-pad)] pr-[calc(var(--shell-content-pad)+var(--shell-right-rail))]",
+          isCompactMobileHeader && "min-h-12 py-1.5",
+        )}
       >
-        <div className="flex w-full min-w-0 flex-col gap-2 md:grid md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center">
+        <div className="grid w-full min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]">
           <div className="flex min-w-0 items-center gap-2">
             {showHeaderToggles ? <SidebarTrigger className={toggleButtonClass} aria-label="Toggle sidebar" /> : null}
             {showHeaderToggles ? <Separator orientation="vertical" className="h-4 bg-border" /> : null}
@@ -423,9 +455,9 @@ function AppShellHeader({
           />
           <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 md:flex-nowrap">
             <div id="site-header-actions-right" className="flex flex-wrap items-center gap-2 md:flex-nowrap" />
-            {hasUser ? <NotificationsMenu /> : null}
+            {hasUser && !isCompactMobileHeader ? <NotificationsMenu /> : null}
             <ThemeToggle />
-            {hasUser && !isAdmin ? (
+            {hasUser && !isAdmin && !isCompactMobileHeader ? (
               <SupportMenu
                 email={SUPPORT_EMAIL}
                 buttonVariant="ghost"

@@ -86,11 +86,13 @@ export function NotificationsMenu() {
   const [loading, setLoading] = useState(false)
   const [inboxItems, setInboxItems] = useState<NotificationItem[]>([])
   const [loadError, setLoadError] = useState<string | null>(null)
+  const [hideBellUnreadCue, setHideBellUnreadCue] = useState(false)
 
   const unreadCount = useMemo(
     () => inboxItems.filter((item) => item.unread).length,
     [inboxItems]
   )
+  const showBellUnreadCue = unreadCount > 0 && !hideBellUnreadCue
 
   useEffect(() => {
     setMounted(true)
@@ -107,9 +109,17 @@ export function NotificationsMenu() {
       return
     }
 
+    const nextUnreadCount = result.inbox.reduce(
+      (count, item) => count + (item.readAt == null ? 1 : 0),
+      0
+    )
+    if (!open && nextUnreadCount > 0) {
+      setHideBellUnreadCue(false)
+    }
+
     setInboxItems(result.inbox.map(toNotificationItem))
     setLoading(false)
-  }, [])
+  }, [open])
 
   useEffect(() => {
     if (!mounted) return
@@ -130,9 +140,9 @@ export function NotificationsMenu() {
         aria-label="Notifications"
       >
         <Bell className="h-4 w-4" />
-        {unreadCount > 0 ? (
+        {showBellUnreadCue ? (
           <span
-            className="bg-destructive absolute top-2 right-2 h-2 w-2 rounded-full"
+            className="absolute top-2 right-2 h-2 w-2 rounded-full bg-sky-500 dark:bg-sky-400"
             aria-hidden
           />
         ) : null}
@@ -166,7 +176,15 @@ export function NotificationsMenu() {
   }
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        setOpen(nextOpen)
+        if (nextOpen) {
+          setHideBellUnreadCue(true)
+        }
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -175,9 +193,9 @@ export function NotificationsMenu() {
           aria-label="Notifications"
         >
           <Bell className="h-4 w-4" />
-          {unreadCount > 0 ? (
+          {showBellUnreadCue ? (
             <span
-              className="bg-destructive absolute top-2 right-2 h-2 w-2 rounded-full"
+              className="absolute top-2 right-2 h-2 w-2 rounded-full bg-sky-500 dark:bg-sky-400"
               aria-hidden
             />
           ) : null}
@@ -308,7 +326,7 @@ function NotificationsList({
                   </p>
                   {item.unread ? (
                     <span
-                      className="bg-destructive h-2 w-2 shrink-0 rounded-full"
+                      className="h-2 w-2 shrink-0 rounded-full bg-sky-500 dark:bg-sky-400"
                       aria-hidden
                     />
                   ) : null}

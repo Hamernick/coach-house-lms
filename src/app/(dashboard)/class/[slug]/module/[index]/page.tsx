@@ -94,7 +94,7 @@ export default async function ModulePage({
 
   const isFormationClass = slug === "electives"
   if (!entitlements.hasAcceleratorAccess && !isAdmin && !isFormationClass) {
-    redirect("/pricing?plan=accelerator")
+    redirect("/my-organization?paywall=accelerator&plan=accelerator&source=module")
   }
 
   if (!isAdmin && isFormationClass) {
@@ -107,7 +107,9 @@ export default async function ModulePage({
       entitlements.hasAcceleratorAccess ||
       entitlements.ownedElectiveModuleSlugs.includes(moduleSlug)
     if (requiresElectivePurchase && !hasElectiveAccess) {
-      redirect(`/pricing?plan=electives&module=${encodeURIComponent(moduleSlug)}`)
+      redirect(
+        `/my-organization?paywall=elective&plan=electives&module=${encodeURIComponent(moduleSlug)}&source=module`,
+      )
     }
   }
 

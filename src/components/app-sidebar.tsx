@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useMemo } from "react"
 import { usePathname } from "next/navigation"
+import ListChecksIcon from "lucide-react/dist/esm/icons/list-checks"
 import Rocket from "lucide-react/dist/esm/icons/rocket"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -38,6 +39,7 @@ export type AppSidebarProps = {
   hasElectiveAccess?: boolean
   ownedElectiveModuleSlugs?: string[]
   formationStatus?: string | null
+  onboardingLocked?: boolean
 }
 
 export function AppSidebar({
@@ -51,6 +53,7 @@ export function AppSidebar({
   hasElectiveAccess,
   ownedElectiveModuleSlugs,
   formationStatus,
+  onboardingLocked = false,
 }: AppSidebarProps) {
   const resolvedUser = useMemo(
     () => ({
@@ -78,6 +81,7 @@ export function AppSidebar({
         hasElectiveAccess={hasElectiveAccess}
         ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
         formationStatus={formationStatus}
+        onboardingLocked={onboardingLocked}
       />
     </aside>
   )
@@ -101,6 +105,7 @@ type SidebarBodyProps = {
   hasElectiveAccess?: boolean
   ownedElectiveModuleSlugs?: string[]
   formationStatus?: string | null
+  onboardingLocked?: boolean
 }
 
 export function SidebarBody({
@@ -117,6 +122,7 @@ export function SidebarBody({
   hasElectiveAccess = false,
   ownedElectiveModuleSlugs = [],
   formationStatus = null,
+  onboardingLocked = false,
 }: SidebarBodyProps) {
   const pathname = usePathname()
   const progressValue =
@@ -124,13 +130,31 @@ export function SidebarBody({
       ? Math.max(0, Math.min(100, Math.round(acceleratorProgress)))
       : null
 
-  const shouldShowAccelerator = Boolean(isAdmin || showAccelerator)
+  const shouldShowAccelerator = !onboardingLocked && Boolean(isAdmin || showAccelerator)
   const hasUser = Boolean(user.email)
   const mainNavItems = buildMainNav({ isAdmin, showOrgAdmin })
   return (
     <>
       <SidebarContent className="gap-0">
-        <NavMain items={mainNavItems} className="py-0" />
+        {onboardingLocked ? (
+          <SidebarGroup className="pt-3 pb-1">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive
+                >
+                  <Link href="/my-organization" className="flex w-full min-w-0 items-center gap-2">
+                    <ListChecksIcon className="size-4" />
+                    <span className="min-w-0 flex-1 truncate whitespace-nowrap">Onboarding</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        ) : (
+          <NavMain items={mainNavItems} className="py-0" />
+        )}
         {shouldShowAccelerator ? (
           <SidebarGroup className="pt-3 pb-1">
             <SidebarMenu>
@@ -173,10 +197,12 @@ export function SidebarBody({
       </SidebarContent>
 
       <SidebarFooter className="mt-auto">
-        <div className="space-y-4 pt-2">
-          <NavDocuments items={RESOURCE_NAV} label="Resources" />
-          <NavSecondary items={SECONDARY_NAV} />
-        </div>
+        {onboardingLocked ? null : (
+          <div className="space-y-4 pt-2">
+            <NavDocuments items={RESOURCE_NAV} label="Resources" />
+            <NavSecondary items={SECONDARY_NAV} />
+          </div>
+        )}
         {hasUser ? <NavUser user={user} isAdmin={isAdmin} showDivider={false} /> : null}
       </SidebarFooter>
     </>

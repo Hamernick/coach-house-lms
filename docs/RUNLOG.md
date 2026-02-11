@@ -6640,3 +6640,422 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - documentation card spans upward into prior row,
   - narrowed centered max width to `760px` to match surrounding section balance.
 - Validation: `pnpm exec eslint src/components/public/home-canvas-preview.tsx src/components/public/home2-sections.tsx` ✅
+
+## 2026-02-07 — Codex auth flow pass (signup verification redirect + countdown)
+- Added shared auth callback URL resolver to avoid localhost links when a non-local app URL is configured:
+  - `src/components/auth/auth-callback-url.ts`
+  - Prefers `NEXT_PUBLIC_SITE_URL`/browser origin that is not localhost.
+- Updated signup flow (`src/components/auth/sign-up-form.tsx`):
+  - uses resolver for `emailRedirectTo`,
+  - success copy updated,
+  - 20s countdown + automatic redirect to sign-in,
+  - explicit “Go now” sign-in link.
+- Updated forgot-password flow (`src/components/auth/forgot-password-form.tsx`) to use same callback URL resolver.
+- Validation:
+  - `pnpm exec eslint src/components/auth/auth-callback-url.ts src/components/auth/sign-up-form.tsx src/components/auth/forgot-password-form.tsx` ✅
+  - `pnpm build` ✅
+
+## 2026-02-08 — Codex auth microcopy cleanup
+- Updated signup role field copy in `src/components/auth/sign-up-form.tsx`:
+  - `Role type` -> `Role`
+  - `Select your role type` -> `Select your role`
+  - validation message `Select your role type` -> `Select your role`
+
+## 2026-02-08 — Codex onboarding UX pass (centering + dynamic progress)
+- Updated onboarding inline card layout in `src/components/onboarding/onboarding-dialog.tsx`:
+  - tightened max width (`max-w-3xl`) and forced centered placement in shell.
+- Replaced static step-based percent with live completion-based progress:
+  - progress now tracks `orgName`, available `orgSlug`, selected `formationStatus`, `firstName`, and `lastName`.
+  - added smooth numeric/bar animation as completion changes.
+- Added onboarding validation for formation status selection and surfaced inline error copy.
+- Follow-up tweak: reduced onboarding inline width to `max-w-[680px]` and added top offset (`pt-4 md:pt-8`) for lower visual placement on canvas (`src/components/onboarding/onboarding-dialog.tsx`).
+- Onboarding placement fix: centered inline onboarding surface both horizontally and vertically by centering `data-shell-content-body` during onboarding mode in `src/components/app-shell.tsx`; removed manual top offset from onboarding card wrapper in `src/components/onboarding/onboarding-dialog.tsx`.
+- Shell cleanup: introduced explicit onboarding layout mode in `src/components/app-shell.tsx` (`data-shell-mode=onboarding`) and centralized centering behavior there (`justify-center items-center gap-0`) so onboarding placement is controlled by shell mode instead of per-card offset tweaks.
+- Onboarding validation UX: required-field errors now display only after attempted validation on that step (`attemptedStep` gating), preventing step-2 first/last-name errors from showing immediately on entry (`src/components/onboarding/onboarding-dialog.tsx`).
+- Onboarding email security hardening (`src/components/onboarding/onboarding-dialog.tsx`, `src/app/(dashboard)/onboarding/actions.ts`):
+  - replaced editable onboarding `Email` input with read-only `Account email` display (verified sign-in identity),
+  - added separate optional `Public contact email (public)` field with helper copy,
+  - stopped writing onboarding email into auth user metadata,
+  - owner/person seed now uses `publicEmail` only for public contact email.
+- Onboarding draft persistence fix (`src/components/onboarding/onboarding-dialog.tsx`): draft saves now merge with previous local draft values so step-specific unmounted fields are preserved (prevents Step 1 org values from being wiped while editing Step 2).
+- Onboarding access gating (`src/components/app-shell.tsx`, `src/components/app-sidebar.tsx`, `src/app/(dashboard)/layout.tsx`): added `onboardingLocked` shell/sidebar mode so incomplete-onboarding users only see a single "Onboarding" nav item in left rail, with resources/global-search hidden until onboarding is complete.
+- Validation: `pnpm exec eslint ...` ✅, `pnpm build` ✅.
+- Follow-up onboarding nav/data pass:
+  - Added explicit 2-step onboarding sidebar navigation in locked mode (`Step 1 · Organization`, `Step 2 · Account`) and removed single-item placeholder (`src/components/app-sidebar.tsx`).
+  - Synced onboarding form step to URL query (`onboardingStep`) so left-rail step links drive the visible onboarding step and stay in sync (`src/components/onboarding/onboarding-dialog.tsx`).
+  - Validation/build checks: `pnpm exec eslint ...` ✅, `pnpm build` ✅.
+- Onboarding Step 2 spacing tweak (`src/components/onboarding/onboarding-dialog.tsx`): added extra vertical breathing room (`pt-2 pb-4`) to the Step 2 content block.
+- Onboarding avatar upload UX polish (`src/components/onboarding/onboarding-dialog.tsx`): replaced visible file input with an overlay icon action on avatar container; hidden native file input remains wired for upload/crop/swap behavior.
+- Onboarding canvas spacing tweak (`src/components/app-shell.tsx`): added explicit vertical outer padding in onboarding shell mode (`py-6 md:py-10`) so top/bottom breathing room is outside the card.
+- Reverted onboarding step links per product feedback:
+  - removed `Step 1 · Organization` / `Step 2 · Account` sidebar entries and restored a single onboarding nav item in locked mode (`src/components/app-sidebar.tsx`).
+  - removed onboarding URL step-sync logic (`onboardingStep` query param writes/reads) from `src/components/onboarding/onboarding-dialog.tsx`.
+- Onboarding outer spacing adjustment: increased onboarding shell-mode vertical padding (`py-10 md:py-16`) and reduced inline onboarding card max height (`max-h-[min(78vh,820px)]`) to enforce visible top/bottom space outside the card (`src/components/app-shell.tsx`, `src/components/onboarding/onboarding-dialog.tsx`).
+- Onboarding Step 2 UX hardening (`src/components/onboarding/onboarding-dialog.tsx`, `src/components/app-shell.tsx`):
+  - added non-blocking scroll-gate for Step 2 finish: submit is blocked only when content actually overflows and bottom has not yet been viewed.
+  - added fading/bouncing down-arrow indicator while Step 2 requires scrolling.
+  - added robust overflow detection via scroll + resize + ResizeObserver + settle timer to avoid lock/freeze edge cases.
+  - mobile inline onboarding card now fills the available canvas (`h-full max-h-full` on mobile, desktop constrained), with reduced onboarding shell vertical padding on mobile.
+  - aligned right-column optional fields by adding matching helper-text slots for `Phone`/`Title` rows.
+- Validation: `pnpm exec eslint src/components/onboarding/onboarding-dialog.tsx src/components/app-shell.tsx` ✅, `pnpm build` ✅.
+- Onboarding scroll behavior simplification (`src/components/onboarding/onboarding-dialog.tsx`): removed Step 2 scroll-gate/indicator logic; kept reliable scrolling + footer overlap protections (`shrink-0` footer and larger Step 2 bottom scroll padding) so updates/newsletter content stays visible without blocking progression.
+- Onboarding footer-clickability fix (`src/components/onboarding/onboarding-dialog.tsx`): replaced nested scroll wrappers with single `flex-1 overflow-y-auto` content container, increased Step 2 bottom scroll padding (`pb-28`), and raised footer stacking (`relative z-20`) to prevent content overlap blocking Back/Finish interactions.
+- Onboarding spacing trim (`src/components/onboarding/onboarding-dialog.tsx`): reduced Step 2 bottom scroll padding from `pb-28` to `pb-16` to remove excess whitespace below updates/newsletter while preserving footer accessibility.
+- Onboarding spacing normalization (`src/components/onboarding/onboarding-dialog.tsx`): removed Step 2-specific extra bottom scroll padding and tuned Step 2 block bottom padding to `pb-2` so bottom spacing matches top rhythm above the avatar card.
+- Onboarding avatar action placement fix (`src/components/onboarding/onboarding-dialog.tsx`): moved camera upload button outside the avatar image clipping layer and anchored it with negative right/bottom offsets so it overlays the circle border edge without being clipped.
+- Validation: `pnpm exec eslint src/components/onboarding/onboarding-dialog.tsx` ✅.
+- Avatar upload icon placement adjustment (`src/components/onboarding/onboarding-dialog.tsx`): moved overlay control inward from `-right-2 -bottom-2` to `-right-1 -bottom-1` to keep border overlap while reducing overhang.
+- Validation: `pnpm exec eslint src/components/onboarding/onboarding-dialog.tsx` ✅.
+- Mobile onboarding fit/layout pass (`src/components/app-shell.tsx`, `src/components/onboarding/onboarding-dialog.tsx`):
+  - inline onboarding is now full-bleed on mobile (`px-0 py-0` shell body, no mobile card border/radius/shadow), with desktop styling preserved.
+  - onboarding-locked mobile header is compacted (shorter header row, reduced mobile chrome) to keep breadcrumb/title alignment cleaner.
+  - reduced onboarding form content vertical padding to `py-0` (`px-6` retained) so parent shell spacing controls top/bottom rhythm and avoids double vertical gaps.
+- Validation: `pnpm exec eslint src/components/app-shell.tsx src/components/onboarding/onboarding-dialog.tsx` ✅, `pnpm build` ✅.
+- Mobile onboarding layout fix (`src/components/app-shell.tsx`, `src/components/onboarding/onboarding-dialog.tsx`):
+  - reduced mobile onboarding horizontal shell padding to `px-0` in inline onboarding mode.
+  - increased onboarding mobile bottom safe-area buffer to `pb-[calc(6.25rem+env(safe-area-inset-bottom))]` to prevent Step 2/footer from clipping behind bottom nav.
+  - reduced onboarding card mobile horizontal padding from `px-6` to `px-4` in header/content/footer (desktop keeps `md:px-6`).
+- Validation: `pnpm exec eslint src/components/app-shell.tsx src/components/onboarding/onboarding-dialog.tsx` ✅.
+- Mobile canvas fit optimization (`src/components/app-shell.tsx`):
+  - removed mobile canvas rounding and border (`rounded-none border-0`) so content uses full mobile canvas area.
+  - reduced mobile onboarding inline bottom safe buffer from `6.25rem` to `5rem` (+ safe-area) to cut excess vertical gap while keeping clear of bottom nav.
+- Validation: `pnpm exec eslint src/components/app-shell.tsx` ✅.
+- Onboarding Step 2 avatar panel sizing tweak (`src/components/onboarding/onboarding-dialog.tsx`): increased vertical padding (`p-4` -> `px-4 py-5`) to make the profile upload block visibly taller without changing layout structure.
+- Validation: `pnpm exec eslint src/components/onboarding/onboarding-dialog.tsx` ✅.
+- Onboarding avatar upload panel size follow-up (`src/components/onboarding/onboarding-dialog.tsx`): increased panel vertical padding again (`px-4 py-5` -> `px-4 py-6`) to make the profile block taller.
+- Validation: `pnpm exec eslint src/components/onboarding/onboarding-dialog.tsx` ✅.
+- Onboarding Step 2 spacing + avatar block sizing (`src/components/onboarding/onboarding-dialog.tsx`):
+  - normalized Step 2 outer spacing from `pt-2 pb-2` to `py-5` so top/bottom outside spacing is symmetric.
+  - made the avatar upload panel consistently taller with `min-h-[10.5rem]` and centered content, while keeping existing padding.
+- Validation: `pnpm exec eslint src/components/onboarding/onboarding-dialog.tsx` ✅.
+- Onboarding Step 2 scroll gate + indicator (`src/components/onboarding/onboarding-dialog.tsx`):
+  - added Step 2 scroll-state tracking (`step2NeedsScroll`, `step2ScrolledToBottom`) using scroll/resize + `ResizeObserver` so gate only applies when content overflows.
+  - `Finish` now stays disabled until user reaches bottom of Step 2 content.
+  - added non-interactive bottom-right chip with icon/text (`Scroll down to finish`) that appears only while Step 2 needs scroll and user is not yet at bottom.
+- Validation: `pnpm exec eslint src/components/onboarding/onboarding-dialog.tsx` ✅.
+- Onboarding draft + spacing fixes (`src/components/onboarding/onboarding-dialog.tsx`):
+  - fixed Back-navigation data loss by rehydrating visible draft fields on step changes (not just initial open), so step-1 values like `orgName` persist when returning from step 2.
+  - restored top/bottom rhythm for Step 1 form content (`space-y-5 py-5`) so spacing above `Organization name` is present again.
+- Validation: `pnpm exec eslint src/components/onboarding/onboarding-dialog.tsx` ✅.
+- Onboarding validation visibility fix (`src/components/onboarding/onboarding-dialog.tsx`): reset `attemptedStep` and step-level `errors` on step changes so Step 2 required-field errors do not pre-render immediately after moving from Step 1; they now appear only after attempting Finish.
+- Validation: `pnpm exec eslint src/components/onboarding/onboarding-dialog.tsx` ✅.
+- Home canvas scroll affordance update (`src/components/public/home-canvas-preview.tsx`): replaced the old `ChevronsUpDown + Scroll` pill with the onboarding-style bottom-right indicator chip using a bouncing down-arrow icon and generic copy (`Scroll down`) per UI consistency request (no "to finish" text).
+- Validation: `pnpm exec eslint src/components/public/home-canvas-preview.tsx` ✅.
+- Added private QA autofill utility for case-study walkthroughs:
+  - new floating `Autofill page` control for allowed owner emails only (`caleb.hamernick@gmail.com`, `caleb@bandto.com`) (`src/components/dev/case-study-autofill-fab.tsx`).
+  - integrated globally in app shell so it appears across authenticated platform/accelerator pages (`src/components/app-shell.tsx`).
+  - autofill behavior targets visible empty fields only (inputs/textareas/selects + contenteditable), dispatches input/change events for React state sync, applies page-safe defaults (org/profile/roadmap/module copy), and includes onboarding formation-status auto-selection when missing.
+- Validation: `pnpm exec eslint src/components/dev/case-study-autofill-fab.tsx src/components/app-shell.tsx` ✅, `pnpm build` ✅.
+- QA autofill availability expansion (`src/components/dev/case-study-autofill-fab.tsx`, `src/components/public/home-canvas-preview.tsx`):
+  - added token-gated mode (`allowToken`) so the floating autofill control can appear on public entry surfaces only after an allowed owner account has authenticated once in the same browser.
+  - integrated token-gated control into `/home-canvas` surface for signup/login/pricing walkthrough autofill without exposing broadly to all users.
+- Validation: `pnpm exec eslint src/components/dev/case-study-autofill-fab.tsx src/components/public/home-canvas-preview.tsx src/components/app-shell.tsx` ✅, `pnpm build` ✅.
+- QA autofill entry-point coverage expansion:
+  - added token-gated autofill control to auth entry surfaces (`src/components/auth/auth-screen-shell.tsx`, `src/app/(auth)/login/page.tsx`) so signup/login flows can be autofilled in the same browser once owner auth has enabled the QA token.
+- Validation: `pnpm exec eslint src/components/dev/case-study-autofill-fab.tsx src/components/app-shell.tsx src/components/public/home-canvas-preview.tsx src/components/auth/auth-screen-shell.tsx 'src/app/(auth)/login/page.tsx'` ✅ (existing `@next/next/no-img-element` warning on login hero image), `pnpm build` ✅.
+- QA autofill visibility fix (`src/components/dev/case-study-autofill-fab.tsx`): expanded gate to always allow authenticated localhost sessions (`localhost`/`127.0.0.1`) while preserving explicit allowlist/token behavior for non-local contexts, resolving missing button visibility during local onboarding testing.
+- Validation: `pnpm exec eslint src/components/dev/case-study-autofill-fab.tsx` ✅.
+- Onboarding submission loop fix (`src/components/onboarding/onboarding-dialog.tsx`):
+  - preserved Step 1 organization fields for Step 2 submit by tracking `orgName`/`orgSlug` locally and posting them as hidden inputs while on Step 2, preventing server-side `missing_org_name` redirects.
+  - synced org field state during draft rehydrate so Back/refresh/autofill flows keep submit payload intact.
+- Onboarding error spacing tweak (`src/components/onboarding/onboarding-dialog.tsx`): added top margin to the server error banner (`mt-5`) to restore visual gap above “Enter an organization name to continue.”
+- Validation: `pnpm exec eslint src/components/onboarding/onboarding-dialog.tsx` ✅, `pnpm build` ✅.
+- Onboarding Step 2 validation UX fix (`src/components/onboarding/onboarding-dialog.tsx`): when Step 2 has prior required-field errors, form `onChange` now clears `firstName`/`lastName` errors immediately as values are entered (including autofill), and resets attempted state once both are present.
+- Onboarding Step 2 copy/field cleanup (`src/components/onboarding/onboarding-dialog.tsx`): removed the `Account email` display block and retained only the optional phone field in that section.
+- Validation: `pnpm exec eslint src/components/onboarding/onboarding-dialog.tsx` ✅.
+- In-app paywall overlay implementation (`src/components/paywall/paywall-overlay.tsx`):
+  - replaced iframe pricing embed with native modal checkout cards.
+  - `paywall=elective`: renders elective module purchase cards directly in-app with `startCheckout` forms (`checkoutMode=elective`).
+  - `paywall=accelerator`: renders Accelerator Pro/Base one-time checkout cards directly in-app (`checkoutMode=accelerator`).
+  - retained fallback "Open pricing" external action for full plan details/monthly variants.
+- Paywall routing changes to keep users in-app instead of sending to `/pricing` first:
+  - accelerator gate redirect now targets app overlay query (`/my-organization?paywall=accelerator...`) in `src/app/(accelerator)/layout.tsx`.
+  - module paywall redirects now target app overlay query for accelerator/elective in `src/app/(dashboard)/class/[slug]/module/[index]/page.tsx`.
+  - sidebar locked-track/elective links now open app overlay query instead of `/pricing` in `src/components/app-sidebar/classes-section.tsx`.
+- Stripe receipt hardening (`src/app/(public)/pricing/actions.ts`):
+  - added `payment_intent_data.receipt_email` for accelerator/elective one-time checkout sessions to improve receipt email delivery consistency.
+- Validation: `pnpm exec eslint src/components/paywall/paywall-overlay.tsx 'src/app/(public)/pricing/actions.ts' src/components/app-shell.tsx 'src/app/(accelerator)/layout.tsx' 'src/app/(dashboard)/class/[slug]/module/[index]/page.tsx' src/components/app-sidebar/classes-section.tsx` ✅, `pnpm build` ✅.
+- Autofill URL safety fix (`src/components/dev/case-study-autofill-fab.tsx`):
+  - narrowed website matcher from generic `url/site` to `website/homepage/domain/public site` signals.
+  - added media-field guard (`image/logo/avatar/photo/banner/cover/thumbnail/icon`) so autofill never injects website URLs into media/image URL fields consumed by `next/image`.
+  - URL input fallback now only fills when hints explicitly indicate website/homepage/domain.
+- Validation: `pnpm exec eslint src/components/dev/case-study-autofill-fab.tsx` ✅.
+- My Organization dashboard cleanup:
+  - removed the `workspace-actions` bento card from `src/app/(dashboard)/my-organization/page.tsx` (Actions/launch-critical shortcuts block).
+  - removed unused `workspaceActions` card rule from `src/components/organization/my-organization-bento-rules.ts` so layout no longer reserves that slot.
+- Paywall modal layout refactor (`src/components/paywall/paywall-overlay.tsx`):
+  - converted dialog container from fixed-height grid to `flex` column with `max-h` + scrolling body to eliminate large empty/stretch bands.
+  - tightened header/body/footer spacing, improved card rhythm, and standardized CTA button heights.
+  - added responsive footer button stack for small screens.
+- Validation: `pnpm exec eslint src/components/paywall/paywall-overlay.tsx 'src/app/(dashboard)/my-organization/page.tsx' src/components/organization/my-organization-bento-rules.ts` ✅, `pnpm build` ✅.
+- My Organization dashboard cleanup + calendar action fix:
+  - removed `activity` bento card from `src/app/(dashboard)/my-organization/page.tsx` and removed `activity` slot rule from `src/components/organization/my-organization-bento-rules.ts`.
+  - rebalanced grid after card removal by extending `programBuilder` row span to fill vacated space.
+  - updated organization metrics strip to mirror accelerator snapshot metrics: `Funding goal`, `Programs`, `People` (replacing About/Programs/People percentages).
+  - removed profile completion badge from org card header.
+- Launch roadmap card ordering/content (`src/app/(dashboard)/my-organization/page.tsx`):
+  - now sorts modules with `sortAcceleratorModules` and splits sections into `Free modules` (top) and `Paid electives` (below), with clear labels.
+- Calendar card simplification (`src/app/(dashboard)/my-organization/page.tsx`):
+  - removed description text (`Internal roadmap events.`), removed `NEXT EVENT` label, and removed `Google Meet` chip.
+  - removed `Open calendar` button.
+  - replaced redirecting `Add event` link with in-page side sheet trigger.
+- New component: `src/components/organization/my-organization-add-event-sheet-button.tsx`
+  - adds right-side sheet form for quick internal event creation via `createRoadmapCalendarEvent` without leaving `/my-organization`.
+- Programs card cleanup (`src/components/organization/program-builder-dashboard-card.tsx`):
+  - removed `Seed demo workspace` and `Seed next stage` buttons.
+  - made empty state fill available card body height (`Card`/`CardContent` flex + `Empty` height).
+- Validation: `pnpm exec eslint 'src/app/(dashboard)/my-organization/page.tsx' src/components/organization/my-organization-bento-rules.ts src/components/organization/program-builder-dashboard-card.tsx src/components/organization/my-organization-add-event-sheet-button.tsx` ✅, `pnpm build` ✅.
+- Added dependency `@vercel/speed-insights` (v1.3.1) via `pnpm add`.
+- Install required using existing pnpm store path due store mismatch (`/Users/calebhamernick/Library/pnpm/store/v10`).
+- Landing page sidebar + navigation update (`src/components/public/home-canvas-preview.tsx`):
+  - added persistent `About` nav item in the left sidebar footer linking to `https://www.coachhousesolutions.org/` (new-tab external link).
+  - improved wheel-scroll section handoff to reduce accidental section skipping by adding gesture-intent accumulation and a short post-transition wheel lock.
+- Landing page offerings update (`src/components/public/home2-sections.tsx`):
+  - changed `What we do` card title from `Nonprofit platform` to `Platform`.
+  - added new `Fiscal Sponsorship` card (external link to `https://www.coachhousesolutions.org/`).
+  - updated offerings section supporting copy to include fiscal sponsorship and enabled proper external-link behavior for external cards.
+- Pricing tiers refresh (`src/components/public/pricing-surface.tsx`, `src/app/(public)/pricing/page.tsx`):
+  - updated platform tiers to reflect Tier 1 / Tier 2 / Tier 3 content and pricing notes.
+  - added Tier 3 card (`$58/month`) with Tier-3-specific operations/support features and contact CTA.
+  - updated feature-comparison table to compare Tier 1 vs Tier 2 vs Tier 3 and refreshed grouped feature rows/copy.
+  - updated pricing hero/supporting metadata copy to match tier framing.
+- Validation:
+  - `pnpm exec eslint src/components/public/home-canvas-preview.tsx src/components/public/home2-sections.tsx src/components/public/pricing-surface.tsx 'src/app/(public)/pricing/page.tsx' tests/acceptance/home-canvas-scroll-logic.test.ts tests/acceptance/home-canvas-behavior.test.ts` ✅
+  - `pnpm exec vitest run tests/acceptance/home-canvas-scroll-logic.test.ts tests/acceptance/home-canvas-behavior.test.ts tests/acceptance/pricing.test.ts` ✅
+  - `pnpm lint` ✅ (existing warning in `src/app/(auth)/login/page.tsx` for `@next/next/no-img-element`)
+  - `pnpm test:snapshots` ✅
+  - `pnpm test:acceptance` ❌ (pre-existing failures unrelated to this work: `tests/acceptance/admin-crud.test.ts` missing `SUPABASE_SERVICE_ROLE_KEY`, plus two failing assertions in `tests/acceptance/stripe-webhook-route.test.ts`)
+  - `pnpm test:rls` ✅
+  - `pnpm build` ✅
+- Fiscal Sponsorship modal UX for landing offerings (`src/components/public/home2-sections.tsx`, `src/components/public/fiscal-sponsorship-dialog.tsx`):
+  - converted the `Fiscal Sponsorship` offerings card from external link behavior to modal trigger behavior.
+  - added reusable `FiscalSponsorshipDialog` component with a polished, scrollable information-card layout and full Part 1/Part 2 policy content.
+  - preserved existing offerings card visual language while routing fiscal sponsorship clicks to an in-app dialog for better readability and context.
+- Validation:
+  - `pnpm exec eslint src/components/public/home2-sections.tsx src/components/public/fiscal-sponsorship-dialog.tsx` ✅
+  - `pnpm build` ✅
+- Pricing labels cleanup (`src/components/public/pricing-surface.tsx`, `src/app/(public)/pricing/page.tsx`):
+  - removed Tier naming from pricing cards and restored/renamed plan labels (`Individual`, `Organization`, `Operations Support`).
+  - updated card eyebrow/title/CTA labels and feature-heading copy to remove Tier references.
+  - updated feature-breakdown column headers and supporting copy to match restored plan names.
+  - updated pricing page metadata description to match restored naming.
+- Validation:
+  - `pnpm exec eslint src/components/public/pricing-surface.tsx 'src/app/(public)/pricing/page.tsx'` ✅
+- Landing offerings badge update (`src/components/public/home2-sections.tsx`):
+  - added a `Coming soon` pill to the `Community map` highlight card.
+  - implemented card-level optional badge support in `Highlight` + `HighlightCard` so the pill renders consistently across split/stacked layouts.
+- Validation:
+  - `pnpm exec eslint src/components/public/home2-sections.tsx` ✅
+- Notifications unread-indicator color update (`src/components/notifications/notifications-menu.tsx`):
+  - changed unread dots from `bg-destructive` to blue (`bg-sky-500 dark:bg-sky-400`) for:
+    - bell trigger badge
+    - mounted bell trigger badge
+    - per-notification unread dot in the inbox list
+- Validation:
+  - `pnpm exec eslint src/components/notifications/notifications-menu.tsx` ✅
+- Notifications bell unread-cue behavior (`src/components/notifications/notifications-menu.tsx`):
+  - added a separate bell cue state so opening the notifications popover clears the blue bell dot immediately.
+  - kept per-notification unread dots tied to each item’s unread state so they only clear when that specific notification is clicked.
+  - refresh logic now re-enables the bell cue when unread items exist while the popover is closed.
+- Validation:
+  - `pnpm exec eslint src/components/notifications/notifications-menu.tsx` ✅
+- Added email confirmation template (`docs/briefs/email-confirmation-template.md`):
+  - included subject line, preview text, HTML template with Coach House logo, and plain-text fallback.
+  - used friendly/simple confirmation copy and Supabase placeholder `{{ .ConfirmationURL }}`.
+- Email confirmation template branding fix (`docs/briefs/email-confirmation-template.md`):
+  - replaced blue CTA/link accent with neutral app-aligned dark tone (`#111827`) to match product styling.
+  - switched logo source from external site URL to app-hosted asset via Supabase template variable: `{{ .SiteURL }}/coach-house-logo-light.png`.
+- Documents page redesign discovery brief added (`docs/briefs/documents-page-console-layout-adaptation.md`):
+  - analyzed the provided console-style screenshot (layout, scanning model, filtering, table behavior, action placement).
+  - produced a Keep/Remove/Adapt mapping specifically for Coach House document management use cases.
+  - proposed updated information architecture (header, 4-card summary strip, sticky filters, status-first document table).
+  - defined a category taxonomy for multi-category document management and mapped roadmap sections to document records.
+  - documented roadmap-as-document status mapping (`not_started -> Missing`, `in_progress -> Draft`, `complete -> Ready`, optional `Published`).
+  - included updated page/action/empty-state copy suggestions and a mobile behavior pattern.
+  - outlined a phased implementation plan:
+    - Phase 1: no schema migration, unify `profile.documents` + virtual roadmap docs in UI.
+    - Phase 2: optional normalized `organization_documents` metadata table.
+- Documents command-center redesign implemented (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`, `src/app/(dashboard)/my-organization/documents/page.tsx`):
+  - retained and adapted a promo banner at top of Documents page (coach-house-specific copy + quick actions).
+  - replaced single-purpose upload cards with a unified index that merges:
+    - uploaded private org documents (`profile.documents` via existing `/api/account/org-documents` APIs)
+    - roadmap sections as first-class document rows (`resolveRoadmapSections(profile)`).
+  - added summary metric strip (total docs, roadmap docs, uploaded files, needs attention).
+  - added filter/search controls (source/category/visibility/status + sort + quick toggles).
+  - added status-first table layout (desktop) and stacked card layout (mobile) reusing existing UI primitives.
+  - preserved existing upload/view/delete behavior and storage routes; no backend schema migration required.
+  - added row-level actions:
+    - uploads: view, upload/replace, delete (admin/edit mode aware)
+    - roadmap rows: open roadmap editor and public roadmap link when section is public.
+  - mapped roadmap statuses into document statuses:
+    - `not_started -> Missing`
+    - `in_progress -> Draft`
+    - `complete -> Ready` (or `Published` when public)
+  - widened documents page container and updated page subtitle to reflect the new filing-system purpose.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/documents/page.tsx' 'src/components/organization/org-profile-card/tabs/documents-tab.tsx'` ✅
+  - `pnpm build` ✅
+- Documents roadmap entitlement gating fix (`src/app/(dashboard)/my-organization/documents/page.tsx`, `src/components/organization/org-profile-card/tabs/documents-tab.tsx`):
+  - added accelerator entitlement check via `fetchLearningEntitlements` on `/my-organization/documents`.
+  - roadmap-derived document rows are now only included when `hasAcceleratorAccess` is true.
+  - for non-accelerator users, roadmap sections are excluded from data and UI:
+    - no roadmap rows,
+    - no roadmap source option/filter action,
+    - no roadmap metric card,
+    - promo/index copy now references uploaded files only.
+  - kept existing upload/view/delete doc APIs unchanged.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/documents/page.tsx' 'src/components/organization/org-profile-card/tabs/documents-tab.tsx'` ✅
+  - `pnpm build` ✅
+- Documents UI simplification + banner style alignment (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`, `src/app/(dashboard)/my-organization/documents/page.tsx`):
+  - replaced the shaded/gradient documents promo card with an accelerator-style closeable banner (same visual language and dismiss button pattern).
+  - added local per-user dismiss persistence for the documents banner (`localStorage` key: `documents-command-center-dismissed:v1:<userId>`).
+  - removed the separate “Find documents quickly” card.
+  - moved and simplified filtering controls into the top of the existing `Document index` card, directly above the table/list content.
+  - kept all existing document table actions and entitlement gating behavior intact.
+- Validation:
+  - `pnpm exec eslint 'src/components/organization/org-profile-card/tabs/documents-tab.tsx' 'src/app/(dashboard)/my-organization/documents/page.tsx'` ✅
+  - `pnpm build` ✅
+- Documents policy + filter UX overhaul (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`, `src/app/(dashboard)/my-organization/documents/page.tsx`, `src/app/api/account/org-policies/route.ts`):
+  - implemented first-class `Policies` in Documents with create/edit/delete support via new API route (`/api/account/org-policies`) backed by `organizations.profile.policies`.
+  - policy records support structured associations:
+    - board policy toggle,
+    - associated program,
+    - associated people (multi-select).
+  - policy rows now appear in the unified document index with source `Policy` and category `Policies`.
+  - changed non-finished statuses to avoid `Missing` for in-progress work:
+    - roadmap `not_started -> Not started`, `in_progress -> In progress`.
+    - policy `not_started -> Not started`, `in_progress -> In progress`, `complete -> Ready`.
+    - `Missing` remains for required upload documents that have no file.
+  - replaced multi-control filtering UI with a single minimal one-line pattern:
+    - search input + one multi-select `Filters` dropdown (source/status/visibility/category + quick filters),
+    - reset action,
+    - removed standalone toggle buttons (`Only needs attention`, `Updated last 30 days`).
+  - removed `Document index` header copy block from the index card.
+  - banner cleanup:
+    - changed banner icon from `Sparkles` to `FolderOpen`,
+    - removed the `DOCUMENT COMMAND CENTER` eyebrow text,
+    - removed banner CTA buttons (`Focus needs attention`, `Show roadmap docs`).
+  - kept roadmap entitlement gating in place (roadmap items hidden when no accelerator access).
+- Validation:
+  - `pnpm exec eslint 'src/components/organization/org-profile-card/tabs/documents-tab.tsx' 'src/app/(dashboard)/my-organization/documents/page.tsx' 'src/app/api/account/org-policies/route.ts'` ✅
+  - `pnpm build` ✅
+
+## 2026-02-11 — Codex session (documents policy dialog search + select overflow fix)
+
+- Documents policy dialog UX refinements (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`):
+  - added an in-list people search field to the `Associated people` picker.
+  - implemented a sticky search header inside the scrollable people list so search remains visible while browsing long lists.
+  - added empty-state copy when no people match the query.
+  - constrained `Program association` select trigger/content width and enabled long-label wrapping to prevent clipping/overflow outside the dialog surface.
+- Validation:
+  - `pnpm exec eslint src/components/organization/org-profile-card/tabs/documents-tab.tsx` ✅
+  - `pnpm build` ✅
+
+## 2026-02-11 — Codex session (documents table sorting + policy categories/files)
+
+- Documents table controls (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`):
+  - added sortable columns for `Status`, `Name`, `Category`, `Source`, `Visibility`, and `Last updated`.
+  - added ascending/descending controls in the unified `Filters` dropdown (`Sort by` + `Direction`).
+  - removed the top 4-card metrics strip from the Documents page.
+  - converted document rows to multi-category support and updated category rendering/filter matching.
+- Policy authoring UX (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`):
+  - replaced `Board policy` checkbox with category selection/creation (preset tags + custom category add/remove).
+  - added searchable associated-people picker with sticky search header.
+  - added policy PDF attachment controls in the policy dialog:
+    - choose/replace file,
+    - clear pending selection,
+    - view existing file,
+    - remove existing file.
+  - new-policy flow now supports selecting a file in the create dialog and uploads it after policy save.
+- Policy persistence/API (`src/app/api/account/org-policies/route.ts`, `src/app/api/account/org-policies/document/route.ts`, `src/app/(dashboard)/my-organization/documents/page.tsx`):
+  - policy schema now stores `categories[]` and optional `document` metadata in org profile.
+  - maintained backward compatibility for legacy `board` boolean by mapping it to `categories: ["Board"]` when needed.
+  - added policy document API route for signed view/upload/delete:
+    - `GET /api/account/org-policies/document?id=<policyId>`
+    - `POST /api/account/org-policies/document?id=<policyId>`
+    - `DELETE /api/account/org-policies/document?id=<policyId>`
+  - delete-policy flow now removes any attached policy file from storage to avoid orphaned objects.
+- Validation:
+  - `pnpm exec eslint src/components/organization/org-profile-card/tabs/documents-tab.tsx 'src/app/(dashboard)/my-organization/documents/page.tsx' src/app/api/account/org-policies/route.ts src/app/api/account/org-policies/document/route.ts` ✅
+  - `pnpm build` ✅
+
+## 2026-02-11 — Codex session (people page controls inline + right rail hidden)
+
+- People page layout update (`src/components/people/people-table.tsx`, `src/app/(dashboard)/people/page.tsx`):
+  - added configurable controls placement to `PeopleTableShell` with `controlsPlacement: "rail" | "inline"`.
+  - switched `/people` to `controlsPlacement="inline"` so People controls render in the main content area under the `People` heading separator.
+  - kept one-line horizontal control layout for inline mode (search, category select, add button) while preserving existing right-rail mode for other uses.
+  - because no `RightRailSlot` is mounted on `/people` in inline mode, the right rail now closes/hides automatically.
+- Validation:
+  - `pnpm exec eslint src/components/people/people-table.tsx 'src/app/(dashboard)/people/page.tsx'` ✅
+  - `pnpm build` ✅
+
+## 2026-02-11 — Codex session (people manager assignment + add-dialog reset fixes)
+
+- People manager assignment bugfix (`src/components/people/people-table.tsx`, `src/components/people/create-person-dialog.tsx`, `src/actions/people.ts`):
+  - expanded manager assignment eligibility to include `volunteers` (previously staff-only).
+  - updated People table `Reports To` cell to allow manager editing for volunteers.
+  - updated create/edit person flow to show `Reports to` for eligible categories and preserve value through save.
+  - server action now persists `reportsToId` for eligible categories instead of nulling non-staff unconditionally.
+- Add Person stale autofill bugfix (`src/components/people/create-person-dialog.tsx`):
+  - added full form reset/hydration on open/close using `initial` values.
+  - closing/reopening `Add` now starts clean and no longer carries over previous entry values.
+- Validation:
+  - `pnpm exec eslint src/components/people/create-person-dialog.tsx src/components/people/people-table.tsx src/actions/people.ts` ✅
+  - `pnpm build` ✅
+
+## 2026-02-11 — Codex session (people manager assignment expanded to all categories)
+
+- Expanded `Reports to` assignment beyond staff/volunteers to all people categories (`src/components/people/create-person-dialog.tsx`, `src/components/people/people-table.tsx`, `src/actions/people.ts`).
+- Manager picker options now include all people except self (not just staff).
+- Server save logic now persists `reportsToId` for all categories and guards against self-reporting.
+- Validation:
+  - `pnpm exec eslint src/components/people/create-person-dialog.tsx src/components/people/people-table.tsx src/actions/people.ts` ✅
+  - `pnpm build` ✅
+
+## 2026-02-11 — Codex session (people canvas persistence + docs/admin/table/layout updates)
+
+- People org-chart hardening (`src/components/people/org-chart-canvas.tsx`, `src/app/api/people/position/route.ts`, `src/app/api/people/position/reset/route.ts`, `src/components/people/people-table.tsx`):
+  - enabled draggable React Flow nodes when user can edit.
+  - added persisted node positions with debounced/batched saves to `/api/people/position`.
+  - added undo/redo controls with bounded in-memory history and reset-to-default layout action.
+  - reset endpoint now supports full-layout reset (all categories) and still supports category-scoped reset.
+  - updated layout behavior for canvas lanes:
+    - board categories at top,
+    - core org chart centered,
+    - volunteers in left-side columns/rows,
+    - supporters below in rows,
+    - volunteers are not auto-connected unless an explicit `reportsTo` exists.
+  - simplified people table row rendering path by removing heavy virtualization branch for paged table views to improve page-switch responsiveness.
+
+- Organization Access invite row overlap fix (`src/components/account-settings/sections/organization-access-manager.tsx`):
+  - adjusted invite form grid sizing/min-width behavior so `Invite` button and role select no longer overlap.
+
+- Documents policy dialog category selector update (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`):
+  - converted policy categories picker into a dropdown menu with multi-select checkboxes.
+  - kept custom category creation inside the dropdown and retained selected-category removable chips below.
+
+- Documents index column order update (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`):
+  - moved `Actions` column to appear immediately after `Name` (before `Category`).
+
+- Documents checklist expansion wiring:
+  - added new document keys/types (`src/components/organization/org-profile-card/types.ts`).
+  - added new checklist items in documents UI (`src/components/organization/org-profile-card/tabs/documents-tab.tsx`):
+    - UEI Confirmation (SAM screenshot)
+    - SAM.gov Active Status
+    - Grants.gov Registration Confirmation
+    - GATA Pre-Qualification
+    - EIN Confirmation Letter (CP 575)
+    - 990s (last 3 years)
+    - Audited Financials
+  - enabled upload/get/delete support for new kinds (`src/app/api/account/org-documents/route.ts`).
+  - ensured server documents page reads/wires new fields (`src/app/(dashboard)/my-organization/documents/page.tsx`).
+
+- My Organization card layout update (`src/components/organization/my-organization-bento-rules.ts`):
+  - moved Calendar and Roadmap cards to a shared horizontal row above Programs.
+  - moved Programs card to its own row below those two cards.
+
+- Validation:
+  - `pnpm exec eslint src/components/people/org-chart-canvas.tsx src/components/people/people-table.tsx src/app/api/people/position/route.ts src/app/api/people/position/reset/route.ts src/components/account-settings/sections/organization-access-manager.tsx src/components/organization/org-profile-card/tabs/documents-tab.tsx src/components/organization/org-profile-card/types.ts src/components/organization/my-organization-bento-rules.ts src/app/api/account/org-documents/route.ts 'src/app/(dashboard)/my-organization/documents/page.tsx'` ✅
+  - `pnpm build` ✅

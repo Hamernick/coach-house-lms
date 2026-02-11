@@ -5,7 +5,7 @@ import { PricingSurface } from "@/components/public/pricing-surface"
 export const metadata: Metadata = {
   title: "Pricing",
   description:
-    "Simple pricing for nonprofit founders and teams: start free, upgrade for seats, add the Accelerator when you're ready.",
+    "Simple pricing for nonprofit founders and teams: start free with Individual, upgrade to Organization, and scale with Operations Support.",
 }
 
 export const runtime = "nodejs"

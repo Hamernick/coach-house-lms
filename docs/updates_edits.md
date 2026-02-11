@@ -629,7 +629,7 @@ MISC:
 
 
 
-1. [pending] Program creator needs a revisit - the stepped form to create them needs to be revisitedrevisted and integrated into our accelerator lesson/modules + synced/editable with my organization - built based on the Pilot Program Design Questions.md file in /docs, fix it so its a stepped form.
+1. [Done] Program creator needs a revisit - the stepped form to create them needs to be revisitedrevisted and integrated into our accelerator lesson/modules + synced/editable with my organization - built based on the Pilot Program Design Questions.md file in /docs, fix it so its a stepped form.
     * [done] Program wizard now uses a full-screen dialog with a mobile bottom drawer layout and fixed header/footer actions.
 2. [done] Onboarding/signup/tutorial needs to be revisited:
     * [done] When I registered it immediately assumed I was taking the accelerator and asked questions about why and how confident I am. For the free version we need to remove that and just have it fill out the profile stuff.

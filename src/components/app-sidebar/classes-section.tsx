@@ -304,7 +304,7 @@ export function ClassesSection({
           <div className="flex items-center justify-between rounded-lg border border-dashed border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
             <span>Electives are optional add-ons.</span>
             <Link
-              href="/pricing?plan=electives"
+              href="/my-organization?paywall=elective&plan=electives&source=sidebar"
               className="text-foreground underline-offset-4 hover:underline"
             >
               Unlock
@@ -318,7 +318,7 @@ export function ClassesSection({
           <div className="flex items-center justify-between rounded-lg border border-dashed border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
             <span>Some electives are not included yet.</span>
             <Link
-              href="/pricing?plan=electives"
+              href="/my-organization?paywall=elective&plan=electives&source=sidebar"
               className="text-foreground underline-offset-4 hover:underline"
             >
               Buy more
@@ -329,7 +329,7 @@ export function ClassesSection({
           <div className="flex items-center justify-between rounded-lg border border-dashed border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
             <span>Unlock this track with Accelerator.</span>
             <Link
-              href="/pricing?plan=accelerator"
+              href="/my-organization?paywall=accelerator&plan=accelerator&source=sidebar"
               className="text-foreground underline-offset-4 hover:underline"
             >
               View plans

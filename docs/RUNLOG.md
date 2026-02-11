@@ -7059,3 +7059,19 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm exec eslint src/components/people/org-chart-canvas.tsx src/components/people/people-table.tsx src/app/api/people/position/route.ts src/app/api/people/position/reset/route.ts src/components/account-settings/sections/organization-access-manager.tsx src/components/organization/org-profile-card/tabs/documents-tab.tsx src/components/organization/org-profile-card/types.ts src/components/organization/my-organization-bento-rules.ts src/app/api/account/org-documents/route.ts 'src/app/(dashboard)/my-organization/documents/page.tsx'` ✅
   - `pnpm build` ✅
+
+## 2026-02-11 — Codex session (active org resolution priority fix)
+
+- Active organization resolution hardening (`src/lib/organization/active-org.ts`):
+  - changed membership selection from "earliest created membership" to role-priority selection:
+    - `owner` → `admin` → `staff` → `board` → `member`.
+  - within the same role tier, keeps stable ordering by oldest `created_at`.
+  - added role normalization safeguards for unexpected/null role values.
+  - this prevents users with multiple org memberships from being silently dropped into a lower-permission org context.
+
+- Account settings org-name lookup alignment (`src/components/account-settings/account-settings-dialog-state.ts`):
+  - replaced local "first membership" lookup with `resolveActiveOrganization(...)` so the account settings dialog uses the same active-org logic as server routes and actions.
+
+- Validation:
+  - `pnpm exec eslint src/lib/organization/active-org.ts src/components/account-settings/account-settings-dialog-state.ts` ✅
+  - `pnpm build` ✅

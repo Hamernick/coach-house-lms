@@ -3,6 +3,7 @@ import { useRouter } from "next/navigation"
 
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
 import { toast } from "@/lib/toast"
+import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import type {
   AccountSettingsErrorKey,
   AccountSettingsMobilePage,
@@ -202,16 +203,7 @@ export function useAccountSettingsDialogState({
           : defaultNewsletterOptIn
 
       if (data?.user?.id) {
-        const activeOrgId = await (async () => {
-          const { data: membership } = await supabase
-            .from("organization_memberships")
-            .select("org_id, created_at")
-            .eq("member_id", data.user.id)
-            .order("created_at", { ascending: true })
-            .limit(1)
-            .maybeSingle<{ org_id: string; created_at: string }>()
-          return membership?.org_id ?? data.user.id
-        })()
+        const { orgId: activeOrgId } = await resolveActiveOrganization(supabase, data.user.id)
 
         const { data: profileRow } = await supabase
           .from("profiles")

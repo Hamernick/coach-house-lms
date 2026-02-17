@@ -8243,3 +8243,30 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Because GitHub push protection blocks even token-removal commits without an explicit bypass, created a temporary push-protection bypass via GitHub API for the provided placeholder id, then pushed the cleanup commit successfully.
 - Verification:
   - `origin/main:.env.example` now contains `NEXT_PUBLIC_MAPBOX_TOKEN=""`.
+
+## 2026-02-18 — Codex security hygiene (full git history purge for Mapbox token)
+
+- Performed a full repository history rewrite to purge a previously committed Mapbox token from all refs.
+- Method:
+  - `git-filter-repo --replace-text` with exact token replacement to empty string.
+  - rewrote local history across branches/refs.
+- Safety controls used:
+  - captured pre-purge rollback tag: `pre-token-purge-2026-02-17`.
+  - verified app tree integrity before/after purge:
+    - pre-tree: `736f09267813fd1d6d916a57d65113da60f79342`
+    - post-tree: `736f09267813fd1d6d916a57d65113da60f79342` (unchanged)
+  - post-rewrite typecheck: `pnpm exec tsc --noEmit` ✅
+- Remote sync:
+  - force-updated remote branches with rewritten history:
+    - `chore/fix-supabase-getuser-usage`
+    - `docs/user-journeys-flow`
+    - `feat/design-unification-exploration`
+    - `feat/s29-student-dashboard`
+    - `feat/s31-authoring-ux`
+    - `main`
+    - `release/v0.1.0`
+    - `step/s01-design-system`
+- Verification:
+  - no token hits in rewritten local history (`git log --all -S <token>` empty)
+  - no token hits in rewritten remote-tracking history (`git log --remotes=origin -S <token>` empty)
+

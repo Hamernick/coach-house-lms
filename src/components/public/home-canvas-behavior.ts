@@ -4,7 +4,7 @@ export type CanvasSectionBehavior = {
 }
 
 export function resolveCanvasSectionBehavior(sectionId: string): CanvasSectionBehavior {
-  const scrollable = sectionId === "pricing"
+  const scrollable = sectionId === "pricing" || sectionId === "accelerator"
   return {
     scrollable,
     touchAction: scrollable ? "pan-y" : "pan-x",

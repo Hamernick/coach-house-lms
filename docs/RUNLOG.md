@@ -8354,3 +8354,20 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - `pnpm eslint src/components/public/pricing-surface.tsx` ✅
   - `pnpm exec tsc --noEmit --pretty false` ✅
 - Follow-up: converted pricing visibility terms to explicit pills (`Private` on Individual, `Public` on paid tiers) in card checklists and feature matrix labels for clearer scanability.
+
+## 2026-02-17 — Codex home canvas accelerator overview + map card interaction update
+
+- Added a dedicated public `Accelerator` section to the Home Canvas and surfaced it in left-rail navigation.
+- Files:
+  - `src/components/public/home2-sections.tsx`
+  - `src/components/public/home-canvas-preview.tsx`
+  - `src/components/public/home-canvas-behavior.ts`
+- Changes:
+  - Extended `Home2SectionId` + `HOME2_SECTION_NAV` with `accelerator`.
+  - Added `Home2AcceleratorOverviewSection` with Coach House-style cards and CTAs (`/?section=signup`, `/?section=pricing`).
+  - Updated the offerings card `Accelerator + coaching` to link to `/?section=accelerator` instead of `/accelerator`.
+  - Made `Community map` non-clickable by removing its `href`; this also removes the interactive arrow affordance.
+  - Marked the accelerator canvas section as scrollable in `resolveCanvasSectionBehavior`.
+- Validation:
+  - `pnpm eslint src/components/public/home2-sections.tsx src/components/public/home-canvas-preview.tsx src/components/public/home-canvas-behavior.ts` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅

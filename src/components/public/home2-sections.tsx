@@ -44,7 +44,7 @@ const body = Space_Grotesk({
 
 export const HOME2_BODY_CLASSNAME = body.className
 
-export type Home2SectionId = "hero" | "impact" | "offerings" | "process" | "news" | "team" | "cta"
+export type Home2SectionId = "hero" | "impact" | "offerings" | "accelerator" | "process" | "news" | "team" | "cta"
 
 export type Home2SectionNavItem = {
   id: Home2SectionId
@@ -56,6 +56,7 @@ export const HOME2_SECTION_NAV: Home2SectionNavItem[] = [
   { id: "hero", label: "Hero", icon: Hand },
   { id: "impact", label: "Impact", icon: Target },
   { id: "offerings", label: "Offerings", icon: PanelTop },
+  { id: "accelerator", label: "Accelerator", icon: CalendarCheck },
   { id: "process", label: "Process", icon: Layers },
   { id: "news", label: "News", icon: Notebook },
   { id: "team", label: "Team", icon: GraduationCap },
@@ -133,7 +134,7 @@ const PRODUCT_HIGHLIGHTS: Highlight[] = [
     size: "s",
   },
   {
-    href: "/accelerator",
+    href: "/?section=accelerator",
     eyebrow: "Curriculum",
     title: "Accelerator + coaching",
     description: "Guided assignments, clear pacing, and 1:1 sessions to help your team make steady progress each week.",
@@ -151,7 +152,6 @@ const PRODUCT_HIGHLIGHTS: Highlight[] = [
     size: "s",
   },
   {
-    href: "/community#map",
     eyebrow: "NFP map",
     title: "Community map",
     description: "Explore the network of nonprofits building alongside Coach House.",
@@ -170,6 +170,24 @@ const PRODUCT_HIGHLIGHTS: Highlight[] = [
     external: true,
     size: "xs",
   },
+]
+
+const ACCELERATOR_FOUNDATION_ITEMS = [
+  "Formation modules mapped to real deliverables.",
+  "Strategic roadmap sections that stay editable as your organization evolves.",
+  "Progress tracking so teams can see what is complete and what is next.",
+]
+
+const ACCELERATOR_SUPPORT_ITEMS = [
+  "Asynchronous learning for flexible pacing across your team.",
+  "Weekly member programming for accountability and momentum.",
+  "Operations Support adds monthly 1:1 coaching and discounted expert help.",
+]
+
+const ACCELERATOR_OUTCOME_ITEMS = [
+  "Fundability readiness signals in one workspace.",
+  "Clear narrative alignment from mission to programs and outcomes.",
+  "Documentation flow that keeps core formation work organized for grants.",
 ]
 
 const PROCESS_STEPS = [
@@ -417,6 +435,76 @@ export function Home2OfferingsSection({ layout = "split" }: Home2OfferingsSectio
   )
 }
 
+export function Home2AcceleratorOverviewSection() {
+  return (
+    <div className="w-full max-w-[920px] space-y-4">
+      <div className="rounded-[30px] border border-border/60 bg-card/70 p-6 shadow-sm sm:p-8">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="inline-flex rounded-full border border-border/70 bg-muted/50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Accelerator
+          </span>
+          <span className="inline-flex rounded-full border border-border/70 bg-muted/30 px-3 py-1 text-[11px] font-semibold text-muted-foreground">
+            Included on paid tiers
+          </span>
+        </div>
+        <h2 className={cn(heading.className, "text-balance text-3xl font-semibold tracking-tight sm:text-4xl")}>
+          Guided structure for formation, momentum, and funding readiness.
+        </h2>
+        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+          The Accelerator combines curriculum, roadmap deliverables, and coaching support so your team can move from
+          idea to execution with consistent progress.
+        </p>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
+          <Button asChild className="rounded-xl px-5">
+            <Link href="/?section=signup">Start free</Link>
+          </Button>
+          <Button asChild variant="outline" className="rounded-xl px-5">
+            <Link href="/?section=pricing">Compare plans</Link>
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="rounded-[24px] border border-border/60 bg-card/60 p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Build the foundation</p>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            {ACCELERATOR_FOUNDATION_ITEMS.map((item) => (
+              <li key={item} className="flex items-start gap-2">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/70" aria-hidden />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-[24px] border border-border/60 bg-card/60 p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Stay supported</p>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            {ACCELERATOR_SUPPORT_ITEMS.map((item) => (
+              <li key={item} className="flex items-start gap-2">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/70" aria-hidden />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div className="rounded-[24px] border border-border/60 bg-card/60 p-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Get funder-ready</p>
+          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
+            {ACCELERATOR_OUTCOME_ITEMS.map((item) => (
+              <li key={item} className="flex items-start gap-2">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/70" aria-hidden />
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function HighlightCard({ item, className }: { item: Highlight; className?: string }) {
   const isInteractive = Boolean(item.href || item.modal)
   const baseClassName = cn(
@@ -433,12 +521,12 @@ function HighlightCard({ item, className }: { item: Highlight; className?: strin
       ) : null}
       <div className="flex h-full flex-col justify-between">
         <div className="flex flex-col items-start gap-3">
-          <div className="flex w-full items-end justify-start gap-3">
+          <div className="flex w-full items-center justify-start gap-3">
             <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
               {item.icon}
             </div>
             {item.badge ? (
-              <span className="inline-flex shrink-0 self-end rounded-full border border-border/70 bg-muted/60 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+              <span className="inline-flex shrink-0 self-center rounded-full border border-border/70 bg-muted/60 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
                 {item.badge}
               </span>
             ) : null}

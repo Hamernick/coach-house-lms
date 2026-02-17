@@ -25,6 +25,7 @@ import { LoginPanel } from "@/components/auth/login-panel"
 import { SignUpForm } from "@/components/auth/sign-up-form"
 import {
   HOME2_SECTION_NAV,
+  Home2AcceleratorOverviewSection,
   Home2HeroSection,
   Home2ImpactSection,
   Home2OfferingsSection,
@@ -164,6 +165,16 @@ function HomeSectionPanel({ sectionId }: { sectionId: Home2SectionId }) {
       <div className="mx-auto flex min-h-full w-full max-w-[1100px] items-center px-4 py-6 md:px-6 lg:px-8">
         <div className="mx-auto flex w-full justify-center">
           <Home2OfferingsSection layout="stacked" />
+        </div>
+      </div>
+    )
+  }
+
+  if (sectionId === "accelerator") {
+    return (
+      <div className="mx-auto flex min-h-full w-full max-w-[1100px] items-center px-4 py-6 md:px-6 lg:px-8">
+        <div className="mx-auto flex w-full justify-center">
+          <Home2AcceleratorOverviewSection />
         </div>
       </div>
     )
@@ -461,7 +472,7 @@ export function HomeCanvasPreview({ initialSection, pricingPanel }: HomeCanvasPr
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-            <SidebarGroup className="pt-1">
+            <SidebarGroup className="mt-auto pt-1">
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>

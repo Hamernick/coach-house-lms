@@ -5,9 +5,7 @@ import Image from "next/image"
 import CalendarCheckIcon from "lucide-react/dist/esm/icons/calendar-check"
 import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
-import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
-import CircleDotIcon from "lucide-react/dist/esm/icons/circle-dot"
-import CircleIcon from "lucide-react/dist/esm/icons/circle"
+import CheckIcon from "lucide-react/dist/esm/icons/check"
 import RocketIcon from "lucide-react/dist/esm/icons/rocket"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
 
@@ -22,6 +20,7 @@ import {
 import type { FormationStatus, ProfileTab } from "@/components/organization/org-profile-card/types"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Progress } from "@/components/ui/progress"
 import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern/index"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
@@ -127,40 +126,12 @@ function withMonthParam(
   return `/organization?${query.toString()}`
 }
 
-function formationModuleStatusLabel(status: ModuleCardStatus) {
-  if (status === "completed") return "Complete"
-  if (status === "in_progress") return "In progress"
-  return "Not started"
-}
+type FormationStepState = "completed" | "active" | "pending"
 
-function formationModuleStatusClass(status: ModuleCardStatus) {
-  if (status === "completed") {
-    return "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-500/15 dark:text-emerald-200"
-  }
-  if (status === "in_progress") {
-    return "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-900/50 dark:bg-amber-500/15 dark:text-amber-200"
-  }
-  return "border-zinc-300 bg-zinc-100 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
-}
-
-function formationModuleBadgeLabel(module: { status: ModuleCardStatus; slug?: string | null; title?: string | null }) {
-  if (module.status === "not_started" && isElectiveAddOnModule(module)) {
-    return "Optional"
-  }
-  return formationModuleStatusLabel(module.status)
-}
-
-function formationModuleBadgeClass(module: { status: ModuleCardStatus; slug?: string | null; title?: string | null }) {
-  if (module.status === "not_started" && isElectiveAddOnModule(module)) {
-    return "border-sky-200 bg-sky-100 text-sky-800 dark:border-sky-900/50 dark:bg-sky-500/15 dark:text-sky-200"
-  }
-  return formationModuleStatusClass(module.status)
-}
-
-function formationModuleStatusIcon(status: ModuleCardStatus) {
-  if (status === "completed") return <CheckCircle2Icon className="h-4 w-4 text-emerald-600 dark:text-emerald-300" aria-hidden />
-  if (status === "in_progress") return <CircleDotIcon className="h-4 w-4 text-amber-600 dark:text-amber-300" aria-hidden />
-  return <CircleIcon className="h-4 w-4 text-zinc-500 dark:text-zinc-400" aria-hidden />
+function resolveFormationStepState(status: ModuleCardStatus): FormationStepState {
+  if (status === "completed") return "completed"
+  if (status === "in_progress") return "active"
+  return "pending"
 }
 
 const DASHBOARD_SUPPORT_CARD_FRAME_CLASS =
@@ -319,6 +290,10 @@ export default async function MyOrganizationPage({
     ? [...foundationPreviewModules, ...acceleratorPreviewModules]
     : foundationPreviewModules
   const formationCompletedCount = visibleRoadmapModules.filter((module) => module.status === "completed").length
+  const formationProgressPercent =
+    visibleRoadmapModules.length > 0
+      ? Math.round((formationCompletedCount / visibleRoadmapModules.length) * 100)
+      : 0
   const showLaunchRoadmapCard =
     foundationRoadmapModules.length > 0 && foundationRoadmapModules.some((module) => module.status !== "completed")
   const nextFormationModule =
@@ -392,9 +367,6 @@ export default async function MyOrganizationPage({
     initialProfile.tagline.trim() ||
     locationSubtitle ||
     ""
-  const continueInAcceleratorLabel = nextFormationModule
-    ? `Continue - Lesson ${nextFormationModule.index}`
-    : "Continue in Accelerator"
   const showTeamCard = false
 
   if (showEditor) {
@@ -521,12 +493,9 @@ export default async function MyOrganizationPage({
                 <dd className="font-medium tabular-nums">{people.length}</dd>
               </div>
             </dl>
-            <div className="mt-auto grid gap-2 pt-1 sm:grid-cols-2" data-tour="dashboard-actions">
-              <Button asChild size="sm" className="h-9">
+            <div className="mt-auto grid gap-2 pt-1" data-tour="dashboard-actions">
+              <Button asChild size="sm" className="h-9 w-full">
                 <Link href="/organization?view=editor">Edit organization</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm" className="h-9">
-                <Link href={nextFormationHref}>{continueInAcceleratorLabel}</Link>
               </Button>
             </div>
           </CardContent>
@@ -627,28 +596,48 @@ export default async function MyOrganizationPage({
             <CardContent className={cn(DASHBOARD_SUPPORT_CARD_CONTENT_CLASS, "gap-3")}>
               <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
                 {visibleRoadmapModules.length > 0 ? (
-                  <div className="space-y-1.5">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                      {hasPaidPlan ? "Included modules" : "Formation modules"}
-                    </p>
-                    <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-background/20">
-                      {visibleRoadmapModules.map((module) => (
-                        <li key={module.id}>
-                          <Link href={module.href} className="block px-3 py-2.5 transition hover:bg-muted/35">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="flex min-w-0 items-start gap-2">
-                                {formationModuleStatusIcon(module.status)}
-                                <p className="line-clamp-2 text-sm font-medium">{module.title}</p>
-                              </div>
-                              <span
-                                className={`shrink-0 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium ${formationModuleBadgeClass(module)}`}
-                              >
-                                {formationModuleBadgeLabel(module)}
+                  <div className="rounded-xl border border-border/60 bg-background/20 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold tracking-tight text-foreground">Progress</p>
+                      <p className="text-xs tabular-nums text-muted-foreground">
+                        {formationCompletedCount}/{visibleRoadmapModules.length}
+                      </p>
+                    </div>
+                    <Progress value={formationProgressPercent} className="mt-2 h-1.5 bg-muted/70" />
+
+                    <ul className="mt-3 space-y-1.5">
+                      {visibleRoadmapModules.map((module, index) => {
+                        const stepState = resolveFormationStepState(module.status)
+                        const stepCircleClass = cn(
+                          "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold tabular-nums",
+                          stepState === "completed"
+                            ? "border-transparent bg-sky-500 text-white"
+                            : stepState === "active"
+                              ? "border-sky-400 text-sky-600 dark:text-sky-200"
+                              : "border-border text-muted-foreground",
+                        )
+                        const titleClass = cn(
+                          "line-clamp-2 text-sm font-medium leading-tight transition",
+                          stepState === "completed" && "text-muted-foreground line-through decoration-2",
+                          stepState === "pending" && "text-muted-foreground",
+                        )
+
+                        return (
+                          <li key={module.id}>
+                            <Link href={module.href} className="flex items-center gap-3 rounded-lg px-1.5 py-1.5 transition hover:bg-muted/35">
+                              <span className={stepCircleClass} aria-hidden>
+                                {stepState === "completed" ? <CheckIcon className="h-3.5 w-3.5" aria-hidden /> : index + 1}
                               </span>
-                            </div>
-                          </Link>
-                        </li>
-                      ))}
+                              <span className={cn("min-w-0 flex-1", titleClass)}>{module.title}</span>
+                              {stepState === "pending" && isElectiveAddOnModule(module) ? (
+                                <span className="shrink-0 rounded-full border border-sky-200 bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-800 dark:border-sky-900/50 dark:bg-sky-500/15 dark:text-sky-200">
+                                  Optional
+                                </span>
+                              ) : null}
+                            </Link>
+                          </li>
+                        )
+                      })}
                     </ul>
                   </div>
                 ) : null}
@@ -662,7 +651,7 @@ export default async function MyOrganizationPage({
               </div>
 
               <p className="text-xs text-muted-foreground">
-                {formationCompletedCount}/{visibleRoadmapModules.length} complete
+                {formationProgressPercent}% complete
               </p>
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <Button asChild variant="outline" size="sm" className="h-9">

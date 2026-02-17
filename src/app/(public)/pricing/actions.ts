@@ -11,6 +11,7 @@ import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import type { Database } from "@/lib/supabase"
 
 const stripe = env.STRIPE_SECRET_KEY ? new Stripe(env.STRIPE_SECRET_KEY) : null
+const REUSABLE_STRIPE_SUBSCRIPTION_STATUSES = new Set(["trialing", "active", "past_due", "incomplete"])
 
 type SubscriptionStatus = Database["public"]["Enums"]["subscription_status"]
 type SubscriptionInsert = Database["public"]["Tables"]["subscriptions"]["Insert"]
@@ -143,6 +144,15 @@ export async function startCheckout(formData: FormData) {
       }
 
       if (existingStripeSubscription) {
+        const stripeStatus = existingStripeSubscription.status
+        const canReuseExistingSubscription = REUSABLE_STRIPE_SUBSCRIPTION_STATUSES.has(stripeStatus)
+
+        if (!canReuseExistingSubscription) {
+          existingStripeSubscription = null
+        }
+      }
+
+      if (existingStripeSubscription) {
         const currentItem = existingStripeSubscription.items.data[0]
         const currentPriceId = currentItem?.price?.id ?? null
 
@@ -184,7 +194,7 @@ export async function startCheckout(formData: FormData) {
         }
 
         if (currentPriceId === organizationPriceId) {
-          redirect(`/organization?subscription=${existingSubscription.status}&plan=${planTier}`)
+          redirect(`/organization?subscription=${toSubscriptionStatus(existingStripeSubscription.status)}&plan=${planTier}`)
         }
       }
     }

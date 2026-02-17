@@ -34,7 +34,7 @@ export function buildReadinessChecklist(options: {
     .map((reason) => {
       if (reason === "Complete formation lessons") {
         return {
-          href: nextFormationModuleHref ?? "/accelerator/class/formation/module/1",
+          href: nextFormationModuleHref ?? "/accelerator",
           label: "Complete formation lessons",
         }
       }

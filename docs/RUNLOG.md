@@ -8371,3 +8371,66 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm eslint src/components/public/home2-sections.tsx src/components/public/home-canvas-preview.tsx src/components/public/home-canvas-behavior.ts` ✅
   - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-17 — Codex accelerator presentation refresh + formation checklist styling
+
+- Refined public Accelerator presentation on Home Canvas to be more minimal, visual, and less copy-heavy.
+- Updated files:
+  - `src/components/public/home2-sections.tsx`
+  - `src/app/(dashboard)/my-organization/page.tsx`
+- Home accelerator overview changes:
+  - Replaced dense 3-column text blocks with a cleaner showcase surface.
+  - Added minimal slide paginator (segmented tabs + next/prev + dot indicators) with motion transitions.
+  - Added product-style progress preview card using numbered/check state rows.
+  - Kept CTAs focused (`Start free`, `Open accelerator`) and reduced copy volume.
+- Formation Status card changes (`/organization`):
+  - Restyled module list into checklist-style progress rows inspired by supplied reference.
+  - Added compact progress bar + percent complete display.
+  - Complete rows now use filled check state and strikethrough text.
+  - Active/pending rows use numbered circle states.
+  - Removed the `Continue - Lesson N` action from the profile card action area (left `Edit organization` only there).
+- Validation:
+  - `pnpm eslint src/components/public/home2-sections.tsx 'src/app/(dashboard)/my-organization/page.tsx' src/components/public/home-canvas-preview.tsx src/components/public/home-canvas-behavior.ts` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-17 — Codex fix for non-working accelerator readiness checklist action
+
+- Fixed a brittle formation-group lookup that could leave the `Complete formation lessons` action pointing to an invalid/irrelevant target.
+- Files:
+  - `src/app/(accelerator)/accelerator/page.tsx`
+  - `src/lib/accelerator/readiness-checklist.ts`
+- Changes:
+  - formation group detection now supports slug/title contains `formation` and falls back to the first visible group if no exact match exists.
+  - checklist fallback for `Complete formation lessons` now safely routes to `/accelerator` instead of a potentially invalid hard-coded module path.
+- Validation:
+  - `pnpm eslint 'src/app/(accelerator)/accelerator/page.tsx' src/lib/accelerator/readiness-checklist.ts` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-17 — Codex accelerator presentation refinement + checkout guardrail
+
+- Refined Home Canvas Accelerator section to align with requested minimal style and product-UI emphasis.
+- File:
+  - `src/components/public/home2-sections.tsx`
+- Changes:
+  - reduced oversized checklist markers/text for better visual balance.
+  - removed parent panel translate animation; container now stays stable while inner content fades.
+  - switched section typography to app-consistent Inter styling.
+  - replaced text-heavy preview with module-card recreations modeled on real accelerator card UI patterns.
+  - retained compact paginator controls (tabs, arrows, dots) with lighter motion.
+
+- Refined Organization > Formation Status checklist marker sizing.
+- File:
+  - `src/app/(dashboard)/my-organization/page.tsx`
+- Changes:
+  - reduced numbered/check circle size and icon size to match requested compact look.
+
+- Added checkout safety guardrail for stale Stripe records.
+- File:
+  - `src/app/(public)/pricing/actions.ts`
+- Changes:
+  - existing subscription shortcut now only reuses Stripe subscriptions in reusable statuses (`trialing|active|past_due|incomplete`).
+  - if Stripe reports non-reusable status (e.g., canceled), flow proceeds to fresh Checkout instead of short-circuiting to app.
+
+- Validation:
+  - `pnpm eslint src/components/public/home2-sections.tsx 'src/app/(dashboard)/my-organization/page.tsx' 'src/app/(public)/pricing/actions.ts' 'src/app/(accelerator)/accelerator/page.tsx' src/lib/accelerator/readiness-checklist.ts` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅

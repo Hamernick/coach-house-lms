@@ -236,7 +236,14 @@ export default async function AcceleratorOverviewPage() {
   })
   const readinessStateLabel = readiness.verified ? "Verified" : readiness.fundable ? "Fundable" : "Building"
   const readinessTargetLabel = readiness.verified ? null : readiness.fundable ? "Verified" : "Fundable"
-  const formationGroup = visibleGroups.find((group) => group.slug.trim().toLowerCase() === "formation") ?? null
+  const formationGroup =
+    visibleGroups.find((group) => {
+      const slug = group.slug.trim().toLowerCase()
+      const title = group.title.trim().toLowerCase()
+      return slug === "formation" || slug.includes("formation") || title.includes("formation")
+    }) ??
+    visibleGroups[0] ??
+    null
   const nextIncompleteFormationModule =
     formationGroup?.modules.find((module) => module.status !== "completed") ?? formationGroup?.modules[0] ?? null
   const nextCoreRoadmapSection =

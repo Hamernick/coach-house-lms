@@ -2,10 +2,14 @@
 
 import Link from "next/link"
 import { Inter, Sora, Space_Grotesk } from "next/font/google"
-import type { ComponentType, ReactNode } from "react"
+import { AnimatePresence, motion } from "framer-motion"
+import { useState, type ComponentType, type ReactNode } from "react"
 
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
 import CalendarCheck from "lucide-react/dist/esm/icons/calendar-check"
+import Check from "lucide-react/dist/esm/icons/check"
+import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left"
+import ChevronRight from "lucide-react/dist/esm/icons/chevron-right"
 import CircleDollarSign from "lucide-react/dist/esm/icons/circle-dollar-sign"
 import GraduationCap from "lucide-react/dist/esm/icons/graduation-cap"
 import Hand from "lucide-react/dist/esm/icons/hand"
@@ -172,22 +176,112 @@ const PRODUCT_HIGHLIGHTS: Highlight[] = [
   },
 ]
 
-const ACCELERATOR_FOUNDATION_ITEMS = [
-  "Formation modules mapped to real deliverables.",
-  "Strategic roadmap sections that stay editable as your organization evolves.",
-  "Progress tracking so teams can see what is complete and what is next.",
-]
+type AcceleratorPreviewStepState = "complete" | "active" | "pending"
+type AcceleratorPreviewModuleStatus = "not_started" | "in_progress" | "completed"
+type AcceleratorPreviewSlide = {
+  id: string
+  tab: string
+  title: string
+  subtitle: string
+  progressLabel: string
+  progressValue: number
+  modules: Array<{
+    index: number
+    title: string
+    description: string
+    status: AcceleratorPreviewModuleStatus
+  }>
+  steps: Array<{ label: string; state: AcceleratorPreviewStepState }>
+}
 
-const ACCELERATOR_SUPPORT_ITEMS = [
-  "Asynchronous learning for flexible pacing across your team.",
-  "Weekly member programming for accountability and momentum.",
-  "Operations Support adds monthly 1:1 coaching and discounted expert help.",
-]
-
-const ACCELERATOR_OUTCOME_ITEMS = [
-  "Fundability readiness signals in one workspace.",
-  "Clear narrative alignment from mission to programs and outcomes.",
-  "Documentation flow that keeps core formation work organized for grants.",
+const ACCELERATOR_PREVIEW_SLIDES: AcceleratorPreviewSlide[] = [
+  {
+    id: "formation",
+    tab: "Formation",
+    title: "Map your formation work.",
+    subtitle: "Track the essentials in one clean flow.",
+    progressLabel: "2 of 5 complete",
+    progressValue: 40,
+    modules: [
+      {
+        index: 1,
+        title: "Naming your NFP",
+        description: "Define a clear name, identity, and public framing.",
+        status: "completed",
+      },
+      {
+        index: 2,
+        title: "NFP registration",
+        description: "Set structure, legal path, and registration checklist.",
+        status: "in_progress",
+      },
+    ],
+    steps: [
+      { label: "Define mission and legal path", state: "complete" },
+      { label: "Set governance foundation", state: "complete" },
+      { label: "Build strategic roadmap draft", state: "active" },
+      { label: "Align program + funding narrative", state: "pending" },
+      { label: "Finalize funder-ready package", state: "pending" },
+    ],
+  },
+  {
+    id: "roadmap",
+    tab: "Roadmap",
+    title: "Keep strategy visible.",
+    subtitle: "Link milestones, programs, and readiness signals.",
+    progressLabel: "3 of 6 complete",
+    progressValue: 50,
+    modules: [
+      {
+        index: 3,
+        title: "Origin Story",
+        description: "Capture why this work matters now and who it serves.",
+        status: "completed",
+      },
+      {
+        index: 4,
+        title: "Needs statement",
+        description: "Define the problem, evidence, and urgency for funders.",
+        status: "in_progress",
+      },
+    ],
+    steps: [
+      { label: "Origin story and problem statement", state: "complete" },
+      { label: "Program outcomes and evidence", state: "complete" },
+      { label: "Budget + delivery assumptions", state: "complete" },
+      { label: "Fundability score review", state: "active" },
+      { label: "Board review checkpoint", state: "pending" },
+      { label: "Public profile alignment", state: "pending" },
+    ],
+  },
+  {
+    id: "support",
+    tab: "Support",
+    title: "Add coaching when needed.",
+    subtitle: "Move faster with accountability and expert support.",
+    progressLabel: "Now enrolling",
+    progressValue: 72,
+    modules: [
+      {
+        index: 5,
+        title: "Program strategy",
+        description: "Align delivery model, impact outcomes, and capacity.",
+        status: "not_started",
+      },
+      {
+        index: 6,
+        title: "Funding narrative",
+        description: "Package your strategy into a funder-ready storyline.",
+        status: "not_started",
+      },
+    ],
+    steps: [
+      { label: "Weekly member programming", state: "complete" },
+      { label: "Accelerator pacing plan", state: "complete" },
+      { label: "Monthly 1:1 coaching slot", state: "active" },
+      { label: "Expert network handoff", state: "pending" },
+    ],
+  },
 ]
 
 const PROCESS_STEPS = [
@@ -436,69 +530,238 @@ export function Home2OfferingsSection({ layout = "split" }: Home2OfferingsSectio
 }
 
 export function Home2AcceleratorOverviewSection() {
+  const [activeSlide, setActiveSlide] = useState(0)
+  const slide = ACCELERATOR_PREVIEW_SLIDES[activeSlide] ?? ACCELERATOR_PREVIEW_SLIDES[0]
+  const slideCount = ACCELERATOR_PREVIEW_SLIDES.length
+
+  const jumpToSlide = (index: number) => {
+    const normalized = ((index % slideCount) + slideCount) % slideCount
+    setActiveSlide(normalized)
+  }
+
+  const shiftSlide = (delta: -1 | 1) => {
+    jumpToSlide(activeSlide + delta)
+  }
+
+  const resolveModuleStatus = (status: AcceleratorPreviewModuleStatus) => {
+    if (status === "completed") {
+      return {
+        label: "Completed",
+        cta: "Review",
+        className:
+          "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+      }
+    }
+    if (status === "in_progress") {
+      return {
+        label: "In progress",
+        cta: "Continue",
+        className:
+          "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+      }
+    }
+    return {
+      label: "Not started",
+      cta: "Start",
+      className: "border-border/60 bg-background/70 text-muted-foreground",
+    }
+  }
+
+  const stepCircleClass = (state: AcceleratorPreviewStepState) =>
+    cn(
+      "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold tabular-nums transition-colors",
+      state === "complete"
+        ? "border-transparent bg-sky-500 text-white"
+        : state === "active"
+          ? "border-sky-400 text-sky-600 dark:text-sky-200"
+          : "border-border text-muted-foreground",
+    )
+
+  const stepTextClass = (state: AcceleratorPreviewStepState) =>
+    cn(
+      "text-sm font-medium leading-tight tracking-tight",
+      state === "complete" && "text-muted-foreground line-through decoration-2",
+      state === "active" && "text-foreground",
+      state === "pending" && "text-muted-foreground",
+    )
+
   return (
-    <div className="w-full max-w-[920px] space-y-4">
-      <div className="rounded-[30px] border border-border/60 bg-card/70 p-6 shadow-sm sm:p-8">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <span className="inline-flex rounded-full border border-border/70 bg-muted/50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Accelerator
-          </span>
-          <span className="inline-flex rounded-full border border-border/70 bg-muted/30 px-3 py-1 text-[11px] font-semibold text-muted-foreground">
-            Included on paid tiers
-          </span>
-        </div>
-        <h2 className={cn(heading.className, "text-balance text-3xl font-semibold tracking-tight sm:text-4xl")}>
-          Guided structure for formation, momentum, and funding readiness.
-        </h2>
-        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-          The Accelerator combines curriculum, roadmap deliverables, and coaching support so your team can move from
-          idea to execution with consistent progress.
-        </p>
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <Button asChild className="rounded-xl px-5">
-            <Link href="/?section=signup">Start free</Link>
-          </Button>
-          <Button asChild variant="outline" className="rounded-xl px-5">
-            <Link href="/?section=pricing">Compare plans</Link>
-          </Button>
-        </div>
-      </div>
+    <div className={cn(inter.className, "w-full max-w-[980px] space-y-4")}>
+      <div className="rounded-[30px] border border-border/60 bg-card/70 p-4 shadow-sm sm:p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="inline-flex rounded-full border border-border/70 bg-muted/50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Accelerator
+            </span>
+            <span className="inline-flex rounded-full border border-border/70 bg-muted/30 px-3 py-1 text-[11px] font-semibold text-muted-foreground">
+              Included on paid tiers
+            </span>
+          </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-[24px] border border-border/60 bg-card/60 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Build the foundation</p>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            {ACCELERATOR_FOUNDATION_ITEMS.map((item) => (
-              <li key={item} className="flex items-start gap-2">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/70" aria-hidden />
-                <span>{item}</span>
-              </li>
+          <div className="inline-flex items-center rounded-full border border-border/70 bg-background/70 p-1">
+            {ACCELERATOR_PREVIEW_SLIDES.map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => jumpToSlide(index)}
+                className="relative inline-flex h-8 items-center justify-center overflow-hidden rounded-full px-3 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+                aria-pressed={activeSlide === index}
+                aria-label={`Show ${item.tab}`}
+              >
+                {activeSlide === index ? (
+                  <motion.span
+                    layoutId="accelerator-slide-tab"
+                    className="absolute inset-0 rounded-full border border-border/70 bg-background shadow-sm"
+                    transition={{ type: "spring", bounce: 0.18, duration: 0.45 }}
+                  />
+                ) : null}
+                <span className={cn("relative z-10", activeSlide === index && "text-foreground")}>{item.tab}</span>
+              </button>
             ))}
-          </ul>
+          </div>
         </div>
 
-        <div className="rounded-[24px] border border-border/60 bg-card/60 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Stay supported</p>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            {ACCELERATOR_SUPPORT_ITEMS.map((item) => (
-              <li key={item} className="flex items-start gap-2">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/70" aria-hidden />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+          <div className="rounded-[24px] border border-border/60 bg-background/60 p-5">
+            <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">{slide.title}</h2>
+            <p className="mt-2 max-w-lg text-sm text-muted-foreground sm:text-base">{slide.subtitle}</p>
+
+            <div className="mt-5 space-y-2">
+              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+                <span>{slide.progressLabel}</span>
+                <span>{slide.progressValue}%</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                <motion.div
+                  className="h-full rounded-full bg-foreground"
+                  initial={false}
+                  animate={{ width: `${slide.progressValue}%` }}
+                  transition={{ duration: 0.25, ease: "easeOut" }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 min-h-[220px]">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={`${slide.id}-modules`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="grid gap-3 sm:grid-cols-2"
+                >
+                  {slide.modules.map((module) => {
+                    const moduleStatus = resolveModuleStatus(module.status)
+                    return (
+                      <article
+                        key={`${slide.id}-module-${module.index}`}
+                        className="group flex min-h-[182px] flex-col overflow-hidden rounded-[22px] border border-border/60 bg-card text-left shadow-sm"
+                      >
+                        <div className="relative mx-[5px] mb-2 mt-[5px] aspect-[5/3] overflow-hidden rounded-[18px] bg-muted/35">
+                          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-1 text-[10px] font-medium text-muted-foreground shadow-sm">
+                            Module {module.index}
+                          </span>
+                        </div>
+                        <div className="space-y-1 px-3 pb-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{moduleStatus.cta}</span>
+                            <span
+                              className={cn(
+                                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                                moduleStatus.className,
+                              )}
+                            >
+                              {moduleStatus.label}
+                            </span>
+                          </div>
+                          <p className="text-sm font-semibold leading-tight text-foreground">{module.title}</p>
+                          <p className="line-clamp-2 text-xs text-muted-foreground">{module.description}</p>
+                        </div>
+                      </article>
+                    )
+                  })}
+                </motion.div>
+              </AnimatePresence>
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center gap-2">
+              <Button asChild className="rounded-xl px-5">
+                <Link href="/?section=signup">Start free</Link>
+              </Button>
+              <Button asChild variant="outline" className="rounded-xl px-5">
+                <Link href="/accelerator">Open accelerator</Link>
+              </Button>
+            </div>
+          </div>
+
+          <div className="rounded-[24px] border border-border/60 bg-background p-5">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-sm font-semibold tracking-tight text-foreground">Progress</p>
+              <div className="inline-flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => shiftSlide(-1)}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/70 text-muted-foreground transition hover:text-foreground"
+                  aria-label="Previous slide"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => shiftSlide(1)}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/70 text-muted-foreground transition hover:text-foreground"
+                  aria-label="Next slide"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                </button>
+              </div>
+            </div>
+
+            <div className="min-h-[220px]">
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.ul
+                  key={`${slide.id}-steps`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18, ease: "easeOut" }}
+                  className="space-y-2"
+                >
+                  {slide.steps.map((step, index) => (
+                    <li key={`${slide.id}-${step.label}`} className="flex items-center gap-2.5">
+                      <span className={stepCircleClass(step.state)} aria-hidden>
+                        {step.state === "complete" ? <Check className="h-3.5 w-3.5" aria-hidden /> : index + 1}
+                      </span>
+                      <span className={stepTextClass(step.state)}>{step.label}</span>
+                    </li>
+                  ))}
+                </motion.ul>
+              </AnimatePresence>
+            </div>
+          </div>
         </div>
 
-        <div className="rounded-[24px] border border-border/60 bg-card/60 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Get funder-ready</p>
-          <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            {ACCELERATOR_OUTCOME_ITEMS.map((item) => (
-              <li key={item} className="flex items-start gap-2">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-foreground/70" aria-hidden />
-                <span>{item}</span>
-              </li>
-            ))}
-          </ul>
+        <div className="mt-4 flex items-center justify-center gap-2">
+          {ACCELERATOR_PREVIEW_SLIDES.map((item, index) => (
+            <button
+              key={`${item.id}-dot`}
+              type="button"
+              onClick={() => jumpToSlide(index)}
+              className="relative inline-flex h-2.5 w-8 items-center justify-center rounded-full"
+              aria-label={`Go to ${item.tab}`}
+              aria-current={activeSlide === index ? "true" : undefined}
+            >
+              <span className="absolute inset-0 rounded-full bg-muted" />
+              {activeSlide === index ? (
+                <motion.span
+                  layoutId="accelerator-slide-dot"
+                  className="absolute inset-0 rounded-full bg-foreground"
+                  transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                />
+              ) : null}
+            </button>
+          ))}
         </div>
       </div>
     </div>

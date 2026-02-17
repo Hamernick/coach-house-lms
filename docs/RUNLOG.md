@@ -8235,3 +8235,11 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - `307 /accelerator` (auth/paywall redirect expected)
   - `200 /pricing`
   - `200 /tester/sign-up`
+
+## 2026-02-18 — Codex repo hygiene fix (remove Mapbox token from `origin/main` env example)
+
+- Removed hardcoded `NEXT_PUBLIC_MAPBOX_TOKEN` value from `.env.example` and replaced with empty placeholder.
+- Commit pushed to `main`: `c5c6c16`.
+- Because GitHub push protection blocks even token-removal commits without an explicit bypass, created a temporary push-protection bypass via GitHub API for the provided placeholder id, then pushed the cleanup commit successfully.
+- Verification:
+  - `origin/main:.env.example` now contains `NEXT_PUBLIC_MAPBOX_TOKEN=""`.

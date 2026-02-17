@@ -13,6 +13,9 @@ Status legend:
 | Brief | Status | Owner | Last touched | Notes |
 |---|---|---|---|---|
 | `docs/briefs/onboarding-simplification.md` | active | Caleb | 2026-01-15 | Needs follow-through on remaining onboarding/UI polish tasks. |
+| `docs/briefs/tester-rollout-pricing-access-overhaul.md` | active | Caleb + Codex | 2026-02-16 | Consolidated execution plan for tester tooling governance, 3-tier pricing/access model, onboarding intent step, paywall updates, and Stripe lifecycle validation. |
+| `docs/briefs/tester-route-walkthrough-2026-02-16.md` | active | Caleb + Codex | 2026-02-16 | Current route/gating walkthrough from signup -> onboarding -> paywall -> pricing/entitlements for tester rollout QA. |
+| `docs/briefs/stripe-tier-readiness-2026-02-16.md` | active | Caleb + Codex | 2026-02-16 | Stripe env + transition readiness brief for Free/$20/$58 model, including automated coverage and manual smoke checklist. |
 | `docs/briefs/coaching-booking.md` | done | Caleb | 2026-01-16 | Standardized booking CTAs + 3-tier scheduling links. |
 | `docs/briefs/budget-table-ux.md` | done | Caleb | 2026-01-16 | Updated budget table UX, CSV template, and mini guide. |
 | `docs/briefs/budget-table-rebuild.md` | active | Caleb | 2026-01-16 | TanStack rebuild for spreadsheet-grade budget table behavior. |
@@ -35,9 +38,9 @@ Status legend:
 | `docs/briefs/roadmap-section-routing.md` | done | Caleb | 2026-01-26 | Persist roadmap section selection via slug routes. |
 | `docs/briefs/frameworks.md` | active | Caleb | 2026-01-20 | Frameworks: context-aware roadmap suggestions + popover actions; AI provider TBD. |
 | `docs/briefs/stripe-gating.md` | active | Caleb + Codex | 2026-02-06 | Updated billing + entitlement contract for Accelerator one-time (180-day included), monthly installment metering, and rollover logic. |
-| `docs/briefs/pricing-page.md` | needs_update | Caleb | 2026-01-13 | Update copy/features for new Accelerator payment option + “public org profile” in free tier. |
-| `docs/briefs/pricing-accelerator-bundle.md` | needs_update | Caleb | 2026-01-13 | Update (installment option replaces older bundle notes). |
-| `docs/briefs/electives-addons.md` | blocked | Caleb | 2026-01-15 | Blocked on “Electives 1–3 = free formation flow?” decision. |
+| `docs/briefs/pricing-page.md` | superseded | Caleb | 2026-01-13 | Superseded by `docs/briefs/tester-rollout-pricing-access-overhaul.md`. |
+| `docs/briefs/pricing-accelerator-bundle.md` | superseded | Caleb | 2026-01-13 | Superseded by `docs/briefs/tester-rollout-pricing-access-overhaul.md`. |
+| `docs/briefs/electives-addons.md` | superseded | Caleb | 2026-01-15 | Superseded by `docs/briefs/tester-rollout-pricing-access-overhaul.md` decision lock. |
 | `docs/briefs/elective-entitlement-scenarios.md` | done | Codex | 2026-02-06 | Implemented v1 matrix for formation vs elective vs accelerator access, checkout modes, and route guards. |
 | `docs/briefs/global-search.md` | done | Caleb | 2026-01-15 | v1 shipped; revisit only if new scope added. |
 | `docs/briefs/multi-account-org-access.md` | done | Caleb | 2026-01-15 | v1 shipped (RLS + active org resolver). |

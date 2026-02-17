@@ -94,7 +94,7 @@ export default async function ModulePage({
 
   const isFormationClass = slug === "electives"
   if (!entitlements.hasAcceleratorAccess && !isAdmin && !isFormationClass) {
-    redirect("/my-organization?paywall=accelerator&plan=accelerator&source=module")
+    redirect("/organization?paywall=organization&plan=organization&source=module")
   }
 
   if (!isAdmin && isFormationClass) {
@@ -108,7 +108,7 @@ export default async function ModulePage({
       entitlements.ownedElectiveModuleSlugs.includes(moduleSlug)
     if (requiresElectivePurchase && !hasElectiveAccess) {
       redirect(
-        `/my-organization?paywall=elective&plan=electives&module=${encodeURIComponent(moduleSlug)}&source=module`,
+        `/organization?paywall=organization&plan=organization&module=${encodeURIComponent(moduleSlug)}&source=module`,
       )
     }
   }
@@ -121,6 +121,7 @@ export default async function ModulePage({
     slug,
     modules: classContext.modules.map((module) => ({
       id: module.id,
+      idx: module.idx,
       title: module.title,
       subtitle: module.description ?? undefined,
       videoUrl: module.videoUrl ?? null,

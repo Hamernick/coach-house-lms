@@ -8,6 +8,8 @@ import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
+import type { Json } from "@/lib/supabase"
+import { hasPaidTeamAccessFromSubscription } from "@/lib/billing/subscription-access"
 
 export default async function AdminLayout({ children, breadcrumbs }: { children: ReactNode; breadcrumbs: ReactNode }) {
   const supabase = await createSupabaseServerClient()
@@ -39,8 +41,19 @@ export default async function AdminLayout({ children, breadcrumbs }: { children:
     .eq("id", user.id)
     .maybeSingle<{ role: string | null }>()
   const isAdmin = roleRow?.role === "admin"
-  const { role } = await resolveActiveOrganization(supabase, user.id)
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   const showOrgAdmin = role === "owner" || role === "admin" || isAdmin
+  let canAccessOrgAdmin = isAdmin
+  if (!isAdmin && showOrgAdmin) {
+    const { data: subscription } = await supabase
+      .from("subscriptions")
+      .select("status, metadata, created_at")
+      .eq("user_id", orgId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ status: string | null; metadata: Json | null }>()
+    canAccessOrgAdmin = hasPaidTeamAccessFromSubscription(subscription ?? null)
+  }
   let showAccelerator = isAdmin
 
   if (!isAdmin) {
@@ -64,6 +77,7 @@ export default async function AdminLayout({ children, breadcrumbs }: { children:
       user={{ name: displayName, email, avatar }}
       isAdmin={isAdmin}
       showOrgAdmin={showOrgAdmin}
+      canAccessOrgAdmin={canAccessOrgAdmin}
       showAccelerator={showAccelerator}
       context="platform"
     >

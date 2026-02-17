@@ -49,7 +49,8 @@ export function ModuleDetail({
 
   const pathname = usePathname()
   const basePath = pathname?.startsWith("/accelerator") ? "/accelerator" : ""
-  const breakHref = basePath ? "/accelerator" : "/my-organization"
+  const breakHref = basePath ? "/accelerator" : "/organization"
+  const completedModuleIdSet = useMemo(() => new Set(completedModuleIds), [completedModuleIds])
 
   const embedUrl = getVideoEmbedUrl(m.videoUrl)
   const inlineVideoUrl = getInlineVideoUrl(m.videoUrl)
@@ -60,7 +61,11 @@ export function ModuleDetail({
     [c.modules, m.id],
   )
   const nextModule = currentModuleIndex >= 0 ? c.modules[currentModuleIndex + 1] : null
-  const nextHref = nextModule && c.slug ? `${basePath}/class/${c.slug}/module/${currentModuleIndex + 2}` : null
+  const nextRouteIndex =
+    typeof nextModule?.idx === "number" && Number.isFinite(nextModule.idx)
+      ? nextModule.idx
+      : currentModuleIndex + 2
+  const nextHref = nextModule && c.slug ? `${basePath}/class/${c.slug}/module/${nextRouteIndex}` : null
   useEffect(() => {
     if (typeof window === "undefined") return
     completedModuleIds.forEach((id) => {
@@ -123,8 +128,9 @@ export function ModuleDetail({
         nextHref={nextHref}
         nextLocked={nextLocked}
         breakHref={breakHref}
-        moduleIndex={currentModuleIndex >= 0 ? currentModuleIndex : null}
         moduleCount={c.modules.length}
+        completedModuleCount={completedModuleIdSet.size}
+        isCurrentModuleCompleted={completedModuleIdSet.has(m.id)}
       />
 
     </div>

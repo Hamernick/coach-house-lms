@@ -144,7 +144,7 @@ async function attachOrganizationImages({
 
   for (const result of results) {
     if (result.image) continue
-    if (result.href === "/my-organization") {
+    if (result.href === "/organization") {
       needsSelf = true
       continue
     }
@@ -192,7 +192,7 @@ async function attachOrganizationImages({
 
   return results.map((result) => {
     if (result.image) return result
-    if (result.href === "/my-organization" && selfLogoUrl) {
+    if (result.href === "/organization" && selfLogoUrl) {
       return { ...result, image: selfLogoUrl }
     }
     if (result.group === "Community") {
@@ -239,7 +239,7 @@ async function addActiveOrganizationResults({
         id: `program:${program.id}`,
         label: program.title ?? "Untitled program",
         subtitle: program.subtitle ?? program.status_label ?? undefined,
-        href: `/my-organization?tab=programs&programId=${program.id}`,
+        href: `/organization?tab=programs&programId=${program.id}`,
         group: "Programs",
       })
     }
@@ -264,7 +264,7 @@ async function addActiveOrganizationResults({
       id: `org:${orgId}`,
       label: name || "My organization",
       subtitle: "Your organization",
-      href: "/my-organization",
+      href: "/organization",
       group: "My organization",
     })
   }
@@ -293,7 +293,7 @@ async function addActiveOrganizationResults({
         id: `doc:${orgId}:${key}`,
         label: name || label,
         subtitle: label,
-        href: "/my-organization/documents",
+        href: "/organization/documents",
         group: "Documents",
         keywords: [key, label].filter(Boolean),
       })
@@ -398,7 +398,7 @@ async function addFallbackResults({
         id: `program:${program.id}`,
         label: program.title ?? "Untitled program",
         subtitle: program.subtitle ?? program.status_label ?? undefined,
-        href: `/my-organization?tab=programs&programId=${program.id}`,
+        href: `/organization?tab=programs&programId=${program.id}`,
         group: "Programs",
       })
     }
@@ -427,7 +427,7 @@ async function addFallbackResults({
         id: `org:${userOrg.user_id}`,
         label: name || "My organization",
         subtitle: "Your organization",
-        href: "/my-organization",
+        href: "/organization",
         group: "My organization",
         image: logoUrl || undefined,
         keywords: [tagline, mission, description].filter(Boolean),
@@ -459,7 +459,7 @@ async function addFallbackResults({
           id: `doc:${userOrg.user_id}:${key}`,
           label: name || label,
           subtitle: label,
-          href: "/my-organization/documents",
+          href: "/organization/documents",
           group: "Documents",
           keywords: [key, label].filter(Boolean),
         })

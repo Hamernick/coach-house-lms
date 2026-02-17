@@ -15,8 +15,6 @@ import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 
-export const dynamic = "force-dynamic"
-
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value)
 
@@ -48,7 +46,7 @@ export default async function MyOrganizationDocumentsPage() {
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw supabaseErrorToError(userError, "Unable to load user.")
   }
-  if (!user) redirect("/login?redirect=/my-organization/documents")
+  if (!user) redirect("/login?redirect=/organization/documents")
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   const canEdit = canEditOrganization(role)

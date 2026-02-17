@@ -30,7 +30,7 @@ describe("readiness checklist link resolution", () => {
     expect(checklist).toEqual([
       { href: "/accelerator/class/formation/module/1", label: "Complete formation lessons" },
       { href: "/accelerator/roadmap/origin-story", label: "Complete core roadmap sections" },
-      { href: "/my-organization/documents", label: "Upload verification letter" },
+      { href: "/organization/documents", label: "Upload verification letter" },
     ])
   })
 
@@ -39,6 +39,6 @@ describe("readiness checklist link resolution", () => {
       reasons: ["Unknown reason", "Upload legal formation document", "Upload legal formation document"],
     })
 
-    expect(checklist).toEqual([{ href: "/my-organization/documents", label: "Upload legal document" }])
+    expect(checklist).toEqual([{ href: "/organization/documents", label: "Upload legal document" }])
   })
 })

@@ -22,15 +22,16 @@ import {
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
+const AVAILABLE_ACCOUNT_INTENT = "founder_exec" as const
+
 const ACCOUNT_INTENT_OPTIONS = [
-  { value: "founder_exec", label: "Founder / Executive lead" },
-  { value: "staff_operator", label: "Staff / Program operator" },
-  { value: "board_member", label: "Board member" },
-  { value: "funder_partner", label: "Funder / Partner / Advisor" },
+  { value: "founder_exec", label: "Founder / Executive lead", available: true },
+  { value: "staff_operator", label: "Staff / Program operator", available: false },
+  { value: "board_member", label: "Board member", available: false },
+  { value: "funder_partner", label: "Funder / Partner / Advisor", available: false },
 ] as const
 
 const schema = z.object({
-  accountIntent: z.string().min(1, "Select your role"),
   email: z.string().email("Enter a valid email"),
   password: z.string().min(8, "Password must be at least 8 characters"),
 })
@@ -40,11 +41,17 @@ type SignUpValues = z.infer<typeof schema>
 type SignUpFormProps = {
   redirectTo?: string
   loginHref?: string
+  signUpMetadata?: Record<string, unknown>
 }
 
-export function SignUpForm({ redirectTo = "/my-organization", loginHref }: SignUpFormProps) {
+function isExistingAccountResponse(user: { identities?: unknown[] } | null | undefined) {
+  return Boolean(user && Array.isArray(user.identities) && user.identities.length === 0)
+}
+
+export function SignUpForm({ redirectTo = "/organization", loginHref, signUpMetadata }: SignUpFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
+  const [accountIntent, setAccountIntent] = useState<typeof AVAILABLE_ACCOUNT_INTENT>(AVAILABLE_ACCOUNT_INTENT)
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState<string>("")
   const [countdown, setCountdown] = useState(20)
@@ -54,7 +61,6 @@ export function SignUpForm({ redirectTo = "/my-organization", loginHref }: SignU
   const form = useForm<SignUpValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      accountIntent: "",
       email: "",
       password: "",
     },
@@ -85,13 +91,14 @@ export function SignUpForm({ redirectTo = "/my-organization", loginHref }: SignU
     startTransition(async () => {
       const emailRedirectTo = resolveAuthCallbackUrl(redirectTo)
 
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
           emailRedirectTo,
           data: {
-            account_intent: values.accountIntent,
+            account_intent: accountIntent,
+            ...(signUpMetadata ?? {}),
           },
         },
       })
@@ -99,6 +106,12 @@ export function SignUpForm({ redirectTo = "/my-organization", loginHref }: SignU
       if (error) {
         setStatus("error")
         setMessage(error.message)
+        return
+      }
+
+      if (isExistingAccountResponse(data.user)) {
+        setStatus("error")
+        setMessage("An account with this email already exists. Sign in instead.")
         return
       }
 
@@ -114,30 +127,40 @@ export function SignUpForm({ redirectTo = "/my-organization", loginHref }: SignU
     <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="accountIntent"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Role</FormLabel>
-                <Select value={field.value || undefined} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select your role" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {ACCOUNT_INTENT_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="space-y-2">
+            <FormLabel>Role</FormLabel>
+            <Select
+              value={accountIntent}
+              onValueChange={(value) => {
+                if (value === AVAILABLE_ACCOUNT_INTENT) {
+                  setAccountIntent(value)
+                }
+              }}
+            >
+              <FormControl>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your role" />
+                </SelectTrigger>
+              </FormControl>
+                <SelectContent>
+                  {ACCOUNT_INTENT_OPTIONS.map((option) => (
+                    <SelectItem
+                      key={option.value}
+                      value={option.value}
+                      disabled={option.value !== AVAILABLE_ACCOUNT_INTENT}
+                    >
+                      {option.label}
+                      {!option.available ? (
+                        <span className="text-xs text-muted-foreground"> — Coming soon</span>
+                      ) : null}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Additional role options are coming soon.
+            </p>
+          </div>
           <FormField
             control={form.control}
             name="email"
@@ -178,7 +201,14 @@ export function SignUpForm({ redirectTo = "/my-organization", loginHref }: SignU
                     Go now
                   </Link>
                 </>
-              ) : null}
+              ) : (
+                <>
+                  {" "}
+                  <Link href={resolvedLoginHref} className="underline underline-offset-2 hover:no-underline">
+                    Go to sign in
+                  </Link>
+                </>
+              )}
             </p>
           ) : null}
           <Button className="w-full" type="submit" disabled={isPending}>

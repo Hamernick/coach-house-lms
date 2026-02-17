@@ -281,8 +281,6 @@ export default async function AcceleratorOverviewPage() {
     nextGroup?.modules.find((module) => module.status !== "completed") ??
     nextGroup?.modules[0] ??
     null
-  const continueHref = nextModule?.href ?? "/accelerator"
-  const continueModuleLabel = nextModule?.title ?? "Continue in Accelerator"
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-8 p-6 lg:p-8">
@@ -294,7 +292,7 @@ export default async function AcceleratorOverviewPage() {
           status: section.status,
         }))}
       />
-      <section id="overview" className="space-y-6">
+      <section id="overview" className="space-y-6" data-tour="accelerator-get-started">
         <AcceleratorWelcomeBanner userId={user.id} />
 
         <AcceleratorOrgSnapshotStrip
@@ -316,8 +314,6 @@ export default async function AcceleratorOverviewPage() {
           readinessStateLabel={readinessStateLabel}
           readinessTargetLabel={readinessTargetLabel}
           readinessChecklist={readinessChecklist}
-          continueHref={continueHref}
-          continueModuleLabel={continueModuleLabel}
         />
 
         <RoadmapOutlineCard sections={roadmapSections} modules={timelineModules} />
@@ -353,7 +349,7 @@ export default async function AcceleratorOverviewPage() {
                   statusLabel="Template"
                   chips={template.chips}
                   ctaLabel="View template"
-                  ctaHref="/my-organization?tab=programs"
+                  ctaHref="/organization?tab=programs"
                   ctaTarget="_self"
                   patternId={template.patternId}
                   variant="medium"

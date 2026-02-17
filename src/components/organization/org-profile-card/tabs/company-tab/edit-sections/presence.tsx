@@ -9,7 +9,7 @@ export function PresenceSection({ company, errors, onInputChange }: CompanyEditP
   return (
     <FormRow title="Presence" description="Primary website and newsletter.">
       <div className="grid gap-4 md:grid-cols-2">
-        <ProfileField label="Website URL">
+        <ProfileField label="Website">
           <InputWithIcon
             icon={PROVIDER_ICON.generic}
             inputProps={{
@@ -17,11 +17,13 @@ export function PresenceSection({ company, errors, onInputChange }: CompanyEditP
               value: company.publicUrl ?? "",
               onChange: onInputChange,
               "aria-invalid": Boolean(errors.publicUrl),
-              placeholder: "example.org",
+              placeholder: "google.com",
             }}
           />
           {errors.publicUrl ? <p className="text-xs text-destructive">{errors.publicUrl}</p> : null}
-          <p className="text-xs text-muted-foreground">Paste a domain or full URL — we&apos;ll add https:// if missing.</p>
+          <p className="text-xs text-muted-foreground">
+            Your organization&apos;s own website (not your Coach House public page URL).
+          </p>
         </ProfileField>
         <ProfileField label="Newsletter">
           <InputWithIcon

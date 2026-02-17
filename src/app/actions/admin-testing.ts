@@ -2,19 +2,9 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { resolveDevtoolsAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
 
 type AdminTestingActionResult = { ok: true } | { error: string }
-
-async function isAdminUser(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, userId: string) {
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .maybeSingle<{ role: string | null }>()
-
-  if (error) return false
-  return profile?.role === "admin"
-}
 
 export async function resetOnboardingCompletionAction(): Promise<AdminTestingActionResult> {
   const supabase = await createSupabaseServerClient()
@@ -26,8 +16,12 @@ export async function resetOnboardingCompletionAction(): Promise<AdminTestingAct
   if (error && !isSupabaseAuthSessionMissingError(error)) return { error: "Unable to load user." }
   if (!user) return { error: "Not authenticated." }
 
-  const isAdmin = await isAdminUser(supabase, user.id)
-  if (!isAdmin) return { error: "Forbidden." }
+  const audience = await resolveDevtoolsAudience({
+    supabase,
+    userId: user.id,
+    fallbackIsTester: resolveTesterMetadata(user.user_metadata ?? null),
+  })
+  if (!audience.isAdmin && !audience.isTester) return { error: "Forbidden." }
 
   const { error: updateError } = await supabase.auth.updateUser({
     data: {
@@ -39,4 +33,3 @@ export async function resetOnboardingCompletionAction(): Promise<AdminTestingAct
   if (updateError) return { error: "Unable to update onboarding state." }
   return { ok: true }
 }
-

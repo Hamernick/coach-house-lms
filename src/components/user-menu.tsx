@@ -27,7 +27,7 @@ export function UserMenu({ name, email }: UserMenuProps) {
   function signOut() {
     startTransition(async () => {
       await fetch("/api/auth/signout", { method: "POST" })
-      router.replace("/login")
+      router.replace("/")
       router.refresh()
     })
   }

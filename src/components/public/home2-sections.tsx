@@ -111,7 +111,7 @@ type Highlight = {
 
 const PRODUCT_HIGHLIGHTS: Highlight[] = [
   {
-    href: "/my-organization",
+    href: "/organization",
     eyebrow: "Platform",
     title: "Platform",
     description: "Strategic roadmap, organization profile, and funding-readiness tools in one shared workspace.",
@@ -120,7 +120,6 @@ const PRODUCT_HIGHLIGHTS: Highlight[] = [
     size: "m",
   },
   {
-    href: "/community#groups",
     eyebrow: "Community",
     title: "Community",
     description: "Connect with founders, share wins, and get real-time help.",
@@ -137,7 +136,7 @@ const PRODUCT_HIGHLIGHTS: Highlight[] = [
     href: "/accelerator",
     eyebrow: "Curriculum",
     title: "Accelerator + coaching",
-    description: "Guided assignments, pacing, and 1:1 sessions to keep you shipping every week.",
+    description: "Guided assignments, clear pacing, and 1:1 sessions to help your team make steady progress each week.",
     seed: "news-accelerator",
     icon: <GraduationCap className="h-5 w-5" aria-hidden />,
     size: "l",
@@ -165,7 +164,7 @@ const PRODUCT_HIGHLIGHTS: Highlight[] = [
     href: "https://coach-house.gitbook.io/coach-house",
     eyebrow: "Documentation",
     title: "Documentation",
-    description: "Implementation guides, platform references, and runbooks.",
+    description: "Open Source tools, frameworks, and best practices for nonprofits.",
     seed: "news-docs",
     icon: <Notebook className="h-5 w-5" aria-hidden />,
     external: true,
@@ -419,15 +418,19 @@ export function Home2OfferingsSection({ layout = "split" }: Home2OfferingsSectio
 }
 
 function HighlightCard({ item, className }: { item: Highlight; className?: string }) {
+  const isInteractive = Boolean(item.href || item.modal)
   const baseClassName = cn(
-    "group relative flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-sm transition duration-300 ease-out hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+    "group relative flex h-full min-h-0 flex-col overflow-hidden rounded-[28px] border border-border/60 bg-card/80 p-5 shadow-sm transition duration-300 ease-out",
+    isInteractive && "hover:-translate-y-1 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
     className,
   )
   const content = (
     <>
-      <span className="pointer-events-none absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground/70 shadow-sm ring-1 ring-border/40 transition group-hover:bg-background/80 group-hover:text-muted-foreground">
-        <ArrowUpRight className="h-4 w-4" aria-hidden />
-      </span>
+      {isInteractive ? (
+        <span className="pointer-events-none absolute right-4 top-4 inline-flex h-8 w-8 items-center justify-center rounded-full bg-background/60 text-muted-foreground/70 shadow-sm ring-1 ring-border/40 transition group-hover:bg-background/80 group-hover:text-muted-foreground">
+          <ArrowUpRight className="h-4 w-4" aria-hidden />
+        </span>
+      ) : null}
       <div className="flex h-full flex-col justify-between">
         <div className="flex flex-col items-start gap-3">
           <div className="flex w-full items-end justify-start gap-3">

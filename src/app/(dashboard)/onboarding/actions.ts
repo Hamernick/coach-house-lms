@@ -19,6 +19,7 @@ const RESERVED_SLUGS = new Set([
   "class",
   "dashboard",
   "people",
+  "organization",
   "my-organization",
   "_next",
   "public",
@@ -46,7 +47,7 @@ export async function completeOnboardingAction(form: FormData) {
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw supabaseErrorToError(userError, "Unable to load user.")
   }
-  if (!user) redirect("/login?redirect=/my-organization")
+  if (!user) redirect("/login?redirect=/organization")
 
   const first = String(form.get("firstName") || "").trim()
   const last = String(form.get("lastName") || "").trim()
@@ -56,6 +57,19 @@ export async function completeOnboardingAction(form: FormData) {
   const linkedin = String(form.get("linkedin") || "").trim()
   const marketingOptIn = Boolean(form.get("optInUpdates"))
   const newsletterOptIn = Boolean(form.get("newsletterOptIn"))
+  const intentFocusRaw = String(form.get("intentFocus") || "").trim()
+  const roleInterestRaw = String(form.get("roleInterest") || "").trim()
+  const intentFocus =
+    intentFocusRaw === "build" || intentFocusRaw === "find" || intentFocusRaw === "fund" || intentFocusRaw === "support"
+      ? intentFocusRaw
+      : null
+  const roleInterest =
+    roleInterestRaw === "staff" ||
+    roleInterestRaw === "operator" ||
+    roleInterestRaw === "volunteer" ||
+    roleInterestRaw === "board_member"
+      ? roleInterestRaw
+      : null
 
   const formationStatusRaw = String(form.get("formationStatus") || "").trim()
   const formationStatus =
@@ -67,17 +81,24 @@ export async function completeOnboardingAction(form: FormData) {
   const orgSlugRaw = String(form.get("orgSlug") || "").trim()
   const normalizedSlug = slugify(orgSlugRaw || orgName)
 
+  if (!intentFocus) {
+    redirect("/organization?onboarding=1&error=missing_intent_focus")
+  }
+  if (intentFocus !== "build") {
+    redirect("/organization?onboarding=1&error=intent_focus_coming_soon")
+  }
+
   if (!orgName) {
-    redirect("/my-organization?onboarding=1&error=missing_org_name")
+    redirect("/organization?onboarding=1&error=missing_org_name")
   }
   if (!normalizedSlug) {
-    redirect("/my-organization?onboarding=1&error=missing_org_slug")
+    redirect("/organization?onboarding=1&error=missing_org_slug")
   }
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) {
-    redirect(`/my-organization?onboarding=1&error=invalid_org_slug&slug=${encodeURIComponent(normalizedSlug)}`)
+    redirect(`/organization?onboarding=1&error=invalid_org_slug&slug=${encodeURIComponent(normalizedSlug)}`)
   }
   if (RESERVED_SLUGS.has(normalizedSlug)) {
-    redirect(`/my-organization?onboarding=1&error=reserved_org_slug&slug=${encodeURIComponent(normalizedSlug)}`)
+    redirect(`/organization?onboarding=1&error=reserved_org_slug&slug=${encodeURIComponent(normalizedSlug)}`)
   }
 
   const { count: slugCount, error: slugError } = await supabase
@@ -88,7 +109,7 @@ export async function completeOnboardingAction(form: FormData) {
 
   if (slugError) throw supabaseErrorToError(slugError, "Unable to validate organization URL.")
   if ((slugCount ?? 0) > 0) {
-    redirect(`/my-organization?onboarding=1&error=slug_taken&slug=${encodeURIComponent(normalizedSlug)}`)
+    redirect(`/organization?onboarding=1&error=slug_taken&slug=${encodeURIComponent(normalizedSlug)}`)
   }
 
   let avatarUrl: string | null = null
@@ -120,6 +141,14 @@ export async function completeOnboardingAction(form: FormData) {
     name: orgName,
     ...(formationStatus ? { formationStatus } : {}),
     ...(linkedin.length > 0 ? { linkedin } : {}),
+    ...(
+      avatarUrl &&
+      (!existingOrg?.profile || typeof existingOrg.profile["logoUrl"] !== "string" || existingOrg.profile["logoUrl"].trim().length === 0)
+        ? { logoUrl: avatarUrl }
+        : {}
+    ),
+    onboarding_intent_focus: intentFocus,
+    ...(roleInterest ? { onboarding_role_interest: roleInterest } : {}),
   }
 
   const existingPeopleRaw = Array.isArray((existingOrg?.profile ?? {})?.org_people)
@@ -168,8 +197,10 @@ export async function completeOnboardingAction(form: FormData) {
       marketing_opt_in: marketingOptIn,
       newsletter_opt_in: newsletterOptIn,
       phone: phone.length > 0 ? phone : null,
+      onboarding_intent_focus: intentFocus,
+      onboarding_role_interest: roleInterest,
     },
   })
 
-  redirect("/my-organization?welcome=1")
+  redirect("/organization?paywall=organization&plan=organization&source=onboarding")
 }

@@ -5,19 +5,19 @@ export type ReadinessChecklistItem = {
 
 const READINESS_REASON_TO_CTA: Record<string, { href: string; label: string }> = {
   "Set a program funding goal": {
-    href: "/my-organization?view=editor&tab=programs",
+    href: "/organization?view=editor&tab=programs",
     label: "Set a program funding goal",
   },
   "Upload legal formation document": {
-    href: "/my-organization/documents",
+    href: "/organization/documents",
     label: "Upload legal document",
   },
   "Upload verification letter": {
-    href: "/my-organization/documents",
+    href: "/organization/documents",
     label: "Upload verification letter",
   },
   "Formation status must be approved": {
-    href: "/my-organization?view=editor&tab=company",
+    href: "/organization?view=editor&tab=company",
     label: "Set formation status",
   },
 }

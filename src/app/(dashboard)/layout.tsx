@@ -4,16 +4,24 @@ import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { completeOnboardingAction } from "@/app/(dashboard)/onboarding/actions"
-import { fetchSidebarTree } from "@/lib/academy"
+import { fetchSidebarTree, type SidebarClass } from "@/lib/academy"
 import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
 import { AppShell } from "@/components/app-shell"
 import { FrameEscape } from "@/components/navigation/frame-escape"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
+import { resolveProfileAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
+import { resolvePricingPlanTier, type PricingPlanTier } from "@/lib/billing/plan-tier"
 import type { Json } from "@/lib/supabase"
 
-export default async function DashboardLayout({ children, breadcrumbs }: { children: ReactNode; breadcrumbs?: ReactNode }) {
+export default async function DashboardLayout({
+  children,
+  breadcrumbs,
+}: {
+  children: ReactNode
+  breadcrumbs?: ReactNode
+}) {
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -28,6 +36,7 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
   let email: string | null = user?.email ?? null
   let avatar: string | null = null
   let isAdmin = false
+  let isTester = false
   let needsOnboarding = false
   let acceleratorProgress: number | null = null
   let showLiveBadges = false
@@ -39,30 +48,44 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
   let hasElectiveAccess = false
   let ownedElectiveModuleSlugs: string[] = []
   let showOrgAdmin = false
+  let canAccessOrgAdmin = false
   let formationStatus: string | null = null
+  let organizationName: string | null = null
+  let currentPlanTier: PricingPlanTier = "free"
 
   if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("full_name, role, avatar_url")
-      .eq("id", user.id)
-      .maybeSingle<{ full_name: string | null; role: string | null; avatar_url: string | null }>()
+    const fallbackIsTester = resolveTesterMetadata(user.user_metadata ?? null)
+    const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
+    const completed = Boolean(userMeta?.onboarding_completed)
 
-    displayName = profile?.full_name ?? (user.user_metadata?.full_name as string | undefined) ?? null
-    isAdmin = profile?.role === "admin"
+    const [profileAudience, activeOrg] = await Promise.all([
+      resolveProfileAudience({
+        supabase,
+        userId: user.id,
+        fallbackIsTester,
+      }),
+      resolveActiveOrganization(supabase, user.id),
+    ])
+
+    displayName =
+      profileAudience.fullName ?? (user.user_metadata?.full_name as string | undefined) ?? null
+    isAdmin = profileAudience.isAdmin
+    isTester = profileAudience.isTester
 
     if (!email && typeof user.user_metadata?.email === "string") {
       email = user.user_metadata.email as string
     }
 
-    avatar = profile?.avatar_url ?? (typeof user.user_metadata?.avatar_url === "string" ? (user.user_metadata.avatar_url as string) : null)
+    avatar =
+      profileAudience.avatarUrl ??
+      (typeof user.user_metadata?.avatar_url === "string"
+        ? (user.user_metadata.avatar_url as string)
+        : null)
 
-    const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
-    const completed = Boolean(userMeta?.onboarding_completed)
-    // Admins never see onboarding; students see it until completed
+    // Admins never see onboarding; students see it until completed.
     needsOnboarding = !isAdmin && !completed
 
-    const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+    const { orgId, role } = activeOrg
     showOrgAdmin = role === "owner" || role === "admin"
     if (isAdmin) {
       showOrgAdmin = true
@@ -72,49 +95,80 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
       needsOnboarding = false
     }
 
-    {
-      const { data: orgProfileRow } = await supabase
+    const [orgRowResult, entitlements] = await Promise.all([
+      supabase
         .from("organizations")
-        .select("profile")
+        .select("profile, public_slug, is_public, is_public_roadmap")
         .eq("user_id", orgId)
-        .maybeSingle<{ profile: Json | null }>()
-      const orgProfile = (orgProfileRow?.profile as Record<string, unknown> | null) ?? null
-      const fs = typeof orgProfile?.formationStatus === "string" ? orgProfile.formationStatus : null
-      formationStatus = fs
-    }
+        .maybeSingle<{
+          profile: Json | null
+          public_slug: string | null
+          is_public: boolean | null
+          is_public_roadmap: boolean | null
+        }>(),
+      fetchLearningEntitlements({
+        supabase,
+        userId: user.id,
+        orgUserId: orgId,
+        isAdmin,
+      }),
+    ])
 
-    const tutorialsCompleted = Array.isArray(userMeta?.tutorials_completed)
-      ? (userMeta?.tutorials_completed as unknown[]).filter((t): t is string => typeof t === "string")
-      : []
-    const tutorialsDismissed = Array.isArray(userMeta?.tutorials_dismissed)
-      ? (userMeta?.tutorials_dismissed as unknown[]).filter((t): t is string => typeof t === "string")
-      : []
+    const orgProfile = (orgRowResult.data?.profile as Record<string, unknown> | null) ?? null
+    const fs = typeof orgProfile?.formationStatus === "string" ? orgProfile.formationStatus : null
+    formationStatus = fs
+    const orgName = typeof orgProfile?.name === "string" ? orgProfile.name.trim() : ""
+    organizationName = orgName.length > 0 ? orgName : null
 
     if (publicSharingEnabled) {
-      const { data: orgRow } = await supabase
-        .from("organizations")
-        .select("public_slug, is_public, is_public_roadmap")
-        .eq("user_id", orgId)
-        .maybeSingle<{ public_slug: string | null; is_public: boolean | null; is_public_roadmap: boolean | null }>()
-
-      const hasSlug = Boolean(orgRow?.public_slug && orgRow.public_slug.trim().length > 0)
-      showLiveBadges = hasSlug && Boolean(orgRow?.is_public) && Boolean(orgRow?.is_public_roadmap)
+      const hasSlug = Boolean(
+        orgRowResult.data?.public_slug && orgRowResult.data.public_slug.trim().length > 0,
+      )
+      showLiveBadges =
+        hasSlug &&
+        Boolean(orgRowResult.data?.is_public) &&
+        Boolean(orgRowResult.data?.is_public_roadmap)
     }
 
-    const entitlements = await fetchLearningEntitlements({
-      supabase,
-      userId: user.id,
-      orgUserId: orgId,
-      isAdmin,
-    })
     hasActiveSubscription = entitlements.hasActiveSubscription
     hasAcceleratorAccess = entitlements.hasAcceleratorAccess
     hasElectiveAccess = entitlements.hasElectiveAccess
     ownedElectiveModuleSlugs = entitlements.ownedElectiveModuleSlugs
     showAccelerator = hasAcceleratorAccess || hasElectiveAccess
+    canAccessOrgAdmin = showOrgAdmin && (isAdmin || hasActiveSubscription)
+
+    if (hasActiveSubscription) {
+      const { data: activeSubscription } = await supabase
+        .from("subscriptions")
+        .select("status, metadata")
+        .eq("user_id", orgId)
+        .in("status", ["active", "trialing", "past_due", "incomplete"])
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle<{ status: string | null; metadata: Json | null }>()
+
+      currentPlanTier = resolvePricingPlanTier(activeSubscription ?? null)
+      if (currentPlanTier === "free") {
+        currentPlanTier = "organization"
+      }
+    }
+
+    const tutorialsCompleted = Array.isArray(userMeta?.tutorials_completed)
+      ? (userMeta?.tutorials_completed as unknown[]).filter(
+          (value): value is string => typeof value === "string",
+        )
+      : []
+    const tutorialsDismissed = Array.isArray(userMeta?.tutorials_dismissed)
+      ? (userMeta?.tutorials_dismissed as unknown[]).filter(
+          (value): value is string => typeof value === "string",
+        )
+      : []
 
     const welcomeEligible = !needsOnboarding && !isAdmin && completed
-    tutorialWelcomePlatform = welcomeEligible && !tutorialsCompleted.includes("platform") && !tutorialsDismissed.includes("platform")
+    tutorialWelcomePlatform =
+      welcomeEligible &&
+      !tutorialsCompleted.includes("platform") &&
+      !tutorialsDismissed.includes("platform")
     tutorialWelcomeAccelerator =
       welcomeEligible &&
       showAccelerator &&
@@ -122,12 +176,15 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
       !tutorialsDismissed.includes("accelerator")
   }
 
-  const sidebarTree = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
+  let sidebarTree: SidebarClass[] = []
+  if (user && (isAdmin || showAccelerator)) {
+    sidebarTree = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
+  }
 
-    if (user) {
-      try {
-        const { percent } = await fetchAcceleratorProgressSummary({
-          supabase,
+  if (user && showAccelerator && sidebarTree.length > 0) {
+    try {
+      const { percent } = await fetchAcceleratorProgressSummary({
+        supabase,
         userId: user.id,
         isAdmin,
         classes: sidebarTree,
@@ -147,6 +204,7 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
         user={{ name: displayName, email: email ?? null, avatar: avatar ?? null }}
         isAdmin={isAdmin}
         showOrgAdmin={showOrgAdmin}
+        canAccessOrgAdmin={canAccessOrgAdmin}
         acceleratorProgress={acceleratorProgress}
         showAccelerator={showAccelerator}
         showLiveBadges={showLiveBadges}
@@ -154,7 +212,10 @@ export default async function DashboardLayout({ children, breadcrumbs }: { child
         hasAcceleratorAccess={hasAcceleratorAccess}
         hasElectiveAccess={hasElectiveAccess}
         ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
+        currentPlanTier={currentPlanTier}
+        organizationName={organizationName}
         tutorialWelcome={{ platform: tutorialWelcomePlatform, accelerator: tutorialWelcomeAccelerator }}
+        isTester={isTester}
         onboardingProps={{
           enabled: Boolean(user),
           open: needsOnboarding,

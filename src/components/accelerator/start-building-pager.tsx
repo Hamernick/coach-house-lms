@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation"
 import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2"
 import NotebookPen from "lucide-react/dist/esm/icons/notebook-pen"
 
-import { NewsGradientThumb } from "@/components/news/gradient-thumb"
 import { RightRailSlot } from "@/components/app-shell/right-rail"
 import { RailLabel } from "@/components/ui/rail-label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -210,7 +209,7 @@ function StartBuildingCard({
   const cardBody = (
     <>
       <div className="relative aspect-[5/3] overflow-hidden rounded-[22px] shadow-sm mx-[5px] mt-[5px] mb-3">
-        <NewsGradientThumb seed={`module-${module.id}`} className="absolute inset-0" />
+        <div className="absolute inset-0 bg-muted/35" />
         <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/80 px-2 py-1 text-[11px] font-medium text-muted-foreground shadow-sm">
           Module {module.index}
         </span>

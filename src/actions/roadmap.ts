@@ -126,7 +126,7 @@ export async function saveRoadmapSectionAction({
       userId: user.id,
       title: "Roadmap section added",
       description: section.title ? `New section: ${section.title}.` : "A new roadmap section was added.",
-      href: "/my-organization",
+      href: "/organization",
       tone: "success",
       type: "roadmap_section_added",
       actorId: user.id,

@@ -24,6 +24,7 @@ import {
 import { resetAllTutorialsAction } from "@/app/actions/tutorial"
 import { resetOnboardingCompletionAction } from "@/app/actions/admin-testing"
 import { seedTestNotificationsAction } from "@/app/actions/notifications"
+import { resolveDevtoolsAccess } from "@/lib/devtools/access"
 import { toast } from "@/lib/toast"
 const AccountSettingsDialog = dynamic(
   () =>
@@ -42,12 +43,14 @@ type NavUserProps = {
     avatar?: string | null
   }
   isAdmin?: boolean
+  isTester?: boolean
   showDivider?: boolean
 }
 
 export function NavUser({
   user,
   isAdmin = false,
+  isTester = false,
   showDivider = true,
 }: NavUserProps) {
   const router = useRouter()
@@ -84,7 +87,7 @@ export function NavUser({
     setMenuOpen(false)
     startSignOutTransition(async () => {
       await fetch("/api/auth/signout", { method: "POST" })
-      router.replace("/login")
+      router.replace("/")
       router.refresh()
     })
   }
@@ -167,6 +170,7 @@ export function NavUser({
   const displayName = user.name ?? user.email ?? "User"
   const displayEmail = user.email ?? ""
   const avatarFallback = displayName.charAt(0).toUpperCase() || "U"
+  const devtools = resolveDevtoolsAccess({ isAdmin, isTester })
 
   return (
     <div className={showDivider ? "border-border/60 border-t pt-2" : ""}>
@@ -269,142 +273,172 @@ export function NavUser({
                     Billing
                   </Link>
                 ) : null}
-                {isAdmin ? (
+                {devtools.canSeeTestingMenu ? (
                   <>
                     <div className="bg-border/60 my-2 h-px" />
                     <div className="text-muted-foreground px-2 py-1 text-xs font-medium">
                       Testing
                     </div>
-                    <button
-                      type="button"
-                      className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
-                      onClick={() => {
-                        setMenuOpen(false)
-                        dispatchOnboardingStart()
-                      }}
-                    >
-                      <WrenchIcon className="size-4" />
-                      Open onboarding
-                    </button>
-                    <button
-                      type="button"
-                      className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
-                      onClick={() => {
-                        setMenuOpen(false)
-                        dispatchTutorialStart("platform")
-                      }}
-                    >
-                      <SparklesIcon className="size-4" />
-                      Start Platform tutorial
-                    </button>
-                    <button
-                      type="button"
-                      className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
-                      onClick={() => {
-                        setMenuOpen(false)
-                        dispatchTutorialStart("accelerator")
-                      }}
-                    >
-                      <SparklesIcon className="size-4" />
-                      Start Accelerator tutorial
-                    </button>
-                    <Link
-                      href="/my-organization?welcome=1"
-                      className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      <SparklesIcon className="size-4" />
-                      Show Platform welcome
-                    </Link>
-                    <Link
-                      href="/accelerator?welcome=1"
-                      className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
-                      onClick={() => setMenuOpen(false)}
-                    >
-                      <SparklesIcon className="size-4" />
-                      Show Accelerator welcome
-                    </Link>
-                    <button
-                      type="button"
-                      disabled={adminPending}
-                      className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition disabled:opacity-60"
-                      onClick={() => {
-                        if (adminPending) return
-                        setMenuOpen(false)
-                        startAdminTransition(async () => {
-                          await resetAllTutorialsAction()
-                          if (typeof window !== "undefined") {
-                            const tutorials = [
-                              "platform",
-                              "dashboard",
-                              "my-organization",
-                              "roadmap",
-                              "documents",
-                              "billing",
-                              "accelerator",
-                              "people",
-                              "marketplace",
-                            ]
-                            for (const tutorial of tutorials) {
-                              window.localStorage.removeItem(
-                                `coachhouse_tutorial_completed_${tutorial}`
-                              )
-                              window.localStorage.removeItem(
-                                `coachhouse_tutorial_dismissed_${tutorial}`
-                              )
-                            }
-                            window.localStorage.removeItem(
-                              "coachhouse_tour_completed"
-                            )
-                          }
-                          router.refresh()
-                        })
-                      }}
-                    >
-                      <RotateCcwIcon className="size-4" />
-                      Reset tutorials
-                    </button>
-                    <button
-                      type="button"
-                      disabled={adminPending}
-                      className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition disabled:opacity-60"
-                      onClick={() => {
-                        if (adminPending) return
-                        setMenuOpen(false)
-                        startAdminTransition(async () => {
-                          await resetOnboardingCompletionAction()
-                          if (typeof window !== "undefined") {
-                            window.localStorage.removeItem("onboardingDraftV2")
-                          }
+                    {devtools.canOpenOnboarding ? (
+                      <button
+                        type="button"
+                        className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+                        onClick={() => {
+                          setMenuOpen(false)
                           dispatchOnboardingStart()
-                          router.refresh()
-                        })
-                      }}
-                    >
-                      <RotateCcwIcon className="size-4" />
-                      Reset onboarding
-                    </button>
-                    <button
-                      type="button"
-                      disabled={adminPending}
-                      className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition disabled:opacity-60"
-                      onClick={() => {
-                        if (adminPending) return
-                        setMenuOpen(false)
-                        startAdminTransition(async () => {
-                          const result = await seedTestNotificationsAction()
-                          if ("error" in result) {
-                            toast.error(result.error)
-                            return
-                          }
-                          toast.success("Test notifications created.")
-                          router.refresh()
-                        })
-                      }}
-                    >
-                      <BellIcon className="size-4" />
-                      Seed notifications
-                    </button>
+                        }}
+                      >
+                        <WrenchIcon className="size-4" />
+                        Open onboarding
+                      </button>
+                    ) : null}
+                    {devtools.canStartTutorials ? (
+                      <>
+                        <button
+                          type="button"
+                          className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+                          onClick={() => {
+                            setMenuOpen(false)
+                            dispatchTutorialStart("platform")
+                          }}
+                        >
+                          <SparklesIcon className="size-4" />
+                          Start Platform tutorial
+                        </button>
+                        <button
+                          type="button"
+                          className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+                          onClick={() => {
+                            setMenuOpen(false)
+                            dispatchTutorialStart("accelerator")
+                          }}
+                        >
+                          <SparklesIcon className="size-4" />
+                          Start Accelerator tutorial
+                        </button>
+                      </>
+                    ) : null}
+                    {devtools.canShowWelcomeLaunchers ? (
+                      <>
+                        <Link
+                          href="/organization?welcome=1"
+                          className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <SparklesIcon className="size-4" />
+                          Show Platform welcome
+                        </Link>
+                        <Link
+                          href="/accelerator?welcome=1"
+                          className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+                          onClick={() => setMenuOpen(false)}
+                        >
+                          <SparklesIcon className="size-4" />
+                          Show Accelerator welcome
+                        </Link>
+                      </>
+                    ) : null}
+                    {devtools.canUsePaymentPlayground ? (
+                      <Link
+                        href="/pricing?source=test-playground"
+                        className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        <CreditCardIcon className="size-4" />
+                        Payment playground
+                      </Link>
+                    ) : null}
+                    {devtools.canResetTutorials ? (
+                      <button
+                        type="button"
+                        disabled={adminPending}
+                        className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition disabled:opacity-60"
+                        onClick={() => {
+                          if (adminPending) return
+                          setMenuOpen(false)
+                          startAdminTransition(async () => {
+                            const result = await resetAllTutorialsAction()
+                            if ("error" in result) {
+                              toast.error(result.error)
+                              return
+                            }
+
+                            if (typeof window !== "undefined") {
+                              const tutorials = [
+                                "platform",
+                                "dashboard",
+                                "my-organization",
+                                "roadmap",
+                                "documents",
+                                "billing",
+                                "accelerator",
+                                "people",
+                                "marketplace",
+                              ]
+                              for (const tutorial of tutorials) {
+                                window.localStorage.removeItem(`coachhouse_tutorial_completed_${tutorial}`)
+                                window.localStorage.removeItem(`coachhouse_tutorial_dismissed_${tutorial}`)
+                              }
+                              window.localStorage.removeItem("coachhouse_tour_completed")
+                            }
+                            router.refresh()
+                          })
+                        }}
+                      >
+                        <RotateCcwIcon className="size-4" />
+                        Reset tutorials
+                      </button>
+                    ) : null}
+                    {devtools.canResetOnboarding ? (
+                      <button
+                        type="button"
+                        disabled={adminPending}
+                        className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition disabled:opacity-60"
+                        onClick={() => {
+                          if (adminPending) return
+                          setMenuOpen(false)
+                          startAdminTransition(async () => {
+                            const result = await resetOnboardingCompletionAction()
+                            if ("error" in result) {
+                              toast.error(result.error)
+                              return
+                            }
+
+                            if (typeof window !== "undefined") {
+                              window.localStorage.removeItem("onboardingDraftV2")
+                            }
+                            dispatchOnboardingStart()
+                            router.refresh()
+                          })
+                        }}
+                      >
+                        <RotateCcwIcon className="size-4" />
+                        Reset onboarding
+                      </button>
+                    ) : null}
+                    {devtools.canSeedNotifications ? (
+                      <button
+                        type="button"
+                        disabled={adminPending}
+                        className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition disabled:opacity-60"
+                        onClick={() => {
+                          if (adminPending) return
+                          setMenuOpen(false)
+                          startAdminTransition(async () => {
+                            const result = await seedTestNotificationsAction()
+                            if ("error" in result) {
+                              toast.error(result.error)
+                              return
+                            }
+                            toast.success("Test notifications created.")
+                            router.refresh()
+                          })
+                        }}
+                      >
+                        <BellIcon className="size-4" />
+                        Seed notifications
+                      </button>
+                    ) : null}
                   </>
                 ) : null}
                 <div className="bg-border/60 my-2 h-px" />

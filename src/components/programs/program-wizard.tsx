@@ -74,8 +74,8 @@ type StepMeta = {
 
 const STEPS: StepMeta[] = [
   {
-    title: "Name it",
-    helper: "What is this program, in plain language?",
+    title: "Program name",
+    helper: "Give this program a clear name and one-sentence summary.",
   },
   {
     title: "Type + format",
@@ -713,14 +713,14 @@ export function ProgramWizard({
       ) : null}
       <DialogContent
         showCloseButton={false}
-        className="left-0 right-0 top-auto bottom-0 z-50 flex h-[94svh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-t-3xl border border-border/60 bg-background p-0 shadow-2xl sm:inset-6 sm:h-[90svh] sm:max-w-5xl sm:rounded-3xl"
+        className="left-0 right-0 top-auto bottom-0 z-50 flex h-[94svh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-t-3xl border border-border/60 bg-background p-0 shadow-2xl sm:left-1/2 sm:top-1/2 sm:right-auto sm:bottom-auto sm:h-[90svh] sm:w-[min(96vw,72rem)] sm:max-w-[72rem] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl"
       >
         <DialogTitle className="sr-only">Program Builder</DialogTitle>
 
         <header className="border-b border-border/60 px-4 py-3 sm:px-6 sm:py-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="space-y-1">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Program builder</p>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Program setup</p>
               <h2 className="text-lg font-semibold sm:text-xl">{STEPS[currentStep].title}</h2>
               <p className="text-sm text-muted-foreground">{STEPS[currentStep].helper}</p>
             </div>

@@ -6,6 +6,7 @@ import BookOpenIcon from "lucide-react/dist/esm/icons/book-open"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
 import HandCoinsIcon from "lucide-react/dist/esm/icons/hand-coins"
 import PencilIcon from "lucide-react/dist/esm/icons/pencil"
+import RouteIcon from "lucide-react/dist/esm/icons/route"
 
 import { Button } from "@/components/ui/button"
 import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern/index"
@@ -32,8 +33,6 @@ type AcceleratorOrgSnapshotStripProps = {
   readinessTargetLabel?: string | null
   readinessChecklist?: Array<{ label: string; href: string }>
   editHref?: string
-  continueHref?: string
-  continueModuleLabel?: string
 }
 
 const ORG_HEADER_SQUARES: Array<[number, number]> = [
@@ -66,6 +65,40 @@ function formatFundingGoal(cents: number) {
   return COMPACT_USD.format(cents / 100)
 }
 
+function resolveReadinessChecklistVisual(item: { label: string; href: string }) {
+  const normalized = `${item.label} ${item.href}`.toLowerCase()
+
+  if (normalized.includes("formation lesson")) {
+    return {
+      icon: BookOpenIcon,
+      iconClass: "text-amber-700 dark:text-amber-300",
+      iconWrapClass: "border-amber-300/70 bg-amber-100/75 dark:border-amber-500/40 dark:bg-amber-500/15",
+    }
+  }
+
+  if (normalized.includes("roadmap")) {
+    return {
+      icon: RouteIcon,
+      iconClass: "text-violet-700 dark:text-violet-300",
+      iconWrapClass: "border-violet-300/70 bg-violet-100/75 dark:border-violet-500/40 dark:bg-violet-500/15",
+    }
+  }
+
+  if (normalized.includes("funding goal") || normalized.includes("program")) {
+    return {
+      icon: HandCoinsIcon,
+      iconClass: "text-emerald-700 dark:text-emerald-300",
+      iconWrapClass: "border-emerald-300/70 bg-emerald-100/75 dark:border-emerald-500/40 dark:bg-emerald-500/15",
+    }
+  }
+
+  return {
+    icon: BadgeCheckIcon,
+    iconClass: "text-sky-700 dark:text-sky-300",
+    iconWrapClass: "border-sky-300/70 bg-sky-100/75 dark:border-sky-500/40 dark:bg-sky-500/15",
+  }
+}
+
 export function AcceleratorOrgSnapshotStrip({
   organizationTitle,
   organizationSubtitle,
@@ -85,9 +118,7 @@ export function AcceleratorOrgSnapshotStrip({
   readinessStateLabel = "Building",
   readinessTargetLabel = null,
   readinessChecklist = [],
-  editHref = "/my-organization?view=editor",
-  continueHref = "/accelerator",
-  continueModuleLabel = "Accelerator",
+  editHref = "/organization?view=editor",
 }: AcceleratorOrgSnapshotStripProps) {
   const progress = clampPercent(progressPercent)
   const fundable = clampPercent(fundableCheckpoint)
@@ -112,6 +143,7 @@ export function AcceleratorOrgSnapshotStrip({
     moduleGroupsTotal > 0
       ? `${moduleGroupsComplete} of ${moduleGroupsTotal}`
       : "0 of 0"
+  const progressPillLabel = `${progress}%`
   const readinessStatePillClass =
     readinessStateLabel === "Verified"
       ? "border-emerald-300 bg-emerald-100 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200"
@@ -178,8 +210,9 @@ export function AcceleratorOrgSnapshotStrip({
                 "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
                 readinessStatePillClass,
               )}
+              title={`Readiness: ${readinessStateLabel}`}
             >
-              {readinessStateLabel}
+              {progressPillLabel}
             </span>
           </div>
           <div className="mt-4 space-y-2">
@@ -222,13 +255,12 @@ export function AcceleratorOrgSnapshotStrip({
                     type="button"
                     aria-label="Verified checkpoint"
                     className={cn(
-                      "absolute top-1/2 z-10 inline-flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 transition-colors",
+                      "absolute right-0 top-1/2 z-10 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full border-2 transition-colors",
                       "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2",
                       verifiedReached
                         ? "border-sky-500 bg-sky-500 text-white"
                         : "border-sky-400/70 bg-background text-sky-600 dark:text-sky-300",
                     )}
-                    style={{ left: `${verified}%` }}
                   >
                     <BadgeCheckIcon className="h-2.5 w-2.5" aria-hidden />
                   </button>
@@ -245,34 +277,59 @@ export function AcceleratorOrgSnapshotStrip({
         </div>
 
         {readinessTargetLabel && readinessChecklist.length > 0 ? (
-          <div className="rounded-lg border border-border/60 bg-background/25 px-3 py-2">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Next to reach {readinessTargetLabel}
-            </p>
-            <div className="mt-1.5 space-y-1">
-              {readinessChecklist.map((item) => (
-                <Link
-                  key={`${item.href}-${item.label}`}
-                  href={item.href}
-                  className="block truncate text-xs text-foreground underline-offset-2 hover:underline"
-                >
-                  {item.label}
-                </Link>
-              ))}
+          <div className="rounded-lg border border-border/60 bg-background/25 px-3 py-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                Next to reach {readinessTargetLabel}
+              </p>
+              <span className="inline-flex h-5 items-center rounded-full border border-border/60 bg-background px-2 text-[10px] font-medium text-muted-foreground">
+                {readinessChecklist.length} items
+              </span>
             </div>
+            <ul className="mt-2 space-y-1.5">
+              {readinessChecklist.map((item, index) => {
+                const visual = resolveReadinessChecklistVisual(item)
+                const ItemIcon = visual.icon
+
+                return (
+                  <li key={`${item.href}-${item.label}`}>
+                    <Link
+                      href={item.href}
+                      className="group/checklist flex min-w-0 items-center gap-2 rounded-md border border-transparent px-1.5 py-1 text-xs transition-colors hover:border-border/60 hover:bg-accent/30"
+                    >
+                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border bg-background/70 text-muted-foreground">
+                        <span
+                          className={cn(
+                            "inline-flex h-4 w-4 items-center justify-center rounded-sm border",
+                            visual.iconWrapClass,
+                          )}
+                        >
+                          <ItemIcon className={cn("h-2.5 w-2.5", visual.iconClass)} aria-hidden />
+                        </span>
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-foreground">{item.label}</span>
+                      <span className="inline-flex items-center text-[10px] font-medium text-muted-foreground">
+                        {(index + 1).toString().padStart(2, "0")}
+                      </span>
+                      <ChevronRightIcon className="h-3 w-3 shrink-0 text-muted-foreground transition-transform group-hover/checklist:translate-x-0.5" aria-hidden />
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
           </div>
         ) : null}
 
         <div className="grid grid-cols-3 gap-3">
-          <Link href="/my-organization?view=editor&tab=programs" className="min-w-0 py-1">
+          <Link href="/organization?view=editor&tab=programs" className="min-w-0 py-1">
             <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Funding goal</p>
             <p className="mt-1 text-sm font-semibold tabular-nums">{formatFundingGoal(fundingGoalCents)}</p>
           </Link>
-          <Link href="/my-organization?view=editor&tab=programs" className="min-w-0 py-1">
+          <Link href="/organization?view=editor&tab=programs" className="min-w-0 py-1">
             <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Programs</p>
             <p className="mt-1 text-sm font-semibold tabular-nums">{programsCount}</p>
           </Link>
-          <Link href="/my-organization?view=editor&tab=people" className="min-w-0 py-1">
+          <Link href="/organization?view=editor&tab=people" className="min-w-0 py-1">
             <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">People</p>
             <p className="mt-1 text-sm font-semibold tabular-nums">{peopleCount}</p>
           </Link>
@@ -288,26 +345,6 @@ export function AcceleratorOrgSnapshotStrip({
             <dd className="font-medium tabular-nums">{groupsSummaryValue}</dd>
           </div>
         </dl>
-
-        <div className="mt-auto pt-1">
-          <Button asChild variant="ghost" size="sm" className="h-auto w-full p-0 hover:bg-transparent">
-            <Link
-              href={continueHref}
-              className="group/item flex w-full min-w-0 items-center gap-3 rounded-xl border border-border/60 bg-background/70 px-3 py-2.5 transition-colors hover:bg-accent/40"
-            >
-              <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/70 bg-background text-muted-foreground">
-                <BookOpenIcon className="h-3.5 w-3.5" aria-hidden />
-              </span>
-              <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">{continueModuleLabel}</span>
-              <span className="ml-auto inline-flex shrink-0 items-center gap-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Continue</span>
-                <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/70 bg-background text-muted-foreground transition-transform group-hover/item:translate-x-0.5">
-                  <ChevronRightIcon className="h-3.5 w-3.5" aria-hidden />
-                </span>
-              </span>
-            </Link>
-          </Button>
-        </div>
       </div>
     </div>
   )

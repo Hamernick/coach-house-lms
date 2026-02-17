@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
@@ -11,7 +12,6 @@ import Flag from "lucide-react/dist/esm/icons/flag"
 import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 import Layers from "lucide-react/dist/esm/icons/layers"
 
-import { NewsGradientThumb } from "@/components/news/gradient-thumb"
 import { ROADMAP_SECTION_ICONS } from "@/components/roadmap/roadmap-icons"
 import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern/index"
 import { Button } from "@/components/ui/button"
@@ -400,8 +400,7 @@ export function RoadmapRailCard({
               {visibleTimelineCards.map((card) => {
                 if (card.kind === "deliverable") {
                   const { item } = card
-                  const Icon = ROADMAP_SECTION_ICONS[item.id] ?? Flag
-                  const active = item.idx === activeIndex
+                  const Icon = WaypointsIcon
                   const meta = statusMeta(item)
 
                   return (
@@ -410,13 +409,11 @@ export function RoadmapRailCard({
                         href={item.href}
                         title={item.displayTitle}
                         aria-label={`Go to ${item.displayTitle}`}
-                        aria-current={active ? "step" : undefined}
                         onClick={() => setActiveIndex(item.idx)}
                         className={cn(
                           "group relative flex h-full min-h-[200px] flex-col overflow-hidden rounded-[26px] border border-border/60 bg-card text-left transition-transform duration-300 ease-out",
                           "hover:-translate-y-1",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2",
-                          active ? "border-primary/50 ring-1 ring-primary/20" : "border-border/60",
                         )}
                       >
                         <div className="relative mb-3 ml-[5px] mr-[5px] mt-[5px] aspect-[4/3] overflow-hidden rounded-[22px] border border-border/60 bg-muted/20">
@@ -463,13 +460,25 @@ export function RoadmapRailCard({
 
                 const cardBody = (
                   <>
-                    <div className="relative mb-3 ml-[5px] mr-[5px] mt-[5px] aspect-[4/3] overflow-hidden rounded-[22px]">
-                      <NewsGradientThumb seed={`timeline-module-${module.id}`} className="absolute inset-0" />
-                      <GridPattern
-                        patternId={`roadmap-module-media-${module.id}`}
-                        squares={ROADMAP_MEDIA_SQUARES}
-                        className="inset-x-0 inset-y-[-45%] h-[200%] skew-y-12 [mask-image:radial-gradient(220px_circle_at_center,white,transparent)] opacity-45"
+                    <div className="relative mb-3 ml-[5px] mr-[5px] mt-[5px] aspect-[4/3] overflow-hidden rounded-[22px] border border-border/60 bg-muted/20">
+                      <Image
+                        src="/textures/fluted-glass-flowers.webp"
+                        alt=""
+                        fill
+                        sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                        className="pointer-events-none object-cover"
+                        priority={false}
                       />
+                      <div
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 opacity-75"
+                        style={{
+                          background:
+                            "repeating-linear-gradient(90deg, rgba(255,255,255,0.26) 0px, rgba(255,255,255,0.08) 2px, rgba(255,255,255,0.02) 7px, rgba(255,255,255,0.18) 10px)",
+                          mixBlendMode: "overlay",
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-background/14" />
                       <div className="absolute inset-0 flex items-center justify-center">
                         <span
                           data-roadmap-node="true"

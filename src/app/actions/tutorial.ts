@@ -2,6 +2,7 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { resolveDevtoolsAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
 
 export type TutorialKey =
   | "platform"
@@ -30,17 +31,6 @@ type TutorialActionResult = { ok: true } | { error: string }
 
 function isTutorialKey(value: string): value is TutorialKey {
   return (ALLOWED_TUTORIALS as string[]).includes(value)
-}
-
-async function isAdminUser(supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>, userId: string) {
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .maybeSingle<{ role: string | null }>()
-
-  if (error) return false
-  return profile?.role === "admin"
 }
 
 function normalizeStringArray(value: unknown): string[] {
@@ -144,8 +134,12 @@ export async function resetTutorialAction(tutorial: string): Promise<TutorialAct
   if (error && !isSupabaseAuthSessionMissingError(error)) return { error: "Unable to load user." }
   if (!user) return { error: "Not authenticated." }
 
-  const isAdmin = await isAdminUser(supabase, user.id)
-  if (!isAdmin) return { error: "Forbidden." }
+  const audience = await resolveDevtoolsAudience({
+    supabase,
+    userId: user.id,
+    fallbackIsTester: resolveTesterMetadata(user.user_metadata ?? null),
+  })
+  if (!audience.isAdmin && !audience.isTester) return { error: "Forbidden." }
 
   const meta = (user.user_metadata ?? {}) as Record<string, unknown>
   const completed = normalizeStringArray(meta.tutorials_completed).filter((entry) => entry !== tutorial)
@@ -181,8 +175,12 @@ export async function resetAllTutorialsAction(): Promise<TutorialActionResult> {
   if (error && !isSupabaseAuthSessionMissingError(error)) return { error: "Unable to load user." }
   if (!user) return { error: "Not authenticated." }
 
-  const isAdmin = await isAdminUser(supabase, user.id)
-  if (!isAdmin) return { error: "Forbidden." }
+  const audience = await resolveDevtoolsAudience({
+    supabase,
+    userId: user.id,
+    fallbackIsTester: resolveTesterMetadata(user.user_metadata ?? null),
+  })
+  if (!audience.isAdmin && !audience.isTester) return { error: "Forbidden." }
 
   const { error: updateError } = await supabase.auth.updateUser({
     data: {

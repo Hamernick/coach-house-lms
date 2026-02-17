@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect } from "react"
-import { useSearchParams } from "next/navigation"
 
 const REACT_GRAB_RUNTIME_ID = "react-grab-runtime"
 const REACT_GRAB_OPENCODE_ID = "react-grab-opencode"
@@ -50,13 +49,12 @@ function ensureScript({
 }
 
 export function ReactGrabLoader() {
-  const searchParams = useSearchParams()
-  const isEmbedMode = searchParams.get("embed") === "1"
-
   useEffect(() => {
-    const shouldLoad =
-      process.env.NODE_ENV === "development" &&
-      process.env.NEXT_PUBLIC_ENABLE_REACT_GRAB !== "0"
+    const explicitFlag = process.env.NEXT_PUBLIC_ENABLE_REACT_GRAB
+    const host = window.location.hostname
+    const isLocalHost = host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0"
+    const isEmbedMode = new URLSearchParams(window.location.search).get("embed") === "1"
+    const shouldLoad = explicitFlag === "1" || (explicitFlag !== "0" && (process.env.NODE_ENV === "development" || isLocalHost))
 
     if (!shouldLoad) return
     if (isEmbedMode) return
@@ -73,7 +71,7 @@ export function ReactGrabLoader() {
         })
       },
     })
-  }, [isEmbedMode])
+  }, [])
 
   return null
 }

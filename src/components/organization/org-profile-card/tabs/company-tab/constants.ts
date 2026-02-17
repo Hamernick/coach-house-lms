@@ -10,6 +10,7 @@ export const RESERVED_SLUGS = new Set([
   "class",
   "dashboard",
   "people",
+  "organization",
   "my-organization",
   "internal",
   "_next",

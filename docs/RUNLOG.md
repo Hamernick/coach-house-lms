@@ -2,6 +2,44 @@
 
 Purpose: Track changes we’re making outside the formal PR stepper.
 
+## 2026-02-16 — Codex session (tester rollout + pricing/access overhaul planning)
+
+- Added consolidated execution brief for the new direction spanning tooling governance, pricing simplification, entitlements, onboarding/paywall flow, tutorials, and Stripe lifecycle validation (`docs/briefs/tester-rollout-pricing-access-overhaul.md`).
+- Captured decision lock from product direction:
+  - 3-tier model (`Free`, `$20/mo`, `$58/mo`)
+  - remove Accelerator Pro/Base and elective-only purchase surfaces
+  - include Accelerator in paid tiers
+  - testers can access test/tutorial/payment tools but not seed actions.
+- Updated brief index to mark the new consolidated brief as active and mark older pricing/electives briefs as superseded (`docs/briefs/INDEX.md`).
+- Validation: docs-only planning pass (no test suite run in this step).
+
+## 2026-02-16 — Codex session (WS1 tooling governance implementation)
+
+- Added centralized devtools access policy + audience resolver:
+  - `src/lib/devtools/access.ts`
+  - `src/lib/devtools/audience.ts`
+- Wired tester/admin audience through app shell + sidebar/user menu:
+  - added `isTester` propagation through `AppShell` and `SidebarBody`
+  - `NavUser` testing section now uses centralized policy controls
+  - testers can access tutorial/onboarding/payment-playground tools
+  - seed notifications remains admin-only
+  - files: `src/components/app-shell.tsx`, `src/components/app-sidebar.tsx`, `src/components/nav-user.tsx`
+- Updated server actions to allow tester-safe reset actions while preserving admin-only seed behavior:
+  - `src/app/actions/tutorial.ts`
+  - `src/app/actions/admin-testing.ts`
+- Added tester flag support in schema + migration:
+  - migration: `supabase/migrations/20260216183000_add_profiles_is_tester.sql`
+  - schema types: `src/lib/supabase/schema/tables/profiles.ts`
+- Updated dashboard and accelerator layouts to resolve and pass tester audience state:
+  - `src/app/(dashboard)/layout.tsx`
+  - `src/app/(accelerator)/layout.tsx`
+- Made react-grab explicit opt-in in development (`NEXT_PUBLIC_ENABLE_REACT_GRAB=1` required):
+  - `src/components/dev/react-grab-loader.tsx`
+
+- Validation:
+  - `pnpm exec eslint src/lib/devtools/access.ts src/lib/devtools/audience.ts src/components/nav-user.tsx src/components/app-sidebar.tsx src/components/app-shell.tsx 'src/app/(dashboard)/layout.tsx' 'src/app/(accelerator)/layout.tsx' src/app/actions/admin-testing.ts src/app/actions/tutorial.ts src/components/dev/react-grab-loader.tsx src/lib/supabase/schema/tables/profiles.ts` ✅
+  - `pnpm test:acceptance tests/acceptance/onboarding.test.ts tests/acceptance/pricing.test.ts` ✅ (6 passed)
+
 ## 2026-02-07 — Codex session (demo-seed realism + fixture guardrails)
 
 - Executed targeted full-account seed against staging Supabase for `caleb@bandto.com` with mixed progress and coaching variant (`pnpm seed:full-account --email caleb@bandto.com --variant with_coaching --progress mixed`), after dry-run fixture verification (`org_people_seeded: 161`).
@@ -7075,3 +7113,1125 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm exec eslint src/lib/organization/active-org.ts src/components/account-settings/account-settings-dialog-state.ts` ✅
   - `pnpm build` ✅
+
+## 2026-02-11 — Codex session (home2 documentation card copy update)
+
+- Updated documentation highlight card copy to match current positioning:
+  - `src/components/public/home2-sections.tsx`
+  - changed to: "Open Source tools, frameworks, and best practices for nonprofits."
+
+- Validation:
+  - `pnpm exec eslint src/components/public/home2-sections.tsx` ✅
+
+## 2026-02-11 — Codex session (pricing tier sync + community card nav update)
+
+- Pricing tier consistency pass (`src/components/public/pricing-surface.tsx`):
+  - aligned Individual/Organization/Operations card bullets with current tier notes.
+  - clarified roadmap/profile behavior in tier copy and feature breakdown:
+    - Strategic Roadmap is private/internal across tiers.
+    - Organizational Profile is private on Individual and optionally public on paid tiers.
+  - aligned fee-for-service labeling across operations support items to avoid mixed semantics.
+  - normalized community wording in comparison rows to match current product language.
+  - updated comparison footer note to explicitly document roadmap/profile visibility rules.
+
+- Offerings card behavior (`src/components/public/home2-sections.tsx`):
+  - made the `Community` highlight card non-clickable (removed navigation target).
+  - removed interactive-only affordances for non-clickable cards (no jump hover or external arrow for static cards).
+
+- Validation:
+  - `pnpm exec eslint src/components/public/pricing-surface.tsx src/components/public/home2-sections.tsx` ✅
+
+## 2026-02-11 — Codex session (operations checkout + pricing CTA consistency)
+
+- Pricing checkout + CTA consistency (`src/components/public/pricing-surface.tsx`):
+  - kept Operations Support on self-checkout flow (`startCheckout`) rather than contact/mailto.
+  - ensured platform tier eyebrow labels remain consistently styled (same typography/casing treatment).
+  - confirmed pricing CTA buttons use the same rounded-rectangle treatment across the pricing surface (`rounded-xl`) for actions like Get started, Upgrade Organization, and Continue.
+
+- Environment wiring (`src/lib/env.ts`, `.env.example`):
+  - added `STRIPE_OPERATIONS_SUPPORT_PRICE_ID` as an optional env var.
+  - Operations tier now uses `STRIPE_OPERATIONS_SUPPORT_PRICE_ID` first, with fallback to `STRIPE_ORGANIZATION_PRICE_ID` when needed.
+
+- Validation:
+  - `pnpm exec eslint src/components/public/pricing-surface.tsx src/lib/env.ts` ✅
+  - `pnpm build` ✅
+
+## 2026-02-11 — Codex session (formation label copy update)
+
+- Updated formation status copy on My Organization summary card:
+  - `src/app/(dashboard)/my-organization/page.tsx`
+  - changed approved-state label from `Approved` to `IRS Approved`.
+
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/page.tsx'` ✅
+
+## 2026-02-11 — Codex session (tier-gated admin access controls)
+
+- Organization access gating by pricing tier (`src/app/actions/organization-access.ts`):
+  - added paid-tier entitlement check for organization team-management controls (active/trialing paid subscription on the org owner record).
+  - free-tier users can still open the admin surface, but backend mutations are now blocked with an upgrade-required message for:
+    - invite creation/revocation,
+    - member role updates,
+    - org access settings updates.
+  - `listOrganizationAccessAction` now returns tier-aware UI flags: `hasPaidTeamAccess` and `canEditRoles`.
+
+- Admin UI updates (`src/components/account-settings/sections/organization-access-manager.tsx`):
+  - added a clear upgrade callout explaining free-tier limits (1 founder admin seat).
+  - role editing is now explicitly gated by paid access (`canEditRoles`), while non-edit states render role badges.
+
+- Validation:
+  - `pnpm exec eslint src/app/actions/organization-access.ts src/components/account-settings/sections/organization-access-manager.tsx` ✅
+  - `pnpm build` ✅
+
+## 2026-02-11 — Codex session (admin nav upgrade pill + internal checkout flow)
+
+- Sidebar navigation gating (`src/components/app-sidebar/nav-data.ts`, `src/components/nav-main.tsx`, `src/components/app-sidebar.tsx`, `src/components/app-shell.tsx`):
+  - updated Admin nav behavior for free-tier org users:
+    - Admin row is shown but non-clickable.
+    - an `Upgrade` pill is rendered on the row.
+    - the `Upgrade` pill opens an in-app paywall flow.
+  - added `canAccessOrgAdmin` wiring through app shell/sidebar so each layout can decide whether Admin is clickable.
+
+- Internal upgrade paywall flow (`src/components/paywall/paywall-overlay.tsx`):
+  - added `paywall=organization` mode with an Organization checkout card.
+  - checkout action uses existing Stripe server action (`startCheckout`) with `checkoutMode=organization`.
+
+- Paid-access predicate reuse (`src/lib/billing/subscription-access.ts`, `src/app/actions/organization-access.ts`, `src/app/(admin)/layout.tsx`):
+  - introduced shared helper `hasPaidTeamAccessFromSubscription(...)`.
+  - reused helper in organization-access backend checks and admin layout nav gating to keep tier rules aligned.
+
+- Layout wiring for nav access (`src/app/(dashboard)/layout.tsx`, `src/app/(accelerator)/layout.tsx`, `src/app/(admin)/layout.tsx`):
+  - compute and pass `canAccessOrgAdmin` so free-tier org users see upgrade CTA instead of clickable Admin nav access.
+
+- Validation:
+  - `pnpm exec eslint src/lib/billing/subscription-access.ts src/app/actions/organization-access.ts src/components/app-sidebar/nav-data.ts src/components/app-sidebar.tsx src/components/app-shell.tsx src/components/nav-main.tsx src/components/paywall/paywall-overlay.tsx 'src/app/(dashboard)/layout.tsx' 'src/app/(admin)/layout.tsx' 'src/app/(accelerator)/layout.tsx'` ✅
+  - `pnpm build` ✅
+
+## 2026-02-16 — Codex session (WS2/WS3 pricing consolidation + unified paywall)
+
+- Pricing surface consolidated to 3-tier strategy (`src/components/public/pricing-surface.tsx`):
+  - removed legacy `Accelerator Pro`, `Accelerator Base`, and `Buy electives only` sections.
+  - aligned tier bullets and comparison table to Free (`Individual`), `$20` (`Organization`), and `$58` (`Operations Support`).
+  - updated Operations Support language to expert-network framing (hire specialists as needed) while keeping self-checkout flow.
+  - kept tier-card action buttons consistently rounded-rectangle (`rounded-xl`).
+
+- Unified in-app paywall upgrade flow (`src/components/paywall/paywall-overlay.tsx`):
+  - removed accelerator/elective-specific checkout branches.
+  - all gated states now drive to paid-plan upgrade checkout (`Organization`) with pricing handoff for Operations Support.
+  - preserved backward-compatible reason copy when older `paywall` query values are present.
+
+- Checkout server action simplified to paid-tier subscription model (`src/app/(public)/pricing/actions.ts`):
+  - removed accelerator/elective checkout handling from `startCheckout`.
+  - subscription checkout now supports:
+    - Organization via `STRIPE_ORGANIZATION_PRICE_ID`
+    - Operations Support via explicit `priceId` or `STRIPE_OPERATIONS_SUPPORT_PRICE_ID` fallback.
+  - added checkout metadata normalization:
+    - `kind: organization`
+    - `plan_tier: organization | operations_support`
+
+- Learning/paywall route link realignment:
+  - `src/app/(accelerator)/layout.tsx`: paid-access redirect now uses `paywall=organization`.
+  - `src/app/(dashboard)/class/[slug]/module/[index]/page.tsx`: all upgrade redirects now target organization paywall.
+  - `src/components/app-sidebar/classes-section.tsx`:
+    - removed elective-purchase messaging and `paywall=elective`/`paywall=accelerator` links.
+    - updated copy and links to paid-plan upgrade path.
+    - unified track lock model to `open | requires_paid`.
+
+- Validation:
+  - `pnpm exec eslint 'src/components/public/pricing-surface.tsx' 'src/components/paywall/paywall-overlay.tsx' 'src/app/(public)/pricing/actions.ts' 'src/components/app-sidebar/classes-section.tsx' 'src/app/(dashboard)/class/[slug]/module/[index]/page.tsx' 'src/app/(accelerator)/layout.tsx'` ✅
+  - `pnpm exec eslint 'tests/acceptance/pricing.test.ts' 'tests/acceptance/pricing-accelerator-checkout-metadata.test.ts'` ✅
+  - `pnpm test:acceptance tests/acceptance/pricing.test.ts tests/acceptance/pricing-accelerator-checkout-metadata.test.ts tests/acceptance/accelerator-module-order.test.ts` ✅ (12 tests)
+  - `pnpm test:acceptance tests/acceptance/accelerator-readiness.test.ts tests/acceptance/module-progress.test.ts tests/acceptance/readiness-checklist.test.ts` ✅ (8 tests)
+
+## 2026-02-16 — Codex session (WS5 accelerator card visual cleanup)
+
+- Removed gradient/pattern treatment from Accelerator module cards while preserving card shells/layout:
+  - `src/components/accelerator/start-building-pager.tsx`
+  - `src/components/accelerator/accelerator-next-module-card.tsx`
+- Replaced card media fills with neutral surface background (`bg-muted/35`) to keep visual hierarchy without colored gradients.
+- Strategic Roadmap visuals were left unchanged.
+
+- Validation:
+  - `pnpm exec eslint 'src/components/accelerator/start-building-pager.tsx' 'src/components/accelerator/accelerator-next-module-card.tsx'` ✅
+
+## 2026-02-16 — Codex session (WS4 onboarding intent step + post-onboarding upgrade handoff)
+
+- Added early intent selection step to onboarding flow (`src/components/onboarding/onboarding-dialog.tsx`):
+  - expanded onboarding steps from 2 to 3: `intent` -> `org` -> `account`.
+  - added centered card-grid intent selector with `Coming soon` disabled options:
+    - `Build nonprofits` (available)
+    - `Find nonprofits` (coming soon)
+    - `Fund nonprofits` (coming soon)
+    - `Support teams` (coming soon)
+  - added optional role-interest selector with `Board member` disabled/coming soon.
+  - persisted `intentFocus` and `roleInterest` in onboarding draft state (`onboardingDraftV2`).
+  - integrated intent into progress calculation and step validation.
+
+- Onboarding server action updates (`src/app/(dashboard)/onboarding/actions.ts`):
+  - parses/validates `intentFocus` and `roleInterest` from form data.
+  - enforces `Build nonprofits` as the only currently selectable onboarding focus.
+  - stores onboarding intent metadata in:
+    - organization profile (`onboarding_intent_focus`, `onboarding_role_interest`)
+    - auth user metadata (`onboarding_intent_focus`, `onboarding_role_interest`)
+  - after successful onboarding, redirects to skippable in-app upgrade flow:
+    - `/my-organization?paywall=organization&plan=organization&source=onboarding`
+
+- Welcome modal coordination (`src/components/onboarding/onboarding-welcome.tsx`):
+  - suppresses auto-open welcome dialog when a paywall query is present, so post-onboarding upgrade prompt is not visually stacked/competing.
+
+- Validation:
+  - `pnpm exec eslint 'src/components/onboarding/onboarding-dialog.tsx' 'src/components/onboarding/onboarding-welcome.tsx' 'src/app/(dashboard)/onboarding/actions.ts'` ✅
+  - `pnpm test:acceptance tests/acceptance/onboarding.test.ts tests/acceptance/pricing.test.ts tests/acceptance/pricing-accelerator-checkout-metadata.test.ts` ✅ (10 tests)
+
+## 2026-02-16 — Codex session (WS6 route walkthrough documentation)
+
+- Added end-to-end tester route map documenting current flow and gating:
+  - `docs/briefs/tester-route-walkthrough-2026-02-16.md`
+  - includes signup -> onboarding intent flow -> post-onboarding paywall -> pricing/checkout -> gated routes.
+- Updated brief index:
+  - `docs/briefs/INDEX.md`
+
+
+## 2026-02-16 — Codex session (webhook parity + admin test compatibility + tester toggle)
+
+- Stripe webhook invoice compatibility fix (`src/app/api/stripe/webhook/route.ts`):
+  - `invoice.paid` installment handler now resolves subscription ids from both invoice shapes:
+    - `invoice.parent.subscription_details.subscription`
+    - legacy `invoice.subscription`
+  - restored monthly installment progression behavior for both test fixtures.
+
+- Admin API route hardening for test/runtime parity (`src/app/api/admin/classes/[id]/modules/route.ts`):
+  - route now uses `requireAdmin()` return value for primary server client.
+  - service-role client creation is now lazy and only used on explicit RLS fallback paths.
+  - avoids unnecessary `SUPABASE_SERVICE_ROLE_KEY` dependency when fallback is not needed.
+
+- Acceptance test alignment for current schema/revalidation behavior (`tests/acceptance/admin-crud.test.ts`):
+  - updated module insert assertion from `published` -> `is_published`.
+  - updated revalidation assertion to match shared class revalidate targets:
+    - `/classes`, `/training`, `/accelerator`, `/accelerator/roadmap`.
+
+- Tester-mode operational toggle (non-destructive) in Organization Access:
+  - backend (`src/app/actions/organization-access.ts`):
+    - `listOrganizationAccessAction` now returns per-member `isTester` and `canManageTesterFlags`.
+    - added `setOrganizationMemberTesterFlagAction({ memberId, isTester })`.
+    - action is platform-admin only and constrained to members within the active organization.
+  - UI (`src/components/account-settings/sections/organization-access-manager.tsx`):
+    - added per-member `Tester` switch (visible to platform admins only).
+    - switch toggles tester tools access on/off without role/subscription mutation.
+
+- Devtools/env clarity:
+  - added `NEXT_PUBLIC_ENABLE_REACT_GRAB="0"` to `.env.example` to keep React Grab explicitly opt-in in development.
+
+- Validation:
+  - `pnpm test:acceptance tests/acceptance/stripe-webhook-route.test.ts tests/acceptance/billing.test.ts` ✅
+  - `pnpm test:acceptance` ✅ (21 passed, 1 skipped)
+  - `pnpm test:rls` ✅
+  - `pnpm lint` ✅ (existing warning only: `src/app/(auth)/login/page.tsx` `@next/next/no-img-element`)
+
+## 2026-02-16 — Codex session (devtools visibility tightening + tutorial anchor refresh + Stripe readiness brief)
+
+- Internal tooling visibility tightened on public/auth surfaces:
+  - removed `CaseStudyAutofillFab` from unauthenticated/public entry points:
+    - `src/components/auth/auth-screen-shell.tsx`
+    - `src/app/(auth)/login/page.tsx`
+    - `src/components/public/home-canvas-preview.tsx`
+  - authenticated in-app autofill remains role-gated through `resolveDevtoolsAccess` (admin/tester only).
+
+- Tutorial anchor coverage refreshed for current UI:
+  - `src/components/nav-main.tsx`: added `data-tour="nav-documents"` mapping for `/my-organization/documents`.
+  - `src/components/tutorial/tutorial-manager.tsx`:
+    - platform step now uses fallback selector:
+      - `[data-tour="nav-accelerator"], [data-tour="nav-documents"]`
+    - updated step copy to be navigation-agnostic for free/paid users.
+  - `src/app/(dashboard)/my-organization/page.tsx`:
+    - added `data-tour` anchors for `dashboard-overview`, `dashboard-stats`, and `dashboard-actions`.
+  - `src/app/(accelerator)/accelerator/page.tsx`:
+    - added `data-tour="accelerator-get-started"` anchor to overview section.
+
+- Stripe rollout documentation added:
+  - new brief: `docs/briefs/stripe-tier-readiness-2026-02-16.md`
+    - captures required env vars, current checkout contract, transition matrix, and manual smoke checklist for Free/$20/$58.
+  - index updated: `docs/briefs/INDEX.md`.
+
+- Validation:
+  - `pnpm exec eslint 'src/components/auth/auth-screen-shell.tsx' 'src/app/(auth)/login/page.tsx' 'src/components/public/home-canvas-preview.tsx' 'src/components/nav-main.tsx' 'src/app/(dashboard)/my-organization/page.tsx' 'src/app/(accelerator)/accelerator/page.tsx' 'src/components/tutorial/tutorial-manager.tsx'` ✅ (existing warning only for `login/page.tsx` `<img>`)
+  - `pnpm test:acceptance` ✅ (21 passed, 1 skipped)
+  - `pnpm test:rls` ✅
+
+## 2026-02-16 — Codex session (operations price safety + tutorial anchor parity)
+
+- Operations pricing safety fix:
+  - `src/components/public/pricing-surface.tsx`
+    - removed fallback from `STRIPE_OPERATIONS_SUPPORT_PRICE_ID` -> `STRIPE_ORGANIZATION_PRICE_ID`.
+    - Operations checkout form now requires an explicit operations price id.
+    - when operations Stripe config is missing, render a disabled `Operations plan unavailable` CTA instead of routing into ambiguous checkout paths.
+  - `src/app/(public)/pricing/actions.ts`
+    - removed server-side fallback that could charge Organization pricing for Operations checkout when operations price is missing.
+    - missing operations price now redirects to `/pricing?error=operations_support_unavailable`.
+
+- Stripe local test setup check:
+  - verified local `.env.local` had all Stripe keys except `STRIPE_OPERATIONS_SUPPORT_PRICE_ID`.
+  - created Stripe test product/price for Operations Support (`$58/mo`) and set local `STRIPE_OPERATIONS_SUPPORT_PRICE_ID` (local env only).
+
+- Public/internal tooling visibility hardening:
+  - removed unauthenticated/public `CaseStudyAutofillFab` launchers from:
+    - `src/components/auth/auth-screen-shell.tsx`
+    - `src/app/(auth)/login/page.tsx`
+    - `src/components/public/home-canvas-preview.tsx`
+  - authenticated app still role-gated via `resolveDevtoolsAccess`.
+
+- Tutorial anchor parity updates:
+  - `src/app/(dashboard)/my-organization/page.tsx`:
+    - added `data-tour="dashboard-overview"`, `data-tour="dashboard-stats"`, `data-tour="dashboard-actions"`.
+  - `src/app/(accelerator)/accelerator/page.tsx`:
+    - added `data-tour="accelerator-get-started"`.
+  - `src/components/nav-main.tsx`:
+    - mapped `/my-organization/documents` to `data-tour="nav-documents"`.
+  - `src/components/tutorial/tutorial-manager.tsx`:
+    - updated platform navigation step selector fallback to `[data-tour="nav-accelerator"], [data-tour="nav-documents"]`.
+
+- Docs:
+  - added `docs/briefs/stripe-tier-readiness-2026-02-16.md`.
+  - updated `docs/briefs/INDEX.md`.
+
+- Validation:
+  - `pnpm exec eslint 'src/app/(public)/pricing/actions.ts' 'src/components/public/pricing-surface.tsx' 'src/components/auth/auth-screen-shell.tsx' 'src/app/(auth)/login/page.tsx' 'src/components/public/home-canvas-preview.tsx' 'src/components/nav-main.tsx' 'src/app/(dashboard)/my-organization/page.tsx' 'src/app/(accelerator)/accelerator/page.tsx' 'src/components/tutorial/tutorial-manager.tsx'` ✅ (existing `login/page.tsx` `<img>` warning only)
+  - `pnpm test:acceptance tests/acceptance/pricing-accelerator-checkout-metadata.test.ts tests/acceptance/pricing.test.ts` ✅
+  - `pnpm test:acceptance` ✅ (21 passed, 1 skipped)
+  - `pnpm test:rls` ✅
+
+## 2026-02-16 — Codex session (hosted Stripe env set + logout redirect fix)
+
+- Hosted env update (Vercel):
+  - linked project `caleb-hamernicks-projects/coach-house-platform`.
+  - set `STRIPE_OPERATIONS_SUPPORT_PRICE_ID` to `price_1T1YgoGifcBHlPT4wynmmrul` for:
+    - `Development`
+    - `Preview`
+    - `Production`
+  - verified with `vercel env ls`.
+
+- Logout redirect behavior update:
+  - changed post-signout destination from `/login` to `/` (Coach House home page) in all sign-out surfaces:
+    - `src/components/nav-user.tsx`
+    - `src/components/sign-out-button.tsx`
+    - `src/components/user-menu.tsx`
+  - aligned account deletion redirect to `/` as well:
+    - `src/components/account-settings/account-settings-dialog-state.ts`
+
+- Docs:
+  - updated Stripe readiness brief to reflect current rule:
+    - operations price id is required (no `$20` fallback for operations checkout)
+    - file: `docs/briefs/stripe-tier-readiness-2026-02-16.md`
+
+- Validation:
+  - `pnpm exec eslint src/components/nav-user.tsx src/components/sign-out-button.tsx src/components/user-menu.tsx src/components/account-settings/account-settings-dialog-state.ts` ✅
+  - `pnpm test:acceptance` ✅ (21 passed, 1 skipped)
+
+## 2026-02-16 — Codex session (home-canvas pricing auth handoff fix)
+
+- Fixed embedded pricing CTA behavior so pricing cards keep users inside home-canvas auth instead of hard-redirecting to `/login`:
+  - `src/components/public/pricing-surface.tsx`
+  - in embedded mode:
+    - Individual card routes to `/?section=signup`.
+    - Organization/Operations cards route to `/?section=login`.
+  - non-embedded `/pricing` behavior is unchanged (normal checkout/actions).
+
+- Validation:
+  - `pnpm exec eslint src/components/public/pricing-surface.tsx` ✅
+  - `pnpm test:acceptance tests/acceptance/pricing.test.ts tests/acceptance/pricing-accelerator-checkout-metadata.test.ts` ✅
+
+## 2026-02-16 — Codex session (tester route + role lock + local react-grab)
+
+- Added dedicated tester auth routes:
+  - `src/app/(auth)/tester/login/page.tsx` (`/tester/login`)
+  - `src/app/(auth)/tester/sign-up/page.tsx` (`/tester/sign-up`)
+  - tester signup uses normal signup flow but writes `qa_tester: true` into auth metadata for tester-audience detection.
+
+- Locked signup role options to currently supported role:
+  - `src/components/auth/sign-up-form.tsx`
+  - only `Founder / Executive lead` is selectable.
+  - other role options remain visible but disabled with `Coming soon` labeling.
+  - server validation now enforces `founder_exec`.
+
+- Restored local react-grab behavior while keeping production safe:
+  - `src/components/dev/react-grab-loader.tsx`
+    - development default is enabled unless explicitly set `NEXT_PUBLIC_ENABLE_REACT_GRAB=0`.
+    - production remains disabled by `NODE_ENV` guard.
+  - `.env.example`
+    - updated `NEXT_PUBLIC_ENABLE_REACT_GRAB` guidance and default example.
+
+- Validation:
+  - `pnpm exec eslint src/components/dev/react-grab-loader.tsx src/components/auth/sign-up-form.tsx 'src/app/(auth)/tester/login/page.tsx' 'src/app/(auth)/tester/sign-up/page.tsx'` ✅
+  - `pnpm test:acceptance` ✅ (21 passed, 1 skipped)
+
+## 2026-02-16 — Codex session (react-grab fix for `/tester/sign-up`)
+
+- Updated react-grab loader to initialize reliably on localhost routes, including auth/tester pages:
+  - `src/components/dev/react-grab-loader.tsx`
+  - removed `useSearchParams` dependency from the loader.
+  - embed-mode detection now reads `window.location.search` directly.
+  - load condition now allows localhost in addition to development by default (still disabled if `NEXT_PUBLIC_ENABLE_REACT_GRAB=0`).
+  - explicit override is supported with `NEXT_PUBLIC_ENABLE_REACT_GRAB=1`.
+
+- Validation:
+  - `pnpm exec eslint src/components/dev/react-grab-loader.tsx` ✅
+
+## 2026-02-17 — Codex session (hide `Why Us` sidebar nav item only)
+
+- Updated home-canvas sidebar nav rendering to hide the `Why Us` item while preserving section flow and scroll sequencing:
+  - `src/components/public/home-canvas-preview.tsx`
+  - added `HIDDEN_SIDEBAR_NAV_IDS` and `SIDEBAR_CANVAS_NAV` so `impact` remains in `VISIBLE_CANVAS_NAV` for section transitions but is not rendered in the left nav.
+
+- Validation:
+  - `pnpm exec eslint src/components/public/home-canvas-preview.tsx` ✅
+
+## 2026-02-17 — Codex session (hide scroll hint on non-scrollable home-canvas sections)
+
+- Updated home-canvas scroll hint visibility to only render on scrollable sections:
+  - `src/components/public/home-canvas-preview.tsx`
+  - wrapped the “Scroll down” chip in `activeSectionBehavior.scrollable` so it no longer appears on non-scrollable sections like `/signup` and other fixed panels.
+
+- Validation:
+  - `pnpm exec eslint src/components/public/home-canvas-preview.tsx` ✅
+
+## 2026-02-17 — Codex session (deprecate standalone `/pricing` and `/login` pages)
+
+- Updated route behavior so standalone `/pricing` and `/login` are no longer directly rendered:
+  - `src/app/(public)/pricing/page.tsx`
+    - now redirects to `/?section=pricing`.
+    - preserves non-embed query params when forwarding.
+  - `src/app/(auth)/login/page.tsx`
+    - now redirects to `/?section=login`.
+    - safely forwards supported params (`redirect`, `error`, `plan`, `addon`) to preserve auth/paywall handoff context.
+
+- Validation:
+  - `pnpm exec eslint 'src/app/(public)/pricing/page.tsx' 'src/app/(auth)/login/page.tsx'` ✅
+  - `pnpm test:acceptance` ✅ (21 passed, 1 skipped)
+
+## 2026-02-17 — Codex session (signup duplicate-email UX)
+
+- Updated shared signup behavior to surface a clear error for existing-account responses from Supabase:
+  - `src/components/auth/sign-up-form.tsx`
+  - handles the obfuscated duplicate-account response pattern (`data.user.identities` empty) and shows:
+    - `An account with this email already exists. Sign in instead.`
+  - prevents success/countdown state in this case.
+  - adds direct `Go to sign in` link on error status messages.
+
+- Validation:
+  - `pnpm exec eslint src/components/auth/sign-up-form.tsx` ✅
+  - `pnpm test:acceptance tests/acceptance/onboarding.test.ts tests/acceptance/pricing.test.ts` ✅
+
+## 2026-02-17 — Codex session (account deletion hardening + home redirect)
+
+- Hardened account deletion flow for cleaner session teardown and routing:
+  - `src/app/api/account/delete/route.ts`
+    - clears active auth session (`supabase.auth.signOut()`) before admin deletion.
+    - returns the same `response` object so auth cookie mutations are preserved.
+    - continues deleting the auth user via `admin.auth.admin.deleteUser(user.id)`.
+  - `src/components/account-settings/account-settings-dialog-state.ts`
+    - improved `handleDeleteAccount` error handling and user feedback.
+    - performs client sign-out best-effort after successful deletion.
+    - consistently redirects to `/` and refreshes.
+
+- Validation:
+  - `pnpm exec eslint src/app/api/account/delete/route.ts src/components/account-settings/account-settings-dialog-state.ts` ✅
+  - `pnpm test:acceptance tests/acceptance/onboarding.test.ts` ✅
+
+- Follow-up queued:
+  - implement secure storage cleanup during account deletion so user-owned files/assets are purged from Supabase Storage (bucket + path scoped), with server-side authz checks and failure-safe deletion ordering.
+
+## 2026-02-17 — Codex session (delete-account confirmation + invalid-session handling)
+
+- Added explicit delete confirmation UX requiring account email entry:
+  - `src/components/account-settings/account-settings-dialog.tsx`
+  - Delete action now opens a dedicated confirmation dialog.
+  - user must type their current account email to enable the destructive action.
+  - added pending state so delete button does not appear stuck during async deletion.
+
+- Hardened delete handler outcomes:
+  - `src/components/account-settings/account-settings-dialog-state.ts`
+  - `handleDeleteAccount` now returns `Promise<boolean>` for clear success/failure flow.
+  - detects invalid/stale auth session errors, signs out safely, and routes user to `/?section=login` with a clear toast.
+  - successful delete still signs out and routes to `/`.
+
+- Validation:
+  - `pnpm exec eslint src/components/account-settings/account-settings-dialog.tsx src/components/account-settings/account-settings-dialog-state.ts src/app/api/account/delete/route.ts` ✅
+  - `pnpm test:acceptance tests/acceptance/onboarding.test.ts tests/acceptance/pricing.test.ts` ✅
+
+## 2026-02-17 — Codex session (onboarding layout cleanup + callback auth UX)
+
+- Onboarding visual/layout adjustments:
+  - `src/components/onboarding/onboarding-dialog.tsx`
+  - removed inline onboarding card drop shadow.
+  - fixed vertical centering in dashboard inline canvas by switching wrapper to a desktop flex centering container.
+  - removed the optional “How are you involved?” selector block from step 1.
+
+- Auth callback resiliency and user-friendly messaging:
+  - `src/lib/supabase/auth-callback.ts`
+    - added OTP token-hash verification path (`verifyOtp`) for callback links that include `token_hash`.
+    - improved fallback redirects to home-canvas login (`/?section=login`) with sanitized params.
+    - handles PKCE code-verifier-missing on signup confirmations by redirecting with a non-error notice (`notice=email_confirmed_sign_in`).
+  - `src/components/auth/login-form.tsx`
+    - maps technical auth errors to plain-language messages.
+    - displays callback notices (including confirmed-email prompt).
+    - preserves safe `redirect` query targets and carries them through signin/signup links.
+  - `src/components/public/home-canvas-preview.tsx`
+    - updated auth panel links to root section routing (`/?section=login|signup`) instead of `/home-canvas`.
+
+- Validation:
+  - `pnpm exec eslint src/components/onboarding/onboarding-dialog.tsx src/components/auth/login-form.tsx src/components/public/home-canvas-preview.tsx src/lib/supabase/auth-callback.ts` ✅
+  - `pnpm test:acceptance tests/acceptance/onboarding.test.ts tests/acceptance/pricing.test.ts` ✅
+
+## 2026-02-17 — Codex session (paywall overlay redesign: optional + full tier cards)
+
+- Reworked in-app paywall modal to remove “Upgrade required” framing and external pricing routing:
+  - `src/components/paywall/paywall-overlay.tsx`
+  - heading now uses neutral/optional language (`Choose your plan` / `Plan options`).
+  - onboarding source (`source=onboarding`) copy explicitly states upgrade is optional.
+  - removed the “Open pricing” external route button.
+  - replaced single-card upsell with full in-app 3-tier card layout:
+    - Individual (Free)
+    - Organization ($20/mo)
+    - Operations Support ($58/mo)
+  - each tier now has clearer summary bullets and direct actions (stay free, checkout organization, checkout operations).
+  - footer action simplified to in-app dismiss (`Not now` / `Close`).
+
+- Validation:
+  - `pnpm exec eslint src/components/paywall/paywall-overlay.tsx` ✅
+  - `pnpm test:acceptance tests/acceptance/pricing.test.ts tests/acceptance/onboarding.test.ts` ✅
+
+- Follow-up refinement:
+  - removed free-tier CTA button from the in-app paywall card.
+  - free tier now shows a non-interactive status pill/copy (`Current plan` / `Your current plan`) and is not selectable.
+  - Validation:
+    - `pnpm exec eslint src/components/paywall/paywall-overlay.tsx` ✅
+    - `pnpm test:acceptance tests/acceptance/pricing.test.ts` ✅
+
+## 2026-02-17 — Codex session (fix Radix sheet hydration mismatch on My Organization)
+
+- Addressed hydration mismatch caused by server/client Radix trigger id drift (`aria-controls`) on the calendar add-event sheet trigger:
+  - `src/components/organization/my-organization-add-event-sheet-button.tsx`
+  - added mounted-gate rendering:
+    - pre-mount: render a stable disabled plain `Button` (no Radix dialog trigger attributes)
+    - post-mount: render full `Sheet` + `SheetTrigger` interactive flow
+  - this keeps SSR/CSR markup aligned during hydration and prevents the reported warning.
+
+- Validation:
+  - `pnpm exec eslint src/components/organization/my-organization-add-event-sheet-button.tsx` ✅
+  - `pnpm test:acceptance tests/acceptance/onboarding.test.ts tests/acceptance/pricing.test.ts` ✅
+
+## 2026-02-17 — Codex session (tutorial/onboarding refresh + tester paid-access nav fix)
+
+- Refreshed onboarding/tutorial guidance to match current product flow:
+  - `src/components/onboarding/onboarding-dialog.tsx`
+    - updated Step 1 title/description copy.
+    - defaulted onboarding intent to `build` (available-now path) to reduce friction.
+  - `src/components/onboarding/onboarding-welcome.tsx`
+    - updated welcome checklist copy to current workspace model.
+    - removed stale upgrade-checklist messaging.
+  - `src/components/tutorial/tutorial-manager.tsx`
+    - refreshed platform/my-organization/documents tutorial step copy and targets.
+    - moved my-organization tutorial to stable selectors (`dashboard-overview`, `dashboard-actions`, `nav-documents`).
+  - `src/components/organization/org-profile-card/tabs/documents-tab.tsx`
+    - added stable `data-tour="documents-search"` target on documents search input.
+
+- Fixed paid tester accelerator visibility after sandbox checkout:
+  - `src/app/(public)/pricing/actions.ts`
+    - checkout metadata now includes both `user_id` and `org_user_id`.
+    - fallback trialing record writes to `org_user_id` ownership context.
+  - `src/app/(public)/pricing/success/page.tsx`
+    - subscription upsert now uses `org_user_id` from metadata when present.
+  - `src/app/api/stripe/webhook/route.ts`
+    - subscription upserts now prefer `org_user_id` metadata, with fallback to `user_id`.
+    - added metadata fallback path for checkout sessions missing `client_reference_id`.
+  - `src/lib/accelerator/entitlements.ts`
+    - entitlements now check active subscription for active org owner id first, then fallback to member user id for backwards compatibility with older user-scoped subscription rows.
+
+- Validation:
+  - `pnpm exec eslint 'src/app/(public)/pricing/actions.ts' 'src/app/(public)/pricing/success/page.tsx' src/app/api/stripe/webhook/route.ts src/lib/accelerator/entitlements.ts src/components/tutorial/tutorial-manager.tsx src/components/onboarding/onboarding-dialog.tsx src/components/onboarding/onboarding-welcome.tsx src/components/organization/org-profile-card/tabs/documents-tab.tsx` ✅
+  - `pnpm test:acceptance tests/acceptance/pricing.test.ts tests/acceptance/onboarding.test.ts tests/acceptance/stripe-webhook-route.test.ts` ✅
+  - `pnpm test:acceptance` ✅ (21 passed, 1 skipped)
+
+## 2026-02-17 — Codex session (paid tier Accelerator nav visibility hotfix)
+
+- Root-cause fix for paid users not seeing Accelerator in nav after successful Stripe checkout:
+  - DB `subscriptions` table conflict target is composite (`user_id, stripe_subscription_id`), but write paths were using `onConflict: "stripe_subscription_id"`.
+  - This caused subscription upserts to fail silently in checkout success + webhook flows, leaving entitlement state unsynced.
+
+- Updated subscription write paths to the correct conflict target:
+  - `src/app/(public)/pricing/actions.ts`
+  - `src/app/(public)/pricing/success/page.tsx`
+  - `src/app/api/stripe/webhook/route.ts`
+  - `src/lib/accelerator/entitlements.ts`
+  - all now use `onConflict: "user_id,stripe_subscription_id"`.
+
+- Added entitlement resiliency when local subscription state is missing:
+  - `src/lib/accelerator/entitlements.ts`
+  - if no active local subscription is found, attempts Stripe metadata lookup (`user_id` / `org_user_id`) and backfills `subscriptions` via admin client.
+  - includes short in-memory cooldown to avoid repeated Stripe lookups.
+
+- Updated acceptance assertions for new conflict target:
+  - `tests/acceptance/pricing.test.ts`
+  - `tests/acceptance/stripe-webhook-route.test.ts`
+
+- Operational data repair performed:
+  - backfilled missing active Stripe subscription row(s) into `subscriptions` using corrected composite conflict target.
+
+- Validation:
+  - `pnpm exec eslint 'src/lib/accelerator/entitlements.ts' 'src/app/(public)/pricing/actions.ts' 'src/app/(public)/pricing/success/page.tsx' 'src/app/api/stripe/webhook/route.ts' 'tests/acceptance/pricing.test.ts' 'tests/acceptance/stripe-webhook-route.test.ts'` ✅
+  - `pnpm test:acceptance tests/acceptance/pricing.test.ts tests/acceptance/stripe-webhook-route.test.ts` ✅
+  - `pnpm test:acceptance tests/acceptance/pricing-accelerator-checkout-metadata.test.ts` ✅
+  - `pnpm test:acceptance` ✅ (21 passed, 1 skipped)
+
+## 2026-02-17 — Codex session (billing UX rebuild + in-app upgrade/downgrade)
+
+- Rebuilt the in-app paywall modal from placeholder-like upsell into a full plan management surface:
+  - `src/components/paywall/paywall-overlay.tsx`
+  - added clear current-plan state, stronger layout hierarchy, and explicit upgrade/downgrade messaging.
+  - added paid-tier switching actions in-place (`Organization` ↔ `Operations Support`) using existing checkout action.
+  - added direct shortcut to `/billing` from modal footer.
+
+- Implemented real subscription plan switching logic in checkout action (prevents duplicate subscriptions):
+  - `src/app/(public)/pricing/actions.ts`
+  - when active/trialing subscription exists, action now updates existing Stripe subscription item price instead of creating a second subscription.
+  - persists updated subscription status/metadata to Supabase with composite conflict target (`user_id,stripe_subscription_id`).
+  - keeps checkout path for first-time paid subscriptions.
+
+- Added reusable plan-tier resolver:
+  - `src/lib/billing/plan-tier.ts`
+  - normalizes plan tier from subscription status + metadata (`free`, `organization`, `operations_support`).
+
+- Wired current plan tier through app shell so paywall state is accurate for logged-in users:
+  - `src/app/(dashboard)/layout.tsx`
+  - `src/app/(accelerator)/layout.tsx`
+  - `src/components/app-shell.tsx`
+
+- Replaced billing placeholder page with a real billing management screen:
+  - `src/app/(dashboard)/billing/page.tsx`
+  - now shows current plan summary, renewal info, side-by-side plan cards, and one-click upgrade/downgrade actions.
+
+- Billing portal action aligned to active org context:
+  - `src/app/(dashboard)/billing/actions.ts`
+  - resolves `orgId` first (with safe fallback in test/mocked contexts) before looking up Stripe customer.
+
+- Validation:
+  - `pnpm exec eslint 'src/app/(public)/pricing/actions.ts' 'src/components/paywall/paywall-overlay.tsx' 'src/components/app-shell.tsx' 'src/app/(dashboard)/layout.tsx' 'src/app/(accelerator)/layout.tsx' 'src/app/(dashboard)/billing/page.tsx' 'src/app/(dashboard)/billing/actions.ts' 'src/lib/billing/plan-tier.ts'` ✅
+  - `pnpm test:acceptance` ✅ (21 passed, 1 skipped)
+
+## 2026-02-17 — Codex session (organization route defaults + nav naming + onboarding slug clarity)
+
+- Migrated user-facing default workspace route references from `/my-organization` to `/organization` across app navigation/auth/paywall/search/redirect surfaces while keeping compatibility pages in place:
+  - added/kept route aliases:
+    - `src/app/(dashboard)/organization/page.tsx` -> re-export of `../my-organization/page`
+    - `src/app/(dashboard)/organization/documents/page.tsx` -> re-export of `../../my-organization/documents/page`
+  - updated nav + shell default links and auth fallbacks to point at `/organization`.
+
+- Sidebar now supports dynamic org naming in primary nav item:
+  - `src/components/app-sidebar/nav-data.ts`
+  - `src/components/app-sidebar.tsx`
+  - `src/components/app-shell.tsx`
+  - main item title now uses `organizationName` when available, fallback label is `Organization`.
+
+- Onboarding slug safety + clarity updates:
+  - reserved slug lists now include `organization` (while retaining `my-organization`) in:
+    - `src/components/onboarding/onboarding-dialog.tsx`
+    - `src/app/(dashboard)/onboarding/actions.ts`
+    - `src/app/api/public/organizations/slug-available/route.ts`
+    - `src/components/organization/org-profile-card/tabs/company-tab/constants.ts`
+  - added helper copy in onboarding org step clarifying that display name and public URL slug are separate.
+
+- Added local Stripe branding assets and reusable badge component (official asset source) and integrated into billing/paywall:
+  - `public/brand/stripe/powered-by-stripe-black.svg`
+  - `public/brand/stripe/powered-by-stripe-white.svg`
+  - `src/components/billing/stripe-powered-badge.tsx`
+  - `src/app/(dashboard)/billing/page.tsx`
+  - `src/components/paywall/paywall-overlay.tsx`
+
+- Validation:
+  - `pnpm exec eslint src/proxy.ts src/lib/supabase/auth-callback.ts src/components/app-shell.tsx src/components/app-sidebar.tsx src/components/app-sidebar/nav-data.ts src/components/nav-main.tsx src/components/auth/login-form.tsx src/components/auth/sign-up-form.tsx src/components/auth/update-password-form.tsx 'src/app/(auth)/sign-up/page.tsx' 'src/app/(auth)/tester/sign-up/page.tsx' 'src/app/(auth)/tester/login/page.tsx' 'src/app/(auth)/update-password/page.tsx' 'src/app/(dashboard)/onboarding/actions.ts' src/components/onboarding/onboarding-dialog.tsx src/app/api/public/organizations/slug-available/route.ts src/components/organization/org-profile-card/tabs/company-tab/constants.ts 'src/app/(dashboard)/organization/page.tsx' 'src/app/(dashboard)/organization/documents/page.tsx' 'src/app/(dashboard)/my-organization/page.tsx' 'src/app/(dashboard)/layout.tsx' 'src/app/(accelerator)/layout.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ❌ (pre-existing repository errors unrelated to this route pass remain in pricing/auth typing + acceptance test typing stubs).
+
+## 2026-02-17 — Codex session (strict completion sweep: routes, onboarding/tutorial, billing QA, TS+tests)
+
+- Route consistency and naming cleanup toward `/organization`:
+  - finalized user-facing defaults/redirects on `/organization` and `/organization/documents` while preserving compatibility route aliases.
+  - sidebar main nav now uses dynamic org name when available, fallback label `Organization`.
+  - updated language strings from “My Organization” -> “Organization” across error states, join/admin helpers, and roadmap guidance.
+  - files (representative):
+    - `src/components/nav-main.tsx`
+    - `src/components/tutorial/tutorial-manager.tsx`
+    - `src/components/onboarding/onboarding-welcome.tsx`
+    - `src/components/global-search.tsx`
+    - `src/app/(dashboard)/@breadcrumbs/my-organization/page.tsx`
+    - `src/app/(dashboard)/@breadcrumbs/organization/page.tsx` (new)
+
+- Onboarding slug + display-name clarity:
+  - kept display name vs public slug as separate concepts and added helper copy in onboarding.
+  - ensured `organization` is reserved across slug validators.
+  - files:
+    - `src/components/onboarding/onboarding-dialog.tsx`
+    - `src/app/(dashboard)/onboarding/actions.ts`
+    - `src/app/api/public/organizations/slug-available/route.ts`
+    - `src/components/organization/org-profile-card/tabs/company-tab/constants.ts`
+
+- TypeScript hardening and test reliability fixes:
+  - fixed `startCheckout` control-flow narrowing for plan price fallback redirect path.
+  - refactored signup role selection to local controlled state while preserving “only Founder/Executive available” behavior and removing RHF generic/type conflicts.
+  - normalized Stripe `current_period_end` typing cast in entitlements sync.
+  - fixed webhook acceptance tests to use `NextRequest` and explicit `afterEach` import.
+  - files:
+    - `src/app/(public)/pricing/actions.ts`
+    - `src/components/auth/sign-up-form.tsx`
+    - `src/lib/accelerator/entitlements.ts`
+    - `tests/acceptance/stripe-webhook-route.test.ts`
+
+- Acceptance/snapshot suite updates for route rename:
+  - updated expectations from `/my-organization` -> `/organization`.
+  - files:
+    - `tests/acceptance/pricing.test.ts`
+    - `tests/acceptance/onboarding.test.ts`
+    - `tests/acceptance/readiness-checklist.test.ts`
+    - `src/stories/breadcrumb.stories.tsx` (snapshot text parity)
+
+- Performance pass:
+  - added short-lived server cache for common published-only sidebar tree fetch to reduce repeated layout query work during authenticated route transitions.
+  - file:
+    - `src/lib/academy.ts`
+
+- Validation:
+  - `pnpm exec eslint src/lib/academy.ts` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/pricing.test.ts tests/acceptance/pricing-accelerator-checkout-metadata.test.ts tests/acceptance/stripe-webhook-route.test.ts` ✅
+  - `pnpm test:acceptance` ✅ (71 passed, 1 skipped)
+  - `pnpm lint` ✅
+  - `pnpm test:snapshots` ✅ (after `pnpm snapshots:update` for breadcrumb rename)
+  - `pnpm test:rls` ✅
+  - `pnpm build` ✅
+  - `pnpm check:perf` ❌ (existing budget script issues: missing legacy route key `/(dashboard)/dashboard/page` and `/admin` first-load bundle over budget).
+
+## 2026-02-17 — Codex hotfix (unstable_cache + cookies runtime error)
+
+- Fixed `/accelerator` runtime error caused by calling cookie-backed `createSupabaseServerClient()` inside `unstable_cache` scope in sidebar tree fetch.
+- Updated `src/lib/academy.ts`:
+  - `fetchSidebarTreeUncached` now accepts an optional `clientOverride`.
+  - cached published sidebar loader now always uses `createSupabaseAdminClient()` (no cookies) and returns cached result.
+  - cache path is only used when `SUPABASE_SERVICE_ROLE_KEY` is present; otherwise it safely falls back to uncached per-request path.
+- Validation:
+  - `pnpm exec eslint src/lib/academy.ts` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-17 — Codex UI tweak (accelerator readiness checklist feed styling)
+
+- Confirmed `NEXT TO REACH FUNDABLE` content is dynamic:
+  - driven from `resolveAcceleratorReadiness(...)` missing criteria in `src/app/(accelerator)/accelerator/page.tsx`.
+  - mapped via `buildReadinessChecklist(...)` and hidden automatically when target/checklist are empty.
+- Restyled readiness block into a mini checklist feed in `src/components/accelerator/accelerator-org-snapshot-strip.tsx`:
+  - per-item iconography by task type (formation, roadmap, funding/program, legal/docs).
+  - compact feed rows with hover affordance, right chevron, and sequence index.
+  - added item count pill for quick scan.
+- Validation:
+  - `pnpm exec eslint src/components/accelerator/accelerator-org-snapshot-strip.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-17 — Codex UI alignment fix (accelerator roadmap module card media)
+
+- Restored requested design behavior for `RoadmapOutlineCard` module tiles in accelerator:
+  - removed module media gradient/pattern treatment (had drifted back in).
+  - kept existing card shell, status pill, and centered icon container.
+- File:
+  - `src/components/roadmap/roadmap-rail-card.tsx`
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-17 — Codex CTA layout tweak (accelerator continue row)
+
+- Updated accelerator snapshot CTA row layout in `src/components/accelerator/accelerator-org-snapshot-strip.tsx`:
+  - moved `CONTINUE` label to the left side,
+  - removed trailing chevron icon container,
+  - moved module title + icon block to the right side.
+- Validation:
+  - `pnpm exec eslint src/components/accelerator/accelerator-org-snapshot-strip.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-17 — Codex roadmap card visual tweak (active highlight + strategic icon)
+
+- Removed persistent active highlight treatment on accelerator roadmap deliverable cards in `RoadmapRailCard` snake-grid mode (eliminated active border/ring + `aria-current` marker from card link).
+- Switched center icon for accelerator roadmap deliverable cards to strategic roadmap icon (`WaypointsIcon`) so cards no longer render section-specific icons like BookOpen for this surface.
+- File:
+  - `src/components/roadmap/roadmap-rail-card.tsx`
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-17 — Codex experiment (replace module media gradient with FlutedGlass shader)
+
+- Added Paper Design shaders package:
+  - `@paper-design/shaders-react`
+- Added local texture asset (no hotlink runtime dependency):
+  - `public/textures/fluted-glass-flowers.webp` (downloaded from paper.design sample image)
+- Updated accelerator roadmap module cards to use `FlutedGlass` as media background replacement in `RoadmapRailCard`:
+  - `src/components/roadmap/roadmap-rail-card.tsx`
+  - mounted via `next/dynamic` with `ssr: false` to avoid SSR/hydration issues for WebGL shader component.
+  - kept existing centered icon container + status badge overlays.
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-17 — Codex stability fix (roadmap card media flicker from per-card WebGL shader)
+
+- Root cause: per-card `FlutedGlass` WebGL mounts caused context churn/instability with many cards, producing intermittent blink/partial overlay application.
+- Replaced per-card runtime WebGL shader in roadmap module media with deterministic CSS fluted treatment layered over the shared local image, so every card renders consistently.
+- File:
+  - `src/components/roadmap/roadmap-rail-card.tsx`
+- Validation:
+  - `pnpm exec eslint src/components/roadmap/roadmap-rail-card.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-17 — Codex bugfix (module completion progress + next lesson routing)
+
+- Fixed stale module completion summary and incorrect next-lesson navigation on module completion screen.
+- Root cause:
+  - completion summary was derived from current module position, not actual completed module count.
+  - next lesson URL used array position (`+2`) instead of stable module `idx`, which can route to the wrong module when indexes are non-contiguous.
+- Updated files:
+  - `src/components/training/module-detail.tsx`
+    - compute/set completed module set once.
+    - derive next lesson href from `nextModule.idx` with safe fallback.
+    - pass `completedModuleCount` and `isCurrentModuleCompleted` to stepper.
+  - `src/components/training/module-detail/module-stepper.tsx`
+    - replaced positional completion metric with completion-count metric.
+    - progress bar + label now show completed modules out of total.
+    - preserves optimistic +1 on completion screen when current module was just completed.
+  - `src/app/(dashboard)/class/[slug]/module/[index]/page.tsx`
+    - include `idx` in class module payload passed into detail component.
+- Validation:
+  - `pnpm eslint 'src/components/training/module-detail.tsx' 'src/components/training/module-detail/module-stepper.tsx' 'src/app/(dashboard)/class/[slug]/module/[index]/page.tsx'` ✅
+  - `pnpm test:acceptance` ✅
+
+## 2026-02-17 — Codex UI fix (sidebar organization name overflow handling)
+
+- Updated sidebar primary nav item rendering to support long organization names without clipping/breaking layout.
+- File:
+  - `src/components/nav-main.tsx`
+- Changes:
+  - organization nav row can grow vertically (`h-auto` + `min-h-8`).
+  - organization label now wraps with 2-line clamp and word breaking.
+  - non-organization rows retain single-line truncate behavior.
+- Validation:
+  - `pnpm eslint src/components/nav-main.tsx` ✅
+
+## 2026-02-17 — Codex tester UX improvement (Autofill page first-use guide + undo)
+
+- Upgraded tester `Autofill page` behavior in `src/components/dev/case-study-autofill-fab.tsx`:
+  - added hover tooltip explaining purpose and behavior.
+  - added first-use confirmation dialog with tester-focused usage guidance.
+  - added per-run page snapshot + `Undo` action (via toast) to restore changed values if autofill was accidental.
+  - clears undo snapshot on route change to avoid cross-page restores.
+- Validation:
+  - `pnpm eslint src/components/dev/case-study-autofill-fab.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-17 — Codex onboarding fix (uploaded photo now seeds org logo)
+
+- Root cause: onboarding avatar upload only populated `profiles.avatar_url` and owner `org_people.image`; it did not set organization `logoUrl`, so org header/logo surfaces kept showing the `LOGO` placeholder.
+- Updated:
+  - `src/app/(dashboard)/onboarding/actions.ts`
+  - when onboarding avatar exists and org `logoUrl` is currently empty, onboarding now seeds `organizations.profile.logoUrl` with the uploaded avatar URL.
+  - existing org logos are preserved (no overwrite).
+- Validation:
+  - `pnpm eslint 'src/app/(dashboard)/onboarding/actions.ts'` ✅
+  - `pnpm test:acceptance tests/acceptance/onboarding.test.ts` ✅
+
+## 2026-02-17 — Codex autofill mapping fix (program/editor field accuracy)
+
+- Addressed incorrect autofill value mapping (including tagline/subtitle collisions) and low-fill coverage in editor/program contexts.
+- Updated `src/components/dev/case-study-autofill-fab.tsx`:
+  - added explicit `tagline` and program-specific sample values (`programTitle`, `programSubtitle`, status/type/format/frequency/duration, numeric budget/staff/goal fields).
+  - tightened matcher regexes with word boundaries to avoid accidental substring matches (e.g., `subtitle` hitting `title`).
+  - made fieldset legend a fallback-only hint source (prevents cross-section hint contamination).
+  - added numeric/date/month input handling for program wizard fields.
+- Validation:
+  - `pnpm eslint src/components/dev/case-study-autofill-fab.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-17 — Codex autofill + profile form polish (socials, boilerplate, website label, icon centering)
+
+- Improved tester autofill data quality and field precision in `src/components/dev/case-study-autofill-fab.tsx`:
+  - added explicit sample values for representative, EIN, socials, newsletter, website domain, and boilerplate.
+  - replaced generic long-text fallback with realistic nonprofit boilerplate copy.
+  - added direct field-name mapping for key org profile fields (`rep`, `ein`, `publicUrl`, socials, `boilerplate`, address fields, etc.) to prevent incorrect cross-matches.
+  - expanded URL handling to correctly populate social URL fields.
+- Updated Presence section copy in `src/components/organization/org-profile-card/tabs/company-tab/edit-sections/presence.tsx`:
+  - `Website URL` -> `Website`
+  - placeholder changed to `google.com`
+  - helper text clarifies this is the organization website, not Coach House public profile URL.
+- Fixed icon vertical alignment in icon-input rows by updating `InputWithIcon` in `src/components/organization/org-profile-card/shared.tsx`.
+- Validation:
+  - `pnpm eslint src/components/dev/case-study-autofill-fab.tsx src/components/organization/org-profile-card/tabs/company-tab/edit-sections/presence.tsx src/components/organization/org-profile-card/shared.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-17 — Codex UI alignment fix (icon centering + desktop form-row alignment)
+
+- Fixed remaining icon alignment issue for icon-prefixed inputs by changing icon positioning to full-height vertical centering in:
+  - `src/components/organization/org-profile-card/shared.tsx` (`InputWithIcon`)
+- Fixed desktop form/title alignment drift by normalizing `FormRow` to a stable 2-column template and top alignment:
+  - `src/components/organization/org-profile-card/shared.tsx` (`FormRow`)
+  - uses `md:grid-cols-[minmax(180px,240px)_minmax(0,1fr)]` with `md:items-start`.
+- Validation:
+  - `pnpm eslint src/components/organization/org-profile-card/shared.tsx src/components/dev/case-study-autofill-fab.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-17 — Codex view-mode polish (stable field alignment + upgraded link presentation)
+
+- Fixed view-mode alignment drift where field blocks could appear vertically centered in mixed-height rows.
+- Updated:
+  - `src/components/organization/org-profile-card/shared.tsx`
+    - `ProfileField` now anchors content to start (`content-start self-start`) for consistent title-to-content spacing.
+  - `src/components/organization/org-profile-card/tabs/company-tab/display-sections.tsx`
+    - section grids now explicitly use `md:items-start` in view mode.
+- Replaced plain icon + underlined URL presentation with a structured link card style:
+  - `src/components/organization/org-profile-card/shared.tsx` (`BrandLink`)
+  - each link now renders as a bordered row with icon badge, hostname title, secondary path text, and external-link affordance.
+- Validation:
+  - `pnpm eslint src/components/organization/org-profile-card/shared.tsx src/components/organization/org-profile-card/tabs/company-tab/display-sections.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-17 — Codex UX update (FieldText read-more expansion)
+
+- Added inline `Read more / Read less` behavior for long text fields in view mode.
+- File:
+  - `src/components/organization/org-profile-card/shared.tsx` (`FieldText`)
+- Behavior:
+  - multiline fields collapse after ~280 chars by default.
+  - single-line fields collapse after ~140 chars by default.
+  - users can expand/collapse in-place without leaving the section.
+- Validation:
+  - `pnpm eslint src/components/organization/org-profile-card/shared.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-17 — Codex spacing tweak (Brand Kit logo field)
+
+- Increased vertical spacing between the `Logo` label and its image/link block in view mode.
+- File:
+  - `src/components/organization/org-profile-card/tabs/company-tab/display-sections.tsx`
+- Change:
+  - wrapped logo `BrandLink` with `pt-1.5` to move the image container lower under the label.
+- Validation:
+  - `pnpm eslint src/components/organization/org-profile-card/tabs/company-tab/display-sections.tsx` ✅
+
+## 2026-02-18 — Codex performance pass (faster main-nav route transitions)
+
+- Optimized server-side work on main dashboard routes to reduce nav switch latency.
+
+### Batched avatar URL signing
+- Added shared helper:
+  - `src/lib/people/display-images.ts`
+- Replaced per-person `createSignedUrl(...)` calls with one batched `createSignedUrls(...)` call per page render.
+- Applied in:
+  - `src/app/(dashboard)/people/page.tsx`
+  - `src/app/(dashboard)/my-organization/page.tsx`
+
+### Parallelized expensive `/organization` page fetches
+- `src/app/(dashboard)/my-organization/page.tsx`
+- Parallelized independent queries with `Promise.all(...)`:
+  - programs list
+  - roadmap calendar events
+  - accelerator progress summary
+
+### Removed unnecessary explicit dynamic flags on main nav pages
+- Removed `export const dynamic = "force-dynamic"` from:
+  - `src/app/(dashboard)/people/page.tsx`
+  - `src/app/(dashboard)/my-organization/page.tsx`
+  - `src/app/(dashboard)/my-organization/documents/page.tsx`
+- These routes remain user-dynamic via auth/cookies, but no longer force the strictest dynamic path unnecessarily.
+
+### Validation
+- `pnpm eslint 'src/lib/people/display-images.ts' 'src/app/(dashboard)/people/page.tsx' 'src/app/(dashboard)/my-organization/page.tsx' 'src/app/(dashboard)/my-organization/documents/page.tsx'` ✅
+- `pnpm exec tsc --noEmit` ✅
+- `pnpm test:acceptance` ✅ (71 passed, 1 skipped)
+
+## 2026-02-18 — Codex QA fix (`/people` autofill now opens Add Person flow)
+
+- Fixed tester `Autofill page` behavior on `/people` where it previously no-op'd because no editable form fields are visible until the Add Person sheet opens.
+- Updated:
+  - `src/components/dev/case-study-autofill-fab.tsx`
+- Changes:
+  - Added `/people` fallback flow to:
+    - open the **Add Person** sheet automatically,
+    - advance step-by-step through `Continue`,
+    - prefill visible inputs on each step,
+    - stop before submit so testers can review and click `Add Person` manually.
+  - Added safer field skipping for search/filter controls so autofill targets forms, not list filters.
+  - Improved success toast copy on `/people` to clarify next action.
+  - Preserved undo snapshot behavior for autofilled sheet fields.
+- Validation:
+  - `pnpm eslint src/components/dev/case-study-autofill-fab.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-18 — Codex UI tweak (Verified checkpoint pinned to strip endpoint)
+
+- Moved the `Verified checkpoint` marker on Accelerator snapshot progress strip to the far-right endpoint of the bar.
+- File:
+  - `src/components/accelerator/accelerator-org-snapshot-strip.tsx`
+- Implementation:
+  - switched marker positioning from dynamic `left: ${verified}%` with `-translate-x-1/2` to fixed endpoint anchor `right-0` with `translate-x-1/2`.
+  - this keeps the marker centered on the 100% endpoint.
+- Validation:
+  - `pnpm eslint src/components/accelerator/accelerator-org-snapshot-strip.tsx` ✅
+
+## 2026-02-18 — Codex UX copy tweak (snapshot progress pill now percentage)
+
+- Updated the Accelerator snapshot progress pill to show numeric percent instead of readiness word labels.
+- File:
+  - `src/components/accelerator/accelerator-org-snapshot-strip.tsx`
+- Details:
+  - pill text now renders `progressPercent` as `${progress}%`.
+  - readiness state is retained as the pill color treatment and tooltip title (`Readiness: Building/Fundable/Verified`).
+- Validation:
+  - `pnpm eslint src/components/accelerator/accelerator-org-snapshot-strip.tsx` ✅
+
+## 2026-02-18 — Codex alignment polish (verified marker flush-right)
+
+- Adjusted the `Verified checkpoint` marker position so it no longer overhangs the progress strip by half its width.
+- File:
+  - `src/components/accelerator/accelerator-org-snapshot-strip.tsx`
+- Change:
+  - removed `translate-x-1/2` from the verified marker class while keeping `right-0`.
+  - result: marker right edge now aligns flush with the strip endpoint, matching right-aligned progress pill edge.
+- Validation:
+  - `pnpm eslint src/components/accelerator/accelerator-org-snapshot-strip.tsx` ✅
+
+## 2026-02-18 — Codex pricing-sync pass (My Organization `Formation Status` card)
+
+- Updated `launch-roadmap` card to align with current 3-tier model and remove outdated tier language.
+- File:
+  - `src/app/(dashboard)/my-organization/page.tsx`
+- Changes:
+  - replaced legacy `Free modules` + `Paid electives` sections with a unified roadmap module list.
+  - added plan-aware messaging:
+    - free plan: shows formation modules + upgrade prompt for additional accelerator modules.
+    - paid plans: shows included modules across formation + accelerator preview.
+  - card description updated to reflect formation + accelerator progress in one place.
+  - free-plan primary CTA now routes to in-app upgrade paywall (`?paywall=organization&plan=organization...`) instead of generic continue.
+  - added plan-tier resolution from active org subscription (`resolvePricingPlanTier`) for card behavior.
+- Validation:
+  - `pnpm eslint 'src/app/(dashboard)/my-organization/page.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-18 — Codex layout contract pass (Programs card fixed frame + stable empty state)
+
+- Standardized the `Programs` dashboard card display contract so empty and populated states keep the same frame behavior across screen sizes.
+- File:
+  - `src/components/organization/program-builder-dashboard-card.tsx`
+- Changes:
+  - introduced explicit card frame constraints:
+    - `min-h-[460px] md:min-h-[500px] xl:min-h-[540px]`
+    - `max-h-[760px]`
+    - `overflow-hidden` with full-height flex layout.
+  - made content region fixed/scroll-contained:
+    - card content uses `flex-1 min-h-0 overflow-hidden`.
+    - populated state grid now fills full card height (`h-full min-h-0`).
+    - left list panel and right detail panel use internal `overflow-y-auto` so long content scrolls inside the card, not by stretching the card.
+  - empty state now fills the same content frame (`h-full w-full`) to match populated-state dimensions.
+  - class merge order updated so this card’s sizing contract wins over incoming min-height utility classes.
+- Validation:
+  - `pnpm eslint src/components/organization/program-builder-dashboard-card.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-18 — Codex follow-through (stable frame contract for Calendar + Formation cards)
+
+- Continued from interrupted layout-consistency work by applying the same fixed-frame pattern used on Programs to support cards on My Organization.
+- Files:
+  - `src/app/(dashboard)/my-organization/page.tsx`
+  - `src/components/organization/my-organization-bento-rules.ts`
+- Changes:
+  - Added shared support-card frame/content classes in My Organization page:
+    - `DASHBOARD_SUPPORT_CARD_FRAME_CLASS`
+    - `DASHBOARD_SUPPORT_CARD_CONTENT_CLASS`
+  - Applied fixed frame + overflow contract to:
+    - `calendar` card
+    - `launch-roadmap` (Formation Status) card
+  - Anchored Calendar action row (`Add event`) to bottom via `mt-auto` for consistent vertical rhythm.
+  - Formation Status card now uses internal scroll area for module list content so card height stays stable while CTA/footer remains anchored.
+  - Updated bento rule description for launch roadmap card to remove outdated temporary wording.
+- Validation:
+  - `pnpm eslint 'src/app/(dashboard)/my-organization/page.tsx' src/components/organization/my-organization-bento-rules.ts` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-18 — Codex modal positioning fix (Program Wizard centered on desktop)
+
+- Fixed Program Wizard dialog positioning so it opens centered on larger screens.
+- File:
+  - `src/components/programs/program-wizard.tsx`
+- Root cause:
+  - desktop layout used `sm:inset-6`, which anchored the dialog to viewport edges rather than true center coordinates.
+- Change:
+  - kept mobile bottom-sheet behavior (`left/right=0`, `bottom=0`, no translate).
+  - switched `sm+` to explicit centered modal positioning:
+    - `sm:left-1/2 sm:top-1/2 sm:right-auto sm:bottom-auto`
+    - `sm:-translate-x-1/2 sm:-translate-y-1/2`
+    - retained large modal dimensions (`sm:h-[90svh]`, responsive width cap).
+- Validation:
+  - `pnpm eslint src/components/programs/program-wizard.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-18 — Codex UX polish (Program Wizard copy + Autofill layering)
+
+- Improved awkward Program Wizard opener copy in step 1:
+  - `src/components/programs/program-wizard.tsx`
+  - `Name it` → `Program name`
+  - `What is this program, in plain language?` → `Give this program a clear name and one-sentence summary.`
+  - header eyebrow `Program builder` → `Program setup`
+- Fixed Autofill control being hidden behind dialogs:
+  - `src/components/dev/case-study-autofill-fab.tsx`
+  - raised floating control z-index from `z-40` to `z-[70]` so it remains clickable above `Dialog` overlays/content (`z-50`).
+- Validation:
+  - `pnpm eslint src/components/programs/program-wizard.tsx src/components/dev/case-study-autofill-fab.tsx` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-18 — Codex calendar nav restore (My Organization card)
+
+- Restored previous/next month chevron controls in the My Organization calendar card.
+- File:
+  - `src/app/(dashboard)/my-organization/page.tsx`
+- Changes:
+  - added month query parsing (`month=YYYY-MM`) and formatting helpers.
+  - added query-preserving month navigation helper so existing params are retained when paging months.
+  - added left/right chevron icon buttons with accessible labels (`Show <Month Year>`).
+  - calendar now anchors to selected month when `month` query is present.
+
+## 2026-02-18 — Codex Formation card status polish (electives marked optional)
+
+- Updated Formation Status card badges so elective modules display `Optional` instead of `Not started` when untouched.
+- File:
+  - `src/app/(dashboard)/my-organization/page.tsx`
+- Changes:
+  - added module-aware badge label/class helpers.
+  - elective + `not_started` now renders as `Optional` with neutral-info styling.
+  - completed/in-progress modules retain existing labels/colors.
+- Validation:
+  - `pnpm eslint 'src/app/(dashboard)/my-organization/page.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-02-18 — Codex release preflight + production deploy
+
+- Ran full preflight on current working tree before deploy:
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm lint` ✅
+  - `pnpm test:snapshots` ✅
+  - `pnpm test:acceptance` ✅ (71 passed, 1 skipped)
+  - `pnpm test:rls` ✅
+  - `pnpm build` ✅
+- Deployed production via Vercel:
+  - `npx vercel deploy --prod --yes` ✅
+  - deployment URL: `https://coach-house-platform-75b1qy1nq-caleb-hamernicks-projects.vercel.app`
+  - aliased URL: `https://coach-house-platform.vercel.app`
+- Post-deploy smoke status checks:
+  - `200 /`
+  - `200 /home-canvas`
+  - `200 /organization`
+  - `200 /people`
+  - `307 /accelerator` (auth/paywall redirect expected)
+  - `200 /pricing`
+  - `200 /tester/sign-up`

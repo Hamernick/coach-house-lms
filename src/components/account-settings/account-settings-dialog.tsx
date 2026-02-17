@@ -15,6 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Input } from "@/components/ui/input"
 import Cropper from "react-easy-crop"
 import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 import { toast } from "@/lib/toast"
@@ -54,6 +55,9 @@ export function AccountSettingsDialog({
   const [zoom, setZoom] = useState(1)
   const [croppedArea, setCroppedArea] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
+  const [deleteEmailInput, setDeleteEmailInput] = useState("")
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
   const {
     tab,
@@ -98,6 +102,33 @@ export function AccountSettingsDialog({
     defaultNewsletterOptIn,
     onOpenChange,
   })
+
+  const normalizedAccountEmail = email.trim().toLowerCase()
+  const normalizedDeleteEmail = deleteEmailInput.trim().toLowerCase()
+  const canDeleteAccount =
+    normalizedAccountEmail.length > 0 &&
+    normalizedDeleteEmail.length > 0 &&
+    normalizedDeleteEmail === normalizedAccountEmail &&
+    !isDeletingAccount
+
+  function openDeleteAccountConfirmation() {
+    setDeleteEmailInput("")
+    setConfirmDeleteOpen(true)
+  }
+
+  async function confirmAccountDeletion() {
+    if (!canDeleteAccount) return
+
+    setIsDeletingAccount(true)
+    try {
+      const deleted = await handleDeleteAccount()
+      if (deleted) {
+        setConfirmDeleteOpen(false)
+      }
+    } finally {
+      setIsDeletingAccount(false)
+    }
+  }
 
   function handleAvatarFileSelected(file?: File | null) {
     if (!file) return
@@ -145,7 +176,7 @@ export function AccountSettingsDialog({
         errors={errors}
         onSave={handleSave}
         onUpdatePassword={handleUpdatePassword}
-        onDeleteAccount={handleDeleteAccount}
+        onDeleteAccount={openDeleteAccountConfirmation}
         onAvatarFileSelected={handleAvatarFileSelected}
         onMarketingOptInChange={handleMarketingOptInChange}
         onNewsletterOptInChange={handleNewsletterOptInChange}
@@ -240,6 +271,47 @@ export function AccountSettingsDialog({
           </div>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog
+        open={confirmDeleteOpen}
+        onOpenChange={(next) => {
+          if (isDeletingAccount) return
+          setConfirmDeleteOpen(next)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete account?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently deletes your account. Enter your email to confirm.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <Input
+              value={deleteEmailInput}
+              onChange={(event) => setDeleteEmailInput(event.currentTarget.value)}
+              placeholder={email || "you@example.com"}
+              autoComplete="off"
+              aria-label="Confirm account email"
+              disabled={isDeletingAccount}
+            />
+            <p className="text-xs text-muted-foreground">
+              Type <span className="font-medium text-foreground">{email || "your account email"}</span> to continue.
+            </p>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingAccount}>Cancel</AlertDialogCancel>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={confirmAccountDeletion}
+              disabled={!canDeleteAccount}
+            >
+              {isDeletingAccount ? "Deleting..." : "Delete account"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
         <AlertDialogContent>

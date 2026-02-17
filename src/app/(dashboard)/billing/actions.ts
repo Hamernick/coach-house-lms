@@ -5,6 +5,7 @@ import Stripe from "stripe"
 import { env } from "@/lib/env"
 import { logger } from "@/lib/logger"
 import { requireServerSession } from "@/lib/auth"
+import { resolveActiveOrganization } from "@/lib/organization/active-org"
 
 export async function createBillingPortalSession() {
   const { supabase, session } = await requireServerSession("/billing")
@@ -15,10 +16,18 @@ export async function createBillingPortalSession() {
     return { error: "Billing portal not available yet." }
   }
 
+  let orgId = user.id
+  try {
+    const resolved = await resolveActiveOrganization(supabase, user.id)
+    orgId = resolved.orgId
+  } catch {
+    orgId = user.id
+  }
+
   const { data: subscription, error } = await supabase
     .from("subscriptions")
     .select("stripe_customer_id")
-    .eq("user_id", user.id)
+    .eq("user_id", orgId)
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle<{ stripe_customer_id: string | null }>()

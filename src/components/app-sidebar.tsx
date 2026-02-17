@@ -31,7 +31,9 @@ export type AppSidebarProps = {
     avatar?: string | null
   }
   isAdmin?: boolean
+  isTester?: boolean
   showOrgAdmin?: boolean
+  canAccessOrgAdmin?: boolean
   classes?: SidebarClass[]
   acceleratorProgress?: number | null
   showAccelerator?: boolean
@@ -40,12 +42,15 @@ export type AppSidebarProps = {
   ownedElectiveModuleSlugs?: string[]
   formationStatus?: string | null
   onboardingLocked?: boolean
+  organizationName?: string | null
 }
 
 export function AppSidebar({
   user,
   isAdmin = false,
+  isTester = false,
   showOrgAdmin = false,
+  canAccessOrgAdmin = true,
   classes,
   acceleratorProgress,
   showAccelerator,
@@ -54,6 +59,7 @@ export function AppSidebar({
   ownedElectiveModuleSlugs,
   formationStatus,
   onboardingLocked = false,
+  organizationName = null,
 }: AppSidebarProps) {
   const resolvedUser = useMemo(
     () => ({
@@ -71,17 +77,20 @@ export function AppSidebar({
     <aside className="hidden h-full w-72 shrink-0 border-r border-border/70 bg-sidebar px-3 pb-6 pt-0 md:flex md:flex-col md:gap-6">
       <SidebarBody
         isAdmin={isAdmin}
+        isTester={isTester}
         classes={classes}
         user={resolvedUser}
         isAcceleratorActive={isAcceleratorActive}
         acceleratorProgress={acceleratorProgress}
         showAccelerator={showAccelerator}
         showOrgAdmin={showOrgAdmin}
+        canAccessOrgAdmin={canAccessOrgAdmin}
         hasAcceleratorAccess={hasAcceleratorAccess}
         hasElectiveAccess={hasElectiveAccess}
         ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
         formationStatus={formationStatus}
         onboardingLocked={onboardingLocked}
+        organizationName={organizationName}
       />
     </aside>
   )
@@ -89,6 +98,7 @@ export function AppSidebar({
 
 type SidebarBodyProps = {
   isAdmin: boolean
+  isTester: boolean
   classes?: SidebarClass[]
   user: {
     name: string | null
@@ -101,15 +111,18 @@ type SidebarBodyProps = {
   showClasses?: boolean
   classesBasePath?: string
   showOrgAdmin?: boolean
+  canAccessOrgAdmin?: boolean
   hasAcceleratorAccess?: boolean
   hasElectiveAccess?: boolean
   ownedElectiveModuleSlugs?: string[]
   formationStatus?: string | null
   onboardingLocked?: boolean
+  organizationName?: string | null
 }
 
 export function SidebarBody({
   isAdmin,
+  isTester,
   classes,
   user,
   isAcceleratorActive,
@@ -118,11 +131,13 @@ export function SidebarBody({
   showClasses = false,
   classesBasePath,
   showOrgAdmin = false,
+  canAccessOrgAdmin = true,
   hasAcceleratorAccess = false,
   hasElectiveAccess = false,
   ownedElectiveModuleSlugs = [],
   formationStatus = null,
   onboardingLocked = false,
+  organizationName = null,
 }: SidebarBodyProps) {
   const pathname = usePathname()
   const progressValue =
@@ -132,7 +147,7 @@ export function SidebarBody({
 
   const shouldShowAccelerator = !onboardingLocked && Boolean(isAdmin || showAccelerator)
   const hasUser = Boolean(user.email)
-  const mainNavItems = buildMainNav({ isAdmin, showOrgAdmin })
+  const mainNavItems = buildMainNav({ isAdmin, showOrgAdmin, canAccessOrgAdmin, organizationName })
   return (
     <>
       <SidebarContent className="gap-0">
@@ -144,7 +159,7 @@ export function SidebarBody({
                   asChild
                   isActive
                 >
-                  <Link href="/my-organization" className="flex w-full min-w-0 items-center gap-2">
+                  <Link href="/organization" className="flex w-full min-w-0 items-center gap-2">
                     <ListChecksIcon className="size-4" />
                     <span className="min-w-0 flex-1 truncate whitespace-nowrap">Onboarding</span>
                   </Link>
@@ -203,7 +218,7 @@ export function SidebarBody({
             <NavSecondary items={SECONDARY_NAV} />
           </div>
         )}
-        {hasUser ? <NavUser user={user} isAdmin={isAdmin} showDivider={false} /> : null}
+        {hasUser ? <NavUser user={user} isAdmin={isAdmin} isTester={isTester} showDivider={false} /> : null}
       </SidebarFooter>
     </>
   )

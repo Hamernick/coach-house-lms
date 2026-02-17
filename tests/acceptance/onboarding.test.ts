@@ -8,7 +8,7 @@ describe("onboarding gate", () => {
     vi.resetModules()
   })
 
-  it("redirects to my organization when onboarding already completed", async () => {
+  it("redirects to organization when onboarding already completed", async () => {
     const supabase = {
       from: () => ({
         select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { full_name: null, headline: null } }) }) }),
@@ -31,7 +31,7 @@ describe("onboarding gate", () => {
     // Re-import after mock
     const { default: Page } = await import("@/app/(dashboard)/onboarding/page")
     const destination = await captureRedirect(() => Page())
-    expect(destination).toBe("/my-organization")
+    expect(destination).toBe("/organization")
   })
 
   it("renders onboarding page when onboarding is not completed", async () => {

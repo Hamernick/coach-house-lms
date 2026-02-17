@@ -8,6 +8,9 @@ import { fetchSidebarTree } from "@/lib/academy"
 import { AppShell } from "@/components/app-shell"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
+import { resolveProfileAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
+import { resolvePricingPlanTier, type PricingPlanTier } from "@/lib/billing/plan-tier"
+import type { Json } from "@/lib/supabase"
 
 export default async function AcceleratorLayout({ children }: { children: ReactNode }) {
   const supabase = await createSupabaseServerClient()
@@ -28,33 +31,74 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   let email: string | null = user.email ?? null
   let avatar: string | null = null
   let isAdmin = false
+  let isTester = false
   let tutorialWelcome = false
   let showOrgAdmin = false
+  let canAccessOrgAdmin = false
+  let organizationName: string | null = null
+  let currentPlanTier: PricingPlanTier = "free"
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, role, avatar_url")
-    .eq("id", user.id)
-    .maybeSingle<{ full_name: string | null; role: string | null; avatar_url: string | null }>()
+  const fallbackIsTester = resolveTesterMetadata(user.user_metadata ?? null)
+  const [profileAudience, activeOrg] = await Promise.all([
+    resolveProfileAudience({
+      supabase,
+      userId: user.id,
+      fallbackIsTester,
+    }),
+    resolveActiveOrganization(supabase, user.id),
+  ])
 
-  displayName = profile?.full_name ?? (user.user_metadata?.full_name as string | undefined) ?? null
-  isAdmin = profile?.role === "admin"
+  displayName = profileAudience.fullName ?? (user.user_metadata?.full_name as string | undefined) ?? null
+  isAdmin = profileAudience.isAdmin
+  isTester = profileAudience.isTester
 
   if (!email && typeof user.user_metadata?.email === "string") {
     email = user.user_metadata.email as string
   }
 
-  avatar = profile?.avatar_url ?? (typeof user.user_metadata?.avatar_url === "string" ? (user.user_metadata.avatar_url as string) : null)
+  avatar =
+    profileAudience.avatarUrl ??
+    (typeof user.user_metadata?.avatar_url === "string"
+      ? (user.user_metadata.avatar_url as string)
+      : null)
 
-  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  const { orgId, role } = activeOrg
   showOrgAdmin = role === "owner" || role === "admin" || isAdmin
 
-  const entitlements = await fetchLearningEntitlements({
-    supabase,
-    userId: user.id,
-    orgUserId: orgId,
-    isAdmin,
-  })
+  const [entitlements, orgRowResult] = await Promise.all([
+    fetchLearningEntitlements({
+      supabase,
+      userId: user.id,
+      orgUserId: orgId,
+      isAdmin,
+    }),
+    supabase
+      .from("organizations")
+      .select("profile")
+      .eq("user_id", orgId)
+      .maybeSingle<{ profile: Json | null }>(),
+  ])
+  canAccessOrgAdmin = showOrgAdmin && (isAdmin || entitlements.hasActiveSubscription)
+
+  const orgProfile = (orgRowResult.data?.profile as Record<string, unknown> | null) ?? null
+  const orgName = typeof orgProfile?.name === "string" ? orgProfile.name.trim() : ""
+  organizationName = orgName.length > 0 ? orgName : null
+
+  if (entitlements.hasActiveSubscription) {
+    const { data: activeSubscription } = await supabase
+      .from("subscriptions")
+      .select("status, metadata")
+      .eq("user_id", orgId)
+      .in("status", ["active", "trialing", "past_due", "incomplete"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ status: string | null; metadata: Json | null }>()
+
+    currentPlanTier = resolvePricingPlanTier(activeSubscription ?? null)
+    if (currentPlanTier === "free" && entitlements.hasActiveSubscription) {
+      currentPlanTier = "organization"
+    }
+  }
 
   const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
   const onboardingCompleted = Boolean(userMeta?.onboarding_completed)
@@ -67,7 +111,7 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   tutorialWelcome = !isAdmin && onboardingCompleted && !tutorialsCompleted.includes("accelerator") && !tutorialsDismissed.includes("accelerator")
 
   if (!entitlements.hasAcceleratorAccess && !entitlements.hasElectiveAccess) {
-    redirect("/my-organization?paywall=accelerator&upgrade=accelerator&source=accelerator")
+    redirect("/organization?paywall=organization&plan=organization&upgrade=accelerator-access&source=accelerator")
   }
 
   const sidebarTree = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
@@ -77,12 +121,16 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
       sidebarTree={sidebarTree}
       isAdmin={isAdmin}
       showOrgAdmin={showOrgAdmin}
+      canAccessOrgAdmin={canAccessOrgAdmin}
+      isTester={isTester}
       tutorialWelcome={{ platform: false, accelerator: tutorialWelcome }}
       user={{ name: displayName, email: email ?? null, avatar: avatar ?? null }}
       showAccelerator={true}
       hasAcceleratorAccess={entitlements.hasAcceleratorAccess}
       hasElectiveAccess={entitlements.hasElectiveAccess}
       ownedElectiveModuleSlugs={entitlements.ownedElectiveModuleSlugs}
+      currentPlanTier={currentPlanTier}
+      organizationName={organizationName}
       context="accelerator"
     >
       {children}

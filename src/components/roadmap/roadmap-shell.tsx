@@ -128,7 +128,7 @@ export function RoadmapShell({
     goalCents: 0,
     raisedCents: 0,
     ctaLabel: "Create program",
-    ctaHref: "/my-organization?tab=programs",
+    ctaHref: "/organization?tab=programs",
     ctaTarget: "_self",
   }
   const programCard = programPreview ?? fallbackProgram

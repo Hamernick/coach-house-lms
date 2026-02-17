@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import CalendarPlusIcon from "lucide-react/dist/esm/icons/calendar-plus"
 import Loader2Icon from "lucide-react/dist/esm/icons/loader-2"
@@ -49,10 +49,15 @@ function buildDefaultDraft(): EventDraft {
 
 export function MyOrganizationAddEventSheetButton() {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [draft, setDraft] = useState<EventDraft>(() => buildDefaultDraft())
   const [formError, setFormError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const handleOpenChange = (nextOpen: boolean) => {
     setOpen(nextOpen)
@@ -98,6 +103,15 @@ export function MyOrganizationAddEventSheetButton() {
       setOpen(false)
       router.refresh()
     })
+  }
+
+  if (!mounted) {
+    return (
+      <Button type="button" size="sm" className="h-9 w-full" disabled>
+        <CalendarPlusIcon className="h-4 w-4" aria-hidden />
+        Add event
+      </Button>
+    )
   }
 
   return (

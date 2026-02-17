@@ -5,6 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
+import { hasPaidTeamAccessFromSubscription } from "@/lib/billing/subscription-access"
 
 export type OrganizationMemberRole = "owner" | "admin" | "staff" | "board" | "member"
 
@@ -13,6 +14,7 @@ export type OrganizationAccessMember = {
   email: string | null
   role: OrganizationMemberRole
   joinedAt: string | null
+  isTester?: boolean
 }
 
 export type OrganizationAccessInvite = {
@@ -34,9 +36,12 @@ type OrganizationAccessListResult =
       invites: OrganizationAccessInvite[]
       adminsCanInvite: boolean
       staffCanManageCalendar: boolean
+      hasPaidTeamAccess: boolean
       canInvite: boolean
       canManageMembers: boolean
+      canEditRoles: boolean
       canManageSettings: boolean
+      canManageTesterFlags: boolean
     }
   | { error: string }
 
@@ -49,6 +54,10 @@ type AcceptInviteResult =
   | { error: string }
 
 const INVITE_ROLES: OrganizationMemberRole[] = ["admin", "staff", "board", "member"]
+const TEAM_ACCESS_UPGRADE_MESSAGE =
+  "Upgrade to Organization to invite teammates and manage team access."
+
+type ServerSupabaseClient = Awaited<ReturnType<typeof createSupabaseServerClient>>
 
 function normalizeEmail(input: string) {
   return input.trim().toLowerCase()
@@ -79,6 +88,25 @@ function createInviteToken() {
   return `${Date.now().toString(16)}${Math.random().toString(16).slice(2)}`
 }
 
+async function resolvePaidTeamAccessForOrg(
+  supabase: ServerSupabaseClient,
+  orgId: string,
+): Promise<{ hasPaidTeamAccess: boolean } | { error: string }> {
+  const { data: subscription, error } = await supabase
+    .from("subscriptions")
+    .select("status, metadata, created_at")
+    .eq("user_id", orgId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ status: string | null; metadata: Json | null }>()
+
+  if (error) return { error: "Unable to load subscription status." }
+
+  const hasPaidTeamAccess = hasPaidTeamAccessFromSubscription(subscription ?? null)
+
+  return { hasPaidTeamAccess }
+}
+
 export async function listOrganizationAccessAction(): Promise<OrganizationAccessListResult> {
   const supabase = await createSupabaseServerClient()
   const {
@@ -96,9 +124,14 @@ export async function listOrganizationAccessAction(): Promise<OrganizationAccess
     .eq("id", user.id)
     .maybeSingle<{ role: string | null }>()
   const isPlatformAdmin = profileRow?.role === "admin"
+  const paidAccess = isPlatformAdmin ? { hasPaidTeamAccess: true } : await resolvePaidTeamAccessForOrg(supabase, orgId)
+  if ("error" in paidAccess) return { error: paidAccess.error }
+  const hasPaidTeamAccess = paidAccess.hasPaidTeamAccess
 
   const canManageMembers = isPlatformAdmin || orgId === user.id
-  const canManageSettings = isPlatformAdmin || orgId === user.id
+  const canEditRoles = hasPaidTeamAccess && canManageMembers
+  const canManageSettings = hasPaidTeamAccess && (isPlatformAdmin || orgId === user.id)
+  const canManageTesterFlags = isPlatformAdmin
 
   const { data: settingsRow } = await supabase
     .from("organization_access_settings")
@@ -108,7 +141,8 @@ export async function listOrganizationAccessAction(): Promise<OrganizationAccess
 
   const adminsCanInvite = Boolean(settingsRow?.admins_can_invite)
   const staffCanManageCalendar = Boolean(settingsRow?.staff_can_manage_calendar)
-  const canInvite = isPlatformAdmin || orgId === user.id || (role === "admin" && adminsCanInvite)
+  const canInvite =
+    hasPaidTeamAccess && (isPlatformAdmin || orgId === user.id || (role === "admin" && adminsCanInvite))
 
   const ownerEmail = orgId === user.id ? resolveUserEmail(user) : null
   const members: OrganizationAccessMember[] = [
@@ -170,15 +204,34 @@ export async function listOrganizationAccessAction(): Promise<OrganizationAccess
     acceptedAt: invite.accepted_at,
   }))
 
+  if (members.length > 0) {
+    const memberIds = members.map((member) => member.id)
+    const { data: memberProfiles, error: memberProfilesError } = await supabase
+      .from("profiles")
+      .select("id, is_tester")
+      .in("id", memberIds)
+      .returns<Array<{ id: string; is_tester: boolean | null }>>()
+
+    if (!memberProfilesError && memberProfiles) {
+      const testerMap = new Map(memberProfiles.map((profile) => [profile.id, Boolean(profile.is_tester)]))
+      for (const member of members) {
+        member.isTester = testerMap.get(member.id) ?? false
+      }
+    }
+  }
+
   return {
     ok: true,
     members,
     invites: normalizedInvites,
     adminsCanInvite,
     staffCanManageCalendar,
+    hasPaidTeamAccess,
     canInvite,
     canManageMembers,
+    canEditRoles,
     canManageSettings,
+    canManageTesterFlags,
   }
 }
 
@@ -205,6 +258,9 @@ export async function createOrganizationInviteAction({
     .eq("id", user.id)
     .maybeSingle<{ role: string | null }>()
   const isPlatformAdmin = profileRow?.role === "admin"
+  const paidAccess = isPlatformAdmin ? { hasPaidTeamAccess: true } : await resolvePaidTeamAccessForOrg(supabase, orgId)
+  if ("error" in paidAccess) return { error: paidAccess.error }
+  if (!paidAccess.hasPaidTeamAccess) return { error: TEAM_ACCESS_UPGRADE_MESSAGE }
   const { data: settingsRow } = await supabase
     .from("organization_access_settings")
     .select("admins_can_invite")
@@ -326,6 +382,9 @@ export async function revokeOrganizationInviteAction(inviteId: string): Promise<
     .eq("id", user.id)
     .maybeSingle<{ role: string | null }>()
   const isPlatformAdmin = profileRow?.role === "admin"
+  const paidAccess = isPlatformAdmin ? { hasPaidTeamAccess: true } : await resolvePaidTeamAccessForOrg(supabase, orgId)
+  if ("error" in paidAccess) return { error: paidAccess.error }
+  if (!paidAccess.hasPaidTeamAccess) return { error: TEAM_ACCESS_UPGRADE_MESSAGE }
   const { data: settingsRow } = await supabase
     .from("organization_access_settings")
     .select("admins_can_invite")
@@ -385,6 +444,9 @@ export async function updateOrganizationMemberRoleAction({
   if (!user) return { error: "Not authenticated." }
   const { orgId } = await resolveActiveOrganization(supabase, user.id)
   if (orgId !== user.id) return { error: "Only the organization owner can manage members." }
+  const paidAccess = await resolvePaidTeamAccessForOrg(supabase, orgId)
+  if ("error" in paidAccess) return { error: paidAccess.error }
+  if (!paidAccess.hasPaidTeamAccess) return { error: TEAM_ACCESS_UPGRADE_MESSAGE }
   if (memberId === orgId) return { error: "You can’t change the organization owner role." }
   if (!INVITE_ROLES.includes(role)) return { error: "Invalid role." }
 
@@ -395,6 +457,54 @@ export async function updateOrganizationMemberRoleAction({
     .eq("member_id", memberId)
 
   if (updateError) return { error: "Unable to update role." }
+  return { ok: true }
+}
+
+export async function setOrganizationMemberTesterFlagAction({
+  memberId,
+  isTester,
+}: {
+  memberId: string
+  isTester: boolean
+}): Promise<OrganizationAccessResult> {
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error && !isSupabaseAuthSessionMissingError(error)) return { error: "Unable to load user." }
+  if (!user) return { error: "Not authenticated." }
+
+  const { data: profileRow } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle<{ role: string | null }>()
+
+  if (profileRow?.role !== "admin") {
+    return { error: "Only platform admins can change tester access." }
+  }
+
+  const { orgId } = await resolveActiveOrganization(supabase, user.id)
+  const { data: membership } = await supabase
+    .from("organization_memberships")
+    .select("member_id")
+    .eq("org_id", orgId)
+    .eq("member_id", memberId)
+    .maybeSingle<{ member_id: string }>()
+
+  const memberIsInOrg = membership?.member_id === memberId || memberId === orgId
+  if (!memberIsInOrg) {
+    return { error: "Member not found in this organization." }
+  }
+
+  const { error: updateError } = await supabase
+    .from("profiles")
+    .update({ is_tester: Boolean(isTester) })
+    .eq("id", memberId)
+
+  if (updateError) return { error: "Unable to update tester access." }
   return { ok: true }
 }
 
@@ -410,6 +520,9 @@ export async function setOrganizationAdminsCanInviteAction(next: boolean): Promi
 
   const { orgId } = await resolveActiveOrganization(supabase, user.id)
   if (orgId !== user.id) return { error: "Only the organization owner can change this setting." }
+  const paidAccess = await resolvePaidTeamAccessForOrg(supabase, orgId)
+  if ("error" in paidAccess) return { error: paidAccess.error }
+  if (!paidAccess.hasPaidTeamAccess) return { error: TEAM_ACCESS_UPGRADE_MESSAGE }
 
   const { error: upsertError } = await supabase
     .from("organization_access_settings")
@@ -431,6 +544,9 @@ export async function setOrganizationStaffCanManageCalendarAction(next: boolean)
 
   const { orgId } = await resolveActiveOrganization(supabase, user.id)
   if (orgId !== user.id) return { error: "Only the organization owner can change this setting." }
+  const paidAccess = await resolvePaidTeamAccessForOrg(supabase, orgId)
+  if ("error" in paidAccess) return { error: paidAccess.error }
+  if (!paidAccess.hasPaidTeamAccess) return { error: TEAM_ACCESS_UPGRADE_MESSAGE }
 
   const { error: upsertError } = await supabase
     .from("organization_access_settings")

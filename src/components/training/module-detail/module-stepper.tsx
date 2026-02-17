@@ -88,8 +88,9 @@ type ModuleStepperProps = {
   nextHref?: string | null
   breakHref?: string
   nextLocked?: boolean
-  moduleIndex: number | null
   moduleCount: number
+  completedModuleCount: number
+  isCurrentModuleCompleted: boolean
   stepperPlacement?: "header" | "body"
   showModuleHeading?: boolean
 }
@@ -161,10 +162,11 @@ export function ModuleStepper({
   updatedAt,
   completeOnSubmit,
   nextHref,
-  breakHref = "/my-organization",
+  breakHref = "/organization",
   nextLocked = false,
-  moduleIndex,
   moduleCount,
+  completedModuleCount,
+  isCurrentModuleCompleted,
   stepperPlacement = "body",
   showModuleHeading = true,
 }: ModuleStepperProps) {
@@ -213,11 +215,15 @@ export function ModuleStepper({
   const ModuleIcon = getTrackIcon(classTitle)
   const activeStep = steps[activeIndex]
   const totalSteps = steps.length
-  const moduleProgressIndex = moduleIndex != null ? moduleIndex + 1 : null
+  const completionCount = useMemo(() => {
+    const completedFromServer = Math.max(0, Math.min(moduleCount, completedModuleCount))
+    if (activeStep?.type !== "complete" || isCurrentModuleCompleted) {
+      return completedFromServer
+    }
+    return Math.min(moduleCount, completedFromServer + 1)
+  }, [activeStep?.type, completedModuleCount, isCurrentModuleCompleted, moduleCount])
   const progressPercent =
-    moduleCount > 0 && moduleProgressIndex != null
-      ? Math.round((moduleProgressIndex / moduleCount) * 100)
-      : 0
+    moduleCount > 0 ? Math.round((completionCount / moduleCount) * 100) : 0
   const useHeaderStepper = stepperPlacement === "header"
   const stepperPageSize = 5
   const stepperVariant = useHeaderStepper ? "header" : "default"
@@ -504,7 +510,7 @@ export function ModuleStepper({
                             <div className="space-y-2">
                               <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
                                 <span>
-                                  {moduleProgressIndex != null ? moduleProgressIndex : 0} of {moduleCount} modules
+                                  {completionCount} of {moduleCount} modules
                                 </span>
                               </div>
                               <div className="mx-auto h-2 w-full max-w-md rounded-full border border-dashed border-border/70 bg-muted/30">

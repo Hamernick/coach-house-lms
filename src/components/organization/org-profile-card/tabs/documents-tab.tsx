@@ -1833,6 +1833,7 @@ export function DocumentsTab({
                 placeholder="Search documents…"
                 className="h-10 pl-9"
                 aria-label="Search documents"
+                data-tour="documents-search"
               />
             </div>
 

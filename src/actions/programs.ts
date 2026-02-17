@@ -161,7 +161,7 @@ function monthStartIsoWithOffset(offset: number) {
 }
 
 export async function createProgramAction(payload: CreateProgramPayload) {
-  const { supabase, session } = await requireServerSession("/my-organization")
+  const { supabase, session } = await requireServerSession("/organization")
   const userId = session.user.id
   const { orgId, role } = await resolveActiveOrganization(supabase, userId)
   const canEdit = canEditOrganization(role)
@@ -211,7 +211,7 @@ export async function createProgramAction(payload: CreateProgramPayload) {
 export type UpdateProgramPayload = Partial<CreateProgramPayload>
 
 export async function updateProgramAction(id: string, payload: UpdateProgramPayload) {
-  const { supabase, session } = await requireServerSession("/my-organization")
+  const { supabase, session } = await requireServerSession("/organization")
   const userId = session.user.id
   const { orgId, role } = await resolveActiveOrganization(supabase, userId)
   const canEdit = canEditOrganization(role)
@@ -304,7 +304,7 @@ export async function updateProgramAction(id: string, payload: UpdateProgramPayl
 }
 
 export async function seedNextDemoProgramAction(): Promise<SeedDemoProgramResult> {
-  const { supabase, session } = await requireServerSession("/my-organization")
+  const { supabase, session } = await requireServerSession("/organization")
   const userId = session.user.id
   const { orgId, role } = await resolveActiveOrganization(supabase, userId)
   const canEdit = canEditOrganization(role)
@@ -430,7 +430,7 @@ export async function seedNextDemoProgramAction(): Promise<SeedDemoProgramResult
 }
 
 async function revalidateOrganizationProgramViews(supabase: Awaited<ReturnType<typeof requireServerSession>>["supabase"], userId: string) {
-  revalidatePath("/my-organization")
+  revalidatePath("/organization")
   try {
     const { data, error } = await supabase
       .from("organizations")

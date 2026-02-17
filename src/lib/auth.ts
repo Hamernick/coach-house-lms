@@ -64,7 +64,7 @@ export async function getServerSession(): Promise<ServerSessionResult> {
   return { supabase, session: null }
 }
 
-export async function requireServerSession(redirectPath: string = "/my-organization"): Promise<
+export async function requireServerSession(redirectPath: string = "/organization"): Promise<
   { supabase: SupabaseClient<Database>; session: Session }
 > {
   const { supabase, session } = await getServerSession()

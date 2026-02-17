@@ -19,7 +19,7 @@ export default function GlobalError({ error, reset }: { error: Error; reset: () 
       <div className="mt-4 flex items-center gap-2">
         <Button onClick={() => reset()}>Try again</Button>
         <Button asChild variant="outline">
-          <Link href="/my-organization">Back to My Organization</Link>
+          <Link href="/organization">Back to Organization</Link>
         </Button>
       </div>
     </div>

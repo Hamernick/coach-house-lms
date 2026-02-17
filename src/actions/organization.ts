@@ -52,7 +52,7 @@ type OrgProfilePayload = {
 }
 
 export async function updateOrganizationProfileAction(payload: OrgProfilePayload) {
-  const { supabase, session } = await requireServerSession("/my-organization")
+  const { supabase, session } = await requireServerSession("/organization")
 
   const userId = session.user.id
   const { orgId, role } = await resolveActiveOrganization(supabase, userId)
@@ -273,7 +273,7 @@ function revalidateOrganizationViews({
   wasPublic: boolean
   isPublic: boolean
 }) {
-  revalidatePath("/my-organization")
+  revalidatePath("/organization")
 
   if (isPublic || wasPublic) {
     revalidatePath("/community")

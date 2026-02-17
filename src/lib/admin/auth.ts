@@ -48,7 +48,7 @@ async function requireAdminInternal(): Promise<RequireAdminResult> {
   }
 
   if (!profile || profile.role !== "admin") {
-    redirect("/my-organization")
+    redirect("/organization")
   }
 
   return { supabase, userId: user.id }

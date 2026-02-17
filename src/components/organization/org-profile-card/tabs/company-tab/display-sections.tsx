@@ -34,7 +34,7 @@ export function IdentityPreview({ company }: CompanyViewProps) {
 
   return (
     <FormRow title="Identity">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 md:items-start">
         {hasDescription ? (
           <ProfileField label="Description">
             <FieldText text={company.description} multiline />
@@ -62,7 +62,7 @@ export function ContactPreview({ company }: CompanyViewProps) {
 
   return (
     <FormRow title="Contact">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 md:items-start">
         {typeof company.rep === "string" && company.rep.trim() ? (
           <ProfileField label="Representative">
             <FieldText text={company.rep} />
@@ -117,7 +117,7 @@ export function StoryPreview({ company }: CompanyViewProps) {
 
   return (
     <FormRow title="About us">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 md:items-start">
         {vision.trim().length > 0 ? (
           <ProfileField label="Vision">
             <FieldText text={vision} multiline />
@@ -172,7 +172,7 @@ export function SocialPreview({ company, hasAnyBrandLink }: CompanyViewProps) {
 
   return (
     <FormRow title="Social">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 md:items-start">
         {socialFields.map(({ key, label }) => {
           const value = company[key]
           if (typeof value === "string" && value.trim()) {
@@ -200,10 +200,12 @@ export function BrandKitPreview({ company }: CompanyViewProps) {
 
   return (
     <FormRow title="Brand Kit">
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 md:items-start">
         {typeof company.logoUrl === "string" && company.logoUrl.trim() ? (
           <ProfileField label="Logo">
-            <BrandLink href={company.logoUrl} />
+            <div className="pt-1.5">
+              <BrandLink href={company.logoUrl} />
+            </div>
           </ProfileField>
         ) : null}
         {boilerplate.trim().length > 0 ? (

@@ -49,7 +49,9 @@ async function upsertSubscription({
     metadata: metadata ?? null,
   }
 
-  await uncheckedAdmin.from("subscriptions").upsert(payload, { onConflict: "stripe_subscription_id" })
+  await uncheckedAdmin
+    .from("subscriptions")
+    .upsert(payload, { onConflict: "user_id,stripe_subscription_id" })
 }
 
 async function upsertAcceleratorPurchase({
@@ -182,6 +184,14 @@ function extractUserIdFromMetadata(metadata: Stripe.Metadata) {
   return undefined
 }
 
+function extractOrganizationUserIdFromMetadata(metadata: Stripe.Metadata) {
+  const candidate = metadata.org_user_id
+  if (candidate && typeof candidate === "string") {
+    return candidate
+  }
+  return undefined
+}
+
 function toStatus(value: string): Database["public"]["Enums"]["subscription_status"] {
   const allowed: Database["public"]["Enums"]["subscription_status"][] = [
     "trialing",
@@ -273,12 +283,18 @@ async function handleAcceleratorMonthlyInstallmentInvoice(invoice: Stripe.Invoic
   const billingReason = invoice.billing_reason ?? ""
 
   const parentSubscription = invoice.parent?.subscription_details?.subscription
+  const invoiceSubscription = (invoice as Stripe.Invoice & { subscription?: string | Stripe.Subscription | null })
+    .subscription
   const subscriptionId =
     typeof parentSubscription === "string"
       ? parentSubscription
       : parentSubscription && typeof parentSubscription === "object" && "id" in parentSubscription
         ? String(parentSubscription.id)
-        : null
+        : typeof invoiceSubscription === "string"
+          ? invoiceSubscription
+          : invoiceSubscription && typeof invoiceSubscription === "object" && "id" in invoiceSubscription
+            ? String(invoiceSubscription.id)
+            : null
   if (!subscriptionId) return
 
   const subscription = await stripe.subscriptions.retrieve(subscriptionId)
@@ -409,8 +425,11 @@ export async function POST(request: NextRequest) {
       }
 
       if (subscriptionId && userId) {
+        const subscriptionOwnerId =
+          extractOrganizationUserIdFromMetadata(session.metadata ?? {}) ??
+          userId
         await upsertSubscription({
-          userId,
+          userId: subscriptionOwnerId,
           customerId: typeof session.customer === "string" ? session.customer : null,
           subscriptionId,
           status: toStatus(session.status ?? "trialing"),
@@ -419,6 +438,22 @@ export async function POST(request: NextRequest) {
               ? (session.metadata as Record<string, string>)
               : { planName: session.metadata?.planName ?? null },
         })
+      } else if (subscriptionId && session.metadata) {
+        const subscriptionOwnerId =
+          extractOrganizationUserIdFromMetadata(session.metadata ?? {}) ??
+          extractUserIdFromMetadata(session.metadata)
+        if (subscriptionOwnerId) {
+          await upsertSubscription({
+            userId: subscriptionOwnerId,
+            customerId: typeof session.customer === "string" ? session.customer : null,
+            subscriptionId,
+            status: toStatus(session.status ?? "trialing"),
+            metadata:
+              session.metadata && Object.keys(session.metadata).length > 0
+                ? (session.metadata as Record<string, string>)
+                : { planName: session.metadata?.planName ?? null },
+          })
+        }
       }
     }
 
@@ -429,7 +464,9 @@ export async function POST(request: NextRequest) {
 
     if (event.type.startsWith("customer.subscription")) {
       const subscription = event.data.object as Stripe.Subscription
-      const userId = extractUserIdFromMetadata(subscription.metadata)
+      const userId =
+        extractOrganizationUserIdFromMetadata(subscription.metadata) ??
+        extractUserIdFromMetadata(subscription.metadata)
 
       if (userId) {
         await upsertSubscription({

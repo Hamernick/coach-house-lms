@@ -1,11 +1,5 @@
 import { redirect } from "next/navigation"
 
-import { LoginPanel } from "@/components/auth/login-panel"
-import { CaseStudyAutofillFab } from "@/components/dev/case-study-autofill-fab"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
-import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
-import { supabaseErrorToError } from "@/lib/supabase/errors"
-
 type SearchParams = Record<string, string | string[] | undefined>
 
 type LoginPageProps = {
@@ -21,55 +15,19 @@ function getSafeRedirect(value: unknown) {
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const resolved = searchParams ? await searchParams : {}
+  const redirectParamRaw = Array.isArray(resolved.redirect) ? resolved.redirect[0] : resolved.redirect
+  const redirectParam = getSafeRedirect(redirectParamRaw)
+  const error = Array.isArray(resolved.error) ? resolved.error[0] : resolved.error
+  const plan = Array.isArray(resolved.plan) ? resolved.plan[0] : resolved.plan
+  const addon = Array.isArray(resolved.addon) ? resolved.addon[0] : resolved.addon
 
-  const redirectParam = getSafeRedirect(resolved.redirect)
-  const redirectForSignedInUser = redirectParam
-  const error = typeof resolved.error === "string" ? resolved.error : null
+  const params = new URLSearchParams()
+  params.set("section", "login")
 
-  const plan = typeof resolved.plan === "string" ? resolved.plan : undefined
-  const addon = typeof resolved.addon === "string" ? resolved.addon : undefined
-  const selectedPlan = plan === "organization" ? "organization" : plan === "individual" ? "individual" : null
-  const selectedAddon = addon === "accelerator" ? "accelerator" : null
+  if (redirectParam) params.set("redirect", redirectParam)
+  if (typeof error === "string" && error.length > 0) params.set("error", error)
+  if (plan === "organization" || plan === "individual") params.set("plan", plan)
+  if (addon === "accelerator") params.set("addon", addon)
 
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-
-  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw supabaseErrorToError(userError, "Unable to load user.")
-  }
-
-  if (user) {
-    redirect(redirectForSignedInUser ?? "/my-organization")
-  }
-
-  const fallbackParams = new URLSearchParams()
-  if (selectedPlan) fallbackParams.set("plan", selectedPlan)
-  if (selectedAddon) fallbackParams.set("addon", selectedAddon)
-
-  const fallbackQuery = fallbackParams.toString()
-  const redirectTo = redirectParam ?? (fallbackQuery ? `/my-organization?${fallbackQuery}` : undefined)
-  const signUpHref = redirectTo ? `/sign-up?redirect=${encodeURIComponent(redirectTo)}` : "/sign-up"
-
-  return (
-    <>
-      <div className="grid min-h-svh lg:grid-cols-2">
-        <div className="flex flex-col p-6 md:p-10">
-          <div className="flex flex-1 items-center justify-center">
-            <LoginPanel redirectTo={redirectTo} initialError={error} signUpHref={signUpHref} />
-          </div>
-        </div>
-        <div className="relative hidden bg-muted lg:block">
-          <img
-            src="https://images.unsplash.com/photo-1602146057681-08560aee8cde"
-            alt="Students collaborating during a workshop"
-            className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.75] dark:grayscale"
-          />
-        </div>
-      </div>
-      <CaseStudyAutofillFab allowToken />
-    </>
-  )
+  redirect(`/?${params.toString()}`)
 }

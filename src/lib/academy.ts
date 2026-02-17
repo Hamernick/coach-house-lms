@@ -1,6 +1,10 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
+import { env } from "@/lib/env"
+import { unstable_cache } from "next/cache"
+import type { SupabaseClient } from "@supabase/supabase-js"
+import type { Database } from "@/lib/supabase/types"
 
 export type SidebarModule = {
   id: string
@@ -26,16 +30,23 @@ type FetchSidebarOptions = {
   forceAdmin?: boolean
 }
 
+type FetchSidebarInternalOptions = FetchSidebarOptions & {
+  clientOverride?: SupabaseClient<Database, "public">
+}
+
 /**
  * Fetch classes + modules for the Academy sidebar / training shell.
  * - `includeDrafts=true` keeps unpublished items (used for admins or preview modes)
  * - `forceAdmin=true` uses the service-role client to bypass RLS (needed for learners).
  */
-export async function fetchSidebarTree({
+async function fetchSidebarTreeUncached({
   includeDrafts,
   forceAdmin = false,
-}: FetchSidebarOptions): Promise<SidebarClass[]> {
-  const supabase = forceAdmin
+  clientOverride,
+}: FetchSidebarInternalOptions): Promise<SidebarClass[]> {
+  const supabase = clientOverride
+    ? clientOverride
+    : forceAdmin
     ? (() => {
         try {
           return createSupabaseAdminClient()
@@ -172,4 +183,31 @@ export async function fetchSidebarTree({
   })
 
   return unique
+}
+
+const fetchPublishedSidebarTreeCached = unstable_cache(
+  async (): Promise<SidebarClass[]> => {
+    const admin = createSupabaseAdminClient()
+    return fetchSidebarTreeUncached({
+      includeDrafts: false,
+      forceAdmin: false,
+      clientOverride: admin,
+    })
+  },
+  ["sidebar-tree-published-v1"],
+  { revalidate: 30, tags: ["sidebar-tree"] },
+)
+
+/**
+ * Cached for the common published-only learner path to reduce layout query cost
+ * on route transitions. Admin/draft variants stay uncached.
+ */
+export async function fetchSidebarTree({
+  includeDrafts,
+  forceAdmin = false,
+}: FetchSidebarOptions): Promise<SidebarClass[]> {
+  if (!includeDrafts && !forceAdmin && env.SUPABASE_SERVICE_ROLE_KEY) {
+    return fetchPublishedSidebarTreeCached()
+  }
+  return fetchSidebarTreeUncached({ includeDrafts, forceAdmin })
 }

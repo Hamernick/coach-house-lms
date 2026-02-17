@@ -1,23 +1,24 @@
-import type { Metadata } from "next"
+import { redirect } from "next/navigation"
 
-import { PricingSurface } from "@/components/public/pricing-surface"
-
-export const metadata: Metadata = {
-  title: "Pricing",
-  description:
-    "Simple pricing for nonprofit founders and teams: start free with Individual, upgrade to Organization, and scale with Operations Support.",
-}
-
-export const runtime = "nodejs"
-export const revalidate = 3600
+type SearchParams = Record<string, string | string[] | undefined>
 
 type PricingPageProps = {
-  searchParams?: Promise<{ embed?: string }>
+  searchParams?: Promise<SearchParams>
 }
 
 export default async function PricingPage({ searchParams }: PricingPageProps) {
-  const resolvedSearchParams = searchParams ? await searchParams : undefined
-  const isEmbedded = resolvedSearchParams?.embed === "1"
+  const resolved = searchParams ? await searchParams : {}
 
-  return <PricingSurface embedded={isEmbedded} />
+  const params = new URLSearchParams()
+  params.set("section", "pricing")
+
+  for (const [key, value] of Object.entries(resolved)) {
+    if (key === "section" || key === "embed") continue
+    const normalized = Array.isArray(value) ? value[0] : value
+    if (typeof normalized === "string" && normalized.length > 0) {
+      params.set(key, normalized)
+    }
+  }
+
+  redirect(`/?${params.toString()}`)
 }

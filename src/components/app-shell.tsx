@@ -26,7 +26,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Sidebar, SidebarHeader, SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { useIsMobile } from "@/hooks/use-mobile"
 import type { SidebarClass } from "@/lib/academy"
+import { resolveDevtoolsAccess } from "@/lib/devtools/access"
 import type { OnboardingDialogProps } from "@/components/onboarding/onboarding-dialog"
+import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import { cn } from "@/lib/utils"
 
 import { RightRailProvider, RightRailSlot, useRightRailContent, useRightRailPresence } from "@/components/app-shell/right-rail"
@@ -44,7 +46,9 @@ type AppShellProps = {
     avatar?: string | null
   } | null
   isAdmin: boolean
+  isTester?: boolean
   showOrgAdmin?: boolean
+  canAccessOrgAdmin?: boolean
   showLiveBadges?: boolean
   acceleratorProgress?: number | null
   showAccelerator?: boolean
@@ -52,6 +56,8 @@ type AppShellProps = {
   hasAcceleratorAccess?: boolean
   hasElectiveAccess?: boolean
   ownedElectiveModuleSlugs?: string[]
+  currentPlanTier?: PricingPlanTier
+  organizationName?: string | null
   tutorialWelcome?: { platform: boolean; accelerator: boolean }
   onboardingProps?: OnboardingDialogProps & { enabled: boolean }
   onboardingLocked?: boolean
@@ -129,13 +135,17 @@ function AppShellInner({
   sidebarTree,
   user,
   isAdmin,
+  isTester = false,
   showOrgAdmin = false,
+  canAccessOrgAdmin = true,
   acceleratorProgress,
   showAccelerator,
   hasActiveSubscription,
   hasAcceleratorAccess,
   hasElectiveAccess,
   ownedElectiveModuleSlugs = [],
+  currentPlanTier = "free",
+  organizationName = null,
   tutorialWelcome,
   onboardingProps,
   onboardingLocked = false,
@@ -222,6 +232,7 @@ function AppShellInner({
   const resolvedHasAcceleratorAccess =
     hasAcceleratorAccess ?? Boolean(hasActiveSubscription || showAccelerator || isAdmin)
   const resolvedHasElectiveAccess = hasElectiveAccess ?? resolvedHasAcceleratorAccess
+  const devtoolsAccess = resolveDevtoolsAccess({ isAdmin, isTester })
   const onboardingOpen = Boolean(onboardingProps?.open || forcedOnboardingOpen)
   const onboardingInlineMode = Boolean(onboardingProps?.enabled && onboardingOpen)
   const contentPadding = isMobile
@@ -235,7 +246,7 @@ function AppShellInner({
       : "px-[var(--shell-gutter)]"
     : "pl-[var(--shell-outer-gutter)]"
 
-  const brandHref = hasUser ? (isAcceleratorContext ? "/accelerator" : "/my-organization") : "/"
+  const brandHref = hasUser ? (isAcceleratorContext ? "/accelerator" : "/organization") : "/"
 
   return (
       <SidebarProvider
@@ -277,7 +288,9 @@ function AppShellInner({
           </SidebarHeader>
           <SidebarBody
             isAdmin={isAdmin}
+            isTester={isTester}
             showOrgAdmin={showOrgAdmin}
+            canAccessOrgAdmin={canAccessOrgAdmin}
             classes={sidebarTree}
             user={navUser}
             isAcceleratorActive={isAcceleratorContext}
@@ -290,6 +303,7 @@ function AppShellInner({
             ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
             formationStatus={formationStatus}
             onboardingLocked={onboardingLocked}
+            organizationName={organizationName}
           />
         </Sidebar>
 
@@ -385,8 +399,8 @@ function AppShellInner({
           showAccelerator={showAccelerator}
         />
       ) : null}
-      <CaseStudyAutofillFab userEmail={navUser.email} />
-      <PaywallOverlay />
+      {devtoolsAccess.canUseAutofillTools ? <CaseStudyAutofillFab userEmail={navUser.email} /> : null}
+      <PaywallOverlay currentPlanTier={currentPlanTier} />
       <TutorialManager />
       {hasUser ? (
         <OnboardingWelcome

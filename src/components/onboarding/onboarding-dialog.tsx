@@ -5,11 +5,14 @@ import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Cropper from "react-easy-crop"
-import ArrowDownIcon from "lucide-react/dist/esm/icons/arrow-down"
 import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
 import CameraIcon from "lucide-react/dist/esm/icons/camera"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
+import CircleDollarSignIcon from "lucide-react/dist/esm/icons/circle-dollar-sign"
+import HammerIcon from "lucide-react/dist/esm/icons/hammer"
+import SearchIcon from "lucide-react/dist/esm/icons/search"
 import Trash2Icon from "lucide-react/dist/esm/icons/trash-2"
+import UsersIcon from "lucide-react/dist/esm/icons/users"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -23,6 +26,8 @@ import { Label } from "@/components/ui/label"
 import { cn } from "@/lib/utils"
 
 type FormationStatus = "pre_501c3" | "in_progress" | "approved"
+type IntentFocus = "build" | "find" | "fund" | "support"
+type RoleInterest = "staff" | "operator" | "volunteer" | "board_member"
 
 const FORMATION_OPTIONS: Array<{
   value: FormationStatus
@@ -54,12 +59,18 @@ export type OnboardingDialogProps = {
 }
 
 type Step = {
-  id: "org" | "account"
+  id: "intent" | "org" | "account"
   title: string
   description: string
 }
 
 const STEPS: Step[] = [
+  {
+    id: "intent",
+    title: "Choose your onboarding path",
+    description:
+      "Build nonprofits is available now. Find, Fund, and Support are coming soon.",
+  },
   {
     id: "org",
     title: "Create your organization",
@@ -73,6 +84,43 @@ const STEPS: Step[] = [
   },
 ]
 
+const INTENT_OPTIONS: Array<{
+  value: IntentFocus
+  label: string
+  description: string
+  available: boolean
+  icon: React.ComponentType<{ className?: string }>
+}> = [
+  {
+    value: "build",
+    label: "Build nonprofits",
+    description: "Set up your organization, roadmap, and operating foundation.",
+    available: true,
+    icon: HammerIcon,
+  },
+  {
+    value: "find",
+    label: "Find nonprofits",
+    description: "Discover organizations, initiatives, and partners.",
+    available: false,
+    icon: SearchIcon,
+  },
+  {
+    value: "fund",
+    label: "Fund nonprofits",
+    description: "Support organizations and track funded outcomes.",
+    available: false,
+    icon: CircleDollarSignIcon,
+  },
+  {
+    value: "support",
+    label: "Support teams",
+    description: "Help operators and teams execute mission-critical work.",
+    available: false,
+    icon: UsersIcon,
+  },
+]
+
 const RESERVED_SLUGS = new Set([
   "admin",
   "api",
@@ -83,6 +131,7 @@ const RESERVED_SLUGS = new Set([
   "class",
   "dashboard",
   "people",
+  "organization",
   "my-organization",
   "_next",
   "public",
@@ -91,6 +140,8 @@ const RESERVED_SLUGS = new Set([
 ])
 
 const DRAFT_VALUE_KEYS = [
+  "intentFocus",
+  "roleInterest",
   "orgName",
   "orgSlug",
   "firstName",
@@ -126,6 +177,10 @@ function resolveOnboardingError(raw: string | null) {
       return "That URL is reserved. Try something else."
     case "slug_taken":
       return "That URL is already taken. Try another."
+    case "missing_intent_focus":
+      return "Select your focus to continue."
+    case "intent_focus_coming_soon":
+      return "That onboarding focus is coming soon. Select Build nonprofits to continue."
     default:
       return null
   }
@@ -151,6 +206,8 @@ export function OnboardingDialog({
   const [slugHint, setSlugHint] = useState<string | null>(null)
   const [formationStatus, setFormationStatus] =
     useState<FormationStatus | "">("")
+  const [intentFocus, setIntentFocus] = useState<IntentFocus | "">("build")
+  const [roleInterest, setRoleInterest] = useState<RoleInterest | "">("")
 
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [rawImageUrl, setRawImageUrl] = useState<string | null>(null)
@@ -167,9 +224,6 @@ export function OnboardingDialog({
   const [submitting, setSubmitting] = useState(false)
   const formRef = useRef<HTMLFormElement | null>(null)
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
-  const stepContentScrollRef = useRef<HTMLDivElement | null>(null)
-  const [step2NeedsScroll, setStep2NeedsScroll] = useState(false)
-  const [step2ScrolledToBottom, setStep2ScrolledToBottom] = useState(false)
   const [attemptedStep, setAttemptedStep] = useState<number | null>(null)
   const [progressTarget, setProgressTarget] = useState(0)
   const [progressDisplay, setProgressDisplay] = useState(0)
@@ -187,6 +241,7 @@ export function OnboardingDialog({
 
     const data = new FormData(form)
     const checks = [
+      Boolean(intentFocus),
       String(data.get("orgName") ?? "").trim().length > 0,
       slugStatus === "available",
       Boolean(formationStatus),
@@ -195,7 +250,7 @@ export function OnboardingDialog({
     ]
     const completed = checks.filter(Boolean).length
     setProgressTarget(Math.round((completed / checks.length) * 100))
-  }, [formationStatus, slugStatus])
+  }, [formationStatus, intentFocus, slugStatus])
 
   const rehydrateVisibleDraftFields = React.useCallback(() => {
     if (typeof window === "undefined" || !formRef.current) return
@@ -224,6 +279,22 @@ export function OnboardingDialog({
         if (typeof draft.values.orgSlug === "string") {
           setOrgSlugInputValue(slugify(draft.values.orgSlug))
         }
+        if (
+          draft.values.intentFocus === "build" ||
+          draft.values.intentFocus === "find" ||
+          draft.values.intentFocus === "fund" ||
+          draft.values.intentFocus === "support"
+        ) {
+          setIntentFocus(draft.values.intentFocus)
+        }
+        if (
+          draft.values.roleInterest === "staff" ||
+          draft.values.roleInterest === "operator" ||
+          draft.values.roleInterest === "volunteer" ||
+          draft.values.roleInterest === "board_member"
+        ) {
+          setRoleInterest(draft.values.roleInterest)
+        }
       }
 
       if (draft.flags?.optInUpdates !== undefined) {
@@ -247,6 +318,8 @@ export function OnboardingDialog({
     extra?: Partial<{
       step: number
       formationStatus: FormationStatus | ""
+      intentFocus: IntentFocus | ""
+      roleInterest: RoleInterest | ""
       slugEdited: boolean
       avatar: string | null
     }>
@@ -298,6 +371,8 @@ export function OnboardingDialog({
     const payload = {
       step,
       formationStatus,
+      intentFocus,
+      roleInterest,
       slugEdited,
       avatar: avatarPreview,
       values: nextValues,
@@ -366,6 +441,8 @@ export function OnboardingDialog({
       const draft = JSON.parse(raw) as {
         step?: number
         formationStatus?: FormationStatus | ""
+        intentFocus?: IntentFocus | ""
+        roleInterest?: RoleInterest | ""
         slugEdited?: boolean
         avatar?: string | null
         values?: Record<string, string>
@@ -383,6 +460,26 @@ export function OnboardingDialog({
         setFormationStatus(draft.formationStatus)
       } else {
         setFormationStatus("")
+      }
+      if (
+        draft.intentFocus === "build" ||
+        draft.intentFocus === "find" ||
+        draft.intentFocus === "fund" ||
+        draft.intentFocus === "support"
+      ) {
+        setIntentFocus(draft.intentFocus)
+      } else if (!draft.values?.intentFocus) {
+        setIntentFocus("build")
+      }
+      if (
+        draft.roleInterest === "staff" ||
+        draft.roleInterest === "operator" ||
+        draft.roleInterest === "volunteer" ||
+        draft.roleInterest === "board_member"
+      ) {
+        setRoleInterest(draft.roleInterest)
+      } else if (!draft.values?.roleInterest) {
+        setRoleInterest("")
       }
       setSlugEdited(Boolean(draft.slugEdited))
       if (draft.avatar) setAvatarPreview(draft.avatar)
@@ -410,6 +507,22 @@ export function OnboardingDialog({
         setSlugValue(normalizedSlug)
         setOrgSlugInputValue(normalizedSlug)
         setSlugHint(null)
+      }
+      if (
+        draft.values.intentFocus === "build" ||
+        draft.values.intentFocus === "find" ||
+        draft.values.intentFocus === "fund" ||
+        draft.values.intentFocus === "support"
+      ) {
+        setIntentFocus(draft.values.intentFocus)
+      }
+      if (
+        draft.values.roleInterest === "staff" ||
+        draft.values.roleInterest === "operator" ||
+        draft.values.roleInterest === "volunteer" ||
+        draft.values.roleInterest === "board_member"
+      ) {
+        setRoleInterest(draft.values.roleInterest)
       }
 
       if (draft.flags?.optInUpdates !== undefined) {
@@ -518,49 +631,19 @@ export function OnboardingDialog({
     }
   }, [open, slugValue])
 
-  useEffect(() => {
-    if (!open || step !== 1) {
-      setStep2NeedsScroll(false)
-      setStep2ScrolledToBottom(false)
-      return
-    }
-
-    const container = stepContentScrollRef.current
-    if (!container) return
-
-    const updateScrollState = () => {
-      const threshold = 8
-      const needsScroll = container.scrollHeight - container.clientHeight > threshold
-      const atBottom =
-        container.scrollTop + container.clientHeight >=
-        container.scrollHeight - threshold
-
-      setStep2NeedsScroll(needsScroll)
-      setStep2ScrolledToBottom(!needsScroll || atBottom)
-    }
-
-    updateScrollState()
-    const frame = window.requestAnimationFrame(updateScrollState)
-    container.addEventListener("scroll", updateScrollState, { passive: true })
-    window.addEventListener("resize", updateScrollState)
-
-    const observer = new ResizeObserver(updateScrollState)
-    observer.observe(container)
-
-    return () => {
-      window.cancelAnimationFrame(frame)
-      container.removeEventListener("scroll", updateScrollState)
-      window.removeEventListener("resize", updateScrollState)
-      observer.disconnect()
-    }
-  }, [open, step])
-
   const validateStep = (idx: number) => {
     if (!formRef.current) return false
     setAttemptedStep(idx)
     const form = new FormData(formRef.current)
     const nextErrors: Record<string, string> = {}
     const active = STEPS[idx]?.id
+
+    if (active === "intent") {
+      const intent = String(form.get("intentFocus") ?? "").trim()
+      if (intent !== "build") {
+        nextErrors.intentFocus = "Select an available focus to continue"
+      }
+    }
 
     if (active === "org") {
       const orgName = String(form.get("orgName") ?? "").trim()
@@ -638,8 +721,6 @@ export function OnboardingDialog({
 
   const stepLabel = `Step ${step + 1} of ${STEPS.length}`
   const isInline = presentation === "inline"
-  const shouldShowScrollToFinishIndicator =
-    step === STEPS.length - 1 && step2NeedsScroll && !step2ScrolledToBottom
 
   const content = (
     <>
@@ -650,7 +731,7 @@ export function OnboardingDialog({
         onChange={() => {
           saveDraft()
           syncProgress()
-          if (step === 1 && attemptedStep === 1 && formRef.current) {
+          if (STEPS[step]?.id === "account" && attemptedStep === step && formRef.current) {
             const data = new FormData(formRef.current)
             const firstName = String(data.get("firstName") ?? "").trim()
             const lastName = String(data.get("lastName") ?? "").trim()
@@ -729,16 +810,15 @@ export function OnboardingDialog({
           </div>
         </div>
 
-        <div
-          ref={stepContentScrollRef}
-          className="min-h-0 flex-1 space-y-6 overflow-y-auto px-4 py-0 md:px-6"
-        >
+        <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-0 md:px-6">
+            <input type="hidden" name="intentFocus" value={intentFocus} />
+            <input type="hidden" name="roleInterest" value={roleInterest} />
             <input
               type="hidden"
               name="formationStatus"
               value={formationStatus}
             />
-            {step === 1 ? (
+            {currentStep.id !== "org" ? (
               <>
                 <input type="hidden" name="orgName" value={orgNameValue} />
                 <input type="hidden" name="orgSlug" value={orgSlugInputValue || slugValue} />
@@ -751,131 +831,200 @@ export function OnboardingDialog({
               </div>
             ) : null}
 
-            {step === 0 ? (
-              <div className="space-y-5 py-5">
-              <div className="grid gap-2">
-                <Label htmlFor="orgName">Organization name</Label>
-                <Input
-                  id="orgName"
-                  name="orgName"
-                  placeholder="Acme Inc."
-                  aria-invalid={attemptedStep === 0 && Boolean(errors.orgName)}
-                  onChange={(event) => {
-                    const value = event.currentTarget.value
-                    setOrgNameValue(value)
-                    if (!slugEdited) {
-                      const nextSlug = slugify(value)
-                      setSlugValue(nextSlug)
-                      setOrgSlugInputValue(nextSlug)
-                      const input = formRef.current?.querySelector(
-                        'input[name="orgSlug"]'
-                      ) as HTMLInputElement | null
-                      if (input) input.value = nextSlug
-                    }
-                  }}
-                />
-                {attemptedStep === 0 && errors.orgName ? (
-                  <p className="text-destructive text-xs">{errors.orgName}</p>
-                ) : null}
-              </div>
+            {currentStep.id === "intent" ? (
+              <div className="space-y-6 py-5">
+                <div className="space-y-2">
+                  <Label>Your focus</Label>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {INTENT_OPTIONS.map((option) => {
+                      const selected = intentFocus === option.value
+                      const Icon = option.icon
+                      const disabled = !option.available
 
-              <div className="grid gap-2">
-                <Label htmlFor="orgSlug">Organization URL</Label>
-                <div className="border-border/70 bg-background flex items-center gap-2 rounded-xl border px-3 py-1.5">
-                  <span className="text-muted-foreground text-sm">
-                    coachhouse.org/
-                  </span>
-                  <Input
-                    id="orgSlug"
-                    name="orgSlug"
-                    placeholder="acme"
-                    className="h-9 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
-                    aria-invalid={attemptedStep === 0 && Boolean(errors.orgSlug)}
-                    onChange={(event) => {
-                      setSlugEdited(true)
-                      const normalized = slugify(event.currentTarget.value)
-                      setSlugValue(normalized)
-                      setOrgSlugInputValue(normalized)
-                      event.currentTarget.value = normalized
-                    }}
-                  />
-                  {slugStatus === "available" ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
-                      <CheckIcon className="h-3 w-3" aria-hidden />
-                      Available
-                    </span>
-                  ) : slugStatus === "checking" ? (
-                    <span className="bg-muted text-muted-foreground rounded-full px-2 py-1 text-[11px] font-medium">
-                      Checking…
-                    </span>
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          disabled={disabled}
+                          aria-disabled={disabled}
+                          onClick={() => {
+                            if (!option.available) return
+                            setIntentFocus(option.value)
+                            setErrors((prev) => {
+                              if (!prev.intentFocus) return prev
+                              const next = { ...prev }
+                              delete next.intentFocus
+                              return next
+                            })
+                            saveDraft({ intentFocus: option.value })
+                            syncProgress()
+                          }}
+                          className={cn(
+                            "flex min-h-32 flex-col items-start gap-3 rounded-2xl border p-4 text-left transition",
+                            disabled
+                              ? "cursor-not-allowed border-border/60 bg-muted/35 opacity-80"
+                              : selected
+                                ? "border-primary/60 bg-primary/5"
+                                : "border-border/70 bg-background/70 hover:bg-background",
+                          )}
+                        >
+                          <div className="flex w-full items-start justify-between gap-2">
+                            <span
+                              className={cn(
+                                "inline-flex h-9 w-9 items-center justify-center rounded-lg border",
+                                selected
+                                  ? "border-primary/50 bg-primary/10 text-primary"
+                                  : "border-border/70 bg-background text-muted-foreground",
+                              )}
+                            >
+                              <Icon className="h-4 w-4" />
+                            </span>
+                            {!option.available ? (
+                              <span className="inline-flex rounded-full border border-border/70 bg-muted/70 px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                Coming soon
+                              </span>
+                            ) : null}
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-sm font-semibold text-foreground">{option.label}</p>
+                            <p className="text-xs text-muted-foreground">{option.description}</p>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {attemptedStep === step && errors.intentFocus ? (
+                    <p className="text-destructive text-xs">{errors.intentFocus}</p>
                   ) : null}
                 </div>
-                {attemptedStep === 0 && errors.orgSlug ? (
-                  <p className="text-destructive text-xs">{errors.orgSlug}</p>
-                ) : null}
-                {attemptedStep !== 0 && !errors.orgSlug && slugHint ? (
-                  <p className="text-muted-foreground text-xs">{slugHint}</p>
-                ) : null}
-              </div>
 
-              <div className="grid gap-2">
-                <Label>Formation status</Label>
-                <div
-                  role="radiogroup"
-                  aria-label="Formation status"
-                  className="grid gap-2 sm:grid-cols-3"
-                >
-                  {FORMATION_OPTIONS.map((option) => {
-                    const selected = formationStatus === option.value
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        role="radio"
-                        aria-checked={selected}
-                        onClick={() => {
-                          setFormationStatus(option.value)
-                          saveDraft({ formationStatus: option.value })
-                          syncProgress()
-                        }}
-                        className={cn(
-                          "flex flex-col gap-2 rounded-2xl border p-3 text-left transition",
-                          selected
-                            ? "border-primary/60 bg-primary/5"
-                            : "border-border/70 bg-background/60 hover:bg-background"
-                        )}
-                      >
-                        <span
-                          className={cn(
-                            "flex h-5 w-5 items-center justify-center rounded-full border",
-                            selected
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border text-transparent"
-                          )}
-                          aria-hidden
-                        >
-                          <CheckIcon className="h-3 w-3" />
-                        </span>
-                        <span className="w-full">
-                          <span className="text-foreground block text-sm font-medium">
-                            {option.label}
-                          </span>
-                          <span className="text-muted-foreground mt-0.5 block text-xs">
-                            {option.description}
-                          </span>
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
-                {attemptedStep === 0 && errors.formationStatus ? (
-                  <p className="text-destructive text-xs">{errors.formationStatus}</p>
-                ) : null}
-              </div>
               </div>
             ) : null}
 
-            {step === 1 ? (
+            {currentStep.id === "org" ? (
+              <div className="space-y-5 py-5">
+                <div className="grid gap-2">
+                  <Label htmlFor="orgName">Organization name</Label>
+                  <Input
+                    id="orgName"
+                    name="orgName"
+                    placeholder="Acme Inc."
+                    aria-invalid={attemptedStep === step && Boolean(errors.orgName)}
+                    onChange={(event) => {
+                      const value = event.currentTarget.value
+                      setOrgNameValue(value)
+                      if (!slugEdited) {
+                        const nextSlug = slugify(value)
+                        setSlugValue(nextSlug)
+                        setOrgSlugInputValue(nextSlug)
+                        const input = formRef.current?.querySelector(
+                          'input[name="orgSlug"]',
+                        ) as HTMLInputElement | null
+                        if (input) input.value = nextSlug
+                      }
+                    }}
+                  />
+                  <p className="text-muted-foreground text-xs">
+                    Display name and public URL are separate. You can keep this name and change the URL if needed.
+                  </p>
+                  {attemptedStep === step && errors.orgName ? (
+                    <p className="text-destructive text-xs">{errors.orgName}</p>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="orgSlug">Organization URL</Label>
+                  <div className="border-border/70 bg-background flex items-center gap-2 rounded-xl border px-3 py-1.5">
+                    <span className="text-muted-foreground text-sm">coachhouse.org/</span>
+                    <Input
+                      id="orgSlug"
+                      name="orgSlug"
+                      placeholder="acme"
+                      className="h-9 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+                      aria-invalid={attemptedStep === step && Boolean(errors.orgSlug)}
+                      onChange={(event) => {
+                        setSlugEdited(true)
+                        const normalized = slugify(event.currentTarget.value)
+                        setSlugValue(normalized)
+                        setOrgSlugInputValue(normalized)
+                        event.currentTarget.value = normalized
+                      }}
+                    />
+                    {slugStatus === "available" ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                        <CheckIcon className="h-3 w-3" aria-hidden />
+                        Available
+                      </span>
+                    ) : slugStatus === "checking" ? (
+                      <span className="bg-muted text-muted-foreground rounded-full px-2 py-1 text-[11px] font-medium">
+                        Checking…
+                      </span>
+                    ) : null}
+                  </div>
+                  {attemptedStep === step && errors.orgSlug ? (
+                    <p className="text-destructive text-xs">{errors.orgSlug}</p>
+                  ) : null}
+                  {attemptedStep !== step && !errors.orgSlug && slugHint ? (
+                    <p className="text-muted-foreground text-xs">{slugHint}</p>
+                  ) : null}
+                </div>
+
+                <div className="grid gap-2">
+                  <Label>Formation status</Label>
+                  <div
+                    role="radiogroup"
+                    aria-label="Formation status"
+                    className="grid gap-2 sm:grid-cols-3"
+                  >
+                    {FORMATION_OPTIONS.map((option) => {
+                      const selected = formationStatus === option.value
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          onClick={() => {
+                            setFormationStatus(option.value)
+                            saveDraft({ formationStatus: option.value })
+                            syncProgress()
+                          }}
+                          className={cn(
+                            "flex flex-col gap-2 rounded-2xl border p-3 text-left transition",
+                            selected
+                              ? "border-primary/60 bg-primary/5"
+                              : "border-border/70 bg-background/60 hover:bg-background",
+                          )}
+                        >
+                          <span
+                            className={cn(
+                              "flex h-5 w-5 items-center justify-center rounded-full border",
+                              selected
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border text-transparent",
+                            )}
+                            aria-hidden
+                          >
+                            <CheckIcon className="h-3 w-3" />
+                          </span>
+                          <span className="w-full">
+                            <span className="text-foreground block text-sm font-medium">{option.label}</span>
+                            <span className="text-muted-foreground mt-0.5 block text-xs">
+                              {option.description}
+                            </span>
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {attemptedStep === step && errors.formationStatus ? (
+                    <p className="text-destructive text-xs">{errors.formationStatus}</p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
+
+            {currentStep.id === "account" ? (
               <div className="space-y-5 py-5">
               <div className="border-border/70 bg-background/60 flex min-h-[10.5rem] flex-col items-center justify-center gap-3 rounded-2xl border px-4 py-6">
                 <div className="relative size-16">
@@ -948,9 +1097,9 @@ export function OnboardingDialog({
                   <Input
                     id="firstName"
                     name="firstName"
-                    aria-invalid={attemptedStep === 1 && Boolean(errors.firstName)}
+                    aria-invalid={attemptedStep === step && Boolean(errors.firstName)}
                   />
-                  {attemptedStep === 1 && errors.firstName ? (
+                  {attemptedStep === step && errors.firstName ? (
                     <p className="text-destructive text-xs">
                       {errors.firstName}
                     </p>
@@ -961,9 +1110,9 @@ export function OnboardingDialog({
                   <Input
                     id="lastName"
                     name="lastName"
-                    aria-invalid={attemptedStep === 1 && Boolean(errors.lastName)}
+                    aria-invalid={attemptedStep === step && Boolean(errors.lastName)}
                   />
-                  {attemptedStep === 1 && errors.lastName ? (
+                  {attemptedStep === step && errors.lastName ? (
                     <p className="text-destructive text-xs">
                       {errors.lastName}
                     </p>
@@ -1059,15 +1208,6 @@ export function OnboardingDialog({
             ) : null}
         </div>
 
-        {shouldShowScrollToFinishIndicator ? (
-          <div className="pointer-events-none absolute right-4 bottom-20 z-10 md:right-6">
-            <div className="bg-background/95 text-foreground border-border/80 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-sm backdrop-blur">
-              <ArrowDownIcon className="h-3.5 w-3.5 animate-bounce" aria-hidden />
-              Scroll down to finish
-            </div>
-          </div>
-        ) : null}
-
         <div className="border-border/70 bg-background/40 relative z-20 shrink-0 flex flex-wrap items-center justify-between gap-3 border-t px-4 py-4 md:px-6">
           <div className="flex items-center gap-2">
             {step > 0 ? (
@@ -1092,10 +1232,8 @@ export function OnboardingDialog({
               onClick={step === STEPS.length - 1 ? undefined : next}
               disabled={
                 submitting ||
-                (step === 0 && (slugStatus !== "available" || !formationStatus)) ||
-                (step === STEPS.length - 1 &&
-                  step2NeedsScroll &&
-                  !step2ScrolledToBottom)
+                (currentStep.id === "intent" && intentFocus !== "build") ||
+                (currentStep.id === "org" && (slugStatus !== "available" || !formationStatus))
               }
               className={cn(step === STEPS.length - 1 ? "gap-2" : "gap-2")}
             >
@@ -1204,8 +1342,8 @@ export function OnboardingDialog({
 
   return (
     isInline ? (
-      <div className="h-full w-full md:mx-auto md:max-w-[680px]">
-        <section className="bg-card flex h-full max-h-full w-full flex-col overflow-hidden border-0 p-0 shadow-none md:mx-auto md:h-auto md:max-h-[min(78vh,820px)] md:rounded-3xl md:border md:border-border md:bg-card/80 md:shadow-2xl md:backdrop-blur">
+      <div className="flex h-full w-full items-stretch md:mx-auto md:max-w-[680px] md:items-center">
+        <section className="bg-card flex h-full max-h-full w-full flex-col overflow-hidden border-0 p-0 shadow-none md:mx-auto md:h-auto md:max-h-[min(78vh,820px)] md:rounded-3xl md:border md:border-border md:bg-card/80 md:shadow-none md:backdrop-blur">
           {content}
         </section>
       </div>

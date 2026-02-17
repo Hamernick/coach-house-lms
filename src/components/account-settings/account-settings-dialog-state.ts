@@ -44,7 +44,7 @@ type ReturnType = {
   email: string
   handleSave: () => Promise<void>
   handleUpdatePassword: () => Promise<void>
-  handleDeleteAccount: () => Promise<void>
+  handleDeleteAccount: () => Promise<boolean>
   requestClose: () => void
   handleMarketingOptInChange: (value: boolean) => void
   handleNewsletterOptInChange: (value: boolean) => void
@@ -312,10 +312,40 @@ export function useAccountSettingsDialogState({
   }
 
   const handleDeleteAccount = async () => {
-    const res = await fetch("/api/account/delete", { method: "DELETE" })
-    if (res.ok) {
-      router.replace("/login")
+    try {
+      const res = await fetch("/api/account/delete", { method: "DELETE" })
+      if (!res.ok) {
+        const payload = await res.json().catch(() => ({}))
+        const message =
+          typeof payload?.error === "string" && payload.error.length > 0
+            ? payload.error
+            : "Unable to delete account."
+        const normalized = message.toLowerCase()
+        const isSessionError =
+          res.status === 401 ||
+          normalized.includes("invalid refresh token") ||
+          normalized.includes("refresh token not found") ||
+          normalized.includes("auth session")
+
+        if (isSessionError) {
+          toast.error("Session expired. Sign in again, then retry account deletion.")
+          await supabase.auth.signOut().catch(() => undefined)
+          router.replace("/?section=login")
+          router.refresh()
+          return false
+        }
+
+        toast.error(message)
+        return false
+      }
+
+      await supabase.auth.signOut().catch(() => undefined)
+      router.replace("/")
       router.refresh()
+      return true
+    } catch {
+      toast.error("Unable to delete account.")
+      return false
     }
   }
 

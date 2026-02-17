@@ -41,7 +41,7 @@ export async function POST(request: Request) {
     if (upsertErr) return NextResponse.json({ error: upsertErr.message }, { status: 500 })
 
     revalidatePath("/people")
-    revalidatePath("/my-organization")
+    revalidatePath("/organization")
 
     return NextResponse.json({ ok: true })
   } catch {

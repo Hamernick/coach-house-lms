@@ -3,6 +3,8 @@ import { redirect } from "next/navigation"
 import Image from "next/image"
 
 import CalendarCheckIcon from "lucide-react/dist/esm/icons/calendar-check"
+import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
+import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
 import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
 import CircleDotIcon from "lucide-react/dist/esm/icons/circle-dot"
 import CircleIcon from "lucide-react/dist/esm/icons/circle"
@@ -24,18 +26,17 @@ import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern/index"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
 import { createSupabaseServerClient, type Json } from "@/lib/supabase"
-import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { fetchAcceleratorProgressSummary, type ModuleCardStatus } from "@/lib/accelerator/progress"
 import { sortAcceleratorModules } from "@/lib/accelerator/module-order"
 import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
+import { resolvePricingPlanTier } from "@/lib/billing/plan-tier"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import { normalizePersonCategory } from "@/lib/people/categories"
+import { resolvePeopleDisplayImages } from "@/lib/people/display-images"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import type { OrgPerson } from "@/actions/people"
 import { cn } from "@/lib/utils"
-
-export const dynamic = "force-dynamic"
 
 type UpcomingEvent = {
   id: string
@@ -87,6 +88,45 @@ function formatFundingGoal(cents: number) {
   return COMPACT_USD.format(cents / 100)
 }
 
+function parseMonthParam(value: string) {
+  const trimmed = value.trim()
+  const match = /^(\d{4})-(\d{2})$/.exec(trimmed)
+  if (!match) return null
+  const year = Number(match[1])
+  const month = Number(match[2])
+  if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) return null
+  const date = new Date(year, month - 1, 1)
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1) return null
+  return date
+}
+
+function formatMonthParam(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+}
+
+function withMonthParam(
+  params: Record<string, string | string[] | undefined> | undefined,
+  monthDate: Date,
+) {
+  const query = new URLSearchParams()
+  for (const [key, value] of Object.entries(params ?? {})) {
+    if (key === "month") continue
+    if (typeof value === "string" && value.trim()) {
+      query.set(key, value)
+      continue
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        if (typeof item === "string" && item.trim()) {
+          query.append(key, item)
+        }
+      }
+    }
+  }
+  query.set("month", formatMonthParam(monthDate))
+  return `/organization?${query.toString()}`
+}
+
 function formationModuleStatusLabel(status: ModuleCardStatus) {
   if (status === "completed") return "Complete"
   if (status === "in_progress") return "In progress"
@@ -103,11 +143,29 @@ function formationModuleStatusClass(status: ModuleCardStatus) {
   return "border-zinc-300 bg-zinc-100 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
 }
 
+function formationModuleBadgeLabel(module: { status: ModuleCardStatus; slug?: string | null; title?: string | null }) {
+  if (module.status === "not_started" && isElectiveAddOnModule(module)) {
+    return "Optional"
+  }
+  return formationModuleStatusLabel(module.status)
+}
+
+function formationModuleBadgeClass(module: { status: ModuleCardStatus; slug?: string | null; title?: string | null }) {
+  if (module.status === "not_started" && isElectiveAddOnModule(module)) {
+    return "border-sky-200 bg-sky-100 text-sky-800 dark:border-sky-900/50 dark:bg-sky-500/15 dark:text-sky-200"
+  }
+  return formationModuleStatusClass(module.status)
+}
+
 function formationModuleStatusIcon(status: ModuleCardStatus) {
   if (status === "completed") return <CheckCircle2Icon className="h-4 w-4 text-emerald-600 dark:text-emerald-300" aria-hidden />
   if (status === "in_progress") return <CircleDotIcon className="h-4 w-4 text-amber-600 dark:text-amber-300" aria-hidden />
   return <CircleIcon className="h-4 w-4 text-zinc-500 dark:text-zinc-400" aria-hidden />
 }
+
+const DASHBOARD_SUPPORT_CARD_FRAME_CLASS =
+  "flex h-full min-w-0 flex-col overflow-hidden min-h-[320px] md:min-h-[340px] xl:min-h-[360px] max-h-[620px]"
+const DASHBOARD_SUPPORT_CARD_CONTENT_CLASS = "flex min-h-0 flex-1 flex-col overflow-hidden"
 
 export default async function MyOrganizationPage({
   searchParams,
@@ -118,8 +176,9 @@ export default async function MyOrganizationPage({
   const viewParam = typeof resolvedSearchParams?.view === "string" ? resolvedSearchParams.view : ""
   const tabParam = typeof resolvedSearchParams?.tab === "string" ? resolvedSearchParams.tab : ""
   const programIdParam = typeof resolvedSearchParams?.programId === "string" ? resolvedSearchParams.programId : ""
+  const monthParam = typeof resolvedSearchParams?.month === "string" ? resolvedSearchParams.month : ""
   if (tabParam === "roadmap") redirect("/roadmap")
-  if (tabParam === "documents") redirect("/my-organization/documents")
+  if (tabParam === "documents") redirect("/organization/documents")
 
   const supabase = await createSupabaseServerClient()
   const {
@@ -129,7 +188,7 @@ export default async function MyOrganizationPage({
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw supabaseErrorToError(userError, "Unable to load user.")
   }
-  if (!user) redirect("/login?redirect=/my-organization")
+  if (!user) redirect("/login?redirect=/organization")
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   const canEdit = canEditOrganization(role)
@@ -161,27 +220,48 @@ export default async function MyOrganizationPage({
     }
   }
 
-  // Load programs for this organization (by user)
-  const { data: programs } = await supabase
-    .from("programs")
-    .select(
-      "id, title, subtitle, description, location, location_type, location_url, team_ids, image_url, duration_label, features, status_label, goal_cents, raised_cents, is_public, created_at, start_date, end_date, address_city, address_state, address_country, cta_label, cta_url, wizard_snapshot",
-    )
-    .eq("user_id", orgId)
-    .order("created_at", { ascending: false })
-
   const nowIso = new Date().toISOString()
-  const { data: upcomingEvents } = await supabase
-    .from("roadmap_calendar_internal_events")
-    .select("id,title,starts_at,ends_at,all_day")
-    .eq("org_id", orgId)
-    .gte("starts_at", nowIso)
-    .eq("status", "active")
-    .order("starts_at", { ascending: true })
-    .limit(5)
-    .returns<UpcomingEvent[]>()
 
+  const [programsResult, upcomingEventsResult, acceleratorProgress, activeSubscriptionResult] = await Promise.all([
+    supabase
+      .from("programs")
+      .select(
+        "id, title, subtitle, description, location, location_type, location_url, team_ids, image_url, duration_label, features, status_label, goal_cents, raised_cents, is_public, created_at, start_date, end_date, address_city, address_state, address_country, cta_label, cta_url, wizard_snapshot",
+      )
+      .eq("user_id", orgId)
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("roadmap_calendar_internal_events")
+      .select("id,title,starts_at,ends_at,all_day")
+      .eq("org_id", orgId)
+      .gte("starts_at", nowIso)
+      .eq("status", "active")
+      .order("starts_at", { ascending: true })
+      .limit(5)
+      .returns<UpcomingEvent[]>(),
+    fetchAcceleratorProgressSummary({
+      supabase,
+      userId: user.id,
+      isAdmin: false,
+      basePath: "/accelerator",
+    }),
+    supabase
+      .from("subscriptions")
+      .select("status, metadata")
+      .eq("user_id", orgId)
+      .in("status", ["active", "trialing", "past_due", "incomplete"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ status: string | null; metadata: Json | null }>(),
+  ])
+  const programs = programsResult.data
+  const upcomingEvents = upcomingEventsResult.data
+  const currentPlanTier = resolvePricingPlanTier(activeSubscriptionResult.data ?? null)
+  const hasPaidPlan = currentPlanTier !== "free"
+
+  const requestedMonthDate = parseMonthParam(monthParam)
   const calendarAnchorDate = (() => {
+    if (requestedMonthDate) return requestedMonthDate
     const first = upcomingEvents?.[0]?.starts_at
     const parsed = first ? new Date(first) : new Date()
     return Number.isNaN(parsed.getTime()) ? new Date() : parsed
@@ -189,6 +269,12 @@ export default async function MyOrganizationPage({
   const calendarYear = calendarAnchorDate.getFullYear()
   const calendarMonth = calendarAnchorDate.getMonth()
   const calendarMonthLabel = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(calendarAnchorDate)
+  const previousMonthDate = new Date(calendarYear, calendarMonth - 1, 1)
+  const nextMonthDate = new Date(calendarYear, calendarMonth + 1, 1)
+  const previousMonthHref = withMonthParam(resolvedSearchParams, previousMonthDate)
+  const nextMonthHref = withMonthParam(resolvedSearchParams, nextMonthDate)
+  const previousMonthLabel = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(previousMonthDate)
+  const nextMonthLabel = new Intl.DateTimeFormat(undefined, { month: "long", year: "numeric" }).format(nextMonthDate)
   const calendarFirstWeekday = new Date(calendarYear, calendarMonth, 1).getDay()
   const calendarDaysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate()
   const calendarGrid: Array<number | null> = []
@@ -221,27 +307,22 @@ export default async function MyOrganizationPage({
     return parsed.getDate()
   })()
 
-  const acceleratorProgress = await fetchAcceleratorProgressSummary({
-    supabase,
-    userId: user.id,
-    isAdmin: false,
-    basePath: "/accelerator",
-  })
-
   const sortedRoadmapModules = sortAcceleratorModules(
     acceleratorProgress.groups.flatMap((group) => group.modules),
   )
-  const freeRoadmapModules = sortedRoadmapModules.filter((module) => !isElectiveAddOnModule(module))
-  const paidRoadmapModules = sortedRoadmapModules.filter((module) => isElectiveAddOnModule(module))
-  const freePreviewModules = freeRoadmapModules.slice(0, 3)
-  const paidPreviewModules = paidRoadmapModules.slice(0, 3)
-  const visibleRoadmapModules = [...freePreviewModules, ...paidPreviewModules]
+  const foundationRoadmapModules = sortedRoadmapModules.filter((module) => !isElectiveAddOnModule(module))
+  const acceleratorRoadmapModules = sortedRoadmapModules.filter((module) => isElectiveAddOnModule(module))
+  const foundationPreviewModules = foundationRoadmapModules.slice(0, 4)
+  const acceleratorPreviewModules = acceleratorRoadmapModules.slice(0, 2)
+  const visibleRoadmapModules = hasPaidPlan
+    ? [...foundationPreviewModules, ...acceleratorPreviewModules]
+    : foundationPreviewModules
   const formationCompletedCount = visibleRoadmapModules.filter((module) => module.status === "completed").length
   const showLaunchRoadmapCard =
-    freeRoadmapModules.length > 0 && freeRoadmapModules.some((module) => module.status !== "completed")
+    foundationRoadmapModules.length > 0 && foundationRoadmapModules.some((module) => module.status !== "completed")
   const nextFormationModule =
-    freeRoadmapModules.find((module) => module.status !== "completed") ??
-    freeRoadmapModules[0] ??
+    foundationRoadmapModules.find((module) => module.status !== "completed") ??
+    foundationRoadmapModules[0] ??
     null
   const nextFormationHref = nextFormationModule?.href ?? "/accelerator"
 
@@ -250,27 +331,7 @@ export default async function MyOrganizationPage({
     ...person,
     category: normalizePersonCategory(person.category),
   }))
-  let people: (OrgPerson & { displayImage: string | null })[] = []
-  try {
-    const admin = createSupabaseAdminClient()
-    for (const p of peopleNormalized) {
-      let displayImage: string | null = null
-      if (p.image) {
-        if (/^https?:/i.test(p.image) || p.image.startsWith("data:")) {
-          displayImage = p.image
-        } else {
-          const { data: signed } = await admin.storage.from("avatars").createSignedUrl(p.image, 60 * 60)
-          displayImage = signed?.signedUrl ?? null
-        }
-      }
-      people.push({ ...p, displayImage })
-    }
-	  } catch {
-	    people = peopleNormalized.map((p) => ({
-	      ...p,
-	      displayImage: /^https?:/i.test(p.image ?? "") ? (p.image as string) : null,
-	    }))
-	  }
+  const people = await resolvePeopleDisplayImages(peopleNormalized)
 
 	  const formationStatusRaw = profile["formationStatus"]
 	  const isFormationStatus = (value: unknown): value is FormationStatus =>
@@ -348,7 +409,7 @@ export default async function MyOrganizationPage({
               </p>
             </div>
             <Button asChild variant="outline" size="sm">
-              <Link href="/my-organization">Back to workspace</Link>
+              <Link href="/organization">Back to workspace</Link>
             </Button>
           </div>
           <OrgProfileCard
@@ -369,7 +430,7 @@ export default async function MyOrganizationPage({
     <div className="flex flex-col gap-5 md:gap-6">
       <PageTutorialButton tutorial="my-organization" />
 
-      <section className={MY_ORGANIZATION_BENTO_GRID_CLASS}>
+      <section className={MY_ORGANIZATION_BENTO_GRID_CLASS} data-tour="dashboard-overview">
         <Card
           data-bento-card="profile"
           className={cn(
@@ -415,23 +476,23 @@ export default async function MyOrganizationPage({
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-1 rounded-lg border border-border/60 bg-background/30 p-1">
+            <div className="grid grid-cols-3 gap-1 rounded-lg border border-border/60 bg-background/30 p-1" data-tour="dashboard-stats">
               <Link
-                href="/my-organization?view=editor&tab=programs"
+                href="/organization?view=editor&tab=programs"
                 className="rounded-md px-2 py-2 transition hover:bg-muted/40"
               >
                 <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Funding goal</p>
                 <p className="mt-1 text-sm font-semibold tabular-nums">{formatFundingGoal(fundingGoalCents)}</p>
               </Link>
               <Link
-                href="/my-organization?view=editor&tab=programs"
+                href="/organization?view=editor&tab=programs"
                 className="rounded-md px-2 py-2 transition hover:bg-muted/40"
               >
                 <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Programs</p>
                 <p className="mt-1 text-sm font-semibold tabular-nums">{programsCount}</p>
               </Link>
               <Link
-                href="/my-organization?view=editor&tab=people"
+                href="/organization?view=editor&tab=people"
                 className="rounded-md px-2 py-2 transition hover:bg-muted/40"
               >
                 <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">People</p>
@@ -444,7 +505,7 @@ export default async function MyOrganizationPage({
                 <dt className="text-muted-foreground text-xs uppercase tracking-wide">Formation</dt>
                 <dd className="font-medium text-right">
                   {initialProfile.formationStatus === "approved"
-                    ? "Approved"
+                    ? "IRS Approved"
                     : initialProfile.formationStatus === "pre_501c3"
                       ? "Pre-501(c)(3)"
                       : "In progress"}
@@ -459,9 +520,9 @@ export default async function MyOrganizationPage({
                 <dd className="font-medium tabular-nums">{people.length}</dd>
               </div>
             </dl>
-            <div className="mt-auto grid gap-2 pt-1 sm:grid-cols-2">
+            <div className="mt-auto grid gap-2 pt-1 sm:grid-cols-2" data-tour="dashboard-actions">
               <Button asChild size="sm" className="h-9">
-                <Link href="/my-organization?view=editor">Edit organization</Link>
+                <Link href="/organization?view=editor">Edit organization</Link>
               </Button>
               <Button asChild variant="outline" size="sm" className="h-9">
                 <Link href={nextFormationHref}>{continueInAcceleratorLabel}</Link>
@@ -472,7 +533,10 @@ export default async function MyOrganizationPage({
 
         <Card
           data-bento-card="calendar"
-          className={resolveMyOrganizationBentoCardClass("calendar", { showLaunchRoadmapCard })}
+          className={cn(
+            resolveMyOrganizationBentoCardClass("calendar", { showLaunchRoadmapCard }),
+            DASHBOARD_SUPPORT_CARD_FRAME_CLASS,
+          )}
         >
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -480,7 +544,7 @@ export default async function MyOrganizationPage({
               Calendar
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className={cn(DASHBOARD_SUPPORT_CARD_CONTENT_CLASS, "space-y-3")}>
             <div className="space-y-1">
               <p className="text-base font-semibold text-foreground">{nextCalendarEvent?.title ?? "No upcoming events"}</p>
               <p className="text-sm text-muted-foreground">
@@ -493,7 +557,19 @@ export default async function MyOrganizationPage({
             </div>
 
             <div className="rounded-lg border border-border/60 bg-background/20 p-3">
-              <p className="text-lg font-semibold tracking-tight text-foreground">{calendarMonthLabel}</p>
+              <div className="flex items-center justify-between gap-2">
+                <Button asChild type="button" variant="ghost" size="icon" className="h-7 w-7 rounded-md">
+                  <Link href={previousMonthHref} aria-label={`Show ${previousMonthLabel}`}>
+                    <ChevronLeftIcon className="h-4 w-4" aria-hidden />
+                  </Link>
+                </Button>
+                <p className="text-lg font-semibold tracking-tight text-foreground">{calendarMonthLabel}</p>
+                <Button asChild type="button" variant="ghost" size="icon" className="h-7 w-7 rounded-md">
+                  <Link href={nextMonthHref} aria-label={`Show ${nextMonthLabel}`}>
+                    <ChevronRightIcon className="h-4 w-4" aria-hidden />
+                  </Link>
+                </Button>
+              </div>
               <div className="mt-3 grid grid-cols-7 gap-1">
                 {calendarWeekdayLabels.map((label) => (
                   <span key={label} className="text-center text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -526,7 +602,7 @@ export default async function MyOrganizationPage({
                 })}
               </div>
             </div>
-            <div className="pt-1">
+            <div className="mt-auto pt-1">
               <MyOrganizationAddEventSheetButton />
             </div>
           </CardContent>
@@ -535,67 +611,56 @@ export default async function MyOrganizationPage({
         {showLaunchRoadmapCard ? (
           <Card
             data-bento-card="launch-roadmap"
-            className={resolveMyOrganizationBentoCardClass("launchRoadmap", { showLaunchRoadmapCard })}
+            className={cn(
+              resolveMyOrganizationBentoCardClass("launchRoadmap", { showLaunchRoadmapCard }),
+              DASHBOARD_SUPPORT_CARD_FRAME_CLASS,
+            )}
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <RocketIcon className="h-4 w-4" aria-hidden />
                 Formation Status
               </CardTitle>
-              <CardDescription>Core 501(c)(3) formation milestones.</CardDescription>
+              <CardDescription>Formation milestones and accelerator progress in one view.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {freePreviewModules.length > 0 ? (
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Free modules</p>
-                  <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-background/20">
-                    {freePreviewModules.map((module) => (
-                      <li key={module.id}>
-                        <Link href={module.href} className="block px-3 py-2.5 transition hover:bg-muted/35">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex min-w-0 items-start gap-2">
-                              {formationModuleStatusIcon(module.status)}
-                              <p className="line-clamp-2 text-sm font-medium">{module.title}</p>
+            <CardContent className={cn(DASHBOARD_SUPPORT_CARD_CONTENT_CLASS, "gap-3")}>
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto pr-1">
+                {visibleRoadmapModules.length > 0 ? (
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      {hasPaidPlan ? "Included modules" : "Formation modules"}
+                    </p>
+                    <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-background/20">
+                      {visibleRoadmapModules.map((module) => (
+                        <li key={module.id}>
+                          <Link href={module.href} className="block px-3 py-2.5 transition hover:bg-muted/35">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex min-w-0 items-start gap-2">
+                                {formationModuleStatusIcon(module.status)}
+                                <p className="line-clamp-2 text-sm font-medium">{module.title}</p>
+                              </div>
+                              <span
+                                className={`shrink-0 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium ${formationModuleBadgeClass(module)}`}
+                              >
+                                {formationModuleBadgeLabel(module)}
+                              </span>
                             </div>
-                            <span
-                              className={`shrink-0 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium ${formationModuleStatusClass(module.status)}`}
-                            >
-                              {formationModuleStatusLabel(module.status)}
-                            </span>
-                          </div>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
 
-              {paidPreviewModules.length > 0 ? (
-                <div className="space-y-1.5">
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Paid electives</p>
-                  <ul className="divide-y divide-border/60 overflow-hidden rounded-lg border border-border/60 bg-background/20">
-                    {paidPreviewModules.map((module) => (
-                      <li key={module.id}>
-                        <Link href={module.href} className="block px-3 py-2.5 transition hover:bg-muted/35">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex min-w-0 items-start gap-2">
-                              {formationModuleStatusIcon(module.status)}
-                              <p className="line-clamp-2 text-sm font-medium">{module.title}</p>
-                            </div>
-                            <span
-                              className={`shrink-0 whitespace-nowrap rounded-full border px-2 py-0.5 text-[10px] font-medium ${formationModuleStatusClass(module.status)}`}
-                            >
-                              {formationModuleStatusLabel(module.status)}
-                            </span>
-                          </div>
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
+                {!hasPaidPlan && acceleratorRoadmapModules.length > 0 ? (
+                  <p className="rounded-lg border border-border/60 bg-background/20 px-3 py-2 text-xs text-muted-foreground">
+                    Unlock {acceleratorRoadmapModules.length} additional accelerator modules with Organization ($20/mo) or
+                    Operations Support ($58/mo).
+                  </p>
+                ) : null}
+              </div>
 
-              <p className="text-muted-foreground text-xs">
+              <p className="text-xs text-muted-foreground">
                 {formationCompletedCount}/{visibleRoadmapModules.length} complete
               </p>
               <div className="grid grid-cols-2 gap-2 pt-1">
@@ -603,7 +668,9 @@ export default async function MyOrganizationPage({
                   <Link href="/accelerator">Open accelerator</Link>
                 </Button>
                 <Button asChild size="sm" className="h-9">
-                  <Link href={nextFormationHref}>Continue</Link>
+                  <Link href={hasPaidPlan ? nextFormationHref : "/organization?paywall=organization&plan=organization&source=my-org-formation-card"}>
+                    {hasPaidPlan ? "Continue" : "Upgrade"}
+                  </Link>
                 </Button>
               </div>
             </CardContent>

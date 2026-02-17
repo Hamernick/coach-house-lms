@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/admin/auth"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
 import { revalidateClassViews } from "@/app/(admin)/admin/classes/actions"
 import { randomId } from "@/app/(admin)/admin/classes/actions/utils"
@@ -14,15 +13,18 @@ function isRlsError(error: { message?: string | null; code?: string | number | n
 }
 
 export async function POST(_req: Request, props: { params: Promise<{ id: string }> }) {
-  await requireAdmin()
+  const { supabase } = await requireAdmin()
   const { id: classId } = await props.params
 
   if (!classId) {
     return NextResponse.json({ error: "Class id is required" }, { status: 400 })
   }
 
-  const supabase = await createSupabaseServerClient()
-  const admin = createSupabaseAdminClient()
+  let admin: ReturnType<typeof createSupabaseAdminClient> | null = null
+  function getAdminClient() {
+    admin ??= createSupabaseAdminClient()
+    return admin
+  }
 
   let maxIdx = 0
   {
@@ -35,7 +37,7 @@ export async function POST(_req: Request, props: { params: Promise<{ id: string 
       .maybeSingle<{ idx: number | null }>()
 
     if (error && isRlsError(error)) {
-      const { data: adminData, error: adminError } = await admin
+      const { data: adminData, error: adminError } = await getAdminClient()
         .from("modules" satisfies keyof Database["public"]["Tables"])
         .select("idx")
         .eq("class_id", classId)
@@ -74,7 +76,7 @@ export async function POST(_req: Request, props: { params: Promise<{ id: string 
       .single<{ id: string }>()
 
     if (error && isRlsError(error)) {
-      const { data: adminData, error: adminError } = await admin
+      const { data: adminData, error: adminError } = await getAdminClient()
         .from("modules" satisfies keyof Database["public"]["Tables"])
         .insert(insertPayload)
         .select("id")
@@ -103,7 +105,7 @@ export async function POST(_req: Request, props: { params: Promise<{ id: string 
       .eq("id", classId)
       .maybeSingle<{ slug: string | null }>()
     if (error && isRlsError(error)) {
-      const { data: adminData, error: adminError } = await admin
+      const { data: adminData, error: adminError } = await getAdminClient()
         .from("classes" satisfies keyof Database["public"]["Tables"])
         .select("slug")
         .eq("id", classId)

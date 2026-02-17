@@ -29,7 +29,7 @@ export const MY_ORGANIZATION_BENTO_CARD_RULES: Record<
   },
   launchRoadmap: {
     className: "h-full min-h-[220px] xl:col-span-3 xl:col-start-4 xl:row-span-1 xl:row-start-3",
-    description: "Temporary 3-module formation checkpoint card.",
+    description: "Formation + accelerator progress snapshot card.",
   },
   programBuilder: {
     className: "h-full min-h-[360px] md:col-span-2 md:min-h-[380px] xl:col-span-6 xl:col-start-1 xl:row-span-2 xl:row-start-4",

@@ -21,6 +21,11 @@ type ProgramBuilderDashboardCardProps = {
   className?: string
 }
 
+const PROGRAM_CARD_FRAME_CLASS =
+  "flex h-full min-w-0 flex-col overflow-hidden min-h-[460px] md:min-h-[500px] xl:min-h-[540px] max-h-[760px]"
+const PROGRAM_CARD_CONTENT_CLASS = "flex min-h-0 min-w-0 flex-1 overflow-hidden"
+const PROGRAM_CARD_PANEL_CLASS = "min-h-0 min-w-0 overflow-y-auto rounded-xl border border-border/60 bg-background/20"
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value)
 }
@@ -114,7 +119,7 @@ export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuil
 
   return (
     <>
-      <Card className={cn("flex h-full min-w-0 flex-col overflow-hidden", className)}>
+      <Card className={cn(className, PROGRAM_CARD_FRAME_CLASS)}>
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
             <div className="space-y-1">
@@ -141,10 +146,10 @@ export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuil
             </div>
           </div>
         </CardHeader>
-        <CardContent className="flex min-h-0 min-w-0 flex-1">
+        <CardContent className={PROGRAM_CARD_CONTENT_CLASS}>
           {sortedPrograms.length === 0 ? (
             <Empty
-              className="h-full rounded-xl"
+              className="h-full w-full rounded-xl"
               size="sm"
               title="No programs to display"
               description="Programs you create will appear here."
@@ -163,8 +168,8 @@ export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuil
               }
             />
           ) : (
-            <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-              <div className="min-w-0 overflow-hidden rounded-xl border border-border/60 bg-background/20">
+            <div className="grid h-full min-h-0 min-w-0 gap-3 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+              <div className={PROGRAM_CARD_PANEL_CLASS}>
                 {sortedPrograms.map((program, index) => {
                   const displayTitle = program.title?.trim() || "Untitled program"
                   const displayType = parseProgramType(program)
@@ -203,7 +208,7 @@ export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuil
               </div>
 
               {activeProgram ? (
-                <div className="min-w-0 rounded-xl border border-border/60 bg-muted/20 p-4">
+                <div className="min-h-0 min-w-0 overflow-y-auto rounded-xl border border-border/60 bg-muted/20 p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="truncate text-base font-semibold text-foreground">
@@ -271,7 +276,7 @@ export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuil
                       Edit brief
                     </Button>
                     <Button asChild size="sm" variant="outline" className="h-8">
-                      <Link href={`/my-organization?view=editor&tab=programs&programId=${encodeURIComponent(activeProgram.id)}`}>
+                      <Link href={`/organization?view=editor&tab=programs&programId=${encodeURIComponent(activeProgram.id)}`}>
                         Open full view
                         <ArrowUpRightIcon className="h-3.5 w-3.5" aria-hidden />
                       </Link>

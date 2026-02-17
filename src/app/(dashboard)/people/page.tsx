@@ -2,7 +2,6 @@ import { Suspense } from "react"
 import { redirect } from "next/navigation"
 
 import { createSupabaseServerClient } from "@/lib/supabase"
-import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { OrgChartSkeleton } from "@/components/people/org-chart-skeleton"
 import { PeopleTableShell } from "@/components/people/people-table"
@@ -12,8 +11,7 @@ import { ClientOnly } from "@/components/client-only"
 import { normalizePersonCategory } from "@/lib/people/categories"
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
 import type { OrgPerson } from "@/actions/people"
-
-export const dynamic = "force-dynamic"
+import { resolvePeopleDisplayImages } from "@/lib/people/display-images"
 
 export default async function PeoplePage() {
   const supabase = await createSupabaseServerClient()
@@ -98,28 +96,8 @@ export default async function PeoplePage() {
     category: normalizePersonCategory(person.category),
   }))
 
-  // Resolve signed URLs for storage-backed avatars (parallelized)
-  let people: (OrgPerson & { displayImage: string | null })[] = []
-  try {
-    const admin = createSupabaseAdminClient()
-    people = await Promise.all(
-      normalizedPeople.map(async (p) => {
-        let displayImage: string | null = null
-        if (p.image) {
-          if (/^https?:/i.test(p.image) || p.image.startsWith("data:")) {
-            displayImage = p.image
-          } else {
-            const { data: signed } = await admin.storage.from("avatars").createSignedUrl(p.image, 60 * 60)
-            displayImage = signed?.signedUrl ?? null
-          }
-        }
-        return { ...p, displayImage }
-      })
-    )
-  } catch {
-    // Fallback: no admin key or signing failed; still render with initials
-    people = normalizedPeople.map((p) => ({ ...p, displayImage: /^https?:/i.test(p.image ?? "") ? (p.image as string) : null }))
-  }
+  const people: (OrgPerson & { displayImage: string | null })[] =
+    await resolvePeopleDisplayImages(normalizedPeople)
 
   // Flat list drives both canvas and table; table filters internally
 

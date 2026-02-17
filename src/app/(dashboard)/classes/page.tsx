@@ -57,7 +57,7 @@ export default async function ClassesPage({
             </CardHeader>
             <CardContent className="flex flex-wrap items-center gap-2">
               <Button asChild size="sm">
-                <Link href="/my-organization">Go to My Organization</Link>
+                <Link href="/organization">Go to Organization</Link>
               </Button>
             </CardContent>
           </Card>

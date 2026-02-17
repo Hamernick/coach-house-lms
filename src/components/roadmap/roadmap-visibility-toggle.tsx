@@ -41,7 +41,7 @@ export function RoadmapVisibilityToggle({
         return
       }
       if (!sharePath) {
-        toast.error("Set a public slug from My Organization first")
+        toast.error("Set a public slug from Organization first")
         return
       }
       const previous = isPublic

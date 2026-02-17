@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
+import { NextRequest } from "next/server"
 
 const {
   createSupabaseAdminClientMock,
@@ -128,12 +129,12 @@ function createAdminSupabaseStub(options?: {
 
 async function runWebhook() {
   const { POST } = await import("@/app/api/stripe/webhook/route")
-  const request = new Request("http://localhost/api/stripe/webhook", {
+  const request = new NextRequest("http://localhost/api/stripe/webhook", {
     method: "POST",
     headers: { "stripe-signature": "sig_test" },
     body: "{}",
   })
-  return POST(request as unknown as Request)
+  return POST(request)
 }
 
 describe("stripe webhook route acceptance", () => {
@@ -153,11 +154,11 @@ describe("stripe webhook route acceptance", () => {
     createSupabaseAdminClientMock.mockReturnValue(admin)
 
     const { POST } = await import("@/app/api/stripe/webhook/route")
-    const request = new Request("http://localhost/api/stripe/webhook", {
+    const request = new NextRequest("http://localhost/api/stripe/webhook", {
       method: "POST",
       body: "{}",
     })
-    const response = await POST(request as unknown as Request)
+    const response = await POST(request)
     const payload = await response.json()
 
     expect(response.status).toBe(400)
@@ -335,7 +336,7 @@ describe("stripe webhook route acceptance", () => {
         stripe_subscription_id: "sub_accel_active",
         status: "active",
       }),
-      expect.objectContaining({ onConflict: "stripe_subscription_id" }),
+      expect.objectContaining({ onConflict: "user_id,stripe_subscription_id" }),
     )
   })
 
@@ -372,7 +373,7 @@ describe("stripe webhook route acceptance", () => {
         stripe_subscription_id: "sub_accel_past_due",
         status: "past_due",
       }),
-      expect.objectContaining({ onConflict: "stripe_subscription_id" }),
+      expect.objectContaining({ onConflict: "user_id,stripe_subscription_id" }),
     )
   })
 
@@ -446,7 +447,7 @@ describe("stripe webhook route acceptance", () => {
           accelerator_billing: "monthly",
         }),
       }),
-      expect.objectContaining({ onConflict: "stripe_subscription_id" }),
+      expect.objectContaining({ onConflict: "user_id,stripe_subscription_id" }),
     )
   })
 
@@ -651,7 +652,7 @@ describe("stripe webhook route acceptance", () => {
           accelerator_installments_paid: "10",
         }),
       }),
-      expect.objectContaining({ onConflict: "stripe_subscription_id" }),
+      expect.objectContaining({ onConflict: "user_id,stripe_subscription_id" }),
     )
   })
 

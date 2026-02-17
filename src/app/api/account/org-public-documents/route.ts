@@ -103,7 +103,7 @@ async function loadOrgRow(
 }
 
 function revalidateOrgPaths(publicSlug: string | null) {
-  revalidatePath("/my-organization")
+  revalidatePath("/organization")
   if (publicSlug) {
     revalidatePath(`/${publicSlug}`)
   }
@@ -210,7 +210,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       title: "Public document uploaded",
       description: `${file.name} added to public ${kind}.`,
-      href: "/my-organization",
+      href: "/organization",
       tone: "info",
       type: "public_document_uploaded",
       actorId: user.id,

@@ -13,6 +13,7 @@ import {
   listOrganizationAccessAction,
   removeOrganizationMemberAction,
   revokeOrganizationInviteAction,
+  setOrganizationMemberTesterFlagAction,
   setOrganizationAdminsCanInviteAction,
   setOrganizationStaffCanManageCalendarAction,
   updateOrganizationMemberRoleAction,
@@ -81,9 +82,12 @@ export function OrganizationAccessManager({
   const [invites, setInvites] = useState<OrganizationAccessInvite[]>([])
   const [adminsCanInvite, setAdminsCanInvite] = useState(false)
   const [staffCanManageCalendar, setStaffCanManageCalendar] = useState(false)
+  const [hasPaidTeamAccess, setHasPaidTeamAccess] = useState(false)
   const [canInvite, setCanInvite] = useState(false)
   const [canManageMembers, setCanManageMembers] = useState(false)
+  const [canEditRoles, setCanEditRoles] = useState(false)
   const [canManageSettings, setCanManageSettings] = useState(false)
+  const [canManageTesterFlags, setCanManageTesterFlags] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
 
   const [inviteEmail, setInviteEmail] = useState("")
@@ -108,9 +112,12 @@ export function OrganizationAccessManager({
       setInvites([])
       setAdminsCanInvite(false)
       setStaffCanManageCalendar(false)
+      setHasPaidTeamAccess(false)
       setCanInvite(false)
       setCanManageMembers(false)
+      setCanEditRoles(false)
       setCanManageSettings(false)
+      setCanManageTesterFlags(false)
       setLoading(false)
       return
     }
@@ -118,9 +125,12 @@ export function OrganizationAccessManager({
     setInvites(res.invites)
     setAdminsCanInvite(Boolean(res.adminsCanInvite))
     setStaffCanManageCalendar(Boolean(res.staffCanManageCalendar))
+    setHasPaidTeamAccess(Boolean(res.hasPaidTeamAccess))
     setCanInvite(Boolean(res.canInvite))
     setCanManageMembers(Boolean(res.canManageMembers))
+    setCanEditRoles(Boolean(res.canEditRoles))
     setCanManageSettings(Boolean(res.canManageSettings))
+    setCanManageTesterFlags(Boolean(res.canManageTesterFlags))
     setLoading(false)
   }
 
@@ -143,14 +153,14 @@ export function OrganizationAccessManager({
             <p className="text-sm font-medium text-foreground">Organization profile</p>
             <p className="mt-1 text-sm text-muted-foreground">
               Edit your public profile, programs, and org details from{" "}
-              <Link href="/my-organization" className="text-primary underline-offset-4 hover:underline">
-                My Organization
+              <Link href="/organization" className="text-primary underline-offset-4 hover:underline">
+                Organization
               </Link>
               .
             </p>
           </div>
           <Button asChild variant="outline" size="sm">
-            <Link href="/my-organization">Open My Organization</Link>
+            <Link href="/organization">Open Organization</Link>
           </Button>
         </div>
       </div>
@@ -164,6 +174,18 @@ export function OrganizationAccessManager({
             </p>
           </div>
         </div>
+
+        {!hasPaidTeamAccess ? (
+          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border/70 bg-background/40 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-muted-foreground">
+              Free includes 1 admin seat (founder only). Upgrade to Organization to invite teammates, assign roles,
+              and manage access settings.
+            </p>
+            <Button asChild size="sm" className="shrink-0">
+              <Link href="/pricing">Upgrade to Organization</Link>
+            </Button>
+          </div>
+        ) : null}
 
         {canManageSettings ? (
           <div className="mt-4 flex flex-col gap-3 rounded-xl border border-border/70 bg-background/40 p-3 sm:flex-row sm:items-center sm:justify-between">
@@ -326,6 +348,11 @@ export function OrganizationAccessManager({
                           {isOwner ? <span className="ml-2 text-xs font-normal text-muted-foreground">(owner)</span> : null}
                         </p>
                         {member.joinedAt ? <p className="mt-1 text-xs text-muted-foreground">Joined {formatDate(member.joinedAt)}</p> : null}
+                        {canManageTesterFlags ? (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Tester tools {member.isTester ? "enabled" : "disabled"}
+                          </p>
+                        ) : null}
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
@@ -333,7 +360,7 @@ export function OrganizationAccessManager({
                           <span className="rounded-full border border-border/70 bg-muted/40 px-2 py-1 text-xs text-muted-foreground">
                             {ROLE_LABELS.owner}
                           </span>
-                        ) : canManageMembers ? (
+                        ) : canEditRoles ? (
                           <Select
                             value={member.role}
                             onValueChange={(value) => {
@@ -365,6 +392,35 @@ export function OrganizationAccessManager({
                             {ROLE_LABELS[member.role]}
                           </span>
                         )}
+
+                        {canManageTesterFlags ? (
+                          <div className="flex items-center gap-2 rounded-full border border-border/70 bg-muted/30 px-2 py-1">
+                            <span className="text-xs text-muted-foreground">Tester</span>
+                            <Switch
+                              checked={Boolean(member.isTester)}
+                              disabled={pending}
+                              onCheckedChange={(next) => {
+                                startTransition(async () => {
+                                  const res = await setOrganizationMemberTesterFlagAction({
+                                    memberId: member.id,
+                                    isTester: Boolean(next),
+                                  })
+                                  if ("error" in res) {
+                                    toast.error(res.error)
+                                    return
+                                  }
+                                  toast.success(
+                                    Boolean(next)
+                                      ? "Tester tools enabled."
+                                      : "Tester tools disabled.",
+                                  )
+                                  await load()
+                                })
+                              }}
+                              aria-label={`Toggle tester tools for ${member.email ?? member.id}`}
+                            />
+                          </div>
+                        ) : null}
 
                         {canManageMembers && !isOwner ? (
                           <Button

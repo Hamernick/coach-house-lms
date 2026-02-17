@@ -56,12 +56,12 @@ export default async function JoinOrganizationPage({
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild>
-            <Link href="/my-organization">Go to My Organization</Link>
+            <Link href="/organization">Go to Organization</Link>
           </Button>
         </div>
       </div>
     )
   }
 
-  redirect("/my-organization?joined=1")
+  redirect("/organization?joined=1")
 }

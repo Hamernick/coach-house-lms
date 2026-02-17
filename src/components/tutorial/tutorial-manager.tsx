@@ -45,17 +45,17 @@ function getLocalStorageKey(prefix: string, tutorial: TutorialKey) {
 const TOUR_STEPS: Record<TutorialKey, HighlightTourStep[]> = {
   platform: [
     {
-      id: "nav-my-organization",
-      selector: '[data-tour="nav-my-organization"]',
-      title: "My Organization",
+      id: "nav-organization",
+      selector: '[data-tour="nav-organization"]',
+      title: "Organization",
       description: "This is your home base. Update your profile, programs, and documents here.",
       icon: <Building2Icon className="h-5 w-5" aria-hidden />,
     },
     {
       id: "nav-accelerator",
-      selector: '[data-tour="nav-accelerator"]',
-      title: "Accelerator",
-      description: "Jump straight into your core class flow and continue where you left off.",
+      selector: '[data-tour="nav-accelerator"], [data-tour="nav-documents"]',
+      title: "Workspace navigation",
+      description: "Use the left rail to move across Organization, People, Documents, and Accelerator.",
       icon: <RouteIcon className="h-5 w-5" aria-hidden />,
     },
     {
@@ -98,24 +98,24 @@ const TOUR_STEPS: Record<TutorialKey, HighlightTourStep[]> = {
   ],
   "my-organization": [
     {
-      id: "org-profile-edit",
-      selector: '[data-tour="org-profile-edit"]',
-      title: "Edit mode",
-      description: "Turn on editing to update your organization profile and save changes.",
-      icon: <SparklesIcon className="h-5 w-5" aria-hidden />,
-    },
-    {
-      id: "org-profile-tabs",
-      selector: '[data-tour="org-profile-tabs"], [data-tour="org-profile-tab-picker"]',
-      title: "Sections",
-      description: "Switch between About, Programs, and People to build your organization’s profile.",
+      id: "dashboard-overview",
+      selector: '[data-tour="dashboard-overview"]',
+      title: "Organization overview",
+      description: "Track status, progress, and key actions from this command center.",
       icon: <LayersIcon className="h-5 w-5" aria-hidden />,
     },
     {
-      id: "org-formation-status",
-      selector: '[data-tour="org-formation-status"]',
-      title: "Formation status",
-      description: "Set where you are in your 501(c)(3) journey so Coach House can tailor your next steps.",
+      id: "dashboard-actions",
+      selector: '[data-tour="dashboard-actions"]',
+      title: "Next actions",
+      description: "Jump into high-impact tasks without leaving this page.",
+      icon: <LayersIcon className="h-5 w-5" aria-hidden />,
+    },
+    {
+      id: "nav-documents",
+      selector: '[data-tour="nav-documents"]',
+      title: "Documents filing system",
+      description: "Open Documents to manage uploads, roadmap records, and policy files.",
       icon: <Building2Icon className="h-5 w-5" aria-hidden />,
     },
   ],
@@ -130,10 +130,10 @@ const TOUR_STEPS: Record<TutorialKey, HighlightTourStep[]> = {
   ],
   documents: [
     {
-      id: "documents-card",
-      selector: '[data-tour="document-verification-letter"]',
-      title: "Upload key documents",
-      description: "Store private PDFs like your determination letter and bylaws. These are never shared publicly.",
+      id: "documents-search",
+      selector: '[data-tour="documents-search"], [data-tour="document-verification-letter"]',
+      title: "Find documents fast",
+      description: "Use search and filters to find uploads, policies, and roadmap records in one place.",
       icon: <FileTextIcon className="h-5 w-5" aria-hidden />,
     },
   ],
@@ -163,7 +163,7 @@ const TOUR_STEPS: Record<TutorialKey, HighlightTourStep[]> = {
     },
     {
       id: "accelerator-return-home",
-      selector: '[data-tour="nav-my-organization"]',
+      selector: '[data-tour="nav-organization"]',
       title: "Return home",
       description: "Jump back to your organization workspace any time.",
       icon: <HomeIcon className="h-5 w-5" aria-hidden />,

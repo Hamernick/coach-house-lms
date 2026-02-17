@@ -173,7 +173,7 @@ export function RoadmapSectionEditor({ section, publicSlug, index }: RoadmapSect
                 <div className="space-y-1">
                   <p className="text-sm font-medium text-foreground">Visibility</p>
                   <p className="text-xs text-muted-foreground">
-                    {publicSlug ? "Toggle public visibility for this section." : "Set a public slug in My Organization to publish this section."}
+                    {publicSlug ? "Toggle public visibility for this section." : "Set a public slug in Organization to publish this section."}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

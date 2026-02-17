@@ -13,8 +13,6 @@ function dispatchTutorialStart(tutorial: TutorialKey) {
   window.dispatchEvent(new CustomEvent("coachhouse:tutorial:start", { detail: { tutorial } }))
 }
 
-const PLATFORM_UPGRADE_CHECKLIST_ITEM = "Upgrade when you’re ready to publish"
-
 const WELCOME_CONTENT: Record<
   "platform" | "accelerator",
   { eyebrow: string; title: string; description: string; checklist: string[] }
@@ -22,23 +20,23 @@ const WELCOME_CONTENT: Record<
   platform: {
     eyebrow: "Coach House",
     title: "Welcome",
-    description: "You’re all set. Take a quick tour — it takes about a minute.",
+    description: "You’re all set. Take a quick tour to orient your workspace.",
     checklist: [
       "Complete your organization profile",
-      "Build your roadmap (private by default)",
-      "Use Search to jump between tools",
-      PLATFORM_UPGRADE_CHECKLIST_ITEM,
+      "Add people and core documents",
+      "Use Search (CMD+K) to jump between tools",
+      "Open Accelerator when you’re ready",
     ],
   },
   accelerator: {
     eyebrow: "Coach House Accelerator",
     title: "Welcome",
-    description: "Take a quick tour — then start with the first module in Overview.",
+    description: "Take a quick tour, then start with your first module.",
     checklist: [
       "Start in Overview and work through modules in order",
-      "Assignments automatically build your organization story",
-      "Use Search to find information in your account quickly.",
-      "Use Return home to get back to your organization.",
+      "Assignments feed your roadmap and organization records",
+      "Use Search to find content quickly",
+      "Use Organization to return to your core workspace",
       "Replay this tour anytime from the account menu",
     ],
   },
@@ -57,20 +55,28 @@ export function OnboardingWelcome({
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const isWelcome = searchParams.get("welcome") === "1"
+  const hasPaywallQuery = Boolean(searchParams.get("paywall"))
   const resolvedTutorial: "platform" | "accelerator" = tutorial === "accelerator" ? "accelerator" : "platform"
   const content = WELCOME_CONTENT[resolvedTutorial]
-  const [open, setOpen] = useState(isWelcome || defaultOpen)
+  const [suppressAutoOpen, setSuppressAutoOpen] = useState(hasPaywallQuery)
+  const [open, setOpen] = useState((isWelcome || defaultOpen) && !hasPaywallQuery)
   const [, startTransition] = useTransition()
 
   const checklist = useMemo(() => {
     if (resolvedTutorial !== "platform") return content.checklist
-    if (!hasActiveSubscription) return content.checklist
-    return content.checklist.filter((item) => item !== PLATFORM_UPGRADE_CHECKLIST_ITEM)
+    if (hasActiveSubscription) return content.checklist
+    return content.checklist
   }, [content.checklist, hasActiveSubscription, resolvedTutorial])
 
   useEffect(() => {
-    setOpen(isWelcome || defaultOpen)
-  }, [defaultOpen, isWelcome])
+    if (hasPaywallQuery) {
+      setSuppressAutoOpen(true)
+    }
+  }, [hasPaywallQuery])
+
+  useEffect(() => {
+    setOpen((isWelcome || defaultOpen) && !hasPaywallQuery && (isWelcome || !suppressAutoOpen))
+  }, [defaultOpen, hasPaywallQuery, isWelcome, suppressAutoOpen])
 
   const closeHref = useMemo(() => {
     const params = new URLSearchParams(searchParams.toString())

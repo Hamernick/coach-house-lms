@@ -1,12 +1,12 @@
 "use client"
 
-import { Children, type ReactNode } from "react"
+import { Children, useState, type ReactNode } from "react"
 import type React from "react"
 import Image from "next/image"
+import ExternalLink from "lucide-react/dist/esm/icons/external-link"
 
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
-import { Glimpse, GlimpseContent, GlimpseDescription, GlimpseTitle, GlimpseTrigger } from "@/components/kibo-ui/glimpse"
 import { PROVIDER_ICON } from "@/components/shared/provider-icons"
 import { normalizeExternalUrl } from "@/lib/organization/urls"
 import { cn } from "@/lib/utils"
@@ -23,7 +23,7 @@ export function ProfileField({ label, children }: { label: ReactNode; children: 
   if (childArray.length === 0) return null
 
   return (
-    <div className="grid gap-1">
+    <div className="grid content-start self-start gap-1">
       <Label className="text-xs text-muted-foreground">{label}</Label>
       {children}
     </div>
@@ -31,10 +31,45 @@ export function ProfileField({ label, children }: { label: ReactNode; children: 
 }
 
 export function FieldText({ text, multiline = false }: { text?: string | null; multiline?: boolean }) {
-  const hasValue = Boolean(text && text.trim().length > 0)
+  const trimmed = typeof text === "string" ? text.trim() : ""
+  const [expanded, setExpanded] = useState(false)
+  const hasValue = trimmed.length > 0
   if (!hasValue) return null
-  if (multiline) return <p className="whitespace-pre-wrap text-sm">{text}</p>
-  return <p className="text-sm">{text}</p>
+  const maxCollapsedChars = multiline ? 280 : 140
+  const isLong = trimmed.length > maxCollapsedChars
+  const displayText = !expanded && isLong ? `${trimmed.slice(0, maxCollapsedChars).trimEnd()}…` : trimmed
+
+  if (multiline) {
+    return (
+      <div className="space-y-1.5">
+        <p className="whitespace-pre-wrap text-sm leading-relaxed">{displayText}</p>
+        {isLong ? (
+          <button
+            type="button"
+            className="text-xs font-medium text-muted-foreground underline underline-offset-2 transition hover:text-foreground"
+            onClick={() => setExpanded((prev) => !prev)}
+          >
+            {expanded ? "Read less" : "Read more"}
+          </button>
+        ) : null}
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-1">
+      <p className="text-sm">{displayText}</p>
+      {isLong ? (
+        <button
+          type="button"
+          className="text-xs font-medium text-muted-foreground underline underline-offset-2 transition hover:text-foreground"
+          onClick={() => setExpanded((prev) => !prev)}
+        >
+          {expanded ? "Read less" : "Read more"}
+        </button>
+      ) : null}
+    </div>
+  )
 }
 
 export function FormRow({
@@ -50,12 +85,12 @@ export function FormRow({
 }) {
   const insetClass = inset ? "px-6 md:px-0" : "px-0"
   return (
-    <div className="grid gap-4 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-[minmax(180px,240px)_minmax(0,1fr)] md:items-start md:gap-6">
       <div className={insetClass}>
         <h3 className="text-base font-medium leading-none">{title}</h3>
         {description ? <p className="mt-1 text-sm text-muted-foreground">{description}</p> : null}
       </div>
-      <div className={cn("md:col-span-2", insetClass)}>{children}</div>
+      <div className={cn("min-w-0", insetClass)}>{children}</div>
     </div>
   )
 }
@@ -69,10 +104,10 @@ export function InputWithIcon({
 }) {
   return (
     <div className="relative">
-      <span className="pointer-events-none absolute inset-y-0 left-2 flex items-center">
-        <Icon className="h-4 w-4 -translate-y-[2px] text-muted-foreground" />
+      <span className="pointer-events-none absolute inset-y-0 left-0 flex w-9 items-center justify-center">
+        <Icon className="h-4 w-4 text-muted-foreground" />
       </span>
-      <Input {...inputProps} className={cn("pl-7", inputProps.className)} />
+      <Input {...inputProps} className={cn("pl-9", inputProps.className)} />
     </div>
   )
 }
@@ -109,19 +144,32 @@ export function BrandLink({ href }: { href: string }) {
       </div>
     )
   }
+  let host = displayUrl
+  let path = ""
+  try {
+    const u = new URL(normalizedHref)
+    host = u.hostname.replace(/^www\./, "")
+    path = `${u.pathname}${u.search}`.replace(/\/$/, "")
+  } catch {
+    // fall back to shortUrl output
+  }
+
   return (
-    <Glimpse>
-      <GlimpseTrigger asChild>
-        <a href={normalizedHref} target="_blank" rel="noopener" className="inline-flex items-center gap-2 underline underline-offset-2">
-          <Icon className="h-4 w-4" />
-          <span>{displayUrl}</span>
-        </a>
-      </GlimpseTrigger>
-      <GlimpseContent className="w-80">
-        <GlimpseTitle>{displayUrl}</GlimpseTitle>
-        <GlimpseDescription>Opens in a new tab</GlimpseDescription>
-      </GlimpseContent>
-    </Glimpse>
+    <a
+      href={normalizedHref}
+      target="_blank"
+      rel="noopener"
+      className="group inline-flex w-full items-center gap-3 rounded-lg border border-border/70 bg-muted/20 px-3 py-2 text-foreground transition-colors hover:bg-muted/35"
+    >
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border/60 bg-background/80 text-muted-foreground">
+        <Icon className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-sm font-medium">{host}</span>
+        <span className="block truncate text-xs text-muted-foreground">{path || "Open link"}</span>
+      </span>
+      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted-foreground transition group-hover:text-foreground" />
+    </a>
   )
 }
 

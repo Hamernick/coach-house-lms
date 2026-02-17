@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       title: "Document uploaded",
       description: `${file.name} added to your documents.`,
-      href: "/my-organization/documents",
+      href: "/organization/documents",
       tone: "success",
       type: "document_uploaded",
       actorId: user.id,

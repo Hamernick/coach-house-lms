@@ -20,21 +20,14 @@ vi.mock("@/lib/env", () => ({
   env: {
     STRIPE_SECRET_KEY: "sk_test_checkout",
     STRIPE_ORGANIZATION_PRICE_ID: "price_org",
-    STRIPE_ACCELERATOR_WITH_COACHING_PRICE_ID: "price_accel_with_one_time",
-    STRIPE_ACCELERATOR_WITHOUT_COACHING_PRICE_ID: "price_accel_without_one_time",
-    STRIPE_ACCELERATOR_WITH_COACHING_MONTHLY_PRICE_ID: "price_accel_with_monthly",
-    STRIPE_ACCELERATOR_WITHOUT_COACHING_MONTHLY_PRICE_ID: "price_accel_without_monthly",
-    STRIPE_ACCELERATOR_PRICE_ID: undefined,
-    STRIPE_ELECTIVE_RETENTION_AND_SECURITY_PRICE_ID: "price_elective_retention",
-    STRIPE_ELECTIVE_DUE_DILIGENCE_PRICE_ID: "price_elective_due_diligence",
-    STRIPE_ELECTIVE_FINANCIAL_HANDBOOK_PRICE_ID: "price_elective_financial_handbook",
+    STRIPE_OPERATIONS_SUPPORT_PRICE_ID: "price_ops",
     NEXT_PUBLIC_MEETING_FREE_URL: undefined,
     NEXT_PUBLIC_MEETING_DISCOUNTED_URL: undefined,
     NEXT_PUBLIC_MEETING_FULL_URL: undefined,
   },
 }))
 
-describe("accelerator checkout metadata", () => {
+describe("pricing checkout metadata", () => {
   beforeEach(() => {
     resetTestMocks()
     headersMock.mockResolvedValue({
@@ -56,94 +49,6 @@ describe("accelerator checkout metadata", () => {
     })
   })
 
-  it("creates accelerator monthly checkout with installment metadata", async () => {
-    stripeCheckoutCreateMock.mockResolvedValue({ url: "https://checkout.test/monthly" })
-
-    const form = new FormData()
-    form.set("checkoutMode", "accelerator")
-    form.set("acceleratorVariant", "with_coaching")
-    form.set("acceleratorBilling", "monthly")
-
-    const destination = await captureRedirect(() => startCheckout(form))
-    expect(destination).toBe("https://checkout.test/monthly")
-    expect(stripeCheckoutCreateMock).toHaveBeenCalledTimes(1)
-
-    const [params] = stripeCheckoutCreateMock.mock.calls[0] as [Record<string, unknown>]
-    expect(params.mode).toBe("subscription")
-    expect(params.line_items).toEqual([{ price: "price_accel_with_monthly", quantity: 1 }])
-
-    const metadata = params.metadata as Record<string, string>
-    expect(metadata).toMatchObject({
-      kind: "accelerator",
-      accelerator_variant: "with_coaching",
-      accelerator_billing: "monthly",
-      coaching_included: "true",
-      accelerator_installment_limit: "10",
-      accelerator_installments_paid: "0",
-    })
-
-    const subscriptionData = params.subscription_data as { metadata: Record<string, string> }
-    expect(subscriptionData.metadata).toMatchObject({
-      accelerator_billing: "monthly",
-      accelerator_installment_limit: "10",
-      accelerator_installments_paid: "0",
-    })
-  })
-
-  it("creates accelerator monthly checkout without coaching using the non-coaching monthly price", async () => {
-    stripeCheckoutCreateMock.mockResolvedValue({ url: "https://checkout.test/monthly-no-coaching" })
-
-    const form = new FormData()
-    form.set("checkoutMode", "accelerator")
-    form.set("acceleratorVariant", "without_coaching")
-    form.set("acceleratorBilling", "monthly")
-
-    const destination = await captureRedirect(() => startCheckout(form))
-    expect(destination).toBe("https://checkout.test/monthly-no-coaching")
-    expect(stripeCheckoutCreateMock).toHaveBeenCalledTimes(1)
-
-    const [params] = stripeCheckoutCreateMock.mock.calls[0] as [Record<string, unknown>]
-    expect(params.mode).toBe("subscription")
-    expect(params.line_items).toEqual([{ price: "price_accel_without_monthly", quantity: 1 }])
-
-    const metadata = params.metadata as Record<string, string>
-    expect(metadata).toMatchObject({
-      kind: "accelerator",
-      accelerator_variant: "without_coaching",
-      accelerator_billing: "monthly",
-      coaching_included: "false",
-      accelerator_installment_limit: "10",
-      accelerator_installments_paid: "0",
-    })
-  })
-
-  it("creates accelerator one-time checkout without installment metadata", async () => {
-    stripeCheckoutCreateMock.mockResolvedValue({ url: "https://checkout.test/one-time" })
-
-    const form = new FormData()
-    form.set("checkoutMode", "accelerator")
-    form.set("acceleratorVariant", "without_coaching")
-    form.set("acceleratorBilling", "one_time")
-
-    const destination = await captureRedirect(() => startCheckout(form))
-    expect(destination).toBe("https://checkout.test/one-time")
-    expect(stripeCheckoutCreateMock).toHaveBeenCalledTimes(1)
-
-    const [params] = stripeCheckoutCreateMock.mock.calls[0] as [Record<string, unknown>]
-    expect(params.mode).toBe("payment")
-    expect(params.line_items).toEqual([{ price: "price_accel_without_one_time", quantity: 1 }])
-
-    const metadata = params.metadata as Record<string, string>
-    expect(metadata).toMatchObject({
-      kind: "accelerator",
-      accelerator_variant: "without_coaching",
-      accelerator_billing: "one_time",
-      coaching_included: "false",
-    })
-    expect(metadata).not.toHaveProperty("accelerator_installment_limit")
-    expect(metadata).not.toHaveProperty("accelerator_installments_paid")
-  })
-
   it("creates organization checkout with subscription mode and organization price", async () => {
     stripeCheckoutCreateMock.mockResolvedValue({ url: "https://checkout.test/organization" })
 
@@ -158,33 +63,75 @@ describe("accelerator checkout metadata", () => {
     expect(params.mode).toBe("subscription")
     expect(params.line_items).toEqual([{ price: "price_org", quantity: 1 }])
 
-    const subscriptionData = params.subscription_data as { metadata: Record<string, string> }
-    expect(subscriptionData.metadata).toMatchObject({
+    const metadata = params.metadata as Record<string, string>
+    expect(metadata).toMatchObject({
+      kind: "organization",
       user_id: "user-accelerator",
       planName: "Organization",
+      plan_tier: "organization",
+    })
+
+    const subscriptionData = params.subscription_data as { metadata: Record<string, string> }
+    expect(subscriptionData.metadata).toMatchObject({
+      kind: "organization",
+      user_id: "user-accelerator",
+      planName: "Organization",
+      plan_tier: "organization",
     })
   })
 
-  it("creates elective checkout with elective metadata and elective price", async () => {
-    stripeCheckoutCreateMock.mockResolvedValue({ url: "https://checkout.test/elective" })
+  it("creates operations support checkout with provided price id and operations metadata", async () => {
+    stripeCheckoutCreateMock.mockResolvedValue({ url: "https://checkout.test/operations" })
 
     const form = new FormData()
-    form.set("checkoutMode", "elective")
-    form.set("electiveModuleSlug", "due-diligence")
+    form.set("checkoutMode", "organization")
+    form.set("planName", "Operations Support")
+    form.set("priceId", "price_ops_custom")
 
     const destination = await captureRedirect(() => startCheckout(form))
-    expect(destination).toBe("https://checkout.test/elective")
+    expect(destination).toBe("https://checkout.test/operations")
     expect(stripeCheckoutCreateMock).toHaveBeenCalledTimes(1)
 
     const [params] = stripeCheckoutCreateMock.mock.calls[0] as [Record<string, unknown>]
-    expect(params.mode).toBe("payment")
-    expect(params.line_items).toEqual([{ price: "price_elective_due_diligence", quantity: 1 }])
+    expect(params.mode).toBe("subscription")
+    expect(params.line_items).toEqual([{ price: "price_ops_custom", quantity: 1 }])
 
     const metadata = params.metadata as Record<string, string>
     expect(metadata).toMatchObject({
-      kind: "elective",
+      kind: "organization",
       user_id: "user-accelerator",
-      elective_module_slug: "due-diligence",
+      planName: "Operations Support",
+      plan_tier: "operations_support",
     })
+  })
+
+  it("uses operations support env price when plan name is operations and no explicit price id is provided", async () => {
+    stripeCheckoutCreateMock.mockResolvedValue({ url: "https://checkout.test/operations-default" })
+
+    const form = new FormData()
+    form.set("checkoutMode", "organization")
+    form.set("planName", "Operations Support")
+
+    const destination = await captureRedirect(() => startCheckout(form))
+    expect(destination).toBe("https://checkout.test/operations-default")
+    expect(stripeCheckoutCreateMock).toHaveBeenCalledTimes(1)
+
+    const [params] = stripeCheckoutCreateMock.mock.calls[0] as [Record<string, unknown>]
+    expect(params.line_items).toEqual([{ price: "price_ops", quantity: 1 }])
+  })
+
+  it("treats legacy accelerator checkout mode as organization checkout", async () => {
+    stripeCheckoutCreateMock.mockResolvedValue({ url: "https://checkout.test/legacy" })
+
+    const form = new FormData()
+    form.set("checkoutMode", "accelerator")
+
+    const destination = await captureRedirect(() => startCheckout(form))
+    expect(destination).toBe("https://checkout.test/legacy")
+    expect(stripeCheckoutCreateMock).toHaveBeenCalledTimes(1)
+
+    const [params] = stripeCheckoutCreateMock.mock.calls[0] as [Record<string, unknown>]
+    expect(params.mode).toBe("subscription")
+    expect(params.line_items).toEqual([{ price: "price_org", quantity: 1 }])
   })
 })

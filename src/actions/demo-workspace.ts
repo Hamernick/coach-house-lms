@@ -276,14 +276,14 @@ const DEMO_NOTIFICATION_SEEDS = [
   {
     title: "Demo · Board packet review due",
     description: "Finalize board packet docs before Thursday meeting.",
-    href: "/my-organization/documents",
+    href: "/organization/documents",
     tone: "warning",
     type: "demo_workspace",
   },
   {
     title: "Demo · Program brief approved",
     description: "Board Readiness Bootcamp moved to in progress.",
-    href: "/my-organization",
+    href: "/organization",
     tone: "success",
     type: "demo_workspace",
   },
@@ -324,7 +324,7 @@ const DEMO_CALENDAR_EVENT_SEEDS = [
 ] as const
 
 export async function seedDemoWorkspaceAction(): Promise<SeedDemoWorkspaceResult> {
-  const { supabase, session } = await requireServerSession("/my-organization")
+  const { supabase, session } = await requireServerSession("/organization")
   const userId = session.user.id
   const { orgId, role } = await resolveActiveOrganization(supabase, userId)
   if (!canEditOrganization(role)) return { error: "Forbidden" }
@@ -515,9 +515,9 @@ export async function seedDemoWorkspaceAction(): Promise<SeedDemoWorkspaceResult
     }
   }
 
-  revalidatePath("/my-organization")
-  revalidatePath("/my-organization?view=editor&tab=people")
-  revalidatePath("/my-organization?view=editor&tab=programs")
+  revalidatePath("/organization")
+  revalidatePath("/organization?view=editor&tab=people")
+  revalidatePath("/organization?view=editor&tab=programs")
   revalidatePath("/people")
   revalidatePath("/roadmap")
   revalidatePath("/accelerator")

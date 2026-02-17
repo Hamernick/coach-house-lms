@@ -72,7 +72,7 @@ function getResultIcon(item: SearchResult) {
   if (group === "programs") return LayersIcon
   if (group === "community") return MapPinIcon
   if (group === "marketplace") return ShoppingBagIcon
-  if (group === "my organization") return Building2Icon
+  if (group === "my organization" || group === "organization") return Building2Icon
 
   if (href.startsWith("/billing")) return CreditCardIcon
   if (href.startsWith("/internal")) return ShieldIcon
@@ -82,7 +82,7 @@ function getResultIcon(item: SearchResult) {
   if (href.startsWith("/marketplace")) return ShoppingBagIcon
   if (href.startsWith("/accelerator")) return RocketIcon
   if (href.startsWith("/roadmap")) return RouteIcon
-  if (href.startsWith("/my-organization")) return Building2Icon
+  if (href.startsWith("/organization")) return Building2Icon
 
   return ArrowUpRight
 }
@@ -192,12 +192,12 @@ export function GlobalSearch({
             } satisfies SearchResult,
           ]
         : []),
-      { id: "page-organization", label: "My organization", href: "/my-organization", group: "Pages", keywords: ["profile"] },
+      { id: "page-organization", label: "Organization", href: "/organization", group: "Pages", keywords: ["profile"] },
       { id: "page-roadmap", label: "Roadmap", href: "/roadmap", group: "Pages", keywords: ["strategic"] },
-      { id: "page-programs", label: "Programs", href: "/my-organization?tab=programs", group: "Pages" },
+      { id: "page-programs", label: "Programs", href: "/organization?tab=programs", group: "Pages" },
       { id: "page-people", label: "People", href: "/people", group: "Pages", keywords: ["team", "org chart"] },
-      { id: "page-supporters", label: "Supporters", href: "/my-organization?tab=supporters", group: "Pages" },
-      { id: "page-documents", label: "Documents", href: "/my-organization/documents", group: "Pages" },
+      { id: "page-supporters", label: "Supporters", href: "/organization?tab=supporters", group: "Pages" },
+      { id: "page-documents", label: "Documents", href: "/organization/documents", group: "Pages" },
       { id: "page-billing", label: "Billing", href: "/billing", group: "Pages", keywords: ["subscription", "plan"] },
       { id: "page-community", label: "Community", href: "/community", group: "Pages", keywords: ["map", "network"] },
       { id: "page-marketplace", label: "Marketplace", href: "/marketplace", group: "Pages", keywords: ["tools", "resources"] },

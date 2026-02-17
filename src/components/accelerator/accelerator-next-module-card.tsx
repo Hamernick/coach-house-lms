@@ -3,7 +3,6 @@ import Link from "next/link"
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
 import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2"
 
-import { NewsGradientThumb } from "@/components/news/gradient-thumb"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import type { ModuleCard } from "@/lib/accelerator/progress"
@@ -15,7 +14,7 @@ export function AcceleratorNextModuleCard({ module }: { module: ModuleCard | nul
       <Card className="flex h-full w-full max-w-[420px] flex-col overflow-hidden rounded-[26px] border border-border/60 shadow-sm">
         <CardContent className="flex h-full flex-col gap-0 p-0 first:pt-0">
           <div className="relative flex-1 min-h-[220px] overflow-hidden rounded-[22px] shadow-sm mx-[5px] mt-[5px] mb-4">
-            <NewsGradientThumb seed="accelerator-next-module" className="absolute inset-0" />
+            <div className="absolute inset-0 bg-muted/35" />
           </div>
           <div className="space-y-2 px-4 pb-4">
             <div className="space-y-1">
@@ -48,7 +47,7 @@ export function AcceleratorNextModuleCard({ module }: { module: ModuleCard | nul
     >
       <CardContent className="flex h-full flex-col gap-0 p-0 first:pt-0">
         <div className="relative flex-1 min-h-[220px] overflow-hidden rounded-[22px] shadow-sm mx-[5px] mt-[5px] mb-4">
-          <NewsGradientThumb seed={`module-${module.id}`} className="absolute inset-0" />
+          <div className="absolute inset-0 bg-muted/35" />
           <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-background/80 px-2 py-1 text-[11px] font-medium text-muted-foreground shadow-sm">
             Module {module.index}
           </span>

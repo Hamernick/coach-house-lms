@@ -37,7 +37,7 @@ describe("pricing acceptance", () => {
     })
   })
 
-  it("redirects trialing users to My Organization when checkout cannot reach Stripe", async () => {
+  it("redirects trialing users to Organization when checkout cannot reach Stripe", async () => {
     const { supabase, upsert } = createSupabaseStub()
     createSupabaseServerClientMock.mockReturnValue(supabase)
 
@@ -47,31 +47,29 @@ describe("pricing acceptance", () => {
 
     const destination = await captureRedirect(() => startCheckout(form))
 
-    expect(destination).toBe("/my-organization?subscription=trialing")
+    expect(destination).toBe("/organization?subscription=trialing")
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: "user-123",
         status: "trialing",
       }),
-      expect.objectContaining({ onConflict: "stripe_subscription_id" })
+      expect.objectContaining({ onConflict: "user_id,stripe_subscription_id" })
     )
   })
 
-  it("redirects accelerator checkout fallback to accelerator purchase handoff", async () => {
+  it("treats legacy accelerator checkout mode as organization fallback", async () => {
     const { supabase } = createSupabaseStub()
     createSupabaseServerClientMock.mockReturnValue(supabase)
 
     const form = new FormData()
     form.set("checkoutMode", "accelerator")
-    form.set("acceleratorVariant", "with_coaching")
-    form.set("acceleratorBilling", "one_time")
 
     const destination = await captureRedirect(() => startCheckout(form))
 
-    expect(destination).toBe("/my-organization?purchase=accelerator")
+    expect(destination).toBe("/organization?subscription=trialing")
   })
 
-  it("redirects elective checkout fallback to elective purchase handoff with module slug", async () => {
+  it("treats legacy elective checkout mode as organization fallback", async () => {
     const { supabase } = createSupabaseStub()
     createSupabaseServerClientMock.mockReturnValue(supabase)
 
@@ -81,7 +79,7 @@ describe("pricing acceptance", () => {
 
     const destination = await captureRedirect(() => startCheckout(form))
 
-    expect(destination).toBe("/my-organization?purchase=elective&elective=due-diligence")
+    expect(destination).toBe("/organization?subscription=trialing")
   })
 
   it("records subscription state on checkout success callback", async () => {
@@ -92,7 +90,7 @@ describe("pricing acceptance", () => {
       PricingSuccessPage({ searchParams: Promise.resolve({}) })
     )
 
-    expect(destination).toBe("/my-organization?subscription=trialing")
+    expect(destination).toBe("/organization?subscription=trialing")
     expect(upsert).toHaveBeenCalledTimes(1)
     const [payload] = upsert.mock.calls[0]
     expect(payload).toMatchObject({

@@ -23,7 +23,6 @@ import {
 import { PublicThemeToggle } from "@/components/organization/public-theme-toggle"
 import { LoginPanel } from "@/components/auth/login-panel"
 import { SignUpForm } from "@/components/auth/sign-up-form"
-import { CaseStudyAutofillFab } from "@/components/dev/case-study-autofill-fab"
 import {
   HOME2_SECTION_NAV,
   Home2HeroSection,
@@ -83,6 +82,8 @@ const CANVAS_NAV: CanvasNavItem[] = [
 
 const HIDDEN_CANVAS_SECTION_IDS = new Set<CanvasSectionId>(["login", "signup"])
 const VISIBLE_CANVAS_NAV = CANVAS_NAV.filter((item) => !HIDDEN_CANVAS_SECTION_IDS.has(item.id))
+const HIDDEN_SIDEBAR_NAV_IDS = new Set<CanvasSectionId>(["impact"])
+const SIDEBAR_CANVAS_NAV = VISIBLE_CANVAS_NAV.filter((item) => !HIDDEN_SIDEBAR_NAV_IDS.has(item.id))
 
 const HOME_SECTION_IDS = new Set<Home2SectionId>(HOME2_SECTION_NAV.map((item) => item.id))
 const ABOUT_LINK_HREF = "https://www.coachhousesolutions.org/"
@@ -120,9 +121,9 @@ function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
       <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card/60 p-5 sm:p-6">
         {isLogin ? (
           <LoginPanel
-            redirectTo="/my-organization"
+            redirectTo="/organization"
             className="max-w-none space-y-5"
-            signUpHref="/home-canvas?section=signup"
+            signUpHref="/?section=signup"
           />
         ) : (
           <>
@@ -131,8 +132,8 @@ function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
               <p className="text-sm text-muted-foreground">{description}</p>
             </div>
             <SignUpForm
-              redirectTo="/my-organization"
-              loginHref="/home-canvas?section=login"
+              redirectTo="/organization"
+              loginHref="/?section=login"
             />
           </>
         )}
@@ -425,7 +426,7 @@ export function HomeCanvasPreview({ initialSection, pricingPanel }: HomeCanvasPr
             <SidebarGroup>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {VISIBLE_CANVAS_NAV.map((item) => (
+                  {SIDEBAR_CANVAS_NAV.map((item) => (
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton
                         type="button"
@@ -559,20 +560,21 @@ export function HomeCanvasPreview({ initialSection, pricingPanel }: HomeCanvasPr
                   )}
                 </motion.div>
               </AnimatePresence>
-              <div
-                className="pointer-events-none absolute right-4 bottom-4 z-20"
-                aria-hidden
-              >
-                <div className="bg-background/95 text-foreground border-border/80 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-sm backdrop-blur">
-                  <ArrowDownIcon className="text-muted-foreground h-3.5 w-3.5 animate-bounce" />
-                  <span className="text-muted-foreground">Scroll down</span>
+              {activeSectionBehavior.scrollable ? (
+                <div
+                  className="pointer-events-none absolute right-4 bottom-4 z-20"
+                  aria-hidden
+                >
+                  <div className="bg-background/95 text-foreground border-border/80 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-sm backdrop-blur">
+                    <ArrowDownIcon className="text-muted-foreground h-3.5 w-3.5 animate-bounce" />
+                    <span className="text-muted-foreground">Scroll down</span>
+                  </div>
                 </div>
-              </div>
+              ) : null}
             </div>
           </div>
         </SidebarInset>
       </div>
-      <CaseStudyAutofillFab allowToken />
     </SidebarProvider>
   )
 }

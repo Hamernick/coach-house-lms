@@ -1,5 +1,5 @@
 import { AppBreadcrumbs } from "@/components/app-shell/breadcrumbs"
 
 export default function MyOrganizationCrumbs() {
-  return <AppBreadcrumbs segments={[{ label: "My Organization" }]} />
+  return <AppBreadcrumbs segments={[{ label: "Organization" }]} />
 }

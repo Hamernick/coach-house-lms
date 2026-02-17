@@ -32,7 +32,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
     throw supabaseErrorToError(error, "Unable to load user.")
   }
   if (user) {
-    const destination = redirect ?? "/my-organization"
+    const destination = redirect ?? "/organization"
     redirectTo(destination)
   }
 
@@ -46,7 +46,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   if (selectedAddon) fallbackParams.set("addon", selectedAddon)
 
   const fallbackQuery = fallbackParams.toString()
-  const redirectTarget = redirect ?? (fallbackQuery ? `/my-organization?${fallbackQuery}` : "/my-organization")
+  const redirectTarget = redirect ?? (fallbackQuery ? `/organization?${fallbackQuery}` : "/organization")
   const loginHref = `/login?redirect=${encodeURIComponent(redirectTarget)}`
 
   return (

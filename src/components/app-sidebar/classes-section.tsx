@@ -19,7 +19,7 @@ type SidebarTrack = SidebarClass & {
   trackKey: string
   routeSlug: string
   displayTitle: string
-  lockState: "open" | "requires_accelerator" | "requires_elective"
+  lockState: "open" | "requires_paid"
 }
 
 function isLegacyClass(klass: SidebarClass): boolean {
@@ -107,7 +107,7 @@ function buildVisibleTracks(classes: SidebarClass[]) {
         trackKey: getClassKey(klass),
         routeSlug: klass.slug,
         displayTitle: formatClassTitle(klass.title),
-        lockState: "requires_accelerator",
+        lockState: "requires_paid",
       })
       continue
     }
@@ -133,7 +133,7 @@ function buildVisibleTracks(classes: SidebarClass[]) {
         trackKey: "electives",
         routeSlug: klass.slug,
         displayTitle: "Electives",
-        lockState: "requires_elective",
+        lockState: "requires_paid",
       })
     }
   }
@@ -176,7 +176,7 @@ export function ClassesSection({
     () => new Set(ownedElectiveModuleSlugs.map((slug) => slug.trim().toLowerCase())),
     [ownedElectiveModuleSlugs],
   )
-  const canAccessElectives = hasAcceleratorAccess || hasElectiveAccess
+  const canAccessPaidLearning = hasAcceleratorAccess || hasElectiveAccess
 
   const activeKey = useMemo(
     () => getActiveTrackKey({ tracks: visibleTracks, pathname, basePath: normalizedBase }),
@@ -221,9 +221,7 @@ export function ClassesSection({
   }
   const steps: StepItem[] = (() => {
     if (!selectedTrack) return []
-    const classLockedByPlan = !isAdmin &&
-      ((selectedTrack.lockState === "requires_accelerator" && !hasAcceleratorAccess) ||
-        (selectedTrack.lockState === "requires_elective" && !canAccessElectives))
+    const classLockedByPlan = !isAdmin && selectedTrack.lockState === "requires_paid" && !canAccessPaidLearning
     return modules.map((module) => {
       const moduleHref = `${normalizedBase}/class/${selectedTrack.routeSlug}/module/${module.index}`
       const isCompleted = completedMap.get(module.id) === true
@@ -300,39 +298,39 @@ export function ClassesSection({
             {selectedTrack.displayTitle}
           </div>
         )}
-        {!canAccessElectives && selectedTrack.trackKey === "electives" ? (
+        {!canAccessPaidLearning && selectedTrack.trackKey === "electives" ? (
           <div className="flex items-center justify-between rounded-lg border border-dashed border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-            <span>Electives are optional add-ons.</span>
+            <span>Electives are included with paid plans.</span>
             <Link
-              href="/my-organization?paywall=elective&plan=electives&source=sidebar"
+              href="/organization?paywall=organization&plan=organization&source=sidebar-electives"
               className="text-foreground underline-offset-4 hover:underline"
             >
               Unlock
             </Link>
           </div>
         ) : null}
-        {canAccessElectives &&
+        {canAccessPaidLearning &&
         !hasAcceleratorAccess &&
         selectedTrack.trackKey === "electives" &&
         ownedElectiveModuleSlugSet.size < modules.length ? (
           <div className="flex items-center justify-between rounded-lg border border-dashed border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-            <span>Some electives are not included yet.</span>
+            <span>Only previously unlocked electives are available on this account.</span>
             <Link
-              href="/my-organization?paywall=elective&plan=electives&source=sidebar"
+              href="/organization?paywall=organization&plan=organization&source=sidebar-electives"
               className="text-foreground underline-offset-4 hover:underline"
             >
-              Buy more
+              Upgrade
             </Link>
           </div>
         ) : null}
-        {!hasAcceleratorAccess && selectedTrack.lockState === "requires_accelerator" && selectedTrack.trackKey !== "electives" ? (
+        {!canAccessPaidLearning && selectedTrack.lockState === "requires_paid" && selectedTrack.trackKey !== "electives" ? (
           <div className="flex items-center justify-between rounded-lg border border-dashed border-border/60 bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
-            <span>Unlock this track with Accelerator.</span>
+            <span>Unlock this track with a paid plan.</span>
             <Link
-              href="/my-organization?paywall=accelerator&plan=accelerator&source=sidebar"
+              href="/organization?paywall=organization&plan=organization&source=sidebar-learning"
               className="text-foreground underline-offset-4 hover:underline"
             >
-              View plans
+              View pricing
             </Link>
           </div>
         ) : null}

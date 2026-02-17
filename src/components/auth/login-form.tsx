@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useMemo, useState, useTransition } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
@@ -33,11 +33,64 @@ type LoginFormProps = {
   signUpHref?: string
 }
 
+function getSafeRedirect(value: string | null): string | null {
+  if (!value) return null
+  if (!value.startsWith("/")) return null
+  if (value.startsWith("//")) return null
+  return value
+}
+
+function mapAuthErrorMessage(raw: string | null | undefined) {
+  if (!raw) return null
+  const normalized = raw.toLowerCase()
+
+  if (
+    normalized.includes("pkce code verifier") ||
+    normalized.includes("code verifier not found in storage")
+  ) {
+    return "Email confirmed. Sign in to continue."
+  }
+  if (
+    normalized.includes("invalid refresh token") ||
+    normalized.includes("refresh token not found")
+  ) {
+    return "Session expired. Please sign in again."
+  }
+  if (normalized.includes("missing verification code")) {
+    return "This verification link is incomplete. Request a new link and try again."
+  }
+
+  return raw
+}
+
+function mapAuthNoticeMessage(raw: string | null | undefined) {
+  if (!raw) return null
+  switch (raw) {
+    case "email_confirmed_sign_in":
+      return "Email confirmed. Sign in to continue."
+    default:
+      return null
+  }
+}
+
 export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
-  const [errorMessage, setErrorMessage] = useState<string | null>(initialError ?? null)
+  const searchParams = useSearchParams()
+  const searchError = mapAuthErrorMessage(searchParams.get("error"))
+  const noticeMessage = mapAuthNoticeMessage(searchParams.get("notice"))
+  const redirectFromSearch = getSafeRedirect(searchParams.get("redirect"))
+  const resolvedRedirectTo = redirectFromSearch ?? redirectTo ?? "/organization"
+  const [errorMessage, setErrorMessage] = useState<string | null>(
+    mapAuthErrorMessage(initialError) ?? searchError,
+  )
   const [isPending, startTransition] = useTransition()
+  const resolvedSignUpHref = useMemo(() => {
+    const base = signUpHref ?? "/sign-up"
+    if (!resolvedRedirectTo || base.includes("redirect=")) return base
+    const separator = base.includes("?") ? "&" : "?"
+    return `${base}${separator}redirect=${encodeURIComponent(resolvedRedirectTo)}`
+  }, [resolvedRedirectTo, signUpHref])
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(schema),
@@ -46,6 +99,10 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
       password: "",
     },
   })
+
+  useEffect(() => {
+    setErrorMessage(mapAuthErrorMessage(initialError) ?? searchError)
+  }, [initialError, searchError])
 
   async function onSubmit(values: LoginFormValues) {
     setErrorMessage(null)
@@ -56,12 +113,12 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
       })
 
       if (error) {
-        setErrorMessage(error.message)
+        setErrorMessage(mapAuthErrorMessage(error.message))
         return
       }
 
       form.reset()
-      router.replace(redirectTo ?? "/my-organization")
+      router.replace(resolvedRedirectTo)
       router.refresh()
     })
   }
@@ -100,6 +157,10 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
             <p className="text-sm text-destructive" role="alert">
               {errorMessage}
             </p>
+          ) : noticeMessage ? (
+            <p className="text-sm text-emerald-600" role="status">
+              {noticeMessage}
+            </p>
           ) : null}
           <Button className="w-full" type="submit" disabled={isPending}>
             {isPending ? "Signing in..." : "Sign in"}
@@ -107,7 +168,7 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
         </form>
       </Form>
       <div className="flex justify-between text-sm text-muted-foreground">
-        <Link href={signUpHref ?? "/sign-up"} className="hover:text-foreground">
+        <Link href={resolvedSignUpHref} className="hover:text-foreground">
           Need an account? Sign up
         </Link>
         <Link href="/forgot-password" className="hover:text-foreground">

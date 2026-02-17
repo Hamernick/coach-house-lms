@@ -64,9 +64,12 @@ describe("admin module management", () => {
     expect(insertedPayloads[0]).toMatchObject({
       class_id: "class-42",
       idx: 3,
-      published: false,
+      is_published: false,
     })
     expect((insertedPayloads[0] as { slug: string }).slug).toMatch(/^module-[a-z0-9]{8}$/)
-    expect(revalidatePathMock).toHaveBeenCalledWith("/admin/classes/class-42")
+    const revalidatedTargets = revalidatePathMock.mock.calls.map((args) => args[0])
+    expect(revalidatedTargets).toEqual(
+      expect.arrayContaining(["/classes", "/training", "/accelerator", "/accelerator/roadmap"]),
+    )
   })
 })

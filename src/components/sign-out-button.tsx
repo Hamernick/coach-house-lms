@@ -14,7 +14,7 @@ export function SignOutButton({ children = "Sign out", ...props }: SignOutButton
   function handleSignOut() {
     startTransition(async () => {
       await fetch("/api/auth/signout", { method: "POST" })
-      router.replace("/login")
+      router.replace("/")
       router.refresh()
     })
   }

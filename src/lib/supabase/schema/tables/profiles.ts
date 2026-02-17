@@ -9,6 +9,7 @@ export type ProfilesTable = {
     timezone: string | null
     email: string | null
     role: PublicEnums["user_role"]
+    is_tester: boolean
     created_at: string
     updated_at: string
   }
@@ -20,6 +21,7 @@ export type ProfilesTable = {
     timezone?: string | null
     email?: string | null
     role?: PublicEnums["user_role"]
+    is_tester?: boolean
     created_at?: string
     updated_at?: string
   }
@@ -31,6 +33,7 @@ export type ProfilesTable = {
     timezone?: string | null
     email?: string | null
     role?: PublicEnums["user_role"]
+    is_tester?: boolean
     created_at?: string
     updated_at?: string
   }
@@ -44,4 +47,3 @@ export type ProfilesTable = {
     },
   ]
 }
-

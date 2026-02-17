@@ -16,31 +16,55 @@ import type { SidebarClass } from "@/lib/academy"
 export function buildMainNav({
   isAdmin,
   showOrgAdmin,
+  canAccessOrgAdmin,
+  organizationName,
 }: {
   isAdmin: boolean
   showOrgAdmin: boolean
+  canAccessOrgAdmin: boolean
+  organizationName?: string | null
 }): Array<{
   title: string
   href?: string
   icon?: LucideIcon
   locked?: boolean
   badge?: string
+  upgradeHref?: string
+  upgradeLabel?: string
 }> {
+  const organizationLabel =
+    typeof organizationName === "string" && organizationName.trim().length > 0
+      ? organizationName.trim()
+      : "Organization"
+
   const items: Array<{
     title: string
     href?: string
     icon?: LucideIcon
     locked?: boolean
     badge?: string
+    upgradeHref?: string
+    upgradeLabel?: string
   }> = [
-    { title: "My Organization", href: "/my-organization", icon: BuildingIcon },
+    { title: organizationLabel, href: "/organization", icon: BuildingIcon },
     { title: "People", href: "/people", icon: UsersIcon },
-    { title: "Documents", href: "/my-organization/documents", icon: LockIcon },
+    { title: "Documents", href: "/organization/documents", icon: LockIcon },
     { title: "Fundraising", icon: CircleDollarSignIcon, locked: true, badge: "Coming soon" },
   ]
 
   if (showOrgAdmin) {
-    items.push({ title: "Admin", href: "/admin", icon: ShieldIcon })
+    if (canAccessOrgAdmin) {
+      items.push({ title: "Admin", href: "/admin", icon: ShieldIcon })
+    } else {
+      items.push({
+        title: "Admin",
+        icon: ShieldIcon,
+        locked: true,
+        badge: "Upgrade",
+        upgradeLabel: "Upgrade",
+        upgradeHref: "?paywall=organization&plan=organization&upgrade=admin-access&source=nav-admin",
+      })
+    }
   }
   return items
 }

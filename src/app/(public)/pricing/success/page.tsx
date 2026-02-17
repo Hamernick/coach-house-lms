@@ -78,7 +78,7 @@ async function maybeStartOrganizationTrialFromAccelerator({
 
   await admin
     .from("subscriptions" satisfies keyof Database["public"]["Tables"])
-    .upsert(upsertPayload, { onConflict: "stripe_subscription_id" })
+    .upsert(upsertPayload, { onConflict: "user_id,stripe_subscription_id" })
 }
 
 export default async function PricingSuccessPage({
@@ -104,12 +104,12 @@ export default async function PricingSuccessPage({
     try {
       await supabase
         .from("subscriptions" satisfies keyof Database["public"]["Tables"])
-        .upsert(payload, { onConflict: "stripe_subscription_id" })
+        .upsert(payload, { onConflict: "user_id,stripe_subscription_id" })
     } catch (error) {
       console.warn("Unable to record fallback subscription state", error)
     }
 
-    redirect("/my-organization?subscription=trialing")
+    redirect("/organization?subscription=trialing")
   }
 
   if (stripe && sessionId) {
@@ -161,7 +161,7 @@ export default async function PricingSuccessPage({
           })
         }
 
-        redirect(`/my-organization?purchase=accelerator${welcomeQuery}`)
+        redirect(`/organization?purchase=accelerator${welcomeQuery}`)
       }
 
       if (checkout.mode === "payment" && checkout.metadata?.kind === "elective") {
@@ -183,7 +183,7 @@ export default async function PricingSuccessPage({
           .from("elective_purchases" satisfies keyof Database["public"]["Tables"])
           .upsert(payload, { onConflict: "user_id,module_slug" })
 
-        redirect(`/my-organization?purchase=elective&elective=${encodeURIComponent(moduleSlugCandidate)}${welcomeQuery}`)
+        redirect(`/organization?purchase=elective&elective=${encodeURIComponent(moduleSlugCandidate)}${welcomeQuery}`)
       }
 
       if (checkout.mode === "subscription") {
@@ -211,12 +211,16 @@ export default async function PricingSuccessPage({
             subscription.metadata && Object.keys(subscription.metadata).length > 0
               ? subscription.metadata
               : checkout.metadata ?? null
+          const subscriptionOwnerId =
+            typeof metadataSource?.org_user_id === "string" && metadataSource.org_user_id.length > 0
+              ? metadataSource.org_user_id
+              : userId
           const planName =
             typeof metadataSource?.planName === "string" ? metadataSource.planName : null
           const kind = typeof metadataSource?.kind === "string" ? metadataSource.kind : null
 
           const upsertPayload: Database["public"]["Tables"]["subscriptions"]["Insert"] = {
-            user_id: userId,
+            user_id: subscriptionOwnerId,
             stripe_customer_id: typeof subscription.customer === "string" ? subscription.customer : null,
             stripe_subscription_id: subscription.id,
             status,
@@ -226,13 +230,13 @@ export default async function PricingSuccessPage({
 
           await admin
             .from("subscriptions" satisfies keyof Database["public"]["Tables"])
-            .upsert(upsertPayload, { onConflict: "stripe_subscription_id" })
+            .upsert(upsertPayload, { onConflict: "user_id,stripe_subscription_id" })
 
           if (kind === "accelerator") {
-            redirect(`/my-organization?purchase=accelerator${welcomeQuery}`)
+            redirect(`/organization?purchase=accelerator${welcomeQuery}`)
           }
 
-          redirect(`/my-organization?subscription=${status}${welcomeQuery}`)
+          redirect(`/organization?subscription=${status}${welcomeQuery}`)
         }
       }
     } catch (error) {
@@ -240,5 +244,5 @@ export default async function PricingSuccessPage({
     }
   }
 
-  redirect("/my-organization?checkout=success")
+  redirect("/organization?checkout=success")
 }

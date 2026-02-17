@@ -75,12 +75,24 @@ export function ProfileSection({
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
             <Label htmlFor="first">First name</Label>
-            <Input id="first" value={firstName} aria-invalid={Boolean(errors?.firstName)} onChange={(event) => onFirstNameChange(event.currentTarget.value)} />
+            <Input
+              id="first"
+              placeholder="First name"
+              value={firstName}
+              aria-invalid={Boolean(errors?.firstName)}
+              onChange={(event) => onFirstNameChange(event.currentTarget.value)}
+            />
             {errors?.firstName ? <p className="text-xs text-destructive">{errors.firstName}</p> : null}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="last">Last name</Label>
-            <Input id="last" value={lastName} aria-invalid={Boolean(errors?.lastName)} onChange={(event) => onLastNameChange(event.currentTarget.value)} />
+            <Input
+              id="last"
+              placeholder="Last name"
+              value={lastName}
+              aria-invalid={Boolean(errors?.lastName)}
+              onChange={(event) => onLastNameChange(event.currentTarget.value)}
+            />
             {errors?.lastName ? <p className="text-xs text-destructive">{errors.lastName}</p> : null}
           </div>
         </div>

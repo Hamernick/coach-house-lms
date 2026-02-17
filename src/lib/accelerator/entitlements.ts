@@ -173,6 +173,7 @@ export async function fetchLearningEntitlements({
       .select("id")
       .eq("user_id", targetUserId)
       .in("status", ["active", "trialing"])
+      .not("stripe_subscription_id", "ilike", "stub_%")
     const subscriptionsQuery =
       typeof (subscriptionsBaseQuery as { order?: unknown }).order === "function"
         ? (subscriptionsBaseQuery as { order: (column: string, options?: { ascending?: boolean }) => unknown }).order(

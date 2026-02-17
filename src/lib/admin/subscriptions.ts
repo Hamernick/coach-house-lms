@@ -25,6 +25,7 @@ export async function fetchRecentSubscriptions(limit = 50): Promise<AdminSubscri
   const { data, error } = await supabase
     .from("subscriptions")
     .select("id, user_id, status, current_period_end, metadata, updated_at")
+    .not("stripe_subscription_id", "ilike", "stub_%")
     .order("updated_at", { ascending: false })
     .limit(limit)
     .returns<Array<{

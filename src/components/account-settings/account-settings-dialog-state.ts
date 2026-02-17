@@ -20,6 +20,11 @@ type UseAccountSettingsDialogStateArgs = {
   onOpenChange: (next: boolean) => void
 }
 
+type ProfileIdentityRow = {
+  full_name: string | null
+  avatar_url: string | null
+}
+
 type ReturnType = {
   tab: AccountSettingsTabKey
   setTab: (tab: AccountSettingsTabKey) => void
@@ -94,6 +99,15 @@ export function useAccountSettingsDialogState({
   const initialPhoneRef = useRef("")
   const initialMarketingRef = useRef(defaultMarketingOptIn)
   const initialNewsletterRef = useRef(defaultNewsletterOptIn)
+
+  const splitName = (value: string) => {
+    const normalized = value.trim()
+    if (normalized.length === 0) {
+      return { first: "", last: "" }
+    }
+    const [first, ...rest] = normalized.split(/\s+/)
+    return { first: first ?? "", last: rest.join(" ") }
+  }
 
   const markDirty = () => {
     dirtyRef.current = true
@@ -177,21 +191,6 @@ export function useAccountSettingsDialogState({
         setPhone(String(meta.phone))
       }
 
-      const defaultFullName = (defaultName ?? "").trim()
-      if (defaultFullName.includes(" ")) {
-        const [first, ...rest] = defaultFullName.split(" ")
-        setFirstName(first)
-        setLastName(rest.join(" "))
-      } else {
-        setFirstName(defaultFullName)
-        setLastName("")
-      }
-      initialFirstRef.current = defaultFullName.includes(" ")
-        ? defaultFullName.split(" ")[0]
-        : defaultFullName
-      initialLastRef.current = defaultFullName.includes(" ")
-        ? defaultFullName.split(" ").slice(1).join(" ")
-        : ""
       initialPhoneRef.current = typeof meta.phone === "string" ? String(meta.phone) : ""
       initialMarketingRef.current =
         typeof meta.marketing_opt_in === "boolean"
@@ -207,10 +206,22 @@ export function useAccountSettingsDialogState({
 
         const { data: profileRow } = await supabase
           .from("profiles")
-          .select("avatar_url")
+          .select("full_name, avatar_url")
           .eq("id", data.user.id)
-          .maybeSingle<{ avatar_url: string | null }>()
+          .maybeSingle<ProfileIdentityRow>()
         setAvatarUrl(profileRow?.avatar_url ?? null)
+
+        const profileFullName =
+          typeof profileRow?.full_name === "string" ? profileRow.full_name.trim() : ""
+        const defaultFullName = (defaultName ?? "").trim()
+        const metadataFullName =
+          typeof meta.full_name === "string" ? String(meta.full_name).trim() : ""
+        const resolvedFullName = profileFullName || defaultFullName || metadataFullName
+        const { first, last } = splitName(resolvedFullName)
+        setFirstName(first)
+        setLastName(last)
+        initialFirstRef.current = first
+        initialLastRef.current = last
 
         const { data: orgRow } = await supabase
           .from("organizations")
@@ -236,27 +247,46 @@ export function useAccountSettingsDialogState({
     if (!validate()) return
     setIsSaving(true)
     try {
-      const { data: userData } = await supabase.auth.getUser()
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      if (userError) {
+        throw userError
+      }
       const userId = userData?.user?.id
-      if (userId) {
-        if (tab === "profile") {
-          const initialFull = [initialFirstRef.current, initialLastRef.current]
-            .filter(Boolean)
-            .join(" ")
-          const nextFull = [firstName, lastName].filter(Boolean).join(" ")
-          if (initialFull !== nextFull) {
-            await supabase
-              .from("profiles")
-              .upsert({ id: userId, full_name: nextFull || null }, { onConflict: "id" })
-            initialFirstRef.current = firstName
-            initialLastRef.current = lastName
-          }
-        }
+      if (!userId) {
+        throw new Error("Unable to save settings. Please sign in again.")
       }
 
       if (tab === "profile") {
+        const trimmedFirst = firstName.trim()
+        const trimmedLast = lastName.trim()
+        const initialFull = [initialFirstRef.current, initialLastRef.current]
+          .filter(Boolean)
+          .join(" ")
+        const nextFull = [trimmedFirst, trimmedLast].filter(Boolean).join(" ")
+        if (initialFull !== nextFull) {
+          const { error: profileError } = await supabase
+            .from("profiles")
+            .upsert({ id: userId, full_name: nextFull || null }, { onConflict: "id" })
+          if (profileError) {
+            throw profileError
+          }
+          const { error: fullNameMetaError } = await supabase.auth.updateUser({
+            data: { full_name: nextFull || null },
+          })
+          if (fullNameMetaError) {
+            throw fullNameMetaError
+          }
+          initialFirstRef.current = trimmedFirst
+          initialLastRef.current = trimmedLast
+          setFirstName(trimmedFirst)
+          setLastName(trimmedLast)
+        }
+
         if (phone !== initialPhoneRef.current) {
-          await supabase.auth.updateUser({ data: { phone } })
+          const { error: phoneError } = await supabase.auth.updateUser({ data: { phone } })
+          if (phoneError) {
+            throw phoneError
+          }
           initialPhoneRef.current = phone
         }
       } else if (tab === "communications") {
@@ -268,7 +298,10 @@ export function useAccountSettingsDialogState({
           meta.newsletter_opt_in = newsletterOptIn
         }
         if (Object.keys(meta).length > 0) {
-          await supabase.auth.updateUser({ data: meta })
+          const { error: communicationsError } = await supabase.auth.updateUser({ data: meta })
+          if (communicationsError) {
+            throw communicationsError
+          }
           initialMarketingRef.current = marketingOptIn
           initialNewsletterRef.current = newsletterOptIn
         }
@@ -289,6 +322,15 @@ export function useAccountSettingsDialogState({
       if (!isMobile) {
         setJustSaved(true)
       }
+    } catch (error) {
+      const message =
+        typeof error === "object" &&
+        error !== null &&
+        "message" in error &&
+        typeof error.message === "string"
+          ? error.message
+          : "Unable to save settings."
+      toast.error(message)
     } finally {
       setIsSaving(false)
     }

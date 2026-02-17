@@ -166,6 +166,7 @@ export function MobileSubpage({
                 <Label htmlFor="m-first">First name</Label>
                 <Input
                   id="m-first"
+                  placeholder="First name"
                   value={firstName}
                   onChange={(event) => onFirstNameChange(event.currentTarget.value)}
                 />
@@ -174,6 +175,7 @@ export function MobileSubpage({
                 <Label htmlFor="m-last">Last name</Label>
                 <Input
                   id="m-last"
+                  placeholder="Last name"
                   value={lastName}
                   onChange={(event) => onLastNameChange(event.currentTarget.value)}
                 />

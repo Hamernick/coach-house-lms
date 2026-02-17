@@ -89,27 +89,12 @@ export default async function PricingSuccessPage({
   const params = searchParams ? await searchParams : {}
   const sessionId = typeof params?.session_id === "string" ? params.session_id : undefined
 
-  const { session, supabase } = await requireServerSession("/pricing/success")
+  const { session } = await requireServerSession("/pricing/success")
   const user = session.user
   const userId = user.id
 
   if (!stripe) {
-    const payload: Database["public"]["Tables"]["subscriptions"]["Insert"] = {
-      user_id: userId,
-      stripe_subscription_id: `stub_${Date.now()}`,
-      status: "trialing",
-      metadata: null,
-    }
-
-    try {
-      await supabase
-        .from("subscriptions" satisfies keyof Database["public"]["Tables"])
-        .upsert(payload, { onConflict: "user_id,stripe_subscription_id" })
-    } catch (error) {
-      console.warn("Unable to record fallback subscription state", error)
-    }
-
-    redirect("/organization?subscription=trialing")
+    redirect("/organization?paywall=organization&plan=organization&checkout_error=stripe_unavailable&source=billing")
   }
 
   if (stripe && sessionId) {

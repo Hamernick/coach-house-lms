@@ -28,6 +28,7 @@ export async function createBillingPortalSession() {
     .from("subscriptions")
     .select("stripe_customer_id")
     .eq("user_id", orgId)
+    .not("stripe_subscription_id", "ilike", "stub_%")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle<{ stripe_customer_id: string | null }>()

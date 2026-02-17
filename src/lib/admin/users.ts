@@ -77,6 +77,7 @@ export async function listAdminUsers({
     .from("subscriptions")
     .select("user_id, status, created_at")
     .in("user_id", userIds)
+    .not("stripe_subscription_id", "ilike", "stub_%")
     .returns<Array<{ user_id: string; status: string | null; created_at: string | null }>>()
 
   if (subscriptionsError) {
@@ -226,6 +227,7 @@ export async function getAdminUserDetail(userId: string): Promise<AdminUserDetai
     .from("subscriptions")
     .select("status, current_period_end, metadata")
     .eq("user_id", userId)
+    .not("stripe_subscription_id", "ilike", "stub_%")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle<{ status: string | null; current_period_end: string | null; metadata: unknown }>()

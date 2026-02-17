@@ -8270,3 +8270,87 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - no token hits in rewritten local history (`git log --all -S <token>` empty)
   - no token hits in rewritten remote-tracking history (`git log --remotes=origin -S <token>` empty)
 
+
+## 2026-02-17 — Codex account settings profile save + placeholder fix
+
+- Fixed account settings profile fields so first/last names reliably persist and load from the canonical profile row.
+- Added missing placeholders for first/last name in both desktop and mobile profile forms.
+- Files:
+  - `src/components/account-settings/account-settings-dialog-state.ts`
+  - `src/components/account-settings/sections/desktop/profile.tsx`
+  - `src/components/account-settings/sections/mobile-sections.tsx`
+- Changes:
+  - profile dialog now reads `profiles.full_name` (fallback to passed default/metadata) when opening.
+  - save flow now validates and surfaces Supabase errors instead of failing silently.
+  - profile save now syncs `auth.user_metadata.full_name` after `profiles.full_name` update.
+  - mobile/desktop first/last inputs now include explicit placeholders.
+- Validation:
+  - `pnpm eslint src/components/account-settings/account-settings-dialog-state.ts src/components/account-settings/sections/desktop/profile.tsx src/components/account-settings/sections/mobile-sections.tsx` ✅
+  - `pnpm verify:settings` requires an email argument; not run to completion in this pass.
+
+## 2026-02-17 — Codex progression reset + checkout hardening
+
+- Fixed accelerator module progression reliability and removed checkout fallbacks that could auto-grant paid access.
+- Files:
+  - `src/components/training/module-detail/module-stepper.tsx`
+  - `src/app/actions/module-progress.ts`
+  - `src/lib/modules/progress.ts`
+  - `src/lib/modules/service.ts`
+  - `src/app/(dashboard)/class/[slug]/module/[index]/page.tsx`
+  - `src/app/(public)/pricing/actions.ts`
+  - `src/app/(public)/pricing/success/page.tsx`
+  - `src/lib/accelerator/entitlements.ts`
+  - `src/app/(dashboard)/billing/page.tsx`
+  - `src/app/(admin)/layout.tsx`
+- Progression fixes:
+  - `Continue to next lesson` now navigates immediately and saves completion as a non-blocking best-effort call (prevents UI stalls/reset feel).
+  - Module-complete writes now always include `completed_at`.
+  - Assignment-based completion path now upserts with `onConflict: user_id,module_id` so completion updates existing rows reliably.
+  - Non-admin learners now only receive published modules from `getClassModulesForUser`, reducing index mismatch/hidden-module routing issues.
+  - Removed ambiguous module fallback mapping (`moduleIndex -> array index`) in module route; route now requires exact module `idx`.
+- Checkout/access fixes:
+  - Removed all `stub_*` subscription creation fallbacks in pricing checkout + pricing success flows.
+  - Checkout errors now redirect back to app paywall with `checkout_error` context instead of granting trialing access.
+  - Existing-subscription lookup during checkout now ignores `stub_*` records.
+  - Entitlement checks now ignore `stub_*` subscription rows.
+  - Billing and admin subscription lookups now ignore `stub_*` rows to avoid false paid-state UI.
+- Validation:
+  - `pnpm eslint src/app/actions/module-progress.ts src/lib/modules/progress.ts src/lib/modules/service.ts src/components/training/module-detail/module-stepper.tsx 'src/app/(dashboard)/class/[slug]/module/[index]/page.tsx' 'src/app/(public)/pricing/actions.ts' 'src/app/(public)/pricing/success/page.tsx' src/lib/accelerator/entitlements.ts` ✅
+  - `pnpm eslint 'src/app/(dashboard)/billing/page.tsx' 'src/app/(admin)/layout.tsx'` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-17 — Codex subscription data cleanup + stub guardrails
+
+- Extended subscription hardening to all major app/admin readers so legacy fallback records cannot influence UI/access state.
+- Added `stripe_subscription_id NOT ILIKE 'stub_%'` filters in:
+  - `src/app/(dashboard)/billing/actions.ts`
+  - `src/app/(dashboard)/my-organization/page.tsx`
+  - `src/app/actions/organization-access.ts`
+  - `src/lib/admin/users.ts`
+  - `src/lib/admin/kpis.ts`
+  - `src/lib/admin/subscriptions.ts`
+  - `src/app/(accelerator)/layout.tsx`
+  - `src/app/(dashboard)/layout.tsx`
+- Database cleanup executed:
+  - removed legacy fallback subscription rows where `stripe_subscription_id` matched `stub_%`.
+  - result: `deleted_stub_rows=3`, `remaining_stub_rows=0`.
+- Validation:
+  - `pnpm eslint 'src/app/(dashboard)/billing/actions.ts' 'src/app/(dashboard)/my-organization/page.tsx' 'src/app/actions/organization-access.ts' src/lib/admin/users.ts src/lib/admin/kpis.ts src/lib/admin/subscriptions.ts 'src/app/(accelerator)/layout.tsx' 'src/app/(dashboard)/layout.tsx'` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-17 — Codex pricing copy sync (tier cards + feature matrix)
+
+- Updated pricing card checklist copy and feature breakdown table to match latest approved tier language.
+- File:
+  - `src/components/public/pricing-surface.tsx`
+- Tier card updates:
+  - Tier 1 (Free): switched to Organization Profile + Guided formation + Strategic Roadmap + private profile + Discord/WhatsApp access + secure/centralized docs.
+  - Tier 2 ($20): switched to 8 seats, public profile, accelerator access, electives/additional learning, sponsorship opportunities, fundability/through-line trackers, weekly member programming, and board portal.
+  - Tier 3 ($58): switched to monthly coaching, expert network access, expanded delivery/operations support, and discounted coaching.
+- Feature matrix updates:
+  - removed stale rows no longer in current offer framing (legacy unlimited seats / topic tuesdays / ask the ED / payroll/Monkeypod/etc from this surface).
+  - aligned group rows to current tier checklist language so card content and matrix stay in sync.
+- Validation:
+  - `pnpm eslint src/components/public/pricing-surface.tsx` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅
+- Follow-up: converted pricing visibility terms to explicit pills (`Private` on Individual, `Public` on paid tiers) in card checklists and feature matrix labels for clearer scanability.

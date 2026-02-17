@@ -96,6 +96,7 @@ async function resolvePaidTeamAccessForOrg(
     .from("subscriptions")
     .select("status, metadata, created_at")
     .eq("user_id", orgId)
+    .not("stripe_subscription_id", "ilike", "stub_%")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle<{ status: string | null; metadata: Json | null }>()

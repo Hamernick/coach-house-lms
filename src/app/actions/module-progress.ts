@@ -22,6 +22,7 @@ export async function markModuleCompleteAction(moduleId: string): Promise<Result
     user_id: user.id,
     module_id: moduleId,
     status: "completed",
+    completed_at: new Date().toISOString(),
   }
 
   const { error: upsertError } = await supabase

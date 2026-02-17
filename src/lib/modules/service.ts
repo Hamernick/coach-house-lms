@@ -259,7 +259,7 @@ export async function getClassModulesForUser({
     }
   }
 
-  const modules: ModuleRecord[] = moduleRows.map((module, index) => {
+  const allModules: ModuleRecord[] = moduleRows.map((module, index) => {
     const content = contentByModuleId.get(module.id)
     const assignment = assignmentByModuleId.get(module.id)
     const submission = submissionByModuleId.get(module.id)
@@ -294,6 +294,26 @@ export async function getClassModulesForUser({
       assignmentSubmission: submission ?? null,
     }
   })
+  const modules: ModuleRecord[] = forceAdmin
+    ? allModules
+    : allModules.filter((module) => module.published)
+
+  if (modules.length === 0) {
+    return {
+      classId: classRecord.id,
+      classTitle: classRecord.title,
+      classDescription: classRecord.description ?? null,
+      classSubtitle: (classRecord as { subtitle?: string | null }).subtitle ?? null,
+      classVideoUrl,
+      classResources,
+      classPublished:
+        "is_published" in classRecord
+          ? Boolean((classRecord as { is_published?: boolean | null }).is_published)
+          : Boolean((classRecord as { published?: boolean | null }).published ?? true),
+      modules: [],
+      progressMap: {},
+    }
+  }
 
   const { data: progressRows, error: progressError } = await supabase
     .from("module_progress" satisfies keyof Database["public"]["Tables"])

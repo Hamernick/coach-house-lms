@@ -309,12 +309,10 @@ export function ModuleStepper({
 
   const handleContinue = useCallback(async () => {
     if (!nextHref) return
-    try {
-      await markModuleCompleteAction(moduleId)
-    } catch {
-      // non-blocking
-    }
     router.push(nextHref)
+    void markModuleCompleteAction(moduleId).catch(() => {
+      // non-blocking best-effort completion sync
+    })
   }, [moduleId, nextHref, router])
 
   const handleSchedule = useCallback(async () => {

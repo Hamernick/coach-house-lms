@@ -82,6 +82,7 @@ export async function fetchAdminKpis(): Promise<AdminKpis> {
     supabase
       .from("subscriptions")
       .select("status, metadata, updated_at")
+      .not("stripe_subscription_id", "ilike", "stub_%")
       .order("updated_at", { ascending: false })
       .returns<SubscriptionRow[]>()
   ])
@@ -171,6 +172,7 @@ export async function fetchRecentPayments(limit = 5): Promise<AdminRecentPayment
   const { data, error } = await supabase
     .from("subscriptions")
     .select("id, user_id, status, metadata, updated_at")
+    .not("stripe_subscription_id", "ilike", "stub_%")
     .order("updated_at", { ascending: false })
     .limit(limit)
 

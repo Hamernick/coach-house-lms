@@ -23,7 +23,7 @@ export async function markModuleCompleted({
 
   const { error } = await supabase
     .from("module_progress")
-    .upsert(upsertPayload)
+    .upsert(upsertPayload, { onConflict: "user_id,module_id" })
 
   if (error) {
     throw supabaseErrorToError(error, "Unable to update module progress.")

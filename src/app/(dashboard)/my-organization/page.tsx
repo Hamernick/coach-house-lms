@@ -250,6 +250,7 @@ export default async function MyOrganizationPage({
       .select("status, metadata")
       .eq("user_id", orgId)
       .in("status", ["active", "trialing", "past_due", "incomplete"])
+      .not("stripe_subscription_id", "ilike", "stub_%")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle<{ status: string | null; metadata: Json | null }>(),

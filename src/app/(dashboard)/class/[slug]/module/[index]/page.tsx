@@ -83,12 +83,10 @@ export default async function ModulePage({
 
   const moduleStates = buildModuleStates(classContext.modules, classContext.progressMap)
   const currentState = moduleStates.find((state) => state.module.idx === moduleIndex)
-  const fallbackState = moduleStates[moduleIndex - 1] ?? null
-  const resolvedState = currentState ?? fallbackState
-  if (!resolvedState) {
+  if (!currentState) {
     notFound()
   }
-  const currentStateIndex = moduleStates.findIndex((state) => state.module.id === resolvedState.module.id)
+  const currentStateIndex = moduleStates.findIndex((state) => state.module.id === currentState.module.id)
   const nextState = currentStateIndex >= 0 ? moduleStates[currentStateIndex + 1] ?? null : null
   const nextLocked = !isAdmin && nextState ? !nextState.module.published : false
 
@@ -98,10 +96,10 @@ export default async function ModulePage({
   }
 
   if (!isAdmin && isFormationClass) {
-    const moduleSlug = resolvedState.module.slug.trim().toLowerCase()
+    const moduleSlug = currentState.module.slug.trim().toLowerCase()
     const requiresElectivePurchase = isElectiveAddOnModule({
       slug: moduleSlug,
-      title: resolvedState.module.title,
+      title: currentState.module.title,
     })
     const hasElectiveAccess =
       entitlements.hasAcceleratorAccess ||
@@ -132,21 +130,21 @@ export default async function ModulePage({
     })),
   }
 
-  const contentMd = (resolvedState.module as { contentMd?: string | null }).contentMd ?? null
-  const moduleTitle = resolvedState.module.title
-  const moduleSubtitle = resolvedState.module.description ?? undefined
+  const contentMd = (currentState.module as { contentMd?: string | null }).contentMd ?? null
+  const moduleTitle = currentState.module.title
+  const moduleSubtitle = currentState.module.description ?? undefined
 
   const moduleDef = {
-    id: resolvedState.module.id,
+    id: currentState.module.id,
     title: moduleTitle,
     subtitle: moduleSubtitle,
-    videoUrl: resolvedState.module.videoUrl ?? null,
+    videoUrl: currentState.module.videoUrl ?? null,
     contentMd,
-    resources: resolvedState.module.resources,
-    assignment: resolvedState.module.assignment,
-    assignmentSubmission: resolvedState.module.assignmentSubmission,
-    locked: resolvedState.locked,
-    hasDeck: resolvedState.module.hasDeck,
+    resources: currentState.module.resources,
+    assignment: currentState.module.assignment,
+    assignmentSubmission: currentState.module.assignmentSubmission,
+    locked: currentState.locked,
+    hasDeck: currentState.module.hasDeck,
   }
   const completedModuleIds = moduleStates.filter((state) => state.completed).map((state) => state.module.id)
 

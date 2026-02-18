@@ -19,8 +19,24 @@ const STRIPE_API_VERSION: Stripe.LatestApiVersion = "2025-08-27.basil"
 const clientCache = new Map<string, Stripe>()
 
 function normalizeString(value: string | null | undefined) {
-  const trimmed = typeof value === "string" ? value.trim() : ""
-  return trimmed.length > 0 ? trimmed : null
+  if (typeof value !== "string") return null
+
+  let normalized = value.trim()
+  if (normalized.length === 0) return null
+
+  const hasDoubleQuotes = normalized.startsWith("\"") && normalized.endsWith("\"")
+  const hasSingleQuotes = normalized.startsWith("'") && normalized.endsWith("'")
+  if ((hasDoubleQuotes || hasSingleQuotes) && normalized.length > 1) {
+    normalized = normalized.slice(1, -1).trim()
+  }
+
+  normalized = normalized
+    .replace(/\\r\\n/g, "")
+    .replace(/\\n/g, "")
+    .replace(/\r?\n/g, "")
+    .trim()
+
+  return normalized.length > 0 ? normalized : null
 }
 
 function modeFromSecretKey(secretKey: string): "test" | "live" {

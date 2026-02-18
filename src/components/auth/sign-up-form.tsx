@@ -49,6 +49,16 @@ function isExistingAccountResponse(user: { identities?: unknown[] } | null | und
   return Boolean(user && Array.isArray(user.identities) && user.identities.length === 0)
 }
 
+function resolveSignUpErrorMessage(raw: string, isTesterInstantSignup: boolean) {
+  const normalized = raw.toLowerCase()
+  if (normalized.includes("email rate limit exceeded")) {
+    return isTesterInstantSignup
+      ? "Tester sign up is temporarily throttled. Retry in a moment."
+      : "Too many verification emails were requested. Wait a minute and retry. Internal testers can use /tester/sign-up."
+  }
+  return raw
+}
+
 export function SignUpForm({ redirectTo = "/organization", loginHref, signUpMetadata }: SignUpFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
@@ -136,7 +146,7 @@ export function SignUpForm({ redirectTo = "/organization", loginHref, signUpMeta
 
       if (error) {
         setStatus("error")
-        setMessage(error.message)
+        setMessage(resolveSignUpErrorMessage(error.message, isTesterInstantSignup))
         return
       }
 

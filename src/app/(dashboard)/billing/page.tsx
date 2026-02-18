@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation"
+import Link from "next/link"
 import CalendarClockIcon from "lucide-react/dist/esm/icons/calendar-clock"
 import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
 import CircleDotIcon from "lucide-react/dist/esm/icons/circle-dot"
@@ -14,12 +15,13 @@ import { resolvePricingPlanTier } from "@/lib/billing/plan-tier"
 import { env } from "@/lib/env"
 import type { Json } from "@/lib/supabase"
 import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
-import { startCheckout } from "@/app/(public)/pricing/actions"
 import { StripePoweredBadge } from "@/components/billing/stripe-powered-badge"
 
 import { BillingPortalButton } from "./billing-portal-button"
 
 const PORTAL_READY = Boolean(env.STRIPE_SECRET_KEY || env.STRIPE_TEST_SECRET_KEY)
+const CHECKOUT_ORGANIZATION_READY = Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_ORGANIZATION_PRICE_ID)
+const CHECKOUT_OPERATIONS_READY = Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_OPERATIONS_SUPPORT_PRICE_ID)
 
 function formatDate(dateValue: string | null) {
   if (!dateValue) return null
@@ -144,16 +146,16 @@ export default async function BillingPage() {
               <p className="rounded-xl border border-border/70 bg-muted/35 px-3 py-2 text-center text-xs font-medium text-muted-foreground">
                 You are currently on this plan.
               </p>
+            ) : !CHECKOUT_ORGANIZATION_READY ? (
+              <Button type="button" className="w-full rounded-xl" disabled>
+                Organization checkout unavailable
+              </Button>
             ) : (
-              <form action={startCheckout}>
-                <input type="hidden" name="checkoutMode" value="organization" />
-                <input type="hidden" name="planTier" value="organization" />
-                <input type="hidden" name="planName" value="Organization" />
-                <input type="hidden" name="source" value="billing" />
-                <Button type="submit" className="w-full rounded-xl">
+              <Button asChild className="w-full rounded-xl">
+                <Link href="/api/stripe/checkout?plan=organization&source=billing">
                   {operationsIsCurrent ? "Downgrade to Organization" : "Upgrade to Organization"}
-                </Button>
-              </form>
+                </Link>
+              </Button>
             )}
           </CardContent>
         </Card>
@@ -195,16 +197,16 @@ export default async function BillingPage() {
               <p className="rounded-xl border border-border/70 bg-muted/35 px-3 py-2 text-center text-xs font-medium text-muted-foreground">
                 You are currently on this plan.
               </p>
+            ) : !CHECKOUT_OPERATIONS_READY ? (
+              <Button type="button" className="w-full rounded-xl" variant="secondary" disabled>
+                Operations plan unavailable
+              </Button>
             ) : (
-              <form action={startCheckout}>
-                <input type="hidden" name="checkoutMode" value="organization" />
-                <input type="hidden" name="planTier" value="operations_support" />
-                <input type="hidden" name="planName" value="Operations Support" />
-                <input type="hidden" name="source" value="billing" />
-                <Button type="submit" className="w-full rounded-xl" variant="secondary">
+              <Button asChild className="w-full rounded-xl" variant="secondary">
+                <Link href="/api/stripe/checkout?plan=operations_support&source=billing">
                   {organizationIsCurrent ? "Upgrade to Operations Support" : "Choose Operations Support"}
-                </Button>
-              </form>
+                </Link>
+              </Button>
             )}
           </CardContent>
         </Card>

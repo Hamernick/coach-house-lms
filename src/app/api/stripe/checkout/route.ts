@@ -16,6 +16,36 @@ type CheckoutErrorCode =
   | "missing_price"
   | "session_url_missing"
   | "checkout_failed"
+  | "stripe_auth_error"
+  | "price_not_found"
+  | "stripe_invalid_request"
+  | "stripe_permission_error"
+
+function createDebugToken() {
+  const random = Math.random().toString(36).slice(2, 8)
+  return `${Date.now().toString(36)}-${random}`
+}
+
+function normalizeDetail(raw: string | null | undefined) {
+  if (!raw) return null
+  const value = raw.trim().toLowerCase()
+  if (value.length === 0) return null
+  if (!/^[a-z0-9_:-]{1,120}$/.test(value)) return null
+  return value
+}
+
+function resolveCheckoutErrorCode(error: Stripe.errors.StripeError | null): CheckoutErrorCode {
+  if (!error) return "checkout_failed"
+  if (error.type === "StripeAuthenticationError") return "stripe_auth_error"
+  if (error.type === "StripePermissionError") return "stripe_permission_error"
+  if (error.type === "StripeInvalidRequestError") {
+    if (error.code === "resource_missing" && (error.param ?? "").includes("line_items")) {
+      return "price_not_found"
+    }
+    return "stripe_invalid_request"
+  }
+  return "checkout_failed"
+}
 
 function normalizeSource(raw: string | null) {
   const value = (raw ?? "").trim().toLowerCase()
@@ -36,18 +66,28 @@ function buildErrorRedirect({
   planTier,
   source,
   code,
+  detail,
+  debugToken,
 }: {
   request: NextRequest
   supabaseResponse: NextResponse
   planTier: StripeBillingPlanTier
   source: string
   code: CheckoutErrorCode
+  detail?: string | null
+  debugToken?: string | null
 }) {
   const params = new URLSearchParams()
   params.set("paywall", "organization")
   params.set("plan", planTier)
   params.set("checkout_error", code)
   params.set("source", source)
+  if (detail) {
+    params.set("checkout_detail", detail)
+  }
+  if (debugToken) {
+    params.set("checkout_debug", debugToken)
+  }
 
   const response = NextResponse.redirect(new URL(`/organization?${params.toString()}`, request.url))
   copySupabaseCookies(supabaseResponse, response)
@@ -81,6 +121,7 @@ export async function GET(request: NextRequest) {
   const planTier: StripeBillingPlanTier = planParam === "operations_support" ? "operations_support" : "organization"
   const planName = planTier === "operations_support" ? "Operations Support" : "Organization"
   const source = normalizeSource(request.nextUrl.searchParams.get("source"))
+  const debugToken = createDebugToken()
 
   const {
     data: { user },
@@ -104,6 +145,7 @@ export async function GET(request: NextRequest) {
       planTier,
       source,
       code: "stripe_unavailable",
+      debugToken,
     })
   }
 
@@ -115,6 +157,7 @@ export async function GET(request: NextRequest) {
       planTier,
       source,
       code: planTier === "operations_support" ? "operations_unavailable" : "missing_price",
+      debugToken,
     })
   }
 
@@ -163,6 +206,7 @@ export async function GET(request: NextRequest) {
         planTier,
         source,
         code: "session_url_missing",
+        debugToken,
       })
     }
 
@@ -171,12 +215,16 @@ export async function GET(request: NextRequest) {
     return response
   } catch (error) {
     const stripeError = error as Stripe.errors.StripeError | null
+    const resolvedCode = resolveCheckoutErrorCode(stripeError)
+    const detail = normalizeDetail(stripeError?.code ?? stripeError?.type ?? null)
     console.error("Unable to start Stripe checkout (route)", {
       message: error instanceof Error ? error.message : "unknown_error",
       planTier,
       source,
       userId,
       orgId,
+      debugToken,
+      audienceIsTester: audience.isTester,
       stripeMode: stripeConfig.mode,
       stripeType: stripeError?.type ?? null,
       stripeCode: stripeError?.code ?? null,
@@ -188,8 +236,9 @@ export async function GET(request: NextRequest) {
       supabaseResponse,
       planTier,
       source,
-      code: "checkout_failed",
+      code: resolvedCode,
+      detail,
+      debugToken,
     })
   }
 }
-

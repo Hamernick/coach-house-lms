@@ -22,6 +22,8 @@ const PAYWALL_QUERY_KEYS = [
   "module",
   "source",
   "checkout_error",
+  "checkout_detail",
+  "checkout_debug",
 ] as const
 
 type OverlayTier = {
@@ -159,6 +161,8 @@ export function PaywallOverlay({ currentPlanTier = "free" }: PaywallOverlayProps
   const isOpen = Boolean(paywallKind)
   const isOnboardingSource = source === "onboarding"
   const checkoutErrorCode = searchParams.get("checkout_error")
+  const checkoutErrorDetail = searchParams.get("checkout_detail")
+  const checkoutErrorDebug = searchParams.get("checkout_debug")
   const checkoutErrorMessage =
     checkoutErrorCode === "missing_price"
       ? "Checkout is not configured for this plan yet."
@@ -166,6 +170,14 @@ export function PaywallOverlay({ currentPlanTier = "free" }: PaywallOverlayProps
         ? "Operations Support checkout is not available right now."
         : checkoutErrorCode === "stripe_unavailable"
           ? "Stripe is temporarily unavailable. Please try again in a moment."
+          : checkoutErrorCode === "stripe_auth_error"
+            ? "Checkout credentials are misconfigured. Please contact support."
+            : checkoutErrorCode === "price_not_found"
+              ? "This plan is not linked to a valid Stripe price yet."
+              : checkoutErrorCode === "stripe_permission_error"
+                ? "Checkout is blocked by Stripe account permissions."
+                : checkoutErrorCode === "stripe_invalid_request"
+                  ? "Checkout request was rejected by Stripe."
           : checkoutErrorCode === "session_url_missing"
             ? "Stripe could not create a checkout link. Please try again."
             : checkoutErrorCode === "checkout_failed"
@@ -239,7 +251,13 @@ export function PaywallOverlay({ currentPlanTier = "free" }: PaywallOverlayProps
             </div>
             {checkoutErrorMessage ? (
               <div className="rounded-2xl border border-amber-300/70 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
-                {checkoutErrorMessage}
+                <p>{checkoutErrorMessage}</p>
+                {checkoutErrorDetail || checkoutErrorDebug ? (
+                  <p className="mt-1 text-xs opacity-80">
+                    {checkoutErrorDetail ? `Reason: ${checkoutErrorDetail}. ` : ""}
+                    {checkoutErrorDebug ? `Ref: ${checkoutErrorDebug}` : ""}
+                  </p>
+                ) : null}
               </div>
             ) : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">

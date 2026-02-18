@@ -8701,3 +8701,61 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm lint` ✅
   - `pnpm build` ✅
+
+## 2026-02-18 — Codex payment journey hardening plan (pause + reset)
+
+- Trigger:
+  - Active checkout/email-rate-limit instability during tester payment validation.
+  - Requested pause to evaluate and define a complete hardening plan before more patching.
+- Skill used:
+  - `brainstorming` (requirements/design-first workflow before additional behavior changes).
+- Output:
+  - Added canonical execution plan:
+    - `docs/plans/2026-02-18-payment-user-journey-hardening-plan.md`
+- Plan covers:
+  - tester identity reliability,
+  - checkout path unification,
+  - observability/diagnostics,
+  - entitlements lifecycle integrity,
+  - QA matrix,
+  - deployment provenance protocol.
+
+## 2026-02-18 — Codex payment journey hardening phase 1 (checkout canonicalization + diagnostics)
+
+- Scope:
+  - Continued from hardening plan to remove mixed checkout paths and improve Stripe failure diagnosability.
+- Files:
+  - `src/lib/billing/stripe-runtime.ts`
+  - `src/app/api/stripe/checkout/route.ts`
+  - `src/components/paywall/paywall-overlay.tsx`
+  - `src/app/(dashboard)/billing/page.tsx`
+  - `src/components/public/pricing-surface.tsx`
+  - `src/components/auth/sign-up-form.tsx`
+- Changes:
+  - Hardened Stripe env normalization to strip wrapping quotes and literal escaped-newline artifacts (for keys/price IDs copied with formatting noise).
+  - Upgraded `/api/stripe/checkout` with:
+    - specific error codes (`stripe_auth_error`, `price_not_found`, `stripe_invalid_request`, `stripe_permission_error`)
+    - request debug token on failures (`checkout_debug`)
+    - normalized detail passthrough (`checkout_detail`)
+    - richer server logs including `audienceIsTester`.
+  - Updated paywall overlay to:
+    - show specific checkout error messaging,
+    - display reason/debug reference,
+    - clear `checkout_detail` + `checkout_debug` when closing.
+  - Replaced billing page paid CTA forms with direct canonical checkout links:
+    - `/api/stripe/checkout?plan=organization&source=billing`
+    - `/api/stripe/checkout?plan=operations_support&source=billing`
+  - Replaced pricing surface paid CTA forms with direct canonical checkout links:
+    - `/api/stripe/checkout?plan=organization&source=pricing`
+    - `/api/stripe/checkout?plan=operations_support&source=pricing`
+  - Added better sign-up error copy for Supabase email-throttle responses (includes tester route guidance).
+- Validation:
+  - `pnpm exec eslint src/lib/billing/stripe-runtime.ts src/app/api/stripe/checkout/route.ts src/components/paywall/paywall-overlay.tsx 'src/app/(dashboard)/billing/page.tsx' src/components/public/pricing-surface.tsx src/components/auth/sign-up-form.tsx` ✅
+  - `pnpm build` ✅
+  - `pnpm lint` ✅
+  - `pnpm test:snapshots` ✅
+  - `pnpm test:rls` ✅
+  - `pnpm test:acceptance` ❌ (pre-existing suite failures unrelated to this patch also present; major failures currently in legacy pricing/billing acceptance mocks + one readiness checklist expectation drift).
+- Runtime check:
+  - Verified unauthenticated checkout entry redirects to home-canvas login flow with preserved return URL:
+    - `GET /api/stripe/checkout?plan=organization&source=pricing` -> `/?section=login&source=pricing&redirect=/api/stripe/checkout?...`.

@@ -17,8 +17,6 @@ import Tag from "lucide-react/dist/esm/icons/tag"
 import Users from "lucide-react/dist/esm/icons/users"
 import X from "lucide-react/dist/esm/icons/x"
 
-import { startCheckout } from "@/app/(public)/pricing/actions"
-
 type PricingTier = {
   id: string
   eyebrow: string
@@ -320,22 +318,25 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
           {PLATFORM_TIERS.map((tier) => {
             const isFormation = tier.id === "formation"
             const isMailtoCta = tier.ctaHref.startsWith("mailto:")
+            const isPaidTier = tier.id === "organization" || tier.id === "operations"
             const operationsCheckoutUnavailable =
               tier.id === "operations" && Boolean(env.STRIPE_SECRET_KEY) && !canCheckoutOperationsSupport
+            const paidCheckoutUnavailable =
+              isPaidTier &&
+              ((tier.id === "organization" && !canCheckoutOrganization) ||
+                (tier.id === "operations" && !canCheckoutOperationsSupport))
             const embeddedAuthHref =
               tier.id === "formation"
                 ? "/?section=signup&source=pricing&tier=individual"
                 : tier.id === "operations"
                   ? "/?section=login&source=pricing&tier=operations"
                   : "/?section=login&source=pricing&tier=organization"
-            const showCheckoutForm =
-              (tier.id === "organization" && canCheckoutOrganization) ||
-              (tier.id === "operations" && canCheckoutOperationsSupport)
-            const checkoutPriceId =
+            const checkoutHref =
               tier.id === "operations"
-                ? (operationsSupportPriceId ?? "")
-                : (env.STRIPE_ORGANIZATION_PRICE_ID ?? "")
-            const checkoutPlanName = tier.id === "operations" ? "Operations Support" : "Organization"
+                ? "/api/stripe/checkout?plan=operations_support&source=pricing"
+                : tier.id === "organization"
+                  ? "/api/stripe/checkout?plan=organization&source=pricing"
+                  : null
 
             return (
               <Card
@@ -374,25 +375,16 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
                     </CardDescription>
                   </div>
 
-                  {showCheckoutForm && !isEmbedded ? (
-                    <form action={startCheckout} className="w-full">
-                      <input type="hidden" name="checkoutMode" value="organization" />
-                      <input
-                        type="hidden"
-                        name="planTier"
-                        value={tier.id === "operations" ? "operations_support" : "organization"}
-                      />
-                      <input type="hidden" name="planName" value={checkoutPlanName} />
-                      <input type="hidden" name="priceId" value={checkoutPriceId} />
-                      <input type="hidden" name="source" value="pricing" />
-                      <Button
-                        type="submit"
-                        className="w-full rounded-xl"
-                        variant={isFormation ? "default" : tier.featured ? "default" : "secondary"}
-                      >
+                  {isPaidTier && checkoutHref && !paidCheckoutUnavailable ? (
+                    <Button
+                      asChild
+                      className="w-full rounded-xl"
+                      variant={isFormation ? "default" : tier.featured ? "default" : "secondary"}
+                    >
+                      <Link href={checkoutHref} className="flex items-center justify-center">
                         {tier.ctaLabel}
-                      </Button>
-                    </form>
+                      </Link>
+                    </Button>
                   ) : isEmbedded ? (
                     <Button
                       asChild
@@ -412,22 +404,31 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
                     >
                       Operations plan unavailable
                     </Button>
-                  ) : (
+                  ) : paidCheckoutUnavailable ? (
                     <Button
-                      asChild
+                      type="button"
+                      disabled
                       className="w-full rounded-xl"
-                      variant={isFormation ? "default" : tier.featured ? "default" : "secondary"}
+                      variant={tier.featured ? "default" : "secondary"}
                     >
-                      {isMailtoCta ? (
-                        <a href={tier.ctaHref} className="flex items-center justify-center">
-                          {tier.ctaLabel}
-                        </a>
-                      ) : (
-                        <Link href={tier.ctaHref} className="flex items-center justify-center">
-                          {tier.ctaLabel}
-                        </Link>
-                      )}
+                      Checkout unavailable
                     </Button>
+                  ) : (
+                      <Button
+                        asChild
+                        className="w-full rounded-xl"
+                        variant={isFormation ? "default" : tier.featured ? "default" : "secondary"}
+                      >
+                        {isMailtoCta ? (
+                          <a href={tier.ctaHref} className="flex items-center justify-center">
+                            {tier.ctaLabel}
+                          </a>
+                        ) : (
+                          <Link href={tier.ctaHref} className="flex items-center justify-center">
+                            {tier.ctaLabel}
+                          </Link>
+                        )}
+                      </Button>
                   )}
                 </CardHeader>
 

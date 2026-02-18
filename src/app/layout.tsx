@@ -22,8 +22,8 @@ const geistMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Coach House LMS",
-    template: "%s · Coach House LMS",
+    default: "Coach House",
+    template: "%s · Coach House",
   },
   description:
     "A course platform built with Next.js, Tailwind CSS, and shadcn/ui. Bootstrapped in step S00.",

@@ -4,7 +4,9 @@ import { HomeCanvasPreview } from "@/components/public/home-canvas-preview"
 import { PricingSurface } from "@/components/public/pricing-surface"
 
 export const metadata: Metadata = {
-  title: "Coach House",
+  title: {
+    absolute: "Coach House",
+  },
   description: "A nonprofit platform for formation, planning, and public-ready storytelling.",
 }
 

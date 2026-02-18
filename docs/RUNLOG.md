@@ -8533,3 +8533,26 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm eslint 'src/app/(public)/pricing/actions.ts' 'src/components/paywall/paywall-overlay.tsx' 'src/components/onboarding/onboarding-dialog.tsx' 'src/app/(dashboard)/layout.tsx'` ✅
   - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-17 — Codex production Stripe env fix
+
+- Investigated live checkout failure message: "Stripe is temporarily unavailable".
+- Root cause:
+  - Vercel Production project was missing required Stripe env vars (`STRIPE_SECRET_KEY`, `STRIPE_ORGANIZATION_PRICE_ID`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_SITE_URL`).
+- Actions:
+  - added/updated required Stripe env variables in Vercel Production.
+  - confirmed production env list now includes Stripe secret + plan IDs.
+  - triggered new production deployment to apply env updates.
+- Deploy:
+  - Alias updated to `https://coach-house-platform.vercel.app`.
+
+## 2026-02-18 — Codex browser tab title cleanup
+
+- Updated global app metadata title to remove "LMS" from browser tab titles.
+- File:
+  - `src/app/layout.tsx`
+- Changes:
+  - `metadata.title.default`: `Coach House LMS` -> `Coach House`
+  - `metadata.title.template`: `%s · Coach House LMS` -> `%s · Coach House`
+- Validation:
+  - `pnpm eslint src/app/layout.tsx` ✅

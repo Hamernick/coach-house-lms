@@ -8604,3 +8604,9 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm eslint src/lib/env.ts src/lib/billing/stripe-runtime.ts 'src/app/(public)/pricing/actions.ts' 'src/app/(public)/pricing/success/page.tsx' 'src/app/(dashboard)/billing/actions.ts' 'src/app/(dashboard)/billing/page.tsx' 'src/app/api/stripe/webhook/route.ts' src/lib/accelerator/entitlements.ts` ✅
   - `pnpm exec tsc --noEmit --pretty false` ✅
+- Deploy:
+  - `https://coach-house-platform.vercel.app` aliased to deployment `coach-house-platform-6uix0zcmn-caleb-hamernicks-projects.vercel.app`.
+- Live Stripe follow-up:
+  - Stripe CLI live auth completed for account `acct_1QegK8GWpMHCiyVj`.
+  - Returned key is restricted (`rk_live`) and does **not** have permissions for required endpoints (`checkout.sessions.create`, `prices.create`), so it cannot be used as the production server key.
+  - Production still needs full-access live server key + live webhook secret + live recurring plan prices to complete true real-card checkout.

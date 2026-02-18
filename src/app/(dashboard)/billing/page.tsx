@@ -147,7 +147,9 @@ export default async function BillingPage() {
             ) : (
               <form action={startCheckout}>
                 <input type="hidden" name="checkoutMode" value="organization" />
+                <input type="hidden" name="planTier" value="organization" />
                 <input type="hidden" name="planName" value="Organization" />
+                <input type="hidden" name="source" value="billing" />
                 <Button type="submit" className="w-full rounded-xl">
                   {operationsIsCurrent ? "Downgrade to Organization" : "Upgrade to Organization"}
                 </Button>
@@ -196,7 +198,9 @@ export default async function BillingPage() {
             ) : (
               <form action={startCheckout}>
                 <input type="hidden" name="checkoutMode" value="organization" />
+                <input type="hidden" name="planTier" value="operations_support" />
                 <input type="hidden" name="planName" value="Operations Support" />
+                <input type="hidden" name="source" value="billing" />
                 <Button type="submit" className="w-full rounded-xl" variant="secondary">
                   {organizationIsCurrent ? "Upgrade to Operations Support" : "Choose Operations Support"}
                 </Button>

@@ -299,6 +299,7 @@ export function PaywallOverlay({ currentPlanTier = "free" }: PaywallOverlayProps
                         {details.cta && tier.planName ? (
                           <form action={startCheckout} className="w-full" data-checkout-form="true">
                             <input type="hidden" name="checkoutMode" value="organization" />
+                            <input type="hidden" name="planTier" value={tier.id} />
                             <input type="hidden" name="planName" value={tier.planName} />
                             <input type="hidden" name="source" value={source ?? "billing"} />
                             <Button

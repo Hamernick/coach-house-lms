@@ -71,10 +71,24 @@ function redirectCheckoutError({
 }
 
 export async function startCheckout(formData: FormData) {
+  const checkoutModeEntry = formData.get("checkoutMode")
+  const checkoutMode = typeof checkoutModeEntry === "string" ? checkoutModeEntry.trim().toLowerCase() : "organization"
+
   const planNameEntry = formData.get("planName")
   const planName = typeof planNameEntry === "string" ? planNameEntry : undefined
+  const planTierEntry = formData.get("planTier")
+  const requestedPlanTier =
+    typeof planTierEntry === "string" && planTierEntry === "operations_support"
+      ? "operations_support"
+      : typeof planTierEntry === "string" && planTierEntry === "organization"
+        ? "organization"
+        : null
   const sourceEntry = formData.get("source")
   const source = typeof sourceEntry === "string" && sourceEntry.trim().length > 0 ? sourceEntry.trim() : "billing"
+
+  if (checkoutMode !== "organization") {
+    redirectCheckoutError({ planTier: "organization", code: "checkout_failed", source })
+  }
 
   const { supabase, session } = await requireServerSession("/pricing")
 
@@ -107,10 +121,12 @@ export async function startCheckout(formData: FormData) {
 
   try {
     const stripeClient = stripeConfig.client
-    const resolvedPlanName = planName ?? "Organization"
-    const planTier = resolvedPlanName.toLowerCase().includes("operations")
+    const inferredPlanTier = planName?.toLowerCase().includes("operations")
       ? "operations_support"
       : "organization"
+    const planTier = requestedPlanTier ?? inferredPlanTier
+    const resolvedPlanName =
+      planName ?? (planTier === "operations_support" ? "Operations Support" : "Organization")
     const organizationPriceId = resolveStripePriceIdForPlan({
       config: stripeConfig,
       planTier,

@@ -377,8 +377,14 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
                   {showCheckoutForm && !isEmbedded ? (
                     <form action={startCheckout} className="w-full">
                       <input type="hidden" name="checkoutMode" value="organization" />
+                      <input
+                        type="hidden"
+                        name="planTier"
+                        value={tier.id === "operations" ? "operations_support" : "organization"}
+                      />
                       <input type="hidden" name="planName" value={checkoutPlanName} />
                       <input type="hidden" name="priceId" value={checkoutPriceId} />
+                      <input type="hidden" name="source" value="pricing" />
                       <Button
                         type="submit"
                         className="w-full rounded-xl"

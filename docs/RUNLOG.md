@@ -8645,3 +8645,21 @@ Purpose: Track changes we’re making outside the formal PR stepper.
     - primary org (`$20` live), primary ops (`$58` live)
     - tester org (`$20` test), tester ops (`$58` test)
   - Verified direct Stripe API session creation succeeds for all four combinations.
+
+## 2026-02-18 — Codex Stripe CTA integrity pass (mode + tier enforcement)
+
+- Scope:
+  - Continued Stripe checkout audit across active CTA surfaces and enforced stricter server-side checkout input validation.
+- Files:
+  - `src/app/(public)/pricing/actions.ts`
+  - `src/components/paywall/paywall-overlay.tsx`
+  - `src/app/(dashboard)/billing/page.tsx`
+  - `src/components/public/pricing-surface.tsx`
+- Changes:
+  - Added strict `checkoutMode` guard in `startCheckout` so only organization subscription flow is accepted.
+  - Added explicit `planTier` parsing (`organization` | `operations_support`) with safe fallback inference.
+  - Added `planTier` hidden inputs to all active paid-plan checkout forms (paywall, billing, pricing).
+  - Added explicit `source` hidden inputs on billing and pricing checkout forms for cleaner attribution/debugging.
+- Validation:
+  - `pnpm lint` ✅
+  - `pnpm build` ✅

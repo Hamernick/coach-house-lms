@@ -8556,3 +8556,19 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - `metadata.title.template`: `%s · Coach House LMS` -> `%s · Coach House`
 - Validation:
   - `pnpm eslint src/app/layout.tsx` ✅
+
+## 2026-02-18 — Codex production Stripe checkout env audit
+
+- Audited Stripe checkout env state in Vercel Production and validated price IDs directly against Stripe API.
+- Findings:
+  - required production Stripe vars are present (`STRIPE_SECRET_KEY`, `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_ORGANIZATION_PRICE_ID`, `STRIPE_OPERATIONS_SUPPORT_PRICE_ID`, `NEXT_PUBLIC_SITE_URL`).
+  - production keys are currently test mode (`sk_test_*`, `pk_test_*`), not live mode.
+  - `STRIPE_OPERATIONS_SUPPORT_PRICE_ID` was malformed in Vercel as `price_...\\n`, causing Stripe price lookup failures.
+- Actions:
+  - removed and re-added `STRIPE_OPERATIONS_SUPPORT_PRICE_ID` in Vercel Production without escaped newline.
+  - revalidated both plan price IDs via Stripe API:
+    - organization: active monthly `$20.00`, `livemode=false`
+    - operations support: active monthly `$58.00`, `livemode=false`
+  - triggered a fresh production deploy so corrected env values are active.
+- Deploy:
+  - `https://coach-house-platform.vercel.app` aliased to deployment `coach-house-platform-jzhzn03i3-caleb-hamernicks-projects.vercel.app`.

@@ -595,194 +595,179 @@ export function Home2AcceleratorOverviewSection() {
 
   return (
     <div className={cn(inter.className, "w-full max-w-[980px] space-y-4")}>
-      <div className="rounded-[30px] border border-border/60 bg-card/70 p-4 shadow-sm sm:p-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex rounded-full border border-border/70 bg-muted/50 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-              Accelerator
-            </span>
-            <span className="inline-flex rounded-full border border-border/70 bg-muted/30 px-3 py-1 text-[11px] font-semibold text-muted-foreground">
-              Included on paid tiers
-            </span>
-          </div>
-
-          <div className="inline-flex items-center rounded-full border border-border/70 bg-background/70 p-1">
-            {ACCELERATOR_PREVIEW_SLIDES.map((item, index) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => jumpToSlide(index)}
-                className="relative inline-flex h-8 items-center justify-center overflow-hidden rounded-full px-3 text-xs font-medium text-muted-foreground transition hover:text-foreground"
-                aria-pressed={activeSlide === index}
-                aria-label={`Show ${item.tab}`}
-              >
-                {activeSlide === index ? (
-                  <motion.span
-                    layoutId="accelerator-slide-tab"
-                    className="absolute inset-0 rounded-full border border-border/70 bg-background shadow-sm"
-                    transition={{ type: "spring", bounce: 0.18, duration: 0.45 }}
-                  />
-                ) : null}
-                <span className={cn("relative z-10", activeSlide === index && "text-foreground")}>{item.tab}</span>
-              </button>
-            ))}
-          </div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Accelerator</span>
+          <span className="text-[11px] font-semibold text-muted-foreground">Included on paid tiers</span>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-          <div className="rounded-[24px] border border-border/60 bg-background/60 p-5">
-            <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">{slide.title}</h2>
-            <p className="mt-2 max-w-lg text-sm text-muted-foreground sm:text-base">{slide.subtitle}</p>
-
-            <div className="mt-5 space-y-2">
-              <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                <span>{slide.progressLabel}</span>
-                <span>{slide.progressValue}%</span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                <motion.div
-                  className="h-full rounded-full bg-foreground"
-                  initial={false}
-                  animate={{ width: `${slide.progressValue}%` }}
-                  transition={{ duration: 0.25, ease: "easeOut" }}
-                />
-              </div>
-            </div>
-
-            <div className="mt-4 min-h-[220px]">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={`${slide.id}-modules`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
-                  className="grid gap-3 sm:grid-cols-2"
-                >
-                  {slide.modules.map((module) => {
-                    const moduleStatus = resolveModuleStatus(module.status)
-                    return (
-                      <article
-                        key={`${slide.id}-module-${module.index}`}
-                        className="group flex min-h-[182px] flex-col overflow-hidden rounded-[22px] border border-border/60 bg-card text-left shadow-sm"
-                      >
-                        <div className="relative mx-[5px] mb-2 mt-[5px] aspect-[5/3] overflow-hidden rounded-[18px] bg-muted/35">
-                          <GridPattern
-                            width={24}
-                            height={24}
-                            patternId={`accelerator-preview-module-${slide.id}-${module.index}`}
-                            className="inset-x-0 inset-y-[-35%] h-[170%] skew-y-6 opacity-60 [mask-image:radial-gradient(220px_circle_at_center,white,transparent)]"
-                          />
-                          <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/5 via-transparent to-background/20" />
-                          <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-border/70 bg-background/85 text-foreground shadow-sm">
-                              {module.icon}
-                            </span>
-                          </span>
-                          <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-1 text-[10px] font-medium text-muted-foreground shadow-sm">
-                            Module {module.index}
-                          </span>
-                        </div>
-                        <div className="space-y-1 px-3 pb-3">
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{moduleStatus.cta}</span>
-                            <span
-                              className={cn(
-                                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
-                                moduleStatus.className,
-                              )}
-                            >
-                              {moduleStatus.label}
-                            </span>
-                          </div>
-                          <p className="text-sm font-semibold leading-tight text-foreground">{module.title}</p>
-                          <p className="line-clamp-2 text-xs text-muted-foreground">{module.description}</p>
-                        </div>
-                      </article>
-                    )
-                  })}
-                </motion.div>
-              </AnimatePresence>
-            </div>
-
-            <div className="mt-5 flex flex-wrap items-center gap-2">
-              <Button asChild className="rounded-xl px-5">
-                <Link href="/?section=signup">Start free</Link>
-              </Button>
-              <Button asChild variant="outline" className="rounded-xl px-5">
-                <Link href="/accelerator">Open accelerator</Link>
-              </Button>
-            </div>
-          </div>
-
-          <div className="rounded-[24px] border border-border/60 bg-background p-5">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <p className="text-sm font-semibold tracking-tight text-foreground">Progress</p>
-              <div className="inline-flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => shiftSlide(-1)}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/70 text-muted-foreground transition hover:text-foreground"
-                  aria-label="Previous slide"
-                >
-                  <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => shiftSlide(1)}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/70 text-muted-foreground transition hover:text-foreground"
-                  aria-label="Next slide"
-                >
-                  <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-                </button>
-              </div>
-            </div>
-
-            <div className="min-h-[220px]">
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.ul
-                  key={`${slide.id}-steps`}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.18, ease: "easeOut" }}
-                  className="space-y-2"
-                >
-                  {slide.steps.map((step, index) => (
-                    <li key={`${slide.id}-${step.label}`} className="flex items-center gap-2.5">
-                      <span className={stepCircleClass(step.state)} aria-hidden>
-                        {step.state === "complete" ? <Check className="h-3.5 w-3.5" aria-hidden /> : index + 1}
-                      </span>
-                      <span className={stepTextClass(step.state)}>{step.label}</span>
-                    </li>
-                  ))}
-                </motion.ul>
-              </AnimatePresence>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4 flex items-center justify-center gap-2">
+        <div className="inline-flex items-center rounded-full border border-border/70 bg-background/70 p-1">
           {ACCELERATOR_PREVIEW_SLIDES.map((item, index) => (
             <button
-              key={`${item.id}-dot`}
+              key={item.id}
               type="button"
               onClick={() => jumpToSlide(index)}
-              className="relative inline-flex h-2.5 w-8 items-center justify-center rounded-full"
-              aria-label={`Go to ${item.tab}`}
-              aria-current={activeSlide === index ? "true" : undefined}
+              className="relative inline-flex h-8 items-center justify-center overflow-hidden rounded-full px-3 text-xs font-medium text-muted-foreground transition hover:text-foreground"
+              aria-pressed={activeSlide === index}
+              aria-label={`Show ${item.tab}`}
             >
-              <span className="absolute inset-0 rounded-full bg-muted" />
               {activeSlide === index ? (
                 <motion.span
-                  layoutId="accelerator-slide-dot"
-                  className="absolute inset-0 rounded-full bg-foreground"
-                  transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                  layoutId="accelerator-slide-tab"
+                  className="absolute inset-0 rounded-full border border-border/70 bg-background shadow-sm"
+                  transition={{ type: "spring", bounce: 0.18, duration: 0.45 }}
                 />
               ) : null}
+              <span className={cn("relative z-10", activeSlide === index && "text-foreground")}>{item.tab}</span>
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+        <div className="rounded-[24px] border border-border/60 bg-background/60 p-5">
+          <h2 className="text-balance text-3xl font-semibold tracking-tight sm:text-4xl">{slide.title}</h2>
+          <p className="mt-2 max-w-lg text-sm text-muted-foreground sm:text-base">{slide.subtitle}</p>
+
+          <div className="mt-5 space-y-2">
+            <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              <span>{slide.progressLabel}</span>
+              <span>{slide.progressValue}%</span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+              <motion.div
+                className="h-full rounded-full bg-foreground"
+                initial={false}
+                animate={{ width: `${slide.progressValue}%` }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+              />
+            </div>
+          </div>
+
+          <div className="mt-4 min-h-[220px]">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={`${slide.id}-modules`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                className="grid gap-3 sm:grid-cols-2"
+              >
+                {slide.modules.map((module) => {
+                  const moduleStatus = resolveModuleStatus(module.status)
+                  return (
+                    <article
+                      key={`${slide.id}-module-${module.index}`}
+                      className="group flex min-h-[182px] flex-col overflow-hidden rounded-[22px] border border-border/60 bg-card text-left shadow-sm"
+                    >
+                      <div className="relative mx-[5px] mb-2 mt-[5px] aspect-[5/3] overflow-hidden rounded-[18px] bg-muted/35">
+                        <GridPattern
+                          width={24}
+                          height={24}
+                          patternId={`accelerator-preview-module-${slide.id}-${module.index}`}
+                          className="inset-x-0 inset-y-[-35%] h-[170%] skew-y-6 opacity-60 [mask-image:radial-gradient(220px_circle_at_center,white,transparent)]"
+                        />
+                        <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/5 via-transparent to-background/20" />
+                        <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                          <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-border/70 bg-background/85 text-foreground shadow-sm">
+                            {module.icon}
+                          </span>
+                        </span>
+                        <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-1 text-[10px] font-medium text-muted-foreground shadow-sm">
+                          Module {module.index}
+                        </span>
+                      </div>
+                      <div className="space-y-1 px-3 pb-3">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] uppercase tracking-wide text-muted-foreground">{moduleStatus.cta}</span>
+                          <span
+                            className={cn(
+                              "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium",
+                              moduleStatus.className,
+                            )}
+                          >
+                            {moduleStatus.label}
+                          </span>
+                        </div>
+                        <p className="text-sm font-semibold leading-tight text-foreground">{module.title}</p>
+                        <p className="line-clamp-2 text-xs text-muted-foreground">{module.description}</p>
+                      </div>
+                    </article>
+                  )
+                })}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+
+        <div className="rounded-[24px] border border-border/60 bg-background p-5">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold tracking-tight text-foreground">Progress</p>
+            <div className="inline-flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => shiftSlide(-1)}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/70 text-muted-foreground transition hover:text-foreground"
+                aria-label="Previous slide"
+              >
+                <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+              </button>
+              <button
+                type="button"
+                onClick={() => shiftSlide(1)}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-border/70 text-muted-foreground transition hover:text-foreground"
+                aria-label="Next slide"
+              >
+                <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+              </button>
+            </div>
+          </div>
+
+          <div className="min-h-[220px]">
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.ul
+                key={`${slide.id}-steps`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+                className="space-y-2"
+              >
+                {slide.steps.map((step, index) => (
+                  <li key={`${slide.id}-${step.label}`} className="flex items-center gap-2.5">
+                    <span className={stepCircleClass(step.state)} aria-hidden>
+                      {step.state === "complete" ? <Check className="h-3.5 w-3.5" aria-hidden /> : index + 1}
+                    </span>
+                    <span className={stepTextClass(step.state)}>{step.label}</span>
+                  </li>
+                ))}
+              </motion.ul>
+            </AnimatePresence>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 flex items-center justify-center gap-2">
+        {ACCELERATOR_PREVIEW_SLIDES.map((item, index) => (
+          <button
+            key={`${item.id}-dot`}
+            type="button"
+            onClick={() => jumpToSlide(index)}
+            className="relative inline-flex h-2.5 w-8 items-center justify-center rounded-full"
+            aria-label={`Go to ${item.tab}`}
+            aria-current={activeSlide === index ? "true" : undefined}
+          >
+            <span className="absolute inset-0 rounded-full bg-muted" />
+            {activeSlide === index ? (
+              <motion.span
+                layoutId="accelerator-slide-dot"
+                className="absolute inset-0 rounded-full bg-foreground"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+              />
+            ) : null}
+          </button>
+        ))}
       </div>
     </div>
   )

@@ -7,7 +7,6 @@ import ArrowUpDownIcon from "lucide-react/dist/esm/icons/arrow-up-down"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
 
-import { startCheckout } from "@/app/(public)/pricing/actions"
 import { StripePoweredBadge } from "@/components/billing/stripe-powered-badge"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -297,19 +296,17 @@ export function PaywallOverlay({ currentPlanTier = "free" }: PaywallOverlayProps
                       </ul>
                       <div className="mt-auto space-y-2 pt-2">
                         {details.cta && tier.planName ? (
-                          <form action={startCheckout} className="w-full" data-checkout-form="true">
-                            <input type="hidden" name="checkoutMode" value="organization" />
-                            <input type="hidden" name="planTier" value={tier.id} />
-                            <input type="hidden" name="planName" value={tier.planName} />
-                            <input type="hidden" name="source" value={source ?? "billing"} />
-                            <Button
-                              type="submit"
-                              className="h-10 w-full rounded-xl"
-                              variant={tier.id === "organization" ? "default" : "secondary"}
+                          <Button
+                            asChild
+                            className="h-10 w-full rounded-xl"
+                            variant={tier.id === "organization" ? "default" : "secondary"}
+                          >
+                            <Link
+                              href={`/api/stripe/checkout?plan=${tier.id}&source=${encodeURIComponent(source ?? "billing")}`}
                             >
                               {details.cta}
-                            </Button>
-                          </form>
+                            </Link>
+                          </Button>
                         ) : (
                           <p className="rounded-xl border border-border/70 bg-muted/35 px-3 py-2 text-center text-xs font-medium text-muted-foreground">
                             {details.note}

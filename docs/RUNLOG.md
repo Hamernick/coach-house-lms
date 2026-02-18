@@ -8685,3 +8685,19 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm lint` ✅
   - `pnpm build` ✅
+
+## 2026-02-18 — Codex paywall checkout route fallback for tester reliability
+
+- Scope:
+  - Addressed persistent tester checkout failures from onboarding/paywall CTA path.
+- Files:
+  - `src/app/api/stripe/checkout/route.ts`
+  - `src/components/paywall/paywall-overlay.tsx`
+- Changes:
+  - Added dedicated route checkout endpoint: `GET /api/stripe/checkout`.
+  - Route performs authenticated checkout creation with audience-aware Stripe runtime selection (tester vs primary), resolves plan tier from query, and redirects directly to Stripe Checkout URL.
+  - Added route-level structured error logging for Stripe failures (`stripeType`, `stripeCode`, etc.) to improve production debugging.
+  - Updated paywall CTA buttons to use direct route links instead of server-action form submit for improved reliability in dialog/onboarding contexts.
+- Validation:
+  - `pnpm lint` ✅
+  - `pnpm build` ✅

@@ -54,6 +54,20 @@ const FORMATION_OPTIONS: Array<{
 export type OnboardingDialogProps = {
   open: boolean
   defaultEmail?: string | null
+  defaultOrgName?: string | null
+  defaultOrgSlug?: string | null
+  defaultFormationStatus?: FormationStatus | null
+  defaultIntentFocus?: IntentFocus | null
+  defaultRoleInterest?: RoleInterest | null
+  defaultFirstName?: string | null
+  defaultLastName?: string | null
+  defaultPhone?: string | null
+  defaultPublicEmail?: string | null
+  defaultTitle?: string | null
+  defaultLinkedin?: string | null
+  defaultAvatarUrl?: string | null
+  defaultOptInUpdates?: boolean | null
+  defaultNewsletterOptIn?: boolean | null
   onSubmit: (form: FormData) => Promise<void>
   presentation?: "dialog" | "inline"
 }
@@ -189,9 +203,90 @@ function resolveOnboardingError(raw: string | null) {
 export function OnboardingDialog({
   open,
   defaultEmail,
+  defaultOrgName,
+  defaultOrgSlug,
+  defaultFormationStatus,
+  defaultIntentFocus,
+  defaultRoleInterest,
+  defaultFirstName,
+  defaultLastName,
+  defaultPhone,
+  defaultPublicEmail,
+  defaultTitle,
+  defaultLinkedin,
+  defaultAvatarUrl,
+  defaultOptInUpdates,
+  defaultNewsletterOptIn,
   onSubmit,
   presentation = "dialog",
 }: OnboardingDialogProps) {
+  const initialOrgName = (defaultOrgName ?? "").trim()
+  const initialOrgSlug = slugify((defaultOrgSlug ?? "").trim() || initialOrgName)
+  const initialFormationStatus: FormationStatus | "" =
+    defaultFormationStatus === "pre_501c3" ||
+    defaultFormationStatus === "in_progress" ||
+    defaultFormationStatus === "approved"
+      ? defaultFormationStatus
+      : ""
+  const initialIntentFocus: IntentFocus | "" =
+    defaultIntentFocus === "build" ||
+    defaultIntentFocus === "find" ||
+    defaultIntentFocus === "fund" ||
+    defaultIntentFocus === "support"
+      ? defaultIntentFocus
+      : "build"
+  const initialRoleInterest: RoleInterest | "" =
+    defaultRoleInterest === "staff" ||
+    defaultRoleInterest === "operator" ||
+    defaultRoleInterest === "volunteer" ||
+    defaultRoleInterest === "board_member"
+      ? defaultRoleInterest
+      : ""
+  const initialFirstName = (defaultFirstName ?? "").trim()
+  const initialLastName = (defaultLastName ?? "").trim()
+  const initialPhone = (defaultPhone ?? "").trim()
+  const initialPublicEmail = (defaultPublicEmail ?? defaultEmail ?? "").trim()
+  const initialTitle = (defaultTitle ?? "").trim()
+  const initialLinkedin = (defaultLinkedin ?? "").trim()
+  const initialAvatarUrl = (defaultAvatarUrl ?? "").trim() || null
+  const initialOptInUpdates = defaultOptInUpdates ?? true
+  const initialNewsletterOptIn = defaultNewsletterOptIn ?? true
+  const persistedFieldDefaults = React.useMemo<Record<string, string>>(
+    () => ({
+      intentFocus: initialIntentFocus || "",
+      roleInterest: initialRoleInterest || "",
+      orgName: initialOrgName,
+      orgSlug: initialOrgSlug,
+      firstName: initialFirstName,
+      lastName: initialLastName,
+      phone: initialPhone,
+      publicEmail: initialPublicEmail,
+      title: initialTitle,
+      linkedin: initialLinkedin,
+    }),
+    [
+      initialIntentFocus,
+      initialRoleInterest,
+      initialOrgName,
+      initialOrgSlug,
+      initialFirstName,
+      initialLastName,
+      initialPhone,
+      initialPublicEmail,
+      initialTitle,
+      initialLinkedin,
+    ],
+  )
+
+  const resolveDraftFieldValue = React.useCallback(
+    (key: string, draftValue: unknown) => {
+      const value = typeof draftValue === "string" ? draftValue : ""
+      if (value.trim().length > 0) return value
+      return persistedFieldDefaults[key] ?? value
+    },
+    [persistedFieldDefaults],
+  )
+
   const searchParams = useSearchParams()
   const [step, setStep] = useState(0)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -200,16 +295,16 @@ export function OnboardingDialog({
   const [slugStatus, setSlugStatus] = useState<
     "idle" | "checking" | "available" | "unavailable"
   >("idle")
-  const [orgNameValue, setOrgNameValue] = useState("")
-  const [orgSlugInputValue, setOrgSlugInputValue] = useState("")
-  const [slugValue, setSlugValue] = useState("")
+  const [orgNameValue, setOrgNameValue] = useState(initialOrgName)
+  const [orgSlugInputValue, setOrgSlugInputValue] = useState(initialOrgSlug)
+  const [slugValue, setSlugValue] = useState(initialOrgSlug)
   const [slugHint, setSlugHint] = useState<string | null>(null)
   const [formationStatus, setFormationStatus] =
-    useState<FormationStatus | "">("")
-  const [intentFocus, setIntentFocus] = useState<IntentFocus | "">("build")
-  const [roleInterest, setRoleInterest] = useState<RoleInterest | "">("")
+    useState<FormationStatus | "">(initialFormationStatus)
+  const [intentFocus, setIntentFocus] = useState<IntentFocus | "">(initialIntentFocus)
+  const [roleInterest, setRoleInterest] = useState<RoleInterest | "">(initialRoleInterest)
 
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(initialAvatarUrl)
   const [rawImageUrl, setRawImageUrl] = useState<string | null>(null)
   const [cropOpen, setCropOpen] = useState(false)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
@@ -271,29 +366,33 @@ export function OnboardingDialog({
             | HTMLTextAreaElement
             | null
           if (!el) continue
-          el.value = value
+          el.value = resolveDraftFieldValue(key, value)
         }
-        if (typeof draft.values.orgName === "string") {
-          setOrgNameValue(draft.values.orgName)
+        const draftOrgName = resolveDraftFieldValue("orgName", draft.values.orgName)
+        if (draftOrgName) {
+          setOrgNameValue(draftOrgName)
         }
-        if (typeof draft.values.orgSlug === "string") {
-          setOrgSlugInputValue(slugify(draft.values.orgSlug))
+        const draftOrgSlug = slugify(resolveDraftFieldValue("orgSlug", draft.values.orgSlug))
+        if (draftOrgSlug) {
+          setOrgSlugInputValue(draftOrgSlug)
         }
+        const draftIntentFocus = resolveDraftFieldValue("intentFocus", draft.values.intentFocus)
         if (
-          draft.values.intentFocus === "build" ||
-          draft.values.intentFocus === "find" ||
-          draft.values.intentFocus === "fund" ||
-          draft.values.intentFocus === "support"
+          draftIntentFocus === "build" ||
+          draftIntentFocus === "find" ||
+          draftIntentFocus === "fund" ||
+          draftIntentFocus === "support"
         ) {
-          setIntentFocus(draft.values.intentFocus)
+          setIntentFocus(draftIntentFocus)
         }
+        const draftRoleInterest = resolveDraftFieldValue("roleInterest", draft.values.roleInterest)
         if (
-          draft.values.roleInterest === "staff" ||
-          draft.values.roleInterest === "operator" ||
-          draft.values.roleInterest === "volunteer" ||
-          draft.values.roleInterest === "board_member"
+          draftRoleInterest === "staff" ||
+          draftRoleInterest === "operator" ||
+          draftRoleInterest === "volunteer" ||
+          draftRoleInterest === "board_member"
         ) {
-          setRoleInterest(draft.values.roleInterest)
+          setRoleInterest(draftRoleInterest)
         }
       }
 
@@ -312,7 +411,7 @@ export function OnboardingDialog({
     } catch {
       // ignore malformed draft
     }
-  }, [])
+  }, [resolveDraftFieldValue])
 
   const saveDraft = (
     extra?: Partial<{
@@ -458,8 +557,6 @@ export function OnboardingDialog({
         draft.formationStatus === "approved"
       ) {
         setFormationStatus(draft.formationStatus)
-      } else {
-        setFormationStatus("")
       }
       if (
         draft.intentFocus === "build" ||
@@ -468,8 +565,6 @@ export function OnboardingDialog({
         draft.intentFocus === "support"
       ) {
         setIntentFocus(draft.intentFocus)
-      } else if (!draft.values?.intentFocus) {
-        setIntentFocus("build")
       }
       if (
         draft.roleInterest === "staff" ||
@@ -478,11 +573,9 @@ export function OnboardingDialog({
         draft.roleInterest === "board_member"
       ) {
         setRoleInterest(draft.roleInterest)
-      } else if (!draft.values?.roleInterest) {
-        setRoleInterest("")
       }
       setSlugEdited(Boolean(draft.slugEdited))
-      if (draft.avatar) setAvatarPreview(draft.avatar)
+      if (typeof draft.avatar === "string" && draft.avatar.trim().length > 0) setAvatarPreview(draft.avatar)
 
       const form = formRef.current
       if (!form || !draft.values) return
@@ -493,15 +586,15 @@ export function OnboardingDialog({
           | HTMLTextAreaElement
           | null
         if (!el) continue
-        el.value = value
+        el.value = resolveDraftFieldValue(key, value)
       }
 
-      const orgName = draft.values.orgName ?? ""
+      const orgName = resolveDraftFieldValue("orgName", draft.values.orgName)
       if (orgName) {
         setOrgNameValue(orgName)
       }
 
-      const slug = draft.values.orgSlug ?? ""
+      const slug = resolveDraftFieldValue("orgSlug", draft.values.orgSlug)
       if (slug) {
         const normalizedSlug = slugify(slug)
         setSlugValue(normalizedSlug)
@@ -509,20 +602,20 @@ export function OnboardingDialog({
         setSlugHint(null)
       }
       if (
-        draft.values.intentFocus === "build" ||
-        draft.values.intentFocus === "find" ||
-        draft.values.intentFocus === "fund" ||
-        draft.values.intentFocus === "support"
+        resolveDraftFieldValue("intentFocus", draft.values.intentFocus) === "build" ||
+        resolveDraftFieldValue("intentFocus", draft.values.intentFocus) === "find" ||
+        resolveDraftFieldValue("intentFocus", draft.values.intentFocus) === "fund" ||
+        resolveDraftFieldValue("intentFocus", draft.values.intentFocus) === "support"
       ) {
-        setIntentFocus(draft.values.intentFocus)
+        setIntentFocus(resolveDraftFieldValue("intentFocus", draft.values.intentFocus) as IntentFocus)
       }
       if (
-        draft.values.roleInterest === "staff" ||
-        draft.values.roleInterest === "operator" ||
-        draft.values.roleInterest === "volunteer" ||
-        draft.values.roleInterest === "board_member"
+        resolveDraftFieldValue("roleInterest", draft.values.roleInterest) === "staff" ||
+        resolveDraftFieldValue("roleInterest", draft.values.roleInterest) === "operator" ||
+        resolveDraftFieldValue("roleInterest", draft.values.roleInterest) === "volunteer" ||
+        resolveDraftFieldValue("roleInterest", draft.values.roleInterest) === "board_member"
       ) {
-        setRoleInterest(draft.values.roleInterest)
+        setRoleInterest(resolveDraftFieldValue("roleInterest", draft.values.roleInterest) as RoleInterest)
       }
 
       if (draft.flags?.optInUpdates !== undefined) {
@@ -543,7 +636,7 @@ export function OnboardingDialog({
     } catch {
       // ignore
     }
-  }, [open, syncProgress])
+  }, [open, resolveDraftFieldValue, syncProgress])
 
   useEffect(() => {
     if (!open) return
@@ -690,10 +783,10 @@ export function OnboardingDialog({
   }
 
   const removeAvatar = () => {
-    if (avatarPreview) {
+    if (avatarPreview?.startsWith("blob:")) {
       URL.revokeObjectURL(avatarPreview)
     }
-    if (rawImageUrl) {
+    if (rawImageUrl?.startsWith("blob:")) {
       URL.revokeObjectURL(rawImageUrl)
     }
     setAvatarPreview(null)
@@ -909,6 +1002,7 @@ export function OnboardingDialog({
                     id="orgName"
                     name="orgName"
                     placeholder="Acme Inc."
+                    defaultValue={initialOrgName}
                     aria-invalid={attemptedStep === step && Boolean(errors.orgName)}
                     onChange={(event) => {
                       const value = event.currentTarget.value
@@ -940,6 +1034,7 @@ export function OnboardingDialog({
                       id="orgSlug"
                       name="orgSlug"
                       placeholder="acme"
+                      defaultValue={initialOrgSlug}
                       className="h-9 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
                       aria-invalid={attemptedStep === step && Boolean(errors.orgSlug)}
                       onChange={(event) => {
@@ -1097,6 +1192,7 @@ export function OnboardingDialog({
                   <Input
                     id="firstName"
                     name="firstName"
+                    defaultValue={initialFirstName}
                     aria-invalid={attemptedStep === step && Boolean(errors.firstName)}
                   />
                   {attemptedStep === step && errors.firstName ? (
@@ -1110,6 +1206,7 @@ export function OnboardingDialog({
                   <Input
                     id="lastName"
                     name="lastName"
+                    defaultValue={initialLastName}
                     aria-invalid={attemptedStep === step && Boolean(errors.lastName)}
                   />
                   {attemptedStep === step && errors.lastName ? (
@@ -1127,6 +1224,7 @@ export function OnboardingDialog({
                   name="phone"
                   type="tel"
                   placeholder="(555) 555-5555"
+                  defaultValue={initialPhone}
                 />
                 <p className="text-muted-foreground min-h-8 text-xs leading-4">Optional.</p>
               </div>
@@ -1141,6 +1239,7 @@ export function OnboardingDialog({
                     name="publicEmail"
                     type="email"
                     placeholder="contact@yourorg.org"
+                    defaultValue={initialPublicEmail}
                   />
                   <p className="text-muted-foreground text-xs">
                     Shown on your workspace/profile for collaborators.
@@ -1152,6 +1251,7 @@ export function OnboardingDialog({
                     id="title"
                     name="title"
                     placeholder="Founder, Executive Director, etc."
+                    defaultValue={initialTitle}
                   />
                   <p className="invisible text-xs">Optional.</p>
                 </div>
@@ -1163,6 +1263,7 @@ export function OnboardingDialog({
                   id="linkedin"
                   name="linkedin"
                   placeholder="https://linkedin.com/in/…"
+                  defaultValue={initialLinkedin}
                 />
               </div>
 
@@ -1171,7 +1272,7 @@ export function OnboardingDialog({
                   <input
                     type="checkbox"
                     name="optInUpdates"
-                    defaultChecked
+                    defaultChecked={initialOptInUpdates}
                     className="mt-1 h-4 w-4"
                   />
                   <span className="space-y-0.5">
@@ -1187,7 +1288,7 @@ export function OnboardingDialog({
                   <input
                     type="checkbox"
                     name="newsletterOptIn"
-                    defaultChecked
+                    defaultChecked={initialNewsletterOptIn}
                     className="mt-1 h-4 w-4"
                   />
                   <span className="space-y-0.5">

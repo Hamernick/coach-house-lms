@@ -499,8 +499,8 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
                           </span>
                         </th>
                       </tr>
-                      {group.rows.map((row) => (
-                        <tr key={`${group.title}-${row.label}`} className="border-t border-border/60">
+                      {group.rows.map((row, rowIndex) => (
+                        <tr key={`${group.title}-${row.label}-${row.labelBadge ?? "none"}-${rowIndex}`} className="border-t border-border/60">
                           <th scope="row" className="px-6 py-4 font-medium text-foreground">
                             <span className="inline-flex flex-wrap items-center gap-2">
                               <span>{row.label}</span>

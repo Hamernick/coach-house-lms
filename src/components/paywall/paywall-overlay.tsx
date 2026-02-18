@@ -152,6 +152,19 @@ export function PaywallOverlay({ currentPlanTier = "free" }: PaywallOverlayProps
   const source = searchParams.get("source")
   const isOpen = Boolean(paywallKind)
   const isOnboardingSource = source === "onboarding"
+  const checkoutErrorCode = searchParams.get("checkout_error")
+  const checkoutErrorMessage =
+    checkoutErrorCode === "missing_price"
+      ? "Checkout is not configured for this plan yet."
+      : checkoutErrorCode === "operations_unavailable"
+        ? "Operations Support checkout is not available right now."
+        : checkoutErrorCode === "stripe_unavailable"
+          ? "Stripe is temporarily unavailable. Please try again in a moment."
+          : checkoutErrorCode === "session_url_missing"
+            ? "Stripe could not create a checkout link. Please try again."
+            : checkoutErrorCode === "checkout_failed"
+              ? "We could not start checkout. Please try again."
+              : null
 
   const reasonCopy = (() => {
     if (isOnboardingSource) {
@@ -218,6 +231,11 @@ export function PaywallOverlay({ currentPlanTier = "free" }: PaywallOverlayProps
               <SparklesIcon className="mt-0.5 h-4 w-4 shrink-0 text-foreground/70" aria-hidden />
               <p className="text-sm font-medium text-foreground">{reasonCopy}</p>
             </div>
+            {checkoutErrorMessage ? (
+              <div className="rounded-2xl border border-amber-300/70 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+                {checkoutErrorMessage}
+              </div>
+            ) : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {OVERLAY_TIERS.map((tier) => {
                 const details = resolveTierLabel({ tier, currentPlanTier })
@@ -272,9 +290,10 @@ export function PaywallOverlay({ currentPlanTier = "free" }: PaywallOverlayProps
                       </ul>
                       <div className="mt-auto space-y-2 pt-2">
                         {details.cta && tier.planName ? (
-                          <form action={startCheckout} className="w-full">
+                          <form action={startCheckout} className="w-full" data-checkout-form="true">
                             <input type="hidden" name="checkoutMode" value="organization" />
                             <input type="hidden" name="planName" value={tier.planName} />
+                            <input type="hidden" name="source" value={source ?? "billing"} />
                             <Button
                               type="submit"
                               className="h-10 w-full rounded-xl"

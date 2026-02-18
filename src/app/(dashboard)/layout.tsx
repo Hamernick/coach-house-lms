@@ -52,11 +52,32 @@ export default async function DashboardLayout({
   let formationStatus: string | null = null
   let organizationName: string | null = null
   let currentPlanTier: PricingPlanTier = "free"
+  let onboardingDefaultOrgSlug: string | null = null
+  let onboardingDefaultFormationStatus: "pre_501c3" | "in_progress" | "approved" | null = null
+  let onboardingDefaultIntentFocus: "build" | "find" | "fund" | "support" | null = null
+  let onboardingDefaultRoleInterest: "staff" | "operator" | "volunteer" | "board_member" | null = null
+  let onboardingDefaultFirstName: string | null = null
+  let onboardingDefaultLastName: string | null = null
+  let onboardingDefaultPhone: string | null = null
+  let onboardingDefaultPublicEmail: string | null = null
+  let onboardingDefaultTitle: string | null = null
+  let onboardingDefaultLinkedin: string | null = null
+  let onboardingDefaultOptInUpdates: boolean | null = null
+  let onboardingDefaultNewsletterOptIn: boolean | null = null
 
   if (user) {
     const fallbackIsTester = resolveTesterMetadata(user.user_metadata ?? null)
     const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
     const completed = Boolean(userMeta?.onboarding_completed)
+    const metadataIntentFocus = typeof userMeta?.onboarding_intent_focus === "string" ? userMeta.onboarding_intent_focus : null
+    const metadataRoleInterest = typeof userMeta?.onboarding_role_interest === "string" ? userMeta.onboarding_role_interest : null
+    const metadataPhone = typeof userMeta?.phone === "string" ? userMeta.phone.trim() : ""
+    const metadataFirstName = typeof userMeta?.first_name === "string" ? userMeta.first_name.trim() : ""
+    const metadataLastName = typeof userMeta?.last_name === "string" ? userMeta.last_name.trim() : ""
+    const metadataOptInUpdates =
+      typeof userMeta?.marketing_opt_in === "boolean" ? userMeta.marketing_opt_in : null
+    const metadataNewsletterOptIn =
+      typeof userMeta?.newsletter_opt_in === "boolean" ? userMeta.newsletter_opt_in : null
 
     const [profileAudience, activeOrg] = await Promise.all([
       resolveProfileAudience({
@@ -81,6 +102,33 @@ export default async function DashboardLayout({
       (typeof user.user_metadata?.avatar_url === "string"
         ? (user.user_metadata.avatar_url as string)
         : null)
+
+    const normalizedDisplayName = typeof displayName === "string" ? displayName.trim() : ""
+    const parsedDisplayParts = normalizedDisplayName ? normalizedDisplayName.split(/\s+/) : []
+    const fallbackFirstName = parsedDisplayParts[0] ?? ""
+    const fallbackLastName = parsedDisplayParts.slice(1).join(" ")
+    onboardingDefaultFirstName = metadataFirstName || fallbackFirstName || null
+    onboardingDefaultLastName = metadataLastName || fallbackLastName || null
+    onboardingDefaultPhone = metadataPhone || null
+    onboardingDefaultOptInUpdates = metadataOptInUpdates
+    onboardingDefaultNewsletterOptIn = metadataNewsletterOptIn
+
+    if (
+      metadataIntentFocus === "build" ||
+      metadataIntentFocus === "find" ||
+      metadataIntentFocus === "fund" ||
+      metadataIntentFocus === "support"
+    ) {
+      onboardingDefaultIntentFocus = metadataIntentFocus
+    }
+    if (
+      metadataRoleInterest === "staff" ||
+      metadataRoleInterest === "operator" ||
+      metadataRoleInterest === "volunteer" ||
+      metadataRoleInterest === "board_member"
+    ) {
+      onboardingDefaultRoleInterest = metadataRoleInterest
+    }
 
     // Admins never see onboarding; students see it until completed.
     needsOnboarding = !isAdmin && !completed
@@ -115,10 +163,41 @@ export default async function DashboardLayout({
     ])
 
     const orgProfile = (orgRowResult.data?.profile as Record<string, unknown> | null) ?? null
+    const orgPeople = Array.isArray(orgProfile?.org_people)
+      ? (orgProfile.org_people as Array<Record<string, unknown>>)
+      : []
+    const orgSlug = typeof orgRowResult.data?.public_slug === "string" ? orgRowResult.data.public_slug.trim() : ""
     const fs = typeof orgProfile?.formationStatus === "string" ? orgProfile.formationStatus : null
     formationStatus = fs
+    if (fs === "pre_501c3" || fs === "in_progress" || fs === "approved") {
+      onboardingDefaultFormationStatus = fs
+    }
     const orgName = typeof orgProfile?.name === "string" ? orgProfile.name.trim() : ""
     organizationName = orgName.length > 0 ? orgName : null
+    onboardingDefaultOrgSlug = orgSlug || null
+
+    const ownerPerson =
+      orgPeople.find((person) => typeof person?.id === "string" && person.id === user.id) ??
+      orgPeople.find((person) => {
+        const personEmail = typeof person?.email === "string" ? person.email.trim().toLowerCase() : ""
+        const currentEmail = (email ?? "").trim().toLowerCase()
+        return Boolean(personEmail && currentEmail && personEmail === currentEmail)
+      }) ??
+      null
+
+    const ownerTitle = typeof ownerPerson?.title === "string" ? ownerPerson.title.trim() : ""
+    const ownerLinkedin = typeof ownerPerson?.linkedin === "string" ? ownerPerson.linkedin.trim() : ""
+    const ownerEmail = typeof ownerPerson?.email === "string" ? ownerPerson.email.trim() : ""
+    const orgEmail = typeof orgProfile?.email === "string" ? orgProfile.email.trim() : ""
+    const orgPhone = typeof orgProfile?.phone === "string" ? orgProfile.phone.trim() : ""
+    const orgLinkedin = typeof orgProfile?.linkedin === "string" ? orgProfile.linkedin.trim() : ""
+
+    onboardingDefaultTitle = ownerTitle || null
+    onboardingDefaultLinkedin = orgLinkedin || ownerLinkedin || null
+    onboardingDefaultPublicEmail = orgEmail || ownerEmail || email || null
+    if (!onboardingDefaultPhone && orgPhone) {
+      onboardingDefaultPhone = orgPhone
+    }
 
     if (publicSharingEnabled) {
       const hasSlug = Boolean(
@@ -221,6 +300,20 @@ export default async function DashboardLayout({
           enabled: Boolean(user),
           open: needsOnboarding,
           defaultEmail: email,
+          defaultOrgName: organizationName,
+          defaultOrgSlug: onboardingDefaultOrgSlug,
+          defaultFormationStatus: onboardingDefaultFormationStatus,
+          defaultIntentFocus: onboardingDefaultIntentFocus,
+          defaultRoleInterest: onboardingDefaultRoleInterest,
+          defaultFirstName: onboardingDefaultFirstName,
+          defaultLastName: onboardingDefaultLastName,
+          defaultPhone: onboardingDefaultPhone,
+          defaultPublicEmail: onboardingDefaultPublicEmail,
+          defaultTitle: onboardingDefaultTitle,
+          defaultLinkedin: onboardingDefaultLinkedin,
+          defaultAvatarUrl: avatar,
+          defaultOptInUpdates: onboardingDefaultOptInUpdates,
+          defaultNewsletterOptIn: onboardingDefaultNewsletterOptIn,
           onSubmit: completeOnboardingAction,
         }}
         onboardingLocked={needsOnboarding}

@@ -25,6 +25,7 @@ import { NewsGradientThumb } from "@/components/news/gradient-thumb"
 import { Button } from "@/components/ui/button"
 import { FlipWords } from "@/components/ui/flip-words"
 import { ScrollReveal } from "@/components/ui/scroll-reveal"
+import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern/index"
 import { cn } from "@/lib/utils"
 
 const heading = Sora({
@@ -190,6 +191,7 @@ type AcceleratorPreviewSlide = {
     title: string
     description: string
     status: AcceleratorPreviewModuleStatus
+    icon: ReactNode
   }>
   steps: Array<{ label: string; state: AcceleratorPreviewStepState }>
 }
@@ -208,12 +210,14 @@ const ACCELERATOR_PREVIEW_SLIDES: AcceleratorPreviewSlide[] = [
         title: "Naming your NFP",
         description: "Define a clear name, identity, and public framing.",
         status: "completed",
+        icon: <Target className="h-5 w-5" aria-hidden />,
       },
       {
         index: 2,
         title: "NFP registration",
         description: "Set structure, legal path, and registration checklist.",
         status: "in_progress",
+        icon: <PanelTop className="h-5 w-5" aria-hidden />,
       },
     ],
     steps: [
@@ -237,12 +241,14 @@ const ACCELERATOR_PREVIEW_SLIDES: AcceleratorPreviewSlide[] = [
         title: "Origin Story",
         description: "Capture why this work matters now and who it serves.",
         status: "completed",
+        icon: <Layers className="h-5 w-5" aria-hidden />,
       },
       {
         index: 4,
         title: "Needs statement",
         description: "Define the problem, evidence, and urgency for funders.",
         status: "in_progress",
+        icon: <CircleDollarSign className="h-5 w-5" aria-hidden />,
       },
     ],
     steps: [
@@ -267,12 +273,14 @@ const ACCELERATOR_PREVIEW_SLIDES: AcceleratorPreviewSlide[] = [
         title: "Program strategy",
         description: "Align delivery model, impact outcomes, and capacity.",
         status: "not_started",
+        icon: <CalendarCheck className="h-5 w-5" aria-hidden />,
       },
       {
         index: 6,
         title: "Funding narrative",
         description: "Package your strategy into a funder-ready storyline.",
         status: "not_started",
+        icon: <CircleDollarSign className="h-5 w-5" aria-hidden />,
       },
     ],
     steps: [
@@ -659,6 +667,18 @@ export function Home2AcceleratorOverviewSection() {
                         className="group flex min-h-[182px] flex-col overflow-hidden rounded-[22px] border border-border/60 bg-card text-left shadow-sm"
                       >
                         <div className="relative mx-[5px] mb-2 mt-[5px] aspect-[5/3] overflow-hidden rounded-[18px] bg-muted/35">
+                          <GridPattern
+                            width={24}
+                            height={24}
+                            patternId={`accelerator-preview-module-${slide.id}-${module.index}`}
+                            className="inset-x-0 inset-y-[-35%] h-[170%] skew-y-6 opacity-60 [mask-image:radial-gradient(220px_circle_at_center,white,transparent)]"
+                          />
+                          <span className="pointer-events-none absolute inset-0 bg-gradient-to-b from-background/5 via-transparent to-background/20" />
+                          <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                            <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-border/70 bg-background/85 text-foreground shadow-sm">
+                              {module.icon}
+                            </span>
+                          </span>
                           <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-background/85 px-2 py-1 text-[10px] font-medium text-muted-foreground shadow-sm">
                             Module {module.index}
                           </span>

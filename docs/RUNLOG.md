@@ -8434,3 +8434,102 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm eslint src/components/public/home2-sections.tsx 'src/app/(dashboard)/my-organization/page.tsx' 'src/app/(public)/pricing/actions.ts' 'src/app/(accelerator)/accelerator/page.tsx' src/lib/accelerator/readiness-checklist.ts` ✅
   - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-17 — Codex home accelerator preview centering + graph pattern
+
+- Updated Home Canvas accelerator overview cards so media blocks now render centered icon containers (instead of appearing visually empty/off-center).
+- Added graph/grid pattern treatment behind each preview module media tile to match the requested visual language.
+- File:
+  - `src/components/public/home2-sections.tsx`
+- Changes:
+  - added per-module icon metadata for all preview slides.
+  - rendered centered icon chip in each module preview media surface.
+  - layered `GridPattern` + subtle gradient in module preview media surfaces.
+  - retained module index label and existing status/CTA behavior.
+- Validation:
+  - `pnpm eslint src/components/public/home2-sections.tsx src/components/public/home-canvas-preview.tsx` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-17 — Codex pricing table key-collision fix
+
+- Fixed duplicate React key warning in Pricing feature breakdown table.
+- File:
+  - `src/components/public/pricing-surface.tsx`
+- Changes:
+  - updated feature row render key from `${group.title}-${row.label}` to `${group.title}-${row.label}-${row.labelBadge ?? "none"}-${rowIndex}`.
+  - this prevents collisions when a group contains duplicate row labels (for example repeated “Organizational profile”).
+- Validation:
+  - `pnpm eslint src/components/public/pricing-surface.tsx` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-17 — Codex paywall overlay checkout clickability + error visibility
+
+- Investigated onboarding paywall click behavior where $20/$58 tier clicks appeared to do nothing.
+- Files:
+  - `src/components/paywall/paywall-overlay.tsx`
+  - `src/app/(public)/pricing/actions.ts`
+- Changes:
+  - made paid tier cards click-submit checkout when clicking card body (not only the CTA button), while preserving normal button behavior.
+  - added inline checkout error banner in the overlay for `checkout_error` query codes so failures are visible.
+  - passed `source` through checkout form submission and preserved source in checkout-error redirects.
+- Validation:
+  - `pnpm eslint 'src/components/paywall/paywall-overlay.tsx' 'src/app/(public)/pricing/actions.ts'` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-17 — Codex paywall interaction rollback (CTA-only)
+
+- Reverted unintended whole-card click-to-submit behavior in paywall tier cards.
+- File:
+  - `src/components/paywall/paywall-overlay.tsx`
+- Changes:
+  - removed card-level `onClick` submit logic.
+  - removed checkout-card cursor affordance.
+  - checkout remains CTA-button only, as requested.
+- Retained:
+  - inline checkout error messaging in the overlay.
+  - tester checkout behavior fix in pricing action path.
+- Validation:
+  - `pnpm eslint 'src/components/paywall/paywall-overlay.tsx' 'src/app/(public)/pricing/actions.ts'` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-17 — Codex onboarding replay prefill from persisted data
+
+- Fixed onboarding replay so previously saved information is prefilled from persisted account/org data (not only local draft storage).
+- Files:
+  - `src/components/onboarding/onboarding-dialog.tsx`
+  - `src/app/(dashboard)/layout.tsx`
+- Changes:
+  - expanded `OnboardingDialogProps` with optional persisted defaults for org, account, intent, role, avatar, and opt-in flags.
+  - initialized onboarding state from defaults (`orgName`, `orgSlug`, `formationStatus`, `intentFocus`, `roleInterest`, `avatar`).
+  - added `defaultValue` wiring for org/account inputs and default checkbox states for update/newsletter opts.
+  - guarded avatar cleanup to only revoke blob URLs.
+  - computed and passed onboarding defaults from dashboard layout using `organizations.profile`, `public_slug`, `org_people`, `profiles/user metadata`, and current auth email/avatar.
+- Validation:
+  - `pnpm eslint 'src/components/onboarding/onboarding-dialog.tsx' 'src/app/(dashboard)/layout.tsx'` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-17 — Codex onboarding account-step replay hardening
+
+- Hardened replay prefill so account-step fields retain persisted values even when stale local drafts contain empty strings.
+- File:
+  - `src/components/onboarding/onboarding-dialog.tsx`
+- Changes:
+  - added persisted default field map + resolver for draft hydration.
+  - draft hydration now prefers persisted values when draft entries are empty/missing.
+  - removed state-reset fallbacks that were clearing valid persisted formation/role values when draft payload was partial.
+  - ensured lint-stable memoization for persisted default map.
+- Validation:
+  - `pnpm eslint 'src/components/onboarding/onboarding-dialog.tsx' 'src/app/(dashboard)/layout.tsx'` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-17 — Codex checkout no-op hardening (incomplete subscription)
+
+- Fixed a checkout short-circuit case where `incomplete` subscriptions could be treated as reusable, causing apparent no-op refresh behavior instead of opening Stripe Checkout.
+- File:
+  - `src/app/(public)/pricing/actions.ts`
+- Changes:
+  - narrowed reusable Stripe subscription statuses to `trialing|active|past_due` (removed `incomplete`).
+  - users with `incomplete` state now proceed to a fresh Checkout Session.
+- Validation:
+  - `pnpm eslint 'src/app/(public)/pricing/actions.ts' 'src/components/paywall/paywall-overlay.tsx' 'src/components/onboarding/onboarding-dialog.tsx' 'src/app/(dashboard)/layout.tsx'` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅

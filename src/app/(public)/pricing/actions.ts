@@ -8,10 +8,11 @@ import Stripe from "stripe"
 import { env } from "@/lib/env"
 import { requireServerSession } from "@/lib/auth"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
+import { resolveTesterMetadata } from "@/lib/devtools/audience"
 import type { Database } from "@/lib/supabase"
 
 const stripe = env.STRIPE_SECRET_KEY ? new Stripe(env.STRIPE_SECRET_KEY) : null
-const REUSABLE_STRIPE_SUBSCRIPTION_STATUSES = new Set(["trialing", "active", "past_due", "incomplete"])
+const REUSABLE_STRIPE_SUBSCRIPTION_STATUSES = new Set(["trialing", "active", "past_due"])
 
 type SubscriptionStatus = Database["public"]["Enums"]["subscription_status"]
 type SubscriptionInsert = Database["public"]["Tables"]["subscriptions"]["Insert"]
@@ -38,6 +39,7 @@ function toSubscriptionStatus(value: string): SubscriptionStatus {
 function redirectCheckoutError({
   planTier,
   code,
+  source = "billing",
 }: {
   planTier: "organization" | "operations_support"
   code:
@@ -46,8 +48,14 @@ function redirectCheckoutError({
     | "missing_price"
     | "session_url_missing"
     | "checkout_failed"
+  source?: string
 }): never {
-  redirect(`/organization?paywall=organization&plan=${planTier}&checkout_error=${code}&source=billing`)
+  const params = new URLSearchParams()
+  params.set("paywall", "organization")
+  params.set("plan", planTier)
+  params.set("checkout_error", code)
+  params.set("source", source)
+  redirect(`/organization?${params.toString()}`)
 }
 
 export async function startCheckout(formData: FormData) {
@@ -55,10 +63,25 @@ export async function startCheckout(formData: FormData) {
   const priceId = typeof priceIdEntry === "string" ? priceIdEntry : null
   const planNameEntry = formData.get("planName")
   const planName = typeof planNameEntry === "string" ? planNameEntry : undefined
+  const sourceEntry = formData.get("source")
+  const source = typeof sourceEntry === "string" && sourceEntry.trim().length > 0 ? sourceEntry.trim() : "billing"
 
   const { supabase, session } = await requireServerSession("/pricing")
 
   const user = session.user
+  const metadataTester = resolveTesterMetadata(user.user_metadata ?? null)
+  let profileTester = false
+  try {
+    const { data: testerProfile } = await supabase
+      .from("profiles")
+      .select("is_tester")
+      .eq("id", user.id)
+      .maybeSingle<{ is_tester: boolean | null }>()
+    profileTester = Boolean(testerProfile?.is_tester)
+  } catch {
+    profileTester = false
+  }
+  const forceCheckoutForTester = metadataTester || profileTester
 
   const requestHeaders = await headers()
   const origin =
@@ -74,7 +97,7 @@ export async function startCheckout(formData: FormData) {
   }
 
   if (!stripe) {
-    redirectCheckoutError({ planTier: "organization", code: "stripe_unavailable" })
+    redirectCheckoutError({ planTier: "organization", code: "stripe_unavailable", source })
   }
 
   try {
@@ -97,9 +120,9 @@ export async function startCheckout(formData: FormData) {
 
     if (!organizationPriceId) {
       if (planTier === "operations_support") {
-        redirectCheckoutError({ planTier, code: "operations_unavailable" })
+        redirectCheckoutError({ planTier, code: "operations_unavailable", source })
       }
-      redirectCheckoutError({ planTier: "organization", code: "missing_price" })
+      redirectCheckoutError({ planTier: "organization", code: "missing_price", source })
     }
 
     let existingSubscription: SubscriptionLookupRow | null = null
@@ -133,7 +156,7 @@ export async function startCheckout(formData: FormData) {
       existingSubscription = null
     }
 
-    if (existingSubscription?.stripe_subscription_id) {
+    if (!forceCheckoutForTester && existingSubscription?.stripe_subscription_id) {
       let existingStripeSubscription: Stripe.Subscription | null = null
       try {
         existingStripeSubscription = await stripeClient.subscriptions.retrieve(
@@ -233,7 +256,7 @@ export async function startCheckout(formData: FormData) {
     const checkout = await stripeClient.checkout.sessions.create(sessionParams)
 
     if (!checkout.url) {
-      redirectCheckoutError({ planTier, code: "session_url_missing" })
+      redirectCheckoutError({ planTier, code: "session_url_missing", source })
     }
 
     redirect(checkout.url!)
@@ -245,6 +268,6 @@ export async function startCheckout(formData: FormData) {
       throw error
     }
     console.warn("Unable to start Stripe checkout", error)
-    redirectCheckoutError({ planTier: "organization", code: "checkout_failed" })
+    redirectCheckoutError({ planTier: "organization", code: "checkout_failed", source })
   }
 }

@@ -472,7 +472,7 @@ export function HomeCanvasPreview({ initialSection, pricingPanel }: HomeCanvasPr
                 </SidebarMenu>
               </SidebarGroupContent>
             </SidebarGroup>
-            <SidebarGroup className="mt-auto pt-1">
+            <SidebarGroup className="mt-auto pt-1 pb-[var(--shell-rail-padding,0.75rem)]">
               <SidebarGroupContent>
                 <SidebarMenu>
                   <SidebarMenuItem>

@@ -16,7 +16,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import { cn } from "@/lib/utils"
 
-const PAYWALL_QUERY_KEYS = ["paywall", "plan", "upgrade", "module", "source"] as const
+const PAYWALL_QUERY_KEYS = [
+  "paywall",
+  "plan",
+  "upgrade",
+  "module",
+  "source",
+  "checkout_error",
+] as const
 
 type OverlayTier = {
   id: PricingPlanTier

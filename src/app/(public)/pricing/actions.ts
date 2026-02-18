@@ -26,6 +26,16 @@ type SubscriptionLookupRow = {
   metadata: Record<string, string> | null
 }
 
+function isNextRedirectError(error: unknown) {
+  if (isRedirectError(error)) return true
+  if (error instanceof Error && error.message.startsWith("redirect:")) return true
+  if (typeof error === "object" && error && "digest" in error) {
+    const digest = String((error as { digest?: unknown }).digest ?? "")
+    if (digest.startsWith("NEXT_REDIRECT")) return true
+  }
+  return false
+}
+
 function toSubscriptionStatus(value: string): SubscriptionStatus {
   const allowed: SubscriptionStatus[] = [
     "trialing",
@@ -253,13 +263,21 @@ export async function startCheckout(formData: FormData) {
 
     redirect(checkout.url!)
   } catch (error) {
-    if (
-      isRedirectError(error) ||
-      (error instanceof Error && error.message.startsWith("redirect:"))
-    ) {
+    if (isNextRedirectError(error)) {
       throw error
     }
-    console.warn("Unable to start Stripe checkout", error)
+    const stripeError = error as Stripe.errors.StripeError | null
+    console.error("Unable to start Stripe checkout", {
+      message: error instanceof Error ? error.message : "unknown_error",
+      planName,
+      source,
+      userId,
+      orgId,
+      stripeMode: stripeConfig.mode,
+      stripeType: stripeError?.type ?? null,
+      stripeCode: stripeError?.code ?? null,
+      stripeParam: stripeError?.param ?? null,
+    })
     redirectCheckoutError({ planTier: "organization", code: "checkout_failed", source })
   }
 }

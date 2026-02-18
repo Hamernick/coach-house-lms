@@ -8624,3 +8624,24 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm eslint src/lib/env.ts src/lib/billing/stripe-runtime.ts` ✅
   - `pnpm exec tsc --noEmit --pretty false` ✅
+
+## 2026-02-18 — Codex checkout reliability hardening (tester + production)
+
+- Scope:
+  - Investigated persistent `checkout_failed` behavior reported by tester upgrade actions.
+  - Audited all UI Stripe entry points (`/pricing`, paywall overlay, `/billing`, and portal action wiring).
+- Files:
+  - `src/app/(public)/pricing/actions.ts`
+  - `src/components/paywall/paywall-overlay.tsx`
+- Changes:
+  - Hardened redirect-error detection in `startCheckout` by handling `NEXT_REDIRECT` digests explicitly so successful redirect flows are never incorrectly treated as failures.
+  - Upgraded checkout failure logging to structured diagnostics (plan, source, user/org, stripe mode/type/code/param).
+  - Added `checkout_error` query key to paywall close/reset so stale checkout error banners do not persist across retries.
+- Validation:
+  - `pnpm lint` ✅
+  - `pnpm build` ✅
+- Notes:
+  - Pulled current production env and verified all four runtime combinations resolve to valid recurring monthly prices:
+    - primary org (`$20` live), primary ops (`$58` live)
+    - tester org (`$20` test), tester ops (`$58` test)
+  - Verified direct Stripe API session creation succeeds for all four combinations.

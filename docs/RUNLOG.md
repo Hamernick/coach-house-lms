@@ -8610,3 +8610,17 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - Stripe CLI live auth completed for account `acct_1QegK8GWpMHCiyVj`.
   - Returned key is restricted (`rk_live`) and does **not** have permissions for required endpoints (`checkout.sessions.create`, `prices.create`), so it cannot be used as the production server key.
   - Production still needs full-access live server key + live webhook secret + live recurring plan prices to complete true real-card checkout.
+
+## 2026-02-18 — Codex publishable key split for tester vs primary
+
+- Added explicit support for separate publishable keys across primary and tester audiences.
+- Files:
+  - `src/lib/env.ts`
+  - `src/lib/billing/stripe-runtime.ts`
+- Changes:
+  - Added `NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLE_KEY` to env schema and client env mapping.
+  - Added `resolveStripePublishableKeyForAudience()` helper in Stripe runtime.
+  - Set Vercel production `NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLE_KEY` (mirrored from current publishable key to preserve behavior until live cutover).
+- Validation:
+  - `pnpm eslint src/lib/env.ts src/lib/billing/stripe-runtime.ts` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅

@@ -103,6 +103,17 @@ export function resolveStripeWebhookRuntimeConfigs() {
   )
 }
 
+export function resolveStripePublishableKeyForAudience({
+  isTester,
+}: {
+  isTester: boolean
+}) {
+  const primary = normalizeString(env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
+  const tester = normalizeString(env.NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLE_KEY)
+  if (isTester) return tester ?? primary
+  return primary
+}
+
 export function resolveStripePriceIdForPlan({
   config,
   planTier,

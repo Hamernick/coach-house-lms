@@ -5,13 +5,15 @@ import { redirect } from "next/navigation"
 import { isRedirectError } from "next/dist/client/components/redirect-error"
 import Stripe from "stripe"
 
-import { env } from "@/lib/env"
 import { requireServerSession } from "@/lib/auth"
+import { resolveDevtoolsAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
+import {
+  resolveStripePriceIdForPlan,
+  resolveStripeRuntimeConfigForAudience,
+} from "@/lib/billing/stripe-runtime"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
-import { resolveTesterMetadata } from "@/lib/devtools/audience"
 import type { Database } from "@/lib/supabase"
 
-const stripe = env.STRIPE_SECRET_KEY ? new Stripe(env.STRIPE_SECRET_KEY) : null
 const REUSABLE_STRIPE_SUBSCRIPTION_STATUSES = new Set(["trialing", "active", "past_due"])
 
 type SubscriptionStatus = Database["public"]["Enums"]["subscription_status"]
@@ -59,8 +61,6 @@ function redirectCheckoutError({
 }
 
 export async function startCheckout(formData: FormData) {
-  const priceIdEntry = formData.get("priceId")
-  const priceId = typeof priceIdEntry === "string" ? priceIdEntry : null
   const planNameEntry = formData.get("planName")
   const planName = typeof planNameEntry === "string" ? planNameEntry : undefined
   const sourceEntry = formData.get("source")
@@ -69,19 +69,13 @@ export async function startCheckout(formData: FormData) {
   const { supabase, session } = await requireServerSession("/pricing")
 
   const user = session.user
-  const metadataTester = resolveTesterMetadata(user.user_metadata ?? null)
-  let profileTester = false
-  try {
-    const { data: testerProfile } = await supabase
-      .from("profiles")
-      .select("is_tester")
-      .eq("id", user.id)
-      .maybeSingle<{ is_tester: boolean | null }>()
-    profileTester = Boolean(testerProfile?.is_tester)
-  } catch {
-    profileTester = false
-  }
-  const forceCheckoutForTester = metadataTester || profileTester
+  const fallbackIsTester = resolveTesterMetadata(user.user_metadata ?? null)
+  const audience = await resolveDevtoolsAudience({
+    supabase,
+    userId: user.id,
+    fallbackIsTester,
+  })
+  const forceCheckoutForTester = audience.isTester
 
   const requestHeaders = await headers()
   const origin =
@@ -96,27 +90,21 @@ export async function startCheckout(formData: FormData) {
     orgId = userId
   }
 
-  if (!stripe) {
+  const stripeConfig = resolveStripeRuntimeConfigForAudience({ isTester: forceCheckoutForTester })
+  if (!stripeConfig) {
     redirectCheckoutError({ planTier: "organization", code: "stripe_unavailable", source })
   }
 
   try {
-    const stripeClient = stripe!
+    const stripeClient = stripeConfig.client
     const resolvedPlanName = planName ?? "Organization"
     const planTier = resolvedPlanName.toLowerCase().includes("operations")
       ? "operations_support"
       : "organization"
-
-    const resolvePriceId = (candidate: string | null | undefined) =>
-      candidate && candidate.startsWith("price_") ? candidate : null
-
-    const defaultPriceId =
-      planTier === "operations_support"
-        ? env.STRIPE_OPERATIONS_SUPPORT_PRICE_ID
-        : env.STRIPE_ORGANIZATION_PRICE_ID
-    const organizationPriceId =
-      resolvePriceId(priceId) ??
-      resolvePriceId(defaultPriceId)
+    const organizationPriceId = resolveStripePriceIdForPlan({
+      config: stripeConfig,
+      planTier,
+    })
 
     if (!organizationPriceId) {
       if (planTier === "operations_support") {
@@ -191,6 +179,7 @@ export async function startCheckout(formData: FormData) {
               org_user_id: orgId,
               planName: resolvedPlanName,
               plan_tier: planTier,
+              stripe_mode: stripeConfig.mode,
             },
           })
           const currentPeriodEndUnix =
@@ -208,6 +197,7 @@ export async function startCheckout(formData: FormData) {
               plan_tier: planTier,
               user_id: userId,
               org_user_id: orgId,
+              stripe_mode: stripeConfig.mode,
             },
           }
           await supabase
@@ -239,6 +229,7 @@ export async function startCheckout(formData: FormData) {
         org_user_id: orgId,
         planName: resolvedPlanName,
         plan_tier: planTier,
+        stripe_mode: stripeConfig.mode,
       },
       subscription_data: {
         metadata: {
@@ -247,6 +238,7 @@ export async function startCheckout(formData: FormData) {
           org_user_id: orgId,
           planName: resolvedPlanName,
           plan_tier: planTier,
+          stripe_mode: stripeConfig.mode,
         },
       },
       success_url: `${origin}/pricing/success?session_id={CHECKOUT_SESSION_ID}`,

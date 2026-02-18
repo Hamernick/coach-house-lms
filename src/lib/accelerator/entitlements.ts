@@ -4,7 +4,7 @@ import Stripe from "stripe"
 import type { Database } from "@/lib/supabase"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { getElectiveAddOnModuleSlugs, isElectiveAddOnModuleSlug } from "@/lib/accelerator/elective-modules"
-import { env } from "@/lib/env"
+import { resolveStripeRuntimeConfigsForFallback } from "@/lib/billing/stripe-runtime"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 
 type AccessOptions = {
@@ -24,7 +24,6 @@ export type LearningEntitlements = {
 
 type SubscriptionStatus = Database["public"]["Enums"]["subscription_status"]
 
-const stripe = env.STRIPE_SECRET_KEY ? new Stripe(env.STRIPE_SECRET_KEY) : null
 const ENABLE_STRIPE_ENTITLEMENT_SYNC = process.env.ENABLE_STRIPE_ENTITLEMENT_SYNC === "1"
 const stripeSyncAttemptedAt = new Map<string, number>()
 const STRIPE_SYNC_COOLDOWN_MS = 2 * 60 * 1000
@@ -66,7 +65,8 @@ async function trySyncSubscriptionFromStripe({
   userId: string
   orgUserId: string
 }) {
-  if (!ENABLE_STRIPE_ENTITLEMENT_SYNC || !stripe || process.env.NODE_ENV === "test") {
+  const stripeConfigs = resolveStripeRuntimeConfigsForFallback({ preferTester: false })
+  if (!ENABLE_STRIPE_ENTITLEMENT_SYNC || stripeConfigs.length === 0 || process.env.NODE_ENV === "test") {
     return false
   }
 
@@ -91,13 +91,15 @@ async function trySyncSubscriptionFromStripe({
     ]
 
     for (const query of queries) {
-      try {
-        const result = await stripe.subscriptions.search({ query, limit: 20 })
-        for (const subscription of result.data) {
-          candidates.set(subscription.id, subscription)
+      for (const config of stripeConfigs) {
+        try {
+          const result = await config.client.subscriptions.search({ query, limit: 20 })
+          for (const subscription of result.data) {
+            candidates.set(subscription.id, subscription)
+          }
+        } catch {
+          // Metadata search can be unavailable in some environments; silently skip.
         }
-      } catch {
-        // Metadata search can be unavailable in some environments; silently skip.
       }
     }
   }

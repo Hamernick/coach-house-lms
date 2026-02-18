@@ -1,30 +1,30 @@
 import { redirect } from "next/navigation"
 import Stripe from "stripe"
 
-import { env } from "@/lib/env"
 import { requireServerSession } from "@/lib/auth"
+import { resolveDevtoolsAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
+import { resolveStripeRuntimeConfigsForFallback } from "@/lib/billing/stripe-runtime"
 import { createSupabaseAdminClient } from "@/lib/supabase"
 import { isElectiveAddOnModuleSlug } from "@/lib/accelerator/elective-modules"
 import type { Database } from "@/lib/supabase"
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
-const stripe = env.STRIPE_SECRET_KEY ? new Stripe(env.STRIPE_SECRET_KEY) : null
-
 async function maybeStartOrganizationTrialFromAccelerator({
   stripeClient,
+  organizationPriceId,
   admin,
   userId,
   checkoutSessionId,
   customerId,
 }: {
   stripeClient: Stripe
+  organizationPriceId: string | null
   admin: ReturnType<typeof createSupabaseAdminClient>
   userId: string
   checkoutSessionId: string
   customerId: string
 }) {
-  const organizationPriceId = env.STRIPE_ORGANIZATION_PRICE_ID
   if (!organizationPriceId) return
 
   const { data: existing } = await admin
@@ -89,19 +89,39 @@ export default async function PricingSuccessPage({
   const params = searchParams ? await searchParams : {}
   const sessionId = typeof params?.session_id === "string" ? params.session_id : undefined
 
-  const { session } = await requireServerSession("/pricing/success")
+  const { supabase, session } = await requireServerSession("/pricing/success")
   const user = session.user
   const userId = user.id
 
-  if (!stripe) {
+  const fallbackIsTester = resolveTesterMetadata(user.user_metadata ?? null)
+  const audience = await resolveDevtoolsAudience({
+    supabase,
+    userId,
+    fallbackIsTester,
+  })
+  const stripeConfigs = resolveStripeRuntimeConfigsForFallback({ preferTester: audience.isTester })
+  if (stripeConfigs.length === 0) {
     redirect("/organization?paywall=organization&plan=organization&checkout_error=stripe_unavailable&source=billing")
   }
 
-  if (stripe && sessionId) {
+  if (sessionId) {
     try {
-      const checkout = await stripe.checkout.sessions.retrieve(sessionId, {
-        expand: ["subscription"],
-      })
+      let checkout: Stripe.Checkout.Session | null = null
+      let checkoutStripeConfig = stripeConfigs[0]
+      for (const config of stripeConfigs) {
+        try {
+          checkout = await config.client.checkout.sessions.retrieve(sessionId, {
+            expand: ["subscription"],
+          })
+          checkoutStripeConfig = config
+          break
+        } catch {
+          checkout = null
+        }
+      }
+      if (!checkout) {
+        throw new Error("checkout_session_not_found_in_available_stripe_modes")
+      }
 
       const checkoutUserId = checkout.client_reference_id ?? checkout.metadata?.user_id ?? null
       if (!checkoutUserId || checkoutUserId !== userId) {
@@ -138,7 +158,8 @@ export default async function PricingSuccessPage({
         const customerId = typeof checkout.customer === "string" ? checkout.customer : null
         if (customerId) {
           await maybeStartOrganizationTrialFromAccelerator({
-            stripeClient: stripe,
+            stripeClient: checkoutStripeConfig.client,
+            organizationPriceId: checkoutStripeConfig.organizationPriceId,
             admin,
             userId,
             checkoutSessionId: checkout.id,
@@ -196,13 +217,22 @@ export default async function PricingSuccessPage({
             subscription.metadata && Object.keys(subscription.metadata).length > 0
               ? subscription.metadata
               : checkout.metadata ?? null
+          const metadataWithMode: Record<string, string> | null = metadataSource
+            ? {
+                ...(metadataSource as Record<string, string>),
+                stripe_mode:
+                  typeof (metadataSource as Record<string, string>).stripe_mode === "string"
+                    ? (metadataSource as Record<string, string>).stripe_mode
+                    : checkoutStripeConfig.mode,
+              }
+            : null
           const subscriptionOwnerId =
-            typeof metadataSource?.org_user_id === "string" && metadataSource.org_user_id.length > 0
-              ? metadataSource.org_user_id
+            typeof metadataWithMode?.org_user_id === "string" && metadataWithMode.org_user_id.length > 0
+              ? metadataWithMode.org_user_id
               : userId
           const planName =
-            typeof metadataSource?.planName === "string" ? metadataSource.planName : null
-          const kind = typeof metadataSource?.kind === "string" ? metadataSource.kind : null
+            typeof metadataWithMode?.planName === "string" ? metadataWithMode.planName : null
+          const kind = typeof metadataWithMode?.kind === "string" ? metadataWithMode.kind : null
 
           const upsertPayload: Database["public"]["Tables"]["subscriptions"]["Insert"] = {
             user_id: subscriptionOwnerId,
@@ -210,7 +240,12 @@ export default async function PricingSuccessPage({
             stripe_subscription_id: subscription.id,
             status,
             current_period_end: currentPeriodEnd,
-            metadata: metadataSource && Object.keys(metadataSource).length > 0 ? metadataSource : planName ? { planName } : null,
+            metadata:
+              metadataWithMode && Object.keys(metadataWithMode).length > 0
+                ? metadataWithMode
+                : planName
+                  ? { planName, stripe_mode: checkoutStripeConfig.mode }
+                  : null,
           }
 
           await admin

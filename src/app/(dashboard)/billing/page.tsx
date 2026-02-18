@@ -19,7 +19,7 @@ import { StripePoweredBadge } from "@/components/billing/stripe-powered-badge"
 
 import { BillingPortalButton } from "./billing-portal-button"
 
-const PORTAL_READY = Boolean(env.STRIPE_SECRET_KEY)
+const PORTAL_READY = Boolean(env.STRIPE_SECRET_KEY || env.STRIPE_TEST_SECRET_KEY)
 
 function formatDate(dateValue: string | null) {
   if (!dateValue) return null

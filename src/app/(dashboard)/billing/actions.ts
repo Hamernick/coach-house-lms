@@ -1,20 +1,26 @@
 "use server"
 
 import { headers } from "next/headers"
-import Stripe from "stripe"
-import { env } from "@/lib/env"
 import { logger } from "@/lib/logger"
 import { requireServerSession } from "@/lib/auth"
+import { resolveDevtoolsAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
+import { resolveStripeRuntimeConfigsForFallback } from "@/lib/billing/stripe-runtime"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 
 export async function createBillingPortalSession() {
   const { supabase, session } = await requireServerSession("/billing")
   const user = session.user
 
-  if (!env.STRIPE_SECRET_KEY) {
-
-    return { error: "Billing portal not available yet." }
-  }
+  const fallbackIsTester = resolveTesterMetadata(user.user_metadata ?? null)
+  const audience = await resolveDevtoolsAudience({
+    supabase,
+    userId: user.id,
+    fallbackIsTester,
+  })
+  const stripeConfigs = resolveStripeRuntimeConfigsForFallback({
+    preferTester: audience.isTester,
+  })
+  if (stripeConfigs.length === 0) return { error: "Billing portal not available yet." }
 
   let orgId = user.id
   try {
@@ -26,12 +32,12 @@ export async function createBillingPortalSession() {
 
   const { data: subscription, error } = await supabase
     .from("subscriptions")
-    .select("stripe_customer_id")
+    .select("stripe_customer_id, metadata")
     .eq("user_id", orgId)
     .not("stripe_subscription_id", "ilike", "stub_%")
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle<{ stripe_customer_id: string | null }>()
+    .maybeSingle<{ stripe_customer_id: string | null; metadata: Record<string, string> | null }>()
 
   if (error) {
     logger.error("billing_portal_subscription_lookup_failed", error, { userId: user.id })
@@ -43,24 +49,38 @@ export async function createBillingPortalSession() {
     return { error: "No Stripe customer linked to this account yet." }
   }
 
-  const stripe = new Stripe(env.STRIPE_SECRET_KEY, {
-    apiVersion: "2025-08-27.basil",
-  })
   const headerStore = await headers()
   const origin = headerStore.get("origin") ?? "https://coachhouse.local"
 
-  try {
-    const portalSession = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: `${origin}/billing`,
-    })
+  const modeHint = typeof subscription?.metadata?.stripe_mode === "string"
+    ? subscription.metadata.stripe_mode
+    : null
+  const orderedConfigs = modeHint
+    ? [
+        ...stripeConfigs.filter((config) => config.mode === modeHint),
+        ...stripeConfigs.filter((config) => config.mode !== modeHint),
+      ]
+    : stripeConfigs
 
-    logger.info("billing_portal_session_created", { userId: user.id })
+  let lastPortalError: unknown = null
+  for (const config of orderedConfigs) {
+    try {
+      const portalSession = await config.client.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: `${origin}/billing`,
+      })
 
-    return { url: portalSession.url }
-  } catch (portalError) {
-    logger.error("billing_portal_session_failed", portalError, { userId: user.id })
-    return { error: "We couldn't open the billing portal. Contact support." }
+      logger.info("billing_portal_session_created", {
+        userId: user.id,
+        stripeMode: config.mode,
+      })
 
+      return { url: portalSession.url }
+    } catch (portalError) {
+      lastPortalError = portalError
+    }
   }
+
+  logger.error("billing_portal_session_failed", lastPortalError, { userId: user.id })
+  return { error: "We couldn't open the billing portal. Contact support." }
 }

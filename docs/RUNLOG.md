@@ -8572,3 +8572,35 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - triggered a fresh production deploy so corrected env values are active.
 - Deploy:
   - `https://coach-house-platform.vercel.app` aliased to deployment `coach-house-platform-jzhzn03i3-caleb-hamernicks-projects.vercel.app`.
+
+## 2026-02-18 — Codex dual Stripe runtime split (production vs tester)
+
+- Implemented dual Stripe runtime handling so tester audience can use test Stripe config while regular production users use primary Stripe config.
+- Files:
+  - `src/lib/env.ts`
+  - `src/lib/billing/stripe-runtime.ts`
+  - `src/app/(public)/pricing/actions.ts`
+  - `src/app/(public)/pricing/success/page.tsx`
+  - `src/app/(dashboard)/billing/actions.ts`
+  - `src/app/(dashboard)/billing/page.tsx`
+  - `src/app/api/stripe/webhook/route.ts`
+  - `src/lib/accelerator/entitlements.ts`
+- Changes:
+  - Added optional test-mode Stripe env vars:
+    - `STRIPE_TEST_SECRET_KEY`
+    - `STRIPE_TEST_WEBHOOK_SECRET`
+    - `STRIPE_TEST_ORGANIZATION_PRICE_ID`
+    - `STRIPE_TEST_OPERATIONS_SUPPORT_PRICE_ID`
+  - Added centralized Stripe runtime resolver for:
+    - audience-based checkout selection (tester vs primary)
+    - fallback session retrieval across configured Stripe modes
+    - webhook verification across multiple webhook secrets
+  - Checkout now writes `stripe_mode` metadata for subscription updates/sessions.
+  - Billing portal creation now retries across configured Stripe modes (mode hint aware).
+  - Webhook route now validates/processes events against whichever configured Stripe runtime matches signature.
+  - Accelerator entitlement Stripe sync now checks all configured Stripe runtimes (when enabled).
+- Vercel env actions:
+  - Seeded production tester-specific env vars from current production Stripe values.
+- Validation:
+  - `pnpm eslint src/lib/env.ts src/lib/billing/stripe-runtime.ts 'src/app/(public)/pricing/actions.ts' 'src/app/(public)/pricing/success/page.tsx' 'src/app/(dashboard)/billing/actions.ts' 'src/app/(dashboard)/billing/page.tsx' 'src/app/api/stripe/webhook/route.ts' src/lib/accelerator/entitlements.ts` ✅
+  - `pnpm exec tsc --noEmit --pretty false` ✅

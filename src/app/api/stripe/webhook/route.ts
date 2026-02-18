@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server"
 import Stripe from "stripe"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import { env } from "@/lib/env"
+import { resolveStripeWebhookRuntimeConfigs } from "@/lib/billing/stripe-runtime"
 import { createSupabaseAdminClient } from "@/lib/supabase"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import {
@@ -20,8 +20,6 @@ import { isElectiveAddOnModuleSlug } from "@/lib/accelerator/elective-modules"
 import type { Database } from "@/lib/supabase"
 
 export const runtime = "nodejs"
-
-const stripe = env.STRIPE_SECRET_KEY ? new Stripe(env.STRIPE_SECRET_KEY) : null
 
 async function upsertSubscription({
   userId,
@@ -213,21 +211,25 @@ function getCurrentPeriodEndIso(subscription: Stripe.Subscription) {
 }
 
 async function maybeStartOrganizationSubscription({
+  stripeClient,
+  stripeMode,
+  organizationPriceId,
   userId,
   customerId,
   idempotencyKey,
   trialPeriodDays,
   context,
 }: {
+  stripeClient: Stripe
+  stripeMode: "live" | "test"
+  organizationPriceId: string | null
   userId: string
   customerId: string
   idempotencyKey: string
   trialPeriodDays?: number
   context: "accelerator_bundle_one_time" | "accelerator_rollover"
 }) {
-  const organizationPriceId = env.STRIPE_ORGANIZATION_PRICE_ID
-
-  if (!stripe || !organizationPriceId) {
+  if (!organizationPriceId) {
     return
   }
 
@@ -255,6 +257,7 @@ async function maybeStartOrganizationSubscription({
       user_id: userId,
       planName: "Organization",
       context,
+      stripe_mode: stripeMode,
     },
   }
 
@@ -262,7 +265,7 @@ async function maybeStartOrganizationSubscription({
     subscriptionParams.trial_period_days = trialPeriodDays
   }
 
-  const subscription = await stripe.subscriptions.create(subscriptionParams, { idempotencyKey })
+  const subscription = await stripeClient.subscriptions.create(subscriptionParams, { idempotencyKey })
 
   const periodUnix = (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end ?? null
   const currentPeriodEnd = periodUnix ? new Date(periodUnix * 1000).toISOString() : null
@@ -273,12 +276,17 @@ async function maybeStartOrganizationSubscription({
     subscriptionId: subscription.id,
     status: toStatus(subscription.status),
     currentPeriodEnd,
-    metadata: { planName: "Organization", context },
+    metadata: { planName: "Organization", context, stripe_mode: stripeMode },
   })
 }
 
-async function handleAcceleratorMonthlyInstallmentInvoice(invoice: Stripe.Invoice) {
-  if (!stripe) return
+async function handleAcceleratorMonthlyInstallmentInvoice({
+  invoice,
+  stripeClient,
+}: {
+  invoice: Stripe.Invoice
+  stripeClient: Stripe
+}) {
 
   const billingReason = invoice.billing_reason ?? ""
 
@@ -297,7 +305,7 @@ async function handleAcceleratorMonthlyInstallmentInvoice(invoice: Stripe.Invoic
             : null
   if (!subscriptionId) return
 
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+  const subscription = await stripeClient.subscriptions.retrieve(subscriptionId)
   const metadata = subscription.metadata as Record<string, string | undefined>
   const installmentProgress = resolveNextInstallmentProgress({
     billingReason,
@@ -318,7 +326,7 @@ async function handleAcceleratorMonthlyInstallmentInvoice(invoice: Stripe.Invoic
     metadata.accelerator_installments_paid !== String(nextInstallmentsPaid)
 
   if (needsMetadataUpdate || shouldSetCancelAtPeriodEnd) {
-    effectiveSubscription = await stripe.subscriptions.update(subscription.id, {
+    effectiveSubscription = await stripeClient.subscriptions.update(subscription.id, {
       metadata: {
         ...metadata,
         accelerator_installment_limit: String(installmentLimit),
@@ -339,9 +347,8 @@ async function handleAcceleratorMonthlyInstallmentInvoice(invoice: Stripe.Invoic
 }
 
 export async function POST(request: NextRequest) {
-  const secret = env.STRIPE_WEBHOOK_SECRET
-
-  if (!stripe || !secret) {
+  const runtimeConfigs = resolveStripeWebhookRuntimeConfigs()
+  if (runtimeConfigs.length === 0) {
     return NextResponse.json({ ignored: true }, { status: 200 })
   }
 
@@ -352,12 +359,26 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing signature" }, { status: 400 })
   }
 
-  let event: Stripe.Event
+  let event: Stripe.Event | null = null
+  let stripeClient: Stripe | null = null
+  let stripeMode: "live" | "test" = "live"
+  let organizationPriceId: string | null = null
 
-  try {
-    event = stripe.webhooks.constructEvent(body, signature, secret)
-  } catch (error) {
-    console.error("Stripe signature verification failed", error)
+  for (const config of runtimeConfigs) {
+    try {
+      event = config.client.webhooks.constructEvent(body, signature, config.webhookSecret!)
+      stripeClient = config.client
+      stripeMode = config.mode
+      organizationPriceId = config.organizationPriceId
+      break
+    } catch {
+      event = null
+      stripeClient = null
+    }
+  }
+
+  if (!event || !stripeClient) {
+    console.error("Stripe signature verification failed")
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
 
@@ -398,6 +419,9 @@ export async function POST(request: NextRequest) {
 
           if (customerId) {
             await maybeStartOrganizationSubscription({
+              stripeClient,
+              stripeMode,
+              organizationPriceId,
               userId: resolvedUserId,
               customerId,
               idempotencyKey: `accelerator_bundle_${session.id}`,
@@ -435,8 +459,8 @@ export async function POST(request: NextRequest) {
           status: toStatus(session.status ?? "trialing"),
           metadata:
             session.metadata && Object.keys(session.metadata).length > 0
-              ? (session.metadata as Record<string, string>)
-              : { planName: session.metadata?.planName ?? null },
+              ? ({ ...session.metadata, stripe_mode: session.metadata?.stripe_mode ?? stripeMode } as Record<string, string>)
+              : { planName: session.metadata?.planName ?? null, stripe_mode: stripeMode },
         })
       } else if (subscriptionId && session.metadata) {
         const subscriptionOwnerId =
@@ -450,8 +474,8 @@ export async function POST(request: NextRequest) {
             status: toStatus(session.status ?? "trialing"),
             metadata:
               session.metadata && Object.keys(session.metadata).length > 0
-                ? (session.metadata as Record<string, string>)
-                : { planName: session.metadata?.planName ?? null },
+                ? ({ ...session.metadata, stripe_mode: session.metadata?.stripe_mode ?? stripeMode } as Record<string, string>)
+                : { planName: session.metadata?.planName ?? null, stripe_mode: stripeMode },
           })
         }
       }
@@ -459,7 +483,10 @@ export async function POST(request: NextRequest) {
 
     if (event.type === "invoice.paid") {
       const invoice = event.data.object as Stripe.Invoice
-      await handleAcceleratorMonthlyInstallmentInvoice(invoice)
+      await handleAcceleratorMonthlyInstallmentInvoice({
+        invoice,
+        stripeClient,
+      })
     }
 
     if (event.type.startsWith("customer.subscription")) {
@@ -475,7 +502,13 @@ export async function POST(request: NextRequest) {
           subscriptionId: subscription.id,
           status: toStatus(subscription.status),
           currentPeriodEnd: getCurrentPeriodEndIso(subscription),
-          metadata: subscription.metadata as Record<string, string> | null,
+          metadata: {
+            ...(subscription.metadata as Record<string, string>),
+            stripe_mode:
+              typeof subscription.metadata?.stripe_mode === "string"
+                ? subscription.metadata.stripe_mode
+                : stripeMode,
+          },
         })
 
         if (
@@ -488,6 +521,9 @@ export async function POST(request: NextRequest) {
           })
         ) {
           await maybeStartOrganizationSubscription({
+            stripeClient,
+            stripeMode,
+            organizationPriceId,
             userId,
             customerId: subscription.customer,
             idempotencyKey: `accelerator_rollover_${subscription.id}_${event.id}`,

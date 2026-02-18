@@ -26,6 +26,12 @@ function isEmailExistsError(error: { code?: string; message?: string } | null | 
   return message.includes("already been registered") || message.includes("email exists")
 }
 
+function isRateLimitError(error: { code?: string; message?: string } | null | undefined) {
+  if (!error) return false
+  const message = (error.message ?? "").toLowerCase()
+  return message.includes("rate limit")
+}
+
 async function findUserByEmail(email: string) {
   const admin = createSupabaseAdminClient()
   const perPage = 200
@@ -57,6 +63,34 @@ export async function createTesterAccountAction(
 
   const admin = createSupabaseAdminClient()
 
+  const existingBeforeCreate = await findUserByEmail(email)
+  if (existingBeforeCreate?.id) {
+    const mergedMetadata = {
+      ...(existingBeforeCreate.user_metadata ?? {}),
+      qa_tester: true,
+      is_tester: true,
+    }
+    await admin.auth.admin.updateUserById(existingBeforeCreate.id, {
+      user_metadata: mergedMetadata,
+      email_confirm: true,
+    })
+
+    const { error: existingProfileError } = await admin.from("profiles").upsert(
+      {
+        id: existingBeforeCreate.id,
+        email,
+        is_tester: true,
+      },
+      { onConflict: "id" },
+    )
+
+    if (existingProfileError) {
+      return { ok: false, error: "Tester account found, but profile sync failed. Try signing in again." }
+    }
+
+    return { ok: true, created: false, userId: existingBeforeCreate.id }
+  }
+
   const { data: createdData, error: createError } = await admin.auth.admin.createUser({
     email,
     password,
@@ -71,6 +105,14 @@ export async function createTesterAccountAction(
   let created = Boolean(createdData.user)
 
   if (!userId) {
+    if (isRateLimitError(createError ?? undefined)) {
+      return {
+        ok: false,
+        error:
+          "Tester sign up is temporarily throttled. Try again in 60 seconds, or use Tester sign in if this account already exists.",
+      }
+    }
+
     if (!isEmailExistsError(createError ?? undefined)) {
       return { ok: false, error: createError?.message ?? "Unable to create tester account." }
     }
@@ -109,4 +151,3 @@ export async function createTesterAccountAction(
 
   return { ok: true, created, userId }
 }
-

@@ -8759,3 +8759,18 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Runtime check:
   - Verified unauthenticated checkout entry redirects to home-canvas login flow with preserved return URL:
     - `GET /api/stripe/checkout?plan=organization&source=pricing` -> `/?section=login&source=pricing&redirect=/api/stripe/checkout?...`.
+
+## 2026-02-18 — Codex tester signup reliability patch (rate-limit hardening)
+
+- Scope:
+  - Addressed recurring tester signup rate-limit failures during payment journey QA.
+- Files:
+  - `src/app/(auth)/tester/sign-up/actions.ts`
+- Changes:
+  - Added pre-create lookup path for tester signup:
+    - if user already exists, skip create and re-tag as tester + `email_confirm: true`.
+  - Added explicit rate-limit detection and user-forward fallback error copy for tester signups.
+  - Preserved existing profile upsert behavior for tester flag consistency.
+- Validation:
+  - `pnpm exec eslint 'src/app/(auth)/tester/sign-up/actions.ts' src/components/auth/sign-up-form.tsx` ✅
+  - `pnpm build` ✅

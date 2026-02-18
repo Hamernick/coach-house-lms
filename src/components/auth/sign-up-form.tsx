@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
+import { createTesterAccountAction } from "@/app/(auth)/tester/sign-up/actions"
 import { resolveAuthCallbackUrl } from "@/components/auth/auth-callback-url"
 import { PasswordInput } from "@/components/auth/password-input"
 import { Button } from "@/components/ui/button"
@@ -57,6 +58,7 @@ export function SignUpForm({ redirectTo = "/organization", loginHref, signUpMeta
   const [countdown, setCountdown] = useState(20)
   const [isPending, startTransition] = useTransition()
   const resolvedLoginHref = useMemo(() => loginHref ?? "/login", [loginHref])
+  const isTesterInstantSignup = signUpMetadata?.qa_tester === true
 
   const form = useForm<SignUpValues>({
     resolver: zodResolver(schema),
@@ -89,6 +91,35 @@ export function SignUpForm({ redirectTo = "/organization", loginHref, signUpMeta
     setMessage("")
     setCountdown(20)
     startTransition(async () => {
+      if (isTesterInstantSignup) {
+        const createResult = await createTesterAccountAction({
+          email: values.email,
+          password: values.password,
+        })
+
+        if (!createResult.ok) {
+          setStatus("error")
+          setMessage(createResult.error)
+          return
+        }
+
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email: values.email,
+          password: values.password,
+        })
+        if (signInError) {
+          setStatus("error")
+          setMessage(
+            "Tester account is ready, but we could not sign you in automatically. Please use sign in."
+          )
+          return
+        }
+
+        router.replace(redirectTo)
+        router.refresh()
+        return
+      }
+
       const emailRedirectTo = resolveAuthCallbackUrl(redirectTo)
 
       const { data, error } = await supabase.auth.signUp({

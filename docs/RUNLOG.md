@@ -8663,3 +8663,25 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm lint` ✅
   - `pnpm build` ✅
+
+## 2026-02-18 — Codex tester auth rate-limit bypass (instant tester signup)
+
+- Scope:
+  - Removed tester signup dependency on verification-email delivery so QA can continue when provider email throttling is hit.
+- Files:
+  - `src/app/(auth)/tester/sign-up/actions.ts`
+  - `src/components/auth/sign-up-form.tsx`
+- Changes:
+  - Added server action `createTesterAccountAction` that:
+    - creates tester users with `email_confirm: true` (no verification email send)
+    - tags metadata `qa_tester: true` and `is_tester: true`
+    - marks `profiles.is_tester = true` (upsert)
+    - handles existing-email path by ensuring tester metadata/profile flags remain set
+  - Updated `SignUpForm` for tester route (`signUpMetadata.qa_tester === true`) to:
+    - call instant tester account creation action
+    - sign in immediately with email/password
+    - redirect directly to onboarding/workspace target without inbox verification wait
+  - Standard `/sign-up` behavior is unchanged.
+- Validation:
+  - `pnpm lint` ✅
+  - `pnpm build` ✅

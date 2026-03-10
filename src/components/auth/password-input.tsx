@@ -18,6 +18,7 @@ export function PasswordInput({ className, ...props }: PasswordInputProps) {
       <Input
         {...props}
         type={visible ? "text" : "password"}
+        placeholder={props.placeholder ?? "••••••••"}
         className={cn("pr-10", className)}
       />
       <Button

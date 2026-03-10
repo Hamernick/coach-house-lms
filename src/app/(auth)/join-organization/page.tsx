@@ -56,12 +56,19 @@ export default async function JoinOrganizationPage({
         </div>
         <div className="flex flex-wrap gap-2">
           <Button asChild>
-            <Link href="/organization">Go to Organization</Link>
+            <Link href="/workspace">Go to Workspace</Link>
           </Button>
         </div>
       </div>
     )
   }
 
-  redirect("/organization?joined=1")
+  const joinedRole = result.inviteKind === "funder" ? "funder" : result.role
+  const joinedQuery = `?joined=1&role=${encodeURIComponent(joinedRole)}`
+  const destination =
+    result.role === "staff" || result.role === "admin" || result.role === "owner"
+      ? "/workspace"
+      : "/workspace/present"
+
+  redirect(`${destination}${joinedQuery}`)
 }

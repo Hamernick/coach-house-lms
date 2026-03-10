@@ -1,11 +1,7 @@
 "use client"
 
-import Link from "next/link"
-import Image from "next/image"
 import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
-import CheckCircle2 from "lucide-react/dist/esm/icons/check-circle-2"
 import ChevronLeft from "lucide-react/dist/esm/icons/chevron-left"
 import ChevronRight from "lucide-react/dist/esm/icons/chevron-right"
 import Flag from "lucide-react/dist/esm/icons/flag"
@@ -13,20 +9,17 @@ import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 import Layers from "lucide-react/dist/esm/icons/layers"
 
 import { ROADMAP_SECTION_ICONS } from "@/components/roadmap/roadmap-icons"
-import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern/index"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { StepperRail, type StepperRailStep } from "@/components/ui/stepper-rail"
 import { getTrackIcon } from "@/lib/accelerator/track-icons"
 import { sortAcceleratorModules } from "@/lib/accelerator/module-order"
-import type { ModuleCard, ModuleCardStatus } from "@/lib/accelerator/progress"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { cn } from "@/lib/utils"
+import { RoadmapRailCardSnakeGrid } from "./roadmap-rail-card/roadmap-rail-card-snake-grid"
+import type { LessonGroupOption, RoadmapRailItem, RoadmapTimelineModule, TimelineCard } from "./roadmap-rail-card/types"
 
-export type RoadmapTimelineModule = ModuleCard & {
-  groupTitle?: string
-  sequence?: number
-}
+export type { RoadmapTimelineModule } from "./roadmap-rail-card/types"
 
 type RoadmapRailCardProps = {
   sections: RoadmapSection[]
@@ -40,81 +33,7 @@ type RoadmapRailCardProps = {
   modules?: RoadmapTimelineModule[]
 }
 
-type RoadmapRailItem = RoadmapSection & {
-  displayTitle: string
-  displaySubtitle: string
-  href: string
-  idx: number
-}
-
-type TimelineCard =
-  | { kind: "deliverable"; key: string; item: RoadmapRailItem }
-  | { kind: "module"; key: string; module: RoadmapTimelineModule }
-
 const LESSON_GROUP_ALL = "__all_groups__"
-const STATUS_BADGE_OVERLAY_CLASS =
-  "absolute right-3 top-3 inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium backdrop-blur-sm"
-const ROADMAP_MEDIA_SQUARES: Array<[number, number]> = [
-  [4, 4],
-  [5, 1],
-  [8, 2],
-  [5, 3],
-  [5, 5],
-  [10, 10],
-  [12, 15],
-  [15, 10],
-  [10, 15],
-  [15, 10],
-]
-
-function statusMeta(item: RoadmapRailItem) {
-  if (item.status === "complete") {
-    return {
-      label: "Complete",
-      dotClass: "bg-emerald-500",
-      badgeClass:
-        "border-emerald-200 bg-emerald-100 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-500/15 dark:text-emerald-200",
-    }
-  }
-  if (item.status === "in_progress") {
-    return {
-      label: "In progress",
-      dotClass: "bg-amber-500",
-      badgeClass:
-        "border-amber-200 bg-amber-100 text-amber-800 dark:border-amber-900/50 dark:bg-amber-500/15 dark:text-amber-200",
-    }
-  }
-  return {
-    label: "Not started",
-    dotClass: "bg-zinc-400 dark:bg-zinc-500",
-    badgeClass:
-      "border-zinc-300 bg-zinc-100 text-zinc-900 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100",
-  }
-}
-
-function moduleStatusMeta(status: ModuleCardStatus) {
-  if (status === "completed") {
-    return {
-      label: "Completed",
-      cta: "Review",
-      badgeClass:
-        "border-emerald-300 bg-emerald-50/95 text-emerald-700 dark:border-emerald-500/35 dark:bg-emerald-500/12 dark:text-emerald-200",
-    }
-  }
-  if (status === "in_progress") {
-    return {
-      label: "In progress",
-      cta: "Continue",
-      badgeClass:
-        "border-amber-300 bg-amber-50/95 text-amber-700 dark:border-amber-500/35 dark:bg-amber-500/12 dark:text-amber-200",
-    }
-  }
-  return {
-    label: "Not started",
-    cta: "Start",
-    badgeClass: "border-border/60 bg-background/70 text-muted-foreground",
-  }
-}
 
 export function RoadmapRailCard({
   sections,
@@ -123,7 +42,7 @@ export function RoadmapRailCard({
   subtitle = "Jump into any section and continue building.",
   pageSize = 4,
   surface = "card",
-  hrefBase = "/roadmap",
+  hrefBase = "/workspace/roadmap",
   layout = "rail",
   modules = [],
 }: RoadmapRailCardProps) {
@@ -132,7 +51,7 @@ export function RoadmapRailCard({
 
   const normalizedHrefBase = useMemo(() => {
     const trimmed = hrefBase.trim()
-    if (!trimmed) return "/roadmap"
+    if (!trimmed) return "/workspace/roadmap"
     const withLeadingSlash = trimmed.startsWith("/") ? trimmed : `/${trimmed}`
     return withLeadingSlash.replace(/\/+$/, "")
   }, [hrefBase])
@@ -157,16 +76,8 @@ export function RoadmapRailCard({
   }, [normalizedHrefBase, sections])
 
   const orderedModules = useMemo(() => sortAcceleratorModules(modules), [modules])
-  const lessonGroupOptions = useMemo(() => {
-    const groups = new Map<
-      string,
-      {
-        key: string
-        label: string
-        moduleIds: Set<string>
-        moduleIndexes: Set<number>
-      }
-    >()
+  const lessonGroupOptions = useMemo<LessonGroupOption[]>(() => {
+    const groups = new Map<string, LessonGroupOption>()
 
     for (const lessonModule of orderedModules) {
       const groupLabel = lessonModule.groupTitle?.trim() || "General"
@@ -393,143 +304,8 @@ export function RoadmapRailCard({
         </div>
       ) : null}
 
-      {visibleTimelineCards.length > 0 && isSnakeGrid ? (
-        <div className="mt-4">
-          <div className="relative">
-            <div className="relative z-10 grid auto-rows-[minmax(220px,auto)] gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 md:gap-4">
-              {visibleTimelineCards.map((card) => {
-                if (card.kind === "deliverable") {
-                  const { item } = card
-                  const Icon = WaypointsIcon
-                  const meta = statusMeta(item)
-
-                  return (
-                    <div key={card.key} className="min-w-0 h-full">
-                      <Link
-                        href={item.href}
-                        title={item.displayTitle}
-                        aria-label={`Go to ${item.displayTitle}`}
-                        onClick={() => setActiveIndex(item.idx)}
-                        className={cn(
-                          "group relative flex h-full min-h-[200px] flex-col overflow-hidden rounded-[26px] border border-border/60 bg-card text-left transition-transform duration-300 ease-out",
-                          "hover:-translate-y-1",
-                          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2",
-                        )}
-                      >
-                        <div className="relative mb-3 ml-[5px] mr-[5px] mt-[5px] aspect-[4/3] overflow-hidden rounded-[22px] border border-border/60 bg-muted/20">
-                          <GridPattern
-                            patternId={`roadmap-deliverable-media-${item.id}`}
-                            squares={ROADMAP_MEDIA_SQUARES}
-                            className="inset-x-0 inset-y-[-45%] h-[200%] skew-y-12 [mask-image:radial-gradient(220px_circle_at_center,white,transparent)] opacity-70"
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <span
-                              data-roadmap-node="true"
-                              className="inline-flex h-11 min-w-11 items-center justify-center rounded-xl border border-border/60 bg-background/80 px-3 text-muted-foreground backdrop-blur-sm"
-                            >
-                              <Icon className="h-4 w-4" aria-hidden />
-                            </span>
-                          </div>
-                          <span
-                            className={cn(
-                              STATUS_BADGE_OVERLAY_CLASS,
-                              meta.badgeClass,
-                            )}
-                          >
-                            <span className={cn("h-1.5 w-1.5 rounded-full", meta.dotClass)} aria-hidden />
-                            {meta.label}
-                          </span>
-                        </div>
-
-                        <div className="relative mt-0.5 flex flex-1 flex-col gap-2 px-4 pb-11">
-                          <p className="text-sm font-semibold text-foreground">{item.displayTitle}</p>
-                          <p className="line-clamp-3 text-xs text-muted-foreground">{item.displaySubtitle}</p>
-                          <p className="absolute bottom-4 left-4 inline-flex items-center gap-1 text-xs text-muted-foreground">
-                            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
-                            Open deliverable
-                          </p>
-                        </div>
-                      </Link>
-                    </div>
-                  )
-                }
-
-                const { module } = card
-                const meta = moduleStatusMeta(module.status)
-                const ModuleTrackIcon = getTrackIcon(module.groupTitle ?? module.title)
-
-                const cardBody = (
-                  <>
-                    <div className="relative mb-3 ml-[5px] mr-[5px] mt-[5px] aspect-[4/3] overflow-hidden rounded-[22px] border border-border/60 bg-muted/20">
-                      <Image
-                        src="/textures/fluted-glass-flowers.webp"
-                        alt=""
-                        fill
-                        sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                        className="pointer-events-none object-cover"
-                        priority={false}
-                      />
-                      <div
-                        aria-hidden
-                        className="pointer-events-none absolute inset-0 opacity-75"
-                        style={{
-                          background:
-                            "repeating-linear-gradient(90deg, rgba(255,255,255,0.26) 0px, rgba(255,255,255,0.08) 2px, rgba(255,255,255,0.02) 7px, rgba(255,255,255,0.18) 10px)",
-                          mixBlendMode: "overlay",
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-background/14" />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <span
-                          data-roadmap-node="true"
-                          title={module.groupTitle ?? module.title}
-                          aria-label={module.groupTitle ?? module.title}
-                          className="inline-flex h-11 min-w-11 items-center justify-center rounded-xl border border-border/60 bg-background/80 px-3 text-muted-foreground backdrop-blur-sm"
-                        >
-                          <ModuleTrackIcon className="h-4 w-4" aria-hidden />
-                        </span>
-                      </div>
-                      <span
-                        className={cn(
-                          STATUS_BADGE_OVERLAY_CLASS,
-                          meta.badgeClass,
-                        )}
-                      >
-                        {module.status === "completed" ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> : null}
-                        <span>{meta.label}</span>
-                      </span>
-                    </div>
-
-                    <div className="relative mt-0.5 flex flex-1 flex-col gap-2 px-4 pb-11">
-                      <p className="text-sm font-semibold text-foreground">{module.title}</p>
-                      {module.description ? (
-                        <p className="line-clamp-3 text-xs text-muted-foreground">{module.description}</p>
-                      ) : null}
-                      <p className="absolute bottom-4 left-4 inline-flex items-center gap-1 text-xs text-muted-foreground">
-                        <ArrowUpRight className="h-3.5 w-3.5" aria-hidden />
-                        Open module
-                      </p>
-                    </div>
-                  </>
-                )
-
-                return (
-                  <div key={card.key} className="min-w-0 h-full">
-                    <Link
-                      href={module.href}
-                      className={cn(
-                        "group flex h-full min-h-[200px] flex-col overflow-hidden rounded-[26px] border border-border/60 bg-card text-left transition-transform duration-300 ease-out",
-                        "hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                      )}
-                    >
-                      {cardBody}
-                    </Link>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
+      {isSnakeGrid ? (
+        <RoadmapRailCardSnakeGrid cards={visibleTimelineCards} onDeliverableSelect={(index) => setActiveIndex(index)} />
       ) : (
         <p className="mt-4 rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
           No roadmap sections found yet.

@@ -23,7 +23,7 @@ type SupportMenuProps = {
 }
 
 export function SupportMenu({
-  email = "contact@coachhousesolutions.org",
+  email = "joel@coachhousesolutions.org",
   label = "Support",
   buttonVariant = "ghost",
   buttonSize = "sm",

@@ -5,6 +5,7 @@ import type React from "react"
 import Image from "next/image"
 import ExternalLink from "lucide-react/dist/esm/icons/external-link"
 
+import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { PROVIDER_ICON } from "@/components/shared/provider-icons"
@@ -44,13 +45,15 @@ export function FieldText({ text, multiline = false }: { text?: string | null; m
       <div className="space-y-1.5">
         <p className="whitespace-pre-wrap text-sm leading-relaxed">{displayText}</p>
         {isLong ? (
-          <button
+          <Button
             type="button"
-            className="text-xs font-medium text-muted-foreground underline underline-offset-2 transition hover:text-foreground"
+            variant="link"
+            size="sm"
+            className="h-auto p-0 text-xs font-medium text-muted-foreground underline underline-offset-2 transition hover:text-foreground"
             onClick={() => setExpanded((prev) => !prev)}
           >
             {expanded ? "Read less" : "Read more"}
-          </button>
+          </Button>
         ) : null}
       </div>
     )
@@ -60,13 +63,15 @@ export function FieldText({ text, multiline = false }: { text?: string | null; m
     <div className="space-y-1">
       <p className="text-sm">{displayText}</p>
       {isLong ? (
-        <button
+        <Button
           type="button"
-          className="text-xs font-medium text-muted-foreground underline underline-offset-2 transition hover:text-foreground"
+          variant="link"
+          size="sm"
+          className="h-auto p-0 text-xs font-medium text-muted-foreground underline underline-offset-2 transition hover:text-foreground"
           onClick={() => setExpanded((prev) => !prev)}
         >
           {expanded ? "Read less" : "Read more"}
-        </button>
+        </Button>
       ) : null}
     </div>
   )

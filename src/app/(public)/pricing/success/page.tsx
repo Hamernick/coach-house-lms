@@ -1,3 +1,4 @@
+import { isRedirectError } from "next/dist/client/components/redirect-error"
 import { redirect } from "next/navigation"
 import Stripe from "stripe"
 
@@ -6,79 +7,44 @@ import { resolveDevtoolsAudience, resolveTesterMetadata } from "@/lib/devtools/a
 import { resolveStripeRuntimeConfigsForFallback } from "@/lib/billing/stripe-runtime"
 import { createSupabaseAdminClient } from "@/lib/supabase"
 import { isElectiveAddOnModuleSlug } from "@/lib/accelerator/elective-modules"
+import { maybeStartOrganizationTrialFromAccelerator } from "./_lib/success-helpers"
 import type { Database } from "@/lib/supabase"
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
 
-async function maybeStartOrganizationTrialFromAccelerator({
-  stripeClient,
-  organizationPriceId,
-  admin,
-  userId,
-  checkoutSessionId,
-  customerId,
-}: {
-  stripeClient: Stripe
-  organizationPriceId: string | null
-  admin: ReturnType<typeof createSupabaseAdminClient>
-  userId: string
-  checkoutSessionId: string
-  customerId: string
-}) {
-  if (!organizationPriceId) return
+function getFirstParam(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value
+}
 
-  const { data: existing } = await admin
-    .from("subscriptions" satisfies keyof Database["public"]["Tables"])
-    .select("id, status")
-    .eq("user_id", userId)
-    .in("status", ["active", "trialing"])
-    .limit(1)
-    .maybeSingle<{ id: string; status: string }>()
+function getSafeRedirect(value: string | string[] | undefined) {
+  const raw = getFirstParam(value)
+  if (typeof raw !== "string") return null
+  if (!raw.startsWith("/")) return null
+  if (raw.startsWith("//")) return null
+  return raw
+}
 
-  if (existing) return
-
-  const subscription = await stripeClient.subscriptions.create(
-    {
-      customer: customerId,
-      items: [{ price: organizationPriceId }],
-      trial_period_days: 30,
-      metadata: {
-        user_id: userId,
-        planName: "Organization",
-        context: "accelerator_bundle",
-      },
-    },
-    { idempotencyKey: `accelerator_bundle_${checkoutSessionId}` },
-  )
-
-  const currentPeriodEndUnix =
-    (subscription as Stripe.Subscription & { current_period_end?: number }).current_period_end ?? null
-  const currentPeriodEnd = currentPeriodEndUnix ? new Date(currentPeriodEndUnix * 1000).toISOString() : null
-
-  const allowed: Database["public"]["Enums"]["subscription_status"][] = [
-    "trialing",
-    "active",
-    "past_due",
-    "canceled",
-    "incomplete",
-    "incomplete_expired",
-  ]
-  const status = allowed.includes(subscription.status as Database["public"]["Enums"]["subscription_status"])
-    ? (subscription.status as Database["public"]["Enums"]["subscription_status"])
-    : "trialing"
-
-  const upsertPayload: Database["public"]["Tables"]["subscriptions"]["Insert"] = {
-    user_id: userId,
-    stripe_customer_id: typeof subscription.customer === "string" ? subscription.customer : customerId,
-    stripe_subscription_id: subscription.id,
-    status,
-    current_period_end: currentPeriodEnd,
-    metadata: { planName: "Organization", context: "accelerator_bundle" },
+function appendInternalRedirectParams(
+  target: string,
+  params: Record<string, string | null | undefined>,
+) {
+  const url = new URL(target, "https://coachhouse.internal")
+  for (const [key, value] of Object.entries(params)) {
+    if (typeof value === "string" && value.length > 0) {
+      url.searchParams.set(key, value)
+    }
   }
+  return `${url.pathname}${url.search}`
+}
 
-  await admin
-    .from("subscriptions" satisfies keyof Database["public"]["Tables"])
-    .upsert(upsertPayload, { onConflict: "user_id,stripe_subscription_id" })
+function isNextRedirectError(error: unknown) {
+  if (isRedirectError(error)) return true
+  if (error instanceof Error && error.message.startsWith("redirect:")) return true
+  if (typeof error === "object" && error && "digest" in error) {
+    const digest = String((error as { digest?: unknown }).digest ?? "")
+    if (digest.startsWith("NEXT_REDIRECT")) return true
+  }
+  return false
 }
 
 export default async function PricingSuccessPage({
@@ -88,6 +54,7 @@ export default async function PricingSuccessPage({
 }) {
   const params = searchParams ? await searchParams : {}
   const sessionId = typeof params?.session_id === "string" ? params.session_id : undefined
+  const redirectTarget = getSafeRedirect(params?.redirect)
 
   const { supabase, session } = await requireServerSession("/pricing/success")
   const user = session.user
@@ -252,16 +219,41 @@ export default async function PricingSuccessPage({
             .from("subscriptions" satisfies keyof Database["public"]["Tables"])
             .upsert(upsertPayload, { onConflict: "user_id,stripe_subscription_id" })
 
+          const isSuccessfulSubscriptionState =
+            status === "trialing" || status === "active" || status === "past_due"
+
           if (kind === "accelerator") {
             redirect(`/organization?purchase=accelerator${welcomeQuery}`)
           }
 
-          redirect(`/organization?subscription=${status}${welcomeQuery}`)
+          if (redirectTarget) {
+            if (isSuccessfulSubscriptionState) {
+              redirect(appendInternalRedirectParams(redirectTarget, { checkout: "success" }))
+            }
+            redirect(
+              appendInternalRedirectParams(redirectTarget, {
+                checkout_error: "checkout_failed",
+                subscription: status,
+              }),
+            )
+          }
+
+          if (isSuccessfulSubscriptionState) {
+            redirect(`/organization?subscription=${status}${welcomeQuery}`)
+          }
+          redirect(`/organization?checkout_error=checkout_failed&subscription=${status}`)
         }
       }
     } catch (error) {
+      if (isNextRedirectError(error)) {
+        throw error
+      }
       console.warn("Unable to read Stripe checkout session", error)
     }
+  }
+
+  if (redirectTarget) {
+    redirect(redirectTarget)
   }
 
   redirect("/organization?checkout=success")

@@ -18,9 +18,20 @@
 ## Required Validation Gates
 
 - `pnpm lint`
+- `pnpm check:structure`
+- `pnpm check:routes`
+- `pnpm check:features`
+- `pnpm check:feature-scaffold`
+- `pnpm check:thresholds`
+- `pnpm check:boundaries`
+- `pnpm check:workspace-storage`
+- `pnpm check:raw-buttons`
 - `pnpm test:snapshots`
+- `pnpm test:visual`
 - `pnpm test:acceptance`
 - `pnpm test:rls`
+- `pnpm build`
+- `pnpm check:perf`
 
 ## Testing And QA
 
@@ -28,8 +39,10 @@
 - After migration/policy edits, run RLS tests.
 - Update snapshots via `pnpm snapshots:update` when intended.
 - Mirror CI locally:
-  - `pnpm lint && pnpm test:snapshots && pnpm test:acceptance`
+  - `pnpm check:quality`
 - Add targeted edge cases for touched behavior.
+- Visual baselines:
+  - Update intentionally changed screenshots with `pnpm test:visual:update`.
 
 ## File And Module Layout
 
@@ -47,7 +60,10 @@
 
 - Single environment: `prod` (Supabase + Stripe test/live modes).
 - Migrations must be versioned and reversible.
-- GitHub Actions should run typecheck, lint, build, preview deploy checks.
+- GitHub Actions should execute `pnpm check:quality` as the canonical quality gate command (single source of truth for required checks).
+- CI should install Playwright Chromium and enforce visual regression checks.
+- Branch protection should require `quality` before merge.
+- Enable CODEOWNERS review enforcement for protected branches.
 - Feature flags are required for risky rollouts.
 
 ## Git And PR Workflow
@@ -60,10 +76,24 @@
 ## Build And Dev Commands
 
 - Install: `pnpm install`
+- Setup hooks (once): `pnpm setup:hooks`
 - Dev: `pnpm dev` (`http://localhost:3000`)
 - Build/start: `pnpm build` then `pnpm start`
 - Utilities:
+  - `pnpm check:structure`
+  - `pnpm check:routes`
+  - `pnpm check:features`
+  - `pnpm check:feature-scaffold`
+  - `pnpm check:thresholds`
+  - `pnpm check:boundaries`
+  - `pnpm check:workspace-storage`
+  - `pnpm check:raw-buttons`
+  - `pnpm check:prepush`
+  - `pnpm test:visual`
+  - `pnpm test:visual:update`
   - `pnpm check:perf`
+  - `pnpm check:quality`
+  - `pnpm scaffold:feature <feature-name>`
   - `pnpm db:push`
   - `pnpm create:admin`
   - `pnpm seed:validate` (dry-run fixture validation for full-account seed)

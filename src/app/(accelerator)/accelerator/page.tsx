@@ -1,8 +1,6 @@
 import { Empty } from "@/components/ui/empty"
-import { ProgramCard } from "@/components/programs/program-card"
 import { AcceleratorOrgSnapshotStrip } from "@/components/accelerator/accelerator-org-snapshot-strip"
 import { AcceleratorWelcomeBanner } from "@/components/accelerator/accelerator-welcome-banner"
-import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
 import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
 import { RoadmapOutlineCard } from "@/components/roadmap/roadmap-outline-card"
 import { AcceleratorOverviewRightRail } from "@/components/accelerator/accelerator-overview-right-rail"
@@ -11,49 +9,17 @@ import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import { resolveRoadmapSections } from "@/lib/roadmap"
 import { resolveRoadmapHomework } from "@/lib/roadmap/homework"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
-import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
 import { resolveAcceleratorReadiness } from "@/lib/accelerator/readiness"
 import { buildReadinessChecklist } from "@/lib/accelerator/readiness-checklist"
-import { sortAcceleratorModules } from "@/lib/accelerator/module-order"
+import { ProgramBuilderSection } from "./_components/program-builder-section"
+import {
+  buildVisibleAcceleratorGroups,
+  CORE_ROADMAP_SECTION_IDS,
+  isRecord,
+} from "./_lib/overview-helpers"
 
 export const runtime = "edge"
 export const dynamic = "force-dynamic"
-
-const PROGRAM_TEMPLATES = [
-  {
-    title: "After-school STEM Lab",
-    location: "Youth enrichment",
-    chips: ["12-week cohort", "STEM mentors", "Pilot ready"],
-    patternId: "template-stem",
-  },
-  {
-    title: "Community Health Navigation",
-    location: "Public health",
-    chips: ["Case management", "Referral network", "Outcomes plan"],
-    patternId: "template-health",
-  },
-]
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
-}
-
-function dedupeModulesById<T extends { id: string }>(modules: T[]) {
-  const seen = new Set<string>()
-  return modules.filter((module) => {
-    if (seen.has(module.id)) return false
-    seen.add(module.id)
-    return true
-  })
-}
-
-const CORE_ROADMAP_SECTION_IDS = new Set([
-  "origin_story",
-  "need",
-  "mission_vision_values",
-  "theory_of_change",
-  "program",
-])
 
 export default async function AcceleratorOverviewPage() {
   const supabase = await createSupabaseServerClient()
@@ -108,86 +74,11 @@ export default async function AcceleratorOverviewPage() {
   const ownedElectiveModuleSlugSet = new Set(
     entitlements.ownedElectiveModuleSlugs.map((slug) => slug.trim().toLowerCase()),
   )
-  const visibleGroups = (() => {
-    const baseGroups = groups.filter((group) => {
-      const title = group.title.trim().toLowerCase()
-      const slug = group.slug.trim().toLowerCase()
-      return title !== "published class" && slug !== "published-class"
-    })
-
-    const transformed: Array<(typeof groups)[number]> = []
-    let formationTrack: (typeof groups)[number] | null = null
-    let electivesTrack: (typeof groups)[number] | null = null
-
-    for (const group of baseGroups) {
-      const normalizedSlug = group.slug.trim().toLowerCase()
-      const normalizedTitle = group.title.trim().toLowerCase()
-      const isFormationSource =
-        normalizedSlug === "electives" || normalizedSlug === "formation" || normalizedTitle === "formation"
-
-      if (!isFormationSource) {
-        if (entitlements.hasAcceleratorAccess) {
-          transformed.push(group)
-        }
-        continue
-      }
-
-      const formationModules = group.modules.filter((module) => !isElectiveAddOnModule(module))
-      const electiveModules = group.modules.filter((module) => isElectiveAddOnModule(module))
-
-      if (formationModules.length > 0) {
-        const seed: (typeof groups)[number] = formationTrack ?? {
-          ...group,
-          title: "Formation",
-          slug: "formation",
-          modules: [],
-        }
-
-        formationTrack = {
-          ...seed,
-          modules: [...seed.modules, ...formationModules],
-        }
-      }
-
-      const accessibleElectiveModules = entitlements.hasAcceleratorAccess
-        ? electiveModules
-        : electiveModules.filter((module) => ownedElectiveModuleSlugSet.has(module.slug.trim().toLowerCase()))
-
-      if (accessibleElectiveModules.length > 0) {
-        const seed: (typeof groups)[number] = electivesTrack ?? {
-          ...group,
-          title: "Electives",
-          slug: "electives",
-          modules: [],
-        }
-
-        electivesTrack = {
-          ...seed,
-          modules: [...seed.modules, ...accessibleElectiveModules],
-        }
-      }
-    }
-
-    if (formationTrack) {
-      formationTrack = {
-        ...formationTrack,
-        modules: sortAcceleratorModules(dedupeModulesById(formationTrack.modules)),
-      }
-    }
-
-    if (electivesTrack) {
-      electivesTrack = {
-        ...electivesTrack,
-        modules: sortAcceleratorModules(dedupeModulesById(electivesTrack.modules)),
-      }
-    }
-
-    const ordered: Array<(typeof groups)[number]> = []
-    if (formationTrack) ordered.push(formationTrack)
-    ordered.push(...transformed)
-    if (electivesTrack) ordered.push(electivesTrack)
-    return ordered.filter((group) => group.modules.length > 0)
-  })()
+  const visibleGroups = buildVisibleAcceleratorGroups({
+    groups,
+    hasAcceleratorAccess: entitlements.hasAcceleratorAccess,
+    ownedElectiveModuleSlugSet,
+  })
   const timelineModules = visibleGroups.flatMap((group, groupIndex) =>
     group.modules.map((module, moduleIndex) => ({
       ...module,
@@ -201,6 +92,7 @@ export default async function AcceleratorOverviewPage() {
   const state = String(orgProfile["address_state"] ?? "").trim()
   const locationSubtitle = [city, state].filter(Boolean).join(", ")
   const organizationSubtitle = String(orgProfile["tagline"] ?? "").trim() || locationSubtitle || null
+  const organizationDescription = String(orgProfile["description"] ?? "").trim() || null
   const logoUrl = String(orgProfile["logoUrl"] ?? "").trim() || null
   const headerUrl = String(orgProfile["headerUrl"] ?? "").trim() || null
   const peopleCount = Math.max(1, Array.isArray(orgProfile["org_people"]) ? orgProfile["org_people"].length : 0)
@@ -249,7 +141,7 @@ export default async function AcceleratorOverviewPage() {
   const nextCoreRoadmapSection =
     roadmapSections.find((section) => CORE_ROADMAP_SECTION_IDS.has(section.id) && !isRoadmapSectionComplete(section)) ?? null
   const nextCoreRoadmapHref = nextCoreRoadmapSection
-    ? `/accelerator/roadmap/${nextCoreRoadmapSection.slug ?? nextCoreRoadmapSection.id}`
+    ? `/workspace/roadmap/${nextCoreRoadmapSection.slug ?? nextCoreRoadmapSection.id}`
     : null
   const readinessChecklist = buildReadinessChecklist({
     reasons: readinessTargetLabel === "Verified" ? readiness.verifiedMissing : readiness.fundableMissing,
@@ -305,6 +197,7 @@ export default async function AcceleratorOverviewPage() {
         <AcceleratorOrgSnapshotStrip
           organizationTitle={organizationTitle}
           organizationSubtitle={organizationSubtitle}
+          organizationDescription={organizationDescription}
           logoUrl={logoUrl}
           headerUrl={headerUrl}
           fundingGoalCents={fundingGoalCents}
@@ -312,6 +205,8 @@ export default async function AcceleratorOverviewPage() {
           programsCount={programsCount}
           peopleCount={peopleCount}
           progressPercent={readiness.progressPercent}
+          lessonsComplete={progressSummary.completedModules}
+          lessonsTotal={progressSummary.totalModules}
           deliverablesComplete={roadmapCompletedCount}
           deliverablesTotal={roadmapSections.length}
           moduleGroupsComplete={lessonGroupProgress.complete}
@@ -326,47 +221,7 @@ export default async function AcceleratorOverviewPage() {
         <RoadmapOutlineCard sections={roadmapSections} modules={timelineModules} />
       </section>
 
-      {showProgramBuilder ? (
-        <section id="roadmap" className="space-y-3">
-          <div className="flex flex-wrap items-end justify-between gap-2">
-            <div className="space-y-1">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Program builder</p>
-              <span className="text-xs text-muted-foreground">Templates stay private until published.</span>
-            </div>
-          </div>
-          <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1 snap-x snap-mandatory">
-            <div className="snap-start shrink-0 w-[min(380px,85vw)] min-h-[480px]">
-              <Empty
-                className="h-full rounded-3xl border-2 border-dashed border-border/60 bg-surface dark:bg-card/40"
-                title="Create your first program"
-                description="Start from scratch or customize a template to reflect real staffing, outcomes, and funding needs."
-                actions={<ProgramWizardLazy triggerLabel="Create program" />}
-                size="sm"
-                variant="subtle"
-              />
-            </div>
-            {PROGRAM_TEMPLATES.map((template) => (
-              <div
-                key={template.title}
-                className="snap-start shrink-0 w-[min(380px,85vw)] min-h-[480px]"
-              >
-                <ProgramCard
-                  title={template.title}
-                  location={template.location}
-                  statusLabel="Template"
-                  chips={template.chips}
-                  ctaLabel="View template"
-                  ctaHref="/organization?tab=programs"
-                  ctaTarget="_self"
-                  patternId={template.patternId}
-                  variant="medium"
-                  className="h-full bg-surface dark:bg-card"
-                />
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
+      {showProgramBuilder ? <ProgramBuilderSection /> : null}
     </div>
   )
 }

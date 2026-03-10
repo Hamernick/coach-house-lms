@@ -2,9 +2,10 @@
 
 import { useMemo, useState, useEffect } from "react"
 import Image from "next/image"
-import { useSearchParams } from "next/navigation"
+import { parseAsString, parseAsStringEnum, useQueryState } from "nuqs"
 
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -87,22 +88,13 @@ function MarketCard({
 }
 
 export function MarketplaceClient() {
-  const searchParams = useSearchParams()
-  const paramQuery = searchParams.get("q") ?? ""
-  const paramCategory = searchParams.get("category")
-  const initialCategory = isMarketplaceCategory(paramCategory) ? paramCategory : "top-picks"
-
-  const [query, setQuery] = useState(paramQuery)
-  const [tab, setTab] = useState<MarketplaceCategory>(initialCategory)
+  const [query, setQuery] = useQueryState("q", parseAsString.withDefault(""))
+  const [tab, setTab] = useQueryState(
+    "category",
+    parseAsStringEnum(CATEGORIES.map((category) => category.value)).withDefault("top-picks"),
+  )
   const [featuredIndex, setFeaturedIndex] = useState(0)
   const [reduceMotion, setReduceMotion] = useState(false)
-
-  useEffect(() => {
-    const nextQuery = paramQuery
-    const nextCategory = isMarketplaceCategory(paramCategory) ? paramCategory : "top-picks"
-    setQuery(nextQuery)
-    setTab(nextCategory)
-  }, [paramQuery, paramCategory])
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return
@@ -160,7 +152,9 @@ export function MarketplaceClient() {
             data-tour="marketplace-search"
             placeholder="Search resources"
             value={query}
-            onChange={(e) => setQuery(e.currentTarget.value)}
+            onChange={(e) => {
+              void setQuery(e.currentTarget.value)
+            }}
             className="h-10"
             aria-label="Search marketplace"
           />
@@ -169,7 +163,13 @@ export function MarketplaceClient() {
           <Label htmlFor="marketplace-category" className="text-xs uppercase tracking-wide text-muted-foreground">
             Category
           </Label>
-          <Select value={tab} onValueChange={(v) => setTab(v as MarketplaceCategory)}>
+          <Select
+            value={tab}
+            onValueChange={(value) => {
+              if (!isMarketplaceCategory(value)) return
+              void setTab(value)
+            }}
+          >
             <SelectTrigger
               id="marketplace-category"
               data-tour="marketplace-categories"
@@ -177,7 +177,7 @@ export function MarketplaceClient() {
             >
               <SelectValue placeholder="Choose category" />
             </SelectTrigger>
-          <SelectContent>
+            <SelectContent>
               {CATEGORIES.map((category) => (
                 <SelectItem key={category.value} value={category.value}>
                   {category.label}
@@ -199,15 +199,17 @@ export function MarketplaceClient() {
                 {featured.map((item, index) => {
                   const isActive = index === featuredIndex
                   return (
-                    <button
+                    <Button
                       key={item.id}
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       aria-label={`Show recommendation ${index + 1} of ${featured.length}`}
                       aria-current={isActive ? "true" : undefined}
                       onClick={() => setFeaturedIndex(index)}
-                      className={`h-2.5 w-2.5 rounded-full transition ${
-                        isActive ? "bg-foreground" : "bg-muted-foreground/30"
-                      } focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2`}
+                      className={`h-2.5 w-2.5 rounded-full p-0 transition ${
+                        isActive ? "bg-foreground hover:bg-foreground/90" : "bg-muted-foreground/30 hover:bg-muted-foreground/40"
+                      }`}
                     />
                   )
                 })}

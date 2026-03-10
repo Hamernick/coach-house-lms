@@ -1,11 +1,11 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import {
   CommunicationsSection,
   DangerSection,
   DesktopFooter,
-  OrganizationSection,
   ProfileSection,
   SecuritySection,
 } from "./sections/desktop-sections"
@@ -35,9 +35,12 @@ type AccountSettingsDialogShellProps = {
   isUpdatingPassword: boolean
   firstName: string
   lastName: string
+  title: string
+  company: string
+  contact: string
+  about: string
   phone: string
   email: string
-  orgName: string
   avatarUrl: string | null
   isUploadingAvatar: boolean
   errors: Partial<Record<AccountSettingsErrorKey, string>>
@@ -49,6 +52,10 @@ type AccountSettingsDialogShellProps = {
   onNewsletterOptInChange: (value: boolean) => void
   onFirstNameChange: (value: string) => void
   onLastNameChange: (value: string) => void
+  onTitleChange: (value: string) => void
+  onCompanyChange: (value: string) => void
+  onContactChange: (value: string) => void
+  onAboutChange: (value: string) => void
   onPhoneChange: (value: string) => void
   onNewPasswordChange: (value: string) => void
   onConfirmPasswordChange: (value: string) => void
@@ -72,9 +79,12 @@ export function AccountSettingsDialogShell({
   isUpdatingPassword,
   firstName,
   lastName,
+  title,
+  company,
+  contact,
+  about,
   phone,
   email,
-  orgName,
   avatarUrl,
   isUploadingAvatar,
   errors,
@@ -86,6 +96,10 @@ export function AccountSettingsDialogShell({
   onNewsletterOptInChange,
   onFirstNameChange,
   onLastNameChange,
+  onTitleChange,
+  onCompanyChange,
+  onContactChange,
+  onAboutChange,
   onPhoneChange,
   onNewPasswordChange,
   onConfirmPasswordChange,
@@ -125,22 +139,28 @@ export function AccountSettingsDialogShell({
               </div>
             ) : (
               <div className="flex items-center justify-between">
-                <button
-                  className="text-sm text-muted-foreground"
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto px-1 text-sm text-muted-foreground"
                   onClick={() => onMobilePageChange("menu")}
                 >
                   Cancel
-                </button>
+                </Button>
                 <p className="text-base font-semibold capitalize">
                   {TAB_LABELS[mobilePage]}
                 </p>
-                <button
-                  className="text-sm text-primary disabled:opacity-50"
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto px-1 text-sm text-primary disabled:opacity-50"
                   onClick={onSave}
                   disabled={!isDirty || isSaving}
                 >
                   {isSaving ? "Saving…" : "Save"}
-                </button>
+                </Button>
               </div>
             )}
           </div>
@@ -152,11 +172,6 @@ export function AccountSettingsDialogShell({
                   label="Profile"
                   active={tab === "profile"}
                   onClick={() => onTabChange("profile")}
-                />
-                <SideLink
-                  label="Organization"
-                  active={tab === "organization"}
-                  onClick={() => onTabChange("organization")}
                 />
                 <SideLink
                   label="Communications"
@@ -184,6 +199,10 @@ export function AccountSettingsDialogShell({
                     avatarUrl={avatarUrl}
                     firstName={firstName}
                     lastName={lastName}
+                    title={title}
+                    company={company}
+                    contact={contact}
+                    about={about}
                     phone={phone}
                     email={email}
                     errors={errors}
@@ -191,13 +210,11 @@ export function AccountSettingsDialogShell({
                     onAvatarFileSelected={onAvatarFileSelected}
                     onFirstNameChange={onFirstNameChange}
                     onLastNameChange={onLastNameChange}
+                    onTitleChange={onTitleChange}
+                    onCompanyChange={onCompanyChange}
+                    onContactChange={onContactChange}
+                    onAboutChange={onAboutChange}
                     onPhoneChange={onPhoneChange}
-                  />
-                )}
-
-                {tab === "organization" && (
-                  <OrganizationSection
-                    orgName={orgName}
                   />
                 )}
 
@@ -233,7 +250,6 @@ export function AccountSettingsDialogShell({
             isDirty={isDirty}
             isSaving={isSaving}
             onSave={onSave}
-            onClose={requestClose}
             onDone={() => onOpenChange(false)}
           />
 
@@ -250,17 +266,25 @@ export function AccountSettingsDialogShell({
             avatarUrl={avatarUrl}
             firstName={firstName}
             lastName={lastName}
+            title={title}
+            company={company}
+            contact={contact}
+            about={about}
             phone={phone}
             email={email}
+            errors={errors}
             marketingOptIn={marketingOptIn}
             newsletterOptIn={newsletterOptIn}
             newPassword={newPassword}
             confirmPassword={confirmPassword}
-            orgName={orgName}
             isUploadingAvatar={isUploadingAvatar}
             onAvatarFileSelected={onAvatarFileSelected}
             onFirstNameChange={onFirstNameChange}
             onLastNameChange={onLastNameChange}
+            onTitleChange={onTitleChange}
+            onCompanyChange={onCompanyChange}
+            onContactChange={onContactChange}
+            onAboutChange={onAboutChange}
             onPhoneChange={onPhoneChange}
             onMarketingOptInChange={onMarketingOptInChange}
             onNewsletterOptInChange={onNewsletterOptInChange}

@@ -1,25 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
-import { Input } from "@/components/ui/input"
-import Cropper from "react-easy-crop"
-import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 import { toast } from "@/lib/toast"
 
+import { AccountSettingsAvatarCropDialog } from "./account-settings-avatar-crop-dialog"
+import { AccountSettingsDeleteAccountDialog } from "./account-settings-delete-account-dialog"
+import { AccountSettingsDiscardChangesDialog } from "./account-settings-discard-changes-dialog"
+import { type CropArea, getCroppedBlob } from "./account-settings-image-utils"
 import { AccountSettingsDialogShell } from "./account-settings-dialog-shell"
 import { useAccountSettingsDialogState } from "./account-settings-dialog-state"
 import type { AccountSettingsTabKey } from "./types"
@@ -53,7 +43,7 @@ export function AccountSettingsDialog({
   const [rawImageUrl, setRawImageUrl] = useState<string | null>(null)
   const [crop, setCrop] = useState({ x: 0, y: 0 })
   const [zoom, setZoom] = useState(1)
-  const [croppedArea, setCroppedArea] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
+  const [croppedArea, setCroppedArea] = useState<CropArea | null>(null)
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [deleteEmailInput, setDeleteEmailInput] = useState("")
@@ -66,6 +56,10 @@ export function AccountSettingsDialog({
     handleMobilePageChange,
     firstName,
     lastName,
+    title,
+    company,
+    contact,
+    about,
     phone,
     marketingOptIn,
     newsletterOptIn,
@@ -79,7 +73,6 @@ export function AccountSettingsDialog({
     isDirty,
     errors,
     avatarUrl,
-    orgName,
     email,
     handleSave,
     handleUpdatePassword,
@@ -89,6 +82,10 @@ export function AccountSettingsDialog({
     handleNewsletterOptInChange,
     handleFirstNameChange,
     handleLastNameChange,
+    handleTitleChange,
+    handleCompanyChange,
+    handleContactChange,
+    handleAboutChange,
     handlePhoneChange,
     handleNewPasswordChange,
     handleConfirmPasswordChange,
@@ -116,6 +113,18 @@ export function AccountSettingsDialog({
     setConfirmDeleteOpen(true)
   }
 
+  function resetAvatarCropState() {
+    setCrop({ x: 0, y: 0 })
+    setZoom(1)
+    setCroppedArea(null)
+    setRawImageUrl((previous) => {
+      if (previous) {
+        URL.revokeObjectURL(previous)
+      }
+      return null
+    })
+  }
+
   async function confirmAccountDeletion() {
     if (!canDeleteAccount) return
 
@@ -140,6 +149,9 @@ export function AccountSettingsDialog({
       toast.error("Image too large. Max size is 5 MB.")
       return
     }
+    if (rawImageUrl) {
+      URL.revokeObjectURL(rawImageUrl)
+    }
     const url = URL.createObjectURL(file)
     setRawImageUrl(url)
     setCrop({ x: 0, y: 0 })
@@ -147,6 +159,14 @@ export function AccountSettingsDialog({
     setCroppedArea(null)
     setCropOpen(true)
   }
+
+  useEffect(() => {
+    return () => {
+      if (rawImageUrl) {
+        URL.revokeObjectURL(rawImageUrl)
+      }
+    }
+  }, [rawImageUrl])
 
   return (
     <>
@@ -168,9 +188,12 @@ export function AccountSettingsDialog({
         isUpdatingPassword={isUpdatingPassword}
         firstName={firstName}
         lastName={lastName}
+        title={title}
+        company={company}
+        contact={contact}
+        about={about}
         phone={phone}
         email={email}
-        orgName={orgName}
         avatarUrl={avatarUrl}
         isUploadingAvatar={isUploadingAvatar}
         errors={errors}
@@ -182,190 +205,90 @@ export function AccountSettingsDialog({
         onNewsletterOptInChange={handleNewsletterOptInChange}
         onFirstNameChange={handleFirstNameChange}
         onLastNameChange={handleLastNameChange}
+        onTitleChange={handleTitleChange}
+        onCompanyChange={handleCompanyChange}
+        onContactChange={handleContactChange}
+        onAboutChange={handleAboutChange}
         onPhoneChange={handlePhoneChange}
         onNewPasswordChange={handleNewPasswordChange}
         onConfirmPasswordChange={handleConfirmPasswordChange}
       />
 
-      <Dialog open={cropOpen} onOpenChange={setCropOpen}>
-        <DialogContent className="w-[min(720px,92%)] rounded-2xl p-0 sm:p-0">
-          <div className="space-y-0">
-            <DialogHeader className="border-b px-6 py-4">
-              <DialogTitle>Adjust your profile picture</DialogTitle>
-              <DialogDescription>Zoom and position the image, then apply.</DialogDescription>
-            </DialogHeader>
-            <div className="relative h-[320px] w-full">
-              {rawImageUrl ? (
-                <Cropper
-                  image={rawImageUrl}
-                  crop={crop}
-                  zoom={zoom}
-                  aspect={1}
-                  cropShape="round"
-                  showGrid={false}
-                  onCropChange={setCrop}
-                  onZoomChange={setZoom}
-                  onCropComplete={(_, area) => setCroppedArea(area)}
-                />
-              ) : null}
-            </div>
-            <div className="flex items-center justify-between border-t px-6 py-4">
-              <input
-                type="range"
-                min={1}
-                max={3}
-                step={0.05}
-                value={zoom}
-                onChange={(event) => setZoom(Number(event.currentTarget.value))}
-                className="h-1 w-40 accent-primary"
-              />
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" onClick={() => setCropOpen(false)}>
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  disabled={isUploadingAvatar}
-                  aria-busy={isUploadingAvatar}
-                  onClick={async () => {
-                    if (!rawImageUrl || !croppedArea) return
-                    setIsUploadingAvatar(true)
-                    const toastId = toast.loading("Uploading photo...")
-                    try {
-                      const blob = await getCroppedBlob(rawImageUrl, croppedArea)
-                      if (!blob) throw new Error("Failed to crop image")
-                      if (blob.size > MAX_AVATAR_BYTES) {
-                        toast.error("Cropped image is over 5 MB.")
-                        return
-                      }
-                      const formData = new FormData()
-                      formData.append("file", new File([blob], "avatar.png", { type: blob.type || "image/png" }))
-                      const res = await fetch("/api/account/avatar", { method: "POST", body: formData })
-                      if (!res.ok) {
-                        const err = await res.json().catch(() => ({}))
-                        throw new Error(err?.error || "Upload failed")
-                      }
-                      const { avatarUrl: url } = await res.json()
-                      applyAvatarUrl(url)
-                      toast.success("Profile photo updated", { id: toastId })
-                      router.refresh()
-                      setCropOpen(false)
-                    } catch (error) {
-                      const message = error instanceof Error ? error.message : "Upload failed"
-                      toast.error(message, { id: toastId })
-                    } finally {
-                      setIsUploadingAvatar(false)
-                    }
-                  }}
-                >
-                  {isUploadingAvatar ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="size-4 animate-spin" aria-hidden /> Applying…
-                    </span>
-                  ) : (
-                    "Apply"
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <AlertDialog
-        open={confirmDeleteOpen}
+      <AccountSettingsAvatarCropDialog
+        open={cropOpen}
         onOpenChange={(next) => {
-          if (isDeletingAccount) return
-          setConfirmDeleteOpen(next)
+          setCropOpen(next)
+          if (!next) {
+            resetAvatarCropState()
+          }
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete account?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This permanently deletes your account. Enter your email to confirm.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="space-y-2">
-            <Input
-              value={deleteEmailInput}
-              onChange={(event) => setDeleteEmailInput(event.currentTarget.value)}
-              placeholder={email || "you@example.com"}
-              autoComplete="off"
-              aria-label="Confirm account email"
-              disabled={isDeletingAccount}
-            />
-            <p className="text-xs text-muted-foreground">
-              Type <span className="font-medium text-foreground">{email || "your account email"}</span> to continue.
-            </p>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeletingAccount}>Cancel</AlertDialogCancel>
-            <Button
-              type="button"
-              variant="destructive"
-              onClick={confirmAccountDeletion}
-              disabled={!canDeleteAccount}
-            >
-              {isDeletingAccount ? "Deleting..." : "Delete account"}
-            </Button>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        rawImageUrl={rawImageUrl}
+        crop={crop}
+        onCropChange={setCrop}
+        zoom={zoom}
+        onZoomChange={setZoom}
+        onCropComplete={setCroppedArea}
+        isUploadingAvatar={isUploadingAvatar}
+        onApply={async () => {
+          if (!rawImageUrl || !croppedArea) return
+          setIsUploadingAvatar(true)
+          const toastId = toast.loading("Uploading photo...")
+          try {
+            const blob = await getCroppedBlob(rawImageUrl, croppedArea)
+            if (!blob) throw new Error("Failed to crop image")
+            if (blob.size > MAX_AVATAR_BYTES) {
+              toast.error("Cropped image is over 5 MB.")
+              return
+            }
+            const formData = new FormData()
+            formData.append("file", new File([blob], "avatar.png", { type: blob.type || "image/png" }))
+            const res = await fetch("/api/account/avatar", { method: "POST", body: formData })
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({}))
+              const debugToken =
+                typeof err?.debugToken === "string" && err.debugToken.trim().length > 0 ? err.debugToken : null
+              const errorMessage = typeof err?.error === "string" && err.error.trim().length > 0 ? err.error : "Upload failed"
+              throw new Error(debugToken ? `${errorMessage} (ref: ${debugToken})` : errorMessage)
+            }
+            const { avatarUrl: url } = await res.json()
+            if (typeof url !== "string" || url.trim().length === 0) {
+              throw new Error("Upload succeeded but no avatar URL was returned.")
+            }
+            applyAvatarUrl(url)
+            setCropOpen(false)
+            resetAvatarCropState()
+            toast.success("Profile photo updated", { id: toastId })
+            requestAnimationFrame(() => {
+              router.refresh()
+            })
+          } catch (error) {
+            const message = error instanceof Error ? error.message : "Upload failed"
+            toast.error(message, { id: toastId })
+          } finally {
+            setIsUploadingAvatar(false)
+          }
+        }}
+      />
 
-      <AlertDialog open={confirmClose} onOpenChange={setConfirmClose}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Discard changes?</AlertDialogTitle>
-            <AlertDialogDescription>
-              You have unsaved changes. Do you want to discard them or go back and save?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setConfirmClose(false)}>Keep editing</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                setConfirmClose(false)
-                onOpenChange(false)
-              }}
-            >
-              Discard
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <AccountSettingsDeleteAccountDialog
+        open={confirmDeleteOpen}
+        onOpenChange={setConfirmDeleteOpen}
+        isDeletingAccount={isDeletingAccount}
+        deleteEmailInput={deleteEmailInput}
+        onDeleteEmailInputChange={setDeleteEmailInput}
+        accountEmail={email}
+        canDeleteAccount={canDeleteAccount}
+        onConfirmDelete={confirmAccountDeletion}
+      />
+
+      <AccountSettingsDiscardChangesDialog
+        open={confirmClose}
+        onOpenChange={setConfirmClose}
+        onDiscard={() => {
+          setConfirmClose(false)
+          onOpenChange(false)
+        }}
+      />
     </>
   )
-}
-
-async function getCroppedBlob(
-  imageSrc: string,
-  area: { x: number; y: number; width: number; height: number }
-): Promise<Blob | null> {
-  return new Promise((resolve) => {
-    const img = new Image()
-    img.onload = () => {
-      const size = Math.min(area.width, area.height)
-      const canvas = document.createElement("canvas")
-      canvas.width = size
-      canvas.height = size
-      const ctx = canvas.getContext("2d")!
-      ctx.fillStyle = "#fff"
-      ctx.fillRect(0, 0, size, size)
-      ctx.drawImage(
-        img,
-        area.x,
-        area.y,
-        area.width,
-        area.height,
-        0,
-        0,
-        size,
-        size
-      )
-      canvas.toBlob((blob) => resolve(blob), "image/png", 0.92)
-    }
-    img.onerror = () => resolve(null)
-    img.src = imageSrc
-  })
 }

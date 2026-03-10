@@ -2,6 +2,9 @@
 
 import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
+import CheckIcon from "lucide-react/dist/esm/icons/check"
+import GlobeIcon from "lucide-react/dist/esm/icons/globe"
+import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,22 +16,31 @@ import { slugifyLocal } from "../../../utils"
 import type { CompanyEditProps } from "../types"
 import { RESERVED_SLUGS } from "../constants"
 import { Switch } from "@/components/ui/switch"
-import { publicSharingEnabled } from "@/lib/feature-flags"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 
 export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugStatus, setSlugStatus }: CompanyEditProps) {
-  const sharingEnabled = publicSharingEnabled
   const [isChecking, setIsChecking] = useState(false)
   const lastCheckRef = useRef(0)
   const explicitSlug = typeof company.publicSlug === "string" && company.publicSlug.trim().length > 0 ? company.publicSlug : ""
   const shouldCheckSlug = Boolean(explicitSlug || company.isPublic)
   const publicSlug = company.publicSlug || slugifyLocal(company.name || "")
+  const hasAddress = [
+    company.addressStreet,
+    company.addressCity,
+    company.addressState,
+    company.addressPostal,
+    company.addressCountry,
+    company.address,
+  ].some((value) => typeof value === "string" && value.trim().length > 0)
+  const isOnlineOnly = company.locationType === "online"
   const slugCandidate = useMemo(() => {
     const raw = explicitSlug || (company.isPublic ? company.name || "" : "")
     return slugifyLocal(raw)
   }, [company.isPublic, company.name, explicitSlug])
 
   useEffect(() => {
-    if (!sharingEnabled || !shouldCheckSlug) {
+    if (!shouldCheckSlug) {
       setIsChecking(false)
       setSlugStatus(null)
       return
@@ -78,7 +90,7 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
       window.clearTimeout(timeout)
       controller.abort()
     }
-  }, [sharingEnabled, shouldCheckSlug, slugCandidate, setSlugStatus])
+  }, [shouldCheckSlug, slugCandidate, setSlugStatus])
 
   const statusMessage = useMemo(() => {
     if (errors.publicSlug) return { tone: "error", message: errors.publicSlug }
@@ -88,76 +100,149 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
   }, [errors.publicSlug, isChecking, slugStatus])
 
   return (
-    <FormRow title="Public Page" description="Publish a minimal brand overview at a shareable URL.">
+    <FormRow title="Public Map Profile" description="Publish your organization on the Coach House map index.">
       <div className="grid gap-4">
-        {!sharingEnabled ? (
-          <p className="text-xs text-muted-foreground">
-            Public pages are disabled until the site launches. You can still prepare your details.
-          </p>
-        ) : null}
         <div className="flex items-start gap-3 rounded-lg border border-border/60 bg-muted/30 p-3">
           <Switch
             id="publicPageEnabled"
             checked={Boolean(company.isPublic)}
-            disabled={!sharingEnabled}
             onCheckedChange={(value) => {
               onUpdate({ isPublic: Boolean(value) })
               onDirty()
             }}
-            aria-label="Make brand overview public"
+            aria-label="Make organization visible on map"
           />
           <div className="space-y-1">
             <Label htmlFor="publicPageEnabled" className="text-xs text-muted-foreground">
-              Make public
+              Public
             </Label>
             <p className="text-xs text-muted-foreground">
-              When enabled, your overview is available at /{publicSlug}
+              When enabled, your organization is discoverable on{" "}
+              <Link
+                href="/find"
+                target="_blank"
+                rel="noreferrer"
+                className="text-inherit underline underline-offset-2"
+              >
+                our map
+              </Link>
+              .
             </p>
           </div>
         </div>
+        <div className="grid gap-4 md:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
+          <div className="grid gap-1">
+            <Label htmlFor="publicLocationType">How people access you</Label>
+            <Select
+              value={isOnlineOnly ? "online" : "in_person"}
+              onValueChange={(value) => {
+                if (value !== "online" && value !== "in_person") return
+                onUpdate({ locationType: value })
+                onDirty()
+              }}
+            >
+              <SelectTrigger id="publicLocationType" className="bg-background">
+                <SelectValue placeholder="Select access type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="in_person">Physical location</SelectItem>
+                <SelectItem value="online">Online only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {isOnlineOnly ? (
+            <div className="grid gap-1">
+              <Label htmlFor="locationUrl">Web resource link</Label>
+              <Input
+                id="locationUrl"
+                name="locationUrl"
+                value={company.locationUrl ?? ""}
+                onChange={(event) => {
+                  onUpdate({ locationUrl: event.currentTarget.value })
+                  onDirty()
+                }}
+                placeholder="https://example.org/get-help"
+                aria-invalid={Boolean(errors.locationUrl)}
+              />
+              {errors.locationUrl ? <p className="text-xs text-destructive">{errors.locationUrl}</p> : null}
+              <p className="text-xs text-muted-foreground">
+                Add the link people should visit if this organization is a web resource.
+              </p>
+            </div>
+          ) : null}
+        </div>
+        {company.isPublic && !hasAddress && !isOnlineOnly ? (
+          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3">
+            <div className="flex items-start gap-2">
+              <MapPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" aria-hidden />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">Add an address to appear on the map</p>
+                <p className="text-xs text-muted-foreground">
+                  This profile can still be published now, but it will not render a map marker until you add a public address in the Address section.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {company.isPublic && isOnlineOnly ? (
+          <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
+            <div className="flex items-start gap-2">
+              <GlobeIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">This will appear as a web resource</p>
+                <p className="text-xs text-muted-foreground">
+                  Online-only organizations stay visible in the `/find` list with a web resource badge instead of a map marker.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
           <div className="grid gap-1">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <Label htmlFor="publicSlug">Public URL</Label>
-              {statusMessage ? (
-                <span
-                  className={`text-xs ${
-                    statusMessage.tone === "success"
-                      ? "text-emerald-600 dark:text-emerald-500"
-                      : statusMessage.tone === "error"
-                        ? "text-destructive"
-                        : "text-muted-foreground"
-                  }`}
-                  role="status"
-                  aria-live="polite"
-                >
+            </div>
+            <div
+              className={cn(
+                "border-border/70 bg-background flex items-center gap-2 rounded-xl border px-3 py-1.5",
+                Boolean(errors.publicSlug) && "border-destructive/70",
+              )}
+            >
+              <span className="text-muted-foreground shrink-0 text-sm">
+                coachhouse.org/find/
+              </span>
+              <Input
+                id="publicSlug"
+                name="publicSlug"
+                value={company.publicSlug ?? ""}
+                onChange={(event) => {
+                  const value = event.currentTarget.value
+                  const normalized = slugifyLocal(value)
+                  onUpdate({ publicSlug: normalized })
+                  setSlugStatus(null)
+                  onDirty()
+                }}
+                placeholder={slugifyLocal(company.name || "")}
+                aria-invalid={Boolean(errors.publicSlug)}
+                className="h-9 min-w-0 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
+              />
+              {statusMessage?.tone === "success" ? (
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+                  <CheckIcon className="h-3 w-3" aria-hidden />
+                  {statusMessage.message}
+                </span>
+              ) : statusMessage?.tone === "muted" ? (
+                <span className="bg-muted text-muted-foreground shrink-0 rounded-full px-2 py-1 text-[11px] font-medium">
                   {statusMessage.message}
                 </span>
               ) : null}
             </div>
-            <div className="flex min-w-0 flex-1 items-center">
-              <div className="relative w-full max-w-sm">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-                  /
-                </span>
-                <Input
-                  id="publicSlug"
-                  name="publicSlug"
-                  value={company.publicSlug ?? ""}
-                  onChange={(event) => {
-                    const value = event.currentTarget.value
-                    const normalized = slugifyLocal(value)
-                    onUpdate({ publicSlug: normalized })
-                    setSlugStatus(null)
-                    onDirty()
-                  }}
-                  placeholder={slugifyLocal(company.name || "")}
-                  aria-invalid={Boolean(errors.publicSlug)}
-                  className="w-full min-w-0 pl-6"
-                />
-              </div>
-            </div>
-            {errors.publicSlug ? null : (
+            {statusMessage?.tone === "error" ? (
+              <p className="text-destructive text-xs" role="status" aria-live="polite">
+                {statusMessage.message}
+              </p>
+            ) : (
               <p className="text-xs text-muted-foreground">
                 Lowercase letters, numbers, and dashes only. Avoid reserved words like /admin.
               </p>
@@ -166,11 +251,13 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
           {company.isPublic ? (
             <div className="flex flex-col items-stretch gap-2 lg:items-end lg:justify-self-end">
               <Button asChild size="sm" variant="secondary" className="w-full lg:w-auto">
-                <Link href={`/${publicSlug}`}>View public page</Link>
+                <Link href={`/find/${encodeURIComponent(publicSlug)}`}>Preview map profile</Link>
               </Button>
               <ShareButton
                 url={
-                  typeof window === "undefined" ? undefined : `${window.location.origin}/${publicSlug}`
+                  typeof window === "undefined"
+                    ? undefined
+                    : `${window.location.origin}/find/${encodeURIComponent(publicSlug)}`
                 }
                 title={company.name || company.publicSlug || "Organization"}
               />

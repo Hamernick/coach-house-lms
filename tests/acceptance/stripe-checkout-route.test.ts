@@ -1,0 +1,143 @@
+import { beforeEach, describe, expect, it, vi } from "vitest"
+import { NextRequest } from "next/server"
+
+const {
+  createSupabaseRouteHandlerClientMock,
+  resolveActiveOrganizationMock,
+  resolveDevtoolsAudienceMock,
+  resolveTesterMetadataMock,
+  resolveStripeRuntimeConfigForAudienceMock,
+  resolveStripePriceIdForPlanMock,
+} = vi.hoisted(() => ({
+  createSupabaseRouteHandlerClientMock: vi.fn(),
+  resolveActiveOrganizationMock: vi.fn(),
+  resolveDevtoolsAudienceMock: vi.fn(),
+  resolveTesterMetadataMock: vi.fn(),
+  resolveStripeRuntimeConfigForAudienceMock: vi.fn(),
+  resolveStripePriceIdForPlanMock: vi.fn(),
+}))
+
+vi.mock("@/lib/supabase", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/supabase")>("@/lib/supabase")
+  return {
+    ...actual,
+    createSupabaseRouteHandlerClient: createSupabaseRouteHandlerClientMock,
+  }
+})
+
+vi.mock("@/lib/organization/active-org", () => ({
+  resolveActiveOrganization: resolveActiveOrganizationMock,
+}))
+
+vi.mock("@/lib/devtools/audience", () => ({
+  resolveDevtoolsAudience: resolveDevtoolsAudienceMock,
+  resolveTesterMetadata: resolveTesterMetadataMock,
+}))
+
+vi.mock("@/lib/billing/stripe-runtime", () => ({
+  resolveStripeRuntimeConfigForAudience: resolveStripeRuntimeConfigForAudienceMock,
+  resolveStripePriceIdForPlan: resolveStripePriceIdForPlanMock,
+}))
+
+vi.mock("@/lib/billing/stripe-checkout-diagnostics", () => ({
+  collectStripeCheckoutPriceDiagnostics: vi.fn(),
+}))
+
+describe("stripe checkout route", () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    resolveTesterMetadataMock.mockReturnValue(false)
+    resolveDevtoolsAudienceMock.mockResolvedValue({ isTester: false })
+    resolveActiveOrganizationMock.mockResolvedValue({ orgId: "org_123", role: "owner" })
+    resolveStripePriceIdForPlanMock.mockReturnValue("price_ops")
+  })
+
+  it("preserves onboarding return params when redirecting unauthenticated users to login", async () => {
+    createSupabaseRouteHandlerClientMock.mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({ data: { user: null } }),
+      },
+    })
+
+    const { GET } = await import("@/app/api/stripe/checkout/route")
+    const request = new NextRequest(
+      "http://localhost/api/stripe/checkout?plan=operations_support&source=onboarding&redirect=%2Fworkspace%3Fonboarding_flow%3D1%26source%3Donboarding_pricing&cancel=%2Fworkspace%3Fonboarding_flow%3D1%26source%3Donboarding_pricing&context=onboarding_builder",
+    )
+
+    const response = await GET(request)
+
+    expect(response.status).toBe(307)
+    expect(response.headers.get("location")).toBe(
+      "http://localhost/login?source=onboarding&redirect=%2Fapi%2Fstripe%2Fcheckout%3Fplan%3Doperations_support%26source%3Donboarding%26redirect%3D%252Fworkspace%253Fonboarding_flow%253D1%2526source%253Donboarding_pricing%26cancel%3D%252Fworkspace%253Fonboarding_flow%253D1%2526source%253Donboarding_pricing%26context%3Donboarding_builder",
+    )
+  })
+
+  it("returns checkout setup errors back to the onboarding workspace path", async () => {
+    createSupabaseRouteHandlerClientMock.mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user_123", email: "builder@example.test", user_metadata: {} } },
+        }),
+      },
+    })
+    resolveStripeRuntimeConfigForAudienceMock.mockReturnValue(null)
+
+    const { GET } = await import("@/app/api/stripe/checkout/route")
+    const request = new NextRequest(
+      "http://localhost/api/stripe/checkout?plan=organization&source=onboarding&redirect=%2Fworkspace%3Fonboarding_flow%3D1%26source%3Donboarding_pricing&cancel=%2Fworkspace%3Fonboarding_flow%3D1%26source%3Donboarding_pricing",
+    )
+
+    const response = await GET(request)
+    const location = response.headers.get("location")
+
+    expect(response.status).toBe(307)
+    expect(location).toContain(
+      "http://localhost/workspace?onboarding_flow=1&source=onboarding_pricing",
+    )
+    expect(location).toContain("checkout_error=stripe_unavailable")
+  })
+
+  it("adds cancelled=true to the onboarding cancel return URL sent to Stripe", async () => {
+    const stripeCheckoutCreateMock = vi.fn().mockResolvedValue({
+      url: "https://checkout.stripe.test/session_123",
+    })
+
+    createSupabaseRouteHandlerClientMock.mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user_123", email: "builder@example.test", user_metadata: {} } },
+        }),
+      },
+    })
+    resolveStripeRuntimeConfigForAudienceMock.mockReturnValue({
+      client: {
+        checkout: {
+          sessions: {
+            create: stripeCheckoutCreateMock,
+          },
+        },
+      },
+      mode: "live",
+      target: "live",
+    })
+
+    const { GET } = await import("@/app/api/stripe/checkout/route")
+    const request = new NextRequest(
+      "http://localhost/api/stripe/checkout?plan=operations_support&source=onboarding&redirect=%2Fworkspace%3Fonboarding_flow%3D1%26source%3Donboarding_pricing&cancel=%2Fworkspace%3Fonboarding_flow%3D1%26source%3Donboarding_pricing&context=onboarding_builder",
+    )
+
+    const response = await GET(request)
+
+    expect(response.status).toBe(307)
+    expect(response.headers.get("location")).toBe("https://checkout.stripe.test/session_123")
+    expect(stripeCheckoutCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cancel_url:
+          "http://localhost/workspace?onboarding_flow=1&source=onboarding_pricing&cancelled=true",
+        success_url: expect.stringContaining(
+          "/pricing/success?session_id=%7BCHECKOUT_SESSION_ID%7D&redirect=%2Fworkspace%3Fonboarding_flow%3D1%26source%3Donboarding_pricing&context=onboarding_builder",
+        ),
+      }),
+    )
+  })
+})

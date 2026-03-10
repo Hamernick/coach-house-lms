@@ -5,8 +5,8 @@ import { revalidatePath } from "next/cache"
 
 import { requireServerSession } from "@/lib/auth"
 import { geocodeAddress } from "@/lib/mapbox/geocode"
+import type { BrandTypographyConfig } from "@/lib/organization/org-profile-brand-types"
 import type { Database } from "@/lib/supabase"
-import { publicSharingEnabled } from "@/lib/feature-flags"
 import { sanitizeOrgProfileText, shouldStripOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 import { normalizeExternalUrl } from "@/lib/organization/urls"
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
@@ -27,7 +27,10 @@ type OrgProfilePayload = {
   addressState?: string | null
   addressPostal?: string | null
   addressCountry?: string | null
+  locationType?: "in_person" | "online" | null
+  locationUrl?: string | null
   logoUrl?: string | null
+  brandMarkUrl?: string | null
   headerUrl?: string | null
   publicUrl?: string | null
   twitter?: string | null
@@ -47,6 +50,10 @@ type OrgProfilePayload = {
   boilerplate?: string | null
   brandPrimary?: string | null
   brandColors?: string[] | null
+  brandThemePresetId?: string | null
+  brandAccentPresetId?: string | null
+  brandTypographyPresetId?: string | null
+  brandTypography?: BrandTypographyConfig | null
   publicSlug?: string | null
   isPublic?: boolean | null
 }
@@ -58,8 +65,6 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   const { orgId, role } = await resolveActiveOrganization(supabase, userId)
   const canEdit = canEditOrganization(role)
   if (!canEdit) return { error: "Forbidden" }
-
-  const allowPublicSharing = publicSharingEnabled
 
   // Load existing profile to merge
   const { data: orgRow, error: orgErr } = await supabase
@@ -81,8 +86,13 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
 
   const current = (orgRow?.profile ?? {}) as Record<string, unknown>
   const previousLogoUrl = typeof current["logoUrl"] === "string" ? (current["logoUrl"] as string) : null
+  const previousBrandMarkUrl =
+    typeof current["brandMarkUrl"] === "string"
+      ? (current["brandMarkUrl"] as string)
+      : null
   const previousHeaderUrl = typeof current["headerUrl"] === "string" ? (current["headerUrl"] as string) : null
   const logoTouched = Object.prototype.hasOwnProperty.call(payload, "logoUrl")
+  const brandMarkTouched = Object.prototype.hasOwnProperty.call(payload, "brandMarkUrl")
   const headerTouched = Object.prototype.hasOwnProperty.call(payload, "headerUrl")
   const next: Record<string, unknown> = { ...current }
   const urlFields = new Set([
@@ -96,6 +106,7 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
     "tiktok",
     "github",
     "logoUrl",
+    "brandMarkUrl",
     "headerUrl",
   ])
 
@@ -109,6 +120,11 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
         trimmed === "pre_501c3" || trimmed === "in_progress" || trimmed === "approved"
           ? trimmed
           : null
+    } else if (k === "locationType") {
+      const trimmed = typeof v === "string" ? v.trim() : ""
+      next.location_type = trimmed === "online" || trimmed === "in_person" ? trimmed : null
+    } else if (k === "locationUrl") {
+      next.location_url = typeof v === "string" ? normalizeExternalUrl(v) : null
     } else {
       if (typeof v === "string") {
         if (urlFields.has(k)) {
@@ -182,7 +198,7 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   const desiredSlug =
     typeof payload.publicSlug === "string" && payload.publicSlug.length > 0
       ? payload.publicSlug
-      : allowPublicSharing && payload.isPublic
+      : payload.isPublic
         ? String(payload.name ?? current["name"] ?? "")
         : ""
   const normalizedSlugRaw = desiredSlug ? slugify(desiredSlug) : undefined
@@ -192,10 +208,22 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   let locationLng = orgRow?.location_lng ?? null
 
   const nextLogoUrl = typeof next["logoUrl"] === "string" ? (next["logoUrl"] as string) : null
+  const nextBrandMarkUrl =
+    typeof next["brandMarkUrl"] === "string"
+      ? (next["brandMarkUrl"] as string)
+      : null
   const nextHeaderUrl = typeof next["headerUrl"] === "string" ? (next["headerUrl"] as string) : null
   const cleanupPaths = new Set<string>()
   if (logoTouched) {
     const cleanupPath = resolveOrgMediaCleanupPath({ previousUrl: previousLogoUrl, nextUrl: nextLogoUrl, userId: orgId })
+    if (cleanupPath) cleanupPaths.add(cleanupPath)
+  }
+  if (brandMarkTouched) {
+    const cleanupPath = resolveOrgMediaCleanupPath({
+      previousUrl: previousBrandMarkUrl,
+      nextUrl: nextBrandMarkUrl,
+      userId: orgId,
+    })
     if (cleanupPath) cleanupPaths.add(cleanupPath)
   }
   if (headerTouched) {
@@ -204,7 +232,8 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   }
 
   const addressForGeocode = typeof next.address === "string" ? next.address.replace(/\n+/g, ", ") : ""
-  if (!addressForGeocode) {
+  const isOnlineOnly = next.location_type === "online"
+  if (isOnlineOnly || !addressForGeocode) {
     locationLat = null
     locationLng = null
   } else {
@@ -219,7 +248,7 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
     user_id: orgId,
     ein: typeof payload.ein === "string" ? payload.ein : orgRow?.ein ?? null,
     public_slug: normalizedSlug ?? undefined,
-    is_public: allowPublicSharing ? payload.isPublic ?? undefined : false,
+    is_public: payload.isPublic ?? undefined,
     profile: next as unknown as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
     location_lat: locationLat,
     location_lng: locationLng,
@@ -240,7 +269,7 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
   const previousSlug = typeof orgRow?.public_slug === "string" && orgRow.public_slug.length > 0 ? orgRow.public_slug : null
   const nextSlug = normalizedSlug ?? previousSlug
   const wasPublic = Boolean(orgRow?.is_public)
-  const isPublic = allowPublicSharing ? (typeof payload.isPublic === "boolean" ? payload.isPublic : wasPublic) : false
+  const isPublic = typeof payload.isPublic === "boolean" ? payload.isPublic : wasPublic
 
   revalidateOrganizationViews({
     previousSlug,
@@ -274,6 +303,7 @@ function revalidateOrganizationViews({
   isPublic: boolean
 }) {
   revalidatePath("/organization")
+  revalidatePath("/find")
 
   if (isPublic || wasPublic) {
     revalidatePath("/community")
@@ -281,10 +311,12 @@ function revalidateOrganizationViews({
 
   if (previousSlug) {
     revalidatePath(`/${previousSlug}`)
+    revalidatePath(`/find/${previousSlug}`)
   }
 
-  if (isPublic && nextSlug && nextSlug !== previousSlug) {
+  if (nextSlug && nextSlug !== previousSlug) {
     revalidatePath(`/${nextSlug}`)
+    revalidatePath(`/find/${nextSlug}`)
   }
 }
  

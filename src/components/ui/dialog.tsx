@@ -4,12 +4,24 @@ import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import XIcon from "lucide-react/dist/esm/icons/x"
 
+import {
+  scheduleInteractionLockGuard,
+  scheduleInteractionLockGuardOnClose,
+} from "@/lib/ui/interaction-lock-guard"
 import { cn } from "@/lib/utils"
 
 function Dialog({
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Root>) {
-  return <DialogPrimitive.Root data-slot="dialog" {...props} />
+  const handleOpenChange = React.useCallback(
+    (open: boolean) => {
+      scheduleInteractionLockGuardOnClose({ open, onOpenChange })
+    },
+    [onOpenChange],
+  )
+
+  return <DialogPrimitive.Root data-slot="dialog" onOpenChange={handleOpenChange} {...props} />
 }
 
 function DialogTrigger({
@@ -54,6 +66,13 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  React.useEffect(
+    () => () => {
+      scheduleInteractionLockGuard()
+    },
+    [],
+  )
+
   return (
     <DialogPortal data-slot="dialog-portal">
       <DialogOverlay />

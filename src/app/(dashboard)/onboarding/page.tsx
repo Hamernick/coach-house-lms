@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 
+import { CommunityJoinCards } from "@/components/community/community-join-cards"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckboxField } from "@/components/form/checkbox-field"
@@ -75,6 +76,13 @@ export default async function OnboardingPage() {
             </form>
           </CardContent>
         </Card>
+      </section>
+
+      <section className="mx-auto w-full max-w-3xl">
+        <CommunityJoinCards
+          title="Meet the community"
+          description="Optional now, helpful later. Join the Coach House communities while you set up your workspace."
+        />
       </section>
     </div>
   )

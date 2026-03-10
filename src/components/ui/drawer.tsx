@@ -3,12 +3,24 @@
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
+import {
+  scheduleInteractionLockGuard,
+  scheduleInteractionLockGuardOnClose,
+} from "@/lib/ui/interaction-lock-guard"
 import { cn } from "@/lib/utils"
 
 function Drawer({
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Root>) {
-  return <DrawerPrimitive.Root data-slot="drawer" {...props} />
+  const handleOpenChange = React.useCallback(
+    (open: boolean) => {
+      scheduleInteractionLockGuardOnClose({ open, onOpenChange })
+    },
+    [onOpenChange],
+  )
+
+  return <DrawerPrimitive.Root data-slot="drawer" onOpenChange={handleOpenChange} {...props} />
 }
 
 function DrawerTrigger({
@@ -50,6 +62,13 @@ function DrawerContent({
   children,
   ...props
 }: React.ComponentProps<typeof DrawerPrimitive.Content>) {
+  React.useEffect(
+    () => () => {
+      scheduleInteractionLockGuard()
+    },
+    [],
+  )
+
   return (
     <DrawerPortal data-slot="drawer-portal">
       <DrawerOverlay />

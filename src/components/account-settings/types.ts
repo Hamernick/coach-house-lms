@@ -1,4 +1,4 @@
-export type AccountSettingsTabKey = "profile" | "organization" | "communications" | "security" | "danger"
+export type AccountSettingsTabKey = "profile" | "communications" | "security" | "danger"
 
 export type AccountSettingsMobilePage = "menu" | AccountSettingsTabKey
 

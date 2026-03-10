@@ -110,6 +110,10 @@ function sanitizeFilename(name: string) {
   return cleaned.length > 0 ? cleaned : "document.pdf"
 }
 
+function isPolicyDocumentPath(path: string, orgId: string, policyId: string) {
+  return path.startsWith(`${orgId}/policies/${policyId}/`)
+}
+
 async function loadProfile(
   supabase: ReturnType<typeof createSupabaseRouteHandlerClient>,
   orgId: string,
@@ -190,6 +194,8 @@ export async function GET(request: NextRequest) {
   const auth = await requireOrgMember(request)
   if ("error" in auth) return auth.error
   const policyId = getPolicyId(request)
+  const { searchParams } = new URL(request.url)
+  const downloadRequested = searchParams.get("download") === "1"
   if (!policyId) return NextResponse.json({ error: "Policy id is required." }, { status: 400 })
 
   try {
@@ -198,10 +204,24 @@ export async function GET(request: NextRequest) {
     if (!policy?.document?.path) {
       return NextResponse.json({ error: "Policy document not found." }, { status: 404 })
     }
+    if (!isPolicyDocumentPath(policy.document.path, auth.orgId, policy.id)) {
+      return NextResponse.json({ error: "Policy document not found." }, { status: 404 })
+    }
 
     const { data: signed, error: signedError } = await auth.supabase.storage
       .from(BUCKET)
-      .createSignedUrl(policy.document.path, 60 * 15)
+      .createSignedUrl(
+        policy.document.path,
+        60 * 15,
+        downloadRequested
+          ? {
+              download:
+                policy.document.name && policy.document.name.length > 0
+                  ? policy.document.name
+                  : true,
+            }
+          : undefined,
+      )
     if (signedError || !signed?.signedUrl) {
       return NextResponse.json(
         { error: signedError?.message ?? "Unable to access policy document." },
@@ -237,7 +257,10 @@ export async function POST(request: NextRequest) {
     const existing = policies.find((entry) => entry.id === policyId)
     if (!existing) return NextResponse.json({ error: "Policy not found." }, { status: 404 })
 
-    if (existing.document?.path) {
+    if (
+      existing.document?.path &&
+      isPolicyDocumentPath(existing.document.path, auth.orgId, policyId)
+    ) {
       await auth.supabase.storage.from(BUCKET).remove([existing.document.path])
     }
 
@@ -286,6 +309,9 @@ export async function DELETE(request: NextRequest) {
     const existing = policies.find((entry) => entry.id === policyId)
     if (!existing) return NextResponse.json({ error: "Policy not found." }, { status: 404 })
     if (!existing.document?.path) {
+      return NextResponse.json({ error: "Policy document not found." }, { status: 404 })
+    }
+    if (!isPolicyDocumentPath(existing.document.path, auth.orgId, policyId)) {
       return NextResponse.json({ error: "Policy document not found." }, { status: 404 })
     }
 

@@ -4,10 +4,24 @@ import * as React from "react"
 import * as SheetPrimitive from "@radix-ui/react-dialog"
 import XIcon from "lucide-react/dist/esm/icons/x"
 
+import {
+  scheduleInteractionLockGuard,
+  scheduleInteractionLockGuardOnClose,
+} from "@/lib/ui/interaction-lock-guard"
 import { cn } from "@/lib/utils"
 
-function Sheet({ ...props }: React.ComponentProps<typeof SheetPrimitive.Root>) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />
+function Sheet({
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof SheetPrimitive.Root>) {
+  const handleOpenChange = React.useCallback(
+    (open: boolean) => {
+      scheduleInteractionLockGuardOnClose({ open, onOpenChange })
+    },
+    [onOpenChange],
+  )
+
+  return <SheetPrimitive.Root data-slot="sheet" onOpenChange={handleOpenChange} {...props} />
 }
 
 function SheetTrigger({
@@ -52,6 +66,13 @@ function SheetContent({
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left"
 }) {
+  React.useEffect(
+    () => () => {
+      scheduleInteractionLockGuard()
+    },
+    [],
+  )
+
   return (
     <SheetPortal>
       <SheetOverlay />

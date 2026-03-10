@@ -1,0 +1,254 @@
+"use client"
+
+import type { ComponentType } from "react"
+import DownloadIcon from "lucide-react/dist/esm/icons/download"
+import FacebookIcon from "lucide-react/dist/esm/icons/facebook"
+import GlobeIcon from "lucide-react/dist/esm/icons/globe"
+import InstagramIcon from "lucide-react/dist/esm/icons/instagram"
+import LinkedinIcon from "lucide-react/dist/esm/icons/linkedin"
+import MailIcon from "lucide-react/dist/esm/icons/mail"
+import PhoneIcon from "lucide-react/dist/esm/icons/phone"
+import TwitterIcon from "lucide-react/dist/esm/icons/twitter"
+
+import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+
+export type PublicMapSocialKey = keyof Pick<
+  PublicMapOrganization,
+  "twitter" | "facebook" | "linkedin" | "instagram"
+>
+
+export type OrganizationDetailIcon = ComponentType<{
+  className?: string
+  "aria-hidden"?: boolean
+}>
+
+export type OrganizationDetailSocialLink = {
+  key: PublicMapSocialKey
+  label: string
+  href: string
+}
+
+export type OrganizationDetailActionLink = {
+  key: string
+  label: string
+  href: string
+  external: boolean
+  icon: OrganizationDetailIcon
+}
+
+export type OrganizationDetailStoryField = {
+  label: string
+  value: string
+}
+
+export type OrganizationDetailContactRow = {
+  label: string
+  value: string
+}
+
+const SOCIAL_FIELDS: Array<{
+  label: string
+  key: PublicMapSocialKey
+}> = [
+  { label: "Twitter / X", key: "twitter" },
+  { label: "Facebook", key: "facebook" },
+  { label: "LinkedIn", key: "linkedin" },
+  { label: "Instagram", key: "instagram" },
+]
+
+export const SOCIAL_ICON_MAP: Record<PublicMapSocialKey, OrganizationDetailIcon> =
+  {
+    twitter: TwitterIcon,
+    facebook: FacebookIcon,
+    linkedin: LinkedinIcon,
+    instagram: InstagramIcon,
+  }
+
+export function normalizeHref(value: string | null | undefined) {
+  if (!value) return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (/^https?:\/\//i.test(trimmed)) return trimmed
+  return `https://${trimmed}`
+}
+
+export function normalizeText(value: string | null | undefined) {
+  if (typeof value !== "string") return ""
+  return value.trim()
+}
+
+export function normalizeImageSrc(value: string | null | undefined) {
+  if (typeof value !== "string") return null
+  const trimmed = value.trim()
+  if (!trimmed) return null
+  if (
+    /^https?:\/\//i.test(trimmed) ||
+    /^data:/i.test(trimmed) ||
+    trimmed.startsWith("/")
+  ) {
+    return trimmed
+  }
+  if (trimmed.startsWith("//")) return `https:${trimmed}`
+  return `https://${trimmed}`
+}
+
+export function buildInitials(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean)
+  if (parts.length === 0) return "O"
+  if (parts.length === 1) return parts[0]!.slice(0, 1).toUpperCase()
+  return `${parts[0]!.slice(0, 1)}${parts[1]!.slice(0, 1)}`.toUpperCase()
+}
+
+export function truncateAtWordBoundary(value: string, maxLength: number) {
+  if (value.length <= maxLength) return value
+  const sliced = value.slice(0, maxLength)
+  const boundary = sliced.lastIndexOf(" ")
+  const core = boundary > 0 ? sliced.slice(0, boundary) : sliced
+  return `${core.trimEnd()}...`
+}
+
+export function formatLocation(organization: PublicMapOrganization) {
+  return [organization.city, organization.state, organization.country]
+    .filter((entry) => Boolean(entry && entry.trim().length > 0))
+    .join(", ")
+}
+
+export function formatAddressLines(organization: PublicMapOrganization) {
+  const street = normalizeText(organization.addressStreet)
+  const locality = [
+    organization.city,
+    organization.state,
+    organization.addressPostal,
+  ]
+    .map((entry) => normalizeText(entry))
+    .filter((entry) => entry.length > 0)
+  const country = normalizeText(organization.country)
+  const fallback = normalizeText(organization.address)
+
+  const lines: string[] = []
+  if (street) lines.push(street)
+  if (locality.length > 0) lines.push(locality.join(", "))
+  if (country) lines.push(country)
+  if (lines.length === 0 && fallback) {
+    lines.push(
+      ...fallback
+        .split(/\n+/)
+        .map((segment) => segment.trim())
+        .filter(Boolean)
+    )
+  }
+  return lines
+}
+
+export function buildBrandPalette(organization: PublicMapOrganization) {
+  const palette = new Set<string>()
+  const primary = normalizeText(organization.brandPrimary)
+  if (primary) palette.add(primary)
+  for (const color of organization.brandColors) {
+    const normalized = normalizeText(color)
+    if (!normalized) continue
+    palette.add(normalized)
+  }
+  return Array.from(palette)
+}
+
+export function resolveAboutText(organization: PublicMapOrganization) {
+  return (
+    normalizeText(organization.description) ||
+    normalizeText(organization.tagline) ||
+    normalizeText(organization.mission) ||
+    "This organization is publicly listed in the Coach House map index."
+  )
+}
+
+export function resolveBrandKitDownloadHref(organization: PublicMapOrganization) {
+  if (!organization.brandKitAvailable || !organization.publicSlug) return null
+  return `/api/public/organizations/${organization.publicSlug}/brand-kit`
+}
+
+export function buildSocialLinks(
+  organization: PublicMapOrganization
+): OrganizationDetailSocialLink[] {
+  return SOCIAL_FIELDS.map((field) => ({
+    key: field.key,
+    label: field.label,
+    href: normalizeHref(organization[field.key]),
+  })).filter(
+    (
+      entry
+    ): entry is OrganizationDetailSocialLink => Boolean(entry.href)
+  )
+}
+
+export function buildStoryFields(
+  organization: PublicMapOrganization
+): OrganizationDetailStoryField[] {
+  return [
+    { label: "Vision", value: normalizeText(organization.vision) },
+    { label: "Mission", value: normalizeText(organization.mission) },
+    { label: "Values", value: normalizeText(organization.values) },
+    { label: "Need statement", value: normalizeText(organization.needStatement) },
+  ]
+}
+
+export function buildContactRows(
+  organization: PublicMapOrganization
+): OrganizationDetailContactRow[] {
+  return [
+    { label: "Contact", value: normalizeText(organization.contactName) },
+    { label: "Email", value: normalizeText(organization.email) },
+    { label: "Phone", value: normalizeText(organization.phone) },
+  ].filter((entry) => entry.value.length > 0)
+}
+
+export function buildActionLinks(
+  organization: PublicMapOrganization
+): OrganizationDetailActionLink[] {
+  const website = normalizeHref(organization.website)
+  const email = normalizeText(organization.email)
+  const phone = normalizeText(organization.phone)
+  const brandKitHref = resolveBrandKitDownloadHref(organization)
+
+  const actions: Array<OrganizationDetailActionLink | null> = [
+    website
+      ? {
+          key: "website",
+          label: "Website",
+          href: website,
+          external: true,
+          icon: GlobeIcon,
+        }
+      : null,
+    email
+      ? {
+          key: "email",
+          label: "Email",
+          href: `mailto:${email}`,
+          external: false,
+          icon: MailIcon,
+        }
+      : null,
+    phone
+      ? {
+          key: "call",
+          label: "Call",
+          href: `tel:${phone}`,
+          external: false,
+          icon: PhoneIcon,
+        }
+      : null,
+    brandKitHref
+      ? {
+          key: "brand-kit",
+          label: "Brand kit",
+          href: brandKitHref,
+          external: true,
+          icon: DownloadIcon,
+        }
+      : null,
+  ]
+
+  return actions.filter(
+    (action): action is OrganizationDetailActionLink => action !== null,
+  )
+}

@@ -16,6 +16,7 @@ export type DevtoolsAudience = {
 export type ProfileAudience = {
   fullName: string | null
   avatarUrl: string | null
+  headline: string | null
   isAdmin: boolean
   isTester: boolean
 }
@@ -32,6 +33,7 @@ type ProfileRowWithoutTester = {
 type ProfileAudienceWithTester = {
   full_name: string | null
   avatar_url: string | null
+  headline: string | null
   role: string | null
   is_tester: boolean | null
 }
@@ -39,7 +41,59 @@ type ProfileAudienceWithTester = {
 type ProfileAudienceWithoutTester = {
   full_name: string | null
   avatar_url: string | null
+  headline: string | null
   role: string | null
+}
+
+type QueryResult<T> = {
+  data: T | null
+  error: unknown | null
+}
+
+function resolveIsTesterFlag({
+  profileTesterValue,
+  fallbackIsTester,
+}: {
+  profileTesterValue: boolean | null | undefined
+  fallbackIsTester: boolean
+}) {
+  if (typeof profileTesterValue === "boolean") return profileTesterValue
+  return fallbackIsTester
+}
+
+async function lookupProfileRow<T>({
+  supabase,
+  userId,
+  columns,
+}: {
+  supabase: SupabaseClient<Database, "public">
+  userId: string
+  columns: string
+}): Promise<QueryResult<T>> {
+  try {
+    const fromResult = supabase.from("profiles") as unknown as Record<string, unknown>
+    if (typeof fromResult.select !== "function") {
+      return { data: null, error: null }
+    }
+    const selected = (fromResult.select as (value: string) => unknown)(columns) as Record<string, unknown>
+    if (typeof selected.eq !== "function") {
+      return { data: null, error: null }
+    }
+    const filtered = (selected.eq as (column: string, value: string) => unknown)("id", userId) as Record<
+      string,
+      unknown
+    >
+
+    if (typeof filtered.maybeSingle === "function") {
+      return (await (filtered.maybeSingle as () => Promise<QueryResult<T>>)()) ?? { data: null, error: null }
+    }
+    if (typeof filtered.single === "function") {
+      return (await (filtered.single as () => Promise<QueryResult<T>>)()) ?? { data: null, error: null }
+    }
+    return { data: null, error: null }
+  } catch (error) {
+    return { data: null, error }
+  }
 }
 
 function isMissingTesterColumnError(error: unknown) {
@@ -58,16 +112,19 @@ export async function resolveDevtoolsAudience({
   userId,
   fallbackIsTester = false,
 }: DevtoolsAudienceOptions): Promise<DevtoolsAudience> {
-  const withTester = await supabase
-    .from("profiles")
-    .select("role, is_tester")
-    .eq("id", userId)
-    .maybeSingle<ProfileRowWithTester>()
+  const withTester = await lookupProfileRow<ProfileRowWithTester>({
+    supabase,
+    userId,
+    columns: "role, is_tester",
+  })
 
   if (!withTester.error) {
     return {
       isAdmin: withTester.data?.role === "admin",
-      isTester: Boolean(withTester.data?.is_tester) || fallbackIsTester,
+      isTester: resolveIsTesterFlag({
+        profileTesterValue: withTester.data?.is_tester,
+        fallbackIsTester,
+      }),
     }
   }
 
@@ -76,11 +133,11 @@ export async function resolveDevtoolsAudience({
     return { isAdmin: false, isTester: fallbackIsTester }
   }
 
-  const withoutTester = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", userId)
-    .maybeSingle<ProfileRowWithoutTester>()
+  const withoutTester = await lookupProfileRow<ProfileRowWithoutTester>({
+    supabase,
+    userId,
+    columns: "role",
+  })
 
   return {
     isAdmin: withoutTester.data?.role === "admin",
@@ -93,18 +150,22 @@ export async function resolveProfileAudience({
   userId,
   fallbackIsTester = false,
 }: DevtoolsAudienceOptions): Promise<ProfileAudience> {
-  const withTester = await supabase
-    .from("profiles")
-    .select("full_name, avatar_url, role, is_tester")
-    .eq("id", userId)
-    .maybeSingle<ProfileAudienceWithTester>()
+  const withTester = await lookupProfileRow<ProfileAudienceWithTester>({
+    supabase,
+    userId,
+    columns: "full_name, avatar_url, headline, role, is_tester",
+  })
 
   if (!withTester.error) {
     return {
       fullName: withTester.data?.full_name ?? null,
       avatarUrl: withTester.data?.avatar_url ?? null,
+      headline: withTester.data?.headline ?? null,
       isAdmin: withTester.data?.role === "admin",
-      isTester: Boolean(withTester.data?.is_tester) || fallbackIsTester,
+      isTester: resolveIsTesterFlag({
+        profileTesterValue: withTester.data?.is_tester,
+        fallbackIsTester,
+      }),
     }
   }
 
@@ -112,20 +173,22 @@ export async function resolveProfileAudience({
     return {
       fullName: null,
       avatarUrl: null,
+      headline: null,
       isAdmin: false,
       isTester: fallbackIsTester,
     }
   }
 
-  const withoutTester = await supabase
-    .from("profiles")
-    .select("full_name, avatar_url, role")
-    .eq("id", userId)
-    .maybeSingle<ProfileAudienceWithoutTester>()
+  const withoutTester = await lookupProfileRow<ProfileAudienceWithoutTester>({
+    supabase,
+    userId,
+    columns: "full_name, avatar_url, headline, role",
+  })
 
   return {
     fullName: withoutTester.data?.full_name ?? null,
     avatarUrl: withoutTester.data?.avatar_url ?? null,
+    headline: withoutTester.data?.headline ?? null,
     isAdmin: withoutTester.data?.role === "admin",
     isTester: fallbackIsTester,
   }

@@ -1,24 +1,31 @@
 "use client"
 
-import { useId, useState } from "react"
+import { useEffect, useId, useState } from "react"
+import ImageIcon from "lucide-react/dist/esm/icons/image"
 import { toast } from "@/lib/toast"
 
-import Link from "next/link"
-
-import { Button } from "@/components/ui/button"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { GridPattern } from "@/components/ui/shadcn-io/grid-pattern/index"
 import Image from "next/image"
-import Loader2 from "lucide-react/dist/esm/icons/loader-2"
-import PencilLine from "lucide-react/dist/esm/icons/pencil-line"
 import { cn } from "@/lib/utils"
-import { uploadOrgMedia, validateOrgMediaFile } from "@/lib/organization/org-media"
+import {
+  uploadOrgMedia,
+  validateOrgMediaFile,
+} from "@/lib/organization/org-media"
+import { ORG_BANNER_ASPECT_RATIO } from "@/lib/organization/banner-spec"
+
+import {
+  type CropArea,
+  getCroppedBannerBlob,
+  loadImageDimensions,
+  validateBannerCropDimensions,
+  validateBannerImageDimensions,
+} from "./banner-image-utils"
+import { OrgProfileBannerCropDialog } from "./org-profile-banner-crop-dialog"
+import {
+  OrgProfileHeaderActions,
+  OrgProfileHeaderBannerControls,
+  OrgProfileHeaderLogoControls,
+} from "./header-controls"
 
 type OrgProfileHeaderProps = {
   name: string
@@ -30,6 +37,7 @@ type OrgProfileHeaderProps = {
   isDirty: boolean
   canEdit: boolean
   publicLink?: string | null
+  onCloseToWorkspace?: (() => void) | null
   onLogoChange: (url: string | null) => Promise<void>
   onHeaderChange: (url: string | null) => Promise<void>
   onEnterEdit: () => void
@@ -62,6 +70,7 @@ export function OrgProfileHeader({
   isDirty,
   canEdit,
   publicLink,
+  onCloseToWorkspace,
   onLogoChange,
   onHeaderChange,
   onEnterEdit,
@@ -74,15 +83,61 @@ export function OrgProfileHeader({
   const [isUploadingHeader, setIsUploadingHeader] = useState(false)
   const [isRemovingLogo, setIsRemovingLogo] = useState(false)
   const [isRemovingHeader, setIsRemovingHeader] = useState(false)
+  const [bannerCropOpen, setBannerCropOpen] = useState(false)
+  const [bannerCrop, setBannerCrop] = useState({ x: 0, y: 0 })
+  const [bannerZoom, setBannerZoom] = useState(1)
+  const [bannerCroppedArea, setBannerCroppedArea] = useState<CropArea | null>(
+    null
+  )
+  const [bannerRawImageUrl, setBannerRawImageUrl] = useState<string | null>(
+    null
+  )
 
-  const handleUpload = async (file: File, kind: "logo" | "header") => {
+  const revokeIfObjectUrl = (url: string | null) => {
+    if (!url?.startsWith("blob:")) return
+    URL.revokeObjectURL(url)
+  }
+
+  useEffect(() => {
+    return () => {
+      revokeIfObjectUrl(bannerRawImageUrl)
+    }
+  }, [bannerRawImageUrl])
+
+  const resetBannerCropState = () => {
+    setBannerCrop({ x: 0, y: 0 })
+    setBannerZoom(1)
+    setBannerCroppedArea(null)
+  }
+
+  const setBannerDraftImageUrl = (nextUrl: string | null) => {
+    setBannerRawImageUrl((previous) => {
+      if (previous && previous !== nextUrl) {
+        revokeIfObjectUrl(previous)
+      }
+      return nextUrl
+    })
+  }
+
+  const handleBannerCropOpenChange = (nextOpen: boolean) => {
+    setBannerCropOpen(nextOpen)
+    if (nextOpen) return
+    resetBannerCropState()
+    setBannerDraftImageUrl(null)
+  }
+
+  const handleUpload = async (
+    file: File,
+    kind: "logo" | "header"
+  ): Promise<boolean> => {
     const error = validateOrgMediaFile(file)
     if (error) {
       toast.error(error)
-      return
+      return false
     }
 
-    const setUploading = kind === "logo" ? setIsUploadingLogo : setIsUploadingHeader
+    const setUploading =
+      kind === "logo" ? setIsUploadingLogo : setIsUploadingHeader
     setUploading(true)
     const toastId = toast.loading("Uploading image…")
     try {
@@ -93,15 +148,93 @@ export function OrgProfileHeader({
         await onHeaderChange(url)
       }
       toast.success("Image saved", { id: toastId })
+      return true
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Upload failed", { id: toastId })
+      toast.error(error instanceof Error ? error.message : "Upload failed", {
+        id: toastId,
+      })
+      return false
     } finally {
       setUploading(false)
     }
   }
 
+  const handleStartBannerUpload = async (file: File) => {
+    const fileError = validateOrgMediaFile(file)
+    if (fileError) {
+      toast.error(fileError)
+      return
+    }
+
+    const objectUrl = URL.createObjectURL(file)
+    try {
+      const dimensions = await loadImageDimensions(objectUrl)
+      const dimensionError = validateBannerImageDimensions(dimensions)
+      if (dimensionError) {
+        toast.error(dimensionError)
+        URL.revokeObjectURL(objectUrl)
+        return
+      }
+
+      resetBannerCropState()
+      setBannerDraftImageUrl(objectUrl)
+      setBannerCropOpen(true)
+    } catch {
+      URL.revokeObjectURL(objectUrl)
+      toast.error("Unable to read image. Try a different banner file.")
+    }
+  }
+
+  const handleAdjustExistingBanner = async () => {
+    if (!headerUrl) return
+    try {
+      const dimensions = await loadImageDimensions(headerUrl)
+      const dimensionError = validateBannerImageDimensions(dimensions)
+      if (dimensionError) {
+        toast.error(dimensionError)
+        return
+      }
+
+      resetBannerCropState()
+      setBannerDraftImageUrl(headerUrl)
+      setBannerCropOpen(true)
+    } catch {
+      toast.error("Unable to load the current banner. Try uploading it again.")
+    }
+  }
+
+  const handleApplyBannerCrop = async () => {
+    if (!bannerRawImageUrl || !bannerCroppedArea) {
+      toast.error("Select a banner crop before applying.")
+      return
+    }
+    const cropValidationError = validateBannerCropDimensions(bannerCroppedArea)
+    if (cropValidationError) return void toast.error(cropValidationError)
+
+    const croppedBlob = await getCroppedBannerBlob(
+      bannerRawImageUrl,
+      bannerCroppedArea
+    )
+    if (!croppedBlob) {
+      toast.error("Failed to crop banner image.")
+      return
+    }
+
+    const bannerFile = new File(
+      [croppedBlob],
+      `organization-banner-${Date.now()}.webp`,
+      {
+        type: "image/webp",
+      }
+    )
+    const uploaded = await handleUpload(bannerFile, "header")
+    if (!uploaded) return
+    handleBannerCropOpenChange(false)
+  }
+
   const handleRemove = async (kind: "logo" | "header") => {
-    const setRemoving = kind === "logo" ? setIsRemovingLogo : setIsRemovingHeader
+    const setRemoving =
+      kind === "logo" ? setIsRemovingLogo : setIsRemovingHeader
     setRemoving(true)
     const toastId = toast.loading("Removing image…")
     try {
@@ -112,7 +245,9 @@ export function OrgProfileHeader({
       }
       toast.success("Image removed", { id: toastId })
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Remove failed", { id: toastId })
+      toast.error(error instanceof Error ? error.message : "Remove failed", {
+        id: toastId,
+      })
     } finally {
       setRemoving(false)
     }
@@ -120,194 +255,115 @@ export function OrgProfileHeader({
 
   const logoBusy = isUploadingLogo || isRemovingLogo || isSaving
   const headerBusy = isUploadingHeader || isRemovingHeader || isSaving
-  const hasLogo = Boolean(logoUrl)
-  const hasHeader = Boolean(headerUrl)
+  const hasLogo = Boolean(logoUrl),
+    hasHeader = Boolean(headerUrl)
 
   return (
     <>
-      <div className="relative h-52 w-full overflow-hidden border-b bg-background">
+      <div
+        className="bg-background relative w-full overflow-hidden rounded-t-[22px] border-b"
+        style={{ aspectRatio: ORG_BANNER_ASPECT_RATIO }}
+      >
         {headerUrl ? (
-          <Image src={headerUrl} alt="" fill className="object-cover" sizes="100vw" />
+          <Image
+            src={headerUrl}
+            alt=""
+            fill
+            className="object-cover object-center"
+            sizes="(max-width: 1024px) 100vw, 1024px"
+            loading="eager"
+          />
         ) : null}
-        <div className="absolute inset-0 bg-gradient-to-b from-background/5 via-background/10 to-background/40" />
-        <GridPattern
-          patternId="org-profile-header-pattern"
-          squares={headerSquares}
-          className={cn(
-            "inset-x-0 inset-y-[-30%] h-[200%] skew-y-12 [mask-image:radial-gradient(320px_circle_at_center,white,transparent)]",
-            headerUrl ? "opacity-40" : "opacity-70",
-          )}
-        />
-        {canEdit && editMode ? (
-          <div className="absolute right-4 top-4 flex items-center gap-2">
-            <input
-              id={headerInputId}
-              type="file"
-              accept="image/*"
-              className="sr-only"
-              onChange={(event) => {
-                const file = event.currentTarget.files?.[0]
-                if (!file) return
-                void handleUpload(file, "header")
-                event.currentTarget.value = ""
-              }}
+        {!headerUrl ? (
+          <>
+            <div className="from-background/5 via-background/10 to-background/40 absolute inset-0 bg-gradient-to-b" />
+            <GridPattern
+              patternId="org-profile-header-pattern"
+              squares={headerSquares}
+              className={cn(
+                "inset-x-0 inset-y-[-30%] h-[200%] skew-y-12 [mask-image:radial-gradient(320px_circle_at_center,white,transparent)] opacity-70"
+              )}
             />
-            {hasHeader ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    disabled={headerBusy}
-                    aria-label="Header image actions"
-                  >
-                    <PencilLine className="h-4 w-4" aria-hidden />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild disabled={headerBusy} className="cursor-pointer">
-                    <label htmlFor={headerInputId} className="flex w-full cursor-pointer items-center gap-2">
-                      {isUploadingHeader ? (
-                        <>
-                          <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
-                        </>
-                      ) : (
-                        "Replace header"
-                      )}
-                    </label>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    variant="destructive"
-                    disabled={headerBusy}
-                    onSelect={() => void handleRemove("header")}
-                  >
-                    Remove header
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Button asChild size="sm" variant="secondary" disabled={headerBusy}>
-                <label htmlFor={headerInputId} className="cursor-pointer">
-                  {isUploadingHeader ? (
-                    <span className="inline-flex items-center gap-2">
-                      <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
-                    </span>
-                  ) : (
-                    "Upload"
-                  )}
-                </label>
-              </Button>
-            )}
-          </div>
+          </>
         ) : null}
+        <OrgProfileHeaderBannerControls
+          canEdit={canEdit}
+          editMode={editMode}
+          headerInputId={headerInputId}
+          headerBusy={headerBusy}
+          hasHeader={hasHeader}
+          isUploadingHeader={isUploadingHeader}
+          onCloseToWorkspace={onCloseToWorkspace}
+          onStartBannerUpload={(file) => void handleStartBannerUpload(file)}
+          onAdjustHeader={() => void handleAdjustExistingBanner()}
+          onRemoveHeader={() => void handleRemove("header")}
+        />
       </div>
 
-      <div className="relative bg-background p-6">
+      <div className="bg-background relative p-6">
         <div className="absolute -top-12 left-6">
           <div className="flex items-end gap-3">
-            <div className="relative h-24 w-24 overflow-hidden rounded-xl border border-border bg-background shadow-sm">
+            <div className="border-border bg-background relative h-24 w-24 overflow-hidden rounded-xl border shadow-sm">
               {logoUrl ? (
-                <Image src={logoUrl} alt="Logo" fill className="object-cover" sizes="96px" />
+                <Image
+                  src={logoUrl}
+                  alt="Logo"
+                  fill
+                  className="object-cover"
+                  sizes="96px"
+                />
               ) : (
-                <div className="grid h-full w-full place-items-center text-sm text-muted-foreground">LOGO</div>
+                <div className="text-muted-foreground grid h-full w-full place-items-center">
+                  <ImageIcon className="h-6 w-6" aria-hidden />
+                </div>
               )}
             </div>
-            {canEdit && editMode ? (
-              <div className="flex items-center">
-                <input
-                  id={logoInputId}
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={(event) => {
-                    const file = event.currentTarget.files?.[0]
-                    if (!file) return
-                    void handleUpload(file, "logo")
-                    event.currentTarget.value = ""
-                  }}
-                />
-                {hasLogo ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        disabled={logoBusy}
-                        aria-label="Logo image actions"
-                      >
-                        <PencilLine className="h-4 w-4" aria-hidden />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start">
-                      <DropdownMenuItem asChild disabled={logoBusy} className="cursor-pointer">
-                        <label htmlFor={logoInputId} className="flex w-full cursor-pointer items-center gap-2">
-                          {isUploadingLogo ? (
-                            <>
-                              <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
-                            </>
-                          ) : (
-                            "Replace logo"
-                          )}
-                        </label>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        variant="destructive"
-                        disabled={logoBusy}
-                        onSelect={() => void handleRemove("logo")}
-                      >
-                        Remove logo
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <Button asChild size="sm" variant="outline" disabled={logoBusy}>
-                    <label htmlFor={logoInputId} className="cursor-pointer">
-                      {isUploadingLogo ? (
-                        <span className="inline-flex items-center gap-2">
-                          <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
-                        </span>
-                      ) : (
-                        "Upload"
-                      )}
-                    </label>
-                  </Button>
-                )}
-              </div>
-            ) : null}
+            <OrgProfileHeaderLogoControls
+              canEdit={canEdit}
+              editMode={editMode}
+              logoInputId={logoInputId}
+              logoBusy={logoBusy}
+              hasLogo={hasLogo}
+              isUploadingLogo={isUploadingLogo}
+              onUploadLogo={(file) => void handleUpload(file, "logo")}
+              onRemoveLogo={() => void handleRemove("logo")}
+            />
           </div>
         </div>
 
         <div className={cn("mt-14", editMode && canEdit && "mt-24")}>
-          <h2 className="text-2xl font-semibold tracking-tight">{name || "Organization"}</h2>
-          <p className="max-w-md text-sm text-muted-foreground">{tagline || "—"}</p>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            {name || "Organization"}
+          </h2>
+          <p className="text-muted-foreground max-w-md text-sm">
+            {tagline || "—"}
+          </p>
         </div>
 
-        <div className="absolute right-6 top-6 flex gap-2">
-          {publicLink && !editMode ? (
-            <Button asChild size="sm" variant="secondary">
-              <Link href={publicLink}>View public page</Link>
-            </Button>
-          ) : null}
-          {canEdit ? (
-            editMode ? (
-            <>
-              <Button size="sm" variant="ghost" onClick={onCancelEdit} disabled={isSaving}>
-                Cancel
-              </Button>
-              <Button size="sm" onClick={onSave} disabled={isSaving || !isDirty}>
-                {isSaving ? "Saving…" : "Save changes"}
-              </Button>
-            </>
-            ) : (
-              <Button size="sm" onClick={onEnterEdit} data-tour="org-profile-edit">
-                Edit
-              </Button>
-            )
-          ) : null}
-        </div>
+        <OrgProfileHeaderActions
+          publicLink={publicLink}
+          editMode={editMode}
+          canEdit={canEdit}
+          isSaving={isSaving}
+          isDirty={isDirty}
+          onEnterEdit={onEnterEdit}
+          onCancelEdit={onCancelEdit}
+          onSave={onSave}
+        />
       </div>
+
+      <OrgProfileBannerCropDialog
+        open={bannerCropOpen}
+        onOpenChange={handleBannerCropOpenChange}
+        rawImageUrl={bannerRawImageUrl}
+        crop={bannerCrop}
+        onCropChange={setBannerCrop}
+        zoom={bannerZoom}
+        onZoomChange={setBannerZoom}
+        onCropComplete={setBannerCroppedArea}
+        isUploadingBanner={isUploadingHeader}
+        onApply={handleApplyBannerCrop}
+      />
     </>
   )
 }

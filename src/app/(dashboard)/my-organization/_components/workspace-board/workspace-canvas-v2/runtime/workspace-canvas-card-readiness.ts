@@ -1,0 +1,142 @@
+import { resolveBrandKitReadiness } from "@/features/workspace-brand-kit"
+
+import type {
+  WorkspaceBoardState,
+  WorkspaceSeedData,
+} from "../../workspace-board-types"
+import type { WorkspaceCanvasV2CardId } from "../contracts/workspace-card-contract"
+
+export type WorkspaceCardReadinessStatus = "empty" | "partial" | "ready"
+
+export type WorkspaceCardReadiness = {
+  status: WorkspaceCardReadinessStatus
+  isReady: boolean
+}
+
+function buildReadiness(status: WorkspaceCardReadinessStatus): WorkspaceCardReadiness {
+  return {
+    status,
+    isReady: status === "ready",
+  }
+}
+
+function resolveOrganizationReadiness(seed: WorkspaceSeedData) {
+  if (
+    seed.journeyReadiness.organizationProfileComplete &&
+    seed.journeyReadiness.teammateCount >= 1
+  ) {
+    return buildReadiness("ready")
+  }
+
+  const hasIdentitySignal = Boolean(
+    seed.initialProfile.name?.trim() ||
+      seed.initialProfile.tagline?.trim() ||
+      seed.initialProfile.boilerplate?.trim(),
+  )
+
+  return buildReadiness(hasIdentitySignal ? "partial" : "empty")
+}
+
+function resolveVaultReadiness(seed: WorkspaceSeedData) {
+  return buildReadiness(
+    seed.journeyReadiness.workspaceDocumentCount > 0 ? "ready" : "empty",
+  )
+}
+
+function resolveProgramsReadiness(seed: WorkspaceSeedData) {
+  return buildReadiness(seed.programsCount > 0 ? "ready" : "empty")
+}
+
+function resolveAcceleratorReadiness({
+  seed,
+  boardState,
+}: {
+  seed: WorkspaceSeedData
+  boardState: WorkspaceBoardState
+}) {
+  const completedCount = Math.max(
+    seed.journeyReadiness.acceleratorCompletedStepCount,
+    boardState.accelerator.completedStepIds.length,
+  )
+  const started =
+    seed.journeyReadiness.acceleratorStarted ||
+    Boolean(boardState.accelerator.activeStepId) ||
+    completedCount > 0
+
+  return buildReadiness(started ? "ready" : "empty")
+}
+
+function resolveEconomicEngineReadiness(seed: WorkspaceSeedData) {
+  const hasFundingGoal = seed.fundingGoalCents > 0
+  const hasPrograms = seed.programsCount > 0
+
+  if (hasFundingGoal && hasPrograms) {
+    return buildReadiness("ready")
+  }
+
+  return buildReadiness(hasFundingGoal || hasPrograms ? "partial" : "empty")
+}
+
+function resolveCalendarReadiness(seed: WorkspaceSeedData) {
+  const hasCalendarSignal =
+    Boolean(seed.calendar.nextEvent) || seed.calendar.upcomingEvents.length > 0
+
+  return buildReadiness(hasCalendarSignal ? "ready" : "empty")
+}
+
+function resolveCommunicationsReadiness({
+  seed,
+  boardState,
+}: {
+  seed: WorkspaceSeedData
+  boardState: WorkspaceBoardState
+}) {
+  const brandReadiness = resolveBrandKitReadiness(seed.initialProfile)
+  const connectedChannelCount = Object.values(
+    boardState.communications.channelConnections,
+  ).filter((entry) => entry.connected).length
+  const communicationsActivityCount = seed.activityFeed.filter(
+    (entry) => entry.source === "communications",
+  ).length
+
+  if (
+    brandReadiness.completedCount >= 2 ||
+    connectedChannelCount > 0 ||
+    communicationsActivityCount > 0
+  ) {
+    return buildReadiness("ready")
+  }
+
+  const hasBrandOrCopySignal =
+    brandReadiness.completedCount > 0 ||
+    Boolean(boardState.communications.copy.trim())
+
+  return buildReadiness(hasBrandOrCopySignal ? "partial" : "empty")
+}
+
+export function resolveWorkspaceCanvasCardReadinessMap({
+  seed,
+  boardState,
+}: {
+  seed: WorkspaceSeedData
+  boardState: WorkspaceBoardState
+}): Record<WorkspaceCanvasV2CardId, WorkspaceCardReadiness> {
+  const brandKitReadiness = resolveBrandKitReadiness(seed.initialProfile)
+
+  return {
+    "organization-overview": resolveOrganizationReadiness(seed),
+    programs: resolveProgramsReadiness(seed),
+    vault: resolveVaultReadiness(seed),
+    accelerator: resolveAcceleratorReadiness({ seed, boardState }),
+    "economic-engine": resolveEconomicEngineReadiness(seed),
+    calendar: resolveCalendarReadiness(seed),
+    communications: resolveCommunicationsReadiness({ seed, boardState }),
+    "brand-kit": buildReadiness(
+      brandKitReadiness.status === "ready"
+        ? "ready"
+        : brandKitReadiness.completedCount > 0
+          ? "partial"
+          : "empty",
+    ),
+  }
+}

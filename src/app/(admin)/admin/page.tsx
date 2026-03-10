@@ -17,7 +17,7 @@ export default async function OrganizationAdminPage() {
     throw supabaseErrorToError(userError, "Unable to load user.")
   }
   if (!user) {
-    redirect("/login?redirect=/admin")
+    redirect("/team/login?redirect=/admin")
   }
 
   const { orgId } = await resolveActiveOrganization(supabase, user.id)

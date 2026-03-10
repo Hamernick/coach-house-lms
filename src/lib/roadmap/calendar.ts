@@ -1,6 +1,14 @@
 export type RoadmapCalendarType = "public" | "internal"
 
 export type RoadmapCalendarAssignedRole = "admin" | "staff" | "board"
+export const ROADMAP_CALENDAR_EVENT_TYPES = [
+  "meeting",
+  "board_meeting",
+  "deadline",
+  "milestone",
+  "other",
+] as const
+export type RoadmapCalendarEventType = (typeof ROADMAP_CALENDAR_EVENT_TYPES)[number]
 
 export type RoadmapCalendarRecurrence = {
   frequency: "weekly" | "monthly" | "quarterly" | "annual"
@@ -15,6 +23,7 @@ export type RoadmapCalendarEvent = {
   orgId: string
   title: string
   description: string | null
+  eventType: RoadmapCalendarEventType
   startsAt: string
   endsAt: string | null
   allDay: boolean
@@ -28,6 +37,7 @@ export type RoadmapCalendarEvent = {
 export type RoadmapCalendarEventInput = {
   title: string
   description?: string | null
+  eventType?: RoadmapCalendarEventType
   startsAt: string
   endsAt?: string | null
   allDay?: boolean
@@ -43,18 +53,42 @@ export const ROADMAP_CALENDAR_PRESETS = [
     id: "board_meeting",
     label: "Board meeting",
     title: "Board meeting",
+    eventType: "board_meeting",
   },
   {
     id: "reporting_deadline",
     label: "Reporting deadline",
     title: "Reporting deadline",
+    eventType: "deadline",
   },
   {
     id: "key_milestone",
     label: "Key milestone",
     title: "Key milestone",
+    eventType: "milestone",
   },
 ] as const
+
+export function normalizeEventType(input: unknown): RoadmapCalendarEventType {
+  if (
+    input === "meeting" ||
+    input === "board_meeting" ||
+    input === "deadline" ||
+    input === "milestone" ||
+    input === "other"
+  ) {
+    return input
+  }
+  return "meeting"
+}
+
+export function getRoadmapCalendarEventTypeLabel(eventType: RoadmapCalendarEventType) {
+  if (eventType === "board_meeting") return "Board meeting"
+  if (eventType === "deadline") return "Deadline"
+  if (eventType === "milestone") return "Milestone"
+  if (eventType === "other") return "Other"
+  return "Meeting"
+}
 
 export function normalizeAssignedRoles(input: unknown): RoadmapCalendarAssignedRole[] {
   if (!Array.isArray(input)) return []
@@ -86,6 +120,7 @@ export function mapCalendarRow(
     org_id: string
     title: string
     description: string | null
+    event_type: string | null
     starts_at: string
     ends_at: string | null
     all_day: boolean
@@ -101,6 +136,7 @@ export function mapCalendarRow(
     orgId: row.org_id,
     title: row.title,
     description: row.description,
+    eventType: normalizeEventType(row.event_type),
     startsAt: row.starts_at,
     endsAt: row.ends_at,
     allDay: row.all_day,

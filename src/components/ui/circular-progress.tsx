@@ -9,6 +9,7 @@ type CircularProgressProps = HTMLAttributes<HTMLDivElement> & {
   size?: number
   strokeWidth?: number
   shape?: "round" | "square"
+  decorative?: boolean
   trackClassName?: string
   progressClassName?: string
 }
@@ -18,6 +19,7 @@ export function CircularProgress({
   size = 28,
   strokeWidth = 3,
   shape = "round",
+  decorative = false,
   className,
   trackClassName,
   progressClassName,
@@ -30,10 +32,11 @@ export function CircularProgress({
 
   return (
     <div
-      role="progressbar"
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={normalized}
+      role={decorative ? undefined : "progressbar"}
+      aria-valuemin={decorative ? undefined : 0}
+      aria-valuemax={decorative ? undefined : 100}
+      aria-valuenow={decorative ? undefined : normalized}
+      aria-hidden={decorative ? true : undefined}
       className={cn("relative inline-flex items-center justify-center", className)}
       {...props}
     >

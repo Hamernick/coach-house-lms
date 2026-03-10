@@ -9,9 +9,29 @@ import ChevronUpIcon from "lucide-react/dist/esm/icons/chevron-up"
 import { cn } from "@/lib/utils"
 
 function Select({
+  value,
+  defaultValue,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />
+  const normalizedValue = value === "" ? undefined : value
+  const normalizedDefaultValue = defaultValue === "" ? undefined : defaultValue
+  const rootProps: React.ComponentProps<typeof SelectPrimitive.Root> = {
+    ...props,
+  }
+
+  if (normalizedValue !== undefined) {
+    rootProps.value = normalizedValue
+  }
+  if (normalizedDefaultValue !== undefined) {
+    rootProps.defaultValue = normalizedDefaultValue
+  }
+
+  return (
+    <SelectPrimitive.Root
+      data-slot="select"
+      {...rootProps}
+    />
+  )
 }
 
 function SelectGroup({
@@ -40,21 +60,21 @@ function SelectTrigger({
   const [wraps, setWraps] = React.useState(false)
 
   const measureWraps = React.useCallback(() => {
-    if (!multiline || !triggerRef.current) {
-      return
-    }
+    if (!multiline || !triggerRef.current) return
+
     const valueEl = triggerRef.current.querySelector<HTMLElement>("[data-slot='select-value']")
-    if (!valueEl) {
-      return
-    }
+    if (!valueEl) return
+
     const computed = window.getComputedStyle(valueEl)
     const lineHeight = Number.parseFloat(computed.lineHeight)
+
     if (Number.isFinite(lineHeight) && lineHeight > 0) {
       const height = valueEl.getBoundingClientRect().height
       const lines = Math.round(height / lineHeight)
       setWraps(lines > 1)
       return
     }
+
     setWraps(valueEl.scrollHeight - 1 > valueEl.clientHeight)
   }, [multiline])
 
@@ -63,18 +83,22 @@ function SelectTrigger({
       setWraps(false)
       return
     }
+
     measureWraps()
+
     if (typeof ResizeObserver === "undefined" || !triggerRef.current) {
       return
     }
+
     const observer = new ResizeObserver(() => measureWraps())
     observer.observe(triggerRef.current)
     const valueEl = triggerRef.current.querySelector<HTMLElement>("[data-slot='select-value']")
     if (valueEl) {
       observer.observe(valueEl)
     }
+
     return () => observer.disconnect()
-  }, [measureWraps, multiline, children])
+  }, [children, measureWraps, multiline])
 
   const alignmentClass = multiline ? (wraps ? "items-start" : "items-center") : "items-center"
 
@@ -91,7 +115,7 @@ function SelectTrigger({
         !multiline &&
           "whitespace-nowrap data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:items-center *:data-[slot=select-value]:line-clamp-1",
         multiline &&
-          "min-h-11 data-[wraps=true]:[&>svg]:mt-0.5 *:data-[slot=select-value]:items-start *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:flex-1 *:data-[slot=select-value]:whitespace-normal *:data-[slot=select-value]:break-words *:data-[slot=select-value]:leading-tight *:data-[slot=select-value]:text-left *:data-[slot=select-value]:line-clamp-2",
+          "min-h-11 *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:flex-1 *:data-[slot=select-value]:whitespace-normal *:data-[slot=select-value]:break-words *:data-[slot=select-value]:text-left *:data-[slot=select-value]:line-clamp-2 data-[wraps=false]:*:data-[slot=select-value]:items-center data-[wraps=true]:*:data-[slot=select-value]:items-start data-[wraps=true]:*:data-[slot=select-value]:leading-tight data-[wraps=true]:[&>svg]:mt-0.5",
         className
       )}
       {...props}

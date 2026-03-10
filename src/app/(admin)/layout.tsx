@@ -10,6 +10,7 @@ import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import type { Json } from "@/lib/supabase"
 import { hasPaidTeamAccessFromSubscription } from "@/lib/billing/subscription-access"
+import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 
 export default async function AdminLayout({ children, breadcrumbs }: { children: ReactNode; breadcrumbs: ReactNode }) {
   const supabase = await createSupabaseServerClient()
@@ -22,7 +23,7 @@ export default async function AdminLayout({ children, breadcrumbs }: { children:
     throw supabaseErrorToError(userError, "Unable to load user.")
   }
   if (!user) {
-    redirect("/login?redirect=/admin")
+    redirect("/team/login?redirect=/admin")
   }
 
   const { data: profile } = await supabase
@@ -55,19 +56,23 @@ export default async function AdminLayout({ children, breadcrumbs }: { children:
       .maybeSingle<{ status: string | null; metadata: Json | null }>()
     canAccessOrgAdmin = hasPaidTeamAccessFromSubscription(subscription ?? null)
   }
-  let showAccelerator = isAdmin
-
-  if (!isAdmin) {
-    const { data: purchase } = await supabase
-      .from("accelerator_purchases")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("status", "active")
-      .limit(1)
-      .maybeSingle<{ id: string }>()
-
-    showAccelerator = Boolean(purchase)
-  }
+  const [entitlements, orgRowResult] = await Promise.all([
+    fetchLearningEntitlements({
+      supabase,
+      userId: user.id,
+      orgUserId: orgId,
+      isAdmin,
+    }),
+    supabase
+      .from("organizations")
+      .select("profile")
+      .eq("user_id", orgId)
+      .maybeSingle<{ profile: Json | null }>(),
+  ])
+  const showAccelerator = entitlements.hasAcceleratorAccess || entitlements.hasElectiveAccess
+  const orgProfile = (orgRowResult.data?.profile as Record<string, unknown> | null) ?? null
+  const orgName = typeof orgProfile?.name === "string" ? orgProfile.name.trim() : ""
+  const organizationName = orgName.length > 0 ? orgName : null
 
   const sidebarTree = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
 
@@ -80,7 +85,8 @@ export default async function AdminLayout({ children, breadcrumbs }: { children:
       showOrgAdmin={showOrgAdmin}
       canAccessOrgAdmin={canAccessOrgAdmin}
       showAccelerator={showAccelerator}
-      context="platform"
+      organizationName={organizationName}
+      context="admin"
     >
       {children}
     </AppShell>

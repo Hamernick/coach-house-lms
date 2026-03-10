@@ -151,10 +151,14 @@ export default async function BillingPage() {
                 Organization checkout unavailable
               </Button>
             ) : (
-              <Button asChild className="w-full rounded-xl">
-                <Link href="/api/stripe/checkout?plan=organization&source=billing">
-                  {operationsIsCurrent ? "Downgrade to Organization" : "Upgrade to Organization"}
-                </Link>
+              <Button
+                type="button"
+                className="w-full rounded-xl"
+                onClick={() =>
+                  window.location.assign("/api/stripe/checkout?plan=organization&source=billing")
+                }
+              >
+                {operationsIsCurrent ? "Downgrade to Organization" : "Upgrade to Organization"}
               </Button>
             )}
           </CardContent>
@@ -202,10 +206,15 @@ export default async function BillingPage() {
                 Operations plan unavailable
               </Button>
             ) : (
-              <Button asChild className="w-full rounded-xl" variant="secondary">
-                <Link href="/api/stripe/checkout?plan=operations_support&source=billing">
-                  {organizationIsCurrent ? "Upgrade to Operations Support" : "Choose Operations Support"}
-                </Link>
+              <Button
+                type="button"
+                className="w-full rounded-xl"
+                variant="secondary"
+                onClick={() =>
+                  window.location.assign("/api/stripe/checkout?plan=operations_support&source=billing")
+                }
+              >
+                {organizationIsCurrent ? "Upgrade to Operations Support" : "Choose Operations Support"}
               </Button>
             )}
           </CardContent>

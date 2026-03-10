@@ -12,9 +12,9 @@ export function RoadmapOutlineCard({ sections, modules = [] }: RoadmapOutlineCar
   return (
     <RoadmapRailCard
       sections={sections}
-      title="The Framework"
+      title="The Accelerator"
       subtitle="Track lessons and deliverables as you move through the accelerator."
-      hrefBase="/accelerator/roadmap"
+      hrefBase="/workspace/roadmap"
       layout="snake-grid"
       modules={modules}
     />

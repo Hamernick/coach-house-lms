@@ -193,6 +193,9 @@ export async function fetchLearningEntitlements({
       .maybeSingle<{ id: string }>()
 
     if (result.error) {
+      if (isMissingRelationError(result.error)) {
+        return false
+      }
       throw supabaseErrorToError(result.error, "Unable to load subscription entitlements.")
     }
 
@@ -216,7 +219,9 @@ export async function fetchLearningEntitlements({
   ])
 
   if (acceleratorResult.error) {
-    throw supabaseErrorToError(acceleratorResult.error, "Unable to load accelerator entitlements.")
+    if (!isMissingRelationError(acceleratorResult.error)) {
+      throw supabaseErrorToError(acceleratorResult.error, "Unable to load accelerator entitlements.")
+    }
   }
 
   const primarySubscriptionOwnerId = orgUserId ?? userId

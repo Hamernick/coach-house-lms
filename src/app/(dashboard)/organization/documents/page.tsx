@@ -1,1 +1,1 @@
-export { default } from "../../my-organization/documents/page"
+export { default } from "./organization-documents-page-content"

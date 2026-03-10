@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation"
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { resolvePricingPlanTier } from "@/lib/billing/plan-tier"
 import type { Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
@@ -21,11 +22,32 @@ const RESERVED_SLUGS = new Set([
   "people",
   "organization",
   "my-organization",
+  "roadmap",
   "_next",
   "public",
   "favicon",
   "assets",
 ])
+
+function buildOnboardingErrorRedirect({
+  intentFocus,
+  error,
+  slug,
+}: {
+  intentFocus: "build" | "find" | "fund" | "support" | null
+  error: string
+  slug?: string
+}) {
+  const params = new URLSearchParams({ error })
+  if (slug) {
+    params.set("slug", slug)
+  }
+  if (intentFocus && intentFocus !== "build") {
+    params.set("member_onboarding", "1")
+    return `/find?${params.toString()}`
+  }
+  return `/organization?onboarding=1&${params.toString()}`
+}
 
 function slugify(input: string): string {
   const base = input
@@ -55,8 +77,8 @@ export async function completeOnboardingAction(form: FormData) {
   const publicEmail = String(form.get("publicEmail") || "").trim()
   const title = String(form.get("title") || "").trim()
   const linkedin = String(form.get("linkedin") || "").trim()
-  const marketingOptIn = Boolean(form.get("optInUpdates"))
-  const newsletterOptIn = Boolean(form.get("newsletterOptIn"))
+  const marketingOptIn = form.has("optInUpdates")
+  const newsletterOptIn = form.has("newsletterOptIn")
   const intentFocusRaw = String(form.get("intentFocus") || "").trim()
   const roleInterestRaw = String(form.get("roleInterest") || "").trim()
   const intentFocus =
@@ -82,34 +104,88 @@ export async function completeOnboardingAction(form: FormData) {
   const normalizedSlug = slugify(orgSlugRaw || orgName)
 
   if (!intentFocus) {
-    redirect("/organization?onboarding=1&error=missing_intent_focus")
-  }
-  if (intentFocus !== "build") {
-    redirect("/organization?onboarding=1&error=intent_focus_coming_soon")
-  }
-
-  if (!orgName) {
-    redirect("/organization?onboarding=1&error=missing_org_name")
-  }
-  if (!normalizedSlug) {
-    redirect("/organization?onboarding=1&error=missing_org_slug")
-  }
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) {
-    redirect(`/organization?onboarding=1&error=invalid_org_slug&slug=${encodeURIComponent(normalizedSlug)}`)
-  }
-  if (RESERVED_SLUGS.has(normalizedSlug)) {
-    redirect(`/organization?onboarding=1&error=reserved_org_slug&slug=${encodeURIComponent(normalizedSlug)}`)
+    redirect(
+      buildOnboardingErrorRedirect({
+        intentFocus,
+        error: "missing_intent_focus",
+      }),
+    )
   }
 
-  const { count: slugCount, error: slugError } = await supabase
-    .from("organizations")
-    .select("user_id", { count: "exact", head: true })
-    .ilike("public_slug", normalizedSlug)
-    .neq("user_id", user.id)
+  if (intentFocus === "build") {
+    const { data: activeSubscription, error: activeSubscriptionError } = await supabase
+      .from("subscriptions")
+      .select("status, metadata")
+      .eq("user_id", user.id)
+      .in("status", ["active", "trialing", "past_due", "incomplete"])
+      .not("stripe_subscription_id", "ilike", "stub_%")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ status: string | null; metadata: Json | null }>()
 
-  if (slugError) throw supabaseErrorToError(slugError, "Unable to validate organization URL.")
-  if ((slugCount ?? 0) > 0) {
-    redirect(`/organization?onboarding=1&error=slug_taken&slug=${encodeURIComponent(normalizedSlug)}`)
+    if (activeSubscriptionError) {
+      throw supabaseErrorToError(activeSubscriptionError, "Unable to load builder plan status.")
+    }
+    if (resolvePricingPlanTier(activeSubscription ?? null) === "free") {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error: "builder_plan_required",
+        }),
+      )
+    }
+
+    if (!orgName) {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error: "missing_org_name",
+        }),
+      )
+    }
+    if (!normalizedSlug) {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error: "missing_org_slug",
+        }),
+      )
+    }
+    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error: "invalid_org_slug",
+          slug: normalizedSlug,
+        }),
+      )
+    }
+    if (RESERVED_SLUGS.has(normalizedSlug)) {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error: "reserved_org_slug",
+          slug: normalizedSlug,
+        }),
+      )
+    }
+
+    const { count: slugCount, error: slugError } = await supabase
+      .from("organizations")
+      .select("user_id", { count: "exact", head: true })
+      .ilike("public_slug", normalizedSlug)
+      .neq("user_id", user.id)
+
+    if (slugError) throw supabaseErrorToError(slugError, "Unable to validate organization URL.")
+    if ((slugCount ?? 0) > 0) {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error: "slug_taken",
+          slug: normalizedSlug,
+        }),
+      )
+    }
   }
 
   let avatarUrl: string | null = null
@@ -126,81 +202,127 @@ export async function completeOnboardingAction(form: FormData) {
   if (title.length > 0) profilePayload.headline = title
   if (user.email) profilePayload.email = user.email
 
-  await supabase.from("profiles").upsert(profilePayload, { onConflict: "id" })
+  const { error: profileUpsertError } = await supabase
+    .from("profiles")
+    .upsert(profilePayload, { onConflict: "id" })
 
-  const { data: existingOrg, error: existingOrgError } = await supabase
-    .from("organizations")
-    .select("profile")
-    .eq("user_id", user.id)
-    .maybeSingle<{ profile: Record<string, unknown> | null }>()
-
-  if (existingOrgError) throw supabaseErrorToError(existingOrgError, "Unable to load organization profile.")
-
-  const nextProfile = {
-    ...(existingOrg?.profile ?? {}),
-    name: orgName,
-    ...(formationStatus ? { formationStatus } : {}),
-    ...(linkedin.length > 0 ? { linkedin } : {}),
-    ...(
-      avatarUrl &&
-      (!existingOrg?.profile || typeof existingOrg.profile["logoUrl"] !== "string" || existingOrg.profile["logoUrl"].trim().length === 0)
-        ? { logoUrl: avatarUrl }
-        : {}
-    ),
-    onboarding_intent_focus: intentFocus,
-    ...(roleInterest ? { onboarding_role_interest: roleInterest } : {}),
+  if (profileUpsertError) {
+    console.error("completeOnboardingAction: profile upsert failed", {
+      userId: user.id,
+      message: profileUpsertError.message,
+    })
+    throw supabaseErrorToError(profileUpsertError, "Unable to save your profile.")
   }
 
-  const existingPeopleRaw = Array.isArray((existingOrg?.profile ?? {})?.org_people)
-    ? ((existingOrg?.profile ?? {})?.org_people as Array<Record<string, unknown>>)
-    : []
-  const nextOwnerPerson = {
-    id: user.id,
-    name: fullName || user.email || "You",
-    title: title.length > 0 ? title : null,
-    email: publicEmail.length > 0 ? publicEmail : null,
-    linkedin: linkedin.length > 0 ? linkedin : null,
-    category: "staff",
-    image: avatarUrl,
-    reportsToId: null,
-    pos: null,
+  if (intentFocus === "build") {
+    const { data: existingOrg, error: existingOrgError } = await supabase
+      .from("organizations")
+      .select("profile")
+      .eq("user_id", user.id)
+      .maybeSingle<{ profile: Record<string, unknown> | null }>()
+
+    if (existingOrgError) throw supabaseErrorToError(existingOrgError, "Unable to load organization profile.")
+
+    const nextProfile = {
+      ...(existingOrg?.profile ?? {}),
+      name: orgName,
+      ...(formationStatus ? { formationStatus } : {}),
+      ...(linkedin.length > 0 ? { linkedin } : {}),
+      ...(
+        avatarUrl &&
+        (!existingOrg?.profile || typeof existingOrg.profile["logoUrl"] !== "string" || existingOrg.profile["logoUrl"].trim().length === 0)
+          ? { logoUrl: avatarUrl }
+          : {}
+      ),
+      onboarding_intent_focus: intentFocus,
+      ...(roleInterest ? { onboarding_role_interest: roleInterest } : {}),
+    }
+
+    const existingPeopleRaw = Array.isArray((existingOrg?.profile ?? {})?.org_people)
+      ? ((existingOrg?.profile ?? {})?.org_people as Array<Record<string, unknown>>)
+      : []
+    const nextOwnerPerson = {
+      id: user.id,
+      name: fullName || user.email || "You",
+      title: title.length > 0 ? title : null,
+      email: publicEmail.length > 0 ? publicEmail : null,
+      linkedin: linkedin.length > 0 ? linkedin : null,
+      category: "staff",
+      image: avatarUrl,
+      reportsToId: null,
+      pos: null,
+    }
+    const nextPeople = [
+      nextOwnerPerson,
+      ...existingPeopleRaw.filter((person) => {
+        if (!person || typeof person !== "object") return false
+        const id = typeof person.id === "string" ? person.id : null
+        if (id && id === user.id) return false
+        const personEmail = typeof person.email === "string" ? person.email.toLowerCase() : null
+        const ownerEmail = (nextOwnerPerson.email ?? "").toLowerCase()
+        if (personEmail && ownerEmail && personEmail === ownerEmail) return false
+        return true
+      }),
+    ]
+
+    const orgProfilePayload = { ...nextProfile, org_people: nextPeople } as Json
+
+    const { error: organizationUpsertError } = await supabase.from("organizations").upsert(
+      {
+        user_id: user.id,
+        public_slug: normalizedSlug,
+        profile: orgProfilePayload,
+      },
+      { onConflict: "user_id" },
+    )
+
+    if (organizationUpsertError) {
+      console.error("completeOnboardingAction: organization upsert failed", {
+        userId: user.id,
+        message: organizationUpsertError.message,
+      })
+      throw supabaseErrorToError(
+        organizationUpsertError,
+        "Unable to save your organization.",
+      )
+    }
   }
-  const nextPeople = [
-    nextOwnerPerson,
-    ...existingPeopleRaw.filter((person) => {
-      if (!person || typeof person !== "object") return false
-      const id = typeof person.id === "string" ? person.id : null
-      if (id && id === user.id) return false
-      const personEmail = typeof person.email === "string" ? person.email.toLowerCase() : null
-      const ownerEmail = (nextOwnerPerson.email ?? "").toLowerCase()
-      if (personEmail && ownerEmail && personEmail === ownerEmail) return false
-      return true
-    }),
-  ]
-
-  const orgProfilePayload = { ...nextProfile, org_people: nextPeople } as Json
-
-  await supabase.from("organizations").upsert(
-    {
-      user_id: user.id,
-      public_slug: normalizedSlug,
-      profile: orgProfilePayload,
-    },
-    { onConflict: "user_id" },
-  )
 
   // Update user metadata with onboarding + preference fields.
-  await supabase.auth.updateUser({
+  const { error: updateUserError } = await supabase.auth.updateUser({
     data: {
       onboarding_completed: true,
       onboarding_completed_at: new Date().toISOString(),
+      full_name: fullName || null,
+      first_name: first || null,
+      last_name: last || null,
       marketing_opt_in: marketingOptIn,
       newsletter_opt_in: newsletterOptIn,
       phone: phone.length > 0 ? phone : null,
+      ...(avatarUrl ? { avatar_url: avatarUrl } : {}),
       onboarding_intent_focus: intentFocus,
       onboarding_role_interest: roleInterest,
+      ...(intentFocus === "build"
+        ? {
+            workspace_onboarding_stage: 2,
+            workspace_onboarding_active: true,
+            workspace_onboarding_started_at: new Date().toISOString(),
+          }
+        : {}),
     },
   })
 
-  redirect("/organization?paywall=organization&plan=organization&source=onboarding")
+  if (updateUserError) {
+    console.error("completeOnboardingAction: auth metadata update failed", {
+      userId: user.id,
+      message: updateUserError.message,
+    })
+    throw supabaseErrorToError(updateUserError, "Unable to finish onboarding.")
+  }
+
+  if (intentFocus === "build") {
+    redirect("/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding")
+  }
+
+  redirect("/find?member_onboarding=0&source=member_onboarding")
 }

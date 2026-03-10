@@ -1,123 +1,152 @@
-# Coach House LMS
+# Coach House Platform
 
-Minimal, production‑ready LMS. Next.js (App Router, RSC), Supabase, Stripe, shadcn/ui.
+Coach House is a Next.js App Router product for nonprofit organizations. It combines workspace planning, accelerator lessons, roadmap editing, documents, billing, and account management on top of Supabase, Stripe, and shadcn/ui.
 
-## Why this repo design
+## Source of truth
 
-* **PR‑first**: small, reviewable changes.
-* **Agent‑driven**: `docs/CODEX_RUNBOOK.md` stepper; say **“Proceed.”** to advance.
-* **Explicit contract**: `docs/AGENTS.md` = source of truth.
+- Root contract: [`AGENTS.md`](AGENTS.md)
+- Active continuation thread: [`docs/agent/HANDOFF.md`](docs/agent/HANDOFF.md)
+- Product/system overview: [`docs/OVERVIEW.md`](docs/OVERVIEW.md)
+- Architecture and security: [`docs/agent/architecture-security.md`](docs/agent/architecture-security.md)
+- Workflow and quality gates: [`docs/agent/workflow-quality.md`](docs/agent/workflow-quality.md)
+- Recent implementation history: [`docs/RUNLOG.md`](docs/RUNLOG.md)
 
-For a product/system mental model (who it’s for, how classes/modules/homework connect to My Organization, and how the data model hangs together), start with:
+## Core surfaces
 
-- `docs/OVERVIEW.md` — high‑level system overview + roadmap.
-- `docs/DB_SCHEMA.md` — core tables and relationships.
-- `docs/RUNLOG.md` + `docs/RUNLOG-strategic-roadmap.md` — recent work + design notes.
+- Public marketing and discovery routes under `src/app/(public)/**`
+- Auth flows under `src/app/(auth)/**`
+- Workspace and dashboard routes under `src/app/(dashboard)/**`
+- Accelerator lesson routes under `src/app/(accelerator)/**`
+- Shared feature code under `src/features/**`
+- Shared UI and shell components under `src/components/**`
+- Supabase SQL and RLS tests under `supabase/**`
 
-## Architecture
+Key user-facing routes currently include:
 
-* **Web**: Next.js + TS, RSC‑first, Tailwind, shadcn/ui, next‑themes, Sonner.
-* **Data/Auth**: Supabase (Postgres, Auth, Storage, RLS).
-* **Billing**: Stripe (Checkout, Customer Portal, webhooks).
-* **Runtimes**: Node (API, webhooks), Edge/ISR (public pages).
-* **Caching**: ISR for marketing; `no-store` for authed data; invalidate on writes.
-* **Security**: CSP, XSS sanitization, HTTPS, HttpOnly cookies, admin audit.
+- `/workspace`
+- `/workspace/roadmap`
+- `/organization/documents`
+- `/people`
+- `/accelerator`
 
-## Repository layout
+## Stack
 
-```
-app/                     # routes: (public)|(auth)|(dashboard), /admin, /billing
-src/components/          # UI + app components (Skeleton, Breadcrumb, DataTable, etc.)
-src/lib/                 # clients/helpers (supabase, stripe, auth)
-docs/AGENTS.md           # execution contract (v4)
-docs/CODEX_RUNBOOK.md    # build stepper & prompts
-migrations/              # SQL schema + RLS policies (versioned)
-.github/workflows/       # CI (validate title, build/test)
-.github/PULL_REQUEST_TEMPLATE.md
-```
-
-## Prerequisites
-
-* Node 18+ and **pnpm**
-* Supabase project (or local via CLI)
-* Stripe account (test mode)
+- Next.js 16 + React + TypeScript
+- App Router, RSC-first
+- Tailwind CSS + shadcn/ui
+- Supabase Postgres/Auth/Storage with RLS
+- Stripe Checkout + webhook processing
+- Vitest + Playwright
 
 ## Setup
 
+Prerequisites:
+
+- Node 20+
+- `pnpm`
+- Supabase project or local CLI setup
+- Stripe test/live credentials as needed
+
+Install and run:
+
 ```bash
-pnpm i
+pnpm install
 cp .env.example .env.local
-# Fill:
-# NEXT_PUBLIC_SITE_URL=https://localhost:3000
-# NEXT_PUBLIC_SUPABASE_URL=...
-# NEXT_PUBLIC_SUPABASE_ANON_KEY=...
-# SUPABASE_SERVICE_ROLE_KEY=...      # server only
-# NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=...
-# STRIPE_SECRET_KEY=...
-# STRIPE_WEBHOOK_SECRET=...
+pnpm dev
 ```
 
-## Run (dev)
+Useful commands:
 
 ```bash
-pnpm dev          # web
-# optional: supabase start  # if using local DB
+pnpm build
+pnpm start
+pnpm setup:hooks
+pnpm db:push
+pnpm seed:validate
+pnpm verify:settings -- <email>
+pnpm verify:stripe
 ```
 
-## Database & RLS
+## Quality gates
 
-* Schema per `docs/AGENTS.md §4`; RLS enabled on all app tables.
-* Apply migrations (example):
+The canonical local and CI gate is:
 
 ```bash
-# using Supabase CLI (or psql):
-supabase db push   # or run SQL files in migrations/
+pnpm check:quality
 ```
 
-## Stripe
+That command runs:
 
-* Create products/prices in dashboard.
-* Set webhook → `/api/stripe/webhook` (verify signature).
-* Use Customer Portal for billing mgmt.
+- `pnpm lint`
+- structure / route / feature / boundary checks
+- workspace storage and interaction-lock guardrails
+- snapshot tests
+- acceptance tests
+- RLS tests
+- production build
+- visual regression tests
+- performance budget checks
 
-## CI/CD
+Useful supporting commands:
 
-* **Checks**: `ci.yml` runs lint (`npm run lint`), snapshot tests (`npm run test:snapshots`), and build (`npm run build`).
-* **Titles**: enforce `[STEP SNN]` via `validate-step-id.yml`.
-* **Previews**: configure your host (e.g., Vercel) for PR previews.
+```bash
+pnpm check:prepush
+pnpm seed:validate
+pnpm verify:settings -- <email>
+pnpm verify:stripe
+pnpm test:acceptance
+pnpm test:snapshots
+pnpm test:rls
+pnpm test:visual
+pnpm test:visual:update
+pnpm check:perf
+```
 
-## Agent workflow
+## Production preflight
 
-1. Open `docs/CODEX_RUNBOOK.md`.
-2. Say **“Proceed.”** (Codex executes first unchecked step).
-3. Review PR → merge.
-4. Repeat.
+Before a production merge to `main`, run:
 
-## Development standards
+```bash
+pnpm check:quality
+pnpm check:prepush
+pnpm seed:validate
+pnpm verify:settings -- <email>
+pnpm audit --prod --audit-level high
+```
 
-* RSC by default; client only for interactivity.
-* Secrets server‑side; storage via **signed URLs**.
-* Verify webhooks; log failures; idempotency by `event_id`.
-* Hydration minimization; lazy/dynamic for heavy UI.
-* WCAG AA; keyboard/focus visible; touch targets ≥44px.
+Recommended release artifacts:
 
-## Acceptance (MVP)
+- a dedicated release branch and PR into `main`
+- validation evidence copied into the PR body
+- screenshots/manual QA notes for UI changes
+- an appended entry in [`docs/RUNLOG.md`](docs/RUNLOG.md)
+- a release note/checklist doc under `docs/releases/**` when the change set is broad
 
-* Paid signup → dashboard reflects subscription.
-* `/class/[slug]/module/[index]` flow; completing 1 unlocks 2.
-* Admin: classes/modules CRUD + reorder + publish; users list/detail (search/filter/CSV, role change, resend verification/magic link, revoke sessions); KPIs.
-* Errors observable; budgets met (LCP ≤2.5s, TTI ≤4s); no console errors.
+## Release workflow
 
-## Contributing
+- Branch format: `feat/<slug>`, `fix/<slug>`, `chore/<slug>`
+- PR title format: `[STEP SNN] <title>`
+- Use [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md)
+- Update [`docs/RUNLOG.md`](docs/RUNLOG.md) for every ad-hoc/Codex session
+- Ship only after `pnpm check:quality` passes locally and in CI
 
-* Branch: `feat|fix|chore/<slug>`.
-* PR title: `[STEP SNN] <title>`; use template.
-* One concern per PR; migrations reversible; tests/docs included.
+GitHub Actions currently enforce:
 
-## License
+- PR title validation
+- full `pnpm check:quality` on PRs and pushes to `main`
 
-MIT
+## Security and platform expectations
 
----
+- RLS on application tables
+- Server-side authorization for protected actions
+- Stripe webhook signature verification and idempotency by `event_id`
+- UTC timestamps in storage, locale-aware rendering in UI
+- Sanitized HTML and no client-side secret leakage
+- Signed URLs for protected storage access
 
-**Sanity check**: This README matches the proposed workflow: runbook in `docs/`, PR‑gated steps, CI title guard, agent proceeds step‑by‑step. Ready to start at **S00**.
+## Notes for contributors
+
+- Keep route files composition-only when possible; put feature logic in `src/features/**`
+- Reuse shared UI/system primitives before introducing one-off controls
+- Keep visual changes paired with updated baselines when intentional
+- If a release changes UI behavior materially, include screenshots and manual QA notes in the PR

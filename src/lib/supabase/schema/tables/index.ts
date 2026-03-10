@@ -23,6 +23,17 @@ import type { ElectivePurchasesTable } from "./elective_purchases"
 import type { OrganizationMembershipsTable } from "./organization_memberships"
 import type { OrganizationInvitesTable } from "./organization_invites"
 import type { OrganizationAccessSettingsTable } from "./organization_access_settings"
+import type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
+import type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
+import type { OrganizationWorkspaceCommunicationDeliveriesTable } from "./organization_workspace_communication_deliveries"
+import type { OrganizationWorkspaceCommunicationsTable } from "./organization_workspace_communications"
+import type { OrganizationWorkspaceInvitesTable } from "./organization_workspace_invites"
+import type { OrganizationWorkspaceObjectiveActivityTable } from "./organization_workspace_objective_activity"
+import type { OrganizationWorkspaceObjectiveAssigneesTable } from "./organization_workspace_objective_assignees"
+import type { OrganizationWorkspaceObjectiveGroupsTable } from "./organization_workspace_objective_groups"
+import type { OrganizationWorkspaceObjectiveLinksTable } from "./organization_workspace_objective_links"
+import type { OrganizationWorkspaceObjectiveStepsTable } from "./organization_workspace_objective_steps"
+import type { OrganizationWorkspaceObjectivesTable } from "./organization_workspace_objectives"
 import type { NotificationsTable } from "./notifications"
 
 export type { OrganizationsTable } from "./organizations"
@@ -50,6 +61,17 @@ export type { ElectivePurchasesTable } from "./elective_purchases"
 export type { OrganizationMembershipsTable } from "./organization_memberships"
 export type { OrganizationInvitesTable } from "./organization_invites"
 export type { OrganizationAccessSettingsTable } from "./organization_access_settings"
+export type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
+export type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
+export type { OrganizationWorkspaceCommunicationDeliveriesTable } from "./organization_workspace_communication_deliveries"
+export type { OrganizationWorkspaceCommunicationsTable } from "./organization_workspace_communications"
+export type { OrganizationWorkspaceInvitesTable } from "./organization_workspace_invites"
+export type { OrganizationWorkspaceObjectiveActivityTable } from "./organization_workspace_objective_activity"
+export type { OrganizationWorkspaceObjectiveAssigneesTable } from "./organization_workspace_objective_assignees"
+export type { OrganizationWorkspaceObjectiveGroupsTable } from "./organization_workspace_objective_groups"
+export type { OrganizationWorkspaceObjectiveLinksTable } from "./organization_workspace_objective_links"
+export type { OrganizationWorkspaceObjectiveStepsTable } from "./organization_workspace_objective_steps"
+export type { OrganizationWorkspaceObjectivesTable } from "./organization_workspace_objectives"
 export type { NotificationsTable } from "./notifications"
 
 export type PublicTables = {
@@ -78,5 +100,16 @@ export type PublicTables = {
   organization_memberships: OrganizationMembershipsTable
   organization_invites: OrganizationInvitesTable
   organization_access_settings: OrganizationAccessSettingsTable
+  organization_workspace_boards: OrganizationWorkspaceBoardsTable
+  organization_workspace_communication_channels: OrganizationWorkspaceCommunicationChannelsTable
+  organization_workspace_communication_deliveries: OrganizationWorkspaceCommunicationDeliveriesTable
+  organization_workspace_communications: OrganizationWorkspaceCommunicationsTable
+  organization_workspace_invites: OrganizationWorkspaceInvitesTable
+  organization_workspace_objective_activity: OrganizationWorkspaceObjectiveActivityTable
+  organization_workspace_objective_assignees: OrganizationWorkspaceObjectiveAssigneesTable
+  organization_workspace_objective_groups: OrganizationWorkspaceObjectiveGroupsTable
+  organization_workspace_objective_links: OrganizationWorkspaceObjectiveLinksTable
+  organization_workspace_objective_steps: OrganizationWorkspaceObjectiveStepsTable
+  organization_workspace_objectives: OrganizationWorkspaceObjectivesTable
   notifications: NotificationsTable
 }

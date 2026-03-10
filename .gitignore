@@ -45,3 +45,5 @@ dist-snapshots/
 supabase/.temp/
 .tmp/
 .codex/
+playwright-report/
+test-results/

@@ -30,11 +30,11 @@ async function requireAdminInternal(): Promise<RequireAdminResult> {
 
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     console.error("[admin-auth] Unable to load Supabase user.", userError)
-    redirect("/login?redirect=/internal")
+    redirect("/team/login?redirect=/internal")
   }
 
   if (!user) {
-    redirect("/login?redirect=/internal")
+    redirect("/team/login?redirect=/internal")
   }
 
   const { data: profile, error } = await supabase

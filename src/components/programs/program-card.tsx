@@ -12,8 +12,11 @@ export type ProgramCardProps = {
   title: string
   org?: string
   location?: string
+  description?: string
+  bannerImageUrl?: string
   imageUrl?: string
   statusLabel?: string
+  showStatusBadge?: boolean
   chips?: string[]
   goalCents?: number
   raisedCents?: number
@@ -31,8 +34,11 @@ export function ProgramCard({
   title,
   org,
   location,
+  description,
+  bannerImageUrl = "",
   imageUrl = "",
   statusLabel = "In progress",
+  showStatusBadge = true,
   chips = [],
   goalCents = 0,
   raisedCents = 0,
@@ -45,6 +51,8 @@ export function ProgramCard({
   variant = "medium",
   className,
 }: ProgramCardProps) {
+  const heroImageUrl = bannerImageUrl || imageUrl
+  const thumbImageUrl = imageUrl || bannerImageUrl
   const goal = goalCents || 0
   const raised = raisedCents || 0
   const pct = goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : 0
@@ -75,10 +83,10 @@ export function ProgramCard({
 
   if (variant === "list") {
     return (
-      <Item className={cn("min-h-[96px] items-center", className)}>
+      <Item className={cn("min-h-[112px] items-start", className)}>
         <ItemMedia className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-xl bg-muted">
-          {imageUrl ? (
-            <Image src={imageUrl} alt="" fill sizes="48px" className="object-cover" />
+          {thumbImageUrl ? (
+            <Image src={thumbImageUrl} alt="" fill sizes="48px" className="object-cover" />
           ) : (
             <GridPattern
               patternId={patternId}
@@ -87,20 +95,25 @@ export function ProgramCard({
             />
           )}
         </ItemMedia>
-        <ItemContent>
-          <ItemTitle className="line-clamp-1">{title}</ItemTitle>
-          {(org || location) ? (
-            <ItemDescription className="line-clamp-1">
-              {[org, location].filter(Boolean).join(" · ")}
-            </ItemDescription>
-          ) : null}
-          {statusLabel ? (
-            <Badge variant="secondary" className="mt-2 w-fit rounded-full px-2 py-0.5 text-xs">
+        <ItemContent className="space-y-1.5">
+          {showStatusBadge && statusLabel ? (
+            <Badge variant="secondary" className="w-fit rounded-full px-2 py-0.5 text-[10px]">
               {statusLabel}
             </Badge>
           ) : null}
+          <ItemTitle className="line-clamp-2">{title}</ItemTitle>
+          {(org || location) ? (
+            <ItemDescription className="line-clamp-1 text-xs">
+              {[org, location].filter(Boolean).join(" · ")}
+            </ItemDescription>
+          ) : null}
+          {description ? (
+            <ItemDescription className="line-clamp-2 text-[13px] leading-5">
+              {description}
+            </ItemDescription>
+          ) : null}
         </ItemContent>
-        <ItemActions>
+        <ItemActions className="self-start">
           {ctaHref ? (
             <Button size="sm" variant="outline" asChild>
               <a href={ctaHref} target={ctaTarget} rel={ctaTarget === "_blank" ? "noopener noreferrer" : undefined}>
@@ -137,9 +150,9 @@ export function ProgramCard({
             variant === "full" ? "aspect-[21/9]" : "aspect-[16/9]",
           )}
         >
-          {imageUrl ? (
+          {heroImageUrl ? (
             <Image
-              src={imageUrl}
+              src={heroImageUrl}
               alt="Program visual"
               fill
               className="object-cover"
@@ -152,23 +165,30 @@ export function ProgramCard({
               className="absolute inset-0 opacity-85 fill-gray-500/50 stroke-gray-500/50 dark:fill-white/15 dark:stroke-white/25 [mask-image:radial-gradient(220px_circle_at_center,white,transparent)]"
             />
           )}
-          <div className="absolute right-3 top-3">
-            <Badge
-              variant="secondary"
-              className="rounded-full px-3 py-1 text-xs font-medium border border-white/30 bg-white/50 backdrop-blur-sm dark:border-white/20 dark:bg-black/40"
-            >
-              {statusLabel}
-            </Badge>
-          </div>
+          {showStatusBadge && statusLabel ? (
+            <div className="absolute right-3 top-3">
+              <Badge
+                variant="secondary"
+                className="rounded-full px-3 py-1 text-xs font-medium border border-white/30 bg-white/50 backdrop-blur-sm dark:border-white/20 dark:bg-black/40"
+              >
+                {statusLabel}
+              </Badge>
+            </div>
+          ) : null}
         </div>
       </div>
 
       <CardContent className="flex flex-1 flex-col gap-3 px-4 pt-3 pb-4">
         <div className="space-y-1">
           <h3 className="line-clamp-2 text-lg font-semibold leading-6">{title}</h3>
-        {(org || location) ? (
+          {(org || location) ? (
             <p className="line-clamp-1 text-sm text-muted-foreground">{[org, location].filter(Boolean).join(" · ")}</p>
-        ) : null}
+          ) : null}
+          {description ? (
+            <p className="line-clamp-2 text-sm leading-5 text-muted-foreground">
+              {description}
+            </p>
+          ) : null}
         </div>
 
         <Separator />

@@ -3,63 +3,23 @@ import { useRouter } from "next/navigation"
 
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
 import { toast } from "@/lib/toast"
-import { resolveActiveOrganization } from "@/lib/organization/active-org"
+import { useAccountSettingsProfileLoader } from "./account-settings-dialog-profile-loader"
+import {
+  isMobileSettingsViewport,
+  requestDeleteAccount,
+  resolveErrorMessage,
+  saveCommunicationPreferences,
+  saveProfileSettings,
+} from "./account-settings-dialog-state-helpers"
+import type {
+  UseAccountSettingsDialogStateArgs,
+  UseAccountSettingsDialogStateResult,
+} from "./account-settings-dialog-state-types"
 import type {
   AccountSettingsErrorKey,
   AccountSettingsMobilePage,
   AccountSettingsTabKey,
 } from "./types"
-
-type UseAccountSettingsDialogStateArgs = {
-  open: boolean
-  initialTab: AccountSettingsTabKey
-  defaultName?: string | null
-  defaultEmail?: string | null
-  defaultMarketingOptIn: boolean
-  defaultNewsletterOptIn: boolean
-  onOpenChange: (next: boolean) => void
-}
-
-type ProfileIdentityRow = {
-  full_name: string | null
-  avatar_url: string | null
-}
-
-type ReturnType = {
-  tab: AccountSettingsTabKey
-  setTab: (tab: AccountSettingsTabKey) => void
-  mobilePage: AccountSettingsMobilePage
-  handleMobilePageChange: (page: AccountSettingsMobilePage) => void
-  firstName: string
-  lastName: string
-  phone: string
-  marketingOptIn: boolean
-  newsletterOptIn: boolean
-  newPassword: string
-  confirmPassword: string
-  isSaving: boolean
-  justSaved: boolean
-  isUpdatingPassword: boolean
-  confirmClose: boolean
-  setConfirmClose: (next: boolean) => void
-  isDirty: boolean
-  errors: Partial<Record<AccountSettingsErrorKey, string>>
-  avatarUrl: string | null
-  orgName: string
-  email: string
-  handleSave: () => Promise<void>
-  handleUpdatePassword: () => Promise<void>
-  handleDeleteAccount: () => Promise<boolean>
-  requestClose: () => void
-  handleMarketingOptInChange: (value: boolean) => void
-  handleNewsletterOptInChange: (value: boolean) => void
-  handleFirstNameChange: (value: string) => void
-  handleLastNameChange: (value: string) => void
-  handlePhoneChange: (value: string) => void
-  handleNewPasswordChange: (value: string) => void
-  handleConfirmPasswordChange: (value: string) => void
-  applyAvatarUrl: (url: string) => void
-}
 
 export function useAccountSettingsDialogState({
   open,
@@ -69,13 +29,17 @@ export function useAccountSettingsDialogState({
   defaultMarketingOptIn,
   defaultNewsletterOptIn,
   onOpenChange,
-}: UseAccountSettingsDialogStateArgs): ReturnType {
+}: UseAccountSettingsDialogStateArgs): UseAccountSettingsDialogStateResult {
   const supabase = useSupabaseClient()
   const router = useRouter()
 
   const [tab, _setTab] = useState<AccountSettingsTabKey>(initialTab)
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
+  const [title, setTitle] = useState("")
+  const [company, setCompany] = useState("")
+  const [contact, setContact] = useState("")
+  const [about, setAbout] = useState("")
   const [phone, setPhone] = useState("")
   const [marketingOptIn, setMarketingOptIn] = useState(defaultMarketingOptIn)
   const [newsletterOptIn, setNewsletterOptIn] = useState(defaultNewsletterOptIn)
@@ -96,18 +60,13 @@ export function useAccountSettingsDialogState({
   const email = defaultEmail ?? ""
   const initialFirstRef = useRef("")
   const initialLastRef = useRef("")
+  const initialTitleRef = useRef("")
+  const initialCompanyRef = useRef("")
+  const initialContactRef = useRef("")
+  const initialAboutRef = useRef("")
   const initialPhoneRef = useRef("")
   const initialMarketingRef = useRef(defaultMarketingOptIn)
   const initialNewsletterRef = useRef(defaultNewsletterOptIn)
-
-  const splitName = (value: string) => {
-    const normalized = value.trim()
-    if (normalized.length === 0) {
-      return { first: "", last: "" }
-    }
-    const [first, ...rest] = normalized.split(/\s+/)
-    return { first: first ?? "", last: rest.join(" ") }
-  }
 
   const markDirty = () => {
     dirtyRef.current = true
@@ -139,6 +98,22 @@ export function useAccountSettingsDialogState({
     setPhone(value)
     markDirty()
     clearError("phone")
+  }
+  const handleTitleChange = (value: string) => {
+    setTitle(value)
+    markDirty()
+  }
+  const handleCompanyChange = (value: string) => {
+    setCompany(value)
+    markDirty()
+  }
+  const handleContactChange = (value: string) => {
+    setContact(value)
+    markDirty()
+  }
+  const handleAboutChange = (value: string) => {
+    setAbout(value)
+    markDirty()
   }
   const handleMarketingOptInChange = (value: boolean) => {
     setMarketingOptIn(value)
@@ -176,65 +151,33 @@ export function useAccountSettingsDialogState({
     setJustSaved(false)
   }, [open])
 
-  useEffect(() => {
-    async function loadMeta() {
-      if (!open) return
-      const { data } = await supabase.auth.getUser()
-      const meta = (data?.user?.user_metadata ?? {}) as Record<string, unknown>
-      if (typeof meta.marketing_opt_in === "boolean") {
-        setMarketingOptIn(meta.marketing_opt_in)
-      }
-      if (typeof meta.newsletter_opt_in === "boolean") {
-        setNewsletterOptIn(meta.newsletter_opt_in)
-      }
-      if (typeof meta.phone === "string") {
-        setPhone(String(meta.phone))
-      }
-
-      initialPhoneRef.current = typeof meta.phone === "string" ? String(meta.phone) : ""
-      initialMarketingRef.current =
-        typeof meta.marketing_opt_in === "boolean"
-          ? (meta.marketing_opt_in as boolean)
-          : defaultMarketingOptIn
-      initialNewsletterRef.current =
-        typeof meta.newsletter_opt_in === "boolean"
-          ? (meta.newsletter_opt_in as boolean)
-          : defaultNewsletterOptIn
-
-      if (data?.user?.id) {
-        const { orgId: activeOrgId } = await resolveActiveOrganization(supabase, data.user.id)
-
-        const { data: profileRow } = await supabase
-          .from("profiles")
-          .select("full_name, avatar_url")
-          .eq("id", data.user.id)
-          .maybeSingle<ProfileIdentityRow>()
-        setAvatarUrl(profileRow?.avatar_url ?? null)
-
-        const profileFullName =
-          typeof profileRow?.full_name === "string" ? profileRow.full_name.trim() : ""
-        const defaultFullName = (defaultName ?? "").trim()
-        const metadataFullName =
-          typeof meta.full_name === "string" ? String(meta.full_name).trim() : ""
-        const resolvedFullName = profileFullName || defaultFullName || metadataFullName
-        const { first, last } = splitName(resolvedFullName)
-        setFirstName(first)
-        setLastName(last)
-        initialFirstRef.current = first
-        initialLastRef.current = last
-
-        const { data: orgRow } = await supabase
-          .from("organizations")
-          .select("profile")
-          .eq("user_id", activeOrgId)
-          .maybeSingle<{ profile: Record<string, unknown> | null }>()
-        const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
-        setOrgName(String(profile.name ?? ""))
-      }
-    }
-
-    void loadMeta()
-  }, [open, defaultName, defaultMarketingOptIn, defaultNewsletterOptIn, supabase])
+  useAccountSettingsProfileLoader({
+    open,
+    supabase,
+    defaultName,
+    defaultMarketingOptIn,
+    defaultNewsletterOptIn,
+    setMarketingOptIn,
+    setNewsletterOptIn,
+    setPhone,
+    setAvatarUrl,
+    setFirstName,
+    setLastName,
+    setTitle,
+    setCompany,
+    setContact,
+    setAbout,
+    setOrgName,
+    initialFirstRef,
+    initialLastRef,
+    initialTitleRef,
+    initialCompanyRef,
+    initialContactRef,
+    initialAboutRef,
+    initialPhoneRef,
+    initialMarketingRef,
+    initialNewsletterRef,
+  })
 
   const isDirty = useMemo(() => dirty || dirtyRef.current, [dirty])
 
@@ -257,62 +200,67 @@ export function useAccountSettingsDialogState({
       }
 
       if (tab === "profile") {
-        const trimmedFirst = firstName.trim()
-        const trimmedLast = lastName.trim()
-        const initialFull = [initialFirstRef.current, initialLastRef.current]
-          .filter(Boolean)
-          .join(" ")
-        const nextFull = [trimmedFirst, trimmedLast].filter(Boolean).join(" ")
-        if (initialFull !== nextFull) {
-          const { error: profileError } = await supabase
-            .from("profiles")
-            .upsert({ id: userId, full_name: nextFull || null }, { onConflict: "id" })
-          if (profileError) {
-            throw profileError
-          }
-          const { error: fullNameMetaError } = await supabase.auth.updateUser({
-            data: { full_name: nextFull || null },
-          })
-          if (fullNameMetaError) {
-            throw fullNameMetaError
-          }
-          initialFirstRef.current = trimmedFirst
-          initialLastRef.current = trimmedLast
-          setFirstName(trimmedFirst)
-          setLastName(trimmedLast)
-        }
+        const result = await saveProfileSettings({
+          supabase,
+          userId,
+          firstName,
+          lastName,
+          title,
+          company,
+          contact,
+          about,
+          phone,
+          initialFirstName: initialFirstRef.current,
+          initialLastName: initialLastRef.current,
+          initialTitle: initialTitleRef.current,
+          initialCompany: initialCompanyRef.current,
+          initialContact: initialContactRef.current,
+          initialAbout: initialAboutRef.current,
+          initialPhone: initialPhoneRef.current,
+        })
 
-        if (phone !== initialPhoneRef.current) {
-          const { error: phoneError } = await supabase.auth.updateUser({ data: { phone } })
-          if (phoneError) {
-            throw phoneError
-          }
-          initialPhoneRef.current = phone
+        initialFirstRef.current = result.initialFirstName
+        initialLastRef.current = result.initialLastName
+        initialTitleRef.current = result.initialTitle
+        initialCompanyRef.current = result.initialCompany
+        initialContactRef.current = result.initialContact
+        initialAboutRef.current = result.initialAbout
+        initialPhoneRef.current = result.initialPhone
+
+        if (result.firstName !== firstName) {
+          setFirstName(result.firstName)
+        }
+        if (result.lastName !== lastName) {
+          setLastName(result.lastName)
+        }
+        if (result.title !== title) {
+          setTitle(result.title)
+        }
+        if (result.company !== company) {
+          setCompany(result.company)
+        }
+        if (result.contact !== contact) {
+          setContact(result.contact)
+        }
+        if (result.about !== about) {
+          setAbout(result.about)
         }
       } else if (tab === "communications") {
-        const meta: Record<string, unknown> = {}
-        if (marketingOptIn !== initialMarketingRef.current) {
-          meta.marketing_opt_in = marketingOptIn
-        }
-        if (newsletterOptIn !== initialNewsletterRef.current) {
-          meta.newsletter_opt_in = newsletterOptIn
-        }
-        if (Object.keys(meta).length > 0) {
-          const { error: communicationsError } = await supabase.auth.updateUser({ data: meta })
-          if (communicationsError) {
-            throw communicationsError
-          }
-          initialMarketingRef.current = marketingOptIn
-          initialNewsletterRef.current = newsletterOptIn
-        }
+        const result = await saveCommunicationPreferences({
+          supabase,
+          marketingOptIn,
+          newsletterOptIn,
+          initialMarketingOptIn: initialMarketingRef.current,
+          initialNewsletterOptIn: initialNewsletterRef.current,
+        })
+        initialMarketingRef.current = result.initialMarketingOptIn
+        initialNewsletterRef.current = result.initialNewsletterOptIn
       }
 
       dirtyRef.current = false
       setDirty(false)
 
-      const isMobile =
-        typeof window !== "undefined" &&
-        window.matchMedia("(max-width: 767px)").matches
+      const isMobile = isMobileSettingsViewport()
       if (isMobile) {
         setMobilePage("menu")
         _setTab("profile")
@@ -323,14 +271,7 @@ export function useAccountSettingsDialogState({
         setJustSaved(true)
       }
     } catch (error) {
-      const message =
-        typeof error === "object" &&
-        error !== null &&
-        "message" in error &&
-        typeof error.message === "string"
-          ? error.message
-          : "Unable to save settings."
-      toast.error(message)
+      toast.error(resolveErrorMessage(error, "Unable to save settings."))
     } finally {
       setIsSaving(false)
     }
@@ -354,33 +295,18 @@ export function useAccountSettingsDialogState({
   }
 
   const handleDeleteAccount = async () => {
-    try {
-      const res = await fetch("/api/account/delete", { method: "DELETE" })
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}))
-        const message =
-          typeof payload?.error === "string" && payload.error.length > 0
-            ? payload.error
-            : "Unable to delete account."
-        const normalized = message.toLowerCase()
-        const isSessionError =
-          res.status === 401 ||
-          normalized.includes("invalid refresh token") ||
-          normalized.includes("refresh token not found") ||
-          normalized.includes("auth session")
-
-        if (isSessionError) {
-          toast.error("Session expired. Sign in again, then retry account deletion.")
-          await supabase.auth.signOut().catch(() => undefined)
-          router.replace("/?section=login")
-          router.refresh()
-          return false
-        }
-
-        toast.error(message)
-        return false
+    const result = await requestDeleteAccount()
+    if (!result.ok) {
+      toast.error(result.message)
+      if (result.sessionExpired) {
+        await supabase.auth.signOut().catch(() => undefined)
+        router.replace("/login")
+        router.refresh()
       }
+      return false
+    }
 
+    try {
       await supabase.auth.signOut().catch(() => undefined)
       router.replace("/")
       router.refresh()
@@ -399,14 +325,6 @@ export function useAccountSettingsDialogState({
     onOpenChange(false)
   }
 
-  const handleNewsletterOptIn = (value: boolean) => {
-    handleNewsletterOptInChange(value)
-  }
-
-  const handleMarketingOptIn = (value: boolean) => {
-    handleMarketingOptInChange(value)
-  }
-
   const applyAvatarUrl = (url: string) => {
     setAvatarUrl(url)
   }
@@ -418,6 +336,10 @@ export function useAccountSettingsDialogState({
     handleMobilePageChange,
     firstName,
     lastName,
+    title,
+    company,
+    contact,
+    about,
     phone,
     marketingOptIn,
     newsletterOptIn,
@@ -437,10 +359,14 @@ export function useAccountSettingsDialogState({
     handleUpdatePassword,
     handleDeleteAccount,
     requestClose,
-    handleMarketingOptInChange: handleMarketingOptIn,
-    handleNewsletterOptInChange: handleNewsletterOptIn,
+    handleMarketingOptInChange,
+    handleNewsletterOptInChange,
     handleFirstNameChange,
     handleLastNameChange,
+    handleTitleChange,
+    handleCompanyChange,
+    handleContactChange,
+    handleAboutChange,
     handlePhoneChange,
     handleNewPasswordChange,
     handleConfirmPasswordChange,

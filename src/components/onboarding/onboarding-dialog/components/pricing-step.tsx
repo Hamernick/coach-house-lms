@@ -1,5 +1,8 @@
 "use client"
 
+import { useSearchParams } from "next/navigation"
+
+import { getCheckoutErrorMessage } from "@/components/paywall/paywall-overlay/config"
 import { PLATFORM_TIERS } from "@/components/public/pricing-surface-data"
 import { TierFeatures } from "@/components/public/pricing-surface-sections/shared"
 import {
@@ -8,6 +11,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -63,7 +67,12 @@ export function PricingStep({
   currentPlanTier,
   checkoutReturnTo,
 }: PricingStepProps) {
+  const searchParams = useSearchParams()
   const builderTiers = PLATFORM_TIERS.filter((tier) => BUILDER_TIER_IDS.has(tier.id))
+  const checkoutErrorCode = searchParams.get("checkout_error")
+  const checkoutErrorDetail = searchParams.get("checkout_detail")
+  const checkoutErrorDebug = searchParams.get("checkout_debug")
+  const checkoutErrorMessage = getCheckoutErrorMessage(checkoutErrorCode)
 
   return (
     <div className="space-y-5 py-5" data-onboarding-step-id="pricing">
@@ -77,6 +86,20 @@ export function PricingStep({
           free member journey if you only want the internal map experience.
         </p>
       </div>
+
+      {checkoutErrorMessage ? (
+        <Alert className="rounded-2xl border-amber-300/70 bg-amber-50/80 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100">
+          <AlertDescription>
+            <p>{checkoutErrorMessage}</p>
+            {checkoutErrorDetail || checkoutErrorDebug ? (
+              <p className="mt-1 text-xs opacity-80">
+                {checkoutErrorDetail ? `Reason: ${checkoutErrorDetail}. ` : ""}
+                {checkoutErrorDebug ? `Ref: ${checkoutErrorDebug}` : ""}
+              </p>
+            ) : null}
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-2">
         {builderTiers.map((tier) => {

@@ -6,7 +6,6 @@ import {
   PricingHeroSection,
   PricingTierCardsSection,
 } from "@/components/public/pricing-surface-sections"
-import { env } from "@/lib/env"
 import { cn } from "@/lib/utils"
 
 type PricingSurfaceProps = {
@@ -15,10 +14,6 @@ type PricingSurfaceProps = {
 
 export async function PricingSurface({ embedded = false }: PricingSurfaceProps = {}) {
   const isEmbedded = embedded
-  const hasStripeSecretKey = Boolean(env.STRIPE_SECRET_KEY)
-  const canCheckoutOrganization = Boolean(hasStripeSecretKey && env.STRIPE_ORGANIZATION_PRICE_ID)
-  const operationsSupportPriceId = env.STRIPE_OPERATIONS_SUPPORT_PRICE_ID ?? null
-  const canCheckoutOperationsSupport = Boolean(hasStripeSecretKey && operationsSupportPriceId)
 
   return (
     <main
@@ -36,12 +31,7 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
         )}
       >
         <PricingHeroSection />
-        <PricingTierCardsSection
-          isEmbedded={isEmbedded}
-          hasStripeSecretKey={hasStripeSecretKey}
-          canCheckoutOrganization={canCheckoutOrganization}
-          canCheckoutOperationsSupport={canCheckoutOperationsSupport}
-        />
+        <PricingTierCardsSection isEmbedded={isEmbedded} />
         <PricingFeatureBreakdownIntroSection />
         <PricingFeatureMatrixSection />
         <PricingCallToActionSection />

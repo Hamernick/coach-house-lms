@@ -7,11 +7,13 @@ import "mapbox-gl/dist/mapbox-gl.css"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { MAP_STYLE, RECENT_ORGANIZATIONS_LIMIT } from "./public-map-index/constants"
+import { filterPublicMapOrganizations, organizationHasMapLocation, type PublicMapBounds } from "./public-map-index/helpers"
 import {
-  filterPublicMapOrganizations,
-  organizationHasMapLocation,
-  type PublicMapBounds,
-} from "./public-map-index/helpers"
+  observePublicMapContainer,
+  resolveMapBounds,
+  useSyncPublicMapAuthFavorite,
+  useSyncPublicMapLayout,
+} from "./public-map-index/layout-sync"
 import type { PublicMapMemberProfile } from "./public-map-index/member-profile-card"
 import {
   createOrganizationMarkerElement,
@@ -55,10 +57,6 @@ type PublicMapIndexProps = {
   memberProfile?: PublicMapMemberProfile | null
 }
 
-function PublicMapMainSurface(props: ComponentProps<typeof PublicMapSurface>) {
-  return <PublicMapSurface {...props} />
-}
-
 export function PublicMapIndex({
   organizations,
   mapboxToken,
@@ -76,7 +74,6 @@ export function PublicMapIndex({
   const markersRef = useRef<Array<{ id: string; marker: mapboxgl.Marker }>>([])
   const hasResolvedInitialViewportRef = useRef(false)
   const mapLoadedRef = useRef(false)
-
   const token = (mapboxToken ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "").trim()
   const tokenAvailable = Boolean(token)
   const [mapError, setMapError] = useState<string | null>(null)
@@ -100,7 +97,6 @@ export function PublicMapIndex({
     useState<UserLocationStatus>("idle")
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
   const [pendingAuthOrgId, setPendingAuthOrgId] = useState<string | null>(null)
-
   const {
     favorites,
     recentOrganizationIds,
@@ -114,7 +110,6 @@ export function PublicMapIndex({
   const effectiveViewer = viewer ?? initialViewer
   const isAuthenticated = Boolean(effectiveViewer)
   const locationFeedback = buildLocationFeedback(userLocationStatus)
-
   const organizationById = useMemo(
     () => new Map(organizations.map((organization) => [organization.id, organization] as const)),
     [organizations],
@@ -156,6 +151,23 @@ export function PublicMapIndex({
   const authAction = searchParams.get("auth_action")
   const authOrganizationId = searchParams.get("auth_org")
 
+  useSyncPublicMapLayout({
+    containerRef,
+    mapRef,
+    mapLoadedRef,
+    onViewportChange: (map) => setAppliedBounds(resolveBounds(map)),
+    sidebarMode,
+  })
+  useSyncPublicMapAuthFavorite({
+    authAction,
+    authOrganizationId,
+    initialPublicSlug,
+    isAuthenticated,
+    router,
+    searchParams,
+    setFavorites,
+  })
+
   const { authRedirectTo, handleSelectOrganization, toggleFavorite } =
     usePublicMapActions({
       organizationById,
@@ -185,36 +197,12 @@ export function PublicMapIndex({
   }, [filteredOrganizations, organizationById, selectedOrgId, selectedOrganization])
 
   useEffect(() => {
-    if (!isAuthenticated) return
-    if (authAction !== "save" || !authOrganizationId) return
-
-    setFavorites((current) => {
-      if (current.includes(authOrganizationId)) return current
-      return [authOrganizationId, ...current].slice(0, 120)
-    })
-
-    const nextSearchParams = removeAuthParams(new URLSearchParams(searchParams.toString()))
-    const nextHref = buildMapHref({
-      slug: initialPublicSlug,
-      searchParams: nextSearchParams,
-    })
-    router.replace(nextHref, { scroll: false })
-  }, [
-    authAction,
-    authOrganizationId,
-    initialPublicSlug,
-    isAuthenticated,
-    router,
-    searchParams,
-    setFavorites,
-  ])
-
-  useEffect(() => {
     if (!tokenAvailable) return
     if (!containerRef.current) return
     if (mapRef.current) return
 
     let cancelled = false
+    let stopObservingMapContainer = () => {}
 
     async function initializeMap() {
       try {
@@ -252,14 +240,29 @@ export function PublicMapIndex({
 
         map.on("load", () => {
           mapLoadedRef.current = true
-          setAppliedBounds(resolveBounds(map))
+          requestAnimationFrame(() => {
+            if (mapRef.current !== map) return
+            map.resize()
+            setAppliedBounds(resolveMapBounds(map))
+          })
+          setAppliedBounds(resolveMapBounds(map))
         })
 
         map.on("moveend", () => {
-          setAppliedBounds(resolveBounds(map))
+          setAppliedBounds(resolveMapBounds(map))
         })
 
         mapRef.current = map
+
+        stopObservingMapContainer = observePublicMapContainer({
+          containerRef,
+          map,
+          mapRef,
+          mapLoadedRef,
+          onViewportChange: (activeMap) => {
+            setAppliedBounds(resolveMapBounds(activeMap))
+          },
+        })
       } catch (error) {
         console.error("Public map init error:", error)
         setMapError("Mapbox couldn't start. Check your token and domain restrictions.")
@@ -276,6 +279,7 @@ export function PublicMapIndex({
         mapRef.current.remove()
         mapRef.current = null
       }
+      stopObservingMapContainer()
       mapLoadedRef.current = false
       hasResolvedInitialViewportRef.current = false
     }
@@ -412,7 +416,7 @@ export function PublicMapIndex({
         onToggleFavorite={toggleFavorite}
       />
 
-      <PublicMapMainSurface
+      <PublicMapSurface
         containerRef={containerRef}
         sidebarMode={sidebarMode}
         filteredOrganizations={filteredOrganizations}

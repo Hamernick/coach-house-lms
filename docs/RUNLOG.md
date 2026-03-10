@@ -24214,3 +24214,51 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm exec eslint 'src/app/(auth)/team/login/page.tsx' 'src/components/auth/login-form.tsx'` ✅
   - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-10 09:40 EDT - redeploy production to bake in Mapbox public token
+
+- Scope:
+  - Vercel production deployment for `caleb-hamernicks-projects/coach-house-platform`
+- Changes:
+  - Confirmed `NEXT_PUBLIC_MAPBOX_TOKEN` exists in Vercel for `Development`, `Preview`, and `Production`.
+  - Confirmed the latest production deployment predated the env var creation, so the public token was not yet present in the shipped client bundle.
+  - Triggered a fresh production redeploy from the latest ready deployment:
+    - source deployment: `https://coach-house-platform-c9foloael-caleb-hamernicks-projects.vercel.app`
+    - new production deployment: `https://coach-house-platform-oittyc51v-caleb-hamernicks-projects.vercel.app`
+- Validation:
+  - `pnpm dlx vercel env ls` ✅
+  - `pnpm dlx vercel ls coach-house-platform --scope caleb-hamernicks-projects --yes` ✅
+  - `pnpm dlx vercel redeploy https://coach-house-platform-c9foloael-caleb-hamernicks-projects.vercel.app --target production --scope caleb-hamernicks-projects` ✅
+  - `pnpm dlx vercel inspect https://coach-house-platform-oittyc51v-caleb-hamernicks-projects.vercel.app --wait --timeout 5m --scope caleb-hamernicks-projects` ✅
+
+## 2026-03-10 10:14 EDT - fix public map canvas sizing when search panel toggles
+
+- Scope:
+  - `src/components/public/public-map-index.tsx`
+  - `src/components/public/public-map-index/map-surface.tsx`
+- Changes:
+  - Moved the positioned map frame off the Mapbox container element and onto a wrapper div.
+  - This avoids Mapbox's `mapboxgl-map { position: relative; }` class from overriding the app's absolute layout rules.
+  - Added resize synchronization so the map canvas remeasures when the public map sidebar opens, closes, or changes width.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/public-map-index.tsx' 'src/components/public/public-map-index/map-surface.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - Local Playwright verification on `http://localhost:3000/find` confirmed the map container and `.mapboxgl-canvas` stay matched before close, after close, and after reopen ✅
+
+## 2026-03-10 10:47 EDT - route public pricing through signup and surface onboarding checkout failures
+
+- Scope:
+  - `src/components/public/pricing-surface.tsx`
+  - `src/components/public/pricing-surface-sections/pricing-tier-cards-section.tsx`
+  - `src/components/onboarding/onboarding-flow.tsx`
+  - `src/components/onboarding/onboarding-dialog/components/pricing-step.tsx`
+- Changes:
+  - Stopped public paid pricing CTAs from linking straight to `/api/stripe/checkout`.
+  - Routed public builder pricing through `/sign-up` with a redirect back to `/workspace?onboarding_flow=1&source=onboarding_pricing`.
+  - Taught onboarding to treat `source=onboarding_pricing` as an entry point into the builder pricing step.
+  - Added visible checkout error messaging inside the onboarding pricing step so Stripe failures no longer look like a silent page reload.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/pricing-surface.tsx' 'src/components/public/pricing-surface-sections/pricing-tier-cards-section.tsx' 'src/components/onboarding/onboarding-flow.tsx' 'src/components/onboarding/onboarding-dialog/components/pricing-step.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+- Follow-up / unresolved:
+  - `coachhouse.vercel.app` appears to be backed by a different Vercel project or env context than the repo-linked `coach-house-platform` project. Stripe runtime verification passed for `coach-house-platform`, so the live `price_not_found` failures on `coachhouse.vercel.app` still need env/account correction in the project that owns that domain.

@@ -20,6 +20,28 @@ const urlInput = z
   })
   .optional()
 
+const brandTypographyTrackingSchema = z.enum([
+  "tighter",
+  "tight",
+  "normal",
+  "wide",
+  "wider",
+])
+
+const brandTypographySlotSchema = z.object({
+  family: z.string().min(1).max(120),
+  weight: z.string().min(1).max(8),
+  tracking: brandTypographyTrackingSchema,
+})
+
+const brandTypographySchema = z.object({
+  headings: brandTypographySlotSchema,
+  body: brandTypographySlotSchema,
+  code: z.object({
+    family: z.string().min(1).max(120),
+  }),
+})
+
 export const organizationProfileSchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
   tagline: z.string().max(160).optional().or(z.literal("")),
@@ -39,7 +61,10 @@ export const organizationProfileSchema = z.object({
   addressState: z.string().max(200).optional().or(z.literal("")),
   addressPostal: z.string().max(40).optional().or(z.literal("")),
   addressCountry: z.string().max(120).optional().or(z.literal("")),
+  locationType: z.enum(["in_person", "online"]).optional(),
+  locationUrl: urlInput.or(z.literal("")),
   logoUrl: urlInput.or(z.literal("")),
+  brandMarkUrl: urlInput.or(z.literal("")),
   headerUrl: urlInput.or(z.literal("")),
   publicUrl: urlInput.or(z.literal("")),
   twitter: z.string().max(200).optional().or(z.literal("")),
@@ -59,6 +84,10 @@ export const organizationProfileSchema = z.object({
   boilerplate: z.string().max(5000).optional().or(z.literal("")),
   brandPrimary: hexColor,
   brandColors: z.array(hexColor).max(12).optional(),
+  brandThemePresetId: z.string().max(60).optional().or(z.literal("")),
+  brandAccentPresetId: z.string().max(60).optional().or(z.literal("")),
+  brandTypographyPresetId: z.string().max(60).optional().or(z.literal("")),
+  brandTypography: brandTypographySchema.nullish(),
   publicSlug: z
     .string()
     .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/i, "Use letters, numbers, and dashes only")

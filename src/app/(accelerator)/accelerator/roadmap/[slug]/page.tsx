@@ -1,12 +1,14 @@
-import { StrategicRoadmapEditorPage } from "@/components/roadmap/strategic-roadmap-editor-page"
+import { redirect } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
 type AcceleratorRoadmapSectionPageProps = {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
 }
 
-export default async function AcceleratorRoadmapSectionPage({ params }: AcceleratorRoadmapSectionPageProps) {
-  const slug = params.slug
-  return <StrategicRoadmapEditorPage redirectTo={`/accelerator/roadmap/${slug}`} initialSectionSlug={slug} />
+export default async function AcceleratorRoadmapSectionPage({
+  params,
+}: AcceleratorRoadmapSectionPageProps) {
+  const { slug } = await params
+  redirect(`/workspace/roadmap/${slug}`)
 }

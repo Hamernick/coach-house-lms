@@ -9,11 +9,18 @@ import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 import Plus from "lucide-react/dist/esm/icons/plus"
 
-import { RoadmapEditor, type RoadmapEditorLayout } from "@/components/roadmap/roadmap-editor"
+import {
+  RoadmapEditor,
+  type RoadmapEditorLayout,
+} from "@/components/roadmap/roadmap-editor"
 import { ProgramCard } from "@/components/programs/program-card"
+import { Button } from "@/components/ui/button"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { toast } from "@/lib/toast"
-import { uploadOrgMedia, validateOrgMediaFile } from "@/lib/organization/org-media"
+import {
+  uploadOrgMedia,
+  validateOrgMediaFile,
+} from "@/lib/organization/org-media"
 import { setRoadmapHeroImageAction } from "@/actions/roadmap"
 import { cn } from "@/lib/utils"
 
@@ -72,7 +79,10 @@ export function RoadmapShell({
   const [isUploadingHero, setIsUploadingHero] = useState(false)
   const [isSavingHero, setIsSavingHero] = useState(false)
 
-  const saveHero = async (nextUrl: string | null, toastId?: string | number) => {
+  const saveHero = async (
+    nextUrl: string | null,
+    toastId?: string | number
+  ) => {
     if (!canEdit) return
     setIsSavingHero(true)
     try {
@@ -110,7 +120,9 @@ export function RoadmapShell({
       const url = await uploadOrgMedia({ file, kind: "roadmap" })
       await saveHero(url, toastId)
     } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Upload failed", { id: toastId })
+      toast.error(error instanceof Error ? error.message : "Upload failed", {
+        id: toastId,
+      })
     } finally {
       setIsUploadingHero(false)
     }
@@ -141,29 +153,34 @@ export function RoadmapShell({
           <header
             className={cn(
               "flex gap-4",
-              headerLayout === "column" ? "flex-col items-start" : "flex-wrap items-start",
+              headerLayout === "column"
+                ? "flex-col items-start"
+                : "flex-wrap items-start"
             )}
           >
-            <span className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground">
+            <span className="border-border/60 bg-muted/40 text-muted-foreground inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border">
               <WaypointsIcon className="h-5 w-5" aria-hidden />
             </span>
             <div className="min-w-0 space-y-2 sm:max-w-2xl">
-              <h1 className="text-3xl font-semibold tracking-tight text-foreground">Strategic roadmap</h1>
-              <p className="text-sm text-muted-foreground">
-                A pitch-ready snapshot of what you are building. Use it to show funders a clear path, proof of progress,
-                and what comes next.
+              <h1 className="text-foreground text-3xl font-semibold tracking-tight">
+                Strategic roadmap
+              </h1>
+              <p className="text-muted-foreground text-sm">
+                A pitch-ready snapshot of what you are building. Use it to show
+                funders a clear path, proof of progress, and what comes next.
               </p>
             </div>
           </header>
         ) : null}
 
         {showHeroEditor ? (
-          <section className="rounded-2xl border border-border/60 bg-card/70 p-4 shadow-sm sm:p-6">
+          <section className="border-border/60 bg-card/70 rounded-2xl border p-4 shadow-sm sm:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-1">
                 <h2 className="text-lg font-semibold">Roadmap hero image</h2>
-                <p className="text-sm text-muted-foreground">
-                  Shown on the public roadmap page header. Dot grid is used if empty.
+                <p className="text-muted-foreground text-sm">
+                  Shown on the public roadmap page header. Dot grid is used if
+                  empty.
                 </p>
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -181,10 +198,15 @@ export function RoadmapShell({
                     event.currentTarget.value = ""
                   }}
                 />
-                <div className="flex items-center gap-2 rounded-full border border-border/60 bg-background/80 px-2 py-1">
-                  <button
+                <div className="border-border/60 bg-background/80 flex items-center gap-2 rounded-full border px-2 py-1">
+                  <Button
                     type="button"
-                    className={cn(swatchBase, !isHeroImage && "ring-2 ring-foreground/40")}
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      swatchBase,
+                      !isHeroImage && "ring-foreground/40 ring-2"
+                    )}
                     aria-label="Use dot grid background"
                     aria-pressed={!isHeroImage}
                     disabled={!canEdit || isUploadingHero || isSavingHero}
@@ -193,11 +215,16 @@ export function RoadmapShell({
                     }}
                   >
                     <span className={cn(DOT_PATTERN_CLASSES)} />
-                    <span className="pointer-events-none absolute inset-0 bg-background [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
-                  </button>
-                  <button
+                    <span className="bg-background pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+                  </Button>
+                  <Button
                     type="button"
-                    className={cn(swatchBase, isHeroImage && "ring-2 ring-foreground/40")}
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      swatchBase,
+                      isHeroImage && "ring-foreground/40 ring-2"
+                    )}
                     aria-label="Use hero image"
                     aria-pressed={isHeroImage}
                     disabled={!canEdit || isUploadingHero || isSavingHero}
@@ -207,33 +234,58 @@ export function RoadmapShell({
                     }}
                   >
                     {isHeroImage ? (
-                      <Image src={heroUrl} alt="" fill className="object-cover" sizes="40px" />
+                      <Image
+                        src={heroUrl}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="40px"
+                      />
                     ) : (
-                      <ImageIcon className="h-4 w-4 text-muted-foreground" aria-hidden />
+                      <ImageIcon
+                        className="text-muted-foreground h-4 w-4"
+                        aria-hidden
+                      />
                     )}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     className={swatchBase}
                     aria-label="Upload hero image"
                     disabled={!canEdit || isUploadingHero || isSavingHero}
                     onClick={() => heroInputRef.current?.click()}
                   >
                     {isUploadingHero || isSavingHero ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden />
+                      <Loader2
+                        className="text-muted-foreground h-4 w-4 animate-spin"
+                        aria-hidden
+                      />
                     ) : (
-                      <Plus className="h-4 w-4 text-muted-foreground" aria-hidden />
+                      <Plus
+                        className="text-muted-foreground h-4 w-4"
+                        aria-hidden
+                      />
                     )}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
-            <div className="relative mt-4 h-40 w-full overflow-hidden rounded-xl border border-border/50 sm:h-48">
-              {heroUrl ? <Image src={heroUrl} alt="" fill className="object-cover" sizes="100vw" /> : null}
+            <div className="border-border/50 relative mt-4 h-40 w-full overflow-hidden rounded-xl border sm:h-48">
+              {heroUrl ? (
+                <Image
+                  src={heroUrl}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) calc(100vw - 2rem), (max-width: 1280px) 768px, 960px"
+                />
+              ) : null}
               {!heroUrl ? (
                 <>
                   <div className={cn(DOT_PATTERN_CLASSES)} />
-                  <div className="pointer-events-none absolute inset-0 bg-background [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+                  <div className="bg-background pointer-events-none absolute inset-0 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
                 </>
               ) : null}
             </div>

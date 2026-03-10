@@ -49,6 +49,10 @@ function sanitizeFilename(name: string) {
   return cleaned.length > 0 ? cleaned : "document.pdf"
 }
 
+function isDocumentPathForKind(path: string, orgId: string, key: DocumentKey) {
+  return path.startsWith(`${orgId}/${key}/`)
+}
+
 async function loadProfile(supabase: ReturnType<typeof createSupabaseRouteHandlerClient>, orgId: string) {
   const { data: orgRow, error } = await supabase
     .from("organizations")
@@ -86,6 +90,7 @@ export async function GET(request: NextRequest) {
 
   const { searchParams } = new URL(request.url)
   const key = getDocumentKey(searchParams.get("kind"))
+  const downloadRequested = searchParams.get("download") === "1"
   if (!key) {
     return NextResponse.json({ error: "Unsupported document kind" }, { status: 400 })
   }
@@ -98,8 +103,19 @@ export async function GET(request: NextRequest) {
     if (!isRecord(doc) || typeof doc.path !== "string") {
       return NextResponse.json({ error: "Document not found" }, { status: 404 })
     }
+    if (!isDocumentPathForKind(doc.path, orgId, key)) {
+      return NextResponse.json({ error: "Document not found" }, { status: 404 })
+    }
 
-    const { data: signed, error: signedError } = await supabase.storage.from(BUCKET).createSignedUrl(doc.path, 60 * 15)
+    const { data: signed, error: signedError } = await supabase.storage
+      .from(BUCKET)
+      .createSignedUrl(
+        doc.path,
+        60 * 15,
+        downloadRequested
+          ? { download: typeof doc.name === "string" && doc.name.length > 0 ? doc.name : true }
+          : undefined,
+      )
     if (signedError || !signed?.signedUrl) {
       return NextResponse.json({ error: signedError?.message ?? "Unable to access document" }, { status: 500 })
     }
@@ -150,7 +166,7 @@ export async function POST(request: NextRequest) {
     const existing = documents[key]
     const existingPath = isRecord(existing) && typeof existing.path === "string" ? existing.path : null
 
-    if (existingPath) {
+    if (existingPath && isDocumentPathForKind(existingPath, orgId, key)) {
       await supabase.storage.from(BUCKET).remove([existingPath])
     }
 
@@ -241,6 +257,9 @@ export async function PATCH(request: NextRequest) {
     if (!isRecord(current) || typeof current.path !== "string") {
       return NextResponse.json({ error: "Document not found" }, { status: 404 })
     }
+    if (!isDocumentPathForKind(current.path, orgId, key)) {
+      return NextResponse.json({ error: "Document not found" }, { status: 404 })
+    }
 
     const doc: DocumentMeta = {
       name: nextName,
@@ -299,7 +318,7 @@ export async function DELETE(request: NextRequest) {
     const current = documents[key]
     const path = isRecord(current) && typeof current.path === "string" ? current.path : null
 
-    if (path) {
+    if (path && isDocumentPathForKind(path, orgId, key)) {
       await supabase.storage.from(BUCKET).remove([path])
     }
 

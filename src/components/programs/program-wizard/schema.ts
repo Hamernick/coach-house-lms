@@ -2,6 +2,7 @@
 
 import { z } from "zod"
 import { publicSharingEnabled } from "@/lib/feature-flags"
+import type { BudgetTableRow } from "@/lib/modules"
 
 export const PROGRAM_TYPES = [
   "Direct Services",
@@ -29,11 +30,21 @@ export const DELIVERY_FORMATS = [
 export const LOCATION_MODES = ["in_person", "online", "hybrid"] as const
 
 const monthRegex = /^\d{4}-(0[1-9]|1[0-2])$/
+const BudgetTableRowSchema = z.object({
+  category: z.string(),
+  description: z.string(),
+  costType: z.string(),
+  unit: z.string(),
+  units: z.string(),
+  costPerUnit: z.string(),
+  totalCost: z.string(),
+}) satisfies z.ZodType<BudgetTableRow>
 
 export const ProgramWizardSchema = z.object({
   title: z.string().trim().min(1).max(160),
   oneSentence: z.string().trim().min(1).max(240),
   subtitle: z.string().max(200).or(z.literal("")).default(""),
+  bannerImageUrl: z.string().url().or(z.literal("")).default(""),
   imageUrl: z.string().url().or(z.literal("")).default(""),
   programType: z.enum(PROGRAM_TYPES),
   coreFormat: z.enum(DELIVERY_FORMATS),
@@ -62,7 +73,8 @@ export const ProgramWizardSchema = z.object({
   frequency: z.string().trim().min(1).max(120),
   locationMode: z.enum(LOCATION_MODES),
   locationDetails: z.string().max(200).or(z.literal("")).default(""),
-  budgetUsd: z.coerce.number().min(1),
+  budgetRows: z.array(BudgetTableRowSchema).default([]),
+  budgetUsd: z.coerce.number().nonnegative().default(0),
   costStaffUsd: z.coerce.number().nonnegative().default(0),
   costSpaceUsd: z.coerce.number().nonnegative().default(0),
   costMaterialsUsd: z.coerce.number().nonnegative().default(0),
@@ -96,6 +108,7 @@ export const defaultProgramWizardForm: ProgramWizardFormState = {
   title: "",
   oneSentence: "",
   subtitle: "",
+  bannerImageUrl: "",
   imageUrl: "",
   description: "",
   location: "",
@@ -129,6 +142,7 @@ export const defaultProgramWizardForm: ProgramWizardFormState = {
   frequency: "Weekly",
   locationMode: "in_person",
   locationDetails: "",
+  budgetRows: [],
   budgetUsd: 25000,
   costStaffUsd: 15000,
   costSpaceUsd: 5000,

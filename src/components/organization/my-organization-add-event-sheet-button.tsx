@@ -9,13 +9,19 @@ import { createRoadmapCalendarEvent } from "@/actions/roadmap-calendar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Textarea } from "@/components/ui/textarea"
+import { ROADMAP_CALENDAR_PRESETS } from "@/lib/roadmap/calendar"
+import type { RoadmapCalendarEventType } from "@/lib/roadmap/calendar"
 import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 
 type EventDraft = {
+  presetId: (typeof ROADMAP_CALENDAR_PRESETS)[number]["id"]
   title: string
   description: string
+  eventType: RoadmapCalendarEventType
   startsAt: string
   endsAt: string
 }
@@ -34,20 +40,29 @@ function fromDatetimeLocal(value: string) {
 }
 
 function buildDefaultDraft(): EventDraft {
+  const defaultPreset = ROADMAP_CALENDAR_PRESETS[0]
   const start = new Date()
   start.setMinutes(0, 0, 0)
   start.setHours(start.getHours() + 1)
   const end = new Date(start)
   end.setHours(end.getHours() + 1)
   return {
-    title: "",
+    presetId: defaultPreset.id,
+    title: defaultPreset.title,
     description: "",
+    eventType: defaultPreset.eventType,
     startsAt: toDatetimeLocal(start.toISOString()),
     endsAt: toDatetimeLocal(end.toISOString()),
   }
 }
 
-export function MyOrganizationAddEventSheetButton() {
+export function MyOrganizationAddEventSheetButton({
+  iconOnly = false,
+  className,
+}: {
+  iconOnly?: boolean
+  className?: string
+}) {
   const router = useRouter()
   const [mounted, setMounted] = useState(false)
   const [open, setOpen] = useState(false)
@@ -84,6 +99,7 @@ export function MyOrganizationAddEventSheetButton() {
         event: {
           title: draft.title.trim(),
           description: draft.description.trim(),
+          eventType: draft.eventType,
           startsAt: fromDatetimeLocal(draft.startsAt),
           endsAt: draft.endsAt ? fromDatetimeLocal(draft.endsAt) : null,
           allDay: false,
@@ -107,9 +123,16 @@ export function MyOrganizationAddEventSheetButton() {
 
   if (!mounted) {
     return (
-      <Button type="button" size="sm" className="h-9 w-full" disabled>
+      <Button
+        type="button"
+        size={iconOnly ? "icon" : "sm"}
+        variant={iconOnly ? "ghost" : "default"}
+        className={cn(iconOnly ? "h-7 w-7" : "h-9 w-full", className)}
+        disabled
+      >
         <CalendarPlusIcon className="h-4 w-4" aria-hidden />
-        Add event
+        <span className="sr-only">Add event</span>
+        {!iconOnly ? <span>Add event</span> : null}
       </Button>
     )
   }
@@ -117,9 +140,15 @@ export function MyOrganizationAddEventSheetButton() {
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetTrigger asChild>
-        <Button type="button" size="sm" className="h-9 w-full">
+        <Button
+          type="button"
+          size={iconOnly ? "icon" : "sm"}
+          variant={iconOnly ? "ghost" : "default"}
+          className={cn(iconOnly ? "h-7 w-7" : "h-9 w-full", className)}
+        >
           <CalendarPlusIcon className="h-4 w-4" aria-hidden />
-          Add event
+          <span className="sr-only">Add event</span>
+          {!iconOnly ? <span>Add event</span> : null}
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full sm:max-w-md">
@@ -129,6 +158,44 @@ export function MyOrganizationAddEventSheetButton() {
         </SheetHeader>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 pb-4">
+          <div className="grid gap-2">
+            <Label htmlFor="quick-event-preset">Type</Label>
+            <Select
+              value={draft.presetId}
+              onValueChange={(presetId) => {
+                setDraft((previous) => {
+                  const previousPreset = ROADMAP_CALENDAR_PRESETS.find(
+                    (entry) => entry.id === previous.presetId,
+                  )
+                  const nextPreset = ROADMAP_CALENDAR_PRESETS.find(
+                    (entry) => entry.id === presetId,
+                  )
+                  if (!nextPreset) return previous
+                  const shouldReplaceTitle =
+                    previous.title.trim().length === 0 ||
+                    previous.title === (previousPreset?.title ?? "")
+                  return {
+                    ...previous,
+                    presetId: nextPreset.id,
+                    eventType: nextPreset.eventType,
+                    title: shouldReplaceTitle ? nextPreset.title : previous.title,
+                  }
+                })
+              }}
+            >
+              <SelectTrigger id="quick-event-preset">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {ROADMAP_CALENDAR_PRESETS.map((preset) => (
+                  <SelectItem key={preset.id} value={preset.id}>
+                    {preset.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid gap-2">
             <Label htmlFor="quick-event-title">Title</Label>
             <Input

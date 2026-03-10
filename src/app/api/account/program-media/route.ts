@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
+import { extractPublicObjectPath } from "@/lib/storage/public-url"
 
 const BUCKET = "program-media"
 const MAX_BYTES = 20 * 1024 * 1024
@@ -44,4 +45,39 @@ export async function POST(request: NextRequest) {
   }
   const { data: publicUrl } = supabase.storage.from(BUCKET).getPublicUrl(objectName)
   return NextResponse.json({ url: publicUrl.publicUrl }, { status: 200 })
+}
+
+export async function DELETE(request: NextRequest) {
+  const response = NextResponse.next()
+  const supabase = createSupabaseRouteHandlerClient(request, response)
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+  if (error || !user) {
+    return NextResponse.json({ error: error?.message ?? "Unauthorized" }, { status: 401 })
+  }
+
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  if (!canEditOrganization(role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
+  const body = await request.json().catch(() => null) as { url?: unknown } | null
+  const url = typeof body?.url === "string" ? body.url.trim() : ""
+  if (!url) {
+    return NextResponse.json({ error: "Missing url" }, { status: 400 })
+  }
+
+  const objectPath = extractPublicObjectPath(url, BUCKET)
+  if (!objectPath || !objectPath.startsWith(`${orgId}/`)) {
+    return NextResponse.json({ ok: true }, { status: 200 })
+  }
+
+  const { error: removeError } = await supabase.storage.from(BUCKET).remove([objectPath])
+  if (removeError) {
+    return NextResponse.json({ error: removeError.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true }, { status: 200 })
 }

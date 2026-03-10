@@ -3,205 +3,12 @@ import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
 import type { Json } from "@/lib/supabase/schema/json"
-import { markModuleCompleted, parseAssignmentFields, type ModuleAssignmentField } from "@/lib/modules"
+import { parseAssignmentFields } from "@/lib/modules"
 import { revalidateClassViews } from "@/app/(admin)/admin/classes/actions"
-import { sanitizeOrgProfileText, shouldStripOrgProfileHtml } from "@/lib/organization/profile-cleanup"
-import { createNotification } from "@/lib/notifications"
-
-type SubmissionStatus = Database["public"]["Enums"]["submission_status"]
-
-type AnswersPayload = Record<string, unknown>
-
-type SanitizedResult = {
-  answers: Record<string, unknown>
-  missingRequired: string[]
-}
-
-type AssignmentSchema = {
-  fields?: Array<{
-    name?: unknown
-    org_key?: unknown
-    orgKey?: unknown
-  }>
-}
-
-function extractOrgKeyMappings(schema: unknown): Record<string, string> {
-  const mapping: Record<string, string> = {}
-  if (!schema || typeof schema !== "object") return mapping
-
-  const fields = Array.isArray((schema as AssignmentSchema).fields)
-    ? ((schema as AssignmentSchema).fields as AssignmentSchema["fields"])
-    : []
-
-  for (const field of fields ?? []) {
-    if (!field || typeof field !== "object") continue
-    const nameRaw = field.name
-    const orgKeyRaw = (field.org_key ?? field.orgKey) as unknown
-    if (typeof nameRaw !== "string" || nameRaw.trim().length === 0) continue
-    if (typeof orgKeyRaw !== "string" || orgKeyRaw.trim().length === 0) continue
-    const name = nameRaw.trim()
-    const orgKey = orgKeyRaw.trim()
-    mapping[name] = orgKey
-  }
-
-  return mapping
-}
-
-function sanitizeAnswers(fields: ModuleAssignmentField[], raw: AnswersPayload): SanitizedResult {
-  if (!raw || typeof raw !== "object") {
-    return { answers: {}, missingRequired: fields.filter((f) => f.required && f.type !== "subtitle").map((f) => f.label || f.name) }
-  }
-
-  const result: Record<string, unknown> = {}
-  const missingRequired: string[] = []
-  const seen = new Set<string>()
-
-  fields.forEach((field) => {
-    if (field.type === "subtitle") {
-      return
-    }
-
-    const key = field.name
-    if (!key || seen.has(key)) {
-      return
-    }
-    seen.add(key)
-
-    const value = raw[key]
-
-    switch (field.type) {
-      case "short_text":
-      case "long_text":
-      case "custom_program": {
-        if (typeof value === "string") {
-          const trimmed = value.trim()
-          if (trimmed.length > 0) {
-            result[key] = trimmed
-          } else if (field.required) {
-            missingRequired.push(field.label || key)
-          }
-        } else if (field.required) {
-          missingRequired.push(field.label || key)
-        }
-        break
-      }
-      case "select": {
-        if (typeof value === "string") {
-          const trimmed = value.trim()
-          if (!field.options || field.options.length === 0 || field.options.includes(trimmed)) {
-            if (trimmed.length > 0) {
-              result[key] = trimmed
-            } else if (field.required) {
-              missingRequired.push(field.label || key)
-            }
-          }
-        } else if (field.required) {
-          missingRequired.push(field.label || key)
-        }
-        break
-      }
-      case "multi_select": {
-        if (Array.isArray(value)) {
-          const options = new Set(field.options ?? [])
-          const selected = value
-            .map((item) => (typeof item === "string" ? item.trim() : ""))
-            .filter((item) => item.length > 0 && (options.size === 0 || options.has(item)))
-          if (selected.length > 0) {
-            result[key] = selected
-          } else if (field.required) {
-            missingRequired.push(field.label || key)
-          }
-        } else if (field.required) {
-          missingRequired.push(field.label || key)
-        }
-        break
-      }
-      case "slider": {
-        const min = typeof field.min === "number" ? field.min : 0
-        const max = typeof field.max === "number" ? field.max : min + 100
-        const step = typeof field.step === "number" && field.step > 0 ? field.step : 1
-        let numeric: number | null = null
-        if (typeof value === "number" && Number.isFinite(value)) {
-          numeric = value
-        } else if (typeof value === "string") {
-          const asNumber = Number(value)
-          numeric = Number.isFinite(asNumber) ? asNumber : null
-        }
-        if (numeric === null) {
-          if (field.required) {
-            missingRequired.push(field.label || key)
-          }
-          break
-        }
-        const clamped = Math.min(Math.max(numeric, min), max)
-        const rounded = Math.round(clamped / step) * step
-        result[key] = Number.isFinite(rounded) ? rounded : clamped
-        break
-      }
-      case "budget_table": {
-        const fallbackRows = Array.isArray(field.rows) ? field.rows : []
-        const rawRows = Array.isArray(value) ? value : fallbackRows
-        const normalizedRows = (rawRows as Array<Record<string, unknown> | string | null | undefined>)
-          .map((row, index) => {
-            if (typeof row === "string") {
-              const category = row.trim()
-              return {
-                category,
-                description: "",
-                costType: "",
-                unit: "",
-                units: "",
-                costPerUnit: "",
-                totalCost: "",
-              }
-            }
-            if (!row || typeof row !== "object") {
-              return {
-                category: fallbackRows[index]?.category ?? "",
-                description: "",
-                costType: "",
-                unit: "",
-                units: "",
-                costPerUnit: "",
-                totalCost: "",
-              }
-            }
-            const record = row as Record<string, unknown>
-            const fallback = fallbackRows[index]
-            const toString = (val: unknown, fallbackValue = "") =>
-              typeof val === "string" ? val.trim() : typeof val === "number" ? String(val) : fallbackValue
-            return {
-              category: toString(record.category, fallback?.category ?? ""),
-              description: toString(record.description, fallback?.description ?? ""),
-              costType: toString(record.costType, fallback?.costType ?? ""),
-              unit: toString(record.unit, fallback?.unit ?? ""),
-              units: toString(record.units, fallback?.units ?? ""),
-              costPerUnit: toString(record.costPerUnit, fallback?.costPerUnit ?? ""),
-              totalCost: toString(record.totalCost, fallback?.totalCost ?? ""),
-            }
-          })
-
-        const hasContent = normalizedRows.some((row) =>
-          Object.values(row).some((val) => typeof val === "string" && val.trim().length > 0),
-        )
-
-        if (normalizedRows.length > 0) {
-          result[key] = normalizedRows
-          if (field.required && !hasContent) {
-            missingRequired.push(field.label || key)
-          }
-        } else if (field.required) {
-          missingRequired.push(field.label || key)
-        }
-        break
-      }
-      default:
-        break
-    }
-  })
-
-  return { answers: result, missingRequired }
-}
+import { processModuleCompletion } from "./_lib/completion"
+import { syncMappedAnswersToOrganizationProfile } from "./_lib/profile-sync"
+import { extractOrgKeyMappings, sanitizeAnswers } from "./_lib/sanitize"
+import type { AnswersPayload, ModuleMeta, SubmissionStatus } from "./_lib/types"
 
 export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
   const { id: moduleId } = await context.params
@@ -238,13 +45,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     .from("modules" satisfies keyof Database["public"]["Tables"])
     .select("id, idx, title, class_id, classes ( slug, title )")
     .eq("id", moduleId)
-    .maybeSingle<{
-      id: string
-      idx: number | null
-      title: string
-      class_id: string
-      classes: { slug: string | null; title: string | null } | null
-    }>()
+    .maybeSingle<ModuleMeta>()
 
   if (moduleError) {
     return NextResponse.json({ error: moduleError.message }, { status: 500 })
@@ -303,179 +104,21 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     return NextResponse.json({ error: upsertError.message }, { status: 500 })
   }
 
-  // Optionally sync mapped answers into the learner's organization profile
-  if (Object.keys(orgKeyMapping).length > 0) {
-    const { data: orgRow, error: orgErr } = await supabase
-      .from("organizations" satisfies keyof Database["public"]["Tables"])
-      .select("profile")
-      .eq("user_id", user.id)
-      .maybeSingle<{ profile: Record<string, unknown> | null }>()
-
-    if (!orgErr) {
-      const currentProfile = (orgRow?.profile ?? {}) as Record<string, unknown>
-      const nextProfile: Record<string, unknown> = { ...currentProfile }
-
-      for (const [fieldName, orgKey] of Object.entries(orgKeyMapping)) {
-        const value = sanitizedAnswers[fieldName]
-        if (typeof value === "string") {
-          const trimmed = value.trim()
-          if (trimmed.length > 0) {
-            const cleaned = shouldStripOrgProfileHtml(orgKey) ? sanitizeOrgProfileText(trimmed) : trimmed
-            if (cleaned) {
-              nextProfile[orgKey] = cleaned
-            }
-          }
-        } else if (Array.isArray(value)) {
-          const normalized = value
-            .map((item) => (typeof item === "string" ? item.trim() : ""))
-            .filter((item) => item.length > 0)
-          if (normalized.length > 0) {
-            if (shouldStripOrgProfileHtml(orgKey)) {
-              nextProfile[orgKey] = normalized.join("\n")
-            } else {
-              nextProfile[orgKey] = normalized
-            }
-          }
-        } else if (typeof value === "number") {
-          nextProfile[orgKey] = value
-        }
-      }
-
-      await supabase
-        .from("organizations" satisfies keyof Database["public"]["Tables"])
-        .upsert(
-          {
-            user_id: user.id,
-            profile: nextProfile as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
-          } as Database["public"]["Tables"]["organizations"]["Insert"],
-          { onConflict: "user_id" },
-        )
-    }
-  }
+  await syncMappedAnswersToOrganizationProfile({
+    supabase,
+    userId: user.id,
+    sanitizedAnswers,
+    orgKeyMapping,
+  })
 
   if (assignmentRow.complete_on_submit) {
-    try {
-      await markModuleCompleted({ moduleId, userId: user.id })
-      const notifyResult = await createNotification(supabase, {
-        userId: user.id,
-        title: "Module completed",
-        description: moduleMeta.title ? `You completed ${moduleMeta.title}.` : "You completed a module.",
-        href: modulePath,
-        tone: "success",
-        type: "module_completed",
-        actorId: user.id,
-        metadata: { moduleId },
-      })
-      if ("error" in notifyResult) {
-        console.error("Failed to create module completion notification", notifyResult.error)
-      }
-
-      const { data: classModules, error: classModulesError } = await supabase
-        .from("modules" satisfies keyof Database["public"]["Tables"])
-        .select("id")
-        .eq("class_id", moduleMeta.class_id)
-        .eq("is_published", true)
-
-      if (classModulesError) {
-        console.error("Failed to load class modules for completion check", classModulesError)
-      } else if (classModules?.length) {
-        const classModuleIds = classModules.map((module) => module.id)
-        const [progressResult, submissionResult, assignmentResult] = await Promise.all([
-          supabase
-            .from("module_progress")
-            .select("module_id, status")
-            .eq("user_id", user.id)
-            .in("module_id", classModuleIds)
-            .returns<Array<{ module_id: string; status: string | null }>>(),
-          supabase
-            .from("assignment_submissions")
-            .select("module_id, status")
-            .eq("user_id", user.id)
-            .in("module_id", classModuleIds)
-            .returns<Array<{ module_id: string; status: string | null }>>(),
-          supabase
-            .from("module_assignments")
-            .select("module_id, complete_on_submit")
-            .in("module_id", classModuleIds)
-            .returns<Array<{ module_id: string; complete_on_submit: boolean | null }>>(),
-        ])
-
-        if (progressResult.error) {
-          console.error("Failed to load class progress for completion check", progressResult.error)
-        }
-        if (submissionResult.error) {
-          console.error("Failed to load class submissions for completion check", submissionResult.error)
-        }
-        if (assignmentResult.error) {
-          console.error("Failed to load class assignments for completion check", assignmentResult.error)
-        }
-
-        const progressStatusByModuleId = new Map<string, string>()
-        for (const row of progressResult.error ? [] : progressResult.data ?? []) {
-          if (row.status) progressStatusByModuleId.set(row.module_id, row.status)
-        }
-
-        const submissionStatusByModuleId = new Map<string, string>()
-        for (const row of submissionResult.error ? [] : submissionResult.data ?? []) {
-          if (row.status) submissionStatusByModuleId.set(row.module_id, row.status)
-        }
-
-        const completeOnSubmit = new Set<string>()
-        for (const row of assignmentResult.error ? [] : assignmentResult.data ?? []) {
-          if (row.complete_on_submit) {
-            completeOnSubmit.add(row.module_id)
-          }
-        }
-
-        const completedModuleIds = new Set<string>()
-        for (const moduleId of classModuleIds) {
-          const progressStatus = progressStatusByModuleId.get(moduleId)
-          if (progressStatus === "completed") {
-            completedModuleIds.add(moduleId)
-            continue
-          }
-          const submissionStatus = submissionStatusByModuleId.get(moduleId)
-          if (submissionStatus && completeOnSubmit.has(moduleId) && submissionStatus !== "revise") {
-            completedModuleIds.add(moduleId)
-          }
-        }
-
-        const classCompleted = completedModuleIds.size === classModuleIds.length
-        if (classCompleted) {
-          const { data: existingNotifications, error: existingError } = await supabase
-            .from("notifications")
-            .select("id")
-            .eq("user_id", user.id)
-            .eq("type", "class_completed")
-            .contains("metadata", { classId: moduleMeta.class_id })
-            .limit(1)
-
-          if (existingError) {
-            console.error("Failed to check class completion notifications", existingError)
-          } else if (!existingNotifications?.length) {
-            const classTitle = moduleMeta.classes?.title?.trim() || "Class"
-            const classSlug = moduleMeta.classes?.slug ?? null
-            const classHref = modulePath ?? (classSlug ? `/class/${classSlug}/module/1` : null)
-            const classNotifyResult = await createNotification(supabase, {
-              userId: user.id,
-              title: "Class completed",
-              description: `You completed ${classTitle}.`,
-              href: classHref,
-              tone: "success",
-              type: "class_completed",
-              actorId: user.id,
-              metadata: { classId: moduleMeta.class_id, classTitle },
-            })
-            if ("error" in classNotifyResult) {
-              console.error("Failed to create class completion notification", classNotifyResult.error)
-            }
-          }
-        }
-      }
-    } catch (completionError) {
-      // Surface as non-fatal so submission still succeeds
-      console.error("Failed to mark module complete", completionError)
-    }
+    await processModuleCompletion({
+      supabase,
+      moduleId,
+      userId: user.id,
+      moduleMeta,
+      modulePath,
+    })
   }
 
   await revalidateClassViews({

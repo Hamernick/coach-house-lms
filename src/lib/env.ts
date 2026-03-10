@@ -33,6 +33,8 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_MEETING_DISCOUNTED_URL: optionalNonEmptyString,
   NEXT_PUBLIC_MEETING_FULL_URL: optionalNonEmptyString,
   NEXT_PUBLIC_MAPBOX_TOKEN: optionalNonEmptyString,
+  INTERNAL_DB_VIEWER_ALLOWED_EMAILS: optionalNonEmptyString,
+  INTERNAL_DB_VIEWER_TABLES: optionalNonEmptyString,
 })
 
 const clientEnvSchema = serverEnvSchema.pick({
@@ -95,6 +97,8 @@ export const env: ServerEnv = assertEnv(serverEnvSchema, {
   NEXT_PUBLIC_MEETING_DISCOUNTED_URL: process.env.NEXT_PUBLIC_MEETING_DISCOUNTED_URL,
   NEXT_PUBLIC_MEETING_FULL_URL: process.env.NEXT_PUBLIC_MEETING_FULL_URL,
   NEXT_PUBLIC_MAPBOX_TOKEN: process.env.NEXT_PUBLIC_MAPBOX_TOKEN,
+  INTERNAL_DB_VIEWER_ALLOWED_EMAILS: process.env.INTERNAL_DB_VIEWER_ALLOWED_EMAILS,
+  INTERNAL_DB_VIEWER_TABLES: process.env.INTERNAL_DB_VIEWER_TABLES,
 })
 
 export const clientEnv: ClientEnv = assertEnv(clientEnvSchema, {

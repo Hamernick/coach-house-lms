@@ -99,6 +99,7 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
       password: "",
     },
   })
+  const isConfirmationMessage = errorMessage === "Email confirmed. Sign in to continue."
 
   useEffect(() => {
     setErrorMessage(mapAuthErrorMessage(initialError) ?? searchError)
@@ -154,7 +155,14 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
             )}
           />
           {errorMessage ? (
-            <p className="text-sm text-destructive" role="alert">
+            <p
+              className={
+                isConfirmationMessage
+                  ? "text-sm text-emerald-600 dark:text-emerald-400"
+                  : "text-sm text-destructive"
+              }
+              role={isConfirmationMessage ? "status" : "alert"}
+            >
               {errorMessage}
             </p>
           ) : noticeMessage ? (

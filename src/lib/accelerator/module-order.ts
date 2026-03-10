@@ -69,11 +69,15 @@ function resolveCoreFormationRank(module: OrderedModule): number | null {
   return null
 }
 
+export function isCoreFormationModule(module: OrderedModule) {
+  return resolveCoreFormationRank(module) != null
+}
+
 function isElectiveAddOnModule(module: OrderedModule) {
   const slug = normalize(module.slug)
   if (isElectiveAddOnModuleSlug(slug)) return true
   if (isElectiveAddOnModuleTitle(module.title)) return true
-  if (resolveCoreFormationRank(module) != null) return false
+  if (isCoreFormationModule(module)) return false
 
   const classSlug = classSlugFromHref(module.href)
   return classSlug === "electives" && module.index >= 1 && module.index <= 3

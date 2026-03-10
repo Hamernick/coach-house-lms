@@ -6,6 +6,9 @@ export type ProfilesTable = {
     full_name: string | null
     avatar_url: string | null
     headline: string | null
+    company: string | null
+    contact: string | null
+    about: string | null
     timezone: string | null
     email: string | null
     role: PublicEnums["user_role"]
@@ -18,6 +21,9 @@ export type ProfilesTable = {
     full_name?: string | null
     avatar_url?: string | null
     headline?: string | null
+    company?: string | null
+    contact?: string | null
+    about?: string | null
     timezone?: string | null
     email?: string | null
     role?: PublicEnums["user_role"]
@@ -30,6 +36,9 @@ export type ProfilesTable = {
     full_name?: string | null
     avatar_url?: string | null
     headline?: string | null
+    company?: string | null
+    contact?: string | null
+    about?: string | null
     timezone?: string | null
     email?: string | null
     role?: PublicEnums["user_role"]

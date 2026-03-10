@@ -1,0 +1,48 @@
+"use client"
+
+import dynamic from "next/dynamic"
+
+export const GlobalSearch = dynamic(
+  () => import("@/components/global-search").then((mod) => ({ default: mod.GlobalSearch })),
+  { loading: () => null, ssr: false },
+)
+
+export const CaseStudyAutofillFab = dynamic(
+  () =>
+    import("@/components/dev/case-study-autofill-fab").then((mod) => ({
+      default: mod.CaseStudyAutofillFab,
+    })),
+  { loading: () => null, ssr: false },
+)
+
+export const OnboardingDialogEntry = dynamic(
+  () =>
+    import("@/components/onboarding/onboarding-dialog-entry").then((mod) => ({
+      default: mod.OnboardingDialogEntry,
+    })),
+  { loading: () => null, ssr: false },
+)
+
+export const OnboardingWelcome = dynamic(
+  () =>
+    import("@/components/onboarding/onboarding-welcome").then((mod) => ({
+      default: mod.OnboardingWelcome,
+    })),
+  { loading: () => null, ssr: false },
+)
+
+export const PaywallOverlay = dynamic(
+  () =>
+    import("@/components/paywall/paywall-overlay").then((mod) => ({
+      default: mod.PaywallOverlay,
+    })),
+  { loading: () => null, ssr: false },
+)
+
+export const TutorialManager = dynamic(
+  () =>
+    import("@/components/tutorial/tutorial-manager").then((mod) => ({
+      default: mod.TutorialManager,
+    })),
+  { loading: () => null, ssr: false },
+)

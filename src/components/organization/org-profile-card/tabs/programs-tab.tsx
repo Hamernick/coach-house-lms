@@ -6,12 +6,19 @@ import InfoIcon from "lucide-react/dist/esm/icons/info"
 
 import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
 import { ProgramCard } from "@/components/programs/program-card"
+import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  resolveProgramBannerImageUrl,
+  resolveProgramCardChips,
+  resolveProgramProfileImageUrl,
+  resolveProgramSummary,
+} from "@/lib/programs/display"
 
 import type { OrgProgram } from "../types"
 import { FormRow } from "@/components/organization/org-profile-card/shared"
-import { dateRangeChip, locationSummary } from "../utils"
+import { locationSummary } from "../utils"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 
 type ProgramsTabProps = {
@@ -37,13 +44,15 @@ export function ProgramsTab({ programs, companyName, editMode, onProgramEdit }: 
                 <h3 className="text-base font-medium leading-none">Programs</h3>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <button
+                    <Button
                       type="button"
-                      className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-border/70 text-muted-foreground transition hover:text-foreground"
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 rounded-full border border-border/70 p-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
                       aria-label="Programs visibility info"
                     >
                       <InfoIcon className="h-3.5 w-3.5" aria-hidden />
-                    </button>
+                    </Button>
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">{publicCopy}</TooltipContent>
                 </Tooltip>
@@ -64,12 +73,11 @@ export function ProgramsTab({ programs, companyName, editMode, onProgramEdit }: 
                   title={program.title ?? "Untitled program"}
                   org={companyName || undefined}
                   location={locationSummary(program) || undefined}
-                  imageUrl={program.image_url || undefined}
+                  description={resolveProgramSummary(program) || undefined}
+                  bannerImageUrl={resolveProgramBannerImageUrl(program) || undefined}
+                  imageUrl={resolveProgramProfileImageUrl(program) || undefined}
                   statusLabel={program.status_label || undefined}
-                  chips={[
-                    dateRangeChip(program.start_date, program.end_date) || program.duration_label,
-                    ...(Array.isArray(program.features) ? program.features : []),
-                  ].filter(Boolean) as string[]}
+                  chips={resolveProgramCardChips(program)}
                   goalCents={program.goal_cents || 0}
                   raisedCents={program.raised_cents || 0}
                   ctaLabel="Edit"
@@ -100,12 +108,11 @@ export function ProgramsTab({ programs, companyName, editMode, onProgramEdit }: 
                   title={program.title ?? "Untitled program"}
                   org={companyName || undefined}
                   location={locationSummary(program) || undefined}
-                  imageUrl={program.image_url || undefined}
+                  description={resolveProgramSummary(program) || undefined}
+                  bannerImageUrl={resolveProgramBannerImageUrl(program) || undefined}
+                  imageUrl={resolveProgramProfileImageUrl(program) || undefined}
                   statusLabel={program.status_label || (program.is_public ? undefined : "Private") || undefined}
-                    chips={[
-                      dateRangeChip(program.start_date, program.end_date) || program.duration_label,
-                      ...(Array.isArray(program.features) ? program.features : []),
-                    ].filter(Boolean) as string[]}
+                    chips={resolveProgramCardChips(program)}
                     goalCents={program.goal_cents || 0}
                     raisedCents={program.raised_cents || 0}
                     ctaLabel={program.cta_label || "Learn more"}

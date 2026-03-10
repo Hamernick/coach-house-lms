@@ -70,6 +70,21 @@ function parseProgramChips(program: OrgProgram): string[] {
   return chips.filter((value): value is string => Boolean(value && value.trim()))
 }
 
+function parseBudgetTotalCents(program: OrgProgram) {
+  if (!isRecord(program.wizard_snapshot)) return program.goal_cents ?? 0
+  const value = program.wizard_snapshot.budgetUsd
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return Math.round(value * 100)
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed) && parsed > 0) {
+      return Math.round(parsed * 100)
+    }
+  }
+  return program.goal_cents ?? 0
+}
+
 export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuilderDashboardCardProps) {
   const router = useRouter()
   const [createOpen, setCreateOpen] = useState(false)
@@ -174,16 +189,18 @@ export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuil
                   const displayTitle = program.title?.trim() || "Untitled program"
                   const displayType = parseProgramType(program)
                   const statusLabel = program.status_label?.trim() || "Draft"
-                  const budget = formatMoney(program.goal_cents)
+                  const budget = formatMoney(parseBudgetTotalCents(program))
+                  const fundraisingTarget = formatMoney(program.goal_cents)
                   const active = activeProgram?.id === program.id
                   return (
-                    <button
+                    <Button
                       key={program.id}
                       type="button"
+                      variant="ghost"
                       className={cn(
-                        "w-full px-3 py-2.5 text-left transition",
+                        "h-auto w-full justify-start whitespace-normal px-3 py-2.5 text-left transition hover:bg-muted/30",
                         index > 0 && "border-t border-border/60",
-                        active ? "bg-muted/40" : "hover:bg-muted/30",
+                        active && "bg-muted/40",
                       )}
                       onClick={() => setActiveProgramId(program.id)}
                     >
@@ -192,7 +209,7 @@ export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuil
                           <p className="truncate text-sm font-medium">{displayTitle}</p>
                           <p className="text-muted-foreground mt-1 text-xs">
                             {displayType ? `${displayType} · ` : ""}
-                            Budget {budget}
+                            Budget {budget} · Need {fundraisingTarget}
                           </p>
                         </div>
                         <Badge
@@ -202,7 +219,7 @@ export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuil
                           {statusLabel}
                         </Badge>
                       </div>
-                    </button>
+                    </Button>
                   )
                 })}
               </div>
@@ -237,6 +254,10 @@ export function ProgramBuilderDashboardCard({ programs, className }: ProgramBuil
                   <dl className="mt-4 divide-y divide-border/50 rounded-lg border border-border/60 bg-background/20 text-sm">
                     <div className="flex items-center justify-between gap-3 px-3 py-2.5">
                       <dt className="text-muted-foreground text-xs uppercase tracking-wide">Budget</dt>
+                      <dd className="font-medium tabular-nums">{formatMoney(parseBudgetTotalCents(activeProgram))}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 px-3 py-2.5">
+                      <dt className="text-muted-foreground text-xs uppercase tracking-wide">Fundraising target</dt>
                       <dd className="font-medium tabular-nums">{formatMoney(activeProgram.goal_cents)}</dd>
                     </div>
                     <div className="flex items-center justify-between gap-3 px-3 py-2.5">

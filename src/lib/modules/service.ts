@@ -5,7 +5,6 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
-import { inferProviderSlug } from "@/lib/lessons/providers"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 import {
@@ -14,33 +13,16 @@ import {
   type ModuleAssignmentSubmission,
   type ModuleRecord,
   type ModuleResource,
-  type ModuleResourceProvider,
   type ModuleProgressStatus,
 } from "./types"
 import { parseAssignmentFields, parseLegacyHomework } from "./assignment"
-
-// Use shared provider inference; cast union to ModuleResourceProvider
-function inferResourceProvider(rawUrl: string | null | undefined): ModuleResourceProvider {
-  return inferProviderSlug(rawUrl) as ModuleResourceProvider
-}
-
-type ClassWithModules = Database["public"]["Tables"]["classes"]["Row"] & {
-  modules: Array<
-    Pick<
-      Database["public"]["Tables"]["modules"]["Row"],
-      | "id"
-      | "idx"
-      | "slug"
-      | "title"
-      | "description"
-      | "is_published"
-      | "video_url"
-      | "content_md"
-      | "duration_minutes"
-      | "deck_path"
-    >
-  > | null
-}
+import {
+  buildClassResourcesAndVideo,
+  inferResourceProvider,
+  resolveClassPublished,
+  resolveClassSubtitle,
+  type ClassWithModules,
+} from "./service-helpers"
 
 export async function getClassModulesForUser({
   classSlug,
@@ -106,30 +88,9 @@ export async function getClassModulesForUser({
   }
 
   const classRecord = classRow as ClassWithModules
-  // Build class-level resources and video URL
-  const classVideoUrl = (classRecord as { video_url?: string | null }).video_url ?? null
-  const classResources: ModuleResource[] = []
-  const linkPairs: Array<[string | null | undefined, string | null | undefined]> = [
-    [
-      (classRecord as { link1_title?: string | null }).link1_title,
-      (classRecord as { link1_url?: string | null }).link1_url,
-    ],
-    [
-      (classRecord as { link2_title?: string | null }).link2_title,
-      (classRecord as { link2_url?: string | null }).link2_url,
-    ],
-    [
-      (classRecord as { link3_title?: string | null }).link3_title,
-      (classRecord as { link3_url?: string | null }).link3_url,
-    ],
-  ]
-  for (const [t, u] of linkPairs) {
-    const title = (t ?? '').trim()
-    const url = (u ?? '').trim()
-    if (!url) continue
-    const label = title || url
-    classResources.push({ label, url, provider: inferResourceProvider(url) })
-  }
+  const { classVideoUrl, classResources } = buildClassResourcesAndVideo(classRecord)
+  const classSubtitle = resolveClassSubtitle(classRecord)
+  const classPublished = resolveClassPublished(classRecord)
 
   const moduleRows = [...(classRecord.modules ?? [])].sort(
     (a, b) => ((a?.idx ?? 0) - (b?.idx ?? 0))
@@ -140,13 +101,10 @@ export async function getClassModulesForUser({
       classId: classRecord.id,
       classTitle: classRecord.title,
       classDescription: classRecord.description ?? null,
-      classSubtitle: (classRecord as { subtitle?: string | null }).subtitle ?? null,
+      classSubtitle,
       classVideoUrl,
       classResources,
-      classPublished:
-        "is_published" in classRecord
-          ? Boolean((classRecord as { is_published?: boolean | null }).is_published)
-          : Boolean((classRecord as { published?: boolean | null }).published ?? true),
+      classPublished,
       modules: [],
       progressMap: {},
     }
@@ -303,13 +261,10 @@ export async function getClassModulesForUser({
       classId: classRecord.id,
       classTitle: classRecord.title,
       classDescription: classRecord.description ?? null,
-      classSubtitle: (classRecord as { subtitle?: string | null }).subtitle ?? null,
+      classSubtitle,
       classVideoUrl,
       classResources,
-      classPublished:
-        "is_published" in classRecord
-          ? Boolean((classRecord as { is_published?: boolean | null }).is_published)
-          : Boolean((classRecord as { published?: boolean | null }).published ?? true),
+      classPublished,
       modules: [],
       progressMap: {},
     }
@@ -361,13 +316,10 @@ export async function getClassModulesForUser({
     classId: classRecord.id,
     classTitle: classRecord.title,
     classDescription: classRecord.description ?? null,
-    classSubtitle: (classRecord as { subtitle?: string | null }).subtitle ?? null,
+    classSubtitle,
     classVideoUrl,
     classResources,
-    classPublished:
-      "is_published" in classRecord
-        ? Boolean((classRecord as { is_published?: boolean | null }).is_published)
-        : Boolean((classRecord as { published?: boolean | null }).published ?? true),
+    classPublished,
     modules,
     progressMap,
   }

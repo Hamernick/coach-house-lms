@@ -8,6 +8,9 @@ import Stripe from "stripe"
 import { requireServerSession } from "@/lib/auth"
 import { resolveDevtoolsAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
 import {
+  collectStripeCheckoutPriceDiagnostics,
+} from "@/lib/billing/stripe-checkout-diagnostics"
+import {
   resolveStripePriceIdForPlan,
   resolveStripeRuntimeConfigForAudience,
 } from "@/lib/billing/stripe-runtime"
@@ -73,6 +76,8 @@ function redirectCheckoutError({
 export async function startCheckout(formData: FormData) {
   const checkoutModeEntry = formData.get("checkoutMode")
   const checkoutMode = typeof checkoutModeEntry === "string" ? checkoutModeEntry.trim().toLowerCase() : "organization"
+  const normalizedCheckoutMode =
+    checkoutMode === "accelerator" || checkoutMode === "elective" ? "organization" : checkoutMode
 
   const planNameEntry = formData.get("planName")
   const planName = typeof planNameEntry === "string" ? planNameEntry : undefined
@@ -85,8 +90,10 @@ export async function startCheckout(formData: FormData) {
         : null
   const sourceEntry = formData.get("source")
   const source = typeof sourceEntry === "string" && sourceEntry.trim().length > 0 ? sourceEntry.trim() : "billing"
+  const priceIdEntry = formData.get("priceId")
+  const explicitPriceId = typeof priceIdEntry === "string" && priceIdEntry.trim().length > 0 ? priceIdEntry.trim() : null
 
-  if (checkoutMode !== "organization") {
+  if (normalizedCheckoutMode !== "organization") {
     redirectCheckoutError({ planTier: "organization", code: "checkout_failed", source })
   }
 
@@ -119,6 +126,7 @@ export async function startCheckout(formData: FormData) {
     redirectCheckoutError({ planTier: "organization", code: "stripe_unavailable", source })
   }
 
+  let selectedPriceIdForCheckout: string | null = null
   try {
     const stripeClient = stripeConfig.client
     const inferredPlanTier = planName?.toLowerCase().includes("operations")
@@ -127,10 +135,13 @@ export async function startCheckout(formData: FormData) {
     const planTier = requestedPlanTier ?? inferredPlanTier
     const resolvedPlanName =
       planName ?? (planTier === "operations_support" ? "Operations Support" : "Organization")
-    const organizationPriceId = resolveStripePriceIdForPlan({
-      config: stripeConfig,
-      planTier,
-    })
+    const organizationPriceId =
+      explicitPriceId ??
+      resolveStripePriceIdForPlan({
+        config: stripeConfig,
+        planTier,
+      })
+    selectedPriceIdForCheckout = organizationPriceId
 
     if (!organizationPriceId) {
       if (planTier === "operations_support") {
@@ -283,16 +294,32 @@ export async function startCheckout(formData: FormData) {
       throw error
     }
     const stripeError = error as Stripe.errors.StripeError | null
+    const stripePriceDiagnostics =
+      stripeError?.type === "StripeInvalidRequestError" &&
+      stripeError.code === "resource_missing" &&
+      (stripeError.param ?? "").includes("line_items") &&
+      selectedPriceIdForCheckout
+        ? await collectStripeCheckoutPriceDiagnostics({
+            priceId: selectedPriceIdForCheckout,
+            selectedConfig: stripeConfig,
+            preferTester: forceCheckoutForTester,
+          })
+        : null
     console.error("Unable to start Stripe checkout", {
       message: error instanceof Error ? error.message : "unknown_error",
       planName,
       source,
       userId,
       orgId,
+      fallbackIsTester,
+      audienceIsTester: forceCheckoutForTester,
+      stripeTarget: stripeConfig.target,
       stripeMode: stripeConfig.mode,
+      selectedPriceId: selectedPriceIdForCheckout,
       stripeType: stripeError?.type ?? null,
       stripeCode: stripeError?.code ?? null,
       stripeParam: stripeError?.param ?? null,
+      stripePriceDiagnostics,
     })
     redirectCheckoutError({ planTier: "organization", code: "checkout_failed", source })
   }

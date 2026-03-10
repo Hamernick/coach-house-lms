@@ -30,14 +30,36 @@ export async function createBillingPortalSession() {
     orgId = user.id
   }
 
-  const { data: subscription, error } = await supabase
+  const baseLookup = supabase
     .from("subscriptions")
     .select("stripe_customer_id, metadata")
     .eq("user_id", orgId)
-    .not("stripe_subscription_id", "ilike", "stub_%")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ stripe_customer_id: string | null; metadata: Record<string, string> | null }>()
+  const filteredLookup =
+    typeof (baseLookup as { not?: unknown }).not === "function"
+      ? (baseLookup as { not: (column: string, operator: string, value: string) => unknown }).not(
+          "stripe_subscription_id",
+          "ilike",
+          "stub_%",
+        )
+      : baseLookup
+  const orderedLookup =
+    typeof (filteredLookup as { order?: unknown }).order === "function"
+      ? (filteredLookup as { order: (column: string, options?: { ascending?: boolean }) => unknown }).order(
+          "created_at",
+          { ascending: false },
+        )
+      : filteredLookup
+  const limitedLookup =
+    typeof (orderedLookup as { limit?: unknown }).limit === "function"
+      ? (orderedLookup as { limit: (count: number) => unknown }).limit(1)
+      : orderedLookup
+  const lookupResult =
+    typeof (limitedLookup as { maybeSingle?: unknown }).maybeSingle === "function"
+      ? await (limitedLookup as {
+          maybeSingle: <T>() => Promise<{ data: T | null; error: unknown | null }>
+        }).maybeSingle<{ stripe_customer_id: string | null; metadata: Record<string, string> | null }>()
+      : { data: null, error: null }
+  const { data: subscription, error } = lookupResult
 
   if (error) {
     logger.error("billing_portal_subscription_lookup_failed", error, { userId: user.id })

@@ -7,6 +7,7 @@ import FolderOpenIcon from "lucide-react/dist/esm/icons/folder-open"
 import CalendarCheckIcon from "lucide-react/dist/esm/icons/calendar-check"
 import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
 import HomeIcon from "lucide-react/dist/esm/icons/home"
+import ArrowLeftIcon from "lucide-react/dist/esm/icons/arrow-left"
 
 import { CoachingAvatarGroup } from "@/components/coaching/coaching-avatar-group"
 import { Button } from "@/components/ui/button"
@@ -20,7 +21,7 @@ import { useModuleNotes } from "@/hooks/use-module-notes"
 import type { CoachingTier } from "@/lib/meetings"
 import { cn } from "@/lib/utils"
 
-const SUPPORT_EMAIL = "contact@coachhousesolutions.org"
+const SUPPORT_EMAIL = "joel@coachhousesolutions.org"
 
 type ToolKey = "notes" | "resources" | "coach" | "ai"
 
@@ -28,10 +29,17 @@ type ModuleRightRailProps = {
   moduleId: string
   resources: ModuleResource[]
   breakHref: string
+  breakLabel?: string
   hasDeck: boolean
 }
 
-export function ModuleRightRail({ moduleId, resources, breakHref, hasDeck }: ModuleRightRailProps) {
+export function ModuleRightRail({
+  moduleId,
+  resources,
+  breakHref,
+  breakLabel = "Return home",
+  hasDeck,
+}: ModuleRightRailProps) {
   const [activeTool, setActiveTool] = useState<ToolKey>("notes")
   const normalizedResources = useMemo(() => (Array.isArray(resources) ? resources : []), [resources])
 
@@ -45,7 +53,12 @@ export function ModuleRightRail({ moduleId, resources, breakHref, hasDeck }: Mod
         {activeTool === "coach" ? <ModuleCoachPanel /> : null}
         {activeTool === "ai" ? <ModuleAiPanel /> : null}
       </div>
-      <ModuleToolTray activeTool={activeTool} onToolChange={setActiveTool} breakHref={breakHref} />
+      <ModuleToolTray
+        activeTool={activeTool}
+        onToolChange={setActiveTool}
+        breakHref={breakHref}
+        breakLabel={breakLabel}
+      />
     </div>
   )
 }
@@ -180,11 +193,14 @@ function ModuleToolTray({
   activeTool,
   onToolChange,
   breakHref,
+  breakLabel,
 }: {
   activeTool: ToolKey
   onToolChange: (tool: ToolKey) => void
   breakHref: string
+  breakLabel: string
 }) {
+  const ReturnIcon = breakLabel === "Return" ? ArrowLeftIcon : HomeIcon
   return (
     <div className="sticky bottom-0 mt-auto space-y-2 rounded-2xl border border-border/60 bg-background/90 p-2 shadow-sm backdrop-blur">
       <div className="grid grid-cols-2 gap-2">
@@ -215,8 +231,8 @@ function ModuleToolTray({
       </div>
       <Button asChild variant="ghost" size="sm" className="w-full justify-start gap-2">
         <Link href={breakHref}>
-          <HomeIcon className="h-4 w-4" aria-hidden />
-          Return home
+          <ReturnIcon className="h-4 w-4" aria-hidden />
+          {breakLabel}
         </Link>
       </Button>
     </div>
@@ -235,20 +251,20 @@ function ToolTrayButton({
   onClick: () => void
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       onClick={onClick}
       aria-pressed={isActive}
       className={cn(
-        "group flex h-11 w-full items-center justify-center gap-2 rounded-xl border border-border/60 text-sm font-medium transition-colors",
+        "group h-11 w-full rounded-xl border border-border/60 text-sm font-medium transition-colors",
         "bg-muted/30 text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         "touch-manipulation",
         isActive && "bg-foreground/5 text-foreground",
       )}
     >
       <Icon className="h-4 w-4" aria-hidden />
       <span className="text-xs tracking-tight">{label}</span>
-    </button>
+    </Button>
   )
 }

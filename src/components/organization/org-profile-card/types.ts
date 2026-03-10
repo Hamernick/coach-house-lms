@@ -2,6 +2,27 @@ import type { OrgPersonWithImage } from "@/components/people/supporters-showcase
 
 export type FormationStatus = "pre_501c3" | "in_progress" | "approved"
 
+export type BrandTypographyTracking =
+  | "tighter"
+  | "tight"
+  | "normal"
+  | "wide"
+  | "wider"
+
+export type BrandTypographySlot = {
+  family: string
+  weight: string
+  tracking: BrandTypographyTracking
+}
+
+export type BrandTypographyConfig = {
+  headings: BrandTypographySlot
+  body: BrandTypographySlot
+  code: {
+    family: string
+  }
+}
+
 export type OrgProfile = {
   name?: string | null
   description?: string | null
@@ -17,7 +38,10 @@ export type OrgProfile = {
   addressState?: string | null
   addressPostal?: string | null
   addressCountry?: string | null
+  locationType?: "in_person" | "online" | null
+  locationUrl?: string | null
   logoUrl?: string | null
+  brandMarkUrl?: string | null
   headerUrl?: string | null
   publicUrl?: string | null
   twitter?: string | null
@@ -37,6 +61,10 @@ export type OrgProfile = {
   boilerplate?: string | null
   brandPrimary?: string | null
   brandColors?: string[] | null
+  brandThemePresetId?: string | null
+  brandAccentPresetId?: string | null
+  brandTypographyPresetId?: string | null
+  brandTypography?: BrandTypographyConfig | null
   publicSlug?: string | null
   isPublic?: boolean | null
 }
@@ -111,4 +139,5 @@ export interface OrgProfileCardProps {
   canEdit?: boolean
   initialTab?: ProfileTab
   initialProgramId?: string | null
+  onClose?: () => void
 }

@@ -4,8 +4,8 @@ import { useEffect } from "react"
 
 const REACT_GRAB_RUNTIME_ID = "react-grab-runtime"
 const REACT_GRAB_OPENCODE_ID = "react-grab-opencode"
-const REACT_GRAB_RUNTIME_SRC = "https://unpkg.com/react-grab@0.1.1/dist/index.global.js"
-const REACT_GRAB_OPENCODE_SRC = "https://unpkg.com/@react-grab/opencode@0.1.1/dist/client.global.js"
+const REACT_GRAB_RUNTIME_SRC = "https://unpkg.com/react-grab@0.1.22/dist/index.global.js"
+const REACT_GRAB_OPENCODE_SRC = "https://unpkg.com/@react-grab/opencode@0.1.22/dist/client.global.js"
 
 function ensureScript({
   id,
@@ -51,10 +51,54 @@ function ensureScript({
 export function ReactGrabLoader() {
   useEffect(() => {
     const explicitFlag = process.env.NEXT_PUBLIC_ENABLE_REACT_GRAB
+    const explicitOpenCodeFlag = process.env.NEXT_PUBLIC_ENABLE_REACT_GRAB_OPENCODE
     const host = window.location.hostname
     const isLocalHost = host === "localhost" || host === "127.0.0.1" || host === "0.0.0.0"
-    const isEmbedMode = new URLSearchParams(window.location.search).get("embed") === "1"
-    const shouldLoad = explicitFlag === "1" || (explicitFlag !== "0" && (process.env.NODE_ENV === "development" || isLocalHost))
+    const searchParams = new URLSearchParams(window.location.search)
+    const isEmbedMode = searchParams.get("embed") === "1"
+    const urlEnable = searchParams.get("reactGrab") === "1" || searchParams.get("react-grab") === "1"
+    const urlDisable = searchParams.get("reactGrab") === "0" || searchParams.get("react-grab") === "0"
+    const openCodeUrlEnable =
+      searchParams.get("reactGrabOpenCode") === "1" ||
+      searchParams.get("react-grab-opencode") === "1"
+    const openCodeUrlDisable =
+      searchParams.get("reactGrabOpenCode") === "0" ||
+      searchParams.get("react-grab-opencode") === "0"
+    const storageKey = "coachhouse:react-grab-enabled"
+    const openCodeStorageKey = "coachhouse:react-grab-opencode-enabled"
+    const persisted = typeof window !== "undefined" ? window.localStorage.getItem(storageKey) : null
+    const autoLocalDevLoad = process.env.NODE_ENV === "development" || isLocalHost
+
+    if (urlEnable) {
+      window.localStorage.setItem(storageKey, "1")
+    } else if (urlDisable) {
+      window.localStorage.setItem(storageKey, "0")
+    }
+    if (openCodeUrlEnable) {
+      window.localStorage.setItem(openCodeStorageKey, "1")
+    } else if (openCodeUrlDisable) {
+      window.localStorage.setItem(openCodeStorageKey, "0")
+    }
+
+    // Local dev defaults to on. Env/query/localStorage can still force enable/disable.
+    const shouldLoad = (() => {
+      if (explicitFlag === "0") return false
+      if (explicitFlag === "1") return true
+      if (urlDisable) return false
+      if (urlEnable) return true
+      if (persisted === "0") return false
+      if (persisted === "1") return true
+      return autoLocalDevLoad
+    })()
+    const shouldLoadOpenCode = (() => {
+      if (explicitOpenCodeFlag === "0") return false
+      if (explicitOpenCodeFlag === "1") return true
+      if (openCodeUrlDisable) return false
+      if (openCodeUrlEnable) return true
+      // Keep OpenCode opt-in only to avoid persistent websocket reconnect loops
+      // from stale localStorage flags across sessions.
+      return false
+    })()
 
     if (!shouldLoad) return
     if (isEmbedMode) return
@@ -65,6 +109,11 @@ export function ReactGrabLoader() {
       src: REACT_GRAB_RUNTIME_SRC,
       crossOrigin: "anonymous",
       onLoad: () => {
+        if (!shouldLoadOpenCode) {
+          const existingOpenCodeScript = document.getElementById(REACT_GRAB_OPENCODE_ID)
+          existingOpenCodeScript?.remove()
+          return
+        }
         ensureScript({
           id: REACT_GRAB_OPENCODE_ID,
           src: REACT_GRAB_OPENCODE_SRC,

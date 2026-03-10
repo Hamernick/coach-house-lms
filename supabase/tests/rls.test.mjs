@@ -229,6 +229,51 @@ async function run() {
       name: "member cannot read other profile",
       passed: !otherProfile,
     })
+
+    const avatarUrl = `https://example.com/avatar-${suffix}.png`
+    const { data: updatedProfile, error: updateError } = await memberClient
+      .from("profiles")
+      .update({ avatar_url: avatarUrl })
+      .eq("id", member.id)
+      .select("avatar_url")
+      .maybeSingle()
+    results.push({
+      name: "member can update own profile avatar",
+      passed:
+        !updateError &&
+        !!updatedProfile &&
+        updatedProfile.avatar_url === avatarUrl,
+    })
+
+    const avatarBytes = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
+    const ownAvatarObject = `${member.id}/rls-avatar-${suffix}.png`
+    const otherAvatarObject = `${admin.id}/rls-avatar-${suffix}.png`
+    const { error: ownAvatarUploadError } = await memberClient.storage
+      .from("avatars")
+      .upload(ownAvatarObject, avatarBytes, {
+        contentType: "image/png",
+        upsert: true,
+      })
+    results.push({
+      name: "member can upload avatar to own folder",
+      passed: !ownAvatarUploadError,
+    })
+
+    const { error: otherAvatarUploadError } = await memberClient.storage
+      .from("avatars")
+      .upload(otherAvatarObject, avatarBytes, {
+        contentType: "image/png",
+        upsert: true,
+      })
+    const avatarFolderDenied =
+      !!otherAvatarUploadError &&
+      (otherAvatarUploadError.statusCode === "403" ||
+        otherAvatarUploadError.statusCode === "401" ||
+        /row-level security|permission denied|not allowed/i.test(otherAvatarUploadError.message ?? ""))
+    results.push({
+      name: "member cannot upload avatar to another user's folder",
+      passed: avatarFolderDenied,
+    })
   }
 
   // Class visibility
@@ -372,6 +417,10 @@ async function run() {
   }
 
   let orgAccessReady = false
+  let workspaceTablesAvailable = false
+  let workspaceCommunicationsTableAvailable = false
+  let workspaceCommunicationChannelsTableAvailable = false
+  let workspaceCommunicationDeliveriesTableAvailable = false
 
   // Organization membership access (multi-account org access)
   {
@@ -563,6 +612,315 @@ async function run() {
       name: "org admin cannot change invite setting",
       passed: settingsRow?.admins_can_invite === true,
     })
+  }
+
+  // Workspace board + collaboration invite RLS.
+  if (orgAccessReady) {
+    const { error: workspaceProbeError } = await memberClient
+      .from("organization_workspace_boards")
+      .select("org_id")
+      .limit(1)
+
+    workspaceTablesAvailable = !workspaceProbeError
+
+    results.push({
+      name: "workspace tables available",
+      passed: workspaceTablesAvailable,
+    })
+
+    if (workspaceTablesAvailable) {
+      const { error: workspaceCommunicationsProbeError } = await memberClient
+        .from("organization_workspace_communications")
+        .select("org_id")
+        .limit(1)
+      workspaceCommunicationsTableAvailable = !workspaceCommunicationsProbeError
+
+      if (workspaceCommunicationsTableAvailable) {
+        const { error: workspaceCommunicationChannelsProbeError } =
+          await memberClient
+            .from("organization_workspace_communication_channels")
+            .select("org_id")
+            .limit(1)
+        workspaceCommunicationChannelsTableAvailable =
+          !workspaceCommunicationChannelsProbeError
+
+        const { error: workspaceDeliveryProbeError } = await memberClient
+          .from("organization_workspace_communication_deliveries")
+          .select("org_id")
+          .limit(1)
+        workspaceCommunicationDeliveriesTableAvailable = !workspaceDeliveryProbeError
+      }
+    }
+  }
+
+  if (orgAccessReady && workspaceTablesAvailable) {
+    const nowIso = new Date().toISOString()
+    const inviteId = `workspace-invite-${suffix}`
+
+    const { data: staffBoard, error: staffBoardError } = await staffClient
+      .from("organization_workspace_boards")
+      .upsert(
+        {
+          org_id: member.id,
+          state: {
+            version: 1,
+            preset: "balanced",
+            nodes: [],
+            updatedAt: nowIso,
+          },
+          updated_by: staff.id,
+        },
+        { onConflict: "org_id" }
+      )
+      .select("org_id")
+      .maybeSingle()
+    results.push({
+      name: "staff can upsert workspace board",
+      passed: !!staffBoard && !staffBoardError,
+    })
+
+    const { data: boardReadsBoard, error: boardReadsBoardError } =
+      await boardClient
+        .from("organization_workspace_boards")
+        .select("org_id")
+        .eq("org_id", member.id)
+        .maybeSingle()
+    results.push({
+      name: "board can read workspace board",
+      passed: !!boardReadsBoard && !boardReadsBoardError,
+    })
+
+    const { data: boardUpdatesBoard, error: boardUpdatesBoardError } =
+      await boardClient
+        .from("organization_workspace_boards")
+        .update({
+          state: {
+            version: 1,
+            preset: "calendar-focused",
+            nodes: [],
+            updatedAt: nowIso,
+          },
+        })
+        .eq("org_id", member.id)
+        .select("org_id")
+    results.push({
+      name: "board cannot update workspace board",
+      passed:
+        !!boardUpdatesBoardError ||
+        (Array.isArray(boardUpdatesBoard) && boardUpdatesBoard.length === 0),
+    })
+
+    const { data: boardCreatedInvite, error: boardCreatedInviteError } =
+      await boardClient
+        .from("organization_workspace_invites")
+        .insert({
+          id: inviteId,
+          org_id: member.id,
+          user_id: staff.id,
+          user_name: "Test Staff",
+          user_email: staffEmail,
+          created_by: board.id,
+          expires_at: new Date(Date.now() + 3600_000).toISOString(),
+          duration_value: 1,
+          duration_unit: "hours",
+        })
+        .select("id")
+        .maybeSingle()
+    results.push({
+      name: "board can create workspace invite",
+      passed: !!boardCreatedInvite && !boardCreatedInviteError,
+    })
+
+    const { data: staffReadsInvite, error: staffReadsInviteError } =
+      await staffClient
+        .from("organization_workspace_invites")
+        .select("id")
+        .eq("id", inviteId)
+        .eq("org_id", member.id)
+        .maybeSingle()
+    results.push({
+      name: "staff can read workspace invite",
+      passed: !!staffReadsInvite && !staffReadsInviteError,
+    })
+
+    const { data: orgAdminRevokesInvite, error: orgAdminRevokesInviteError } =
+      await orgAdminClient
+        .from("organization_workspace_invites")
+        .update({ revoked_at: new Date().toISOString() })
+        .eq("id", inviteId)
+        .eq("org_id", member.id)
+        .select("id")
+    results.push({
+      name: "org admin can revoke workspace invite",
+      passed:
+        !orgAdminRevokesInviteError &&
+        Array.isArray(orgAdminRevokesInvite) &&
+        orgAdminRevokesInvite.length === 1,
+    })
+
+    if (workspaceCommunicationsTableAvailable) {
+      const communicationId = randomUUID()
+
+      const { data: staffCommunication, error: staffCommunicationError } =
+        await staffClient
+          .from("organization_workspace_communications")
+          .insert({
+            id: communicationId,
+            org_id: member.id,
+            channel: "social",
+            media_mode: "text",
+            content: "Board update scheduled from workspace tests.",
+            status: "scheduled",
+            scheduled_for: new Date(Date.now() + 7200_000).toISOString(),
+            created_by: staff.id,
+          })
+          .select("id")
+          .maybeSingle()
+      results.push({
+        name: "staff can create workspace communication post",
+        passed: !!staffCommunication && !staffCommunicationError,
+      })
+
+      const { data: boardReadsCommunication, error: boardReadsCommunicationError } =
+        await boardClient
+          .from("organization_workspace_communications")
+          .select("id")
+          .eq("id", communicationId)
+          .eq("org_id", member.id)
+          .maybeSingle()
+      results.push({
+        name: "board can read workspace communication post",
+        passed: !!boardReadsCommunication && !boardReadsCommunicationError,
+      })
+
+      const { error: boardCreatesCommunicationError } = await boardClient
+        .from("organization_workspace_communications")
+        .insert({
+          org_id: member.id,
+          channel: "email",
+          media_mode: "text",
+          content: "Unauthorized board post",
+          status: "scheduled",
+          scheduled_for: new Date(Date.now() + 3600_000).toISOString(),
+          created_by: board.id,
+        })
+      results.push({
+        name: "board cannot create workspace communication post",
+        passed: !!boardCreatesCommunicationError,
+      })
+
+      if (workspaceCommunicationChannelsTableAvailable) {
+        const { data: staffConnectedChannel, error: staffConnectedChannelError } =
+          await staffClient
+            .from("organization_workspace_communication_channels")
+            .upsert(
+              {
+                org_id: member.id,
+                channel: "social",
+                is_connected: true,
+                provider: "mock-social",
+                connected_by: staff.id,
+                connected_at: new Date().toISOString(),
+                metadata: { source: "rls-test" },
+              },
+              { onConflict: "org_id,channel" }
+            )
+            .select("channel")
+            .maybeSingle()
+        results.push({
+          name: "staff can upsert workspace communication channel",
+          passed: !!staffConnectedChannel && !staffConnectedChannelError,
+        })
+
+        const {
+          data: boardReadsConnectedChannel,
+          error: boardReadsConnectedChannelError,
+        } = await boardClient
+          .from("organization_workspace_communication_channels")
+          .select("channel")
+          .eq("org_id", member.id)
+          .eq("channel", "social")
+          .maybeSingle()
+        results.push({
+          name: "board can read workspace communication channel",
+          passed:
+            !!boardReadsConnectedChannel && !boardReadsConnectedChannelError,
+        })
+
+        const { error: boardUpsertsConnectedChannelError } = await boardClient
+          .from("organization_workspace_communication_channels")
+          .upsert(
+            {
+              org_id: member.id,
+              channel: "email",
+              is_connected: true,
+              provider: "mock-email",
+              connected_by: board.id,
+              connected_at: new Date().toISOString(),
+              metadata: { source: "rls-test" },
+            },
+            { onConflict: "org_id,channel" }
+          )
+        results.push({
+          name: "board cannot upsert workspace communication channel",
+          passed: !!boardUpsertsConnectedChannelError,
+        })
+      }
+
+      if (workspaceCommunicationDeliveriesTableAvailable) {
+        const deliveryId = randomUUID()
+
+        const { data: staffDelivery, error: staffDeliveryError } =
+          await staffClient
+            .from("organization_workspace_communication_deliveries")
+            .insert({
+              id: deliveryId,
+              org_id: member.id,
+              communication_id: communicationId,
+              channel: "social",
+              status: "queued",
+              provider: "mock",
+              attempt_count: 0,
+              payload: {},
+              created_by: staff.id,
+            })
+            .select("id")
+            .maybeSingle()
+        results.push({
+          name: "staff can enqueue workspace communication delivery",
+          passed: !!staffDelivery && !staffDeliveryError,
+        })
+
+        const { data: boardReadsDelivery, error: boardReadsDeliveryError } =
+          await boardClient
+            .from("organization_workspace_communication_deliveries")
+            .select("id")
+            .eq("id", deliveryId)
+            .eq("org_id", member.id)
+            .maybeSingle()
+        results.push({
+          name: "board can read workspace communication delivery",
+          passed: !!boardReadsDelivery && !boardReadsDeliveryError,
+        })
+
+        const { error: boardCreatesDeliveryError } = await boardClient
+          .from("organization_workspace_communication_deliveries")
+          .insert({
+            org_id: member.id,
+            communication_id: communicationId,
+            channel: "email",
+            status: "queued",
+            provider: "mock",
+            attempt_count: 0,
+            payload: {},
+            created_by: board.id,
+          })
+        results.push({
+          name: "board cannot enqueue workspace communication delivery",
+          passed: !!boardCreatesDeliveryError,
+        })
+      }
+    }
   }
 
   // Attachments visibility and invites admin-only
@@ -803,6 +1161,7 @@ async function run() {
     .from("notifications")
     .delete()
     .in("user_id", [member.id, admin.id])
+  await adminClient.storage.from("avatars").remove([`${member.id}/rls-avatar-${suffix}.png`])
   await adminClient.auth.admin.deleteUser(member.id)
   await adminClient.auth.admin.deleteUser(admin.id)
   await adminClient.auth.admin.deleteUser(staff.id)

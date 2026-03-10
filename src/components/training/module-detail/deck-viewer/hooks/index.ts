@@ -1,0 +1,6 @@
+export { useDeckCanvasRenderer } from "./use-deck-canvas-renderer"
+export { useDeckGestures } from "./use-deck-gestures"
+export { useDeckDocumentLoader } from "./use-deck-document-loader"
+export { useDeckKeyboardNavigation } from "./use-deck-keyboard-navigation"
+export { useDeckPageNavigation } from "./use-deck-page-navigation"
+export { useDeckSource } from "./use-deck-source"

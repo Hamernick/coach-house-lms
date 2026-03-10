@@ -10,6 +10,7 @@ import { z } from "zod"
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
 import { createTesterAccountAction } from "@/app/(auth)/tester/sign-up/actions"
 import { resolveAuthCallbackUrl } from "@/components/auth/auth-callback-url"
+import type { IntentFocus } from "@/components/onboarding/onboarding-dialog/types"
 import { PasswordInput } from "@/components/auth/password-input"
 import { Button } from "@/components/ui/button"
 import {
@@ -23,14 +24,35 @@ import {
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-const AVAILABLE_ACCOUNT_INTENT = "founder_exec" as const
+const DEFAULT_BUILDER_REDIRECT = "/workspace?onboarding_flow=1&source=signup"
+const DEFAULT_MEMBER_REDIRECT = "/find?member_onboarding=1&source=signup"
 
-const ACCOUNT_INTENT_OPTIONS = [
-  { value: "founder_exec", label: "Founder / Executive lead", available: true },
-  { value: "staff_operator", label: "Staff / Program operator", available: false },
-  { value: "board_member", label: "Board member", available: false },
-  { value: "funder_partner", label: "Funder / Partner / Advisor", available: false },
-] as const
+const JOURNEY_OPTIONS: Array<{
+  value: IntentFocus
+  label: string
+  description: string
+}> = [
+  {
+    value: "build",
+    label: "Build a nonprofit",
+    description: "Create your organization workspace and unlock builder onboarding.",
+  },
+  {
+    value: "find",
+    label: "Find nonprofits",
+    description: "Save organizations, follow your interests, and stay connected.",
+  },
+  {
+    value: "fund",
+    label: "Fund nonprofits",
+    description: "Track organizations you support and review funder-ready updates.",
+  },
+  {
+    value: "support",
+    label: "Support teams",
+    description: "Join organizations, collaborate, and help teams execute.",
+  },
+]
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -41,8 +63,56 @@ type SignUpValues = z.infer<typeof schema>
 
 type SignUpFormProps = {
   redirectTo?: string
+  builderRedirectTo?: string
+  memberRedirectTo?: string
   loginHref?: string
   signUpMetadata?: Record<string, unknown>
+  defaultIntentFocus?: IntentFocus
+  lockedIntentFocus?: IntentFocus | null
+}
+
+function resolveLegacyAccountIntent(intentFocus: IntentFocus) {
+  switch (intentFocus) {
+    case "build":
+      return "founder_exec"
+    case "support":
+      return "staff_operator"
+    case "fund":
+      return "funder_partner"
+    case "find":
+    default:
+      return "board_member"
+  }
+}
+
+function resolvePostSignUpRedirect({
+  intentFocus,
+  builderRedirectTo,
+  memberRedirectTo,
+  redirectTo,
+}: {
+  intentFocus: IntentFocus
+  builderRedirectTo?: string
+  memberRedirectTo?: string
+  redirectTo?: string
+}) {
+  if (intentFocus === "build") {
+    return builderRedirectTo ?? redirectTo ?? DEFAULT_BUILDER_REDIRECT
+  }
+  return memberRedirectTo ?? redirectTo ?? DEFAULT_MEMBER_REDIRECT
+}
+
+function appendRedirectToHref({
+  baseHref,
+  redirectTo,
+}: {
+  baseHref?: string
+  redirectTo: string
+}) {
+  const base = baseHref ?? "/login"
+  if (base.includes("redirect=")) return base
+  const separator = base.includes("?") ? "&" : "?"
+  return `${base}${separator}redirect=${encodeURIComponent(redirectTo)}`
 }
 
 function isExistingAccountResponse(user: { identities?: unknown[] } | null | undefined) {
@@ -59,15 +129,43 @@ function resolveSignUpErrorMessage(raw: string, isTesterInstantSignup: boolean) 
   return raw
 }
 
-export function SignUpForm({ redirectTo = "/organization", loginHref, signUpMetadata }: SignUpFormProps) {
+export function SignUpForm({
+  redirectTo,
+  builderRedirectTo,
+  memberRedirectTo,
+  loginHref,
+  signUpMetadata,
+  defaultIntentFocus = "build",
+  lockedIntentFocus = null,
+}: SignUpFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
-  const [accountIntent, setAccountIntent] = useState<typeof AVAILABLE_ACCOUNT_INTENT>(AVAILABLE_ACCOUNT_INTENT)
+  const [intentFocus, setIntentFocus] = useState<IntentFocus>(
+    lockedIntentFocus ?? defaultIntentFocus,
+  )
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState<string>("")
   const [countdown, setCountdown] = useState(20)
   const [isPending, startTransition] = useTransition()
-  const resolvedLoginHref = useMemo(() => loginHref ?? "/login", [loginHref])
+  const activeIntentFocus = lockedIntentFocus ?? intentFocus
+  const resolvedRedirectTo = useMemo(
+    () =>
+      resolvePostSignUpRedirect({
+        intentFocus: activeIntentFocus,
+        builderRedirectTo,
+        memberRedirectTo,
+        redirectTo,
+      }),
+    [activeIntentFocus, builderRedirectTo, memberRedirectTo, redirectTo],
+  )
+  const resolvedLoginHref = useMemo(
+    () =>
+      appendRedirectToHref({
+        baseHref: loginHref,
+        redirectTo: resolvedRedirectTo,
+      }),
+    [loginHref, resolvedRedirectTo],
+  )
   const isTesterInstantSignup = signUpMetadata?.qa_tester === true
 
   const form = useForm<SignUpValues>({
@@ -125,12 +223,12 @@ export function SignUpForm({ redirectTo = "/organization", loginHref, signUpMeta
           return
         }
 
-        router.replace(redirectTo)
+        router.replace(resolvedRedirectTo)
         router.refresh()
         return
       }
 
-      const emailRedirectTo = resolveAuthCallbackUrl(redirectTo)
+      const emailRedirectTo = resolveAuthCallbackUrl(resolvedRedirectTo)
 
       const { data, error } = await supabase.auth.signUp({
         email: values.email,
@@ -138,8 +236,9 @@ export function SignUpForm({ redirectTo = "/organization", loginHref, signUpMeta
         options: {
           emailRedirectTo,
           data: {
-            account_intent: accountIntent,
             ...(signUpMetadata ?? {}),
+            account_intent: resolveLegacyAccountIntent(activeIntentFocus),
+            onboarding_intent_focus: activeIntentFocus,
           },
         },
       })
@@ -168,40 +267,40 @@ export function SignUpForm({ redirectTo = "/organization", loginHref, signUpMeta
     <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="space-y-2">
-            <FormLabel>Role</FormLabel>
-            <Select
-              value={accountIntent}
-              onValueChange={(value) => {
-                if (value === AVAILABLE_ACCOUNT_INTENT) {
-                  setAccountIntent(value)
-                }
-              }}
-            >
-              <FormControl>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your role" />
-                </SelectTrigger>
-              </FormControl>
+          {lockedIntentFocus ? null : (
+            <div className="space-y-2">
+              <FormLabel>How will you use Coach House?</FormLabel>
+              <Select
+                value={intentFocus}
+                onValueChange={(value) => {
+                  if (
+                    value === "build" ||
+                    value === "find" ||
+                    value === "fund" ||
+                    value === "support"
+                  ) {
+                    setIntentFocus(value)
+                  }
+                }}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose your journey" />
+                  </SelectTrigger>
+                </FormControl>
                 <SelectContent>
-                  {ACCOUNT_INTENT_OPTIONS.map((option) => (
-                    <SelectItem
-                      key={option.value}
-                      value={option.value}
-                      disabled={option.value !== AVAILABLE_ACCOUNT_INTENT}
-                    >
+                  {JOURNEY_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
                       {option.label}
-                      {!option.available ? (
-                        <span className="text-xs text-muted-foreground"> — Coming soon</span>
-                      ) : null}
                     </SelectItem>
                   ))}
                 </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Additional role options are coming soon.
-            </p>
-          </div>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Builder accounts continue into pricing and workspace onboarding. Member journeys stay on the internal map.
+              </p>
+            </div>
+          )}
           <FormField
             control={form.control}
             name="email"

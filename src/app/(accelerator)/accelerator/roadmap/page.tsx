@@ -1,7 +1,7 @@
-import { StrategicRoadmapEditorPage } from "@/components/roadmap/strategic-roadmap-editor-page"
+import { redirect } from "next/navigation"
 
 export const dynamic = "force-dynamic"
 
 export default async function AcceleratorRoadmapPage() {
-  return <StrategicRoadmapEditorPage redirectTo="/accelerator/roadmap" />
+  redirect("/workspace/roadmap")
 }

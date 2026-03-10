@@ -3,13 +3,25 @@
 import * as React from "react"
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog"
 
+import {
+  scheduleInteractionLockGuard,
+  scheduleInteractionLockGuardOnClose,
+} from "@/lib/ui/interaction-lock-guard"
 import { cn } from "@/lib/utils"
 import { buttonVariants } from "@/components/ui/button"
 
 function AlertDialog({
+  onOpenChange,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Root>) {
-  return <AlertDialogPrimitive.Root data-slot="alert-dialog" {...props} />
+  const handleOpenChange = React.useCallback(
+    (open: boolean) => {
+      scheduleInteractionLockGuardOnClose({ open, onOpenChange })
+    },
+    [onOpenChange],
+  )
+
+  return <AlertDialogPrimitive.Root data-slot="alert-dialog" onOpenChange={handleOpenChange} {...props} />
 }
 
 function AlertDialogTrigger({
@@ -48,6 +60,13 @@ function AlertDialogContent({
   className,
   ...props
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content>) {
+  React.useEffect(
+    () => () => {
+      scheduleInteractionLockGuard()
+    },
+    [],
+  )
+
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />

@@ -24,6 +24,7 @@ type RoadmapSectionPanelProps = {
   headerIconSize?: number | null
   headerTextRef?: RefObject<HTMLDivElement | null>
   contentMaxWidth?: string
+  panelClassName?: string
   toolbarSlotId?: string
   body?: ReactNode
   editorProps?: RichTextEditorProps
@@ -43,6 +44,7 @@ export function RoadmapSectionPanel({
   headerIconSize = null,
   headerTextRef,
   contentMaxWidth = "max-w-3xl",
+  panelClassName,
   toolbarSlotId,
   body,
   editorProps,
@@ -59,7 +61,12 @@ export function RoadmapSectionPanel({
   const headerTextSpacing = headerVariant === "calendar" ? "space-y-0.5" : "space-y-1"
 
   return (
-    <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-6 overflow-hidden">
+    <div
+      className={cn(
+        "flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-6 overflow-hidden",
+        panelClassName,
+      )}
+    >
       {showHeader ? (
         <div className={cn("w-full", headerPaddingClass)}>
           <div

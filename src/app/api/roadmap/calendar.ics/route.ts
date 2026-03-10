@@ -61,7 +61,7 @@ export async function GET(request: Request) {
 
   const { data: events } = await admin
     .from(CALENDAR_TABLES[type].events)
-    .select("id,title,description,starts_at,ends_at,all_day,status,updated_at")
+    .select("id,title,description,event_type,starts_at,ends_at,all_day,status,updated_at")
     .eq("org_id", feedRow.org_id)
     .eq("status", "active")
     .order("starts_at", { ascending: true })
@@ -70,6 +70,7 @@ export async function GET(request: Request) {
         id: string
         title: string
         description: string | null
+        event_type: string | null
         starts_at: string
         ends_at: string | null
         all_day: boolean
@@ -108,6 +109,9 @@ export async function GET(request: Request) {
     lines.push(`SUMMARY:${escapeIcsText(event.title)}`)
     if (event.description) {
       lines.push(`DESCRIPTION:${escapeIcsText(event.description)}`)
+    }
+    if (event.event_type) {
+      lines.push(`CATEGORIES:${escapeIcsText(event.event_type)}`)
     }
     if (event.updated_at) {
       lines.push(`LAST-MODIFIED:${formatIcsDateTime(new Date(event.updated_at))}`)

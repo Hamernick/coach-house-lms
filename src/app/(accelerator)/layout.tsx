@@ -28,6 +28,7 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   }
 
   let displayName: string | null = null
+  let displayTitle: string | null = null
   let email: string | null = user.email ?? null
   let avatar: string | null = null
   let isAdmin = false
@@ -39,6 +40,10 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   let currentPlanTier: PricingPlanTier = "free"
 
   const fallbackIsTester = resolveTesterMetadata(user.user_metadata ?? null)
+  const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
+  const metadataFirstName = typeof userMeta?.first_name === "string" ? userMeta.first_name.trim() : ""
+  const metadataLastName = typeof userMeta?.last_name === "string" ? userMeta.last_name.trim() : ""
+  const metadataFullName = [metadataFirstName, metadataLastName].filter(Boolean).join(" ").trim()
   const [profileAudience, activeOrg] = await Promise.all([
     resolveProfileAudience({
       supabase,
@@ -48,7 +53,11 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
     resolveActiveOrganization(supabase, user.id),
   ])
 
-  displayName = profileAudience.fullName ?? (user.user_metadata?.full_name as string | undefined) ?? null
+  displayName =
+    profileAudience.fullName ??
+    (typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null) ??
+    (metadataFullName || null)
+  displayTitle = profileAudience.headline
   isAdmin = profileAudience.isAdmin
   isTester = profileAudience.isTester
 
@@ -101,7 +110,6 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
     }
   }
 
-  const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
   const onboardingCompleted = Boolean(userMeta?.onboarding_completed)
   const tutorialsCompleted = Array.isArray(userMeta?.tutorials_completed)
     ? (userMeta?.tutorials_completed as unknown[]).filter((t): t is string => typeof t === "string")
@@ -125,7 +133,7 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
       canAccessOrgAdmin={canAccessOrgAdmin}
       isTester={isTester}
       tutorialWelcome={{ platform: false, accelerator: tutorialWelcome }}
-      user={{ name: displayName, email: email ?? null, avatar: avatar ?? null }}
+      user={{ name: displayName, title: displayTitle, email: email ?? null, avatar: avatar ?? null }}
       showAccelerator={true}
       hasAcceleratorAccess={entitlements.hasAcceleratorAccess}
       hasElectiveAccess={entitlements.hasElectiveAccess}

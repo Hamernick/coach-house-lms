@@ -41,7 +41,7 @@ export function CommunityOrganizationList({ organizations }: { organizations: Co
               <div className="flex flex-wrap items-center gap-2">
                 <h3 className="text-base font-semibold tracking-tight text-foreground sm:text-lg">{org.name}</h3>
                 {org.publicSlug ? (
-                  <Link href={`/${org.publicSlug}`} className="text-xs font-medium text-primary underline underline-offset-4">
+                  <Link href={`/find/${encodeURIComponent(org.publicSlug)}`} className="text-xs font-medium text-primary underline underline-offset-4">
                     View profile
                   </Link>
                 ) : null}

@@ -5,6 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 const STAGE_OPTIONS = [
@@ -59,11 +60,13 @@ export function SideLink({
   danger?: boolean
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
+      size="sm"
       onClick={onClick}
       className={cn(
-        "rounded-md px-2 py-1.5 text-left text-sm transition-colors",
+        "h-auto justify-start rounded-md px-2 py-1.5 text-left text-sm transition-colors",
         active
           ? "bg-accent text-accent-foreground"
           : danger
@@ -72,7 +75,7 @@ export function SideLink({
       )}
     >
       {label}
-    </button>
+    </Button>
   )
 }
 

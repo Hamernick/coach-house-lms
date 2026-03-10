@@ -118,24 +118,24 @@ export function StoryPreview({ company }: CompanyViewProps) {
   return (
     <FormRow title="About us">
       <div className="grid gap-4 md:grid-cols-2 md:items-start">
-        {vision.trim().length > 0 ? (
-          <ProfileField label="Vision">
-            <FieldText text={vision} multiline />
-          </ProfileField>
-        ) : null}
-        {need.trim().length > 0 ? (
-          <ProfileField label="Need statement">
-            <FieldText text={need} multiline />
-          </ProfileField>
-        ) : null}
         {mission.trim().length > 0 ? (
           <ProfileField label="Mission">
             <FieldText text={mission} multiline />
           </ProfileField>
         ) : null}
+        {vision.trim().length > 0 ? (
+          <ProfileField label="Vision">
+            <FieldText text={vision} multiline />
+          </ProfileField>
+        ) : null}
         {values.trim().length > 0 ? (
           <ProfileField label="Values">
             <FieldText text={values} multiline />
+          </ProfileField>
+        ) : null}
+        {need.trim().length > 0 ? (
+          <ProfileField label="Need statement">
+            <FieldText text={need} multiline />
           </ProfileField>
         ) : null}
       </div>

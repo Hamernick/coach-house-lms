@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
   const kindParam = searchParams.get("kind")
   const kind =
     kindParam === "logo" ||
+    kindParam === "logo-mark" ||
     kindParam === "header" ||
     kindParam === "roadmap" ||
     kindParam === "roadmap-inline" ||
@@ -49,7 +50,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Image too large. Max size is 10 MB." }, { status: 400 })
   }
 
-  const ext = file.type.split("/").pop() || "png"
+  const ext = file.type === "image/svg+xml" ? "svg" : file.type.split("/").pop() || "png"
   const objectName = `${orgId}/${kind}/${Date.now()}.${ext}`
   const buf = Buffer.from(await file.arrayBuffer())
 

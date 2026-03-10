@@ -4,8 +4,8 @@ import BookOpenIcon from "lucide-react/dist/esm/icons/book-open"
 import CalendarIcon from "lucide-react/dist/esm/icons/calendar"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
 import CompassIcon from "lucide-react/dist/esm/icons/compass"
+import DollarSignIcon from "lucide-react/dist/esm/icons/dollar-sign"
 import FileTextIcon from "lucide-react/dist/esm/icons/file-text"
-import HandCoinsIcon from "lucide-react/dist/esm/icons/hand-coins"
 import HandIcon from "lucide-react/dist/esm/icons/hand"
 import LineChartIcon from "lucide-react/dist/esm/icons/line-chart"
 import ListChecksIcon from "lucide-react/dist/esm/icons/list-checks"
@@ -23,8 +23,8 @@ export const ROADMAP_SECTION_ICONS: Record<string, ComponentType<{ className?: s
   program: RocketIcon,
   evaluation: LineChartIcon,
   people: UsersIcon,
-  budget: HandCoinsIcon,
-  fundraising: HandCoinsIcon,
+  budget: DollarSignIcon,
+  fundraising: DollarSignIcon,
   fundraising_strategy: TargetIcon,
   fundraising_presentation: FileTextIcon,
   fundraising_crm_plan: MapIcon,

@@ -54,7 +54,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && isAuthRoute) {
-    const redirectResponse = NextResponse.redirect(new URL("/organization", request.url))
+    const redirectResponse = NextResponse.redirect(new URL("/workspace", request.url))
     copyCookies(response, redirectResponse)
     return redirectResponse
   }

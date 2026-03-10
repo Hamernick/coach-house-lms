@@ -80,9 +80,12 @@ describe("billing portal flow", () => {
       apiVersion: "2025-08-27.basil",
     })
     expect(result).toEqual({ url: "https://billing.example/session" })
-    expect(loggerInfoMock).toHaveBeenCalledWith("billing_portal_session_created", {
-      userId: "user-123",
-    })
+    expect(loggerInfoMock).toHaveBeenCalledWith(
+      "billing_portal_session_created",
+      expect.objectContaining({
+        userId: "user-123",
+      }),
+    )
     expect(loggerErrorMock).not.toHaveBeenCalled()
   })
 })

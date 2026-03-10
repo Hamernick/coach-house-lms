@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import { deriveAssignmentInitialValues } from "./assignment-form"
@@ -40,7 +40,7 @@ export function useAssignmentSubmission({
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(submission?.updatedAt ?? null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, startTransition] = useTransition()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     setSubmissionStatus(submission?.status ?? null)
@@ -50,77 +50,81 @@ export function useAssignmentSubmission({
   }, [submission?.status, submission?.updatedAt, moduleId])
 
   const handleSubmit = useCallback(
-    (values: AssignmentValues, options?: { silent?: boolean }) => {
+    async (values: AssignmentValues, options?: { silent?: boolean }) => {
       if (assignmentFields.length === 0) return
       const fieldsSnapshot = assignmentFields
       setMessage(null)
       setError(null)
+      setIsSubmitting(true)
 
-      startTransition(() => {
-        ;(async () => {
+      try {
+        const response = await fetch(`/api/modules/${moduleId}/assignment-submission`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answers: values }),
+        })
+
+        if (!response.ok) {
+          let friendly = "Failed to submit assignment."
           try {
-            const response = await fetch(`/api/modules/${moduleId}/assignment-submission`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ answers: values }),
-            })
-
-            if (!response.ok) {
-              let friendly = "Failed to submit assignment."
-              try {
-                const payload = await response.json()
-                if (Array.isArray(payload?.missing) && payload.missing.length > 0) {
-                  friendly = `Please complete: ${payload.missing.join(", ")}`
-                } else if (typeof payload?.error === "string") {
-                  friendly = payload.error
-                }
-              } catch {
-                // ignore parse errors
-              }
-              setError(friendly)
-              return
+            const payload = await response.json()
+            if (Array.isArray(payload?.missing) && payload.missing.length > 0) {
+              friendly = `Please complete: ${payload.missing.join(", ")}`
+            } else if (typeof payload?.error === "string") {
+              friendly = payload.error
             }
-
-            const data = (await response.json()) as {
-              answers?: Record<string, unknown>
-              status?: string | null
-              updatedAt?: string | null
-              completeOnSubmit?: boolean
-            }
-
-            const normalizedAnswers = buildAssignmentValues(
-              fieldsSnapshot,
-              data.answers ?? null,
-            )
-            setFormSeed(normalizedAnswers)
-
-            const nextStatus = (data.status ?? "submitted") as string
-            setSubmissionStatus(nextStatus)
-
-            const savedAt = data.updatedAt ?? new Date().toISOString()
-            setLastSavedAt(savedAt)
-
-            const autoComplete = Boolean(data.completeOnSubmit)
-            if (!options?.silent) {
-              setMessage(
-                autoComplete
-                  ? "Submission saved — this module is now marked complete."
-                  : "Submission saved.",
-              )
-            } else {
-              setMessage(null)
-            }
-            setError(null)
-
-            router.refresh()
-          } catch (err) {
-            console.error("Assignment submission failed", err)
-            setError("Unable to submit assignment. Please try again.")
+          } catch {
+            // ignore parse errors
           }
-        })()
-      })
+          setError(friendly)
+          return
+        }
+
+        const data = (await response.json()) as {
+          answers?: Record<string, unknown>
+          status?: string | null
+          updatedAt?: string | null
+          completeOnSubmit?: boolean
+        }
+
+        const normalizedAnswers = buildAssignmentValues(
+          fieldsSnapshot,
+          data.answers ?? null,
+        )
+        setFormSeed(normalizedAnswers)
+
+        const nextStatus = (data.status ?? "submitted") as string
+        setSubmissionStatus(nextStatus)
+
+        const savedAt = data.updatedAt ?? new Date().toISOString()
+        setLastSavedAt(savedAt)
+
+        const autoComplete = Boolean(data.completeOnSubmit)
+        if (!options?.silent) {
+          setMessage(
+            autoComplete
+              ? "Submission saved — this module is now marked complete."
+              : "Submission saved.",
+          )
+        } else {
+          setMessage(null)
+        }
+        setError(null)
+
+        const shouldRefresh =
+          autoComplete ||
+          (!options?.silent && submissionStatus !== nextStatus)
+        if (shouldRefresh) {
+          router.refresh()
+        }
+      } catch (err) {
+        console.error("Assignment submission failed", err)
+        setError("Unable to submit assignment. Please try again.")
+      } finally {
+        setIsSubmitting(false)
+      }
     },
-    [assignmentFields, moduleId, router],
+    [assignmentFields, moduleId, router, submissionStatus],
   )
 
   const statusMeta = useMemo(() => {

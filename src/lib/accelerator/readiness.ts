@@ -1,8 +1,8 @@
 import type { ModuleCardStatus } from "@/lib/accelerator/progress"
 import type { RoadmapSection } from "@/lib/roadmap"
 
-const FUNDABLE_THRESHOLD = 70
-const VERIFIED_THRESHOLD = 90
+export const ACCELERATOR_FUNDABLE_THRESHOLD = 70
+export const ACCELERATOR_VERIFIED_THRESHOLD = 90
 
 const CORE_FORMATION_MODULE_SLUGS = new Set(["naming-your-nfp", "nfp-registration", "filing-1023"])
 const CORE_ROADMAP_SECTION_IDS = new Set([
@@ -109,7 +109,9 @@ export function resolveAcceleratorReadiness({
 
   const fundableScore = clamp(profileScore + roadmapScore + formationScore + programScore + teamScore, 0, 100)
   const fundableHardRequirements = coreLessonsComplete && hasFundingGoal && (hasVerificationLetter || hasArticles)
-  const fundable = fundableHardRequirements && fundableScore >= FUNDABLE_THRESHOLD
+  const fundable =
+    fundableHardRequirements &&
+    fundableScore >= ACCELERATOR_FUNDABLE_THRESHOLD
 
   const docDepthCount = VERIFIED_DOC_KEYS.filter((key) => hasUploadedDocument(documents, key)).length
   const docDepthScore = Math.round((docDepthCount / VERIFIED_DOC_KEYS.length) * 20)
@@ -127,14 +129,23 @@ export function resolveAcceleratorReadiness({
     coreLessonsComplete &&
     roadmapCoreCompleted === CORE_ROADMAP_SECTION_IDS.size &&
     hasFundingGoal
-  const verified = verifiedMandatory && verifiedScore >= VERIFIED_THRESHOLD
+  const verified =
+    verifiedMandatory && verifiedScore >= ACCELERATOR_VERIFIED_THRESHOLD
 
-  const score = verified ? 100 : fundable ? Math.max(fundableScore, FUNDABLE_THRESHOLD) : fundableScore
+  const score = verified
+    ? 100
+    : fundable
+      ? Math.max(fundableScore, ACCELERATOR_FUNDABLE_THRESHOLD)
+      : fundableScore
   const progressPercent = verified
     ? 100
     : fundable
-      ? clamp(score, FUNDABLE_THRESHOLD, VERIFIED_THRESHOLD - 1)
-      : clamp(score, 0, FUNDABLE_THRESHOLD - 1)
+      ? clamp(
+          score,
+          ACCELERATOR_FUNDABLE_THRESHOLD,
+          ACCELERATOR_VERIFIED_THRESHOLD - 1,
+        )
+      : clamp(score, 0, ACCELERATOR_FUNDABLE_THRESHOLD - 1)
 
   const fundableMissing: string[] = []
   if (!coreLessonsComplete) fundableMissing.push("Complete formation lessons")
@@ -151,8 +162,8 @@ export function resolveAcceleratorReadiness({
   return {
     score,
     progressPercent,
-    fundableCheckpoint: FUNDABLE_THRESHOLD,
-    verifiedCheckpoint: VERIFIED_THRESHOLD,
+    fundableCheckpoint: ACCELERATOR_FUNDABLE_THRESHOLD,
+    verifiedCheckpoint: ACCELERATOR_VERIFIED_THRESHOLD,
     fundable,
     verified,
     fundableMissing,

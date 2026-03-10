@@ -1,0 +1,177 @@
+"use client"
+
+import { PLATFORM_TIERS } from "@/components/public/pricing-surface-data"
+import { TierFeatures } from "@/components/public/pricing-surface-sections/shared"
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import type { PricingPlanTier } from "@/lib/billing/plan-tier"
+import { cn } from "@/lib/utils"
+
+type PricingStepProps = {
+  step: number
+  attemptedStep: number | null
+  errors: Record<string, string>
+  currentPlanTier: PricingPlanTier
+  checkoutReturnTo: string
+}
+
+const BUILDER_TIER_IDS = new Set(["organization", "operations"])
+
+function splitTierEyebrow(eyebrow: string) {
+  const match = eyebrow.match(/^(.*?)(\s*\(.*\))$/)
+  if (!match) {
+    return {
+      primary: eyebrow,
+      secondary: null,
+    }
+  }
+
+  return {
+    primary: match[1]?.trim() ?? eyebrow,
+    secondary: match[2]?.trim() ?? null,
+  }
+}
+
+function buildCheckoutHref({
+  tierId,
+  checkoutReturnTo,
+}: {
+  tierId: "organization" | "operations"
+  checkoutReturnTo: string
+}) {
+  const params = new URLSearchParams({
+    source: "onboarding",
+    context: "onboarding_builder",
+    redirect: checkoutReturnTo,
+    cancel: checkoutReturnTo,
+  })
+  params.set("plan", tierId === "operations" ? "operations_support" : "organization")
+  return `/api/stripe/checkout?${params.toString()}`
+}
+
+export function PricingStep({
+  step,
+  attemptedStep,
+  errors,
+  currentPlanTier,
+  checkoutReturnTo,
+}: PricingStepProps) {
+  const builderTiers = PLATFORM_TIERS.filter((tier) => BUILDER_TIER_IDS.has(tier.id))
+
+  return (
+    <div className="space-y-5 py-5" data-onboarding-step-id="pricing">
+      <div className="rounded-2xl border border-border/70 bg-muted/25 p-4">
+        <p className="text-sm font-medium text-foreground">
+          Want to build your own organization?
+        </p>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          Choose a builder plan to unlock organization creation, workspace setup,
+          teammate access, and the accelerator. You can go back and choose a
+          free member journey if you only want the internal map experience.
+        </p>
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        {builderTiers.map((tier) => {
+          const eyebrow = splitTierEyebrow(tier.eyebrow)
+          const isCurrentTier =
+            (tier.id === "organization" && currentPlanTier === "organization") ||
+            (tier.id === "operations" && currentPlanTier === "operations_support")
+          const checkoutHref = buildCheckoutHref({
+            tierId: tier.id === "operations" ? "operations" : "organization",
+            checkoutReturnTo,
+          })
+
+          return (
+            <Card
+              key={tier.id}
+              className={cn(
+                "rounded-[26px] border border-border/70 shadow-none",
+                tier.featured && "border-primary/35 ring-1 ring-primary/10",
+                isCurrentTier && "border-emerald-500/45 bg-emerald-500/[0.06]",
+              )}
+            >
+              <CardHeader className="space-y-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      <span className="block">{eyebrow.primary}</span>
+                      {eyebrow.secondary ? (
+                        <span className="mt-0.5 block">{eyebrow.secondary}</span>
+                      ) : null}
+                    </p>
+                    <CardTitle className="mt-2 text-2xl">{tier.title}</CardTitle>
+                  </div>
+                  {isCurrentTier ? (
+                    <Badge className="rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+                      Current plan
+                    </Badge>
+                  ) : tier.badge ? (
+                    <Badge variant="secondary" className="rounded-full">
+                      {tier.badge}
+                    </Badge>
+                  ) : null}
+                </div>
+
+                <div className="flex items-end gap-2">
+                  <span className="text-4xl font-semibold tracking-tight">{tier.priceLine}</span>
+                  {tier.priceNote ? (
+                    <span className="pb-1 text-sm text-muted-foreground">{tier.priceNote}</span>
+                  ) : null}
+                </div>
+
+                <CardDescription className="text-sm leading-relaxed text-muted-foreground">
+                  {tier.subtitle}
+                </CardDescription>
+
+                {isCurrentTier ? (
+                  <Button type="button" className="w-full rounded-xl" disabled>
+                    Builder access active
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    className="w-full rounded-xl"
+                    onClick={() => window.location.assign(checkoutHref)}
+                  >
+                    {tier.ctaLabel}
+                  </Button>
+                )}
+              </CardHeader>
+
+              <CardContent className="space-y-4">
+                <div className="h-px bg-border/70" aria-hidden />
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value={`${tier.id}-includes`} className="border-b-0">
+                    <AccordionTrigger className="py-2 text-sm font-semibold text-foreground hover:no-underline">
+                      <span>{tier.featureHeading}</span>
+                    </AccordionTrigger>
+                    <AccordionContent className="pb-0">
+                      <TierFeatures
+                        heading={tier.featureHeading}
+                        items={tier.features}
+                        tone="muted"
+                        hideHeading
+                      />
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+
+      {attemptedStep === step && errors.builderPlanTier ? (
+        <p className="text-xs text-destructive">{errors.builderPlanTier}</p>
+      ) : null}
+    </div>
+  )
+}

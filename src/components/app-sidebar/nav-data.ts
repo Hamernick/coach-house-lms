@@ -1,9 +1,8 @@
 "use client"
 
 import type { LucideIcon } from "lucide-react"
-import BuildingIcon from "lucide-react/dist/esm/icons/building-2"
-import CircleDollarSignIcon from "lucide-react/dist/esm/icons/circle-dollar-sign"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
+import LayoutGridIcon from "lucide-react/dist/esm/icons/layout-grid"
 import LockIcon from "lucide-react/dist/esm/icons/lock"
 import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
@@ -17,12 +16,10 @@ export function buildMainNav({
   isAdmin,
   showOrgAdmin,
   canAccessOrgAdmin,
-  organizationName,
 }: {
   isAdmin: boolean
   showOrgAdmin: boolean
   canAccessOrgAdmin: boolean
-  organizationName?: string | null
 }): Array<{
   title: string
   href?: string
@@ -32,11 +29,6 @@ export function buildMainNav({
   upgradeHref?: string
   upgradeLabel?: string
 }> {
-  const organizationLabel =
-    typeof organizationName === "string" && organizationName.trim().length > 0
-      ? organizationName.trim()
-      : "Organization"
-
   const items: Array<{
     title: string
     href?: string
@@ -46,10 +38,9 @@ export function buildMainNav({
     upgradeHref?: string
     upgradeLabel?: string
   }> = [
-    { title: organizationLabel, href: "/organization", icon: BuildingIcon },
+    { title: "Workspace", href: "/workspace", icon: LayoutGridIcon },
     { title: "People", href: "/people", icon: UsersIcon },
     { title: "Documents", href: "/organization/documents", icon: LockIcon },
-    { title: "Fundraising", icon: CircleDollarSignIcon, locked: true, badge: "Coming soon" },
   ]
 
   if (showOrgAdmin) {
@@ -91,7 +82,7 @@ export const RESOURCE_NAV = [
 export const SECONDARY_NAV = [
   {
     title: "Support",
-    url: "mailto:contact@coachhousesolutions.org",
+    url: "mailto:joel@coachhousesolutions.org",
     icon: HelpCircleIcon,
   },
 ]

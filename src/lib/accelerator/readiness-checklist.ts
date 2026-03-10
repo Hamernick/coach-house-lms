@@ -34,13 +34,13 @@ export function buildReadinessChecklist(options: {
     .map((reason) => {
       if (reason === "Complete formation lessons") {
         return {
-          href: nextFormationModuleHref ?? "/accelerator",
+          href: nextFormationModuleHref ?? "/accelerator/class/formation/module/1",
           label: "Complete formation lessons",
         }
       }
       if (reason === "Complete core roadmap sections") {
         return {
-          href: nextCoreRoadmapHref ?? "/accelerator/roadmap/origin-story",
+          href: nextCoreRoadmapHref ?? "/workspace/roadmap/origin-story",
           label: "Complete core roadmap sections",
         }
       }

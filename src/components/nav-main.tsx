@@ -32,10 +32,20 @@ export function NavMain({
   className?: string
 }) {
   const pathname = usePathname()
+  const isWorkspaceHref = (href: string) =>
+    href === "/workspace" || href === "/organization" || href === "/organization/workspace"
+  const matchesAliasWorkspacePath = (href: string, currentPath: string) => {
+    if (!isWorkspaceHref(href)) return false
+    return currentPath === "/organization" || currentPath.startsWith("/organization/workspace")
+  }
+
   const activeHref = pathname
     ? items.reduce<string | null>((current, item) => {
         if (!item.href) return current
-        const matches = pathname === item.href || pathname.startsWith(`${item.href}/`)
+        const matches =
+          pathname === item.href ||
+          pathname.startsWith(`${item.href}/`) ||
+          matchesAliasWorkspacePath(item.href, pathname)
         if (!matches) return current
         if (!current || item.href.length > current.length) return item.href
         return current
@@ -49,7 +59,7 @@ export function NavMain({
         <SidebarMenu>
           {items.map((item) => {
             const isActive = Boolean(item.href && item.href === activeHref)
-            const isOrganizationItem = item.href === "/organization"
+            const isOrganizationItem = Boolean(item.href && isWorkspaceHref(item.href))
             const tourId =
               isOrganizationItem
                 ? "nav-organization"

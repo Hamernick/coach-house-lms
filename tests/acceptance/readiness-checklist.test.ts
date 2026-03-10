@@ -29,7 +29,7 @@ describe("readiness checklist link resolution", () => {
 
     expect(checklist).toEqual([
       { href: "/accelerator/class/formation/module/1", label: "Complete formation lessons" },
-      { href: "/accelerator/roadmap/origin-story", label: "Complete core roadmap sections" },
+      { href: "/workspace/roadmap/origin-story", label: "Complete core roadmap sections" },
       { href: "/organization/documents", label: "Upload verification letter" },
     ])
   })

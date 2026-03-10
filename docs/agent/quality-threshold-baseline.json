@@ -1,0 +1,22 @@
+{
+  "eslint": {
+    "complexityMax": 130,
+    "maxLines": 600,
+    "maxLinesPerFunction": 350
+  },
+  "structure": {
+    "componentLineBudget": 450,
+    "sourceLineBudget": 500,
+    "lineBudgetWarningThreshold": 0.9
+  },
+  "routes": {
+    "pageLayoutBudget": 280,
+    "pageLayoutWarningThreshold": 0.9,
+    "pageLayoutAllowlistMax": 0
+  },
+  "policy": {
+    "direction": "non_increasing",
+    "updated": "2026-02-22",
+    "notes": "Thresholds may be lowered without friction. Any increase requires an explicit baseline update plus RUNLOG rationale."
+  }
+}

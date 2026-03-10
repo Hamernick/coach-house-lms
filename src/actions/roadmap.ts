@@ -116,7 +116,7 @@ export async function saveRoadmapSectionAction({
     await supabase.storage.from(ORG_MEDIA_BUCKET).remove([cleanupPath])
   }
 
-  revalidatePath("/roadmap")
+  revalidatePath("/workspace/roadmap")
   if (orgRow?.public_slug) {
     revalidatePath(`/${orgRow.public_slug}/roadmap`)
   }
@@ -202,7 +202,7 @@ export async function deleteRoadmapSectionAction(sectionId: string | null | unde
     await supabase.storage.from(ORG_MEDIA_BUCKET).remove([cleanupPath])
   }
 
-  revalidatePath("/roadmap")
+  revalidatePath("/workspace/roadmap")
   if (orgRow?.public_slug) {
     revalidatePath(`/${orgRow.public_slug}/roadmap`)
   }
@@ -266,7 +266,7 @@ export async function setRoadmapPublicAction(nextPublic: boolean): Promise<Toggl
     return { error: error.message }
   }
 
-  revalidatePath("/roadmap")
+  revalidatePath("/workspace/roadmap")
   if (orgRow?.public_slug) {
     revalidatePath(`/${orgRow.public_slug}/roadmap`)
   }
@@ -335,7 +335,7 @@ export async function setRoadmapHeroImageAction(heroUrl: string | null): Promise
     await supabase.storage.from(ORG_MEDIA_BUCKET).remove([cleanupPath])
   }
 
-  revalidatePath("/roadmap")
+  revalidatePath("/workspace/roadmap")
   if (orgRow?.public_slug && orgRow?.is_public_roadmap) {
     revalidatePath(`/${orgRow.public_slug}/roadmap`)
   }

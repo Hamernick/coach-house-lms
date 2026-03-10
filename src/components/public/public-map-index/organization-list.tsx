@@ -75,19 +75,24 @@ export function PublicMapOrganizationList({
           <article
             key={org.id}
             className={cn(
-              "rounded-2xl border bg-background/85 p-3 transition-colors",
+              "group relative overflow-hidden rounded-2xl border bg-background/85 p-3 transition-colors",
               selected
                 ? "bg-card"
                 : "hover:bg-background",
             )}
           >
-            <div className="flex items-start justify-between gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                className="h-auto min-w-0 flex-1 justify-start gap-3 px-0 py-0 text-left font-normal text-foreground hover:bg-transparent hover:text-foreground"
-                onClick={() => onSelectOrg(org.id)}
-              >
+            <Button
+              type="button"
+              variant="ghost"
+              className="absolute inset-0 z-0 h-auto w-auto rounded-[inherit] border-0 bg-transparent p-0 text-transparent shadow-none transition-colors hover:bg-muted/10 focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              onMouseEnter={() => onSelectOrg(org.id)}
+              onFocus={() => onSelectOrg(org.id)}
+              onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}
+              aria-label={`Open details for ${org.name}`}
+            />
+
+            <div className="relative z-10 flex items-start justify-between gap-2">
+              <div className="pointer-events-none min-w-0 flex flex-1 items-start gap-3">
                 <Avatar className="mt-0.5 size-10 rounded-xl border border-border/60">
                   <AvatarImage src={org.logoUrl ?? org.headerUrl ?? undefined} alt={org.name} className="object-cover" />
                   <AvatarFallback className="rounded-xl bg-muted/45 text-[11px] font-semibold text-foreground">
@@ -108,13 +113,14 @@ export function PublicMapOrganizationList({
                     </span>
                   ) : null}
                 </span>
-              </Button>
+              </div>
 
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 className={cn(
+                  "relative z-20",
                   "inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors",
                   isFavorite
                     ? "border-primary/45 bg-primary/10 text-primary"
@@ -128,7 +134,7 @@ export function PublicMapOrganizationList({
             </div>
 
             {org.programPreview?.title ? (
-              <div className="mt-2 rounded-xl border border-border/70 bg-card/80 px-2.5 py-2">
+              <div className="pointer-events-none relative z-10 mt-2 rounded-xl border border-border/70 bg-card/80 px-2.5 py-2">
                 <p className="line-clamp-1 text-xs font-medium text-foreground">{org.programPreview.title}</p>
                 {org.programPreview.subtitle ? (
                   <p className="line-clamp-1 text-[11px] text-muted-foreground">{org.programPreview.subtitle}</p>
@@ -137,7 +143,7 @@ export function PublicMapOrganizationList({
             ) : null}
 
             {previewPrograms.length > 0 ? (
-              <div className="mt-2 grid grid-cols-3 gap-1.5">
+              <div className="pointer-events-none relative z-10 mt-2 grid grid-cols-3 gap-1.5">
                 {previewPrograms.map((program) => (
                   <div
                     key={`${org.id}:program:${program.id}`}
@@ -160,8 +166,8 @@ export function PublicMapOrganizationList({
               </div>
             ) : null}
 
-            <div className="mt-3 flex items-end justify-between gap-2">
-              <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+            <div className="relative z-10 mt-3 flex items-end justify-between gap-2">
+              <div className="pointer-events-none flex min-w-0 flex-wrap items-center gap-1.5">
                 <Badge variant="outline" className="rounded-md border-border/70 bg-background/80 text-[10px] text-foreground">
                   {PUBLIC_MAP_GROUP_LABELS[org.primaryGroup]}
                 </Badge>
@@ -171,17 +177,12 @@ export function PublicMapOrganizationList({
                     Web resource
                   </Badge>
                 ) : null}
-                {org.brandKitAvailable && org.publicSlug ? (
-                  <Badge variant="outline" className="rounded-md border-foreground/15 bg-foreground/5 text-[10px] text-foreground">
-                    Brand kit
-                  </Badge>
-                ) : null}
               </div>
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="h-7 rounded-md border border-border/70 bg-background/80 px-2.5 text-[11px] text-foreground hover:bg-muted"
+                className="relative z-20 h-7 rounded-md border border-border/70 bg-background/80 px-2.5 text-[11px] text-foreground hover:bg-muted"
                 onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}
               >
                 Details

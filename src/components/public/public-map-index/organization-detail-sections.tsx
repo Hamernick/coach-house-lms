@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { OrganizationFormationStatusSummary } from "@/components/organization/organization-formation-status-summary"
 import type { FormationStatusOption } from "@/lib/organization/formation-status"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import { cn } from "@/lib/utils"
 
 import {
   truncateAtWordBoundary,
@@ -21,18 +22,6 @@ import {
 
 type DetailBrandKitProps = {
   organization: PublicMapOrganization
-  brandPalette: string[]
-  brandThemeLabel: string | null
-  brandAccent: { label: string; color: string } | null
-  typographySummary:
-    | {
-        title: string
-        headings: string
-        body: string
-        code: string
-      }
-    | null
-  boilerplate: string
   brandKitDownloadHref: string | null
 }
 
@@ -44,23 +33,24 @@ type DetailOriginProps = {
 
 export function OrganizationDetailBrandKitSection({
   organization,
-  brandPalette,
-  brandThemeLabel,
-  brandAccent,
-  typographySummary,
-  boilerplate,
   brandKitDownloadHref,
 }: DetailBrandKitProps) {
-  if (
-    !brandKitDownloadHref &&
-    brandPalette.length === 0 &&
-    !brandThemeLabel &&
-    !brandAccent &&
-    !typographySummary &&
-    !boilerplate
-  ) {
-    return null
-  }
+  const logoCards = [
+    {
+      key: "primary-logo",
+      label: "Primary logo",
+      imageUrl: organization.logoUrl,
+      alt: `${organization.name} primary logo`,
+    },
+    {
+      key: "logo-mark",
+      label: "Logo mark",
+      imageUrl: organization.brandMarkUrl,
+      alt: `${organization.name} logo mark`,
+    },
+  ].filter((card) => Boolean(card.imageUrl))
+
+  if (!brandKitDownloadHref && logoCards.length === 0) return null
 
   return (
     <section className="rounded-xl border border-border/70 bg-background/70 p-2.5">
@@ -81,82 +71,21 @@ export function OrganizationDetailBrandKitSection({
         ) : null}
       </div>
 
-      {organization.logoUrl || organization.brandMarkUrl ? (
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <OrganizationDetailLogoCard
-            label="Primary logo"
-            imageUrl={organization.logoUrl}
-            alt={`${organization.name} primary logo`}
-          />
-          <OrganizationDetailLogoCard
-            label="Logo mark"
-            imageUrl={organization.brandMarkUrl}
-            alt={`${organization.name} logo mark`}
-          />
-        </div>
-      ) : null}
-
-      {brandPalette.length > 0 ? (
-        <div className="mt-2">
-          <p className="text-[11px] text-muted-foreground">Palette</p>
-          <div className="mt-1.5 flex flex-wrap gap-2">
-            {brandPalette.map((color) => (
-              <span
-                key={color}
-                className="inline-flex items-center gap-2 rounded-full border border-border/70 px-2 py-1 text-[11px] text-foreground"
-              >
-                <span
-                  className="h-3 w-3 rounded-full border border-black/10"
-                  style={{ backgroundColor: color }}
-                />
-                {color}
-              </span>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {brandThemeLabel || brandAccent ? (
-        <div className="mt-2 flex flex-wrap gap-2">
-          {brandThemeLabel ? (
-            <span className="inline-flex items-center rounded-full border border-border/70 bg-background/80 px-2 py-1 text-[11px] text-foreground">
-              Theme: {brandThemeLabel}
-            </span>
-          ) : null}
-          {brandAccent ? (
-            <span className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/80 px-2 py-1 text-[11px] text-foreground">
-              <span
-                className="h-2.5 w-2.5 rounded-full border border-black/10"
-                style={{ backgroundColor: brandAccent.color }}
-              />
-              Accent: {brandAccent.label}
-            </span>
-          ) : null}
-        </div>
-      ) : null}
-
-      {typographySummary ? (
-        <div className="mt-2 rounded-xl border border-border/70 bg-background/80 px-3 py-2">
-          <p className="text-[11px] text-muted-foreground">Typography</p>
-          <p className="mt-1 text-sm text-foreground">{typographySummary.title}</p>
-          <p className="text-[11px] text-muted-foreground">
-            Headings: {typographySummary.headings}
-          </p>
-          <p className="text-[11px] text-muted-foreground">
-            Body: {typographySummary.body}
-          </p>
-          <p className="text-[11px] text-muted-foreground">
-            Code: {typographySummary.code}
-          </p>
-        </div>
-      ) : null}
-
-      {boilerplate ? (
-        <div className="mt-2 rounded-xl border border-border/70 bg-background/80 px-3 py-2">
-          <p className="text-[11px] text-muted-foreground">Boilerplate</p>
-          <p className="mt-1 text-sm leading-relaxed text-foreground">
-            {boilerplate}
-          </p>
+      {logoCards.length > 0 ? (
+        <div
+          className={cn(
+            "mt-2 grid gap-2",
+            logoCards.length > 1 ? "grid-cols-2" : "grid-cols-1",
+          )}
+        >
+          {logoCards.map((card) => (
+            <OrganizationDetailLogoCard
+              key={card.key}
+              label={card.label}
+              imageUrl={card.imageUrl!}
+              alt={card.alt}
+            />
+          ))}
         </div>
       ) : null}
     </section>
@@ -169,25 +98,19 @@ function OrganizationDetailLogoCard({
   alt,
 }: {
   label: string
-  imageUrl: string | null
+  imageUrl: string
   alt: string
 }) {
   return (
     <div className="rounded-xl border border-border/70 bg-background/80 p-2">
       <p className="text-[11px] text-muted-foreground">{label}</p>
-      <div className="mt-2 flex h-16 items-center justify-center overflow-hidden rounded-lg bg-muted/20">
-        {imageUrl ? (
-          <>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={imageUrl}
-              alt={alt}
-              className="max-h-full max-w-full object-contain p-2"
-            />
-          </>
-        ) : (
-          <span className="text-[11px] text-muted-foreground">Not shared</span>
-        )}
+      <div className="mt-2 flex h-16 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-muted/20 p-2">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageUrl}
+          alt={alt}
+          className="max-h-full max-w-full rounded-lg object-contain"
+        />
       </div>
     </div>
   )
@@ -300,10 +223,31 @@ export function OrganizationDetailAddressSection({
   isOnlineOnly: boolean
   resourceHref: string | null
 }) {
+  const webAddress = resourceHref
+    ? resourceHref.replace(/^https?:\/\//, "").replace(/\/$/, "")
+    : null
+
   return (
     <section className="rounded-xl border border-border/70 bg-background/70 p-2.5">
       <p className="text-sm font-medium">Address</p>
-      {addressLines.length > 0 ? (
+      {isOnlineOnly ? (
+        <div className="mt-1.5 space-y-2">
+          {resourceHref && webAddress ? (
+            <a
+              href={resourceHref}
+              target="_blank"
+              rel="noreferrer"
+              className="block break-all text-xs text-foreground underline-offset-4 hover:underline"
+            >
+              {webAddress}
+            </a>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              No web address listed yet.
+            </p>
+          )}
+        </div>
+      ) : addressLines.length > 0 ? (
         <ul className="mt-1.5 space-y-0.5">
           {addressLines.map((line) => (
             <li key={line} className="text-xs text-foreground">
@@ -311,22 +255,6 @@ export function OrganizationDetailAddressSection({
             </li>
           ))}
         </ul>
-      ) : isOnlineOnly ? (
-        <div className="mt-1.5 space-y-2">
-          <p className="text-xs text-muted-foreground">Online-only organization.</p>
-          {resourceHref ? (
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="h-7 rounded-md border-border/70 bg-background/80 px-2.5 text-[11px] text-foreground hover:bg-muted"
-            >
-              <a href={resourceHref} target="_blank" rel="noreferrer">
-                Open web resource
-              </a>
-            </Button>
-          ) : null}
-        </div>
       ) : (
         <p className="mt-1 text-xs text-muted-foreground">
           No address listed yet. This profile can still appear on `/find`, but it

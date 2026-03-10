@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import ArrowLeftIcon from "lucide-react/dist/esm/icons/arrow-left"
 import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
 import WifiIcon from "lucide-react/dist/esm/icons/wifi"
@@ -10,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { PUBLIC_MAP_GROUP_LABELS } from "@/lib/public-map/groups"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import { toast } from "@/lib/toast"
 
 import {
   SOCIAL_ICON_MAP,
@@ -28,7 +30,6 @@ type DetailIdentityProps = {
   profileImageSrc: string | null
   profileInitials: string
   location: string
-  hasBrandKitDownload: boolean
 }
 
 type DetailAboutProps = {
@@ -92,7 +93,6 @@ export function OrganizationDetailIdentitySection({
   profileImageSrc,
   profileInitials,
   location,
-  hasBrandKitDownload,
 }: DetailIdentityProps) {
   return (
     <div>
@@ -130,11 +130,6 @@ export function OrganizationDetailIdentitySection({
             Online resource
           </span>
         ) : null}
-        {hasBrandKitDownload ? (
-          <span className="inline-flex items-center rounded-full border border-foreground/15 bg-foreground/5 px-2 py-0.5 text-[10px] text-foreground">
-            Brand kit available
-          </span>
-        ) : null}
       </div>
     </div>
   )
@@ -145,12 +140,52 @@ export function OrganizationDetailActionLinks({
 }: {
   actionLinks: OrganizationDetailActionLink[]
 }) {
+  const [copyingActionKey, setCopyingActionKey] = useState<string | null>(null)
+
   if (actionLinks.length === 0) return null
+
+  async function handleCopyAction(action: Extract<OrganizationDetailActionLink, { kind: "copy" }>) {
+    try {
+      setCopyingActionKey(action.key)
+      if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(action.value)
+        toast.success("Phone number copied", {
+          description: action.value,
+        })
+        return
+      }
+      if (typeof window !== "undefined") {
+        window.prompt("Copy this number:", action.value)
+      }
+    } catch {
+      toast.error("Couldn't copy phone number")
+    } finally {
+      setCopyingActionKey(null)
+    }
+  }
 
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
       {actionLinks.map((action) => {
         const Icon = action.icon
+
+        if (action.kind === "copy") {
+          return (
+            <Button
+              key={action.key}
+              type="button"
+              variant="ghost"
+              onClick={() => void handleCopyAction(action)}
+              disabled={copyingActionKey === action.key}
+              className="h-20 rounded-xl border border-border/70 bg-background/85 px-2 text-[11px] text-foreground hover:bg-muted"
+            >
+              <span className="flex h-full w-full flex-col items-center justify-center gap-1 text-center">
+                <Icon className="h-5 w-5" aria-hidden />
+                <span>{action.label}</span>
+              </span>
+            </Button>
+          )
+        }
 
         return (
           <Button

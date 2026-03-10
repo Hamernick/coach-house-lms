@@ -10,6 +10,7 @@ import { z } from "zod"
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
 import { createTesterAccountAction } from "@/app/(auth)/tester/sign-up/actions"
 import { resolveAuthCallbackUrl } from "@/components/auth/auth-callback-url"
+import { clearOnboardingDraft } from "@/components/onboarding/onboarding-dialog/draft"
 import type { IntentFocus } from "@/components/onboarding/onboarding-dialog/types"
 import { PasswordInput } from "@/components/auth/password-input"
 import { Button } from "@/components/ui/button"
@@ -223,6 +224,7 @@ export function SignUpForm({
           return
         }
 
+        clearOnboardingDraft()
         router.replace(resolvedRedirectTo)
         router.refresh()
         return
@@ -255,6 +257,7 @@ export function SignUpForm({
         return
       }
 
+      clearOnboardingDraft()
       setStatus("success")
       setMessage(
         "Check your inbox for your verification link from Coach House."

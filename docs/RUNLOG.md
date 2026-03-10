@@ -24372,3 +24372,98 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm exec playwright test --config=playwright.visual.config.ts tests/visual/public-shell.visual.spec.ts --update-snapshots` ✅
   - `pnpm check:quality` ✅
+
+## 2026-03-10 13:37 EDT - replace the live/test Stripe promotion code with `earlyaccess`
+
+- Scope:
+  - Stripe live runtime
+  - Stripe test runtime
+  - `docs/RUNLOG.md`
+- Changes:
+  - Created a new live promotion code `earlyaccess` backed by the existing recurring `$20 off forever` coupon (`ECjr09un`).
+  - Deactivated the previous live promotion code `EARLYADOPTER20CAP50`.
+  - Created a matching test coupon and active test promotion code `earlyaccess` for environment parity.
+  - Preserved the 50-redemption cap on the active promotion code in both environments.
+- Validation:
+  - Verified live promotion code state:
+    - `earlyaccess` active, `maxRedemptions=50`, `timesRedeemed=0`
+    - `EARLYADOPTER20CAP50` inactive
+  - Verified test promotion code state:
+    - `earlyaccess` active, `maxRedemptions=50`, `timesRedeemed=0`
+
+## 2026-03-10 14:04 EDT - make the full public map org card open details and remove the Brand Kit badge
+
+- Scope:
+  - `src/components/public/public-map-index/organization-list.tsx`
+- Changes:
+  - Converted each public map organization list row into a full-card details trigger instead of limiting selection/open behavior to the inner text block.
+  - Added hover/focus selection on the full-card trigger so the map preview still tracks the active organization before opening details.
+  - Kept the favorite heart and Details button independently clickable above the card trigger.
+  - Removed the Brand Kit badge from the organization list metadata row.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/public-map-index/organization-list.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-10 14:10 EDT - align public formation status styling with onboarding and remove the identity Brand Kit pill
+
+- Scope:
+  - `src/components/organization/organization-formation-status-summary.tsx`
+  - `src/components/public/public-map-index/organization-detail-shell-sections.tsx`
+  - `src/components/public/public-map-index/organization-detail.tsx`
+- Changes:
+  - Updated the contained formation-status summary surface to match the selected onboarding formation-status card styling instead of the older neutral box treatment.
+  - Removed the `Brand kit available` pill from the public organization detail identity header.
+  - Deleted the now-unused `hasBrandKitDownload` prop from the public identity section path.
+- Validation:
+  - `pnpm exec eslint 'src/components/organization/organization-formation-status-summary.tsx' 'src/components/public/public-map-index/organization-detail-shell-sections.tsx' 'src/components/public/public-map-index/organization-detail.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-10 14:18 EDT - simplify the public Brand Kit detail section to real shared assets only
+
+- Scope:
+  - `src/components/public/public-map-index/organization-detail-sections.tsx`
+  - `src/components/public/public-map-index/organization-detail.tsx`
+- Changes:
+  - Rounded the visible logo preview container more aggressively so shared logo assets sit inside a clearly rounded surface.
+  - Removed empty `Not shared` logo cards; individual logo cards only render when an actual logo asset exists.
+  - Removed the public Brand Kit palette, typography, theme/accent, and boilerplate blocks from the detail view.
+  - Simplified the public detail data path so it no longer computes Brand Kit metadata that is no longer rendered.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/public-map-index/organization-detail-sections.tsx' 'src/components/public/public-map-index/organization-detail.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-10 14:24 EDT - show the web address in the public Address section for online-only organizations
+
+- Scope:
+  - `src/components/public/public-map-index/organization-detail-sections.tsx`
+- Changes:
+  - Changed the public organization detail Address section to prioritize online-only behavior before any saved street fields.
+  - Online-only organizations now show their web address directly in the Address section as the visible, clickable value.
+  - Added an explicit empty-state message when an online-only organization has no web address listed yet.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/public-map-index/organization-detail-sections.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-10 14:31 EDT - make the public Call action copy the phone number instead of opening `tel:`
+
+- Scope:
+  - `src/components/public/public-map-index/organization-detail-helpers.ts`
+  - `src/components/public/public-map-index/organization-detail-shell-sections.tsx`
+- Changes:
+  - Split public organization detail actions into explicit `link` and `copy` variants instead of treating every action as a navigational link.
+  - Changed the `Call` action to copy the phone number to the clipboard and show a confirmation toast instead of opening the phone app immediately.
+  - Added a clipboard fallback prompt when the browser clipboard API is unavailable.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/public-map-index/organization-detail-helpers.ts' 'src/components/public/public-map-index/organization-detail-shell-sections.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-10 14:41 EDT - clear stale onboarding draft state after account creation so new signups start at step 1
+
+- Scope:
+  - `src/components/auth/sign-up-form.tsx`
+- Changes:
+  - Cleared the persisted onboarding draft immediately after successful signup so a new account redirect into `/workspace?onboarding_flow=1...` cannot inherit an old saved onboarding step index.
+  - Applied the same draft reset to the instant tester signup path before redirecting into the workspace.
+- Validation:
+  - `pnpm exec eslint 'src/components/auth/sign-up-form.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅

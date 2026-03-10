@@ -3,17 +3,12 @@
 import { useState } from "react"
 
 import {
-  resolveBrandAccentPreset,
-  resolveBrandThemePreset,
-  resolveBrandTypographyConfig,
-  resolveBrandTypographyPreset,
 } from "@/features/workspace-brand-kit"
 import { resolveFormationStatusOption } from "@/lib/organization/formation-status"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
 import {
   buildActionLinks,
-  buildBrandPalette,
   buildContactRows,
   buildInitials,
   buildSocialLinks,
@@ -77,28 +72,6 @@ export function PublicMapOrganizationDetail({
     : truncateAtWordBoundary(aboutText, 280)
   const actionLinks = buildActionLinks(organization)
   const brandKitDownloadHref = resolveBrandKitDownloadHref(organization)
-  const brandPalette = buildBrandPalette(organization)
-  const brandTheme = resolveBrandThemePreset(organization.brandThemePresetId)
-  const brandAccent = resolveBrandAccentPreset(
-    organization.brandAccentPresetId
-  )
-  const brandPreset = resolveBrandTypographyPreset(
-    organization.brandTypographyPresetId
-  )
-  const brandTypography = resolveBrandTypographyConfig({
-    brandTypography: organization.brandTypography,
-    brandTypographyPresetId: organization.brandTypographyPresetId,
-  })
-  const boilerplate = normalizeText(organization.boilerplate)
-  const typographySummary =
-    brandPreset || organization.brandTypography
-      ? {
-          title: brandPreset?.label ?? "Custom typography",
-          headings: `${brandTypography.headings.family} ${brandTypography.headings.weight}`,
-          body: `${brandTypography.body.family} ${brandTypography.body.weight}`,
-          code: brandTypography.code.family,
-        }
-      : null
 
   return (
     <div className="space-y-3 border-b border-border/60 bg-transparent px-2 pb-3 pt-3 text-card-foreground">
@@ -113,7 +86,6 @@ export function PublicMapOrganizationDetail({
         profileImageSrc={profileImageSrc}
         profileInitials={profileInitials}
         location={location}
-        hasBrandKitDownload={Boolean(brandKitDownloadHref)}
       />
 
       <OrganizationDetailActionLinks actionLinks={actionLinks} />
@@ -131,15 +103,6 @@ export function PublicMapOrganizationDetail({
 
       <OrganizationDetailBrandKitSection
         organization={organization}
-        brandPalette={brandPalette}
-        brandThemeLabel={brandTheme?.label ?? null}
-        brandAccent={
-          brandAccent
-            ? { label: brandAccent.label, color: brandAccent.color }
-            : null
-        }
-        typographySummary={typographySummary}
-        boilerplate={boilerplate}
         brandKitDownloadHref={brandKitDownloadHref}
       />
 

@@ -31,10 +31,18 @@ export type OrganizationDetailSocialLink = {
 export type OrganizationDetailActionLink = {
   key: string
   label: string
-  href: string
-  external: boolean
   icon: OrganizationDetailIcon
-}
+} & (
+  | {
+      kind: "link"
+      href: string
+      external: boolean
+    }
+  | {
+      kind: "copy"
+      value: string
+    }
+)
 
 export type OrganizationDetailStoryField = {
   label: string
@@ -213,6 +221,7 @@ export function buildActionLinks(
     website
       ? {
           key: "website",
+          kind: "link",
           label: "Website",
           href: website,
           external: true,
@@ -222,6 +231,7 @@ export function buildActionLinks(
     email
       ? {
           key: "email",
+          kind: "link",
           label: "Email",
           href: `mailto:${email}`,
           external: false,
@@ -231,15 +241,16 @@ export function buildActionLinks(
     phone
       ? {
           key: "call",
+          kind: "copy",
           label: "Call",
-          href: `tel:${phone}`,
-          external: false,
+          value: phone,
           icon: PhoneIcon,
         }
       : null,
     brandKitHref
       ? {
           key: "brand-kit",
+          kind: "link",
           label: "Brand kit",
           href: brandKitHref,
           external: true,

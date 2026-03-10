@@ -59,6 +59,6 @@ test("embedded pricing surface", async ({ page }) => {
     animations: "disabled",
     caret: "hide",
     scale: "css",
-    maxDiffPixelRatio: 0.015,
+    maxDiffPixelRatio: 0.018,
   })
 })

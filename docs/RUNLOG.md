@@ -24199,3 +24199,18 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - `pnpm test:visual` ✅
 - Follow-up / unresolved:
   - CI needed to rerun on PR `#52` to confirm the Linux runner now matches the stabilized screenshot path.
+
+## 2026-03-10 08:18 EDT - remove Supabase auth-ui session warning on team login
+
+- Scope:
+  - `src/app/(auth)/team/login/page.tsx`
+  - `src/components/auth/login-supabase-ui-panel.tsx`
+  - `package.json`
+  - `pnpm-lock.yaml`
+- Changes:
+  - Replaced the team login page's `@supabase/auth-ui-react` widget with the existing native `LoginForm` that uses `signInWithPassword` directly.
+  - Removed the obsolete `login-supabase-ui-panel.tsx` wrapper and dropped the unused `@supabase/auth-ui-react` and `@supabase/auth-ui-shared` dependencies.
+  - This removes the warning source from the app because the old widget internally called `auth.getSession()` and stored `session.user` from the local session cache.
+- Validation:
+  - `pnpm exec eslint 'src/app/(auth)/team/login/page.tsx' 'src/components/auth/login-form.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅

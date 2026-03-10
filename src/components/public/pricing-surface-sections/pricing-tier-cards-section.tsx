@@ -9,16 +9,24 @@ import { cn } from "@/lib/utils"
 
 type PricingTierCardsSectionProps = {
   isEmbedded: boolean
-  hasStripeSecretKey: boolean
-  canCheckoutOrganization: boolean
-  canCheckoutOperationsSupport: boolean
+}
+
+const WORKSPACE_ONBOARDING_PRICING_REDIRECT =
+  "/workspace?onboarding_flow=1&source=onboarding_pricing"
+
+function buildBuilderSignUpHref(tierId: "organization" | "operations") {
+  const params = new URLSearchParams({
+    plan: "organization",
+    redirect: WORKSPACE_ONBOARDING_PRICING_REDIRECT,
+  })
+  if (tierId === "operations") {
+    params.set("tier", "operations")
+  }
+  return `/sign-up?${params.toString()}`
 }
 
 export function PricingTierCardsSection({
   isEmbedded,
-  hasStripeSecretKey,
-  canCheckoutOrganization,
-  canCheckoutOperationsSupport,
 }: PricingTierCardsSectionProps) {
   return (
     <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -27,23 +35,11 @@ export function PricingTierCardsSection({
         const isMailtoCta = tier.ctaHref.startsWith("mailto:")
         const isPaidTier = tier.id === "organization" || tier.id === "operations"
         const ctaVariant = isFormation || tier.featured ? "default" : "secondary"
-        const operationsCheckoutUnavailable = tier.id === "operations" && hasStripeSecretKey && !canCheckoutOperationsSupport
-        const paidCheckoutUnavailable =
-          isPaidTier &&
-          ((tier.id === "organization" && !canCheckoutOrganization) ||
-            (tier.id === "operations" && !canCheckoutOperationsSupport))
-        const embeddedAuthHref =
-          tier.id === "formation"
-            ? "/?section=signup&source=pricing&tier=individual"
-            : tier.id === "operations"
-              ? "/login?source=pricing&tier=operations"
-              : "/login?source=pricing&tier=organization"
-        const checkoutHref =
-          tier.id === "operations"
-            ? "/api/stripe/checkout?plan=operations_support&source=pricing"
-            : tier.id === "organization"
-              ? "/api/stripe/checkout?plan=organization&source=pricing"
-              : null
+        const signUpHref = isFormation
+          ? "/sign-up?plan=individual"
+          : tier.id === "operations"
+            ? buildBuilderSignUpHref("operations")
+            : buildBuilderSignUpHref("organization")
 
         return (
           <Card
@@ -72,25 +68,11 @@ export function PricingTierCardsSection({
                 <CardDescription className="min-h-20 text-sm leading-relaxed text-muted-foreground">{tier.subtitle}</CardDescription>
               </div>
 
-              {isPaidTier && checkoutHref && !paidCheckoutUnavailable ? (
+              {isEmbedded || isPaidTier ? (
                 <Button asChild className="w-full rounded-xl" variant={ctaVariant}>
-                  <a href={checkoutHref} className="flex items-center justify-center">
+                  <Link href={signUpHref} className="flex items-center justify-center">
                     {tier.ctaLabel}
-                  </a>
-                </Button>
-              ) : isEmbedded ? (
-                <Button asChild className="w-full rounded-xl" variant={ctaVariant}>
-                  <a href={embeddedAuthHref} className="flex items-center justify-center">
-                    {tier.ctaLabel}
-                  </a>
-                </Button>
-              ) : operationsCheckoutUnavailable ? (
-                <Button type="button" disabled className="w-full rounded-xl" variant={ctaVariant}>
-                  Operations plan unavailable
-                </Button>
-              ) : paidCheckoutUnavailable ? (
-                <Button type="button" disabled className="w-full rounded-xl" variant={ctaVariant}>
-                  Checkout unavailable
+                  </Link>
                 </Button>
               ) : (
                 <Button asChild className="w-full rounded-xl" variant={ctaVariant}>

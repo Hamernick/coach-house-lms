@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react"
 import { useSearchParams } from "next/navigation"
 
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
@@ -43,6 +43,49 @@ type OnboardingFlowProps = OnboardingFlowDefaults & {
   open?: boolean
   isInline: boolean
   onSubmit: (form: FormData) => Promise<void>
+}
+
+function useApplyPricingEntryPoint({
+  open,
+  searchParams,
+  setIntentFocus,
+  setStep,
+}: {
+  open: boolean
+  searchParams: ReturnType<typeof useSearchParams>
+  setIntentFocus: Dispatch<SetStateAction<IntentFocus | "">>
+  setStep: Dispatch<SetStateAction<number>>
+}) {
+  const pricingEntryAppliedRef = useRef(false)
+
+  useEffect(() => {
+    if (!open) return
+    if (pricingEntryAppliedRef.current) return
+    if (searchParams.get("source") !== "onboarding_pricing") return
+
+    pricingEntryAppliedRef.current = true
+    setIntentFocus("build")
+    const pricingStepIndex = resolveOnboardingSteps("build").findIndex(
+      (candidate) => candidate.id === "pricing",
+    )
+    setStep(pricingStepIndex >= 0 ? pricingStepIndex : 0)
+  }, [open, searchParams, setIntentFocus, setStep])
+}
+
+function useSyncOnboardingServerError({
+  open,
+  searchParams,
+  setServerError,
+}: {
+  open: boolean
+  searchParams: ReturnType<typeof useSearchParams>
+  setServerError: Dispatch<SetStateAction<string | null>>
+}) {
+  useEffect(() => {
+    if (!open) return
+    const msg = resolveOnboardingError(searchParams.get("error"))
+    setServerError(msg)
+  }, [open, searchParams, setServerError])
 }
 
 export function OnboardingFlow({
@@ -99,7 +142,6 @@ export function OnboardingFlow({
     defaultOptInUpdates,
     defaultNewsletterOptIn,
   })
-
   const searchParams = useSearchParams()
   const [step, setStep] = useState(0)
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -126,21 +168,13 @@ export function OnboardingFlow({
   )
   const latestOrganizationValuesRef = useRef({ orgName: initialOrgName, orgSlug: initialOrgSlug })
   const latestAccountValuesRef = useRef(accountValues)
-
   const formRef = useRef<HTMLFormElement | null>(null)
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
   const steps = React.useMemo(() => resolveOnboardingSteps(intentFocus), [intentFocus])
   const currentStep = steps[Math.max(0, Math.min(step, steps.length - 1))]
   const { slugStatus, slugHint } = useSlugAvailability({ open, slugValue })
-  const { syncProgress } = useOnboardingProgress({
-    open,
-    formRef,
-    intentFocus,
-    formationStatus,
-    slugStatus,
-  })
+  const { syncProgress } = useOnboardingProgress({ open, formRef, intentFocus, formationStatus, slugStatus })
   const stepProgress = React.useMemo(() => Math.round(((step + 1) / Math.max(steps.length, 1)) * 100), [step, steps.length])
-
   const saveDraft = (extra?: SaveOnboardingDraftExtra) => {
     writeOnboardingDraftSnapshot({
       formRef,
@@ -153,7 +187,6 @@ export function OnboardingFlow({
       extra,
     })
   }
-
   const { syncAccountStateFromForm, syncOrganizationStateFromForm } =
     useOnboardingStateSnapshot({
       formRef,
@@ -165,7 +198,6 @@ export function OnboardingFlow({
       accountValuesRef: latestAccountValuesRef,
       organizationValuesRef: latestOrganizationValuesRef,
     })
-
   useOnboardingCarryForwardRefs({
     accountValues,
     accountValuesRef: latestAccountValuesRef,
@@ -174,7 +206,6 @@ export function OnboardingFlow({
     slugValue,
     organizationValuesRef: latestOrganizationValuesRef,
   })
-
   const {
     avatarPreview,
     crop,
@@ -213,12 +244,8 @@ export function OnboardingFlow({
     setSlugValue,
     syncProgress,
   })
-
-  useEffect(() => {
-    if (!open) return
-    const msg = resolveOnboardingError(searchParams.get("error"))
-    setServerError(msg)
-  }, [open, searchParams])
+  useSyncOnboardingServerError({ open, searchParams, setServerError })
+  useApplyPricingEntryPoint({ open, searchParams, setIntentFocus, setStep })
 
   useEffect(() => {
     setAttemptedStep(null)

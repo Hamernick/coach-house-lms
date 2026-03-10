@@ -83,13 +83,15 @@ export function PublicMapSurface({
       ) : (
         <div className="relative h-full min-h-[520px]">
           <div
-            ref={containerRef}
-            className={cn(
-              "absolute inset-y-0 right-0",
-              sidebarMode === "hidden" ? "left-0" : "left-[min(390px,100%)]",
-            )}
-            aria-label="Public organization map"
-          />
+            className="absolute inset-y-0 right-0"
+            style={{ left: sidebarMode === "hidden" ? 0 : "min(390px, 100%)" }}
+          >
+            <div
+              ref={containerRef}
+              className="h-full w-full"
+              aria-label="Public organization map"
+            />
+          </div>
 
           <div className="pointer-events-none absolute right-4 top-4 z-20 flex max-w-[min(24rem,calc(100vw-2rem))] flex-col items-end gap-2">
             {locationFeedback ? (

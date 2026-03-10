@@ -7,6 +7,16 @@ async function stabilizeForScreenshot(page: Page) {
         animation: none !important;
         transition: none !important;
       }
+
+      * {
+        scrollbar-width: none !important;
+      }
+
+      *::-webkit-scrollbar {
+        display: none !important;
+        width: 0 !important;
+        height: 0 !important;
+      }
     `,
   })
 }

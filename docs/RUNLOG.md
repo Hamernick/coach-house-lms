@@ -24186,3 +24186,16 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Follow-up / unresolved:
   - The aggregate `pnpm check:quality` script still did not produce a single uninterrupted green exit when wrapped inside another shell process. `pnpm lint` passes in isolation and every downstream check above passed individually, so this currently looks like a wrapper/invocation issue rather than a failing release gate.
   - The release candidate remains a very large dirty tree overall, so it is hardened but not yet staged, committed, or merged to `main`.
+
+## 2026-03-10 05:18 EDT - pricing embed visual CI stabilization
+
+- Scope:
+  - `tests/visual/public-shell.visual.spec.ts`
+- Changes:
+  - Stabilized Playwright visual screenshots by hiding environment-specific scrollbar chrome during capture.
+  - Targeted the only failing CI check on PR `#52`, where the `embedded pricing surface` screenshot drifted in GitHub Actions despite matching locally.
+- Validation:
+  - `pnpm exec eslint tests/visual/public-shell.visual.spec.ts` ✅
+  - `pnpm test:visual` ✅
+- Follow-up / unresolved:
+  - CI needed to rerun on PR `#52` to confirm the Linux runner now matches the stabilized screenshot path.

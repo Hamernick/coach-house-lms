@@ -20,12 +20,11 @@ type CanvasNavItem = {
 
 const CANVAS_LABEL_OVERRIDES: Partial<Record<LegacyHomeSectionId, string>> = {
   hero: "Welcome",
-  impact: "Why Us",
   platform: "Platform",
   process: "Journey",
 }
 
-const HIDDEN_HOME_SECTIONS = new Set<LegacyHomeSectionId>(["process", "news", "team", "cta"])
+const HIDDEN_HOME_SECTIONS = new Set<LegacyHomeSectionId>(["impact", "process", "news", "team", "cta"])
 
 export const CANVAS_NAV: CanvasNavItem[] = [
   ...LEGACY_HOME_SECTION_NAV.filter((item) => !HIDDEN_HOME_SECTIONS.has(item.id)).map((item) => ({
@@ -41,7 +40,7 @@ export const CANVAS_NAV: CanvasNavItem[] = [
 
 const HIDDEN_CANVAS_SECTION_IDS = new Set<CanvasSectionId>(["find", "login", "signup"])
 export const VISIBLE_CANVAS_NAV = CANVAS_NAV.filter((item) => !HIDDEN_CANVAS_SECTION_IDS.has(item.id))
-const HIDDEN_SIDEBAR_NAV_IDS = new Set<CanvasSectionId>(["impact"])
+const HIDDEN_SIDEBAR_NAV_IDS = new Set<CanvasSectionId>()
 export const SIDEBAR_CANVAS_NAV = VISIBLE_CANVAS_NAV.filter((item) => !HIDDEN_SIDEBAR_NAV_IDS.has(item.id))
 
 const HOME_SECTION_IDS = new Set<LegacyHomeSectionId>(LEGACY_HOME_SECTION_NAV.map((item) => item.id))
@@ -53,6 +52,7 @@ export const SECTION_WHEEL_LOCK_MS = 750
 const OPEN_DIALOG_SELECTOR = "[data-slot='dialog-content'][data-state='open']"
 const CANVAS_SECTION_ALIASES: Partial<Record<string, CanvasSectionId>> = {
   offerings: "platform",
+  impact: "hero",
 }
 
 export function isHomeSectionId(sectionId: CanvasSectionId): sectionId is LegacyHomeSectionId {

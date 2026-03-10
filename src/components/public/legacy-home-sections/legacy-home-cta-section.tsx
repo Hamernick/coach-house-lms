@@ -21,7 +21,7 @@ export function LegacyHomeCtaSection() {
           <Link href="/sign-up">Start free</Link>
         </Button>
         <Button asChild size="lg" variant="outline" className="rounded-full px-6">
-          <Link href="/pricing">View pricing</Link>
+          <Link href="/?section=pricing">View pricing</Link>
         </Button>
       </div>
     </div>

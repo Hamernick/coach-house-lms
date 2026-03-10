@@ -24262,3 +24262,113 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - `pnpm exec tsc --noEmit` ✅
 - Follow-up / unresolved:
   - `coachhouse.vercel.app` appears to be backed by a different Vercel project or env context than the repo-linked `coach-house-platform` project. Stripe runtime verification passed for `coach-house-platform`, so the live `price_not_found` failures on `coachhouse.vercel.app` still need env/account correction in the project that owns that domain.
+
+## 2026-03-10 11:41 EDT - merge pricing/map hotfix and isolate live Mapbox hostname restriction
+
+- Scope:
+  - `main` merge / production deploy verification
+  - `docs/RUNLOG.md`
+- Changes:
+  - Reran the flaky `quality` GitHub Actions job for PR `#54`; the rerun passed with no code changes.
+  - Confirmed PR `#54` merged to `main` as commit `6b09cb7a1fa93caa2fd980a016c6dc12b80b0aa8`.
+  - Synced local `main` to the merged production commit.
+  - Verified both production Vercel deployments completed successfully for that merge commit:
+    - `Vercel – coach-house-platform`
+    - `Vercel – coachhouse`
+  - Verified the live pricing CTAs on `https://coachhouse.vercel.app/pricing` now route through signup instead of going straight to Stripe checkout:
+    - `Upgrade Organization` -> `/sign-up?plan=organization&redirect=%2Fworkspace%3Fonboarding_flow%3D1%26source%3Donboarding_pricing`
+    - `Start Operations Support` -> `/sign-up?plan=organization&redirect=%2Fworkspace%3Fonboarding_flow%3D1%26source%3Donboarding_pricing&tier=operations`
+  - Confirmed the remaining live map failure on `https://coachhouse.vercel.app/find` is not a Vercel build issue. The app is serving the Mapbox public token, but Mapbox tile requests are returning `403`.
+  - Narrowed the Mapbox issue to hostname restrictions on the public token:
+    - Allowed: `http://localhost:3000/find`
+    - Allowed: `https://coach-house-platform.vercel.app/find`
+    - Blocked: `https://coachhouse.vercel.app/find`
+    - Blocked: `https://coachhouse-git-fix-pricing-sign-13bc69-calebs-projects-58ab1538.vercel.app/find`
+    - Blocked: `https://coach-house-platform-git-fix-p-a4af6a-caleb-hamernicks-projects.vercel.app/find`
+- Validation:
+  - `gh run rerun 22909381677` ✅
+  - `gh pr checks 54` ✅
+  - `gh api repos/Hamernick/coach-house-lms/commits/main/status` ✅
+  - `git checkout main && git pull --ff-only origin main` ✅
+  - Production browser smoke against `https://coachhouse.vercel.app/pricing` confirmed signup redirects ✅
+  - Production browser/network smoke against `https://coachhouse.vercel.app/find` confirmed Mapbox `403` tile responses and visible domain-restriction failure message ✅
+- Follow-up / unresolved:
+  - To restore the live map on `coachhouse.vercel.app`, update the Mapbox token allowlist to include:
+    - `https://coachhouse.vercel.app/*`
+    - `https://coachhouse-git-*.vercel.app/*` if preview maps should work there
+    - `https://coach-house-platform-git-*.vercel.app/*` if preview maps should work there
+
+## 2026-03-10 12:46 EDT - collapse public pricing CTAs into the home signup flow
+
+- Scope:
+  - `src/components/public/pricing-surface-data.ts`
+  - `src/components/public/pricing-surface-sections/pricing-tier-cards-section.tsx`
+  - `src/components/public/pricing-surface.tsx`
+  - `src/components/public/public-header.tsx`
+  - `src/app/(public)/home/page.tsx`
+  - `src/components/account-settings/sections/organization-access-manager.tsx`
+  - `src/components/nav-user-testing-section.tsx`
+  - `src/components/public/home-canvas-preview.tsx`
+  - `src/components/public/legacy-home-sections/legacy-home-hero-section.tsx`
+  - `src/components/public/legacy-home-sections/legacy-home-process-section.tsx`
+  - `src/components/public/legacy-home-sections/legacy-home-cta-section.tsx`
+  - `tests/acceptance/public-pricing-route.test.ts`
+  - `tests/acceptance/public-pricing-surface-data.test.ts`
+  - `tests/visual/public-shell.visual.spec.ts`
+- Changes:
+  - Kept `/pricing` only as a backward-compatible redirect shim into `/?section=pricing`.
+  - Switched the canonical public pricing destination from `/pricing` to `/?section=pricing` across the remaining public and upgrade links.
+  - Changed every tier card CTA label to `Get started`.
+  - Pointed every pricing tier CTA at `/?section=signup` so pricing now enters the normal home signup flow instead of carrying plan-specific signup/workspace redirect logic.
+  - Removed the special paid-tier CTA override in the pricing card renderer so the tier data is the single source of truth again.
+  - Updated the embedded pricing visual test to use the home pricing section instead of the legacy `/pricing?embed=1` entry.
+- Validation:
+  - `pnpm exec vitest run tests/acceptance/public-pricing-route.test.ts tests/acceptance/public-pricing-surface-data.test.ts` ✅
+  - `pnpm exec eslint 'src/components/public/pricing-surface-data.ts' 'src/components/public/pricing-surface-sections/pricing-tier-cards-section.tsx' 'src/components/public/pricing-surface.tsx' 'src/components/public/public-header.tsx' 'src/app/(public)/home/page.tsx' 'src/components/account-settings/sections/organization-access-manager.tsx' 'src/components/nav-user-testing-section.tsx' 'src/components/public/home-canvas-preview.tsx' 'src/components/public/legacy-home-sections/legacy-home-process-section.tsx' 'src/components/public/legacy-home-sections/legacy-home-cta-section.tsx' 'src/components/public/legacy-home-sections/legacy-home-hero-section.tsx' 'tests/acceptance/public-pricing-route.test.ts' 'tests/acceptance/public-pricing-surface-data.test.ts' 'tests/visual/public-shell.visual.spec.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-10 12:49 EDT - split pricing eyebrow qualifiers onto a second line
+
+- Scope:
+  - `src/components/public/pricing-surface-sections/pricing-tier-cards-section.tsx`
+- Changes:
+  - Split parenthetical pricing eyebrow qualifiers like `(Free)` and `(Support)` onto their own line in the public tier cards so the header reads more cleanly.
+  - Kept the pricing data unchanged and scoped the change to the card header presentation only.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/pricing-surface-sections/pricing-tier-cards-section.tsx'` ✅
+
+## 2026-03-10 12:53 EDT - remove the public home impact canvas section
+
+- Scope:
+  - `src/components/public/home-canvas-preview-config.ts`
+  - `src/components/public/home-canvas-preview-panels.tsx`
+- Changes:
+  - Removed the `impact` panel from the active home canvas section list so it no longer exists as a front-page step.
+  - Added an alias from `?section=impact` to `?section=hero` so old links fall back to the welcome state instead of rendering the retired panel.
+  - Removed the impact branch from the home section panel renderer.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/home-canvas-preview-config.ts' 'src/components/public/home-canvas-preview-panels.tsx'` ✅
+
+## 2026-03-10 13:01 EDT - restore globe projection on the public Mapbox map
+
+- Scope:
+  - `src/components/public/public-map-index.tsx`
+- Changes:
+  - Replaced the explicit `mercator` projection override with `globe` in the public map initializer.
+  - Reapplied Mapbox fog on `style.load` so the globe view regains its atmospheric treatment.
+  - This restores the intended globe presentation; the style id itself did not change, the projection override did.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/public-map-index.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-10 13:18 EDT - update the public pricing visual baseline for the home-shell pricing surface
+
+- Scope:
+  - `tests/visual/public-shell.visual.spec.ts`
+  - `tests/visual/public-shell.visual.spec.ts-snapshots/pricing-embed-shell.png`
+- Changes:
+  - Kept the pricing visual test on the new canonical `/?section=pricing` route.
+  - Updated the pricing shell baseline to match the intentional move from the legacy standalone pricing view into the home canvas shell.
+- Validation:
+  - `pnpm exec playwright test --config=playwright.visual.config.ts tests/visual/public-shell.visual.spec.ts --update-snapshots` ✅
+  - `pnpm check:quality` ✅

@@ -33,7 +33,7 @@ export function LegacyHomeHeroSection() {
       </p>
       <div className="flex flex-wrap items-center justify-start gap-3 pt-2">
         <Button asChild size="lg" className="rounded-full px-6">
-          <Link href="/pricing">
+          <Link href="/?section=pricing">
             View pricing <ArrowUpRight className="h-4 w-4" aria-hidden />
           </Link>
         </Button>

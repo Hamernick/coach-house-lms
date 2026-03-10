@@ -37,7 +37,7 @@ export function LegacyHomeProcessSection() {
           narrative when it matters most.
         </p>
         <Button asChild size="sm" variant="secondary" className="mt-auto self-start rounded-full px-4">
-          <Link href="/pricing">View pricing</Link>
+          <Link href="/?section=pricing">View pricing</Link>
         </Button>
       </div>
     </>

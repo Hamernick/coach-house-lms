@@ -50,7 +50,7 @@ test("home canvas header auth controls", async ({ page }) => {
 })
 
 test("embedded pricing surface", async ({ page }) => {
-  await page.goto("/pricing?embed=1")
+  await page.goto("/?section=pricing")
   await page.waitForSelector("main", { state: "visible" })
   await stabilizeForScreenshot(page)
 

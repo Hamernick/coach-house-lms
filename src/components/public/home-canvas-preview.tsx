@@ -278,7 +278,7 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
                               Pricing is currently unavailable in this preview.
                             </p>
                             <Button asChild className="mt-4 rounded-xl">
-                              <Link href="/pricing">Open pricing</Link>
+                              <Link href="/?section=pricing">Open pricing</Link>
                             </Button>
                           </div>
                         </div>

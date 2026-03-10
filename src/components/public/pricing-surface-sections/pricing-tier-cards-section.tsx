@@ -7,39 +7,29 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
-type PricingTierCardsSectionProps = {
-  isEmbedded: boolean
-}
+function splitTierEyebrow(eyebrow: string) {
+  const match = eyebrow.match(/^(.*?)(\s*\(.*\))$/)
 
-const WORKSPACE_ONBOARDING_PRICING_REDIRECT =
-  "/workspace?onboarding_flow=1&source=onboarding_pricing"
-
-function buildBuilderSignUpHref(tierId: "organization" | "operations") {
-  const params = new URLSearchParams({
-    plan: "organization",
-    redirect: WORKSPACE_ONBOARDING_PRICING_REDIRECT,
-  })
-  if (tierId === "operations") {
-    params.set("tier", "operations")
+  if (!match) {
+    return {
+      primary: eyebrow,
+      secondary: null,
+    }
   }
-  return `/sign-up?${params.toString()}`
+
+  return {
+    primary: match[1]?.trim() ?? eyebrow,
+    secondary: match[2]?.trim() ?? null,
+  }
 }
 
-export function PricingTierCardsSection({
-  isEmbedded,
-}: PricingTierCardsSectionProps) {
+export function PricingTierCardsSection() {
   return (
     <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {PLATFORM_TIERS.map((tier) => {
-        const isFormation = tier.id === "formation"
         const isMailtoCta = tier.ctaHref.startsWith("mailto:")
-        const isPaidTier = tier.id === "organization" || tier.id === "operations"
-        const ctaVariant = isFormation || tier.featured ? "default" : "secondary"
-        const signUpHref = isFormation
-          ? "/sign-up?plan=individual"
-          : tier.id === "operations"
-            ? buildBuilderSignUpHref("operations")
-            : buildBuilderSignUpHref("organization")
+        const ctaVariant = tier.id === "formation" || tier.featured ? "default" : "secondary"
+        const eyebrow = splitTierEyebrow(tier.eyebrow)
 
         return (
           <Card
@@ -51,7 +41,10 @@ export function PricingTierCardsSection({
           >
             <CardHeader className="space-y-5 p-6">
               <div className="flex items-center justify-between gap-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{tier.eyebrow}</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  <span className="block">{eyebrow.primary}</span>
+                  {eyebrow.secondary ? <span className="mt-0.5 block">{eyebrow.secondary}</span> : null}
+                </p>
                 {tier.badge ? (
                   <Badge variant="secondary" className="rounded-full text-xs">
                     {tier.badge}
@@ -68,25 +61,17 @@ export function PricingTierCardsSection({
                 <CardDescription className="min-h-20 text-sm leading-relaxed text-muted-foreground">{tier.subtitle}</CardDescription>
               </div>
 
-              {isEmbedded || isPaidTier ? (
-                <Button asChild className="w-full rounded-xl" variant={ctaVariant}>
-                  <Link href={signUpHref} className="flex items-center justify-center">
+              <Button asChild className="w-full rounded-xl" variant={ctaVariant}>
+                {isMailtoCta ? (
+                  <a href={tier.ctaHref} className="flex items-center justify-center">
+                    {tier.ctaLabel}
+                  </a>
+                ) : (
+                  <Link href={tier.ctaHref} className="flex items-center justify-center">
                     {tier.ctaLabel}
                   </Link>
-                </Button>
-              ) : (
-                <Button asChild className="w-full rounded-xl" variant={ctaVariant}>
-                  {isMailtoCta ? (
-                    <a href={tier.ctaHref} className="flex items-center justify-center">
-                      {tier.ctaLabel}
-                    </a>
-                  ) : (
-                    <Link href={tier.ctaHref} className="flex items-center justify-center">
-                      {tier.ctaLabel}
-                    </Link>
-                  )}
-                </Button>
-              )}
+                )}
+              </Button>
             </CardHeader>
 
             <CardContent className="flex flex-1 flex-col gap-5 px-6 pb-6">

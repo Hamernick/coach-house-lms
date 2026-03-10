@@ -1,8 +1,8 @@
 import { redirect as redirectTo } from "next/navigation"
 
 import { AuthCard } from "@/components/auth/auth-card"
+import { LoginForm } from "@/components/auth/login-form"
 import { AuthScreenShell } from "@/components/auth/auth-screen-shell"
-import { LoginSupabaseUiPanel } from "@/components/auth/login-supabase-ui-panel"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -25,7 +25,6 @@ export default async function TeamLoginPage({ searchParams }: TeamLoginPageProps
   const redirectParamRaw = Array.isArray(resolved.redirect) ? resolved.redirect[0] : resolved.redirect
   const redirectParam = getSafeRedirect(redirectParamRaw)
   const error = Array.isArray(resolved.error) ? resolved.error[0] : resolved.error
-  const notice = Array.isArray(resolved.notice) ? resolved.notice[0] : resolved.notice
   const plan = Array.isArray(resolved.plan) ? resolved.plan[0] : resolved.plan
   const addon = Array.isArray(resolved.addon) ? resolved.addon[0] : resolved.addon
 
@@ -55,11 +54,10 @@ export default async function TeamLoginPage({ searchParams }: TeamLoginPageProps
   return (
     <AuthScreenShell>
       <AuthCard title="Team sign in" description="Secure access for you and your organization members.">
-        <LoginSupabaseUiPanel
+        <LoginForm
           redirectTo={redirectTarget}
           signUpHref={signUpHref}
           initialError={typeof error === "string" ? error : null}
-          initialNotice={typeof notice === "string" ? notice : null}
         />
       </AuthCard>
     </AuthScreenShell>

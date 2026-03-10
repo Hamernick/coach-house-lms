@@ -214,7 +214,6 @@ export function PublicMapIndex({
 
         mapboxgl.accessToken = token
         mapboxRef.current = mapboxgl
-
         if (!containerRef.current || cancelled) return
 
         const map = new mapboxgl.Map({
@@ -222,21 +221,21 @@ export function PublicMapIndex({
           style: MAP_STYLE,
           center: FALLBACK_CENTER,
           zoom: FALLBACK_ZOOM,
-          projection: "mercator",
+          projection: "globe",
           cooperativeGestures: true,
         })
 
         map.dragRotate.disable()
         map.boxZoom.disable()
-        if (typeof map.touchZoomRotate.disableRotation === "function") {
-          map.touchZoomRotate.disableRotation()
-        }
+        if (typeof map.touchZoomRotate.disableRotation === "function") map.touchZoomRotate.disableRotation()
 
         map.on("error", (event) => {
           if (!event?.error) return
           console.error("Public map error:", event.error)
           setMapError("Mapbox couldn't load the map. Check your token and domain restrictions.")
         })
+
+        map.on("style.load", () => map.setFog({}))
 
         map.on("load", () => {
           mapLoadedRef.current = true

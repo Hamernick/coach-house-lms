@@ -87,7 +87,7 @@ export function OrganizationAccessManager({
               and manage access settings.
             </p>
             <Button asChild size="sm" className="shrink-0">
-              <Link href="/pricing">Upgrade to Organization</Link>
+              <Link href="/?section=pricing">Upgrade to Organization</Link>
             </Button>
           </div>
         ) : null}

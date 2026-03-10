@@ -30,7 +30,7 @@ export function PublicHeader() {
           </span>
         </Link>
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <Link href="/pricing" className="hidden sm:inline hover:text-foreground">
+          <Link href="/?section=pricing" className="hidden sm:inline hover:text-foreground">
             Pricing
           </Link>
           <Link href="/news" className="hidden sm:inline hover:text-foreground">

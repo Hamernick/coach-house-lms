@@ -7,7 +7,6 @@ import { SignUpForm } from "@/components/auth/sign-up-form"
 import {
   LegacyHomeAcceleratorOverviewSection,
   LegacyHomeHeroSection,
-  LegacyHomeImpactSection,
   LegacyHomeOfferingsSection,
   LegacyHomeProcessSection,
   LegacyHomeTeamSection,
@@ -68,14 +67,6 @@ export function HomeSectionPanel({ sectionId }: { sectionId: LegacyHomeSectionId
     return (
       <CanvasPanelShell centered>
         <LegacyHomeHeroSection />
-      </CanvasPanelShell>
-    )
-  }
-
-  if (sectionId === "impact") {
-    return (
-      <CanvasPanelShell>
-        <LegacyHomeImpactSection staticText />
       </CanvasPanelShell>
     )
   }

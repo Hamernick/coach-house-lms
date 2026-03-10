@@ -103,7 +103,7 @@ export function NavUserTestingSection({
       ) : null}
       {devtools.canUsePaymentPlayground ? (
         <Link
-          href="/pricing?source=test-playground"
+          href="/?section=pricing&source=test-playground"
           className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
           onClick={onCloseMenu}
         >

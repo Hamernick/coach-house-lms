@@ -31,7 +31,7 @@ export async function PricingSurface({ embedded = false }: PricingSurfaceProps =
         )}
       >
         <PricingHeroSection />
-        <PricingTierCardsSection isEmbedded={isEmbedded} />
+        <PricingTierCardsSection />
         <PricingFeatureBreakdownIntroSection />
         <PricingFeatureMatrixSection />
         <PricingCallToActionSection />

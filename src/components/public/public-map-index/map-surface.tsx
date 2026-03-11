@@ -74,12 +74,6 @@ export function PublicMapSurface({
             </AlertDescription>
           </Alert>
         </div>
-      ) : mapError ? (
-        <div className="flex h-full min-h-[480px] items-center justify-center px-6">
-          <Alert className="max-w-xl rounded-2xl border-destructive/30 bg-card/90">
-            <AlertDescription>{mapError}</AlertDescription>
-          </Alert>
-        </div>
       ) : (
         <div className="relative h-full min-h-[520px]">
           <div
@@ -94,6 +88,11 @@ export function PublicMapSurface({
           </div>
 
           <div className="pointer-events-none absolute right-4 top-4 z-20 flex max-w-[min(24rem,calc(100vw-2rem))] flex-col items-end gap-2">
+            {mapError ? (
+              <Alert className="pointer-events-auto rounded-2xl border-destructive/30 bg-background/92 text-xs shadow-sm backdrop-blur">
+                <AlertDescription>{mapError}</AlertDescription>
+              </Alert>
+            ) : null}
             {locationFeedback ? (
               <Alert
                 className={cn(

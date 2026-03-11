@@ -21,7 +21,6 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
 import {
   Drawer,
@@ -46,8 +45,19 @@ import {
   SheetNavigationProvider,
   useSheetNavigation,
 } from '@/contexts/SheetNavigationContext'
+import { useIsMobile } from '@/hooks/use-mobile'
+import { cn } from '@/lib/utils'
 
 const queryClient = new QueryClient()
+
+function createInitialStack(projectRef: string) {
+  return [
+    {
+      title: 'Database',
+      component: <DatabaseManager projectRef={projectRef} />,
+    },
+  ]
+}
 
 function DialogView({ projectRef, isMobile }: { projectRef: string; isMobile?: boolean }) {
   const { stack, push, popTo, reset } = useSheetNavigation()
@@ -255,6 +265,50 @@ function DialogView({ projectRef, isMobile }: { projectRef: string; isMobile?: b
   )
 }
 
+function SupabaseManagerRoot({
+  projectRef,
+  className,
+  isMobile,
+}: {
+  projectRef: string
+  className?: string
+  isMobile: boolean
+}) {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SheetNavigationProvider onStackEmpty={() => {}} initialStack={createInitialStack(projectRef)}>
+        <div className={className}>
+          <DialogView projectRef={projectRef} isMobile={isMobile} />
+        </div>
+      </SheetNavigationProvider>
+    </QueryClientProvider>
+  )
+}
+
+export function SupabaseManagerSurface({
+  projectRef,
+  className,
+  isMobile: isMobileProp,
+}: {
+  projectRef: string
+  className?: string
+  isMobile?: boolean
+}) {
+  const detectedIsMobile = useIsMobile()
+  const isMobile = isMobileProp ?? detectedIsMobile
+
+  return (
+    <SupabaseManagerRoot
+      projectRef={projectRef}
+      isMobile={isMobile}
+      className={cn(
+        'h-full min-h-0 overflow-hidden rounded-[28px] border border-border/70 bg-card shadow-sm',
+        className,
+      )}
+    />
+  )
+}
+
 export default function SupabaseManagerDialog({
   projectRef,
   open,
@@ -266,43 +320,25 @@ export default function SupabaseManagerDialog({
   onOpenChange: (open: boolean) => void
   isMobile: boolean
 }) {
-  const content = (
-    <SheetNavigationProvider
-      onStackEmpty={() => {}}
-      initialStack={[
-        {
-          title: 'Database',
-          component: <DatabaseManager projectRef={projectRef} />,
-        },
-      ]}
-    >
-      <DialogView projectRef={projectRef} isMobile={isMobile} />
-    </SheetNavigationProvider>
-  )
-
   if (!isMobile) {
     return (
-      <QueryClientProvider client={queryClient}>
-        <Dialog open={open} onOpenChange={onOpenChange}>
-          <DialogContent className="w-full h-[80vh] max-h-[700px] sm:max-w-[calc(100%-2rem)] w-[1180px] p-0 overflow-hidden sm:rounded-lg">
-            <DialogTitle className="sr-only">Manage your back-end</DialogTitle>
-            {content}
-          </DialogContent>
-        </Dialog>
-      </QueryClientProvider>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="w-full h-[80vh] max-h-[700px] sm:max-w-[calc(100%-2rem)] w-[1180px] p-0 overflow-hidden sm:rounded-lg">
+          <DialogTitle className="sr-only">Manage your back-end</DialogTitle>
+          <SupabaseManagerRoot projectRef={projectRef} isMobile={false} className="h-full min-h-0" />
+        </DialogContent>
+      </Dialog>
     )
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Drawer open={open} onOpenChange={onOpenChange}>
-        <DrawerContent className="h-[90vh] p-0 overflow-hidden">
-          <DrawerHeader className="sr-only">
-            <DrawerTitle>Manage your back-end</DrawerTitle>
-          </DrawerHeader>
-          {content}
-        </DrawerContent>
-      </Drawer>
-    </QueryClientProvider>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent className="h-[90vh] p-0 overflow-hidden">
+        <DrawerHeader className="sr-only">
+          <DrawerTitle>Manage your back-end</DrawerTitle>
+        </DrawerHeader>
+        <SupabaseManagerRoot projectRef={projectRef} isMobile className="h-full min-h-0" />
+      </DrawerContent>
+    </Drawer>
   )
 }

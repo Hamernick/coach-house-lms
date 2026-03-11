@@ -24467,3 +24467,73 @@ Purpose: Track changes we’re making outside the formal PR stepper.
 - Validation:
   - `pnpm exec eslint 'src/components/auth/sign-up-form.tsx'` ✅
   - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-10 17:05 EDT - cleanup foundation pass 1: admin platform surface, deprecated guardrails, and system map baseline
+
+- Scope:
+  - `src/components/supabase-manager/index.tsx`
+  - `src/components/app-sidebar/nav-data.ts`
+  - `src/lib/supabase/project-ref.ts`
+  - `src/app/(admin)/admin/platform/page.tsx`
+  - `src/app/(admin)/@breadcrumbs/admin/platform/page.tsx`
+  - `src/app/(internal)/internal/supabase/page.tsx`
+  - `scripts/check-deprecated-imports.mjs`
+  - `package.json`
+  - `deprecated/README.md`
+  - `deprecated/src/unused-2026-03-10/**`
+  - `docs/system-map.md`
+  - `docs/briefs/2026-03-10-cleanup-foundation-audit.md`
+  - `README.md`
+  - `tests/acceptance/app-sidebar-nav-data.test.ts`
+  - `tests/acceptance/supabase-project-ref.test.ts`
+- Changes:
+  - Promoted the generated Supabase Platform Kit manager into a reusable in-shell surface and mounted it at `/admin/platform` with breadcrumb + admin-sidebar entry wiring.
+  - Locked `/admin/platform` behind `requireAdmin()` and converted the old hidden `/internal/supabase` route into a compatibility redirect instead of a detached launcher flow.
+  - Added `resolveSupabaseProjectRef()` as the shared project-ref parser and covered it with focused acceptance tests.
+  - Archived the now-unused `internal-supabase-manager-launcher.tsx` into a dated `deprecated/` bucket instead of deleting it silently.
+  - Added `pnpm check:deprecated-imports` and wired it into `check:prepush` and `check:quality` so active code cannot import archived `deprecated` paths.
+  - Expanded the root archive README with the active archive workflow and documented the current product/system baseline in `docs/system-map.md` plus the next-pass audit in `docs/briefs/2026-03-10-cleanup-foundation-audit.md`.
+- Validation:
+  - `pnpm exec eslint 'src/components/supabase-manager/index.tsx' 'src/components/app-sidebar/nav-data.ts' 'src/lib/supabase/project-ref.ts' 'src/app/(admin)/admin/platform/page.tsx' 'src/app/(admin)/@breadcrumbs/admin/platform/page.tsx' 'src/app/(internal)/internal/supabase/page.tsx' 'tests/acceptance/app-sidebar-nav-data.test.ts' 'tests/acceptance/supabase-project-ref.test.ts'` ✅
+  - `pnpm exec vitest run tests/acceptance/app-sidebar-nav-data.test.ts tests/acceptance/supabase-project-ref.test.ts` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm check:deprecated-imports` ✅
+  - `pnpm check:quality` ✅
+
+## 2026-03-10 17:18 EDT - add manifest-based platform-admin provisioning for internal operators
+
+- Scope:
+  - `scripts/provision-platform-admins.mjs`
+  - `package.json`
+  - `docs/platform-admin-access.md`
+  - `README.md`
+  - `tests/acceptance/platform-admin-provisioning.test.ts`
+- Changes:
+  - Added `pnpm provision:admins` to create or promote multiple platform admins from a local JSON manifest instead of relying on one-off env-only commands.
+  - Supported both internal cases:
+    - create a brand-new confirmed admin account when the user does not exist and a password is present,
+    - promote/reset an existing user when the email already exists.
+  - Fixed the CLI to correctly accept `pnpm ... -- --file ...` argument passing and updated the package scripts to load `.env.local` by default for `create:admin`, `promote:admin`, and `provision:admins`.
+  - Added an operator-facing runbook documenting what platform admin access means, how to prepare the manifest, and how to safely share temp passwords with the team.
+- Validation:
+  - `pnpm exec eslint 'scripts/provision-platform-admins.mjs' 'tests/acceptance/platform-admin-provisioning.test.ts'` ✅
+  - `pnpm exec vitest run tests/acceptance/platform-admin-provisioning.test.ts` ✅
+  - `pnpm provision:admins -- --file /tmp/platform-admins.local.json --dry-run` ✅
+  - `pnpm check:quality` ✅
+
+## 2026-03-10 18:02 EDT - harden password recovery callback origin and preserve login redirect context
+
+- Scope:
+  - `src/components/auth/auth-callback-url.ts`
+  - `src/components/auth/login-form.tsx`
+  - `tests/acceptance/auth-callback-url.test.ts`
+  - `docs/RUNLOG.md`
+- Changes:
+  - Changed auth callback URL resolution to prefer the live browser origin over a potentially stale `NEXT_PUBLIC_SITE_URL`, so reset/verification emails generated from localhost, previews, or renamed prod domains point back to the actual surface the user is on.
+  - Updated the login-form `Forgot password?` link to preserve the current redirect intent when routing into `/forgot-password`.
+  - Added focused acceptance coverage for auth callback origin selection and kept the existing recovery callback tests green.
+- Validation:
+  - `pnpm exec eslint 'src/components/auth/auth-callback-url.ts' 'src/components/auth/login-form.tsx' 'tests/acceptance/auth-callback-url.test.ts'` ✅
+  - `pnpm exec vitest run tests/acceptance/auth-callback-url.test.ts tests/acceptance/auth-recovery.test.ts` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm check:quality` ✅

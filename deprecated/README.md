@@ -7,6 +7,19 @@ This folder stores legacy or disconnected artifacts that are intentionally kept 
 - Do not import from `deprecated/**` in runtime code.
 - Do not edit archived files unless restoring/migrating them.
 - If restoring a file, move it back to its active location in the same PR.
+- Archive root-level legacy code/docs/assets under `deprecated/**` instead of leaving dead ends in active route or feature trees.
+- Temporary route-local staging folders like `src/**/deprecated/**` should be treated as short-lived holding areas only; move true archives into this root.
+- Active guardrail: `pnpm check:deprecated-imports` fails if any non-deprecated code imports a `deprecated` path segment.
+
+## Active Archive Workflow
+
+1. Verify the code is no longer imported by active routes/features.
+2. Move it into a dated bucket under `deprecated/src/**`, `deprecated/docs/**`, `deprecated/tests/**`, or `deprecated/artifacts/**`.
+3. Add or update a README in that bucket with:
+   - why it was archived,
+   - what replaced it,
+   - whether it is safe to delete later.
+4. Record the move in `docs/RUNLOG.md`.
 
 ## Archived In This Pass (2026-02-06)
 

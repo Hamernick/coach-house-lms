@@ -18,9 +18,9 @@ export function resolveAuthCallbackUrl(redirectTo: string): string | undefined {
   const browserOrigin = typeof window === "undefined" ? null : toOrigin(window.location.origin)
 
   const preferredOrigin =
-    [configuredOrigin, browserOrigin].find((origin) => origin && !isLocalOrigin(origin)) ??
+    browserOrigin ??
     configuredOrigin ??
-    browserOrigin
+    [configuredOrigin, browserOrigin].find((origin) => origin && !isLocalOrigin(origin))
 
   if (!preferredOrigin) return undefined
   return `${preferredOrigin}/auth/callback?redirect=${encodeURIComponent(redirectTo)}`

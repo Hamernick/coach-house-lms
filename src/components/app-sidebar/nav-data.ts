@@ -1,6 +1,7 @@
 "use client"
 
 import type { LucideIcon } from "lucide-react"
+import DatabaseIcon from "lucide-react/dist/esm/icons/database"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
 import LayoutGridIcon from "lucide-react/dist/esm/icons/layout-grid"
 import LockIcon from "lucide-react/dist/esm/icons/lock"
@@ -56,6 +57,9 @@ export function buildMainNav({
         upgradeHref: "?paywall=organization&plan=organization&upgrade=admin-access&source=nav-admin",
       })
     }
+  }
+  if (isAdmin) {
+    items.push({ title: "Platform", href: "/admin/platform", icon: DatabaseIcon })
   }
   return items
 }

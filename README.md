@@ -7,6 +7,9 @@ Coach House is a Next.js App Router product for nonprofit organizations. It comb
 - Root contract: [`AGENTS.md`](AGENTS.md)
 - Active continuation thread: [`docs/agent/HANDOFF.md`](docs/agent/HANDOFF.md)
 - Product/system overview: [`docs/OVERVIEW.md`](docs/OVERVIEW.md)
+- Active system map: [`docs/system-map.md`](docs/system-map.md)
+- Cleanup foundation audit: [`docs/briefs/2026-03-10-cleanup-foundation-audit.md`](docs/briefs/2026-03-10-cleanup-foundation-audit.md)
+- Platform admin setup: [`docs/platform-admin-access.md`](docs/platform-admin-access.md)
 - Architecture and security: [`docs/agent/architecture-security.md`](docs/agent/architecture-security.md)
 - Workflow and quality gates: [`docs/agent/workflow-quality.md`](docs/agent/workflow-quality.md)
 - Recent implementation history: [`docs/RUNLOG.md`](docs/RUNLOG.md)
@@ -65,6 +68,7 @@ pnpm db:push
 pnpm seed:validate
 pnpm verify:settings -- <email>
 pnpm verify:stripe
+pnpm provision:admins -- --file ./platform-admins.local.json --dry-run
 ```
 
 ## Quality gates
@@ -91,6 +95,7 @@ Useful supporting commands:
 
 ```bash
 pnpm check:prepush
+pnpm check:deprecated-imports
 pnpm seed:validate
 pnpm verify:settings -- <email>
 pnpm verify:stripe

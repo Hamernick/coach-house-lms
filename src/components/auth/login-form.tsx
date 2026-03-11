@@ -91,6 +91,11 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
     const separator = base.includes("?") ? "&" : "?"
     return `${base}${separator}redirect=${encodeURIComponent(resolvedRedirectTo)}`
   }, [resolvedRedirectTo, signUpHref])
+  const resolvedForgotPasswordHref = useMemo(() => {
+    const base = "/forgot-password"
+    if (!resolvedRedirectTo) return base
+    return `${base}?redirect=${encodeURIComponent(resolvedRedirectTo)}`
+  }, [resolvedRedirectTo])
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(schema),
@@ -179,7 +184,7 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
         <Link href={resolvedSignUpHref} className="hover:text-foreground">
           Need an account? Sign up
         </Link>
-        <Link href="/forgot-password" className="hover:text-foreground">
+        <Link href={resolvedForgotPasswordHref} className="hover:text-foreground">
           Forgot password?
         </Link>
       </div>

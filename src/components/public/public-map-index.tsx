@@ -105,7 +105,7 @@ export function PublicMapIndex({
     viewer,
     setFavorites,
     setRecentOrganizationIds,
-  } = usePublicMapPreferences()
+  } = usePublicMapPreferences({ initialViewer })
 
   const effectiveViewer = viewer ?? initialViewer
   const isAuthenticated = Boolean(effectiveViewer)

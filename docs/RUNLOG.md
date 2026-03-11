@@ -24537,3 +24537,20 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - `pnpm exec vitest run tests/acceptance/auth-callback-url.test.ts tests/acceptance/auth-recovery.test.ts` ✅
   - `pnpm exec tsc --noEmit` ✅
   - `pnpm check:quality` ✅
+
+## 2026-03-11 12:24 EDT - stop signed-out public map preference 401s and keep map visible on runtime errors
+
+- Scope:
+  - `src/components/public/public-map-index.tsx`
+  - `src/components/public/public-map-index/use-public-map-preferences.ts`
+  - `src/components/public/public-map-index/map-surface.tsx`
+  - `tests/acceptance/public-map-preferences.test.ts`
+- Changes:
+  - Stopped the public `/find` experience from calling `/api/account/map-preferences` for signed-out visitors by seeding the preference hook with the server-known viewer and skipping remote sync when there is no authenticated user.
+  - Hardened the public map surface so runtime Mapbox errors show as an overlay alert instead of replacing the entire map area, which avoids the “map flashes, then disappears” failure mode.
+  - Added focused acceptance coverage for the signed-out vs authenticated remote-preference gating logic.
+  - Reproduced `https://coachhouse.app/find` in Playwright and confirmed the remaining live network issue before this fix was the signed-out `401`; current Mapbox style/tile requests on the custom domain are returning `200`.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/public-map-index.tsx' 'src/components/public/public-map-index/map-surface.tsx' 'src/components/public/public-map-index/use-public-map-preferences.ts' 'tests/acceptance/public-map-preferences.test.ts'` ✅
+  - `pnpm exec vitest run tests/acceptance/public-map-preferences.test.ts` ✅
+  - `pnpm exec tsc --noEmit` ✅

@@ -17,14 +17,26 @@ import {
   type PublicMapPreferences,
 } from "./helpers"
 
-export function usePublicMapPreferences() {
+type PublicMapViewer = { id: string; email: string | null } | null
+
+type UsePublicMapPreferencesOptions = {
+  initialViewer?: PublicMapViewer
+}
+
+export function canLoadRemotePublicMapPreferences(viewer: PublicMapViewer) {
+  return Boolean(viewer?.id)
+}
+
+export function usePublicMapPreferences({
+  initialViewer = null,
+}: UsePublicMapPreferencesOptions = {}) {
   const [favorites, setFavorites] = useState<string[]>([])
   const [savedQueries, setSavedQueries] = useState<string[]>([])
   const [recentOrganizationIds, setRecentOrganizationIds] = useState<string[]>([])
   const [preferenceMode, setPreferenceMode] = useState<PreferenceMode>("unknown")
   const [isSavingPreferences, setIsSavingPreferences] = useState(false)
   const [preferencesSaveError, setPreferencesSaveError] = useState<string | null>(null)
-  const [viewer, setViewer] = useState<{ id: string; email: string | null } | null>(null)
+  const [viewer, setViewer] = useState<PublicMapViewer>(initialViewer)
 
   const shouldSkipRemoteSyncRef = useRef(true)
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -41,6 +53,12 @@ export function usePublicMapPreferences() {
     setSavedQueries(localSavedQueries)
     setRecentOrganizationIds(localRecentOrganizationIds)
     setPreferenceMode("guest")
+    setViewer(initialViewer)
+
+    if (!canLoadRemotePublicMapPreferences(initialViewer)) {
+      shouldSkipRemoteSyncRef.current = true
+      return
+    }
 
     let cancelled = false
 
@@ -52,7 +70,10 @@ export function usePublicMapPreferences() {
         })
 
         if (response.status === 401) {
-          if (!cancelled) setPreferenceMode("guest")
+          if (!cancelled) {
+            setPreferenceMode("guest")
+            setViewer(null)
+          }
           return
         }
 
@@ -116,7 +137,7 @@ export function usePublicMapPreferences() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [initialViewer])
 
   useEffect(() => {
     if (typeof window === "undefined") return

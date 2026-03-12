@@ -48,3 +48,18 @@ export function canTreatCheckoutAsSuccessfulSubscriptionReturn(
   if (checkout.status !== "complete") return false
   return checkout.payment_status === "paid" || checkout.payment_status === "no_payment_required"
 }
+
+export async function resolveCheckoutSubscription({
+  checkout,
+  stripeClient,
+}: {
+  checkout: Stripe.Checkout.Session
+  stripeClient: Stripe
+}) {
+  if (!checkout.subscription) return null
+  if (typeof checkout.subscription !== "string") {
+    return checkout.subscription
+  }
+
+  return stripeClient.subscriptions.retrieve(checkout.subscription)
+}

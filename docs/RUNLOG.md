@@ -2,6 +2,18 @@
 
 Purpose: Track changes we’re making outside the formal PR stepper.
 
+## 2026-03-12 — Codex session (subscription hydration hotfix for onboarding checkout)
+
+- Fixed a Stripe checkout success-path bug where `checkout.subscription` could still be a string id even after session retrieval, which caused local subscription upserts to fail and left paid users looking like `free` on subsequent onboarding/workspace loads.
+- Updated [`src/app/(public)/pricing/success/page.tsx`] to hydrate string subscription ids through Stripe before building the local subscription payload.
+- Extended [`src/app/(public)/pricing/success/_lib/onboarding-return.ts`] with a checkout-subscription resolver.
+- Added regression coverage for the string-subscription case in [`tests/acceptance/pricing-success-return.test.ts`].
+- Backfilled the latest live affected account for `paula.hamernick@protonmail.com` after confirming a completed Stripe checkout with a missing local `subscriptions` row.
+- Validation:
+  - `pnpm exec vitest run tests/acceptance/pricing-success-return.test.ts tests/acceptance/onboarding-pricing-return.test.ts tests/acceptance/stripe-checkout-route.test.ts`
+  - `pnpm exec eslint 'src/app/(public)/pricing/success/page.tsx' 'src/app/(public)/pricing/success/_lib/onboarding-return.ts' 'tests/acceptance/pricing-success-return.test.ts'`
+  - `pnpm exec tsc --noEmit`
+
 ## 2026-03-12 — Codex session (onboarding pricing success fallback hotfix)
 
 - Fixed a Stripe checkout return gap where completed onboarding builder checkouts could fall back to the raw `/workspace?onboarding_flow=1&source=onboarding_pricing` URL without `checkout=success` if Stripe had not hydrated the subscription object on the success-page read yet.

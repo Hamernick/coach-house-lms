@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import type { ReactNode } from "react"
 import "./globals.css"
 
+import { Analytics } from "@vercel/analytics/next"
 import { Inter, JetBrains_Mono } from "next/font/google"
 
 import { ReactGrabLoader } from "@/components/dev/react-grab-loader"
@@ -52,6 +53,7 @@ export default async function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} min-h-screen bg-background font-sans antialiased`}>
         <ReactGrabLoader />
         <AppProviders>{children}</AppProviders>
+        <Analytics />
       </body>
     </html>
   )

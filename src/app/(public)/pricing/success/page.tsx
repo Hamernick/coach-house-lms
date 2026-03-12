@@ -9,34 +9,16 @@ import { resolveStripeRuntimeConfigsForFallback } from "@/lib/billing/stripe-run
 import { createSupabaseAdminClient } from "@/lib/supabase"
 import { isElectiveAddOnModuleSlug } from "@/lib/accelerator/elective-modules"
 import { maybeStartOrganizationTrialFromAccelerator } from "./_lib/success-helpers"
+import {
+  appendInternalRedirectParams,
+  appendSuccessfulPricingReturn,
+  canTreatCheckoutAsSuccessfulSubscriptionReturn,
+  getSafeRedirect,
+  resolveSuccessfulCheckoutPlanTier,
+} from "./_lib/onboarding-return"
 import type { Database } from "@/lib/supabase"
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>
-
-function getFirstParam(value: string | string[] | undefined) {
-  return Array.isArray(value) ? value[0] : value
-}
-
-function getSafeRedirect(value: string | string[] | undefined) {
-  const raw = getFirstParam(value)
-  if (typeof raw !== "string") return null
-  if (!raw.startsWith("/")) return null
-  if (raw.startsWith("//")) return null
-  return raw
-}
-
-function appendInternalRedirectParams(
-  target: string,
-  params: Record<string, string | null | undefined>,
-) {
-  const url = new URL(target, "https://coachhouse.internal")
-  for (const [key, value] of Object.entries(params)) {
-    if (typeof value === "string" && value.length > 0) {
-      url.searchParams.set(key, value)
-    }
-  }
-  return `${url.pathname}${url.search}`
-}
 
 function isNextRedirectError(error: unknown) {
   if (isRedirectError(error)) return true
@@ -242,12 +224,7 @@ export default async function PricingSuccessPage({
 
           if (redirectTarget) {
             if (isSuccessfulSubscriptionState) {
-              redirect(
-                appendInternalRedirectParams(redirectTarget, {
-                  checkout: "success",
-                  plan: resolvedPlanTier,
-                }),
-              )
+              redirect(appendSuccessfulPricingReturn(redirectTarget, resolvedPlanTier))
             }
             redirect(
               appendInternalRedirectParams(redirectTarget, {
@@ -261,6 +238,15 @@ export default async function PricingSuccessPage({
             redirect(`/organization?subscription=${status}${welcomeQuery}`)
           }
           redirect(`/organization?checkout_error=checkout_failed&subscription=${status}`)
+        }
+
+        if (redirectTarget && canTreatCheckoutAsSuccessfulSubscriptionReturn(checkout)) {
+          redirect(
+            appendSuccessfulPricingReturn(
+              redirectTarget,
+              resolveSuccessfulCheckoutPlanTier(checkout),
+            ),
+          )
         }
       }
     } catch (error) {

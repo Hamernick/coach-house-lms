@@ -14,6 +14,7 @@ import {
   appendSuccessfulPricingReturn,
   canTreatCheckoutAsSuccessfulSubscriptionReturn,
   getSafeRedirect,
+  resolveCheckoutSubscription,
   resolveSuccessfulCheckoutPlanTier,
 } from "./_lib/onboarding-return"
 import type { Database } from "@/lib/supabase"
@@ -143,7 +144,10 @@ export default async function PricingSuccessPage({
       }
 
       if (checkout.mode === "subscription") {
-        const subscription = checkout.subscription as Stripe.Subscription | null
+        const subscription = await resolveCheckoutSubscription({
+          checkout,
+          stripeClient: checkoutStripeConfig.client,
+        })
         if (subscription) {
           type SubscriptionStatus = Database["public"]["Enums"]["subscription_status"]
 

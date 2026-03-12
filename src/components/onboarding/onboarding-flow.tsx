@@ -12,7 +12,11 @@ import {
   type SaveOnboardingDraftExtra,
   writeOnboardingDraftSnapshot,
 } from "./onboarding-dialog/draft-writer"
-import { resolveOnboardingError } from "./onboarding-dialog/helpers"
+import {
+  resolveOnboardingError,
+  resolveOnboardingPricingEntryStepId,
+  resolveOnboardingPricingPlanOverride,
+} from "./onboarding-dialog/helpers"
 import { useOnboardingAvatar } from "./onboarding-dialog/hooks/use-onboarding-avatar"
 import { useOnboardingDefaults } from "./onboarding-dialog/hooks/use-onboarding-defaults"
 import { useOnboardingCarryForwardRefs } from "./onboarding-dialog/hooks/use-onboarding-carry-forward-refs"
@@ -57,16 +61,15 @@ function useApplyPricingEntryPoint({
   setStep: Dispatch<SetStateAction<number>>
 }) {
   const pricingEntryAppliedRef = useRef(false)
-
   useEffect(() => {
     if (!open) return
     if (pricingEntryAppliedRef.current) return
-    if (searchParams.get("source") !== "onboarding_pricing") return
-
+    const entryStepId = resolveOnboardingPricingEntryStepId(searchParams)
+    if (!entryStepId) return
     pricingEntryAppliedRef.current = true
     setIntentFocus("build")
     const pricingStepIndex = resolveOnboardingSteps("build").findIndex(
-      (candidate) => candidate.id === "pricing",
+      (candidate) => candidate.id === entryStepId,
     )
     setStep(pricingStepIndex >= 0 ? pricingStepIndex : 0)
   }, [open, searchParams, setIntentFocus, setStep])
@@ -143,6 +146,7 @@ export function OnboardingFlow({
     defaultNewsletterOptIn,
   })
   const searchParams = useSearchParams()
+  const checkoutPlanOverride = resolveOnboardingPricingPlanOverride(searchParams)
   const [step, setStep] = useState(0)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [serverError, setServerError] = useState<string | null>(null)
@@ -153,7 +157,8 @@ export function OnboardingFlow({
   const [formationStatus, setFormationStatus] = useState<FormationStatus | "">(initialFormationStatus)
   const [intentFocus, setIntentFocus] = useState<IntentFocus | "">(initialIntentFocus)
   const [roleInterest, setRoleInterest] = useState<RoleInterest | "">(initialRoleInterest)
-  const builderPlanTier: PricingPlanTier = defaultBuilderPlanTier ?? "free"
+  const builderPlanTier: PricingPlanTier =
+    checkoutPlanOverride ?? defaultBuilderPlanTier ?? "free"
   const [submitting, setSubmitting] = useState(false)
   const [attemptedStep, setAttemptedStep] = useState<number | null>(null)
   const [accountStepReady, setAccountStepReady] = useState(() =>

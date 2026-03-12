@@ -24554,3 +24554,22 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - `pnpm exec eslint 'src/components/public/public-map-index.tsx' 'src/components/public/public-map-index/map-surface.tsx' 'src/components/public/public-map-index/use-public-map-preferences.ts' 'tests/acceptance/public-map-preferences.test.ts'` ✅
   - `pnpm exec vitest run tests/acceptance/public-map-preferences.test.ts` ✅
   - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-12 10:40 EDT - onboarding pricing Stripe success return unblock
+
+- Scope:
+  - `src/app/(public)/pricing/success/page.tsx`
+  - `src/components/onboarding/onboarding-flow.tsx`
+  - `src/components/onboarding/onboarding-dialog/helpers.ts`
+  - `tests/acceptance/pricing-success-return.test.ts`
+  - `tests/acceptance/onboarding-pricing-return.test.ts`
+  - `docs/RUNLOG.md`
+- Changes:
+  - Stopped successful Stripe onboarding checkouts from silently falling back to the raw workspace pricing URL when subscription syncing throws during `/pricing/success`.
+  - Successful internal onboarding returns now append a trusted `plan` param alongside `checkout=success`, so the builder flow can treat the user as paid immediately even if subscription persistence lags or admin sync is unavailable.
+  - Taught onboarding to recognize successful `source=onboarding_pricing` returns, apply the paid plan override client-side, and re-enter on the `org` step instead of forcing the user back through pricing.
+  - Added focused coverage for both the sync-failure success redirect path and the onboarding pricing return helpers.
+- Validation:
+  - `pnpm exec vitest run tests/acceptance/pricing-success-return.test.ts tests/acceptance/onboarding-pricing-return.test.ts tests/acceptance/stripe-checkout-route.test.ts` ✅
+  - `pnpm exec eslint 'src/app/(public)/pricing/success/page.tsx' 'src/components/onboarding/onboarding-flow.tsx' 'src/components/onboarding/onboarding-dialog/helpers.ts' 'tests/acceptance/pricing-success-return.test.ts' 'tests/acceptance/onboarding-pricing-return.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅

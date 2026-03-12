@@ -107,7 +107,54 @@ describe("pricing success return handling", () => {
     )
 
     expect(destination).toBe(
-      "/workspace?onboarding_flow=1&source=onboarding_pricing&checkout=success",
+      "/workspace?onboarding_flow=1&source=onboarding_pricing&checkout=success&plan=operations_support",
+    )
+  })
+
+  it("still returns successful onboarding pricing state when subscription sync fails", async () => {
+    resolveStripeRuntimeConfigsForFallbackMock.mockReturnValue([
+      {
+        client: {
+          checkout: {
+            sessions: {
+              retrieve: vi.fn().mockResolvedValue({
+                id: "cs_test_success_sync_failure",
+                mode: "subscription",
+                client_reference_id: "user_123",
+                metadata: {},
+                subscription: {
+                  id: "sub_success_sync_failure",
+                  status: "active",
+                  customer: "cus_success_sync_failure",
+                  metadata: {
+                    kind: "organization",
+                    planName: "Organization",
+                    plan_tier: "organization",
+                  },
+                },
+              }),
+            },
+          },
+        },
+        mode: "live",
+      },
+    ])
+    createSupabaseAdminClientMock.mockImplementation(() => {
+      throw new Error("missing_service_role")
+    })
+
+    const Page = (await import("@/app/(public)/pricing/success/page")).default
+    const destination = await captureRedirect(() =>
+      Page({
+        searchParams: Promise.resolve({
+          session_id: "cs_test_success_sync_failure",
+          redirect: "/workspace?onboarding_flow=1&source=onboarding_pricing",
+        }),
+      }),
+    )
+
+    expect(destination).toBe(
+      "/workspace?onboarding_flow=1&source=onboarding_pricing&checkout=success&plan=organization",
     )
   })
 

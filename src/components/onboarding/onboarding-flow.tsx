@@ -66,7 +66,6 @@ function useApplyPricingEntryPoint({
     if (pricingEntryAppliedRef.current) return
     const entryStepId = resolveOnboardingPricingEntryStepId(searchParams)
     if (!entryStepId) return
-
     pricingEntryAppliedRef.current = true
     setIntentFocus("build")
     const pricingStepIndex = resolveOnboardingSteps("build").findIndex(

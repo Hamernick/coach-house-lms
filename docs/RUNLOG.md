@@ -2,6 +2,16 @@
 
 Purpose: Track changes we’re making outside the formal PR stepper.
 
+## 2026-03-12 — Codex session (onboarding pricing success fallback hotfix)
+
+- Fixed a Stripe checkout return gap where completed onboarding builder checkouts could fall back to the raw `/workspace?onboarding_flow=1&source=onboarding_pricing` URL without `checkout=success` if Stripe had not hydrated the subscription object on the success-page read yet.
+- Updated [`src/app/(public)/pricing/success/page.tsx`] to treat completed subscription checkouts with `payment_status=paid` or `payment_status=no_payment_required` as successful onboarding returns and preserve the paid plan marker.
+- Added regression coverage for the completed/no-subscription-yet case in [`tests/acceptance/pricing-success-return.test.ts`].
+- Validation:
+  - `pnpm exec vitest run tests/acceptance/pricing-success-return.test.ts tests/acceptance/onboarding-pricing-return.test.ts tests/acceptance/stripe-checkout-route.test.ts`
+  - `pnpm exec eslint 'src/app/(public)/pricing/success/page.tsx' 'tests/acceptance/pricing-success-return.test.ts'`
+  - `pnpm exec tsc --noEmit`
+
 ## 2026-03-10 — Codex session (production hardening sweep + shared coach scheduling card)
 
 - Created a dedicated release-hardening branch (`chore/production-hardening`) to keep the current production candidate isolated from `main` while running preflight checks.

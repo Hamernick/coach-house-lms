@@ -158,6 +158,47 @@ describe("pricing success return handling", () => {
     )
   })
 
+  it("returns successful onboarding pricing state when Stripe completes checkout before subscription expansion is available", async () => {
+    resolveStripeRuntimeConfigsForFallbackMock.mockReturnValue([
+      {
+        client: {
+          checkout: {
+            sessions: {
+              retrieve: vi.fn().mockResolvedValue({
+                id: "cs_test_success_no_subscription",
+                mode: "subscription",
+                status: "complete",
+                payment_status: "no_payment_required",
+                client_reference_id: "user_123",
+                metadata: {
+                  kind: "organization",
+                  planName: "Operations Support",
+                  plan_tier: "operations_support",
+                },
+                subscription: null,
+              }),
+            },
+          },
+        },
+        mode: "live",
+      },
+    ])
+
+    const Page = (await import("@/app/(public)/pricing/success/page")).default
+    const destination = await captureRedirect(() =>
+      Page({
+        searchParams: Promise.resolve({
+          session_id: "cs_test_success_no_subscription",
+          redirect: "/workspace?onboarding_flow=1&source=onboarding_pricing",
+        }),
+      }),
+    )
+
+    expect(destination).toBe(
+      "/workspace?onboarding_flow=1&source=onboarding_pricing&checkout=success&plan=operations_support",
+    )
+  })
+
   it("returns incomplete subscriptions to the onboarding workspace path with an error", async () => {
     resolveStripeRuntimeConfigsForFallbackMock.mockReturnValue([
       {

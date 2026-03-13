@@ -186,6 +186,7 @@ export function useWorkspaceAcceleratorCardController(input: WorkspaceAccelerato
 
   useEffect(() => {
     if (!allowAutoResize || !onSizeChange || !currentStep) return
+    if (size === "lg") return
     const targetSize = resolveWorkspaceAcceleratorCardTargetSize(currentStep)
     if (lastAutoResizeTargetRef.current === targetSize && targetSize !== size) return
     lastAutoResizeTargetRef.current = targetSize

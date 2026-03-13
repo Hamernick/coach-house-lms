@@ -5,6 +5,7 @@ import { useMemo } from "react"
 import ListChecksIcon from "lucide-react/dist/esm/icons/list-checks"
 
 import { CoachSchedulingCard } from "@/components/coaching/coach-scheduling-card"
+import { CoachSchedulingSidebarItem } from "@/components/coaching/coach-scheduling-sidebar-item"
 import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
@@ -180,9 +181,14 @@ export function SidebarBody({
         {onboardingLocked ? null : (
           <div className="space-y-4 pt-2">
             {showCoachScheduling ? (
-              <div className="group-data-[collapsible=icon]:hidden">
-                <CoachSchedulingCard />
-              </div>
+              <>
+                <div className="hidden group-data-[collapsible=icon]:hidden [@media(min-height:56rem)]:block">
+                  <CoachSchedulingCard />
+                </div>
+                <div className="[@media(min-height:56rem)]:hidden">
+                  <CoachSchedulingSidebarItem />
+                </div>
+              </>
             ) : null}
             <NavDocuments items={RESOURCE_NAV} label="Resources" />
           </div>

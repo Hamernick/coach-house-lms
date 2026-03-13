@@ -1,5 +1,6 @@
 export { WorkspaceAcceleratorCardPanel } from "./components"
 export { WorkspaceAcceleratorStepNodeCard } from "./components"
+export { WorkspaceAcceleratorHeaderPicker } from "./components"
 export {
   buildWorkspaceAcceleratorRuntimeActionsSignature,
   buildWorkspaceAcceleratorCardSteps,
@@ -14,6 +15,8 @@ export type {
   WorkspaceAcceleratorCardStepResource,
   WorkspaceAcceleratorCardRuntimeActions,
   WorkspaceAcceleratorCardRuntimeSnapshot,
+  WorkspaceAcceleratorTutorialCallout,
+  WorkspaceAcceleratorTutorialFocus,
   WorkspaceAcceleratorStepKind,
   WorkspaceAcceleratorStepStatus,
   WorkspaceAcceleratorTimelineModuleSeed,

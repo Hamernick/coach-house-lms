@@ -17,6 +17,10 @@ import { useWorkspaceCanvasConnectionsController } from "../runtime/workspace-ca
 import { useWorkspaceCanvasLifecycleLogs } from "../runtime/workspace-canvas-lifecycle-logs"
 import { useWorkspaceCanvasAcceleratorRuntime } from "./workspace-canvas-surface-v2-accelerator-runtime"
 import {
+  resolveAcceleratorTutorialCallout,
+  useWorkspaceAcceleratorTutorialActionComplete,
+} from "./workspace-canvas-surface-v2-accelerator-tutorial"
+import {
   WORKSPACE_CANVAS_V2_ACCELERATOR_FOCUS_OPTIONS,
   WORKSPACE_CANVAS_V2_CARD_FOCUS_OPTIONS,
   WORKSPACE_CANVAS_V2_LAYOUT_FIT_OPTIONS,
@@ -145,6 +149,19 @@ export function WorkspaceCanvasSurfaceV2({
     onFocusCard,
     onTutorialShortcutOpened,
   })
+  const acceleratorTutorialCallout = useMemo(
+    () =>
+      resolveAcceleratorTutorialCallout({
+        tutorialActive,
+        tutorialStepIndex: boardState.onboardingFlow.tutorialStepIndex,
+        openedTutorialStepIds: boardState.onboardingFlow.openedTutorialStepIds,
+      }),
+    [
+      boardState.onboardingFlow.openedTutorialStepIds,
+      boardState.onboardingFlow.tutorialStepIndex,
+      tutorialActive,
+    ],
+  )
   const {
     acceleratorRuntimeSnapshot,
     handleAcceleratorRuntimeChange,
@@ -158,7 +175,14 @@ export function WorkspaceCanvasSurfaceV2({
     activeStepId: boardState.accelerator.activeStepId,
     onOpenAcceleratorStepNode,
     onCloseAcceleratorStepNode,
+    tutorialCallout: acceleratorTutorialCallout,
+    onTutorialActionComplete: onTutorialShortcutOpened,
   })
+  const handleAcceleratorTutorialActionComplete =
+    useWorkspaceAcceleratorTutorialActionComplete({
+      onTutorialNext,
+      onTutorialShortcutOpened,
+    })
   useEffect(() => {
     if (!acceleratorCardVisible || !acceleratorStepNodeVisible) {
       setAcceleratorStepNodePositionOverride(null)
@@ -178,6 +202,7 @@ export function WorkspaceCanvasSurfaceV2({
       onNext: handleNextStep,
       onComplete: handleCompleteStep,
       onClose: handleHideStepNode,
+      tutorialCallout: null,
     })
     return node as WorkspaceCanvasNode | null
   }, [
@@ -213,6 +238,8 @@ export function WorkspaceCanvasSurfaceV2({
     onHideAcceleratorStepNode: handleHideStepNode,
     onAcceleratorRuntimeChange: handleAcceleratorRuntimeChange,
     onAcceleratorRuntimeActionsChange: handleAcceleratorRuntimeActionsChange,
+    acceleratorTutorialCallout,
+    onAcceleratorTutorialActionComplete: handleAcceleratorTutorialActionComplete,
     journeyGuideState,
     onFocusCard,
     organizationShortcutItems: shortcutItems,
@@ -228,6 +255,7 @@ export function WorkspaceCanvasSurfaceV2({
     handleHideStepNode,
     handleOpenStepNode,
     journeyGuideState,
+    acceleratorTutorialCallout,
     onAcceleratorStateChange,
     onCommunicationsChange,
     onFocusCard,
@@ -236,6 +264,7 @@ export function WorkspaceCanvasSurfaceV2({
     organizationEditorData,
     presentationMode,
     shortcutItems,
+    handleAcceleratorTutorialActionComplete,
     seed,
     vaultViewMode,
   ])

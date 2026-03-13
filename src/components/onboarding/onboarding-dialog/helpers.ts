@@ -1,4 +1,5 @@
-import type { FormationStatus, IntentFocus, RoleInterest } from "./types"
+import type { PricingPlanTier } from "@/lib/billing/plan-tier"
+import type { FormationStatus, IntentFocus, OnboardingStepId, RoleInterest } from "./types"
 
 export function slugify(input: string): string {
   const base = input
@@ -32,6 +33,29 @@ export function resolveOnboardingError(raw: string | null) {
     default:
       return null
   }
+}
+
+type SearchParamReader = {
+  get: (key: string) => string | null
+}
+
+export function resolveOnboardingPricingPlanOverride(
+  searchParams: SearchParamReader,
+): PricingPlanTier | null {
+  if (searchParams.get("source") !== "onboarding_pricing") return null
+  if (searchParams.get("checkout") !== "success") return null
+
+  const plan = searchParams.get("plan")
+  if (plan === "organization" || plan === "operations_support") return plan
+  return "organization"
+}
+
+export function resolveOnboardingPricingEntryStepId(
+  searchParams: SearchParamReader,
+): OnboardingStepId | null {
+  if (searchParams.get("source") !== "onboarding_pricing") return null
+  if (searchParams.get("checkout") === "success") return "org"
+  return "pricing"
 }
 
 export async function getCroppedBlob(

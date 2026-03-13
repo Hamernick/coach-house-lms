@@ -3,6 +3,7 @@
 import { Position, type Edge, type Node } from "reactflow"
 
 import type {
+  WorkspaceAcceleratorCardRuntimeActions,
   WorkspaceAcceleratorCardRuntimeSnapshot,
   WorkspaceAcceleratorStepKind,
 } from "@/features/workspace-accelerator-card"
@@ -123,6 +124,7 @@ export function buildAcceleratorStepNodeData({
   onNext,
   onComplete,
   onClose,
+  tutorialCallout,
 }: {
   acceleratorRuntimeSnapshot: WorkspaceAcceleratorCardRuntimeSnapshot | null
   acceleratorStepNodePositionOverride: { x: number; y: number } | null
@@ -136,6 +138,7 @@ export function buildAcceleratorStepNodeData({
   onNext: () => void
   onComplete: () => void
   onClose: () => void
+  tutorialCallout?: WorkspaceBoardAcceleratorStepNodeData["tutorialCallout"]
 }): WorkspaceFlowNode | null {
   const runtimeStep = acceleratorRuntimeSnapshot?.currentStep
   if (!runtimeStep) return null
@@ -203,6 +206,7 @@ export function buildAcceleratorStepNodeData({
       onComplete,
       onClose,
       presentationMode,
+      tutorialCallout: tutorialCallout ?? null,
     },
   }
 }
@@ -327,11 +331,7 @@ export function buildWorkspaceNodes({
     snapshot: WorkspaceAcceleratorCardRuntimeSnapshot
   ) => void
   onAcceleratorRuntimeActionsChange: (
-    actions: {
-      goPrevious: () => void
-      goNext: () => void
-      markCurrentStepComplete: () => void
-    }
+    actions: WorkspaceAcceleratorCardRuntimeActions
   ) => void
   onToggleCanvasFullscreen: (cardId: WorkspaceCardId) => void
 }): WorkspaceFlowNode[] {

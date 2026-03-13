@@ -25,11 +25,24 @@ const SUPPORT_EMAIL = "joel@coachhousesolutions.org"
 
 type ToolKey = "notes" | "resources" | "coach" | "ai"
 
+type ModuleRightRailBreakAction =
+  | {
+      kind: "link"
+      href: string
+      label?: string
+    }
+  | {
+      kind: "button"
+      label: string
+      onClick: () => void
+    }
+
 type ModuleRightRailProps = {
   moduleId: string
   resources: ModuleResource[]
-  breakHref: string
+  breakHref?: string
   breakLabel?: string
+  breakAction?: ModuleRightRailBreakAction
   hasDeck: boolean
 }
 
@@ -38,6 +51,7 @@ export function ModuleRightRail({
   resources,
   breakHref,
   breakLabel = "Return home",
+  breakAction,
   hasDeck,
 }: ModuleRightRailProps) {
   const [activeTool, setActiveTool] = useState<ToolKey>("notes")
@@ -56,8 +70,16 @@ export function ModuleRightRail({
       <ModuleToolTray
         activeTool={activeTool}
         onToolChange={setActiveTool}
-        breakHref={breakHref}
-        breakLabel={breakLabel}
+        breakAction={
+          breakAction ??
+          (breakHref
+            ? {
+                kind: "link",
+                href: breakHref,
+                label: breakLabel,
+              }
+            : null)
+        }
       />
     </div>
   )
@@ -192,15 +214,12 @@ function ModuleAiPanel() {
 function ModuleToolTray({
   activeTool,
   onToolChange,
-  breakHref,
-  breakLabel,
+  breakAction,
 }: {
   activeTool: ToolKey
   onToolChange: (tool: ToolKey) => void
-  breakHref: string
-  breakLabel: string
+  breakAction: ModuleRightRailBreakAction | null
 }) {
-  const ReturnIcon = breakLabel === "Return" ? ArrowLeftIcon : HomeIcon
   return (
     <div className="sticky bottom-0 mt-auto space-y-2 rounded-2xl border border-border/60 bg-background/90 p-2 shadow-sm backdrop-blur">
       <div className="grid grid-cols-2 gap-2">
@@ -229,12 +248,25 @@ function ModuleToolTray({
           onClick={() => onToolChange("ai")}
         />
       </div>
-      <Button asChild variant="ghost" size="sm" className="w-full justify-start gap-2">
-        <Link href={breakHref}>
-          <ReturnIcon className="h-4 w-4" aria-hidden />
-          {breakLabel}
-        </Link>
-      </Button>
+      {breakAction ? (
+        breakAction.kind === "link" ? (
+          <Button asChild variant="ghost" size="sm" className="w-full justify-start gap-2">
+            <Link href={breakAction.href}>
+              {breakAction.label === "Return" ? (
+                <ArrowLeftIcon className="h-4 w-4" aria-hidden />
+              ) : (
+                <HomeIcon className="h-4 w-4" aria-hidden />
+              )}
+              {breakAction.label ?? "Return home"}
+            </Link>
+          </Button>
+        ) : (
+          <Button type="button" variant="ghost" size="sm" className="w-full justify-start gap-2" onClick={breakAction.onClick}>
+            <ArrowLeftIcon className="h-4 w-4" aria-hidden />
+            {breakAction.label}
+          </Button>
+        )
+      ) : null}
     </div>
   )
 }

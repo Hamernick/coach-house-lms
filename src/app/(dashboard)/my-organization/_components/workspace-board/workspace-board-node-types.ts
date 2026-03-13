@@ -1,4 +1,5 @@
 import type {
+  WorkspaceAcceleratorTutorialCallout,
   WorkspaceAcceleratorCardRuntimeActions,
   WorkspaceAcceleratorCardRuntimeSnapshot,
 } from "@/features/workspace-accelerator-card"
@@ -43,6 +44,10 @@ export type WorkspaceBoardNodeData = {
   onAcceleratorRuntimeActionsChange?: (
     actions: WorkspaceAcceleratorCardRuntimeActions
   ) => void
+  acceleratorTutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
+  onAcceleratorTutorialActionComplete?: (
+    mode?: "complete" | "complete-and-advance",
+  ) => void
   journeyGuideState?: WorkspaceJourneyGuideState | null
   isJourneyTarget?: boolean
   onFocusCard?: (cardId: WorkspaceCardId) => void
@@ -65,4 +70,5 @@ export type WorkspaceBoardAcceleratorStepNodeData = {
   onComplete: () => void
   onClose: () => void
   presentationMode: boolean
+  tutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
 }

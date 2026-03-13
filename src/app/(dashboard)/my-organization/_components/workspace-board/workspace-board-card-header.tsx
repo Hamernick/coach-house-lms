@@ -63,8 +63,11 @@ export function WorkspaceBoardCardHeader({
     showCanvasFullscreenAction && fullscreenControlMode === "inline"
   const showEditorAction = Boolean(editorHref)
   const hasCustomMenuActions = menuActions.length > 0
+  const showDirectEditorLink =
+    !isCanvasFullscreen && showEditorAction && !hasCustomMenuActions
   const showOverflowMenu =
     !isCanvasFullscreen &&
+    !showDirectEditorLink &&
     (
       (showCanvasFullscreenAction && !showInlineFullscreenControl) ||
       showEditorAction ||
@@ -140,6 +143,13 @@ export function WorkspaceBoardCardHeader({
         <div className="nodrag nopan flex items-center gap-1">
           {headerMeta ? <div className="nodrag nopan shrink-0">{headerMeta}</div> : null}
           {headerAction ? <div className="nodrag nopan shrink-0">{headerAction}</div> : null}
+          {showDirectEditorLink ? (
+            <Button asChild variant="ghost" size="icon" className="nodrag nopan h-7 w-7">
+              <Link href={editorHref as string} aria-label="Open card editor">
+                <Maximize2Icon className="text-muted-foreground h-3.5 w-3.5" aria-hidden />
+              </Link>
+            </Button>
+          ) : null}
           {showOverflowMenu ? (
             <Popover>
               <PopoverTrigger asChild>

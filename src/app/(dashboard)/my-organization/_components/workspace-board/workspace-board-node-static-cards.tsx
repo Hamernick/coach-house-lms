@@ -66,6 +66,8 @@ export function OrganizationOverviewCard({
 }) {
   const headerUrl = safeText(seed.initialProfile.headerUrl)
   const logoUrl = safeText(seed.initialProfile.logoUrl)
+  const displayTitle = seed.organizationTitle.trim() || "Title"
+  const displaySubtitle = seed.organizationSubtitle.trim() || "Subtitle"
   const headerImage = useImageLoaded(headerUrl)
   const logoImage = useImageLoaded(logoUrl)
   const displayProgramsCount = resolveOrganizationOverviewDisplayPrograms({
@@ -138,13 +140,11 @@ export function OrganizationOverviewCard({
         </div>
         <div className="min-w-0 space-y-0.5">
           <h3 className="text-foreground line-clamp-2 text-lg font-semibold leading-6">
-            {seed.organizationTitle}
+            {displayTitle}
           </h3>
-          {seed.organizationSubtitle ? (
-            <p className="text-muted-foreground line-clamp-1 text-sm">
-              {seed.organizationSubtitle}
-            </p>
-          ) : null}
+          <p className="text-muted-foreground line-clamp-1 text-sm">
+            {displaySubtitle}
+          </p>
         </div>
       </div>
 

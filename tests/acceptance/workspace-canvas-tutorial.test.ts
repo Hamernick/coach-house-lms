@@ -46,6 +46,12 @@ describe("workspace canvas tutorial", () => {
     expect(resolveWorkspaceCanvasTutorialVisibleCardIds(3)).toEqual([
       "organization-overview",
     ])
+
+    expect(resolveWorkspaceCanvasTutorialStep(4).id).toBe("accelerator-nav")
+    expect(resolveWorkspaceCanvasTutorialVisibleCardIds(4, ["accelerator"])).toEqual([
+      "organization-overview",
+      "accelerator",
+    ])
   })
 
   it("keeps tool steps in prompt mode until their shortcut is opened", () => {
@@ -57,24 +63,33 @@ describe("workspace canvas tutorial", () => {
     expect(resolveWorkspaceCanvasTutorialShortcutInstruction(3)).toContain(
       "Accelerator tool",
     )
-    expect(resolveWorkspaceCanvasTutorialContinueMode(4)).toBe("shortcut")
-    expect(resolveWorkspaceCanvasTutorialShortcutInstruction(4)).toContain(
+    expect(resolveWorkspaceCanvasTutorialContinueMode(4, ["accelerator"])).toBe("next")
+    expect(resolveWorkspaceCanvasTutorialContinueMode(5, ["accelerator"])).toBe("next")
+    expect(resolveWorkspaceCanvasTutorialContinueMode(6, ["accelerator"])).toBe("next")
+    expect(resolveWorkspaceCanvasTutorialContinueMode(7, ["accelerator"])).toBe(
+      "action",
+    )
+    expect(resolveWorkspaceCanvasTutorialContinueMode(8, ["accelerator"])).toBe(
+      "action",
+    )
+    expect(resolveWorkspaceCanvasTutorialContinueMode(9)).toBe("shortcut")
+    expect(resolveWorkspaceCanvasTutorialShortcutInstruction(9)).toContain(
       "Calendar tool",
     )
-    expect(resolveWorkspaceCanvasTutorialContinueMode(5)).toBe("shortcut")
-    expect(resolveWorkspaceCanvasTutorialShortcutInstruction(5)).toContain(
+    expect(resolveWorkspaceCanvasTutorialContinueMode(10)).toBe("shortcut")
+    expect(resolveWorkspaceCanvasTutorialShortcutInstruction(10)).toContain(
       "Programs tool",
     )
-    expect(resolveWorkspaceCanvasTutorialContinueMode(6)).toBe("shortcut")
-    expect(resolveWorkspaceCanvasTutorialShortcutInstruction(6)).toContain(
+    expect(resolveWorkspaceCanvasTutorialContinueMode(11)).toBe("shortcut")
+    expect(resolveWorkspaceCanvasTutorialShortcutInstruction(11)).toContain(
       "Documents tool",
     )
-    expect(resolveWorkspaceCanvasTutorialContinueMode(7)).toBe("shortcut")
-    expect(resolveWorkspaceCanvasTutorialShortcutInstruction(7)).toContain(
+    expect(resolveWorkspaceCanvasTutorialContinueMode(12)).toBe("shortcut")
+    expect(resolveWorkspaceCanvasTutorialShortcutInstruction(12)).toContain(
       "Fundraising tool",
     )
-    expect(resolveWorkspaceCanvasTutorialContinueMode(8)).toBe("shortcut")
-    expect(resolveWorkspaceCanvasTutorialShortcutInstruction(8)).toContain(
+    expect(resolveWorkspaceCanvasTutorialContinueMode(13)).toBe("shortcut")
+    expect(resolveWorkspaceCanvasTutorialShortcutInstruction(13)).toContain(
       "Communications tool",
     )
     expect(resolveWorkspaceCanvasTutorialContinueMode(1)).toBe("next")
@@ -103,37 +118,37 @@ describe("workspace canvas tutorial", () => {
   it("keeps previously opened tools visible on later prompt steps", () => {
     const openedStepIds = ["accelerator"] as const
 
-    expect(resolveWorkspaceCanvasTutorialContinueMode(4, [...openedStepIds])).toBe(
+    expect(resolveWorkspaceCanvasTutorialContinueMode(9, [...openedStepIds])).toBe(
       "shortcut",
     )
-    expect(resolveWorkspaceCanvasTutorialPromptTargetCardId(4, [...openedStepIds])).toBe(
+    expect(resolveWorkspaceCanvasTutorialPromptTargetCardId(9, [...openedStepIds])).toBe(
       "calendar",
     )
-    expect(resolveWorkspaceCanvasTutorialSceneFocusCardIds(4, [...openedStepIds])).toEqual([
+    expect(resolveWorkspaceCanvasTutorialSceneFocusCardIds(9, [...openedStepIds])).toEqual([
       "organization-overview",
     ])
-    expect(resolveWorkspaceCanvasTutorialVisibleCardIds(4, [...openedStepIds])).toEqual([
+    expect(resolveWorkspaceCanvasTutorialVisibleCardIds(9, [...openedStepIds])).toEqual([
       "organization-overview",
       "accelerator",
     ])
-    expect(resolveWorkspaceCanvasTutorialSelectedCardId(4, [...openedStepIds])).toBeNull()
+    expect(resolveWorkspaceCanvasTutorialSelectedCardId(9, [...openedStepIds])).toBeNull()
   })
 
   it("accumulates later opened tools while preserving the current-step selection", () => {
     const openedStepIds = ["accelerator", "calendar"] as const
 
-    expect(resolveWorkspaceCanvasTutorialContinueMode(4, [...openedStepIds])).toBe(
+    expect(resolveWorkspaceCanvasTutorialContinueMode(9, [...openedStepIds])).toBe(
       "next",
     )
-    expect(resolveWorkspaceCanvasTutorialVisibleCardIds(4, [...openedStepIds])).toEqual([
+    expect(resolveWorkspaceCanvasTutorialVisibleCardIds(9, [...openedStepIds])).toEqual([
       "organization-overview",
       "accelerator",
       "calendar",
     ])
-    expect(resolveWorkspaceCanvasTutorialSceneFocusCardIds(4, [...openedStepIds])).toEqual([
+    expect(resolveWorkspaceCanvasTutorialSceneFocusCardIds(9, [...openedStepIds])).toEqual([
       "calendar",
     ])
-    expect(resolveWorkspaceCanvasTutorialSelectedCardId(4, [...openedStepIds])).toBe(
+    expect(resolveWorkspaceCanvasTutorialSelectedCardId(9, [...openedStepIds])).toBe(
       "calendar",
     )
   })
@@ -158,15 +173,47 @@ describe("workspace canvas tutorial", () => {
     expect(resolveWorkspaceCanvasTutorialContinueMode(3, [])).toBe("shortcut")
   })
 
+  it("surfaces accelerator internal callouts before resuming the tool sequence", () => {
+    expect(resolveWorkspaceCanvasTutorialCallout(4, ["accelerator"])).toEqual({
+      kind: "accelerator-nav",
+      label: "Accelerator navigation",
+      instruction:
+        "Use these arrows to move backward and forward through the accelerator.",
+    })
+    expect(resolveWorkspaceCanvasTutorialCallout(5, ["accelerator"])).toEqual({
+      kind: "accelerator-picker",
+      label: "Lesson picker",
+      instruction:
+        "Switch lesson groups here to move between lessons in the accelerator.",
+    })
+    expect(resolveWorkspaceCanvasTutorialCallout(6, ["accelerator"])).toEqual({
+      kind: "accelerator-progress",
+      label: "Accelerator progress",
+      instruction:
+        "Hover the milestone markers to see what it takes to reach Fundable and Verified.",
+    })
+    expect(resolveWorkspaceCanvasTutorialCallout(7, ["accelerator"])).toEqual({
+      kind: "accelerator-first-module",
+      label: "First module",
+      instruction: "Click the first module step here to continue.",
+    })
+    expect(resolveWorkspaceCanvasTutorialCallout(8, ["accelerator"])).toEqual({
+      kind: "accelerator-close-module",
+      label: "Close module",
+      instruction:
+        "Click here to close this module and return to the accelerator.",
+    })
+  })
+
   it("anchors the collaboration step to the team access rail section", () => {
-    expect(resolveWorkspaceCanvasTutorialStep(9).id).toBe("collaboration")
-    expect(resolveWorkspaceCanvasTutorialCallout(9)).toEqual({
+    expect(resolveWorkspaceCanvasTutorialStep(14).id).toBe("collaboration")
+    expect(resolveWorkspaceCanvasTutorialCallout(14)).toEqual({
       kind: "team-access",
       label: "Team Access",
       instruction:
         "Use Team Access to invite members and manage who can work in this workspace.",
     })
-    expect(resolveWorkspaceCanvasTutorialSelectedCardId(9, [
+    expect(resolveWorkspaceCanvasTutorialSelectedCardId(14, [
       "accelerator",
       "calendar",
       "programs",
@@ -174,7 +221,7 @@ describe("workspace canvas tutorial", () => {
       "fundraising",
       "communications",
     ])).toBeNull()
-    expect(resolveWorkspaceCanvasTutorialSceneFocusCardIds(9, [
+    expect(resolveWorkspaceCanvasTutorialSceneFocusCardIds(14, [
       "accelerator",
       "calendar",
       "programs",

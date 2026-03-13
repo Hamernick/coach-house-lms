@@ -3,6 +3,7 @@ import { redirect } from "next/navigation"
 import Stripe from "stripe"
 
 import { requireServerSession } from "@/lib/auth"
+import { resolvePaidPlanTierFromMetadata } from "@/lib/billing/plan-tier"
 import { resolveDevtoolsAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
 import { resolveStripeRuntimeConfigsForFallback } from "@/lib/billing/stripe-runtime"
 import { createSupabaseAdminClient } from "@/lib/supabase"
@@ -98,9 +99,8 @@ export default async function PricingSuccessPage({
       const shouldShowWelcome = checkout.metadata?.context === "onboarding"
       const welcomeQuery = shouldShowWelcome ? "&welcome=1" : ""
 
-      const admin = createSupabaseAdminClient()
-
       if (checkout.mode === "payment" && checkout.metadata?.kind === "accelerator") {
+        const admin = createSupabaseAdminClient()
         const variant =
           checkout.metadata?.accelerator_variant === "without_coaching"
             ? "without_coaching"
@@ -138,6 +138,7 @@ export default async function PricingSuccessPage({
       }
 
       if (checkout.mode === "payment" && checkout.metadata?.kind === "elective") {
+        const admin = createSupabaseAdminClient()
         const moduleSlugCandidate = checkout.metadata?.elective_module_slug ?? ""
         if (!isElectiveAddOnModuleSlug(moduleSlugCandidate)) {
           redirect("/pricing?plan=electives&cancelled=true")
@@ -197,6 +198,8 @@ export default async function PricingSuccessPage({
             typeof metadataWithMode?.org_user_id === "string" && metadataWithMode.org_user_id.length > 0
               ? metadataWithMode.org_user_id
               : userId
+          const resolvedPlanTier =
+            resolvePaidPlanTierFromMetadata(metadataWithMode) ?? "organization"
           const planName =
             typeof metadataWithMode?.planName === "string" ? metadataWithMode.planName : null
           const kind = typeof metadataWithMode?.kind === "string" ? metadataWithMode.kind : null
@@ -215,9 +218,20 @@ export default async function PricingSuccessPage({
                   : null,
           }
 
-          await admin
-            .from("subscriptions" satisfies keyof Database["public"]["Tables"])
-            .upsert(upsertPayload, { onConflict: "user_id,stripe_subscription_id" })
+          try {
+            const admin = createSupabaseAdminClient()
+            await admin
+              .from("subscriptions" satisfies keyof Database["public"]["Tables"])
+              .upsert(upsertPayload, { onConflict: "user_id,stripe_subscription_id" })
+          } catch (error) {
+            console.error("Unable to persist subscription after checkout", {
+              sessionId: checkout.id,
+              subscriptionId: subscription.id,
+              subscriptionOwnerId,
+              redirectTarget,
+              error,
+            })
+          }
 
           const isSuccessfulSubscriptionState =
             status === "trialing" || status === "active" || status === "past_due"
@@ -228,7 +242,12 @@ export default async function PricingSuccessPage({
 
           if (redirectTarget) {
             if (isSuccessfulSubscriptionState) {
-              redirect(appendInternalRedirectParams(redirectTarget, { checkout: "success" }))
+              redirect(
+                appendInternalRedirectParams(redirectTarget, {
+                  checkout: "success",
+                  plan: resolvedPlanTier,
+                }),
+              )
             }
             redirect(
               appendInternalRedirectParams(redirectTarget, {

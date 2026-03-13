@@ -48,7 +48,7 @@ describe("workspace canvas tutorial runtime", () => {
 
   it("places the guide away from the visible cluster while keeping the current target", () => {
     const runtime = resolveWorkspaceCanvasTutorialRuntime({
-      tutorialStepIndex: 7,
+      tutorialStepIndex: 12,
       openedTutorialStepIds: ["accelerator", "calendar", "programs"],
       visibleCardIds: [
         "organization-overview",
@@ -85,7 +85,7 @@ describe("workspace canvas tutorial runtime", () => {
 
   it("targets the current tool once it becomes visible", () => {
     const runtime = resolveWorkspaceCanvasTutorialRuntime({
-      tutorialStepIndex: 4,
+      tutorialStepIndex: 9,
       openedTutorialStepIds: ["accelerator", "calendar"],
       visibleCardIds: ["organization-overview", "accelerator", "calendar"],
       existingNodes: [...EXISTING_NODES],
@@ -126,7 +126,7 @@ describe("workspace canvas tutorial runtime", () => {
 
   it("moves the guide toward the currently introduced tool instead of the full cluster", () => {
     const runtime = resolveWorkspaceCanvasTutorialRuntime({
-      tutorialStepIndex: 7,
+      tutorialStepIndex: 12,
       openedTutorialStepIds: ["accelerator", "calendar", "programs", "documents", "fundraising"],
       visibleCardIds: [
         "organization-overview",

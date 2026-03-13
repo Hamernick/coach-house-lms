@@ -1,13 +1,16 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useRef, useState, useTransition } from "react"
+import type HCaptcha from "@hcaptcha/react-hcaptcha"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 
+import { HCaptchaWidget } from "@/components/auth/hcaptcha-widget"
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
+import { isCaptchaConfigured } from "@/components/auth/sign-up-form-schema"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -19,6 +22,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { PasswordInput } from "@/components/auth/password-input"
+import { clientEnv } from "@/lib/env"
 
 const schema = z.object({
   email: z.string().email("Enter a valid email"),
@@ -84,7 +88,14 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
   const [errorMessage, setErrorMessage] = useState<string | null>(
     mapAuthErrorMessage(initialError) ?? searchError,
   )
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaError, setCaptchaError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
+  const captchaRef = useRef<HCaptcha | null>(null)
+  const captchaRequired = isCaptchaConfigured(
+    clientEnv.NEXT_PUBLIC_HCAPTCHA_SITE_KEY,
+    clientEnv.NEXT_PUBLIC_HCAPTCHA_ENABLED,
+  )
   const resolvedSignUpHref = useMemo(() => {
     const base = signUpHref ?? "/sign-up"
     if (!resolvedRedirectTo || base.includes("redirect=")) return base
@@ -110,19 +121,37 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
     setErrorMessage(mapAuthErrorMessage(initialError) ?? searchError)
   }, [initialError, searchError])
 
+  function resetCaptchaState() {
+    setCaptchaToken(null)
+    setCaptchaError(null)
+    captchaRef.current?.resetCaptcha()
+  }
+
   async function onSubmit(values: LoginFormValues) {
     setErrorMessage(null)
+    setCaptchaError(null)
+
+    if (captchaRequired && !captchaToken) {
+      setCaptchaError("Complete the security check to continue.")
+      return
+    }
+
     startTransition(async () => {
       const { error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
+        options: {
+          captchaToken: captchaRequired ? captchaToken ?? undefined : undefined,
+        },
       })
 
       if (error) {
+        resetCaptchaState()
         setErrorMessage(mapAuthErrorMessage(error.message))
         return
       }
 
+      resetCaptchaState()
       form.reset()
       router.replace(resolvedRedirectTo)
       router.refresh()
@@ -159,6 +188,30 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
               </FormItem>
             )}
           />
+          {captchaRequired ? (
+            <div className="space-y-2">
+              <HCaptchaWidget
+                captchaRef={captchaRef}
+                onVerify={(token) => {
+                  setCaptchaToken(token)
+                  setCaptchaError(null)
+                }}
+                onExpire={() => {
+                  setCaptchaToken(null)
+                  setCaptchaError("The security check expired. Complete it again to continue.")
+                }}
+                onError={(message) => {
+                  setCaptchaToken(null)
+                  setCaptchaError(message)
+                }}
+              />
+              {captchaError ? (
+                <p className="text-sm text-destructive" role="alert">
+                  {captchaError}
+                </p>
+              ) : null}
+            </div>
+          ) : null}
           {errorMessage ? (
             <p
               className={

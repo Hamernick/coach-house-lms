@@ -5,7 +5,7 @@ import { shouldAutoOpenRightRailForWorkspaceTutorialCallout } from "@/app/(dashb
 
 describe("workspace board canvas body", () => {
   it("auto-opens the right rail for the team access tutorial step", () => {
-    const tutorialCallout = resolveWorkspaceCanvasTutorialCallout(9, [])
+    const tutorialCallout = resolveWorkspaceCanvasTutorialCallout(14, [])
 
     expect(
       shouldAutoOpenRightRailForWorkspaceTutorialCallout(tutorialCallout),

@@ -165,6 +165,7 @@ export function buildWorkspaceAcceleratorCardSteps(
       flattened.push({
         id: `${timelineModule.id}:${stepKind}`,
         moduleId: timelineModule.id,
+        moduleSlug: timelineModule.slug ?? null,
         moduleTitle: timelineModule.title,
         stepKind,
         stepTitle: resolveStepTitle(stepKind),
@@ -181,6 +182,7 @@ export function buildWorkspaceAcceleratorCardSteps(
         moduleSequenceIndex: moduleIndex + 1,
         moduleSequenceTotal: moduleTotal,
         groupTitle: timelineModule.groupTitle || "Accelerator",
+        groupOrder: timelineModule.groupOrder ?? null,
         videoUrl: timelineModule.videoUrl,
         durationMinutes: typeof timelineModule.durationMinutes === "number" ? timelineModule.durationMinutes : null,
         resources: timelineModule.resources,
@@ -242,7 +244,8 @@ export function normalizeWorkspaceAcceleratorCardInput(
 
   return {
     steps: normalizedSteps,
-    size: input.size === "md" ? "md" : "sm",
+    size: input.size === "md" || input.size === "lg" ? input.size : "sm",
+    readinessSummary: input.readinessSummary ?? null,
     linkHrefOverride:
       typeof input.linkHrefOverride === "string" && input.linkHrefOverride.trim().length > 0
         ? input.linkHrefOverride
@@ -265,12 +268,16 @@ export function buildWorkspaceAcceleratorRuntimeActionsSignature({
   canGoNext,
   isCurrentStepCompleted,
   totalSteps,
+  selectedLessonGroupKey,
+  lessonGroupCount,
 }: {
   currentStepId: string | null
   canGoPrevious: boolean
   canGoNext: boolean
   isCurrentStepCompleted: boolean
   totalSteps: number
+  selectedLessonGroupKey?: string | null
+  lessonGroupCount?: number
 }) {
   return JSON.stringify({
     currentStepId,
@@ -278,5 +285,7 @@ export function buildWorkspaceAcceleratorRuntimeActionsSignature({
     canGoNext,
     isCurrentStepCompleted,
     totalSteps,
+    selectedLessonGroupKey: selectedLessonGroupKey ?? null,
+    lessonGroupCount: lessonGroupCount ?? 0,
   })
 }

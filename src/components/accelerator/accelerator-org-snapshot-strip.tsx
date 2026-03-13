@@ -30,6 +30,8 @@ export function AcceleratorOrgSnapshotStrip({
   moduleGroupsTotal,
   fundableCheckpoint = ACCELERATOR_FUNDABLE_THRESHOLD,
   verifiedCheckpoint = ACCELERATOR_VERIFIED_THRESHOLD,
+  fundableMilestoneChecklist = [],
+  verifiedMilestoneChecklist = [],
   readinessStateLabel = "Building",
   readinessTargetLabel = null,
   readinessChecklist = [],
@@ -81,6 +83,8 @@ export function AcceleratorOrgSnapshotStrip({
               progressPercent={progress}
               fundableCheckpoint={fundableCheckpoint}
               verifiedCheckpoint={verifiedCheckpoint}
+              fundableChecklist={fundableMilestoneChecklist}
+              verifiedChecklist={verifiedMilestoneChecklist}
             />
 
             <p className="text-[11px] text-muted-foreground">{lessonsSummaryText}</p>

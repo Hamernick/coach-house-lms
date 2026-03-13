@@ -14,11 +14,16 @@ export type WorkspaceCanvasTutorialStepId =
   | "welcome"
   | "organization"
   | "tool-buttons"
-  | "documents"
-  | "programs"
   | "accelerator"
-  | "fundraising"
+  | "accelerator-nav"
+  | "accelerator-picker"
+  | "accelerator-progress"
+  | "accelerator-first-module"
+  | "accelerator-close-module"
   | "calendar"
+  | "programs"
+  | "documents"
+  | "fundraising"
   | "communications"
   | "collaboration"
   | "finish"
@@ -35,6 +40,16 @@ export type WorkspaceCanvasTutorialCallout =
       label: string
       instruction: string
     }
+  | {
+      kind:
+        | "accelerator-nav"
+        | "accelerator-picker"
+        | "accelerator-progress"
+        | "accelerator-first-module"
+        | "accelerator-close-module"
+      label: string
+      instruction: string
+    }
 
 export type WorkspaceCanvasTutorialStep = {
   id: WorkspaceCanvasTutorialStepId
@@ -43,9 +58,17 @@ export type WorkspaceCanvasTutorialStep = {
   targetCardId: WorkspaceCanvasTutorialCardId | null
   targetLabel: string | null
   revealedCardIds: WorkspaceCanvasTutorialCardId[]
-  continueMode?: "next" | "shortcut"
+  continueMode?: "next" | "shortcut" | "action"
   calloutInstruction?: string | null
-  calloutTarget?: "shortcut-button" | "team-access" | null
+  calloutTarget?:
+    | "shortcut-button"
+    | "team-access"
+    | "accelerator-nav"
+    | "accelerator-picker"
+    | "accelerator-progress"
+    | "accelerator-first-module"
+    | "accelerator-close-module"
+    | null
   highlightShortcutButtons?: boolean
 }
 

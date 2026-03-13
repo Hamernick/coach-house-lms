@@ -1,12 +1,13 @@
 "use client"
 
-import { useMemo, useRef } from "react"
+import { useMemo } from "react"
 import Link from "next/link"
 import PlusIcon from "lucide-react/dist/esm/icons/plus"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
+import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 import { WorkspaceBoardInviteSheet } from "./workspace-board-invite-sheet"
@@ -70,7 +71,6 @@ export function WorkspaceBoardTeamAccessSection({
   } | null
   onInvitesChange: (nextInvites: WorkspaceCollaborationInvite[]) => void
 }) {
-  const sectionRef = useRef<HTMLElement | null>(null)
   const nowMs = Date.now()
   const activeInviteCount = countActiveWorkspaceInvites(invites, nowMs)
   const accessPeople = useMemo(
@@ -90,9 +90,8 @@ export function WorkspaceBoardTeamAccessSection({
     activeInviteCount,
   })
 
-  return (
+  const content = (
     <section
-      ref={sectionRef}
       className={cn(
         "space-y-2 rounded-[22px] px-0.5 transition-colors",
         tutorialCallout && "bg-primary/5 ring-1 ring-primary/35",
@@ -288,13 +287,20 @@ export function WorkspaceBoardTeamAccessSection({
           </p>
         </>
       )}
-      {tutorialCallout ? (
-        <WorkspaceTutorialCallout
-          anchorRef={sectionRef}
-          title={tutorialCallout.title}
-          instruction={tutorialCallout.instruction}
-        />
-      ) : null}
     </section>
+  )
+
+  if (!tutorialCallout) {
+    return content
+  }
+
+  return (
+    <Tooltip open>
+      <TooltipTrigger asChild>{content}</TooltipTrigger>
+      <WorkspaceTutorialCallout
+        title={tutorialCallout.title}
+        instruction={tutorialCallout.instruction}
+      />
+    </Tooltip>
   )
 }

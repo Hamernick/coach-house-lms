@@ -37,7 +37,7 @@ export const CARD_DIMENSION_OVERRIDES: Partial<
   accelerator: {
     sm: { width: 400, height: 252 },
     md: { width: 480, height: 520 },
-    lg: { width: 600, height: 620 },
+    lg: { width: 1180, height: 720 },
   },
   "brand-kit": {
     sm: { height: 360 },

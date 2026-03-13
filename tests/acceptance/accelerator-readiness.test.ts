@@ -69,6 +69,23 @@ describe("accelerator readiness", () => {
     expect(readiness.verified).toBe(false)
     expect(readiness.fundableMissing).toContain("Complete formation lessons")
     expect(readiness.fundableMissing).toContain("Set a program funding goal")
+    expect(readiness.fundableChecklist).toEqual([
+      {
+        id: "formation-lessons",
+        label: "Complete formation lessons",
+        complete: false,
+      },
+      {
+        id: "program-funding-goal",
+        label: "Set a program funding goal",
+        complete: false,
+      },
+      {
+        id: "legal-formation-document",
+        label: "Upload legal formation document",
+        complete: false,
+      },
+    ])
     expect(readiness.progressPercent).toBeLessThan(readiness.fundableCheckpoint)
   })
 
@@ -93,6 +110,12 @@ describe("accelerator readiness", () => {
 
     expect(readiness.fundable).toBe(true)
     expect(readiness.verified).toBe(false)
+    expect(readiness.fundableChecklist.every((item) => item.complete)).toBe(true)
+    expect(
+      readiness.verifiedChecklist.find(
+        (item) => item.id === "approved-formation-status",
+      )?.complete,
+    ).toBe(false)
     expect(readiness.progressPercent).toBeGreaterThanOrEqual(readiness.fundableCheckpoint)
     expect(readiness.progressPercent).toBeLessThan(readiness.verifiedCheckpoint)
   })
@@ -121,6 +144,7 @@ describe("accelerator readiness", () => {
 
     expect(readiness.fundable).toBe(true)
     expect(readiness.verified).toBe(true)
+    expect(readiness.verifiedChecklist.every((item) => item.complete)).toBe(true)
     expect(readiness.score).toBe(100)
     expect(readiness.progressPercent).toBe(100)
   })

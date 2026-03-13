@@ -74,7 +74,11 @@ export function AppShellInner({
   const hasRightRail = useRightRailPresence()
   const isMobile = useIsMobile()
   const { rightOpen, handleRightOpenChangeUser, handleRightOpenChangeAuto } =
-    useAppShellRightRailState({ hasRightRail, isMobile })
+    useAppShellRightRailState({
+      hasRightRail,
+      isMobile,
+      autoOpenOnDesktopWhenAvailable: hasUser,
+    })
   const rightRailControls = useMemo(
     () => ({
       rightOpen,

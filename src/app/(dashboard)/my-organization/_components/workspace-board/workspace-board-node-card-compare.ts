@@ -77,6 +77,17 @@ export function workspaceBoardCardPropsEqual(
     ) {
       return false
     }
+    if (
+      prevData.acceleratorTutorialCallout !== nextData.acceleratorTutorialCallout
+    ) {
+      return false
+    }
+    if (
+      prevData.onAcceleratorTutorialActionComplete !==
+      nextData.onAcceleratorTutorialActionComplete
+    ) {
+      return false
+    }
     if (prevData.journeyGuideState !== nextData.journeyGuideState) return false
   }
 

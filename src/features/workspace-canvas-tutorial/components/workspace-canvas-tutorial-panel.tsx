@@ -7,6 +7,7 @@ import { Dithering } from "@paper-design/shaders-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 import type { WorkspaceCanvasTutorialStepId } from "../types"
@@ -33,12 +34,18 @@ export function WorkspaceCanvasTutorialPanel({
     useWorkspaceCanvasTutorialController(stepIndex, openedStepIds)
   const isFirstStep = stepIndex <= 0
   const isFinalStep = stepIndex >= stepCount - 1
-  const continueWithShortcut = continueMode === "shortcut"
-  const fundraisingTitleBadge =
-    step.id === "fundraising" ? (
+  const continueBlocked = continueMode !== "next"
+  const continueHelperText =
+    continueMode === "shortcut"
+      ? "Click on the highlighted button on the card to continue."
+      : continueMode === "action"
+        ? "Use the highlighted part of the accelerator to continue."
+        : null
+  const comingSoonTitleBadge =
+    step.id === "fundraising" || step.id === "communications" ? (
       <Badge
         variant="outline"
-        className="rounded-full border-amber-300/70 bg-amber-100/70 px-2 py-0 text-[10px] font-semibold text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+        className="rounded-full border-border/70 bg-muted/70 px-2 py-0 text-[10px] font-semibold text-foreground/80 dark:bg-muted/30 dark:text-foreground/75"
       >
         Coming soon
       </Badge>
@@ -93,7 +100,29 @@ export function WorkspaceCanvasTutorialPanel({
               </Button>
             ) : null}
 
-            {!continueWithShortcut ? (
+            {continueBlocked ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="inline-flex">
+                    <Button
+                      type="button"
+                      size="icon"
+                      disabled
+                      className="nodrag rounded-xl"
+                      aria-label={continueHelperText ?? "Complete this step to continue"}
+                      title={continueHelperText ?? "Complete this step to continue"}
+                    >
+                      <ChevronRightIcon aria-hidden />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {continueHelperText ? (
+                  <TooltipContent side="bottom" align="end" sideOffset={10}>
+                    {continueHelperText}
+                  </TooltipContent>
+                ) : null}
+              </Tooltip>
+            ) : (
               <Button
                 type="button"
                 size="icon"
@@ -104,7 +133,7 @@ export function WorkspaceCanvasTutorialPanel({
               >
                 <ChevronRightIcon aria-hidden />
               </Button>
-            ) : null}
+            )}
           </div>
         </div>
 
@@ -124,7 +153,7 @@ export function WorkspaceCanvasTutorialPanel({
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">
               {step.title}
             </h2>
-            {fundraisingTitleBadge}
+            {comingSoonTitleBadge}
           </div>
           <p className="min-h-[5.25rem] text-[15px] leading-6 text-muted-foreground sm:min-h-[4.75rem]">
             {typedMessage}
@@ -136,9 +165,9 @@ export function WorkspaceCanvasTutorialPanel({
               )}
             />
           </p>
-          {continueWithShortcut ? (
+          {continueHelperText ? (
             <p className="text-xs leading-5 text-muted-foreground">
-              Click on the highlighted button on the card to continue.
+              {continueHelperText}
             </p>
           ) : null}
         </div>

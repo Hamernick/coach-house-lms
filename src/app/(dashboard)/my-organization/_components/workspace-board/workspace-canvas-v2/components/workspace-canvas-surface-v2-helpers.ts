@@ -2,7 +2,10 @@
 
 import type { Node } from "reactflow"
 
-import type { WorkspaceAcceleratorCardRuntimeSnapshot } from "@/features/workspace-accelerator-card"
+import type {
+  WorkspaceAcceleratorCardRuntimeSnapshot,
+  WorkspaceAcceleratorTutorialCallout,
+} from "@/features/workspace-accelerator-card"
 import type { WorkspaceCanvasTutorialNodeData } from "@/features/workspace-canvas-tutorial"
 
 import { resolveWorkspaceCardNodeStyle } from "../../workspace-board-layout"
@@ -91,6 +94,8 @@ export function buildWorkspaceCanvasV2CardDataLookup({
   onHideAcceleratorStepNode,
   onAcceleratorRuntimeChange,
   onAcceleratorRuntimeActionsChange,
+  acceleratorTutorialCallout,
+  onAcceleratorTutorialActionComplete,
   journeyGuideState,
   onFocusCard,
   organizationShortcutItems,
@@ -116,6 +121,8 @@ export function buildWorkspaceCanvasV2CardDataLookup({
     snapshot: WorkspaceAcceleratorCardRuntimeSnapshot,
   ) => void
   onAcceleratorRuntimeActionsChange: WorkspaceBoardNodeData["onAcceleratorRuntimeActionsChange"]
+  acceleratorTutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
+  onAcceleratorTutorialActionComplete?: () => void
   journeyGuideState: WorkspaceJourneyGuideState
   onFocusCard: (cardId: WorkspaceCardId) => void
   organizationShortcutItems: WorkspaceCardShortcutItemModel[]
@@ -190,6 +197,8 @@ export function buildWorkspaceCanvasV2CardDataLookup({
       onHideAcceleratorStepNode,
       onAcceleratorRuntimeChange,
       onAcceleratorRuntimeActionsChange,
+      acceleratorTutorialCallout,
+      onAcceleratorTutorialActionComplete,
     },
     "brand-kit": {
       ...baseData,

@@ -37,7 +37,7 @@ import { buildInitialOrganizationProfile } from "./helpers"
 import { applyFormationStatusAcceleratorProgressOverrides } from "./my-organization-accelerator-progress"
 import {
   buildAcceleratorTimelineModules,
-  buildModuleGroupTitleById,
+  buildModuleGroupMetaById,
 } from "./my-organization-accelerator-timeline"
 import { mapUpcomingEvents, type UpcomingEventRow } from "./upcoming-events"
 import { buildWorkspaceViewSeed } from "./workspace-view"
@@ -336,14 +336,14 @@ export default async function MyOrganizationPage({
     nextHref: nextFormationHref,
   }
 
-  const moduleGroupTitleById = buildModuleGroupTitleById(
+  const moduleGroupMetaById = buildModuleGroupMetaById(
     acceleratorProgressSummary.groups,
   )
   const acceleratorTimelineModules = await buildAcceleratorTimelineModules({
     supabase,
     userId: user.id,
     sortedRoadmapModules,
-    groupTitleById: moduleGroupTitleById,
+    groupMetaById: moduleGroupMetaById,
   })
   const acceleratorTimeline = buildWorkspaceAcceleratorCardSteps(acceleratorTimelineModules)
 

@@ -1,4 +1,8 @@
+import type { ReactNode } from "react"
+
 import BadgeCheckIcon from "lucide-react/dist/esm/icons/badge-check"
+import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
+import CircleIcon from "lucide-react/dist/esm/icons/circle"
 import DollarSignIcon from "lucide-react/dist/esm/icons/dollar-sign"
 
 import { clampPercent } from "@/components/accelerator/accelerator-org-snapshot-strip/helpers"
@@ -6,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   ACCELERATOR_FUNDABLE_THRESHOLD,
+  type AcceleratorReadinessChecklistItem,
   ACCELERATOR_VERIFIED_THRESHOLD,
 } from "@/lib/accelerator/readiness"
 import { cn } from "@/lib/utils"
@@ -14,6 +19,8 @@ type AcceleratorProgressRailProps = {
   progressPercent: number
   fundableCheckpoint?: number
   verifiedCheckpoint?: number
+  fundableChecklist?: AcceleratorReadinessChecklistItem[]
+  verifiedChecklist?: AcceleratorReadinessChecklistItem[]
   className?: string
 }
 
@@ -27,6 +34,84 @@ type AcceleratorProgressRailState = {
   verifiedReached: boolean
   firstSegmentClass: string
   secondSegmentClass: string
+}
+
+function AcceleratorMilestoneTooltip({
+  title,
+  reached,
+  icon,
+  items,
+}: {
+  title: string
+  reached: boolean
+  icon: ReactNode
+  items: AcceleratorReadinessChecklistItem[]
+}) {
+  const completeCount = items.filter((item) => item.complete).length
+
+  return (
+    <div className="w-[18rem] space-y-3 p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-1.5 text-sm font-semibold">
+            {icon}
+            <span>{title}</span>
+          </div>
+          <p className="text-xs text-primary-foreground/75">
+            {completeCount} of {items.length} complete
+          </p>
+        </div>
+        <span
+          className={cn(
+            "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
+            reached
+              ? "border-white/20 bg-white/14 text-primary-foreground"
+              : "border-white/15 bg-white/8 text-primary-foreground/80",
+          )}
+        >
+          {reached ? "Reached" : "In progress"}
+        </span>
+      </div>
+
+      <ul className="space-y-1.5">
+        {items.map((item) => {
+          const StatusIcon = item.complete ? CheckCircle2Icon : CircleIcon
+
+          return (
+            <li
+              key={item.id}
+              className={cn(
+                "flex items-start gap-2 rounded-lg border px-2.5 py-2",
+                item.complete
+                  ? "border-white/12 bg-white/10"
+                  : "border-white/10 bg-black/10",
+              )}
+            >
+              <StatusIcon
+                className={cn(
+                  "mt-0.5 h-4 w-4 shrink-0",
+                  item.complete
+                    ? "text-emerald-300"
+                    : "text-primary-foreground/55",
+                )}
+                aria-hidden
+              />
+              <span
+                className={cn(
+                  "text-xs leading-5",
+                  item.complete
+                    ? "text-primary-foreground/88"
+                    : "text-primary-foreground/72",
+                )}
+              >
+                {item.label}
+              </span>
+            </li>
+          )
+        })}
+      </ul>
+    </div>
+  )
 }
 
 export function resolveAcceleratorProgressRailState({
@@ -68,6 +153,8 @@ export function AcceleratorProgressRail({
   progressPercent,
   fundableCheckpoint = ACCELERATOR_FUNDABLE_THRESHOLD,
   verifiedCheckpoint = ACCELERATOR_VERIFIED_THRESHOLD,
+  fundableChecklist = [],
+  verifiedChecklist = [],
   className,
 }: AcceleratorProgressRailProps) {
   const state = resolveAcceleratorProgressRailState({
@@ -123,10 +210,14 @@ export function AcceleratorProgressRail({
         <TooltipContent
           side="top"
           sideOffset={8}
-          className="inline-flex items-center gap-1.5"
+          className="max-w-none whitespace-normal p-0"
         >
-          <DollarSignIcon className="size-3" aria-hidden />
-          <span>Fundable</span>
+          <AcceleratorMilestoneTooltip
+            title="Fundable"
+            reached={state.fundableReached}
+            icon={<DollarSignIcon className="size-3.5" aria-hidden />}
+            items={fundableChecklist}
+          />
         </TooltipContent>
       </Tooltip>
 
@@ -151,10 +242,14 @@ export function AcceleratorProgressRail({
         <TooltipContent
           side="top"
           sideOffset={8}
-          className="inline-flex items-center gap-1.5"
+          className="max-w-none whitespace-normal p-0"
         >
-          <BadgeCheckIcon className="size-2.5" aria-hidden />
-          <span>Verified</span>
+          <AcceleratorMilestoneTooltip
+            title="Verified"
+            reached={state.verifiedReached}
+            icon={<BadgeCheckIcon className="size-3.5" aria-hidden />}
+            items={verifiedChecklist}
+          />
         </TooltipContent>
       </Tooltip>
     </div>

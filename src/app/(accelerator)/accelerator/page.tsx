@@ -213,6 +213,8 @@ export default async function AcceleratorOverviewPage() {
           moduleGroupsTotal={lessonGroupProgress.total}
           fundableCheckpoint={readiness.fundableCheckpoint}
           verifiedCheckpoint={readiness.verifiedCheckpoint}
+          fundableMilestoneChecklist={readiness.fundableChecklist}
+          verifiedMilestoneChecklist={readiness.verifiedChecklist}
           readinessStateLabel={readinessStateLabel}
           readinessTargetLabel={readinessTargetLabel}
           readinessChecklist={readinessChecklist}

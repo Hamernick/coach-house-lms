@@ -2,12 +2,11 @@
 
 import { memo, startTransition, useCallback, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
-import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
-import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
 import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 
 import {
   WorkspaceAcceleratorCardPanel,
+  WorkspaceAcceleratorHeaderPicker,
   type WorkspaceAcceleratorCardInput,
   type WorkspaceAcceleratorCardRuntimeActions,
   type WorkspaceAcceleratorCardRuntimeSnapshot,
@@ -39,6 +38,34 @@ import type {
   WorkspaceCardSize,
 } from "./workspace-board-types"
 import type { WorkspaceBoardNodeData } from "./workspace-board-node-types"
+import { resolveWorkspaceAcceleratorReadinessSummary } from "./workspace-board-accelerator-card-helpers"
+
+function resolveAcceleratorHeaderMeta({
+  acceleratorRuntimeActions,
+  acceleratorRuntimeSnapshot,
+  acceleratorTutorialCallout,
+}: {
+  acceleratorRuntimeActions: WorkspaceAcceleratorCardRuntimeActions | null
+  acceleratorRuntimeSnapshot: WorkspaceAcceleratorCardRuntimeSnapshot | null
+  acceleratorTutorialCallout: WorkspaceBoardNodeData["acceleratorTutorialCallout"]
+}) {
+  if (!acceleratorRuntimeSnapshot || !acceleratorRuntimeActions) return undefined
+
+  return (
+    <WorkspaceAcceleratorHeaderPicker
+      lessonGroupOptions={acceleratorRuntimeSnapshot.lessonGroupOptions ?? []}
+      selectedLessonGroupKey={
+        acceleratorRuntimeSnapshot.selectedLessonGroupKey ?? ""
+      }
+      tutorialCallout={
+        acceleratorTutorialCallout?.focus === "picker"
+          ? acceleratorTutorialCallout
+          : null
+      }
+      onLessonGroupChange={acceleratorRuntimeActions.selectLessonGroup}
+    />
+  )
+}
 
 export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
   data,
@@ -50,6 +77,7 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
     cardId,
     size,
     seed,
+    organizationEditorData,
     canEdit,
     presentationMode,
     communications,
@@ -60,6 +88,8 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
     onAcceleratorStateChange,
     onAcceleratorRuntimeChange,
     onAcceleratorRuntimeActionsChange,
+    acceleratorTutorialCallout = null,
+    onAcceleratorTutorialActionComplete,
     acceleratorState,
     isJourneyTarget = false,
     isCanvasFullscreen = false,
@@ -76,7 +106,7 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
     ? () => onToggleCanvasFullscreen(cardId)
     : undefined
   const organizationEditorHref = "/workspace?view=editor&tab=company"
-const acceleratorPaywallHref =
+  const acceleratorPaywallHref =
     "/workspace?paywall=organization&plan=organization&upgrade=accelerator-access&source=accelerator"
   const acceleratorCardHref = seed.hasAcceleratorAccess
     ? cardMeta.fullHref
@@ -108,11 +138,11 @@ const acceleratorPaywallHref =
   const [communicationsMenuActions, setCommunicationsMenuActions] =
     useState<WorkspaceCardOverflowAction[]>([])
   const [programsCreateOpen, setProgramsCreateOpen] = useState(false)
-  const fundraisingTitleBadge =
-    cardId === "economic-engine" ? (
+  const comingSoonTitleBadge =
+    cardId === "economic-engine" || cardId === "communications" ? (
       <Badge
         variant="outline"
-        className="rounded-full border-amber-300/70 bg-amber-100/70 px-2 py-0 text-[10px] font-semibold text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+        className="rounded-full border-border/70 bg-muted/70 px-2 py-0 text-[10px] font-semibold text-foreground/80 dark:bg-muted/30 dark:text-foreground/75"
       >
         Coming soon
       </Badge>
@@ -127,6 +157,10 @@ const acceleratorPaywallHref =
           previous?.currentModuleStepTotal === snapshot.currentModuleStepTotal &&
           previous?.currentModuleCompletedCount === snapshot.currentModuleCompletedCount &&
           previous?.isCurrentModuleCompleted === snapshot.isCurrentModuleCompleted &&
+          previous?.isModuleViewerOpen === snapshot.isModuleViewerOpen &&
+          previous?.openModuleId === snapshot.openModuleId &&
+          JSON.stringify(previous?.lessonGroupOptions ?? []) ===
+            JSON.stringify(snapshot.lessonGroupOptions ?? []) &&
           previous?.currentIndex === snapshot.currentIndex &&
           previous?.totalSteps === snapshot.totalSteps
         ) {
@@ -154,13 +188,30 @@ const acceleratorPaywallHref =
     },
     [router],
   )
+  const acceleratorReadinessSummary = useMemo(
+    () =>
+      resolveWorkspaceAcceleratorReadinessSummary({
+        acceleratorState,
+        programs: (organizationEditorData?.programs ?? []).map((program) => ({
+          goal_cents: program.goal_cents ?? null,
+        })),
+        seed,
+      }),
+    [acceleratorState, organizationEditorData, seed],
+  )
 
   const acceleratorCardInput = useMemo<WorkspaceAcceleratorCardInput>(
     () => ({
       steps: seed.acceleratorTimeline ?? [],
-      size: resolvedCardSize === "sm" ? "sm" : "md",
+      size:
+        resolvedCardSize === "lg"
+          ? "lg"
+          : resolvedCardSize === "sm"
+            ? "sm"
+            : "md",
+      readinessSummary: acceleratorReadinessSummary,
       linkHrefOverride: seed.hasAcceleratorAccess ? null : acceleratorPaywallHref,
-      allowAutoResize: true,
+      allowAutoResize: false,
       storageKey: `${seed.orgId}:${seed.viewerId}`,
       onSizeChange: handleAcceleratorSizeChange,
       initialCurrentStepId: acceleratorState.activeStepId,
@@ -173,6 +224,7 @@ const acceleratorPaywallHref =
       handleAcceleratorProgressChange,
       handleAcceleratorSizeChange,
       resolvedCardSize,
+      acceleratorReadinessSummary,
       seed.acceleratorTimeline,
       seed.hasAcceleratorAccess,
       seed.orgId,
@@ -180,47 +232,27 @@ const acceleratorPaywallHref =
     ],
   )
 
-  const acceleratorHeaderMeta = useMemo(() => {
-    if (cardId !== "accelerator" || !acceleratorRuntimeSnapshot) return null
-    return (
-      <div className="inline-flex items-center gap-1">
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 rounded-md"
-          disabled={!acceleratorRuntimeSnapshot.canGoPrevious}
-          onClick={() => acceleratorRuntimeActions?.goPrevious()}
-          aria-label="Previous accelerator step"
-        >
-          <ChevronLeftIcon className="h-3.5 w-3.5" aria-hidden />
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 rounded-md"
-          disabled={!acceleratorRuntimeSnapshot.canGoNext}
-          onClick={() => acceleratorRuntimeActions?.goNext()}
-          aria-label="Next accelerator step"
-        >
-          <ChevronRightIcon className="h-3.5 w-3.5" aria-hidden />
-        </Button>
-      </div>
-    )
-  }, [acceleratorRuntimeActions, acceleratorRuntimeSnapshot, cardId])
-
   const frameContentClassName =
     cardId === "vault"
       ? "min-h-0 flex-1 px-0 pt-0 pb-0"
-      : cardId === "accelerator" || cardId === "brand-kit" || cardId === "communications"
+      : cardId === "accelerator"
+        ? "px-3 pt-0.5 pb-3"
+        : cardId === "brand-kit" || cardId === "communications"
         ? "pt-0.5"
         : undefined
+  const acceleratorHeaderMeta = resolveAcceleratorHeaderMeta({
+    acceleratorRuntimeActions,
+    acceleratorRuntimeSnapshot,
+    acceleratorTutorialCallout,
+  })
 
   return (
     <div
       className={cn(
         "relative min-h-0 w-full min-w-0 origin-center transition-[box-shadow,filter,opacity,transform] duration-200",
+        cardId === "accelerator" &&
+          acceleratorRuntimeSnapshot?.isModuleViewerOpen === true &&
+          "z-20",
         cardId === "accelerator" ||
           cardId === "organization-overview" ||
           cardId === "programs" ||
@@ -234,7 +266,7 @@ const acceleratorPaywallHref =
           <WorkspaceBoardOrganizationCardShell
             title={cardMeta.title}
             subtitle={cardMeta.subtitle}
-            headerMeta={acceleratorHeaderMeta}
+            headerMeta={undefined}
             size={effectiveCardSize}
             presentationMode={presentationMode}
             fullHref={cardMeta.fullHref}
@@ -257,7 +289,7 @@ const acceleratorPaywallHref =
             cardId={cardId}
             title={cardMeta.title}
             subtitle={cardMeta.subtitle}
-            titleBadge={fundraisingTitleBadge}
+            titleBadge={comingSoonTitleBadge}
             tone={cardId === "accelerator" ? "accelerator" : "default"}
             titleIcon={
               cardId === "accelerator" ? (
@@ -269,7 +301,7 @@ const acceleratorPaywallHref =
             }
             hideTitle={false}
             hideSubtitle={hideHeaderSubtitle}
-            headerMeta={acceleratorHeaderMeta}
+            headerMeta={cardId === "accelerator" ? acceleratorHeaderMeta : undefined}
             headerAction={
               cardId === "programs" && canEdit ? (
                 <Button
@@ -304,7 +336,12 @@ const acceleratorPaywallHref =
                 input={acceleratorCardInput}
                 onRuntimeChange={handleAcceleratorRuntimeChange}
                 onRuntimeActionsChange={handleAcceleratorRuntimeActionsChange}
-                onOpenStepNode={data.onOpenAcceleratorStepNode}
+                tutorialCallout={
+                  acceleratorTutorialCallout?.focus === "nav"
+                    ? null
+                    : acceleratorTutorialCallout
+                }
+                onTutorialActionComplete={onAcceleratorTutorialActionComplete}
               />
             ) : null}
             {cardId === "programs" ? (

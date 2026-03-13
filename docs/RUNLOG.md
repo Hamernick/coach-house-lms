@@ -24554,3 +24554,105 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - `pnpm exec eslint 'src/components/public/public-map-index.tsx' 'src/components/public/public-map-index/map-surface.tsx' 'src/components/public/public-map-index/use-public-map-preferences.ts' 'tests/acceptance/public-map-preferences.test.ts'` ✅
   - `pnpm exec vitest run tests/acceptance/public-map-preferences.test.ts` ✅
   - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-11 12:40 EDT - point public home login signup link at home signup section
+
+- Scope:
+  - `src/components/public/home-canvas-preview-panels.tsx`
+- Changes:
+  - Updated the `Need an account? Sign up` link in the public home login panel to route to `/?section=signup` instead of the legacy `/sign-up?intent=build` path.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/home-canvas-preview-panels.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-11 12:43 EDT - point public home signup login link at home login section
+
+- Scope:
+  - `src/components/public/home-canvas-preview-panels.tsx`
+- Changes:
+  - Updated the `Sign in` link in the public home signup panel to route to `/?section=login` instead of the standalone `/login` route so the auth flow stays inside the home canvas.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/home-canvas-preview-panels.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-11 12:56 EDT - surface missing Supabase management token in admin platform UI
+
+- Scope:
+  - `src/app/(admin)/admin/platform/page.tsx`
+  - `src/components/supabase-manager/database.tsx`
+  - `src/components/supabase-manager/error-message.ts`
+  - `tests/acceptance/supabase-manager-error-message.test.ts`
+- Changes:
+  - Added an explicit setup warning on `/admin/platform` when `SUPABASE_MANAGEMENT_API_TOKEN` is not configured in the active runtime.
+  - Updated the database manager to surface the real proxy error message instead of collapsing all failures into a generic “Error loading tables” state.
+  - Added focused acceptance coverage for structured management-proxy error message extraction.
+- Validation:
+  - `pnpm exec eslint 'src/app/(admin)/admin/platform/page.tsx' 'src/components/supabase-manager/database.tsx' 'src/components/supabase-manager/error-message.ts' 'tests/acceptance/supabase-manager-error-message.test.ts'` ✅
+  - `pnpm exec vitest run tests/acceptance/supabase-manager-error-message.test.ts` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-11 16:20 EDT - make admin platform full-bleed, toast missing setup, and anchor tutorial callouts to real tooltips
+
+- Scope:
+  - `src/app/(admin)/admin/platform/page.tsx`
+  - `src/app/(admin)/admin/platform/admin-platform-setup-toast.tsx`
+  - `src/app/actions/notifications.ts`
+  - `src/lib/supabase/management-api-config.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-tutorial-callout.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-team-access-section.tsx`
+  - `tests/acceptance/supabase-management-api-config.test.ts`
+- Changes:
+  - Removed the standalone header from `/admin/platform` and made the Supabase Platform Kit surface fill the full home-canvas content area instead of sitting inside an extra inset card.
+  - Replaced the inline missing-token warning with a manual-dismiss Sonner toast and surfaced the same setup issue in the app notifications feed as a synthetic admin notification.
+  - Added shared helpers for Supabase management-token configuration and synthetic platform setup notifications.
+  - Replaced the custom fixed-position tutorial callout with an anchored tooltip pattern so the step callout stays attached to its trigger while remaining inspectable/selectable for React Grab.
+- Validation:
+  - `pnpm exec eslint 'src/app/(admin)/admin/platform/page.tsx' 'src/app/(admin)/admin/platform/admin-platform-setup-toast.tsx' 'src/app/actions/notifications.ts' 'src/lib/supabase/management-api-config.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-team-access-section.tsx' 'tests/acceptance/supabase-management-api-config.test.ts'` ✅
+  - `pnpm exec vitest run tests/acceptance/supabase-management-api-config.test.ts tests/acceptance/supabase-manager-error-message.test.ts` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-11 16:40 EDT - softened the workspace tutorial shortcut callout by removing the button-like click badge, switching to inline "Click here" text with an arrow icon, and lowering the tooltip alignment against its anchor.
+2026-03-11 16:46 EDT - flattened the workspace shortcut buttons by removing the inner icon chip and softened the tutorial button highlight so the border no longer reads as doubled or overly thick.
+2026-03-11 16:53 EDT - pinned the workspace tutorial callout action to the top-right, increased the title size, and restored a visible outside-right arrow for the shortcut tooltip.
+2026-03-11 17:01 EDT - changed the organization overview card empty-state copy so missing org name/subtitle now render as Title and Subtitle.
+2026-03-11 17:09 EDT - replaced the single-action workspace card overflow menu with a direct fullscreen-style icon link to the editor route.
+2026-03-11 17:16 EDT - restored the workspace tutorial callout to native tooltip arrow geometry, centered it against the shortcut trigger, and kept the action text pinned top-right.
+2026-03-11 17:21 EDT - shifted the workspace tutorial callout back down by restoring a start-aligned tooltip offset against the shortcut trigger.
+2026-03-11 17:28 EDT - rebuilt the workspace tutorial callout as a centered flag with a small outside-right pointer so it points at the middle of the shortcut button while keeping the action text in the top-right.
+2026-03-11 17:34 EDT - reduced the workspace tutorial flag pointer size and locked it to the action-row height while shifting the tooltip back down to target the button center.
+2026-03-11 17:41 EDT - simplified the workspace tutorial callout back to native tooltip anchoring by removing the custom pointer geometry and keeping only a custom inner content layout.
+2026-03-11 17:52 EDT - split workspace tutorial callouts into two modes: a local anchored bubble for canvas shortcut buttons to eliminate zoom jitter, and the existing tooltip-anchored version for right-rail tutorial targets.
+2026-03-11 18:00 EDT - retuned the anchored workspace shortcut callout so the Click here row and pointer share the button center line while the body hangs lower like a flag.
+2026-03-11 18:07 EDT - unified all workspace shortcut buttons onto one blue active/open state and kept inactive tool buttons grayscale instead of using per-tool accent colors.
+2026-03-11 18:11 EDT - softened the workspace tutorial callout action label by dropping Click here from semibold to medium weight.
+2026-03-11 19:00 EDT - expanded the workspace guide so Accelerator now has its own internal substeps for header navigation, lesson-group selection, milestone progress, and a required first-module click before the tutorial resumes the rest of the workspace tools; also switched gated tutorial steps to show a disabled Next button with helper tooltip text, and expanded the accelerator progress rail milestone tooltips with Fundable/Verified requirement lists derived from workspace readiness data.
+2026-03-11 19:18 EDT - removed the mixed inline/floating accelerator tutorial callouts and rewired the shortcut, accelerator nav, lesson picker, progress strip, and first-module prompt to use the same forced-open tooltip primitive anchored to their real trigger elements; focused validation passed with `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-accelerator-card-helpers.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx'`, `pnpm exec tsc --noEmit`, `pnpm exec vitest run tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-accelerator-card.test.ts tests/acceptance/workspace-accelerator-card-checklist.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`, and `pnpm check:quality`.
+2026-03-11 19:21 EDT - fixed the accelerator checklist tutorial highlight leak so the first visible module step only keeps the blue tutorial state during the gated first-module tutorial step instead of staying permanently highlighted afterward; validation passed with focused `eslint`, `tsc`, and `vitest` on the accelerator/tutorial surfaces.
+2026-03-11 19:23 EDT - changed the accelerator lesson-picker tutorial copy to say “lessons” instead of “sections”.
+2026-03-11 19:38 EDT - upgraded the Fundable and Verified accelerator milestone tooltips from plain missing-text lists into real status checklists backed by structured readiness items, and threaded the same milestone checklist data through both the workspace accelerator card and the full accelerator overview rail; validation passed with focused `eslint`, `tsc`, and `vitest` on readiness, progress rail, and workspace accelerator surfaces.
+2026-03-11 19:52 EDT - added a new gated `Close the Module` accelerator tutorial step immediately after the required first-module click, anchored its callout to the real step-node close button, and wired the tutorial flow so opening the first module advances directly into the close-module prompt while closing the node completes that action step and reveals `Next`; validation passed with focused `eslint`, `tsc`, and `vitest` on the workspace tutorial and accelerator surfaces.
+2026-03-11 20:02 EDT - changed both fundraising `Coming soon` pills to a neutral grayscale badge treatment in the workspace guide card and the live workspace fundraising card header; validation passed with focused `eslint` and `tsc`.
+2026-03-11 20:05 EDT - extended the same neutral grayscale `Coming soon` badge treatment to the communications tutorial card and the live workspace communications card header; validation passed with focused `eslint` and `tsc`.
+2026-03-11 20:12 EDT - made the shared sidebar coaching CTA responsive by keeping the full `Coach scheduling` card only on taller viewports and swapping to a compact `Coaching` sidebar item with the coaching avatar group and the same booking action on shorter screens; validation passed with focused `eslint` and `tsc`.
+2026-03-11 20:18 EDT - moved the roadmap editor `Return To Workspace` action out of the right-rail footer and into the section header controls stack so it renders directly above the roadmap status select; validation passed with focused `eslint` and `tsc`.
+2026-03-11 23:30 EDT - replaced the workspace accelerator’s floating step-node module flow with an embedded in-card viewer: clicking a checklist step now expands the accelerator card to `lg`, opens a rounded two-pane lesson screen on the right, reuses the existing step content renderer inside the card, and mounts the old notes/resources/coach/AI right rail inside the expanded pane; completing or closing the module collapses the viewer back to the checklist-only card. I also extended the runtime snapshot/equality logic to track embedded viewer state (`isModuleViewerOpen` / `openModuleId`), removed the stale workspace panel `onOpenStepNode` path, and kept the tutorial close-module step anchored to the embedded viewer close button instead of the old floating node. Validation passed with focused `eslint`, focused `vitest`, `pnpm exec tsc --noEmit`, and a full `pnpm check:quality`.
+2026-03-11 23:41 EDT - corrected the embedded accelerator lesson proportions after the first in-card viewer pass shrank the video step: widened the accelerator `lg` card from `920` to `1180`, slightly widened the left checklist column, and reduced the embedded notes rail width so the lesson content regains the full-screen feel the old floating step-node had. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:02 EDT - moved the accelerator previous/next controls out of the workspace card header and into the top-right of the checklist header so they sit with the module list they control; the nav tutorial callout now anchors to that checklist-header control group instead of the outer card header. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:19 EDT - moved the accelerator lesson-group picker out of the checklist/sidebar area and into the outer accelerator card header, right-aligned beside the `Accelerator` title; the header picker now uses the live runtime lesson-group options and actions, while the graph/runtime snapshot plumbing was updated to carry the fuller accelerator runtime action shape without type drift. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:28 EDT - removed the extra “0 of 9 steps complete” progress summary line from the embedded workspace accelerator strip and deleted the dead counter props that only existed to render that copy. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:31 EDT - right-aligned the accelerator module/step count chips in the workspace accelerator sidebar so the metadata row now sits on the right instead of the left. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:36 EDT - tightened the embedded workspace accelerator spacing by removing the panel’s extra bottom padding, giving the accelerator card content a matching `px-3 / pb-3` inset, and slightly reducing the checklist shell padding so the progress and checklist blocks read wider inside the parent card. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:41 EDT - bumped the embedded accelerator checklist header copy slightly so the lesson-group title now uses `text-xs` and the supporting instruction copy uses `text-[11px]` for better readability. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:44 EDT - widened the accelerator card header lesson-group picker, then tightened it back to `w-[224px] max-w-[32vw]` so longer lesson names still fit better without pushing the `Accelerator` title onto a second line. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:50 EDT - updated the accelerator header lesson-group picker so long selected lesson titles truncate by default and slide horizontally on hover, letting the full label be read without widening the trigger or wrapping the card header. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 01:00 EDT - changed the authenticated app-shell right rail to auto-open on desktop when right-rail content becomes available, while leaving the public home preview behavior unchanged; this ensures users land in the logged-in shell with the right sidebar open unless they explicitly close it. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 01:11 EDT - fixed the accelerator lesson-group picker ordering by carrying the source class-group order from the server-side accelerator timeline into each workspace step and sorting lesson groups by that explicit order first; roadmap-title aliases remain as a fallback for unlabeled/legacy groups, and unknown/custom groups still preserve insertion order. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 10:40 EDT - fixed the onboarding pricing post-Stripe return path so successful builder checkouts no longer strand users on the pricing step when subscription syncing throws. `/pricing/success` now preserves a successful internal redirect with `checkout=success&plan=...` even if the subscription upsert/admin sync fails, and onboarding now honors that successful `source=onboarding_pricing` return by applying the paid plan override client-side and resuming on the `org` step instead of forcing pricing again. Validation passed with focused `vitest`, `eslint`, and `pnpm exec tsc --noEmit`.
+2026-03-12 14:09 EDT - added hCaptcha support to the shared signup form by wiring the official `@hcaptcha/react-hcaptcha` widget into signup-only flows, introducing the optional public `NEXT_PUBLIC_HCAPTCHA_SITE_KEY` env, and passing `options.captchaToken` to `supabase.auth.signUp()` when configured; also added a confirm-password field with zod validation so mismatched passwords are blocked before submit. Login remained unchanged. Validation passed with focused `vitest`, focused `eslint`, and `pnpm exec tsc --noEmit`.
+2026-03-12 14:18 EDT - added Vercel Analytics to the root App Router layout by installing `@vercel/analytics` and mounting `<Analytics />` in `src/app/layout.tsx` so analytics runs across the entire app. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 17:43 EDT - restored the older onboarding-style formation-status card treatment on the public `/find` organization detail sidebar by updating the contained `OrganizationFormationStatusSummary` variant to use the prior rounded card layout with the circular check indicator, while leaving the current onboarding toggle mechanics unchanged. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 17:54 EDT - tightened the public organization detail action-link buttons by reducing their height from `h-20` to `h-16` and shrinking the icon-to-label gap so labels sit closer to the icons without changing the grid or behavior. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 17:58 EDT - made the entire public `/find` organization list card reliably open details by letting the existing full-card overlay button receive clicks through non-interactive content layers, while keeping the favorite heart and `Details` affordance independently clickable; also removed the container chrome from `Details` so it renders as icon + text only. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 18:12 EDT - added hCaptcha handling to the password login form so local and production sign-in work when Supabase captcha is enabled: the login form now renders the shared hCaptcha widget below the password field, blocks submit until it is completed, passes `options.captchaToken` into `supabase.auth.signInWithPassword()`, and resets the widget after failed attempts. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 18:51 EDT - installed the project-scoped `hcaptcha-public-docs` agent skill at `.agents/skills/hcaptcha-public-docs/SKILL.md` so Codex can read and cite the public hCaptcha LLM markdown docs with local search-index discovery and enterprise handoff guidance.
+2026-03-13 10:55 EDT - disabled hCaptcha across the app by adding a default-off `NEXT_PUBLIC_HCAPTCHA_ENABLED` gate that all active auth captcha checks now respect, so login/signup no longer render the widget or send captcha tokens unless that flag is explicitly re-enabled later. The shared widget remains in place for future reactivation, but runtime behavior is now off by default even if a site key is still configured. Validation passed with focused `eslint`, `pnpm exec vitest run tests/acceptance/sign-up-form-schema.test.ts`, and `pnpm exec tsc --noEmit`.

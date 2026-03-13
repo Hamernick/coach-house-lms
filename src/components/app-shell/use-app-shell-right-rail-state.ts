@@ -5,9 +5,11 @@ import { useEffect, useRef, useState } from "react"
 export function useAppShellRightRailState({
   hasRightRail,
   isMobile,
+  autoOpenOnDesktopWhenAvailable = false,
 }: {
   hasRightRail: boolean
   isMobile: boolean
+  autoOpenOnDesktopWhenAvailable?: boolean
 }) {
   const [rightOpen, setRightOpen] = useState(() => {
     if (typeof window === "undefined") return false
@@ -21,15 +23,21 @@ export function useAppShellRightRailState({
       setRightOpen(false)
       return
     }
-    // Avoid "late pop-open" when right-rail content mounts after page paint.
-    // If the user hasn't set a preference yet, keep the current state.
+    if (
+      !isMobile &&
+      autoOpenOnDesktopWhenAvailable &&
+      rightRailPreferenceRef.current === null
+    ) {
+      setRightOpen(true)
+      return
+    }
     if (!isMobile && rightRailPreferenceRef.current === "open") {
       setRightOpen(true)
     }
     if (!isMobile && rightRailPreferenceRef.current === "closed") {
       setRightOpen(false)
     }
-  }, [hasRightRail, isMobile])
+  }, [autoOpenOnDesktopWhenAvailable, hasRightRail, isMobile])
 
   useEffect(() => {
     if (isMobile && !wasMobileRef.current) {

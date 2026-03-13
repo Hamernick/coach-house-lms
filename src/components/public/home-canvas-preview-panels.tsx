@@ -32,7 +32,7 @@ export function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
   const heading = "Create account"
   const description = "Join Coach House and start building your organization workspace."
   const builderRedirectTo = "/workspace?onboarding_flow=1&source=home_signup"
-  const builderLoginHref = `/login?redirect=${encodeURIComponent(builderRedirectTo)}`
+  const builderLoginHref = "/?section=login"
 
   return (
     <CanvasPanelShell centered>
@@ -41,7 +41,7 @@ export function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
           <LoginPanel
             redirectTo={builderRedirectTo}
             className="max-w-none space-y-5"
-            signUpHref="/sign-up?intent=build"
+            signUpHref="/?section=signup"
           />
         ) : (
           <>

@@ -50,6 +50,71 @@ export const WORKSPACE_CANVAS_TUTORIAL_STEPS: WorkspaceCanvasTutorialStep[] = [
     calloutInstruction: "Click to open the Accelerator tool and continue.",
   },
   {
+    id: "accelerator-nav",
+    title: "Accelerator Navigation",
+    message:
+      "Use the header arrows to move between accelerator lessons without leaving the workspace.",
+    targetCardId: "accelerator",
+    targetLabel: "Accelerator navigation",
+    revealedCardIds: ["organization-overview", "accelerator"],
+    continueMode: "next",
+    calloutTarget: "accelerator-nav",
+    calloutInstruction:
+      "Use these arrows to move backward and forward through the accelerator.",
+  },
+  {
+    id: "accelerator-picker",
+    title: "Lesson Groups",
+    message:
+      "Use the lesson picker to jump between lesson groups and narrow the checklist to the part of the accelerator you want to work on.",
+    targetCardId: "accelerator",
+    targetLabel: "Lesson picker",
+    revealedCardIds: ["organization-overview", "accelerator"],
+    continueMode: "next",
+    calloutTarget: "accelerator-picker",
+    calloutInstruction:
+      "Switch lesson groups here to move between lessons in the accelerator.",
+  },
+  {
+    id: "accelerator-progress",
+    title: "Progress",
+    message:
+      "This strip shows your accelerator progress and the Fundable and Verified milestones you are working toward.",
+    targetCardId: "accelerator",
+    targetLabel: "Accelerator progress",
+    revealedCardIds: ["organization-overview", "accelerator"],
+    continueMode: "next",
+    calloutTarget: "accelerator-progress",
+    calloutInstruction:
+      "Hover the milestone markers to see what it takes to reach Fundable and Verified.",
+  },
+  {
+    id: "accelerator-first-module",
+    title: "Open Your First Module",
+    message:
+      "Click the first visible module step in the checklist to open it and continue the walkthrough.",
+    targetCardId: "accelerator",
+    targetLabel: "First module",
+    revealedCardIds: ["organization-overview", "accelerator"],
+    continueMode: "action",
+    calloutTarget: "accelerator-first-module",
+    calloutInstruction:
+      "Click the first module step here to continue.",
+  },
+  {
+    id: "accelerator-close-module",
+    title: "Close the Module",
+    message:
+      "Use the close button in the module header to dismiss this lesson and return to the accelerator card.",
+    targetCardId: "accelerator",
+    targetLabel: "Close module",
+    revealedCardIds: ["organization-overview", "accelerator"],
+    continueMode: "action",
+    calloutTarget: "accelerator-close-module",
+    calloutInstruction:
+      "Click here to close this module and return to the accelerator.",
+  },
+  {
     id: "calendar",
     title: "Calendar",
     message:
@@ -208,10 +273,10 @@ export function resolveWorkspaceCanvasTutorialContinueMode(
   openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
-  if (step.continueMode === "shortcut") {
+  if (step.continueMode === "shortcut" || step.continueMode === "action") {
     return isWorkspaceCanvasTutorialStepOpened(stepIndex, openedStepIds)
       ? "next"
-      : "shortcut"
+      : step.continueMode
   }
   return step.continueMode ?? "next"
 }
@@ -338,15 +403,44 @@ export function resolveWorkspaceCanvasTutorialCallout(
     }
   }
 
+  const continueMode = resolveWorkspaceCanvasTutorialContinueMode(
+    stepIndex,
+    openedStepIds,
+  )
+
   if (
     step.calloutTarget === "shortcut-button" &&
-    resolveWorkspaceCanvasTutorialContinueMode(stepIndex, openedStepIds) ===
-      "shortcut" &&
+    continueMode === "shortcut" &&
     step.targetCardId
   ) {
     return {
       kind: "shortcut-button",
       cardId: step.targetCardId,
+      label,
+      instruction,
+    }
+  }
+
+  if (
+    step.calloutTarget === "accelerator-first-module" &&
+    continueMode === "action"
+  ) {
+    return {
+      kind: "accelerator-first-module",
+      label,
+      instruction,
+    }
+  }
+
+  if (
+    step.calloutTarget === "accelerator-nav" ||
+    step.calloutTarget === "accelerator-picker" ||
+    step.calloutTarget === "accelerator-progress" ||
+    (step.calloutTarget === "accelerator-close-module" &&
+      continueMode === "action")
+  ) {
+    return {
+      kind: step.calloutTarget,
       label,
       instruction,
     }

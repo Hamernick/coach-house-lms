@@ -153,14 +153,14 @@ async function loadTimelineModuleRows({
 
 function buildModuleSeed({
   roadmapModule,
-  groupTitleById,
+  groupMetaById,
   contentByModuleId,
   moduleMetaById,
   modulesWithAssignments,
   moduleContextById,
 }: {
   roadmapModule: ModuleCard
-  groupTitleById: Map<string, string>
+  groupMetaById: Map<string, { title: string; order: number }>
   contentByModuleId: Map<string, { videoUrl: string | null; resources: unknown }>
   moduleMetaById: Map<
     string,
@@ -172,6 +172,7 @@ function buildModuleSeed({
   const content = contentByModuleId.get(roadmapModule.id)
   const meta = moduleMetaById.get(roadmapModule.id)
   const moduleContextEntry = moduleContextById.get(roadmapModule.id)
+  const groupMeta = groupMetaById.get(roadmapModule.id)
   const moduleRecord = moduleContextEntry?.module
   const resourcesFromModuleRecord = (moduleRecord?.resources ?? []).map(
     (resource, index) => ({
@@ -190,11 +191,13 @@ function buildModuleSeed({
 
   return {
     id: roadmapModule.id,
+    slug: roadmapModule.slug,
     title: roadmapModule.title,
     description: roadmapModule.description ?? null,
     href: roadmapModule.href,
     status: roadmapModule.status,
-    groupTitle: groupTitleById.get(roadmapModule.id) ?? "Accelerator",
+    groupTitle: groupMeta?.title ?? "Accelerator",
+    groupOrder: groupMeta?.order ?? null,
     videoUrl,
     durationMinutes: moduleRecord?.durationMinutes ?? meta?.durationMinutes ?? null,
     resources,
@@ -215,15 +218,15 @@ function buildModuleSeed({
   }
 }
 
-export function buildModuleGroupTitleById(
+export function buildModuleGroupMetaById(
   groups: ModuleGroup[]
-): Map<string, string> {
-  const lookup = new Map<string, string>()
-  for (const group of groups) {
+): Map<string, { title: string; order: number }> {
+  const lookup = new Map<string, { title: string; order: number }>()
+  groups.forEach((group, groupIndex) => {
     for (const groupModule of group.modules) {
-      lookup.set(groupModule.id, group.title)
+      lookup.set(groupModule.id, { title: group.title, order: groupIndex })
     }
-  }
+  })
   return lookup
 }
 
@@ -231,12 +234,12 @@ export async function buildAcceleratorTimelineModules({
   supabase,
   userId,
   sortedRoadmapModules,
-  groupTitleById,
+  groupMetaById,
 }: {
   supabase: SupabaseServerClient
   userId: string
   sortedRoadmapModules: ModuleCard[]
-  groupTitleById: Map<string, string>
+  groupMetaById: Map<string, { title: string; order: number }>
 }) {
   const timelineModuleIds = sortedRoadmapModules.map((roadmapModule) => roadmapModule.id)
   const timelineClassSlugs = Array.from(
@@ -281,7 +284,7 @@ export async function buildAcceleratorTimelineModules({
   return sortedRoadmapModules.map((roadmapModule) =>
     buildModuleSeed({
       roadmapModule,
-      groupTitleById,
+      groupMetaById,
       contentByModuleId,
       moduleMetaById,
       modulesWithAssignments,

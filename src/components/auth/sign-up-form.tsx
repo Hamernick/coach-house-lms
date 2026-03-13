@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react"
-import type HCaptcha from "@hcaptcha/react-hcaptcha"
+import { useEffect, useMemo, useState, useTransition } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -10,9 +9,8 @@ import { useForm } from "react-hook-form"
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
 import { createTesterAccountAction } from "@/app/(auth)/tester/sign-up/actions"
 import { resolveAuthCallbackUrl } from "@/components/auth/auth-callback-url"
-import { HCaptchaWidget } from "@/components/auth/hcaptcha-widget"
 import { clearOnboardingDraft } from "@/components/onboarding/onboarding-dialog/draft"
-import { isCaptchaConfigured, signUpSchema, type SignUpValues } from "@/components/auth/sign-up-form-schema"
+import { signUpSchema, type SignUpValues } from "@/components/auth/sign-up-form-schema"
 import type { IntentFocus } from "@/components/onboarding/onboarding-dialog/types"
 import { PasswordInput } from "@/components/auth/password-input"
 import { Button } from "@/components/ui/button"
@@ -26,7 +24,6 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { clientEnv } from "@/lib/env"
 
 const DEFAULT_BUILDER_REDIRECT = "/workspace?onboarding_flow=1&source=signup"
 const DEFAULT_MEMBER_REDIRECT = "/find?member_onboarding=1&source=signup"
@@ -143,10 +140,7 @@ export function SignUpForm({
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState<string>("")
   const [countdown, setCountdown] = useState(20)
-  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
-  const [captchaError, setCaptchaError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
-  const captchaRef = useRef<HCaptcha | null>(null)
   const activeIntentFocus = lockedIntentFocus ?? intentFocus
   const resolvedRedirectTo = useMemo(
     () =>
@@ -167,11 +161,6 @@ export function SignUpForm({
     [loginHref, resolvedRedirectTo],
   )
   const isTesterInstantSignup = signUpMetadata?.qa_tester === true
-  const captchaRequired =
-    isCaptchaConfigured(
-      clientEnv.NEXT_PUBLIC_HCAPTCHA_SITE_KEY,
-      clientEnv.NEXT_PUBLIC_HCAPTCHA_ENABLED,
-    ) && !isTesterInstantSignup
 
   const form = useForm<SignUpValues>({
     resolver: zodResolver(signUpSchema),
@@ -181,12 +170,6 @@ export function SignUpForm({
       confirmPassword: "",
     },
   })
-
-  function resetCaptchaState() {
-    setCaptchaToken(null)
-    setCaptchaError(null)
-    captchaRef.current?.resetCaptcha()
-  }
 
   useEffect(() => {
     if (status !== "success") return
@@ -210,12 +193,6 @@ export function SignUpForm({
     setStatus("idle")
     setMessage("")
     setCountdown(20)
-    setCaptchaError(null)
-
-    if (captchaRequired && !captchaToken) {
-      setCaptchaError("Complete the security check to continue.")
-      return
-    }
 
     startTransition(async () => {
       if (isTesterInstantSignup) {
@@ -255,7 +232,6 @@ export function SignUpForm({
         password: values.password,
         options: {
           emailRedirectTo,
-          captchaToken: captchaRequired ? captchaToken ?? undefined : undefined,
           data: {
             ...(signUpMetadata ?? {}),
             account_intent: resolveLegacyAccountIntent(activeIntentFocus),
@@ -265,20 +241,17 @@ export function SignUpForm({
       })
 
       if (error) {
-        resetCaptchaState()
         setStatus("error")
         setMessage(resolveSignUpErrorMessage(error.message, isTesterInstantSignup))
         return
       }
 
       if (isExistingAccountResponse(data.user)) {
-        resetCaptchaState()
         setStatus("error")
         setMessage("An account with this email already exists. Sign in instead.")
         return
       }
 
-      resetCaptchaState()
       clearOnboardingDraft()
       setStatus("success")
       setMessage(
@@ -365,36 +338,6 @@ export function SignUpForm({
               </FormItem>
             )}
           />
-          {captchaRequired ? (
-            <div className="grid gap-2">
-              <FormLabel>Security check</FormLabel>
-              <div className="overflow-hidden rounded-xl border border-border/60 bg-background p-3">
-                <HCaptchaWidget
-                  captchaRef={captchaRef}
-                  onVerify={(token) => {
-                    setCaptchaToken(token)
-                    setCaptchaError(null)
-                  }}
-                  onExpire={() => {
-                    setCaptchaToken(null)
-                    setCaptchaError("Security check expired. Please try again.")
-                  }}
-                  onError={(nextError) => {
-                    setCaptchaToken(null)
-                    setCaptchaError(nextError)
-                  }}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Complete the hCaptcha check before creating your account.
-              </p>
-              {captchaError ? (
-                <p className="text-sm text-destructive" role="alert">
-                  {captchaError}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
           {status !== "idle" ? (
             <p
               className={`text-sm ${status === "success" ? "text-emerald-600" : "text-destructive"}`}

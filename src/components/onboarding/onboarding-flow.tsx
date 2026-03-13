@@ -12,8 +12,8 @@ import {
   type SaveOnboardingDraftExtra,
   writeOnboardingDraftSnapshot,
 } from "./onboarding-dialog/draft-writer"
-import { resolveOnboardingError } from "./onboarding-dialog/helpers"
 import {
+  resolveOnboardingError,
   resolveOnboardingPricingEntryStepId,
   resolveOnboardingPricingPlanOverride,
 } from "./onboarding-dialog/helpers"
@@ -61,13 +61,11 @@ function useApplyPricingEntryPoint({
   setStep: Dispatch<SetStateAction<number>>
 }) {
   const pricingEntryAppliedRef = useRef(false)
-
   useEffect(() => {
     if (!open) return
     if (pricingEntryAppliedRef.current) return
     const entryStepId = resolveOnboardingPricingEntryStepId(searchParams)
     if (!entryStepId) return
-
     pricingEntryAppliedRef.current = true
     setIntentFocus("build")
     const pricingStepIndex = resolveOnboardingSteps("build").findIndex(

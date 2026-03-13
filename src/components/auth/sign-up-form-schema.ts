@@ -13,15 +13,6 @@ export const signUpSchema = z
 
 export type SignUpValues = z.infer<typeof signUpSchema>
 
-function isCaptchaFlagEnabled(enabled: boolean | string | null | undefined) {
-  if (typeof enabled === "boolean") return enabled
-  if (typeof enabled !== "string") return false
-  return enabled.trim().toLowerCase() === "true"
-}
-
-export function isCaptchaConfigured(
-  siteKey: string | null | undefined,
-  enabled: boolean | string | null | undefined = false,
-) {
-  return isCaptchaFlagEnabled(enabled) && Boolean(siteKey && siteKey.trim().length > 0)
+export function isCaptchaConfigured(siteKey: string | null | undefined) {
+  return Boolean(siteKey && siteKey.trim().length > 0)
 }

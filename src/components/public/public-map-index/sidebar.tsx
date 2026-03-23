@@ -1,6 +1,12 @@
 "use client"
 
-import type { CSSProperties } from "react"
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react"
 import SearchIcon from "lucide-react/dist/esm/icons/search"
 
 import { Button } from "@/components/ui/button"
@@ -44,9 +50,53 @@ export function PublicMapSidebar({
   setSelectedOrgId,
   setSidebarMode,
 }: PublicMapSidebarProps) {
+  const listScrollRef = useRef<HTMLDivElement | null>(null)
+  const [listFadeState, setListFadeState] = useState({
+    showTopFade: false,
+    showBottomFade: false,
+  })
   const mapSidebarProviderStyle = {
     "--sidebar-width": "100%",
   } as CSSProperties
+  const syncListFadeState = useCallback(() => {
+    const element = listScrollRef.current
+    if (!element) {
+      setListFadeState({
+        showTopFade: false,
+        showBottomFade: false,
+      })
+      return
+    }
+
+    const maxScrollTop = element.scrollHeight - element.clientHeight
+    const showTopFade = element.scrollTop > 2
+    const showBottomFade = maxScrollTop - element.scrollTop > 2
+
+    setListFadeState((current) => {
+      if (
+        current.showTopFade === showTopFade &&
+        current.showBottomFade === showBottomFade
+      ) {
+        return current
+      }
+      return {
+        showTopFade,
+        showBottomFade,
+      }
+    })
+  }, [])
+
+  useEffect(() => {
+    syncListFadeState()
+    const element = listScrollRef.current
+    if (!element || typeof ResizeObserver === "undefined") return
+
+    const observer = new ResizeObserver(() => {
+      syncListFadeState()
+    })
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [filteredOrganizations, query, sidebarMode, syncListFadeState])
 
   return (
     <>
@@ -98,20 +148,39 @@ export function PublicMapSidebar({
                   />
                 </SidebarGroupContent>
               </SidebarGroup>
-              <SidebarGroup className="min-h-0 flex-1 px-2 py-0">
+              <SidebarGroup className="relative min-h-0 flex-1 overflow-hidden px-2 py-0">
                 <SidebarGroupContent className="h-full min-h-0 pl-0">
-                  <div className="h-full min-h-0 overflow-y-auto pt-1 pl-1 pr-1 pb-1 [scrollbar-width:thin]">
-                    <PublicMapOrganizationList
-                      organizations={filteredOrganizations}
-                      selectedOrgId={selectedOrganization?.id ?? null}
-                      favorites={favorites}
-                      query={query}
-                      onSelectOrg={setSelectedOrgId}
-                      onToggleFavorite={toggleFavorite}
-                      onOpenDetails={(orgId) => {
-                        setSelectedOrgId(orgId)
-                        setSidebarMode("details")
-                      }}
+                  <div className="relative h-full min-h-0">
+                    <div
+                      ref={listScrollRef}
+                      onScroll={syncListFadeState}
+                      className="h-full min-h-0 overflow-y-auto scroll-smooth pt-1 pb-1 pl-1 pr-1 [scrollbar-width:thin]"
+                    >
+                      <PublicMapOrganizationList
+                        organizations={filteredOrganizations}
+                        selectedOrgId={selectedOrganization?.id ?? null}
+                        favorites={favorites}
+                        query={query}
+                        onSelectOrg={setSelectedOrgId}
+                        onToggleFavorite={toggleFavorite}
+                        onOpenDetails={(orgId) => {
+                          setSelectedOrgId(orgId)
+                          setSidebarMode("details")
+                        }}
+                      />
+                    </div>
+
+                    <div
+                      className={cn(
+                        "pointer-events-none absolute inset-x-0 top-0 z-20 h-7 bg-gradient-to-b from-background/95 via-background/45 to-transparent transition-opacity duration-200",
+                        listFadeState.showTopFade ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    <div
+                      className={cn(
+                        "pointer-events-none absolute inset-x-0 bottom-0 z-20 h-7 bg-gradient-to-t from-background/95 via-background/45 to-transparent transition-opacity duration-200",
+                        listFadeState.showBottomFade ? "opacity-100" : "opacity-0",
+                      )}
                     />
                   </div>
                 </SidebarGroupContent>

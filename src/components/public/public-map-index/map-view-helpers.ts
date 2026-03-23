@@ -24,8 +24,8 @@ export const PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID =
   "public-map-organizations-cluster-hit"
 export const PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID =
   "public-map-organizations-point-hit"
-export const PUBLIC_MAP_CLUSTER_RADIUS = 60
-export const PUBLIC_MAP_CLUSTER_MAX_ZOOM = 12
+export const PUBLIC_MAP_CLUSTER_RADIUS = 28
+export const PUBLIC_MAP_CLUSTER_MAX_ZOOM = 9
 
 export type PublicMapOrganizationFeatureCollection = {
   type: "FeatureCollection"

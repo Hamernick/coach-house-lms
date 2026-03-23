@@ -247,33 +247,36 @@ export function usePublicMapClusteredMarkers({
                 return
               }
 
-              if (typeof source.getClusterLeaves !== "function") {
-                source.getClusterExpansionZoom(clusterId, (error, zoom) => {
-                  const expansionZoom =
-                    typeof zoom === "number" && Number.isFinite(zoom) ? zoom : null
-                  if (error || expansionZoom === null) {
-                    activeMap.easeTo({
-                      center: coordinates,
-                      zoom: Math.max(activeMap.getZoom() + 1.25, 6),
-                      duration: 420,
-                      essential: true,
-                    })
-                    return
-                  }
-
+              source.getClusterExpansionZoom(clusterId, (error, zoom) => {
+                const expansionZoom =
+                  typeof zoom === "number" && Number.isFinite(zoom) ? zoom : null
+                if (error || expansionZoom === null) {
                   activeMap.easeTo({
                     center: coordinates,
-                    zoom: Math.min(expansionZoom, 15.5),
-                    duration: 480,
+                    zoom: Math.max(activeMap.getZoom() + 1.25, 6),
+                    duration: 420,
                     essential: true,
                   })
-                })
-                return
-              }
+                  return
+                }
 
-              const leafLimit = Math.max(2, Math.min(pointCount, 128))
-              source.getClusterLeaves(clusterId, leafLimit, 0, (leafError, leaves) => {
-                if (!leafError && Array.isArray(leaves) && leaves.length > 1) {
+                const targetZoom = Math.min(
+                  Math.max(expansionZoom + 0.85, activeMap.getZoom() + 1.1),
+                  16,
+                )
+
+                activeMap.easeTo({
+                  center: coordinates,
+                  zoom: targetZoom,
+                  duration: 460,
+                  essential: true,
+                })
+
+                if (typeof source.getClusterLeaves !== "function") return
+                const leafLimit = Math.max(2, Math.min(pointCount, 12))
+                source.getClusterLeaves(clusterId, leafLimit, 0, (leafError, leaves) => {
+                  if (leafError || !Array.isArray(leaves) || leaves.length < 2) return
+
                   const bounds = new activeMapbox.LngLatBounds()
                   for (const leaf of leaves) {
                     const leafCoordinates = resolveFeatureCoordinates(
@@ -282,35 +285,12 @@ export function usePublicMapClusteredMarkers({
                     if (!leafCoordinates) continue
                     bounds.extend(leafCoordinates)
                   }
+                  if (bounds.isEmpty()) return
 
-                  if (!bounds.isEmpty()) {
-                    activeMap.fitBounds(bounds, {
-                      padding: resolveFitPadding(activeMap),
-                      maxZoom: 13.5,
-                      duration: 520,
-                    })
-                    return
-                  }
-                }
-
-                source.getClusterExpansionZoom(clusterId, (error, zoom) => {
-                  const expansionZoom =
-                    typeof zoom === "number" && Number.isFinite(zoom) ? zoom : null
-                  if (error || expansionZoom === null) {
-                    activeMap.easeTo({
-                      center: coordinates,
-                      zoom: Math.max(activeMap.getZoom() + 1.25, 6),
-                      duration: 420,
-                      essential: true,
-                    })
-                    return
-                  }
-
-                  activeMap.easeTo({
-                    center: coordinates,
-                    zoom: Math.min(expansionZoom, 15.5),
-                    duration: 480,
-                    essential: true,
+                  activeMap.fitBounds(bounds, {
+                    padding: resolveFitPadding(activeMap),
+                    maxZoom: 15.5,
+                    duration: 520,
                   })
                 })
               })

@@ -258,6 +258,7 @@ function useWorkspaceAcceleratorRuntimeSync({
   }, [onRuntimeActionsChange, runtimeActions, runtimeActionsSignature])
 }
 
+// eslint-disable-next-line max-lines-per-function
 export function WorkspaceAcceleratorCardPanel({
   input,
   presentationMode = "embedded",

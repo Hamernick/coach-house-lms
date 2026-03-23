@@ -140,6 +140,7 @@ function resolveWorkspaceBoardFrameContentClassName({
   return undefined
 }
 
+// eslint-disable-next-line max-lines-per-function
 export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
   data,
 }: {

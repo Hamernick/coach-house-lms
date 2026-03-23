@@ -1,5 +1,3 @@
-"use client"
-
 export type ReactGrabDebugSurfaceKind =
   | "trigger"
   | "content"

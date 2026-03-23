@@ -53,7 +53,7 @@ describe("workspace board canvas helpers", () => {
     expect(next.hiddenCardIds).not.toContain("programs")
     expect(next.hiddenCardIds).not.toContain("roadmap")
     expect(next.hiddenCardIds).not.toContain("accelerator")
-    expect(next.hiddenCardIds).not.toContain("calendar")
+    expect(next.hiddenCardIds).toContain("calendar")
     expect(next.hiddenCardIds).toContain("economic-engine")
     expect(next.hiddenCardIds).toContain("communications")
     expect(
@@ -97,10 +97,11 @@ describe("workspace board canvas helpers", () => {
     expect(accelerator).toBeTruthy()
     expect(calendar).toBeTruthy()
     expect(accelerator?.size).toBe("sm")
-    expect((programs?.x ?? 0)).toBeGreaterThan(organization?.x ?? 0)
-    expect((roadmap?.x ?? 0)).toBeGreaterThan(programs?.x ?? 0)
-    expect((accelerator?.x ?? 0)).toBeGreaterThan(roadmap?.x ?? 0)
-    expect((calendar?.x ?? 0)).toBeGreaterThan(accelerator?.x ?? 0)
+    expect((roadmap?.x ?? 0)).toBeLessThan(organization?.x ?? 0)
+    expect((programs?.x ?? 0)).toBe(organization?.x ?? 0)
+    expect((programs?.y ?? 0)).toBeGreaterThan(organization?.y ?? 0)
+    expect((accelerator?.x ?? 0)).toBeGreaterThan(organization?.x ?? 0)
+    expect((calendar?.x ?? 0)).toBeGreaterThanOrEqual(accelerator?.x ?? 0)
   })
 
   it("resolves one explicit completion exit request from the completed board state", () => {

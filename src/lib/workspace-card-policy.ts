@@ -16,7 +16,6 @@ export const WORKSPACE_REST_VISIBLE_CARD_IDS = [
   "programs",
   "roadmap",
   "accelerator",
-  "calendar",
 ] as const
 
 export function isWorkspaceTemporarilyUnavailableCardId(cardId: string) {

@@ -9,6 +9,9 @@ function buildInitials(name: string) {
 }
 
 export const ORGANIZATION_MARKER_OFFSET_Y = -12
+const PUBLIC_MAP_MARKER_REACT_GRAB_SOURCE =
+  "src/components/public/public-map-index/map-markers.ts"
+const PUBLIC_MAP_MARKER_REACT_GRAB_COMPONENT = "PublicMapOrganizationMarker"
 
 function resolveAccent(primaryGroup: PublicMapOrganization["primaryGroup"]) {
   return PUBLIC_MAP_GROUP_ACCENTS[primaryGroup] ?? PUBLIC_MAP_GROUP_ACCENTS.community
@@ -96,6 +99,39 @@ function syncMarkerAvatarImage({
   }
 }
 
+export function buildPublicMapMarkerReactGrabMetadata(organizationId: string) {
+  if (process.env.NODE_ENV === "production") return
+
+  const ownerId = `public-map-marker:${organizationId}`
+  return {
+    "data-react-grab-anchor": PUBLIC_MAP_MARKER_REACT_GRAB_COMPONENT,
+    "data-react-grab-owner-id": ownerId,
+    "data-react-grab-link-id": ownerId,
+    "data-react-grab-owner-component": PUBLIC_MAP_MARKER_REACT_GRAB_COMPONENT,
+    "data-react-grab-surface-component": PUBLIC_MAP_MARKER_REACT_GRAB_COMPONENT,
+    "data-react-grab-owner-source": PUBLIC_MAP_MARKER_REACT_GRAB_SOURCE,
+    "data-react-grab-surface-source": PUBLIC_MAP_MARKER_REACT_GRAB_SOURCE,
+    "data-react-grab-owner-slot": "marker",
+    "data-react-grab-surface-slot": "marker",
+    "data-react-grab-surface-kind": "root",
+  } as const
+}
+
+function attachMarkerReactGrabMetadata({
+  button,
+  organizationId,
+}: {
+  button: HTMLButtonElement
+  organizationId: string
+}) {
+  const metadata = buildPublicMapMarkerReactGrabMetadata(organizationId)
+  if (!metadata) return
+
+  for (const [key, value] of Object.entries(metadata)) {
+    button.setAttribute(key, value)
+  }
+}
+
 export function updateOrganizationMarkerElement({
   element,
   organization,
@@ -143,6 +179,10 @@ export function createOrganizationMarkerElement({
   button.style.gap = "5px"
   button.style.minWidth = "124px"
   button.style.maxWidth = "132px"
+  attachMarkerReactGrabMetadata({
+    button,
+    organizationId: organization.id,
+  })
 
   const avatar = document.createElement("span")
   avatar.dataset.markerPart = "avatar"

@@ -23,6 +23,7 @@ export function useWorkspaceCanvasViewportControls({
   focusCardRequest,
   journeyGuideState,
   visibleNodeIds,
+  onResetToBaseLayout,
 }: {
   flowInstanceRef: MutableRefObject<ReactFlowInstance | null>
   tutorialActive: boolean
@@ -31,6 +32,7 @@ export function useWorkspaceCanvasViewportControls({
   focusCardRequest: WorkspaceCanvasSurfaceV2Props["focusCardRequest"]
   journeyGuideState: WorkspaceCanvasSurfaceV2Props["journeyGuideState"]
   visibleNodeIds: string[]
+  onResetToBaseLayout: WorkspaceCanvasSurfaceV2Props["onResetToBaseLayout"]
 }) {
   const handleZoomIn = useCallback(() => {
     void flowInstanceRef.current?.zoomIn({ duration: 180 })
@@ -70,6 +72,7 @@ export function useWorkspaceCanvasViewportControls({
   ])
 
   const handleResetView = useCallback(() => {
+    onResetToBaseLayout()
     const flowInstance = flowInstanceRef.current
     if (!flowInstance) return
     const command = resolveWorkspaceCanvasViewportCommand({
@@ -88,7 +91,7 @@ export function useWorkspaceCanvasViewportControls({
       sceneFitOptions: WORKSPACE_CANVAS_V2_TUTORIAL_SCENE_FIT_OPTIONS,
       focusCardOptions: WORKSPACE_CANVAS_V2_CARD_FOCUS_OPTIONS,
     })
-  }, [flowInstanceRef, visibleNodeIds])
+  }, [flowInstanceRef, onResetToBaseLayout, visibleNodeIds])
 
   return {
     handleZoomIn,

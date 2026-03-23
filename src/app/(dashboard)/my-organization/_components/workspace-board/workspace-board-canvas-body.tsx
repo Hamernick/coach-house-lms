@@ -64,6 +64,7 @@ export function WorkspaceBoardCanvasBody({
   onOnboardingFlowChange,
   onPersistNodePosition,
   onToggleCardVisibility,
+  onResetToBaseLayout,
   onConnectCards,
   onDisconnectConnection,
   onDisconnectAllConnections,
@@ -109,6 +110,7 @@ export function WorkspaceBoardCanvasBody({
     cardId: WorkspaceCardId,
     context?: WorkspaceBoardToggleContext,
   ) => void
+  onResetToBaseLayout: () => void
   onConnectCards: (source: WorkspaceCardId, target: WorkspaceCardId) => void
   onDisconnectConnection: (connectionId: string) => void
   onDisconnectAllConnections: () => void
@@ -195,6 +197,7 @@ export function WorkspaceBoardCanvasBody({
           onOnboardingFlowChange={onOnboardingFlowChange}
           onPersistNodePosition={onPersistNodePosition}
           onToggleCardVisibility={onToggleCardVisibility}
+          onResetToBaseLayout={onResetToBaseLayout}
           onConnectCards={onConnectCards}
           onDisconnectConnection={onDisconnectConnection}
           onDisconnectAllConnections={onDisconnectAllConnections}

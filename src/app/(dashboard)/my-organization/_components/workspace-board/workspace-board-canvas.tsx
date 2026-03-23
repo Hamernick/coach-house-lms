@@ -22,6 +22,7 @@ import { applyAutoLayout } from "./workspace-board-layout"
 import {
   applyWorkspaceTutorialSnapshot,
   areWorkspaceOnboardingFlowStatesEqual,
+  buildCompletedWorkspaceTutorialBoardState,
 } from "./workspace-board-onboarding-flow"
 import { WorkspaceBoardCanvasBody } from "./workspace-board-canvas-body"
 import {
@@ -332,6 +333,15 @@ export function WorkspaceBoardCanvas({
     }))
   }, [allowEditing])
 
+  const handleResetToBaseLayout = useCallback(() => {
+    if (!allowEditing) return
+
+    setBoardState((previous) => buildCompletedWorkspaceTutorialBoardState(previous))
+    setFocusCardRequest(null)
+    setTutorialCompletionExitRequest(null)
+    setLayoutFitRequestKey((previous) => previous + 1)
+  }, [allowEditing])
+
   const rightRailCurrentUser = useWorkspaceRightRailCurrentUser(seed)
 
   useWorkspaceJourneyAutoFocus({
@@ -384,6 +394,7 @@ export function WorkspaceBoardCanvas({
         onOnboardingFlowChange={handleOnboardingFlowChange}
         onPersistNodePosition={handlePersistNodePosition}
         onToggleCardVisibility={handleToggleCardVisibility}
+        onResetToBaseLayout={handleResetToBaseLayout}
         onConnectCards={handleConnectCards}
         onDisconnectConnection={handleDisconnectConnection}
         onDisconnectAllConnections={handleDisconnectAllConnections}

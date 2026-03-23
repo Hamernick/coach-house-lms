@@ -1,6 +1,6 @@
 "use client"
 
-import type { RefObject } from "react"
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
@@ -10,6 +10,7 @@ import { PublicMapAuthSheet } from "./auth-sheet"
 import type { UserLocationFeedback } from "./user-location"
 import { PublicMapSidebar } from "./sidebar"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import { resolvePublicMapSidebarWidth } from "./map-view-helpers"
 
 type PublicMapSurfaceProps = {
   containerRef: RefObject<HTMLDivElement | null>
@@ -30,6 +31,7 @@ type PublicMapSurfaceProps = {
   onSelectOrg: (orgId: string) => void
   onSidebarModeChange: (mode: SidebarMode) => void
   onAuthSheetOpenChange: (nextOpen: boolean) => void
+  onSidebarInsetChange?: (value: number) => void
 }
 
 export function PublicMapSurface({
@@ -51,11 +53,47 @@ export function PublicMapSurface({
   onSelectOrg,
   onSidebarModeChange,
   onAuthSheetOpenChange,
+  onSidebarInsetChange,
 }: PublicMapSurfaceProps) {
+  const surfaceRef = useRef<HTMLDivElement | null>(null)
+  const [surfaceWidth, setSurfaceWidth] = useState(0)
+
+  useEffect(() => {
+    const element = surfaceRef.current
+    if (!element) return
+
+    const updateSize = () => setSurfaceWidth(element.clientWidth)
+    updateSize()
+
+    if (typeof ResizeObserver === "undefined") {
+      window.addEventListener("resize", updateSize)
+      return () => window.removeEventListener("resize", updateSize)
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0]
+      if (!entry) return
+      setSurfaceWidth(entry.contentRect.width)
+    })
+
+    observer.observe(element)
+    return () => observer.disconnect()
+  }, [])
+
+  const sidebarWidth = useMemo(
+    () => resolvePublicMapSidebarWidth({ surfaceWidth, sidebarMode }),
+    [sidebarMode, surfaceWidth],
+  )
+
+  useEffect(() => {
+    onSidebarInsetChange?.(sidebarWidth)
+  }, [onSidebarInsetChange, sidebarWidth])
+
   return (
     <div className="relative h-full min-h-0 overflow-hidden bg-background">
       <PublicMapSidebar
         sidebarMode={sidebarMode}
+        sidebarWidth={sidebarWidth}
         filteredOrganizations={filteredOrganizations}
         selectedOrganization={selectedOrganization}
         favorites={favorites}
@@ -75,11 +113,8 @@ export function PublicMapSurface({
           </Alert>
         </div>
       ) : (
-        <div className="relative h-full min-h-[520px]">
-          <div
-            className="absolute inset-y-0 right-0"
-            style={{ left: sidebarMode === "hidden" ? 0 : "min(390px, 100%)" }}
-          >
+        <div ref={surfaceRef} className="relative h-full min-h-[520px]">
+          <div className="absolute inset-0">
             <div
               ref={containerRef}
               className="h-full w-full"

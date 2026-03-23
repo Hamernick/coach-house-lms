@@ -18,16 +18,16 @@ export function PublicMapSearchCard({
   onHidePanel,
 }: PublicMapSearchCardProps) {
   return (
-    <div className="space-y-3 border-b border-border/60 bg-transparent px-3 pb-3 pt-3 text-card-foreground">
+    <div className="space-y-3 border-b border-white/30 bg-transparent px-3 pb-3 pt-3 text-card-foreground">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[31px] font-semibold leading-none tracking-tight">Search</p>
+        <p className="text-[23px] font-semibold leading-tight tracking-tight">Resource map</p>
         {onHidePanel ? (
           <Button
             type="button"
             variant="ghost"
             size="icon"
             onClick={onHidePanel}
-            className="h-8 w-8 rounded-full border border-border/70 bg-background/80 text-foreground hover:bg-muted"
+            className="h-8 w-8 rounded-full border border-white/35 bg-background/48 text-foreground shadow-sm backdrop-blur-xl supports-[backdrop-filter]:bg-background/40 hover:bg-background/62"
             aria-label="Hide search panel"
           >
             <XIcon className="h-4 w-4" aria-hidden />

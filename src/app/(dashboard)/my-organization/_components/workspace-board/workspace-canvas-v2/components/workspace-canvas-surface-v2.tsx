@@ -88,6 +88,7 @@ export function WorkspaceCanvasSurfaceV2({
   onDisconnectConnection,
   onDisconnectAllConnections,
   onToggleCardVisibility,
+  onResetToBaseLayout,
   onTutorialCompletionExitHandled,
 }: WorkspaceCanvasSurfaceV2Props) {
   const flowInstanceRef = useRef<ReactFlowInstance | null>(null)
@@ -317,6 +318,7 @@ export function WorkspaceCanvasSurfaceV2({
     focusCardRequest,
     journeyGuideState,
     visibleNodeIds,
+    onResetToBaseLayout,
   })
   useWorkspaceCanvasCameraController({
     flowInstanceRef,

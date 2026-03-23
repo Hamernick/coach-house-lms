@@ -52,6 +52,7 @@ export type WorkspaceBoardFlowSurfaceProps = {
     cardId: WorkspaceCardId,
     context?: WorkspaceBoardToggleContext,
   ) => void
+  onResetToBaseLayout: () => void
   onConnectCards: (source: WorkspaceCardId, target: WorkspaceCardId) => void
   onDisconnectConnection: (connectionId: string) => void
   onDisconnectAllConnections: () => void
@@ -93,6 +94,7 @@ export const WorkspaceBoardFlowSurface = memo(function WorkspaceBoardFlowSurface
       onDisconnectConnection={props.onDisconnectConnection}
       onDisconnectAllConnections={props.onDisconnectAllConnections}
       onToggleCardVisibility={props.onToggleCardVisibility}
+      onResetToBaseLayout={props.onResetToBaseLayout}
       onTutorialCompletionExitHandled={props.onTutorialCompletionExitHandled}
     />
   )

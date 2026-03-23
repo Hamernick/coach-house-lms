@@ -263,6 +263,7 @@ describe("workspace canvas tutorial", () => {
     expect(buildWorkspaceCanvasTutorialCompletionHiddenCardIds()).toEqual([
       "brand-kit",
       "economic-engine",
+      "calendar",
       "communications",
       "deck",
       "atlas",

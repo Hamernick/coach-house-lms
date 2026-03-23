@@ -25,10 +25,11 @@ import {
   createMarkerMap,
   FALLBACK_CENTER,
   FALLBACK_ZOOM,
-  fitMapToOrganizations,
+  focusChicagoFallback,
   focusOrganizationOnMap,
   normalizeSlug,
   removeAuthParams,
+  resolvePublicMapCameraPadding,
   resolveBounds,
   resolveMarkerOrganizations,
 } from "./public-map-index/map-view-helpers"
@@ -97,6 +98,7 @@ export function PublicMapIndex({
     useState<UserLocationStatus>("idle")
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
   const [pendingAuthOrgId, setPendingAuthOrgId] = useState<string | null>(null)
+  const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
   const {
     favorites,
     recentOrganizationIds,
@@ -345,11 +347,7 @@ export function PublicMapIndex({
     }
 
     if (typeof window === "undefined" || !("geolocation" in window.navigator)) {
-      fitMapToOrganizations({
-        map,
-        mapboxgl: mapboxRef.current!,
-        organizations,
-      })
+      focusChicagoFallback({ map })
       setUserLocationStatus("unavailable")
       hasResolvedInitialViewportRef.current = true
       return
@@ -371,12 +369,8 @@ export function PublicMapIndex({
       },
       (error) => {
         const activeMap = mapRef.current
-        if (!activeMap || !mapboxRef.current) return
-        fitMapToOrganizations({
-          map: activeMap,
-          mapboxgl: mapboxRef.current,
-          organizations,
-        })
+        if (!activeMap) return
+        focusChicagoFallback({ map: activeMap })
         setUserLocationStatus(error.code === 1 ? "denied" : "error")
         hasResolvedInitialViewportRef.current = true
       },
@@ -386,7 +380,23 @@ export function PublicMapIndex({
         maximumAge: 60_000,
       },
     )
-  }, [initialOrganization, organizations])
+  }, [initialOrganization])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapLoadedRef.current) return
+
+    const frame = requestAnimationFrame(() => {
+      if (mapRef.current !== map) return
+      map.easeTo({
+        padding: resolvePublicMapCameraPadding(sidebarInsetLeft),
+        duration: 320,
+        essential: true,
+      })
+    })
+
+    return () => cancelAnimationFrame(frame)
+  }, [sidebarInsetLeft])
 
   useEffect(() => {
     const map = mapRef.current
@@ -439,6 +449,7 @@ export function PublicMapIndex({
         }
         onSidebarModeChange={setSidebarMode}
         onAuthSheetOpenChange={setAuthSheetOpen}
+        onSidebarInsetChange={setSidebarInsetLeft}
       />
     </>
   )

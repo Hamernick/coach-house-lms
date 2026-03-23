@@ -47,5 +47,6 @@ export type WorkspaceCanvasSurfaceV2Props = {
     cardId: WorkspaceCardId,
     context?: WorkspaceBoardToggleContext,
   ) => void
+  onResetToBaseLayout: () => void
   onTutorialCompletionExitHandled: () => void
 }

@@ -8,6 +8,7 @@ import {
 } from "@/features/workspace-canvas-tutorial"
 import { buildAutoLayoutNodesForMode } from "./workspace-board-auto-layout-modes"
 import { buildDefaultWorkspaceConnections } from "./workspace-board-layout"
+import { resolveCardDimensions, roundToSnap } from "./workspace-board-layout-config"
 import type {
   WorkspaceBoardOnboardingFlowState,
   WorkspaceBoardState,
@@ -201,6 +202,91 @@ function ensureWorkspaceTutorialCompletionConnections(
   return Array.from(nextConnections.values())
 }
 
+const WORKSPACE_TUTORIAL_COMPLETION_LEFT_X = 96
+const WORKSPACE_TUTORIAL_COMPLETION_TOP_Y = 192
+const WORKSPACE_TUTORIAL_COMPLETION_COLUMN_GAP = 40
+const WORKSPACE_TUTORIAL_COMPLETION_ROW_GAP = 28
+
+function buildWorkspaceTutorialCompletionNodes({
+  existingNodes,
+  hiddenCardIds,
+  connections,
+}: {
+  existingNodes: WorkspaceBoardState["nodes"]
+  hiddenCardIds: WorkspaceBoardState["hiddenCardIds"]
+  connections: WorkspaceBoardState["connections"]
+}) {
+  const autoLayoutNodes = buildAutoLayoutNodesForMode({
+    mode: "dagre-tree",
+    existingNodes,
+    hiddenCardIds,
+    connections,
+  })
+
+  const nodeById = new Map(autoLayoutNodes.map((node) => [node.id, node] as const))
+  const roadmapNode = nodeById.get("roadmap")
+  const organizationNode = nodeById.get("organization-overview")
+  const programsNode = nodeById.get("programs")
+  const acceleratorNode = nodeById.get("accelerator")
+
+  if (!roadmapNode || !organizationNode || !programsNode || !acceleratorNode) {
+    return autoLayoutNodes
+  }
+
+  const roadmapDimensions = resolveCardDimensions(roadmapNode.size, "roadmap")
+  const organizationDimensions = resolveCardDimensions(
+    organizationNode.size,
+    "organization-overview",
+  )
+  const acceleratorDimensions = resolveCardDimensions(
+    acceleratorNode.size,
+    "accelerator",
+  )
+
+  const roadmapX = roundToSnap(WORKSPACE_TUTORIAL_COMPLETION_LEFT_X)
+  const topY = roundToSnap(WORKSPACE_TUTORIAL_COMPLETION_TOP_Y)
+  const organizationX = roundToSnap(
+    roadmapX +
+      roadmapDimensions.width +
+      WORKSPACE_TUTORIAL_COMPLETION_COLUMN_GAP,
+  )
+  const programsY = roundToSnap(
+    topY + organizationDimensions.height + WORKSPACE_TUTORIAL_COMPLETION_ROW_GAP,
+  )
+  const acceleratorX = roundToSnap(
+    organizationX +
+      organizationDimensions.width +
+      WORKSPACE_TUTORIAL_COMPLETION_COLUMN_GAP,
+  )
+  const acceleratorY = topY
+
+  const completionPositionByCardId = new Map<
+    WorkspaceCardId,
+    { x: number; y: number }
+  >([
+    ["roadmap", { x: roadmapX, y: topY }],
+    ["organization-overview", { x: organizationX, y: topY }],
+    ["programs", { x: organizationX, y: programsY }],
+    [
+      "accelerator",
+      {
+        x: Math.max(organizationX + acceleratorDimensions.width / 4, acceleratorX),
+        y: acceleratorY,
+      },
+    ],
+  ])
+
+  return autoLayoutNodes.map((node) => {
+    const override = completionPositionByCardId.get(node.id)
+    if (!override) return node
+    return {
+      ...node,
+      x: roundToSnap(override.x),
+      y: roundToSnap(override.y),
+    }
+  })
+}
+
 export function buildCompletedWorkspaceTutorialBoardState(
   boardState: WorkspaceBoardState,
 ) {
@@ -235,8 +321,7 @@ export function buildCompletedWorkspaceTutorialBoardState(
 
   return {
     ...nextState,
-    nodes: buildAutoLayoutNodesForMode({
-      mode: completionAutoLayoutMode,
+    nodes: buildWorkspaceTutorialCompletionNodes({
       existingNodes: compactCompletionNodes,
       hiddenCardIds: nextHiddenCardIds,
       connections: nextConnections,

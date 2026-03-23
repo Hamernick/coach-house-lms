@@ -2,27 +2,697 @@
 
 Purpose: Track changes we’re making outside the formal PR stepper.
 
-## 2026-03-12 — Codex session (subscription hydration hotfix for onboarding checkout)
+## 2026-03-19 14:47 EDT - consolidate workspace guide motion/camera ownership into a shared presentation runtime
 
-- Fixed a Stripe checkout success-path bug where `checkout.subscription` could still be a string id even after session retrieval, which caused local subscription upserts to fail and left paid users looking like `free` on subsequent onboarding/workspace loads.
-- Updated [`src/app/(public)/pricing/success/page.tsx`] to hydrate string subscription ids through Stripe before building the local subscription payload.
-- Extended [`src/app/(public)/pricing/success/_lib/onboarding-return.ts`] with a checkout-subscription resolver.
-- Added regression coverage for the string-subscription case in [`tests/acceptance/pricing-success-return.test.ts`].
-- Backfilled the latest live affected account for `paula.hamernick@protonmail.com` after confirming a completed Stripe checkout with a missing local `subscriptions` row.
+- Replaced the last local tutorial-step timing table with a shared presentation engine and motion grammar so transition kind, shell mode, and camera timing now resolve from one runtime path instead of being recomputed ad hoc inside the tutorial hook.
+- Added a shared viewport-command layer for manual recenter/reset behavior and aligned it with the automatic camera controller, so scene-fit, focus-card, and fit-visible all follow the same precedence rules.
+- Centralized the guide-shell semantic split into `guided-shell` vs `centered-prompt`, preserving the existing tutorial node chrome while making the “detached prompt” behavior explicit for unresolved shortcut steps.
+- Reused the new shared types across the camera controller, tutorial scene-fit request builder, canvas surface props, and board focus-request plumbing to reduce parallel shape drift.
+- Added focused acceptance coverage for the new presentation plan and viewport command layers, and reran the existing tutorial runtime/camera/render-state suite to confirm no visual-contract regressions in the current guide flow.
 - Validation:
-  - `pnpm exec vitest run tests/acceptance/pricing-success-return.test.ts tests/acceptance/onboarding-pricing-return.test.ts tests/acceptance/stripe-checkout-route.test.ts`
-  - `pnpm exec eslint 'src/app/(public)/pricing/success/page.tsx' 'src/app/(public)/pricing/success/_lib/onboarding-return.ts' 'tests/acceptance/pricing-success-return.test.ts'`
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-focus-policy.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-motion-grammar.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-presentation-engine.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-viewport-command.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-viewport-controls.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-controller-hooks.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-types.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-helpers.ts' 'tests/acceptance/workspace-canvas-presentation-engine.test.ts' 'tests/acceptance/workspace-canvas-viewport-command.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-presentation-engine.test.ts tests/acceptance/workspace-canvas-viewport-command.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-camera.test.ts tests/acceptance/workspace-canvas-surface-v2-render-state.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-focus-policy.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-motion-grammar.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-presentation-engine.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-viewport-command.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-viewport-controls.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-controller-hooks.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-types.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-helpers.ts`
+  - `tests/acceptance/workspace-canvas-presentation-engine.test.ts`
+  - `tests/acceptance/workspace-canvas-viewport-command.test.ts`
+
+## 2026-03-19 12:35 EDT - make the guide-owned accelerator preview step force the wide shell immediately
+
+- Investigated the `Welcome -> Start` click path end to end and confirmed the mismatch was between the inner module preview opening immediately and the outer tutorial accelerator shell still waiting on the runtime snapshot to promote from compact to module width.
+- Tightened the normalization contract so the guide-owned `accelerator-close-module` preview step always resolves as “viewer open” for shell sizing, while `accelerator-first-module` still waits for the actual viewer-open state before promoting.
+- Updated the focused tutorial presentation contract to cover the intended split: compact picker, runtime-driven first-module promotion, and always-wide guided preview.
+- Validation:
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-scene-spec.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+
+## 2026-03-19 12:28 EDT - let the compact communications canvas card shrink to its real content height
+
+- Removed the fixed-height shell treatment from the compact communications canvas card so the card now sizes to its actual tab content instead of leaving a large empty well below the draft preview.
+- Promoted `communications` into the same intrinsic-height canvas group as Organization, Programs, Accelerator, and Calendar by updating both the workspace node class contract and the canvas node style contract.
+- Kept the rest of the communications sizing system intact; this pass only changed the rendered canvas shell behavior, not the wider layout dimension contract or the editor/fullscreen paths.
+- Updated the focused canvas-node and handle-style regressions to reflect the new intrinsic-height behavior.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-class-name.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout-config.ts' 'tests/acceptance/workspace-canvas-surface-v2-helpers.test.ts' 'tests/acceptance/workspace-board-handle-styles.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-helpers.test.ts tests/acceptance/workspace-board-handle-styles.test.ts tests/acceptance/workspace-board-layout.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-class-name.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout-config.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-helpers.test.ts`
+  - `tests/acceptance/workspace-board-handle-styles.test.ts`
+
+## 2026-03-19 04:04 EDT - tie accelerator canvas width to the live module viewer state instead of stale compact node size
+
+- Traced the accelerator canvas/render path end to end and found the width contract was split across three layers: persisted board node size, the live accelerator runtime snapshot, and the tutorial presentation shell.
+- Fixed the live canvas card path by teaching the canvas card-data lookup to derive the accelerator size from the runtime snapshot first: open module viewer forces `lg`, while a closed viewer collapses any stale persisted `lg` back to compact.
+- Fixed the tutorial clone path by removing the overly narrow step-specific gate around `acceleratorModuleViewerOpen`; if the accelerator viewer is already open on an accelerator tutorial step, the tutorial presentation now promotes the visible surface to the module shell immediately.
+- Corrected the tutorial presentation helper defaults so omitted `acceleratorModuleViewerOpen` values no longer incorrectly assume the module viewer is open.
+- Added focused regressions for both boundaries: runtime-driven accelerator canvas sizing and tutorial-shell promotion whenever the accelerator viewer is already open.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-helpers.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-card-data.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-scene-spec.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'tests/acceptance/workspace-canvas-surface-v2-helpers.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-helpers.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-helpers.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-card-data.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-scene-spec.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-helpers.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+
+## 2026-03-19 02:10 EDT - replace jittery guide handoffs with a parent-first, skeleton-backed transition system
+
+- Smoothed the workspace guide transition system so the shell and copy rail stay stable first, then the featured card surface reveals after a short staged handoff instead of blanking and replaying unpredictably.
+- Removed size-driven transition churn by changing the presentation transition key to track scene plus card identity instead of card width/height, which stops measured-height updates from retriggering full presentation handoffs.
+- Added a shared `surface-handoff` motion preset for non-accelerator card swaps, shortened the default delays, and kept the dedicated `accelerator-entry` preset for the more dramatic accelerator transition.
+- Replaced the old blank content gap during handoff with a framed skeleton surface, so the parent container appears first and the child card loads in as a calm second phase.
+- Split the new skeleton into its own component to stay under the tutorial panel file-budget guardrail.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-motion.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-skeleton.tsx' 'tests/acceptance/workspace-canvas-tutorial-panel.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-motion.ts`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-skeleton.tsx`
+  - `tests/acceptance/workspace-canvas-tutorial-panel.test.ts`
+
+## 2026-03-19 01:32 EDT - raise the shared tool-step tutorial shell floor to stop Documents clipping
+
+- Increased the shared tool-family tutorial shell floor slightly so shorter tool cards like Documents have enough vertical room below the framed presentation and no longer clip at the bottom edge.
+- Kept the tighter tool chrome and top-anchored presentation from the previous pass; only the base shell height changed, so taller tool cards still size from their own frame height instead of getting broadly looser again.
+- Updated the focused tool-shell presentation regression to reflect the new minimum shell height contract.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+
+## 2026-03-19 01:29 EDT - tighten the shared tool-step tutorial shell around Programs and the other tool cards
+
+- Reduced the extra vertical dead space around the shared tool-step presentation so Programs, Calendar, Documents, Fundraising, and Communications no longer float inside an overly tall tutorial shell.
+- Tightened the shared tool copy rail from `8rem` to `6.75rem` and reduced the tool body spacing from `gap-5 py-5` to `gap-4 py-4`, which pulls the framed tool presentation closer to the copy.
+- Reduced the shared tool-family shell baseline and adaptive chrome height, then top-anchored the framed tool presentation instead of vertically centering it inside the fill area, so shorter cards like the Programs empty state stop sitting with large gaps above and below.
+- Updated the focused tutorial layout and presentation tests to reflect the tighter tool-shell contract.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-layout.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'tests/acceptance/workspace-canvas-tutorial-panel.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-layout.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-panel.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+
+## 2026-03-19 01:04 EDT - increase the workspace guide zoom further across all tutorial steps
+
+- Increased the shared workspace guide zoom boost again so the entire tutorial reads larger without retuning individual steps one by one.
+- Raised the shared tutorial zoom helper from a `+0.06` boost to `+0.10` and lifted the max cap slightly so the welcome, overview, tool, and accelerator camera states all scale up together.
+- Kept the same single-source camera contract, so the live tutorial runtime and the authored scene viewport defaults remain aligned.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-zoom.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes-config.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial-camera.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-camera.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-zoom.ts`
+
+## 2026-03-19 00:50 EDT - boost the workspace guide camera zoom across all tutorial steps
+
+- Increased the workspace guide camera zoom across the full tutorial so the guide reads larger from welcome through the tool and accelerator steps instead of feeling too far away on the canvas.
+- Added a shared tutorial zoom helper and routed the live tutorial runtime camera through it, which keeps the zoom increase consistent across centered shell stages and the accelerator-specific desktop zoom override.
+- Normalized the authored onboarding scene viewport table through the same helper so the dormant scene viewport defaults stay aligned with the live runtime zoom contract if that config path is reused later.
+- Updated the focused tutorial runtime acceptance expectations to assert the boosted zoom values through the shared helper instead of hardcoding stale numbers.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-zoom.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes-config.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial-camera.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-camera.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-zoom.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes-config.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-19 00:45 EDT - force closed accelerator cards back to compact size after module preview
+
+- Fixed the accelerator card size contract so a closed card no longer stays stretched at `lg` after a module-viewer session or guide completion.
+- Added a compact-size fallback in the accelerator module-viewer sync helper: if the viewer is closed and there is no remembered collapsed size to restore, a stale closed `lg` accelerator now snaps back to `sm` instead of staying wide.
+- Normalized the guide-completion board snapshot so the accelerator node is compact before the post-guide workspace auto-layout runs, preventing the completed workspace from inheriting a stretched accelerator width.
+- Added focused regressions for both the runtime collapsed-size fallback and the completed-workspace accelerator size contract.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-onboarding-flow.ts' 'tests/acceptance/workspace-accelerator-card-panel.test.ts' 'tests/acceptance/workspace-board-canvas-helpers.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-board-canvas-helpers.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-onboarding-flow.ts`
+  - `tests/acceptance/workspace-accelerator-card-panel.test.ts`
+  - `tests/acceptance/workspace-board-canvas-helpers.test.ts`
+
+## 2026-03-19 00:27 EDT - land guide completion on the connected workspace layout instead of resetting into tutorial state
+
+- Fixed the workspace guide completion handoff so finishing Team Access now targets the connected post-guide workspace graph instead of the old organization-plus-accelerator fallback cluster.
+- Updated the completed guide hidden-card contract to reveal the connected workspace cards (`organization`, `programs`, `documents`, `accelerator`, `fundraising`, `calendar`, `communications`) while still leaving utility cards (`brand-kit`, `deck`, `atlas`) parked.
+- Rebuilt the local React Flow node store whenever tutorial mode toggles on or off so leaving the guide immediately swaps the tutorial scene out for the real workspace layout instead of keeping stale tutorial nodes alive through the transition.
+- Fixed the secondary workspace seed helper to honor `workspace_onboarding_completed_at` even when `workspace_onboarding_active` is already false, preventing one completion/remount path from falling back to stale tutorial state.
+- Added/updated focused regressions around the connected completion layout and the inactive-onboarding completion edge case.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/lib/index.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-onboarding-flow.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts' 'src/app/(dashboard)/my-organization/_lib/my-organization-workspace-seed-helpers.ts' 'tests/acceptance/workspace-board-canvas-helpers.test.ts' 'tests/acceptance/my-organization-workspace-seed-helpers.test.ts' 'tests/acceptance/my-organization-page-content-helpers.test.ts' 'tests/acceptance/workspace-canvas-tutorial.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-board-canvas-helpers.test.ts tests/acceptance/my-organization-workspace-seed-helpers.test.ts tests/acceptance/my-organization-page-content-helpers.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+- Files:
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-onboarding-flow.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts`
+  - `src/app/(dashboard)/my-organization/_lib/my-organization-workspace-seed-helpers.ts`
+  - `tests/acceptance/workspace-board-canvas-helpers.test.ts`
+  - `tests/acceptance/my-organization-workspace-seed-helpers.test.ts`
+  - `tests/acceptance/my-organization-page-content-helpers.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial.test.ts`
+
+## 2026-03-19 00:20 EDT - unify the accelerator picker highlight and guard tooltip onto one shared neutral surface
+
+- Collapsed the accelerator tutorial picker highlight and the blocked-action guard tooltip onto a single shared neutral surface token so they no longer drift independently across themes.
+- Kept the current light-mode treatment as the translucent muted gray surface, and kept the dark-mode treatment as the near-white face with dark text, then pointed both the picker trigger and tooltip chrome at that same theme-aware surface contract.
+- Updated the tooltip arrow fill to follow the shared neutral treatment instead of the old primary-button styling path.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'tests/acceptance/workspace-accelerator-header-picker.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts`
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+
+## 2026-03-19 00:05 EDT - only pan accelerator class labels on hover when the text actually overflows
+
+- Fixed the accelerator class picker label hover behavior so short labels like `Formation` no longer shift left and clip themselves; the hover pan now only activates when the rendered label width truly exceeds the trigger viewport.
+- Extracted the scroll-distance math into a small pure helper that returns `0` for exact-fit and shorter labels, then only adds the trailing pan offset once a real overflow width exists.
+- Added a focused regression covering equal-width, shorter-than-viewport, and overflowing label cases so the one-word picker labels stay stationary.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'tests/acceptance/workspace-accelerator-header-picker.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts`
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+
+## 2026-03-18 23:59 EDT - retune the accelerator class picker highlight to a neutral theme-aware surface
+
+- Replaced the tutorial-highlighted accelerator class picker trigger’s solid primary treatment with a neutral blurred surface that better matches the local shadcn `new-york` token patterns: light mode now uses a softer translucent muted gray, while dark mode flips to a near-white face with dark text for stronger contrast.
+- Updated the highlighted track icon tint to follow the same theme-aware neutral treatment instead of the old primary-foreground color.
+- Refreshed the focused picker regression to assert the new neutral surface tokens and ensure the old solid-primary highlight does not come back.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'tests/acceptance/workspace-accelerator-header-picker.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts`
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+
+## 2026-03-18 22:47 EDT - make the accelerator-entry gradient/fade layer animate with the guide surface instead of popping in
+
+- Fixed the accelerator-entry presentation bug where the compact accelerator fade/gradient layer was still skipping its initial motion and appearing instantly over the card during the Tools -> Accelerator guide handoff.
+- Added a small motion helper that explicitly allows initial presentation animation for the dedicated `accelerator-entry` preset, then applied it to both the framed presentation surface and the bottom fade overlay so they enter under the same staged motion contract.
+- Added a focused regression proving the accelerator-entry preset opts into initial animation while the default tutorial surfaces still do not.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-motion.ts' 'tests/acceptance/workspace-canvas-tutorial-panel.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-scene-spec.test.ts`
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-motion.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-panel.test.ts`
+
+## 2026-03-18 22:31 EDT - make the accelerator class picker match the guide button shape more closely
+
+- Tightened the tutorial-highlighted accelerator class picker so it now shares the guide button’s taller control height, rounded-xl corner treatment, and horizontal padding, instead of only borrowing the primary color tokens.
+- Extended the focused picker regression to assert the rounded-xl and `h-9` guide-button styling contract for the tutorial-highlighted combobox trigger.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'tests/acceptance/workspace-accelerator-header-picker.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts`
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+
+## 2026-03-18 22:30 EDT - restyle the accelerator picker tutorial highlight and guard tooltip to match guide chrome
+
+- Replaced the picker’s tutorial-only sky highlight with the same primary surface language used by the guide navigation button, so the focused class-track trigger now reads like part of the guide chrome instead of a separate blue state.
+- Updated the accelerator tutorial guard tooltip surface to use matching primary-button styling and arrow treatment, keeping the blocked-action feedback visually aligned with the guide controls.
+- Added a focused picker regression to lock the new primary-token styling and ensure the old sky classes do not come back.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'tests/acceptance/workspace-accelerator-header-picker.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts`
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+
+## 2026-03-18 22:27 EDT - smooth the tools-to-accelerator guide handoff and stage the accelerator surface
+
+- Added a dedicated `accelerator-entry` tutorial transition kind so the guide no longer uses the generic fast family-change timing when it first moves from the overview/tools prompt into the embedded accelerator presentation.
+- Slowed the overview-to-accelerator layout/camera handoff and added a slight camera delay so the canvas reposition reads as one deliberate move instead of a jolt.
+- Split the tutorial panel motion preset into a dedicated support module and introduced an accelerator-entry presentation preset that reveals the accelerator surface earlier, animates the whole framed card as one unit, and delays the bottom fade/gradient so it arrives with the surface instead of looking preloaded.
+- Added focused regressions for both the new transition kind and the new accelerator-entry motion preset.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-scene-spec.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-motion.ts' 'tests/acceptance/workspace-canvas-tutorial-scene-spec.test.ts' 'tests/acceptance/workspace-canvas-tutorial-panel.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-scene-spec.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-scene-spec.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-motion.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-scene-spec.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-panel.test.ts`
+
+## 2026-03-18 22:14 EDT - make the Programs card preview-only during the Programs guide step
+
+- Locked the standalone Programs card into a tutorial-only preview mode when the active workspace-guide step is `programs`, so the empty-state `Create program` button and the card-header `Add` button no longer open the real program wizard during the guide.
+- Disabled editable program-card CTAs on that same tutorial step so existing program rows also stay non-destructive while the guide is showing the Programs tool.
+- Added a focused regression around the new preview-only step helper used by the workspace board card.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-programs-card.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx' 'tests/acceptance/workspace-organization-overview-programs.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-organization-overview-programs.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-programs-card.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx`
+  - `tests/acceptance/workspace-organization-overview-programs.test.ts`
+
+## 2026-03-18 22:03 EDT - recenter the unresolved Calendar prompt instead of leaving it in the preview handoff state
+
+- Adjusted the accelerator-preview-to-Calendar transition so the camera recenter begins immediately instead of delaying behind the preview-exit choreography.
+- Marked unresolved shortcut prompt steps on the shared overview scene as detached/centered tutorial prompts, so the guide shell does not keep behaving like an attached handoff card after leaving the accelerator module preview.
+- Added a focused regression proving the unopened Calendar prompt returns to the centered overview shell and reports itself as a detached tutorial prompt.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-scene-spec.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-18 21:26 EDT - keep completed workspace-guide sessions from falling back to step 1
+
+- Fixed the workspace-guide finish path so completed auth metadata now forces the real post-guide workspace board state even if the persisted board snapshot is stale when the page remounts.
+- Moved the pure completed-tutorial board-state builder into the onboarding-flow module so both the client completion path and the server seed loaders use the same final workspace contract.
+- Updated the client tutorial completion handler to persist the completed board snapshot immediately when editing is allowed, instead of relying only on the normal debounced autosave after the guide closes.
+- Added focused regressions covering both server seed helper paths and the shared completed-board-state contract.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-onboarding-flow.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-helpers.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas.tsx' 'src/app/(dashboard)/my-organization/_lib/my-organization-page-content-helpers.ts' 'src/app/(dashboard)/my-organization/_lib/my-organization-workspace-seed-helpers.ts' 'tests/acceptance/my-organization-page-content-helpers.test.ts' 'tests/acceptance/my-organization-workspace-seed-helpers.test.ts' 'tests/acceptance/workspace-board-canvas-helpers.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/my-organization-page-content-helpers.test.ts tests/acceptance/my-organization-workspace-seed-helpers.test.ts tests/acceptance/workspace-board-canvas-helpers.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-onboarding-flow.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-helpers.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas.tsx`
+  - `src/app/(dashboard)/my-organization/_lib/my-organization-page-content-helpers.ts`
+  - `src/app/(dashboard)/my-organization/_lib/my-organization-workspace-seed-helpers.ts`
+  - `tests/acceptance/my-organization-page-content-helpers.test.ts`
+  - `tests/acceptance/my-organization-workspace-seed-helpers.test.ts`
+  - `tests/acceptance/workspace-board-canvas-helpers.test.ts`
+
+## 2026-03-18 21:18 EDT - tighten the shared tool-step tutorial layout for Calendar, Programs, Documents, and Communications
+
+- Reworked the shared `tool` tutorial presentation family so the opened tool steps stop rendering like small docked artifacts inside an oversized shell.
+- Promoted small tool cards to the medium tutorial presentation size, tightened the shared tool shell width/height, and reduced the extra chrome reserved around the featured card.
+- Switched the opened tool-family steps onto the stronger framed-card presentation path instead of the dashed docked-card treatment, and made framed tutorial surfaces render with a proper solid feature frame instead of a placeholder-style dashed outline.
+- Added focused layout regressions for the new tool copy/body spacing and the updated tool-family shell/card sizing contract.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-layout.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'tests/acceptance/workspace-canvas-tutorial-panel.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-layout.ts`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `tests/acceptance/workspace-canvas-tutorial-panel.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+
+## 2026-03-18 21:12 EDT - recenter the Calendar prompt after leaving the accelerator module preview
+
+- Changed unresolved tutorial shortcut steps to use the shared overview prompt scene until their target card is actually opened, instead of preemptively adopting the target tool scene layout before the click happens.
+- This fixes the step-7-to-Calendar handoff so the guide snaps back to the centered overview shell after the accelerator module preview, then transitions into the Calendar scene only once Calendar is opened.
+- Added a focused runtime regression proving the Calendar prompt recenters on the overview shell while preserving the existing opened-Calendar scene contract.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial-scene-spec.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-18 20:51 EDT - end the workspace guide on Team Access and harden completion against step-1 fallthrough
+
+- Removed the terminal `Next Steps` tutorial panel so the guide now ends directly on the Team Access step instead of inserting an extra overview card that interrupted the finish flow.
+- The final guide action now happens on the actual last meaningful step, so the header CTA becomes `Enter workspace` there and completion transitions straight into the post-guide workspace resting state.
+- Hardened the completed-tutorial seed detection to treat the completion hidden-card state as a set instead of requiring exact array order, which makes it less likely for a finished guide to be misread as incomplete and reopened from step 1.
+- Added/updated focused acceptance coverage for the new final-step contract and the completed-guide reactivation guard.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/lib/index.ts' 'src/features/workspace-canvas-tutorial/types.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_lib/my-organization-page-content-helpers.ts' 'src/app/(dashboard)/my-organization/_lib/my-organization-workspace-seed-helpers.ts' 'tests/acceptance/workspace-canvas-tutorial.test.ts' 'tests/acceptance/my-organization-page-content-helpers.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/my-organization-page-content-helpers.test.ts tests/acceptance/workspace-board-canvas-helpers.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+- Files:
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+  - `src/features/workspace-canvas-tutorial/types.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `src/app/(dashboard)/my-organization/_lib/my-organization-page-content-helpers.ts`
+  - `src/app/(dashboard)/my-organization/_lib/my-organization-workspace-seed-helpers.ts`
+  - `tests/acceptance/workspace-canvas-tutorial.test.ts`
+  - `tests/acceptance/my-organization-page-content-helpers.test.ts`
+
+## 2026-03-18 20:46 EDT - keep tutorial shortcut steps on their opened scene so Calendar and later tools actually open
+
+- Fixed the workspace guide shortcut-open transition so clicking a guided tool button marks the current shortcut step as opened without auto-advancing past it, which lets the existing tutorial scene/focus logic actually reveal and focus the target card.
+- This closes the bug where the Calendar step, and the later Programs/Documents/Fundraising/Communications shortcut steps that share the same mechanic, could appear to do nothing because the flow skipped straight to the next prompt step.
+- Added focused regressions for the new opened-step flow state, the Calendar opened scene layout, and the later shortcut-step selected-card contracts.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-state.ts' 'tests/acceptance/workspace-board-canvas-state.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-board-canvas-state.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts`
+  - `pnpm test:acceptance tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-state.ts`
+  - `tests/acceptance/workspace-board-canvas-state.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial.test.ts`
+
+## 2026-03-18 20:17 EDT - rebuild the React Flow node store when restarting the workspace guide
+
+- Fixed the guide restart path so the local React Flow node store is rebuilt from the authored tutorial snapshot when the explicit restart request key changes, instead of relying on reconciliation against whatever nodes were left behind at the end of the guide.
+- This specifically protects the welcome step, where the guide intentionally hides all managed cards and depends on the tutorial node itself being reinserted cleanly.
+- Added a focused node-builder regression proving the welcome step still renders the tutorial node even when `visibleCardIds` is empty.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts' 'tests/acceptance/workspace-canvas-surface-v2-node-builders.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-node-builders.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-node-builders.test.ts`
+
+## 2026-03-18 20:11 EDT - invert workspace shortcut tooltip colors by theme
+
+- Scoped an inverse tooltip surface to the workspace shortcut rail so the shortcut labels and accelerator tutorial indicator bubble now flip theme treatment:
+  - light mode uses a dark tooltip surface with light text
+  - dark mode uses a light tooltip surface with dark text
+- Added a dedicated `tooltipContentClassName` override to `WorkspaceTutorialCallout` so the tutorial indicator bubble can share the same themed tooltip treatment as the shortcut label without changing the global tooltip primitive.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx' 'tests/acceptance/workspace-card-shortcuts.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-tutorial-callout.test.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-18 20:07 EDT - switch workspace guide step label to percent progress
+
+- Replaced the workspace guide header subtitle from `Step x of y` to a percentage-based progress label so the card header matches the existing progress bar language.
+- Centralized the tutorial progress math in a shared `resolveWorkspaceCanvasTutorialProgressPercent` helper and reused it for both the subtitle text and the header progress bar width.
+- Added focused acceptance coverage for the rounded percentage helper contract.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/lib/index.ts' 'src/features/workspace-canvas-tutorial/index.ts' 'tests/acceptance/workspace-canvas-tutorial.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts`
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+  - `src/features/workspace-canvas-tutorial/index.ts`
+  - `tests/acceptance/workspace-canvas-tutorial.test.ts`
+
+## 2026-03-18 20:04 EDT - fix prototype-lab server boundary leak and close the build
+
+- Removed the server-only `getPrototypeLabPageInput` re-export from the prototype-lab public feature entrypoint so client imports like the app sidebar no longer pull `next/headers` into the browser graph.
+- Kept the admin prototypes page on the server path by importing `getPrototypeLabPageInput` from `@/features/prototype-lab/server`.
+- Fixed the follow-on build blockers uncovered by `next build`:
+  - corrected the tutorial transition resolver call in `workspace-canvas-surface-v2-tutorial.ts`
+  - removed stray `onNext` props passed into `WorkspaceAcceleratorStepBody`
+  - replaced the final stale `OrgProfile` reference in `workspace-map-card/lib/index.ts` with the feature-owned type
+- Validation:
+  - `pnpm exec eslint 'src/features/prototype-lab/index.ts' 'src/app/(admin)/admin/platform/prototypes/page.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx' 'src/features/workspace-map-card/lib/index.ts'`
+  - `pnpm build`
+- Files:
+  - `src/features/prototype-lab/index.ts`
+  - `src/app/(admin)/admin/platform/prototypes/page.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx`
+  - `src/features/workspace-map-card/lib/index.ts`
+
+## 2026-03-18 19:44 EDT - repair workspace acceptance regressions and expose the next build blocker
+
+- Fixed the extracted canvas node builder contract so tutorial-draggable card ids and tutorial position overrides default safely when omitted, restoring the revealed-card draggable test path.
+- Updated the affected acceptance coverage to match current intentional tutorial and workspace contracts:
+  - tutorial right-rail test now resolves steps by tutorial step id instead of hard-coded indexes that drift when map steps are present/absent
+  - organization overview canvas width assertion now matches the current `552px` layout override
+  - workspace activity feed test now uses a valid UUID module id so it exercises the guarded `module_progress` query path
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-node-builders.ts' 'tests/acceptance/workspace-board-canvas-body.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-helpers.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-node-builders.test.ts' 'tests/acceptance/workspace-view-seed.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-board-canvas-body.test.ts tests/acceptance/workspace-canvas-surface-v2-helpers.test.ts tests/acceptance/workspace-canvas-surface-v2-node-builders.test.ts tests/acceptance/workspace-view-seed.test.ts`
+  - `pnpm check:quality` now clears acceptance/RLS and fails later in `next build` because `src/features/prototype-lab/index.ts` re-exports `getPrototypeLabPageInput` from `./queries`, which pulls server-only `next/headers` code into the client sidebar import path
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-node-builders.ts`
+  - `tests/acceptance/workspace-board-canvas-body.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-helpers.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-node-builders.test.ts`
+  - `tests/acceptance/workspace-view-seed.test.ts`
+
+## 2026-03-18 19:30 EDT - clear prototype-lab public-boundary imports and sidebar raw-button guard
+
+- Routed the prototype-lab sidebar helpers and types through the feature public entrypoint so shared sidebar components no longer import from `@/features/prototype-lab/lib/sidebar-tree` directly.
+- Replaced the remaining raw prototype-tree folder trigger in `nav-main.tsx` with the shared shadcn `Button` primitive so the repo raw-button guard passes without changing the collapsible behavior.
+- Validation:
+  - `pnpm exec eslint 'src/features/prototype-lab/index.ts' 'src/components/app-sidebar/nav-data.ts' 'src/components/nav-main.tsx'`
+  - `pnpm check:boundaries`
+  - `pnpm check:raw-buttons`
+  - `pnpm check:quality` now clears boundaries/raw-buttons and fails later in acceptance on four existing test failures:
+    - `tests/acceptance/workspace-board-canvas-body.test.ts`
+    - `tests/acceptance/workspace-canvas-surface-v2-helpers.test.ts`
+    - `tests/acceptance/workspace-canvas-surface-v2-node-builders.test.ts`
+    - `tests/acceptance/workspace-view-seed.test.ts`
+- Files:
+  - `src/features/prototype-lab/index.ts`
+  - `src/components/app-sidebar/nav-data.ts`
+  - `src/components/nav-main.tsx`
+
+## 2026-03-18 19:17 EDT - clear workspace-map-card feature-contract boundary
+
+- Replaced the workspace map card’s dependency on `@/components/organization/org-profile-card/types` with a feature-owned `WorkspaceMapOrganizationProfile` shape so the `lib/**` layer no longer imports UI component types.
+- This pass was intentionally limited to the feature-contract violation raised by `pnpm check:quality`; no map-card behavior or canvas layout logic changed.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-map-card/types.ts' 'src/features/workspace-map-card/lib/index.ts'`
+  - `pnpm check:features`
+  - `pnpm check:quality` now clears features and fails later on existing import-boundary violations in:
+    - `src/components/app-sidebar/nav-data.ts`
+    - `src/components/nav-main.tsx`
+    - both importing `@/features/prototype-lab/lib/sidebar-tree` instead of the feature public entrypoint
+- Files:
+  - `src/features/workspace-map-card/types.ts`
+  - `src/features/workspace-map-card/lib/index.ts`
+
+## 2026-03-18 19:13 EDT - reduce workspace structure-budget violations without changing behavior
+
+- Extracted helper-only code from the workspace invite sheet, board node card, onboarding scene layout map, and workspace server actions so the repo structure check no longer fails on source/component line budgets.
+- Kept runtime behavior unchanged by preserving the existing public props, action exports, and scene-resolution logic while moving implementation details into adjacent support/config modules.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet-content.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet-content-support.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-support.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes-config.ts' 'src/app/(dashboard)/my-organization/_lib/workspace-actions.ts' 'src/app/(dashboard)/my-organization/_lib/workspace-actions-support.ts'`
+  - `pnpm check:structure`
+  - `pnpm check:quality` now clears structure and fails later on an existing feature-contract violation in `src/features/workspace-map-card/lib/index.ts`
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet-content.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet-content-support.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-support.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes-config.ts`
+  - `src/app/(dashboard)/my-organization/_lib/workspace-actions.ts`
+  - `src/app/(dashboard)/my-organization/_lib/workspace-actions-support.ts`
+
+## 2026-03-18 18:47 EDT - harden the accelerator tutorial path and normalize the Calendar handoff
+
+- Added a tutorial-only accelerator interaction policy that pins the guide to `Formation`, limits step-launching to the guided Welcome path, and turns the module preview step into a read-only experience outside of video playback and guide continuation.
+- Replaced dead disabled states with a shared guarded-action tooltip so blocked picker, checklist, and preview controls now respond with a short-lived `We'll go over this soon, I promise! :)` message instead of silently failing.
+- Hid the interactive module right rail during the step-7 preview and blocked preview navigation/close controls there, so the guide cannot drift into real accelerator work while still keeping the embedded video and `Continue` path live.
+- Added a dedicated `accelerator-preview-exit` tutorial transition contract plus accelerator-viewer normalization so the step-7-to-step-8 Calendar scene no longer computes from stale module-preview state.
+- Files:
+  - `src/features/workspace-accelerator-card/types.ts`
+  - `src/features/workspace-accelerator-card/index.ts`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-lesson-groups.ts`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card-body.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-tutorial-guards.ts`
+  - `src/features/workspace-accelerator-card/components/use-workspace-accelerator-tutorial-guard.ts`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-types.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-accelerator-interaction-policy.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-card-data.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-helpers.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-support.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-scene-spec.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx`
+  - `tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+  - `tests/acceptance/workspace-accelerator-tutorial-policy.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-scene-spec.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/types.ts' 'src/features/workspace-accelerator-card/index.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-lesson-groups.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card-body.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-tutorial-guards.ts' 'src/features/workspace-accelerator-card/components/use-workspace-accelerator-tutorial-guard.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-types.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-accelerator-interaction-policy.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-card-data.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-helpers.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-support.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-scene-spec.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'tests/acceptance/workspace-accelerator-card-checklist.test.ts' 'tests/acceptance/workspace-accelerator-tutorial-policy.test.ts' 'tests/acceptance/workspace-canvas-tutorial-scene-spec.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-checklist.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-accelerator-tutorial-policy.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial-scene-spec.test.ts`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+
+## 2026-03-18 17:39 EDT - rename accelerator lesson copy to classes and tighten picker guidance
+
+- Renamed the workspace tutorial’s accelerator picker step from `Lessons` to `Classes` and rewrote the body/callout copy to explain that the picker switches class tracks, modules, progress, and next steps.
+- Updated connected accelerator UI copy to use the new `Classes` terminology in the picker, empty state, readiness checklist, roadmap rail, onboarding guidance, and snapshot/progress surfaces.
+- Tightened module preview language that still used `lesson` as shorthand by rewriting it into clearer `class`, `module`, or `step` language where that was more accurate.
+- Files:
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx`
+  - `src/features/workspace-accelerator-card/lib/index.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-onboarding-flow.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-copy.ts`
+  - `src/lib/accelerator/readiness.ts`
+  - `src/lib/accelerator/readiness-checklist.ts`
+  - `src/components/accelerator/accelerator-org-snapshot-strip.tsx`
+  - `src/components/accelerator/accelerator-org-snapshot-strip/helpers.ts`
+  - `src/components/roadmap/roadmap-outline-card.tsx`
+  - `src/components/roadmap/roadmap-rail-card.tsx`
+  - `src/components/coaching/coach-scheduling-card.tsx`
+  - `src/components/training/module-detail/video-section.tsx`
+  - `src/components/training/module-detail/module-stepper-helpers.ts`
+  - `tests/acceptance/workspace-canvas-tutorial.test.ts`
+  - `tests/acceptance/workspace-accelerator-card-panel.test.ts`
+  - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+  - `tests/acceptance/accelerator-readiness.test.ts`
+  - `tests/acceptance/readiness-checklist.test.ts`
+  - `tests/acceptance/workspace-accelerator-card.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/lib/index.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx' 'src/features/workspace-accelerator-card/lib/index.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-onboarding-flow.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-copy.ts' 'src/lib/accelerator/readiness.ts' 'src/lib/accelerator/readiness-checklist.ts' 'src/components/accelerator/accelerator-org-snapshot-strip.tsx' 'src/components/accelerator/accelerator-org-snapshot-strip/helpers.ts' 'src/components/roadmap/roadmap-outline-card.tsx' 'src/components/roadmap/roadmap-rail-card.tsx' 'src/components/coaching/coach-scheduling-card.tsx' 'src/components/training/module-detail/video-section.tsx' 'src/components/training/module-detail/module-stepper-helpers.ts' 'tests/acceptance/workspace-canvas-tutorial.test.ts' 'tests/acceptance/workspace-accelerator-card-panel.test.ts' 'tests/acceptance/workspace-accelerator-header-picker.test.ts' 'tests/acceptance/accelerator-readiness.test.ts' 'tests/acceptance/readiness-checklist.test.ts' 'tests/acceptance/workspace-accelerator-card.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/accelerator-readiness.test.ts tests/acceptance/readiness-checklist.test.ts tests/acceptance/workspace-accelerator-card.test.ts`
+
+## 2026-03-18 17:19 EDT - keep tutorial module preview from stretching the live accelerator card on later canvas steps
+
+- Stopped the live accelerator card’s module-viewer size sync from firing while the tutorial owns module preview state, so the real canvas node no longer expands to the large module width during the guide.
+- Kept the tutorial presentation shell behavior intact, but made the tutorial footer `Continue` path close its preview before advancing so later steps do not inherit open-module layout state.
+- Added focused acceptance coverage for the tutorial-only width-sync guard to prevent regressions where the accelerator card stays wide after the preview step.
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx`
+  - `tests/acceptance/workspace-accelerator-card-panel.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx' 'tests/acceptance/workspace-accelerator-card-panel.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+
+## 2026-03-18 17:10 EDT - retarget step 7 to module preview and let tutorial continue without closing the module
+
+- Reframed the workspace guide’s accelerator step-7 copy from `Close the Module` to `Module preview`, with accurate body copy explaining that this step is just showing the embedded module experience.
+- Changed that tutorial step from an action-locked state to a normal `next` step, so the guide’s header Next button is active instead of blocked by the close-button requirement.
+- Added a tutorial-only `module-preview` mode to the embedded accelerator panel so step 7 still forces the module viewer open, but the footer `Continue` button now advances the guide instead of completing/closing the real accelerator module.
+- Removed the close-button tutorial callout for that step by no longer emitting the `accelerator-close-module` internal callout there; the real accelerator component behavior outside the guide is unchanged.
+- Files:
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx`
+  - `tests/acceptance/workspace-canvas-tutorial.test.ts`
+  - `tests/acceptance/workspace-accelerator-card-panel.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/lib/index.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx' 'tests/acceptance/workspace-canvas-tutorial.test.ts' 'tests/acceptance/workspace-accelerator-card-panel.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts`
+
+## 2026-03-18 16:21 EDT - fix react-grab semantic copy interception so redirected copies succeed
+
+- Fixed the dev-only React Grab semantic targeting plugin so it no longer marks ordinary selections as intercepted by returning an `async` promise for every click.
+- The selection hook now falls through synchronously when no redirect is needed, and returns the nested `copyElement()` promise only when React Grab should redirect a portal/callout surface back to its semantic anchor.
+- Added focused acceptance coverage to lock the redirect contract and prevent future `Failed to copy` regressions from promise-shaped no-op handlers.
+- Files:
+  - `src/components/dev/react-grab-loader.tsx`
+  - `tests/acceptance/react-grab-loader.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/dev/react-grab-loader.tsx' 'tests/acceptance/react-grab-loader.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/react-grab-loader.test.ts`
+
+## 2026-03-18 — Codex session (tighten step 5/6 accelerator guide copy rail)
+
+- Gave the short accelerator guide steps (`Lessons` and `Modules`) their own compact copy-rail contract instead of reusing the taller generic accelerator rail.
+- Matched those two steps to a 20px body gap/inset layout so the subtitle-to-frame spacing aligns with the side insets instead of leaving extra dead space above the dashed accelerator frame.
+- Extracted the panel layout helpers into a dedicated module to keep the tutorial panel under the repo line-count guardrail.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-layout.ts' 'tests/acceptance/workspace-canvas-tutorial-panel.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts`
   - `pnpm exec tsc --noEmit`
 
-## 2026-03-12 — Codex session (onboarding pricing success fallback hotfix)
+## 2026-03-18 — Codex session (improve React Grab semantic targeting for tutorial callouts)
 
-- Fixed a Stripe checkout return gap where completed onboarding builder checkouts could fall back to the raw `/workspace?onboarding_flow=1&source=onboarding_pricing` URL without `checkout=success` if Stripe had not hydrated the subscription object on the success-page read yet.
-- Updated [`src/app/(public)/pricing/success/page.tsx`] to treat completed subscription checkouts with `payment_status=paid` or `payment_status=no_payment_required` as successful onboarding returns and preserve the paid plan marker.
-- Added regression coverage for the completed/no-subscription-yet case in [`tests/acceptance/pricing-success-return.test.ts`].
+- Added semantic React Grab anchor/link metadata to `WorkspaceTutorialCallout` so the dev grabber has a stable relationship between the visible tooltip bubble and its owning anchor.
+- Registered a dev-only React Grab plugin in `react-grab-loader` that redirects selection from linked tooltip/portal surfaces back to the owning semantic anchor before copying context.
+- Sanitized copied content to strip internal `data-react-grab-*` metadata attributes from the final output.
 - Validation:
-  - `pnpm exec vitest run tests/acceptance/pricing-success-return.test.ts tests/acceptance/onboarding-pricing-return.test.ts tests/acceptance/stripe-checkout-route.test.ts`
-  - `pnpm exec eslint 'src/app/(public)/pricing/success/page.tsx' 'tests/acceptance/pricing-success-return.test.ts'`
-  - `pnpm exec tsc --noEmit`
+  - `pnpm exec eslint 'src/components/dev/react-grab-loader.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx' 'tests/acceptance/workspace-tutorial-callout.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts`
+
+## 2026-03-18 — Codex session (fix step 5 picker callout anchor)
+
+- Moved the step-5 lesson-picker tutorial indicator off the lesson-group icon slot and onto the picker trigger root so it anchors from the full dropdown button instead of the top-left icon pocket.
+- Set the picker indicator to the trigger's right edge and vertical centerline, with the bubble on the right pointing left back at the dropdown.
+- Added focused coverage for the picker trigger anchor geometry.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'tests/acceptance/workspace-accelerator-header-picker.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-tutorial-callout.test.ts`
+
+## 2026-03-18 — Codex session (remove custom tutorial indicator tooltip styling)
+
+- Stripped `WorkspaceTutorialCallout` indicator mode back to default shadcn tooltip composition so the bubble and arrow come from the shared `TooltipContent` primitive instead of tutorial-specific border/background/shadow overrides.
+- Kept only minimal inner layout for the indicator icon and optional label, with no custom tooltip-surface styling in indicator mode.
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'tests/acceptance/workspace-tutorial-callout.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-18 — Codex session (restore accelerator proof-point guide copy)
+
+- Replaced the shortened generic accelerator intro line in the workspace guide with the stronger proof-point version about raising `$30M+` over `25+ years` operating nonprofits.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/lib/index.ts'`
+
+## 2026-03-13 — Codex session (invite teammate select user rows)
+
+- Reworked the workspace invite-sheet teammate picker to render avatar/name/subtitle rows instead of falling back to raw user IDs in the select content and selected value.
+- Backfilled the current viewer's name, email, and avatar into the workspace member map so owner/self rows degrade less often when profile data is sparse.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet-content.tsx' 'src/app/(dashboard)/my-organization/_lib/workspace-view.ts'`
+
+## 2026-03-13 — Codex session (invite access dropdown + viewer default)
+
+- Replaced the workspace invite-sheet access tabs with a dropdown select and set the default access level to `viewer`.
+- Aligned the initial invite flow to open on `Team + Viewer` so the sheet lands on a valid default rather than the unavailable temporary-viewer path.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet-content.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet.tsx'`
+
+## 2026-03-13 — Codex session (tighten invite sheet audience tabs)
+
+- Reordered the workspace invite-type tabs so `Team` appears before `Temporary`.
+- Shrunk that invite-type tab switcher from a full-width grid to a content-width pill group so it no longer stretches across the sheet.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet-content.tsx'`
+
+## 2026-03-13 — Codex session (remove workspace right-rail layout subtitle)
+
+- Removed the explanatory subtitle beneath the workspace right-rail layout mode buttons so the section now shows only the layout controls themselves.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-right-rail.tsx'`
+
+## 2026-03-13 — Codex session (remove nav user testing actions)
+
+- Removed the tester/dev action cluster from the account menu, including onboarding, tutorial, welcome, payment playground, reset, and seed controls.
+- Deleted the dedicated `NavUserTestingSection` component and simplified `NavUser` / menu-content plumbing so the menu now only exposes real account actions.
+- Validation:
+  - `pnpm exec eslint 'src/components/nav-user.tsx' 'src/components/nav-user/nav-user-menu-content.tsx'`
+
+## 2026-03-13 — Codex session (remove Autofill page dev FAB)
+
+- Removed the floating `Autofill page` QA/dev control from the app shell so it no longer renders in product surfaces.
+- Deleted the now-unused dynamic import and isolated `src/components/dev/case-study-autofill-fab/**` helper tree instead of leaving dead code behind.
+- Validation:
+  - `pnpm exec eslint 'src/components/app-shell/app-shell-inner.tsx' 'src/components/app-shell/dynamic-components.tsx'`
 
 ## 2026-03-10 — Codex session (production hardening sweep + shared coach scheduling card)
 
@@ -24577,25 +25247,2530 @@ Purpose: Track changes we’re making outside the formal PR stepper.
   - `pnpm exec vitest run tests/acceptance/public-map-preferences.test.ts` ✅
   - `pnpm exec tsc --noEmit` ✅
 
-## 2026-03-12 10:40 EDT - onboarding pricing Stripe success return unblock
+## 2026-03-11 12:40 EDT - point public home login signup link at home signup section
 
 - Scope:
-  - `src/app/(public)/pricing/success/page.tsx`
-  - `src/components/onboarding/onboarding-flow.tsx`
-  - `src/components/onboarding/onboarding-dialog/helpers.ts`
-  - `tests/acceptance/pricing-success-return.test.ts`
-  - `tests/acceptance/onboarding-pricing-return.test.ts`
-  - `docs/RUNLOG.md`
+  - `src/components/public/home-canvas-preview-panels.tsx`
 - Changes:
-  - Stopped successful Stripe onboarding checkouts from silently falling back to the raw workspace pricing URL when subscription syncing throws during `/pricing/success`.
-  - Successful internal onboarding returns now append a trusted `plan` param alongside `checkout=success`, so the builder flow can treat the user as paid immediately even if subscription persistence lags or admin sync is unavailable.
-  - Taught onboarding to recognize successful `source=onboarding_pricing` returns, apply the paid plan override client-side, and re-enter on the `org` step instead of forcing the user back through pricing.
-  - Added focused coverage for both the sync-failure success redirect path and the onboarding pricing return helpers.
+  - Updated the `Need an account? Sign up` link in the public home login panel to route to `/?section=signup` instead of the legacy `/sign-up?intent=build` path.
 - Validation:
-  - `pnpm exec vitest run tests/acceptance/pricing-success-return.test.ts tests/acceptance/onboarding-pricing-return.test.ts tests/acceptance/stripe-checkout-route.test.ts` ✅
-  - `pnpm exec eslint 'src/app/(public)/pricing/success/page.tsx' 'src/components/onboarding/onboarding-flow.tsx' 'src/components/onboarding/onboarding-dialog/helpers.ts' 'tests/acceptance/pricing-success-return.test.ts' 'tests/acceptance/onboarding-pricing-return.test.ts'` ✅
+  - `pnpm exec eslint 'src/components/public/home-canvas-preview-panels.tsx'` ✅
   - `pnpm exec tsc --noEmit` ✅
-2026-03-12 14:16 EDT - isolated the auth/signup hCaptcha + confirm-password update into a clean hotfix branch, added the optional public `NEXT_PUBLIC_HCAPTCHA_SITE_KEY` env, wired the official `@hcaptcha/react-hcaptcha` widget into signup-only flows, passed `options.captchaToken` to `supabase.auth.signUp()` when configured, and added Vercel Analytics to the root App Router layout. Validation passed with focused `vitest`, focused `eslint`, and `pnpm exec tsc --noEmit`.
 
-2026-03-12 18:40 EDT - isolated a login hCaptcha hotfix from clean main so password sign-in now mirrors signup when Supabase captcha is enabled: the login form renders the shared hCaptcha widget, blocks submit until completed, passes `options.captchaToken` into `supabase.auth.signInWithPassword()`, and resets the widget after failed attempts. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+## 2026-03-11 12:43 EDT - point public home signup login link at home login section
+
+- Scope:
+  - `src/components/public/home-canvas-preview-panels.tsx`
+- Changes:
+  - Updated the `Sign in` link in the public home signup panel to route to `/?section=login` instead of the standalone `/login` route so the auth flow stays inside the home canvas.
+- Validation:
+  - `pnpm exec eslint 'src/components/public/home-canvas-preview-panels.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-11 12:56 EDT - surface missing Supabase management token in admin platform UI
+
+- Scope:
+  - `src/app/(admin)/admin/platform/page.tsx`
+  - `src/components/supabase-manager/database.tsx`
+  - `src/components/supabase-manager/error-message.ts`
+  - `tests/acceptance/supabase-manager-error-message.test.ts`
+- Changes:
+  - Added an explicit setup warning on `/admin/platform` when `SUPABASE_MANAGEMENT_API_TOKEN` is not configured in the active runtime.
+  - Updated the database manager to surface the real proxy error message instead of collapsing all failures into a generic “Error loading tables” state.
+  - Added focused acceptance coverage for structured management-proxy error message extraction.
+- Validation:
+  - `pnpm exec eslint 'src/app/(admin)/admin/platform/page.tsx' 'src/components/supabase-manager/database.tsx' 'src/components/supabase-manager/error-message.ts' 'tests/acceptance/supabase-manager-error-message.test.ts'` ✅
+  - `pnpm exec vitest run tests/acceptance/supabase-manager-error-message.test.ts` ✅
+  - `pnpm exec tsc --noEmit` ✅
+
+## 2026-03-11 16:20 EDT - make admin platform full-bleed, toast missing setup, and anchor tutorial callouts to real tooltips
+
+- Scope:
+  - `src/app/(admin)/admin/platform/page.tsx`
+  - `src/app/(admin)/admin/platform/admin-platform-setup-toast.tsx`
+  - `src/app/actions/notifications.ts`
+  - `src/lib/supabase/management-api-config.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-tutorial-callout.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-team-access-section.tsx`
+  - `tests/acceptance/supabase-management-api-config.test.ts`
+- Changes:
+  - Removed the standalone header from `/admin/platform` and made the Supabase Platform Kit surface fill the full home-canvas content area instead of sitting inside an extra inset card.
+  - Replaced the inline missing-token warning with a manual-dismiss Sonner toast and surfaced the same setup issue in the app notifications feed as a synthetic admin notification.
+  - Added shared helpers for Supabase management-token configuration and synthetic platform setup notifications.
+  - Replaced the custom fixed-position tutorial callout with an anchored tooltip pattern so the step callout stays attached to its trigger while remaining inspectable/selectable for React Grab.
+- Validation:
+  - `pnpm exec eslint 'src/app/(admin)/admin/platform/page.tsx' 'src/app/(admin)/admin/platform/admin-platform-setup-toast.tsx' 'src/app/actions/notifications.ts' 'src/lib/supabase/management-api-config.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-team-access-section.tsx' 'tests/acceptance/supabase-management-api-config.test.ts'` ✅
+  - `pnpm exec vitest run tests/acceptance/supabase-management-api-config.test.ts tests/acceptance/supabase-manager-error-message.test.ts` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-11 16:40 EDT - softened the workspace tutorial shortcut callout by removing the button-like click badge, switching to inline "Click here" text with an arrow icon, and lowering the tooltip alignment against its anchor.
+2026-03-11 16:46 EDT - flattened the workspace shortcut buttons by removing the inner icon chip and softened the tutorial button highlight so the border no longer reads as doubled or overly thick.
+2026-03-11 16:53 EDT - pinned the workspace tutorial callout action to the top-right, increased the title size, and restored a visible outside-right arrow for the shortcut tooltip.
+2026-03-11 17:01 EDT - changed the organization overview card empty-state copy so missing org name/subtitle now render as Title and Subtitle.
+2026-03-11 17:09 EDT - replaced the single-action workspace card overflow menu with a direct fullscreen-style icon link to the editor route.
+2026-03-11 17:16 EDT - restored the workspace tutorial callout to native tooltip arrow geometry, centered it against the shortcut trigger, and kept the action text pinned top-right.
+2026-03-11 17:21 EDT - shifted the workspace tutorial callout back down by restoring a start-aligned tooltip offset against the shortcut trigger.
+2026-03-11 17:28 EDT - rebuilt the workspace tutorial callout as a centered flag with a small outside-right pointer so it points at the middle of the shortcut button while keeping the action text in the top-right.
+2026-03-11 17:34 EDT - reduced the workspace tutorial flag pointer size and locked it to the action-row height while shifting the tooltip back down to target the button center.
+2026-03-11 17:41 EDT - simplified the workspace tutorial callout back to native tooltip anchoring by removing the custom pointer geometry and keeping only a custom inner content layout.
+2026-03-11 17:52 EDT - split workspace tutorial callouts into two modes: a local anchored bubble for canvas shortcut buttons to eliminate zoom jitter, and the existing tooltip-anchored version for right-rail tutorial targets.
+2026-03-11 18:00 EDT - retuned the anchored workspace shortcut callout so the Click here row and pointer share the button center line while the body hangs lower like a flag.
+2026-03-11 18:07 EDT - unified all workspace shortcut buttons onto one blue active/open state and kept inactive tool buttons grayscale instead of using per-tool accent colors.
+2026-03-11 18:11 EDT - softened the workspace tutorial callout action label by dropping Click here from semibold to medium weight.
+2026-03-11 19:00 EDT - expanded the workspace guide so Accelerator now has its own internal substeps for header navigation, lesson-group selection, milestone progress, and a required first-module click before the tutorial resumes the rest of the workspace tools; also switched gated tutorial steps to show a disabled Next button with helper tooltip text, and expanded the accelerator progress rail milestone tooltips with Fundable/Verified requirement lists derived from workspace readiness data.
+2026-03-11 19:18 EDT - removed the mixed inline/floating accelerator tutorial callouts and rewired the shortcut, accelerator nav, lesson picker, progress strip, and first-module prompt to use the same forced-open tooltip primitive anchored to their real trigger elements; focused validation passed with `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-accelerator-card-helpers.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx'`, `pnpm exec tsc --noEmit`, `pnpm exec vitest run tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-accelerator-card.test.ts tests/acceptance/workspace-accelerator-card-checklist.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`, and `pnpm check:quality`.
+2026-03-11 19:21 EDT - fixed the accelerator checklist tutorial highlight leak so the first visible module step only keeps the blue tutorial state during the gated first-module tutorial step instead of staying permanently highlighted afterward; validation passed with focused `eslint`, `tsc`, and `vitest` on the accelerator/tutorial surfaces.
+2026-03-11 19:23 EDT - changed the accelerator lesson-picker tutorial copy to say “lessons” instead of “sections”.
+2026-03-11 19:38 EDT - upgraded the Fundable and Verified accelerator milestone tooltips from plain missing-text lists into real status checklists backed by structured readiness items, and threaded the same milestone checklist data through both the workspace accelerator card and the full accelerator overview rail; validation passed with focused `eslint`, `tsc`, and `vitest` on readiness, progress rail, and workspace accelerator surfaces.
+2026-03-11 19:52 EDT - added a new gated `Close the Module` accelerator tutorial step immediately after the required first-module click, anchored its callout to the real step-node close button, and wired the tutorial flow so opening the first module advances directly into the close-module prompt while closing the node completes that action step and reveals `Next`; validation passed with focused `eslint`, `tsc`, and `vitest` on the workspace tutorial and accelerator surfaces.
+2026-03-11 20:02 EDT - changed both fundraising `Coming soon` pills to a neutral grayscale badge treatment in the workspace guide card and the live workspace fundraising card header; validation passed with focused `eslint` and `tsc`.
+2026-03-11 20:05 EDT - extended the same neutral grayscale `Coming soon` badge treatment to the communications tutorial card and the live workspace communications card header; validation passed with focused `eslint` and `tsc`.
+2026-03-11 20:12 EDT - made the shared sidebar coaching CTA responsive by keeping the full `Coach scheduling` card only on taller viewports and swapping to a compact `Coaching` sidebar item with the coaching avatar group and the same booking action on shorter screens; validation passed with focused `eslint` and `tsc`.
+2026-03-11 20:18 EDT - moved the roadmap editor `Return To Workspace` action out of the right-rail footer and into the section header controls stack so it renders directly above the roadmap status select; validation passed with focused `eslint` and `tsc`.
+2026-03-11 23:30 EDT - replaced the workspace accelerator’s floating step-node module flow with an embedded in-card viewer: clicking a checklist step now expands the accelerator card to `lg`, opens a rounded two-pane lesson screen on the right, reuses the existing step content renderer inside the card, and mounts the old notes/resources/coach/AI right rail inside the expanded pane; completing or closing the module collapses the viewer back to the checklist-only card. I also extended the runtime snapshot/equality logic to track embedded viewer state (`isModuleViewerOpen` / `openModuleId`), removed the stale workspace panel `onOpenStepNode` path, and kept the tutorial close-module step anchored to the embedded viewer close button instead of the old floating node. Validation passed with focused `eslint`, focused `vitest`, `pnpm exec tsc --noEmit`, and a full `pnpm check:quality`.
+2026-03-11 23:41 EDT - corrected the embedded accelerator lesson proportions after the first in-card viewer pass shrank the video step: widened the accelerator `lg` card from `920` to `1180`, slightly widened the left checklist column, and reduced the embedded notes rail width so the lesson content regains the full-screen feel the old floating step-node had. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:02 EDT - moved the accelerator previous/next controls out of the workspace card header and into the top-right of the checklist header so they sit with the module list they control; the nav tutorial callout now anchors to that checklist-header control group instead of the outer card header. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:19 EDT - moved the accelerator lesson-group picker out of the checklist/sidebar area and into the outer accelerator card header, right-aligned beside the `Accelerator` title; the header picker now uses the live runtime lesson-group options and actions, while the graph/runtime snapshot plumbing was updated to carry the fuller accelerator runtime action shape without type drift. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:28 EDT - removed the extra “0 of 9 steps complete” progress summary line from the embedded workspace accelerator strip and deleted the dead counter props that only existed to render that copy. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:31 EDT - right-aligned the accelerator module/step count chips in the workspace accelerator sidebar so the metadata row now sits on the right instead of the left. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:36 EDT - tightened the embedded workspace accelerator spacing by removing the panel’s extra bottom padding, giving the accelerator card content a matching `px-3 / pb-3` inset, and slightly reducing the checklist shell padding so the progress and checklist blocks read wider inside the parent card. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:41 EDT - bumped the embedded accelerator checklist header copy slightly so the lesson-group title now uses `text-xs` and the supporting instruction copy uses `text-[11px]` for better readability. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:44 EDT - widened the accelerator card header lesson-group picker, then tightened it back to `w-[224px] max-w-[32vw]` so longer lesson names still fit better without pushing the `Accelerator` title onto a second line. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 00:50 EDT - updated the accelerator header lesson-group picker so long selected lesson titles truncate by default and slide horizontally on hover, letting the full label be read without widening the trigger or wrapping the card header. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 01:00 EDT - changed the authenticated app-shell right rail to auto-open on desktop when right-rail content becomes available, while leaving the public home preview behavior unchanged; this ensures users land in the logged-in shell with the right sidebar open unless they explicitly close it. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 01:11 EDT - fixed the accelerator lesson-group picker ordering by carrying the source class-group order from the server-side accelerator timeline into each workspace step and sorting lesson groups by that explicit order first; roadmap-title aliases remain as a fallback for unlabeled/legacy groups, and unknown/custom groups still preserve insertion order. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 10:40 EDT - fixed the onboarding pricing post-Stripe return path so successful builder checkouts no longer strand users on the pricing step when subscription syncing throws. `/pricing/success` now preserves a successful internal redirect with `checkout=success&plan=...` even if the subscription upsert/admin sync fails, and onboarding now honors that successful `source=onboarding_pricing` return by applying the paid plan override client-side and resuming on the `org` step instead of forcing pricing again. Validation passed with focused `vitest`, `eslint`, and `pnpm exec tsc --noEmit`.
+2026-03-12 14:09 EDT - added hCaptcha support to the shared signup form by wiring the official `@hcaptcha/react-hcaptcha` widget into signup-only flows, introducing the optional public `NEXT_PUBLIC_HCAPTCHA_SITE_KEY` env, and passing `options.captchaToken` to `supabase.auth.signUp()` when configured; also added a confirm-password field with zod validation so mismatched passwords are blocked before submit. Login remained unchanged. Validation passed with focused `vitest`, focused `eslint`, and `pnpm exec tsc --noEmit`.
+2026-03-12 14:18 EDT - added Vercel Analytics to the root App Router layout by installing `@vercel/analytics` and mounting `<Analytics />` in `src/app/layout.tsx` so analytics runs across the entire app. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 17:43 EDT - restored the older onboarding-style formation-status card treatment on the public `/find` organization detail sidebar by updating the contained `OrganizationFormationStatusSummary` variant to use the prior rounded card layout with the circular check indicator, while leaving the current onboarding toggle mechanics unchanged. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 17:54 EDT - tightened the public organization detail action-link buttons by reducing their height from `h-20` to `h-16` and shrinking the icon-to-label gap so labels sit closer to the icons without changing the grid or behavior. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 17:58 EDT - made the entire public `/find` organization list card reliably open details by letting the existing full-card overlay button receive clicks through non-interactive content layers, while keeping the favorite heart and `Details` affordance independently clickable; also removed the container chrome from `Details` so it renders as icon + text only. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 18:12 EDT - added hCaptcha handling to the password login form so local and production sign-in work when Supabase captcha is enabled: the login form now renders the shared hCaptcha widget below the password field, blocks submit until it is completed, passes `options.captchaToken` into `supabase.auth.signInWithPassword()`, and resets the widget after failed attempts. Validation passed with focused `eslint` and `pnpm exec tsc --noEmit`.
+2026-03-12 18:51 EDT - installed the project-scoped `hcaptcha-public-docs` agent skill at `.agents/skills/hcaptcha-public-docs/SKILL.md` so Codex can read and cite the public hCaptcha LLM markdown docs with local search-index discovery and enterprise handoff guidance.
+2026-03-13 10:55 EDT - disabled hCaptcha across the app by adding a default-off `NEXT_PUBLIC_HCAPTCHA_ENABLED` gate that all active auth captcha checks now respect, so login/signup no longer render the widget or send captcha tokens unless that flag is explicitly re-enabled later. The shared widget remains in place for future reactivation, but runtime behavior is now off by default even if a site key is still configured. Validation passed with focused `eslint`, `pnpm exec vitest run tests/acceptance/sign-up-form-schema.test.ts`, and `pnpm exec tsc --noEmit`.
 2026-03-13 11:33 EDT - isolated a follow-up auth rollback from clean `origin/main` and removed hCaptcha from the active login/signup app surfaces while leaving the shared widget/helper files in the repo for later reactivation. The shipped auth forms now go back to plain Supabase email/password flows with no captcha UI, no captcha submit gating, and no captcha token forwarding in the live app bundle. Validation passed with focused `eslint`, `pnpm exec vitest run tests/acceptance/sign-up-form-schema.test.ts tests/acceptance/auth-recovery.test.ts`, and `pnpm exec tsc --noEmit`.
+2026-03-13 15:43 EDT - implemented the hybrid organization invite/access-request system and internal prototype lab. Added `organization_access_requests` with RLS + schema types, created existing-user invite routing through in-app notifications plus Resend heads-up email, kept tokenized email invites for non-users, added signed-in `/access-requests` review/accept/decline flow, introduced the admin-only `/admin/platform/prototypes` lab with centered invite/email canvases, and added the admin auth-template sync action/button plus shared Coach House email previews for invite/auth templates. Also pushed the two new migrations to the linked Supabase project: `20260313190000_add_organization_access_requests.sql` and `20260313193000_restrict_organization_access_request_updates.sql`.
+
+- Files of note:
+  - `src/app/actions/organization-access/**`
+  - `src/app/(dashboard)/access-requests/page.tsx`
+  - `src/app/(admin)/admin/platform/**`
+  - `src/features/organization-access/**`
+  - `src/features/prototype-lab/**`
+  - `src/lib/email/resend.ts`
+  - `supabase/migrations/20260313190000_add_organization_access_requests.sql`
+  - `supabase/migrations/20260313193000_restrict_organization_access_request_updates.sql`
+  - `tests/acceptance/organization-access.test.ts`
+  - `tests/acceptance/prototype-lab.test.ts`
+  - `supabase/tests/rls.test.mjs`
+- Validation:
+  - `pnpm lint` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm check:structure` ✅
+  - `pnpm check:routes` ✅
+  - `pnpm check:features` ✅
+  - `pnpm check:feature-scaffold` ✅
+  - `pnpm check:thresholds` ✅
+  - `pnpm check:boundaries` ✅
+  - `pnpm check:deprecated-imports` ✅
+  - `pnpm check:workspace-storage` ✅
+  - `pnpm check:interaction-locks` ✅
+  - `pnpm check:raw-buttons` ✅
+  - `pnpm test:snapshots` ✅
+  - `pnpm test:acceptance` ✅
+  - `pnpm test:rls` ✅
+  - `pnpm build` ✅
+  - `pnpm test:visual` ✅
+  - `pnpm check:perf` ✅
+- Notes:
+  - The first `pnpm check:quality` attempt failed during `pnpm build` because the auth-template sync action had been surfaced through a feature-root export, which Turbopack rejected for `"use server"` semantics. Moved that action back into `src/app/(admin)/admin/platform/actions.ts`, reran the affected gates individually, and all quality sub-checks passed afterward.
+2026-03-13 16:11 EDT - fixed the notifications bell trigger so the popover opens again. `NotificationsBellButton` had been used under `PopoverTrigger asChild` without forwarding Radix’s injected props/ref, which meant the bell swallowed the trigger handlers and never opened the notifications popover. Converted it to a ref-forwarding wrapper that spreads the trigger props through to the underlying shared `Button`. Validation passed with `pnpm exec eslint src/components/notifications/notifications-menu.tsx` and `pnpm exec tsc --noEmit`.
+2026-03-13 16:18 EDT - moved the team invite explainer copy out of the workspace invite sheet body and into a hoverable info icon beside the `Team access` heading, using the existing `HoverCard` primitive so the guidance now appears as a compact popover next to the title instead of a persistent bordered paragraph. Validation passed with `pnpm exec eslint src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet-content.tsx` and `pnpm exec tsc --noEmit`.
+2026-03-13 16:44 EDT - refined workspace collaboration invites and reset the prototype lab UI. The temporary invite path now renders as an always-visible searchable reviewer surface instead of a nested dropdown, keeps Joel/Paula pinned as coach-review shortcuts, and preserves the selected reviewer as a full user row before creation. Temporary invite notifications now get archived when an invite is revoked. The prototype lab now uses a minimal file-tree left rail with one centered prototype canvas at a time instead of the previous stacked card-heavy preview chrome.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet-content.tsx`
+  - `src/app/(dashboard)/my-organization/_lib/workspace-actions.ts`
+  - `src/features/prototype-lab/components/prototype-lab-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet-content.tsx' 'src/app/(dashboard)/my-organization/_lib/workspace-actions.ts' 'src/features/prototype-lab/components/prototype-lab-panel.tsx'` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-board-invite-sheet-helpers.test.ts tests/acceptance/workspace-collaboration-invite-helpers.test.ts tests/acceptance/prototype-lab.test.ts` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-13 16:55 EDT - corrected prototype lab placement and stripped the page back to the blank-canvas baseline. Moved the prototype file tree out of the page body and into the real `Prototypes` sidebar nav item with an integrated chevron/expanded file-tree state, visible only while the prototypes route is active. Removed the prototype page header/panel/iframe preview chrome so `/admin/platform/prototypes` now renders as a blank centered canvas only, leaving actual prototype design work for later. Added a small acceptance assertion for the sidebar tree source.
+
+- Files of note:
+  - `src/components/nav-main.tsx`
+  - `src/components/app-sidebar/nav-data.ts`
+  - `src/features/prototype-lab/components/prototype-lab-panel.tsx`
+  - `src/features/prototype-lab/lib/sidebar-tree.ts`
+  - `tests/acceptance/prototype-lab.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/nav-main.tsx' 'src/components/app-sidebar/nav-data.ts' 'src/features/prototype-lab/components/prototype-lab-panel.tsx' 'src/features/prototype-lab/index.ts' 'src/features/prototype-lab/lib/sidebar-tree.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/prototype-lab.test.ts` ✅
+2026-03-13 16:59 EDT - simplified the prototype lab feature boundary so the blank-canvas route no longer computes or carries unused preview payloads. Removed the unused sync-action prop from the prototypes page path, cut the hidden flow/email preview data out of `buildPrototypeLabInput`, and tightened the prototype feature README to explicitly require the tree to live in the real app sidebar and the page body to stay a single centered canvas until a prototype is intentionally designed.
+
+- Files of note:
+  - `src/app/(admin)/admin/platform/prototypes/page.tsx`
+  - `src/features/prototype-lab/components/prototype-lab-panel.tsx`
+  - `src/features/prototype-lab/server/queries.ts`
+  - `src/features/prototype-lab/lib/index.ts`
+  - `src/features/prototype-lab/types.ts`
+  - `src/features/prototype-lab/README.md`
+  - `tests/acceptance/prototype-lab.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/nav-main.tsx' 'src/components/app-sidebar/nav-data.ts' 'src/app/(admin)/admin/platform/prototypes/page.tsx' 'src/features/prototype-lab/components/prototype-lab-panel.tsx' 'src/features/prototype-lab/server/queries.ts' 'src/features/prototype-lab/lib/index.ts' 'src/features/prototype-lab/types.ts' 'tests/acceptance/prototype-lab.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/prototype-lab.test.ts` ✅
+2026-03-13 17:11 EDT - converted the prototype sidebar tree to real shadcn/Radix collapsibles so the `Prototypes` chevron and the nested folder chevrons can open and close locally without relying on route reload behavior. Added a shared `src/components/ui/collapsible.tsx` primitive, reshaped the prototype tree into nested folder/entry nodes, and updated the sidebar nav renderer to use collapsible triggers/content for the top-level prototype tree plus nested folders while keeping the prototype page itself blank.
+
+- Files of note:
+  - `src/components/nav-main.tsx`
+  - `src/components/ui/collapsible.tsx`
+  - `src/features/prototype-lab/index.ts`
+  - `src/features/prototype-lab/lib/sidebar-tree.ts`
+  - `tests/acceptance/prototype-lab.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/nav-main.tsx' 'src/components/ui/collapsible.tsx' 'src/features/prototype-lab/index.ts' 'src/features/prototype-lab/lib/sidebar-tree.ts' 'tests/acceptance/prototype-lab.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/prototype-lab.test.ts` ✅
+2026-03-13 17:48 EDT - refactored workspace onboarding into an authored scene system with breakpoint-aware card choreography, guided camera presets, and a compact attached guide tab. Added transient tutorial card-position overrides plus authored viewport targets for `desktop`, `tablet`, and `mobile`, wired those into the React Flow surface/camera controller without persisting node layout changes, and locked canvas drag/connect interactions while onboarding scenes are active. Replaced the old floating tutorial card with a smaller tab-style guide shell, added reduced-motion handling for the message reveal, and introduced shared workspace typography roles that now drive the guide, board card headers, and accelerator checklist/support surfaces.
+
+- Files of note:
+  - `src/components/workspace/workspace-typography.ts`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/features/workspace-canvas-tutorial/hooks/use-workspace-canvas-tutorial-controller.ts`
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+  - `src/features/workspace-canvas-tutorial/index.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-typography.ts' 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/features/workspace-canvas-tutorial/index.ts' 'src/features/workspace-canvas-tutorial/hooks/use-workspace-canvas-tutorial-controller.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx' 'src/features/workspace-canvas-tutorial/lib/index.ts' 'src/features/workspace-canvas-tutorial/types.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-card-header.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-controller-hooks.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-node-builders.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-reconcile.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-canvas-connections-runtime.test.ts` ✅
+  - `pnpm check:quality` ⚠️ blocked by pre-existing structure-budget failures in `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet-content.tsx` and `src/app/(dashboard)/my-organization/_lib/workspace-actions.ts`, not by this onboarding refactor
+2026-03-13 19:11 EDT - corrected the onboarding guide regression from the first scene-refactor pass. Restored the animated sphere treatment inside the guide header, reapplied the `nodrag nopan` interaction contract so React Flow no longer steals pointer events from the guide controls, and moved the guide panel fully above the target card so only the attachment lip meets the card edge instead of the body overlapping the organization card.
+
+- Files of note:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+2026-03-13 20:19 EDT - recovered the workspace onboarding flow into a workspace-first path instead of the old standalone setup blocker. New builders now land directly in the workspace tutorial, the tutorial guide is back on the old card shell with attached “hat” positioning over the active card, and Formation now starts with two additive accelerator modules: `Welcome` and `Workspace setup`. The workspace setup module reuses the existing onboarding form inline inside the accelerator so organization setup happens before the first real Formation lesson without rebuilding the form stack.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx`
+  - `src/app/(dashboard)/my-organization/_lib/my-organization-page-content-helpers.ts`
+  - `src/app/(dashboard)/my-organization/_lib/my-organization-accelerator-timeline.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-body.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx`
+  - `src/features/workspace-accelerator-card/lib/index.ts`
+  - `src/features/workspace-accelerator-card/types.ts`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card-onboarding.tsx`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `tests/acceptance/workspace-accelerator-card.test.ts`
+  - `tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+- Validation:
+  - `pnpm exec eslint -- './src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx' './src/app/(dashboard)/my-organization/_lib/my-organization-page-content-helpers.ts' './src/app/(dashboard)/my-organization/_lib/my-organization-accelerator-timeline.ts' './src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas.tsx' './src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-body.tsx' './src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-flow-surface.tsx' './src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx' './src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-types.ts' './src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-accelerator-step.tsx' './src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-flow-surface-accelerator-graph-composition.ts' './src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-types.ts' './src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-helpers.ts' './src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' './src/features/workspace-accelerator-card/types.ts' './src/features/workspace-accelerator-card/lib/index.ts' './src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx' './src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx' './src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card-onboarding.tsx' './src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' './src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes.ts' './src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' './tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card.test.ts tests/acceptance/workspace-accelerator-card-checklist.test.ts` ✅
+2026-03-13 20:28 EDT - fixed the UUID crash in workspace seed loading after adding synthetic onboarding accelerator modules. `buildWorkspaceViewSeed` now filters accelerator progress lookups to real UUID module ids only, so the app-owned `workspace-onboarding-*` modules stay in the accelerator timeline without being passed into the `module_progress` query.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_lib/workspace-view.ts`
+  - `src/app/(dashboard)/my-organization/_lib/workspace-view-helpers.ts`
+  - `tests/acceptance/workspace-view-helpers.test.ts`
+- Validation:
+  - `pnpm exec eslint -- './src/app/(dashboard)/my-organization/_lib/workspace-view.ts' './src/app/(dashboard)/my-organization/_lib/workspace-view-helpers.ts' './tests/acceptance/workspace-view-helpers.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-view-helpers.test.ts` ✅
+2026-03-13 20:39 EDT - fixed the workspace tutorial guide controls so the rendered guide can actually receive clicks inside the React Flow canvas again. The tutorial node no longer renders an unused React Flow handle, no longer pretends to expose a drag handle, and now stops pointer events from bubbling into the pan surface so the guide’s back/next controls behave like normal buttons instead of canvas interactions.
+
+- Files of note:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-13 20:46 EDT - removed the temporary tutorial-guide attachment lip and the guide card `backdrop-blur`, because the blur layer was mispainting as a large rectangular block over the organization card at higher React Flow zoom levels. The workspace guide is back to a solid card surface while we keep refining the attached-hat behavior more safely.
+
+- Files of note:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-13 20:50 EDT - fixed the remaining workspace guide navigation bug. The guide wrapper was stopping pointer and click events during the capture phase, which prevented the prev/next buttons from receiving the events at all. Switched the wrapper to bubble-phase event blocking so the buttons can fire normally while still preventing the React Flow pan surface from hijacking the interaction.
+
+- Files of note:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-13 20:55 EDT - tightened the workspace guide title-to-body spacing and increased the onboarding body copy size for better scanability. Reduced the internal content stack gap slightly and raised the message copy to `text-base` / `sm:text-[17px]` with a roomier line height.
+
+- Files of note:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-13 21:26 EDT - implemented a calm guided transition layer for workspace onboarding without changing the tutorial content model. Step changes now use authored layout/camera timing instead of snapping, the welcome guide uses the organization card as its width reference, the guide is draggable from its header on every tutorial step, and dragged positions animate back onto the authored path on next/back. The guide content now crossfades/slides between steps, the welcome card drops its shadow, and the board finally opts into the existing node transform animation hook during tutorial scene changes.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-controller-hooks.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx`
+  - `src/features/workspace-canvas-tutorial/types.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint -- 'src/features/workspace-canvas-tutorial/types.ts' 'src/features/workspace-canvas-tutorial/index.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-controller-hooks.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card.test.ts tests/acceptance/workspace-accelerator-card-checklist.test.ts` ✅
+2026-03-13 21:33 EDT - removed the remaining workspace guide card shadow completely. The tutorial panel now forces `!shadow-none`, so it no longer inherits the shared `Card` primitive shadow or any attached-step shadow styling.
+
+- Files of note:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-13 21:41 EDT - refined the workspace guide attachment behavior and tooltip theming. Step 2 now uses the full organization-card width, attached guide steps measure their real rendered height and shift upward so typed copy grows away from the card instead of down across it, and tooltip surfaces now use popover tokens so light mode no longer renders as a dark primary bubble.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx`
+  - `src/features/workspace-canvas-tutorial/types.ts`
+  - `src/components/ui/tooltip.tsx`
+  - `src/app/globals.css`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/ui/tooltip.tsx' 'src/features/workspace-canvas-tutorial/types.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+2026-03-13 21:43 EDT - fixed the remaining tutorial tooltip regressions. `WorkspaceTutorialCallout` no longer overrides the shared tooltip with `bg-primary`, so light mode now uses the proper popover surface, and the tooltip arrow is back to a normal themed pointer instead of the rotated-square styling that was distorting it.
+
+- Files of note:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/components/ui/tooltip.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/ui/tooltip.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-13 21:55 EDT - fixed the step 4 onboarding overlap at the authored-runtime layer. The accelerator shortcut step now reserves extra attached-guide height on its first render, so it starts above the organization card immediately instead of briefly overlapping while waiting for the measured-height correction pass.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint -- 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+2026-03-13 22:03 EDT - fixed tutorial next/back viewport drift in the workspace canvas. The tutorial scene-fit request now carries a layout key derived from the currently rendered scene nodes, and the camera controller treats that as part of the handled request state. That lets the tutorial re-run its authored fit after the canvas nodes finish reconciling to the new step layout, instead of only fitting once against stale pre-reconcile positions.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-controller-hooks.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-controller-hooks.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+2026-03-13 23:16 EDT - simplified workspace onboarding motion so step changes stop stacking multiple animations. Same-scene steps now skip board layout animation and keep the guide’s measured height instead of resetting and jumping. Scene-change timings were shortened, the guide copy transition was reduced to a quick opacity-plus-2px settle, and the tutorial node’s always-on transform animation was removed so only real scene changes animate the board.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/app/globals.css`
+- Validation:
+  - `pnpm exec eslint -- 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+2026-03-13 23:24 EDT - normalized the shared tooltip arrow back toward the stock shadcn/Radix treatment. The custom stroke/size styling that made the tutorial callout pointer look detached was removed, and the shared tooltip arrow now uses the plain popover-filled arrow with the standard upward translate.
+
+- Files of note:
+  - `src/components/ui/tooltip.tsx`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/ui/tooltip.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-13 23:31 EDT - fixed the step 4 accelerator shortcut click path during workspace onboarding. The organization shortcut buttons now opt out of React Flow drag/pan handling and stop pointer-down propagation before the canvas can consume the interaction, and the tutorial callout bubble itself is now `pointer-events-none` so the instructional overlay cannot sit on top of the highlighted shortcut and block the click.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+2026-03-13 23:36 EDT - tightened the tutorial tooltip styling so it reads like a normal lightweight tooltip instead of a mini popover. The workspace tutorial callout now uses a narrower width, a smaller side offset so the arrow sits closer to the trigger, and no border/shadow override so the shared tooltip arrow no longer has to visually bridge extra chrome.
+
+- Files of note:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/components/ui/tooltip.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/components/ui/tooltip.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-13 23:39 EDT - reduced the workspace tutorial callout width again so the tooltip reads smaller and stays closer to standard tooltip proportions.
+
+- Files of note:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/components/ui/tooltip.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-13 23:45 EDT - normalized the shared tooltip pointer further by removing the custom arrow offset/background treatment and using the plain Radix arrow dimensions instead. The workspace tutorial callout was also tightened again and moved closer to the trigger so the pointer reads more like the stock tooltip arrow instead of a detached custom pin.
+
+- Files of note:
+  - `src/components/ui/tooltip.tsx`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/ui/tooltip.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-13 23:52 EDT - reverted the shared tooltip arrow change that broke normal app-shell/sidebar tooltips, and stripped the workspace tutorial callout back so it only provides width/text layout inside the shared tooltip surface. The shared primitive owns the pointer and surface again; the tutorial callout no longer overrides border, background, radius, or shadow.
+
+- Files of note:
+  - `src/components/ui/tooltip.tsx`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/ui/tooltip.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-14 00:03 EDT - simplified onboarding motion further so tutorial cards stop gliding and re-settling while the camera moves. Tutorial card layout animation is now disabled entirely, same-scene steps no longer animate the camera, and scene changes use a shorter camera settle. I also moved the derived tutorial render-state logic into its own helper module so tutorial-positioned nodes render in their authored locations immediately instead of waiting on the post-render reconciliation pass in the main surface component.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts`
+- Validation:
+  - `pnpm exec eslint -- 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+2026-03-14 00:07 EDT - fixed the welcome-step centering regression by treating the visible organization card as part of the authored welcome scene instead of leaving it at the live board position. The welcome runtime now places the organization card in the overview slot whenever it is visible and includes it in the scene-fit node set, so step 1 can center against the actual onboarding layout rather than the user’s pre-existing board coordinates.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint -- 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+2026-03-14 00:57 EDT - stopped the tutorial camera from competing with generic canvas fit/focus effects. While a tutorial scene-fit request is active, the camera controller now skips the initial-fit, layout-fit, accelerator-focus, and card-focus paths, and it ignores duplicate rerenders of the same scene-fit request until the pending request settles. That removes the remaining zoom/recenter thrash caused by multiple camera effects firing against the same onboarding transition.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts`
+- Validation:
+  - `pnpm exec eslint -- 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+2026-03-14 11:47 EDT - tightened the overview onboarding scenes so they center from the actual guide-plus-card bounds instead of the old anchor offset math, and made the tutorial surface render from the tutorial’s revealed-card set instead of whatever the board happened to have visible. That makes the welcome/organization/tools/accelerator-shortcut steps settle around the real onboarding composition and removes the stray off-center layout drift when advancing with `Next`.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint -- 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+2026-03-14 11:52 EDT - rebuilt the workspace tutorial callout as plain shared tooltip content instead of a custom mini-layout. The callout now uses only the shadcn tooltip body with simple wrapped text, no extra arrow icon, no grid treatment, and no workspace-specific typography chrome layered on top of the shared primitive.
+
+- Files of note:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/components/ui/tooltip.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/components/ui/tooltip.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-14 11:53 EDT - fixed the step-4 workspace shortcut click path by making the tutorial tooltip wrapper fully pass-through and moving the shortcut button event stop into the capture phase. The accelerator shortcut now stops React Flow from stealing the pointer before `onPress` runs, while the open tutorial tooltip no longer blocks the trigger from the popper wrapper layer.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/app/globals.css`
+- Validation:
+  - `pnpm exec eslint -- 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-14 12:03 EDT - restored the shared tooltip primitive closer to stock behavior by removing the local arrow toggle and stripping the custom arrow positioning/styling back to a plain Radix arrow fill. The shared tooltip now always renders its arrow without the extra translate/background treatment that had been creeping into repeated tooltip regressions.
+
+- Files of note:
+  - `src/components/ui/tooltip.tsx`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/ui/tooltip.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-14 12:10 EDT - removed the leftover custom surface treatment from the shared tooltip body so the container no longer has a shadow/border mismatch with the plain Radix arrow. The tooltip now renders as a simpler popover-colored surface with the stock arrow fill instead of a shadowed box with an unshadowed pointer.
+
+- Files of note:
+  - `src/components/ui/tooltip.tsx`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/ui/tooltip.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-14 13:48 EDT - moved the shortcut tutorial callout above the organization shortcut rail and changed the `tap-here` variant into a centered CTA treatment for the shortcut path. The accelerator shortcut now renders a centered `Open the Accelerator` label with a small rounded icon tile beneath it, while keeping the rest of the tooltip primitive unchanged.
+
+- Files of note:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-14 14:14 EDT - simplified the shortcut CTA callout further by removing the subtitle line and changing the `tap-here` layout to a single centered row. The label now sits to the left of the arrow tile, while the arrow tile stays on the centerline of the tooltip so it visually aligns with the shortcut button below.
+
+- Files of note:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+2026-03-14 14:43 EDT - localized the workspace tutorial callout styling into the workspace-only wrapper, using stock shadcn tooltip structure with workspace-specific blue translucent theming carried via local popover CSS variables so the arrow matches without changing the shared primitive. I also normalized workspace surface sizing by aligning the guide and organization card to shared workspace text roles, slightly increasing the organization overview card footprint and internal spacing, and widening the organization shortcut rail just enough to support the larger card rhythm without changing the broader board layout system.
+
+- Files of note:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/components/workspace/workspace-typography.ts`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-card-header.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout-config.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-organization-card-shell.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-static-cards.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/components/workspace/workspace-typography.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-card-header.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout-config.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-organization-card-shell.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-static-cards.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-board-layout.test.ts tests/acceptance/workspace-organization-overview-programs.test.ts` ✅
+2026-03-14 14:58 EDT - removed the workspace guide drag path after it proved jittery and low-value, reverted the workspace tutorial callout surface back to the stock tooltip look while keeping only the shortcut icon blue, and rebalanced the organization card shortcut rail so the larger buttons distribute evenly through the rail. I also hardened tutorial shortcut activation by deferring tutorial-step advancement to the next animation frame after the card open/focus work, which avoids the accelerator shortcut competing with onboarding state updates in the same click.
+
+- Files of note:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-organization-card-shortcuts.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-organization-card-shell.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-organization-card-shortcuts.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-organization-card-shell.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-board-layout.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+2026-03-14 15:02 EDT - tightened the shortcut tooltip CTA padding so the left inset around the arrow tile matches the top and bottom inset, without changing the default tutorial tooltip layout.
+
+- Files of note:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/workspace/workspace-tutorial-callout.tsx'` ✅
+2026-03-14 15:04 EDT - increased the shortcut tooltip CTA right inset slightly so the text has a bit more breathing room on the trailing edge without shifting the left/icon spacing.
+
+- Files of note:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/workspace/workspace-tutorial-callout.tsx'` ✅
+2026-03-14 15:58 EDT - restored onboarding drag interactions by making the workspace guide draggable again, allowing workspace card nodes to remain draggable during tutorial steps, and layering transient tutorial-only card position overrides so dragged cards stay where the user moved them for the current scene instead of snapping back to the authored layout. I also preserved live node positions during drag reconciliation and kept tutorial shortcut advancement deferred until the next animation frame so the accelerator shortcut can open and focus before the guide advances.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-reconcile.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-controller-hooks.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts`
+- Validation:
+  - `pnpm exec eslint -- 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-reconcile.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-controller-hooks.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-node-builders.test.ts tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` ✅
+2026-03-14 16:09 EDT - restored the shared tooltip surface shadow so it reads closer to stock shadcn again, left-aligned the accelerator shortcut CTA so the tooltip arrow, blue down-arrow tile, and target button sit on the same vertical line, widened the organization shortcut rail, and increased the shortcut button size so the controls take up more of the rail. I also pushed tutorial shortcut advancement out by one more animation frame so accelerator-open/focus work gets a cleaner chance to land before onboarding advances.
+
+- Files of note:
+  - `src/components/ui/tooltip.tsx`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-organization-card-shortcuts.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-organization-card-shell.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/ui/tooltip.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-organization-card-shortcuts.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-organization-card-shell.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts` ✅
+2026-03-14 17:33 EDT - corrected the organization shortcut rail sizing by keeping the original fixed column width, centering the larger buttons in a consistent fixed-gap stack instead of stretching them with `justify-evenly`, and tightening the button size so the larger controls fit inside the original rail cleanly. I also fixed the tutorial shortcut interaction bug by separating tutorial-scene visibility from real board visibility, which was causing the accelerator shortcut to toggle the wrong direction when the tutorial had not revealed the card yet.
+
+- Files of note:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-organization-card-shell.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-organization-card-shortcuts.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts`
+  - `tests/acceptance/workspace-card-shortcuts.test.ts`
+- Validation:
+  - `pnpm exec eslint -- 'src/components/ui/tooltip.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-organization-card-shell.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-organization-card-shortcuts.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts' 'tests/acceptance/workspace-card-shortcuts.test.ts'` ✅
+  - `pnpm exec tsc --noEmit` ✅
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-board-layout.test.ts` ✅
+
+## 2026-03-14 — Codex session (workspace tutorial shell + restart control)
+
+- Reworked the workspace tutorial card into a composite shell that can render embedded workspace surfaces below the guide copy, keeping the existing guide header/progress styling while stabilizing the presentation area for onboarding steps.
+- Replaced the typewriter-style tutorial body updates with step-level copy transitions only, added a persistent presentation key for embedded accelerator/org scenes, and suppressed duplicate live canvas nodes while those same surfaces are rendered inside the tutorial shell.
+- Added a dev-only top-left `Restart guide` canvas overlay control plus a full tutorial reset path that reactivates onboarding, clears opened/acknowledged progress, closes the accelerator step node, and persists the reset to workspace onboarding user metadata.
+- Added the tutorial restart board-state helper and expanded onboarding-flow acceptance coverage for restarting from a partially completed tutorial.
+- Validation:
+  - `pnpm exec eslint -- 'src/features/workspace-canvas-tutorial/types.ts' 'src/features/workspace-canvas-tutorial/hooks/use-workspace-canvas-tutorial-controller.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-onboarding-flow.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-body.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-flow-surface.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-types.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-controller-hooks.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-card-data.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_lib/workspace-actions.ts' 'tests/acceptance/workspace-board-onboarding-flow.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-14 — Codex session (workspace shortcut open fix + tooltip indicator)
+
+- Fixed the tutorial shortcut presentation handoff by threading `openedTutorialStepIds` into the tutorial shell presentation resolver, so clicking a guided shortcut now swaps the shell from the organization rail to the connected target card on that same step instead of appearing stuck.
+- Extracted the shortcut-step presentation decision into a pure helper and added focused regression coverage for accelerator and later shortcut steps.
+- Removed the tutorial-only Radix tooltip wrapper from organization shortcut buttons and replaced it with a compact inline arrow indicator, so the guide still points at the target button without opening a floating layer over the card UI.
+- Kept the existing tooltip-based tutorial callouts for accelerator navigation, picker, progress, module-close, and team-access surfaces by making `WorkspaceTutorialCallout` support both tooltip and inline-indicator modes.
+- Validation:
+  - `pnpm eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+
+## 2026-03-14 — Codex session (workspace tutorial dock mask)
+
+- Replaced the tutorial panel’s embedded-card slot with a transparent dashed dock mask for dockable workspace cards, so the live React Flow card can show through the shell instead of a duplicated embedded renderer.
+- Made tutorial node chrome pass pointer events through the dock area while keeping the header/copy controls interactive, which lets the live card underneath remain clickable and draggable during the walkthrough.
+- Added tutorial dock-target math and snap logic so dockable cards start docked by default, can be dragged out during tutorial mode, and snap back into the slot when dropped near the target area.
+- Threaded tutorial-specific draggable card IDs and dock-derived position overrides through initial node building, reconciliation, and drag-stop handling without persisting those temporary positions to the saved workspace layout.
+- Validation:
+  - `pnpm eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx' 'src/features/workspace-canvas-tutorial/types.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-controller-hooks.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-reconcile.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-node-builders.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-docking.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+
+## 2026-03-14 — Codex session (workspace tutorial dock polish)
+
+- Restored the workspace guide shell itself as the visible parent surface instead of hiding most of the body behind nested mini-panels, while keeping the dashed dock slot visually distinct.
+- Removed the dock-slot helper labels entirely and tightened the dock-slot vertical offset so the docked card lands higher in the slot after the guide body layout change.
+- Raised tutorial-dockable live cards above the tutorial shell layer with explicit node z-index ordering, so the organization card is no longer visually buried under the guide when docked.
+- Validation:
+  - `pnpm eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-helpers.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-reconcile.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+
+## 2026-03-14 — Codex session (workspace tutorial exact dock frame)
+
+- Threaded the resolved docked-card width into the tutorial panel so the dashed mask now renders as the exact organization-card footprint instead of a padded wrapper around it.
+- Collapsed the old two-layer dock placeholder into a single transparent dashed frame and tagged it with `data-workspace-tutorial-mask-for`, which should make the live docked card easier to visually align and easier to identify in DOM inspection.
+- Updated the dock-target regression fixture to match the current slot top offset used by the tutorial presentation runtime.
+- Validation:
+  - `pnpm eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `pnpm exec tsc --noEmit` (started, did not complete within this pass)
+
+## 2026-03-14 — Codex session (workspace tutorial measured dock inset)
+
+- Replaced the tutorial dock slot’s static height assumption with live workspace-card height measurement, so the dashed frame now follows the rendered organization card instead of reserving extra dead space below it.
+- Added a fixed `10px` dock inset on all sides by sizing the dashed frame from the live card dimensions plus inset and snapping the card into that frame instead of flush to the frame edge.
+- Tightened the docked guide shell width for the organization/tutorial path so the guide no longer stays significantly wider than the actual slot it is presenting.
+- Validation:
+  - `pnpm exec tsc --noEmit`
+  - `pnpm eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-types.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-compare.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-hooks.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-card-data.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-helpers.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-docking.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+
+## 2026-03-14 — Codex session (workspace tutorial mask-rect docking)
+
+- Stopped deriving the dock snap target purely from shell width and slot offsets; the tutorial node now measures the rendered dashed mask rect and uses that real rect as the dock target when present.
+- Added tutorial-node reporting for the presentation mask layout so the live organization card can align to the actual dashed frame instead of an inferred center calculation.
+- Kept the measured card-height sizing from the prior pass, but removed the remaining placement guesswork by using the rendered frame as the placement source of truth.
+- Validation:
+  - `pnpm eslint 'src/features/workspace-canvas-tutorial/types.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `pnpm exec tsc --noEmit` (started, no diagnostics returned before timeout in this pass)
+
+## 2026-03-14 — Codex session (workspace tutorial unscaled canvas measurements)
+
+- Fixed a React Flow zoom-space bug in the tutorial docking flow: node and mask measurements were using `getBoundingClientRect()`, which returns zoom-scaled values and caused the organization card, dashed frame, and guide shell to disagree at non-1x zoom.
+- Switched the workspace-card and tutorial-node measurements to unscaled layout dimensions, and normalized the measured mask rect back into canvas-space before using it as the dock target.
+- This keeps the tutorial shell height, dashed frame size, and dock target in the same coordinate system so the organization card no longer drifts up-left or overlaps the tutorial copy when the canvas is zoomed.
+- Validation:
+  - `pnpm eslint 'src/features/workspace-canvas-tutorial/index.ts' 'src/features/workspace-canvas-tutorial/types.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `pnpm exec tsc --noEmit` (started, still running with no diagnostics returned before I closed this pass)
+
+## 2026-03-15 — Codex session (workspace accelerator shortcut rail focus fix)
+
+- Fixed the organization-card accelerator shortcut so a click now focuses the accelerator card instead of taking the generic visible-child branch that toggled and refocused the parent rail group.
+- Kept a legacy recovery path for poisoned hidden-state snapshots: if accelerator is somehow hidden, the shortcut opens it first and then focuses it.
+- Added acceptance coverage for both the visible accelerator case and the legacy hidden accelerator case in the shortcut model tests.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts' 'tests/acceptance/workspace-card-shortcuts.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-15 — Codex session (workspace onboarding guide live-card stabilization)
+
+- Replaced the tutorial’s organization/tool dock-mask ownership path with embedded shared `WorkspaceBoardCard` surfaces inside the guide shell, so guided clicks now hit the same live card component instead of a masked canvas node behind the guide.
+- Kept the dashed frame as a visual container, but moved the interactive organization/tool card into that frame and suppressed the corresponding canvas node during guided ownership.
+- Disabled dragging for the tutorial guide node and removed the disabled-next tooltip layer from the guide header to reduce overlay interference.
+- Added persistent canvas viewport controls for zoom in, zoom out, recenter, and reset, all wired to the same React Flow instance used by guided and regular canvas flows.
+- Increased same-scene tutorial camera moves from zero-duration to a short animated refocus so step-to-step guided changes can visibly punch in/punch out without a full layout jump.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-viewport-controls.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-15 — Codex session (workspace guide overlay + frame height follow-up)
+
+- Folded the canvas help affordance into the top-right viewport controls cluster so the help bubble and camera controls no longer compete as separate overlays.
+- Stopped forcing the dashed guide frame to reserve a stale minimum height when it is wrapping an embedded live card, which removes the extra empty space below the organization card.
+- Disabled tutorial mask-layout reporting for embedded live-card steps, reducing unnecessary layout measurement churn now that those steps no longer use dock snapping.
+- Reverted same-scene tutorial camera nudges back to zero-duration to cut the visible jank introduced by the prior refocus change.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/types.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-help-overlay.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-15 — Codex session (workspace guide shortcut-state ownership fix)
+
+- Removed the tutorial shortcut rail’s dependency on the normal board visibility toggle path, so clicking a highlighted guide shortcut now advances tutorial-owned visibility state immediately instead of waiting on an out-of-band dock toggle.
+- Kept focus requests intact, but made the tutorial shortcut advance synchronous; this prevents the embedded organization card from keeping the guide stuck on the organization step after an Accelerator click.
+- Updated the shortcut regression suite to assert that tutorial shortcut steps do not toggle hidden card state directly and instead hand control back to the guide runtime.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts' 'tests/acceptance/workspace-card-shortcuts.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-15 — Codex session (live browser pass + accelerator shortcut click fix)
+
+- Ran a real authenticated Playwright pass against `http://127.0.0.1:3000/workspace?onboarding_flow=1`, restarted the guide, advanced to step 4, and confirmed the embedded Accelerator shortcut was still failing in the browser even though the model tests passed.
+- Traced the failure to `WorkspaceCardShortcutButton`: the button was calling `stopPropagation()` from `onClickCapture` on the same target that owned `onClick`, which prevented the shortcut press handler from firing in the live guide card.
+- Removed the `onClickCapture` propagation trap while keeping the pointer-down propagation guards needed for React Flow interaction containment.
+- Removed the temporary shortcut debug logs added during browser diagnosis.
+- Re-ran the live browser flow and verified the step-4 Accelerator button now swaps the guide content from the organization card to the accelerator card inside the tutorial container.
+- Validation:
+  - Live Playwright browser pass against the running local app, including login, tutorial restart, step-4 advancement, and Accelerator click verification
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-state.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-15 — Codex session (canvas help hint clipping fix)
+
+- Confirmed in the browser that the Radix hover-card content was already portaled correctly; the clipping problem was the separate integrated `Hover for canvas help` hint bubble being positioned above the control cluster inside an `overflow-hidden` canvas surface.
+- Repositioned that integrated hint below the viewport controls so it stays inside the visible canvas bounds, and added hover-card collision padding to keep the full help panel off the edges of the workspace.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-help-overlay.tsx'`
+  - Live Playwright browser pass on the local workspace route, including hover verification and screenshot review
+## 2026-03-15 22:06 EDT - workspace guide stability/performance pass
+
+- Refactored the workspace guide runtime around stable presentation families instead of raw step indices, so tutorial scene signatures now dedupe same-family copy changes instead of refitting the camera on nearly every step.
+- Stabilized the guide shell with shared family-level shell specs for overview, tool, and accelerator scenes; the tutorial node now uses fixed width/height per family and no longer repositions from measured guide height.
+- Removed extra tutorial render churn by:
+  - dropping the duplicate `setNodes(reconcile(...))` pass from `workspace-canvas-surface-v2.tsx`,
+  - removing attached-guide height measurement state from the tutorial runtime,
+  - short-circuiting the tutorial node `ResizeObserver` when no measurements are needed,
+  - making scene-fit handling idempotent per request key instead of refiring on `layoutKey` churn.
+- Converted the tutorial panel into a fixed-height flex shell with internal scroll regions so embedded card content no longer resizes the guide shell step-by-step.
+- Updated shortcut-opened scene layout resolution so a revealed target adopts its target scene layout immediately instead of staying anchored to the old overview layout.
+- Removed the competing focus-camera request from tutorial-highlighted shortcut presses and changed shortcut-step completion to advance immediately into the next tutorial step once the user clicks the required shortcut.
+- Added and updated regression coverage for stable scene-family signatures, shortcut-step scene adoption, and the no-focus tutorial shortcut path.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-state.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-card-shortcuts.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+  - `pnpm exec tsc --noEmit`
+  - Live Playwright-style browser pass against the running local app using a fresh tester sign-up flow:
+    - verified the Accelerator shortcut now advances immediately from `Step 4 of 16` to `Step 5 of 16`
+    - verified the overview shell stays on the same rendered bounds through steps 2-4
+
+## 2026-03-15 23:28 EDT - workspace guide center-lock motion fix
+
+- Reworked tutorial scene signatures to follow stable stage families (`welcome`, `overview`, `tool`, `accelerator`) instead of active card ids, which stops same-family steps from reissuing camera moves.
+- Center-locked the tutorial node to a single authored stage anchor per breakpoint and switched the camera to derive its viewport center from the guide shell itself, so shell size changes grow from the center instead of shifting from the top-left.
+- Simplified guided camera framing to be tutorial-shell-first: scene fit requests now only wait on the tutorial node, not the surrounding canvas cards, which removes pan-heavy refits when guided cards are embedded inside the shell.
+- Unified accelerator module steps onto the same accelerator-family stage so deeper accelerator onboarding no longer zooms/pans to a separate authored scene.
+- Updated tutorial transition timing to treat same-family steps as no camera move and family changes as short reframes.
+- Added regression coverage that locks guide-center stability across welcome -> overview and accelerator -> accelerator-module transitions.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `pnpm exec tsc --noEmit`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - verified `Step 1 of 16` through `Step 5 of 16` keep the guide centered after a short settle
+    - measured zero center delta across `Step 1 -> 2 -> 3 -> 4 -> 5`
+    - verified the embedded `Accelerator` shortcut still advances to `Step 5 of 16`
+
+## 2026-03-16 13:31 EDT - workspace guide step-2 handoff smoothing
+
+- Moved the welcome step onto the same overview-stage shell and zoom profile as step 2, removing the step 1 -> 2 shell resize and camera zoom change.
+- Kept the guide copy region at a fixed minimum height and switched the step content reveal to a top-to-bottom stagger so the title, body copy, helper copy, and presentation area settle into an already-sized shell instead of expanding it mid-transition.
+- Softened the dock-mask frame slightly by increasing the dashed-border corner radius.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `pnpm exec tsc --noEmit`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - verified `Step 1 of 16` and `Step 2 of 16` hold identical guide bounds after settle
+    - measured zero delta for guide center, width, height, and viewport transform scale across `Step 1 -> 2`
+
+## 2026-03-16 13:51 EDT - workspace guide step-2 handoff correction
+
+- Reverted the welcome step back to its smaller shell while keeping the same center anchor and zoom as the overview stage, so `Step 1 -> 2` now grows in place instead of starting oversized.
+- Added a resize-first reveal sequence for the `welcome -> organization` handoff: the guide shell grows first, then the step-2 copy and presentation content fade in from top to bottom.
+- Removed the extra copy/presentation spacing that was pushing the organization card down by dropping the forced body min-height and tightening the content gap.
+- Rebuilt the dashed organization frame as a centered overlay around the live card instead of a bordered padding box, which restores equal inset on the top, bottom, left, and right.
+- Added a direct transition on the React Flow tutorial node wrapper so shell width/height/position changes interpolate cleanly instead of snapping.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+  - `pnpm exec tsc --noEmit`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - verified `Step 1 of 16` stays on the compact welcome shell
+    - verified `Step 2 of 16` keeps the same viewport scale (`0.68`) and final center (`720, 570`)
+    - verified the organization frame inset resolves evenly on all four sides (`6.8px` at viewport scale, matching the authored `10px` inset)
+
+## 2026-03-16 13:59 EDT - workspace guide overview shell trim
+
+- Reduced the overview-family tutorial shell height from `724px` to `700px` so the organization guide no longer carries leftover dead space below the embedded card after the copy-spacing cleanup.
+- Added a small top offset for non-helper overview presentation steps so the organization frame sits more evenly between the body copy above and the remaining bottom space below.
+- Kept the dashed frame inset symmetric on all sides while preserving the center-locked shell and unchanged overview zoom.
+- Validation:
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - measured `Step 2 of 16` guide-frame gap at `17.6px` above and `15.1px` below the organization frame
+    - measured symmetric frame inset on `Step 2 of 16` and `Step 4 of 16` (`6.8px` on left/right/top/bottom at the active viewport scale)
+    - verified the overview shell remains center-locked at `y = 570` and the shortcut step still fits inside the trimmed shell
+
+## 2026-03-16 14:08 EDT - organization preview banner height tweak
+
+- Increased the organization overview preview banner band slightly by using a taller local preview aspect ratio (`3.7:1`) and a higher minimum preview height, without changing the underlying upload/banner spec.
+- Left the shared `GridBackground` component alone; the adjustment is scoped to the workspace organization overview card preview so the header/media rhythm tightens only where the user flagged it.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-static-cards.tsx'`
+  - `pnpm exec tsc --noEmit`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - verified the organization preview banner renders at `84.3px` tall at the active tutorial viewport scale
+    - verified the header-to-banner gap remains driven by layout (`12.3px`) rather than added padding
+
+## 2026-03-16 14:17 EDT - overview copy rail stabilization
+
+- Replaced the conditional overview frame top-padding with a stable overview copy rail for organization-docked no-helper steps, using the measured step-2 copy height as the fixed rail instead of ad hoc spacer offsets.
+- Switched the tutorial body layout from stacked flex compensation to an explicit two-row grid: copy rail first, presentation rail second, with the organization frame centered in the presentation row rather than nudged by per-step padding.
+- This keeps the organization frame anchored between `Step 2 of 16` and `Step 3 of 16` even though the `Tools` body copy is shorter.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `pnpm exec tsc --noEmit`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - measured `Step 2 of 16` copy height `80.8px`, frame gap `10.9px`, frame top `522.9px`
+    - measured `Step 3 of 16` copy height `80.2px`, frame gap `10.9px`, frame top `522.4px`
+
+## 2026-03-16 14:23 EDT - tutorial motion cadence pass
+
+- Slowed the workspace guide motion system slightly so shell resize, copy reveal, and embedded-card reveal all share the same calmer micro push/pull cadence instead of popping through short fades.
+- Added a subtle scale component to step copy and presentation transitions (`scale` with small `y` offsets), while keeping motion compositor-only and preserving reduced-motion fallbacks.
+- Increased the tutorial shell transition duration from `180ms` to `240ms`, raised the welcome handoff delay to `240ms`, and extended family-change camera reframes from `220ms` to `280ms`.
+- Slowed the guide progress bar width transition to `360ms` with the same eased curve so it reads as part of the same transition system.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - verified tutorial progression still advances `Welcome to Workspace -> Build your Organization -> Tools -> Accelerator`
+    - verified no new runtime errors in the local walkthrough flow
+
+## 2026-03-16 14:33 EDT - tutorial frame spacing model cleanup
+
+- Replaced the mixed inset model on the organization tutorial frame with one explicit frame inset on all four sides, instead of deriving left/right spacing from width math and top/bottom spacing from separate vertical padding.
+- The dashed organization frame now uses the same box-model path in both the live-content and placeholder states, and the overview shell spec is slightly shorter (`694px`) so the remaining bottom slack inside the guide body is trimmed at the scene level instead of with one-off padding hacks.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+
+## 2026-03-16 14:42 EDT - step-4 overview shortcut shell + mask fix
+
+- Added a taller center-locked overview shell for unresolved shortcut steps so helper-state overview steps like `Accelerator` can grow symmetrically from the same stage center instead of clipping against the guide body.
+- Removed the live-content mask `minHeight` from the dashed organization frame path; the frame now wraps the real embedded card height directly and no longer vertically centers the organization card inside an oversized placeholder-sized mask.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - advanced to `Step 4 of 16`
+    - measured equal dashed-frame inset on all four sides (`6.8px` top/right/bottom/left at active viewport scale)
+    - confirmed the step-4 frame no longer extends past the guide body (`bottom slack: 21.3px`)
+
+## 2026-03-16 14:50 EDT - step-5 accelerator right-rail alignment
+
+- Repositioned the accelerator-family guide as a desktop right-rail companion to the organization card instead of keeping it on the old centered overview anchor, so step 5 no longer overlaps the org card.
+- Normalized the accelerator-family right-rail gap across the overview-to-accelerator handoff and deeper accelerator/module steps, and centered the camera on the org-card + guide pair instead of the guide alone.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - advanced through `Step 4 of 16` and clicked the embedded `Accelerator` shortcut
+    - confirmed `Step 5 of 16`
+    - measured exact top alignment between the organization card and the guide (`top delta: 0px`)
+    - measured a visible horizontal gap between them (`31.3px` at the active viewport scale)
+
+## 2026-03-16 15:19 EDT - tutorial surface contract refactor for accelerator-family steps
+
+- Replaced the tutorial panel’s split `presentationMask` / `presentationMinHeight` rendering with one shared `presentationSurface` contract so embedded guide surfaces now use the same intrinsic width/height + frame inset model across organization and accelerator-family steps.
+- Removed the accelerator tutorial embed’s generic `w-full max-w-[52rem]` + fixed min-height path, and switched accelerator/tool guide presentations to derive frame sizing from the real card contract plus measured card height.
+- Introduced a stage-shell layout contract for paired accelerator steps, keeping the desktop right-rail composition while resizing the guide around a calmer `780x780` paired shell and anchoring paired camera reframes to the shared stage center instead of letting the guide drift.
+- Added internal scroll support to the tutorial presentation slot so taller accelerator states can stay inside the guide body without clipping.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx' 'src/features/workspace-canvas-tutorial/index.ts' 'src/features/workspace-canvas-tutorial/types.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+  - Attempted a live browser pass with Playwright against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`, but both the bundled Chromium headless shell and the local `Google Chrome.app` binary aborted during process launch on this machine before navigation, so no new live geometry measurements were captured in this pass.
+
+## 2026-03-16 15:29 EDT - accelerator-family guide growth and non-blocking tutorial indicators
+
+- Removed the tutorial presentation `ScrollArea` path so the workspace guide now grows to fit the embedded accelerator surface instead of hiding overflow inside an internal scroll region.
+- Narrowed the accelerator-family shell to the real paired-guide width, promoted the accelerator family height to a larger right-rail shell, and preserved top alignment in paired layouts by keeping right-rail guide growth pinned to its authored top-left position instead of recentering it.
+- Replaced accelerator step callout tooltips with non-blocking indicator affordances so tutorial hints no longer cover the progress strip, picker, nav controls, checklist target, or close-module action.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - advanced through `Step 4 of 16` and clicked the embedded `Accelerator` shortcut
+    - confirmed `Step 5 of 16` top alignment remained exact (`0px`) with a stable pair gap (`31.28px`)
+    - confirmed the accelerator card stayed inside the guide body (`bottom inset: 21.93px`)
+    - advanced to `Step 6 of 16` and confirmed no tooltip content panel rendered over the progress strip
+
+## 2026-03-16 15:36 EDT - dashed organization frame exact-fit correction
+
+- Removed the forced live `minHeight` from the guide panel’s rendered presentation frame path so the dashed organization outline now sizes to the actual embedded card instead of a stale measured height.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - `pnpm exec tsc --noEmit`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - advanced to `Step 2 of 16`
+    - measured equal organization-frame inset on all four sides (`6.8px` top/right/bottom/left at the active viewport scale)
+
+## 2026-03-16 16:05 EDT - step 5 paired accelerator viewport centering fix
+
+- Fixed the step 4 -> 5 onboarding camera handoff so authored tutorial viewports no longer get starved behind React Flow node-measure / double-RAF gating.
+- The scene-fit request path now carries a stable scene signature and dedupes on that signature in the camera controller instead of trusting only a monotonic `requestKey`.
+- Authored tutorial viewports now apply with `setCenter(...)` immediately once the flow is ready, while node visibility/measurement waiting is retained only for true `fitView(...)` scene fits.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-controller-hooks.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-viewport-controls.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-controller-hooks.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-viewport-controls.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - advanced through `Step 4 of 16`
+    - clicked the embedded `Accelerator` shortcut
+    - confirmed the step-5 viewport updated to `matrix(0.64, 0, 0, 0.64, 21.4, 250.6)`
+    - confirmed pair centering error was effectively zero (`pairCenterDelta: 0.00003`)
+    - confirmed top alignment remained exact (`0px`)
+    - confirmed the visible pair gap measured `29.44px` at the active viewport scale
+
+## 2026-03-16 16:15 EDT - step 4 accelerator callout label and step 5 guide-only centering
+
+- Added a non-blocking inline label to the existing step-4 shortcut arrow indicator so the callout now reads `Open the Accelerator` while keeping the arrow anchored in its prior position over the shortcut button.
+- Changed the desktop accelerator-family tutorial camera framing so step 5+ centers the accelerator guide card itself rather than centering the full organization + guide pair composition.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - advanced to `Step 4 of 16` and confirmed the `Open the Accelerator` label rendered once with a compact inline box (`92.68px x 18.02px`)
+    - advanced to `Step 5 of 16` and confirmed the viewport updated to `matrix(0.64, 0, 0, 0.64, -169.96, 148.2)`
+    - confirmed guide centering error was effectively zero (`guideCenterDelta: -0.00003`)
+    - confirmed the full pair is no longer centered (`pairCenterDelta: -191.36`)
+    - confirmed top alignment remained exact (`0px`) and the visible pair gap remained `29.44px`
+
+## 2026-03-16 16:22 EDT - workspace guide body glassmorphism
+
+- Applied a glassmorphism treatment to the workspace guide body surface only, leaving the existing header treatment intact.
+- Moved the blur/background treatment onto the actual `CardContent` layer and kept the body-specific highlight wash as a separate overlay so all guide steps share the same glass body styling.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - Live Playwright browser pass against `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`:
+    - confirmed the guide header still used its existing blur (`backdrop-filter: blur(8px)`)
+    - confirmed the guide body now owns the glass blur directly (`backdrop-filter: blur(18px)`)
+    - confirmed the guide body background rendered with partial translucency (`background-color` alpha `0.46`)
+
+## 2026-03-16 16:37 EDT - accelerator picker single-label trigger
+
+- Fixed the accelerator lesson-group picker so the trigger renders a single visible title path instead of layering a styled `SelectValue` on top of the trigger's own selected label behavior.
+- Restored the hover-pan logic to a dedicated overflow viewport + content span pair inside the trigger, so the title only translates when it is actually truncated and hovered.
+- Removed the temporary `forwardRef` change from the shared `SelectValue` primitive because the picker no longer needs to treat it as a second visible label component.
+- Updated the trigger's accessible name to include the current selection without duplicating a second visible title node.
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `src/components/ui/select.tsx`
+  - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/components/ui/select.tsx' 'tests/acceptance/workspace-accelerator-header-picker.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts`
+  - `pnpm exec tsc --noEmit`
+  - Attempted live Playwright verification via tester sign-up, but the local tester auth flow stalled on account creation in this environment, so the regression is locked with a render-level acceptance test for the trigger markup.
+
+## 2026-03-16 16:42 EDT - remove accelerator header nav controls and retarget step 5 copy
+
+- Removed the accelerator header previous/next nav controls from the workspace accelerator card instead of merely hiding them.
+- Deleted the now-unused checklist `headerControls` plumbing so the checklist header no longer reserves space for dead controls.
+- Kept the tutorial step id `accelerator-nav` stable for onboarding state continuity, but changed its visible copy to teach the intended interaction: click lessons in the checklist to start them.
+- Removed the obsolete accelerator `nav` callout focus/type path so the tutorial no longer targets missing header arrows.
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx`
+  - `src/features/workspace-accelerator-card/types.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-accelerator-tutorial.ts`
+  - `src/features/workspace-canvas-tutorial/types.ts`
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+  - `tests/acceptance/workspace-canvas-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx' 'src/features/workspace-accelerator-card/types.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-accelerator-tutorial.ts' 'src/features/workspace-canvas-tutorial/types.ts' 'src/features/workspace-canvas-tutorial/lib/index.ts' 'tests/acceptance/workspace-canvas-tutorial.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-16 16:49 EDT - fix accelerator module tutorial reframe and back-reset behavior
+
+- Fixed the guide camera recentering to use the final adapted tutorial shell geometry, including paired right-rail accelerator scenes, so module-open steps can trigger the same micro reframe behavior as the earlier guide steps.
+- Added a dedicated accelerator tutorial rule so the embedded module viewer only stays open on the `close-module` tutorial step; stepping back to `first-module` or earlier now collapses the viewer and lets the guide shell shrink back to the smaller checklist layout.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-camera.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx`
+  - `tests/acceptance/workspace-canvas-tutorial-camera.test.ts`
+  - `tests/acceptance/workspace-accelerator-card-panel.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-camera.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx' 'tests/acceptance/workspace-canvas-tutorial-camera.test.ts' 'tests/acceptance/workspace-accelerator-card-panel.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-camera.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-16 16:59 EDT - switch accelerator welcome onboarding step to video placeholder
+
+- Changed the workspace accelerator `welcome` onboarding step to render through the normal video-step presentation path instead of the custom onboarding copy body.
+- Added placeholder video fallback resolution so the welcome step can temporarily reuse the first available real accelerator video until a dedicated welcome video is supplied.
+- Removed the duplicate visible `Welcome` title by suppressing the module eyebrow when `moduleTitle` and `stepTitle` resolve to the same text.
+- Threaded the placeholder video URL through the accelerator runtime snapshot and standalone step-node data so the embedded guide and the standalone accelerator step node stay consistent.
+- Extracted accelerator runtime sync out of `WorkspaceAcceleratorCardPanel` to keep the panel under the repo lint threshold without changing behavior.
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card-helpers.ts`
+  - `src/features/workspace-accelerator-card/types.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-types.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-accelerator-step.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-flow-surface-accelerator-graph-composition.ts`
+  - `tests/acceptance/workspace-accelerator-step-node-card-helpers.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card-helpers.ts' 'src/features/workspace-accelerator-card/types.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-types.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-accelerator-step.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-flow-surface-accelerator-graph-composition.ts' 'tests/acceptance/workspace-accelerator-step-node-card-helpers.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-step-node-card-helpers.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-16 16:59 EDT - rename accelerator tutorial heading to lessons
+
+- Changed the accelerator tutorial step heading from `Lesson Groups` to `Lessons`.
+- Files:
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/lib/index.ts'`
+
+## 2026-03-16 17:01 EDT - left align step 6 picker callout
+
+- Moved the step-6 lesson picker indicator closer to the picker trigger and aligned it to the picker’s left side instead of centering it over the control.
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx'`
+
+## 2026-03-16 17:06 EDT - remove workspace guide step 7
+
+- Removed the workspace guide `Progress` step (`accelerator-progress`) from the tutorial source of truth so the flow now skips directly from the lesson picker to opening the first module.
+- Updated the accelerator/tutorial index-based acceptance coverage to match the shorter 15-step sequence.
+- Files:
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+  - `tests/acceptance/workspace-canvas-tutorial.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `tests/acceptance/workspace-board-onboarding-flow.test.ts`
+- Validation:
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/lib/index.ts' 'tests/acceptance/workspace-canvas-tutorial.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts' 'tests/acceptance/workspace-board-onboarding-flow.test.ts'`
+
+## 2026-03-16 17:10 EDT - redesign accelerator milestone tooltip for light and dark mode
+
+- Redesigned the Fundable/Verified milestone tooltip content into a calmer card-style layout with a milestone accent chip, a clearer status badge, and quieter checklist rows.
+- Removed the dark-only white/black overlay palette from the tooltip body and replaced it with semantic surfaces (`foreground`, `muted`, `border`) so the content reads correctly in light mode and still holds up in dark mode.
+- Kept milestone differentiation via subtle emerald/sky accent treatment instead of tinting the entire tooltip surface.
+- Used the local shadcn tooltip/badge composition guidance before patching the content structure.
+- Files:
+  - `src/components/accelerator/accelerator-progress-rail.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/components/accelerator/accelerator-progress-rail.tsx'`
+  - `pnpm test:acceptance tests/acceptance/accelerator-progress-rail.test.ts`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-16 17:34 EDT - remove unintended guide body gradient
+
+- Removed the decorative gradient overlay from the workspace guide body after confirming the glass treatment should be a plain blurred/translucent surface, not a gradient wash.
+- Kept the body glass on the `CardContent` layer; only the extra overlay was removed.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+
+## 2026-03-16 17:37 EDT - make workspace guide body glass structurally visible
+
+- Fixed the workspace guide shell so the body glass can actually read against the canvas instead of getting flattened by an opaque parent card.
+- Made the outer guide card root transparent, kept the header on its own semi-opaque surface, and moved the body to a stronger translucent/background-blur treatment with explicit non-backdrop fallbacks.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+
+## 2026-03-16 18:00 EDT - restore compact accelerator checklist shell and real guide body glass
+
+- Reworked the workspace guide shell so the visual glass treatment lives on the actual `CardContent` body surface again, while the outer tutorial card keeps the existing rounded shell and header conventions intact.
+- Split accelerator tutorial sizing into two authored families:
+  - compact paired checklist shell for `accelerator-nav`, `accelerator-picker`, and `accelerator-first-module`
+  - larger paired module shell only for the opened lesson/module state
+- Removed adaptive shell growth from the accelerator presentation path so step 5 no longer widens or adds large bottom slack before a lesson opens.
+- Updated tutorial geometry tests to lock the new compact checklist shell and the larger module-only shell.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial-camera.test.ts`
+  - Live browser pass on `http://127.0.0.1:3000/tester/sign-up?redirect=%2Fworkspace%3Fonboarding_flow%3D1`
+    - step 5 guide and step 6 guide stayed the same rendered size (`333x568`)
+    - step 5 accelerator frame inset measured evenly on all sides (`6.4px`)
+    - guide body `CardContent` now reports `backdrop-filter: blur(26px)` with translucent background and restored bottom radii
+
+## 2026-03-16 18:06 EDT - restore rounded header corners on workspace guide
+
+- Fixed the workspace guide header surface so it has explicit top radii again instead of relying on parent clipping from the transparent outer shell.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - Live browser check confirmed header `border-top-left-radius` and `border-top-right-radius` now both resolve to `28px`
+
+## 2026-03-16 18:18 EDT - remove phantom bottom slack from overview organization steps
+
+- Fixed the overview organization guide so the dashed-frame presentation path uses the authored overview shell heights instead of layering an extra adaptive shell-height system on top.
+- Added a pure shell-height helper so the overview-shell rule is regression-tested without importing the client presentation renderer into the test suite.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - Live browser check on steps 2-4:
+    - step 2 outer spacing: left `17px`, right `15.6px`, bottom `17.9px`
+    - step 3 outer spacing: left `17px`, right `15.6px`, bottom `18.4px`
+    - step 4 outer spacing: left `17px`, right `15.6px`, bottom `20.6px`
+
+## 2026-03-16 19:33 EDT - decouple accelerator tutorial size from stale board card size
+
+- Fixed the tutorial accelerator rendering path so checklist and picker steps no longer inherit a stale expanded accelerator board size after module interactions.
+- Made tutorial measurement cache size-aware and locked tutorial accelerator rendering to explicit tutorial sizes:
+  - checklist/picker/first-module steps use compact accelerator size
+  - module-open steps use the larger tutorial accelerator size
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-types.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-card-data.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-helpers.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-hooks.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-types.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-card-data.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-helpers.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-hooks.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - Live browser check confirmed compact checklist widths remained stable:
+    - step 5: frame `269px`, card `253px`
+    - step 6: frame `269px`, card `256px`
+
+## 2026-03-16 19:41 EDT - remove picker callout padding from accelerator header
+
+- Fixed the accelerator lesson-picker alignment by removing the wrapper top padding that was reserving layout space for the tutorial arrow and pushing the dropdown lower than the header copy.
+- Kept the callout as an absolute overlay so it no longer affects header geometry.
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx'`
+
+## 2026-03-16 19:44 EDT - move accelerator counts into the left header stack
+
+- Moved the accelerator `modules / steps` pills out of the sidebar body and into the card header so they sit under the `Accelerator` title on the left, aligned with the icon/title stack instead of competing with the checklist content.
+- Added a dedicated `headerDetails` slot to the shared workspace card header/frame API, then populated it from the accelerator runtime snapshot.
+- Extended the accelerator runtime snapshot with the filtered checklist counts so the header can render the correct values for the active lesson-group view.
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx`
+  - `src/features/workspace-accelerator-card/components/index.ts`
+  - `src/features/workspace-accelerator-card/index.ts`
+  - `src/features/workspace-accelerator-card/types.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-card-header.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-card-frame.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-types.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx' 'src/features/workspace-accelerator-card/components/index.ts' 'src/features/workspace-accelerator-card/index.ts' 'src/features/workspace-accelerator-card/types.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-card-header.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-card-frame.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-types.ts'`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-16 20:28 EDT - tighten step-6 picker targeting and flatten accelerator checklist chrome
+
+- Re-anchored the step-6 picker callout to the actual lesson-group icon inside the select trigger instead of a hard-coded left offset, so the indicator centers on the icon rather than the trigger wrapper.
+- Tightened the picker trigger’s horizontal padding and gap to make the internal spacing feel more even relative to the vertical spacing.
+- Removed the outer bordered/background container from the accelerator progress strip while keeping the label, percent chip, and rail content intact.
+- Deleted the module-level `Start` badge from the accordion trigger row so the checklist header no longer duplicates the step CTA language.
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx'`
+  - `pnpm exec tsc --noEmit`
+  - Browser probe against `http://127.0.0.1:3000/workspace?onboarding_flow=1` reached the unauthenticated login screen in this environment, so no authenticated live step-6 verification was possible in this pass.
+
+## 2026-03-16 20:42 EDT - restore vertical gap above the step-6 picker indicator
+
+- Increased the picker indicator’s bottom margin from `mb-1` to `mb-3` so the arrow no longer overlaps the lesson-group dropdown and keeps a small visible gap above the trigger.
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx'`
+
+## 2026-03-16 22:26 EDT - insert the workspace map concept into onboarding and promote atlas into a real Map card
+
+- Inserted two new tutorial steps after Organization: `map-button` to highlight a new Organization header Map preview button, and `map-card` to introduce the opened Map card before returning to the rest of the workspace flow.
+- Promoted `atlas` from a hidden utility card into a first-class workspace Map card by adding it to the canvas-v2 contract, wiring the Organization header button to open/focus it, and auto-connecting `organization-overview -> atlas` the first time the button is used.
+- Reused the existing `workspace-map-card` feature for both the header preview button and the full card surface instead of duplicating map logic in the workspace layer.
+- Tightened the board-side sizing contract so the Map card no longer clips or stretches against the old short atlas dimensions, and removed the negative-margin overflow from the live map surface so its rounded frame/full-bleed layout behave correctly inside the shared card shell.
+- Added real acceptance coverage for the map feature contract, updated tutorial/runtime/presentation tests to the new step order, and refreshed the onboarding helper fixtures so refresh/restart behavior stays aligned with the inserted steps.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-auto-layout-modes.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-copy.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-hidden-cards.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout-config.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-compare.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-tool-card-atlas.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-types.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-organization-card-shell.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-organization-map-button.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-card-data.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-helpers.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-positioning.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/contracts/workspace-card-contract.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-card-readiness.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts`
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+  - `src/features/workspace-canvas-tutorial/types.ts`
+  - `src/features/workspace-map-card/components/workspace-map-card-panel.tsx`
+  - `tests/acceptance/my-organization-page-content-helpers.test.ts`
+  - `tests/acceptance/workspace-board-layout.test.ts`
+  - `tests/acceptance/workspace-board-onboarding-flow.test.ts`
+  - `tests/acceptance/workspace-canvas-connections-runtime.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial.test.ts`
+  - `tests/acceptance/workspace-map-card.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-positioning.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-card-readiness.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout-config.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/features/workspace-map-card/components/workspace-map-card-panel.tsx' 'tests/acceptance/workspace-canvas-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-board-onboarding-flow.test.ts' 'tests/acceptance/my-organization-page-content-helpers.test.ts' 'tests/acceptance/workspace-map-card.test.ts' 'tests/acceptance/workspace-board-layout.test.ts' 'tests/acceptance/workspace-canvas-connections-runtime.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-map-card.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/my-organization-page-content-helpers.test.ts tests/acceptance/workspace-board-layout.test.ts tests/acceptance/workspace-canvas-connections-runtime.test.ts`
+
+## 2026-03-16 22:28 EDT - remove the added badge overlay from the organization header Map button
+
+- Removed the extra bottom-left icon badge/background layer from the Organization header Map preview button so the button now shows only the map tile/fallback tile inside the rounded square, as originally requested.
+- Files:
+  - `src/features/workspace-map-card/components/workspace-map-preview-button.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-map-card/components/workspace-map-preview-button.tsx'`
+
+## 2026-03-16 22:40 EDT - hide the staged Map feature and restore the pre-map onboarding flow
+
+- Added a local `WORKSPACE_MAP_FEATURE_ENABLED = false` gate so the new Organization header Map button and the inserted tutorial steps stay hidden for now without deleting the underlying map feature work.
+- Filtered `map-button` and `map-card` out of the active workspace tutorial step list when the feature is disabled, and excluded `atlas` from tutorial-managed cards in that disabled state.
+- Restored `atlas` to the always-hidden bucket while the map feature is off, so persisted workspace states do not surface the Map card unexpectedly.
+- Restored the tutorial/onboarding acceptance fixtures to the pre-map sequence and kept the dedicated map feature tests intact for the underlying reusable feature.
+- Files:
+  - `src/lib/workspace-map-feature.ts`
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-hidden-cards.ts`
+  - `tests/acceptance/workspace-canvas-tutorial.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `tests/acceptance/workspace-board-onboarding-flow.test.ts`
+  - `tests/acceptance/my-organization-page-content-helpers.test.ts`
+  - `tests/acceptance/workspace-board-layout.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx' 'src/lib/workspace-map-feature.ts' 'src/features/workspace-canvas-tutorial/lib/index.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-hidden-cards.ts' 'tests/acceptance/workspace-canvas-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-board-onboarding-flow.test.ts' 'tests/acceptance/my-organization-page-content-helpers.test.ts' 'tests/acceptance/workspace-board-layout.test.ts' 'src/features/workspace-map-card/components/workspace-map-preview-button.tsx'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/my-organization-page-content-helpers.test.ts tests/acceptance/workspace-board-layout.test.ts tests/acceptance/workspace-canvas-connections-runtime.test.ts`
+
+## 2026-03-16 23:00 EDT - let the guide grow around the opened accelerator lesson
+
+- Fixed the tutorial accelerator module presentation so the guide no longer keeps the lesson viewer on the compact checklist shell.
+- The accelerator tutorial now uses the large lesson card contract for the opened-module family and lets the guide shell width/height grow around that frame instead of pinning it to the old medium dimensions.
+- Kept the checklist and picker steps on the compact shell, so the guide only grows once the user actually opens a lesson.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-16 23:35 EDT - stop the close-module callout from shifting and clipping the header
+
+- Removed the top-padding hack from the accelerator lesson close-button tutorial callout so the close button no longer gets pushed downward when the close-module step is active.
+- Let the step viewer header/card surface go overflow-visible only for that close-module tutorial state so the indicator can sit above the button without getting clipped by the card bounds.
+- Raised the close-module indicator layer and kept it as a pure overlay so it does not affect header layout or the close button’s alignment.
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts`
+
+## 2026-03-16 23:44 EDT - tighten the compact accelerator guide shell and stabilize its copy rail
+
+- Fixed the dead space below the compact accelerator tutorial card by reducing the authored checklist-family guide height and giving the accelerator guide steps their own stabilized copy rail instead of letting the extra space fall below the presented card.
+- Kept the compact accelerator family fixed across checklist/picker steps, so this is a family-contract correction rather than an adaptive padding hack.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-16 23:48 EDT - let the close-module indicator escape the guide body clipping
+
+- Fixed the close-module indicator being hidden above the embedded lesson header by opening the overflow path through the workspace guide body only for the accelerator close-module tutorial step.
+- Raised the shared tutorial indicator layer so it stays above nearby guide chrome once overflow is allowed.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts`
+
+## 2026-03-16 23:53 EDT - open the remaining accelerator close-module overflow gate
+
+- Fixed the remaining clipping path for the close-module indicator by allowing overflow on the outer guide card shell and the accelerator card body only for the close-module tutorial state.
+- This complements the earlier step-card/header fix so the indicator can now escape all the way through the embedded accelerator viewer stack instead of still getting cut off by the shared accelerator `CardContent`.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts`
+
+## 2026-03-17 00:39 EDT - collapse the guide back to the compact accelerator shell after closing a lesson
+
+- Fixed the close-module tutorial state so the workspace guide no longer stays on the large module shell after the embedded lesson viewer is dismissed.
+- The tutorial presentation resolver now uses the real accelerator runtime `isModuleViewerOpen` state: if the close-module step is still active but the viewer has been closed, the guide immediately falls back to the compact accelerator family and small accelerator card contract.
+- This keeps the accelerator card and the guide card in sync when backing out of a lesson, without waiting for a later tutorial step change.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts`
+
+## 2026-03-17 13:33 EDT - shorten the compact accelerator guide shell and add a bottom fade
+
+- Tightened the compact accelerator tutorial family so step 5 uses the same shell height as the preceding overview shortcut step, which removes the extra vertical stretch from the guide transition.
+- The compact embedded accelerator frame now clips intentionally inside the guide and adds a bottom gradient fade, so the checklist tapers out instead of reading like dead slack at the bottom of the card.
+- Extracted the presentation frame block out of the main tutorial panel component while keeping the existing staged title/body/surface reveal order and the same subtle punch-style shell transition.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/app/globals.css`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-17 13:55 EDT - move the compact accelerator fade back to the guide viewport
+
+- Corrected the layer choice for the compact accelerator guide steps: the accelerator presentation frame now keeps its real size again, and the workspace guide viewport is the thing that clips and fades the bottom of the checklist.
+- This preserves the accelerator frame geometry while keeping the shorter step-5 shell height, which matches the intended “resize the guide, not the embedded card” behavior.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-17 14:03 EDT - narrow and soften the compact accelerator fade
+
+- Tightened the compact accelerator fade overlay so it is centered to the accelerator frame width instead of spanning the full guide viewport.
+- Reduced the fade height and softened the alpha stops so it reads as a subtle taper rather than a hard dark strip.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-17 14:38 EDT - dock the compact accelerator guide viewport to the bottom edge and hard-gate Welcome-only lesson opening
+
+- Fixed the compact accelerator guide layout so clipped accelerator scenes consume the guide body bottom padding instead of leaving a visible slack gap below the fade container.
+- Restricted lesson opening during the `accelerator-first-module` tutorial step: only the highlighted Welcome row can open, while other lesson rows remain visible and module accordion toggles still work.
+- Updated the guide copy/callout so the instruction explicitly targets the Welcome module.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+  - `tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'src/features/workspace-canvas-tutorial/lib/index.ts' 'tests/acceptance/workspace-accelerator-card-checklist.test.ts' 'tests/acceptance/workspace-canvas-tutorial.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-checklist.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-17 14:47 EDT - animate the compact accelerator fade with the rest of the guide stack
+
+- Moved the compact accelerator bottom fade into its own motion layer so it now fades/slides in with the staged guide transition instead of appearing abruptly.
+- Kept the fade ordered above the presentation content, with a short delayed enter so it arrives after the underlying accelerator card is already in place.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-17 14:56 EDT - reserve headroom for the step-6 picker indicator
+
+- The compact accelerator guide scene was clipping the lesson-picker indicator at the top edge because the picker step was using the same cropped viewport as the rest of the compact accelerator flow.
+- Added dedicated top headroom for the `accelerator-picker` step inside the guide presentation viewport so the indicator can sit above the dropdown without being cut off by the guide clip edge.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-17 15:06 EDT - remove the visible checklist shell and normalize the progress strip container
+
+- Made the checklist parent shell visually transparent while preserving its structure and spacing, so the checklist content still lays out the same way without the extra visible card chrome.
+- Wrapped the progress strip in its own rounded container with consistent padding and increased the sidebar spacing so the progress block now has deliberate top/bottom/side breathing room above the checklist.
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx'`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-17 15:12 EDT - tighten the accelerator intro copy rail
+
+- Reduced the reserved copy-rail height for the `accelerator-nav` guide step only, so the shorter “Start a Lesson” copy no longer leaves unnecessary space below it.
+- Left the larger accelerator copy rail in place for the picker/module-related steps, which still need more vertical room.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-17 15:19 EDT - align accordion chevrons with the checklist icon gutter
+
+- Updated the shared accordion trigger so chevrons are vertically centered, slightly larger, and sit on a consistent right inset instead of floating with the old translate offset.
+- This brings the accelerator checklist trigger layout into balance with the left icon container without adding checklist-specific spacing hacks.
+- Files:
+  - `src/components/ui/accordion.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/components/ui/accordion.tsx'`
+  - `pnpm exec tsc --noEmit`
+
+- Updated the accelerator intro tutorial title from "Accelerator" to "The Accelerator" in `src/features/workspace-canvas-tutorial/lib/index.ts`.
+
+- Made the accelerator progress-strip wrapper visually transparent while preserving its spacing in `src/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip.tsx`.
+
+- Removed the `pt-5` layout padding from the highlighted tutorial checklist row so the callout remains overlay-only in `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`.
+
+- Increased the `Workspace guide` header label size locally in `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`.
+
+## 2026-03-17 15:30 EDT - condense the accelerator onboarding flow and remove the extra checklist-intro step
+
+- Removed the `accelerator-nav` tutorial step so the accelerator flow now condenses to intro, picker, open-module, then close-module.
+- Shortened the accelerator step copy to be more direct, while keeping the established picker and module callouts intact.
+- Removed the old `accelerator-nav`-only copy-rail exception so steps 4-6 stay on the same stable accelerator presentation shell and only shift copy/highlight state.
+- Updated the tutorial type unions and accelerator presentation-step set to match the condensed flow, then shifted the affected acceptance test indices by one.
+- Files:
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+  - `src/features/workspace-canvas-tutorial/types.ts`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `tests/acceptance/workspace-canvas-tutorial.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `tests/acceptance/workspace-board-onboarding-flow.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/lib/index.ts' 'src/features/workspace-canvas-tutorial/types.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'tests/acceptance/workspace-canvas-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-board-onboarding-flow.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+
+## 2026-03-17 15:24 EDT - stabilize the accelerator tutorial viewport and advance after closing the module
+
+- Made the compact accelerator tutorial presentation derive its clip/fade behavior from the actual rendered accelerator surface instead of the step scene id, so compact fallback states keep the bottom fade instead of dropping into an uncropped raw checklist view.
+- Applied the accelerator copy rail consistently across accelerator guide steps so the compact accelerator preview no longer shifts vertically when step copy/helper text changes.
+- Forced the embedded accelerator panel back into the module viewer state whenever the `close-module` tutorial step is active, which prevents the close step from rendering the compact checklist instead of the opened module.
+- Changed the tutorial close-module action to complete and advance the workspace guide, so closing the module no longer leaves the guide stranded on the close step with the wrong presentation state.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx' 'tests/acceptance/workspace-accelerator-card-panel.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-17 15:45 EDT - normalize guide-step copy rails by presented card family
+
+- Reworked the workspace guide panel to reserve copy space by presented card family instead of relying on a few one-off step exceptions.
+- Added stable copy rails for overview, accelerator, map, and tool presentations, with helper-text variants where needed, so the presentation slot no longer shifts vertically just because one step has more copy than another.
+- Kept the compact accelerator fade and bottom docking attached to the actual compact accelerator surface, so the staged preview behavior remains coherent across back/forward transitions and fallback states.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-17 16:10 EDT - unify step 4 overview shell, rewind shortcut state on back, and stage accelerator handoffs
+
+- Removed the obsolete taller overview-shortcut shell override so the accelerator shortcut intro now stays on the same overview shell contract as the preceding organization steps.
+- Added a pure previous-step flow resolver for tutorial back navigation and used it in the board tutorial navigation hook, so going back from the accelerator checklist step rewinds the shortcut-open state and restores the unopened organization-card prompt.
+- Generalized the guide content handoff timing to delay copy/presentation reveal whenever the presented scene actually changes, which stages the overview-to-accelerator transition instead of swapping everything at once.
+- Added regression coverage for tutorial previous navigation and updated the runtime/presentation shell expectations to match the shared overview shell.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-state.ts`
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `tests/acceptance/workspace-board-canvas-state.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-state.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts' 'tests/acceptance/workspace-board-canvas-state.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-board-canvas-state.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`
+
+## 2026-03-17 16:14 EDT - make tutorial arrow indicators inspectable without changing guide behavior
+
+- Updated the shared tutorial indicator callout so the arrow/circle wrapper has a stable inspectable slot and a real hit target, while keeping the outer overlay decorative and absolute.
+- Added explicit `data-slot` hooks for the indicator root, icon, and optional label so React Grab can target the arrow indicator directly.
+- Preserved the guide behavior by keeping the overlay decorative (`aria-hidden`) and limiting the actual pointer target to the indicator wrapper rather than turning the full overlay into an interactive control.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `tests/acceptance/workspace-tutorial-callout.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'tests/acceptance/workspace-tutorial-callout.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts`
+
+## 2026-03-17 17:39 EDT - soften light-mode shortcut and tutorial-chip surfaces
+
+- Softened the shared tutorial indicator chips and organization shortcut buttons in light mode by moving them onto lighter outline-based semantic surfaces instead of the heavier filled treatment.
+- Kept all colors on existing shadcn semantic tokens (`background`, `foreground`, `accent`, `secondary`, `border`) and preserved the same rounded-xl geometry and state hierarchy.
+- Updated the organization shortcut buttons so selected/tutorial-highlighted states use an accent surface, visible states use the secondary surface, and inactive states stay on the softened outline shell.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'tests/acceptance/workspace-tutorial-callout.test.ts' 'tests/acceptance/workspace-card-shortcuts.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-17 17:12 EDT - restyle organization shortcut buttons to match the shared tutorial chip language
+
+- Removed the custom sky-accent styling from the organization shortcut rail buttons and moved them onto shared shadcn button variants instead.
+- The shortcut buttons now use the same rounded-xl size and default theme language as the tutorial indicator chip, with state handled through shared variants:
+  - selected/tutorial-highlighted: `default`
+  - visible: `secondary`
+  - inactive: `outline`
+- Preserved shortcut behavior and tutorial-advance behavior; this was a styling-source cleanup only.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-17 17:09 EDT - align the indicator label pill to the same default button treatment
+
+- Swapped the tutorial indicator label pill from the outline button variant to the same default shadcn button treatment used by the indicator icon chip, so the text callout now matches the icon-only callout styling.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'tests/acceptance/workspace-tutorial-callout.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts`
+
+## 2026-03-17 16:49 EDT - normalize step 4 overview spacing by removing the helper-only copy rail
+
+- Confirmed the step 4 regression was no longer the shell height; it was the overview helper copy rail still reserving extra vertical space for shortcut steps.
+- Normalized the organization-overview guide presentation to one shared overview copy rail so steps 2-4 keep the same vertical contract and the org-card preview no longer loses bottom space on the accelerator shortcut step.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-17 17:04 EDT - move blocked-next guidance from inline body copy to the next button tooltip
+
+- Removed the inline shortcut/action helper paragraph from the guide body copy so the message no longer consumes vertical space inside the card content area.
+- Reworked the blocked next button into a tooltip trigger that surfaces the same guidance on hover, focus, or click, while remaining a non-advancing control.
+- Collapsed the helper-specific accelerator/map/tool copy rail variants now that the helper text no longer renders inline.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-17 17:07 EDT - restyle tutorial arrow indicators to use shared shadcn button language
+
+- Replaced the old custom blue tutorial indicator styling with the shared shadcn button system so the arrow callouts now inherit default theme colors in light and dark mode.
+- Made the main indicator icon slightly larger and moved it to a rounded-xl icon-button treatment to match the workspace guide navigation buttons more closely.
+- Updated the optional indicator label pill and the tooltip `tap-here` icon treatment to use the same shared button language instead of custom accent-specific classes.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'tests/acceptance/workspace-tutorial-callout.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts`
+
+## 2026-03-17 18:15 EDT - rebalance overview guide spacing without changing the org-card frame
+
+- Tightened the overview step composition by increasing the shared overview copy rail reservation so the organization presentation sits lower again and no longer leaves the oversized dead zone below the dashed frame.
+- Kept the overview shell/frame contract intact and refreshed the stale overview geometry assertions that were still expecting the pre-existing `694px` shell instead of the current `664px` shell.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-17 18:33 EDT - lock overview/org guide steps to a fixed 20px presentation layout
+
+- Reworked the overview presentation body so the organization guide steps use a fixed overview copy rail and a true `20px` body layout token instead of the old mixed gap/padding behavior.
+- Overview/org steps now reserve the same top, bottom, left, right, and text-to-frame spacing, so the org card and dashed highlight stay on one stable scene contract across steps 2-4.
+- Kept the change scoped to overview scenes; accelerator/map/tool layout rules were left alone.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-17 19:55 EDT - merge tutorial indicator label and arrow into one themed chip
+
+- Collapsed the labeled tutorial indicator into a single chip so the shortcut callout now renders the text and arrow inside one horizontally aligned surface instead of two neighboring pills.
+- Moved the label to the left side of the arrow inside that chip and flipped the theme treatment so light mode uses a dark blurred surface with white text/icon while dark mode uses a white chip with black text/icon.
+- Preserved distinct React Grab slots for the outer chip, label, and icon so the combined callout remains inspectable.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'tests/acceptance/workspace-tutorial-callout.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-17 22:06 EDT - correct merged tutorial indicator chip order
+
+- Reordered the merged shortcut indicator chip so the arrow icon leads and the label follows inside the same surface, matching the intended visual order.
+- Rebalanced the chip padding to keep the icon/text lockup centered after the swap.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx'`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts`
+
+## 2026-03-17 22:08 EDT - restore tutorial indicator arrow position while keeping the merged chip
+
+- Restored the merged shortcut indicator chip to keep the arrow in its original anchored position and moved only the label inside the same chip to the left of it.
+- Kept the merged one-surface treatment and the existing React Grab slot structure intact.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx'`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts`
+
+## 2026-03-17 22:11 EDT - undo the last tutorial indicator arrow-position change
+
+- Reverted the previous arrow-position adjustment on the merged tutorial indicator chip and restored the prior icon-first arrangement inside the shared surface.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx'`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts`
+
+## 2026-03-17 22:21 EDT - restore tutorial indicator anchor geometry while keeping the label to the right
+
+- Reworked the labeled tutorial indicator so the arrow chip remains centered on the underlying target button and the label floats off its right side instead of shifting the anchor.
+- Kept the shared theming and the inspectable React Grab slots for the indicator wrapper, icon, and label.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx'`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts`
+
+## 2026-03-17 22:29 EDT - merge the labeled tutorial indicator into one anchored chip
+
+- Replaced the split arrow chip plus floating label with one real merged callout chip while preserving the original icon-centered anchor geometry over the target.
+- The arrow remains centered over the button being taught, and the label now lives inside the same surface extending to the right instead of rendering as a second detached container.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx'`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-17 22:31 EDT - restore the tooltip nub on the merged tutorial indicator chip
+
+- Added the tooltip-style pointer nub back onto the merged tutorial indicator chip so the callout still reads like a pointing tutorial bubble rather than a plain floating pill.
+- Kept the chip merged, the icon-centered anchor geometry, and the label-to-the-right placement intact.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `tests/acceptance/workspace-tutorial-callout.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'tests/acceptance/workspace-tutorial-callout.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-17 22:37 EDT - move the merged tutorial indicator chip onto the shared shadcn Button primitive
+
+- Replaced the merged indicator’s custom chip container with the shared shadcn `Button` component while preserving the same icon-centered anchor, right-side label, and pointer nub geometry.
+- This keeps the tutorial indicator on the existing design-system primitive instead of a bespoke inline-flex surface.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'tests/acceptance/workspace-tutorial-callout.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-17 22:45 EDT - move tutorial indicator mode onto the shared tooltip primitive and built-in arrow
+
+- Replaced the indicator-mode custom pointer path with the actual shadcn tooltip stack so the persistent tutorial bubble now renders through `Tooltip`/`TooltipTrigger`/`TooltipContent` and the built-in `TooltipPrimitive.Arrow`.
+- Added shared tooltip `arrowClassName` support so the indicator arrow can match the themed tutorial bubble surface without reintroducing a custom nub.
+- Updated the picker and close-module indicator offsets to use top-positioning instead of the old margin-bottom hack now that the bubble is anchored by tooltip geometry.
+- Files:
+  - `src/components/ui/tooltip.tsx`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx`
+  - `tests/acceptance/workspace-tutorial-callout.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/ui/tooltip.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx' 'tests/acceptance/workspace-tutorial-callout.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-17 23:18 EDT - normalize tutorial indicator callouts onto one tooltip API
+
+- Removed the tutorial-specific tooltip arrow styling escape hatch and kept the indicator bubble on the shared shadcn tooltip primitives only.
+- Refactored `WorkspaceTutorialCallout` indicator mode so the icon stays anchored over the target via a fixed 40px trigger cell while the label extends to the right inside the same `TooltipContent`.
+- Replaced per-callsite positioning hacks with explicit anchor props across the map preview, accelerator picker, checklist row, progress strip, and close-module button.
+- Files:
+  - `src/components/ui/tooltip.tsx`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/features/workspace-map-card/components/workspace-map-preview-button.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx`
+  - `tests/acceptance/workspace-tutorial-callout.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/ui/tooltip.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/features/workspace-map-card/components/workspace-map-preview-button.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'tests/acceptance/workspace-tutorial-callout.test.ts' 'tests/acceptance/workspace-card-shortcuts.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-17 23:38 EDT - move the accelerator shortcut tutorial callout to the right side
+
+- Added a real `indicatorSide` variant to `WorkspaceTutorialCallout` so indicator bubbles can sit on the top, right, bottom, or left while still using the shared shadcn tooltip primitives.
+- Switched the accelerator shortcut tutorial callout to the right side of the button and flipped the inline icon to point left back at the target.
+- Preserved the regular hover tooltip for tutorial-highlighted shortcut buttons by keeping the button on the standard shadcn `Tooltip` path underneath the persistent tutorial indicator.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'tests/acceptance/workspace-tutorial-callout.test.ts' 'tests/acceptance/workspace-card-shortcuts.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-17 23:46 EDT - restore the blue shortcut highlight for the tools tutorial step
+
+- Split the workspace shortcut button styling so the `tool-buttons` tutorial intro state gets its own blue highlight treatment again, without changing the neutral targeted-shortcut styling used by later tutorial steps.
+- Added a focused static-render test to lock the blue tutorial-tools variant on the shortcut button component.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `tests/acceptance/workspace-card-shortcuts.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'tests/acceptance/workspace-card-shortcuts.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-17 23:58 EDT - tighten the close-module tutorial shell around the large accelerator surface
+
+- Shortened the `accelerator-close-module` guide copy rail and reduced the `accelerator-module` shell chrome height so the large accelerator presentation no longer carries dead space above and below the frame.
+- This also shifts the tutorial camera center upward for the close-module step because the runtime now centers on the corrected shell height instead of the old 1100px oversized module shell.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-18 00:58 EDT - widen the paired accelerator guide gap so step 5 no longer crowds the organization card
+
+- Increased the authored accelerator pair gap from `46px` to `64px` at the family-level tutorial shell spec so the step-5 guide sits cleanly to the right of the organization card instead of reading as an overlap.
+- Updated the paired-scene runtime and camera assertions to match the new right-rail anchor for the compact and module accelerator tutorial states.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-camera.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial-camera.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-camera.test.ts`
+
+## 2026-03-18 01:06 EDT - add a very soft welcome-step shadow to the workspace guide shell
+
+- Added a step-1-only guide-card shadow so the welcome state gets a subtle lift without changing the attached overview and accelerator shells.
+- Kept the shadow on the outer tutorial `Card` only, so later steps still use the flat system shell.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-18 13:50 EDT - move the shortcut tutorial callout to the right-center and tighten step-5 zoom
+
+- Added a vertical anchor option to `WorkspaceTutorialCallout` indicator mode so the persistent tutorial bubble can sit on the right side and stay vertically centered on the target instead of being pinned to the top edge.
+- Updated the accelerator shortcut tutorial callout to use that centered right-side anchor, while keeping the tooltip arrow pointing back left at the shortcut button.
+- Added a step-specific camera zoom override for the `accelerator-picker` guide step so step 5 lands slightly closer on the focused accelerator state without changing the broader accelerator family framing.
+- Files:
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `tests/acceptance/workspace-tutorial-callout.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'tests/acceptance/workspace-tutorial-callout.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm exec tsc --noEmit`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-18 13:52 EDT - rename the module-opening guide step and move its callout to the right side
+
+- Changed the `accelerator-first-module` guide step title from `Open a Module` to `Modules`.
+- Moved the tutorial indicator for the Welcome module row to the right side of the row and vertically centered it so it matches the newer right-side shortcut-callout treatment, with the icon pointing back left at the target.
+- Files:
+  - `src/features/workspace-canvas-tutorial/lib/index.ts`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/lib/index.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+
+## 2026-03-18 13:54 EDT - remove extra close-module guide spacing above the accelerator surface
+
+- Dropped the fixed-height copy rail on the `accelerator-close-module` guide step and gave that step its own `20px` body gap/inset layout so the space between the subtitle copy and the large accelerator display now matches the side and bottom spacing instead of reserving extra dead air.
+- Files:
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts`
+  - `pnpm exec tsc --noEmit`
+
+## 2026-03-18 13:58 EDT - align the accelerator shortcut tutorial callout to the right edge like the module-row version
+
+- The accelerator shortcut callout had only been switched to `indicatorSide=\"right\"`; it was still using the default centered horizontal anchor, so it kept rendering from the old position.
+- Updated the shortcut-button call site to use `indicatorAnchorAlign=\"end\"` plus the existing vertical-center anchor so the persistent tutorial bubble now sits on the right edge of the shortcut button, matching the module-row callout behavior.
+- Added a render assertion to lock that right-edge anchor in the shortcut test.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `tests/acceptance/workspace-card-shortcuts.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'tests/acceptance/workspace-card-shortcuts.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-19 03:42 EDT - restore compact accelerator chrome until the module viewer actually opens, and bring the tutorial right rail back
+
+- Fixed the accelerator header picker so it stays on a compact trigger width while the accelerator is in checklist mode and only widens once the module viewer is open.
+- Restored the embedded module right rail during the tutorial preview so the notes/resources rail is visible again, while still blocking the tutorial-only close action from that rail.
+- Corrected the tutorial presentation/runtime contract so the accelerator shell stays compact through the `Modules` step until the viewer is actually open, then promotes the full card container into the module-size shell immediately instead of only stretching inner content.
+- Added focused regressions for:
+  - compact vs expanded picker trigger sizing
+  - first-module shell promotion only after the viewer opens
+  - tutorial preview right-rail visibility
+  - accelerator tutorial runtime shell/zoom expectations
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-support.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-scene-spec.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+  - `tests/acceptance/workspace-accelerator-step-node-card.test.ts`
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-support.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-scene-spec.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'tests/acceptance/workspace-accelerator-header-picker.test.ts' 'tests/acceptance/workspace-accelerator-step-node-card.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-accelerator-step-node-card.test.ts`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts`
+
+## 2026-03-19 03:32 EDT - wait to auto-advance the guided Welcome module until the viewer is actually open
+
+- Fixed the workspace guide's Accelerator `Modules` step so clicking the guided Welcome row no longer advances into `Module preview` before the embedded viewer has committed its open state and large card size.
+- Replaced the inline same-tick tutorial advance with a gated follow-up path that waits for the viewer to be open on the guided target step before firing `complete-and-advance`.
+- Added a focused regression for the new `shouldWorkspaceAcceleratorTutorialAdvanceAfterStepOpen` guard so the guide only advances after the module viewer is open on the expected Welcome step.
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `tests/acceptance/workspace-accelerator-card-panel.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'tests/acceptance/workspace-accelerator-card-panel.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-panel.test.ts`
+
+## 2026-03-18 14:02 EDT - reserve a real bottom row for the module tool tray so it stops overlapping Notes
+
+- Reworked `ModuleRightRail` from a single flex column with a `sticky bottom-0` tray into a two-row grid: the active panel now lives in a scrollable `minmax(0,1fr)` row and the tool tray sits in its own `auto` row beneath it.
+- Removed the sticky positioning from `ModuleToolTray`, which was causing the tray to float over the Notes panel instead of reserving its own layout space inside the embedded accelerator module viewer.
+- Added a render regression to lock the non-sticky two-row rail contract.
+- Files:
+  - `src/components/training/module-right-rail.tsx`
+  - `tests/acceptance/module-right-rail.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/training/module-right-rail.tsx' 'tests/acceptance/module-right-rail.test.ts' 'tests/acceptance/workspace-card-shortcuts.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/module-right-rail.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+  - `pnpm exec tsc --noEmit`
+## 2026-03-19 12:52 EDT - stop blocking the guided Welcome row on the Modules step
+
+- Fixed the accelerator tutorial guard so the `accelerator-first-module` policy derives its allowed module from the visible checklist target step instead of a potentially stale `currentStep.moduleId`.
+- Made the first-module guard treat the guided step id as the source of truth, which prevents the correct `Welcome / Start` row from being blocked by a mismatched module id while still keeping the rest of the tutorial locks intact.
+- Added regression coverage for the stale-current-step case and for the guard behavior when the policy module id drifts behind the guided row.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-accelerator-interaction-policy.ts`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-tutorial-guards.ts`
+  - `tests/acceptance/workspace-accelerator-tutorial-policy.test.ts`
+  - `tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-accelerator-interaction-policy.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-tutorial-guards.ts' 'tests/acceptance/workspace-accelerator-tutorial-policy.test.ts' 'tests/acceptance/workspace-accelerator-card-checklist.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-tutorial-policy.test.ts tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+## 2026-03-19 13:36 EDT - lock the accelerator overview step and unify tutorial tooltip/picker styling
+
+- Extended the accelerator tutorial interaction policy to the earlier `accelerator` step so internal checklist rows stay blocked until the guide reaches the guided `Modules` action step.
+- Updated the accelerator checklist copy for the overview step so it explicitly tells the user to stay on the accelerator overview until the guide opens the module.
+- Moved tutorial tooltip surface classes into shared workspace tutorial theme tokens and reused them from both the workspace shortcut rail and the accelerator guard tooltip, removing the divergent one-off class paths.
+- Made the guarded class picker use the same shared tutorial surface across all accelerator-locked steps instead of only the active picker-callout step, so the same component no longer drifts between separate theme treatments.
+- Added regression coverage for the locked accelerator overview step, shared tooltip chrome, and the guarded picker surface.
+- Files:
+  - `src/components/workspace/workspace-tutorial-theme.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-accelerator-interaction-policy.ts`
+  - `src/features/workspace-accelerator-card/types.ts`
+  - `tests/acceptance/workspace-accelerator-tutorial-policy.test.ts`
+  - `tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+  - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+  - `tests/acceptance/workspace-card-shortcuts.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-theme.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-accelerator-interaction-policy.ts' 'src/features/workspace-accelerator-card/types.ts' 'tests/acceptance/workspace-accelerator-tutorial-policy.test.ts' 'tests/acceptance/workspace-accelerator-card-checklist.test.ts' 'tests/acceptance/workspace-accelerator-header-picker.test.ts' 'tests/acceptance/workspace-card-shortcuts.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-tutorial-policy.test.ts tests/acceptance/workspace-accelerator-card-checklist.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+## 2026-03-19 13:48 EDT - reconcile live canvas node width changes outside the tutorial shell
+
+- Fixed the real workspace canvas accelerator width path by moving render-node reconciliation out of the tutorial-only branch, so live React Flow nodes keep syncing their width/style/data changes even when the tutorial shell is not the active owner.
+- Added a pure `resolveWorkspaceCanvasRenderNodes` helper on the shared canvas helper module and used it from render-state, so the same reconcile path now drives both live canvas updates and test coverage.
+- Updated the workspace card memo comparator to include `acceleratorTutorialInteractionPolicy`, which prevents accelerator tutorial lock/style changes from being dropped as memo-equal.
+- Added a regression proving the real accelerator node can promote from compact to `lg` width without depending on the tutorial presentation frame.
+- Files:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-compare.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-helpers.ts`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts`
+  - `tests/acceptance/workspace-canvas-surface-v2-render-state.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-compare.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-helpers.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-render-state.ts' 'tests/acceptance/workspace-canvas-surface-v2-render-state.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-render-state.test.ts tests/acceptance/workspace-canvas-surface-v2-helpers.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+## 2026-03-19 13:58 EDT - correct guarded accelerator picker dark mode and align guard tooltip with shadcn chrome
+
+- Kept the guarded accelerator picker on the existing light-mode muted translucent surface, but corrected dark mode to a true white surface with dark text/icon tokens instead of the earlier mixed dark token path.
+- Removed the extra custom padding/radius/shadow chrome from the guarded accelerator tooltip so it renders through the normal shadcn `TooltipContent` shape while still using the shared tutorial inverse surface token.
+- Left the underlying shadcn `SelectTrigger` and `TooltipContent` primitives intact; only adjusted the shared tutorial token classes and the guarded picker wrapper overrides.
+- Files:
+  - `src/components/workspace/workspace-tutorial-theme.ts`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-theme.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'tests/acceptance/workspace-accelerator-header-picker.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts`
+
+## 2026-03-19 14:00 EDT - switch guarded accelerator picker dark mode to tutorial nav button chrome
+
+- Replaced the guarded accelerator picker's dark-mode white surface override with the same semantic dark chrome used by the tutorial header outline button: `dark:border-input`, `dark:bg-input/30`, `dark:text-foreground`, `dark:hover:bg-input/50`.
+- Left the existing light-mode muted translucent picker surface untouched.
+- Simplified the guarded picker icon tint so it follows the same semantic foreground/muted-foreground token path instead of a separate slate override.
+- Files:
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'tests/acceptance/workspace-accelerator-header-picker.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts`
+
+## 2026-03-19 14:28 EDT - add deterministic React Grab ownership metadata and collapse tutorial surface ownership
+
+- Added a shared React Grab ownership helper so semantic owners and linked portal surfaces now carry explicit owner/component/source metadata instead of hand-authored `data-react-grab-*` attributes.
+- Updated the React Grab loader to resolve linked surfaces by explicit owner id, added a dev-only trace path, and kept legacy link-id compatibility during the migration window.
+- Migrated the current high-frequency tutorial surfaces to the new ownership model:
+  - `WorkspaceTutorialCallout`
+  - workspace shortcut buttons/tooltips
+  - accelerator header picker trigger/guard tooltip
+  - accelerator checklist step buttons/guard tooltips
+  - accelerator preview header controls
+- Extracted the accelerator picker into dedicated owner files:
+  - `workspace-accelerator-header-picker.tsx`
+  - `workspace-accelerator-header-picker-overflow.ts`
+  This removes picker class ownership from the broader panel support module.
+- Promoted tutorial surface tokens into explicit shared exports in `workspace-tutorial-theme.ts` and removed duplicate raw tutorial button surface definitions from callout/shortcut wrappers.
+- Added repository docs for pasted-component ownership workflow and updated workspace presentation/quality contracts to reference the new React Grab execution rules.
+- Added structural guard scripts:
+  - `pnpm check:react-grab`
+  - `pnpm check:workspace-surfaces`
+- Files:
+  - `src/components/dev/react-grab-surface.ts`
+  - `src/components/dev/react-grab-loader.tsx`
+  - `src/components/workspace/workspace-tutorial-theme.ts`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker-overflow.ts`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+  - `scripts/check-react-grab-ownership.mjs`
+  - `scripts/check-workspace-tutorial-surface-tokens.mjs`
+  - `docs/agent/react-grab-execution-contract.md`
+  - `docs/agent/workspace-presentation-runbook.md`
+  - `docs/agent/workflow-quality.md`
+  - `AGENTS.md`
+- Validation:
+  - `pnpm exec eslint 'src/components/dev/react-grab-surface.ts' 'src/components/dev/react-grab-loader.tsx' 'src/components/workspace/workspace-tutorial-theme.ts' 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker-overflow.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx' 'src/features/workspace-accelerator-card/components/index.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'tests/acceptance/react-grab-loader.test.ts' 'tests/acceptance/workspace-tutorial-callout.test.ts' 'tests/acceptance/workspace-accelerator-header-picker.test.ts' 'tests/acceptance/workspace-card-shortcuts.test.ts' 'scripts/check-react-grab-ownership.mjs' 'scripts/check-workspace-tutorial-surface-tokens.mjs'`
+  - `pnpm test:acceptance tests/acceptance/react-grab-loader.test.ts tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+  - `pnpm check:react-grab && pnpm check:workspace-surfaces`
+
+- Upgraded the React Grab clipboard path from a sanitize-only transform into an ownership-aware report that preserves the originally clicked surface, resolves back to the semantic owner anchor, and prints surface source, class assembly file, token source, owner status, and edit guardrails.
+- Added a runtime debug-surface registry keyed by `ownerId + component + slot + surfaceKind` so multiple surfaces for the same owner do not overwrite each other; shared primitives now register final merged class strings at the true class assembly sites.
+- Instrumented the high-frequency primitives and workspace surfaces that users repeatedly React Grab from:
+  - `src/components/ui/tooltip.tsx`
+  - `src/components/ui/select.tsx`
+  - `src/components/ui/button.tsx`
+  - `src/components/ui/card.tsx`
+  - `src/components/workspace/workspace-tutorial-callout.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx`
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx`
+- Extended React Grab owner/link metadata to optionally carry canonical owner, wrong owner, token source, primitive import, and notes, so mixed-quality or misbuilt surfaces can be reported as `MISBUILT` or `AMBIGUOUS` instead of being silently guessed.
+- Split the loader implementation into focused support modules:
+  - `src/components/dev/react-grab-loader.tsx`
+  - `src/components/dev/react-grab-loader-support.ts`
+  - `src/components/dev/react-grab-clipboard-report.ts`
+  - `src/components/dev/react-grab-debug-surface.ts`
+- Added focused acceptance coverage for:
+  - direct primitive-owned resolved surfaces
+  - explicit misbuilt surfaces with canonical/wrong-owner metadata
+  - unresolved surfaces that now return `DO_NOT_EDIT`
+- Validation:
+  - `pnpm exec eslint 'src/components/dev/react-grab-debug-surface.ts' 'src/components/dev/react-grab-surface.ts' 'src/components/dev/react-grab-clipboard-report.ts' 'src/components/dev/react-grab-loader-support.ts' 'src/components/dev/react-grab-loader.tsx' 'src/components/ui/tooltip.tsx' 'src/components/ui/select.tsx' 'src/components/ui/button.tsx' 'src/components/ui/card.tsx' 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'tests/acceptance/react-grab-loader.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/react-grab-loader.test.ts tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+  - `pnpm check:react-grab && pnpm check:workspace-surfaces`
+
+- Simplified the React Grab clipboard payload so it now emits reference context only:
+  - `COMPONENT`
+  - `SURFACE`
+  - `SURFACE_SOURCE`
+  - `SEMANTIC_OWNER`
+  - `OWNER_STATUS`
+  - `CLASS_ASSEMBLY`
+  - `TOKEN_SOURCE`
+  - `LIKELY_OWNER`
+  - `CHAIN`
+  - `OWNER_ID`
+  - `CLASSNAME_FINAL`
+  Removed the execution-style `EDIT_SCOPE`, `DO NOT EDIT`, and guardrail block from the copied payload.
+- Fixed the Radix popper-wrapper case so if React Grab lands on the outer popper wrapper instead of the inner tooltip/select surface, the loader now resolves through descendant linked surfaces before building the report. This preserves owner id, final className, and token source for tooltip/select content grabs.
+- Normalized copied file paths back to repo-relative paths instead of absolute machine-local paths.
+- Added a regression covering semantic-owner resolution through a selected popper wrapper descendant.
+- Validation:
+  - `pnpm exec eslint 'src/components/dev/react-grab-clipboard-report.ts' 'src/components/dev/react-grab-loader-support.ts' 'tests/acceptance/react-grab-loader.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/react-grab-loader.test.ts tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+- Replaced the remaining unstable `WorkspaceTutorialCallout` React Grab owner ids with stable semantic ids at the current call sites, and added a deterministic fallback id generator inside `workspace-tutorial-callout.tsx` so copied payloads no longer surface transient `React.useId()` values like `_r_1h_`.
+- Normalized stack-chain entries down to component names instead of raw `"in Component (at ...)"` frames, so the copied chain reads as reference context rather than a pasted stack trace.
+- Renamed the ambiguous ownership summary from `LIKELY_OWNER` to `PRIMARY_REFERENCE` and changed the explanation for composed surfaces so it no longer pretends one file definitively owns a surface when the semantic owner, primitive class assembly, and token source all matter.
+- Added stable callout owner ids to the current workspace/tutorial callout entry points:
+  - shortcut rail callouts
+  - accelerator header picker callout
+  - accelerator checklist callout
+  - accelerator progress-strip callout
+  - accelerator close-module callout
+  - team access callout
+  - map preview callout
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-callout.tsx' 'src/components/dev/react-grab-loader-support.ts' 'src/components/dev/react-grab-clipboard-report.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx' 'src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-team-access-section.tsx' 'src/features/workspace-map-card/components/workspace-map-preview-button.tsx' 'tests/acceptance/react-grab-loader.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/react-grab-loader.test.ts tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+- Compressed the React Grab clipboard schema to remove redundant headings and duplicated file sections while preserving reference fidelity. The payload now uses:
+  - `[SURFACE]`
+  - `[SOURCES]`
+  - `[OWNER]`
+  - `[CHAIN]`
+  - `[CLASS]`
+  Optional lines (`token`, `wrong`, `wrong_reason`, `also`, `notes`) appear only when they add new information.
+- Collapsed duplicate ownership fields into the compact `[OWNER]` block:
+  - `status`
+  - `id`
+  - `primary`
+  - `reason`
+  - optional `wrong`
+  - optional `also`
+- Collapsed duplicate source fields into `[SOURCES]`:
+  - `surface`
+  - `semantic`
+  - `class`
+  - optional `token`
+- Validation:
+  - `pnpm exec eslint 'src/components/dev/react-grab-clipboard-report.ts' 'tests/acceptance/react-grab-loader.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/react-grab-loader.test.ts tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+- Tightened the clipboard schema further for style/layout correction workflows:
+  - renamed `[SOURCES]` to `[FILES]`
+  - shortened `class` to `assembly`
+  - removed the semantic component name echo from the file block
+  - removed the default `reason` line from common `resolved` / `ambiguous` cases
+  - renamed `also` to `other`
+  - shortened `wrong_reason` to `why`
+- Validation:
+  - `pnpm exec eslint 'src/components/dev/react-grab-clipboard-report.ts' 'tests/acceptance/react-grab-loader.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/react-grab-loader.test.ts tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+- Consolidated tutorial layout ownership so shell sizing and placement stop living in separate runtime/render layers:
+  - added `workspace-canvas-surface-v2-tutorial-layout-contract.ts` as the single owner for tutorial shell placement, guide-gap resolution, and stage camera centering
+  - moved adaptive presentation shell sizing into `resolveWorkspaceTutorialPresentationLayoutSpec(...)` in `workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+  - updated `workspace-canvas-surface-v2-tutorial-presentation.tsx` to consume that layout spec instead of recomputing shell width/height locally
+  - updated `workspace-canvas-surface-v2-tutorial-runtime.ts` to consume the shared layout contract for centered vs paired-right-rail placement and camera viewport seed generation
+  - updated `workspace-canvas-surface-v2-tutorial-node-state.tsx` to reuse the same contract when measured presentation shells resize, instead of applying a second width-delta reposition pass
+  - threaded the runtime layout context through `workspace-canvas-surface-v2-tutorial.ts` and `workspace-canvas-surface-v2.tsx` so the tutorial node render path and the tutorial scene runtime now use the same shell geometry inputs
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-layout-contract.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'tests/acceptance/workspace-canvas-tutorial-layout-contract.test.ts' 'tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-layout-contract.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-render-state.test.ts tests/acceptance/workspace-canvas-tutorial-camera.test.ts`
+  - `pnpm check:quality` currently stops at `pnpm check:structure` because `src/components/dev/react-grab-loader-support.ts` is over the repo line budget (549 lines); the new tutorial layout files passed focused lint/tests, but the full quality gate is still blocked by that earlier React Grab support file
+
+- Fixed the post-refactor `tutorialBreakpoint is not defined` runtime regression in `workspace-canvas-surface-v2-tutorial-node-state.tsx` by threading the new layout-contract inputs through the hook’s destructured props instead of only its type signature.
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-layout-contract.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-render-state.test.ts tests/acceptance/workspace-canvas-tutorial-camera.test.ts`
+
+- Unified the accelerator picker tutorial callout bubble with the same inverse tutorial tooltip surface used by the workspace shortcut rail.
+  - `workspace-accelerator-header-picker.tsx` now passes `WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME` into the picker `WorkspaceTutorialCallout`, so the class-selection callout uses the dark-surface/light-text token in light mode and the white-surface/dark-text token in dark mode instead of falling back to base `TooltipContent` popover styling.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx' 'tests/acceptance/workspace-accelerator-header-picker.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts`
+
+- Restyled accelerator checklist lesson rows in `workspace-accelerator-card-checklist.tsx` to use sidebar-menu-style row chrome instead of the older mini-card row treatment.
+  - removed the extra boxed icon container from lesson steps
+  - changed the row hover/active treatment to `hover:bg-accent` / `active:bg-accent` with sidebar-style transition timing
+  - kept completion/current-state color coding on the icon itself instead of the icon container
+  - preserved the tutorial highlight row as a highlighted variant on top of the new row chrome
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'tests/acceptance/workspace-accelerator-card-checklist.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+
+- Unified the guided checklist step callout bubble with the same inverse tutorial tooltip surface used by the shortcut rail and picker callouts.
+  - `workspace-accelerator-card-checklist.tsx` now passes `WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME` into the targeted `WorkspaceTutorialCallout`, so the highlighted lesson-step bubble uses the shared inverse tooltip token instead of falling back to base `TooltipContent` popover styling.
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'tests/acceptance/workspace-accelerator-card-checklist.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+
+- Consolidated the first live workspace card-layout ownership pass so shell height mode and canvas shell sizing stop being redefined in the frame, organization shell, and node wrapper layers.
+  - `workspace-board-layout-config.ts` is now the shared owner for:
+    - intrinsic-height card ids via `isWorkspaceCardAutoHeight(...)`
+    - height mode class selection via `resolveWorkspaceCardHeightModeClassName(...)`
+    - canvas shell style via `resolveWorkspaceCardCanvasShellStyle(...)`
+    - canvas shell class composition via `resolveWorkspaceCardCanvasShellClassName(...)`
+  - rewired `workspace-board-node-class-name.ts` to delegate to the layout-config helpers instead of maintaining a second auto-height card set
+  - rewired `workspace-board-card-frame.tsx` to use the shared canvas shell helpers instead of locally deciding fixed-height vs intrinsic-height treatment
+  - rewired `workspace-board-organization-card-shell.tsx` to use the same shared canvas shell helpers as the generic card frame
+  - rewired `workspace-board-node.tsx` to derive its root `h-auto` / `h-full` mode from the shared layout helper instead of another inline branch
+  - exported the new helpers from `workspace-board-layout.ts` and added focused acceptance coverage in `workspace-board-layout.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout-config.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-class-name.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-card-frame.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-organization-card-shell.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node.tsx' 'tests/acceptance/workspace-board-layout.test.ts' 'tests/acceptance/workspace-board-handle-styles.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-board-layout.test.ts tests/acceptance/workspace-board-handle-styles.test.ts tests/acceptance/workspace-canvas-surface-v2-helpers.test.ts tests/acceptance/workspace-canvas-surface-v2-render-state.test.ts`
+
+- Consolidated the active viewport execution path so manual recenter/reset and automatic camera requests share one executor, and removed the dead legacy viewport helpers that were implying a parallel system.
+  - expanded `workspace-canvas-viewport-command.ts` with:
+    - `fit-nodes` command support for accelerator-branch fits
+    - a typed `WorkspaceCanvasViewportExecutionResult`
+    - shared execution return metadata so camera logs no longer need their own duplicate `fitView` path
+  - rewired `workspace-canvas-camera-controller.ts` so:
+    - initial fit
+    - visible-node recovery fit
+    - explicit layout fit
+    - scene-fit execution
+    - accelerator branch focus
+    - explicit card focus
+    all route through `executeWorkspaceCanvasViewportCommand(...)`
+  - decomposed the camera controller into internal effect hooks so the consolidated controller stays under the repo function-size limit without reintroducing behavioral forks
+  - removed the unused legacy files:
+    - `workspace-board-flow-surface-repair.ts`
+    - `workspace-board-flow-surface-fit-view.ts`
+    - `workspace-board-viewport-commands.ts`
+  - added shared executor coverage for accelerator-branch fits in `workspace-canvas-viewport-command.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-viewport-command.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-viewport-controls.ts' 'tests/acceptance/workspace-canvas-viewport-command.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-viewport-command.test.ts tests/acceptance/workspace-canvas-surface-v2-render-state.test.ts tests/acceptance/workspace-canvas-surface-v2-helpers.test.ts tests/acceptance/workspace-canvas-tutorial-camera.test.ts`
+
+- Consolidated workspace tutorial/accelerator motion staging into one shared motion spec so panel shell, skeleton, overlays, and local step-content swaps stop carrying their own timing tables.
+  - added `src/lib/workspace-canvas/motion-spec.ts` as the shared owner for:
+    - scene transition timing (`same-family`, `family-change`, `welcome-handoff`, `accelerator-entry`, `accelerator-preview-exit`)
+    - presentation handoff delays
+    - shared staged easing
+    - per-stage motion specs for `presentation-frame`, `presentation-skeleton`, `bottom-fade`, `copy-shell`, `copy-heading`, `copy-body`, and `content-swap`
+  - rewired `workspace-canvas-motion-grammar.ts` to delegate its scene timing contract to the shared motion spec instead of owning a second timing table
+  - simplified `workspace-canvas-tutorial-panel-motion.ts` so it only resolves semantic presentation presets and transition keys; timing now comes from the shared motion spec
+  - updated `workspace-canvas-tutorial-panel.tsx` and `workspace-canvas-tutorial-panel-skeleton.tsx` to consume the shared stage motion helpers for:
+    - copy rail fade
+    - heading/body staged reveal
+    - framed presentation entry/exit
+    - skeleton entry/exit
+    - bottom gradient/fade entry
+  - updated `workspace-accelerator-step-node-card.tsx` to replace its local hard-coded content swap animation with the shared `content-swap` motion stage, so the embedded accelerator preview no longer carries its own timing/easing island
+  - added focused motion coverage in `tests/acceptance/workspace-canvas-motion-spec.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/lib/workspace-canvas/motion-spec.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-motion-grammar.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-motion.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-skeleton.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-layout.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx' 'tests/acceptance/workspace-canvas-motion-spec.test.ts' 'tests/acceptance/workspace-canvas-tutorial-panel.test.ts' 'tests/acceptance/workspace-accelerator-step-node-card.test.ts' 'tests/acceptance/workspace-canvas-presentation-engine.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-motion-spec.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-presentation-engine.test.ts tests/acceptance/workspace-accelerator-step-node-card.test.ts tests/acceptance/workspace-canvas-tutorial-camera.test.ts`
+
+- Corrected the shared inverse tutorial tooltip surface so its arrow/tip reads like the stock shadcn tooltip again instead of a bordered custom bubble with a mismatched tip.
+  - removed the custom border chrome from `WORKSPACE_TUTORIAL_TOOLTIP_INVERSE_SURFACE_CLASSNAME` in `src/components/workspace/workspace-tutorial-theme.ts`
+  - kept the inverse fill/text contract and arrow fill override, but aligned the overall surface closer to stock `TooltipContent` by using the tooltip shadow without the extra body border
+  - because the inverse token is shared, this normalized the shortcut callouts, guarded accelerator tooltips, and other tutorial inverse bubbles in one place
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-theme.ts' 'tests/acceptance/workspace-accelerator-header-picker.test.ts' 'tests/acceptance/workspace-tutorial-callout.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+- Updated the tooltip primitive arrow to match the actual stock shadcn tooltip shape instead of the older raw Radix triangle, and extended the shared tutorial inverse token to recolor that shape correctly.
+  - `src/components/ui/tooltip.tsx`
+    - replaced the old `fill-popover`-only arrow with the stock shadcn rotated-square arrow classes:
+      - `size-2.5`
+      - `translate-y-[calc(-50%_-_2px)]`
+      - `rotate-45`
+      - `rounded-[2px]`
+      - `bg-popover fill-popover`
+    - exported `TOOLTIP_ARROW_CLASSNAME` so the shared primitive shape contract is testable without depending on portal markup in server-rendered snapshots
+  - `src/components/workspace/workspace-tutorial-theme.ts`
+    - extended the inverse tutorial tooltip token to override both arrow `bg` and arrow `fill`, not just `fill`, so dark/light themed tutorial bubbles still match their body surface after the primitive arrow shape changed
+  - updated focused tooltip/callout/picker coverage in:
+    - `tests/acceptance/workspace-tutorial-callout.test.ts`
+    - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+- Validation:
+  - `pnpm exec eslint 'src/components/ui/tooltip.tsx' 'src/components/workspace/workspace-tutorial-theme.ts' 'tests/acceptance/workspace-tutorial-callout.test.ts' 'tests/acceptance/workspace-accelerator-header-picker.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`
+
+## 2026-03-20 07:31 EDT
+
+- Matched the accelerator checklist tray shell background to the surrounding card surface without changing the shared `CardContent` primitive.
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`
+    - changed the checklist root shell from `bg-transparent` to `bg-muted/10` so the module tool tray reads as the same muted surface as the enclosing card
+  - `tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+    - added a focused markup assertion proving the checklist root includes `bg-muted/10`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'tests/acceptance/workspace-accelerator-card-checklist.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+
+- Added bottom breathing room around the accelerator header class picker at the feature wrapper level so the trigger sits cleanly inside the header tray without changing the shared `SelectTrigger` primitive.
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx`
+    - wrapped the picker in `inline-flex items-start pb-1` to keep the trigger from hanging too low in the accelerator card header
+  - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+    - added a focused markup assertion for the new wrapper spacing
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx' 'tests/acceptance/workspace-accelerator-header-picker.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts`
+
+- Strengthened the accelerator checklist tray background in dark mode after the earlier `bg-muted/10` adjustment proved too subtle there.
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`
+    - kept the light-mode tray surface at `bg-muted/10`
+    - added `dark:bg-muted/30` so the checklist/module tool tray is visibly surfaced in dark mode too
+  - `tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+    - extended the tray shell assertion to require both `bg-muted/10` and `dark:bg-muted/30`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'tests/acceptance/workspace-accelerator-card-checklist.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+
+- Removed the accelerator checklist tray’s extra fill entirely after confirming the real issue was a double-background, not the `CardContent` surface.
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`
+    - replaced the tray shell background with `bg-transparent dark:bg-transparent` so the outer accelerator card remains the only painted background
+  - `tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+    - updated the shell assertion to require transparent backgrounds instead of the earlier muted fill
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx' 'tests/acceptance/workspace-accelerator-card-checklist.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-checklist.test.ts`
+
+- Switched the guarded accelerator class picker trigger from the muted/outline tutorial surface to a true inverse control surface so it matches the tutorial callout styling.
+  - `src/components/workspace/workspace-tutorial-theme.ts`
+    - added `WORKSPACE_TUTORIAL_INVERSE_CONTROL_SURFACE_CLASSNAME` with inverse light/dark surface, text, icon, hover, and open-state tokens
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx`
+    - replaced the old muted picker token path with the new inverse control surface on the tutorial-managed trigger
+  - `tests/acceptance/workspace-accelerator-header-picker.test.ts`
+    - updated trigger expectations from `bg-muted/70` / `dark:bg-input/30` to the inverse surface contract
+- Validation:
+  - `pnpm exec eslint 'src/components/workspace/workspace-tutorial-theme.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx' 'tests/acceptance/workspace-accelerator-header-picker.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-header-picker.test.ts`
+
+- Fixed the actual tutorial-shell owner for the accelerator module preview after confirming the outer frame was hard-coded in the presentation layer, not the inner accelerator components.
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+    - added `resolveWorkspaceTutorialPresentationSurfaceKind()` so the presentation shell contract explicitly decides when a card gets a dashed frame vs a framed surface
+    - the accelerator now resolves to `dashed-frame` when the tutorial family is `accelerator-module`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx`
+    - now consumes the shared surface-kind contract instead of hard-coding the accelerator to `framed-card`
+    - the accelerator module preview frame radius now follows the dashed-frame contract when active
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+    - added a focused regression proving accelerator checklist stays `framed-card` while accelerator module preview resolves to `dashed-frame`
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+- Corrected the accelerator module-preview placeholder video chooser so the onboarding preview prefers the Welcome video instead of drifting to the first later module video.
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx`
+    - added explicit Welcome-preview candidate detection for `workspaceOnboarding.view === "welcome"` / `workspace-onboarding-welcome`
+    - `resolveWorkspaceAcceleratorPlaceholderVideoUrl()` now prefers the Welcome onboarding video first, then falls back to the first other available video only if Welcome has no video
+  - `tests/acceptance/workspace-accelerator-card-panel.test.ts`
+    - added a focused regression proving a later module video does not outrank the Welcome onboarding video
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx' 'tests/acceptance/workspace-accelerator-card-panel.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-accelerator-step-node-card-helpers.test.ts`
+
+- Fixed the real accelerator module-preview overflow path by wiring the rendered tutorial presentation card height back into the measured-height store that sizes the outer tutorial shell.
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+    - added `data-workspace-tutorial-card-content` on the rendered presentation card wrapper so the tutorial node can measure the real embedded card height instead of the whole shell
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx`
+    - changed tutorial height reporting to prefer the presentation card wrapper height
+    - extended the resize observer to watch the presentation card wrapper and mask element, not just the outer tutorial node shell
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx`
+    - preserved the presentation `cardSize` alongside the rendered content so the measured height can be written back against the correct card-size bucket
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx`
+    - restored `onMeasuredHeightChange` for rendered tutorial presentations and routed it to the underlying card’s `onMeasuredHeightChange(size, height)` callback
+    - this lets accelerator module-preview height changes resize the outer tutorial frame instead of letting the inner card hang below it
+- Validation:
+  - `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts`
+
+- Collapsed the remaining tutorial-shell height split by measuring the real rendered guide shell and feeding that height back into the tutorial node contract instead of relying only on guessed chrome constants.
+  - `src/features/workspace-canvas-tutorial/types.ts`
+    - added `onMeasuredShellHeightChange` to the tutorial node data contract
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+    - marked the outer tutorial card with `data-workspace-tutorial-shell` so the node can measure the real shell height
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx`
+    - now reports two measurements separately:
+      - rendered shell height from the real tutorial shell element
+      - embedded presentation card height from `data-workspace-tutorial-card-content`
+    - extended the resize observer to watch the tutorial shell element in addition to the inner card/mask elements
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-hooks.ts`
+    - added a centralized tutorial-shell measurement store keyed by tutorial scene signature
+    - exposed `useWorkspaceTutorialMeasurements()` so card-height and shell-height measurement wiring now come from one hook
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-shell-height.ts`
+    - added `resolveWorkspaceTutorialRenderedShellHeight()` as the pure helper that prefers measured shell height when present
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx`
+    - now resolves tutorial node height from measured rendered shell height first, then falls back to the estimated presentation-shell height
+    - threads `onMeasuredShellHeightChange` into the tutorial node so the real rendered shell can update the outer node/frame height
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx`
+    - switched to the centralized tutorial measurement hook so shell-height and card-height wiring no longer live as separate ad hoc paths in the surface component
+  - `tests/acceptance/workspace-canvas-tutorial-shell-height.test.ts`
+    - added focused coverage for measured-vs-estimated shell-height resolution
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/types.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-node.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-hooks.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-shell-height.ts' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx' 'tests/acceptance/workspace-canvas-tutorial-shell-height.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-shell-height.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+
+- Fixed the remaining missing bottom inset on the accelerator module-preview dashed frame after the shell-height cleanup.
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+    - stopped the tutorial presentation frame container from stretching its child vertically across the full available row height
+    - added `items-start` on the presentation-frame grid and `self-start` on the animated frame wrapper so the dashed frame hugs its intrinsic content height and preserves the parent card’s bottom gap
+    - this keeps the bottom inset aligned with the left/right/top inset instead of letting the dashed frame sit flush to the bottom of the parent shell
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`
+
+- Fixed a React Grab collapse bug where two visually different picker surfaces could serialize as the same trigger payload.
+  - `src/components/dev/react-grab-loader-support.ts`
+    - stopped generic clicked wrappers from borrowing the owner trigger’s debug record when the clicked surface does not carry explicit React Grab metadata
+    - surface source/class/token/assembly now stay attached to the actually clicked wrapper unless there is an explicit surface match
+  - `src/components/dev/react-grab-surface.ts`
+    - extended linked surface metadata to support `surfaceKind: "root"` so wrapper/layout surfaces can declare themselves explicitly
+  - `src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx`
+    - added explicit React Grab linked-surface metadata on the outer picker wrapper so wrapper vs trigger can be distinguished during grabs
+  - `tests/acceptance/react-grab-loader.test.ts`
+    - added a regression proving a generic clicked wrapper no longer collapses to the owner trigger’s class/source/token payload
+- Validation:
+  - `pnpm exec eslint 'src/components/dev/react-grab-surface.ts' 'src/components/dev/react-grab-loader-support.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx' 'tests/acceptance/react-grab-loader.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/react-grab-loader.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts`
+
+- Extended React Grab surface metadata into the tutorial panel so distinct layout wrappers stop collapsing to the same `CardContent` payload.
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-react-grab.ts`
+    - added centralized owner/surface helper builders for tutorial-panel React Grab metadata
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+    - tagged the tutorial panel card, card-content, body shell, body grid, presentation slot, presentation shell, presentation frame, and presentation card-content with explicit React Grab surface metadata
+    - this gives the tutorial shell’s real nested layout containers distinct surface ids/slots instead of forcing them all to collapse to the nearest generic `CardContent`
+  - `tests/acceptance/react-grab-loader.test.ts`
+    - added a regression proving an explicit tutorial-panel wrapper surface serializes as its own surface instead of flattening to a generic `card-content`
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-react-grab.ts' 'src/components/dev/react-grab-loader-support.ts' 'tests/acceptance/react-grab-loader.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/react-grab-loader.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts`
+
+- Fixed the last React Grab fallback bug for explicit wrapper surfaces.
+  - `src/components/dev/react-grab-debug-surface.ts`
+    - added `strict` lookup mode so explicit selected surfaces can require an exact debug-record match instead of falling back to a different surface owned by the same id
+  - `src/components/dev/react-grab-loader-support.ts`
+    - explicit wrapper surfaces now use strict debug lookup
+    - `[FILES] surface` now prefers explicit surface metadata when `getSource()` resolves to a different underlying primitive file
+    - this stops wrapper/layout surfaces like `body-grid` or `presentation-frame` from borrowing the outer `Card` or `CardContent` class/source payload
+  - `tests/acceptance/react-grab-loader.test.ts`
+    - strengthened the tutorial-panel wrapper regression to include real competing card/card-content debug records under the same owner id and proved the wrapper still serializes as its own surface/class
+- Validation:
+  - `pnpm exec eslint 'src/components/dev/react-grab-debug-surface.ts' 'src/components/dev/react-grab-loader-support.ts' 'tests/acceptance/react-grab-loader.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/react-grab-loader.test.ts`
+
+- Centralized module-preview presentation geometry so the tutorial panel stops inventing accelerator overflow/headroom rules inline.
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`
+    - added `resolveWorkspaceTutorialPresentationChrome(...)` so shell overflow, body overflow, slot overflow, picker headroom, compact-preview bottom-gap collapse, and bottom-fade behavior are now resolved from one presentation-geometry owner
+    - extended `WorkspaceTutorialPresentationLayoutSpec` with a `chrome` contract instead of leaving those decisions as panel-local booleans
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx`
+    - now threads the resolved `chrome` contract onto the rendered presentation surface
+    - added an explicit React Grab surface for the embedded accelerator card shell so it serializes separately from the outer tutorial card/frame wrappers
+  - `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`
+    - removed the inline `allowAcceleratorModuleCalloutOverflow` / compact-preview clipping / picker headroom / bottom-fade booleans
+    - now renders shell overflow, body overflow, slot overflow, slot top padding, and bottom fade from `presentationSurface.chrome`
+    - now renders frame stretch vs intrinsic-height from `presentationSurface.heightMode`
+  - `src/features/workspace-canvas-tutorial/types.ts`
+    - added `WorkspaceCanvasTutorialPresentationChrome` to make the presentation-shell geometry contract explicit on tutorial presentation surfaces
+  - `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`
+    - added regressions proving module-preview keeps overflow visible without collapsing the bottom guide inset and that compact accelerator previews still clip/reserve picker headroom from the shared chrome contract
+  - `tests/acceptance/react-grab-loader.test.ts`
+    - added a regression proving the embedded accelerator presentation card shell serializes as its own explicit React Grab surface instead of collapsing to the outer tutorial card
+- Validation:
+  - `pnpm exec eslint 'src/features/workspace-canvas-tutorial/types.ts' 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts' 'tests/acceptance/workspace-canvas-tutorial-panel.test.ts' 'tests/acceptance/workspace-canvas-tutorial-presentation.test.ts' 'tests/acceptance/react-grab-loader.test.ts'`
+  - `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/react-grab-loader.test.ts`
+ - `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/react-grab-loader.test.ts`
+2026-03-20 10:10 EDT - fixed the module-preview tutorial shell so content-mode presentation slots stop stretching full-height. `workspace-canvas-tutorial-panel-layout.ts` now resolves intrinsic `presentation-slot` classes for content-mode surfaces, and `workspace-canvas-tutorial-panel.tsx` consumes that contract instead of hard-coding `h-full`. Added a regression in `tests/acceptance/workspace-canvas-tutorial-panel.test.ts` for content vs fill slot behavior. Verified with focused `eslint`, `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`, and a live Playwright repro on the seeded workspace account (`codex.module.preview@example.com`) by opening the Welcome module in the guide’s module-preview step and confirming the embedded accelerator card now renders inside the guide-owned presentation frame instead of the slot stretching independently.
+2026-03-20 11:47 EDT - fixed the React key warning in the tutorial presentation frame. `WorkspaceTutorialPresentationFrame` in `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx` renders its border layer and `presentation-card-content` wrapper as direct children of `motion.div`; because `motion.div` is a custom component, those sibling children needed explicit `key` props. Added stable keys to both wrappers and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`.
+2026-03-20 11:51 EDT - fixed three workspace console-warning paths. In `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx`, the lesson accordion now stays controlled for its full lifetime by using an empty-string fallback instead of `undefined`. In `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx`, React Flow now reads `nodeTypes` and `edgeTypes` from stable refs so Fast Refresh and rerenders do not hand it a fresh object identity. In `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-connections.ts` and `workspace-canvas-connections-controller.ts`, dropped connections are now classified by reason and the dev warning is suppressed when the only drops are expected hidden-node edges during tutorial/presentation filtering. Added coverage in `tests/acceptance/workspace-canvas-connections-runtime.test.ts` and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-connections-runtime.test.ts tests/acceptance/workspace-accelerator-card-checklist.test.ts`. Live Playwright console verification was not possible in this shell because the `playwright` package is not installed.
+2026-03-20 12:03 EDT - corrected the accelerator tutorial transition/picker/frame regressions at the actual owners. In `src/lib/workspace-canvas/motion-spec.ts`, accelerator-entry is now a direct reveal instead of a skeleton handoff, with slower layout/camera timing and calmer frame/fade timing. In `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx`, compact accelerator tutorial presentations now use `heightMode: "fill"` again while module-preview stays content-mode, which restores frame ownership of the slot and removes the oversized bottom gap on the regular accelerator step after navigating back. In `src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx`, the guarded class picker trigger now uses the neutral tutorial control surface instead of the inverse black/white override, restoring the expected light/dark styling. Updated coverage in `tests/acceptance/workspace-canvas-tutorial-panel.test.ts` and `tests/acceptance/workspace-accelerator-header-picker.test.ts`, and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts`. Live browser verification was not possible in this shell because Playwright is not installed.
+2026-03-20 12:13 EDT - fixed the inconsistent bottom-gap regression on fixed-height guide steps after navigating back from later tutorial scenes. The root cause was `resolveWorkspaceTutorialRenderedShellHeight` applying measured shell height to every tutorial family, which let a stale larger measured shell height leak into fixed-height scenes like `tool-buttons` during step changes. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx` now carries the presentation family through the tutorial presentation model, `workspace-canvas-surface-v2-tutorial-shell-height.ts` now only honors measured shell heights for adaptive families (`tool` and `accelerator-module`), and `workspace-canvas-surface-v2-tutorial-node-state.tsx` consumes that family-aware contract when resolving tutorial node height. Added coverage in `tests/acceptance/workspace-canvas-tutorial-shell-height.test.ts` and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-shell-height.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`.
+2026-03-20 12:17 EDT - fixed the maximum update-depth loop introduced by the family-aware shell-height refactor. The problem was `workspace-canvas-tutorial-node.tsx` still reporting measured shell height for fixed-height tutorial families even after `resolveWorkspaceTutorialRenderedShellHeight` stopped consuming those values, which left the measurement callback churning state for scenes that should have stayed static. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx` now only wires `onMeasuredShellHeightChange` when the current presentation family actually uses measured shell height (`tool` or `accelerator-module`). Verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-shell-height.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`.
+2026-03-20 12:33 EDT - tightened the accelerator tutorial transition contract so steps `accelerator-picker` and `accelerator-first-module` stop mutating the same accelerator shell. The remaining drift was not a four-layer ownership split; it was two stale step-specific exceptions inside the shared contract. In `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-layout-contract.ts`, the picker-only desktop zoom bump was removed so compact accelerator checklist steps now share the same camera viewport. In `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`, the picker-only slot headroom hack was removed so the accelerator card no longer shifts vertically between picker and first-module. Added regressions in `tests/acceptance/workspace-canvas-tutorial-layout-contract.test.ts`, `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`, `tests/acceptance/workspace-canvas-tutorial-panel.test.ts`, and `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` to prove the compact accelerator family now keeps the same shell chrome and camera framing across those steps. Verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-layout-contract.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`. Live browser verification was not run in this shell.
+2026-03-20 12:36 EDT - fixed a module-preview measurement feedback loop on step `accelerator-close-module`. The tutorial node was reporting both the measured shell height and the measured presentation-content height back into the same adaptive accelerator-module presentation path, which could recurse into a maximum update depth error when the preview opened. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx` now treats measured-shell families as shell-height-owned and stops wiring the inner presentation-content measurement callback for those families. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-shell-height.ts` now exports `shouldWorkspaceTutorialMeasurePresentationContentHeight(...)` so that rule is explicit and testable. Updated `tests/acceptance/workspace-canvas-tutorial-shell-height.test.ts` and reran the focused tutorial shell/panel/presentation/runtime suite with `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-shell-height.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` plus focused `eslint`. Live browser repro was not run in this shell.
+2026-03-20 12:40 EDT - corrected the remaining accelerator presentation-frame style split. The shared tutorial presentation-state contract was still resolving regular accelerator checklist steps as `framed-card` while the tutorial panel and existing surface fixtures already treated accelerator presentations as `dashed-frame`. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts` now resolves all accelerator card presentations to `dashed-frame`, and `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-skeleton.tsx` now matches that kind during skeleton states so the dashed border treatment stays consistent through handoffs. Updated `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts` and reran the focused tutorial presentation/panel/runtime suites with `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts` plus focused `eslint`. Sweep result: no other remaining `framed-card` accelerator presentation expectations were left in the tutorial surface path.
+2026-03-20 12:50 EDT - fixed the workspace canvas help tip dismissal behavior and right-aligned its close affordance. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-help-overlay.tsx` now persists dismissal to `localStorage` under `workspace-canvas-help-tip-dismissed`, so once the user closes or opens the help tip it stays dismissed across refreshes. The inline close button in the tip shell is now explicitly right-aligned instead of floating inline with the label. Added `tests/acceptance/workspace-canvas-help-overlay.test.ts` to cover the persisted visible/hidden initial states and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-help-overlay.test.ts`.
+2026-03-20 12:54 EDT - widened the tutorial presentation sweep beyond accelerator and fixed the old tool-card path. Calendar and the other tool presentations were still resolving through the shared `framed-card` + `fill` contract, which produced the solid frame and extra bottom space below the presented card. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts` now resolves tutorial presentation surfaces to `dashed-frame` across the guide presentation path, and `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx` now limits `heightMode: "fill"` to the compact accelerator checklist path only; tool cards like Calendar now render as intrinsic `content` surfaces. Updated `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts` and `tests/acceptance/workspace-canvas-tutorial-panel.test.ts`, then verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`. Sweep result: no remaining tool-card expectations were left on the old `framed-card`/`fill` tutorial path.
+2026-03-20 13:11 EDT - removed the still-coming-soon Fundraising and Communications steps from the workspace tutorial and blocked their live shortcut openings. `src/features/workspace-canvas-tutorial/lib/index.ts` now drops those two steps from the tutorial sequence and cleans up the intro copy so the guide no longer tells users to open tools that are not ready. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model.ts` now marks `economic-engine` and `communications` as `comingSoon` and makes their rail buttons no-op instead of toggling/focusing the cards. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx` now renders a `Coming soon` badge inside those shortcut tooltips and marks the trigger as disabled-looking without breaking the tooltip. Removed the dead tutorial-panel badge import in `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`. Verified with focused `eslint`, `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts`, and `pnpm test:acceptance tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`.
+2026-03-20 13:15 EDT - tightened the tool-family tutorial shell contract so the presented card no longer sits in an oversized section with dead space below it. The real owner was `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`: tool presentations were still reserving a 720px shell with 184px of chrome even though the body/copy contract only needed 676px total for the medium tool cards used in the guide. Reduced the tool shell baseline from 720 to 676 and the adaptive chrome allowance from 184 to 156, which keeps the Calendar/tool presentation frame tighter inside its guide section instead of leaving a larger bottom gap. Updated `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts` and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`.
+2026-03-20 13:22 EDT - made the Documents tutorial card display-only during the guide. The real owner was the Vault card itself, not the tutorial panel button shell. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-tool-card-vault.tsx` now exposes `shouldRenderWorkspaceBoardVaultCardDisplayOnly(...)` and renders the Vault surface `inert` when it is being shown as the tutorial `documents` presentation, which freezes tab switching, search selection, viewer controls, the dropzone, and the Documents link in one place while leaving the live Vault card interactive outside the guide. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx` now passes `tutorialStepId` through to the Vault card, and `tests/acceptance/workspace-board-vault-card.test.ts` covers the display-only gating. Verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-board-vault-card.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts`.
+2026-03-20 13:34 EDT - removed the dead stretch track under content-mode tutorial presentations so module-preview spacing stays symmetric around the presented frame. The real owner was the tutorial panel body grid in `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`: it was always rendering `grid-rows-[auto_minmax(0,1fr)]`, which is correct for fill-mode presentations but wrong for content-mode frames like `accelerator-close-module`. That left a flexible second row under the frame and showed up as a larger bottom gap than the gap above. Added `resolveWorkspaceTutorialBodyGridClass(...)` in `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-layout.ts` so fill-mode surfaces keep the old stretch row while content-mode surfaces now render `grid-rows-[auto_auto]` with intrinsic height. Updated `tests/acceptance/workspace-canvas-tutorial-panel.test.ts` and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/react-grab-loader.test.ts`.
+2026-03-20 13:43 EDT - removed the stale minimum shell-height floor for tool-family tutorial presentations so sparse Programs and Calendar cards stop inheriting extra bottom slack. The remaining issue was in `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`: `resolveWorkspaceTutorialPresentationShellHeight(...)` still used `Math.max(shellHeight, frameHeight + chromeHeight)` for tool steps, which meant shorter measured tool cards could never shrink below the old shell baseline even after the body-grid fix. Tool-family shells now resolve strictly to `surfaceFrameHeight + chromeHeight`, so the guide shell follows the actual measured Programs/Calendar card height instead of reserving dead space underneath it. Verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`.
+2026-03-20 13:56 EDT - fixed the accelerator intro refresh bug at the tutorial visibility contract instead of patching camera state. The root cause was `src/features/workspace-canvas-tutorial/lib/index.ts`: once the current `accelerator` shortcut step was marked opened, `resolveWorkspaceCanvasTutorialVisibleCardIds(...)` still kept `organization-overview` in that step’s visible set because it always started from `step.revealedCardIds`. That made the hydrated tutorial snapshot legitimately restore both cards, which let the organization card reappear on the live canvas after refresh and pulled the scene framing off-center. The opened accelerator intro step now resolves as target-only (`accelerator`) instead of `organization-overview + accelerator`, while later tutorial steps still keep previously opened tools visible as designed. Updated `tests/acceptance/workspace-canvas-tutorial.test.ts` to lock the opened-step contract, and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`.
+2026-03-20 14:08 EDT - corrected the accelerator intro shell contract so refresh and in-app navigation resolve the same centered guide mode. The real mismatch was in `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`: the opened `accelerator` intro step was still inheriting the generic accelerator family shell spec, which meant `paired-right-rail` attached layout even though the desired behavior for that step is the standalone centered guide shown before refresh. Added `isWorkspaceTutorialCenteredAcceleratorIntroStep(...)` and made the opened `accelerator` step resolve to the compact accelerator shell with `layoutMode: "centered"` and no pair gap, while `accelerator-picker` and later accelerator steps remain attached. In `workspace-canvas-surface-v2-tutorial-runtime.ts`, tutorial attachment now derives from the resolved shell layout mode instead of assuming every non-shortcut accelerator state is attached. Kept the tutorial visible-card contract tighter in `src/features/workspace-canvas-tutorial/lib/index.ts` so the opened accelerator intro step resolves target-only visibility. Updated `tests/acceptance/workspace-canvas-presentation-engine.test.ts`, `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`, `tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`, and `tests/acceptance/workspace-canvas-tutorial.test.ts`. Verified with focused `eslint` and `pnpm test:acceptance tests/acceptance/workspace-canvas-presentation-engine.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`.
+2026-03-20 14:28 EDT - fixed the restart-guide refresh race at the real owner and removed the tool-step centering regression. In `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-state.ts`, `handleTutorialRestart` now persists `buildRestartedWorkspaceTutorialBoardState(previous)` immediately with `saveWorkspaceBoardStateAction(...)` before firing `resetWorkspaceCanvasTutorialAction()`, so refresh no longer depends on the normal debounced board-state persistence to win the race after pressing Restart guide. I also backed out the tool-family `bodyJustify: "center"` override from `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts` and the matching `justify-center` branch in `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`; Programs and Calendar tool steps now stay on the standard body-shell flow instead of adding extra bottom slack from centered residual space. Updated `tests/acceptance/my-organization-page-content-helpers.test.ts`, `tests/acceptance/my-organization-workspace-seed-helpers.test.ts`, `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`, `tests/acceptance/workspace-canvas-tutorial-panel.test.ts`, and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/my-organization-page-content-helpers.test.ts tests/acceptance/my-organization-workspace-seed-helpers.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-board-canvas-state.test.ts`.
+2026-03-20 14:32 EDT - removed `organization-overview` from the accelerator internal tutorial scene definitions so refresh and live navigation restore the same focused accelerator-only canvas. The actual leak was in `src/features/workspace-canvas-tutorial/lib/index.ts`: `accelerator-picker`, `accelerator-first-module`, and `accelerator-close-module` still had `revealedCardIds: ["organization-overview", "accelerator"]`, so any hydrated tutorial snapshot for those steps legitimately brought the organization card back even after the restart persistence fix. Those accelerator scene steps now reveal only `["accelerator"]`. Updated `tests/acceptance/workspace-canvas-tutorial.test.ts` with explicit accelerator-only visibility assertions and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`.
+2026-03-20 14:36 EDT - removed the broader “keep previously opened tools visible” tutorial rule so later guide steps stop leaking old cards onto the live canvas after refresh. The underlying contract lived in `src/features/workspace-canvas-tutorial/lib/index.ts`: `resolveWorkspaceCanvasTutorialVisibleCardIds(...)` was unioning every previously opened shortcut target into the current step’s visible-card set, which is why opening Accelerator early could make it reappear behind Calendar, Programs, and later steps after hydration. The visibility rule is now single-scene: unopened shortcut steps show the prompt scene (`organization-overview`), and opened shortcut steps show only the current target card. Updated `tests/acceptance/workspace-canvas-tutorial.test.ts` accordingly and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`.
+2026-03-20 14:48 EDT - delayed all always-open workspace tutorial callouts until their anchors have finished settling so they no longer pop in at the wrong coordinates and then jump. In `src/components/workspace/workspace-tutorial-callout.tsx`, tutorial callout bubbles now stay visually hidden for a shared settle delay (`420ms`, reduced to `120ms` under reduced motion), keyed to the specific callout target. The bubble still mounts so Radix can track the anchor while the target animates, but users do not see it until the anchor has stabilized. This automatically covers shortcut-button callouts, accelerator internal callouts, and the Team Access guide callout because they all route through `WorkspaceTutorialCallout`. Verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-tutorial-callout.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-accelerator-card-checklist.test.ts tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts`.
+2026-03-20 14:49 EDT - corrected the Team Access guide callout to use the same inverse tooltip surface as the other workspace guide callouts. The issue was semantic-owner level in `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-team-access-section.tsx`: the Team Access wrapper rendered `WorkspaceTutorialCallout` without `WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME`, so it fell back to the default tooltip theme and inverted incorrectly in dark/light mode. Wired the shared inverse token through `tooltipContentClassName` and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-tutorial-callout.test.ts`.
+2026-03-20 15:08 EDT - centralized workspace card availability for the current ship set and cleaned up deprecated board-card owners. Added `src/lib/workspace-card-policy.ts` as the single source for deprecated cards (`brand-kit`, `deck`, `atlas`), temporarily unavailable cards (`economic-engine`, `communications`), and the connected post-guide rest-state visible set (`organization-overview`, `programs`, `vault`, `accelerator`, `calendar`). Wired that contract through `workspace-board-hidden-cards.ts`, `workspace-board-layout-config.ts`, `src/features/workspace-canvas-tutorial/lib/index.ts`, `workspace-board-journey.ts`, and `workspace-canvas-v2/contracts/workspace-card-contract.ts` so default board state, hidden-card normalization, guide completion, journey targeting, and rail/dock availability all agree. Fundraising and Communications are now hidden/non-toggleable in live workspace for this update, and post-guide completion now lands on the reduced rest-state graph without targeting those cards. Also moved the board-level deprecated card owners for Atlas and Deck into `src/app/(dashboard)/my-organization/_components/deprecated/workspace-board/` and introduced a deprecated Brand Kit board-card wrapper there; `workspace-board-node-tool-cards.tsx` now re-exports those deprecated owners cleanly. Updated focused acceptance coverage in `workspace-board-canvas-helpers.test.ts`, `workspace-board-visibility-reducer.test.ts`, `workspace-canvas-card-contract.test.ts`, `workspace-card-shortcuts.test.ts`, `workspace-canvas-tutorial.test.ts`, and `workspace-board-layout.test.ts`. Verified with focused `eslint` and `pnpm test:acceptance tests/acceptance/workspace-board-canvas-helpers.test.ts tests/acceptance/workspace-board-visibility-reducer.test.ts tests/acceptance/workspace-canvas-card-contract.test.ts tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-board-layout.test.ts`.
+2026-03-20 15:22 EDT - unified the workspace-guide exit camera handoff so tutorial completion now emits one explicit transient viewport intent instead of racing `layoutFitRequestKey`, journey autofocus, and fallback focus. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-helpers.ts` now resolves one completion-exit request from the completed board state (`fit-visible` for Dagre, `focus-card` for timeline when the post-guide target is still a live rest-state card), `workspace-board-canvas.tsx` holds that request transiently and pauses journey autofocus without resetting its focus key, and the request is threaded through `workspace-board-canvas-body.tsx`, `workspace-board-flow-surface.tsx`, `workspace-canvas-surface-v2-types.ts`, and `workspace-canvas-surface-v2.tsx`. The shared viewport contract in `workspace-canvas-viewport-command.ts` now gives tutorial completion explicit precedence between scene-fit and normal focus fallback, `workspace-canvas-surface-v2-viewport-controls.ts` recentering follows that same command path, and `workspace-canvas-camera-controller.ts` now hands the one-shot completion move off to `workspace-canvas-tutorial-completion-exit-effect.ts` so the first post-guide camera move is consumed exactly once before journey autofocus resumes. Added focused coverage in `tests/acceptance/workspace-canvas-viewport-command.test.ts` and `tests/acceptance/workspace-board-canvas-helpers.test.ts`. Verified with focused `eslint`, `pnpm test:acceptance tests/acceptance/workspace-board-canvas-helpers.test.ts tests/acceptance/workspace-canvas-viewport-command.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`, and `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts`.
+2026-03-20 15:37 EDT - blocked the Documents tutorial presentation at the actual Vault card owner instead of chasing individual buttons. In `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-tool-card-vault.tsx`, the documents guide step now renders a full-surface tutorial interaction shield above the Vault card when `presentationMode && tutorialStepId === "documents"`. The shield captures pointer/focus interaction across the whole card, preventing tab switches, dropzone interaction, search result clicks, viewer actions, and the “Open Documents” CTA from firing during the guide, and shows the shared hint copy `We'll go over this later :)` in an inverse tutorial tooltip. Added focused coverage in `tests/acceptance/workspace-board-vault-card.test.ts` and verified with `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-tool-card-vault.tsx' 'tests/acceptance/workspace-board-vault-card.test.ts'` plus `pnpm test:acceptance tests/acceptance/workspace-board-vault-card.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts`.
+2026-03-20 15:44 EDT - corrected the Documents tutorial interaction lock to key off the actual tutorial signal instead of `presentationMode`. The guide-rendered Vault card can still carry `tutorialStepId === "documents"` through a path where `presentationMode` is false, so the previous shield condition was too narrow and left the live controls clickable. `shouldRenderWorkspaceBoardVaultCardDisplayOnly(...)` in `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-tool-card-vault.tsx` now locks whenever the current tutorial step is `documents`, regardless of `presentationMode`, which aligns with the real tutorial card-data contract. Updated the expectation in `tests/acceptance/workspace-board-vault-card.test.ts` and re-verified with `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-tool-card-vault.tsx' 'tests/acceptance/workspace-board-vault-card.test.ts'` plus `pnpm test:acceptance tests/acceptance/workspace-board-vault-card.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts`.
+2026-03-20 15:52 EDT - changed tutorial completion to land on one deterministic post-guide rest layout instead of preserving the pre-guide `timeline` mode. The screenshot the user reported was still consistent with the old behavior because `buildCompletedWorkspaceTutorialBoardState(...)` in `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-onboarding-flow.ts` was keeping `boardState.autoLayoutMode`, which left the completed board in the wide timeline rail layout and made the new camera handoff look like “no change.” Completion now forces `autoLayoutMode: "dagre-tree"` and rebuilds the visible rest-state nodes in that mode before the explicit completion-exit request runs, so the workspace should land on the compact connected graph rather than the stretched timeline arrangement. Updated `tests/acceptance/workspace-board-canvas-helpers.test.ts` accordingly and re-verified with `pnpm exec eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-onboarding-flow.ts' 'tests/acceptance/workspace-board-canvas-helpers.test.ts'` plus `pnpm test:acceptance tests/acceptance/workspace-board-canvas-helpers.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-viewport-command.test.ts`.
+2026-03-20 16:04 EDT - fixed the module-preview/tutorial content-mode shell wrappers so accelerator module preview and tool steps stop inheriting fill-mode height behavior. The issue was not the `body-shell` itself but `src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx`: the tutorial panel root `Card`, `CardContent`, and `body-shell` were still rendering with `h-full`/`flex-1` even when the presentation surface had `heightMode: "content"`. That meant the module-preview scene kept measuring its already-stretched `960px` shell instead of its intrinsic rendered height, which is why the guide showed a large dead area below the dashed frame and an over-zoomed feeling around the component. The panel wrappers now switch between fill and content behavior based on `presentationSurface.heightMode`, allowing content-mode scenes to collapse to intrinsic height and feed that smaller shell height back through the existing measurement path. Verified with `pnpm exec eslint 'src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx'` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`.
+
+2026-03-20 16:23 EDT - moved the internal workspace tutorial restart control to the bottom-left canvas corner and hardened its visibility so it only renders in local development editing mode. The button is still rendered from `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx`, but `workspace-canvas-surface-v2.tsx` now delegates the gate to `workspace-canvas-surface-v2-debug-controls.ts` via `shouldShowWorkspaceCanvasInternalTutorialRestart(...)`, which returns true only for `allowEditing && !presentationMode && NODE_ENV === "development"`. This is intentionally stricter than the previous `NODE_ENV !== "production"` check because there is no existing super-admin signal threaded into this client surface, so the safest contract is local-dev only rather than pretending we have RBAC we do not. Added focused coverage in `tests/acceptance/workspace-canvas-surface-v2-debug-controls.test.ts` and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-surface-v2-debug-controls.test.ts`.
+2026-03-20 17:10 EDT - replaced the live workspace Documents slot with a first-class Roadmap card and removed roadmap content from the workspace right rail. `workspace-board-types.ts`, `workspace-board-copy.ts`, `workspace-board-layout-config.ts`, `workspace-board-card-id.ts`, `workspace-canvas-v2/contracts/workspace-card-contract.ts`, and `src/lib/workspace-card-policy.ts` now treat `roadmap` as the live workspace card id in place of `vault`, while `workspace-board-right-rail.tsx` keeps only layout controls and Team Access. Added `src/components/roadmap/roadmap-navigator-section.tsx` as the shared roadmap navigator owner, converted `roadmap-right-rail-section.tsx` into a thin wrapper over that shared owner, and mounted the new workspace card surface in `workspace-board-node-tool-card-roadmap.tsx` so the board card and roadmap page share the same navigator logic. Updated the onboarding/tutorial/card-visibility path to target `roadmap` instead of `documents`/`vault` in `src/features/workspace-canvas-tutorial/lib/index.ts`, `workspace-canvas-v2/components/workspace-canvas-surface-v2-onboarding-scenes-config.ts`, `workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state.ts`, `workspace-board-onboarding-flow.ts`, and related workspace card helpers. Kept the legacy Documents/Vault implementation isolated to its unused legacy files and the explicit `vault -> roadmap` hydration shim in `workspace-board-card-id.ts` so persisted board state upgrades cleanly without leaving the live workspace graph split between ids. Verified with `pnpm exec tsc --noEmit --pretty false`, focused `eslint` on the touched roadmap/workspace files, and `pnpm test:acceptance tests/acceptance/workspace-board-layout.test.ts tests/acceptance/workspace-canvas-tutorial.test.ts tests/acceptance/workspace-canvas-card-contract.test.ts tests/acceptance/workspace-canvas-connection-contract.test.ts tests/acceptance/workspace-canvas-connections-runtime.test.ts tests/acceptance/workspace-canvas-surface-v2-render-state.test.ts tests/acceptance/workspace-canvas-tutorial-layout-contract.test.ts tests/acceptance/workspace-canvas-tutorial-panel.test.ts tests/acceptance/workspace-board-canvas-helpers.test.ts tests/acceptance/workspace-accelerator-tutorial-policy.test.ts tests/acceptance/workspace-card-shortcuts.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-board-onboarding-flow.test.ts tests/acceptance/workspace-board-journey.test.ts`.
+2026-03-20 17:18 EDT - increased the shared Roadmap card shell height so the embedded navigator can show the full roadmap list without truncating inside the workspace canvas. The real owner was `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout-config.ts`, where the new `roadmap` card had inherited an undersized fixed-height shell (`sm: 432`, `md: 456`, `lg: 540`) that was appropriate for the old Documents/Vault card but too short for the roadmap TOC. Raised the Roadmap shell contract to `sm: 560`, `md: 600`, `lg: 680` and updated the fixed-shell regression in `tests/acceptance/workspace-board-layout.test.ts`. Verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-board-layout.test.ts`.
+2026-03-20 17:21 EDT - converted the new workspace Roadmap card from a fixed-height shell to the same intrinsic-height behavior used by the accelerator/organization cards. The issue was not just “make it taller”; the Roadmap card was still outside `AUTO_HEIGHT_CARD_IDS` in `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout-config.ts`, so the board kept forcing a fixed shell and the inner roadmap wrapper in `workspace-board-node-tool-card-roadmap.tsx` was compensating with its own scroll region. That made the card rigid when the roadmap was open and prevented it from collapsing cleanly when the TOC header chevron closed. Roadmap is now an auto-height card in the shared layout contract, its `CardContent` path in `workspace-board-node-card.tsx` no longer forces `flex-1`, and the roadmap card wrapper no longer adds an inner `overflow-auto` region. This lets the full roadmap list determine the live card height and lets the shell shrink again when the TOC is collapsed, preserving a real bottom gap instead of dead scroll slack. Updated `tests/acceptance/workspace-board-layout.test.ts` to assert the new `h-auto`/no-fixed-shell behavior and re-verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-board-layout.test.ts tests/acceptance/workspace-card-shortcuts.test.ts`.
+2026-03-20 17:25 EDT - fixed a maximum update-depth loop in the accelerator tutorial presentation path. The problem was `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-node-state.tsx` still wiring `onMeasuredHeightChange` for the regular `accelerator` tutorial family, even though that scene uses an authored shell contract rather than adaptive shell measurement. That let the rendered accelerator overview feed measured card-content height back into tutorial presentation state on every render, which could churn around the progress-rail/tooltip trigger subtree and surface as the React max-update-depth error from `AcceleratorProgressRail`. Tightened `shouldWorkspaceTutorialMeasurePresentationContentHeight(...)` in `workspace-canvas-surface-v2-tutorial-shell-height.ts` so only the fixed centered card families that actually need presentation-content measurement (`overview` and `map`) report it; `accelerator`, `tool`, and `accelerator-module` no longer feed content height back through that path. Updated `tests/acceptance/workspace-canvas-tutorial-shell-height.test.ts` and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-shell-height.test.ts tests/acceptance/workspace-accelerator-tutorial-policy.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`.
+2026-03-20 17:35 EDT - tightened the accelerator runtime bridge so the tutorial presenter stops re-emitting semantically identical accelerator snapshots through the workspace card tree. The remaining max-update-depth risk was not in `AcceleratorProgressRail` itself; it was the runtime callback path. `src/features/workspace-accelerator-card/lib/runtime-snapshot.ts` now owns the shared accelerator runtime snapshot equality contract, `WorkspaceAcceleratorCardPanel` uses that equality before emitting `onRuntimeChange`, and `workspace-board-node-card.tsx` now uses the same guard before forwarding accelerator runtime changes back up into the workspace canvas. `workspace-canvas-runtime-snapshot.ts` was reduced to a thin re-export so the canvas runtime and accelerator feature use one equality definition instead of drifting. Added `tests/acceptance/workspace-accelerator-runtime-snapshot.test.ts` and verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-accelerator-runtime-snapshot.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-accelerator-tutorial-policy.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`.
+2026-03-20 17:48 EDT - stopped the embedded accelerator intro/picker tutorial scenes from mutating live accelerator workspace state. The remaining accelerator tutorial crash was still happening on the noninteractive overview/picker scenes because the tutorial-presented accelerator card was wired through the same live `onAcceleratorStateChange` / runtime callback bridge as the real workspace card, even though those scenes are display-only and do not need to feed state back into the canvas. `workspace-canvas-surface-v2-tutorial-presentation.tsx` now overrides the embedded accelerator callbacks to no-op on `accelerator` and `accelerator-picker`, while still keeping full runtime tracking on `accelerator-first-module` and `accelerator-close-module` where the guide actually depends on current step/module viewer state. The tracking rule now lives in `workspace-canvas-surface-v2-tutorial-presentation-state.ts` via `shouldWorkspaceTutorialTrackEmbeddedAcceleratorRuntime(...)`, and `tests/acceptance/workspace-canvas-tutorial-presentation.test.ts` now locks that behavior in. Re-verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-accelerator-runtime-snapshot.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`.
+2026-03-20 19:31 EDT - fixed two remaining workspace guide regressions in the embedded presentation path. First, `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-help-overlay.tsx` was reading `localStorage` during initial render, which caused an SSR/client hydration mismatch when the canvas help tip had already been dismissed on the client. The help overlay now renders with a stable server/client default and applies the persisted dismissal state after mount. Second, the embedded accelerator tutorial card was still behaving too much like the live workspace card even on display-only scenes: `workspace-canvas-surface-v2-tutorial-presentation.tsx` now forces tutorial-rendered cards into `presentationMode`, and `workspace-board-node-card.tsx` now disables accelerator storage hydration, progress propagation, size syncing, and local runtime header-bridge callbacks for embedded accelerator tutorial steps unless the step explicitly requires runtime tracking (`accelerator-first-module` or `accelerator-close-module`). This removes the last remaining local `WorkspaceBoardCard` feedback path that could still churn around the accelerator progress rail in overview/picker scenes after the earlier outer-callback no-op change. Verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-help-overlay.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts`.
+2026-03-20 20:13 EDT - narrowed the remaining accelerator tutorial crash to the progress-rail tooltip subtree and added an embedded-tutorial-safe fallback. The crash stack repeatedly terminated at `AcceleratorProgressRail -> TooltipTrigger -> Button`, so instead of changing the live accelerator card again, `src/components/accelerator/accelerator-progress-rail.tsx` now supports a non-tooltip checkpoint rendering mode and `workspace-accelerator-card-progress-strip.tsx` / `workspace-accelerator-card-panel-support.tsx` / `workspace-accelerator-card-panel.tsx` now disable the Fundable/Verified milestone tooltips only when the accelerator is rendered inside tutorial interaction policy scenes. Live accelerator cards still render the full milestone tooltips; tutorial-embedded accelerator scenes now render inert checkpoint chips so the guide no longer mounts the tooltip/button subtree that keeps appearing in the max-update-depth stack. Verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/accelerator-progress-rail.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`.
+2026-03-20 20:18 EDT - removed a redundant lesson-group state sync that was still causing a max-update-depth loop in the embedded accelerator tutorial path. The concrete runtime stack pointed to `useWorkspaceAcceleratorLessonGroupState` in `src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-lesson-groups.ts`, where local `lessonGroupFilter` state was being force-synced from `tutorialInteractionPolicy.allowedClassGroupKey` on every render. That sync was unnecessary because `selectedLessonGroupKey` already derives from `tutorialInteractionPolicy.allowedClassGroupKey` with higher precedence than local state. Deleted the effect entirely so tutorial policy remains a pure derived override instead of a state feedback path. Verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts tests/acceptance/workspace-canvas-tutorial-presentation.test.ts`.
+2026-03-20 20:49 EDT - reverted an over-broad tutorial embed change that was forcing all tutorial-presented cards into `presentationMode`. That change had been added while chasing the embedded accelerator crash, but it incorrectly pushed non-accelerator cards like Calendar onto their alternate presentation render paths. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx` now sets `presentationMode` only for the embedded accelerator card, while Calendar, Programs, Roadmap, and the other tutorial-presented cards keep their normal live canvas render variants. Verified with focused `eslint` plus `pnpm test:acceptance tests/acceptance/workspace-canvas-tutorial-presentation.test.ts tests/acceptance/workspace-canvas-surface-v2-tutorial.test.ts`.
+## 2026-03-20 21:08 EDT — Restore compact accelerator checklist styling
+
+- reverted the off-script visual rewrite in `workspace-accelerator-card-checklist.tsx` that had made the guided module-step buttons larger/taller than the original compact checklist presentation
+- kept the tutorial guard behavior and React Grab ownership wiring, but restored the previous compact container, header, module row, and step button sizing/styling
+- validated with `pnpm exec eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx'`
+2026-03-20 23:44 EDT - moved builder post-signup flow back onto the dedicated `/onboarding` route, kept Stripe gating in front of builder onboarding, removed the two synthetic onboarding modules from the accelerator timeline, and hardened React Grab so it cannot be enabled for normal production users. `src/app/(auth)/sign-up/page.tsx`, `src/components/auth/sign-up-form.tsx`, `src/components/public/home-canvas-preview-panels.tsx`, `src/components/app-shell/onboarding-redirect.ts`, and `src/components/app-sidebar.tsx` now send builder users to `/onboarding` instead of booting them straight into workspace setup. `src/app/(dashboard)/onboarding/page.tsx` now renders the shared inline `OnboardingWorkspaceCard` backed by `completeOnboardingAction`, while `src/app/(dashboard)/onboarding/actions.ts` returns builder-side validation/login redirects to `/onboarding` and still hands successful builders into the workspace guide after completion. `src/app/(dashboard)/my-organization/_lib/my-organization-accelerator-timeline.ts` no longer prepends the old `workspace-onboarding-welcome` and `workspace-onboarding-organization-setup` synthetic modules, so accelerator steps now start at the real accelerator content again. `src/components/dev/react-grab-loader.tsx` now hard-stops non-dev runtime activation even if query params or local storage attempt to enable it. Updated focused acceptance coverage in `tests/acceptance/app-shell-onboarding-redirect.test.ts` and `tests/acceptance/onboarding.test.ts`. Verified with `pnpm exec eslint 'src/components/auth/sign-up-form.tsx' 'src/app/(auth)/sign-up/page.tsx' 'src/components/public/home-canvas-preview-panels.tsx' 'src/components/app-shell/onboarding-redirect.ts' 'src/components/app-sidebar.tsx' 'src/components/onboarding/onboarding-dialog/components/onboarding-dialog-content.tsx' 'src/components/dev/react-grab-loader.tsx' 'src/app/(dashboard)/onboarding/page.tsx' 'src/app/(dashboard)/onboarding/actions.ts' 'src/app/(dashboard)/my-organization/_lib/my-organization-accelerator-timeline.ts' 'src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx' 'src/components/app-shell/app-shell-inner.tsx' 'tests/acceptance/app-shell-onboarding-redirect.test.ts' 'tests/acceptance/onboarding.test.ts'` plus `pnpm test:acceptance tests/acceptance/app-shell-onboarding-redirect.test.ts tests/acceptance/onboarding-pricing-return.test.ts tests/acceptance/onboarding-steps.test.ts tests/acceptance/onboarding.test.ts tests/acceptance/react-grab-loader.test.ts`.
+2026-03-21 00:15 EDT - corrected the workspace onboarding rollback so the accelerator keeps the real `workspace-onboarding-organization-setup` module in place, but only the organization-setup portion now renders inside that embedded accelerator card. `src/app/(dashboard)/my-organization/_lib/my-organization-accelerator-timeline.ts` no longer prepends the mistaken synthetic setup module and now relabels the real roadmap-backed module to `Organization setup`. `src/components/onboarding/onboarding-flow.tsx`, `src/components/onboarding/onboarding-workspace-card.tsx`, and `src/components/onboarding/onboarding-dialog/hooks/use-onboarding-draft-state.ts` now support a scoped visible-step subset so the accelerator-embedded onboarding card renders only `org`, `account`, and `community`, while the standalone `/onboarding` flow still owns `intent` and `pricing`. `src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card-onboarding.tsx` now passes that 3-step subset and updates the inline copy from Workspace setup to Organization setup. Added regression coverage in `tests/acceptance/workspace-accelerator-step-node-card.test.ts` to lock the embedded accelerator form to `Step 1 of 3` / `Create your organization` and ensure the `intent` + `pricing` copy is absent there. Verified with `pnpm exec eslint 'src/app/(dashboard)/my-organization/_lib/my-organization-accelerator-timeline.ts' 'src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx' 'src/components/onboarding/onboarding-dialog/types.ts' 'src/components/onboarding/onboarding-workspace-card.tsx' 'src/components/onboarding/onboarding-flow.tsx' 'src/components/onboarding/onboarding-dialog/hooks/use-onboarding-draft-state.ts' 'src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card-onboarding.tsx' 'tests/acceptance/workspace-accelerator-step-node-card.test.ts'` and `pnpm test:acceptance tests/acceptance/workspace-accelerator-step-node-card.test.ts tests/acceptance/onboarding-steps.test.ts tests/acceptance/onboarding.test.ts`.
+2026-03-22 14:05 EDT - implemented the onboarding/accelerator split and ordering corrections without synthetic modules. Post-signup `/onboarding` now runs in explicit `post_signup_access` mode (steps `intent` + `pricing` only), while workspace onboarding surfaces run in explicit `workspace_setup` mode (steps `org`, `account`, `community`). Added mode-aware submit payloads (`onboardingMode`) and updated `completeOnboardingAction` so builder paywall checks still run for build intent, but organization slug/profile creation is only enforced in organization-setup mode (not the post-signup access mode). Fixed onboarding validation to resolve the active step by `stepId` so filtered step flows validate the correct fields. Restored the real accelerator organization setup module by attaching `moduleContext.workspaceOnboarding` directly to the existing `workspace-onboarding-organization-setup` timeline module seed (with `Organization setup` title), which keeps it visible in the accelerator checklist/panel without synthetic injection. Updated lesson-group ordering in `src/features/workspace-accelerator-card/lib/checklist.ts` so Formation is deterministically ordered ahead of Strategic Foundations. Added/updated focused acceptance coverage in `tests/acceptance/onboarding-pricing-return.test.ts` and `tests/acceptance/workspace-accelerator-card-checklist.test.ts`. Verified with focused `eslint` on all touched files and `pnpm test:acceptance tests/acceptance/onboarding-pricing-return.test.ts tests/acceptance/onboarding-state-helpers.test.ts tests/acceptance/onboarding.test.ts tests/acceptance/workspace-accelerator-step-node-card.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts` plus targeted checklist-order run `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-checklist.test.ts -t 'builds lesson-group options|keeps Formation above'`.
+2026-03-22 14:20 EDT - fixed Organization setup module detection so accelerator wiring no longer depends on one hardcoded module id. `src/app/(dashboard)/my-organization/_lib/my-organization-accelerator-timeline.ts` now classifies the organization-setup module by canonical id plus slug/title/href signals (`workspace setup` / `organization setup`), which covers UUID-backed roadmap module ids while still excluding normal Formation modules. This restores `moduleContext.workspaceOnboarding` attachment for the real module when ids are not `workspace-onboarding-organization-setup`, so the module remains visible in the accelerator checklist/panel path that filters regular lesson steps. Added focused regression coverage in `tests/acceptance/my-organization-accelerator-timeline.test.ts` for canonical id detection, UUID-backed detection, and false-positive prevention. Verified with `pnpm eslint 'src/app/(dashboard)/my-organization/_lib/my-organization-accelerator-timeline.ts' 'tests/acceptance/my-organization-accelerator-timeline.test.ts'` and `pnpm test:acceptance tests/acceptance/my-organization-accelerator-timeline.test.ts tests/acceptance/onboarding-pricing-return.test.ts tests/acceptance/onboarding-state-helpers.test.ts tests/acceptance/onboarding.test.ts tests/acceptance/onboarding-steps.test.ts tests/acceptance/workspace-accelerator-step-node-card.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/react-grab-loader.test.ts tests/acceptance/prototype-lab.test.ts`.
+2026-03-22 14:48 EDT - restored Organization setup as a real Formation curriculum module (no synthetic injection) and enforced deterministic core Formation ordering. Added migration `supabase/migrations/20260322183500_add_organization_setup_formation_module.sql` to: locate `electives`, shift core Formation modules (`naming-your-nfp`, `nfp-registration`, `filing-1023`) to make room, insert or normalize a real `organization-setup` module at index 4, move core Formation steps to indexes 5-7, and ensure a `module_content` row exists. Updated `src/lib/accelerator/module-order.ts` so Organization setup (`organization-setup`/`workspace-setup` aliases) is ranked first in Formation core ordering, with electives index fallback extended through index 7. Added regression coverage in `tests/acceptance/accelerator-module-order.test.ts` to lock Organization setup as the first Formation module. Verified with `pnpm exec eslint 'src/lib/accelerator/module-order.ts' 'tests/acceptance/accelerator-module-order.test.ts' 'src/app/(dashboard)/my-organization/_lib/my-organization-accelerator-timeline.ts' 'tests/acceptance/my-organization-accelerator-timeline.test.ts'` and `pnpm test:acceptance tests/acceptance/accelerator-module-order.test.ts tests/acceptance/my-organization-accelerator-timeline.test.ts tests/acceptance/workspace-accelerator-step-node-card.test.ts tests/acceptance/onboarding-pricing-return.test.ts`.
+2026-03-23 14:20 EDT - implemented route-based fullscreen accelerator module opening from workspace card interactions while preserving tutorial-owned embedded behavior. Added `buildWorkspaceAcceleratorFullscreenHref(...)` in `src/features/workspace-accelerator-card/lib/index.ts` (exported through feature index), extended `WorkspaceAcceleratorCardPanel` with `presentationMode`, external step-open callback support, and fullscreen close callback handling, and wired embedded accelerator checklist step clicks in `workspace-board-node-card.tsx` to navigate to `/workspace/accelerator?step=...&module=...&group=...` instead of opening the in-canvas expanded viewer. Added new fullscreen workspace accelerator route/page at `src/app/(dashboard)/workspace/accelerator/page.tsx`, breadcrumb surface at `src/app/(dashboard)/@breadcrumbs/workspace/accelerator/page.tsx`, and new `MyOrganizationAcceleratorView` composition that reuses existing accelerator card layout/header picker/runtime wiring without mounting workspace canvas. `MyOrganizationPageContent` now supports `view=accelerator` rendering and enforces the existing accelerator paywall gate for direct route access. Updated accelerator workspace meta href to `/workspace/accelerator`. Added acceptance coverage for fullscreen href building in `tests/acceptance/workspace-accelerator-card-panel.test.ts`. Verified with targeted eslint (`pnpm eslint ...` and `pnpm eslint --rule 'max-lines-per-function: off' ...`) and targeted acceptance tests (`pnpm test:acceptance tests/acceptance/workspace-accelerator-card.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts`). Repo currently has unrelated pre-existing failures outside this change in full typecheck (`my-organization-accelerator-timeline.ts` onboarding defaults type mismatch and `workspace-accelerator-runtime-snapshot.test.ts` readiness shape mismatch) and an unrelated existing checklist styling expectation failure in `tests/acceptance/workspace-accelerator-card-checklist.test.ts`.
+2026-03-23 14:27 EDT - fixed workspace-side entitlement regression that was paywalling super admins when opening accelerator modules from `/workspace`. `src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx` now passes the resolved `isAdmin` flag (instead of hardcoded `false`) into both `fetchAcceleratorProgressSummary(...)` and `fetchLearningEntitlements(...)`, restoring the admin entitlement override path used elsewhere in accelerator layout flows. Verified with `pnpm eslint 'src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx'` and `pnpm test:acceptance tests/acceptance/workspace-view-seed.test.ts tests/acceptance/my-organization-page-content-helpers.test.ts`.
+2026-03-23 14:36 EDT - removed the extra fullscreen accelerator card shell and moved the fullscreen accelerator route onto the app-shell inset container contract. `src/app/(dashboard)/my-organization/_components/workspace-board/my-organization-accelerator-view.tsx` no longer wraps fullscreen content in `WorkspaceBoardCardFrame` (`Card` + `CardContent`), and now renders `WorkspaceBoardCardHeader` + `WorkspaceAcceleratorCardPanel` directly inside `SidebarInset` with the workspace shell token classes. This preserves the existing accelerator internals while eliminating the additional rounded card container/gap around the header picker in fullscreen mode. Verified with `pnpm eslint 'src/app/(dashboard)/my-organization/_components/workspace-board/my-organization-accelerator-view.tsx'`, `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-accelerator-header-picker.test.ts`, and `pnpm test:acceptance tests/acceptance/workspace-accelerator-card.test.ts tests/acceptance/workspace-view-seed.test.ts`.
+2026-03-23 14:47 EDT - optimized fullscreen accelerator open latency by adding a dedicated accelerator-only server seed path and proactive route prefetch. `src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx` now detects `view=accelerator` early, skips unrelated workspace fetches (calendar-events query and full workspace-seed hydration path), loads only board state + accelerator timeline dependencies, and returns a minimal accelerator seed through `buildAcceleratorWorkspaceSeed(...)` for `MyOrganizationAcceleratorView`. Non-accelerator workspace rendering still uses the existing full `buildWorkspaceViewSeed(...)` path unchanged. `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx` now prefetches the fullscreen accelerator base route (`/workspace/accelerator`) when accelerator access is available, reducing client-side navigation delay when a user opens a module. Verified with `pnpm eslint 'src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx'`, `pnpm eslint --rule 'max-lines-per-function: off' 'src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx'`, and `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-panel.test.ts tests/acceptance/workspace-accelerator-card.test.ts tests/acceptance/workspace-view-seed.test.ts tests/acceptance/my-organization-page-content-helpers.test.ts`.
+2026-03-23 14:54 EDT - removed checklist icon containers in the accelerator module sidebar rows so module/step icons render without the bordered background chips. `src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx` now renders plain module icons (no rounded icon shell), and step-row icons render in a minimal icon slot without border/background while preserving state color cues. Also aligned row/root class tokens to the existing sidebar hover-chrome acceptance contract (`hover:bg-accent`, transparent root background). Verified with `pnpm eslint 'src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx'` and `pnpm test:acceptance tests/acceptance/workspace-accelerator-card-checklist.test.ts tests/acceptance/workspace-accelerator-card-panel.test.ts`.
+2026-03-23 15:29 EDT - completed a deploy-stability preflight for the workspace accelerator fullscreen path and fixed blocking type errors introduced by the recent fast-path refactor. Guardrails passed (`pnpm check:react-grab`, `pnpm check:workspace-surfaces`). Focused accelerator/workspace acceptance suites passed (`workspace-accelerator-card-checklist`, `workspace-accelerator-card-panel`, `workspace-accelerator-header-picker`, `workspace-accelerator-card`, `workspace-view-seed`, `my-organization-page-content-helpers`, `my-organization-accelerator-timeline`). Production build now passes end-to-end (`pnpm build`). Build blockers resolved: (1) `defaultIntentFocus` widening in `src/app/(dashboard)/my-organization/_lib/my-organization-accelerator-timeline.ts` fixed by explicit literal typing (`"build" as const`), and (2) strict `WorkspaceSeedData` compatibility in `src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx` fixed by typing `formationSummary` in `buildAcceleratorWorkspaceSeed(...)` to the canonical `FormationSummary` interface.

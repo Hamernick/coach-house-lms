@@ -38,7 +38,7 @@ export function formatFundingGoal(cents: number) {
 export function resolveReadinessChecklistVisual(item: AcceleratorReadinessChecklistItem) {
   const normalized = `${item.label} ${item.href}`.toLowerCase()
 
-  if (normalized.includes("formation lesson")) {
+  if (normalized.includes("formation class")) {
     return {
       icon: BookOpenIcon,
       iconClass: "text-amber-700 dark:text-amber-300",

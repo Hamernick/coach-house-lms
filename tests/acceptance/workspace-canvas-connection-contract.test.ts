@@ -42,22 +42,22 @@ describe("workspace canvas connection contract", () => {
     ).toEqual({ allowed: false, reason: "same-node" })
   })
 
-  it("allows linking into and out of vault", () => {
+  it("allows linking into and out of roadmap", () => {
     expect(
       canConnectWorkspaceCards({
         source: "communications",
-        target: "vault",
+        target: "roadmap",
       }),
     ).toBe(true)
     expect(
       canConnectWorkspaceCards({
         source: "economic-engine",
-        target: "vault",
+        target: "roadmap",
       }),
     ).toBe(true)
     expect(
       canConnectWorkspaceCards({
-        source: "vault",
+        source: "roadmap",
         target: "communications",
       }),
     ).toBe(true)

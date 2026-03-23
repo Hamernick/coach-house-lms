@@ -177,10 +177,10 @@ export function OrganizationDetailActionLinks({
               variant="ghost"
               onClick={() => void handleCopyAction(action)}
               disabled={copyingActionKey === action.key}
-              className="h-20 rounded-xl border border-border/70 bg-background/85 px-2 text-[11px] text-foreground hover:bg-muted"
+              className="h-16 rounded-xl border border-border/70 bg-background/85 px-2 text-[11px] text-foreground hover:bg-muted"
             >
-              <span className="flex h-full w-full flex-col items-center justify-center gap-1 text-center">
-                <Icon className="h-5 w-5" aria-hidden />
+              <span className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-center">
+                <Icon className="h-4.5 w-4.5" aria-hidden />
                 <span>{action.label}</span>
               </span>
             </Button>
@@ -192,15 +192,15 @@ export function OrganizationDetailActionLinks({
             key={action.key}
             asChild
             variant="ghost"
-            className="h-20 rounded-xl border border-border/70 bg-background/85 px-2 text-[11px] text-foreground hover:bg-muted"
+            className="h-16 rounded-xl border border-border/70 bg-background/85 px-2 text-[11px] text-foreground hover:bg-muted"
           >
             <a
               href={action.href}
               target={action.external ? "_blank" : undefined}
               rel={action.external ? "noreferrer" : undefined}
-              className="flex h-full w-full flex-col items-center justify-center gap-1 text-center"
+              className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-center"
             >
-              <Icon className="h-5 w-5" aria-hidden />
+              <Icon className="h-4.5 w-4.5" aria-hidden />
               <span>{action.label}</span>
             </a>
           </Button>

@@ -73,10 +73,10 @@ describe("workspace board journey", () => {
     })
 
     expect(guide.stage).toBe("materials")
-    expect(guide.targetCardId).toBe("vault")
+    expect(guide.targetCardId).toBe("roadmap")
     expect(guide.primaryAction).toMatchObject({
       kind: "focus-card",
-      cardId: "vault",
+      cardId: "roadmap",
     })
   })
 

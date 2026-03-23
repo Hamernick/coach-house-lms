@@ -15,6 +15,10 @@ export {
   formatWorkspaceAcceleratorModuleCompletionLabel,
   resolveWorkspaceAcceleratorOpenModuleId,
 } from "./checklist"
+export {
+  areWorkspaceAcceleratorRuntimeSnapshotsEqual,
+  buildWorkspaceAcceleratorRuntimeStepSignature,
+} from "./runtime-snapshot"
 export type {
   WorkspaceAcceleratorChecklistModule,
   WorkspaceAcceleratorLessonGroupOption,
@@ -43,6 +47,10 @@ function resolveDerivedStepStatus(
 }
 
 function buildModuleStepKinds(module: WorkspaceAcceleratorTimelineModuleSeed): WorkspaceAcceleratorStepKind[] {
+  if (module.moduleContext?.workspaceOnboarding) {
+    return ["lesson"]
+  }
+
   const next: WorkspaceAcceleratorStepKind[] = ["lesson"]
   if (module.videoUrl) next.push("video")
   if (module.resources.length > 0 || module.hasDeck) next.push("resources")
@@ -52,7 +60,7 @@ function buildModuleStepKinds(module: WorkspaceAcceleratorTimelineModuleSeed): W
 }
 
 function resolveStepTitle(stepKind: WorkspaceAcceleratorStepKind) {
-  if (stepKind === "lesson") return "Lesson"
+  if (stepKind === "lesson") return "Class"
   if (stepKind === "video") return "Video"
   if (stepKind === "resources") return "Resources"
   if (stepKind === "assignment") return "Assignment"
@@ -72,15 +80,15 @@ function resolveStepDescription({
   hasDeck: boolean
 }) {
   if (stepKind === "lesson") return moduleDescription
-  if (stepKind === "video") return "Watch the core walkthrough for this lesson."
+  if (stepKind === "video") return "Watch the core walkthrough for this class."
   if (stepKind === "resources") {
     if (resourceCount > 0 && hasDeck) return `${resourceCount} linked resources and deck materials`
     if (resourceCount > 0) return `${resourceCount} linked resources`
     if (hasDeck) return "Deck materials available."
     return "No resources attached yet."
   }
-  if (stepKind === "assignment") return "Complete the assignment to advance this lesson."
-  if (stepKind === "complete") return "Mark this module complete and move to the next lesson."
+  if (stepKind === "assignment") return "Complete the assignment to move this module forward."
+  if (stepKind === "complete") return "Mark this module complete and continue to the next module."
   if (hasDeck) return "Review supporting deck materials."
   return null
 }
@@ -162,12 +170,19 @@ export function buildWorkspaceAcceleratorCardSteps(
     const moduleStepKinds = buildModuleStepKinds(timelineModule)
 
     for (const stepKind of moduleStepKinds) {
+      const workspaceOnboarding = timelineModule.moduleContext?.workspaceOnboarding ?? null
+      const stepTitle =
+        workspaceOnboarding && stepKind === "lesson"
+          ? timelineModule.title
+          : resolveStepTitle(stepKind)
+
       flattened.push({
         id: `${timelineModule.id}:${stepKind}`,
         moduleId: timelineModule.id,
+        moduleSlug: timelineModule.slug ?? null,
         moduleTitle: timelineModule.title,
         stepKind,
-        stepTitle: resolveStepTitle(stepKind),
+        stepTitle,
         stepDescription: resolveStepDescription({
           stepKind,
           moduleDescription: timelineModule.description,
@@ -181,6 +196,7 @@ export function buildWorkspaceAcceleratorCardSteps(
         moduleSequenceIndex: moduleIndex + 1,
         moduleSequenceTotal: moduleTotal,
         groupTitle: timelineModule.groupTitle || "Accelerator",
+        groupOrder: timelineModule.groupOrder ?? null,
         videoUrl: timelineModule.videoUrl,
         durationMinutes: typeof timelineModule.durationMinutes === "number" ? timelineModule.durationMinutes : null,
         resources: timelineModule.resources,
@@ -242,7 +258,8 @@ export function normalizeWorkspaceAcceleratorCardInput(
 
   return {
     steps: normalizedSteps,
-    size: input.size === "md" ? "md" : "sm",
+    size: input.size === "md" || input.size === "lg" ? input.size : "sm",
+    readinessSummary: input.readinessSummary ?? null,
     linkHrefOverride:
       typeof input.linkHrefOverride === "string" && input.linkHrefOverride.trim().length > 0
         ? input.linkHrefOverride
@@ -256,6 +273,7 @@ export function normalizeWorkspaceAcceleratorCardInput(
         : null,
     initialCompletedStepIds,
     onProgressChange: input.onProgressChange,
+    onWorkspaceOnboardingSubmit: input.onWorkspaceOnboardingSubmit,
   }
 }
 
@@ -265,12 +283,16 @@ export function buildWorkspaceAcceleratorRuntimeActionsSignature({
   canGoNext,
   isCurrentStepCompleted,
   totalSteps,
+  selectedLessonGroupKey,
+  lessonGroupCount,
 }: {
   currentStepId: string | null
   canGoPrevious: boolean
   canGoNext: boolean
   isCurrentStepCompleted: boolean
   totalSteps: number
+  selectedLessonGroupKey?: string | null
+  lessonGroupCount?: number
 }) {
   return JSON.stringify({
     currentStepId,
@@ -278,5 +300,37 @@ export function buildWorkspaceAcceleratorRuntimeActionsSignature({
     canGoNext,
     isCurrentStepCompleted,
     totalSteps,
+    selectedLessonGroupKey: selectedLessonGroupKey ?? null,
+    lessonGroupCount: lessonGroupCount ?? 0,
   })
+}
+
+export function buildWorkspaceAcceleratorFullscreenHref({
+  stepId,
+  moduleId,
+  lessonGroupKey,
+  basePath = "/workspace/accelerator",
+}: {
+  stepId?: string | null
+  moduleId?: string | null
+  lessonGroupKey?: string | null
+  basePath?: string
+}) {
+  const nextParams = new URLSearchParams()
+  if (stepId) {
+    nextParams.set("step", stepId)
+  }
+  if (moduleId) {
+    nextParams.set("module", moduleId)
+  }
+  if (lessonGroupKey) {
+    nextParams.set("group", lessonGroupKey)
+  }
+
+  const query = nextParams.toString()
+  if (!query) {
+    return basePath
+  }
+
+  return `${basePath}?${query}`
 }

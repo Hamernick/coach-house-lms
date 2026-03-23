@@ -19,8 +19,13 @@ export const WORKSPACE_CARD_META: Record<WorkspaceCardId, WorkspaceCardMeta> = {
   },
   accelerator: {
     title: "Accelerator",
-    subtitle: "Lesson sequence, media, and resources",
-    fullHref: "/accelerator",
+    subtitle: "Class tracks, modules, and resources",
+    fullHref: "/workspace/accelerator",
+  },
+  roadmap: {
+    title: "Roadmap",
+    subtitle: "Strategic priorities, sequencing, and operating focus",
+    fullHref: "/workspace/roadmap",
   },
   "brand-kit": {
     title: "Brand Kit",
@@ -45,16 +50,11 @@ export const WORKSPACE_CARD_META: Record<WorkspaceCardId, WorkspaceCardMeta> = {
   deck: {
     title: "Deck",
     subtitle: "Single PDF or PPT canvas",
-    fullHref: "/workspace/documents",
-  },
-  vault: {
-    title: "Documents",
-    subtitle: "Drop files and quickly review uploads",
-    fullHref: "/workspace/documents",
+    fullHref: "",
   },
   atlas: {
-    title: "Atlas",
-    subtitle: "Locations and online footprint",
+    title: "Map",
+    subtitle: "Public place, checklist, and launch readiness",
     fullHref: "/workspace?view=editor&tab=company",
   },
 }
@@ -66,13 +66,18 @@ export const WORKSPACE_EDGE_SPECS: WorkspaceConnectionState[] = [
     target: "programs",
   },
   {
-    id: "edge-organization-to-vault",
+    id: "edge-organization-to-roadmap",
     source: "organization-overview",
-    target: "vault",
+    target: "roadmap",
   },
   {
-    id: "edge-vault-to-accelerator",
-    source: "vault",
+    id: "edge-organization-to-atlas",
+    source: "organization-overview",
+    target: "atlas",
+  },
+  {
+    id: "edge-roadmap-to-accelerator",
+    source: "roadmap",
     target: "accelerator",
   },
   {

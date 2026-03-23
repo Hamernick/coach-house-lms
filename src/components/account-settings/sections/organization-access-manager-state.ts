@@ -6,6 +6,7 @@ import {
   createOrganizationInviteAction,
   listOrganizationAccessAction,
   removeOrganizationMemberAction,
+  revokeOrganizationAccessRequestAction,
   revokeOrganizationInviteAction,
   setOrganizationMemberTesterFlagAction,
   setOrganizationAdminsCanInviteAction,
@@ -13,6 +14,7 @@ import {
   updateOrganizationMemberRoleAction,
   type OrganizationAccessInvite,
   type OrganizationAccessMember,
+  type OrganizationAccessRequest,
   type OrganizationMemberRole,
 } from "@/app/actions/organization-access"
 import { toast } from "@/lib/toast"
@@ -26,6 +28,7 @@ type UseOrganizationAccessManagerStateResult = {
   loading: boolean
   members: OrganizationAccessMember[]
   invites: OrganizationAccessInvite[]
+  requests: OrganizationAccessRequest[]
   adminsCanInvite: boolean
   staffCanManageCalendar: boolean
   hasPaidTeamAccess: boolean
@@ -50,12 +53,14 @@ type UseOrganizationAccessManagerStateResult = {
   removeMember: (memberId: string) => void
   copyInviteLink: (link: string) => void
   revokeInvite: (inviteId: string) => void
+  revokeRequest: (requestId: string) => void
 }
 
 export function useOrganizationAccessManagerState(): UseOrganizationAccessManagerStateResult {
   const [loading, setLoading] = useState(true)
   const [members, setMembers] = useState<OrganizationAccessMember[]>([])
   const [invites, setInvites] = useState<OrganizationAccessInvite[]>([])
+  const [requests, setRequests] = useState<OrganizationAccessRequest[]>([])
   const [adminsCanInvite, setAdminsCanInvite] = useState(false)
   const [staffCanManageCalendar, setStaffCanManageCalendar] = useState(false)
   const [hasPaidTeamAccess, setHasPaidTeamAccess] = useState(false)
@@ -84,6 +89,7 @@ export function useOrganizationAccessManagerState(): UseOrganizationAccessManage
       setLoadError(res.error)
       setMembers([])
       setInvites([])
+      setRequests([])
       setAdminsCanInvite(false)
       setStaffCanManageCalendar(false)
       setHasPaidTeamAccess(false)
@@ -98,6 +104,7 @@ export function useOrganizationAccessManagerState(): UseOrganizationAccessManage
 
     setMembers(res.members)
     setInvites(res.invites)
+    setRequests(res.requests)
     setAdminsCanInvite(Boolean(res.adminsCanInvite))
     setStaffCanManageCalendar(Boolean(res.staffCanManageCalendar))
     setHasPaidTeamAccess(Boolean(res.hasPaidTeamAccess))
@@ -165,14 +172,38 @@ export function useOrganizationAccessManagerState(): UseOrganizationAccessManage
         return
       }
 
-      const link = inviteUrlBase
-        ? `${inviteUrlBase}/join-organization?token=${res.invite.token}`
-        : `/join-organization?token=${res.invite.token}`
-      try {
-        await copyToClipboard(link)
-        toast.success("Invite link copied", { id: toastId })
-      } catch {
-        toast.success("Invite created", { id: toastId })
+      if ("invite" in res) {
+        if (res.emailSent) {
+          toast.success(
+            res.outcome === "external_invite_resent"
+              ? "Invite email sent again"
+              : "Invite email sent",
+            { id: toastId },
+          )
+        } else {
+          const link = inviteUrlBase
+            ? `${inviteUrlBase}/join-organization?token=${res.invite.token}`
+            : `/join-organization?token=${res.invite.token}`
+          try {
+            await copyToClipboard(link)
+            toast.success("Invite link copied because email delivery failed", {
+              id: toastId,
+            })
+          } catch {
+            toast.success(res.emailError ?? "Invite created", { id: toastId })
+          }
+        }
+      } else {
+        const successLabel =
+          res.outcome === "existing_user_request_resent"
+            ? "Access request sent again"
+            : "Access request sent"
+        toast.success(
+          res.emailSent
+            ? successLabel
+            : `${successLabel}. ${res.emailError ?? "Heads-up email skipped."}`,
+          { id: toastId },
+        )
       }
       setInviteEmail("")
       await refresh()
@@ -252,10 +283,26 @@ export function useOrganizationAccessManagerState(): UseOrganizationAccessManage
     [refresh],
   )
 
+  const revokeRequest = useCallback(
+    (requestId: string) => {
+      startTransition(async () => {
+        const res = await revokeOrganizationAccessRequestAction(requestId)
+        if ("error" in res) {
+          toast.error(res.error)
+          return
+        }
+        toast.success("Access request revoked")
+        await refresh()
+      })
+    },
+    [refresh],
+  )
+
   return {
     loading,
     members,
     invites,
+    requests,
     adminsCanInvite,
     staffCanManageCalendar,
     hasPaidTeamAccess,
@@ -280,5 +327,6 @@ export function useOrganizationAccessManagerState(): UseOrganizationAccessManage
     removeMember,
     copyInviteLink,
     revokeInvite,
+    revokeRequest,
   }
 }

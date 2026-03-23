@@ -6,6 +6,10 @@ import { WorkspaceCanvasSurfaceV2 } from "./workspace-canvas-v2"
 
 import { type WorkspaceBoardToggleContext } from "./workspace-board-debug"
 import type {
+  WorkspaceCanvasCardFocusRequest,
+  WorkspaceCanvasTutorialCompletionExitRequest,
+} from "./workspace-canvas-v2/runtime/workspace-canvas-viewport-command"
+import type {
   WorkspaceBoardAcceleratorState,
   WorkspaceBoardOnboardingFlowState,
   WorkspaceBoardState,
@@ -26,10 +30,10 @@ export type WorkspaceBoardFlowSurfaceProps = {
   workspaceRoomName: string
   layoutFitRequestKey: number
   acceleratorFocusRequestKey: number
-  focusCardRequest: {
-    cardId: WorkspaceCardId
-    requestKey: number
-  } | null
+  tutorialRestartRequestKey: number
+  onInitialOnboardingSubmit: (form: FormData) => Promise<void>
+  focusCardRequest: WorkspaceCanvasCardFocusRequest
+  tutorialCompletionExitRequest: WorkspaceCanvasTutorialCompletionExitRequest
   journeyGuideState: WorkspaceJourneyGuideState
   onSizeChange: (cardId: WorkspaceCardId, size: WorkspaceCardSize) => void
   onCommunicationsChange: (next: WorkspaceCommunicationsState) => void
@@ -39,6 +43,7 @@ export type WorkspaceBoardFlowSurfaceProps = {
   onCloseAcceleratorStepNode: (source?: "dock" | "card" | "unknown") => void
   onTutorialPrevious: () => void
   onTutorialNext: () => void
+  onTutorialRestart: () => void
   onTutorialShortcutOpened: () => void
   onFocusCard: (cardId: WorkspaceCardId) => void
   onOnboardingFlowChange: (next: WorkspaceBoardOnboardingFlowState) => void
@@ -52,6 +57,7 @@ export type WorkspaceBoardFlowSurfaceProps = {
   onDisconnectAllConnections: () => void
   onResetDefaultConnections: () => void
   onCursorConnectionStateChange: (state: "connecting" | "live" | "degraded") => void
+  onTutorialCompletionExitHandled: () => void
 }
 
 export const WorkspaceBoardFlowSurface = memo(function WorkspaceBoardFlowSurface(
@@ -66,7 +72,10 @@ export const WorkspaceBoardFlowSurface = memo(function WorkspaceBoardFlowSurface
       organizationEditorData={props.organizationEditorData}
       layoutFitRequestKey={props.layoutFitRequestKey}
       acceleratorFocusRequestKey={props.acceleratorFocusRequestKey}
+      tutorialRestartRequestKey={props.tutorialRestartRequestKey}
+      onInitialOnboardingSubmit={props.onInitialOnboardingSubmit}
       focusCardRequest={props.focusCardRequest}
+      tutorialCompletionExitRequest={props.tutorialCompletionExitRequest}
       journeyGuideState={props.journeyGuideState}
       onSizeChange={props.onSizeChange}
       onCommunicationsChange={props.onCommunicationsChange}
@@ -76,6 +85,7 @@ export const WorkspaceBoardFlowSurface = memo(function WorkspaceBoardFlowSurface
       onCloseAcceleratorStepNode={props.onCloseAcceleratorStepNode}
       onTutorialPrevious={props.onTutorialPrevious}
       onTutorialNext={props.onTutorialNext}
+      onTutorialRestart={props.onTutorialRestart}
       onTutorialShortcutOpened={props.onTutorialShortcutOpened}
       onFocusCard={props.onFocusCard}
       onPersistNodePosition={props.onPersistNodePosition}
@@ -83,6 +93,7 @@ export const WorkspaceBoardFlowSurface = memo(function WorkspaceBoardFlowSurface
       onDisconnectConnection={props.onDisconnectConnection}
       onDisconnectAllConnections={props.onDisconnectAllConnections}
       onToggleCardVisibility={props.onToggleCardVisibility}
+      onTutorialCompletionExitHandled={props.onTutorialCompletionExitHandled}
     />
   )
 })

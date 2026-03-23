@@ -1,0 +1,1 @@
+export { getPrototypeLabPageInput } from "./queries"

@@ -5,8 +5,10 @@ import { cn } from "@/lib/utils"
 
 import { WORKSPACE_CARD_LAYOUT_SYSTEM } from "./workspace-board-card-layout-system"
 import { WorkspaceBoardCardHeader } from "./workspace-board-card-header"
-import { resolveWorkspaceCardNodeStyle } from "./workspace-board-layout"
-import { isWorkspaceNodeAutoHeightCard } from "./workspace-board-node-class-name"
+import {
+  resolveWorkspaceCardCanvasShellClassName,
+  resolveWorkspaceCardCanvasShellStyle,
+} from "./workspace-board-layout-config"
 import type { WorkspaceCardFrameProps } from "./workspace-board-types"
 
 export function WorkspaceBoardCardFrame({
@@ -16,6 +18,7 @@ export function WorkspaceBoardCardFrame({
   tone = "default",
   titleIcon,
   titleBadge,
+  headerDetails,
   headerMeta,
   headerAction,
   hideTitle = false,
@@ -33,13 +36,11 @@ export function WorkspaceBoardCardFrame({
   fullscreenControlMode = "overflow",
   children,
 }: WorkspaceCardFrameProps) {
-  const canvasNodeStyle = resolveWorkspaceCardNodeStyle(size, cardId)
-  const canvasShellStyle = isCanvasFullscreen || isWorkspaceNodeAutoHeightCard(cardId)
-    ? undefined
-    : {
-        minHeight: canvasNodeStyle.minHeight,
-        height: canvasNodeStyle.height,
-      }
+  const canvasShellStyle = resolveWorkspaceCardCanvasShellStyle({
+    size,
+    cardId,
+    isCanvasFullscreen,
+  })
 
   return (
     <Card
@@ -49,17 +50,11 @@ export function WorkspaceBoardCardFrame({
         "bg-card/95 flex min-h-0 min-w-0 flex-col overflow-visible",
         tone === "accelerator" &&
           "shadow-[0_14px_36px_-30px_rgba(15,23,42,0.18)]",
-        isCanvasFullscreen
-          ? "bg-card h-full rounded-none border-0 shadow-none"
-          : [
-              cardId === "accelerator" ||
-              cardId === "programs" ||
-              cardId === "calendar"
-                ? "h-auto shadow-none"
-                : "h-full shadow-none",
-              "border-border/70 border",
-              size === "sm" ? "rounded-[20px]" : "rounded-[24px]",
-            ]
+        resolveWorkspaceCardCanvasShellClassName({
+          size,
+          cardId,
+          isCanvasFullscreen,
+        })
       )}
     >
       <WorkspaceBoardCardHeader
@@ -68,6 +63,7 @@ export function WorkspaceBoardCardFrame({
         tone={tone}
         titleIcon={titleIcon}
         titleBadge={titleBadge}
+        headerDetails={headerDetails}
         headerMeta={headerMeta}
         headerAction={headerAction}
         hideTitle={hideTitle}
@@ -89,7 +85,7 @@ export function WorkspaceBoardCardFrame({
           cardId === "calendar" ? "pb-3" : "pb-4",
           presentationMode && "px-3.5 pt-0.5 pb-3",
           isCanvasFullscreen &&
-            (cardId === "vault"
+            (cardId === "roadmap"
               ? "overflow-hidden px-0 pt-0 pb-0"
               : "overflow-y-auto px-5 pt-2 pb-5"),
           contentClassName

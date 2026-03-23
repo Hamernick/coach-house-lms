@@ -3,6 +3,11 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import type { NotificationTone } from "@/lib/notifications"
+import {
+  buildPlatformSetupNotification,
+  hasSupabaseManagementApiToken,
+  isPlatformSetupNotificationId,
+} from "@/lib/supabase/management-api-config"
 
 export type { NotificationTone } from "@/lib/notifications"
 
@@ -101,15 +106,26 @@ export async function listNotificationsAction(): Promise<NotificationsListResult
 
   if (inboxResult.error) return { error: "Unable to load notifications." }
 
+  const isAdmin = await isAdminUser(supabase, user.id)
+  const syntheticInbox =
+    isAdmin && !hasSupabaseManagementApiToken()
+      ? [buildPlatformSetupNotification()]
+      : []
+
   return {
     ok: true,
-    inbox: (inboxResult.data ?? []).map(normalizeNotificationRow),
+    inbox: [
+      ...syntheticInbox,
+      ...(inboxResult.data ?? []).map(normalizeNotificationRow),
+    ],
   }
 }
 
 export async function markNotificationReadAction(
   notificationId: string
 ): Promise<NotificationActionResult> {
+  if (isPlatformSetupNotificationId(notificationId)) return { ok: true }
+
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -133,6 +149,8 @@ export async function markNotificationReadAction(
 export async function archiveNotificationAction(
   notificationId: string
 ): Promise<NotificationActionResult> {
+  if (isPlatformSetupNotificationId(notificationId)) return { ok: true }
+
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -156,6 +174,8 @@ export async function archiveNotificationAction(
 export async function unarchiveNotificationAction(
   notificationId: string
 ): Promise<NotificationActionResult> {
+  if (isPlatformSetupNotificationId(notificationId)) return { ok: true }
+
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },

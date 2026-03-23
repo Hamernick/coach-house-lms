@@ -77,6 +77,7 @@ export const WorkspaceBoardAcceleratorStepNode = memo(
           >
             <WorkspaceAcceleratorStepNodeCard
               step={data.step}
+              placeholderVideoUrl={data.placeholderVideoUrl}
               stepIndex={data.stepIndex}
               stepTotal={data.stepTotal}
               canGoPrevious={data.canGoPrevious}
@@ -87,6 +88,8 @@ export const WorkspaceBoardAcceleratorStepNode = memo(
               onNext={data.onNext}
               onComplete={data.onComplete}
               onClose={data.onClose}
+              tutorialCallout={data.tutorialCallout}
+              onWorkspaceOnboardingSubmit={data.onWorkspaceOnboardingSubmit}
             />
           </motion.div>
         </AnimatePresence>

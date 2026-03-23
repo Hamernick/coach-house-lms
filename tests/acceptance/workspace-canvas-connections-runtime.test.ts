@@ -4,6 +4,7 @@ import {
   buildWorkspaceCanvasV2Edges,
   resolveWorkspaceCanvasDisconnectActionSets,
   resolveWorkspaceCanvasConnectAttempt,
+  shouldLogWorkspaceCanvasDroppedConnections,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-connections"
 import type { WorkspaceCardReadiness } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-card-readiness"
 
@@ -82,7 +83,7 @@ describe("workspace canvas v2 runtime connections", () => {
   })
 
   it("builds only valid visible card edges and reports dropped ids", () => {
-    const { edges, droppedConnectionIds } = buildWorkspaceCanvasV2Edges({
+    const { edges, droppedConnectionIds, droppedConnections } = buildWorkspaceCanvasV2Edges({
       connections: [
         {
           id: "edge-valid",
@@ -97,7 +98,7 @@ describe("workspace canvas v2 runtime connections", () => {
         {
           id: "edge-unknown-node",
           source: "deck",
-          target: "vault",
+          target: "roadmap",
         },
         {
           id: "edge-hidden-target",
@@ -115,12 +116,13 @@ describe("workspace canvas v2 runtime connections", () => {
       readinessMap: {
         "organization-overview": READY,
         programs: READY,
-        vault: READY,
+        roadmap: READY,
         accelerator: READY,
         "brand-kit": EMPTY,
         "economic-engine": EMPTY,
         calendar: READY,
         communications: EMPTY,
+        atlas: EMPTY,
       },
       includeAcceleratorStepEdge: true,
       acceleratorWorkspaceNodeId: "accelerator",
@@ -136,6 +138,25 @@ describe("workspace canvas v2 runtime connections", () => {
       "edge-unknown-node",
       "edge-hidden-target",
     ])
+    expect(droppedConnections).toEqual([
+      { id: "edge-unknown-node", reason: "unknown-node-id" },
+      { id: "edge-hidden-target", reason: "hidden-node-id" },
+    ])
+  })
+
+  it("does not log dropped-connection warnings for hidden tutorial edges alone", () => {
+    expect(
+      shouldLogWorkspaceCanvasDroppedConnections([
+        { id: "edge-hidden-target", reason: "hidden-node-id" },
+      ]),
+    ).toBe(false)
+
+    expect(
+      shouldLogWorkspaceCanvasDroppedConnections([
+        { id: "edge-hidden-target", reason: "hidden-node-id" },
+        { id: "edge-unknown-node", reason: "unknown-node-id" },
+      ]),
+    ).toBe(true)
   })
 
   it("keeps real graph edges when the tutorial edge is rendered", () => {
@@ -155,12 +176,13 @@ describe("workspace canvas v2 runtime connections", () => {
       readinessMap: {
         "organization-overview": READY,
         programs: READY,
-        vault: READY,
+        roadmap: READY,
         accelerator: READY,
         "brand-kit": EMPTY,
         "economic-engine": EMPTY,
         calendar: READY,
         communications: EMPTY,
+        atlas: EMPTY,
       },
       includeAcceleratorStepEdge: false,
       acceleratorWorkspaceNodeId: null,
@@ -213,12 +235,13 @@ describe("workspace canvas v2 runtime connections", () => {
     const readinessMap = {
       "organization-overview": READY,
       programs: READY,
-      vault: READY,
+      roadmap: READY,
       accelerator: READY,
       "brand-kit": EMPTY,
       "economic-engine": EMPTY,
       calendar: READY,
       communications: EMPTY,
+      atlas: EMPTY,
     }
 
     expect(readinessMap.programs).toEqual(READY)

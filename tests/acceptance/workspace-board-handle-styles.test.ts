@@ -37,6 +37,6 @@ describe("workspace board handle styles", () => {
     expect(isWorkspaceNodeAutoHeightCard("programs")).toBe(true)
     expect(isWorkspaceNodeAutoHeightCard("accelerator")).toBe(true)
     expect(isWorkspaceNodeAutoHeightCard("calendar")).toBe(true)
-    expect(isWorkspaceNodeAutoHeightCard("communications")).toBe(false)
+    expect(isWorkspaceNodeAutoHeightCard("communications")).toBe(true)
   })
 })

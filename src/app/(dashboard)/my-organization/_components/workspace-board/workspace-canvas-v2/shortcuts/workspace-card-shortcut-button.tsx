@@ -1,63 +1,57 @@
 "use client"
 
-import { useRef } from "react"
+import type { SyntheticEvent } from "react"
 
+import {
+  getReactGrabLinkedSurfaceProps,
+  getReactGrabOwnerProps,
+} from "@/components/dev/react-grab-surface"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME,
+  WORKSPACE_TUTORIAL_OUTLINE_BUTTON_SURFACE_CLASSNAME,
+} from "@/components/workspace/workspace-tutorial-theme"
 import { cn } from "@/lib/utils"
 
 import { WorkspaceTutorialCallout } from "../../workspace-tutorial-callout"
 import type { WorkspaceCardShortcutItemModel } from "./workspace-card-shortcut-model"
 
-const WORKSPACE_SHORTCUT_ICON_ACCENTS: Record<
-  WorkspaceCardShortcutItemModel["id"],
-  {
-    surfaceClassName: string
-    iconClassName: string
+const WORKSPACE_SHORTCUT_VISIBLE_BUTTON_CLASSNAME =
+  "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+const WORKSPACE_SHORTCUT_SELECTED_BUTTON_CLASSNAME =
+  "bg-accent text-accent-foreground shadow-sm hover:bg-accent"
+const WORKSPACE_SHORTCUT_TUTORIAL_TOOLS_BUTTON_CLASSNAME =
+  "border-sky-300/70 bg-sky-50/85 text-sky-700 shadow-[0_10px_24px_-20px_rgba(14,165,233,0.85)] hover:bg-sky-100/90 dark:border-sky-400/45 dark:bg-sky-500/14 dark:text-sky-100 dark:hover:bg-sky-500/20"
+const WORKSPACE_CARD_SHORTCUT_BUTTON_SOURCE =
+  "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx"
+const WORKSPACE_TUTORIAL_THEME_SOURCE =
+  "src/components/workspace/workspace-tutorial-theme.ts"
+
+export function renderWorkspaceCardShortcutTooltipContent({
+  title,
+  comingSoon,
+}: {
+  title: string
+  comingSoon: boolean
+}) {
+  if (!comingSoon) {
+    return title
   }
-> = {
-  "organization-overview": {
-    surfaceClassName: "bg-slate-500/10 dark:bg-slate-400/12",
-    iconClassName: "text-slate-700 dark:text-slate-200",
-  },
-  accelerator: {
-    surfaceClassName: "bg-sky-500/10 dark:bg-sky-400/12",
-    iconClassName: "text-sky-700 dark:text-sky-200",
-  },
-  calendar: {
-    surfaceClassName: "bg-emerald-500/10 dark:bg-emerald-400/12",
-    iconClassName: "text-emerald-700 dark:text-emerald-200",
-  },
-  programs: {
-    surfaceClassName: "bg-amber-500/10 dark:bg-amber-400/12",
-    iconClassName: "text-amber-700 dark:text-amber-200",
-  },
-  vault: {
-    surfaceClassName: "bg-slate-500/10 dark:bg-slate-400/12",
-    iconClassName: "text-slate-700 dark:text-slate-200",
-  },
-  "brand-kit": {
-    surfaceClassName: "bg-slate-500/10 dark:bg-slate-400/12",
-    iconClassName: "text-slate-700 dark:text-slate-200",
-  },
-  "economic-engine": {
-    surfaceClassName: "bg-teal-500/10 dark:bg-teal-400/12",
-    iconClassName: "text-teal-700 dark:text-teal-200",
-  },
-  communications: {
-    surfaceClassName: "bg-orange-500/10 dark:bg-orange-400/12",
-    iconClassName: "text-orange-700 dark:text-orange-200",
-  },
+
+  return (
+    <div className="flex items-center gap-2">
+      <span>{title}</span>
+      <Badge
+        variant="outline"
+        className="rounded-full border-border/70 bg-muted/60 px-2 py-0 text-[10px] font-semibold text-foreground/80"
+      >
+        Coming soon
+      </Badge>
+    </div>
+  )
 }
-
-const WORKSPACE_SHORTCUT_TUTORIAL_BUTTON_CLASSNAME =
-  "border-sky-300/85 bg-sky-50/92 text-sky-700 shadow-[0_0_0_1px_rgba(125,211,252,0.35),0_10px_20px_-18px_rgba(14,165,233,0.55)] dark:border-sky-400/65 dark:bg-sky-500/10 dark:text-sky-200 dark:shadow-[0_0_0_1px_rgba(56,189,248,0.3),0_10px_20px_-18px_rgba(56,189,248,0.5)]"
-
-const WORKSPACE_SHORTCUT_TUTORIAL_ICON_SURFACE_CLASSNAME =
-  "bg-white/88 dark:bg-sky-500/14"
-
-const WORKSPACE_SHORTCUT_TUTORIAL_ICON_CLASSNAME =
-  "text-sky-700 dark:text-sky-200"
 
 export function WorkspaceCardShortcutButton({
   item,
@@ -66,90 +60,135 @@ export function WorkspaceCardShortcutButton({
 }) {
   const Icon = item.icon
   const tutorialCallout = item.tutorialCallout
-  const buttonRef = useRef<HTMLButtonElement | null>(null)
   const tutorialHighlighted = item.tutorialHighlighted
-  const iconAccent = WORKSPACE_SHORTCUT_ICON_ACCENTS[item.id]
+  const comingSoon = item.comingSoon
+  const tutorialIndicatorLabel =
+    tutorialCallout && item.id === "accelerator"
+      ? "Open the Accelerator"
+      : undefined
+  const reactGrabOwnerId = `workspace-card-shortcut:${item.id}`
+  const isTutorialToolsStepHighlight = tutorialHighlighted && tutorialCallout === null
+  const stopShortcutInteractionPropagation = (event: SyntheticEvent) => {
+    event.stopPropagation()
+  }
+  const handleShortcutClick = (event: SyntheticEvent) => {
+    event.preventDefault()
+    event.stopPropagation()
+    item.onPress()
+  }
+  const buttonVariant = "outline"
 
   const iconNode = (
-    <span
+    <Icon
       className={cn(
-        "inline-flex size-6 items-center justify-center rounded-[8px] transition-colors duration-150",
-        iconAccent.surfaceClassName,
-        tutorialHighlighted && WORKSPACE_SHORTCUT_TUTORIAL_ICON_SURFACE_CLASSNAME,
-        item.selected && "shadow-[inset_0_0_0_1px_rgba(255,255,255,0.32)] dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]",
+        "h-5 w-5 transition-opacity duration-150",
+        item.selected && "opacity-95",
+        item.visible && !item.selected && "opacity-90",
+        !item.visible && !item.selected && "opacity-80",
+      )}
+      aria-hidden
+    />
+  )
+
+  const button = (
+    <Button
+      type="button"
+      variant={buttonVariant}
+      size="icon"
+      onClick={handleShortcutClick}
+      onMouseDownCapture={stopShortcutInteractionPropagation}
+      onPointerDownCapture={stopShortcutInteractionPropagation}
+      onPointerDown={stopShortcutInteractionPropagation}
+      aria-label={item.title}
+      aria-pressed={item.selected}
+      aria-disabled={comingSoon}
+      {...getReactGrabOwnerProps({
+        ownerId: reactGrabOwnerId,
+        component: "WorkspaceCardShortcutButton",
+        source: WORKSPACE_CARD_SHORTCUT_BUTTON_SOURCE,
+        slot: "trigger",
+        variant: item.id,
+        tokenSource: WORKSPACE_TUTORIAL_THEME_SOURCE,
+        primitiveImport: "@/components/ui/button",
+      })}
+      className={cn(
+        "nodrag nopan size-10 rounded-xl [&_svg]:size-5",
+        WORKSPACE_TUTORIAL_OUTLINE_BUTTON_SURFACE_CLASSNAME,
+        item.visible && WORKSPACE_SHORTCUT_VISIBLE_BUTTON_CLASSNAME,
+        isTutorialToolsStepHighlight &&
+          WORKSPACE_SHORTCUT_TUTORIAL_TOOLS_BUTTON_CLASSNAME,
+        comingSoon && "cursor-not-allowed opacity-70",
+        (tutorialHighlighted || item.selected) &&
+          !isTutorialToolsStepHighlight &&
+          WORKSPACE_SHORTCUT_SELECTED_BUTTON_CLASSNAME,
       )}
     >
-      <Icon
-        className={cn(
-          "h-4 w-4 transition-colors duration-150",
-          iconAccent.iconClassName,
-          tutorialHighlighted && WORKSPACE_SHORTCUT_TUTORIAL_ICON_CLASSNAME,
-          !item.visible && !item.selected && "opacity-80",
-        )}
-        aria-hidden
-      />
-    </span>
+      {iconNode}
+    </Button>
   )
 
   if (tutorialCallout) {
     return (
-      <>
-        <Button
-          ref={buttonRef}
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={item.onPress}
-          aria-label={item.title}
-          aria-pressed={item.selected}
-          className={cn(
-            "h-[34px] w-[34px] rounded-[12px] border transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-1",
-            item.selected
-              ? "border-neutral-300/80 bg-neutral-100/74 text-neutral-500 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.45)] dark:border-neutral-700/75 dark:bg-neutral-900/90 dark:text-neutral-200 dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-              : item.visible
-                ? "border-neutral-300/65 bg-neutral-100/58 text-neutral-500 dark:border-neutral-700/70 dark:bg-neutral-900/85 dark:text-neutral-300"
-                : "border-neutral-300/55 bg-neutral-100/40 text-neutral-400 dark:border-neutral-700/60 dark:bg-neutral-900/72 dark:text-neutral-500",
-            WORKSPACE_SHORTCUT_TUTORIAL_BUTTON_CLASSNAME,
-          )}
-        >
-          {iconNode}
-        </Button>
+      <div className="relative inline-flex overflow-visible">
         <WorkspaceTutorialCallout
-          anchorRef={buttonRef}
-          title={item.title}
-          instruction={tutorialCallout.instruction}
-          emphasis="tap-here"
+          reactGrabOwnerId={`${reactGrabOwnerId}:callout`}
+          mode="indicator"
+          tapHereLabel={tutorialIndicatorLabel}
+          tooltipContentClassName={WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME}
+          indicatorSide="right"
+          indicatorAnchorAlign="end"
+          indicatorAnchorVerticalAlign="center"
+          indicatorSideOffset={12}
         />
-      </>
+        <Tooltip>
+          <TooltipTrigger asChild>{button}</TooltipTrigger>
+          <TooltipContent
+            side="left"
+            align="center"
+            sideOffset={12}
+            {...getReactGrabLinkedSurfaceProps({
+            ownerId: reactGrabOwnerId,
+            component: "WorkspaceCardShortcutButton",
+            source: WORKSPACE_CARD_SHORTCUT_BUTTON_SOURCE,
+            slot: "tooltip-content",
+            surfaceKind: "content",
+            tokenSource: WORKSPACE_TUTORIAL_THEME_SOURCE,
+            primitiveImport: "@/components/ui/tooltip",
+          })}
+            className={WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME}
+          >
+            {renderWorkspaceCardShortcutTooltipContent({
+              title: item.title,
+              comingSoon,
+            })}
+          </TooltipContent>
+        </Tooltip>
+      </div>
     )
   }
 
   return (
     <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          ref={buttonRef}
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={item.onPress}
-          aria-label={item.title}
-          aria-pressed={item.selected}
-          className={cn(
-            "h-[34px] w-[34px] rounded-[12px] border transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-1",
-            item.selected
-              ? "border-neutral-300/80 bg-neutral-100/74 text-neutral-500 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.45)] dark:border-neutral-700/75 dark:bg-neutral-900/90 dark:text-neutral-200 dark:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-              : item.visible
-                ? "border-neutral-300/65 bg-neutral-100/58 text-neutral-500 dark:border-neutral-700/70 dark:bg-neutral-900/85 dark:text-neutral-300"
-                : "border-neutral-300/55 bg-neutral-100/40 text-neutral-400 dark:border-neutral-700/60 dark:bg-neutral-900/72 dark:text-neutral-500",
-            tutorialHighlighted && WORKSPACE_SHORTCUT_TUTORIAL_BUTTON_CLASSNAME,
-          )}
-        >
-          {iconNode}
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent side="left" align="center" sideOffset={12}>
-        {item.title}
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
+      <TooltipContent
+        side="left"
+        align="center"
+        sideOffset={12}
+        {...getReactGrabLinkedSurfaceProps({
+          ownerId: reactGrabOwnerId,
+          component: "WorkspaceCardShortcutButton",
+          source: WORKSPACE_CARD_SHORTCUT_BUTTON_SOURCE,
+          slot: "tooltip-content",
+          surfaceKind: "content",
+          tokenSource: WORKSPACE_TUTORIAL_THEME_SOURCE,
+          primitiveImport: "@/components/ui/tooltip",
+        })}
+        className={WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME}
+      >
+        {renderWorkspaceCardShortcutTooltipContent({
+          title: item.title,
+          comingSoon,
+        })}
       </TooltipContent>
     </Tooltip>
   )

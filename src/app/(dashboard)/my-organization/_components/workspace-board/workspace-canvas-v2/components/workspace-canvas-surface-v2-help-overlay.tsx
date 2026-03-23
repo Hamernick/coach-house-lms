@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 import GripIcon from "lucide-react/dist/esm/icons/grip"
 import InfoIcon from "lucide-react/dist/esm/icons/info"
@@ -46,35 +46,78 @@ const WORKSPACE_CANVAS_HELP_ITEMS: WorkspaceCanvasHelpItem[] = [
   },
 ]
 
-export function WorkspaceCanvasSurfaceV2HelpOverlay() {
+export const WORKSPACE_CANVAS_HELP_TIP_STORAGE_KEY =
+  "workspace-canvas-help-tip-dismissed"
+
+export function resolveWorkspaceCanvasHelpTipInitialVisibility() {
+  if (typeof window === "undefined") {
+    return true
+  }
+
+  return window.localStorage.getItem(WORKSPACE_CANVAS_HELP_TIP_STORAGE_KEY) !== "true"
+}
+
+export function WorkspaceCanvasSurfaceV2HelpOverlay({
+  integrated = false,
+}: {
+  integrated?: boolean
+}) {
   const [tipVisible, setTipVisible] = useState(true)
+
+  useEffect(() => {
+    setTipVisible(resolveWorkspaceCanvasHelpTipInitialVisibility())
+  }, [])
+
+  const dismissTip = useCallback(() => {
+    setTipVisible(false)
+    if (typeof window === "undefined") return
+    window.localStorage.setItem(WORKSPACE_CANVAS_HELP_TIP_STORAGE_KEY, "true")
+  }, [])
 
   const handleHelpOpenChange = (open: boolean) => {
     if (open) {
-      setTipVisible(false)
+      dismissTip()
     }
   }
 
   return (
-    <div className="pointer-events-none absolute right-3 top-3 z-20">
+    <div
+      className={
+        integrated
+          ? "pointer-events-none relative"
+          : "pointer-events-none absolute right-3 top-3 z-20"
+      }
+    >
       <div className="relative flex items-center justify-end">
         {tipVisible ? (
-          <div className="pointer-events-auto absolute right-full top-1/2 mr-2 -translate-y-1/2">
-            <div className="bg-primary text-primary-foreground relative flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs leading-tight shadow-md">
-              <span className="whitespace-nowrap">Hover for canvas help</span>
+          <div
+            className={
+              integrated
+                ? "pointer-events-auto absolute right-0 top-full mt-2"
+                : "pointer-events-auto absolute right-full top-1/2 mr-2 -translate-y-1/2"
+            }
+          >
+            <div className="bg-primary text-primary-foreground relative flex items-center gap-2 rounded-md px-3 py-1.5 text-xs leading-tight shadow-md">
+              <span className="min-w-0 flex-1 whitespace-nowrap">
+                Hover for canvas help
+              </span>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
                 aria-label="Close canvas help tooltip"
-                className="size-4 rounded-sm p-0 opacity-80 shadow-none transition-opacity hover:bg-transparent hover:text-current hover:opacity-100 focus-visible:ring-2 focus-visible:ring-primary-foreground/70"
-                onClick={() => setTipVisible(false)}
+                className="ml-auto size-4 shrink-0 rounded-sm p-0 opacity-80 shadow-none transition-opacity hover:bg-transparent hover:text-current hover:opacity-100 focus-visible:ring-2 focus-visible:ring-primary-foreground/70"
+                onClick={dismissTip}
               >
                 <XIcon className="size-3" aria-hidden />
               </Button>
               <span
                 aria-hidden
-                className="bg-primary absolute -right-1 top-1/2 size-2 -translate-y-1/2 rotate-45 rounded-[2px]"
+                className={
+                  integrated
+                    ? "bg-primary absolute -top-1 right-4 size-2 rotate-45 rounded-[2px]"
+                    : "bg-primary absolute -right-1 top-1/2 size-2 -translate-y-1/2 rotate-45 rounded-[2px]"
+                }
               />
             </div>
           </div>
@@ -92,7 +135,7 @@ export function WorkspaceCanvasSurfaceV2HelpOverlay() {
               size="icon"
               aria-label="Workspace canvas help"
               className="pointer-events-auto rounded-full shadow-sm backdrop-blur-sm"
-              onClick={() => setTipVisible(false)}
+              onClick={dismissTip}
             >
               <InfoIcon aria-hidden />
             </Button>
@@ -102,6 +145,7 @@ export function WorkspaceCanvasSurfaceV2HelpOverlay() {
             align="end"
             side="bottom"
             sideOffset={10}
+            collisionPadding={16}
             className="pointer-events-auto w-80 rounded-2xl p-0"
           >
             <div className="flex flex-col">

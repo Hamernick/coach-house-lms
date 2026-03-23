@@ -1,0 +1,59 @@
+import React from "react"
+import { renderToStaticMarkup } from "react-dom/server"
+import { describe, expect, it } from "vitest"
+
+import { TOOLTIP_ARROW_CLASSNAME } from "@/components/ui/tooltip"
+import { WorkspaceTutorialCallout } from "@/components/workspace/workspace-tutorial-callout"
+
+describe("workspace tutorial callout", () => {
+  it("renders an inspectable indicator wrapper for the arrow callout", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(WorkspaceTutorialCallout, {
+        mode: "indicator",
+        tapHereLabel: "Open the Accelerator",
+      }),
+    )
+
+    expect(markup).toContain('data-slot="workspace-tutorial-indicator-anchor"')
+    expect(markup).toContain('aria-describedby=')
+    expect(markup).toContain('data-state="instant-open"')
+    expect(markup).toContain('aria-hidden="true"')
+    expect(markup).toContain('data-react-grab-anchor="WorkspaceTutorialCallout"')
+    expect(markup).toContain("data-react-grab-owner-id=")
+    expect(markup).toContain(
+      'data-react-grab-owner-source="src/components/workspace/workspace-tutorial-callout.tsx"',
+    )
+    expect(markup).toContain("data-react-grab-link-id=")
+    expect(TOOLTIP_ARROW_CLASSNAME).toContain("rotate-45")
+    expect(TOOLTIP_ARROW_CLASSNAME).toContain("rounded-[2px]")
+    expect(TOOLTIP_ARROW_CLASSNAME).toContain("bg-popover")
+    expect(markup).not.toContain("workspace-tutorial-pointer")
+    expect(markup).not.toContain("rounded-xl border border-border/70 bg-popover/95")
+  })
+
+  it("supports explicit indicator anchor geometry without class-based offsets", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(WorkspaceTutorialCallout, {
+        mode: "indicator",
+        indicatorAnchorAlign: "start",
+        indicatorOffsetX: 24,
+        indicatorOffsetY: -12,
+      }),
+    )
+
+    expect(markup).toContain('style="left:0;top:0;transform:translate(24px, -12px)"')
+  })
+
+  it("can center the persistent indicator vertically while keeping the bubble on the right", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(WorkspaceTutorialCallout, {
+        mode: "indicator",
+        tapHereLabel: "Open the Accelerator",
+        indicatorSide: "right",
+        indicatorAnchorVerticalAlign: "center",
+      }),
+    )
+
+    expect(markup).toContain('style="left:50%;top:50%;transform:translate(calc(-50% + 0px), calc(-50% + 0px))"')
+  })
+})

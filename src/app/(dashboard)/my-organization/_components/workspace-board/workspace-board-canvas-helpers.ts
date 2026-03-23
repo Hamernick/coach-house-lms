@@ -3,14 +3,20 @@
 import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from "react"
 
 import {
-  buildWorkspaceCanvasTutorialCompletionHiddenCardIds,
   resolveWorkspaceCanvasTutorialStepCount,
   resolveWorkspaceCanvasTutorialContinueMode,
   resolveWorkspaceCanvasTutorialSelectedCardId,
   resolveWorkspaceCanvasTutorialVisibleCardIds,
 } from "@/features/workspace-canvas-tutorial"
 
-import { completeWorkspaceCanvasTutorialAction } from "../../_lib/workspace-actions"
+import {
+  completeWorkspaceCanvasTutorialAction,
+  saveWorkspaceBoardStateAction,
+} from "../../_lib/workspace-actions"
+import {
+  type WorkspaceCanvasCardFocusRequest,
+  type WorkspaceCanvasTutorialCompletionExitRequest,
+} from "./workspace-canvas-v2/runtime/workspace-canvas-viewport-command"
 import { buildAutoLayoutNodesForMode } from "./workspace-board-auto-layout-modes"
 import {
   beginWorkspaceBoardInteraction,
@@ -26,12 +32,13 @@ import type {
   WorkspaceCardId,
   WorkspaceJourneyGuideState,
 } from "./workspace-board-types"
+import { isWorkspaceRestVisibleCardId } from "@/lib/workspace-card-policy"
 import { reduceWorkspaceBoardVisibility } from "./workspace-board-visibility-reducer"
+import { buildCompletedWorkspaceTutorialBoardState } from "./workspace-board-onboarding-flow"
 
-export type WorkspaceCardFocusRequest = {
-  cardId: WorkspaceCardId
-  requestKey: number
-} | null
+export type WorkspaceCardFocusRequest = WorkspaceCanvasCardFocusRequest
+export type WorkspaceTutorialCompletionExitRequest =
+  WorkspaceCanvasTutorialCompletionExitRequest
 
 export function isBoardStateContentEqual(
   left: WorkspaceBoardState,
@@ -191,41 +198,6 @@ export function buildToggleCardVisibilityHandler({
   }
 }
 
-export function buildCompletedWorkspaceTutorialBoardState(
-  previous: WorkspaceBoardState,
-): WorkspaceBoardState {
-  const nextHiddenCardIds = buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
-  const nextConnections = ensureWorkspaceConnection({
-    connections: previous.connections,
-    source: "organization-overview",
-    target: "accelerator",
-  })
-  const nextState: WorkspaceBoardState = {
-    ...previous,
-    onboardingFlow: {
-      ...previous.onboardingFlow,
-      active: false,
-      tutorialStepIndex: resolveWorkspaceCanvasTutorialStepCount() - 1,
-      updatedAt: new Date().toISOString(),
-    },
-    connections: nextConnections,
-    hiddenCardIds: nextHiddenCardIds,
-    visibility: {
-      allCardsHiddenExplicitly: false,
-    },
-  }
-
-  return {
-    ...nextState,
-    nodes: buildAutoLayoutNodesForMode({
-      mode: previous.autoLayoutMode,
-      existingNodes: previous.nodes,
-      hiddenCardIds: nextHiddenCardIds,
-      connections: nextConnections,
-    }),
-  }
-}
-
 export function useWorkspaceTutorialAutoFocus({
   tutorialActive,
   tutorialStepIndex,
@@ -272,17 +244,84 @@ export function useWorkspaceTutorialAutoFocus({
 }
 
 export function useWorkspaceTutorialCompletion({
+  allowEditing,
+  boardState,
+  journeyGuideState,
   setBoardState,
-  setLayoutFitRequestKey,
+  setTutorialCompletionExitRequest,
 }: {
+  allowEditing: boolean
+  boardState: WorkspaceBoardState
+  journeyGuideState: WorkspaceJourneyGuideState
   setBoardState: Dispatch<SetStateAction<WorkspaceBoardState>>
-  setLayoutFitRequestKey: Dispatch<SetStateAction<number>>
+  setTutorialCompletionExitRequest: Dispatch<
+    SetStateAction<WorkspaceTutorialCompletionExitRequest>
+  >
 }) {
   return useCallback(() => {
-    setBoardState((previous) => buildCompletedWorkspaceTutorialBoardState(previous))
-    setLayoutFitRequestKey((previous) => previous + 1)
-    void completeWorkspaceCanvasTutorialAction()
-  }, [setBoardState, setLayoutFitRequestKey])
+    const nextBoardState = buildCompletedWorkspaceTutorialBoardState(boardState)
+    setBoardState(nextBoardState)
+    setTutorialCompletionExitRequest((previous) => {
+      const requestKey = (previous?.requestKey ?? 0) + 1
+      return resolveWorkspaceTutorialCompletionExitRequest({
+        boardState: nextBoardState,
+        targetCardId: journeyGuideState.targetCardId,
+        requestKey,
+      })
+    })
+    void (async () => {
+      if (allowEditing) {
+        const persistResult = await saveWorkspaceBoardStateAction(nextBoardState)
+        if ("error" in persistResult) {
+          console.error(
+            "[workspace-board] Unable to persist completed tutorial state.",
+            persistResult.error,
+          )
+        }
+      }
+
+      const completionResult = await completeWorkspaceCanvasTutorialAction()
+      if ("error" in completionResult) {
+        console.error(
+          "[workspace-board] Unable to mark workspace tutorial complete.",
+          completionResult.error,
+        )
+      }
+    })()
+  }, [
+    allowEditing,
+    boardState,
+    journeyGuideState.targetCardId,
+    setBoardState,
+    setTutorialCompletionExitRequest,
+  ])
+}
+
+export function resolveWorkspaceTutorialCompletionExitRequest({
+  boardState,
+  targetCardId,
+  requestKey,
+}: {
+  boardState: WorkspaceBoardState
+  targetCardId: WorkspaceCardId
+  requestKey: number
+}): NonNullable<WorkspaceTutorialCompletionExitRequest> {
+  if (
+    boardState.autoLayoutMode === "timeline" &&
+    isWorkspaceRestVisibleCardId(targetCardId) &&
+    !boardState.hiddenCardIds.includes(targetCardId)
+  ) {
+    return {
+      kind: "focus-card",
+      cardId: targetCardId,
+      requestKey,
+    }
+  }
+
+  return {
+    kind: "fit-visible",
+    requestKey,
+  }
 }
 
 export function useWorkspaceTutorialLayoutFit({
@@ -321,24 +360,30 @@ export function useWorkspaceJourneyAutoFocus({
   journeyGuideState,
   setFocusCardRequest,
   disabled = false,
+  preserveFocusKeyWhenDisabled = false,
 }: {
   autoLayoutMode: WorkspaceAutoLayoutMode
   journeyGuideState: WorkspaceJourneyGuideState
   setFocusCardRequest: Dispatch<SetStateAction<WorkspaceCardFocusRequest>>
   disabled?: boolean
+  preserveFocusKeyWhenDisabled?: boolean
 }) {
   const lastJourneyFocusKeyRef = useRef<string | null>(null)
+  const nextFocusKey = `${autoLayoutMode}:${journeyGuideState.stage}:${journeyGuideState.targetCardId}`
 
   useEffect(() => {
     if (disabled) {
-      lastJourneyFocusKeyRef.current = null
+      if (preserveFocusKeyWhenDisabled && autoLayoutMode === "timeline") {
+        lastJourneyFocusKeyRef.current = nextFocusKey
+      } else {
+        lastJourneyFocusKeyRef.current = null
+      }
       return
     }
     if (autoLayoutMode !== "timeline") {
       lastJourneyFocusKeyRef.current = null
       return
     }
-    const nextFocusKey = `${autoLayoutMode}:${journeyGuideState.stage}:${journeyGuideState.targetCardId}`
     if (lastJourneyFocusKeyRef.current === nextFocusKey) return
     lastJourneyFocusKeyRef.current = nextFocusKey
     setFocusCardRequest((previous) => ({
@@ -350,6 +395,8 @@ export function useWorkspaceJourneyAutoFocus({
     disabled,
     journeyGuideState.stage,
     journeyGuideState.targetCardId,
+    nextFocusKey,
+    preserveFocusKeyWhenDisabled,
     setFocusCardRequest,
   ])
 }

@@ -1,17 +1,24 @@
 "use client"
 
+import { useMemo } from "react"
+
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 import ChevronUpIcon from "lucide-react/dist/esm/icons/chevron-up"
 import Clock4Icon from "lucide-react/dist/esm/icons/clock-4"
+import InfoIcon from "lucide-react/dist/esm/icons/info"
 import Loader2Icon from "lucide-react/dist/esm/icons/loader-2"
 import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  listWorkspaceCoachInviteShortcuts,
+} from "../../_lib/workspace-collaboration-invite-helpers"
 
 import {
   clampDurationValue,
@@ -25,17 +32,18 @@ import {
   type WorkspaceInviteAccessLevel,
   type WorkspaceInviteAudience,
 } from "./workspace-board-invite-sheet-helpers"
+import {
+  matchesCoachShortcutMember,
+  toCoachInviteTargetOption,
+  toInviteTargetOption,
+  type InviteRow,
+  WorkspaceTemporaryInvitePicker,
+} from "./workspace-board-invite-sheet-content-support"
 import type {
-  WorkspaceCollaborationInvite,
   WorkspaceCollaborationInviteStatus,
   WorkspaceDurationUnit,
   WorkspaceMemberOption,
 } from "./workspace-board-types"
-
-type InviteRow = {
-  invite: WorkspaceCollaborationInvite
-  status: WorkspaceCollaborationInviteStatus
-}
 
 export function WorkspaceBoardInviteSheetBody({
   canInvite,
@@ -80,9 +88,33 @@ export function WorkspaceBoardInviteSheetBody({
   historicalInvites: InviteRow[]
   onRevoke: (inviteId: string) => void
 }) {
-  const normalizedSelectedMemberId = memberOptions.some((member) => member.userId === selectedMemberId)
+  const coachShortcuts = useMemo(() => listWorkspaceCoachInviteShortcuts(), [])
+  const coachTargets = useMemo(
+    () => coachShortcuts.map(toCoachInviteTargetOption),
+    [coachShortcuts],
+  )
+  const memberTargets = useMemo(
+    () =>
+      memberOptions
+        .filter(
+          (member) =>
+            !coachShortcuts.some((shortcut) =>
+              matchesCoachShortcutMember({ member, shortcut }),
+            ),
+        )
+        .map(toInviteTargetOption),
+    [coachShortcuts, memberOptions],
+  )
+  const inviteTargets = useMemo(
+    () => [...coachTargets, ...memberTargets],
+    [coachTargets, memberTargets],
+  )
+  const normalizedSelectedMemberId = inviteTargets.some((member) => member.id === selectedMemberId)
     ? selectedMemberId
     : undefined
+  const selectedMember = normalizedSelectedMemberId
+    ? inviteTargets.find((member) => member.id === normalizedSelectedMemberId) ?? null
+    : null
   const accessCopy = resolveWorkspaceInviteAccessCopy(inviteAudience, inviteAccessLevel)
   const accessAvailable = isWorkspaceInviteAccessAvailable(inviteAudience, inviteAccessLevel)
   const isTeamInvite = inviteAudience === "team"
@@ -99,47 +131,47 @@ export function WorkspaceBoardInviteSheetBody({
             onValueChange={(value) => onInviteAudienceChange(value as WorkspaceInviteAudience)}
             className="gap-0"
           >
-            <TabsList className="grid w-full grid-cols-2 rounded-full border border-border/60 bg-background/70 p-1">
-              <TabsTrigger
-                value="temporary"
-                className="rounded-full px-3 py-1.5 text-xs data-[state=active]:bg-foreground data-[state=active]:text-background"
-              >
-                Temporary
-              </TabsTrigger>
+            <TabsList className="w-fit max-w-full gap-1 self-start rounded-full border border-border/60 bg-background/70 p-1">
               <TabsTrigger
                 value="team"
                 className="rounded-full px-3 py-1.5 text-xs data-[state=active]:bg-foreground data-[state=active]:text-background"
               >
                 Team
               </TabsTrigger>
+              <TabsTrigger
+                value="temporary"
+                className="rounded-full px-3 py-1.5 text-xs data-[state=active]:bg-foreground data-[state=active]:text-background"
+              >
+                Temporary
+              </TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-            Access
-          </p>
-          <Tabs
-            value={inviteAccessLevel}
-            onValueChange={(value) => onInviteAccessLevelChange(value as WorkspaceInviteAccessLevel)}
-            className="gap-0"
+          <Label
+            htmlFor="workspace-invite-access"
+            className="text-xs font-medium uppercase tracking-wide text-muted-foreground"
           >
-            <TabsList className="grid w-full grid-cols-2 rounded-full border border-border/60 bg-background/70 p-1">
-              <TabsTrigger
-                value="viewer"
-                className="rounded-full px-3 py-1.5 text-xs data-[state=active]:bg-foreground data-[state=active]:text-background"
-              >
-                Viewer
-              </TabsTrigger>
-              <TabsTrigger
-                value="editor"
-                className="rounded-full px-3 py-1.5 text-xs data-[state=active]:bg-foreground data-[state=active]:text-background"
-              >
-                Editor
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+            Access
+          </Label>
+          <Select
+            value={inviteAccessLevel}
+            onValueChange={(value) =>
+              onInviteAccessLevelChange(value as WorkspaceInviteAccessLevel)
+            }
+          >
+            <SelectTrigger
+              id="workspace-invite-access"
+              className="w-full bg-background/70 sm:w-[180px]"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="viewer">Viewer</SelectItem>
+              <SelectItem value="editor">Editor</SelectItem>
+            </SelectContent>
+          </Select>
           <div className="rounded-md border border-border/60 bg-background/60 px-3 py-2">
             <p className="text-sm font-medium text-foreground">{accessCopy.title}</p>
             <p className="mt-1 text-xs leading-5 text-muted-foreground">
@@ -171,27 +203,13 @@ export function WorkspaceBoardInviteSheetBody({
           </div>
         ) : accessAvailable ? (
           <>
-            <div className="grid gap-2">
-              <Label htmlFor="workspace-invite-member">Teammate</Label>
-              <Select value={normalizedSelectedMemberId} onValueChange={onSelectedMemberIdChange}>
-                <SelectTrigger id="workspace-invite-member" className="w-full">
-                  <SelectValue placeholder="Select teammate" />
-                </SelectTrigger>
-                <SelectContent>
-                  {memberOptions.length > 0 ? (
-                    memberOptions.map((member) => (
-                      <SelectItem key={member.userId} value={member.userId}>
-                        {member.name?.trim() || member.email || member.userId}
-                      </SelectItem>
-                    ))
-                  ) : (
-                    <SelectItem value="none" disabled>
-                      All members already invited
-                    </SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-            </div>
+            <WorkspaceTemporaryInvitePicker
+              coachTargets={coachTargets}
+              memberTargets={memberTargets}
+              selectedTargetId={normalizedSelectedMemberId}
+              selectedTarget={selectedMember}
+              onSelectedTargetChange={onSelectedMemberIdChange}
+            />
 
             <div className="grid grid-cols-[1fr_120px] gap-2">
               <div className="grid gap-2">
@@ -242,7 +260,12 @@ export function WorkspaceBoardInviteSheetBody({
               </div>
             </div>
 
-            <Button type="button" className="h-9 w-full" onClick={onCreate} disabled={isPending || !canInvite}>
+            <Button
+              type="button"
+              className="h-9 w-full"
+              onClick={onCreate}
+              disabled={isPending || !canInvite || !selectedMemberId}
+            >
               {isPending ? <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden /> : null}
               Create temporary invite
             </Button>
@@ -300,10 +323,35 @@ export function WorkspaceBoardInviteSheetBody({
         </section>
       ) : (
         <section className="space-y-2">
-          <h3 className="text-sm font-medium">Team access</h3>
-          <p className="rounded-md border border-dashed border-border/60 px-3 py-2 text-xs leading-5 text-muted-foreground">
-            Team invites create full organization access and last 7 days until accepted. Use Viewer for read-only access and Editor for day-to-day workspace editing.
-          </p>
+          <div className="flex items-center gap-1.5">
+            <h3 className="text-sm font-medium">Team access</h3>
+            <HoverCard openDelay={120} closeDelay={120}>
+              <HoverCardTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Team invite details"
+                  className="size-6 rounded-full text-muted-foreground"
+                >
+                  <InfoIcon aria-hidden />
+                </Button>
+              </HoverCardTrigger>
+              <HoverCardContent
+                align="start"
+                side="right"
+                sideOffset={8}
+                className="w-[18rem] rounded-xl p-0"
+              >
+                <div className="flex flex-col gap-1 px-3 py-3">
+                  <p className="text-sm font-medium text-foreground">Team invite details</p>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    Team invites create full organization access and stay active for 7 days. Existing Coach House users receive an in-app request, while new users are emailed a secure invite.
+                  </p>
+                </div>
+              </HoverCardContent>
+            </HoverCard>
+          </div>
         </section>
       )}
 

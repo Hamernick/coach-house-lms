@@ -46,7 +46,7 @@ function buildOnboardingErrorRedirect({
     params.set("member_onboarding", "1")
     return `/find?${params.toString()}`
   }
-  return `/organization?onboarding=1&${params.toString()}`
+  return `/onboarding?${params.toString()}`
 }
 
 function slugify(input: string): string {
@@ -69,7 +69,7 @@ export async function completeOnboardingAction(form: FormData) {
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw supabaseErrorToError(userError, "Unable to load user.")
   }
-  if (!user) redirect("/login?redirect=/organization")
+  if (!user) redirect("/login?redirect=/onboarding")
 
   const first = String(form.get("firstName") || "").trim()
   const last = String(form.get("lastName") || "").trim()
@@ -92,6 +92,12 @@ export async function completeOnboardingAction(form: FormData) {
     roleInterestRaw === "board_member"
       ? roleInterestRaw
       : null
+  const onboardingModeRaw = String(form.get("onboardingMode") || "").trim()
+  const onboardingMode =
+    onboardingModeRaw === "post_signup_access" ||
+    onboardingModeRaw === "workspace_setup"
+      ? onboardingModeRaw
+      : "full"
 
   const formationStatusRaw = String(form.get("formationStatus") || "").trim()
   const formationStatus =
@@ -111,6 +117,9 @@ export async function completeOnboardingAction(form: FormData) {
       }),
     )
   }
+
+  const requiresOrganizationSetup =
+    intentFocus === "build" && onboardingMode !== "post_signup_access"
 
   if (intentFocus === "build") {
     const { data: activeSubscription, error: activeSubscriptionError } = await supabase
@@ -135,56 +144,58 @@ export async function completeOnboardingAction(form: FormData) {
       )
     }
 
-    if (!orgName) {
-      redirect(
-        buildOnboardingErrorRedirect({
-          intentFocus,
-          error: "missing_org_name",
-        }),
-      )
-    }
-    if (!normalizedSlug) {
-      redirect(
-        buildOnboardingErrorRedirect({
-          intentFocus,
-          error: "missing_org_slug",
-        }),
-      )
-    }
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) {
-      redirect(
-        buildOnboardingErrorRedirect({
-          intentFocus,
-          error: "invalid_org_slug",
-          slug: normalizedSlug,
-        }),
-      )
-    }
-    if (RESERVED_SLUGS.has(normalizedSlug)) {
-      redirect(
-        buildOnboardingErrorRedirect({
-          intentFocus,
-          error: "reserved_org_slug",
-          slug: normalizedSlug,
-        }),
-      )
-    }
+    if (requiresOrganizationSetup) {
+      if (!orgName) {
+        redirect(
+          buildOnboardingErrorRedirect({
+            intentFocus,
+            error: "missing_org_name",
+          }),
+        )
+      }
+      if (!normalizedSlug) {
+        redirect(
+          buildOnboardingErrorRedirect({
+            intentFocus,
+            error: "missing_org_slug",
+          }),
+        )
+      }
+      if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) {
+        redirect(
+          buildOnboardingErrorRedirect({
+            intentFocus,
+            error: "invalid_org_slug",
+            slug: normalizedSlug,
+          }),
+        )
+      }
+      if (RESERVED_SLUGS.has(normalizedSlug)) {
+        redirect(
+          buildOnboardingErrorRedirect({
+            intentFocus,
+            error: "reserved_org_slug",
+            slug: normalizedSlug,
+          }),
+        )
+      }
 
-    const { count: slugCount, error: slugError } = await supabase
-      .from("organizations")
-      .select("user_id", { count: "exact", head: true })
-      .ilike("public_slug", normalizedSlug)
-      .neq("user_id", user.id)
+      const { count: slugCount, error: slugError } = await supabase
+        .from("organizations")
+        .select("user_id", { count: "exact", head: true })
+        .ilike("public_slug", normalizedSlug)
+        .neq("user_id", user.id)
 
-    if (slugError) throw supabaseErrorToError(slugError, "Unable to validate organization URL.")
-    if ((slugCount ?? 0) > 0) {
-      redirect(
-        buildOnboardingErrorRedirect({
-          intentFocus,
-          error: "slug_taken",
-          slug: normalizedSlug,
-        }),
-      )
+      if (slugError) throw supabaseErrorToError(slugError, "Unable to validate organization URL.")
+      if ((slugCount ?? 0) > 0) {
+        redirect(
+          buildOnboardingErrorRedirect({
+            intentFocus,
+            error: "slug_taken",
+            slug: normalizedSlug,
+          }),
+        )
+      }
     }
   }
 
@@ -214,7 +225,7 @@ export async function completeOnboardingAction(form: FormData) {
     throw supabaseErrorToError(profileUpsertError, "Unable to save your profile.")
   }
 
-  if (intentFocus === "build") {
+  if (requiresOrganizationSetup) {
     const { data: existingOrg, error: existingOrgError } = await supabase
       .from("organizations")
       .select("profile")

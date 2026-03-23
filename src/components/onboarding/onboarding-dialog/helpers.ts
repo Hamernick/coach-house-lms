@@ -1,5 +1,11 @@
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
-import type { FormationStatus, IntentFocus, OnboardingStepId, RoleInterest } from "./types"
+import type {
+  FormationStatus,
+  IntentFocus,
+  OnboardingFlowMode,
+  OnboardingStepId,
+  RoleInterest,
+} from "./types"
 
 export function slugify(input: string): string {
   const base = input
@@ -52,9 +58,12 @@ export function resolveOnboardingPricingPlanOverride(
 
 export function resolveOnboardingPricingEntryStepId(
   searchParams: SearchParamReader,
+  mode: OnboardingFlowMode = "full",
 ): OnboardingStepId | null {
   if (searchParams.get("source") !== "onboarding_pricing") return null
-  if (searchParams.get("checkout") === "success") return "org"
+  if (searchParams.get("checkout") === "success") {
+    return mode === "post_signup_access" ? "pricing" : "org"
+  }
   return "pricing"
 }
 

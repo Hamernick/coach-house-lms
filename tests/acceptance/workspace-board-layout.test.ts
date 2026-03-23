@@ -6,6 +6,9 @@ import {
   buildPresetNodes,
   normalizeWorkspaceBoardState,
   resolveCardDimensions,
+  resolveWorkspaceCardCanvasShellClassName,
+  resolveWorkspaceCardCanvasShellStyle,
+  resolveWorkspaceCardHeightModeClassName,
   sanitizeWorkspaceBoardHiddenState,
   toggleWorkspaceBoardCardVisibility,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout"
@@ -37,7 +40,13 @@ describe("workspace board layout", () => {
       expect(ids.has(id)).toBe(true)
     }
     expect(state.hiddenCardIds).toEqual(
-      expect.arrayContaining(["brand-kit", "deck", "atlas"]),
+      expect.arrayContaining([
+        "brand-kit",
+        "economic-engine",
+        "communications",
+        "deck",
+        "atlas",
+      ]),
     )
   })
 
@@ -74,6 +83,44 @@ describe("workspace board layout", () => {
       width: 640,
       height: 720,
     })
+  })
+
+  it("derives card shell height mode from the shared layout contract", () => {
+    expect(resolveWorkspaceCardHeightModeClassName("organization-overview")).toBe(
+      "h-auto",
+    )
+    expect(resolveWorkspaceCardHeightModeClassName("programs")).toBe("h-auto")
+    expect(resolveWorkspaceCardHeightModeClassName("accelerator")).toBe("h-auto")
+    expect(resolveWorkspaceCardHeightModeClassName("roadmap")).toBe("h-auto")
+  })
+
+  it("keeps auto-height card shells intrinsic while fixed cards retain canvas heights", () => {
+    expect(
+      resolveWorkspaceCardCanvasShellStyle({
+        size: "sm",
+        cardId: "accelerator",
+      }),
+    ).toBeUndefined()
+
+    expect(
+      resolveWorkspaceCardCanvasShellStyle({
+        size: "sm",
+        cardId: "roadmap",
+      }),
+    ).toBeUndefined()
+
+    expect(
+      resolveWorkspaceCardCanvasShellClassName({
+        size: "sm",
+        cardId: "accelerator",
+      }),
+    ).toContain("h-auto")
+    expect(
+      resolveWorkspaceCardCanvasShellClassName({
+        size: "sm",
+        cardId: "roadmap",
+      }),
+    ).toContain("h-auto")
   })
 
   it("normalizes partial payloads into a full board", () => {
@@ -185,12 +232,12 @@ describe("workspace board layout", () => {
 
   it("allows a root-only visible payload after normalization", () => {
     const normalized = normalizeWorkspaceBoardState({
-      hiddenCardIds: WORKSPACE_CARD_IDS.filter((cardId) => cardId !== "vault"),
+      hiddenCardIds: WORKSPACE_CARD_IDS.filter((cardId) => cardId !== "roadmap"),
     })
 
     expect(normalized.hiddenCardIds).not.toContain("organization-overview")
     expect(normalized.hiddenCardIds).toContain("accelerator")
-    expect(normalized.hiddenCardIds).not.toContain("vault")
+    expect(normalized.hiddenCardIds).not.toContain("roadmap")
   })
 
   it("removes organization from hidden payloads even when other core cards are hidden", () => {
@@ -248,18 +295,18 @@ describe("workspace board layout", () => {
     ])
   })
 
-  it("hiding documents hides the entire downstream branch", () => {
+  it("hiding roadmap hides the entire downstream branch", () => {
     const initial = buildDefaultBoardState("balanced")
-    const next = toggleWorkspaceBoardCardVisibility(initial, "vault")
+    const next = toggleWorkspaceBoardCardVisibility(initial, "roadmap")
 
     expect(next.hiddenCardIds).toEqual([
       "accelerator",
+      "roadmap",
       "brand-kit",
       "economic-engine",
       "calendar",
       "communications",
       "deck",
-      "vault",
       "atlas",
     ])
     expect(next.hiddenCardIds).not.toContain("organization-overview")
@@ -337,7 +384,7 @@ describe("workspace board layout", () => {
       toggleWorkspaceBoardCardVisibility(initial, "accelerator")
     )
 
-    expect(before - after).toBe(4)
+    expect(before - after).toBe(2)
   })
 
   it("does not no-op accelerator toggle when legacy hidden state omitted tool defaults", () => {
@@ -365,12 +412,12 @@ describe("workspace board layout", () => {
     expect(sanitized.hiddenCardIds).toEqual([
       "programs",
       "accelerator",
+      "roadmap",
       "brand-kit",
       "economic-engine",
       "calendar",
       "communications",
       "deck",
-      "vault",
       "atlas",
     ])
     expect(sanitized.visibility?.allCardsHiddenExplicitly).toBe(false)
@@ -390,12 +437,12 @@ describe("workspace board layout", () => {
     expect(sanitized.hiddenCardIds).toEqual([
       "programs",
       "accelerator",
+      "roadmap",
       "brand-kit",
       "economic-engine",
       "calendar",
       "communications",
       "deck",
-      "vault",
       "atlas",
     ])
     expect(sanitized.visibility?.allCardsHiddenExplicitly).toBe(false)
@@ -415,12 +462,12 @@ describe("workspace board layout", () => {
     expect(sanitized.hiddenCardIds).toEqual([
       "programs",
       "accelerator",
+      "roadmap",
       "brand-kit",
       "economic-engine",
       "calendar",
       "communications",
       "deck",
-      "vault",
       "atlas",
     ])
     expect(sanitized.visibility?.allCardsHiddenExplicitly).toBe(false)
@@ -527,7 +574,7 @@ describe("workspace board layout", () => {
     })
 
     const programs = findNode(laidOut, "programs")
-    const vault = findNode(laidOut, "vault")
+    const vault = findNode(laidOut, "roadmap")
     const organization = findNode(laidOut, "organization-overview")
     const accelerator = findNode(laidOut, "accelerator")
     const communications = findNode(laidOut, "communications")
@@ -552,7 +599,7 @@ describe("workspace board layout", () => {
     const laidOut = await applyAutoLayout(state.nodes, "timeline")
 
     const organization = findNode(laidOut, "organization-overview")
-    const vault = findNode(laidOut, "vault")
+    const vault = findNode(laidOut, "roadmap")
     const accelerator = findNode(laidOut, "accelerator")
     const communications = findNode(laidOut, "communications")
     const economicEngine = findNode(laidOut, "economic-engine")

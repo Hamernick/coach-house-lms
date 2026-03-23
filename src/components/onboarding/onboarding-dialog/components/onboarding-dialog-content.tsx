@@ -28,6 +28,7 @@ import {
 } from "./step-header"
 import type {
   FormationStatus,
+  OnboardingFlowMode,
   IntentFocus,
   OnboardingSlugStatus,
   RoleInterest,
@@ -91,6 +92,7 @@ type OnboardingDialogContentProps = {
   zoom: number
   onFormChange: () => void
   onFormSubmit: (event: React.FormEvent<HTMLFormElement>) => void
+  onboardingMode: OnboardingFlowMode
   onPrev: () => void
   onNext: () => void
   onSelectIntent: (value: IntentFocus) => void
@@ -148,6 +150,7 @@ export function OnboardingDialogContent({
   zoom,
   onFormChange,
   onFormSubmit,
+  onboardingMode,
   onPrev,
   onNext,
   onSelectIntent,
@@ -198,6 +201,7 @@ export function OnboardingDialogContent({
         >
           <div className="mx-auto w-full max-w-[640px] space-y-5 pb-5 md:space-y-6 md:pb-6">
             <input type="hidden" name="intentFocus" value={intentFocus} />
+            <input type="hidden" name="onboardingMode" value={onboardingMode} />
             <input type="hidden" name="roleInterest" value={roleInterest} />
             <input type="hidden" name="formationStatus" value={formationStatus} />
             {currentStep.id !== "org" ? (
@@ -265,7 +269,7 @@ export function OnboardingDialogContent({
                 attemptedStep={attemptedStep}
                 errors={errors}
                 currentPlanTier={builderPlanTier}
-                checkoutReturnTo="/workspace?onboarding_flow=1&source=onboarding_pricing"
+                checkoutReturnTo="/onboarding?source=onboarding_pricing"
               />
             ) : null}
 

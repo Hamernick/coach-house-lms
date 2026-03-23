@@ -15,13 +15,19 @@ import {
   resolveWorkspaceCanvasTutorialStep,
 } from "@/features/workspace-canvas-tutorial"
 
-import { saveWorkspaceBoardStateAction } from "../../_lib/workspace-actions"
+import {
+  resetWorkspaceCanvasTutorialAction,
+  saveWorkspaceBoardStateAction,
+} from "../../_lib/workspace-actions"
 import {
   isBoardStateContentEqual,
   type WorkspaceCardFocusRequest,
 } from "./workspace-board-canvas-helpers"
 import { logWorkspaceBoardDebug, summarizeWorkspaceBoardVisibility } from "./workspace-board-debug"
-import { applyWorkspaceTutorialSnapshot } from "./workspace-board-onboarding-flow"
+import {
+  applyWorkspaceTutorialSnapshot,
+  buildRestartedWorkspaceTutorialBoardState,
+} from "./workspace-board-onboarding-flow"
 import { resolveWorkspaceJourneyGuideState } from "./workspace-board-journey"
 import type {
   WorkspaceBoardAcceleratorState,
@@ -61,24 +67,69 @@ export function useWorkspaceRightRailCurrentUser(seed: WorkspaceSeedData) {
   )
 }
 
+export function buildPreviousWorkspaceTutorialFlowState(
+  flowState: WorkspaceBoardState["onboardingFlow"],
+) {
+  const tutorialStepIndex = clampWorkspaceCanvasTutorialStepIndex(
+    flowState.tutorialStepIndex - 1,
+  )
+  const tutorialStep = resolveWorkspaceCanvasTutorialStep(tutorialStepIndex)
+  const openedTutorialStepIds =
+    tutorialStep.continueMode === "shortcut"
+      ? flowState.openedTutorialStepIds.filter(
+          (stepId) => stepId !== tutorialStep.id,
+        )
+      : flowState.openedTutorialStepIds
+
+  return {
+    ...flowState,
+    active: true,
+    tutorialStepIndex,
+    openedTutorialStepIds,
+    updatedAt: new Date().toISOString(),
+  }
+}
+
+export function buildOpenedWorkspaceTutorialFlowState(
+  flowState: WorkspaceBoardState["onboardingFlow"],
+) {
+  const tutorialStepIndex = clampWorkspaceCanvasTutorialStepIndex(
+    flowState.tutorialStepIndex,
+  )
+  const currentStepId = resolveWorkspaceCanvasTutorialStep(tutorialStepIndex).id
+  const openedTutorialStepIds = flowState.openedTutorialStepIds.includes(currentStepId)
+    ? flowState.openedTutorialStepIds
+    : [...flowState.openedTutorialStepIds, currentStepId]
+  const acknowledgedTutorialStepIds =
+    flowState.acknowledgedTutorialStepIds.includes(currentStepId)
+      ? flowState.acknowledgedTutorialStepIds
+      : [...flowState.acknowledgedTutorialStepIds, currentStepId]
+
+  return {
+    ...flowState,
+    active: true,
+    tutorialStepIndex,
+    openedTutorialStepIds,
+    acknowledgedTutorialStepIds,
+    updatedAt: new Date().toISOString(),
+  }
+}
+
 export function useWorkspaceBoardTutorialNavigation({
   currentTutorialStepIndex,
   setBoardState,
   onCompleteTutorial,
+  onRestart,
 }: {
   currentTutorialStepIndex: number
   setBoardState: Dispatch<SetStateAction<WorkspaceBoardState>>
   onCompleteTutorial: () => void
+  onRestart?: () => void
 }) {
   const handleTutorialPrevious = useCallback(() => {
     setBoardState((previous) =>
       applyWorkspaceTutorialSnapshot(previous, {
-        ...previous.onboardingFlow,
-        active: true,
-        tutorialStepIndex: clampWorkspaceCanvasTutorialStepIndex(
-          previous.onboardingFlow.tutorialStepIndex - 1,
-        ),
-        updatedAt: new Date().toISOString(),
+        ...buildPreviousWorkspaceTutorialFlowState(previous.onboardingFlow),
       }),
     )
   }, [setBoardState])
@@ -114,30 +165,39 @@ export function useWorkspaceBoardTutorialNavigation({
 
   const handleTutorialShortcutOpened = useCallback(() => {
     setBoardState((previous) => {
-      const currentStepId = resolveWorkspaceCanvasTutorialStep(
+      const stepIndex = clampWorkspaceCanvasTutorialStepIndex(
         previous.onboardingFlow.tutorialStepIndex,
-      ).id
+      )
+      const currentStepId = resolveWorkspaceCanvasTutorialStep(stepIndex).id
 
       if (previous.onboardingFlow.openedTutorialStepIds.includes(currentStepId)) {
         return previous
       }
 
       return applyWorkspaceTutorialSnapshot(previous, {
-        ...previous.onboardingFlow,
-        active: true,
-        openedTutorialStepIds: [
-          ...previous.onboardingFlow.openedTutorialStepIds,
-          currentStepId,
-        ],
-        updatedAt: new Date().toISOString(),
+        ...buildOpenedWorkspaceTutorialFlowState(previous.onboardingFlow),
       })
     })
   }, [setBoardState])
+
+  const handleTutorialRestart = useCallback(() => {
+    let restartedBoardState: WorkspaceBoardState | null = null
+    setBoardState((previous) => {
+      restartedBoardState = buildRestartedWorkspaceTutorialBoardState(previous)
+      return restartedBoardState
+    })
+    onRestart?.()
+    if (restartedBoardState) {
+      void saveWorkspaceBoardStateAction(restartedBoardState)
+    }
+    void resetWorkspaceCanvasTutorialAction()
+  }, [onRestart, setBoardState])
 
   return {
     handleTutorialPrevious,
     handleTutorialNext,
     handleTutorialShortcutOpened,
+    handleTutorialRestart,
   }
 }
 

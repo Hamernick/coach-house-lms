@@ -2,6 +2,7 @@ import {
   normalizeWorkspaceAcceleratorResources,
   type WorkspaceAcceleratorTimelineModuleSeed,
 } from "@/features/workspace-accelerator-card"
+import type { OnboardingFlowDefaults } from "@/components/onboarding/onboarding-dialog/types"
 import type {
   ModuleCard,
   ModuleGroup,
@@ -26,6 +27,67 @@ type TimelineModuleRow = {
   video_url: string | null
   duration_minutes: number | null
   deck_path: string | null
+}
+
+const ORGANIZATION_SETUP_MODULE_ID = "workspace-onboarding-organization-setup"
+const ORGANIZATION_SETUP_TITLE_SIGNALS = new Set([
+  "organization setup",
+  "workspace setup",
+])
+const ORGANIZATION_SETUP_SLUG_SIGNALS = [
+  "organization-setup",
+  "workspace-setup",
+  "onboarding-organization-setup",
+] as const
+
+function normalizeOrganizationSetupToken(value: string | null | undefined) {
+  if (typeof value !== "string") return ""
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function hasOrganizationSetupSlugSignal(value: string | null | undefined) {
+  if (typeof value !== "string") return false
+  const normalized = value.trim().toLowerCase()
+  if (!normalized) return false
+  return ORGANIZATION_SETUP_SLUG_SIGNALS.some((signal) => normalized.includes(signal))
+}
+
+function hasOrganizationSetupTitleSignal(value: string | null | undefined) {
+  const normalized = normalizeOrganizationSetupToken(value)
+  if (!normalized) return false
+  return ORGANIZATION_SETUP_TITLE_SIGNALS.has(normalized)
+}
+
+export function isOrganizationSetupTimelineModule({
+  roadmapModule,
+  moduleRecord,
+}: {
+  roadmapModule: Pick<ModuleCard, "id" | "slug" | "title" | "href">
+  moduleRecord?: Pick<ModuleRecord, "slug" | "title"> | null
+}) {
+  if (roadmapModule.id === ORGANIZATION_SETUP_MODULE_ID) return true
+  if (hasOrganizationSetupSlugSignal(roadmapModule.slug)) return true
+  if (hasOrganizationSetupTitleSignal(roadmapModule.title)) return true
+  if (typeof roadmapModule.href === "string") {
+    const href = roadmapModule.href.toLowerCase()
+    if (
+      href.includes("source=formation-setup") ||
+      href.includes("source=workspace-setup")
+    ) {
+      return true
+    }
+  }
+  if (moduleRecord) {
+    if (hasOrganizationSetupSlugSignal(moduleRecord.slug)) return true
+    if (hasOrganizationSetupTitleSignal(moduleRecord.title)) return true
+  }
+  return false
 }
 
 function isIgnorableModuleSeedError(error: unknown) {
@@ -153,14 +215,15 @@ async function loadTimelineModuleRows({
 
 function buildModuleSeed({
   roadmapModule,
-  groupTitleById,
+  groupMetaById,
   contentByModuleId,
   moduleMetaById,
   modulesWithAssignments,
   moduleContextById,
+  onboardingDefaults,
 }: {
   roadmapModule: ModuleCard
-  groupTitleById: Map<string, string>
+  groupMetaById: Map<string, { title: string; order: number }>
   contentByModuleId: Map<string, { videoUrl: string | null; resources: unknown }>
   moduleMetaById: Map<
     string,
@@ -168,10 +231,12 @@ function buildModuleSeed({
   >
   modulesWithAssignments: Set<string>
   moduleContextById: Map<string, { classTitle: string; module: ModuleRecord }>
+  onboardingDefaults?: OnboardingFlowDefaults | null
 }): WorkspaceAcceleratorTimelineModuleSeed {
   const content = contentByModuleId.get(roadmapModule.id)
   const meta = moduleMetaById.get(roadmapModule.id)
   const moduleContextEntry = moduleContextById.get(roadmapModule.id)
+  const groupMeta = groupMetaById.get(roadmapModule.id)
   const moduleRecord = moduleContextEntry?.module
   const resourcesFromModuleRecord = (moduleRecord?.resources ?? []).map(
     (resource, index) => ({
@@ -187,22 +252,29 @@ function buildModuleSeed({
       : content?.resources ?? []
   )
   const videoUrl = moduleRecord?.videoUrl ?? content?.videoUrl ?? meta?.videoUrl ?? null
-
-  return {
-    id: roadmapModule.id,
-    title: roadmapModule.title,
-    description: roadmapModule.description ?? null,
-    href: roadmapModule.href,
-    status: roadmapModule.status,
-    groupTitle: groupTitleById.get(roadmapModule.id) ?? "Accelerator",
-    videoUrl,
-    durationMinutes: moduleRecord?.durationMinutes ?? meta?.durationMinutes ?? null,
-    resources,
-    hasAssignment:
-      modulesWithAssignments.has(roadmapModule.id) ||
-      Boolean((moduleRecord?.assignment?.fields.length ?? 0) > 0),
-    hasDeck: Boolean(meta?.hasDeck ?? moduleRecord?.hasDeck),
-    moduleContext: moduleRecord
+  const isOrganizationSetupModule = isOrganizationSetupTimelineModule({
+    roadmapModule,
+    moduleRecord,
+  })
+  const moduleContext = isOrganizationSetupModule
+    ? {
+        classTitle: moduleContextEntry?.classTitle ?? groupMeta?.title ?? "Formation",
+        lessonNotesContent: moduleRecord?.contentMd ?? null,
+        moduleResources: moduleRecord?.resources ?? [],
+        assignmentFields: moduleRecord?.assignment?.fields ?? [],
+        assignmentSubmission: moduleRecord?.assignmentSubmission ?? null,
+        completeOnSubmit: Boolean(moduleRecord?.assignment?.completeOnSubmit),
+        workspaceOnboarding: {
+          view: "organization-setup" as const,
+              defaults: onboardingDefaults
+                ? {
+                    ...onboardingDefaults,
+                    defaultIntentFocus: "build" as const,
+                  }
+                : null,
+        },
+      }
+    : moduleRecord
       ? {
           classTitle: moduleContextEntry?.classTitle ?? "Accelerator",
           lessonNotesContent: moduleRecord.contentMd ?? null,
@@ -211,19 +283,37 @@ function buildModuleSeed({
           assignmentSubmission: moduleRecord.assignmentSubmission ?? null,
           completeOnSubmit: Boolean(moduleRecord.assignment?.completeOnSubmit),
         }
-      : null,
+      : null
+
+  return {
+    id: roadmapModule.id,
+    slug: roadmapModule.slug,
+    title: isOrganizationSetupModule ? "Organization setup" : roadmapModule.title,
+    description: roadmapModule.description ?? null,
+    href: roadmapModule.href,
+    status: roadmapModule.status,
+    groupTitle: groupMeta?.title ?? "Accelerator",
+    groupOrder: groupMeta?.order ?? null,
+    videoUrl,
+    durationMinutes: moduleRecord?.durationMinutes ?? meta?.durationMinutes ?? null,
+    resources,
+    hasAssignment:
+      modulesWithAssignments.has(roadmapModule.id) ||
+      Boolean((moduleRecord?.assignment?.fields.length ?? 0) > 0),
+    hasDeck: Boolean(meta?.hasDeck ?? moduleRecord?.hasDeck),
+    moduleContext,
   }
 }
 
-export function buildModuleGroupTitleById(
+export function buildModuleGroupMetaById(
   groups: ModuleGroup[]
-): Map<string, string> {
-  const lookup = new Map<string, string>()
-  for (const group of groups) {
+): Map<string, { title: string; order: number }> {
+  const lookup = new Map<string, { title: string; order: number }>()
+  groups.forEach((group, groupIndex) => {
     for (const groupModule of group.modules) {
-      lookup.set(groupModule.id, group.title)
+      lookup.set(groupModule.id, { title: group.title, order: groupIndex })
     }
-  }
+  })
   return lookup
 }
 
@@ -231,12 +321,14 @@ export async function buildAcceleratorTimelineModules({
   supabase,
   userId,
   sortedRoadmapModules,
-  groupTitleById,
+  groupMetaById,
+  onboardingDefaults = null,
 }: {
   supabase: SupabaseServerClient
   userId: string
   sortedRoadmapModules: ModuleCard[]
-  groupTitleById: Map<string, string>
+  groupMetaById: Map<string, { title: string; order: number }>
+  onboardingDefaults?: OnboardingFlowDefaults | null
 }) {
   const timelineModuleIds = sortedRoadmapModules.map((roadmapModule) => roadmapModule.id)
   const timelineClassSlugs = Array.from(
@@ -278,14 +370,17 @@ export async function buildAcceleratorTimelineModules({
   }
   const modulesWithAssignments = new Set(assignmentRows.map((row) => row.module_id))
 
-  return sortedRoadmapModules.map((roadmapModule) =>
+  const roadmapModuleSeeds = sortedRoadmapModules.map((roadmapModule) =>
     buildModuleSeed({
       roadmapModule,
-      groupTitleById,
+      groupMetaById,
       contentByModuleId,
       moduleMetaById,
       modulesWithAssignments,
       moduleContextById,
-    })
+      onboardingDefaults,
+    }),
   )
+
+  return roadmapModuleSeeds
 }

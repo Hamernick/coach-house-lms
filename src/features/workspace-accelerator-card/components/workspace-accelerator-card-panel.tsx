@@ -1,23 +1,12 @@
 "use client"
 
-import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useRef, useState } from "react"
-import Layers from "lucide-react/dist/esm/icons/layers"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
+
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { getTrackIcon } from "@/lib/accelerator/track-icons"
-import {
-  buildWorkspaceAcceleratorChecklistModules,
-  buildWorkspaceAcceleratorLessonGroupKey,
-  buildWorkspaceAcceleratorLessonGroupOptions,
+  areWorkspaceAcceleratorRuntimeSnapshotsEqual,
   buildWorkspaceAcceleratorRuntimeActionsSignature,
   resolveWorkspaceAcceleratorOpenModuleId,
 } from "../lib"
@@ -27,57 +16,274 @@ import type {
   WorkspaceAcceleratorCardRuntimeActions,
   WorkspaceAcceleratorCardRuntimeSnapshot,
   WorkspaceAcceleratorCardStep,
+  WorkspaceAcceleratorTutorialCallout,
+  WorkspaceAcceleratorTutorialInteractionPolicy,
 } from "../types"
-import { WorkspaceAcceleratorCardChecklist } from "./workspace-accelerator-card-checklist"
-import { WorkspaceAcceleratorCardProgressStrip } from "./workspace-accelerator-card-progress-strip"
+import {
+  completeWorkspaceAcceleratorTutorialPreview,
+  shouldWorkspaceAcceleratorTutorialAdvanceAfterStepOpen,
+  shouldWorkspaceAcceleratorSyncModuleViewerSize,
+  shouldWorkspaceAcceleratorTutorialAdvanceFromFooterContinue,
+  useWorkspaceAcceleratorTutorialViewerState,
+  WorkspaceAcceleratorCardEmptyState,
+  WorkspaceAcceleratorCardSidebar,
+  useModuleViewerSizeSync,
+} from "./workspace-accelerator-card-panel-support"
+import {
+  canWorkspaceAcceleratorTutorialActivateStep,
+} from "./workspace-accelerator-card-tutorial-guards"
+import { useWorkspaceAcceleratorLessonGroupState } from "./workspace-accelerator-card-panel-lesson-groups"
+import { WorkspaceAcceleratorStepNodeCard } from "./workspace-accelerator-step-node-card"
 
 type WorkspaceAcceleratorCardPanelProps = {
   input: WorkspaceAcceleratorCardInput
+  presentationMode?: "embedded" | "fullscreen-route"
+  initialModuleViewerOpen?: boolean
+  initialOpenModuleId?: string | null
   onRuntimeChange?: (snapshot: WorkspaceAcceleratorCardRuntimeSnapshot) => void
   onRuntimeActionsChange?: (
     actions: WorkspaceAcceleratorCardRuntimeActions
   ) => void
-  onOpenStepNode?: (stepId?: string | null) => void
+  onRequestOpenStep?: (args: {
+    step: WorkspaceAcceleratorCardStep
+    selectedLessonGroupKey: string | null
+  }) => boolean | void
+  onModuleViewerClose?: () => void
+  tutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
+  tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
+  tutorialMode?: "module-preview" | null
+  onTutorialActionComplete?: (
+    mode?: "complete" | "complete-and-advance",
+  ) => void
 }
 
-export function WorkspaceAcceleratorCardPanel({
-  input,
+function buildAcceleratorRuntimeSnapshot(
+  args: {
+    controller: ReturnType<typeof useWorkspaceAcceleratorCardController>
+    runtimeStep: WorkspaceAcceleratorCardRuntimeSnapshot["currentStep"]
+    selectedLessonGroupKey: string
+    selectedLessonGroupLabel: string | null
+    lessonGroupOptions: WorkspaceAcceleratorCardRuntimeSnapshot["lessonGroupOptions"]
+    firstVisibleChecklistStepId: string | null
+    isModuleViewerOpen: boolean
+    openModuleId: string | null
+    placeholderVideoUrl: string | null
+    readinessSummary: WorkspaceAcceleratorCardInput["readinessSummary"]
+    checklistModuleCount: number
+    filteredStepCount: number
+  },
+): WorkspaceAcceleratorCardRuntimeSnapshot {
+  const {
+    controller,
+    runtimeStep,
+    selectedLessonGroupKey,
+    selectedLessonGroupLabel,
+    lessonGroupOptions,
+    firstVisibleChecklistStepId,
+    isModuleViewerOpen,
+    openModuleId,
+    placeholderVideoUrl,
+    readinessSummary,
+    checklistModuleCount,
+    filteredStepCount,
+  } = args
+
+  return {
+    currentStep: runtimeStep,
+    currentIndex: controller.currentIndex,
+    totalSteps: controller.steps.length,
+    canGoPrevious: controller.canGoPrevious,
+    canGoNext: controller.canGoNext,
+    currentModuleStepIndex: controller.currentModuleStepIndex,
+    currentModuleStepTotal: Math.max(controller.currentModuleSteps.length, 1),
+    currentModuleCompletedCount: controller.currentModuleCompletedCount,
+    isCurrentModuleCompleted: controller.isCurrentModuleCompleted,
+    isCurrentStepCompleted: controller.isCurrentStepCompleted,
+    selectedLessonGroupKey: selectedLessonGroupKey || null,
+    selectedLessonGroupLabel,
+    lessonGroupOptions,
+    firstVisibleChecklistStepId,
+    isModuleViewerOpen,
+    openModuleId,
+    placeholderVideoUrl,
+    readinessSummary: readinessSummary ?? null,
+    checklistModuleCount,
+    filteredStepCount,
+  }
+}
+
+function buildAcceleratorRuntimeSnapshotSignature(
+  runtimeSnapshot: WorkspaceAcceleratorCardRuntimeSnapshot,
+) {
+  return JSON.stringify({
+    currentStepId: runtimeSnapshot.currentStep?.id ?? null,
+    currentStepHref: runtimeSnapshot.currentStep?.href ?? null,
+    currentStepStatus: runtimeSnapshot.currentStep?.status ?? null,
+    currentStepKind: runtimeSnapshot.currentStep?.stepKind ?? null,
+    currentIndex: runtimeSnapshot.currentIndex,
+    totalSteps: runtimeSnapshot.totalSteps,
+    canGoPrevious: runtimeSnapshot.canGoPrevious,
+    canGoNext: runtimeSnapshot.canGoNext,
+    currentModuleStepIndex: runtimeSnapshot.currentModuleStepIndex,
+    currentModuleStepTotal: runtimeSnapshot.currentModuleStepTotal,
+    currentModuleCompletedCount: runtimeSnapshot.currentModuleCompletedCount,
+    isCurrentModuleCompleted: runtimeSnapshot.isCurrentModuleCompleted,
+    isCurrentStepCompleted: runtimeSnapshot.isCurrentStepCompleted,
+    selectedLessonGroupKey: runtimeSnapshot.selectedLessonGroupKey,
+    selectedLessonGroupLabel: runtimeSnapshot.selectedLessonGroupLabel,
+    lessonGroupOptions: runtimeSnapshot.lessonGroupOptions?.map((option) => option.key) ?? [],
+    firstVisibleChecklistStepId: runtimeSnapshot.firstVisibleChecklistStepId,
+    isModuleViewerOpen: runtimeSnapshot.isModuleViewerOpen ?? false,
+    openModuleId: runtimeSnapshot.openModuleId ?? null,
+    placeholderVideoUrl: runtimeSnapshot.placeholderVideoUrl ?? null,
+    readinessScore: runtimeSnapshot.readinessSummary?.score ?? null,
+    checklistModuleCount: runtimeSnapshot.checklistModuleCount ?? 0,
+    filteredStepCount: runtimeSnapshot.filteredStepCount ?? 0,
+  })
+}
+
+function buildWorkspaceAcceleratorControllerInput(
+  input: WorkspaceAcceleratorCardInput,
+): WorkspaceAcceleratorCardInput {
+  const visibleSteps = input.steps.filter(
+    (step) =>
+      (step.stepKind !== "lesson" ||
+        Boolean(step.moduleContext?.workspaceOnboarding)) &&
+      step.stepKind !== "complete",
+  )
+  if (visibleSteps.length === input.steps.length) {
+    return input
+  }
+  const visibleStepIds = new Set(visibleSteps.map((step) => step.id))
+  const nextInitialCurrentStepId =
+    input.initialCurrentStepId && visibleStepIds.has(input.initialCurrentStepId)
+      ? input.initialCurrentStepId
+      : visibleSteps[0]?.id ?? null
+
+  return {
+    ...input,
+    steps: visibleSteps,
+    initialCurrentStepId: nextInitialCurrentStepId,
+    initialCompletedStepIds: (input.initialCompletedStepIds ?? []).filter(
+      (stepId) => visibleStepIds.has(stepId),
+    ),
+  }
+}
+
+function isWorkspaceAcceleratorWelcomePreviewCandidate(
+  step: WorkspaceAcceleratorCardInput["steps"][number],
+) {
+  return (
+    step.moduleContext?.workspaceOnboarding?.view === "welcome" ||
+    step.moduleId === "workspace-onboarding-welcome" ||
+    step.id.startsWith("workspace-onboarding-welcome")
+  )
+}
+
+function hasWorkspaceAcceleratorStepVideo(
+  step: WorkspaceAcceleratorCardInput["steps"][number],
+) {
+  return typeof step.videoUrl === "string" && step.videoUrl.trim().length > 0
+}
+
+export function resolveWorkspaceAcceleratorPlaceholderVideoUrl({
+  steps,
+  currentStepId,
+}: {
+  steps: WorkspaceAcceleratorCardInput["steps"]
+  currentStepId?: string | null
+}) {
+  const welcomeVideoUrl =
+    steps.find(
+      (step) =>
+        step.id !== currentStepId &&
+        hasWorkspaceAcceleratorStepVideo(step) &&
+        isWorkspaceAcceleratorWelcomePreviewCandidate(step),
+    )?.videoUrl ?? null
+
+  if (welcomeVideoUrl) {
+    return welcomeVideoUrl
+  }
+
+  return (
+    steps.find(
+      (step) =>
+        step.id !== currentStepId &&
+        hasWorkspaceAcceleratorStepVideo(step),
+    )?.videoUrl ?? null
+  )
+}
+
+function useWorkspaceAcceleratorRuntimeSync({
+  runtimeSnapshot,
+  runtimeSnapshotSignature,
+  runtimeActions,
+  runtimeActionsSignature,
   onRuntimeChange,
   onRuntimeActionsChange,
-  onOpenStepNode,
-}: WorkspaceAcceleratorCardPanelProps) {
-  const router = useRouter()
-  const controllerInput = useMemo<WorkspaceAcceleratorCardInput>(() => {
-    const visibleSteps = input.steps.filter(
-      (step) => step.stepKind !== "lesson" && step.stepKind !== "complete",
-    )
-    if (visibleSteps.length === input.steps.length) {
-      return input
-    }
-    const visibleStepIds = new Set(visibleSteps.map((step) => step.id))
-    const nextInitialCurrentStepId =
-      input.initialCurrentStepId && visibleStepIds.has(input.initialCurrentStepId)
-        ? input.initialCurrentStepId
-        : visibleSteps[0]?.id ?? null
-
-    return {
-      ...input,
-      steps: visibleSteps,
-      initialCurrentStepId: nextInitialCurrentStepId,
-      initialCompletedStepIds: (input.initialCompletedStepIds ?? []).filter((stepId) =>
-        visibleStepIds.has(stepId),
-      ),
-    }
-  }, [input])
-  const controller = useWorkspaceAcceleratorCardController(controllerInput)
+}: {
+  runtimeSnapshot: WorkspaceAcceleratorCardRuntimeSnapshot
+  runtimeSnapshotSignature: string
+  runtimeActions: WorkspaceAcceleratorCardRuntimeActions
+  runtimeActionsSignature: string
+  onRuntimeChange?: (snapshot: WorkspaceAcceleratorCardRuntimeSnapshot) => void
+  onRuntimeActionsChange?: (
+    actions: WorkspaceAcceleratorCardRuntimeActions,
+  ) => void
+}) {
+  const lastRuntimeSnapshotRef =
+    useRef<WorkspaceAcceleratorCardRuntimeSnapshot | null>(null)
   const lastRuntimeSnapshotSignatureRef = useRef<string | null>(null)
   const lastRuntimeActionsSignatureRef = useRef<string | null>(null)
-  const runtimeActionsRef = useRef<WorkspaceAcceleratorCardRuntimeActions | null>(null)
+
+  useEffect(() => {
+    if (
+      areWorkspaceAcceleratorRuntimeSnapshotsEqual(
+        lastRuntimeSnapshotRef.current,
+        runtimeSnapshot,
+      )
+    ) {
+      return
+    }
+    if (lastRuntimeSnapshotSignatureRef.current === runtimeSnapshotSignature) return
+    lastRuntimeSnapshotRef.current = runtimeSnapshot
+    lastRuntimeSnapshotSignatureRef.current = runtimeSnapshotSignature
+    onRuntimeChange?.(runtimeSnapshot)
+  }, [onRuntimeChange, runtimeSnapshot, runtimeSnapshotSignature])
+
+  useEffect(() => {
+    if (lastRuntimeActionsSignatureRef.current === runtimeActionsSignature) return
+    lastRuntimeActionsSignatureRef.current = runtimeActionsSignature
+    onRuntimeActionsChange?.(runtimeActions)
+  }, [onRuntimeActionsChange, runtimeActions, runtimeActionsSignature])
+}
+
+// eslint-disable-next-line max-lines-per-function
+export function WorkspaceAcceleratorCardPanel({
+  input,
+  presentationMode = "embedded",
+  initialModuleViewerOpen = false,
+  initialOpenModuleId = null,
+  onRuntimeChange,
+  onRuntimeActionsChange,
+  onRequestOpenStep,
+  onModuleViewerClose,
+  tutorialCallout = null,
+  tutorialInteractionPolicy = null,
+  tutorialMode = null,
+  onTutorialActionComplete,
+}: WorkspaceAcceleratorCardPanelProps) {
+  const router = useRouter()
+  const controllerInput = useMemo<WorkspaceAcceleratorCardInput>(
+    () => buildWorkspaceAcceleratorControllerInput(input),
+    [input],
+  )
+  const controller = useWorkspaceAcceleratorCardController(controllerInput)
   const currentStep = controller.currentStep
-  const stepHrefOverride = typeof controllerInput.linkHrefOverride === "string" && controllerInput.linkHrefOverride.trim().length > 0
-    ? controllerInput.linkHrefOverride
-    : null
-  const fallbackAcceleratorHref = stepHrefOverride ?? "/accelerator"
+  const stepHrefOverride = typeof controllerInput.linkHrefOverride === "string" && controllerInput.linkHrefOverride.trim().length > 0 ? controllerInput.linkHrefOverride : null
+  const fallbackAcceleratorHref =
+    stepHrefOverride ??
+    (presentationMode === "fullscreen-route" ? "/workspace" : "/accelerator")
   const runtimeStep = useMemo(
     () =>
       currentStep
@@ -88,97 +294,6 @@ export function WorkspaceAcceleratorCardPanel({
         : null,
     [currentStep, stepHrefOverride],
   )
-
-  const runtimeSnapshot = useMemo<WorkspaceAcceleratorCardRuntimeSnapshot>(
-    () => ({
-      currentStep: runtimeStep,
-      currentIndex: controller.currentIndex,
-      totalSteps: controller.steps.length,
-      canGoPrevious: controller.canGoPrevious,
-      canGoNext: controller.canGoNext,
-      currentModuleStepIndex: controller.currentModuleStepIndex,
-      currentModuleStepTotal: Math.max(controller.currentModuleSteps.length, 1),
-      currentModuleCompletedCount: controller.currentModuleCompletedCount,
-      isCurrentModuleCompleted: controller.isCurrentModuleCompleted,
-      isCurrentStepCompleted: controller.isCurrentStepCompleted,
-    }),
-    [
-      runtimeStep,
-      controller.canGoNext,
-      controller.canGoPrevious,
-      controller.currentIndex,
-      controller.currentModuleCompletedCount,
-      controller.isCurrentModuleCompleted,
-      controller.currentModuleStepIndex,
-      controller.currentModuleSteps.length,
-      controller.isCurrentStepCompleted,
-      controller.steps.length,
-    ]
-  )
-
-  const runtimeActions = useMemo<WorkspaceAcceleratorCardRuntimeActions>(
-    () => ({
-      goPrevious: controller.goPrevious,
-      goNext: controller.goNext,
-      markCurrentStepComplete: controller.markCurrentStepComplete,
-    }),
-    [
-      controller.goNext,
-      controller.goPrevious,
-      controller.markCurrentStepComplete,
-    ]
-  )
-  runtimeActionsRef.current = runtimeActions
-
-  const runtimeSnapshotSignature = useMemo(
-    () =>
-      JSON.stringify({
-        currentStepId: runtimeSnapshot.currentStep?.id ?? null,
-        currentStepHref: runtimeSnapshot.currentStep?.href ?? null,
-        currentStepStatus: runtimeSnapshot.currentStep?.status ?? null,
-        currentStepKind: runtimeSnapshot.currentStep?.stepKind ?? null,
-        currentIndex: runtimeSnapshot.currentIndex,
-        totalSteps: runtimeSnapshot.totalSteps,
-        canGoPrevious: runtimeSnapshot.canGoPrevious,
-        canGoNext: runtimeSnapshot.canGoNext,
-        currentModuleStepIndex: runtimeSnapshot.currentModuleStepIndex,
-        currentModuleStepTotal: runtimeSnapshot.currentModuleStepTotal,
-        currentModuleCompletedCount: runtimeSnapshot.currentModuleCompletedCount,
-        isCurrentModuleCompleted: runtimeSnapshot.isCurrentModuleCompleted,
-        isCurrentStepCompleted: runtimeSnapshot.isCurrentStepCompleted,
-      }),
-    [runtimeSnapshot],
-  )
-  const runtimeActionsSignature = useMemo(
-    () =>
-      buildWorkspaceAcceleratorRuntimeActionsSignature({
-        currentStepId: runtimeSnapshot.currentStep?.id ?? null,
-        canGoPrevious: runtimeSnapshot.canGoPrevious,
-        canGoNext: runtimeSnapshot.canGoNext,
-        isCurrentStepCompleted: runtimeSnapshot.isCurrentStepCompleted,
-        totalSteps: runtimeSnapshot.totalSteps,
-      }),
-    [
-      runtimeSnapshot.canGoNext,
-      runtimeSnapshot.canGoPrevious,
-      runtimeSnapshot.currentStep?.id,
-      runtimeSnapshot.isCurrentStepCompleted,
-      runtimeSnapshot.totalSteps,
-    ],
-  )
-
-  useEffect(() => {
-    if (lastRuntimeSnapshotSignatureRef.current === runtimeSnapshotSignature) return
-    lastRuntimeSnapshotSignatureRef.current = runtimeSnapshotSignature
-    onRuntimeChange?.(runtimeSnapshot)
-  }, [onRuntimeChange, runtimeSnapshot, runtimeSnapshotSignature])
-
-  useEffect(() => {
-    if (lastRuntimeActionsSignatureRef.current === runtimeActionsSignature) return
-    lastRuntimeActionsSignatureRef.current = runtimeActionsSignature
-    if (!runtimeActionsRef.current) return
-    onRuntimeActionsChange?.(runtimeActionsRef.current)
-  }, [onRuntimeActionsChange, runtimeActionsSignature])
 
   useEffect(() => {
     if (fallbackAcceleratorHref.startsWith("/")) {
@@ -191,85 +306,126 @@ export function WorkspaceAcceleratorCardPanel({
     router.prefetch(runtimeStep.href)
   }, [router, runtimeStep?.href])
 
-  const [lessonGroupFilter, setLessonGroupFilter] = useState<string>("")
-  const [openModuleId, setOpenModuleId] = useState<string | null>(null)
-  const previousCurrentModuleIdRef = useRef<string | null>(null)
-  const lessonGroupOptions = useMemo(
-    () => buildWorkspaceAcceleratorLessonGroupOptions(controller.steps),
-    [controller.steps],
+  const [openModuleId, setOpenModuleId] = useState<string | null>(
+    initialOpenModuleId,
   )
-  const currentLessonGroupKey = currentStep
-    ? buildWorkspaceAcceleratorLessonGroupKey(currentStep.groupTitle)
-    : ""
-
-  useEffect(() => {
-    if (lessonGroupOptions.length === 0) {
-      if (lessonGroupFilter === "") return
-      setLessonGroupFilter("")
-      return
-    }
-    const preferredGroupKey =
-      lessonGroupOptions.find((option) => option.key === currentLessonGroupKey)?.key ??
-      lessonGroupOptions[0]?.key ??
-      ""
-    if (!preferredGroupKey || preferredGroupKey === lessonGroupFilter) return
-    setLessonGroupFilter(preferredGroupKey)
-  }, [currentLessonGroupKey, lessonGroupFilter, lessonGroupOptions])
-
-  const selectedLessonGroupKey =
-    lessonGroupFilter ||
-    currentLessonGroupKey ||
-    lessonGroupOptions[0]?.key ||
-    ""
-  const selectedLessonGroup =
-    lessonGroupOptions.find((option) => option.key === selectedLessonGroupKey) ?? null
-  const ActiveLessonGroupIcon = useMemo(() => {
-    if (!selectedLessonGroup) return Layers
-    return getTrackIcon(selectedLessonGroup.label)
-  }, [selectedLessonGroup])
-  const checklistModules = useMemo(
+  const [isModuleViewerOpen, setIsModuleViewerOpen] = useState(
+    presentationMode === "fullscreen-route" || initialModuleViewerOpen,
+  )
+  const previousCurrentModuleIdRef = useRef<string | null>(null)
+  const previousTutorialManagedViewerOpenRef = useRef(false)
+  const pendingFirstModuleTutorialAdvanceRef = useRef(false)
+  const {
+    selectedLessonGroup,
+    selectedLessonGroupKey,
+    lessonGroupSummaries,
+    checklistModules,
+    filteredSteps,
+    filteredProgressPercent,
+    firstVisibleChecklistStepId,
+    handleLessonGroupChange,
+  } = useWorkspaceAcceleratorLessonGroupState({
+    controller,
+    currentStep,
+    tutorialInteractionPolicy,
+    setOpenModuleId,
+  })
+  const placeholderVideoUrl = useMemo(
     () =>
-      buildWorkspaceAcceleratorChecklistModules({
+      resolveWorkspaceAcceleratorPlaceholderVideoUrl({
         steps: controller.steps,
-        completedStepIds: controller.completedStepIds,
-        selectedGroupKey: selectedLessonGroupKey,
-        currentStepId: currentStep?.id ?? null,
+        currentStepId: currentStep?.id,
+      }),
+    [controller.steps, currentStep?.id],
+  )
+  const runtimeActions = useMemo<WorkspaceAcceleratorCardRuntimeActions>(
+    () => ({
+      goPrevious: controller.goPrevious,
+      goNext: controller.goNext,
+      markCurrentStepComplete: controller.markCurrentStepComplete,
+      selectLessonGroup: handleLessonGroupChange,
+    }),
+    [
+      handleLessonGroupChange,
+      controller.goNext,
+      controller.goPrevious,
+      controller.markCurrentStepComplete,
+    ],
+  )
+  const runtimeSnapshot = useMemo<WorkspaceAcceleratorCardRuntimeSnapshot>(
+    () =>
+      buildAcceleratorRuntimeSnapshot({
+        controller,
+        runtimeStep,
+        selectedLessonGroupKey,
+        selectedLessonGroupLabel: selectedLessonGroup?.label ?? null,
+        lessonGroupOptions: lessonGroupSummaries,
+        firstVisibleChecklistStepId,
+        isModuleViewerOpen,
+        openModuleId,
+        placeholderVideoUrl,
+        readinessSummary: controllerInput.readinessSummary,
+        checklistModuleCount: checklistModules.length,
+        filteredStepCount: filteredSteps.length,
       }),
     [
-      controller.completedStepIds,
-      controller.steps,
-      currentStep?.id,
+      controller,
+      controllerInput.readinessSummary,
+      firstVisibleChecklistStepId,
+      filteredSteps.length,
+      isModuleViewerOpen,
+      lessonGroupSummaries,
+      checklistModules.length,
+      openModuleId,
+      placeholderVideoUrl,
+      runtimeStep,
+      selectedLessonGroup?.label,
       selectedLessonGroupKey,
     ],
   )
-  const filteredSteps = useMemo(
-    () => checklistModules.flatMap((module) => module.steps),
-    [checklistModules],
+  const runtimeSnapshotSignature = useMemo(
+    () => buildAcceleratorRuntimeSnapshotSignature(runtimeSnapshot),
+    [runtimeSnapshot],
   )
-  const filteredCompletedCount = useMemo(
+  const runtimeActionsSignature = useMemo(
     () =>
-      checklistModules.reduce(
-        (sum, module) => sum + module.completedStepCount,
-        0,
-      ),
-    [checklistModules],
+      buildWorkspaceAcceleratorRuntimeActionsSignature({
+        currentStepId: runtimeSnapshot.currentStep?.id ?? null,
+        canGoPrevious: runtimeSnapshot.canGoPrevious,
+        canGoNext: runtimeSnapshot.canGoNext,
+        isCurrentStepCompleted: runtimeSnapshot.isCurrentStepCompleted,
+        totalSteps: runtimeSnapshot.totalSteps,
+        selectedLessonGroupKey,
+        lessonGroupCount: lessonGroupSummaries.length,
+      }),
+    [
+      runtimeSnapshot.canGoNext,
+      runtimeSnapshot.canGoPrevious,
+      runtimeSnapshot.currentStep?.id,
+      runtimeSnapshot.isCurrentStepCompleted,
+      runtimeSnapshot.totalSteps,
+      lessonGroupSummaries.length,
+      selectedLessonGroupKey,
+    ],
   )
-  const filteredProgressPercent =
-    filteredSteps.length === 0
-      ? 0
-      : Math.min(
-          100,
-          Math.round((filteredCompletedCount / filteredSteps.length) * 100),
-        )
-  const moduleCount = checklistModules.length
   const checklistModuleIds = useMemo(
     () => checklistModules.map((module) => module.id),
     [checklistModules],
   )
-  const checklistModuleIdsSignature = useMemo(
-    () => checklistModuleIds.join("|"),
-    [checklistModuleIds],
-  )
+  const checklistModuleIdsSignature = useMemo(() => checklistModuleIds.join("|"), [checklistModuleIds])
+  const { onSizeChange, size, readinessSummary } = controllerInput
+  const shouldSyncModuleViewerSize = shouldWorkspaceAcceleratorSyncModuleViewerSize({
+    tutorialCallout,
+    tutorialMode,
+  })
+  const showMilestoneTooltips = tutorialInteractionPolicy === null
+
+  useModuleViewerSizeSync({
+    size,
+    onSizeChange,
+    isModuleViewerOpen,
+    enabled: shouldSyncModuleViewerSize,
+  })
 
   useEffect(() => {
     const currentModuleId = currentStep?.moduleId ?? null
@@ -298,99 +454,187 @@ export function WorkspaceAcceleratorCardPanel({
     })
   }, [checklistModuleIds, checklistModuleIdsSignature, currentStep?.moduleId])
 
+  useEffect(() => {
+    if (tutorialCallout?.focus !== "first-module") return
+    const nextModuleId = checklistModules[0]?.id ?? null
+    if (!nextModuleId) return
+    setOpenModuleId((previous) => (previous === nextModuleId ? previous : nextModuleId))
+  }, [checklistModules, tutorialCallout?.focus])
+
+  useWorkspaceAcceleratorTutorialViewerState({
+    currentModuleId: currentStep?.moduleId ?? null,
+    tutorialCallout,
+    tutorialMode,
+    setIsModuleViewerOpen,
+    setOpenModuleId,
+    previousTutorialManagedViewerOpenRef,
+  })
+
+  useWorkspaceAcceleratorRuntimeSync({
+    runtimeSnapshot,
+    runtimeSnapshotSignature,
+    runtimeActions,
+    runtimeActionsSignature,
+    onRuntimeChange,
+    onRuntimeActionsChange,
+  })
+
+  useEffect(() => {
+    if (
+      !shouldWorkspaceAcceleratorTutorialAdvanceAfterStepOpen({
+        tutorialCallout,
+        pendingAdvance: pendingFirstModuleTutorialAdvanceRef.current,
+        isModuleViewerOpen,
+        currentStepId: currentStep?.id ?? null,
+        tutorialTargetStepId: firstVisibleChecklistStepId,
+      })
+    ) {
+      if (tutorialCallout?.focus !== "first-module") {
+        pendingFirstModuleTutorialAdvanceRef.current = false
+      }
+      return
+    }
+
+    pendingFirstModuleTutorialAdvanceRef.current = false
+    onTutorialActionComplete?.("complete-and-advance")
+  }, [
+    currentStep?.id,
+    firstVisibleChecklistStepId,
+    isModuleViewerOpen,
+    onTutorialActionComplete,
+    tutorialCallout,
+  ])
+
+  const handleCloseModuleViewer = () => {
+    if (onModuleViewerClose) {
+      onModuleViewerClose()
+      return
+    }
+    setIsModuleViewerOpen(false)
+    if (tutorialCallout?.focus === "close-module") {
+      onTutorialActionComplete?.("complete-and-advance")
+    }
+  }
+
+  const handleCompleteModuleStep = () => {
+    if (
+      shouldWorkspaceAcceleratorTutorialAdvanceFromFooterContinue(tutorialMode)
+    ) {
+      completeWorkspaceAcceleratorTutorialPreview({
+        setIsModuleViewerOpen,
+        previousTutorialManagedViewerOpenRef,
+        onTutorialActionComplete,
+      })
+      return
+    }
+    controller.markCurrentStepComplete()
+    if (controller.canGoNext) {
+      controller.goNext()
+    }
+    handleCloseModuleViewer()
+  }
+
   const handleStepSelect = (step: WorkspaceAcceleratorCardStep) => {
+    if (
+      !canWorkspaceAcceleratorTutorialActivateStep({
+        tutorialInteractionPolicy,
+        stepId: step.id,
+        moduleId: step.moduleId,
+      })
+    ) {
+      return
+    }
+
+    const canRequestExternalOpen =
+      Boolean(onRequestOpenStep) &&
+      (presentationMode === "fullscreen-route" ||
+        tutorialInteractionPolicy === null)
+    const openRequestResult = canRequestExternalOpen
+      ? onRequestOpenStep?.({
+          step,
+          selectedLessonGroupKey: selectedLessonGroupKey || null,
+        })
+      : undefined
+
+    if (
+      presentationMode === "embedded" &&
+      tutorialInteractionPolicy === null &&
+      onRequestOpenStep &&
+      openRequestResult !== false
+    ) {
+      return
+    }
+
     controller.goToStep(step.id)
     setOpenModuleId(step.moduleId)
-    onOpenStepNode?.(step.id)
+    setIsModuleViewerOpen(true)
+    if (
+      tutorialCallout?.focus === "first-module" &&
+      step.id === firstVisibleChecklistStepId
+    ) {
+      pendingFirstModuleTutorialAdvanceRef.current = true
+    }
   }
 
   if (!currentStep) {
-    return (
-      <div className="flex min-h-0 flex-col gap-3 pb-1">
-        <div className="space-y-3">
-          <p className="text-muted-foreground text-xs">
-            Accelerator lessons will appear here once your roadmap is available.
-          </p>
-        </div>
-        <Button
-          asChild
-          size="sm"
-          variant="outline"
-          className="self-start rounded-xl text-xs"
-        >
-          <Link href={fallbackAcceleratorHref}>Open accelerator</Link>
-        </Button>
-      </div>
-    )
+    return <WorkspaceAcceleratorCardEmptyState href={fallbackAcceleratorHref} />
   }
 
   return (
-    <div className="relative flex min-h-0 flex-col gap-2 pb-1">
-      <Select
-        value={selectedLessonGroupKey}
-        onValueChange={(nextValue) => {
-          setLessonGroupFilter(nextValue)
-          const nextGroup = lessonGroupOptions.find((option) => option.key === nextValue)
-          const nextModuleId = nextGroup?.moduleIds[0]
-          const nextStep = controller.steps.find((step) => step.moduleId === nextModuleId)
-          if (!nextStep) return
-          setOpenModuleId(nextModuleId ?? null)
-          controller.goToStep(nextStep.id)
-        }}
+    <div className="relative flex min-h-0 flex-1 flex-col">
+      <div
+        className={cn(
+          "grid min-h-0 flex-1 gap-3",
+          isModuleViewerOpen
+            ? "grid-cols-[minmax(250px,290px)_minmax(0,1fr)]"
+            : "grid-cols-1",
+        )}
       >
-        <SelectTrigger
-          className="min-h-9 w-full text-left text-xs"
-          multiline
-          aria-label="Filter by lesson group"
-        >
-          <ActiveLessonGroupIcon
-            className="h-4 w-4 text-muted-foreground"
-            aria-hidden
+        <div className="flex min-h-0 flex-col gap-2">
+          <WorkspaceAcceleratorCardSidebar
+            selectedLessonGroup={selectedLessonGroup}
+            tutorialCallout={tutorialCallout}
+            tutorialInteractionPolicy={tutorialInteractionPolicy}
+            filteredProgressPercent={filteredProgressPercent}
+            readinessSummary={readinessSummary}
+            showMilestoneTooltips={showMilestoneTooltips}
+            checklistModules={checklistModules}
+            currentStepId={currentStep.id}
+            completedStepIds={controller.completedStepIds}
+            openModuleId={openModuleId}
+            onOpenModuleIdChange={setOpenModuleId}
+            onStepSelect={handleStepSelect}
+            tutorialTargetStepId={
+              tutorialCallout?.focus === "first-module"
+                ? firstVisibleChecklistStepId
+                : null
+            }
           />
-          <SelectValue placeholder="Select lesson group" />
-        </SelectTrigger>
-        <SelectContent align="start">
-          {lessonGroupOptions.map((option) => (
-            <SelectItem
-              key={option.key}
-              value={option.key}
-              icon={
-                (() => {
-                  const OptionIcon = getTrackIcon(option.label)
-                  return <OptionIcon className="h-4 w-4" aria-hidden />
-                })()
-              }
-            >
-              {option.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+        </div>
 
-      <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center rounded-md border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground tabular-nums">
-          {moduleCount} {moduleCount === 1 ? "module" : "modules"}
-        </span>
-        <span className="inline-flex items-center rounded-md border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] text-muted-foreground tabular-nums">
-          {filteredSteps.length} {filteredSteps.length === 1 ? "step" : "steps"}
-        </span>
+        {isModuleViewerOpen ? (
+          <WorkspaceAcceleratorStepNodeCard
+            variant="embedded"
+            step={currentStep}
+            placeholderVideoUrl={placeholderVideoUrl}
+            stepIndex={controller.currentModuleStepIndex}
+            stepTotal={Math.max(controller.currentModuleSteps.length, 1)}
+            canGoPrevious={controller.canGoPrevious}
+            canGoNext={controller.canGoNext}
+            completed={controller.isCurrentStepCompleted}
+            moduleCompleted={controller.isCurrentModuleCompleted}
+            onPrevious={controller.goPrevious}
+            onNext={controller.goNext}
+            onComplete={handleCompleteModuleStep}
+            onClose={handleCloseModuleViewer}
+            tutorialCallout={
+              tutorialCallout?.focus === "close-module" ? tutorialCallout : null
+            }
+            tutorialInteractionPolicy={tutorialInteractionPolicy}
+            onWorkspaceOnboardingSubmit={input.onWorkspaceOnboardingSubmit}
+          />
+        ) : null}
       </div>
-
-      <WorkspaceAcceleratorCardProgressStrip
-        progressPercent={filteredProgressPercent}
-        completedCount={filteredCompletedCount}
-        totalCount={filteredSteps.length}
-      />
-
-      <WorkspaceAcceleratorCardChecklist
-        modules={checklistModules}
-        selectedLessonGroupLabel={selectedLessonGroup?.label ?? null}
-        currentStepId={currentStep.id}
-        completedStepIds={controller.completedStepIds}
-        openModuleId={openModuleId}
-        onOpenModuleIdChange={setOpenModuleId}
-        onStepSelect={handleStepSelect}
-      />
     </div>
   )
 }

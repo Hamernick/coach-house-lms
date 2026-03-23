@@ -41,17 +41,21 @@ function buildWorkspaceCanvasV2CardNode({
   position,
   data,
   allowEditing,
+  tutorialDraggable = false,
 }: {
   cardId: WorkspaceCardId
   position: { x: number; y: number }
   data: WorkspaceBoardNodeData
   allowEditing: boolean
+  tutorialDraggable?: boolean
 }): WorkspaceCanvasNode {
+  const zIndex = tutorialDraggable ? 30 : 0
   return {
     id: cardId,
     type: "workspace",
     position,
-    draggable: allowEditing,
+    zIndex,
+    draggable: allowEditing || tutorialDraggable,
     selectable: false,
     dragHandle: ".workspace-card-drag-handle",
     className: workspaceNodeClassName(data.size, cardId),
@@ -67,6 +71,8 @@ function reconcileWorkspaceCardNode({
   orgNodePositionFromBoard,
   cardData,
   allowEditing,
+  tutorialDraggableCardIds,
+  tutorialCardPositionOverrides,
 }: {
   currentWorkspaceNode?: WorkspaceCanvasNode
   cardId: WorkspaceCanvasV2CardId
@@ -74,14 +80,21 @@ function reconcileWorkspaceCardNode({
   orgNodePositionFromBoard: { x: number; y: number }
   cardData: WorkspaceBoardNodeData
   allowEditing: boolean
+  tutorialDraggableCardIds: WorkspaceCanvasV2CardId[]
+  tutorialCardPositionOverrides: Partial<
+    Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
+  > | null
 }) {
   const fallbackPosition =
     cardId === "organization-overview"
       ? orgNodePositionFromBoard
       : resolveWorkspaceCanvasV2DefaultPosition(cardId)
-  const nextPosition = boardNode
-    ? { x: boardNode.x, y: boardNode.y }
-    : currentWorkspaceNode?.position ?? fallbackPosition
+  const nextPosition =
+    (currentWorkspaceNode?.dragging ? currentWorkspaceNode.position : undefined) ??
+    tutorialCardPositionOverrides?.[cardId] ??
+    (boardNode
+      ? { x: boardNode.x, y: boardNode.y }
+      : currentWorkspaceNode?.position ?? fallbackPosition)
 
   if (!currentWorkspaceNode) {
     return buildWorkspaceCanvasV2CardNode({
@@ -89,6 +102,7 @@ function reconcileWorkspaceCardNode({
       position: nextPosition,
       data: cardData,
       allowEditing,
+      tutorialDraggable: tutorialDraggableCardIds.includes(cardId),
     })
   }
 
@@ -104,17 +118,21 @@ function reconcileWorkspaceCardNode({
     currentWorkspaceNode.data as WorkspaceBoardNodeData,
     cardData,
   )
-  const sameDraggable = currentWorkspaceNode.draggable === allowEditing
+  const nextDraggable = allowEditing || tutorialDraggableCardIds.includes(cardId)
+  const sameDraggable = currentWorkspaceNode.draggable === nextDraggable
+  const nextZIndex = tutorialDraggableCardIds.includes(cardId) ? 30 : 0
+  const sameZIndex = currentWorkspaceNode.zIndex === nextZIndex
   const nextClassName = workspaceNodeClassName(cardData.size, cardId)
   const sameClassName = currentWorkspaceNode.className === nextClassName
-  if (samePosition && sameWidth && sameHeight && sameData && sameDraggable && sameClassName) {
+  if (samePosition && sameWidth && sameHeight && sameData && sameDraggable && sameClassName && sameZIndex) {
     return currentWorkspaceNode
   }
 
   return {
     ...currentWorkspaceNode,
     className: sameClassName ? currentWorkspaceNode.className : nextClassName,
-    draggable: allowEditing,
+    zIndex: nextZIndex,
+    draggable: nextDraggable,
     position: samePosition ? currentWorkspaceNode.position : nextPosition,
     style:
       sameWidth && sameHeight
@@ -188,8 +206,9 @@ function reconcileTutorialNode({
       existingTutorialNode.style?.minHeight === tutorialNodeData.style?.minHeight
     const sameData = existingTutorialNode.data === tutorialNodeData.data
     const sameDraggable = existingTutorialNode.draggable === tutorialNodeData.draggable
+    const sameZIndex = existingTutorialNode.zIndex === tutorialNodeData.zIndex
 
-    if (samePosition && sameWidth && sameHeight && sameData && sameDraggable) {
+    if (samePosition && sameWidth && sameHeight && sameData && sameDraggable && sameZIndex) {
       return existingTutorialNode
     }
 
@@ -198,7 +217,9 @@ function reconcileTutorialNode({
       ...tutorialNodeData,
       position: samePosition
         ? existingTutorialNode.position
-        : tutorialNodeData.position,
+        : existingTutorialNode.dragging
+          ? existingTutorialNode.position
+          : tutorialNodeData.position,
       style:
         sameWidth && sameHeight
           ? existingTutorialNode.style
@@ -219,6 +240,8 @@ export function reconcileWorkspaceCanvasV2Nodes({
   allowEditing,
   acceleratorStepNodeData,
   tutorialNodeData,
+  tutorialDraggableCardIds,
+  tutorialCardPositionOverrides,
 }: {
   previous: WorkspaceCanvasNode[]
   visibleCardIds: WorkspaceCanvasV2CardId[]
@@ -228,6 +251,10 @@ export function reconcileWorkspaceCanvasV2Nodes({
   allowEditing: boolean
   acceleratorStepNodeData: WorkspaceCanvasNode | null
   tutorialNodeData: WorkspaceCanvasNode | null
+  tutorialDraggableCardIds: WorkspaceCanvasV2CardId[]
+  tutorialCardPositionOverrides: Partial<
+    Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
+  > | null
 }): WorkspaceCanvasNode[] {
   const previousById = new Map(previous.map((node) => [node.id, node]))
   const next: WorkspaceCanvasNode[] = visibleCardIds.map((cardId) =>
@@ -241,6 +268,8 @@ export function reconcileWorkspaceCanvasV2Nodes({
       orgNodePositionFromBoard,
       cardData: cardDataLookup[cardId],
       allowEditing,
+      tutorialDraggableCardIds,
+      tutorialCardPositionOverrides,
     }),
   )
 

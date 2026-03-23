@@ -5,13 +5,13 @@ import { buildReadinessChecklist } from "@/lib/accelerator/readiness-checklist"
 describe("readiness checklist link resolution", () => {
   it("maps dynamic formation and roadmap reasons to next-step links", () => {
     const checklist = buildReadinessChecklist({
-      reasons: ["Complete formation lessons", "Complete core roadmap sections"],
+      reasons: ["Complete the Formation class", "Complete core roadmap sections"],
       nextFormationModuleHref: "/accelerator/class/formation/module/2",
       nextCoreRoadmapHref: "/accelerator/roadmap/theory-of-change",
     })
 
     expect(checklist).toEqual([
-      { href: "/accelerator/class/formation/module/2", label: "Complete formation lessons" },
+      { href: "/accelerator/class/formation/module/2", label: "Complete the Formation class" },
       { href: "/accelerator/roadmap/theory-of-change", label: "Complete core roadmap sections" },
     ])
   })
@@ -19,7 +19,7 @@ describe("readiness checklist link resolution", () => {
   it("uses stable fallbacks and limits items", () => {
     const checklist = buildReadinessChecklist({
       reasons: [
-        "Complete formation lessons",
+        "Complete the Formation class",
         "Complete core roadmap sections",
         "Upload verification letter",
         "Set a program funding goal",
@@ -28,7 +28,7 @@ describe("readiness checklist link resolution", () => {
     })
 
     expect(checklist).toEqual([
-      { href: "/accelerator/class/formation/module/1", label: "Complete formation lessons" },
+      { href: "/accelerator/class/formation/module/1", label: "Complete the Formation class" },
       { href: "/workspace/roadmap/origin-story", label: "Complete core roadmap sections" },
       { href: "/organization/documents", label: "Upload verification letter" },
     ])

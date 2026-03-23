@@ -1,13 +1,11 @@
 "use client"
 
-import { memo, useMemo } from "react"
+import { memo } from "react"
 import LayoutIcon from "lucide-react/dist/esm/icons/layout"
 import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 
 import { RightRailSlot } from "@/components/app-shell/right-rail"
-import { RoadmapRightRailSection } from "@/components/roadmap/roadmap-right-rail-section"
 import { Button } from "@/components/ui/button"
-import { resolveRoadmapSections } from "@/lib/roadmap"
 
 import { WorkspaceBoardTeamAccessSection } from "./workspace-board-team-access-section"
 import type {
@@ -24,7 +22,6 @@ export const WorkspaceBoardRightRail = memo(function WorkspaceBoardRightRail({
   canInvite,
   members,
   invites,
-  profile,
   realtimeState,
   currentUser,
   tutorialTeamAccessCallout,
@@ -36,7 +33,6 @@ export const WorkspaceBoardRightRail = memo(function WorkspaceBoardRightRail({
   canInvite: boolean
   members: WorkspaceMemberOption[]
   invites: WorkspaceCollaborationInvite[]
-  profile: Parameters<typeof resolveRoadmapSections>[0]
   realtimeState: "connecting" | "live" | "degraded"
   currentUser: {
     id: string
@@ -50,8 +46,6 @@ export const WorkspaceBoardRightRail = memo(function WorkspaceBoardRightRail({
   onAutoLayoutModeChange: (nextMode: WorkspaceAutoLayoutMode) => void
   onInvitesChange: (nextInvites: WorkspaceCollaborationInvite[]) => void
 }) {
-  const roadmapSections = useMemo(() => resolveRoadmapSections(profile), [profile])
-
   return (
     <>
       <RightRailSlot priority={10}>
@@ -82,9 +76,6 @@ export const WorkspaceBoardRightRail = memo(function WorkspaceBoardRightRail({
                 Linear
               </Button>
             </div>
-            <p className="px-1 text-[11px] text-muted-foreground">
-              Dagre Tree arranges the workspace as a horizontal tree. Linear guides the next move from left to right.
-            </p>
           </section>
 
           <WorkspaceBoardTeamAccessSection
@@ -95,11 +86,6 @@ export const WorkspaceBoardRightRail = memo(function WorkspaceBoardRightRail({
             currentUser={currentUser}
             tutorialCallout={tutorialTeamAccessCallout}
             onInvitesChange={onInvitesChange}
-          />
-
-          <RoadmapRightRailSection
-            sections={roadmapSections}
-            basePath="/workspace/roadmap"
           />
         </div>
       </RightRailSlot>

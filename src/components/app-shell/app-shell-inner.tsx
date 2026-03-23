@@ -6,7 +6,6 @@ import { usePathname, useSearchParams } from "next/navigation"
 import { SidebarBody } from "@/components/app-sidebar"
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import {
-  CaseStudyAutofillFab,
   GlobalSearch,
   OnboardingWelcome,
   PaywallOverlay,
@@ -23,7 +22,6 @@ import { RightRailSlot, useRightRailPresence } from "@/components/app-shell/righ
 import { AppShellRightRailControlsProvider } from "@/components/app-shell/right-rail-controls"
 import { Sidebar, SidebarHeader, SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { resolveDevtoolsAccess } from "@/lib/devtools/access"
 import { releaseStaleInteractionLocks } from "@/lib/ui/interaction-lock-guard"
 import { cn } from "@/lib/utils"
 import { resolveAppShellOnboardingRedirectTarget } from "./onboarding-redirect"
@@ -74,7 +72,11 @@ export function AppShellInner({
   const hasRightRail = useRightRailPresence()
   const isMobile = useIsMobile()
   const { rightOpen, handleRightOpenChangeUser, handleRightOpenChangeAuto } =
-    useAppShellRightRailState({ hasRightRail, isMobile })
+    useAppShellRightRailState({
+      hasRightRail,
+      isMobile,
+      autoOpenOnDesktopWhenAvailable: hasUser,
+    })
   const rightRailControls = useMemo(
     () => ({
       rightOpen,
@@ -99,7 +101,6 @@ export function AppShellInner({
   const resolvedHasAcceleratorAccess =
     hasAcceleratorAccess ?? Boolean(hasActiveSubscription || showAccelerator || isAdmin)
   const resolvedHasElectiveAccess = hasElectiveAccess ?? resolvedHasAcceleratorAccess
-  const devtoolsAccess = resolveDevtoolsAccess({ isAdmin, isTester })
   const isOrganizationRoute = Boolean(
     pathname?.startsWith("/organization") ||
       pathname?.startsWith("/workspace") ||
@@ -260,7 +261,7 @@ export function AppShellInner({
                         {onboardingRedirectTarget ? (
                           <div className="flex min-h-[40svh] flex-1 items-center justify-center px-6 py-16">
                             <p className="text-sm text-muted-foreground">
-                              Redirecting to workspace setup…
+                              Redirecting to onboarding…
                             </p>
                           </div>
                         ) : (
@@ -295,9 +296,6 @@ export function AppShellInner({
           classes={sidebarTree}
           showAccelerator={showAccelerator}
         />
-      ) : null}
-      {!isAdminContext && devtoolsAccess.canUseAutofillTools ? (
-        <CaseStudyAutofillFab userEmail={navUser.email} />
       ) : null}
       {!isAdminContext ? <PaywallOverlay currentPlanTier={currentPlanTier} /> : null}
       {!isAdminContext ? <TutorialManager /> : null}

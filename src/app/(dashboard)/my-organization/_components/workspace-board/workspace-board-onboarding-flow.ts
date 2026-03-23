@@ -1,9 +1,13 @@
 import {
   WORKSPACE_CANVAS_TUTORIAL_MANAGED_CARD_IDS,
+  buildWorkspaceCanvasTutorialCompletionHiddenCardIds,
   clampWorkspaceCanvasTutorialStepIndex,
+  resolveWorkspaceCanvasTutorialStepCount,
   resolveWorkspaceCanvasTutorialTrimmedStepIds,
   resolveWorkspaceCanvasTutorialVisibleCardIds,
 } from "@/features/workspace-canvas-tutorial"
+import { buildAutoLayoutNodesForMode } from "./workspace-board-auto-layout-modes"
+import { buildDefaultWorkspaceConnections } from "./workspace-board-layout"
 import type {
   WorkspaceBoardOnboardingFlowState,
   WorkspaceBoardState,
@@ -49,7 +53,7 @@ export const WORKSPACE_ONBOARDING_STAGE_DEFINITIONS: Record<
   3: {
     stage: 3,
     title: "Open your active step node",
-    description: "Use the canvas step node to work a lesson without losing your workspace context.",
+    description: "Use the canvas step node to work through a class step without losing your workspace context.",
     checklist: [
       "Open the current accelerator step node",
       "Review the step details and resources",
@@ -65,7 +69,7 @@ export const WORKSPACE_ONBOARDING_STAGE_DEFINITIONS: Record<
     description: "Move from setup to execution by opening your next accelerator step.",
     checklist: [
       "Open your next accelerator step",
-      "Complete one lesson action",
+      "Complete one class step",
       "Return to workspace to continue building",
     ],
     targetCardId: "accelerator",
@@ -167,6 +171,79 @@ export function applyWorkspaceTutorialSnapshot(
   }
 }
 
+export function buildRestartedWorkspaceTutorialBoardState(
+  boardState: WorkspaceBoardState,
+) {
+  return applyWorkspaceTutorialSnapshot(boardState, {
+    ...buildDefaultWorkspaceOnboardingFlowState(),
+    active: true,
+    updatedAt: new Date().toISOString(),
+  })
+}
+
+function ensureWorkspaceTutorialCompletionConnections(
+  connections: WorkspaceBoardState["connections"],
+) {
+  const nextConnections = new Map(
+    connections.map((connection) => [
+      `${connection.source}->${connection.target}`,
+      connection,
+    ]),
+  )
+
+  for (const connection of buildDefaultWorkspaceConnections()) {
+    const key = `${connection.source}->${connection.target}`
+    if (!nextConnections.has(key)) {
+      nextConnections.set(key, connection)
+    }
+  }
+
+  return Array.from(nextConnections.values())
+}
+
+export function buildCompletedWorkspaceTutorialBoardState(
+  boardState: WorkspaceBoardState,
+) {
+  const completionAutoLayoutMode = "dagre-tree" as const
+  const nextHiddenCardIds = buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
+  const nextConnections = ensureWorkspaceTutorialCompletionConnections(
+    boardState.connections,
+  )
+  const compactCompletionNodes = boardState.nodes.map((node) =>
+    node.id === "accelerator" && node.size === "lg"
+      ? { ...node, size: "sm" as const }
+      : node,
+  )
+  const nextState: WorkspaceBoardState = {
+    ...boardState,
+    autoLayoutMode: completionAutoLayoutMode,
+    onboardingFlow: {
+      ...boardState.onboardingFlow,
+      active: false,
+      tutorialStepIndex: resolveWorkspaceCanvasTutorialStepCount() - 1,
+      openedTutorialStepIds: [],
+      acknowledgedTutorialStepIds: [],
+      updatedAt: new Date().toISOString(),
+    },
+    connections: nextConnections,
+    hiddenCardIds: nextHiddenCardIds,
+    visibility: {
+      allCardsHiddenExplicitly: false,
+    },
+    nodes: compactCompletionNodes,
+  }
+
+  return {
+    ...nextState,
+    nodes: buildAutoLayoutNodesForMode({
+      mode: completionAutoLayoutMode,
+      existingNodes: compactCompletionNodes,
+      hiddenCardIds: nextHiddenCardIds,
+      connections: nextConnections,
+    }),
+  }
+}
+
 export function areWorkspaceOnboardingFlowStatesEqual(
   left: WorkspaceBoardOnboardingFlowState,
   right: WorkspaceBoardOnboardingFlowState,
@@ -211,10 +288,15 @@ function normalizeTutorialStepIds(
 ): WorkspaceCanvasTutorialStepId[] {
   if (!Array.isArray(value)) return []
 
-  const stepIds = value.filter(
-    (stepId): stepId is WorkspaceCanvasTutorialStepId =>
-      typeof stepId === "string" && stepId.trim().length > 0,
-  )
+  const stepIds = value
+    .map((stepId) => {
+      if (stepId === "documents") return "roadmap"
+      return stepId
+    })
+    .filter(
+      (stepId): stepId is WorkspaceCanvasTutorialStepId =>
+        typeof stepId === "string" && stepId.trim().length > 0,
+    )
 
   return Array.from(new Set(stepIds))
 }

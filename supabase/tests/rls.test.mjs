@@ -614,6 +614,96 @@ async function run() {
     })
   }
 
+  if (orgAccessReady) {
+    const expiresAt = new Date(Date.now() + 3600_000).toISOString()
+    const requestId = randomUUID()
+
+    await memberClient
+      .from("organization_access_settings")
+      .upsert(
+        { org_id: member.id, admins_can_invite: true },
+        { onConflict: "org_id" }
+      )
+
+    const { data: createdRequest, error: createdRequestError } =
+      await orgAdminClient
+        .from("organization_access_requests")
+        .insert({
+          id: requestId,
+          org_id: member.id,
+          invitee_user_id: board.id,
+          invitee_email: boardEmail,
+          role: "board",
+          invited_by_user_id: orgAdmin.id,
+          expires_at: expiresAt,
+        })
+        .select("id")
+        .maybeSingle()
+    results.push({
+      name: "org admin can insert access requests when invite setting enabled",
+      passed: !!createdRequest && !createdRequestError,
+    })
+
+    const { error: deniedRequestError } = await staffClient
+      .from("organization_access_requests")
+      .insert({
+        org_id: member.id,
+        invitee_user_id: staff.id,
+        invitee_email: staffEmail,
+        role: "staff",
+        invited_by_user_id: staff.id,
+        expires_at: expiresAt,
+      })
+    results.push({
+      name: "staff cannot insert access requests",
+      passed: !!deniedRequestError,
+    })
+
+    const { data: boardOwnRequest, error: boardOwnRequestError } = await boardClient
+      .from("organization_access_requests")
+      .select("id")
+      .eq("id", requestId)
+      .maybeSingle()
+    results.push({
+      name: "invitee can read own access request",
+      passed: !!boardOwnRequest && !boardOwnRequestError,
+    })
+
+    const { data: staffReadsRequest } = await staffClient
+      .from("organization_access_requests")
+      .select("id")
+      .eq("id", requestId)
+    results.push({
+      name: "staff cannot read another member access request",
+      passed:
+        Array.isArray(staffReadsRequest) && staffReadsRequest.length === 0,
+    })
+
+    const { data: boardUpdateRequest, error: boardUpdateRequestError } =
+      await boardClient
+        .from("organization_access_requests")
+        .update({ status: "declined" })
+        .eq("id", requestId)
+        .select("id")
+    results.push({
+      name: "invitee cannot update access request directly through RLS",
+      passed:
+        !!boardUpdateRequestError ||
+        (Array.isArray(boardUpdateRequest) && boardUpdateRequest.length === 0),
+    })
+
+    const { data: adminReadsRequest, error: adminReadsRequestError } =
+      await adminSessionClient
+        .from("organization_access_requests")
+        .select("id")
+        .eq("id", requestId)
+        .maybeSingle()
+    results.push({
+      name: "platform admin can read access requests",
+      passed: !!adminReadsRequest && !adminReadsRequestError,
+    })
+  }
+
   // Workspace board + collaboration invite RLS.
   if (orgAccessReady) {
     const { error: workspaceProbeError } = await memberClient

@@ -71,6 +71,16 @@ export function RoadmapEditorShell({
   savingId,
   sectionIcon: SectionIcon,
 }: RoadmapEditorShellProps) {
+  const roadmapReturnButton =
+    roadmapReturnHref && roadmapReturnLabel ? (
+      <Button asChild variant="outline" size="sm" className="w-full justify-start gap-2 sm:w-auto">
+        <Link href={roadmapReturnHref}>
+          <ArrowLeftIcon className="h-4 w-4" aria-hidden />
+          {roadmapReturnLabel}
+        </Link>
+      </Button>
+    ) : null
+
   return (
     <>
       <RightRailSlot>
@@ -82,21 +92,12 @@ export function RoadmapEditorShell({
           onSectionSelect={onSectionSelect}
         />
       </RightRailSlot>
-      {roadmapReturnHref && roadmapReturnLabel ? (
-        <RightRailSlot priority={10} align="bottom">
-          <Button asChild variant="outline" size="sm" className="w-full justify-start gap-2">
-            <Link href={roadmapReturnHref}>
-              <ArrowLeftIcon className="h-4 w-4" aria-hidden />
-              {roadmapReturnLabel}
-            </Link>
-          </Button>
-        </RightRailSlot>
-      ) : null}
       <div className="flex h-full min-h-0 w-full min-w-0 flex-1 flex-col gap-6 overflow-hidden">
         <RoadmapSectionPanel
           title={headerTitle}
           subtitle={headerSubtitle}
           icon={SectionIcon}
+          headerControlsTop={roadmapReturnButton}
           status={status}
           canEdit={canEdit}
           onStatusChange={onStatusChange}

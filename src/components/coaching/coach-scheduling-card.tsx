@@ -19,7 +19,7 @@ type CoachSchedulingCardProps = {
 export function CoachSchedulingCard({
   className,
   title = "Coach scheduling",
-  description = "Get focused support on your current lesson and the next step.",
+  description = "Get focused support on your current class and next step.",
 }: CoachSchedulingCardProps) {
   const { schedule, pending } = useCoachingBooking()
   const [tier, setTier] = useState<CoachingTier | null>(null)

@@ -8,11 +8,6 @@ import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
-import { resetOnboardingCompletionAction } from "@/app/actions/admin-testing"
-import { seedTestNotificationsAction } from "@/app/actions/notifications"
-import { resetAllTutorialsAction } from "@/app/actions/tutorial"
-import { resolveDevtoolsAccess } from "@/lib/devtools/access"
-import { toast } from "@/lib/toast"
 
 import { useNavUserMenu } from "./nav-user/hooks/use-nav-user-menu"
 import { NavUserMenuContent } from "./nav-user/nav-user-menu-content"
@@ -42,12 +37,10 @@ type NavUserProps = {
 export function NavUser({
   user,
   isAdmin = false,
-  isTester = false,
   showDivider = true,
 }: NavUserProps) {
   const router = useRouter()
   const [signOutPending, startSignOutTransition] = useTransition()
-  const [adminPending, startAdminTransition] = useTransition()
   const [settingsOpen, setSettingsOpen] = useState(false)
   const {
     menuOpen,
@@ -57,21 +50,6 @@ export function NavUser({
     menuRef,
     menuStyle,
   } = useNavUserMenu()
-
-  function dispatchTutorialStart(tutorial?: "platform" | "accelerator") {
-    if (typeof window === "undefined") return
-    window.dispatchEvent(
-      new CustomEvent(
-        "coachhouse:tutorial:start",
-        tutorial ? { detail: { tutorial } } : undefined
-      )
-    )
-  }
-
-  function dispatchOnboardingStart() {
-    if (typeof window === "undefined") return
-    window.dispatchEvent(new CustomEvent("coachhouse:onboarding:start"))
-  }
 
   function handleSignOut() {
     setMenuOpen(false)
@@ -92,7 +70,6 @@ export function NavUser({
     (normalizedEmail && normalizedEmail.toLowerCase() !== displayName.toLowerCase() ? normalizedEmail : "")
   const displayAvatar = user.avatar ?? null
   const avatarFallback = displayName.charAt(0).toUpperCase() || "U"
-  const devtools = resolveDevtoolsAccess({ isAdmin, isTester })
 
   return (
     <div className={showDivider ? "border-border/60 border-t pt-2" : ""}>
@@ -147,76 +124,11 @@ export function NavUser({
           displayEmail={displayEmail}
           avatarFallback={avatarFallback}
           isAdmin={isAdmin}
-          devtools={devtools}
-          adminPending={adminPending}
           signOutPending={signOutPending}
           onCloseMenu={() => setMenuOpen(false)}
           onOpenSettings={() => {
             setMenuOpen(false)
             setSettingsOpen(true)
-          }}
-          onOpenOnboarding={dispatchOnboardingStart}
-          onStartTutorial={dispatchTutorialStart}
-          onResetTutorials={() => {
-            if (adminPending) return
-            setMenuOpen(false)
-            startAdminTransition(async () => {
-              const result = await resetAllTutorialsAction()
-              if ("error" in result) {
-                toast.error(result.error)
-                return
-              }
-
-              if (typeof window !== "undefined") {
-                const tutorials = [
-                  "platform",
-                  "dashboard",
-                  "my-organization",
-                  "roadmap",
-                  "documents",
-                  "billing",
-                  "accelerator",
-                  "people",
-                  "marketplace",
-                ]
-                for (const tutorial of tutorials) {
-                  window.localStorage.removeItem(`coachhouse_tutorial_completed_${tutorial}`)
-                  window.localStorage.removeItem(`coachhouse_tutorial_dismissed_${tutorial}`)
-                }
-                window.localStorage.removeItem("coachhouse_tour_completed")
-              }
-              router.refresh()
-            })
-          }}
-          onResetOnboarding={() => {
-            if (adminPending) return
-            setMenuOpen(false)
-            startAdminTransition(async () => {
-              const result = await resetOnboardingCompletionAction()
-              if ("error" in result) {
-                toast.error(result.error)
-                return
-              }
-
-              if (typeof window !== "undefined") {
-                window.localStorage.removeItem("onboardingDraftV2")
-              }
-              dispatchOnboardingStart()
-              router.refresh()
-            })
-          }}
-          onSeedNotifications={() => {
-            if (adminPending) return
-            setMenuOpen(false)
-            startAdminTransition(async () => {
-              const result = await seedTestNotificationsAction()
-              if ("error" in result) {
-                toast.error(result.error)
-                return
-              }
-              toast.success("Test notifications created.")
-              router.refresh()
-            })
           }}
           onSignOut={() => {
             if (!signOutPending) {

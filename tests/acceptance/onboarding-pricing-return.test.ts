@@ -26,6 +26,15 @@ describe("onboarding pricing return helpers", () => {
     expect(resolveOnboardingPricingPlanOverride(searchParams)).toBe("operations_support")
   })
 
+  it("keeps successful pricing returns on the pricing step during post-signup access onboarding", () => {
+    const searchParams = createSearchParams(
+      "source=onboarding_pricing&checkout=success&plan=organization",
+    )
+
+    expect(resolveOnboardingPricingEntryStepId(searchParams, "post_signup_access")).toBe("pricing")
+    expect(resolveOnboardingPricingPlanOverride(searchParams)).toBe("organization")
+  })
+
   it("defaults successful onboarding pricing returns to the organization plan", () => {
     const searchParams = createSearchParams(
       "source=onboarding_pricing&checkout=success",

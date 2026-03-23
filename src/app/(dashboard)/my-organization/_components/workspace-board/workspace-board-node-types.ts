@@ -1,7 +1,10 @@
 import type {
+  WorkspaceAcceleratorTutorialCallout,
   WorkspaceAcceleratorCardRuntimeActions,
   WorkspaceAcceleratorCardRuntimeSnapshot,
+  WorkspaceAcceleratorTutorialInteractionPolicy,
 } from "@/features/workspace-accelerator-card"
+import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
 import type { WorkspaceCardShortcutItemModel } from "./workspace-canvas-v2/shortcuts/workspace-card-shortcut-model"
 import type {
   WorkspaceAcceleratorStepPlacement,
@@ -43,16 +46,32 @@ export type WorkspaceBoardNodeData = {
   onAcceleratorRuntimeActionsChange?: (
     actions: WorkspaceAcceleratorCardRuntimeActions
   ) => void
+  acceleratorTutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
+  acceleratorTutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
+  onAcceleratorTutorialActionComplete?: (
+    mode?: "complete" | "complete-and-advance",
+  ) => void
+  onWorkspaceOnboardingSubmit?: (form: FormData) => Promise<void>
   journeyGuideState?: WorkspaceJourneyGuideState | null
   isJourneyTarget?: boolean
   onFocusCard?: (cardId: WorkspaceCardId) => void
+  onOpenCard?: (cardId: WorkspaceCardId) => void
+  onMeasuredHeightChange?: (size: WorkspaceCardSize, height: number) => void
   isCanvasFullscreen?: boolean
   onToggleCanvasFullscreen?: (cardId: WorkspaceCardId) => void
   organizationShortcutItems?: WorkspaceCardShortcutItemModel[]
+  organizationMapButtonCallout?: {
+    instruction: string
+  } | null
+  onOrganizationMapButtonTutorialComplete?: (
+    mode?: "complete" | "complete-and-advance",
+  ) => void
+  tutorialStepId?: WorkspaceCanvasTutorialStepId | null
 }
 
 export type WorkspaceBoardAcceleratorStepNodeData = {
   step: WorkspaceAcceleratorCardRuntimeSnapshot["currentStep"]
+  placeholderVideoUrl?: string | null
   placement: WorkspaceAcceleratorStepPlacement
   stepIndex: number
   stepTotal: number
@@ -65,4 +84,6 @@ export type WorkspaceBoardAcceleratorStepNodeData = {
   onComplete: () => void
   onClose: () => void
   presentationMode: boolean
+  tutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
+  onWorkspaceOnboardingSubmit?: (form: FormData) => Promise<void>
 }

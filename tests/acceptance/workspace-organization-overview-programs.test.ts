@@ -6,6 +6,7 @@ import {
 import {
   buildWorkspaceProgramEditorHref,
   isWorkspaceProgramRecord,
+  isWorkspaceProgramsPreviewOnlyStep,
   resolveWorkspaceProgramsDisplayPrograms,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-programs-card"
 import type { OrgProgram } from "@/components/organization/org-profile-card/types"
@@ -83,5 +84,11 @@ describe("workspace organization overview programs", () => {
   it("only treats persisted program rows as editable overlay records", () => {
     expect(isWorkspaceProgramRecord({ id: "program-123" })).toBe(true)
     expect(isWorkspaceProgramRecord({ id: "legacy-program-0" })).toBe(false)
+  })
+
+  it("treats the programs tutorial step as preview-only", () => {
+    expect(isWorkspaceProgramsPreviewOnlyStep("programs")).toBe(true)
+    expect(isWorkspaceProgramsPreviewOnlyStep("calendar")).toBe(false)
+    expect(isWorkspaceProgramsPreviewOnlyStep(null)).toBe(false)
   })
 })

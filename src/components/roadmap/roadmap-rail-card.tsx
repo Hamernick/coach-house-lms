@@ -261,7 +261,7 @@ export function RoadmapRailCard({
             <Select value={selectedLessonGroup} onValueChange={setSelectedLessonGroup}>
               <SelectTrigger
                 id="lesson-group-picker"
-                aria-label="Filter by lesson group"
+                aria-label="Choose a class track"
                 className="h-9 w-full justify-start bg-background/80 text-left [&_[data-slot=select-value]]:justify-start [&_[data-slot=select-value]]:text-left [&>svg:last-child]:ml-auto"
               >
                 <ActiveLessonGroupIcon className="h-4 w-4 text-muted-foreground" aria-hidden />

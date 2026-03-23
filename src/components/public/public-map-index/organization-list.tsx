@@ -91,7 +91,7 @@ export function PublicMapOrganizationList({
               aria-label={`Open details for ${org.name}`}
             />
 
-            <div className="relative z-10 flex items-start justify-between gap-2">
+            <div className="pointer-events-none relative z-10 flex items-start justify-between gap-2">
               <div className="pointer-events-none min-w-0 flex flex-1 items-start gap-3">
                 <Avatar className="mt-0.5 size-10 rounded-xl border border-border/60">
                   <AvatarImage src={org.logoUrl ?? org.headerUrl ?? undefined} alt={org.name} className="object-cover" />
@@ -120,7 +120,7 @@ export function PublicMapOrganizationList({
                 variant="ghost"
                 size="icon"
                 className={cn(
-                  "relative z-20",
+                  "pointer-events-auto relative z-20",
                   "inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors",
                   isFavorite
                     ? "border-primary/45 bg-primary/10 text-primary"
@@ -166,7 +166,7 @@ export function PublicMapOrganizationList({
               </div>
             ) : null}
 
-            <div className="relative z-10 mt-3 flex items-end justify-between gap-2">
+            <div className="pointer-events-none relative z-10 mt-3 flex items-end justify-between gap-2">
               <div className="pointer-events-none flex min-w-0 flex-wrap items-center gap-1.5">
                 <Badge variant="outline" className="rounded-md border-border/70 bg-background/80 text-[10px] text-foreground">
                   {PUBLIC_MAP_GROUP_LABELS[org.primaryGroup]}
@@ -182,11 +182,11 @@ export function PublicMapOrganizationList({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="relative z-20 h-7 rounded-md border border-border/70 bg-background/80 px-2.5 text-[11px] text-foreground hover:bg-muted"
+                className="pointer-events-auto relative z-20 h-auto rounded-none border-0 bg-transparent px-0 py-0 text-[11px] text-foreground shadow-none hover:bg-transparent hover:text-foreground/80"
                 onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}
               >
                 Details
-                <ArrowRightIcon className="ml-1 h-3.5 w-3.5" aria-hidden />
+                <ArrowRightIcon className="h-3.5 w-3.5" aria-hidden />
               </Button>
             </div>
           </article>

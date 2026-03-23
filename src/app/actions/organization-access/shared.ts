@@ -31,6 +31,30 @@ export type OrganizationAccessInvite = {
   acceptedAt: string | null
 }
 
+export type OrganizationAccessRequestStatus =
+  | "pending"
+  | "accepted"
+  | "declined"
+  | "expired"
+  | "revoked"
+
+export type OrganizationAccessRequest = {
+  id: string
+  orgId: string
+  organizationName: string | null
+  inviteeUserId: string
+  inviteeEmail: string
+  inviteeName: string | null
+  inviterUserId: string | null
+  inviterName: string | null
+  role: OrganizationMemberRole
+  status: OrganizationAccessRequestStatus
+  message: string | null
+  createdAt: string
+  respondedAt: string | null
+  expiresAt: string
+}
+
 export type OrganizationAccessResult = { ok: true } | { error: string }
 
 export type OrganizationAccessListResult =
@@ -38,6 +62,7 @@ export type OrganizationAccessListResult =
       ok: true
       members: OrganizationAccessMember[]
       invites: OrganizationAccessInvite[]
+      requests: OrganizationAccessRequest[]
       adminsCanInvite: boolean
       staffCanManageCalendar: boolean
       hasPaidTeamAccess: boolean
@@ -50,7 +75,20 @@ export type OrganizationAccessListResult =
   | { error: string }
 
 export type CreateInviteResult =
-  | { ok: true; invite: OrganizationAccessInvite }
+  | {
+      ok: true
+      outcome: "existing_user_request_created" | "existing_user_request_resent"
+      request: OrganizationAccessRequest
+      emailSent: boolean
+      emailError: string | null
+    }
+  | {
+      ok: true
+      outcome: "external_invite_sent" | "external_invite_resent"
+      invite: OrganizationAccessInvite
+      emailSent: boolean
+      emailError: string | null
+    }
   | { error: string }
 
 export type AcceptInviteResult =
@@ -60,6 +98,14 @@ export type AcceptInviteResult =
       role: OrganizationMemberRole
       inviteKind: OrganizationInviteKind
     }
+  | { error: string }
+
+export type ListOrganizationAccessRequestsResult =
+  | { ok: true; requests: OrganizationAccessRequest[] }
+  | { error: string }
+
+export type RespondToOrganizationAccessRequestResult =
+  | { ok: true; orgId: string; status: "accepted" | "declined" }
   | { error: string }
 
 export type OrganizationInviteKind = "standard" | "funder"
@@ -129,6 +175,25 @@ export function createInviteToken(inviteKind: OrganizationInviteKind = "standard
 
 export function parseInviteKindFromToken(token: string): OrganizationInviteKind {
   return token.startsWith(FUNDER_INVITE_TOKEN_PREFIX) ? "funder" : "standard"
+}
+
+export function formatOrganizationRoleLabel(role: OrganizationMemberRole) {
+  if (role === "owner") return "Owner"
+  if (role === "admin") return "Admin"
+  if (role === "staff") return "Staff"
+  if (role === "board") return "Board"
+  return "Viewer"
+}
+
+export function resolveOrganizationAccessRequestStatus({
+  status,
+  expiresAt,
+}: {
+  status: OrganizationAccessRequestStatus
+  expiresAt: string
+}): OrganizationAccessRequestStatus {
+  if (status !== "pending") return status
+  return new Date(expiresAt).getTime() < Date.now() ? "expired" : "pending"
 }
 
 export async function resolvePaidTeamAccessForOrg(
@@ -228,5 +293,31 @@ export function tryCreateSupabaseAdminClient(): ReturnType<
     return createSupabaseAdminClient()
   } catch {
     return null
+  }
+}
+
+export async function findUserByEmail(email: string) {
+  const admin = tryCreateSupabaseAdminClient()
+  if (!admin) return null
+
+  const perPage = 200
+  let page = 1
+
+  while (true) {
+    const { data, error } = await admin.auth.admin.listUsers({ page, perPage })
+    if (error) return null
+
+    const match = (data.users ?? []).find(
+      (user) => normalizeEmail(user.email ?? "") === email,
+    )
+    if (match) {
+      return {
+        id: match.id,
+        email: normalizeEmail(match.email ?? email),
+      }
+    }
+
+    if (!data.users || data.users.length < perPage) return null
+    page += 1
   }
 }

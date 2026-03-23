@@ -33,6 +33,16 @@ type WorkspaceConnectionValidationFailureReason = Extract<
   { allowed: false }
 >["reason"]
 
+export type WorkspaceCanvasDroppedConnectionReason =
+  | "unknown-node-id"
+  | "hidden-node-id"
+  | WorkspaceConnectionValidationFailureReason
+
+export type WorkspaceCanvasDroppedConnection = {
+  id: string
+  reason: WorkspaceCanvasDroppedConnectionReason
+}
+
 export type WorkspaceCanvasConnectAttemptResult =
   | {
       allowed: true
@@ -144,9 +154,11 @@ export function buildWorkspaceCanvasV2Edges({
 }): {
   edges: Edge[]
   droppedConnectionIds: string[]
+  droppedConnections: WorkspaceCanvasDroppedConnection[]
 } {
   const edges: Edge[] = []
   const droppedConnectionIds: string[] = []
+  const droppedConnections: WorkspaceCanvasDroppedConnection[] = []
 
   for (const connection of connections) {
     if (
@@ -154,6 +166,10 @@ export function buildWorkspaceCanvasV2Edges({
       !isWorkspaceCanvasV2CardId(connection.target)
     ) {
       droppedConnectionIds.push(connection.id)
+      droppedConnections.push({
+        id: connection.id,
+        reason: "unknown-node-id",
+      })
       continue
     }
 
@@ -162,6 +178,10 @@ export function buildWorkspaceCanvasV2Edges({
       !visibleCardIdSet.has(connection.target)
     ) {
       droppedConnectionIds.push(connection.id)
+      droppedConnections.push({
+        id: connection.id,
+        reason: "hidden-node-id",
+      })
       continue
     }
 
@@ -171,6 +191,10 @@ export function buildWorkspaceCanvasV2Edges({
     })
     if (!validation.allowed) {
       droppedConnectionIds.push(connection.id)
+      droppedConnections.push({
+        id: connection.id,
+        reason: validation.reason,
+      })
       continue
     }
 
@@ -231,7 +255,15 @@ export function buildWorkspaceCanvasV2Edges({
     })
   }
 
-  return { edges, droppedConnectionIds }
+  return { edges, droppedConnectionIds, droppedConnections }
+}
+
+export function shouldLogWorkspaceCanvasDroppedConnections(
+  droppedConnections: WorkspaceCanvasDroppedConnection[],
+) {
+  return droppedConnections.some(
+    (connection) => connection.reason !== "hidden-node-id",
+  )
 }
 
 export function resolveWorkspaceCanvasDisconnectActionSets({

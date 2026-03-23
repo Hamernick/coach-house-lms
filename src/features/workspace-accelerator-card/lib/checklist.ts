@@ -1,3 +1,4 @@
+import { SECTION_DEFINITIONS } from "@/lib/roadmap/definitions"
 import type { WorkspaceAcceleratorCardStep } from "../types"
 
 export type WorkspaceAcceleratorLessonGroupOption = {
@@ -19,6 +20,86 @@ export type WorkspaceAcceleratorChecklistModule = {
 function normalizeLessonGroupLabel(groupTitle: string) {
   const next = groupTitle.trim()
   return next.length > 0 ? next : "Accelerator"
+}
+
+function normalizeLessonGroupOrderLabel(label: string) {
+  return label
+    .trim()
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+const ROADMAP_LESSON_GROUP_ORDER = new Map(
+  SECTION_DEFINITIONS.map((section, index) => [
+    normalizeLessonGroupOrderLabel(section.title),
+    index,
+  ]),
+)
+
+const ROADMAP_LESSON_GROUP_ALIASES = new Map<string, string>([
+  [
+    normalizeLessonGroupOrderLabel("Theory of Change & Systems Thinking"),
+    normalizeLessonGroupOrderLabel("Theory of Change"),
+  ],
+  [
+    normalizeLessonGroupOrderLabel("Program Design & Delivery"),
+    normalizeLessonGroupOrderLabel("Program"),
+  ],
+  [
+    normalizeLessonGroupOrderLabel("Board Governance & Strategy"),
+    normalizeLessonGroupOrderLabel("Board Strategy"),
+  ],
+])
+
+const PREFERRED_LESSON_GROUP_ORDER = new Map<string, number>([
+  [normalizeLessonGroupOrderLabel("Formation"), 0],
+  [normalizeLessonGroupOrderLabel("Strategic Foundations"), 1],
+])
+
+function resolvePreferredLessonGroupOrderRank(label: string) {
+  const normalizedLabel = normalizeLessonGroupOrderLabel(label)
+  const exactRank = PREFERRED_LESSON_GROUP_ORDER.get(normalizedLabel)
+  if (exactRank != null) return exactRank
+
+  if (normalizedLabel.includes("formation")) {
+    return PREFERRED_LESSON_GROUP_ORDER.get(
+      normalizeLessonGroupOrderLabel("Formation"),
+    )!
+  }
+  if (normalizedLabel.includes("strategic foundation")) {
+    return PREFERRED_LESSON_GROUP_ORDER.get(
+      normalizeLessonGroupOrderLabel("Strategic Foundations"),
+    )!
+  }
+
+  return null
+}
+
+function resolveLessonGroupOrderRank(label: string) {
+  const normalizedLabel = normalizeLessonGroupOrderLabel(label)
+  const exactMatch = ROADMAP_LESSON_GROUP_ORDER.get(normalizedLabel)
+  if (exactMatch != null) return exactMatch
+
+  const aliasMatch = ROADMAP_LESSON_GROUP_ALIASES.get(normalizedLabel)
+  if (aliasMatch) {
+    const aliasedRank = ROADMAP_LESSON_GROUP_ORDER.get(aliasMatch)
+    if (aliasedRank != null) return aliasedRank
+  }
+
+  for (const [canonicalLabel, rank] of ROADMAP_LESSON_GROUP_ORDER.entries()) {
+    if (
+      normalizedLabel.startsWith(canonicalLabel) ||
+      canonicalLabel.startsWith(normalizedLabel)
+    ) {
+      return rank
+    }
+  }
+
+  return null
 }
 
 export function formatWorkspaceAcceleratorModuleCompletionLabel(
@@ -70,11 +151,21 @@ export function buildWorkspaceAcceleratorLessonGroupOptions(
   steps: WorkspaceAcceleratorCardStep[],
 ): WorkspaceAcceleratorLessonGroupOption[] {
   const groups = new Map<string, WorkspaceAcceleratorLessonGroupOption>()
+  const insertionOrder = new Map<string, number>()
+  const explicitGroupOrder = new Map<string, number>()
 
   for (const step of steps) {
     const label = normalizeLessonGroupLabel(step.groupTitle)
     const key = buildWorkspaceAcceleratorLessonGroupKey(label)
     const existing = groups.get(key)
+
+    if (
+      typeof step.groupOrder === "number" &&
+      Number.isFinite(step.groupOrder) &&
+      !explicitGroupOrder.has(key)
+    ) {
+      explicitGroupOrder.set(key, step.groupOrder)
+    }
 
     if (existing) {
       if (!existing.moduleIds.includes(step.moduleId)) {
@@ -88,9 +179,46 @@ export function buildWorkspaceAcceleratorLessonGroupOptions(
       label,
       moduleIds: [step.moduleId],
     })
+    insertionOrder.set(key, insertionOrder.size)
   }
 
-  return Array.from(groups.values())
+  return Array.from(groups.values()).sort((left, right) => {
+    const leftPreferredOrder = resolvePreferredLessonGroupOrderRank(left.label)
+    const rightPreferredOrder = resolvePreferredLessonGroupOrderRank(right.label)
+    if (leftPreferredOrder != null && rightPreferredOrder != null) {
+      if (leftPreferredOrder !== rightPreferredOrder) {
+        return leftPreferredOrder - rightPreferredOrder
+      }
+    } else if (leftPreferredOrder != null) {
+      return -1
+    } else if (rightPreferredOrder != null) {
+      return 1
+    }
+
+    const leftExplicitOrder = explicitGroupOrder.get(left.key)
+    const rightExplicitOrder = explicitGroupOrder.get(right.key)
+
+    if (leftExplicitOrder != null && rightExplicitOrder != null) {
+      if (leftExplicitOrder !== rightExplicitOrder) {
+        return leftExplicitOrder - rightExplicitOrder
+      }
+    } else if (leftExplicitOrder != null) {
+      return -1
+    } else if (rightExplicitOrder != null) {
+      return 1
+    }
+
+    const leftRank = resolveLessonGroupOrderRank(left.label)
+    const rightRank = resolveLessonGroupOrderRank(right.label)
+
+    if (leftRank != null && rightRank != null && leftRank !== rightRank) {
+      return leftRank - rightRank
+    }
+    if (leftRank != null && rightRank == null) return -1
+    if (leftRank == null && rightRank != null) return 1
+
+    return (insertionOrder.get(left.key) ?? 0) - (insertionOrder.get(right.key) ?? 0)
+  })
 }
 
 export function buildWorkspaceAcceleratorChecklistModules({

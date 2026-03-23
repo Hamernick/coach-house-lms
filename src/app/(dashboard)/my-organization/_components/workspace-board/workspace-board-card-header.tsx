@@ -11,6 +11,7 @@ import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { Button } from "@/components/ui/button"
 import { CardHeader, CardTitle } from "@/components/ui/card"
+import { WORKSPACE_TEXT_STYLES } from "@/components/workspace/workspace-typography"
 import {
   Popover,
   PopoverClose,
@@ -27,6 +28,7 @@ export function WorkspaceBoardCardHeader({
   tone = "default",
   titleIcon,
   titleBadge,
+  headerDetails,
   headerMeta,
   headerAction,
   hideTitle = false,
@@ -45,6 +47,7 @@ export function WorkspaceBoardCardHeader({
   tone?: "default" | "accelerator"
   titleIcon?: ReactNode
   titleBadge?: ReactNode
+  headerDetails?: ReactNode
   headerMeta?: ReactNode
   headerAction?: ReactNode
   hideTitle?: boolean
@@ -63,8 +66,11 @@ export function WorkspaceBoardCardHeader({
     showCanvasFullscreenAction && fullscreenControlMode === "inline"
   const showEditorAction = Boolean(editorHref)
   const hasCustomMenuActions = menuActions.length > 0
+  const showDirectEditorLink =
+    !isCanvasFullscreen && showEditorAction && !hasCustomMenuActions
   const showOverflowMenu =
     !isCanvasFullscreen &&
+    !showDirectEditorLink &&
     (
       (showCanvasFullscreenAction && !showInlineFullscreenControl) ||
       showEditorAction ||
@@ -72,7 +78,7 @@ export function WorkspaceBoardCardHeader({
     )
   const showTitle = !hideTitle
   const showSubtitle = !hideSubtitle && subtitle.trim().length > 0
-  const showHeaderCopy = showTitle || showSubtitle
+  const showHeaderCopy = showTitle || showSubtitle || Boolean(headerDetails)
 
   return (
     <CardHeader
@@ -97,8 +103,10 @@ export function WorkspaceBoardCardHeader({
             {showTitle ? (
               <CardTitle
                 className={cn(
-                  "truncate text-sm font-semibold tracking-tight",
-                  presentationMode && "text-[13px]"
+                  "truncate",
+                  presentationMode
+                    ? WORKSPACE_TEXT_STYLES.cardTitleCompact
+                    : WORKSPACE_TEXT_STYLES.cardTitle,
                 )}
               >
                 <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
@@ -126,12 +134,24 @@ export function WorkspaceBoardCardHeader({
             {showSubtitle ? (
               <p
                 className={cn(
-                  "text-muted-foreground line-clamp-1 text-[11px]",
-                  presentationMode && "text-[10px]"
+                  "line-clamp-1",
+                  presentationMode
+                    ? "text-[10px] leading-4 text-muted-foreground"
+                    : WORKSPACE_TEXT_STYLES.cardSubtitle,
                 )}
               >
                 {subtitle}
               </p>
+            ) : null}
+            {headerDetails ? (
+              <div
+                className={cn(
+                  "pt-1",
+                  presentationMode && "pt-0.5"
+                )}
+              >
+                {headerDetails}
+              </div>
             ) : null}
           </div>
         ) : (
@@ -140,6 +160,13 @@ export function WorkspaceBoardCardHeader({
         <div className="nodrag nopan flex items-center gap-1">
           {headerMeta ? <div className="nodrag nopan shrink-0">{headerMeta}</div> : null}
           {headerAction ? <div className="nodrag nopan shrink-0">{headerAction}</div> : null}
+          {showDirectEditorLink ? (
+            <Button asChild variant="ghost" size="icon" className="nodrag nopan h-7 w-7">
+              <Link href={editorHref as string} aria-label="Open card editor">
+                <Maximize2Icon className="text-muted-foreground h-3.5 w-3.5" aria-hidden />
+              </Link>
+            </Button>
+          ) : null}
           {showOverflowMenu ? (
             <Popover>
               <PopoverTrigger asChild>

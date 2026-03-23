@@ -32,10 +32,10 @@ export function buildReadinessChecklist(options: {
 
   const mapped = reasons
     .map((reason) => {
-      if (reason === "Complete formation lessons") {
+      if (reason === "Complete the Formation class") {
         return {
           href: nextFormationModuleHref ?? "/accelerator/class/formation/module/1",
-          label: "Complete formation lessons",
+          label: "Complete the Formation class",
         }
       }
       if (reason === "Complete core roadmap sections") {

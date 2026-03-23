@@ -1,3 +1,4 @@
+import { resolveWorkspaceDefaultHiddenCardIds } from "@/lib/workspace-card-policy"
 import type {
   WorkspaceCardId,
   WorkspaceCardSize,
@@ -15,6 +16,15 @@ export type WorkspaceCardNodeStyle = {
   minHeight?: number
 }
 
+const AUTO_HEIGHT_CARD_IDS = new Set<WorkspaceCardId>([
+  "accelerator",
+  "organization-overview",
+  "programs",
+  "roadmap",
+  "calendar",
+  "communications",
+])
+
 export const CARD_DIMENSIONS: Record<WorkspaceCardSize, CardDimensions> = {
   sm: { width: 320, height: 300 },
   md: { width: 440, height: 400 },
@@ -28,7 +38,7 @@ export const CARD_DIMENSION_OVERRIDES: Partial<
   >
 > = {
   "organization-overview": {
-    md: { width: 528, height: 432 },
+    md: { width: 552, height: 452 },
   },
   programs: {
     md: { height: 620 },
@@ -37,7 +47,12 @@ export const CARD_DIMENSION_OVERRIDES: Partial<
   accelerator: {
     sm: { width: 400, height: 252 },
     md: { width: 480, height: 520 },
-    lg: { width: 600, height: 620 },
+    lg: { width: 1180, height: 720 },
+  },
+  roadmap: {
+    sm: { height: 560 },
+    md: { height: 600 },
+    lg: { height: 680 },
   },
   "brand-kit": {
     sm: { height: 360 },
@@ -58,32 +73,27 @@ export const CARD_DIMENSION_OVERRIDES: Partial<
   deck: {
     sm: { height: 332 },
   },
-  vault: {
-    sm: { height: 432 },
-    md: { height: 456 },
-    lg: { height: 540 },
-  },
   atlas: {
-    sm: { height: 252 },
-    md: { height: 304 },
+    sm: { width: 400, height: 372 },
+    md: { width: 520, height: 428 },
   },
 }
 
 export const DASHBOARD_GRID_ROWS: WorkspaceCardId[][] = [
   ["organization-overview", "programs", "accelerator", "calendar"],
-  ["vault", "brand-kit", "economic-engine", "communications"],
+  ["roadmap", "brand-kit", "economic-engine", "communications"],
   ["deck", "atlas"],
 ]
 
 const CALENDAR_FOCUSED_GRID_ROWS: WorkspaceCardId[][] = [
   ["organization-overview", "programs", "calendar", "accelerator"],
-  ["vault", "brand-kit", "communications", "economic-engine"],
+  ["roadmap", "brand-kit", "communications", "economic-engine"],
   ["deck", "atlas"],
 ]
 
 const COMMUNICATIONS_FOCUSED_GRID_ROWS: WorkspaceCardId[][] = [
   ["organization-overview", "programs", "communications", "accelerator"],
-  ["vault", "brand-kit", "calendar", "economic-engine"],
+  ["roadmap", "brand-kit", "calendar", "economic-engine"],
   ["deck", "atlas"],
 ]
 
@@ -105,16 +115,18 @@ export const DEFAULT_CARD_SIZES: Record<WorkspaceCardId, WorkspaceCardSize> = {
   "organization-overview": "md",
   programs: "md",
   accelerator: "sm",
+  roadmap: "sm",
   "brand-kit": "sm",
   "economic-engine": "md",
   calendar: "sm",
   communications: "md",
   deck: "md",
-  vault: "sm",
   atlas: "md",
 }
 
-export const DEFAULT_HIDDEN_CARD_IDS: WorkspaceCardId[] = ["brand-kit", "deck", "atlas"]
+export const DEFAULT_HIDDEN_CARD_IDS: WorkspaceCardId[] = [
+  ...resolveWorkspaceDefaultHiddenCardIds(),
+]
 
 export const AUTO_LAYOUT_SNAP = 8
 
@@ -140,12 +152,7 @@ export function resolveWorkspaceCardNodeStyle(
 ): WorkspaceCardNodeStyle {
   const dimensions = resolveCardDimensions(size, cardId)
 
-  if (
-    cardId === "accelerator" ||
-    cardId === "organization-overview" ||
-    cardId === "programs" ||
-    cardId === "calendar"
-  ) {
+  if (isWorkspaceCardAutoHeight(cardId)) {
     return {
       width: dimensions.width,
     }
@@ -156,6 +163,56 @@ export function resolveWorkspaceCardNodeStyle(
     height: dimensions.height,
     minHeight: dimensions.height,
   }
+}
+
+export function isWorkspaceCardAutoHeight(cardId?: WorkspaceCardId) {
+  return cardId ? AUTO_HEIGHT_CARD_IDS.has(cardId) : false
+}
+
+export function resolveWorkspaceCardHeightModeClassName(cardId?: WorkspaceCardId) {
+  return isWorkspaceCardAutoHeight(cardId) ? "h-auto" : "h-full"
+}
+
+export function resolveWorkspaceCardCanvasShellStyle({
+  size,
+  cardId,
+  isCanvasFullscreen = false,
+}: {
+  size: WorkspaceCardSize
+  cardId?: WorkspaceCardId
+  isCanvasFullscreen?: boolean
+}) {
+  const canvasNodeStyle = resolveWorkspaceCardNodeStyle(size, cardId)
+
+  if (isCanvasFullscreen || isWorkspaceCardAutoHeight(cardId)) {
+    return undefined
+  }
+
+  return {
+    minHeight: canvasNodeStyle.minHeight,
+    height: canvasNodeStyle.height,
+  }
+}
+
+export function resolveWorkspaceCardCanvasShellClassName({
+  size,
+  cardId,
+  isCanvasFullscreen = false,
+}: {
+  size: WorkspaceCardSize
+  cardId?: WorkspaceCardId
+  isCanvasFullscreen?: boolean
+}) {
+  if (isCanvasFullscreen) {
+    return "h-full rounded-none border-0 shadow-none"
+  }
+
+  return [
+    resolveWorkspaceCardHeightModeClassName(cardId),
+    "shadow-none",
+    "border-border/70 border",
+    size === "sm" ? "rounded-[20px]" : "rounded-[24px]",
+  ].join(" ")
 }
 
 export function roundToSnap(value: number) {

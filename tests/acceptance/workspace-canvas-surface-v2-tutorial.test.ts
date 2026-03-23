@@ -1,24 +1,15 @@
 import { describe, expect, it } from "vitest"
 
 import {
-  resolveWorkspaceCanvasTutorialPositionOverrideForScene,
   resolveWorkspaceCanvasTutorialRuntime,
   resolveWorkspaceCanvasTutorialSceneSignature,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-runtime"
-import { resolveCardDimensions } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout-config"
-import type { WorkspaceCardId } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-types"
-
-function rectsOverlap(
-  left: { x: number; y: number; width: number; height: number },
-  right: { x: number; y: number; width: number; height: number },
-) {
-  return !(
-    left.x + left.width <= right.x ||
-    right.x + right.width <= left.x ||
-    left.y + left.height <= right.y ||
-    right.y + right.height <= left.y
-  )
-}
+import { resolveWorkspaceCanvasTutorialBoostedZoom } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-zoom"
+import {
+  resolveWorkspaceCanvasTutorialStep,
+  resolveWorkspaceCanvasTutorialStepCount,
+  type WorkspaceCanvasTutorialStepId,
+} from "@/features/workspace-canvas-tutorial"
 
 const EXISTING_NODES = [
   { id: "organization-overview", x: 120, y: 220, size: "md" },
@@ -29,144 +20,472 @@ const EXISTING_NODES = [
   { id: "calendar", x: 1544, y: 500, size: "sm" },
   { id: "communications", x: 1544, y: 988, size: "md" },
   { id: "deck", x: 480, y: 692, size: "md" },
-  { id: "vault", x: 632, y: 220, size: "sm" },
+  { id: "roadmap", x: 632, y: 220, size: "sm" },
   { id: "atlas", x: 840, y: 692, size: "md" },
 ] as const
 
+function resolveRectCenter(position: { x: number; y: number }, size: { width: number; height: number }) {
+  return {
+    x: position.x + size.width / 2,
+    y: position.y + size.height / 2,
+  }
+}
+
+function resolveTutorialStepIndex(stepId: WorkspaceCanvasTutorialStepId) {
+  for (let index = 0; index < resolveWorkspaceCanvasTutorialStepCount(); index += 1) {
+    if (resolveWorkspaceCanvasTutorialStep(index).id === stepId) {
+      return index
+    }
+  }
+
+  throw new Error(`Unable to resolve tutorial step index for ${stepId}.`)
+}
+
 describe("workspace canvas tutorial runtime", () => {
-  it("starts with only the tutorial card visible", () => {
+  it("uses stable scene-family signatures instead of raw step indices", () => {
+    const desktopSignature = resolveWorkspaceCanvasTutorialSceneSignature({
+      tutorialActive: true,
+      tutorialStepIndex: 4,
+      openedTutorialStepIds: ["accelerator"],
+      breakpoint: "desktop",
+    })
+    const mobileSignature = resolveWorkspaceCanvasTutorialSceneSignature({
+      tutorialActive: true,
+      tutorialStepIndex: 4,
+      openedTutorialStepIds: ["accelerator"],
+      breakpoint: "mobile",
+    })
+    const organizationSignature = resolveWorkspaceCanvasTutorialSceneSignature({
+      tutorialActive: true,
+      tutorialStepIndex: 1,
+      openedTutorialStepIds: [],
+      breakpoint: "desktop",
+    })
+    const welcomeSignature = resolveWorkspaceCanvasTutorialSceneSignature({
+      tutorialActive: true,
+      tutorialStepIndex: 0,
+      openedTutorialStepIds: [],
+      breakpoint: "desktop",
+    })
+    const acceleratorShortcutClosedSignature =
+      resolveWorkspaceCanvasTutorialSceneSignature({
+        tutorialActive: true,
+        tutorialStepIndex: 3,
+        openedTutorialStepIds: [],
+        breakpoint: "desktop",
+    })
+
+    expect(desktopSignature).toBe("accelerator::desktop")
+    expect(mobileSignature).toBe("accelerator::mobile")
+    expect(welcomeSignature).toBe("welcome::desktop")
+    expect(organizationSignature).toBe("overview::desktop")
+    expect(acceleratorShortcutClosedSignature).toBe("overview::desktop")
+    expect(
+      resolveWorkspaceCanvasTutorialSceneSignature({
+        tutorialActive: false,
+        tutorialStepIndex: 4,
+        openedTutorialStepIds: ["accelerator"],
+        breakpoint: "desktop",
+      }),
+    ).toBeNull()
+  })
+
+  it("starts the welcome step on the compact welcome shell", () => {
     const runtime = resolveWorkspaceCanvasTutorialRuntime({
       tutorialStepIndex: 0,
       visibleCardIds: [],
       existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
     })
 
+    expect(runtime.cardPositionOverrides).toEqual({})
+    expect(runtime.tutorialNodePosition).toEqual({ x: 564, y: 248 })
+    expect(runtime.tutorialNodeStyle).toEqual({
+      width: 520,
+      height: 324,
+      minHeight: 324,
+    })
     expect(runtime.tutorialEdgeTargetCardId).toBeNull()
-    expect(runtime.tutorialNodePosition).toEqual({ x: 560, y: 280 })
-    expect(runtime.guidePlacement).toBe("center")
+    expect(runtime.cameraViewport).toEqual({
+      x: 824,
+      y: 410,
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.68),
+      duration: 240,
+    })
+    expect(runtime.sceneNodeIds).toEqual(["workspace-canvas-tutorial"])
   })
 
-  it("places the guide away from the visible cluster while keeping the current target", () => {
+  it("keeps the welcome stage centered even when the organization card is visible", () => {
     const runtime = resolveWorkspaceCanvasTutorialRuntime({
-      tutorialStepIndex: 7,
-      openedTutorialStepIds: ["accelerator", "calendar", "programs"],
-      visibleCardIds: [
-        "organization-overview",
-        "accelerator",
-        "calendar",
-        "programs",
-        "vault",
-      ],
+      tutorialStepIndex: 0,
+      visibleCardIds: ["organization-overview"],
       existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
     })
-    const tutorialRect = {
-      x: runtime.tutorialNodePosition.x,
-      y: runtime.tutorialNodePosition.y,
-      width: Number(runtime.tutorialNodeStyle.width),
-      height: Number(runtime.tutorialNodeStyle.minHeight),
-    }
-    const visibleRects = [
-      { id: "organization-overview" as WorkspaceCardId, x: 120, y: 220, size: "md" as const },
-      { id: "accelerator" as WorkspaceCardId, x: 1144, y: 220, size: "sm" as const },
-      { id: "calendar" as WorkspaceCardId, x: 1544, y: 500, size: "sm" as const },
-      { id: "programs" as WorkspaceCardId, x: 632, y: 220, size: "md" as const },
-      { id: "vault" as WorkspaceCardId, x: 632, y: 220, size: "sm" as const },
-    ].map((node) => ({
-      ...node,
-      ...resolveCardDimensions(node.size, node.id),
-    }))
 
-    expect(runtime.tutorialEdgeTargetCardId).toBe("organization-overview")
-    expect(runtime.guidePlacement).toBe("above")
-    expect(visibleRects.every((rect) => !rectsOverlap(tutorialRect, rect))).toBe(
-      true,
+    expect(runtime.cardPositionOverrides).toEqual({
+      "organization-overview": {
+        x: 152,
+        y: 248,
+      },
+    })
+    expect(runtime.tutorialNodePosition).toEqual({ x: 564, y: 248 })
+    expect(runtime.tutorialNodeStyle).toEqual({
+      width: 520,
+      height: 324,
+      minHeight: 324,
+    })
+    expect(runtime.cameraViewport).toEqual({
+      x: 824,
+      y: 410,
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.68),
+      duration: 240,
+    })
+    expect(runtime.sceneNodeIds).toEqual(["workspace-canvas-tutorial"])
+  })
+
+  it("keeps the guide center stable between welcome and overview shells", () => {
+    const welcomeRuntime = resolveWorkspaceCanvasTutorialRuntime({
+      tutorialStepIndex: 0,
+      visibleCardIds: ["organization-overview"],
+      existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
+    })
+    const overviewRuntime = resolveWorkspaceCanvasTutorialRuntime({
+      tutorialStepIndex: 1,
+      visibleCardIds: ["organization-overview"],
+      existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
+    })
+
+    expect(
+      resolveRectCenter(welcomeRuntime.tutorialNodePosition, welcomeRuntime.tutorialNodeStyle),
+    ).toEqual(
+      resolveRectCenter(overviewRuntime.tutorialNodePosition, overviewRuntime.tutorialNodeStyle),
     )
   })
 
-  it("targets the current tool once it becomes visible", () => {
+  it("uses a stable overview shell for organization guide steps", () => {
     const runtime = resolveWorkspaceCanvasTutorialRuntime({
-      tutorialStepIndex: 4,
-      openedTutorialStepIds: ["accelerator", "calendar"],
-      visibleCardIds: ["organization-overview", "accelerator", "calendar"],
+      tutorialStepIndex: 1,
+      visibleCardIds: ["organization-overview"],
       existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
     })
 
-    expect(runtime.tutorialEdgeTargetCardId).toBe("calendar")
+    expect(runtime.tutorialNodeStyle).toEqual({
+      width: 620,
+      height: 664,
+      minHeight: 664,
+    })
+    expect(runtime.tutorialNodePosition).toEqual({ x: 514, y: 78 })
+    expect(runtime.cameraViewport).toEqual({
+      x: 824,
+      y: 410,
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.68),
+      duration: 240,
+    })
   })
 
-  it("keeps the accelerator introduction scene non-overlapping", () => {
+  it("keeps unresolved overview shortcut steps on the shared overview shell", () => {
+    const organizationRuntime = resolveWorkspaceCanvasTutorialRuntime({
+      tutorialStepIndex: 1,
+      visibleCardIds: ["organization-overview"],
+      existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
+    })
     const runtime = resolveWorkspaceCanvasTutorialRuntime({
       tutorialStepIndex: 3,
+      openedTutorialStepIds: [],
+      visibleCardIds: ["organization-overview"],
+      existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
+    })
+
+    expect(runtime.tutorialNodeStyle).toEqual({
+      width: 620,
+      height: 664,
+      minHeight: 664,
+    })
+    expect(runtime.tutorialNodePosition).toEqual({ x: 514, y: 78 })
+    expect(runtime.cameraViewport).toEqual({
+      x: 824,
+      y: 410,
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.68),
+      duration: 240,
+    })
+    expect(
+      resolveRectCenter(runtime.tutorialNodePosition, runtime.tutorialNodeStyle),
+    ).toEqual(
+      resolveRectCenter(
+        organizationRuntime.tutorialNodePosition,
+        organizationRuntime.tutorialNodeStyle,
+      ),
+    )
+  })
+
+  it("centers the accelerator family on the guide card on desktop", () => {
+    const runtime = resolveWorkspaceCanvasTutorialRuntime({
+      tutorialStepIndex: 4,
       openedTutorialStepIds: ["accelerator"],
       visibleCardIds: ["organization-overview", "accelerator"],
       existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
     })
-    const tutorialRect = {
-      x: runtime.tutorialNodePosition.x,
-      y: runtime.tutorialNodePosition.y,
-      width: Number(runtime.tutorialNodeStyle.width),
-      height: Number(runtime.tutorialNodeStyle.minHeight),
-    }
-    const organizationRect = {
-      x: 120,
-      y: 220,
-      ...resolveCardDimensions("md", "organization-overview"),
-    }
-    const acceleratorRect = {
-      x: 1144,
-      y: 220,
-      ...resolveCardDimensions("sm", "accelerator"),
-    }
 
-    expect(runtime.tutorialEdgeTargetCardId).toBe("accelerator")
-    expect(runtime.guidePlacement).toBe("above")
-    expect(rectsOverlap(tutorialRect, organizationRect)).toBe(false)
-    expect(rectsOverlap(tutorialRect, acceleratorRect)).toBe(false)
+    expect(runtime.cardPositionOverrides["organization-overview"]).toEqual({
+      x: 136,
+      y: 50,
+    })
+    expect(runtime.cardPositionOverrides.accelerator).toEqual({
+      x: 932,
+      y: 208,
+    })
+    expect(runtime.tutorialNodePosition).toEqual({ x: 752, y: 50 })
+    expect(
+      runtime.tutorialNodePosition.x -
+        (runtime.cardPositionOverrides["organization-overview"]!.x + 552),
+    ).toBe(64)
+    expect(runtime.tutorialNodePosition.y).toBe(
+      runtime.cardPositionOverrides["organization-overview"]!.y,
+    )
+    expect(runtime.tutorialNodeStyle).toEqual({
+      width: 520,
+      height: 724,
+      minHeight: 724,
+    })
+    expect(runtime.cameraViewport).toEqual({
+      x: 1012,
+      y: 412,
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.64),
+      duration: 240,
+    })
+    expect(runtime.sceneNodeIds).toEqual(["workspace-canvas-tutorial"])
   })
 
-  it("moves the guide toward the currently introduced tool instead of the full cluster", () => {
+  it("adopts the accelerator scene as soon as the shortcut step opens its target", () => {
     const runtime = resolveWorkspaceCanvasTutorialRuntime({
-      tutorialStepIndex: 7,
-      openedTutorialStepIds: ["accelerator", "calendar", "programs", "documents", "fundraising"],
-      visibleCardIds: [
-        "organization-overview",
-        "accelerator",
-        "calendar",
-        "programs",
-        "vault",
-        "economic-engine",
-      ],
+      tutorialStepIndex: resolveTutorialStepIndex("accelerator"),
+      openedTutorialStepIds: ["accelerator"],
+      visibleCardIds: ["accelerator"],
       existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
     })
 
-    expect(runtime.tutorialEdgeTargetCardId).toBe("economic-engine")
-    expect(runtime.tutorialNodePosition.x).toBeGreaterThan(1200)
-    expect(runtime.guidePlacement).toBe("above")
+    expect(runtime.cardPositionOverrides.accelerator).toEqual({
+      x: 932,
+      y: 208,
+    })
+    expect(runtime.tutorialNodePosition).toEqual({ x: 564, y: 48 })
+    expect(runtime.tutorialNodeStyle).toEqual({
+      width: 520,
+      height: 724,
+      minHeight: 724,
+    })
+    expect(runtime.tutorialNodeAttached).toBe(false)
+    expect(runtime.cameraViewport).toEqual({
+      x: 824,
+      y: 410,
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.64),
+      duration: 240,
+    })
   })
 
-  it("scopes manual guide drag overrides to the current tutorial scene", () => {
-    const organizationSceneSignature = resolveWorkspaceCanvasTutorialSceneSignature({
-      tutorialActive: true,
-      tutorialStepIndex: 1,
-      openedTutorialStepIds: [],
-    })
-    const acceleratorSceneSignature = resolveWorkspaceCanvasTutorialSceneSignature({
-      tutorialActive: true,
-      tutorialStepIndex: 3,
-      openedTutorialStepIds: [],
+  it("keeps opened calendar shortcut steps on the centered tool shell", () => {
+    const runtime = resolveWorkspaceCanvasTutorialRuntime({
+      tutorialStepIndex: resolveTutorialStepIndex("calendar"),
+      openedTutorialStepIds: ["accelerator", "calendar"],
+      visibleCardIds: ["organization-overview", "accelerator", "calendar"],
+      existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
     })
 
-    expect(
-      resolveWorkspaceCanvasTutorialPositionOverrideForScene(
-        { x: 704, y: 168, sceneSignature: organizationSceneSignature! },
-        organizationSceneSignature,
-      ),
-    ).toEqual({ x: 704, y: 168 })
-    expect(
-      resolveWorkspaceCanvasTutorialPositionOverrideForScene(
-        { x: 704, y: 168, sceneSignature: organizationSceneSignature! },
-        acceleratorSceneSignature,
-      ),
-    ).toBeNull()
+    expect(runtime.cardPositionOverrides["organization-overview"]).toEqual({
+      x: 132,
+      y: 292,
+    })
+    expect(runtime.cardPositionOverrides.calendar).toEqual({
+      x: 968,
+      y: 208,
+    })
+    expect(runtime.cardPositionOverrides.accelerator).toEqual({
+      x: 624,
+      y: 720,
+    })
+    expect(runtime.tutorialNodeAttached).toBe(false)
+    expect(runtime.tutorialNodePosition).toEqual({ x: 544, y: 72 })
+    expect(runtime.cameraViewport).toEqual({
+      x: 824,
+      y: 410,
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.62),
+      duration: 240,
+    })
+  })
+
+  it("recenters the guide on the overview shell before the Calendar shortcut is opened", () => {
+    const runtime = resolveWorkspaceCanvasTutorialRuntime({
+      tutorialStepIndex: resolveTutorialStepIndex("calendar"),
+      openedTutorialStepIds: ["accelerator", "accelerator-first-module"],
+      visibleCardIds: ["organization-overview", "accelerator"],
+      existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
+    })
+
+    expect(runtime.cardPositionOverrides["organization-overview"]).toEqual({
+      x: 152,
+      y: 248,
+    })
+    expect(runtime.cardPositionOverrides.accelerator).toEqual({
+      x: 912,
+      y: 184,
+    })
+    expect(runtime.tutorialNodePosition).toEqual({ x: 514, y: 78 })
+    expect(runtime.tutorialNodeAttached).toBe(false)
+    expect(runtime.cameraViewport).toEqual({
+      x: 824,
+      y: 410,
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.68),
+      duration: 240,
+    })
+  })
+
+  it("keeps mobile accelerator steps on the same centered family shell", () => {
+    const acceleratorPickerStepIndex = resolveTutorialStepIndex("accelerator-picker")
+    const runtime = resolveWorkspaceCanvasTutorialRuntime({
+      tutorialStepIndex: acceleratorPickerStepIndex,
+      openedTutorialStepIds: ["accelerator"],
+      visibleCardIds: ["organization-overview", "accelerator"],
+      existingNodes: [...EXISTING_NODES],
+      breakpoint: "mobile",
+    })
+
+    expect(runtime.cardPositionOverrides["organization-overview"]).toEqual({
+      x: 48,
+      y: 64,
+    })
+    expect(runtime.cardPositionOverrides.accelerator).toEqual({
+      x: 88,
+      y: 324,
+    })
+    expect(runtime.tutorialNodePosition).toEqual({ x: 240, y: 48 })
+    expect(runtime.tutorialNodeStyle).toEqual({
+      width: 520,
+      height: 724,
+      minHeight: 724,
+    })
+    expect(runtime.cameraViewport).toEqual({
+      x: 500,
+      y: 410,
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.52),
+      duration: 240,
+    })
+  })
+
+  it("keeps accelerator module steps centered on the guide card", () => {
+    const closeModuleStepIndex = resolveTutorialStepIndex("accelerator-close-module")
+    const runtime = resolveWorkspaceCanvasTutorialRuntime({
+      tutorialStepIndex: closeModuleStepIndex,
+      openedTutorialStepIds: ["accelerator", "accelerator-first-module"],
+      visibleCardIds: ["organization-overview", "accelerator"],
+      existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
+      acceleratorModuleViewerOpen: true,
+    })
+
+    expect(runtime.cardPositionOverrides["organization-overview"]).toEqual({
+      x: 136,
+      y: 50,
+    })
+    expect(runtime.cardPositionOverrides.accelerator).toEqual({
+      x: 728,
+      y: 232,
+    })
+    expect(runtime.tutorialNodePosition).toEqual({ x: 752, y: 50 })
+    expect(runtime.tutorialNodeStyle).toEqual({
+      width: 560,
+      height: 960,
+      minHeight: 960,
+    })
+    expect(runtime.cameraViewport).toEqual({
+      x: 1032,
+      y: 530,
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.64),
+      duration: 240,
+    })
+    expect(runtime.sceneNodeIds).toEqual(["workspace-canvas-tutorial"])
+  })
+
+  it("keeps accelerator checklist steps on the compact shell and only grows on module open", () => {
+    const acceleratorStepIndex = resolveTutorialStepIndex("accelerator")
+    const pickerStepIndex = resolveTutorialStepIndex("accelerator-picker")
+    const firstModuleStepIndex = resolveTutorialStepIndex("accelerator-first-module")
+    const closeModuleStepIndex = resolveTutorialStepIndex("accelerator-close-module")
+    const acceleratorRuntime = resolveWorkspaceCanvasTutorialRuntime({
+      tutorialStepIndex: acceleratorStepIndex,
+      openedTutorialStepIds: ["accelerator"],
+      visibleCardIds: ["accelerator"],
+      existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
+    })
+    const pickerRuntime = resolveWorkspaceCanvasTutorialRuntime({
+      tutorialStepIndex: pickerStepIndex,
+      openedTutorialStepIds: ["accelerator"],
+      visibleCardIds: ["organization-overview", "accelerator"],
+      existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
+    })
+    const firstModuleRuntime = resolveWorkspaceCanvasTutorialRuntime({
+      tutorialStepIndex: firstModuleStepIndex,
+      openedTutorialStepIds: ["accelerator"],
+      visibleCardIds: ["organization-overview", "accelerator"],
+      existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
+    })
+    const moduleRuntime = resolveWorkspaceCanvasTutorialRuntime({
+      tutorialStepIndex: closeModuleStepIndex,
+      openedTutorialStepIds: ["accelerator", "accelerator-first-module"],
+      visibleCardIds: ["organization-overview", "accelerator"],
+      existingNodes: [...EXISTING_NODES],
+      breakpoint: "desktop",
+      acceleratorModuleViewerOpen: true,
+    })
+
+    expect(acceleratorRuntime.tutorialNodeStyle).toEqual({
+      width: 520,
+      height: 724,
+      minHeight: 724,
+    })
+    expect(pickerRuntime.tutorialNodeStyle).toEqual({
+      width: 520,
+      height: 724,
+      minHeight: 724,
+    })
+    expect(firstModuleRuntime.tutorialNodeStyle).toEqual({
+      width: 520,
+      height: 724,
+      minHeight: 724,
+    })
+    expect(moduleRuntime.tutorialNodeStyle).toEqual({
+      width: 560,
+      height: 960,
+      minHeight: 960,
+    })
+    expect(acceleratorRuntime.tutorialNodePosition).toEqual({ x: 564, y: 48 })
+    expect(pickerRuntime.tutorialNodePosition).toEqual({ x: 752, y: 50 })
+    expect(firstModuleRuntime.tutorialNodePosition).toEqual({ x: 752, y: 50 })
+    expect(moduleRuntime.tutorialNodePosition).toEqual({ x: 752, y: 50 })
+    expect(acceleratorRuntime.cameraViewport).toEqual({
+      x: 824,
+      y: 410,
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.64),
+      duration: 240,
+    })
+    expect(pickerRuntime.cameraViewport).toEqual({
+      x: 1012,
+      y: 412,
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.64),
+      duration: 240,
+    })
+    expect(firstModuleRuntime.cameraViewport).toEqual(pickerRuntime.cameraViewport)
   })
 })

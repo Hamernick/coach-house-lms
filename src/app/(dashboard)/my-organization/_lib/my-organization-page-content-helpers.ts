@@ -1,5 +1,7 @@
 import {
   applyWorkspaceOnboardingStageOverride,
+  buildRestartedWorkspaceTutorialBoardState,
+  buildCompletedWorkspaceTutorialBoardState,
   resolveWorkspaceOnboardingStageFromSearchParam,
 } from "../_components/workspace-board/workspace-board-onboarding-flow"
 import { buildDefaultWorkspaceConnections } from "../_components/workspace-board/workspace-board-layout"
@@ -14,9 +16,10 @@ export type WorkspaceSeedWithAcceleratorBoardState = {
   boardState: WorkspaceBoardState
 }
 
-function areOrderedCardIdsEqual(left: string[], right: string[]) {
+function doCardIdSetsMatch(left: string[], right: string[]) {
   if (left.length !== right.length) return false
-  return left.every((value, index) => value === right[index])
+  const rightSet = new Set(right)
+  return left.every((value) => rightSet.has(value))
 }
 
 function hasCompletedWorkspaceTutorial(boardState: WorkspaceBoardState) {
@@ -26,7 +29,7 @@ function hasCompletedWorkspaceTutorial(boardState: WorkspaceBoardState) {
   return (
     boardState.onboardingFlow.active === false &&
     boardState.onboardingFlow.tutorialStepIndex >= finalStepIndex &&
-    areOrderedCardIdsEqual(boardState.hiddenCardIds, completionHiddenCardIds)
+    doCardIdSetsMatch(boardState.hiddenCardIds, completionHiddenCardIds)
   )
 }
 
@@ -141,14 +144,41 @@ export function applyWorkspaceTutorialActivationToSeed<
     workspaceOnboardingCompletedAt: string | null
   },
 ) {
-  if (initialOnboardingRequired) return workspaceSeed
-  if (workspaceOnboardingCompletedAt) return workspaceSeed
-  if (hasCompletedWorkspaceTutorial(workspaceSeed.boardState)) return workspaceSeed
+  if (workspaceOnboardingCompletedAt) {
+    if (hasCompletedWorkspaceTutorial(workspaceSeed.boardState)) {
+      return workspaceSeed
+    }
 
+    return {
+      ...workspaceSeed,
+      boardState: buildCompletedWorkspaceTutorialBoardState(
+        workspaceSeed.boardState,
+      ),
+    }
+  }
   const shouldActivateTutorial =
-    workspaceOnboardingActive || workspaceTutorialRequested
+    initialOnboardingRequired ||
+    workspaceOnboardingActive ||
+    workspaceTutorialRequested
 
   if (!shouldActivateTutorial) return workspaceSeed
+
+  const shouldRestartCompletedTutorial =
+    initialOnboardingRequired || workspaceOnboardingActive
+
+  if (
+    hasCompletedWorkspaceTutorial(workspaceSeed.boardState) &&
+    shouldRestartCompletedTutorial
+  ) {
+    return {
+      ...workspaceSeed,
+      boardState: buildRestartedWorkspaceTutorialBoardState(
+        workspaceSeed.boardState,
+      ),
+    }
+  }
+
+  if (hasCompletedWorkspaceTutorial(workspaceSeed.boardState)) return workspaceSeed
 
   const connectionMap = new Map(
     workspaceSeed.boardState.connections.map((connection) => [

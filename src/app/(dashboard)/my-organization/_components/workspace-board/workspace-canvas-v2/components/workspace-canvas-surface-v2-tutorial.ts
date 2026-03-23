@@ -1,34 +1,74 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { type NodeDragHandler } from "reactflow"
 
 import {
   type WorkspaceCanvasTutorialNodeData,
+  type WorkspaceCanvasTutorialPresentationMaskLayout,
   clampWorkspaceCanvasTutorialStepIndex,
+  resolveWorkspaceCanvasTutorialVisibleCardIds,
 } from "@/features/workspace-canvas-tutorial"
 
 import type { WorkspaceBoardState } from "../../workspace-board-types"
-import { WORKSPACE_CARD_IDS, type WorkspaceCardId } from "../../workspace-board-types"
+import { type WorkspaceCardId } from "../../workspace-board-types"
 import { useWorkspaceCanvasTutorialVisibility } from "./workspace-canvas-surface-v2-hooks"
 import {
+  resolveWorkspaceCanvasTutorialSceneBreakpoint,
+  type WorkspaceCanvasTutorialSceneBreakpoint,
+} from "./workspace-canvas-surface-v2-onboarding-scenes"
+import {
   WORKSPACE_CANVAS_TUTORIAL_NODE_ID,
-  resolveWorkspaceCanvasTutorialPositionOverrideForScene,
-  resolveWorkspaceCanvasTutorialSceneSignature,
   resolveWorkspaceCanvasTutorialRuntime,
-  type WorkspaceCanvasTutorialPositionOverride,
+  resolveWorkspaceCanvasTutorialSceneSignature,
 } from "./workspace-canvas-surface-v2-tutorial-runtime"
+import { resolveWorkspaceCanvasPresentationPlan } from "../runtime/workspace-canvas-presentation-engine"
+
+function readViewportWidth() {
+  return typeof window === "undefined" ? 1440 : window.innerWidth
+}
+
+function usePrefersReducedMotion() {
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)")
+    const updatePreference = () => {
+      setPrefersReducedMotion(mediaQuery.matches)
+    }
+
+    updatePreference()
+    mediaQuery.addEventListener("change", updatePreference)
+    return () => mediaQuery.removeEventListener("change", updatePreference)
+  }, [])
+
+  return prefersReducedMotion
+}
 
 export function useWorkspaceCanvasTutorialScene({
   boardState,
-  allowEditing,
   onPrevious,
   onNext,
+  acceleratorModuleViewerOpen = false,
 }: {
   boardState: WorkspaceBoardState
-  allowEditing: boolean
   onPrevious: () => void
   onNext: () => void
+  acceleratorModuleViewerOpen?: boolean
 }) {
-  const [tutorialNodePositionOverride, setTutorialNodePositionOverride] =
-    useState<WorkspaceCanvasTutorialPositionOverride | null>(null)
+  const [viewportWidth, setViewportWidth] = useState(readViewportWidth)
+  const [tutorialNodeDragOverride, setTutorialNodeDragOverride] = useState<{
+    x: number
+    y: number
+  } | null>(null)
+  const [tutorialPresentationMaskLayout, setTutorialPresentationMaskLayout] =
+    useState<WorkspaceCanvasTutorialPresentationMaskLayout | null>(null)
+  const [tutorialLayoutAnimating, setTutorialLayoutAnimating] = useState(false)
+  const previousSceneSignatureRef = useRef<string | null>(null)
+  const previousStepIndexRef = useRef<number | null>(null)
+  const previousBreakpointRef = useRef<WorkspaceCanvasTutorialSceneBreakpoint | null>(
+    null,
+  )
   const {
     tutorialActive,
     tutorialSelectedCardId,
@@ -36,60 +76,176 @@ export function useWorkspaceCanvasTutorialScene({
   } = useWorkspaceCanvasTutorialVisibility({
     boardState,
   })
+  const prefersReducedMotion = usePrefersReducedMotion()
   const tutorialStepIndex = clampWorkspaceCanvasTutorialStepIndex(
     boardState.onboardingFlow.tutorialStepIndex,
   )
+  const tutorialBreakpoint = useMemo<WorkspaceCanvasTutorialSceneBreakpoint>(
+    () => resolveWorkspaceCanvasTutorialSceneBreakpoint(viewportWidth),
+    [viewportWidth],
+  )
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const handleResize = () => {
+      setViewportWidth(window.innerWidth)
+    }
+
+    window.addEventListener("resize", handleResize)
+    return () => window.removeEventListener("resize", handleResize)
+  }, [])
+
+  useEffect(() => {
+    if (!tutorialActive) {
+      previousSceneSignatureRef.current = null
+      previousStepIndexRef.current = null
+      previousBreakpointRef.current = null
+      setTutorialNodeDragOverride(null)
+      setTutorialPresentationMaskLayout(null)
+      setTutorialLayoutAnimating(false)
+    }
+  }, [tutorialActive])
+
   const tutorialSceneSignature = useMemo(
     () =>
       resolveWorkspaceCanvasTutorialSceneSignature({
         tutorialActive,
         tutorialStepIndex,
         openedTutorialStepIds: boardState.onboardingFlow.openedTutorialStepIds,
+        breakpoint: tutorialBreakpoint,
       }),
     [
       boardState.onboardingFlow.openedTutorialStepIds,
       tutorialActive,
+      tutorialBreakpoint,
       tutorialStepIndex,
     ],
   )
-  const tutorialRuntime = useMemo(
+  const tutorialVisibleCardIds = useMemo(
     () =>
-      tutorialActive
-        ? resolveWorkspaceCanvasTutorialRuntime({
-            tutorialStepIndex,
-            openedTutorialStepIds: boardState.onboardingFlow.openedTutorialStepIds,
-            visibleCardIds: WORKSPACE_CARD_IDS.filter(
-              (cardId) => !boardState.hiddenCardIds.includes(cardId),
-            ) as WorkspaceCardId[],
-            existingNodes: boardState.nodes,
-            tutorialNodePositionOverride:
-              resolveWorkspaceCanvasTutorialPositionOverrideForScene(
-                tutorialNodePositionOverride,
-                tutorialSceneSignature,
-              ),
-          })
-        : null,
+      resolveWorkspaceCanvasTutorialVisibleCardIds(
+        tutorialStepIndex,
+        boardState.onboardingFlow.openedTutorialStepIds,
+      ) as WorkspaceCardId[],
     [
-      boardState.hiddenCardIds,
+      boardState.onboardingFlow.openedTutorialStepIds,
+      tutorialStepIndex,
+    ],
+  )
+
+  const tutorialRuntime = useMemo(
+    () => {
+      if (!tutorialActive) {
+        return null
+      }
+
+      return resolveWorkspaceCanvasTutorialRuntime({
+        tutorialStepIndex,
+        openedTutorialStepIds: boardState.onboardingFlow.openedTutorialStepIds,
+        visibleCardIds: tutorialVisibleCardIds,
+        existingNodes: boardState.nodes,
+        breakpoint: tutorialBreakpoint,
+        acceleratorModuleViewerOpen,
+      })
+    },
+    [
+      acceleratorModuleViewerOpen,
       boardState.nodes,
       boardState.onboardingFlow.openedTutorialStepIds,
       tutorialActive,
-      tutorialSceneSignature,
-      tutorialNodePositionOverride,
+      tutorialBreakpoint,
       tutorialStepIndex,
+      tutorialVisibleCardIds,
+    ],
+  )
+  const tutorialTransitionPlan = useMemo(
+    () =>
+      resolveWorkspaceCanvasPresentationPlan({
+        tutorialActive,
+        previousStepIndex: previousStepIndexRef.current,
+        tutorialStepIndex,
+        openedTutorialStepIds: boardState.onboardingFlow.openedTutorialStepIds,
+        prefersReducedMotion,
+        tutorialNodeAttached: tutorialRuntime?.tutorialNodeAttached ?? false,
+        tutorialSelectedCardId,
+        visibleCardIds: tutorialVisibleCardIds,
+      }),
+    [
+      boardState.onboardingFlow.openedTutorialStepIds,
+      prefersReducedMotion,
+      tutorialActive,
+      tutorialRuntime?.tutorialNodeAttached,
+      tutorialSelectedCardId,
+      tutorialStepIndex,
+      tutorialVisibleCardIds,
     ],
   )
 
   useEffect(() => {
-    if (!tutorialActive) {
-      setTutorialNodePositionOverride(null)
+    if (!tutorialActive || !tutorialSceneSignature) return
+
+    const previousSignature = previousSceneSignatureRef.current
+    const previousStepIndex = previousStepIndexRef.current
+    const previousBreakpoint = previousBreakpointRef.current
+
+    previousSceneSignatureRef.current = tutorialSceneSignature
+    previousStepIndexRef.current = tutorialStepIndex
+    previousBreakpointRef.current = tutorialBreakpoint
+
+    if (!previousSignature || previousSignature === tutorialSceneSignature) {
       return
     }
 
-    setTutorialNodePositionOverride((previous) =>
-      previous?.sceneSignature === tutorialSceneSignature ? previous : null,
-    )
-  }, [tutorialActive, tutorialSceneSignature])
+    const didStepChange = previousStepIndex !== tutorialStepIndex
+    const didBreakpointChange = previousBreakpoint !== tutorialBreakpoint
+
+    if (didStepChange || didBreakpointChange) {
+      setTutorialNodeDragOverride(null)
+    }
+
+    setTutorialLayoutAnimating(false)
+    return
+  }, [
+    tutorialActive,
+    tutorialBreakpoint,
+    tutorialSceneSignature,
+    tutorialStepIndex,
+    tutorialTransitionPlan,
+  ])
+
+  const handleTutorialNodeDragStop = useCallback<NodeDragHandler>(
+    (_, node) => {
+      if (!tutorialActive) return
+      if (node.id !== WORKSPACE_CANVAS_TUTORIAL_NODE_ID) return
+
+      setTutorialLayoutAnimating(false)
+      setTutorialNodeDragOverride({
+        x: Math.round(node.position.x),
+        y: Math.round(node.position.y),
+      })
+    },
+    [tutorialActive],
+  )
+
+  const handleTutorialPresentationMaskLayoutChange = useCallback(
+    (layout: WorkspaceCanvasTutorialPresentationMaskLayout | null) => {
+      setTutorialPresentationMaskLayout((current: WorkspaceCanvasTutorialPresentationMaskLayout | null) => {
+        if (
+          current?.cardId === layout?.cardId &&
+          current?.x === layout?.x &&
+          current?.y === layout?.y &&
+          current?.width === layout?.width &&
+          current?.height === layout?.height
+        ) {
+          return current
+        }
+
+        return layout
+      })
+    },
+    [],
+  )
 
   const tutorialNodeData = useMemo(() => {
     if (!tutorialActive || !tutorialRuntime) return null
@@ -97,6 +253,13 @@ export function useWorkspaceCanvasTutorialScene({
     const data: WorkspaceCanvasTutorialNodeData = {
       stepIndex: tutorialStepIndex,
       openedStepIds: boardState.onboardingFlow.openedTutorialStepIds,
+      attached: tutorialRuntime.tutorialNodeAttached,
+      dragEnabled: false,
+      variant:
+        tutorialTransitionPlan.shellMode === "guided-shell"
+          ? "attached"
+          : "welcome",
+      onPresentationMaskLayoutChange: handleTutorialPresentationMaskLayoutChange,
       onPrevious,
       onNext,
     }
@@ -104,54 +267,50 @@ export function useWorkspaceCanvasTutorialScene({
     return {
       id: WORKSPACE_CANVAS_TUTORIAL_NODE_ID,
       type: "workspace-tutorial" as const,
-      position: tutorialRuntime.tutorialNodePosition,
-      draggable: allowEditing,
+      position: tutorialNodeDragOverride ?? tutorialRuntime.tutorialNodePosition,
+      zIndex: 20,
+      draggable: false,
       selectable: false,
-      dragHandle: ".workspace-tutorial-card-drag-handle",
-      className: "select-none",
+      className: "workspace-tutorial-node select-none",
       style: tutorialRuntime.tutorialNodeStyle,
       data,
     }
   }, [
-    allowEditing,
     boardState.onboardingFlow.openedTutorialStepIds,
+    handleTutorialPresentationMaskLayoutChange,
     onNext,
     onPrevious,
     tutorialActive,
+    tutorialNodeDragOverride,
     tutorialRuntime,
     tutorialStepIndex,
+    tutorialTransitionPlan.shellMode,
   ])
-
-  const handleTutorialNodeDragStop = useCallback(
-    (x: number, y: number) => {
-      if (!tutorialSceneSignature) {
-        return
-      }
-
-      setTutorialNodePositionOverride((previous) => {
-        if (
-          previous?.x === x &&
-          previous?.y === y &&
-          previous.sceneSignature === tutorialSceneSignature
-        ) {
-          return previous
-        }
-        return {
-          x,
-          y,
-          sceneSignature: tutorialSceneSignature,
-        }
-      })
-    },
-    [tutorialSceneSignature],
-  )
 
   return {
     tutorialActive,
     tutorialSelectedCardId,
     tutorialNodeData,
     tutorialEdgeTargetId: tutorialRuntime?.tutorialEdgeTargetCardId ?? null,
-    tutorialSceneFitPadding: tutorialRuntime?.fitPadding ?? null,
+    tutorialSceneCardPositionOverrides:
+      tutorialRuntime?.cardPositionOverrides ?? null,
+    tutorialScenePrimaryCardId: tutorialRuntime?.primaryCardId ?? null,
+    tutorialSceneGuideGap: tutorialRuntime?.guideGap ?? 0,
+    tutorialSceneBreakpoint: tutorialBreakpoint,
+    tutorialSceneCameraViewport: tutorialRuntime?.cameraViewport
+      ? {
+          ...tutorialRuntime.cameraViewport,
+          delayMs: tutorialTransitionPlan.cameraDelayMs,
+          duration:
+            tutorialTransitionPlan.cameraDurationMs > 0
+              ? tutorialTransitionPlan.cameraDurationMs
+              : tutorialRuntime.cameraViewport.duration,
+        }
+      : null,
+    tutorialSceneNodeIds: tutorialRuntime?.sceneNodeIds ?? [],
+    tutorialPresentationMaskLayout,
+    tutorialSceneSignature,
+    tutorialLayoutAnimating,
     emptyStateMessage,
     handleTutorialNodeDragStop,
   }

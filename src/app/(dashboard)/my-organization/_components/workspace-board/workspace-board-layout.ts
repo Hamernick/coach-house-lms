@@ -46,7 +46,11 @@ import { normalizeWorkspaceBoardAcceleratorUiState } from "./workspace-board-vis
 export { buildDefaultWorkspaceCommunicationsState } from "./workspace-board-layout-communications-state"
 export { buildDefaultWorkspaceTrackerState } from "./workspace-board-layout-tracker-state"
 export {
+  isWorkspaceCardAutoHeight,
   resolveCardDimensions,
+  resolveWorkspaceCardCanvasShellClassName,
+  resolveWorkspaceCardCanvasShellStyle,
+  resolveWorkspaceCardHeightModeClassName,
   resolveWorkspaceCardNodeStyle,
 } from "./workspace-board-layout-config"
 export {

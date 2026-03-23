@@ -5,7 +5,9 @@ import BadgeDollarSignIcon from "lucide-react/dist/esm/icons/badge-dollar-sign"
 import CalendarDaysIcon from "lucide-react/dist/esm/icons/calendar-days"
 import FolderPlusIcon from "lucide-react/dist/esm/icons/folder-plus"
 import FolderTreeIcon from "lucide-react/dist/esm/icons/folder-tree"
+import MapIcon from "lucide-react/dist/esm/icons/map"
 import MegaphoneIcon from "lucide-react/dist/esm/icons/megaphone"
+import RouteIcon from "lucide-react/dist/esm/icons/route"
 import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 import type { LucideIcon } from "lucide-react"
 
@@ -23,12 +25,13 @@ type WorkspaceShortcutIconMap = Record<WorkspaceCanvasV2CardId, LucideIcon>
 const WORKSPACE_SHORTCUT_ICON_BY_ID: WorkspaceShortcutIconMap = {
   "organization-overview": Building2Icon,
   programs: FolderPlusIcon,
-  vault: FolderTreeIcon,
+  roadmap: RouteIcon,
   accelerator: WaypointsIcon,
   "brand-kit": FolderTreeIcon,
   "economic-engine": BadgeDollarSignIcon,
   calendar: CalendarDaysIcon,
   communications: MegaphoneIcon,
+  atlas: MapIcon,
 }
 
 export type WorkspaceCardShortcutItemModel = {
@@ -37,6 +40,7 @@ export type WorkspaceCardShortcutItemModel = {
   icon: LucideIcon
   visible: boolean
   selected: boolean
+  comingSoon: boolean
   tutorialHighlighted: boolean
   tutorialCallout:
     | {
@@ -48,6 +52,15 @@ export type WorkspaceCardShortcutItemModel = {
 
 const WORKSPACE_SHORTCUT_HIDDEN_CARD_IDS = new Set<WorkspaceCanvasV2CardId>([
   "organization-overview",
+])
+
+const WORKSPACE_SHORTCUT_FOCUS_OPEN_CARD_IDS = new Set<WorkspaceCanvasV2CardId>([
+  "accelerator",
+  "roadmap",
+])
+const WORKSPACE_SHORTCUT_COMING_SOON_CARD_IDS = new Set<WorkspaceCanvasV2CardId>([
+  "economic-engine",
+  "communications",
 ])
 
 export function buildWorkspaceCardShortcutItemModels({
@@ -75,9 +88,10 @@ export function buildWorkspaceCardShortcutItemModels({
     .filter((cardId) => !WORKSPACE_SHORTCUT_HIDDEN_CARD_IDS.has(cardId))
     .map((cardId) => {
       const contract = WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId]
+      const boardVisible = !hiddenCardIds.includes(cardId)
       const visible = visibleCardIds
         ? visibleCardIds.includes(cardId)
-        : !hiddenCardIds.includes(cardId)
+        : boardVisible
       const tutorialCallout =
         tutorialTargetCardId === cardId && tutorialInstruction
           ? { instruction: tutorialInstruction }
@@ -89,24 +103,36 @@ export function buildWorkspaceCardShortcutItemModels({
         icon: WORKSPACE_SHORTCUT_ICON_BY_ID[cardId],
         visible,
         selected: selectedCardId === cardId,
+        comingSoon: WORKSPACE_SHORTCUT_COMING_SOON_CARD_IDS.has(cardId),
         tutorialHighlighted: tutorialHighlightAll || tutorialCallout !== null,
         tutorialCallout,
         onPress: () => {
+          if (WORKSPACE_SHORTCUT_COMING_SOON_CARD_IDS.has(cardId)) {
+            return
+          }
+
           if (tutorialCallout) {
-            if (!visible) {
-              onToggle(cardId, { source: "dock" })
-            }
-            onFocusCard(cardId)
             onTutorialAdvance?.()
             return
           }
 
           if (contract.rail.rootBehavior === "fixed") {
+            if (!boardVisible) {
+              onToggle(cardId, { source: "dock" })
+            }
             onFocusCard(cardId)
             return
           }
 
-          if (visible) {
+          if (WORKSPACE_SHORTCUT_FOCUS_OPEN_CARD_IDS.has(cardId)) {
+            if (!boardVisible) {
+              onToggle(cardId, { source: "dock" })
+            }
+            onFocusCard(cardId)
+            return
+          }
+
+          if (boardVisible) {
             onToggle(cardId, { source: "dock" })
             onFocusCard(contract.rail.parentId ?? "organization-overview")
             return

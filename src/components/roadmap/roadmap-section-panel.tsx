@@ -14,6 +14,7 @@ type RoadmapSectionPanelProps = {
   title: string
   subtitle?: string | null
   icon: ComponentType<{ className?: string }>
+  headerControlsTop?: ReactNode
   status: RoadmapSectionStatus
   canEdit?: boolean
   onStatusChange?: (status: RoadmapSectionStatus) => void
@@ -34,6 +35,7 @@ export function RoadmapSectionPanel({
   title,
   subtitle,
   icon: Icon,
+  headerControlsTop,
   status,
   canEdit = true,
   onStatusChange,
@@ -100,7 +102,8 @@ export function RoadmapSectionPanel({
                 )}
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <div className="flex flex-col items-start gap-2 sm:items-end">
+              {headerControlsTop ? <div className="w-full sm:w-auto">{headerControlsTop}</div> : null}
               {!isHydrated ? (
                 <Skeleton className="h-7 w-24 rounded-full" />
               ) : canEdit && onStatusChange ? (

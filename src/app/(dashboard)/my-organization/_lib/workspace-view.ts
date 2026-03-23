@@ -24,6 +24,7 @@ import {
 import {
   isMissingModuleProgressTableError,
   isMissingRoadmapCalendarInternalEventsTableError,
+  isUuidLike,
   isMissingWorkspaceCommunicationChannelsTableError,
   isMissingWorkspaceCommunicationsTableError,
   isMissingWorkspaceObjectiveAssigneesTableError,
@@ -71,6 +72,28 @@ type BuildWorkspaceViewSeedInput<
   }
 }
 
+function applyViewerWorkspaceMemberFallbacks({
+  viewer,
+  nameById,
+  emailById,
+  avatarById,
+}: {
+  viewer: BuildWorkspaceViewSeedInput<unknown, unknown, unknown>["viewer"]
+  nameById: Map<string, string>
+  emailById: Map<string, string | null>
+  avatarById: Map<string, string | null>
+}) {
+  if (viewer.fullName && viewer.fullName.trim().length > 0) {
+    nameById.set(viewer.id, viewer.fullName.trim())
+  }
+  if (viewer.email && viewer.email.trim().length > 0) {
+    emailById.set(viewer.id, viewer.email.trim())
+  }
+  if (viewer.avatarUrl && viewer.avatarUrl.trim().length > 0) {
+    avatarById.set(viewer.id, viewer.avatarUrl.trim())
+  }
+}
+
 export async function buildWorkspaceViewSeed<
   TInitialProfile,
   TFormationSummary,
@@ -103,7 +126,7 @@ export async function buildWorkspaceViewSeed<
     new Set(
       acceleratorTimeline
         .map((step) => step.moduleId)
-        .filter((moduleId) => typeof moduleId === "string" && moduleId.trim().length > 0),
+        .filter((moduleId) => isUuidLike(moduleId)),
     ),
   )
   const [
@@ -356,6 +379,7 @@ export async function buildWorkspaceViewSeed<
       emailById.set(membership.member_id, membership.member_email)
     }
   }
+  applyViewerWorkspaceMemberFallbacks({ viewer, nameById, emailById, avatarById })
 
   const roleById = new Map<string, OrganizationMemberRole>([[orgId, "owner"]])
   for (const membership of membershipRows) {

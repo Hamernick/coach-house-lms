@@ -24,6 +24,10 @@ export function workspaceBoardCardPropsEqual(
     return false
   if (prevData.onTrackerChange !== nextData.onTrackerChange) return false
   if (prevData.onFocusCard !== nextData.onFocusCard) return false
+  if (prevData.onOpenCard !== nextData.onOpenCard) return false
+  if (prevData.onMeasuredHeightChange !== nextData.onMeasuredHeightChange) {
+    return false
+  }
   if (prevData.onToggleCanvasFullscreen !== nextData.onToggleCanvasFullscreen)
     return false
   if (prevData.organizationEditorData !== nextData.organizationEditorData)
@@ -32,16 +36,24 @@ export function workspaceBoardCardPropsEqual(
     if (prevData.organizationShortcutItems !== nextData.organizationShortcutItems) {
       return false
     }
+    if (
+      prevData.organizationMapButtonCallout !==
+      nextData.organizationMapButtonCallout
+    ) {
+      return false
+    }
+    if (
+      prevData.onOrganizationMapButtonTutorialComplete !==
+      nextData.onOrganizationMapButtonTutorialComplete
+    ) {
+      return false
+    }
   }
+
+  if (prevData.tutorialStepId !== nextData.tutorialStepId) return false
 
   if (prevData.cardId === "communications") {
     if (prevData.communications !== nextData.communications) return false
-  }
-
-  if (prevData.cardId === "vault") {
-    if (prevData.vaultViewMode !== nextData.vaultViewMode) return false
-    if (prevData.onVaultViewModeChange !== nextData.onVaultViewModeChange)
-      return false
   }
 
   if (prevData.cardId === "accelerator") {
@@ -74,6 +86,29 @@ export function workspaceBoardCardPropsEqual(
     if (
       prevData.onAcceleratorRuntimeActionsChange !==
       nextData.onAcceleratorRuntimeActionsChange
+    ) {
+      return false
+    }
+    if (
+      prevData.acceleratorTutorialCallout !== nextData.acceleratorTutorialCallout
+    ) {
+      return false
+    }
+    if (
+      prevData.acceleratorTutorialInteractionPolicy !==
+      nextData.acceleratorTutorialInteractionPolicy
+    ) {
+      return false
+    }
+    if (
+      prevData.onAcceleratorTutorialActionComplete !==
+      nextData.onAcceleratorTutorialActionComplete
+    ) {
+      return false
+    }
+    if (
+      prevData.onWorkspaceOnboardingSubmit !==
+      nextData.onWorkspaceOnboardingSubmit
     ) {
       return false
     }

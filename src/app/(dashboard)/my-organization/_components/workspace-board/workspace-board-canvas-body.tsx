@@ -7,6 +7,10 @@ import {
   clampWorkspaceCanvasTutorialStepIndex,
   resolveWorkspaceCanvasTutorialCallout,
 } from "@/features/workspace-canvas-tutorial"
+import type {
+  WorkspaceCanvasCardFocusRequest,
+  WorkspaceCanvasTutorialCompletionExitRequest,
+} from "./workspace-canvas-v2/runtime/workspace-canvas-viewport-command"
 
 import { WorkspaceBoardFlowSurface } from "./workspace-board-flow-surface"
 import { WorkspaceBoardInitialOnboardingSurface } from "./workspace-board-initial-onboarding-surface"
@@ -28,11 +32,6 @@ import type {
 } from "./workspace-board-types"
 import type { WorkspaceBoardToggleContext } from "./workspace-board-debug"
 
-type WorkspaceCardFocusRequest = {
-  cardId: WorkspaceCardId
-  requestKey: number
-} | null
-
 export function WorkspaceBoardCanvasBody({
   initialOnboardingActive,
   seed,
@@ -43,7 +42,9 @@ export function WorkspaceBoardCanvasBody({
   rightRailCurrentUser,
   layoutFitRequestKey,
   acceleratorFocusRequestKey,
+  tutorialRestartRequestKey,
   focusCardRequest,
+  tutorialCompletionExitRequest,
   journeyGuideState,
   organizationEditorData,
   onInitialOnboardingSubmit,
@@ -57,6 +58,7 @@ export function WorkspaceBoardCanvasBody({
   onCloseAcceleratorStepNode,
   onTutorialPrevious,
   onTutorialNext,
+  onTutorialRestart,
   onTutorialShortcutOpened,
   onFocusCard,
   onOnboardingFlowChange,
@@ -67,6 +69,7 @@ export function WorkspaceBoardCanvasBody({
   onDisconnectAllConnections,
   onResetDefaultConnections,
   onCursorConnectionStateChange,
+  onTutorialCompletionExitHandled,
 }: {
   initialOnboardingActive: boolean
   seed: WorkspaceSeedData
@@ -81,7 +84,9 @@ export function WorkspaceBoardCanvasBody({
   }
   layoutFitRequestKey: number
   acceleratorFocusRequestKey: number
-  focusCardRequest: WorkspaceCardFocusRequest
+  tutorialRestartRequestKey: number
+  focusCardRequest: WorkspaceCanvasCardFocusRequest
+  tutorialCompletionExitRequest: WorkspaceCanvasTutorialCompletionExitRequest
   journeyGuideState: ReturnType<typeof resolveWorkspaceJourneyGuideState>
   organizationEditorData: WorkspaceOrganizationEditorData
   onInitialOnboardingSubmit: (form: FormData) => Promise<void>
@@ -95,6 +100,7 @@ export function WorkspaceBoardCanvasBody({
   onCloseAcceleratorStepNode: (source?: "dock" | "card" | "unknown") => void
   onTutorialPrevious: () => void
   onTutorialNext: () => void
+  onTutorialRestart: () => void
   onTutorialShortcutOpened: () => void
   onFocusCard: (cardId: WorkspaceCardId) => void
   onOnboardingFlowChange: (next: WorkspaceBoardOnboardingFlowState) => void
@@ -108,9 +114,10 @@ export function WorkspaceBoardCanvasBody({
   onDisconnectAllConnections: () => void
   onResetDefaultConnections: () => void
   onCursorConnectionStateChange: (state: "connecting" | "live" | "degraded") => void
+  onTutorialCompletionExitHandled: () => void
 }) {
   const rightRailControls = useAppShellRightRailControls()
-  const tutorialActive = !initialOnboardingActive && boardState.onboardingFlow.active
+  const tutorialActive = boardState.onboardingFlow.active
   const tutorialStepIndex = clampWorkspaceCanvasTutorialStepIndex(
     boardState.onboardingFlow.tutorialStepIndex,
   )
@@ -145,7 +152,6 @@ export function WorkspaceBoardCanvasBody({
         canInvite={seed.canInviteCollaborators}
         members={seed.members}
         invites={invites}
-        profile={seed.initialProfile}
         realtimeState={cursorConnectionState}
         currentUser={rightRailCurrentUser}
         tutorialTeamAccessCallout={
@@ -170,7 +176,10 @@ export function WorkspaceBoardCanvasBody({
           workspaceRoomName={`org:${seed.orgId}:workspace`}
           layoutFitRequestKey={layoutFitRequestKey}
           acceleratorFocusRequestKey={acceleratorFocusRequestKey}
+          tutorialRestartRequestKey={tutorialRestartRequestKey}
+          onInitialOnboardingSubmit={onInitialOnboardingSubmit}
           focusCardRequest={focusCardRequest}
+          tutorialCompletionExitRequest={tutorialCompletionExitRequest}
           journeyGuideState={journeyGuideState}
           onSizeChange={onSizeChange}
           onCommunicationsChange={onCommunicationsChange}
@@ -180,6 +189,7 @@ export function WorkspaceBoardCanvasBody({
           onCloseAcceleratorStepNode={onCloseAcceleratorStepNode}
           onTutorialPrevious={onTutorialPrevious}
           onTutorialNext={onTutorialNext}
+          onTutorialRestart={onTutorialRestart}
           onTutorialShortcutOpened={onTutorialShortcutOpened}
           onFocusCard={onFocusCard}
           onOnboardingFlowChange={onOnboardingFlowChange}
@@ -190,6 +200,7 @@ export function WorkspaceBoardCanvasBody({
           onDisconnectAllConnections={onDisconnectAllConnections}
           onResetDefaultConnections={onResetDefaultConnections}
           onCursorConnectionStateChange={onCursorConnectionStateChange}
+          onTutorialCompletionExitHandled={onTutorialCompletionExitHandled}
         />
       </div>
     </>

@@ -4,6 +4,7 @@ import {
   applyWorkspaceTutorialSnapshot,
   areWorkspaceOnboardingFlowStatesEqual,
   buildDefaultWorkspaceOnboardingFlowState,
+  buildRestartedWorkspaceTutorialBoardState,
   normalizeWorkspaceOnboardingFlowState,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-onboarding-flow"
 import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
@@ -22,7 +23,7 @@ const BASE_BOARD_STATE: WorkspaceBoardState = {
     { id: "calendar", x: 1544, y: 500, size: "sm" },
     { id: "communications", x: 1544, y: 988, size: "md" },
     { id: "deck", x: 480, y: 692, size: "md" },
-    { id: "vault", x: 632, y: 220, size: "sm" },
+    { id: "roadmap", x: 632, y: 220, size: "sm" },
     { id: "atlas", x: 840, y: 692, size: "md" },
   ],
   connections: [],
@@ -142,8 +143,31 @@ describe("workspace board onboarding flow equality", () => {
     expect(next.hiddenCardIds).toContain("accelerator")
     expect(next.hiddenCardIds).toContain("calendar")
     expect(next.hiddenCardIds).toContain("programs")
-    expect(next.hiddenCardIds).toContain("vault")
+    expect(next.hiddenCardIds).toContain("roadmap")
     expect(next.hiddenCardIds).toContain("economic-engine")
     expect(next.hiddenCardIds).toContain("communications")
+  })
+
+  it("restarts the workspace tutorial from the beginning and closes the step node", () => {
+    const next = buildRestartedWorkspaceTutorialBoardState({
+      ...BASE_BOARD_STATE,
+      onboardingFlow: {
+        ...BASE_BOARD_STATE.onboardingFlow,
+        active: false,
+        tutorialStepIndex: 6,
+        openedTutorialStepIds: ["accelerator", "accelerator-first-module"],
+        acknowledgedTutorialStepIds: ["organization", "tool-buttons", "accelerator"],
+        completedStages: [2, 3, 4],
+      },
+    })
+
+    expect(next.onboardingFlow.active).toBe(true)
+    expect(next.onboardingFlow.tutorialStepIndex).toBe(0)
+    expect(next.onboardingFlow.openedTutorialStepIds).toEqual([])
+    expect(next.onboardingFlow.acknowledgedTutorialStepIds).toEqual([])
+    expect(next.onboardingFlow.completedStages).toEqual([])
+    expect(next.hiddenCardIds).toContain("organization-overview")
+    expect(next.hiddenCardIds).toContain("accelerator")
+    expect(next.acceleratorUi?.stepOpen).toBe(false)
   })
 })

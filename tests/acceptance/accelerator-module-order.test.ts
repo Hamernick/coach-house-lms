@@ -11,6 +11,43 @@ type TestModule = {
 }
 
 describe("sortAcceleratorModules", () => {
+  it("places Organization setup first in Formation core ordering", () => {
+    const modules: TestModule[] = [
+      {
+        slug: "naming-your-nfp",
+        title: "Naming your NFP",
+        index: 5,
+        href: "/accelerator/class/electives/module/5",
+      },
+      {
+        slug: "organization-setup",
+        title: "Organization setup",
+        index: 4,
+        href: "/accelerator/class/electives/module/4",
+      },
+      {
+        slug: "nfp-registration",
+        title: "NFP Registration",
+        index: 6,
+        href: "/accelerator/class/electives/module/6",
+      },
+      {
+        slug: "filing-1023",
+        title: "Filing 1023",
+        index: 7,
+        href: "/accelerator/class/electives/module/7",
+      },
+    ]
+
+    const ordered = sortAcceleratorModules(modules)
+    expect(ordered.map((module) => module.slug)).toEqual([
+      "organization-setup",
+      "naming-your-nfp",
+      "nfp-registration",
+      "filing-1023",
+    ])
+  })
+
   it("keeps core Formation modules ahead of non-core modules", () => {
     const modules: TestModule[] = [
       {

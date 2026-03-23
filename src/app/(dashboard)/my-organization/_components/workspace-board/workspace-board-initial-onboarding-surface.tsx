@@ -95,6 +95,7 @@ export function WorkspaceBoardInitialOnboardingSurface({
           <div className="pointer-events-auto flex h-full min-h-full w-full max-w-[720px] items-start justify-center">
             <OnboardingWorkspaceCard
               {...seed.initialOnboarding.defaults}
+              mode="workspace_setup"
               onSubmit={onSubmit}
             />
           </div>

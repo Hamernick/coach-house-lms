@@ -22,22 +22,21 @@ import {
   type WorkspaceAcceleratorCardStep,
 } from "@/features/workspace-accelerator-card"
 import {
+  MyOrganizationAcceleratorView,
   MyOrganizationEditorView,
   MyOrganizationWorkspaceView,
 } from "../_components"
 import { completeOnboardingAction } from "../../onboarding/actions"
 import { buildOnboardingFlowDefaults } from "@/lib/onboarding/defaults"
 import {
-  applyWorkspaceOnboardingStageOverride,
   resolveWorkspaceOnboardingStageFromSearchParam,
 } from "../_components/workspace-board/workspace-board-onboarding-flow"
-import type { WorkspaceBoardState } from "../_components/workspace-board/workspace-board-types"
 import { buildMyOrganizationCalendarView } from "./calendar"
 import { buildInitialOrganizationProfile } from "./helpers"
 import { applyFormationStatusAcceleratorProgressOverrides } from "./my-organization-accelerator-progress"
 import {
   buildAcceleratorTimelineModules,
-  buildModuleGroupTitleById,
+  buildModuleGroupMetaById,
 } from "./my-organization-accelerator-timeline"
 import { mapUpcomingEvents, type UpcomingEventRow } from "./upcoming-events"
 import { buildWorkspaceViewSeed } from "./workspace-view"
@@ -48,7 +47,11 @@ import {
   hydrateWorkspaceSeedAcceleratorState,
   resolveOrganizationProfileComplete,
 } from "./my-organization-page-content-helpers"
-import type { MyOrganizationSearchParams } from "./types"
+import {
+  canInviteWorkspaceCollaborators,
+  readWorkspaceBoardStateValue,
+} from "./workspace-state"
+import type { FormationSummary, MyOrganizationSearchParams } from "./types"
 
 const WORKSPACE_PROGRAM_SELECT = [
   "id",
@@ -132,6 +135,121 @@ async function fetchWorkspacePrograms({
   }))
 }
 
+function buildAcceleratorWorkspaceSeed({
+  orgId,
+  viewer,
+  profileAudience,
+  presentationMode,
+  role,
+  canEdit,
+  hasWorkspaceAcceleratorAccess,
+  organizationTitle,
+  organizationSubtitle,
+  fundingGoalCents,
+  raisedCents,
+  programsCount,
+  peopleCount,
+  organizationProfileComplete,
+  teammateCount,
+  workspaceDocumentCount,
+  initialProfile,
+  formationSummary,
+  acceleratorTimeline,
+  calendarView,
+  needsInitialOnboarding,
+  onboardingDefaults,
+  boardState,
+}: {
+  orgId: string
+  viewer: {
+    id: string
+    email: string | null
+    fullName: string | null
+    avatarUrl: string | null
+  }
+  profileAudience: {
+    fullName: string | null
+    avatarUrl: string | null
+  }
+  presentationMode: boolean
+  role: Awaited<ReturnType<typeof resolveActiveOrganization>>["role"]
+  canEdit: boolean
+  hasWorkspaceAcceleratorAccess: boolean
+  organizationTitle: string
+  organizationSubtitle: string
+  fundingGoalCents: number
+  raisedCents: number
+  programsCount: number
+  peopleCount: number
+  organizationProfileComplete: boolean
+  teammateCount: number
+  workspaceDocumentCount: number
+  initialProfile: ReturnType<typeof buildInitialOrganizationProfile>
+  formationSummary: FormationSummary
+  acceleratorTimeline: WorkspaceAcceleratorCardStep[]
+  calendarView: ReturnType<typeof buildMyOrganizationCalendarView>
+  needsInitialOnboarding: boolean
+  onboardingDefaults: ReturnType<typeof buildOnboardingFlowDefaults>
+  boardState: ReturnType<typeof readWorkspaceBoardStateValue>
+}) {
+  return hydrateWorkspaceSeedAcceleratorState(
+    {
+      orgId,
+      viewerId: viewer.id,
+      viewerName:
+        profileAudience.fullName ??
+        viewer.fullName ??
+        viewer.email ??
+        "Teammate",
+      viewerAvatarUrl: profileAudience.avatarUrl ?? viewer.avatarUrl ?? null,
+      presentationMode,
+      role,
+      canEdit,
+      canInviteCollaborators: canInviteWorkspaceCollaborators(role),
+      hasAcceleratorAccess: hasWorkspaceAcceleratorAccess,
+      organizationTitle,
+      organizationSubtitle,
+      fundingGoalCents,
+      raisedCents,
+      programsCount,
+      peopleCount,
+      journeyReadiness: {
+        organizationProfileComplete,
+        teammateCount,
+        workspaceDocumentCount,
+        acceleratorStarted: acceleratorTimeline.some(
+          (step) => step.status !== "not_started",
+        ),
+        acceleratorCompletedStepCount: acceleratorTimeline.filter(
+          (step) => step.status === "completed",
+        ).length,
+      },
+      initialProfile,
+      formationSummary,
+      acceleratorTimeline,
+      activityFeed: [],
+      calendar: calendarView,
+      collaborationInvites: [],
+      members: [
+        {
+          userId: viewer.id,
+          name: profileAudience.fullName ?? viewer.fullName ?? null,
+          email: viewer.email,
+          avatarUrl: profileAudience.avatarUrl ?? viewer.avatarUrl ?? null,
+          role,
+          isOwner: viewer.id === orgId,
+        },
+      ],
+      boardState,
+      initialOnboarding: {
+        required: needsInitialOnboarding,
+        defaults: onboardingDefaults,
+      },
+    },
+    acceleratorTimeline,
+  )
+}
+
 export default async function MyOrganizationPage({
   searchParams,
 }: {
@@ -142,6 +260,9 @@ export default async function MyOrganizationPage({
   const modeParam = typeof resolvedSearchParams?.mode === "string" ? resolvedSearchParams.mode : ""
   const tabParam = typeof resolvedSearchParams?.tab === "string" ? resolvedSearchParams.tab : ""
   const programIdParam = typeof resolvedSearchParams?.programId === "string" ? resolvedSearchParams.programId : ""
+  const acceleratorGroupParam = typeof resolvedSearchParams?.group === "string" ? resolvedSearchParams.group : null
+  const acceleratorModuleParam = typeof resolvedSearchParams?.module === "string" ? resolvedSearchParams.module : null
+  const acceleratorStepParam = typeof resolvedSearchParams?.step === "string" ? resolvedSearchParams.step : null
   const monthParam = typeof resolvedSearchParams?.month === "string" ? resolvedSearchParams.month : ""
   const onboardingFlowRequested =
     typeof resolvedSearchParams?.onboarding_flow === "string" &&
@@ -172,6 +293,7 @@ export default async function MyOrganizationPage({
   const needsInitialOnboarding =
     !isAdmin && !Boolean(userMeta?.onboarding_completed) && orgId === user.id
   const canEdit = canEditOrganization(role)
+  const acceleratorViewRequested = viewParam === "accelerator"
   const showEditor =
     !needsInitialOnboarding &&
     (viewParam === "editor" || Boolean(tabParam) || Boolean(programIdParam))
@@ -208,21 +330,26 @@ export default async function MyOrganizationPage({
   const nowIso = new Date().toISOString()
   const [programsResult, upcomingEventsResult, acceleratorProgress, activeSubscriptionResult, entitlements] = await Promise.all([
     fetchWorkspacePrograms({ supabase, orgId }),
-    supabase
-      .from("roadmap_calendar_internal_events")
-      .select(
-        "id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles",
-      )
-      .eq("org_id", orgId)
-      .gte("starts_at", nowIso)
-      .eq("status", "active")
-      .order("starts_at", { ascending: true })
-      .limit(5)
-      .returns<UpcomingEventRow[]>(),
+    acceleratorViewRequested
+      ? Promise.resolve({
+          data: [] as UpcomingEventRow[],
+          error: null,
+        } as { data: UpcomingEventRow[]; error: null })
+      : supabase
+          .from("roadmap_calendar_internal_events")
+          .select(
+            "id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles",
+          )
+          .eq("org_id", orgId)
+          .gte("starts_at", nowIso)
+          .eq("status", "active")
+          .order("starts_at", { ascending: true })
+          .limit(5)
+          .returns<UpcomingEventRow[]>(),
     fetchAcceleratorProgressSummary({
       supabase,
       userId: user.id,
-      isAdmin: false,
+      isAdmin,
       basePath: "/accelerator",
     }),
     supabase
@@ -238,25 +365,25 @@ export default async function MyOrganizationPage({
       supabase,
       userId: user.id,
       orgUserId: orgId,
-      isAdmin: false,
+      isAdmin,
     }),
   ])
   const programs = programsResult
   const upcomingEvents = mapUpcomingEvents(upcomingEventsResult.data)
   const currentPlanTier = resolvePricingPlanTier(activeSubscriptionResult.data ?? null)
   const hasPaidPlan = currentPlanTier !== "free"
+  const hasWorkspaceAcceleratorAccess =
+    entitlements.hasAcceleratorAccess || entitlements.hasElectiveAccess
   const acceleratorProgressSummary =
     applyFormationStatusAcceleratorProgressOverrides(
       acceleratorProgress,
       initialProfile.formationStatus ?? null,
     )
-
   const calendarView = buildMyOrganizationCalendarView({
     monthParam,
     searchParams: resolvedSearchParams,
     upcomingEvents,
   })
-
   const sortedRoadmapModules = sortAcceleratorModules(
     acceleratorProgressSummary.groups.flatMap((group) => group.modules),
   )
@@ -268,19 +395,13 @@ export default async function MyOrganizationPage({
     formationTrackedModules.length > 0
       ? Math.round((formationCompletedCount / formationTrackedModules.length) * 100)
       : 0
-  const nextFormationModule =
-    foundationRoadmapModules.find((module) => module.status !== "completed") ??
-    foundationRoadmapModules[0] ??
-    null
+  const nextFormationModule = foundationRoadmapModules.find((module) => module.status !== "completed") ?? foundationRoadmapModules[0] ?? null
   const nextFormationHref = nextFormationModule?.href ?? "/accelerator"
-
   const peopleRaw = (Array.isArray(profile.org_people) ? profile.org_people : []) as OrgPerson[]
   const peopleNormalized = peopleRaw.map((person) => ({
     ...person,
     category: normalizePersonCategory(person.category),
   }))
-  const people = await resolvePeopleDisplayImages(peopleNormalized)
-
   const organizationProfileComplete = resolveOrganizationProfileComplete(initialProfile)
   const workspaceDocumentCount = countWorkspaceDocuments(profile)
   const onboardingDefaults = buildOnboardingFlowDefaults({
@@ -297,7 +418,6 @@ export default async function MyOrganizationPage({
     orgSlug: orgRow?.public_slug ?? null,
     builderPlanTier: currentPlanTier,
   })
-
   const allowedTabs: ProfileTab[] = ["company", "programs", "people"]
   const initialTab = allowedTabs.includes(tabParam as ProfileTab) ? (tabParam as ProfileTab) : undefined
   const programRows = (programs ?? []) as Array<{
@@ -307,15 +427,25 @@ export default async function MyOrganizationPage({
   const programsCount = programRows.length
   const fundingGoalCents = programRows.reduce((sum, program) => sum + (program.goal_cents ?? 0), 0)
   const raisedCents = programRows.reduce((sum, program) => sum + (program.raised_cents ?? 0), 0)
-  const teammateCount = people.length
-  const peopleCount = Math.max(1, people.length)
+  const teammateCount = peopleNormalized.length
+  const peopleCount = Math.max(1, peopleNormalized.length)
   const organizationTitle = (initialProfile.name ?? "").trim() || "Organization"
-  const locationSubtitle = [(initialProfile.addressCity ?? "").trim(), (initialProfile.addressState ?? "").trim()]
-    .filter(Boolean)
-    .join(", ")
+  const locationSubtitle = [(initialProfile.addressCity ?? "").trim(), (initialProfile.addressState ?? "").trim()].filter(Boolean).join(", ")
   const organizationSubtitle = (initialProfile.tagline ?? "").trim() || locationSubtitle || ""
-
+  const viewer = {
+    id: user.id,
+    email: user.email ?? null,
+    fullName:
+      typeof user.user_metadata?.full_name === "string"
+        ? user.user_metadata.full_name
+        : null,
+    avatarUrl:
+      typeof user.user_metadata?.avatar_url === "string"
+        ? user.user_metadata.avatar_url
+        : null,
+  }
   if (showEditor) {
+    const people = await resolvePeopleDisplayImages(peopleNormalized)
     return (
       <MyOrganizationEditorView
         initialProfile={initialProfile}
@@ -327,7 +457,6 @@ export default async function MyOrganizationPage({
       />
     )
   }
-
   const formationSummary = {
     visibleModules: formationTrackedModules,
     acceleratorModules: acceleratorRoadmapModules,
@@ -335,31 +464,84 @@ export default async function MyOrganizationPage({
     progressPercent: formationProgressPercent,
     nextHref: nextFormationHref,
   }
-
-  const moduleGroupTitleById = buildModuleGroupTitleById(
+  const moduleGroupMetaById = buildModuleGroupMetaById(
     acceleratorProgressSummary.groups,
   )
   const acceleratorTimelineModules = await buildAcceleratorTimelineModules({
     supabase,
     userId: user.id,
     sortedRoadmapModules,
-    groupTitleById: moduleGroupTitleById,
+    groupMetaById: moduleGroupMetaById,
+    onboardingDefaults,
   })
   const acceleratorTimeline = buildWorkspaceAcceleratorCardSteps(acceleratorTimelineModules)
+  if (acceleratorViewRequested) {
+    if (!hasWorkspaceAcceleratorAccess) {
+      redirect(
+        "/workspace?paywall=organization&plan=organization&upgrade=accelerator-access&source=accelerator",
+      )
+    }
+
+    const boardResult = await supabase
+      .from("organization_workspace_boards")
+      .select("state")
+      .eq("org_id", orgId)
+      .maybeSingle<{ state: unknown }>()
+    if (boardResult.error) {
+      throw supabaseErrorToError(
+        boardResult.error,
+        "Unable to load workspace board state.",
+      )
+    }
+    const acceleratorSeed = buildAcceleratorWorkspaceSeed({
+      orgId,
+      viewer,
+      profileAudience: {
+        fullName: profileAudience.fullName,
+        avatarUrl: profileAudience.avatarUrl,
+      },
+      presentationMode,
+      role,
+      canEdit,
+      hasWorkspaceAcceleratorAccess,
+      organizationTitle,
+      organizationSubtitle,
+      fundingGoalCents,
+      raisedCents,
+      programsCount,
+      peopleCount,
+      organizationProfileComplete,
+      teammateCount,
+      workspaceDocumentCount,
+      initialProfile,
+      formationSummary,
+      acceleratorTimeline,
+      calendarView,
+      needsInitialOnboarding,
+      onboardingDefaults,
+      boardState: readWorkspaceBoardStateValue(boardResult.data?.state),
+    })
+
+    return (
+      <MyOrganizationAcceleratorView
+        seed={acceleratorSeed}
+        initialStepId={acceleratorStepParam}
+        initialModuleId={acceleratorModuleParam}
+        initialLessonGroupKey={acceleratorGroupParam}
+        programFundingTargets={programRows}
+        onWorkspaceOnboardingSubmit={completeOnboardingAction}
+      />
+    )
+  }
 
   const workspaceSeed = await buildWorkspaceViewSeed({
     supabase,
     orgId,
     role,
     canEdit,
-    hasAcceleratorAccess: entitlements.hasAcceleratorAccess || entitlements.hasElectiveAccess,
+    hasAcceleratorAccess: hasWorkspaceAcceleratorAccess,
     presentationMode,
-    viewer: {
-      id: user.id,
-      email: user.email ?? null,
-      fullName: typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null,
-      avatarUrl: typeof user.user_metadata?.avatar_url === "string" ? user.user_metadata.avatar_url : null,
-    },
+    viewer,
     organizationTitle,
     organizationSubtitle,
     fundingGoalCents,
@@ -400,6 +582,7 @@ export default async function MyOrganizationPage({
           : null,
     },
   )
+  const people = await resolvePeopleDisplayImages(peopleNormalized)
 
   return (
     <MyOrganizationWorkspaceView

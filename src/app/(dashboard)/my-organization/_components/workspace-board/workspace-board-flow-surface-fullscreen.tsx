@@ -153,7 +153,7 @@ export function WorkspaceBoardFlowSurfaceFullscreenLayer({
       <div
         className={cn(
           "h-full w-full",
-          fullscreenCardData.cardId === "vault" &&
+          fullscreenCardData.cardId === "roadmap" &&
             "mx-auto max-w-[64rem] px-3 py-3 sm:px-6 sm:py-5",
         )}
       >

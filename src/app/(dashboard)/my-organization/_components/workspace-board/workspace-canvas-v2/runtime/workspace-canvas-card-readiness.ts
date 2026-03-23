@@ -37,10 +37,13 @@ function resolveOrganizationReadiness(seed: WorkspaceSeedData) {
   return buildReadiness(hasIdentitySignal ? "partial" : "empty")
 }
 
-function resolveVaultReadiness(seed: WorkspaceSeedData) {
-  return buildReadiness(
-    seed.journeyReadiness.workspaceDocumentCount > 0 ? "ready" : "empty",
-  )
+function resolveRoadmapReadiness(seed: WorkspaceSeedData) {
+  const hasPlanningSignal =
+    seed.programsCount > 0 ||
+    Boolean(seed.calendar.nextEvent) ||
+    seed.calendar.upcomingEvents.length > 0
+
+  return buildReadiness(hasPlanningSignal ? "ready" : "partial")
 }
 
 function resolveProgramsReadiness(seed: WorkspaceSeedData) {
@@ -82,6 +85,37 @@ function resolveCalendarReadiness(seed: WorkspaceSeedData) {
     Boolean(seed.calendar.nextEvent) || seed.calendar.upcomingEvents.length > 0
 
   return buildReadiness(hasCalendarSignal ? "ready" : "empty")
+}
+
+function resolveMapReadiness(seed: WorkspaceSeedData) {
+  const profile = seed.initialProfile
+  const hasStorySignal = Boolean(
+    profile.vision?.trim() &&
+      profile.mission?.trim() &&
+      profile.values?.trim(),
+  )
+  const hasIdentitySignal = Boolean(
+    profile.name?.trim() &&
+      profile.tagline?.trim() &&
+      (
+        profile.address?.trim() ||
+        profile.addressStreet?.trim() ||
+        profile.addressCity?.trim() ||
+        profile.addressState?.trim() ||
+        profile.addressPostal?.trim()
+      ),
+  )
+  const hasLogoSignal = Boolean(profile.logoUrl?.trim())
+
+  if (hasStorySignal && hasIdentitySignal && hasLogoSignal) {
+    return buildReadiness("ready")
+  }
+
+  if (hasStorySignal || hasIdentitySignal || hasLogoSignal) {
+    return buildReadiness("partial")
+  }
+
+  return buildReadiness("empty")
 }
 
 function resolveCommunicationsReadiness({
@@ -126,7 +160,7 @@ export function resolveWorkspaceCanvasCardReadinessMap({
   return {
     "organization-overview": resolveOrganizationReadiness(seed),
     programs: resolveProgramsReadiness(seed),
-    vault: resolveVaultReadiness(seed),
+    roadmap: resolveRoadmapReadiness(seed),
     accelerator: resolveAcceleratorReadiness({ seed, boardState }),
     "economic-engine": resolveEconomicEngineReadiness(seed),
     calendar: resolveCalendarReadiness(seed),
@@ -138,5 +172,6 @@ export function resolveWorkspaceCanvasCardReadinessMap({
           ? "partial"
           : "empty",
     ),
+    atlas: resolveMapReadiness(seed),
   }
 }

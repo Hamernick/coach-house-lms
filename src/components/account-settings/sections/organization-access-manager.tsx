@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 
 import { OrganizationAccessInvitesList } from "./organization-access-invites-list"
+import { OrganizationAccessRequestsList } from "./organization-access-requests-list"
 import {
   INVITEABLE_ROLES,
   INVITE_ROLE_LABELS,
@@ -34,6 +35,7 @@ export function OrganizationAccessManager({
     loading,
     members,
     invites,
+    requests,
     adminsCanInvite,
     staffCanManageCalendar,
     hasPaidTeamAccess,
@@ -58,10 +60,12 @@ export function OrganizationAccessManager({
     removeMember,
     copyInviteLink,
     revokeInvite,
+    revokeRequest,
   } = useOrganizationAccessManagerState()
 
   const organizationLabel = organizationName?.trim() ? organizationName.trim() : "your organization"
   const hasInvites = invites.length > 0
+  const hasRequests = requests.length > 0
   const hasMembers = members.length > 0
 
   return (
@@ -224,8 +228,10 @@ export function OrganizationAccessManager({
             {canInvite ? (
               <div className="space-y-3">
                 <div>
-                  <p className="text-sm font-medium text-foreground">Pending invites</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Copy an invite link or revoke it.</p>
+                  <p className="text-sm font-medium text-foreground">Pending email invites</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    External invites are emailed when delivery is configured. Copy the fallback link or revoke it here.
+                  </p>
                 </div>
                 {hasInvites ? (
                   <OrganizationAccessInvitesList
@@ -237,6 +243,26 @@ export function OrganizationAccessManager({
                   />
                 ) : (
                   <p className="text-sm text-muted-foreground">No pending invites.</p>
+                )}
+              </div>
+            ) : null}
+
+            {canInvite ? (
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-foreground">Pending teammate requests</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Existing Coach House users accept or decline these requests inside their account.
+                  </p>
+                </div>
+                {hasRequests ? (
+                  <OrganizationAccessRequestsList
+                    requests={requests}
+                    pending={pending}
+                    onRevokeRequest={revokeRequest}
+                  />
+                ) : (
+                  <p className="text-sm text-muted-foreground">No pending teammate requests.</p>
                 )}
               </div>
             ) : null}

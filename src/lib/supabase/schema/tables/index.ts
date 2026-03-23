@@ -22,6 +22,7 @@ import type { AcceleratorPurchasesTable } from "./accelerator_purchases"
 import type { ElectivePurchasesTable } from "./elective_purchases"
 import type { OrganizationMembershipsTable } from "./organization_memberships"
 import type { OrganizationInvitesTable } from "./organization_invites"
+import type { OrganizationAccessRequestsTable } from "./organization_access_requests"
 import type { OrganizationAccessSettingsTable } from "./organization_access_settings"
 import type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
 import type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
@@ -60,6 +61,7 @@ export type { AcceleratorPurchasesTable } from "./accelerator_purchases"
 export type { ElectivePurchasesTable } from "./elective_purchases"
 export type { OrganizationMembershipsTable } from "./organization_memberships"
 export type { OrganizationInvitesTable } from "./organization_invites"
+export type { OrganizationAccessRequestsTable } from "./organization_access_requests"
 export type { OrganizationAccessSettingsTable } from "./organization_access_settings"
 export type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
 export type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
@@ -99,6 +101,7 @@ export type PublicTables = {
   elective_purchases: ElectivePurchasesTable
   organization_memberships: OrganizationMembershipsTable
   organization_invites: OrganizationInvitesTable
+  organization_access_requests: OrganizationAccessRequestsTable
   organization_access_settings: OrganizationAccessSettingsTable
   organization_workspace_boards: OrganizationWorkspaceBoardsTable
   organization_workspace_communication_channels: OrganizationWorkspaceCommunicationChannelsTable

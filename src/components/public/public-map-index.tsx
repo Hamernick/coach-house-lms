@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react"
+import { useEffect, useMemo, useRef, useState, type ComponentProps, type RefObject } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
@@ -56,6 +56,57 @@ type PublicMapIndexProps = {
   joinedOrganizations?: PublicMapJoinedOrganization[]
   boardAlerts?: PublicMapBoardAlert[]
   memberProfile?: PublicMapMemberProfile | null
+}
+
+function useSyncSelectedOrganization({
+  filteredOrganizations,
+  organizationById,
+  selectedOrgId,
+  selectedOrganization,
+  setSelectedOrgId,
+}: {
+  filteredOrganizations: PublicMapOrganization[]
+  organizationById: Map<string, PublicMapOrganization>
+  selectedOrgId: string | null
+  selectedOrganization: PublicMapOrganization | null
+  setSelectedOrgId: (value: string | null) => void
+}) {
+  useEffect(() => {
+    if (!selectedOrganization && filteredOrganizations.length > 0) {
+      setSelectedOrgId(filteredOrganizations[0]!.id)
+      return
+    }
+
+    if (selectedOrgId && !organizationById.has(selectedOrgId) && filteredOrganizations.length > 0) {
+      setSelectedOrgId(filteredOrganizations[0]!.id)
+    }
+  }, [filteredOrganizations, organizationById, selectedOrgId, selectedOrganization, setSelectedOrgId])
+}
+
+function useSyncSidebarCameraPadding({
+  mapRef,
+  mapLoadedRef,
+  sidebarInsetLeft,
+}: {
+  mapRef: RefObject<mapboxgl.Map | null>
+  mapLoadedRef: RefObject<boolean>
+  sidebarInsetLeft: number
+}) {
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapLoadedRef.current) return
+
+    const frame = requestAnimationFrame(() => {
+      if (mapRef.current !== map) return
+      map.easeTo({
+        padding: resolvePublicMapCameraPadding(sidebarInsetLeft),
+        duration: 320,
+        essential: true,
+      })
+    })
+
+    return () => cancelAnimationFrame(frame)
+  }, [mapLoadedRef, mapRef, sidebarInsetLeft])
 }
 
 export function PublicMapIndex({
@@ -186,17 +237,13 @@ export function PublicMapIndex({
       setAuthSheetOpen,
       setFavorites,
     })
-
-  useEffect(() => {
-    if (!selectedOrganization && filteredOrganizations.length > 0) {
-      setSelectedOrgId(filteredOrganizations[0]!.id)
-      return
-    }
-
-    if (selectedOrgId && !organizationById.has(selectedOrgId) && filteredOrganizations.length > 0) {
-      setSelectedOrgId(filteredOrganizations[0]!.id)
-    }
-  }, [filteredOrganizations, organizationById, selectedOrgId, selectedOrganization])
+  useSyncSelectedOrganization({
+    filteredOrganizations,
+    organizationById,
+    selectedOrgId,
+    selectedOrganization,
+    setSelectedOrgId,
+  })
 
   useEffect(() => {
     if (!tokenAvailable) return
@@ -382,21 +429,11 @@ export function PublicMapIndex({
     )
   }, [initialOrganization])
 
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !mapLoadedRef.current) return
-
-    const frame = requestAnimationFrame(() => {
-      if (mapRef.current !== map) return
-      map.easeTo({
-        padding: resolvePublicMapCameraPadding(sidebarInsetLeft),
-        duration: 320,
-        essential: true,
-      })
-    })
-
-    return () => cancelAnimationFrame(frame)
-  }, [sidebarInsetLeft])
+  useSyncSidebarCameraPadding({
+    mapRef,
+    mapLoadedRef,
+    sidebarInsetLeft,
+  })
 
   useEffect(() => {
     const map = mapRef.current

@@ -55,6 +55,30 @@ const ROADMAP_LESSON_GROUP_ALIASES = new Map<string, string>([
   ],
 ])
 
+const PREFERRED_LESSON_GROUP_ORDER = new Map<string, number>([
+  [normalizeLessonGroupOrderLabel("Formation"), 0],
+  [normalizeLessonGroupOrderLabel("Strategic Foundations"), 1],
+])
+
+function resolvePreferredLessonGroupOrderRank(label: string) {
+  const normalizedLabel = normalizeLessonGroupOrderLabel(label)
+  const exactRank = PREFERRED_LESSON_GROUP_ORDER.get(normalizedLabel)
+  if (exactRank != null) return exactRank
+
+  if (normalizedLabel.includes("formation")) {
+    return PREFERRED_LESSON_GROUP_ORDER.get(
+      normalizeLessonGroupOrderLabel("Formation"),
+    )!
+  }
+  if (normalizedLabel.includes("strategic foundation")) {
+    return PREFERRED_LESSON_GROUP_ORDER.get(
+      normalizeLessonGroupOrderLabel("Strategic Foundations"),
+    )!
+  }
+
+  return null
+}
+
 function resolveLessonGroupOrderRank(label: string) {
   const normalizedLabel = normalizeLessonGroupOrderLabel(label)
   const exactMatch = ROADMAP_LESSON_GROUP_ORDER.get(normalizedLabel)
@@ -159,6 +183,18 @@ export function buildWorkspaceAcceleratorLessonGroupOptions(
   }
 
   return Array.from(groups.values()).sort((left, right) => {
+    const leftPreferredOrder = resolvePreferredLessonGroupOrderRank(left.label)
+    const rightPreferredOrder = resolvePreferredLessonGroupOrderRank(right.label)
+    if (leftPreferredOrder != null && rightPreferredOrder != null) {
+      if (leftPreferredOrder !== rightPreferredOrder) {
+        return leftPreferredOrder - rightPreferredOrder
+      }
+    } else if (leftPreferredOrder != null) {
+      return -1
+    } else if (rightPreferredOrder != null) {
+      return 1
+    }
+
     const leftExplicitOrder = explicitGroupOrder.get(left.key)
     const rightExplicitOrder = explicitGroupOrder.get(right.key)
 

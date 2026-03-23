@@ -27,6 +27,7 @@ import {
   resolveProgramProfileImageUrl,
   resolveProgramSummary,
 } from "@/lib/programs/display"
+import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
 
 function sortProgramsByNewest(programs: OrgProgram[]) {
   return [...programs].sort((left, right) => {
@@ -46,6 +47,12 @@ export function buildWorkspaceProgramEditorHref(programId?: string | null) {
 
 export function isWorkspaceProgramRecord(program: Pick<OrgProgram, "id">) {
   return Boolean(program.id && !program.id.startsWith("legacy-program-"))
+}
+
+export function isWorkspaceProgramsPreviewOnlyStep(
+  tutorialStepId?: WorkspaceCanvasTutorialStepId | null,
+) {
+  return tutorialStepId === "programs"
 }
 
 export function resolveWorkspaceProgramsDisplayPrograms({
@@ -70,12 +77,14 @@ export function WorkspaceBoardProgramsCard({
   canEdit,
   createOpen,
   onCreateOpenChange,
+  previewOnly = false,
 }: {
   programs: OrgProgram[]
   legacyProgramsValue?: string | null
   canEdit: boolean
   createOpen: boolean
   onCreateOpenChange: (open: boolean) => void
+  previewOnly?: boolean
 }) {
   const router = useRouter()
   const [editOpen, setEditOpen] = useState(false)
@@ -98,7 +107,18 @@ export function WorkspaceBoardProgramsCard({
   }
 
   const renderProgramCard = (program: OrgProgram) => {
-    const useOverlay = canEdit && isWorkspaceProgramRecord(program)
+    const useOverlay = canEdit && !previewOnly && isWorkspaceProgramRecord(program)
+    const ctaHref = previewOnly
+      ? undefined
+      : useOverlay
+        ? undefined
+        : buildWorkspaceProgramEditorHref(program.id)
+    const onCtaClick = useOverlay
+      ? () => {
+          setSelectedProgram(program)
+          setEditOpen(true)
+        }
+      : undefined
 
     return (
       <ProgramCard
@@ -113,16 +133,9 @@ export function WorkspaceBoardProgramsCard({
         goalCents={program.goal_cents || 0}
         raisedCents={program.raised_cents || 0}
         ctaLabel="Open"
-        ctaHref={useOverlay ? undefined : buildWorkspaceProgramEditorHref(program.id)}
+        ctaHref={ctaHref}
         ctaTarget="_self"
-        onCtaClick={
-          useOverlay
-            ? () => {
-                setSelectedProgram(program)
-                setEditOpen(true)
-              }
-            : undefined
-        }
+        onCtaClick={onCtaClick}
         variant="medium"
         className="max-w-none border border-border/60 bg-background/35 shadow-none"
       />
@@ -165,6 +178,7 @@ export function WorkspaceBoardProgramsCard({
                   variant="outline"
                   size="sm"
                   className="h-8 rounded-lg px-3 text-xs"
+                  disabled={previewOnly}
                   onClick={() => onCreateOpenChange(true)}
                 >
                   Create program
@@ -189,14 +203,14 @@ export function WorkspaceBoardProgramsCard({
         )}
       </div>
 
-      {canEdit ? (
+      {canEdit && !previewOnly ? (
         <ProgramWizardLazy
           mode="create"
           open={createOpen}
           onOpenChange={onCreateOpenChange}
         />
       ) : null}
-      {selectedProgram ? (
+      {selectedProgram && !previewOnly ? (
         <ProgramWizardLazy
           mode="edit"
           program={selectedProgram}

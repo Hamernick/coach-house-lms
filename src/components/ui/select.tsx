@@ -6,7 +6,15 @@ import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 import ChevronUpIcon from "lucide-react/dist/esm/icons/chevron-up"
 
+import {
+  buildReactGrabDebugSurfaceRecord,
+  debugSurfaceClass,
+  type ReactGrabDebugSurfaceAttributes,
+} from "@/components/dev/react-grab-debug-surface"
 import { cn } from "@/lib/utils"
+
+const SELECT_SOURCE = "src/components/ui/select.tsx"
+const SELECT_IMPORT = "@/components/ui/select"
 
 function Select({
   value,
@@ -56,6 +64,7 @@ function SelectTrigger({
   size?: "sm" | "default"
   multiline?: boolean
 }) {
+  const reactGrabAttributes = props as ReactGrabDebugSurfaceAttributes
   const triggerRef = React.useRef<React.ElementRef<typeof SelectPrimitive.Trigger>>(null)
   const [wraps, setWraps] = React.useState(false)
 
@@ -101,6 +110,25 @@ function SelectTrigger({
   }, [children, measureWraps, multiline])
 
   const alignmentClass = multiline ? (wraps ? "items-start" : "items-center") : "items-center"
+  const resolvedClassName = cn(
+    "border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit justify-between gap-2 rounded-lg border bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 *:data-[slot=select-value]:flex *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+    alignmentClass,
+    !multiline &&
+      "whitespace-nowrap data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:items-center *:data-[slot=select-value]:line-clamp-1",
+    multiline &&
+      "min-h-11 *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:flex-1 *:data-[slot=select-value]:whitespace-normal *:data-[slot=select-value]:break-words *:data-[slot=select-value]:text-left *:data-[slot=select-value]:line-clamp-2 data-[wraps=false]:*:data-[slot=select-value]:items-center data-[wraps=true]:*:data-[slot=select-value]:items-start data-[wraps=true]:*:data-[slot=select-value]:leading-tight data-[wraps=true]:[&>svg]:mt-0.5",
+    className
+  )
+  const triggerDebugRecord = buildReactGrabDebugSurfaceRecord({
+    attributes: reactGrabAttributes,
+    fallbackComponent: "SelectTrigger",
+    fallbackSource: SELECT_SOURCE,
+    defaultSlot: "trigger",
+    defaultSurfaceKind: "trigger",
+    className: resolvedClassName,
+    classAssemblyFile: SELECT_SOURCE,
+    primitiveImport: SELECT_IMPORT,
+  })
 
   return (
     <SelectPrimitive.Trigger
@@ -109,15 +137,11 @@ function SelectTrigger({
       data-wraps={multiline ? String(wraps) : undefined}
       suppressHydrationWarning
       ref={triggerRef}
-      className={cn(
-        "border-input data-[placeholder]:text-muted-foreground [&_svg:not([class*='text-'])]:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive dark:bg-input/30 dark:hover:bg-input/50 flex w-fit justify-between gap-2 rounded-lg border bg-transparent px-3 py-2 text-sm shadow-xs transition-[color,box-shadow] outline-none focus-visible:ring-[3px] disabled:cursor-not-allowed disabled:opacity-50 *:data-[slot=select-value]:flex *:data-[slot=select-value]:gap-2 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
-        alignmentClass,
-        !multiline &&
-          "whitespace-nowrap data-[size=default]:h-9 data-[size=sm]:h-8 *:data-[slot=select-value]:items-center *:data-[slot=select-value]:line-clamp-1",
-        multiline &&
-          "min-h-11 *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:flex-1 *:data-[slot=select-value]:whitespace-normal *:data-[slot=select-value]:break-words *:data-[slot=select-value]:text-left *:data-[slot=select-value]:line-clamp-2 data-[wraps=false]:*:data-[slot=select-value]:items-center data-[wraps=true]:*:data-[slot=select-value]:items-start data-[wraps=true]:*:data-[slot=select-value]:leading-tight data-[wraps=true]:[&>svg]:mt-0.5",
-        className
-      )}
+      className={
+        triggerDebugRecord
+          ? debugSurfaceClass(triggerDebugRecord)
+          : resolvedClassName
+      }
       {...props}
     >
       {children}
@@ -134,16 +158,33 @@ function SelectContent({
   position = "popper",
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+  const reactGrabAttributes = props as ReactGrabDebugSurfaceAttributes
+  const resolvedClassName = cn(
+    "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border shadow-md",
+    position === "popper" &&
+      "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
+    className
+  )
+  const contentDebugRecord = buildReactGrabDebugSurfaceRecord({
+    attributes: reactGrabAttributes,
+    fallbackComponent: "SelectContent",
+    fallbackSource: SELECT_SOURCE,
+    defaultSlot: "content",
+    defaultSurfaceKind: "content",
+    className: resolvedClassName,
+    classAssemblyFile: SELECT_SOURCE,
+    primitiveImport: SELECT_IMPORT,
+  })
+
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
         data-slot="select-content"
-        className={cn(
-          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-md border shadow-md",
-          position === "popper" &&
-            "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
-          className
-        )}
+        className={
+          contentDebugRecord
+            ? debugSurfaceClass(contentDebugRecord)
+            : resolvedClassName
+        }
         position={position}
         {...props}
       >

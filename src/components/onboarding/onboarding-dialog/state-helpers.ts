@@ -5,6 +5,7 @@ import { isFormationStatus, isIntentFocus, isRoleInterest, slugify } from "./hel
 import type {
   FormationStatus,
   IntentFocus,
+  OnboardingStepId,
   OnboardingSlugStatus,
   RoleInterest,
 } from "./types"
@@ -235,6 +236,7 @@ export function resolveDraftFieldValue(
 
 export function validateOnboardingStep({
   stepIndex,
+  stepId,
   form,
   formationStatus,
   intentFocus,
@@ -242,7 +244,8 @@ export function validateOnboardingStep({
   slugHint,
   builderPlanTier,
 }: {
-  stepIndex: number
+  stepIndex?: number
+  stepId?: OnboardingStepId | null
   form: FormData
   formationStatus: FormationStatus | ""
   intentFocus: IntentFocus | ""
@@ -251,7 +254,11 @@ export function validateOnboardingStep({
   builderPlanTier: PricingPlanTier
 }) {
   const nextErrors: Record<string, string> = {}
-  const active = resolveOnboardingSteps(intentFocus)[stepIndex]?.id
+  const active =
+    stepId ??
+    (typeof stepIndex === "number"
+      ? resolveOnboardingSteps(intentFocus)[stepIndex]?.id
+      : null)
 
   if (active === "intent") {
     const intent = String(form.get("intentFocus") ?? "").trim()

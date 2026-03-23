@@ -8,7 +8,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - Continuation protocol: after this file, read exactly `docs/agent/HANDOFF.md` to resume the active thread.
 - Implement changes in `src/**`, `app/**`, `migrations/**`, or `docs/**`.
 - Keep PRs small and pass: `pnpm lint`, `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls`.
-- Keep PRs small and pass guardrails: `pnpm check:structure`, `pnpm check:routes`, `pnpm check:features`, `pnpm check:feature-scaffold`, `pnpm check:thresholds`, `pnpm check:boundaries`, `pnpm check:workspace-storage`, `pnpm check:raw-buttons`.
+- Keep PRs small and pass guardrails: `pnpm check:structure`, `pnpm check:routes`, `pnpm check:features`, `pnpm check:feature-scaffold`, `pnpm check:thresholds`, `pnpm check:boundaries`, `pnpm check:workspace-storage`, `pnpm check:interaction-locks`, `pnpm check:react-grab`, `pnpm check:workspace-surfaces`, `pnpm check:raw-buttons`.
 - Build for Next.js App Router, RSC-first, mobile-first, shadcn/ui, dark/light/system.
 - Enforce security defaults: RLS on all tables, server-side authz, webhook signature verification, Stripe idempotency via `event_id`, HTML sanitization.
 - Store timestamps in UTC (`TIMESTAMPTZ`) and render locale-aware date/time/currency.
@@ -39,6 +39,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - Prompt templates for deterministic execution: `docs/agent/codex-execution-playbook.md`
 - External engineering references for guardrails: `docs/agent/engineering-sources.md`
 - Workspace presentation operations checklist: `docs/agent/workspace-presentation-runbook.md`
+- React Grab pasted-component ownership workflow: `docs/agent/react-grab-execution-contract.md`
 
 ## Existing Supporting Docs
 

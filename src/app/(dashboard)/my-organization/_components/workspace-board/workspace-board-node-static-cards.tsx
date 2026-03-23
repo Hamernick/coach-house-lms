@@ -8,8 +8,8 @@ import {
   normalizeToList,
 } from "@/components/organization/org-profile-card/utils"
 import { GridBackground } from "@/components/ui/grid-background"
+import { WORKSPACE_TEXT_STYLES } from "@/components/workspace/workspace-typography"
 import { Progress } from "@/components/ui/progress"
-import { ORG_BANNER_ASPECT_RATIO } from "@/lib/organization/banner-spec"
 import { cn } from "@/lib/utils"
 
 import type {
@@ -17,6 +17,8 @@ import type {
   WorkspaceOrganizationEditorData,
   WorkspaceSeedData,
 } from "./workspace-board-types"
+
+const ORGANIZATION_OVERVIEW_PREVIEW_BANNER_ASPECT_RATIO = 3.7 / 1
 
 function compactUsd(cents: number) {
   const dollars = Math.max(0, cents) / 100
@@ -76,10 +78,12 @@ export function OrganizationOverviewCard({
   })
 
   return (
-    <div className="flex min-h-0 flex-col gap-2 pb-0.5">
+    <div className="flex min-h-0 flex-col gap-3 pb-0.5">
       <div
-        className="bg-muted/30 ring-border/50 relative min-h-[96px] w-full overflow-hidden rounded-[16px] ring-1"
-        style={{ aspectRatio: ORG_BANNER_ASPECT_RATIO }}
+        className="bg-muted/30 ring-border/50 relative min-h-[124px] w-full overflow-hidden rounded-[18px] ring-1"
+        style={{
+          aspectRatio: ORGANIZATION_OVERVIEW_PREVIEW_BANNER_ASPECT_RATIO,
+        }}
       >
         {headerUrl ? (
           <>
@@ -104,12 +108,12 @@ export function OrganizationOverviewCard({
             />
           </>
         ) : (
-          <GridBackground className="rounded-[16px]" />
+          <GridBackground className="rounded-[18px]" />
         )}
       </div>
 
-      <div className="flex min-w-0 items-start gap-2.5">
-        <div className="bg-background ring-border/60 relative h-11 w-11 shrink-0 overflow-hidden rounded-[12px] ring-1">
+      <div className="flex min-w-0 items-start gap-3">
+        <div className="bg-background ring-border/60 relative size-12 shrink-0 overflow-hidden rounded-[14px] ring-1">
           {logoUrl ? (
             <>
               <Image
@@ -134,38 +138,48 @@ export function OrganizationOverviewCard({
             </>
           ) : (
             <div className="text-muted-foreground grid h-full w-full place-items-center">
-              <ImageIcon className="h-4 w-4" aria-hidden />
+              <ImageIcon className="h-4.5 w-4.5" aria-hidden />
             </div>
           )}
         </div>
         <div className="min-w-0 space-y-0.5">
-          <h3 className="text-foreground line-clamp-2 text-lg font-semibold leading-6">
+          <h3
+            className={cn(
+              "line-clamp-2 text-foreground",
+              WORKSPACE_TEXT_STYLES.surfaceTitle,
+            )}
+          >
             {displayTitle}
           </h3>
-          <p className="text-muted-foreground line-clamp-1 text-sm">
+          <p
+            className={cn(
+              "line-clamp-1",
+              WORKSPACE_TEXT_STYLES.surfaceSubtitle,
+            )}
+          >
             {displaySubtitle}
           </p>
         </div>
       </div>
 
-      <dl className="border-border/50 grid grid-cols-3 gap-2 border-t pt-2.5">
+      <dl className="border-border/50 grid grid-cols-3 gap-3 border-t pt-3">
         <div className="min-w-0">
-          <dt className="text-muted-foreground text-[10px]">Programs</dt>
-          <dd className="mt-1 truncate text-sm font-semibold tabular-nums">
+          <dt className={WORKSPACE_TEXT_STYLES.statLabel}>Programs</dt>
+          <dd className={cn("mt-1 truncate", WORKSPACE_TEXT_STYLES.statValue)}>
             {displayProgramsCount}
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className="text-muted-foreground text-[10px]">
+          <dt className={WORKSPACE_TEXT_STYLES.statLabel}>
             {seed.peopleCount === 1 ? "Person" : "People"}
           </dt>
-          <dd className="mt-1 truncate text-sm font-semibold tabular-nums">
+          <dd className={cn("mt-1 truncate", WORKSPACE_TEXT_STYLES.statValue)}>
             {seed.peopleCount}
           </dd>
         </div>
         <div className="min-w-0">
-          <dt className="text-muted-foreground text-[10px]">Raising</dt>
-          <dd className="mt-1 truncate text-sm font-semibold tabular-nums">
+          <dt className={WORKSPACE_TEXT_STYLES.statLabel}>Raising</dt>
+          <dd className={cn("mt-1 truncate", WORKSPACE_TEXT_STYLES.statValue)}>
             {compactUsd(seed.fundingGoalCents)}
           </dd>
         </div>

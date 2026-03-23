@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import { resolveAppShellOnboardingRedirectTarget } from "@/components/app-shell/onboarding-redirect"
 
 describe("app shell onboarding redirect", () => {
-  it("redirects onboarding-locked users from non-workspace dashboard routes", () => {
+  it("redirects onboarding-locked builder users to the dedicated onboarding route", () => {
     expect(
       resolveAppShellOnboardingRedirectTarget({
         onboardingLocked: true,
@@ -11,16 +11,16 @@ describe("app shell onboarding redirect", () => {
         isAdminContext: false,
         pathname: "/accelerator",
       }),
-    ).toBe("/workspace?onboarding_flow=1&source=onboarding")
+    ).toBe("/onboarding?source=onboarding")
   })
 
-  it("does not redirect once the user is already on workspace", () => {
+  it("does not redirect once the user is already on onboarding", () => {
     expect(
       resolveAppShellOnboardingRedirectTarget({
         onboardingLocked: true,
         onboardingIntentFocus: "build",
         isAdminContext: false,
-        pathname: "/workspace",
+        pathname: "/onboarding",
       }),
     ).toBeNull()
   })

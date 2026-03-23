@@ -18,12 +18,12 @@ export const WORKSPACE_CARD_IDS = [
   "organization-overview",
   "programs",
   "accelerator",
+  "roadmap",
   "brand-kit",
   "economic-engine",
   "calendar",
   "communications",
   "deck",
-  "vault",
   "atlas",
 ] as const
 
@@ -388,6 +388,7 @@ export type WorkspaceCardFrameProps = {
   tone?: "default" | "accelerator"
   titleIcon?: ReactNode
   titleBadge?: ReactNode
+  headerDetails?: ReactNode
   headerMeta?: ReactNode
   headerAction?: ReactNode
   hideTitle?: boolean

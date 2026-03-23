@@ -50,6 +50,12 @@ export function resolveWorkspaceCanvasV2InitialPositionLookup(
           y: byId.get("economic-engine")!.y,
         }
       : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS["economic-engine"],
+    roadmap: byId.has("roadmap")
+      ? {
+          x: byId.get("roadmap")!.x,
+          y: byId.get("roadmap")!.y,
+        }
+      : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS.roadmap,
     calendar: byId.has("calendar")
       ? {
           x: byId.get("calendar")!.x,
@@ -62,11 +68,11 @@ export function resolveWorkspaceCanvasV2InitialPositionLookup(
           y: byId.get("communications")!.y,
         }
       : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS.communications,
-    vault: byId.has("vault")
+    atlas: byId.has("atlas")
       ? {
-          x: byId.get("vault")!.x,
-          y: byId.get("vault")!.y,
+          x: byId.get("atlas")!.x,
+          y: byId.get("atlas")!.y,
         }
-      : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS.vault,
+      : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS.atlas,
   } satisfies Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
 }

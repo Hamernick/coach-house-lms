@@ -14,6 +14,7 @@ import {
 import type {
   FormationStatus,
   IntentFocus,
+  OnboardingFlowVisibleStepId,
   RoleInterest,
 } from "@/components/onboarding/onboarding-dialog/types"
 
@@ -22,6 +23,8 @@ type UseOnboardingDraftStateArgs = {
   step: number
   formRef: RefObject<HTMLFormElement | null>
   resolveDraftFieldValue: (key: string, draftValue: unknown) => string
+  visibleStepIds?: OnboardingFlowVisibleStepId[]
+  intentFocusOverride?: IntentFocus | null
   setStep: Dispatch<SetStateAction<number>>
   setFormationStatus: Dispatch<SetStateAction<FormationStatus | "">>
   setIntentFocus: Dispatch<SetStateAction<IntentFocus | "">>
@@ -41,6 +44,8 @@ export function useOnboardingDraftState({
   step,
   formRef,
   resolveDraftFieldValue,
+  visibleStepIds,
+  intentFocusOverride = null,
   setStep,
   setFormationStatus,
   setIntentFocus,
@@ -54,6 +59,16 @@ export function useOnboardingDraftState({
   setSlugValue,
   syncProgress,
 }: UseOnboardingDraftStateArgs) {
+  const resolveVisibleSteps = useCallback(
+    (intent: IntentFocus | "") => {
+      const steps = resolveOnboardingSteps(intent)
+      if (!visibleStepIds || visibleStepIds.length === 0) return steps
+      const allowedStepIds = new Set(visibleStepIds)
+      return steps.filter((candidate) => allowedStepIds.has(candidate.id))
+    },
+    [visibleStepIds],
+  )
+
   const applyDraftAccountState = useCallback(
     ({
       values,
@@ -151,15 +166,27 @@ export function useOnboardingDraftState({
     if (!draft) return
 
     if (typeof draft.step === "number") {
-      const steps = resolveOnboardingSteps(
-        isIntentFocus(draft.intentFocus) ? draft.intentFocus : "",
+      const draftIntentFocus =
+        intentFocusOverride ??
+        (isIntentFocus(draft.intentFocus) ? draft.intentFocus : "")
+      const allSteps = resolveOnboardingSteps(draftIntentFocus)
+      const visibleSteps = resolveVisibleSteps(draftIntentFocus)
+      const draftStepId = allSteps[draft.step]?.id
+      const visibleStepIndex = draftStepId
+        ? visibleSteps.findIndex((candidate) => candidate.id === draftStepId)
+        : -1
+      setStep(
+        visibleStepIndex >= 0
+          ? visibleStepIndex
+          : Math.max(0, Math.min(visibleSteps.length - 1, draft.step)),
       )
-      setStep(Math.max(0, Math.min(steps.length - 1, draft.step)))
     }
     if (isFormationStatus(draft.formationStatus)) {
       setFormationStatus(draft.formationStatus)
     }
-    if (isIntentFocus(draft.intentFocus)) {
+    if (intentFocusOverride) {
+      setIntentFocus(intentFocusOverride)
+    } else if (isIntentFocus(draft.intentFocus)) {
       setIntentFocus(draft.intentFocus)
     }
     if (isRoleInterest(draft.roleInterest)) {
@@ -187,11 +214,15 @@ export function useOnboardingDraftState({
       setOrgSlugInputValue(normalizedSlug)
     }
 
-    const intentFromValues = isIntentFocus(draft.intentFocus)
-      ? draft.intentFocus
-      : resolveDraftFieldValue("intentFocus", draft.values?.intentFocus)
-    if (isIntentFocus(intentFromValues)) {
-      setIntentFocus(intentFromValues)
+    if (intentFocusOverride) {
+      setIntentFocus(intentFocusOverride)
+    } else {
+      const intentFromValues = isIntentFocus(draft.intentFocus)
+        ? draft.intentFocus
+        : resolveDraftFieldValue("intentFocus", draft.values?.intentFocus)
+      if (isIntentFocus(intentFromValues)) {
+        setIntentFocus(intentFromValues)
+      }
     }
 
     const roleFromValues = resolveDraftFieldValue("roleInterest", draft.values?.roleInterest)
@@ -221,6 +252,8 @@ export function useOnboardingDraftState({
     setSlugValue,
     setStep,
     syncProgress,
+    resolveVisibleSteps,
+    intentFocusOverride,
   ])
 
   useEffect(() => {

@@ -5,9 +5,11 @@ import Link from "next/link"
 import PlusIcon from "lucide-react/dist/esm/icons/plus"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { Tooltip, TooltipTrigger } from "@/components/ui/tooltip"
+import { WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME } from "@/components/workspace/workspace-tutorial-theme"
 import { cn } from "@/lib/utils"
 
 import { WorkspaceBoardInviteSheet } from "./workspace-board-invite-sheet"
@@ -17,6 +19,7 @@ import {
   countActiveWorkspaceInvites,
   shouldShowWorkspaceTeamAccessEmptyState,
 } from "./workspace-board-team-access"
+import { formatRemaining } from "./workspace-board-invite-sheet-helpers"
 import type {
   WorkspaceCollaborationInvite,
   WorkspaceMemberOption,
@@ -80,6 +83,17 @@ export function WorkspaceBoardTeamAccessSection({
         members,
       }),
     [currentUser, members],
+  )
+  const activeInviteRows = useMemo(
+    () =>
+      invites
+        .filter((invite) => {
+          if (invite.revokedAt) return false
+          const expiresAt = new Date(invite.expiresAt).getTime()
+          return Number.isFinite(expiresAt) && expiresAt > nowMs
+        })
+        .slice(0, 6),
+    [invites, nowMs],
   )
   const visiblePeople = accessPeople.slice(0, 4)
   const extraPeopleCount = Math.max(0, accessPeople.length - visiblePeople.length)
@@ -242,6 +256,51 @@ export function WorkspaceBoardTeamAccessSection({
                       </div>
                     )
                   })}
+
+                  {activeInviteRows.length > 0 ? (
+                    <>
+                      <div className="px-1 pt-2">
+                        <p className="text-xs font-medium text-muted-foreground">
+                          Active invites
+                        </p>
+                      </div>
+                      {activeInviteRows.map((invite) => {
+                        const displayName =
+                          invite.userName?.trim() || invite.userEmail || "Temporary collaborator"
+                        const hue = hueFromSeed(invite.userId)
+
+                        return (
+                          <div
+                            key={invite.id}
+                            className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/40 px-2.5 py-2"
+                          >
+                            <Avatar className="h-8 w-8 border border-border/50">
+                              <AvatarFallback
+                                className="text-[10px] font-semibold"
+                                style={{
+                                  backgroundColor: `hsl(${hue} 28% 88%)`,
+                                  color: `hsl(${hue} 32% 26%)`,
+                                }}
+                              >
+                                {toInitials(displayName)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium">
+                                {displayName}
+                              </p>
+                              <p className="truncate text-xs text-muted-foreground">
+                                Temporary access · {formatRemaining(invite.expiresAt)}
+                              </p>
+                            </div>
+                            <Badge variant="secondary" className="rounded-full">
+                              Invited
+                            </Badge>
+                          </div>
+                        )
+                      })}
+                    </>
+                  ) : null}
                 </div>
 
                 <div className="flex items-center justify-between gap-2 border-t border-border/60 px-3 py-2.5">
@@ -298,8 +357,10 @@ export function WorkspaceBoardTeamAccessSection({
     <Tooltip open>
       <TooltipTrigger asChild>{content}</TooltipTrigger>
       <WorkspaceTutorialCallout
+        reactGrabOwnerId="workspace-board-team-access-section:callout"
         title={tutorialCallout.title}
         instruction={tutorialCallout.instruction}
+        tooltipContentClassName={WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME}
       />
     </Tooltip>
   )

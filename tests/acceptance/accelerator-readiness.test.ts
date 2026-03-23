@@ -67,12 +67,12 @@ describe("accelerator readiness", () => {
 
     expect(readiness.fundable).toBe(false)
     expect(readiness.verified).toBe(false)
-    expect(readiness.fundableMissing).toContain("Complete formation lessons")
+    expect(readiness.fundableMissing).toContain("Complete the Formation class")
     expect(readiness.fundableMissing).toContain("Set a program funding goal")
     expect(readiness.fundableChecklist).toEqual([
       {
         id: "formation-lessons",
-        label: "Complete formation lessons",
+        label: "Complete the Formation class",
         complete: false,
       },
       {

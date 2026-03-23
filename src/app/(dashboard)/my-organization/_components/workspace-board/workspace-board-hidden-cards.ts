@@ -1,4 +1,7 @@
-import { DEFAULT_HIDDEN_CARD_IDS } from "./workspace-board-layout-config"
+import {
+  resolveWorkspaceAlwaysHiddenCardIds,
+  resolveWorkspaceDefaultHiddenCardIds,
+} from "@/lib/workspace-card-policy"
 import {
   WORKSPACE_CARD_IDS,
   type WorkspaceBoardState,
@@ -10,14 +13,16 @@ import {
   getWorkspaceCanvasCardDescendants,
 } from "./workspace-canvas-v2/contracts/workspace-card-tree-contract"
 
-const ALWAYS_HIDDEN_CARD_IDS: WorkspaceCardId[] = ["brand-kit", "deck", "atlas"]
+const ALWAYS_HIDDEN_CARD_IDS: WorkspaceCardId[] = [
+  ...resolveWorkspaceAlwaysHiddenCardIds(),
+]
 const FIXED_VISIBLE_CARD_IDS: WorkspaceCardId[] = ["organization-overview"]
 
 function isWorkspaceTreeCardId(cardId: WorkspaceCardId) {
   return (
     cardId === "organization-overview" ||
     cardId === "programs" ||
-    cardId === "vault" ||
+    cardId === "roadmap" ||
     cardId === "accelerator" ||
     cardId === "economic-engine" ||
     cardId === "calendar" ||
@@ -95,7 +100,7 @@ function buildDefaultHiddenSet({
   nodeIdSet: Set<WorkspaceCardId>
 }) {
   return toWorkspaceHiddenSet({
-    hiddenCardIds: DEFAULT_HIDDEN_CARD_IDS,
+    hiddenCardIds: [...resolveWorkspaceDefaultHiddenCardIds()],
     nodeIdSet,
   })
 }
@@ -118,7 +123,7 @@ export function normalizeWorkspaceHiddenCardIds(
       hiddenSet.add(normalizedCardId)
     }
   } else {
-    for (const cardId of DEFAULT_HIDDEN_CARD_IDS) {
+    for (const cardId of resolveWorkspaceDefaultHiddenCardIds()) {
       hiddenSet.add(cardId)
     }
   }
@@ -133,14 +138,14 @@ export function normalizeWorkspaceHiddenCardIds(
     }
   }
 
-  // Migrate legacy default where vault was hidden with deck/atlas.
+  // Migrate legacy default where the former Documents card was hidden with deck/atlas.
   const isLegacyToolingDefault =
     hiddenSet.size === 3 &&
     hiddenSet.has("deck") &&
     hiddenSet.has("atlas") &&
-    hiddenSet.has("vault")
+    hiddenSet.has("roadmap")
   if (isLegacyToolingDefault) {
-    hiddenSet.delete("vault")
+    hiddenSet.delete("roadmap")
   }
 
   if (enforceFallbackVisibleCards) {

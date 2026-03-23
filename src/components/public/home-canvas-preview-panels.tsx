@@ -31,7 +31,7 @@ export function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
   const isLogin = mode === "login"
   const heading = "Create account"
   const description = "Join Coach House and start building your organization workspace."
-  const builderRedirectTo = "/workspace?onboarding_flow=1&source=home_signup"
+  const builderRedirectTo = "/onboarding?source=home_signup"
   const builderLoginHref = "/?section=login"
 
   return (

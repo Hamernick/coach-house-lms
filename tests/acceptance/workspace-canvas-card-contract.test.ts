@@ -49,9 +49,13 @@ describe("workspace canvas card contract", () => {
     }
   })
 
-  it("keeps communications as a medium-or-larger dock card and brand-kit out of the dock", () => {
+  it("keeps communications and fundraising out of the dock while brand-kit stays deprecated", () => {
     expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.allowedSizes).toEqual(["md", "lg"])
     expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.defaultSize).toBe("md")
+    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.dockEnabled).toBe(false)
+    expect(WORKSPACE_CANVAS_V2_DOCK_CARD_IDS.includes("communications")).toBe(false)
+    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT["economic-engine"].dockEnabled).toBe(false)
+    expect(WORKSPACE_CANVAS_V2_DOCK_CARD_IDS.includes("economic-engine")).toBe(false)
     expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT["brand-kit"].dockEnabled).toBe(false)
     expect(WORKSPACE_CANVAS_V2_DOCK_CARD_IDS.includes("brand-kit")).toBe(false)
   })
@@ -80,7 +84,7 @@ describe("workspace canvas card contract", () => {
       (cardId) => WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId].layoutRoles.timeline === "root",
     )
 
-    expect(hubCenters).toEqual(["vault"])
+    expect(hubCenters).toEqual(["roadmap"])
     expect(timelineRoots).toEqual(["organization-overview"])
   })
 })

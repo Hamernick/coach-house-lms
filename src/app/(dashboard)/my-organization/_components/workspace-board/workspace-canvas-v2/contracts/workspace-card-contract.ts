@@ -4,8 +4,9 @@ import type { WorkspaceCardSize } from "../../workspace-board-types"
 
 export const WORKSPACE_CANVAS_V2_CARD_IDS = [
   "organization-overview",
+  "atlas",
   "programs",
-  "vault",
+  "roadmap",
   "accelerator",
   "brand-kit",
   "economic-engine",
@@ -24,7 +25,6 @@ export const WORKSPACE_CARD_PORT_TYPES = [
   "financial-model",
   "schedule",
   "campaign",
-  "documents",
 ] as const
 
 export type WorkspaceCardPortType = (typeof WORKSPACE_CARD_PORT_TYPES)[number]
@@ -91,6 +91,65 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
       role: "root",
     },
   },
+  atlas: {
+    id: "atlas",
+    laneIndex: 8,
+    defaultPosition: { x: 184, y: 736 },
+    dockEnabled: true,
+    allowedSizes: ["sm", "md"],
+    defaultSize: "md",
+    scrollPolicy: "none",
+    layoutRoles: {
+      hub: "ring",
+      timeline: "branch",
+    },
+    ports: {
+      inputs: ["organization-context", "workspace-link"],
+      outputs: ["workspace-link"],
+    },
+    rail: {
+      label: "Map",
+      order: 8,
+      enabled: false,
+      rootBehavior: "toggle",
+      parentId: "organization-overview",
+      role: "leaf",
+    },
+  },
+  roadmap: {
+    id: "roadmap",
+    laneIndex: 2,
+    defaultPosition: { x: 1144, y: 208 },
+    dockEnabled: true,
+    allowedSizes: ["sm", "md", "lg"],
+    defaultSize: "sm",
+    scrollPolicy: "single-region",
+    layoutRoles: {
+      hub: "center",
+      timeline: "lane",
+    },
+    ports: {
+      inputs: [
+        "workspace-link",
+        "organization-context",
+        "program-plan",
+        "tasks",
+        "brand-assets",
+        "financial-model",
+        "schedule",
+        "campaign",
+      ],
+      outputs: ["workspace-link"],
+    },
+    rail: {
+      label: "Roadmap",
+      order: 4,
+      enabled: true,
+      rootBehavior: "toggle",
+      parentId: "organization-overview",
+      role: "trunk",
+    },
+  },
   programs: {
     id: "programs",
     laneIndex: 1,
@@ -137,7 +196,7 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
       order: 1,
       enabled: true,
       rootBehavior: "toggle",
-      parentId: "vault",
+      parentId: "roadmap",
       role: "trunk",
     },
   },
@@ -170,7 +229,7 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
     id: "economic-engine",
     laneIndex: 5,
     defaultPosition: { x: 2680, y: 208 },
-    dockEnabled: true,
+    dockEnabled: false,
     allowedSizes: ["sm", "md"],
     defaultSize: "md",
     scrollPolicy: "single-region",
@@ -185,7 +244,7 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
     rail: {
       label: "Engine",
       order: 5,
-      enabled: true,
+      enabled: false,
       rootBehavior: "toggle",
       parentId: "accelerator",
       role: "leaf",
@@ -220,7 +279,7 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
     id: "communications",
     laneIndex: 4,
     defaultPosition: { x: 2168, y: 208 },
-    dockEnabled: true,
+    dockEnabled: false,
     allowedSizes: ["md", "lg"],
     defaultSize: "md",
     scrollPolicy: "single-region",
@@ -235,44 +294,10 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
     rail: {
       label: "Communications",
       order: 6,
-      enabled: true,
+      enabled: false,
       rootBehavior: "toggle",
       parentId: "accelerator",
       role: "leaf",
-    },
-  },
-  vault: {
-    id: "vault",
-    laneIndex: 2,
-    defaultPosition: { x: 1144, y: 208 },
-    dockEnabled: true,
-    allowedSizes: ["sm", "md", "lg"],
-    defaultSize: "sm",
-    scrollPolicy: "single-region",
-    layoutRoles: {
-      hub: "center",
-      timeline: "lane",
-    },
-    ports: {
-      inputs: [
-        "workspace-link",
-        "organization-context",
-        "program-plan",
-        "tasks",
-        "brand-assets",
-        "financial-model",
-        "schedule",
-        "campaign",
-      ],
-      outputs: ["documents", "workspace-link"],
-    },
-    rail: {
-      label: "Docs",
-      order: 4,
-      enabled: true,
-      rootBehavior: "toggle",
-      parentId: "organization-overview",
-      role: "trunk",
     },
   },
 } satisfies Record<WorkspaceCanvasV2CardId, WorkspaceCanvasV2CardContract>)
@@ -280,6 +305,8 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
 export const WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS = Object.freeze({
   "organization-overview":
     WORKSPACE_CANVAS_V2_CARD_CONTRACT["organization-overview"].defaultPosition,
+  atlas: WORKSPACE_CANVAS_V2_CARD_CONTRACT.atlas.defaultPosition,
+  roadmap: WORKSPACE_CANVAS_V2_CARD_CONTRACT.roadmap.defaultPosition,
   programs: WORKSPACE_CANVAS_V2_CARD_CONTRACT.programs.defaultPosition,
   accelerator: WORKSPACE_CANVAS_V2_CARD_CONTRACT.accelerator.defaultPosition,
   "brand-kit": WORKSPACE_CANVAS_V2_CARD_CONTRACT["brand-kit"].defaultPosition,
@@ -287,7 +314,6 @@ export const WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS = Object.freeze({
     WORKSPACE_CANVAS_V2_CARD_CONTRACT["economic-engine"].defaultPosition,
   calendar: WORKSPACE_CANVAS_V2_CARD_CONTRACT.calendar.defaultPosition,
   communications: WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.defaultPosition,
-  vault: WORKSPACE_CANVAS_V2_CARD_CONTRACT.vault.defaultPosition,
 } satisfies Record<WorkspaceCanvasV2CardId, { x: number; y: number }>)
 
 export function resolveWorkspaceCanvasRailCardIds() {

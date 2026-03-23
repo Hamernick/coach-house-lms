@@ -7,10 +7,8 @@ import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
 import LogOutIcon from "lucide-react/dist/esm/icons/log-out"
 import MessageSquareIcon from "lucide-react/dist/esm/icons/message-square"
 
-import { NavUserTestingSection } from "@/components/nav-user-testing-section"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import type { resolveDevtoolsAccess } from "@/lib/devtools/access"
 
 type NavUserMenuContentProps = {
   open: boolean
@@ -23,16 +21,9 @@ type NavUserMenuContentProps = {
   displayEmail: string
   avatarFallback: string
   isAdmin: boolean
-  devtools: ReturnType<typeof resolveDevtoolsAccess>
-  adminPending: boolean
   signOutPending: boolean
   onCloseMenu: () => void
   onOpenSettings: () => void
-  onOpenOnboarding: () => void
-  onStartTutorial: (tutorial: "platform" | "accelerator") => void
-  onResetTutorials: () => void
-  onResetOnboarding: () => void
-  onSeedNotifications: () => void
   onSignOut: () => void
 }
 
@@ -45,16 +36,9 @@ export function NavUserMenuContent({
   displayEmail,
   avatarFallback,
   isAdmin,
-  devtools,
-  adminPending,
   signOutPending,
   onCloseMenu,
   onOpenSettings,
-  onOpenOnboarding,
-  onStartTutorial,
-  onResetTutorials,
-  onResetOnboarding,
-  onSeedNotifications,
   onSignOut,
 }: NavUserMenuContentProps) {
   if (!open || typeof document === "undefined") {
@@ -114,16 +98,6 @@ export function NavUserMenuContent({
           Billing
         </Link>
       ) : null}
-      <NavUserTestingSection
-        devtools={devtools}
-        adminPending={adminPending}
-        onCloseMenu={onCloseMenu}
-        onOpenOnboarding={onOpenOnboarding}
-        onStartTutorial={onStartTutorial}
-        onResetTutorials={onResetTutorials}
-        onResetOnboarding={onResetOnboarding}
-        onSeedNotifications={onSeedNotifications}
-      />
       <div className="bg-border/60 my-2 h-px" />
       <Button
         type="button"

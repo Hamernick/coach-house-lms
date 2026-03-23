@@ -3,7 +3,17 @@
 import * as React from "react"
 import * as TooltipPrimitive from "@radix-ui/react-tooltip"
 
+import {
+  buildReactGrabDebugSurfaceRecord,
+  debugSurfaceClass,
+  type ReactGrabDebugSurfaceAttributes,
+} from "@/components/dev/react-grab-debug-surface"
 import { cn } from "@/lib/utils"
+
+const TOOLTIP_SOURCE = "src/components/ui/tooltip.tsx"
+const TOOLTIP_IMPORT = "@/components/ui/tooltip"
+export const TOOLTIP_ARROW_CLASSNAME =
+  "z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px] bg-popover fill-popover"
 
 function TooltipProvider({
   delayDuration = 0,
@@ -38,26 +48,39 @@ function TooltipContent({
   className,
   sideOffset = 0,
   children,
-  hideArrow = false,
   ...props
-}: React.ComponentProps<typeof TooltipPrimitive.Content> & {
-  hideArrow?: boolean
-}) {
+}: React.ComponentProps<typeof TooltipPrimitive.Content>) {
+  const reactGrabAttributes = props as ReactGrabDebugSurfaceAttributes
+  const resolvedClassName = cn(
+    "bg-popover text-popover-foreground animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-w-[22rem] origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs leading-tight whitespace-nowrap shadow-md",
+    className
+  )
+  const debugRecord = buildReactGrabDebugSurfaceRecord({
+    attributes: reactGrabAttributes,
+    fallbackComponent: "TooltipContent",
+    fallbackSource: TOOLTIP_SOURCE,
+    defaultSlot: "content",
+    defaultSurfaceKind: "content",
+    className: resolvedClassName,
+    classAssemblyFile: TOOLTIP_SOURCE,
+    primitiveImport: TOOLTIP_IMPORT,
+  })
+
   return (
     <TooltipPrimitive.Portal>
       <TooltipPrimitive.Content
         data-slot="tooltip-content"
         sideOffset={sideOffset}
-        className={cn(
-          "bg-primary text-primary-foreground animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 max-w-[22rem] origin-(--radix-tooltip-content-transform-origin) rounded-md px-3 py-1.5 text-xs leading-tight whitespace-nowrap",
-          className
-        )}
+        className={
+          debugRecord ? debugSurfaceClass(debugRecord) : resolvedClassName
+        }
         {...props}
       >
         {children}
-        {hideArrow ? null : (
-          <TooltipPrimitive.Arrow className="bg-primary fill-primary z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
-        )}
+        <TooltipPrimitive.Arrow
+          data-slot="tooltip-arrow"
+          className={TOOLTIP_ARROW_CLASSNAME}
+        />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   )

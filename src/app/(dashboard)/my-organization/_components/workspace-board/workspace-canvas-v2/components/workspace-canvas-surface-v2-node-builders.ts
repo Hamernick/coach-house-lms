@@ -17,6 +17,8 @@ export function buildInitialWorkspaceCanvasNodes({
   allowEditing,
   acceleratorStepNodeData,
   tutorialNodeData,
+  tutorialDraggableCardIds = [],
+  tutorialCardPositionOverrides = null,
 }: {
   visibleCardIds: WorkspaceCanvasV2CardId[]
   boardNodeLookup: Map<WorkspaceCardId, WorkspaceBoardState["nodes"][number]>
@@ -27,18 +29,25 @@ export function buildInitialWorkspaceCanvasNodes({
   allowEditing: boolean
   acceleratorStepNodeData: WorkspaceCanvasNode | null
   tutorialNodeData: WorkspaceCanvasNode | null
+  tutorialDraggableCardIds?: WorkspaceCanvasV2CardId[]
+  tutorialCardPositionOverrides: Partial<
+    Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
+  > | null
 }) {
   const next: WorkspaceCanvasNode[] = []
   for (const cardId of visibleCardIds) {
     const boardNode = boardNodeLookup.get(cardId)
     const fallback = initialPositionLookupRef.current[cardId]
-    const position = boardNode ? { x: boardNode.x, y: boardNode.y } : fallback
+    const position =
+      tutorialCardPositionOverrides?.[cardId] ??
+      (boardNode ? { x: boardNode.x, y: boardNode.y } : fallback)
     next.push(
       buildWorkspaceCanvasV2CardNode({
         cardId,
         position,
         data: cardDataLookup[cardId],
         allowEditing,
+        tutorialDraggable: tutorialDraggableCardIds.includes(cardId),
       }),
     )
   }

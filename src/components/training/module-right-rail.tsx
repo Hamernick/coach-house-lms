@@ -58,14 +58,16 @@ export function ModuleRightRail({
   const normalizedResources = useMemo(() => (Array.isArray(resources) ? resources : []), [resources])
 
   return (
-    <div className="flex min-h-full flex-col gap-4">
-      <div className="space-y-3">
+    <div className="grid min-h-full grid-rows-[minmax(0,1fr)_auto] gap-4">
+      <div className="min-h-0 overflow-y-auto pr-1">
+        <div className="space-y-3">
         {activeTool === "notes" ? <ModuleNotesPanel moduleId={moduleId} /> : null}
         {activeTool === "resources" ? (
           <ModuleResourcesPanel resources={normalizedResources} moduleId={moduleId} hasDeck={hasDeck} />
         ) : null}
         {activeTool === "coach" ? <ModuleCoachPanel /> : null}
         {activeTool === "ai" ? <ModuleAiPanel /> : null}
+        </div>
       </div>
       <ModuleToolTray
         activeTool={activeTool}
@@ -221,7 +223,7 @@ function ModuleToolTray({
   breakAction: ModuleRightRailBreakAction | null
 }) {
   return (
-    <div className="sticky bottom-0 mt-auto space-y-2 rounded-2xl border border-border/60 bg-background/90 p-2 shadow-sm backdrop-blur">
+    <div className="space-y-2 rounded-2xl border border-border/60 bg-background/90 p-2 shadow-sm backdrop-blur">
       <div className="grid grid-cols-2 gap-2">
         <ToolTrayButton
           icon={NotebookPenIcon}

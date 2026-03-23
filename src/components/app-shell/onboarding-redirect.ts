@@ -1,4 +1,4 @@
-const WORKSPACE_ONBOARDING_REDIRECT = "/workspace?onboarding_flow=1&source=onboarding"
+const WORKSPACE_ONBOARDING_REDIRECT = "/onboarding?source=onboarding"
 const MEMBER_ONBOARDING_REDIRECT = "/find?member_onboarding=1&source=onboarding"
 
 export function resolveAppShellOnboardingRedirectTarget({
@@ -23,6 +23,6 @@ export function resolveAppShellOnboardingRedirectTarget({
     return redirectTarget
   }
   if (redirectTarget === MEMBER_ONBOARDING_REDIRECT && pathname.startsWith("/find")) return null
-  if (redirectTarget === WORKSPACE_ONBOARDING_REDIRECT && pathname.startsWith("/workspace")) return null
+  if (redirectTarget === WORKSPACE_ONBOARDING_REDIRECT && pathname.startsWith("/onboarding")) return null
   return redirectTarget
 }

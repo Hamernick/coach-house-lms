@@ -29,7 +29,7 @@ export function VideoSection({
     <div className={`relative w-full bg-black ${mediaClass}`}>
       <iframe
         src={embedUrl}
-        title="Lesson video"
+        title="Class video"
         className="absolute inset-0 h-full w-full"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowFullScreen
@@ -71,7 +71,7 @@ export function VideoSection({
       <div className="flex flex-wrap items-center justify-between gap-2 border-b px-6 py-3">
         <div className="flex items-center gap-2 text-base font-semibold">
           <VideoIcon className="h-4 w-4" />
-          <span>Lesson Video</span>
+          <span>Class video</span>
         </div>
       </div>
       <CardContent className="overflow-hidden rounded-b-2xl p-0">{content}</CardContent>

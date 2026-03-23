@@ -1,37 +1,315 @@
 "use client"
 
+import {
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type SyntheticEvent,
+} from "react"
+
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
 import { Dithering } from "@paper-design/shaders-react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { WORKSPACE_TEXT_STYLES } from "@/components/workspace/workspace-typography"
+import {
+  resolveWorkspaceCanvasStageMotion,
+} from "@/lib/workspace-canvas/motion-spec"
 import { cn } from "@/lib/utils"
-
-import type { WorkspaceCanvasTutorialStepId } from "../types"
+import type { WorkspaceCanvasTutorialNodeVariant, WorkspaceCanvasTutorialPresentationSurface, WorkspaceCanvasTutorialStepId } from "../types"
 import { useWorkspaceCanvasTutorialController } from "../hooks/use-workspace-canvas-tutorial-controller"
+import { resolveWorkspaceCanvasTutorialProgressPercent } from "../lib"
+import {
+  resolveWorkspaceTutorialBodyLayoutClass,
+  resolveWorkspaceTutorialBodyGridClass,
+  resolveWorkspaceTutorialCopyRailClass,
+  resolveWorkspaceTutorialPresentationSlotClass,
+} from "./workspace-canvas-tutorial-panel-layout"
+import {
+  getWorkspaceTutorialPanelOwnerProps,
+  getWorkspaceTutorialPanelSurfaceProps,
+} from "./workspace-canvas-tutorial-panel-react-grab"
+import { WorkspaceTutorialPresentationSkeleton } from "./workspace-canvas-tutorial-panel-skeleton"
+import { resolveWorkspaceTutorialPresentationHandoffDelayMs, resolveWorkspaceTutorialPresentationMotionPreset, resolveWorkspaceTutorialPresentationTransitionKey, shouldWorkspaceTutorialAnimateInitialPresentation, type WorkspaceTutorialPresentationMotionPreset } from "./workspace-canvas-tutorial-panel-motion"
 
 type WorkspaceCanvasTutorialPanelProps = {
   stepIndex: number
   openedStepIds: WorkspaceCanvasTutorialStepId[]
+  attached: boolean
+  dragEnabled: boolean
+  dragHandleClassName?: string
+  variant: WorkspaceCanvasTutorialNodeVariant
   onPrevious: () => void
   onNext: () => void
+  presentationContent?: ReactNode
+  presentationKey?: string | null
+  presentationSurface?: WorkspaceCanvasTutorialPresentationSurface | null
   className?: string
-  dragHandleClassName?: string
+}
+
+const WORKSPACE_TUTORIAL_BLOCKED_CONTINUE_HINT_TIMEOUT_MS = 1800
+type WorkspaceTutorialPresentationFrameProps = {
+  stepId: WorkspaceCanvasTutorialStepId
+  presentationSurface: WorkspaceCanvasTutorialPresentationSurface
+  presentationContent: ReactNode
+  presentationKey: string | null
+  motionPreset: WorkspaceTutorialPresentationMotionPreset
+  prefersReducedMotion: boolean
+}
+
+type WorkspaceTutorialBottomFadeProps = {
+  active: boolean
+  width: number
+  motionPreset: WorkspaceTutorialPresentationMotionPreset
+  prefersReducedMotion: boolean
+}
+
+function WorkspaceTutorialBottomFade({
+  active,
+  width,
+  motionPreset,
+  prefersReducedMotion,
+}: WorkspaceTutorialBottomFadeProps) {
+  const animateInitialPresentation = shouldWorkspaceTutorialAnimateInitialPresentation(motionPreset, prefersReducedMotion)
+  const bottomFadeMotion = resolveWorkspaceCanvasStageMotion({
+    stage: "bottom-fade",
+    preset: motionPreset,
+    prefersReducedMotion,
+  })
+
+  return (
+    <AnimatePresence initial={animateInitialPresentation} mode="wait">
+      {active ? (
+        <motion.div
+          key={`${motionPreset}-workspace-tutorial-bottom-fade`}
+          aria-hidden="true"
+          initial={bottomFadeMotion.initial}
+          animate={bottomFadeMotion.animate}
+          exit={bottomFadeMotion.exit}
+          transition={bottomFadeMotion.transition}
+          className="pointer-events-none absolute bottom-0 left-1/2 z-10 h-14 -translate-x-1/2 bg-gradient-to-t from-background/78 via-background/32 to-transparent dark:from-background/82 dark:via-background/34"
+          style={{ width }}
+        />
+      ) : null}
+    </AnimatePresence>
+  )
+}
+type WorkspaceTutorialBlockedContinueButtonProps = {
+  helperText: string
+  onPointerDown: (event: SyntheticEvent) => void
+}
+
+function WorkspaceTutorialBlockedContinueButton({
+  helperText,
+  onPointerDown,
+}: WorkspaceTutorialBlockedContinueButtonProps) {
+  const blockedContinueHintTimeoutRef = useRef<number | null>(null)
+  const [isBlockedContinueHintOpen, setIsBlockedContinueHintOpen] =
+    useState(false)
+  const clearBlockedContinueHintTimeout = () => {
+    if (blockedContinueHintTimeoutRef.current === null) return
+    window.clearTimeout(blockedContinueHintTimeoutRef.current)
+    blockedContinueHintTimeoutRef.current = null
+  }
+  const openBlockedContinueHint = () => {
+    clearBlockedContinueHintTimeout()
+    setIsBlockedContinueHintOpen(true)
+  }
+  const closeBlockedContinueHint = () => {
+    clearBlockedContinueHintTimeout()
+    setIsBlockedContinueHintOpen(false)
+  }
+  const handleBlockedContinueClick = (event: SyntheticEvent) => {
+    event.preventDefault()
+    onPointerDown(event)
+    openBlockedContinueHint()
+    blockedContinueHintTimeoutRef.current = window.setTimeout(() => {
+      setIsBlockedContinueHintOpen(false)
+      blockedContinueHintTimeoutRef.current = null
+    }, WORKSPACE_TUTORIAL_BLOCKED_CONTINUE_HINT_TIMEOUT_MS)
+  }
+
+  useEffect(
+    () => () => {
+      clearBlockedContinueHintTimeout()
+    },
+    [],
+  )
+
+  return (
+    <Tooltip
+      open={isBlockedContinueHintOpen}
+      onOpenChange={setIsBlockedContinueHintOpen}
+    >
+      <TooltipTrigger asChild>
+        <Button
+          type="button"
+          size="icon"
+          aria-disabled="true"
+          className="nodrag nopan rounded-xl cursor-help opacity-50"
+          onPointerDown={onPointerDown}
+          onPointerEnter={openBlockedContinueHint}
+          onPointerLeave={closeBlockedContinueHint}
+          onFocus={openBlockedContinueHint}
+          onBlur={closeBlockedContinueHint}
+          onClick={handleBlockedContinueClick}
+          aria-label={helperText}
+        >
+          <ChevronRightIcon aria-hidden />
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent
+        side="bottom"
+        align="end"
+        sideOffset={10}
+        className="workspace-tutorial-callout w-56 whitespace-normal text-left"
+      >
+        <p className="text-xs leading-tight text-foreground">{helperText}</p>
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
+function WorkspaceTutorialPresentationFrame({
+  stepId,
+  presentationSurface,
+  presentationContent,
+  presentationKey,
+  motionPreset,
+  prefersReducedMotion,
+}: WorkspaceTutorialPresentationFrameProps) {
+  const presentationFrameRadius =
+    presentationSurface.frameRadius ??
+    (presentationSurface.kind === "dashed-frame" ? 32 : 30)
+  const presentationFrameClasses =
+    presentationSurface.kind === "dashed-frame"
+      ? "mx-auto relative box-border flex justify-center overflow-visible bg-transparent"
+      : "mx-auto relative box-border flex justify-center overflow-visible bg-transparent"
+  const presentationFrameBorderClasses =
+    presentationSurface.kind === "dashed-frame"
+      ? "border-2 border-dashed border-border/70"
+      : "border border-border/70 bg-card/86 shadow-[inset_0_1px_0_rgba(255,255,255,0.12),0_24px_44px_-34px_rgba(15,23,42,0.42)] dark:bg-card/76"
+  const animateInitialPresentation = shouldWorkspaceTutorialAnimateInitialPresentation(motionPreset, prefersReducedMotion)
+  const presentationFrameMotion = resolveWorkspaceCanvasStageMotion({
+    stage: "presentation-frame",
+    preset: motionPreset,
+    prefersReducedMotion,
+  })
+
+  return (
+    <div
+      {...getWorkspaceTutorialPanelSurfaceProps({
+        stepId,
+        slot: "presentation-shell",
+        surfaceKind: "root",
+      })}
+      className={cn(
+        "grid min-h-0 justify-items-center overflow-visible",
+        presentationSurface.heightMode === "fill"
+          ? "h-full content-stretch items-stretch"
+          : "h-auto content-start items-start",
+        presentationSurface.chrome?.allowCalloutOverflow && "relative z-20",
+      )}
+    >
+      <AnimatePresence initial={animateInitialPresentation} mode="wait">
+        <motion.div
+          {...getWorkspaceTutorialPanelSurfaceProps({
+            stepId,
+            slot: "presentation-frame",
+            surfaceKind: "content",
+          })}
+          key={presentationKey ?? stepId}
+          data-workspace-tutorial-mask-for={presentationSurface.cardId}
+          initial={presentationFrameMotion.initial}
+          animate={presentationFrameMotion.animate}
+          exit={presentationFrameMotion.exit}
+          transition={presentationFrameMotion.transition}
+          className={cn(
+            presentationFrameClasses,
+            presentationSurface.heightMode === "fill"
+              ? "h-full self-stretch"
+              : "self-start",
+          )}
+          style={{
+            width: presentationSurface.frameWidth,
+            padding: presentationSurface.frameInset,
+            borderRadius: presentationFrameRadius,
+            height:
+              presentationSurface.heightMode === "fill" ? "100%" : undefined,
+          }}
+        >
+          <div
+            key="presentation-frame-border"
+            aria-hidden="true"
+            className={cn(
+              "pointer-events-none absolute inset-0",
+              presentationFrameBorderClasses,
+            )}
+            style={{ borderRadius: presentationFrameRadius }}
+          />
+          <div
+            key="presentation-card-content"
+            {...getWorkspaceTutorialPanelSurfaceProps({
+              stepId,
+              slot: "presentation-card-content",
+              surfaceKind: "content",
+            })}
+            data-workspace-tutorial-card-content
+            className="relative flex justify-center"
+            style={{
+              width: presentationSurface.cardWidth,
+            }}
+          >
+            {presentationContent}
+          </div>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  )
 }
 
 export function WorkspaceCanvasTutorialPanel({
   stepIndex,
   openedStepIds,
+  attached,
+  dragEnabled,
+  dragHandleClassName,
+  variant: _variant,
   onPrevious,
   onNext,
+  presentationContent,
+  presentationKey = null,
+  presentationSurface = null,
   className,
-  dragHandleClassName,
 }: WorkspaceCanvasTutorialPanelProps) {
-  const { step, stepCount, continueMode, typedMessage } =
-    useWorkspaceCanvasTutorialController(stepIndex, openedStepIds)
+  const { step, stepCount, continueMode, message } = useWorkspaceCanvasTutorialController(stepIndex, openedStepIds)
+  const progressPercent = resolveWorkspaceCanvasTutorialProgressPercent(
+    stepIndex,
+    stepCount,
+  )
+  const prefersReducedMotion = useReducedMotion()
+  const previousStepIndexRef = useRef(stepIndex)
+  const currentPresentationTransitionKey =
+    resolveWorkspaceTutorialPresentationTransitionKey({
+      sceneId: step.sceneId,
+      presentationSurface,
+    })
+  const previousPresentationTransitionKeyRef = useRef(
+    currentPresentationTransitionKey,
+  )
+  const presentationMotionPreset = resolveWorkspaceTutorialPresentationMotionPreset({
+    stepId: step.id,
+    presentationSurface,
+    previousPresentationTransitionKey:
+      previousPresentationTransitionKeyRef.current,
+  })
+  const presentationHandoffDelayMs = resolveWorkspaceTutorialPresentationHandoffDelayMs(presentationMotionPreset)
+  const [isContentRevealReady, setIsContentRevealReady] = useState(true)
   const isFirstStep = stepIndex <= 0
   const isFinalStep = stepIndex >= stepCount - 1
   const continueBlocked = continueMode !== "next"
@@ -41,137 +319,296 @@ export function WorkspaceCanvasTutorialPanel({
       : continueMode === "action"
         ? "Use the highlighted part of the accelerator to continue."
         : null
-  const comingSoonTitleBadge =
-    step.id === "fundraising" || step.id === "communications" ? (
-      <Badge
-        variant="outline"
-        className="rounded-full border-border/70 bg-muted/70 px-2 py-0 text-[10px] font-semibold text-foreground/80 dark:bg-muted/30 dark:text-foreground/75"
-      >
-        Coming soon
-      </Badge>
-    ) : null
+  const stopGuideInteractionPropagation = (event: SyntheticEvent) => event.stopPropagation()
+  const copyShellMotion = resolveWorkspaceCanvasStageMotion({
+    stage: "copy-shell",
+    preset: presentationMotionPreset,
+    prefersReducedMotion: !!prefersReducedMotion,
+  })
+  const copyHeadingMotion = resolveWorkspaceCanvasStageMotion({
+    stage: "copy-heading",
+    preset: presentationMotionPreset,
+    prefersReducedMotion: !!prefersReducedMotion,
+  })
+  const copyBodyMotion = resolveWorkspaceCanvasStageMotion({
+    stage: "copy-body",
+    preset: presentationMotionPreset,
+    prefersReducedMotion: !!prefersReducedMotion,
+  })
+  const copyRailClass = resolveWorkspaceTutorialCopyRailClass({
+    stepId: step.id,
+    presentationSurface,
+  })
+  const bodyLayoutClass = resolveWorkspaceTutorialBodyLayoutClass({
+    stepId: step.id,
+    presentationSurface,
+  })
+  const presentationChrome = presentationSurface?.chrome ?? null
+  const fillPresentationSurface = presentationSurface?.heightMode === "fill"
+  const shouldUseWelcomeShellShadow = step.id === "welcome"
+
+  useEffect(() => {
+    const previousStepIndex = previousStepIndexRef.current
+    const previousPresentationTransitionKey =
+      previousPresentationTransitionKeyRef.current
+    previousStepIndexRef.current = stepIndex
+    previousPresentationTransitionKeyRef.current = currentPresentationTransitionKey
+
+    if (prefersReducedMotion || previousStepIndex === stepIndex) {
+      setIsContentRevealReady(true)
+      return
+    }
+
+    if (
+      previousPresentationTransitionKey !== currentPresentationTransitionKey
+    ) {
+      setIsContentRevealReady(false)
+      const timeoutId = window.setTimeout(() => {
+        setIsContentRevealReady(true)
+      }, presentationHandoffDelayMs)
+
+      return () => window.clearTimeout(timeoutId)
+    }
+
+    setIsContentRevealReady(true)
+  }, [
+    currentPresentationTransitionKey,
+    prefersReducedMotion,
+    presentationHandoffDelayMs,
+    stepIndex,
+  ])
 
   return (
-    <Card
-      className={cn(
-        "border-border/70 bg-card/92 mx-auto w-full max-w-[560px] overflow-hidden rounded-[30px] border shadow-[0_30px_90px_-48px_rgba(15,23,42,0.5)] backdrop-blur-xl",
-        dragHandleClassName,
-        className,
-      )}
-    >
-      <CardHeader className="border-border/70 bg-muted/20 space-y-3 border-b px-5 py-5 sm:px-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-4">
-            <div className="border-border/70 bg-background/90 relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] border shadow-inner">
-              <Dithering
-                colorBack="#050816"
-                colorFront="#13b5ff"
-                shape="sphere"
-                type="4x4"
-                size={2}
-                speed={1}
-                scale={0.6}
-                style={{ height: "100%", width: "100%" }}
-              />
-              <div className="pointer-events-none absolute inset-0 rounded-[20px] ring-1 ring-white/10" />
+    <div className="pointer-events-none relative h-full w-full">
+        <Card
+          {...getWorkspaceTutorialPanelOwnerProps(step.id)}
+          data-workspace-tutorial-shell
+          className={cn(
+          "border-border/70 nopan pointer-events-auto mx-auto flex w-full min-h-0 flex-col overflow-hidden rounded-[30px] border bg-transparent !shadow-none",
+          fillPresentationSurface ? "h-full" : "h-auto",
+          shouldUseWelcomeShellShadow &&
+            "!shadow-[0_18px_44px_-34px_rgba(15,23,42,0.24)]",
+          attached && "rounded-b-[26px]",
+          presentationChrome?.allowCalloutOverflow && "overflow-visible",
+          className,
+        )}
+      >
+        <CardHeader
+          className={cn(
+            "border-border/70 bg-card/92 supports-[backdrop-filter]:bg-card/80 pointer-events-auto space-y-3 rounded-t-[28px] border-b px-5 py-5 backdrop-blur-md sm:px-6",
+            dragEnabled && dragHandleClassName,
+          )}
+        >
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex min-w-0 items-center gap-4">
+              <div className="border-border/70 bg-background/90 relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-[20px] border shadow-inner">
+                <Dithering
+                  colorBack="#050816"
+                  colorFront="#13b5ff"
+                  shape="sphere"
+                  type="4x4"
+                  size={2}
+                  speed={1}
+                  scale={0.6}
+                  style={{ height: "100%", width: "100%" }}
+                />
+                <div className="pointer-events-none absolute inset-0 rounded-[20px] ring-1 ring-white/10" />
+              </div>
+              <div className="min-w-0 space-y-0.5">
+                <p className="text-[15px] leading-[20px] font-medium text-foreground">
+                  Welcome to Workspace
+                </p>
+                <p className={WORKSPACE_TEXT_STYLES.surfaceSubtitle}>
+                  {progressPercent}% complete
+                </p>
+              </div>
             </div>
-            <div className="min-w-0 space-y-0.5">
-              <p className="text-sm font-semibold text-foreground">
-                Workspace guide
-              </p>
-              <p className="text-sm font-medium text-muted-foreground">
-                Step {stepIndex + 1} of {stepCount}
-              </p>
-            </div>
-          </div>
 
-          <div className="flex items-center justify-end gap-2">
-            {!isFirstStep ? (
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                className="nodrag rounded-xl"
-                onClick={onPrevious}
-                aria-label="Previous tutorial step"
-                title="Previous tutorial step"
-              >
-                <ChevronLeftIcon aria-hidden />
-              </Button>
-            ) : null}
+            <div className="flex items-center justify-end gap-2">
+              {!isFirstStep ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  className="nodrag nopan rounded-xl"
+                  onPointerDown={stopGuideInteractionPropagation}
+                  onClick={onPrevious}
+                  aria-label="Previous tutorial step"
+                  title="Previous tutorial step"
+                >
+                  <ChevronLeftIcon aria-hidden />
+                </Button>
+              ) : null}
 
-            {continueBlocked ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span className="inline-flex">
-                    <Button
-                      type="button"
-                      size="icon"
-                      disabled
-                      className="nodrag rounded-xl"
-                      aria-label={continueHelperText ?? "Complete this step to continue"}
-                      title={continueHelperText ?? "Complete this step to continue"}
-                    >
-                      <ChevronRightIcon aria-hidden />
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                {continueHelperText ? (
-                  <TooltipContent side="bottom" align="end" sideOffset={10}>
-                    {continueHelperText}
-                  </TooltipContent>
-                ) : null}
-              </Tooltip>
-            ) : (
-              <Button
-                type="button"
-                size="icon"
-                className="nodrag rounded-xl"
-                onClick={onNext}
-                aria-label={isFinalStep ? "Enter workspace" : "Next tutorial step"}
-                title={isFinalStep ? "Enter workspace" : "Next tutorial step"}
-              >
-                <ChevronRightIcon aria-hidden />
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-border/60 h-1.5 overflow-hidden rounded-full">
-          <div
-            className="bg-primary h-full rounded-full transition-[width] duration-300 ease-out"
-            style={{
-              width: `${Math.round(((stepIndex + 1) / stepCount) * 100)}%`,
-            }}
-          />
-        </div>
-      </CardHeader>
-
-      <CardContent className="space-y-4 px-5 py-5 sm:px-6">
-        <div className="space-y-2">
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              {step.title}
-            </h2>
-            {comingSoonTitleBadge}
-          </div>
-          <p className="min-h-[5.25rem] text-[15px] leading-6 text-muted-foreground sm:min-h-[4.75rem]">
-            {typedMessage}
-            <span
-              aria-hidden
-              className={cn(
-                "ml-0.5 inline-block h-5 w-px translate-y-1 bg-primary/80 align-baseline",
-                typedMessage.length >= step.message.length && "opacity-0",
+              {continueBlocked ? (
+                <WorkspaceTutorialBlockedContinueButton
+                  helperText={
+                    continueHelperText ?? "Complete this step to continue"
+                  }
+                  onPointerDown={stopGuideInteractionPropagation}
+                />
+              ) : (
+                <Button
+                  type="button"
+                  size="icon"
+                  className="nodrag nopan rounded-xl"
+                  onPointerDown={stopGuideInteractionPropagation}
+                  onClick={onNext}
+                  aria-label={isFinalStep ? "Enter workspace" : "Next tutorial step"}
+                  title={isFinalStep ? "Enter workspace" : "Next tutorial step"}
+                >
+                  <ChevronRightIcon aria-hidden />
+                </Button>
               )}
+            </div>
+          </div>
+
+          <div className="bg-border/60 h-1.5 overflow-hidden rounded-full">
+            <div
+              className="bg-primary h-full rounded-full transition-[width] duration-[360ms]"
+              style={{
+                width: `${progressPercent}%`,
+                transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
+              }}
             />
-          </p>
-          {continueHelperText ? (
-            <p className="text-xs leading-5 text-muted-foreground">
-              {continueHelperText}
-            </p>
-          ) : null}
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+        </CardHeader>
+
+        <CardContent
+          {...getWorkspaceTutorialPanelSurfaceProps({
+            stepId: step.id,
+            slot: "card-content",
+            surfaceKind: "content",
+            primitiveImport: "@/components/ui/card",
+          })}
+          className={cn(
+            "relative min-h-0 overflow-hidden rounded-b-[28px] bg-background/70 px-0 py-0 supports-[backdrop-filter]:bg-background/28 backdrop-blur-[26px] dark:bg-background/38 dark:supports-[backdrop-filter]:bg-background/20",
+            fillPresentationSurface ? "flex-1" : "flex-none",
+            attached && "rounded-b-[24px]",
+            presentationChrome?.shellOverflow === "visible" && "overflow-visible",
+          )}
+        >
+          <div
+            {...getWorkspaceTutorialPanelSurfaceProps({
+              stepId: step.id,
+              slot: "body-shell",
+              surfaceKind: "root",
+            })}
+            className={cn(
+              "relative flex min-h-0 flex-col overflow-hidden border-t border-white/10 dark:border-white/6",
+              fillPresentationSurface ? "h-full" : "h-auto",
+              presentationChrome?.bodyOverflow === "visible" && "overflow-visible",
+            )}
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-4 top-0 h-px bg-white/18 blur-[0.2px] dark:bg-white/10"
+            />
+            <div
+              {...getWorkspaceTutorialPanelSurfaceProps({
+                stepId: step.id,
+                slot: "body-grid",
+                surfaceKind: "root",
+              })}
+              className={cn(
+                resolveWorkspaceTutorialBodyGridClass({
+                  presentationSurface,
+                }),
+                bodyLayoutClass,
+                presentationChrome?.collapseBodyBottomPadding && "pb-0",
+                presentationChrome?.bodyOverflow === "visible" && "overflow-visible",
+              )}
+            >
+            <AnimatePresence initial={false} mode="wait">
+              <motion.div
+                key={step.id}
+                initial={copyShellMotion.initial}
+                animate={copyShellMotion.animate}
+                exit={copyShellMotion.exit}
+                transition={copyShellMotion.transition}
+                className={cn(
+                  "flex-none flex flex-col gap-1.5",
+                  copyRailClass,
+                )}
+              >
+                <motion.div
+                  initial={copyHeadingMotion.initial}
+                  animate={copyHeadingMotion.animate}
+                  exit={copyHeadingMotion.exit}
+                  transition={copyHeadingMotion.transition}
+                  className="flex flex-wrap items-center gap-2"
+                >
+                  <h2 className={WORKSPACE_TEXT_STYLES.surfaceTitle}>
+                    {step.title}
+                  </h2>
+                </motion.div>
+                <motion.p
+                  initial={copyBodyMotion.initial}
+                  animate={copyBodyMotion.animate}
+                  exit={copyBodyMotion.exit}
+                  transition={copyBodyMotion.transition}
+                  className={WORKSPACE_TEXT_STYLES.surfaceBody}
+                >
+                  {message}
+                </motion.p>
+              </motion.div>
+            </AnimatePresence>
+
+            {presentationSurface && presentationContent ? (
+              <div
+                {...getWorkspaceTutorialPanelSurfaceProps({
+                  stepId: step.id,
+                  slot: "presentation-slot",
+                  surfaceKind: "root",
+                })}
+                className={cn(
+                  resolveWorkspaceTutorialPresentationSlotClass({
+                    presentationSurface,
+                  }),
+                  presentationChrome?.slotOverflow === "hidden"
+                    ? "overflow-hidden"
+                    : "overflow-visible",
+                  presentationChrome?.allowCalloutOverflow && "relative z-20",
+                )}
+                style={{
+                  paddingTop:
+                    presentationChrome?.slotPaddingTop &&
+                    presentationChrome.slotPaddingTop > 0
+                      ? presentationChrome.slotPaddingTop
+                      : undefined,
+                }}
+              >
+                {isContentRevealReady ? (
+                  <WorkspaceTutorialPresentationFrame
+                    stepId={step.id}
+                    presentationSurface={presentationSurface}
+                    presentationContent={presentationContent}
+                    presentationKey={presentationKey}
+                    motionPreset={presentationMotionPreset}
+                    prefersReducedMotion={!!prefersReducedMotion}
+                  />
+                ) : (
+                  <WorkspaceTutorialPresentationSkeleton
+                    presentationSurface={presentationSurface}
+                    motionPreset={presentationMotionPreset}
+                    prefersReducedMotion={!!prefersReducedMotion}
+                  />
+                )}
+                <WorkspaceTutorialBottomFade
+                  active={
+                    presentationChrome?.showBottomFade === true &&
+                    isContentRevealReady
+                  }
+                  width={presentationSurface.frameWidth}
+                  motionPreset={presentationMotionPreset}
+                  prefersReducedMotion={!!prefersReducedMotion}
+                />
+              </div>
+            ) : null}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

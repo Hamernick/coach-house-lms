@@ -158,7 +158,7 @@ export function resolveAcceleratorReadiness({
   const fundableChecklist: AcceleratorReadinessChecklistItem[] = [
     {
       id: "formation-lessons",
-      label: "Complete formation lessons",
+      label: "Complete the Formation class",
       complete: coreLessonsComplete,
     },
     {
@@ -186,7 +186,7 @@ export function resolveAcceleratorReadiness({
     },
     {
       id: "formation-lessons",
-      label: "Complete formation lessons",
+      label: "Complete the Formation class",
       complete: coreLessonsComplete,
     },
     {

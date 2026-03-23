@@ -6,6 +6,7 @@ import CircleIcon from "lucide-react/dist/esm/icons/circle"
 import DollarSignIcon from "lucide-react/dist/esm/icons/dollar-sign"
 
 import { clampPercent } from "@/components/accelerator/accelerator-org-snapshot-strip/helpers"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
@@ -21,6 +22,7 @@ type AcceleratorProgressRailProps = {
   verifiedCheckpoint?: number
   fundableChecklist?: AcceleratorReadinessChecklistItem[]
   verifiedChecklist?: AcceleratorReadinessChecklistItem[]
+  showMilestoneTooltips?: boolean
   className?: string
 }
 
@@ -36,6 +38,31 @@ type AcceleratorProgressRailState = {
   secondSegmentClass: string
 }
 
+type AcceleratorMilestoneTone = {
+  chipClassName: string
+  statusClassName: string
+  itemCompleteClassName: string
+}
+
+function resolveAcceleratorMilestoneTone(
+  title: string,
+): AcceleratorMilestoneTone {
+  if (title.toLowerCase() === "fundable") {
+    return {
+      chipClassName: "border-emerald-500/25 bg-emerald-500/10 text-emerald-500",
+      statusClassName:
+        "border-emerald-500/25 bg-emerald-500/10 text-foreground",
+      itemCompleteClassName: "text-emerald-500",
+    }
+  }
+
+  return {
+    chipClassName: "border-sky-500/25 bg-sky-500/10 text-sky-500",
+    statusClassName: "border-sky-500/25 bg-sky-500/10 text-foreground",
+    itemCompleteClassName: "text-sky-500",
+  }
+}
+
 function AcceleratorMilestoneTooltip({
   title,
   reached,
@@ -48,68 +75,81 @@ function AcceleratorMilestoneTooltip({
   items: AcceleratorReadinessChecklistItem[]
 }) {
   const completeCount = items.filter((item) => item.complete).length
+  const tone = resolveAcceleratorMilestoneTone(title)
+  const statusLabel = reached ? "Reached" : "In progress"
 
   return (
-    <div className="w-[18rem] space-y-3 p-3">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 text-sm font-semibold">
-            {icon}
-            <span>{title}</span>
-          </div>
-          <p className="text-xs text-primary-foreground/75">
-            {completeCount} of {items.length} complete
-          </p>
-        </div>
-        <span
+    <div className="flex w-[19rem] flex-col gap-3 p-3.5">
+      <div className="flex items-start gap-3">
+        <div
           className={cn(
-            "inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-            reached
-              ? "border-white/20 bg-white/14 text-primary-foreground"
-              : "border-white/15 bg-white/8 text-primary-foreground/80",
+            "flex size-9 shrink-0 items-center justify-center rounded-xl border",
+            tone.chipClassName,
           )}
         >
-          {reached ? "Reached" : "In progress"}
-        </span>
-      </div>
-
-      <ul className="space-y-1.5">
-        {items.map((item) => {
-          const StatusIcon = item.complete ? CheckCircle2Icon : CircleIcon
-
-          return (
-            <li
-              key={item.id}
+          {icon}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                <span>{title}</span>
+              </div>
+              <p className="mt-1 text-xs text-muted-foreground tabular-nums">
+                {completeCount} of {items.length} complete
+              </p>
+            </div>
+            <Badge
+              variant="outline"
               className={cn(
-                "flex items-start gap-2 rounded-lg border px-2.5 py-2",
-                item.complete
-                  ? "border-white/12 bg-white/10"
-                  : "border-white/10 bg-black/10",
+                "rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em]",
+                reached ? tone.statusClassName : "bg-muted/50 text-muted-foreground",
               )}
             >
-              <StatusIcon
-                className={cn(
-                  "mt-0.5 h-4 w-4 shrink-0",
-                  item.complete
-                    ? "text-emerald-300"
-                    : "text-primary-foreground/55",
-                )}
-                aria-hidden
-              />
-              <span
-                className={cn(
-                  "text-xs leading-5",
-                  item.complete
-                    ? "text-primary-foreground/88"
-                    : "text-primary-foreground/72",
-                )}
+              {statusLabel}
+            </Badge>
+          </div>
+        </div>
+      </div>
+
+      {items.length > 0 ? (
+        <ul className="flex flex-col gap-2">
+          {items.map((item) => {
+            const StatusIcon = item.complete ? CheckCircle2Icon : CircleIcon
+
+            return (
+              <li
+                key={item.id}
+                className="flex items-start gap-2.5 rounded-xl border border-border/70 bg-muted/40 px-3 py-2.5"
               >
-                {item.label}
-              </span>
-            </li>
-          )
-        })}
-      </ul>
+                <StatusIcon
+                  className={cn(
+                    "mt-0.5 h-4 w-4 shrink-0",
+                    item.complete
+                      ? tone.itemCompleteClassName
+                      : "text-muted-foreground",
+                  )}
+                  aria-hidden
+                />
+                <span
+                  className={cn(
+                    "min-w-0 text-xs leading-5 break-words",
+                    item.complete ? "text-foreground" : "text-muted-foreground",
+                  )}
+                >
+                  {item.label}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      ) : (
+        <div className="rounded-xl border border-dashed border-border/70 bg-muted/30 px-3 py-2.5">
+          <p className="text-xs leading-5 text-muted-foreground">
+            No milestone requirements yet.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
@@ -155,6 +195,7 @@ export function AcceleratorProgressRail({
   verifiedCheckpoint = ACCELERATOR_VERIFIED_THRESHOLD,
   fundableChecklist = [],
   verifiedChecklist = [],
+  showMilestoneTooltips = true,
   className,
 }: AcceleratorProgressRailProps) {
   const state = resolveAcceleratorProgressRailState({
@@ -188,70 +229,100 @@ export function AcceleratorProgressRail({
         }}
       />
 
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Fundable checkpoint"
+      {showMilestoneTooltips ? (
+        <>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Fundable checkpoint"
+                className={cn(
+                  "absolute top-1/2 z-10 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2",
+                  state.fundableReached
+                    ? "border-emerald-500 bg-emerald-500 text-white hover:!border-emerald-500 hover:!bg-emerald-500 hover:!text-white"
+                    : "border-emerald-500 bg-background text-emerald-600 hover:!border-emerald-500 hover:!bg-background hover:!text-emerald-600 dark:text-emerald-300 dark:hover:!border-emerald-500 dark:hover:!bg-background dark:hover:!text-emerald-300",
+                )}
+                style={{ left: `${state.fundable}%` }}
+              >
+                <DollarSignIcon className="size-2.5" aria-hidden />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              sideOffset={8}
+              className="max-w-none whitespace-normal rounded-xl border border-border/70 p-0 shadow-lg"
+            >
+              <AcceleratorMilestoneTooltip
+                title="Fundable"
+                reached={state.fundableReached}
+                icon={<DollarSignIcon className="size-3.5" aria-hidden />}
+                items={fundableChecklist}
+              />
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Verified checkpoint"
+                className={cn(
+                  "absolute right-0 top-1/2 z-10 size-5 -translate-y-1/2 rounded-full border transition-colors",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2",
+                  state.verifiedReached
+                    ? "border-sky-500 bg-sky-500 text-white hover:!border-sky-500 hover:!bg-sky-500 hover:!text-white"
+                    : "border-sky-400/70 bg-background text-sky-600 hover:!border-sky-400/70 hover:!bg-background hover:!text-sky-600 dark:text-sky-300 dark:hover:!border-sky-400/70 dark:hover:!bg-background dark:hover:!text-sky-300",
+                )}
+              >
+                <BadgeCheckIcon className="size-2.5" aria-hidden />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              sideOffset={8}
+              className="max-w-none whitespace-normal rounded-xl border border-border/70 p-0 shadow-lg"
+            >
+              <AcceleratorMilestoneTooltip
+                title="Verified"
+                reached={state.verifiedReached}
+                icon={<BadgeCheckIcon className="size-3.5" aria-hidden />}
+                items={verifiedChecklist}
+              />
+            </TooltipContent>
+          </Tooltip>
+        </>
+      ) : (
+        <>
+          <span
+            aria-hidden
             className={cn(
-              "absolute top-1/2 z-10 size-5 -translate-x-1/2 -translate-y-1/2 rounded-full border transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2",
+              "absolute top-1/2 z-10 inline-flex size-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border",
               state.fundableReached
-                ? "border-emerald-500 bg-emerald-500 text-white hover:!border-emerald-500 hover:!bg-emerald-500 hover:!text-white"
-                : "border-emerald-500 bg-background text-emerald-600 hover:!border-emerald-500 hover:!bg-background hover:!text-emerald-600 dark:text-emerald-300 dark:hover:!border-emerald-500 dark:hover:!bg-background dark:hover:!text-emerald-300",
+                ? "border-emerald-500 bg-emerald-500 text-white"
+                : "border-emerald-500 bg-background text-emerald-600 dark:text-emerald-300",
             )}
             style={{ left: `${state.fundable}%` }}
           >
-            <DollarSignIcon className="size-2.5" aria-hidden />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent
-          side="top"
-          sideOffset={8}
-          className="max-w-none whitespace-normal p-0"
-        >
-          <AcceleratorMilestoneTooltip
-            title="Fundable"
-            reached={state.fundableReached}
-            icon={<DollarSignIcon className="size-3.5" aria-hidden />}
-            items={fundableChecklist}
-          />
-        </TooltipContent>
-      </Tooltip>
-
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Verified checkpoint"
+            <DollarSignIcon className="size-2.5" />
+          </span>
+          <span
+            aria-hidden
             className={cn(
-              "absolute right-0 top-1/2 z-10 size-5 -translate-y-1/2 rounded-full border transition-colors",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/70 focus-visible:ring-offset-2",
+              "absolute right-0 top-1/2 z-10 inline-flex size-5 -translate-y-1/2 items-center justify-center rounded-full border",
               state.verifiedReached
-                ? "border-sky-500 bg-sky-500 text-white hover:!border-sky-500 hover:!bg-sky-500 hover:!text-white"
-                : "border-sky-400/70 bg-background text-sky-600 hover:!border-sky-400/70 hover:!bg-background hover:!text-sky-600 dark:text-sky-300 dark:hover:!border-sky-400/70 dark:hover:!bg-background dark:hover:!text-sky-300",
+                ? "border-sky-500 bg-sky-500 text-white"
+                : "border-sky-400/70 bg-background text-sky-600 dark:text-sky-300",
             )}
           >
-            <BadgeCheckIcon className="size-2.5" aria-hidden />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent
-          side="top"
-          sideOffset={8}
-          className="max-w-none whitespace-normal p-0"
-        >
-          <AcceleratorMilestoneTooltip
-            title="Verified"
-            reached={state.verifiedReached}
-            icon={<BadgeCheckIcon className="size-3.5" aria-hidden />}
-            items={verifiedChecklist}
-          />
-        </TooltipContent>
-      </Tooltip>
+            <BadgeCheckIcon className="size-2.5" />
+          </span>
+        </>
+      )}
     </div>
   )
 }

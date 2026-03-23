@@ -34,7 +34,7 @@ const HIDDEN_UTILITY_POSITIONS = Object.freeze({
   programs: { x: WORKSPACE_CANVAS_START_X + 1080, y: TIMELINE_START_Y },
   "brand-kit": { x: WORKSPACE_CANVAS_START_X, y: TIMELINE_START_Y + 472 },
   deck: { x: WORKSPACE_CANVAS_START_X + 360, y: TIMELINE_START_Y + 472 },
-  atlas: { x: WORKSPACE_CANVAS_START_X + 720, y: TIMELINE_START_Y + 472 },
+  atlas: { x: WORKSPACE_CANVAS_START_X + 48, y: TIMELINE_START_Y + 540 },
 } satisfies Partial<Record<WorkspaceCardId, WorkspaceNodePosition>>)
 
 function resolveHiddenUtilityPosition(cardId: WorkspaceCardId) {
@@ -46,7 +46,7 @@ function resolveHiddenUtilityPosition(cardId: WorkspaceCardId) {
 const WORKSPACE_TRUNK_CARD_IDS = [
   "organization-overview",
   "programs",
-  "vault",
+  "roadmap",
   "accelerator",
 ] as const satisfies readonly WorkspaceCardId[]
 
@@ -224,6 +224,23 @@ function buildTimelineLayout({
         y: roundToSnap(currentLeafY),
       }
       currentLeafY += dimensions.height + TIMELINE_LEAF_GAP_Y
+    }
+  }
+
+  if (visibleCardSet.has("atlas")) {
+    const anchorId = visibleCardSet.has("organization-overview")
+      ? "organization-overview"
+      : visibleTrunkCards[0] ?? "organization-overview"
+    const anchorPosition = positions[anchorId]
+    const anchorDimensions = resolveCardDimensions(
+      resolveNodeSize(anchorId, sizeLookup),
+      anchorId,
+    )
+    positions.atlas = {
+      x: roundToSnap(anchorPosition.x + 24),
+      y: roundToSnap(
+        anchorPosition.y + anchorDimensions.height + TIMELINE_LEAF_GAP_Y,
+      ),
     }
   }
 

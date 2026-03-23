@@ -2,14 +2,17 @@ import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import type { Json } from "@/lib/supabase"
 import {
   canInviteTeammates,
+  formatOrganizationRoleLabel,
   getOrganizationAccessSettings,
   parseInviteKindFromToken,
+  resolveOrganizationAccessRequestStatus,
   resolveOrganizationActorContext,
   resolvePaidTeamAccessForOrg,
   TEAM_ACCESS_UPGRADE_MESSAGE,
 } from "./shared"
 import type {
   AuthenticatedUser,
+  OrganizationAccessRequest,
   OrganizationAccessInvite,
   OrganizationInviteKind,
   OrganizationMemberRole,
@@ -30,6 +33,21 @@ export type OrganizationInviteRow = {
   token: string
   expires_at: string
   accepted_at: string | null
+  created_at: string
+}
+
+export type OrganizationAccessRequestRow = {
+  id: string
+  org_id: string
+  invitee_user_id: string
+  invitee_email: string
+  role: OrganizationMemberRole
+  status: "pending" | "accepted" | "declined" | "expired" | "revoked"
+  invited_by_user_id: string | null
+  organization_invite_id: string | null
+  message: string | null
+  responded_at: string | null
+  expires_at: string
   created_at: string
 }
 
@@ -73,6 +91,95 @@ export function mapOrganizationInviteRow(
     createdAt: invite.created_at,
     acceptedAt: invite.accepted_at,
   }
+}
+
+export function mapOrganizationAccessRequestRow({
+  request,
+  organizationName = null,
+  inviteeName = null,
+  inviterName = null,
+}: {
+  request: OrganizationAccessRequestRow
+  organizationName?: string | null
+  inviteeName?: string | null
+  inviterName?: string | null
+}): OrganizationAccessRequest {
+  return {
+    id: request.id,
+    orgId: request.org_id,
+    organizationName,
+    inviteeUserId: request.invitee_user_id,
+    inviteeEmail: request.invitee_email,
+    inviteeName,
+    inviterUserId: request.invited_by_user_id,
+    inviterName,
+    role: request.role,
+    status: resolveOrganizationAccessRequestStatus({
+      status: request.status,
+      expiresAt: request.expires_at,
+    }),
+    message: request.message,
+    createdAt: request.created_at,
+    respondedAt: request.responded_at,
+    expiresAt: request.expires_at,
+  }
+}
+
+export function resolveOrganizationAccessNotificationTitle(organizationName: string) {
+  return `${organizationName} invited you to collaborate`
+}
+
+export function resolveOrganizationAccessNotificationDescription({
+  inviterName,
+  role,
+}: {
+  inviterName: string
+  role: OrganizationMemberRole
+}) {
+  return `${inviterName} requested ${formatOrganizationRoleLabel(role).toLowerCase()} access for you.`
+}
+
+type OrganizationAccessClient =
+  | ServerSupabaseClient
+  | ReturnType<typeof createSupabaseAdminClient>
+
+export async function resolveOrganizationName(
+  client: OrganizationAccessClient,
+  orgId: string,
+): Promise<string> {
+  const { data: orgRow } = await client
+    .from("organizations")
+    .select("profile")
+    .eq("user_id", orgId)
+    .maybeSingle<{ profile: Record<string, unknown> | null }>()
+
+  const profile = orgRow?.profile ?? null
+  const rawName = typeof profile?.name === "string" ? profile.name.trim() : ""
+  return rawName.length > 0 ? rawName : "Coach House organization"
+}
+
+export async function resolveProfileSummaries(
+  client: OrganizationAccessClient,
+  userIds: string[],
+) {
+  const dedupedIds = [...new Set(userIds.filter(Boolean))]
+  if (dedupedIds.length === 0) return new Map<string, { fullName: string | null; email: string | null }>()
+
+  const { data } = await client
+    .from("profiles")
+    .select("id, full_name, email")
+    .in("id", dedupedIds)
+    .returns<Array<{ id: string; full_name: string | null; email: string | null }>>()
+
+  return new Map(
+    (data ?? []).map((profile) => [
+      profile.id,
+      {
+        fullName: profile.full_name,
+        email: profile.email,
+      },
+    ]),
+  )
 }
 
 function resolveInvitedMemberFullName({

@@ -1,8 +1,11 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { parseAsString, useQueryState } from "nuqs"
 
+import { WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME } from "@/components/workspace/workspace-tutorial-theme"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
 import type {
   WorkspaceCardSize,
   WorkspaceVaultViewMode,
@@ -20,22 +23,97 @@ import {
 } from "./workspace-board-vault-surfaces"
 
 type ResolveUrlIntent = "view" | "download"
+const WORKSPACE_BOARD_VAULT_TUTORIAL_LOCK_HINT_TIMEOUT_MS = 1800
+export const WORKSPACE_BOARD_VAULT_TUTORIAL_LOCK_MESSAGE =
+  "We'll go over this later :)"
 
 async function readErrorMessage(response: Response, fallback: string) {
   const payload = await response.json().catch(() => ({}))
   return typeof payload?.error === "string" ? payload.error : fallback
 }
 
+export function shouldRenderWorkspaceBoardVaultCardDisplayOnly({
+  tutorialStepId,
+}: {
+  presentationMode: boolean
+  tutorialStepId?: WorkspaceCanvasTutorialStepId | null
+}) {
+  return tutorialStepId === "roadmap"
+}
+
+function WorkspaceBoardVaultTutorialInteractionShield() {
+  const [open, setOpen] = useState(false)
+  const timeoutRef = useRef<number | null>(null)
+
+  const clearOpenTimeout = useCallback(() => {
+    if (timeoutRef.current === null) return
+    window.clearTimeout(timeoutRef.current)
+    timeoutRef.current = null
+  }, [])
+
+  const showHint = useCallback(() => {
+    clearOpenTimeout()
+    setOpen(true)
+    timeoutRef.current = window.setTimeout(() => {
+      setOpen(false)
+      timeoutRef.current = null
+    }, WORKSPACE_BOARD_VAULT_TUTORIAL_LOCK_HINT_TIMEOUT_MS)
+  }, [clearOpenTimeout])
+
+  const hideHint = useCallback(() => {
+    clearOpenTimeout()
+    setOpen(false)
+  }, [clearOpenTimeout])
+
+  useEffect(() => () => clearOpenTimeout(), [clearOpenTimeout])
+
+  return (
+    <Tooltip open={open} onOpenChange={setOpen}>
+      <TooltipTrigger asChild>
+        <button
+          type="button"
+          aria-label={WORKSPACE_BOARD_VAULT_TUTORIAL_LOCK_MESSAGE}
+          className="absolute inset-0 z-20 cursor-help bg-transparent"
+          onPointerDown={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            showHint()
+          }}
+          onClick={(event) => {
+            event.preventDefault()
+            event.stopPropagation()
+            showHint()
+          }}
+          onFocus={showHint}
+          onBlur={hideHint}
+          onPointerEnter={showHint}
+          onPointerLeave={hideHint}
+        />
+      </TooltipTrigger>
+      <TooltipContent
+        side="bottom"
+        align="center"
+        sideOffset={12}
+        className={`workspace-tutorial-callout w-52 whitespace-normal text-left ${WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME}`}
+      >
+        <p className="text-xs leading-tight">{WORKSPACE_BOARD_VAULT_TUTORIAL_LOCK_MESSAGE}</p>
+      </TooltipContent>
+    </Tooltip>
+  )
+}
+
 export function WorkspaceBoardVaultCard({
   size,
   canEdit,
   presentationMode,
+  tutorialStepId = null,
   mode,
   onModeChange,
 }: {
   size: WorkspaceCardSize
   canEdit: boolean
   presentationMode: boolean
+  tutorialStepId?: WorkspaceCanvasTutorialStepId | null
   mode: WorkspaceVaultViewMode
   onModeChange: (next: WorkspaceVaultViewMode) => void
 }) {
@@ -57,6 +135,10 @@ export function WorkspaceBoardVaultCard({
 
   const isCompactCard = size === "sm" && !presentationMode
   const isDropzoneDisabled = presentationMode || !canEdit
+  const tutorialDisplayOnly = shouldRenderWorkspaceBoardVaultCardDisplayOnly({
+    presentationMode,
+    tutorialStepId,
+  })
 
   const loadIndex = useCallback(async () => {
     setIndexBusy(true)
@@ -277,7 +359,10 @@ export function WorkspaceBoardVaultCard({
   }, [resolveItemUrl, selectedItem])
 
   return (
-    <div className="flex h-full w-full flex-col overflow-hidden">
+    <div
+      className="relative flex h-full w-full flex-col overflow-hidden"
+      inert={tutorialDisplayOnly || undefined}
+    >
       <VaultModeToolbar
         mode={mode}
         isCompactCard={isCompactCard}
@@ -330,6 +415,7 @@ export function WorkspaceBoardVaultCard({
           />
         ) : null}
       </div>
+      {tutorialDisplayOnly ? <WorkspaceBoardVaultTutorialInteractionShield /> : null}
     </div>
   )
 }

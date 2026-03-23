@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import Bell from "lucide-react/dist/esm/icons/bell"
 
 import { NotificationsList } from "@/components/notifications/notifications-list"
@@ -7,17 +8,36 @@ import { useNotificationsMenuState } from "@/components/notifications/hooks/use-
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { cn } from "@/lib/utils"
 
-function NotificationsBellButton({ showBellUnreadCue }: { showBellUnreadCue: boolean }) {
+const NotificationsBellButton = React.forwardRef<
+  React.ElementRef<typeof Button>,
+  React.ComponentProps<typeof Button> & {
+    showBellUnreadCue: boolean
+  }
+>(function NotificationsBellButton(
+  { showBellUnreadCue, className, ...props },
+  ref,
+) {
   return (
-    <Button variant="ghost" size="icon" className="relative" aria-label="Notifications">
+    <Button
+      ref={ref}
+      variant="ghost"
+      size="icon"
+      className={cn("relative", className)}
+      aria-label="Notifications"
+      {...props}
+    >
       <Bell className="h-4 w-4" />
       {showBellUnreadCue ? (
-        <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-sky-500 dark:bg-sky-400" aria-hidden />
+        <span
+          className="absolute top-2 right-2 h-2 w-2 rounded-full bg-sky-500 dark:bg-sky-400"
+          aria-hidden
+        />
       ) : null}
     </Button>
   )
-}
+})
 
 export function NotificationsMenu() {
   const {

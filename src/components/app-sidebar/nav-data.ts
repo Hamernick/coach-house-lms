@@ -2,6 +2,7 @@
 
 import type { LucideIcon } from "lucide-react"
 import DatabaseIcon from "lucide-react/dist/esm/icons/database"
+import FlaskConicalIcon from "lucide-react/dist/esm/icons/flask-conical"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
 import LayoutGridIcon from "lucide-react/dist/esm/icons/layout-grid"
 import LockIcon from "lucide-react/dist/esm/icons/lock"
@@ -11,6 +12,10 @@ import ShieldIcon from "lucide-react/dist/esm/icons/shield"
 import ShoppingBagIcon from "lucide-react/dist/esm/icons/shopping-bag"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
 
+import {
+  listPrototypeLabSidebarTree,
+  type PrototypeLabSidebarTreeNode,
+} from "@/features/prototype-lab"
 import type { SidebarClass } from "@/lib/academy"
 
 export function buildMainNav({
@@ -25,6 +30,7 @@ export function buildMainNav({
   title: string
   href?: string
   icon?: LucideIcon
+  tree?: PrototypeLabSidebarTreeNode[]
   locked?: boolean
   badge?: string
   upgradeHref?: string
@@ -34,6 +40,7 @@ export function buildMainNav({
     title: string
     href?: string
     icon?: LucideIcon
+    tree?: PrototypeLabSidebarTreeNode[]
     locked?: boolean
     badge?: string
     upgradeHref?: string
@@ -60,6 +67,12 @@ export function buildMainNav({
   }
   if (isAdmin) {
     items.push({ title: "Platform", href: "/admin/platform", icon: DatabaseIcon })
+    items.push({
+      title: "Prototypes",
+      href: "/admin/platform/prototypes",
+      icon: FlaskConicalIcon,
+      tree: listPrototypeLabSidebarTree(),
+    })
   }
   return items
 }

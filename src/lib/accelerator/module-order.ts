@@ -1,14 +1,20 @@
 import { isElectiveAddOnModuleSlug, isElectiveAddOnModuleTitle } from "@/lib/accelerator/elective-modules"
 
-const CORE_FORMATION_MODULE_SLUG_ORDER = ["naming-your-nfp", "nfp-registration", "filing-1023"] as const
-const CORE_FORMATION_SLUG_RANK: Map<string, number> = new Map(
-  CORE_FORMATION_MODULE_SLUG_ORDER.map((slug, index) => [slug, index]),
-)
+const CORE_FORMATION_SLUG_RANK: Map<string, number> = new Map([
+  ["organization-setup", 0],
+  ["workspace-setup", 0],
+  ["workspace-onboarding-organization-setup", 0],
+  ["naming-your-nfp", 1],
+  ["nfp-registration", 2],
+  ["filing-1023", 3],
+])
 const CORE_FORMATION_TITLE_RANK: Map<string, number> = new Map(
   [
-    ["naming your nfp", 0],
-    ["nfp registration", 1],
-    ["filing 1023", 2],
+    ["organization setup", 0],
+    ["workspace setup", 0],
+    ["naming your nfp", 1],
+    ["nfp registration", 2],
+    ["filing 1023", 3],
   ] as const,
 )
 
@@ -57,12 +63,19 @@ function resolveCoreFormationRank(module: OrderedModule): number | null {
     return 1
   }
   if (formationPhrase.includes("1023")) {
-    return 2
+    return 3
+  }
+  if (
+    (formationPhrase.includes("organization") ||
+      formationPhrase.includes("workspace")) &&
+    formationPhrase.includes("setup")
+  ) {
+    return 0
   }
 
   const classSlug = classSlugFromHref(module.href)
   const knownElectiveAddOn = isElectiveAddOnModuleSlug(slug) || isElectiveAddOnModuleTitle(module.title)
-  if (!knownElectiveAddOn && classSlug === "electives" && module.index >= 4 && module.index <= 6) {
+  if (!knownElectiveAddOn && classSlug === "electives" && module.index >= 4 && module.index <= 7) {
     return module.index - 4
   }
 

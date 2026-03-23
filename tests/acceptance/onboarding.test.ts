@@ -8,50 +8,35 @@ describe("onboarding gate", () => {
     vi.resetModules()
   })
 
-  it("redirects to organization when onboarding already completed", async () => {
-    const supabase = {
-      from: () => ({
-        select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { full_name: null, headline: null } }) }) }),
-      }),
-    }
-
-    vi.doMock("@/lib/auth", () => ({
-      requireServerSession: async () => ({
-        supabase,
-        session: {
-          user: {
-            id: "u1",
-            email: "u1@example.com",
-            user_metadata: { onboarding_completed: true },
-          },
-        },
+  it("redirects completed builder users to workspace", async () => {
+    vi.doMock("@/app/(dashboard)/_lib/dashboard-layout-state", () => ({
+      resolveDashboardLayoutState: async () => ({
+        userPresent: true,
+        onboardingLocked: false,
+        onboardingIntentFocus: "build",
       }),
     }))
+    vi.doMock("@/components/onboarding/onboarding-workspace-card", () => ({
+      OnboardingWorkspaceCard: () => null,
+    }))
 
-    // Re-import after mock
     const { default: Page } = await import("@/app/(dashboard)/onboarding/page")
     const destination = await captureRedirect(() => Page())
-    expect(destination).toBe("/organization")
+    expect(destination).toBe("/workspace")
   })
 
-  it("renders onboarding page when onboarding is not completed", async () => {
-    const supabase = {
-      from: () => ({
-        select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { full_name: "User", headline: null } }) }) }),
+  it("renders onboarding workspace card while onboarding is still locked", async () => {
+    vi.doMock("@/app/(dashboard)/_lib/dashboard-layout-state", () => ({
+      resolveDashboardLayoutState: async () => ({
+        userPresent: true,
+        onboardingLocked: true,
+        onboardingIntentFocus: "build",
+        onboardingDefaults: {},
+        currentPlanTier: "free",
       }),
-    }
-
-    vi.doMock("@/lib/auth", () => ({
-      requireServerSession: async () => ({
-        supabase,
-        session: {
-          user: {
-            id: "u2",
-            email: "u2@example.com",
-            user_metadata: { onboarding_completed: false },
-          },
-        },
-      }),
+    }))
+    vi.doMock("@/components/onboarding/onboarding-workspace-card", () => ({
+      OnboardingWorkspaceCard: () => "onboarding-workspace-card",
     }))
 
     const { default: Page } = await import("@/app/(dashboard)/onboarding/page")
@@ -60,6 +45,4 @@ describe("onboarding gate", () => {
     expect(result).toBeTruthy()
     expect(redirectMock).not.toHaveBeenCalled()
   })
-
-  // Rendering path is covered in E2E; this suite focuses on gating redirect.
 })

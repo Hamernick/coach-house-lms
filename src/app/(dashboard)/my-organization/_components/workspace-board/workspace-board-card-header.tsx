@@ -11,6 +11,7 @@ import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { Button } from "@/components/ui/button"
 import { CardHeader, CardTitle } from "@/components/ui/card"
+import { WORKSPACE_TEXT_STYLES } from "@/components/workspace/workspace-typography"
 import {
   Popover,
   PopoverClose,
@@ -27,6 +28,7 @@ export function WorkspaceBoardCardHeader({
   tone = "default",
   titleIcon,
   titleBadge,
+  headerDetails,
   headerMeta,
   headerAction,
   hideTitle = false,
@@ -45,6 +47,7 @@ export function WorkspaceBoardCardHeader({
   tone?: "default" | "accelerator"
   titleIcon?: ReactNode
   titleBadge?: ReactNode
+  headerDetails?: ReactNode
   headerMeta?: ReactNode
   headerAction?: ReactNode
   hideTitle?: boolean
@@ -75,7 +78,7 @@ export function WorkspaceBoardCardHeader({
     )
   const showTitle = !hideTitle
   const showSubtitle = !hideSubtitle && subtitle.trim().length > 0
-  const showHeaderCopy = showTitle || showSubtitle
+  const showHeaderCopy = showTitle || showSubtitle || Boolean(headerDetails)
 
   return (
     <CardHeader
@@ -100,8 +103,10 @@ export function WorkspaceBoardCardHeader({
             {showTitle ? (
               <CardTitle
                 className={cn(
-                  "truncate text-sm font-semibold tracking-tight",
-                  presentationMode && "text-[13px]"
+                  "truncate",
+                  presentationMode
+                    ? WORKSPACE_TEXT_STYLES.cardTitleCompact
+                    : WORKSPACE_TEXT_STYLES.cardTitle,
                 )}
               >
                 <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5">
@@ -129,12 +134,24 @@ export function WorkspaceBoardCardHeader({
             {showSubtitle ? (
               <p
                 className={cn(
-                  "text-muted-foreground line-clamp-1 text-[11px]",
-                  presentationMode && "text-[10px]"
+                  "line-clamp-1",
+                  presentationMode
+                    ? "text-[10px] leading-4 text-muted-foreground"
+                    : WORKSPACE_TEXT_STYLES.cardSubtitle,
                 )}
               >
                 {subtitle}
               </p>
+            ) : null}
+            {headerDetails ? (
+              <div
+                className={cn(
+                  "pt-1",
+                  presentationMode && "pt-0.5"
+                )}
+              >
+                {headerDetails}
+              </div>
             ) : null}
           </div>
         ) : (

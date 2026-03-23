@@ -12,11 +12,11 @@ import { type NodeDragHandler } from "reactflow"
 import {
   resolveWorkspaceCanvasTutorialCallout,
   resolveWorkspaceCanvasTutorialContinueMode,
-  resolveWorkspaceCanvasTutorialSceneFocusCardIds,
 } from "@/features/workspace-canvas-tutorial"
 
 import { WORKSPACE_CANVAS_EVENTS } from "../contracts/workspace-canvas-events"
 import { logWorkspaceCanvasEvent } from "../runtime/workspace-canvas-logger"
+import type { WorkspaceCanvasSceneFitRequest } from "../runtime/workspace-canvas-viewport-command"
 import {
   useWorkspaceCardShortcutItems,
 } from "./workspace-canvas-surface-v2-hooks"
@@ -28,27 +28,46 @@ import {
 import { ACCELERATOR_STEP_NODE_ID } from "../../workspace-board-flow-surface-accelerator-graph-composition"
 import type { WorkspaceBoardState, WorkspaceCardId } from "../../workspace-board-types"
 import type { WorkspaceBoardToggleContext } from "../../workspace-board-debug"
-import { WORKSPACE_CANVAS_TUTORIAL_NODE_ID } from "./workspace-canvas-surface-v2-tutorial-runtime"
+import { shouldWorkspaceTutorialCardSnapToDock } from "./workspace-canvas-surface-v2-tutorial-docking"
+
+const WORKSPACE_CANVAS_TUTORIAL_NODE_ID = "workspace-canvas-tutorial"
 
 export function useWorkspaceCanvasNodeDragStop({
   allowEditing,
+  tutorialActive,
   boardNodeLookup,
   onPersistNodePosition,
   setAcceleratorStepNodePositionOverride,
+  setTutorialCardPositionOverrides,
+  setTutorialUndockedCardIds,
+  tutorialDockTargets,
   onTutorialNodeDragStop,
 }: {
   allowEditing: boolean
+  tutorialActive: boolean
   boardNodeLookup: Map<string, { x: number; y: number }>
   onPersistNodePosition: WorkspaceCanvasSurfaceV2Props["onPersistNodePosition"]
   setAcceleratorStepNodePositionOverride: Dispatch<
     SetStateAction<{ x: number; y: number } | null>
   >
-  onTutorialNodeDragStop: (x: number, y: number) => void
+  setTutorialCardPositionOverrides: Dispatch<
+    SetStateAction<Partial<Record<WorkspaceCanvasV2CardId, { x: number; y: number }>>>
+  >
+  setTutorialUndockedCardIds: Dispatch<SetStateAction<WorkspaceCanvasV2CardId[]>>
+  tutorialDockTargets: Partial<
+    Record<WorkspaceCanvasV2CardId, { x: number; y: number; snapRadius: number }>
+  >
+  onTutorialNodeDragStop: NodeDragHandler
 }) {
   return useCallback<NodeDragHandler>(
-    (_, node) => {
-      if (!allowEditing) return
+    (event, node, nodes) => {
+      if (node.id === WORKSPACE_CANVAS_TUTORIAL_NODE_ID) {
+        onTutorialNodeDragStop(event, node, nodes)
+        return
+      }
+
       if (node.id === ACCELERATOR_STEP_NODE_ID) {
+        if (!allowEditing) return
         const nextX = Math.round(node.position.x)
         const nextY = Math.round(node.position.y)
         setAcceleratorStepNodePositionOverride((previous) => {
@@ -59,17 +78,52 @@ export function useWorkspaceCanvasNodeDragStop({
         })
         return
       }
-      if (node.id === WORKSPACE_CANVAS_TUTORIAL_NODE_ID) {
-        onTutorialNodeDragStop(
-          Math.round(node.position.x),
-          Math.round(node.position.y),
-        )
-        return
-      }
       if (!isWorkspaceCanvasV2CardId(node.id)) return
 
+      const tutorialCardId = node.id
       const nextX = Math.round(node.position.x)
       const nextY = Math.round(node.position.y)
+      if (tutorialActive) {
+        const dockTarget = tutorialDockTargets[tutorialCardId]
+        const shouldSnap =
+          dockTarget &&
+          shouldWorkspaceTutorialCardSnapToDock({
+            position: { x: nextX, y: nextY },
+            dockTarget,
+          })
+
+        setTutorialUndockedCardIds((previous) => {
+          if (shouldSnap) {
+            return previous.filter((cardId) => cardId !== tutorialCardId)
+          }
+
+          return previous.includes(tutorialCardId)
+            ? previous
+            : [...previous, tutorialCardId]
+        })
+        setTutorialCardPositionOverrides((previous) => {
+          if (shouldSnap) {
+            if (!(tutorialCardId in previous)) {
+              return previous
+            }
+
+            const next = { ...previous }
+            delete next[tutorialCardId]
+            return next
+          }
+
+          const current = previous[tutorialCardId]
+          if (current?.x === nextX && current?.y === nextY) {
+            return previous
+          }
+          return {
+            ...previous,
+            [tutorialCardId]: { x: nextX, y: nextY },
+          }
+        })
+        return
+      }
+      if (!allowEditing) return
       const previous = boardNodeLookup.get(node.id)
       if (!previous) return
       if (previous.x === nextX && previous.y === nextY) return
@@ -84,26 +138,40 @@ export function useWorkspaceCanvasNodeDragStop({
     [
       allowEditing,
       boardNodeLookup,
-      onPersistNodePosition,
       onTutorialNodeDragStop,
+      onPersistNodePosition,
       setAcceleratorStepNodePositionOverride,
+      setTutorialUndockedCardIds,
+      setTutorialCardPositionOverrides,
+      tutorialDockTargets,
+      tutorialActive,
     ],
   )
 }
 
 export function useWorkspaceTutorialSceneFitRequest({
   tutorialActive,
-  tutorialStepIndex,
-  visibleCardIds,
-  openedTutorialStepIds,
-  sceneFitPadding,
+  sceneSignature,
+  sceneViewport,
+  sceneNodeIds,
+  sceneLayoutKey,
+  sceneRequestSeed = 0,
 }: {
   tutorialActive: boolean
-  tutorialStepIndex: number
-  visibleCardIds: WorkspaceCanvasV2CardId[]
-  openedTutorialStepIds: WorkspaceBoardState["onboardingFlow"]["openedTutorialStepIds"]
-  sceneFitPadding: number | null
-}) {
+  sceneSignature: string | null
+  sceneViewport:
+    | {
+        x: number
+        y: number
+        zoom: number
+        duration: number
+        delayMs?: number
+      }
+    | null
+  sceneNodeIds: string[]
+  sceneLayoutKey: string | null
+  sceneRequestSeed?: number
+}): WorkspaceCanvasSceneFitRequest {
   const requestStateRef = useRef<{
     requestKey: number
     signature: string | null
@@ -117,52 +185,40 @@ export function useWorkspaceTutorialSceneFitRequest({
       requestStateRef.current.signature = null
       return null
     }
-
-    const continueMode = resolveWorkspaceCanvasTutorialContinueMode(
-      tutorialStepIndex,
-      openedTutorialStepIds,
-    )
-    const callout = resolveWorkspaceCanvasTutorialCallout(
-      tutorialStepIndex,
-      openedTutorialStepIds,
-    )
-    const signature = [
-      tutorialStepIndex,
-      continueMode,
-      openedTutorialStepIds.join(","),
+    if (!sceneSignature || !sceneViewport || sceneNodeIds.length === 0) {
+      return null
+    }
+    const requestSignature = [
+      sceneSignature,
+      sceneRequestSeed,
+      sceneLayoutKey ?? "__scene-layout__",
+      Math.round(sceneViewport.x),
+      Math.round(sceneViewport.y),
+      Math.round(sceneViewport.zoom * 1000),
+      sceneViewport.duration,
+      sceneViewport.delayMs ?? 0,
     ].join("::")
-
-    if (requestStateRef.current.signature !== signature) {
+    if (requestStateRef.current.signature !== requestSignature) {
       requestStateRef.current = {
         requestKey: requestStateRef.current.requestKey + 1,
-        signature,
+        signature: requestSignature,
       }
     }
 
-    const visibleCardIdSet = new Set<string>(visibleCardIds)
-    const sceneCardIds = resolveWorkspaceCanvasTutorialSceneFocusCardIds(
-      tutorialStepIndex,
-      openedTutorialStepIds,
-    ).filter((cardId) => visibleCardIdSet.has(cardId))
-
     return {
       requestKey: requestStateRef.current.requestKey,
-      nodeIds: [WORKSPACE_CANVAS_TUTORIAL_NODE_ID, ...sceneCardIds],
-      padding: Math.max(
-        sceneFitPadding ?? 0.3,
-        callout?.kind === "shortcut-button"
-          ? 0.46
-          : callout?.kind === "team-access"
-            ? 0.38
-            : 0,
-      ),
+      signature: requestStateRef.current.signature ?? requestSignature,
+      layoutKey: sceneLayoutKey ?? "__scene-layout__",
+      nodeIds: sceneNodeIds,
+      ...sceneViewport,
     }
   }, [
-    openedTutorialStepIds,
-    sceneFitPadding,
+    sceneLayoutKey,
+    sceneNodeIds,
+    sceneRequestSeed,
+    sceneSignature,
+    sceneViewport,
     tutorialActive,
-    tutorialStepIndex,
-    visibleCardIds,
   ])
 }
 

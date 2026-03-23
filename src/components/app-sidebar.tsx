@@ -151,7 +151,7 @@ export function SidebarBody({
                   isActive
                 >
                   <Link
-                    href="/workspace?onboarding_flow=1&source=onboarding"
+                    href="/onboarding?source=onboarding"
                     className="flex w-full min-w-0 items-center gap-2"
                   >
                     <ListChecksIcon className="size-4" />

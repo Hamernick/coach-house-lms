@@ -53,3 +53,30 @@ Operational checklist for live board sessions in Organization Workspace.
 - Return to `/workspace` only if edits are required.
 - Save layout after any post-session adjustments.
 - Record meaningful behavior or UX regressions in `docs/RUNLOG.md`.
+
+## Workspace Ownership Map
+
+- Live workspace card sizing/layout:
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/**`
+- Tutorial presentation shell sizing/layout:
+  - `src/features/workspace-canvas-tutorial/**`
+  - `src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/*tutorial*`
+- Tutorial surface tokens:
+  - `src/components/workspace/workspace-tutorial-theme.ts`
+- React Grab semantic ownership:
+  - `src/components/dev/react-grab-surface.ts`
+  - `src/components/dev/react-grab-loader.tsx`
+
+Do not fix a live workspace card bug in the tutorial presentation layer just because the rendered card looks similar.
+
+## When A User Pastes A React Grab Component
+
+Before editing:
+
+1. Identify the semantic owner anchor (`data-react-grab-anchor`).
+2. Identify whether the pasted element is a trigger or linked portal surface.
+3. Identify the concrete source file named in React Grab metadata.
+4. Identify the file that assembles the final `className`.
+5. Identify the shared token owner, if any.
+
+Only then edit the highest valid owner.

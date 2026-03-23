@@ -1,3 +1,4 @@
+import { isWorkspaceTemporarilyUnavailableCardId } from "@/lib/workspace-card-policy"
 import type {
   WorkspaceBoardAcceleratorState,
   WorkspaceCardId,
@@ -24,23 +25,34 @@ function resolveAcceleratorCompletedStepCount(
 }
 
 function resolveOperatingTargetCard(seed: WorkspaceSeedData): WorkspaceCardId {
-  if (seed.programsCount <= 0) {
-    return "programs"
-  }
+  const fallbackTargetCardId: WorkspaceCardId = "accelerator"
+
+  if (seed.programsCount <= 0) return "programs"
   const hasBrandSignals = Boolean(
     seed.initialProfile.brandPrimary ||
       (Array.isArray(seed.initialProfile.brandColors) &&
         seed.initialProfile.brandColors.length > 0) ||
       seed.initialProfile.boilerplate,
   )
-  if (!hasBrandSignals) return "communications"
-  if (seed.fundingGoalCents <= 0) {
-    return "economic-engine"
+
+  const preferredTargetCardId: WorkspaceCardId =
+    !hasBrandSignals
+      ? "communications"
+      : seed.fundingGoalCents <= 0
+        ? "economic-engine"
+        : !seed.calendar.nextEvent && seed.calendar.upcomingEvents.length === 0
+          ? "calendar"
+          : "communications"
+
+  if (!isWorkspaceTemporarilyUnavailableCardId(preferredTargetCardId)) {
+    return preferredTargetCardId
   }
+
   if (!seed.calendar.nextEvent && seed.calendar.upcomingEvents.length === 0) {
     return "calendar"
   }
-  return "communications"
+
+  return fallbackTargetCardId
 }
 
 export function resolveWorkspaceJourneyStage({
@@ -119,20 +131,20 @@ export function resolveWorkspaceJourneyGuideState({
   if (stage === "materials") {
     return {
       stage,
-      title: "Drop the source materials into Documents",
+      title: "Set the roadmap inside the workspace",
       description:
-        "Use the vault as the working center so your accelerator steps reference real files and policies.",
+        "Use the roadmap to keep board strategy, fundraising priorities, and the next operating moves sequenced in one place.",
       checklist: [
-        "Upload the first operating document",
-        "Open the vault search or viewer once",
-        "Keep your source materials inside the workspace",
+        "Open the roadmap card once",
+        "Review the current section groups",
+        "Keep planning context inside the workspace",
       ],
       tone: "guide",
-      targetCardId: "vault",
+      targetCardId: "roadmap",
       primaryAction: {
         kind: "focus-card",
-        label: "Focus documents",
-        cardId: "vault",
+        label: "Focus roadmap",
+        cardId: "roadmap",
       },
       accentLabel: "Step 2",
     }
@@ -171,13 +183,13 @@ export function resolveWorkspaceJourneyGuideState({
   const targetLabelByCardId: Record<WorkspaceCardId, string> = {
     "organization-overview": "organization",
     programs: "programs",
+    roadmap: "roadmap",
     accelerator: "accelerator",
     "brand-kit": "brand kit",
     "economic-engine": "fundraising",
     calendar: "calendar",
     communications: "communications",
     deck: "deck",
-    vault: "documents",
     atlas: "atlas",
   }
 

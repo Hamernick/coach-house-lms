@@ -10,6 +10,10 @@ import type {
   WorkspaceSeedData,
   WorkspaceTrackerState,
 } from "../../workspace-board-types"
+import type {
+  WorkspaceCanvasCardFocusRequest,
+  WorkspaceCanvasTutorialCompletionExitRequest,
+} from "../runtime/workspace-canvas-viewport-command"
 
 export type WorkspaceCanvasSurfaceV2Props = {
   boardState: WorkspaceBoardState
@@ -19,11 +23,11 @@ export type WorkspaceCanvasSurfaceV2Props = {
   organizationEditorData: WorkspaceOrganizationEditorData
   layoutFitRequestKey: number
   acceleratorFocusRequestKey: number
-  focusCardRequest: {
-    cardId: WorkspaceCardId
-    requestKey: number
-  } | null
+  tutorialRestartRequestKey: number
+  focusCardRequest: WorkspaceCanvasCardFocusRequest
+  tutorialCompletionExitRequest: WorkspaceCanvasTutorialCompletionExitRequest
   journeyGuideState: WorkspaceJourneyGuideState
+  onInitialOnboardingSubmit: (form: FormData) => Promise<void>
   onSizeChange: (cardId: WorkspaceCardId, size: WorkspaceCardSize) => void
   onCommunicationsChange: (next: WorkspaceCommunicationsState) => void
   onTrackerChange: (next: WorkspaceTrackerState) => void
@@ -32,6 +36,7 @@ export type WorkspaceCanvasSurfaceV2Props = {
   onCloseAcceleratorStepNode: (source?: "dock" | "card" | "unknown") => void
   onTutorialPrevious: () => void
   onTutorialNext: () => void
+  onTutorialRestart: () => void
   onTutorialShortcutOpened: () => void
   onFocusCard: (cardId: WorkspaceCardId) => void
   onPersistNodePosition: (cardId: WorkspaceCardId, x: number, y: number) => void
@@ -42,4 +47,5 @@ export type WorkspaceCanvasSurfaceV2Props = {
     cardId: WorkspaceCardId,
     context?: WorkspaceBoardToggleContext,
   ) => void
+  onTutorialCompletionExitHandled: () => void
 }

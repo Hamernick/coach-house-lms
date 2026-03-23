@@ -36,20 +36,6 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   const resolved = searchParams ? await searchParams : {}
   const redirect = getSafeRedirect(resolved.redirect)
   const explicitIntent = getSafeIntent(resolved.intent)
-
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser()
-  if (error && !isSupabaseAuthSessionMissingError(error)) {
-    throw supabaseErrorToError(error, "Unable to load user.")
-  }
-  if (user) {
-    const destination = redirect ?? "/find?member_onboarding=1&source=signup"
-    redirectTo(destination)
-  }
-
   const plan = typeof resolved.plan === "string" ? resolved.plan : undefined
   const tier = typeof resolved.tier === "string" ? resolved.tier : undefined
   const addon = typeof resolved.addon === "string" ? resolved.addon : undefined
@@ -66,10 +52,26 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   if (selectedAddon) fallbackParams.set("addon", selectedAddon)
 
   const fallbackQuery = fallbackParams.toString()
-  const builderRedirectTarget = redirect ?? "/workspace?onboarding_flow=1&source=signup"
+  const builderRedirectTarget = redirect ?? "/onboarding?source=signup"
   const memberRedirectTarget =
     redirect ??
     (fallbackQuery ? `/find?member_onboarding=1&source=signup&${fallbackQuery}` : "/find?member_onboarding=1&source=signup")
+
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+  if (error && !isSupabaseAuthSessionMissingError(error)) {
+    throw supabaseErrorToError(error, "Unable to load user.")
+  }
+  if (user) {
+    const destination =
+      defaultIntentFocus === "build"
+        ? builderRedirectTarget
+        : memberRedirectTarget
+    redirectTo(destination)
+  }
   const loginHref = `/login`
 
   return (

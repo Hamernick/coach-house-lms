@@ -42,7 +42,7 @@ export function AcceleratorOrgSnapshotStrip({
   const subtitleText = organizationSubtitle?.trim() || null
   const descriptionText = organizationDescription?.trim() || null
   const lessonsSummaryText =
-    lessonsTotal > 0 ? `${lessonsComplete}/${lessonsTotal} lessons complete.` : "No lessons assigned yet."
+    lessonsTotal > 0 ? `${lessonsComplete}/${lessonsTotal} classes complete.` : "No classes assigned yet."
   const lessonsSummaryValue = lessonsTotal > 0 ? `${lessonsComplete} of ${lessonsTotal}` : "0 of 0"
   const tracksSummaryValue = moduleGroupsTotal > 0 ? `${moduleGroupsComplete} of ${moduleGroupsTotal}` : "0 of 0"
   const progressPillLabel = `${progress}%`
@@ -114,7 +114,7 @@ export function AcceleratorOrgSnapshotStrip({
             <dd className="font-medium text-right">{formationLabel}</dd>
           </div>
           <div className="flex items-center justify-between gap-3 px-3 py-2.5">
-            <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Lessons completed</dt>
+            <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">Classes completed</dt>
             <dd className="font-medium tabular-nums">{lessonsSummaryValue}</dd>
           </div>
           <div className="flex items-center justify-between gap-3 px-3 py-2.5">

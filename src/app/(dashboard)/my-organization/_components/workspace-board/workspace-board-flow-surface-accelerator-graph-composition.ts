@@ -74,8 +74,17 @@ export const ACCELERATOR_STEP_NODE_DIMENSIONS: Record<
 
 function resolveAcceleratorStepNodeDimensions(
   stepKind: WorkspaceAcceleratorStepKind,
-  assignmentFields: Array<{ type: string }>
+  assignmentFields: Array<{ type: string }>,
+  workspaceOnboardingView?: "welcome" | "organization-setup" | null,
 ) {
+  if (workspaceOnboardingView === "organization-setup") {
+    return ACCELERATOR_STEP_NODE_DIMENSIONS.assignmentExpanded
+  }
+
+  if (workspaceOnboardingView === "welcome") {
+    return ACCELERATOR_STEP_NODE_DIMENSIONS.video
+  }
+
   if (stepKind === "assignment") {
     const hasBudgetTableField = assignmentFields.some(
       (field) => field.type === "budget_table"
@@ -125,6 +134,7 @@ export function buildAcceleratorStepNodeData({
   onComplete,
   onClose,
   tutorialCallout,
+  onWorkspaceOnboardingSubmit,
 }: {
   acceleratorRuntimeSnapshot: WorkspaceAcceleratorCardRuntimeSnapshot | null
   acceleratorStepNodePositionOverride: { x: number; y: number } | null
@@ -139,6 +149,7 @@ export function buildAcceleratorStepNodeData({
   onComplete: () => void
   onClose: () => void
   tutorialCallout?: WorkspaceBoardAcceleratorStepNodeData["tutorialCallout"]
+  onWorkspaceOnboardingSubmit?: (form: FormData) => Promise<void>
 }): WorkspaceFlowNode | null {
   const runtimeStep = acceleratorRuntimeSnapshot?.currentStep
   if (!runtimeStep) return null
@@ -151,7 +162,8 @@ export function buildAcceleratorStepNodeData({
   )
   const stepDimensions = resolveAcceleratorStepNodeDimensions(
     runtimeStep.stepKind,
-    runtimeStep.moduleContext?.assignmentFields ?? []
+    runtimeStep.moduleContext?.assignmentFields ?? [],
+    runtimeStep.moduleContext?.workspaceOnboarding?.view ?? null,
   )
   const placement = resolveWorkspaceAcceleratorStepPlacement(autoLayoutMode)
   const positionX =
@@ -188,6 +200,7 @@ export function buildAcceleratorStepNodeData({
     },
     data: {
       step: runtimeStep,
+      placeholderVideoUrl: acceleratorRuntimeSnapshot.placeholderVideoUrl ?? null,
       placement,
       stepIndex: Math.max(
         acceleratorRuntimeSnapshot.currentModuleStepIndex,
@@ -207,6 +220,7 @@ export function buildAcceleratorStepNodeData({
       onClose,
       presentationMode,
       tutorialCallout: tutorialCallout ?? null,
+      onWorkspaceOnboardingSubmit: onWorkspaceOnboardingSubmit,
     },
   }
 }

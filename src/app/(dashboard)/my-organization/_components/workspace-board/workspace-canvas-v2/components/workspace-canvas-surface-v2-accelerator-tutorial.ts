@@ -23,13 +23,6 @@ export function resolveAcceleratorTutorialCallout({
   )
   if (!callout) return null
 
-  if (callout.kind === "accelerator-nav") {
-    return {
-      focus: "nav",
-      title: callout.label,
-      instruction: callout.instruction,
-    }
-  }
   if (callout.kind === "accelerator-picker") {
     return {
       focus: "picker",

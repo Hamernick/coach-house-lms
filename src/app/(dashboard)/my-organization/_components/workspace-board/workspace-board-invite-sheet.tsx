@@ -68,8 +68,8 @@ export function WorkspaceBoardInviteSheet({
   triggerVariant?: "outline" | "ghost" | "secondary" | "default"
 }) {
   const [open, setOpen] = useState(false)
-  const [inviteAudience, setInviteAudience] = useState<WorkspaceInviteAudience>("temporary")
-  const [inviteAccessLevel, setInviteAccessLevel] = useState<WorkspaceInviteAccessLevel>("editor")
+  const [inviteAudience, setInviteAudience] = useState<WorkspaceInviteAudience>("team")
+  const [inviteAccessLevel, setInviteAccessLevel] = useState<WorkspaceInviteAccessLevel>("viewer")
   const [selectedMemberId, setSelectedMemberId] = useState<string>("")
   const [teamInviteEmail, setTeamInviteEmail] = useState("")
   const [durationValue, setDurationValue] = useState<number>(4)
@@ -116,7 +116,7 @@ export function WorkspaceBoardInviteSheet({
 
   const handleCreate = () => {
     if (!selectedMemberId) {
-      toast.error("Choose a teammate to invite.")
+      toast.error("Choose someone to invite.")
       return
     }
 
@@ -134,7 +134,17 @@ export function WorkspaceBoardInviteSheet({
 
       onInvitesChange(result.invites)
       setSelectedMemberId("")
-      toast.success("Collaboration invite created")
+
+      if (result.inviteWasAlreadyActive) {
+        toast.success("Temporary invite is already active")
+        return
+      }
+
+      toast.success(
+        result.notificationSent
+          ? "Collaboration invite created and notification sent"
+          : "Collaboration invite created",
+      )
     })
   }
 
@@ -156,22 +166,34 @@ export function WorkspaceBoardInviteSheet({
         return
       }
 
-      const link = origin
-        ? `${origin}/join-organization?token=${result.invite.token}`
-        : `/join-organization?token=${result.invite.token}`
+      if ("invite" in result) {
+        if (result.emailSent) {
+          toast.success(
+            result.outcome === "external_invite_resent"
+              ? "Invite email sent again"
+              : inviteAccessLevel === "viewer"
+                ? "Viewer invite emailed"
+                : "Editor invite emailed",
+          )
+        } else {
+          const link = origin
+            ? `${origin}/join-organization?token=${result.invite.token}`
+            : `/join-organization?token=${result.invite.token}`
 
-      try {
-        await copyInviteLink(link)
+          try {
+            await copyInviteLink(link)
+            toast.success("Invite link copied because email delivery failed")
+          } catch {
+            toast.success(result.emailError ?? "Invite created")
+          }
+        }
+      } else {
         toast.success(
-          inviteAccessLevel === "viewer"
-            ? "Viewer invite link copied"
-            : "Editor invite link copied",
-        )
-      } catch {
-        toast.success(
-          inviteAccessLevel === "viewer"
-            ? "Viewer invite created"
-            : "Editor invite created",
+          result.emailSent
+            ? result.outcome === "existing_user_request_resent"
+              ? "Access request sent again"
+              : "Access request sent"
+            : `${result.outcome === "existing_user_request_resent" ? "Access request sent again" : "Access request sent"}. ${result.emailError ?? "Heads-up email skipped."}`,
         )
       }
 

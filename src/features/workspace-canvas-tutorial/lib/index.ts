@@ -4,13 +4,16 @@ import type {
   WorkspaceCanvasTutorialStepId,
   WorkspaceCanvasTutorialStep,
 } from "../types"
+import { WORKSPACE_REST_VISIBLE_CARD_IDS } from "@/lib/workspace-card-policy"
+import { WORKSPACE_MAP_FEATURE_ENABLED } from "@/lib/workspace-map-feature"
 
-export const WORKSPACE_CANVAS_TUTORIAL_STEPS: WorkspaceCanvasTutorialStep[] = [
+const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
   {
     id: "welcome",
+    sceneId: "overview",
     title: "Welcome to Workspace",
     message:
-      "This canvas keeps your organization, documents, programs, accelerator, calendar, fundraising, and communications in one place.",
+      "This canvas keeps your organization, roadmap, programs, accelerator, and calendar in one place.",
     targetCardId: null,
     targetLabel: "Workspace",
     revealedCardIds: [],
@@ -18,16 +21,42 @@ export const WORKSPACE_CANVAS_TUTORIAL_STEPS: WorkspaceCanvasTutorialStep[] = [
   },
   {
     id: "organization",
+    sceneId: "overview",
     title: "Build your Organization",
     message:
-      "Update your public and private organization details, connect data to your organization like programs, core documents, fundraising efforts, teams, and communications.",
+      "Update your public and private organization details, and connect it to the roadmap, programs, calendar, and team activity that shape the rest of the workspace.",
     targetCardId: "organization-overview",
     targetLabel: "Organization",
     revealedCardIds: ["organization-overview"],
     continueMode: "next",
   },
   {
+    id: "map-button",
+    sceneId: "overview",
+    title: "Map",
+    message:
+      "Use the new Map button in the Organization header to open the public map card without leaving the workspace.",
+    targetCardId: null,
+    targetLabel: "Map button",
+    revealedCardIds: ["organization-overview"],
+    continueMode: "action",
+    calloutTarget: "organization-map-button",
+    calloutInstruction: "Click to open the Map and continue.",
+  },
+  {
+    id: "map-card",
+    sceneId: "map",
+    title: "Map",
+    message:
+      "This card connects your organization to place. It shows what still needs to be completed before you can confidently go live on the map.",
+    targetCardId: "atlas",
+    targetLabel: "Map card",
+    revealedCardIds: ["organization-overview", "atlas"],
+    continueMode: "next",
+  },
+  {
     id: "tool-buttons",
+    sceneId: "overview",
     title: "Tools",
     message:
       "Buttons on the left side of your Organization card will open different tools to help you plan and build your org.",
@@ -39,9 +68,10 @@ export const WORKSPACE_CANVAS_TUTORIAL_STEPS: WorkspaceCanvasTutorialStep[] = [
   },
   {
     id: "accelerator",
-    title: "Accelerator",
+    sceneId: "overview",
+    title: "The Accelerator",
     message:
-      "The accelerator is a series of guides to help you move fast and get to whats important. It's a series of lessons built from 30+ years building sustainable nfp's, having raised $25m+.",
+      "Built from raising $30M+ over 25+ years operating nonprofits, the Accelerator helps you move through classes, complete key setup work, and keep momentum without leaving the workspace.",
     targetCardId: "accelerator",
     targetLabel: "Accelerator",
     revealedCardIds: ["organization-overview"],
@@ -50,72 +80,46 @@ export const WORKSPACE_CANVAS_TUTORIAL_STEPS: WorkspaceCanvasTutorialStep[] = [
     calloutInstruction: "Click to open the Accelerator tool and continue.",
   },
   {
-    id: "accelerator-nav",
-    title: "Accelerator Navigation",
-    message:
-      "Use the header arrows to move between accelerator lessons without leaving the workspace.",
-    targetCardId: "accelerator",
-    targetLabel: "Accelerator navigation",
-    revealedCardIds: ["organization-overview", "accelerator"],
-    continueMode: "next",
-    calloutTarget: "accelerator-nav",
-    calloutInstruction:
-      "Use these arrows to move backward and forward through the accelerator.",
-  },
-  {
     id: "accelerator-picker",
-    title: "Lesson Groups",
+    sceneId: "accelerator",
+    title: "Classes",
     message:
-      "Use the lesson picker to jump between lesson groups and narrow the checklist to the part of the accelerator you want to work on.",
+      "Use this picker to switch between class tracks so you can see the right modules, progress, and next steps for each part of the Accelerator.",
     targetCardId: "accelerator",
-    targetLabel: "Lesson picker",
-    revealedCardIds: ["organization-overview", "accelerator"],
+    targetLabel: "Class picker",
+    revealedCardIds: ["accelerator"],
     continueMode: "next",
     calloutTarget: "accelerator-picker",
     calloutInstruction:
-      "Switch lesson groups here to move between lessons in the accelerator.",
-  },
-  {
-    id: "accelerator-progress",
-    title: "Progress",
-    message:
-      "This strip shows your accelerator progress and the Fundable and Verified milestones you are working toward.",
-    targetCardId: "accelerator",
-    targetLabel: "Accelerator progress",
-    revealedCardIds: ["organization-overview", "accelerator"],
-    continueMode: "next",
-    calloutTarget: "accelerator-progress",
-    calloutInstruction:
-      "Hover the milestone markers to see what it takes to reach Fundable and Verified.",
+      "Choose a class track here to update the module list and focus on a different part of the Accelerator.",
   },
   {
     id: "accelerator-first-module",
-    title: "Open Your First Module",
-    message:
-      "Click the first visible module step in the checklist to open it and continue the walkthrough.",
+    sceneId: "accelerator",
+    title: "Modules",
+    message: "Click the Welcome module to open it from the list below.",
     targetCardId: "accelerator",
     targetLabel: "First module",
-    revealedCardIds: ["organization-overview", "accelerator"],
+    revealedCardIds: ["accelerator"],
     continueMode: "action",
     calloutTarget: "accelerator-first-module",
     calloutInstruction:
-      "Click the first module step here to continue.",
+      "Click the Welcome module here to continue.",
   },
   {
     id: "accelerator-close-module",
-    title: "Close the Module",
+    sceneId: "accelerator-module",
+    title: "Module preview",
     message:
-      "Use the close button in the module header to dismiss this lesson and return to the accelerator card.",
+      "This is what an accelerator module looks like inside the workspace. Use Continue below, or the guide Next button, when you're ready to move on.",
     targetCardId: "accelerator",
-    targetLabel: "Close module",
-    revealedCardIds: ["organization-overview", "accelerator"],
-    continueMode: "action",
-    calloutTarget: "accelerator-close-module",
-    calloutInstruction:
-      "Click here to close this module and return to the accelerator.",
+    targetLabel: "Module preview",
+    revealedCardIds: ["accelerator"],
+    continueMode: "next",
   },
   {
     id: "calendar",
+    sceneId: "calendar",
     title: "Calendar",
     message:
       "Add recurring board meetings, annual meetings, deadlines, and operating rhythm here. This is where reminders, accountability, and the shared tempo of the organization start to take shape.",
@@ -128,6 +132,7 @@ export const WORKSPACE_CANVAS_TUTORIAL_STEPS: WorkspaceCanvasTutorialStep[] = [
   },
   {
     id: "programs",
+    sceneId: "programs",
     title: "Programs turn strategy into fundable work",
     message:
       "Build program briefs, budgets, and fundraising targets here. Program details feed the rest of the system so plans, asks, and updates stay aligned.",
@@ -139,43 +144,21 @@ export const WORKSPACE_CANVAS_TUTORIAL_STEPS: WorkspaceCanvasTutorialStep[] = [
     calloutInstruction: "Click to open the Programs tool and continue.",
   },
   {
-    id: "documents",
-    title: "Documents",
+    id: "roadmap",
+    sceneId: "roadmap",
+    title: "Roadmap",
     message:
-      "Keep policies, decks, budgets, and source files in one place so the rest of the workspace stays grounded in real materials.",
-    targetCardId: "vault",
-    targetLabel: "Documents",
+      "Use the roadmap to keep fundraising, board strategy, and execution priorities sequenced in one operating view.",
+    targetCardId: "roadmap",
+    targetLabel: "Roadmap",
     revealedCardIds: ["organization-overview"],
     continueMode: "shortcut",
     calloutTarget: "shortcut-button",
-    calloutInstruction: "Click to open the Documents tool and continue.",
-  },
-  {
-    id: "fundraising",
-    title: "Fundraising",
-    message:
-      "Connect funding goals to the programs and progress you are actually building so your asks stay tied to the work.",
-    targetCardId: "economic-engine",
-    targetLabel: "Fundraising",
-    revealedCardIds: ["organization-overview"],
-    continueMode: "shortcut",
-    calloutTarget: "shortcut-button",
-    calloutInstruction: "Click to open the Fundraising tool and continue.",
-  },
-  {
-    id: "communications",
-    title: "Communications",
-    message:
-      "Turn milestones into updates, shape your public story, and keep supporters aligned with the work in motion.",
-    targetCardId: "communications",
-    targetLabel: "Communications",
-    revealedCardIds: ["organization-overview"],
-    continueMode: "shortcut",
-    calloutTarget: "shortcut-button",
-    calloutInstruction: "Click to open the Communications tool and continue.",
+    calloutInstruction: "Click to open the Roadmap tool and continue.",
   },
   {
     id: "collaboration",
+    sceneId: "overview",
     title: "Team Access",
     message:
       "Invite teammates and board members so this becomes a shared working space, not a board only one person updates.",
@@ -187,17 +170,14 @@ export const WORKSPACE_CANVAS_TUTORIAL_STEPS: WorkspaceCanvasTutorialStep[] = [
     calloutInstruction:
       "Use Team Access to invite members and manage who can work in this workspace.",
   },
-  {
-    id: "finish",
-    title: "Next Steps",
-    message:
-      "Start with Organization and Documents, then move into Programs and the Accelerator to keep each part of the work connected.",
-    targetCardId: "organization-overview",
-    targetLabel: "Organization",
-    revealedCardIds: ["organization-overview"],
-    continueMode: "next",
-  },
 ]
+
+export const WORKSPACE_CANVAS_TUTORIAL_STEPS: WorkspaceCanvasTutorialStep[] =
+  WORKSPACE_MAP_FEATURE_ENABLED
+    ? WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS
+    : WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS.filter(
+        (step) => step.id !== "map-button" && step.id !== "map-card",
+      )
 
 export function resolveWorkspaceCanvasTutorialStepCount() {
   return WORKSPACE_CANVAS_TUTORIAL_STEPS.length
@@ -217,12 +197,28 @@ export function resolveWorkspaceCanvasTutorialStep(stepIndex: number) {
   )
 }
 
+export function resolveWorkspaceCanvasTutorialProgressPercent(
+  stepIndex: number,
+  stepCount: number,
+) {
+  const safeStepCount = Math.max(Math.trunc(stepCount), 1)
+  const currentStep = Math.min(
+    Math.max(Math.trunc(stepIndex) + 1, 1),
+    safeStepCount,
+  )
+
+  return Math.round((currentStep / safeStepCount) * 100)
+}
+
 export const WORKSPACE_CANVAS_TUTORIAL_MANAGED_CARD_IDS = [
   "organization-overview",
+  ...(WORKSPACE_MAP_FEATURE_ENABLED
+    ? (["atlas"] as const satisfies readonly WorkspaceCanvasTutorialCardId[])
+    : []),
   "accelerator",
   "calendar",
   "programs",
-  "vault",
+  "roadmap",
   "economic-engine",
   "communications",
 ] as const satisfies readonly WorkspaceCanvasTutorialCardId[]
@@ -287,27 +283,15 @@ export function resolveWorkspaceCanvasTutorialVisibleCardIds(
 ) {
   const clampedStepIndex = clampWorkspaceCanvasTutorialStepIndex(stepIndex)
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
-  const visibleCardIds = new Set<WorkspaceCanvasTutorialCardId>(step.revealedCardIds)
-  const openedStepIdSet = resolveTutorialStepIdSet(
-    resolveWorkspaceCanvasTutorialTrimmedStepIds(clampedStepIndex, openedStepIds),
+  const openedCurrentStep = isWorkspaceCanvasTutorialStepOpened(
+    clampedStepIndex,
+    openedStepIds,
   )
-
-  for (let index = 0; index <= clampedStepIndex; index += 1) {
-    const tutorialStep = WORKSPACE_CANVAS_TUTORIAL_STEPS[index]
-    if (!tutorialStep || !isTutorialShortcutStep(tutorialStep)) {
-      continue
-    }
-    if (!openedStepIdSet.has(tutorialStep.id)) {
-      continue
-    }
-    const { targetCardId } = tutorialStep
-    if (!targetCardId) {
-      continue
-    }
-    visibleCardIds.add(targetCardId)
+  if (isTutorialShortcutStep(step) && openedCurrentStep && step.targetCardId) {
+    return [step.targetCardId]
   }
 
-  return Array.from(visibleCardIds)
+  return [...step.revealedCardIds]
 }
 
 export function resolveWorkspaceCanvasTutorialActiveVisibleCardIds(
@@ -403,6 +387,18 @@ export function resolveWorkspaceCanvasTutorialCallout(
     }
   }
 
+  if (
+    step.calloutTarget === "organization-map-button" &&
+    resolveWorkspaceCanvasTutorialContinueMode(stepIndex, openedStepIds) ===
+      "action"
+  ) {
+    return {
+      kind: "organization-map-button",
+      label,
+      instruction,
+    }
+  }
+
   const continueMode = resolveWorkspaceCanvasTutorialContinueMode(
     stepIndex,
     openedStepIds,
@@ -433,7 +429,6 @@ export function resolveWorkspaceCanvasTutorialCallout(
   }
 
   if (
-    step.calloutTarget === "accelerator-nav" ||
     step.calloutTarget === "accelerator-picker" ||
     step.calloutTarget === "accelerator-progress" ||
     (step.calloutTarget === "accelerator-close-module" &&
@@ -471,13 +466,12 @@ export const isWorkspaceCanvasTutorialStepCompleted =
 
 export function buildWorkspaceCanvasTutorialCompletionHiddenCardIds() {
   const visibleOnRest: WorkspaceCanvasTutorialCardId[] = [
-    "organization-overview",
-    "accelerator",
+    ...WORKSPACE_REST_VISIBLE_CARD_IDS,
   ]
   const allCards: WorkspaceCanvasTutorialCardId[] = [
     "organization-overview",
     "programs",
-    "vault",
+    "roadmap",
     "accelerator",
     "brand-kit",
     "economic-engine",

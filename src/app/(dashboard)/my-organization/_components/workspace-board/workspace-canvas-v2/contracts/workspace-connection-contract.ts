@@ -40,7 +40,6 @@ export const WORKSPACE_PORT_COMPATIBILITY = Object.freeze({
   "financial-model": ["financial-model"],
   schedule: ["schedule"],
   campaign: ["campaign"],
-  documents: ["documents"],
 } satisfies Record<WorkspacePortType, WorkspacePortType[]>)
 
 export type WorkspaceConnectionValidationResult =

@@ -58,6 +58,12 @@ export type OnboardingFlowDefaults = {
   defaultBuilderPlanTier?: PricingPlanTier | null
 }
 
+export type OnboardingFlowVisibleStepId = OnboardingStepId
+export type OnboardingFlowMode =
+  | "full"
+  | "post_signup_access"
+  | "workspace_setup"
+
 export type OnboardingDialogProps = OnboardingFlowDefaults & {
   open: boolean
   onSubmit: (form: FormData) => Promise<void>

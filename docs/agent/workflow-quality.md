@@ -25,7 +25,10 @@
 - `pnpm check:thresholds`
 - `pnpm check:boundaries`
 - `pnpm check:workspace-storage`
+- `pnpm check:interaction-locks`
+- `pnpm check:react-grab`
 - `pnpm check:raw-buttons`
+- `pnpm check:workspace-surfaces`
 - `pnpm test:snapshots`
 - `pnpm test:visual`
 - `pnpm test:acceptance`
@@ -87,7 +90,10 @@
   - `pnpm check:thresholds`
   - `pnpm check:boundaries`
   - `pnpm check:workspace-storage`
+  - `pnpm check:interaction-locks`
+  - `pnpm check:react-grab`
   - `pnpm check:raw-buttons`
+  - `pnpm check:workspace-surfaces`
   - `pnpm check:prepush`
   - `pnpm test:visual`
   - `pnpm test:visual:update`

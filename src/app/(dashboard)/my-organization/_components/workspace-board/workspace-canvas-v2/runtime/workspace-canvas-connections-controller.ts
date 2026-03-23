@@ -19,6 +19,7 @@ import {
   buildWorkspaceCanvasV2Edges,
   resolveWorkspaceCanvasConnectAttempt,
   resolveWorkspaceCanvasDisconnectActionSets,
+  shouldLogWorkspaceCanvasDroppedConnections,
 } from "./workspace-canvas-connections"
 import type { WorkspaceCardReadiness } from "./workspace-canvas-card-readiness"
 import {
@@ -75,7 +76,7 @@ export function useWorkspaceCanvasConnectionsController({
 }) {
   const [edgeContextMenuState, setEdgeContextMenuState] =
     useState<WorkspaceCanvasEdgeContextMenuState | null>(null)
-  const { edges, droppedConnectionIds } = useMemo(
+  const { edges, droppedConnectionIds, droppedConnections } = useMemo(
     () =>
       buildWorkspaceCanvasV2Edges({
         connections,
@@ -111,13 +112,18 @@ export function useWorkspaceCanvasConnectionsController({
       return
     }
 
+    if (!shouldLogWorkspaceCanvasDroppedConnections(droppedConnections)) {
+      lastDroppedConnectionIdsSignatureRef.current = droppedConnectionIdsSignature
+      return
+    }
+
     if (lastDroppedConnectionIdsSignatureRef.current === droppedConnectionIdsSignature) return
     lastDroppedConnectionIdsSignatureRef.current = droppedConnectionIdsSignature
     logWorkspaceCanvasWarning(WORKSPACE_CANVAS_EVENTS.CONNECTION_DROPPED_INVALID, {
       droppedCount: droppedConnectionIds.length,
       droppedConnectionIds,
     })
-  }, [droppedConnectionIds, droppedConnectionIdsSignature])
+  }, [droppedConnectionIds, droppedConnectionIdsSignature, droppedConnections])
 
   useEffect(() => {
     if (!edgeContextMenuState) return

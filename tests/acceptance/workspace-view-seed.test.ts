@@ -249,7 +249,7 @@ describe("workspace view seed", () => {
       ],
       moduleProgressData: [
         {
-          module_id: "module-1",
+          module_id: "11111111-1111-4111-8111-111111111111",
           status: "completed",
           completed_at: "2026-02-24T17:30:00.000Z",
           updated_at: "2026-02-24T17:30:00.000Z",
@@ -284,7 +284,7 @@ describe("workspace view seed", () => {
       acceleratorTimeline: [
         {
           id: "step-1",
-          moduleId: "module-1",
+          moduleId: "11111111-1111-4111-8111-111111111111",
           moduleTitle: "Launch your first campaign",
           stepKind: "video",
           stepTitle: "Video",

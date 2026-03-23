@@ -4,6 +4,7 @@ import type {
   ModuleResource,
 } from "@/lib/modules"
 import type { AcceleratorReadinessSummary } from "@/lib/accelerator/readiness"
+import type { OnboardingFlowDefaults } from "@/components/onboarding/onboarding-dialog/types"
 
 export const WORKSPACE_ACCELERATOR_STEP_STATUS = ["not_started", "in_progress", "completed"] as const
 export type WorkspaceAcceleratorStepStatus = (typeof WORKSPACE_ACCELERATOR_STEP_STATUS)[number]
@@ -50,6 +51,10 @@ export type WorkspaceAcceleratorModuleContext = {
   assignmentFields: ModuleAssignmentField[]
   assignmentSubmission: ModuleAssignmentSubmission | null
   completeOnSubmit: boolean
+  workspaceOnboarding?: {
+    view: "welcome" | "organization-setup"
+    defaults?: OnboardingFlowDefaults | null
+  } | null
 }
 
 export type WorkspaceAcceleratorTimelineModuleSeed = {
@@ -80,6 +85,7 @@ export type WorkspaceAcceleratorCardInput = {
   initialCurrentStepId?: string | null
   initialCompletedStepIds?: string[]
   onProgressChange?: (state: WorkspaceAcceleratorCardProgressState) => void
+  onWorkspaceOnboardingSubmit?: (form: FormData) => Promise<void>
 }
 
 export type WorkspaceAcceleratorCardProgressState = {
@@ -109,11 +115,13 @@ export type WorkspaceAcceleratorCardRuntimeSnapshot = {
   firstVisibleChecklistStepId?: string | null
   isModuleViewerOpen?: boolean
   openModuleId?: string | null
+  placeholderVideoUrl?: string | null
   readinessSummary?: AcceleratorReadinessSummary | null
+  checklistModuleCount?: number
+  filteredStepCount?: number
 }
 
 export type WorkspaceAcceleratorTutorialFocus =
-  | "nav"
   | "picker"
   | "progress"
   | "first-module"
@@ -123,6 +131,40 @@ export type WorkspaceAcceleratorTutorialCallout = {
   focus: WorkspaceAcceleratorTutorialFocus
   title: string
   instruction: string
+}
+
+export const WORKSPACE_ACCELERATOR_TUTORIAL_BLOCKED_MESSAGE =
+  "We'll go over this soon, I promise! :)"
+export const WORKSPACE_ACCELERATOR_TUTORIAL_BLOCKED_MESSAGE_DURATION_MS = 3000
+
+export type WorkspaceAcceleratorTutorialBlockedAction =
+  | "class-selection"
+  | "step-selection"
+  | "module-open"
+  | "preview-navigation"
+  | "preview-close"
+  | "preview-link"
+  | "preview-submit"
+
+export type WorkspaceAcceleratorTutorialInteractionPolicy = {
+  stepId:
+    | "accelerator"
+    | "accelerator-picker"
+    | "accelerator-first-module"
+    | "accelerator-close-module"
+  allowedClassGroupKey: string
+  allowClassDropdownOpen: boolean
+  allowClassSelection: boolean
+  allowAccordionToggle: boolean
+  allowedModuleId: string | null
+  allowedStepId: string | null
+  allowPreviewPlayback: boolean
+  allowPreviewNavigation: boolean
+  allowPreviewClose: boolean
+  allowPreviewLinks: boolean
+  allowPreviewSubmit: boolean
+  blockedMessage: string
+  blockedMessageDurationMs: number
 }
 
 export type WorkspaceAcceleratorCardRuntimeActions = {

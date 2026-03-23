@@ -14,10 +14,10 @@ describe("workspace board visibility reducer", () => {
     expect(next.hiddenCardIds).not.toContain("organization-overview")
     expect(next.hiddenCardIds).toContain("accelerator")
     expect(next.hiddenCardIds).not.toContain("programs")
-    expect(next.hiddenCardIds).not.toContain("vault")
-    expect(next.hiddenCardIds).not.toContain("economic-engine")
+    expect(next.hiddenCardIds).not.toContain("roadmap")
+    expect(next.hiddenCardIds).toContain("economic-engine")
     expect(next.hiddenCardIds).not.toContain("calendar")
-    expect(next.hiddenCardIds).not.toContain("communications")
+    expect(next.hiddenCardIds).toContain("communications")
   })
 
   it("dock close and reopen keeps accelerator step node closed", () => {
@@ -35,7 +35,7 @@ describe("workspace board visibility reducer", () => {
     })
     expect(afterIsolate.hiddenCardIds).toContain("accelerator")
     expect(afterIsolate.hiddenCardIds).not.toContain("programs")
-    expect(afterIsolate.hiddenCardIds).not.toContain("vault")
+    expect(afterIsolate.hiddenCardIds).not.toContain("roadmap")
     expect(afterIsolate.acceleratorUi?.stepOpen).toBe(false)
     expect(afterIsolate.acceleratorUi?.lastStepId).toBe("module-1:assignment")
 
@@ -53,10 +53,10 @@ describe("workspace board visibility reducer", () => {
     })
     expect(afterReopen.hiddenCardIds).toContain("accelerator")
     expect(afterReopen.hiddenCardIds).not.toContain("programs")
-    expect(afterReopen.hiddenCardIds).not.toContain("vault")
-    expect(afterReopen.hiddenCardIds).not.toContain("economic-engine")
+    expect(afterReopen.hiddenCardIds).not.toContain("roadmap")
+    expect(afterReopen.hiddenCardIds).toContain("economic-engine")
     expect(afterReopen.hiddenCardIds).not.toContain("calendar")
-    expect(afterReopen.hiddenCardIds).not.toContain("communications")
+    expect(afterReopen.hiddenCardIds).toContain("communications")
     expect(afterReopen.acceleratorUi?.stepOpen).toBe(false)
     expect(afterReopen.acceleratorUi?.lastStepId).toBe("module-1:assignment")
   })
@@ -64,7 +64,7 @@ describe("workspace board visibility reducer", () => {
   it("dock reopen preserves accelerator step node state when already open", () => {
     const initial = {
       ...buildDefaultBoardState("balanced"),
-      hiddenCardIds: ["accelerator" as const, "programs" as const, "vault" as const],
+      hiddenCardIds: ["accelerator" as const, "programs" as const, "roadmap" as const],
       acceleratorUi: {
         stepOpen: true,
         lastStepId: "module-3:lesson",
@@ -153,17 +153,17 @@ describe("workspace board visibility reducer", () => {
     })
     const withVaultVisible = reduceWorkspaceBoardVisibility(withAcceleratorVisible, {
       type: "dock_toggle_card",
-      cardId: "vault",
+      cardId: "roadmap",
     })
 
     expect(withAcceleratorVisible.hiddenCardIds).toContain("accelerator")
-    expect(withAcceleratorVisible.hiddenCardIds).not.toContain("vault")
+    expect(withAcceleratorVisible.hiddenCardIds).not.toContain("roadmap")
 
-    expect(withVaultVisible.hiddenCardIds).toContain("vault")
+    expect(withVaultVisible.hiddenCardIds).toContain("roadmap")
     expect(withVaultVisible.hiddenCardIds).toContain("accelerator")
     expect(withVaultVisible.hiddenCardIds).not.toContain("programs")
-    expect(withVaultVisible.hiddenCardIds).not.toContain("economic-engine")
+    expect(withVaultVisible.hiddenCardIds).toContain("economic-engine")
     expect(withVaultVisible.hiddenCardIds).not.toContain("calendar")
-    expect(withVaultVisible.hiddenCardIds).not.toContain("communications")
+    expect(withVaultVisible.hiddenCardIds).toContain("communications")
   })
 })

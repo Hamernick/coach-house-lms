@@ -34,10 +34,10 @@ export function buildModuleStepperSteps({
   let assignmentIndex = 0
 
   if (embedUrl || videoUrl || fallbackUrl) {
-    list.push({ id: "video", label: "Lesson video", type: "video" })
+    list.push({ id: "video", label: "Class video", type: "video" })
   }
   if (lessonNotesContent) {
-    list.push({ id: "notes", label: "Lesson notes", type: "notes" })
+    list.push({ id: "notes", label: "Class notes", type: "notes" })
   }
   if ((resources && resources.length > 0) || hasDeck) {
     list.push({ id: "resources", label: "Resources", type: "resources" })

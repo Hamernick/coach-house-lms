@@ -84,9 +84,7 @@ export function PublicMapOrganizationList({
             <Button
               type="button"
               variant="ghost"
-              className="absolute inset-0 z-0 h-auto w-auto rounded-[inherit] border border-white/15 bg-background/25 p-0 text-transparent shadow-none backdrop-blur-xl transition-colors hover:bg-background/35 focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-              onMouseEnter={() => onSelectOrg(org.id)}
-              onFocus={() => onSelectOrg(org.id)}
+              className="absolute inset-0 z-0 h-auto w-auto rounded-[inherit] border border-white/15 bg-background/25 p-0 text-transparent shadow-none transition-colors hover:bg-background/35 focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}
               aria-label={`Open details for ${org.name}`}
             />

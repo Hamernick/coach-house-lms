@@ -20,6 +20,10 @@ export const PUBLIC_MAP_SIDEBAR_MIN_WIDTH = 220
 export const PUBLIC_MAP_SIDEBAR_MIN_VISIBLE_MAP_WIDTH = 56
 export const PUBLIC_MAP_CAMERA_EDGE_PADDING = 24
 export const PUBLIC_MAP_ORGANIZATION_SOURCE_ID = "public-map-organizations"
+export const PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID =
+  "public-map-organizations-cluster-hit"
+export const PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID =
+  "public-map-organizations-point-hit"
 export const PUBLIC_MAP_CLUSTER_RADIUS = 60
 export const PUBLIC_MAP_CLUSTER_MAX_ZOOM = 12
 

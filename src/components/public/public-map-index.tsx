@@ -227,6 +227,7 @@ function useInitializePublicMap({
   mapLoadedRef,
   hasResolvedInitialViewportRef,
   setInitialViewportResolved,
+  setMapLoadVersion,
   setMapError,
   setAppliedBounds,
 }: {
@@ -238,6 +239,7 @@ function useInitializePublicMap({
   mapLoadedRef: RefObject<boolean>
   hasResolvedInitialViewportRef: RefObject<boolean>
   setInitialViewportResolved: (resolved: boolean) => void
+  setMapLoadVersion: (value: number | ((current: number) => number)) => void
   setMapError: (value: string | null) => void
   setAppliedBounds: (value: PublicMapBounds | null) => void
 }) {
@@ -285,6 +287,7 @@ function useInitializePublicMap({
 
         map.on("load", () => {
           mapLoadedRef.current = true
+          setMapLoadVersion((current) => current + 1)
           requestAnimationFrame(() => {
             if (mapRef.current !== map) return
             map.resize()
@@ -334,6 +337,7 @@ function useInitializePublicMap({
     mapboxRef,
     setAppliedBounds,
     setInitialViewportResolved,
+    setMapLoadVersion,
     setMapError,
     token,
     tokenAvailable,
@@ -381,6 +385,7 @@ export function PublicMapIndex({
   const [pendingAuthOrgId, setPendingAuthOrgId] = useState<string | null>(null)
   const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
   const [initialViewportResolved, setInitialViewportResolved] = useState(false)
+  const [mapLoadVersion, setMapLoadVersion] = useState(0)
   const {
     favorites,
     recentOrganizationIds,
@@ -404,11 +409,11 @@ export function PublicMapIndex({
       filterPublicMapOrganizations({
         organizations,
         query,
-        appliedBounds,
+        appliedBounds: null,
         favorites,
         activeGroup: "all",
       }),
-    [appliedBounds, favorites, organizations, query],
+    [favorites, organizations, query],
   )
 
   const selectedOrganization =
@@ -485,6 +490,7 @@ export function PublicMapIndex({
     mapLoadedRef,
     hasResolvedInitialViewportRef,
     setInitialViewportResolved,
+    setMapLoadVersion,
     setMapError,
     setAppliedBounds,
   })
@@ -495,6 +501,7 @@ export function PublicMapIndex({
     mapLoadedRef,
     organizations,
     organizationById,
+    mapLoadVersion,
     selectedOrganizationId: selectedOrganization?.id ?? null,
     onSelectOrganization: (organizationId) => {
       setSelectedOrgId(organizationId)

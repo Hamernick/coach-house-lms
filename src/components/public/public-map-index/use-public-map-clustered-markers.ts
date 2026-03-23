@@ -17,6 +17,8 @@ import {
   buildPublicMapOrganizationFeatureCollection,
   PUBLIC_MAP_CLUSTER_MAX_ZOOM,
   PUBLIC_MAP_CLUSTER_RADIUS,
+  PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
+  PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
   PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
 } from "./map-view-helpers"
 
@@ -86,6 +88,7 @@ export function usePublicMapClusteredMarkers({
   mapLoadedRef,
   organizations,
   organizationById,
+  mapLoadVersion,
   selectedOrganizationId,
   onSelectOrganization,
 }: {
@@ -94,6 +97,7 @@ export function usePublicMapClusteredMarkers({
   mapLoadedRef: RefObject<boolean>
   organizations: PublicMapOrganization[]
   organizationById: Map<string, PublicMapOrganization>
+  mapLoadVersion: number
   selectedOrganizationId: string | null
   onSelectOrganization: (organizationId: string) => void
 }) {
@@ -138,8 +142,34 @@ export function usePublicMapClusteredMarkers({
       })
     }
 
+    if (!map.getLayer(PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID)) {
+      map.addLayer({
+        id: PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
+        type: "circle",
+        source: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-radius": 1,
+          "circle-opacity": 0,
+        },
+      })
+    }
+
+    if (!map.getLayer(PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID)) {
+      map.addLayer({
+        id: PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
+        type: "circle",
+        source: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+        filter: ["!", ["has", "point_count"]],
+        paint: {
+          "circle-radius": 1,
+          "circle-opacity": 0,
+        },
+      })
+    }
+
     renderMarkersRef.current?.()
-  }, [mapLoadedRef, mapRef, organizations])
+  }, [mapLoadVersion, mapLoadedRef, mapRef, organizations])
 
   useEffect(() => {
     const map = mapRef.current
@@ -314,5 +344,5 @@ export function usePublicMapClusteredMarkers({
       renderMarkersRef.current = null
       clearClusteredMarkers(markersByKey)
     }
-  }, [mapLoadedRef, mapRef, mapboxRef])
+  }, [mapLoadVersion, mapLoadedRef, mapRef, mapboxRef])
 }

@@ -9,6 +9,7 @@ function buildInitials(name: string) {
 }
 
 export const ORGANIZATION_MARKER_OFFSET_Y = -12
+export const ORGANIZATION_CLUSTER_MARKER_OFFSET_Y = -4
 const PUBLIC_MAP_MARKER_REACT_GRAB_SOURCE =
   "src/components/public/public-map-index/map-markers.ts"
 const PUBLIC_MAP_MARKER_REACT_GRAB_COMPONENT = "PublicMapOrganizationMarker"
@@ -227,5 +228,56 @@ export function createOrganizationMarkerElement({
   button.append(avatar, label)
   syncMarkerAvatarImage({ button, organization })
   applyMarkerSelectionStyles({ button, selected, accent })
+  return button
+}
+
+export function updateOrganizationClusterMarkerElement({
+  element,
+  pointCount,
+}: {
+  element: HTMLElement
+  pointCount: number
+}) {
+  if (!(element instanceof HTMLButtonElement)) return
+  const count = element.querySelector<HTMLElement>('[data-marker-part="count"]')
+  if (count) {
+    count.textContent = pointCount.toLocaleString()
+  }
+  element.ariaLabel = `Zoom into ${pointCount.toLocaleString()} organizations`
+}
+
+export function createOrganizationClusterMarkerElement({
+  pointCount,
+  onSelect,
+}: {
+  pointCount: number
+  onSelect: () => void
+}) {
+  const button = document.createElement("button")
+  button.type = "button"
+  button.onclick = onSelect
+  button.ariaLabel = `Zoom into ${pointCount.toLocaleString()} organizations`
+  button.style.border = "0"
+  button.style.padding = "0"
+  button.style.background = "transparent"
+  button.style.cursor = "pointer"
+  button.style.display = "inline-flex"
+  button.style.alignItems = "center"
+  button.style.justifyContent = "center"
+  button.style.width = "46px"
+  button.style.height = "46px"
+  button.style.borderRadius = "9999px"
+  button.style.border = "2px solid rgba(255, 255, 255, 0.9)"
+  button.style.background = "rgba(10, 18, 35, 0.94)"
+  button.style.boxShadow = "0 8px 22px rgba(8, 15, 40, 0.42)"
+  button.style.color = "rgba(248, 250, 252, 0.98)"
+  button.style.fontSize = "12px"
+  button.style.fontWeight = "700"
+  button.style.letterSpacing = "0.01em"
+
+  const count = document.createElement("span")
+  count.dataset.markerPart = "count"
+  count.textContent = pointCount.toLocaleString()
+  button.append(count)
   return button
 }

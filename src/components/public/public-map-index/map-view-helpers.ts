@@ -2,6 +2,7 @@ import type mapboxgl from "mapbox-gl"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { SidebarMode } from "./constants"
+import { organizationHasMapLocation } from "./helpers"
 
 import {
   ORGANIZATION_MARKER_OFFSET_Y,
@@ -18,6 +19,25 @@ export const PUBLIC_MAP_SIDEBAR_MAX_WIDTH = 390
 export const PUBLIC_MAP_SIDEBAR_MIN_WIDTH = 220
 export const PUBLIC_MAP_SIDEBAR_MIN_VISIBLE_MAP_WIDTH = 56
 export const PUBLIC_MAP_CAMERA_EDGE_PADDING = 24
+export const PUBLIC_MAP_ORGANIZATION_SOURCE_ID = "public-map-organizations"
+export const PUBLIC_MAP_CLUSTER_RADIUS = 60
+export const PUBLIC_MAP_CLUSTER_MAX_ZOOM = 12
+
+export type PublicMapOrganizationFeatureCollection = {
+  type: "FeatureCollection"
+  features: Array<{
+    type: "Feature"
+    geometry: {
+      type: "Point"
+      coordinates: [number, number]
+    }
+    properties: {
+      organizationId: string
+      name: string
+      primaryGroup: PublicMapOrganization["primaryGroup"]
+    }
+  }>
+}
 
 export function normalizeSlug(value: string | null | undefined) {
   return typeof value === "string" ? value.trim().toLowerCase() : ""
@@ -44,10 +64,26 @@ export function removeAuthParams(searchParams: URLSearchParams) {
   return next
 }
 
-export function createMarkerMap(
-  markers: Array<{ id: string; marker: mapboxgl.Marker }>,
-) {
-  return new Map(markers.map((entry) => [entry.id, entry.marker] as const))
+export function buildPublicMapOrganizationFeatureCollection(
+  organizations: PublicMapOrganization[],
+): PublicMapOrganizationFeatureCollection {
+  return {
+    type: "FeatureCollection",
+    features: organizations
+      .filter(organizationHasMapLocation)
+      .map((organization) => ({
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: [organization.longitude, organization.latitude] as [number, number],
+        },
+        properties: {
+          organizationId: organization.id,
+          name: organization.name,
+          primaryGroup: organization.primaryGroup,
+        },
+      })),
+  }
 }
 
 export function resolveMarkerOrganizations(organizations: PublicMapOrganization[]) {

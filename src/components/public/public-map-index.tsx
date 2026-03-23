@@ -86,27 +86,142 @@ function useSyncSelectedOrganization({
 function useSyncSidebarCameraPadding({
   mapRef,
   mapLoadedRef,
+  initialViewportResolved,
   sidebarInsetLeft,
 }: {
   mapRef: RefObject<mapboxgl.Map | null>
   mapLoadedRef: RefObject<boolean>
+  initialViewportResolved: boolean
   sidebarInsetLeft: number
 }) {
+  const hasAppliedInitialPaddingRef = useRef(false)
+  const lastMapRef = useRef<mapboxgl.Map | null>(null)
+
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !mapLoadedRef.current) return
+    if (!map || !mapLoadedRef.current || !initialViewportResolved) return
+
+    if (lastMapRef.current !== map) {
+      lastMapRef.current = map
+      hasAppliedInitialPaddingRef.current = false
+    }
+
+    const duration = hasAppliedInitialPaddingRef.current ? 320 : 0
+    hasAppliedInitialPaddingRef.current = true
 
     const frame = requestAnimationFrame(() => {
       if (mapRef.current !== map) return
       map.easeTo({
         padding: resolvePublicMapCameraPadding(sidebarInsetLeft),
-        duration: 320,
+        duration,
         essential: true,
       })
     })
 
     return () => cancelAnimationFrame(frame)
-  }, [mapLoadedRef, mapRef, sidebarInsetLeft])
+  }, [initialViewportResolved, mapLoadedRef, mapRef, sidebarInsetLeft])
+}
+
+function markInitialViewportResolved({
+  status,
+  hasResolvedInitialViewportRef,
+  setUserLocationStatus,
+  setInitialViewportResolved,
+}: {
+  status: UserLocationStatus
+  hasResolvedInitialViewportRef: RefObject<boolean>
+  setUserLocationStatus: (status: UserLocationStatus) => void
+  setInitialViewportResolved: (resolved: boolean) => void
+}) {
+  setUserLocationStatus(status)
+  hasResolvedInitialViewportRef.current = true
+  setInitialViewportResolved(true)
+}
+
+function useResolveInitialPublicMapViewport({
+  mapRef,
+  mapLoadedRef,
+  hasResolvedInitialViewportRef,
+  initialOrganization,
+  setUserLocationStatus,
+  setInitialViewportResolved,
+}: {
+  mapRef: RefObject<mapboxgl.Map | null>
+  mapLoadedRef: RefObject<boolean>
+  hasResolvedInitialViewportRef: RefObject<boolean>
+  initialOrganization: PublicMapOrganization | null
+  setUserLocationStatus: (status: UserLocationStatus) => void
+  setInitialViewportResolved: (resolved: boolean) => void
+}) {
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !mapLoadedRef.current || hasResolvedInitialViewportRef.current) return
+
+    if (initialOrganization && organizationHasMapLocation(initialOrganization)) {
+      focusOrganizationOnMap({ map, organization: initialOrganization })
+      markInitialViewportResolved({
+        status: "idle",
+        hasResolvedInitialViewportRef,
+        setUserLocationStatus,
+        setInitialViewportResolved,
+      })
+      return
+    }
+
+    if (typeof window === "undefined" || !("geolocation" in window.navigator)) {
+      focusChicagoFallback({ map })
+      markInitialViewportResolved({
+        status: "unavailable",
+        hasResolvedInitialViewportRef,
+        setUserLocationStatus,
+        setInitialViewportResolved,
+      })
+      return
+    }
+
+    setUserLocationStatus("requesting")
+    window.navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const activeMap = mapRef.current
+        if (!activeMap) return
+        activeMap.flyTo({
+          center: [position.coords.longitude, position.coords.latitude],
+          zoom: 9.25,
+          duration: 900,
+          essential: true,
+        })
+        markInitialViewportResolved({
+          status: "centered",
+          hasResolvedInitialViewportRef,
+          setUserLocationStatus,
+          setInitialViewportResolved,
+        })
+      },
+      (error) => {
+        const activeMap = mapRef.current
+        if (!activeMap) return
+        focusChicagoFallback({ map: activeMap })
+        markInitialViewportResolved({
+          status: error.code === 1 ? "denied" : "error",
+          hasResolvedInitialViewportRef,
+          setUserLocationStatus,
+          setInitialViewportResolved,
+        })
+      },
+      {
+        enableHighAccuracy: false,
+        timeout: 7000,
+        maximumAge: 60_000,
+      },
+    )
+  }, [
+    hasResolvedInitialViewportRef,
+    initialOrganization,
+    mapLoadedRef,
+    mapRef,
+    setInitialViewportResolved,
+    setUserLocationStatus,
+  ])
 }
 
 export function PublicMapIndex({
@@ -150,6 +265,7 @@ export function PublicMapIndex({
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
   const [pendingAuthOrgId, setPendingAuthOrgId] = useState<string | null>(null)
   const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
+  const [initialViewportResolved, setInitialViewportResolved] = useState(false)
   const {
     favorites,
     recentOrganizationIds,
@@ -252,6 +368,7 @@ export function PublicMapIndex({
 
     let cancelled = false
     let stopObservingMapContainer = () => {}
+    setInitialViewportResolved(false)
 
     async function initializeMap() {
       try {
@@ -382,56 +499,19 @@ export function PublicMapIndex({
     })
   }, [organizations, selectedOrganization?.id])
 
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !mapLoadedRef.current || hasResolvedInitialViewportRef.current) return
-
-    if (initialOrganization && organizationHasMapLocation(initialOrganization)) {
-      focusOrganizationOnMap({ map, organization: initialOrganization })
-      setUserLocationStatus("idle")
-      hasResolvedInitialViewportRef.current = true
-      return
-    }
-
-    if (typeof window === "undefined" || !("geolocation" in window.navigator)) {
-      focusChicagoFallback({ map })
-      setUserLocationStatus("unavailable")
-      hasResolvedInitialViewportRef.current = true
-      return
-    }
-
-    setUserLocationStatus("requesting")
-    window.navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const activeMap = mapRef.current
-        if (!activeMap) return
-        activeMap.flyTo({
-          center: [position.coords.longitude, position.coords.latitude],
-          zoom: 9.25,
-          duration: 900,
-          essential: true,
-        })
-        setUserLocationStatus("centered")
-        hasResolvedInitialViewportRef.current = true
-      },
-      (error) => {
-        const activeMap = mapRef.current
-        if (!activeMap) return
-        focusChicagoFallback({ map: activeMap })
-        setUserLocationStatus(error.code === 1 ? "denied" : "error")
-        hasResolvedInitialViewportRef.current = true
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 7000,
-        maximumAge: 60_000,
-      },
-    )
-  }, [initialOrganization])
+  useResolveInitialPublicMapViewport({
+    mapRef,
+    mapLoadedRef,
+    hasResolvedInitialViewportRef,
+    initialOrganization,
+    setUserLocationStatus,
+    setInitialViewportResolved,
+  })
 
   useSyncSidebarCameraPadding({
     mapRef,
     mapLoadedRef,
+    initialViewportResolved,
     sidebarInsetLeft,
   })
 
@@ -481,7 +561,7 @@ export function PublicMapIndex({
         onSelectOrg={(organizationId) =>
           handleSelectOrganization({
             organizationId,
-            shouldFocusMap: true,
+            shouldFocusMap: false,
           })
         }
         onSidebarModeChange={setSidebarMode}

@@ -1,5 +1,4 @@
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import { PUBLIC_MAP_GROUP_ACCENTS } from "@/lib/public-map/groups"
 
 function buildInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -14,18 +13,12 @@ const PUBLIC_MAP_MARKER_REACT_GRAB_SOURCE =
   "src/components/public/public-map-index/map-markers.ts"
 const PUBLIC_MAP_MARKER_REACT_GRAB_COMPONENT = "PublicMapOrganizationMarker"
 
-function resolveAccent(primaryGroup: PublicMapOrganization["primaryGroup"]) {
-  return PUBLIC_MAP_GROUP_ACCENTS[primaryGroup] ?? PUBLIC_MAP_GROUP_ACCENTS.community
-}
-
 function applyMarkerSelectionStyles({
   button,
   selected,
-  accent,
 }: {
   button: HTMLButtonElement
   selected: boolean
-  accent: string
 }) {
   const avatar = button.querySelector<HTMLElement>('[data-marker-part="avatar"]')
   const fallback = button.querySelector<HTMLElement>('[data-marker-part="fallback"]')
@@ -34,12 +27,12 @@ function applyMarkerSelectionStyles({
 
   avatar.style.width = selected ? "48px" : "42px"
   avatar.style.height = selected ? "48px" : "42px"
-  avatar.style.border = selected ? `2px solid ${accent}` : "2px solid rgba(255, 255, 255, 0.78)"
+  avatar.style.border = selected ? "2px solid rgba(255, 255, 255, 0.96)" : "2px solid rgba(255, 255, 255, 0.78)"
   avatar.style.boxShadow = selected ? "0 10px 26px rgba(8, 15, 40, 0.48)" : "0 3px 12px rgba(8, 15, 40, 0.34)"
   fallback.style.fontSize = selected ? "13px" : "12px"
 
   label.style.fontWeight = selected ? "700" : "600"
-  label.style.border = selected ? `1px solid ${accent}` : "1px solid rgba(255, 255, 255, 0.28)"
+  label.style.border = selected ? "1px solid rgba(255, 255, 255, 0.64)" : "1px solid rgba(255, 255, 255, 0.28)"
   label.style.background = selected ? "rgba(14, 24, 43, 0.96)" : "rgba(8, 15, 40, 0.84)"
   button.dataset.selected = selected ? "true" : "false"
 }
@@ -144,7 +137,6 @@ export function updateOrganizationMarkerElement({
 }) {
   if (!(element instanceof HTMLButtonElement)) return
 
-  const accent = resolveAccent(organization.primaryGroup)
   const label = element.querySelector<HTMLElement>('[data-marker-part="label"]')
   if (label) {
     label.textContent = organization.name
@@ -152,7 +144,7 @@ export function updateOrganizationMarkerElement({
   element.title = organization.name
   element.ariaLabel = `Open ${organization.name}`
   syncMarkerAvatarImage({ button: element, organization })
-  applyMarkerSelectionStyles({ button: element, selected, accent })
+  applyMarkerSelectionStyles({ button: element, selected })
 }
 
 export function createOrganizationMarkerElement({
@@ -164,7 +156,6 @@ export function createOrganizationMarkerElement({
   selected: boolean
   onSelect: () => void
 }) {
-  const accent = resolveAccent(organization.primaryGroup)
   const button = document.createElement("button")
   button.type = "button"
   button.title = organization.name
@@ -180,6 +171,8 @@ export function createOrganizationMarkerElement({
   button.style.gap = "5px"
   button.style.minWidth = "124px"
   button.style.maxWidth = "132px"
+  button.style.outline = "none"
+  button.style.setProperty("-webkit-tap-highlight-color", "transparent")
   attachMarkerReactGrabMetadata({
     button,
     organizationId: organization.id,
@@ -227,7 +220,7 @@ export function createOrganizationMarkerElement({
 
   button.append(avatar, label)
   syncMarkerAvatarImage({ button, organization })
-  applyMarkerSelectionStyles({ button, selected, accent })
+  applyMarkerSelectionStyles({ button, selected })
   return button
 }
 
@@ -274,6 +267,8 @@ export function createOrganizationClusterMarkerElement({
   button.style.fontSize = "12px"
   button.style.fontWeight = "700"
   button.style.letterSpacing = "0.01em"
+  button.style.outline = "none"
+  button.style.setProperty("-webkit-tap-highlight-color", "transparent")
 
   const count = document.createElement("span")
   count.dataset.markerPart = "count"

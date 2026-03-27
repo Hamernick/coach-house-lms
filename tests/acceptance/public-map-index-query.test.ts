@@ -80,6 +80,8 @@ describe("fetchPublicMapOrganizations", () => {
             name: "Atlas Org",
             tagline: "In-person programs",
             formationStatus: "approved",
+            origin_story: "Atlas began after local caregivers lost support access.",
+            theory_of_change: "Pair trained neighbors with recurring care circles.",
             address_street: "123 Main St",
             address_city: "Brooklyn",
             address_state: "NY",
@@ -94,6 +96,8 @@ describe("fetchPublicMapOrganizations", () => {
           profile: {
             name: "Beacon Org",
             tagline: "Public profile without address",
+            originStory: "Beacon launched from a mutual aid pilot.",
+            theoryOfChange: "Shared onboarding and referrals improve continuity.",
             location_type: "online",
             location_url: "https://beacon.org/visit",
           },
@@ -147,6 +151,8 @@ describe("fetchPublicMapOrganizations", () => {
       city: "Brooklyn",
       state: "NY",
       country: "United States",
+      originStory: "Atlas began after local caregivers lost support access.",
+      theoryOfChange: "Pair trained neighbors with recurring care circles.",
       programPreview: {
         id: "program-1",
         title: "Neighborhood Workshops",
@@ -159,6 +165,8 @@ describe("fetchPublicMapOrganizations", () => {
       longitude: null,
       isOnlineOnly: true,
       locationUrl: "https://beacon.org/visit",
+      originStory: "Beacon launched from a mutual aid pilot.",
+      theoryOfChange: "Shared onboarding and referrals improve continuity.",
       programPreview: {
         id: "program-2",
         title: "Remote Office Hours",

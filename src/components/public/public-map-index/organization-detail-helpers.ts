@@ -192,10 +192,12 @@ export function buildStoryFields(
   organization: PublicMapOrganization
 ): OrganizationDetailStoryField[] {
   return [
-    { label: "Vision", value: normalizeText(organization.vision) },
-    { label: "Mission", value: normalizeText(organization.mission) },
-    { label: "Values", value: normalizeText(organization.values) },
+    { label: "Origin story", value: normalizeText(organization.originStory) },
     { label: "Need statement", value: normalizeText(organization.needStatement) },
+    { label: "Mission", value: normalizeText(organization.mission) },
+    { label: "Vision", value: normalizeText(organization.vision) },
+    { label: "Values", value: normalizeText(organization.values) },
+    { label: "Theory of change", value: normalizeText(organization.theoryOfChange) },
   ]
 }
 

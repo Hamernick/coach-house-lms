@@ -7,7 +7,7 @@ import "mapbox-gl/dist/mapbox-gl.css"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { MAP_STYLE, RECENT_ORGANIZATIONS_LIMIT } from "./public-map-index/constants"
-import { filterPublicMapOrganizations, organizationHasMapLocation, type PublicMapBounds } from "./public-map-index/helpers"
+import { organizationHasMapLocation, type PublicMapBounds } from "./public-map-index/helpers"
 import {
   observePublicMapContainer,
   resolveMapBounds,
@@ -39,6 +39,10 @@ import {
 import { usePublicMapActions } from "./public-map-index/use-public-map-actions"
 import { usePublicMapClusteredMarkers } from "./public-map-index/use-public-map-clustered-markers"
 import { usePublicMapPreferences } from "./public-map-index/use-public-map-preferences"
+import {
+  buildPublicMapSearchIndex,
+  filterPublicMapOrganizationIds,
+} from "./public-map-index/search-index"
 
 type MapboxApi = typeof import("mapbox-gl")["default"]
 
@@ -273,6 +277,10 @@ function useInitializePublicMap({
           cooperativeGestures: true,
         })
 
+        if (typeof map.setRenderWorldCopies === "function") {
+          map.setRenderWorldCopies(false)
+        }
+
         map.dragRotate.disable()
         map.boxZoom.disable()
         if (typeof map.touchZoomRotate.disableRotation === "function") map.touchZoomRotate.disableRotation()
@@ -283,7 +291,12 @@ function useInitializePublicMap({
           setMapError("Mapbox couldn't load the map. Check your token and domain restrictions.")
         })
 
-        map.on("style.load", () => map.setFog({}))
+        map.on("style.load", () => {
+          map.setProjection("globe")
+          if (typeof map.setRenderWorldCopies === "function") {
+            map.setRenderWorldCopies(false)
+          }
+        })
 
         map.on("load", () => {
           mapLoadedRef.current = true
@@ -403,17 +416,26 @@ export function PublicMapIndex({
     () => new Map(organizations.map((organization) => [organization.id, organization] as const)),
     [organizations],
   )
+  const searchIndex = useMemo(
+    () => buildPublicMapSearchIndex(organizations),
+    [organizations],
+  )
 
   const filteredOrganizations = useMemo(
-    () =>
-      filterPublicMapOrganizations({
+    () => {
+      const filteredIds = filterPublicMapOrganizationIds({
         organizations,
+        searchIndex,
         query,
         appliedBounds: null,
         favorites,
         activeGroup: "all",
-      }),
-    [favorites, organizations, query],
+      })
+      return filteredIds
+        .map((organizationId) => organizationById.get(organizationId) ?? null)
+        .filter((organization): organization is PublicMapOrganization => Boolean(organization))
+    },
+    [favorites, organizationById, organizations, query, searchIndex],
   )
 
   const selectedOrganization =

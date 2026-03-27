@@ -12,6 +12,11 @@ import { PUBLIC_MAP_GROUP_LABELS } from "@/lib/public-map/groups"
 import { cn } from "@/lib/utils"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
+const PUBLIC_MAP_LIST_CARD_PERF_STYLE = {
+  contentVisibility: "auto",
+  containIntrinsicSize: "308px",
+} as const
+
 function formatLocation(org: PublicMapOrganization) {
   return [org.city, org.state, org.country]
     .filter((entry) => Boolean(entry && entry.trim().length > 0))
@@ -74,6 +79,7 @@ export function PublicMapOrganizationList({
         return (
           <article
             key={org.id}
+            style={PUBLIC_MAP_LIST_CARD_PERF_STYLE}
             className={cn(
               "group relative overflow-hidden rounded-2xl border bg-background/85 p-3 transition-colors",
               selected
@@ -84,7 +90,7 @@ export function PublicMapOrganizationList({
             <Button
               type="button"
               variant="ghost"
-              className="absolute inset-0 z-0 h-auto w-auto rounded-[inherit] border border-white/15 bg-background/25 p-0 text-transparent shadow-none transition-colors hover:bg-background/35 focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="absolute inset-0 z-0 h-auto w-auto rounded-[inherit] border border-white/15 bg-background/25 p-0 text-transparent shadow-none transition-colors hover:bg-background/35 dark:border-white/30 dark:bg-white/12 dark:hover:bg-white/18 focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}
               aria-label={`Open details for ${org.name}`}
             />

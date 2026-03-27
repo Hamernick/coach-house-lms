@@ -84,12 +84,12 @@ export function PublicMapSidebar({
         className="h-full min-h-0 w-full bg-transparent"
         style={mapSidebarProviderStyle}
       >
-        <Sidebar
+          <Sidebar
           collapsible="none"
           className="pointer-events-auto h-full w-full border-r border-white/30 bg-background/40 shadow-[0_20px_45px_-28px_hsl(var(--foreground)/0.6)] backdrop-blur-2xl supports-[backdrop-filter]:bg-background/34"
         >
           {sidebarMode === "search" ? (
-            <SidebarContent className="h-full min-h-0 gap-2 overflow-hidden pt-0 pb-2 pl-1 pr-2">
+            <SidebarContent className="h-full min-h-0 gap-2 overflow-hidden bg-background/38 pt-0 pb-2 pl-1 pr-2 dark:bg-black/28">
               <SidebarGroup className="px-0 pt-0 pb-0">
                 <SidebarGroupContent>
                   <PublicMapSearchCard
@@ -121,7 +121,7 @@ export function PublicMapSidebar({
               </SidebarGroup>
             </SidebarContent>
           ) : selectedOrganization ? (
-            <SidebarContent className="h-full min-h-0 overflow-hidden pt-0 pb-2 pl-0 pr-1">
+            <SidebarContent className="h-full min-h-0 overflow-hidden bg-background/38 pt-0 pb-2 pl-0 pr-1 dark:bg-black/28">
               <SidebarGroup className="h-full min-h-0 px-1 py-0">
                 <SidebarGroupContent className="h-full min-h-0 overflow-y-auto pl-0 pr-0 [scrollbar-width:thin]">
                   <PublicMapOrganizationDetail

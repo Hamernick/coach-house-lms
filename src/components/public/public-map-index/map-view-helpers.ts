@@ -21,11 +21,17 @@ export const PUBLIC_MAP_SIDEBAR_MIN_VISIBLE_MAP_WIDTH = 56
 export const PUBLIC_MAP_CAMERA_EDGE_PADDING = 24
 export const PUBLIC_MAP_ORGANIZATION_SOURCE_ID = "public-map-organizations"
 export const PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID =
-  "public-map-organizations-cluster-hit"
+  "public-map-organizations-cluster"
+export const PUBLIC_MAP_CLUSTER_SOURCE_COUNT_LAYER_ID =
+  "public-map-organizations-cluster-count"
 export const PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID =
-  "public-map-organizations-point-hit"
-export const PUBLIC_MAP_CLUSTER_RADIUS = 28
-export const PUBLIC_MAP_CLUSTER_MAX_ZOOM = 9
+  "public-map-organizations-point"
+export const PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID =
+  "public-map-organizations-selected-halo"
+export const PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID =
+  "public-map-organizations-selected-core"
+export const PUBLIC_MAP_CLUSTER_RADIUS = 16
+export const PUBLIC_MAP_CLUSTER_MAX_ZOOM = 6
 
 export type PublicMapOrganizationFeatureCollection = {
   type: "FeatureCollection"

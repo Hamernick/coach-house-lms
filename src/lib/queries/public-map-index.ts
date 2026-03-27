@@ -27,6 +27,8 @@ export type PublicMapOrganization = {
   mission: string | null
   values: string | null
   needStatement: string | null
+  originStory: string | null
+  theoryOfChange: string | null
   formationStatus: FormationStatus | null
   contactName: string | null
   logoUrl: string | null
@@ -194,6 +196,10 @@ export async function fetchPublicMapOrganizations(): Promise<PublicMapOrganizati
         values: readProfileString(profile, "values"),
         needStatement:
           readProfileString(profile, "need", "needStatement", "need_statement"),
+        originStory:
+          readProfileString(profile, "origin_story", "originStory"),
+        theoryOfChange:
+          readProfileString(profile, "theory_of_change", "theoryOfChange"),
         formationStatus: readProfileFormationStatus(profile),
         contactName:
           readProfileString(profile, "rep", "contactName", "contact_name"),

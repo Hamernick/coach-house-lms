@@ -207,7 +207,7 @@ export function OrganizationDetailFormationSection({
   if (!formationStatus) return null
 
   return (
-    <div className="space-y-1.5">
+    <div className="mr-auto w-full max-w-[22.5rem] space-y-1.5">
       <p className="text-sm font-medium">Formation status</p>
       <OrganizationFormationStatusSummary formationStatus={formationStatus} />
     </div>

@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
-const DEFAULT_DISCORD_INVITE_URL = "https://discord.gg/D7WtYyCC"
+const DEFAULT_DISCORD_INVITE_URL = "https://discord.gg/kDtqKspG"
 const DEFAULT_WHATSAPP_INVITE_URL = "https://chat.whatsapp.com/LSLZR3IKS9lAbWDR3uPNLN"
 
 function DiscordLogo({ className }: { className?: string }) {

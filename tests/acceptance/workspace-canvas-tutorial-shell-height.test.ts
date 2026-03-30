@@ -15,6 +15,14 @@ describe("workspace tutorial rendered shell height", () => {
         measuredShellHeight: 1188,
       }),
     ).toBe(1188)
+
+    expect(
+      resolveWorkspaceTutorialRenderedShellHeight({
+        family: "welcome",
+        estimatedShellHeight: 324,
+        measuredShellHeight: 372,
+      }),
+    ).toBe(372)
   })
 
   it("falls back to the estimated shell height when no measured value exists", () => {
@@ -36,6 +44,7 @@ describe("workspace tutorial rendered shell height", () => {
       }),
     ).toBe(664)
 
+    expect(shouldWorkspaceTutorialUseMeasuredShellHeight("welcome")).toBe(true)
     expect(shouldWorkspaceTutorialUseMeasuredShellHeight("overview")).toBe(false)
     expect(shouldWorkspaceTutorialUseMeasuredShellHeight("accelerator")).toBe(false)
     expect(shouldWorkspaceTutorialUseMeasuredShellHeight("tool")).toBe(true)

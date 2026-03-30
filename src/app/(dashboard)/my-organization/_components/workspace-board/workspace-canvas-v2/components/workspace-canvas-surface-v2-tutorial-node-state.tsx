@@ -22,6 +22,7 @@ import {
 import type { WorkspaceCanvasTutorialSceneBreakpoint } from "./workspace-canvas-surface-v2-onboarding-scenes"
 import { resolveWorkspaceTutorialPresentation } from "./workspace-canvas-surface-v2-tutorial-presentation"
 import { resolveWorkspaceTutorialNormalizedAcceleratorModuleViewerOpen } from "./workspace-canvas-surface-v2-tutorial-scene-spec"
+import { resolveWorkspaceTutorialStageShellSpec } from "./workspace-canvas-surface-v2-tutorial-presentation-state"
 import {
   resolveWorkspaceTutorialRenderedShellHeight,
   shouldWorkspaceTutorialMeasurePresentationContentHeight,
@@ -102,53 +103,88 @@ export function useWorkspaceTutorialNodeState({
       tutorialStepIndex,
     ],
   )
+  const tutorialStageShellSpec = useMemo(
+    () =>
+      tutorialActive
+        ? resolveWorkspaceTutorialStageShellSpec({
+            tutorialStepIndex,
+            openedStepIds,
+            acceleratorModuleViewerOpen: resolvedAcceleratorModuleViewerOpen,
+          })
+        : null,
+    [
+      openedStepIds,
+      resolvedAcceleratorModuleViewerOpen,
+      tutorialActive,
+      tutorialStepIndex,
+    ],
+  )
+  const tutorialShellFamily =
+    tutorialPresentation?.family ?? tutorialStageShellSpec?.family ?? null
+  const tutorialShellWidth =
+    tutorialPresentation?.shellWidth ??
+    tutorialStageShellSpec?.shellWidth ??
+    null
+  const tutorialShellHeight = resolveWorkspaceTutorialRenderedShellHeight({
+    family: tutorialShellFamily ?? "welcome",
+    estimatedShellHeight:
+      tutorialPresentation?.shellHeight ??
+      tutorialStageShellSpec?.shellHeight ??
+      0,
+    measuredShellHeight: tutorialShellMeasuredHeight,
+  })
+  const tutorialShellLayoutMode =
+    tutorialPresentation?.layoutMode ??
+    tutorialStageShellSpec?.layoutMode ??
+    "centered"
   const tutorialLayoutContract: WorkspaceCanvasTutorialLayoutContract | null =
-    tutorialActive && tutorialPresentation
+    tutorialActive &&
+    tutorialShellFamily !== null &&
+    tutorialShellWidth !== null &&
+    tutorialShellHeight > 0
       ? resolveWorkspaceCanvasTutorialLayoutContract({
           tutorialStepIndex,
           openedTutorialStepIds: openedStepIds,
           acceleratorModuleViewerOpen: resolvedAcceleratorModuleViewerOpen,
           breakpoint: tutorialBreakpoint,
-          shellWidth: tutorialPresentation.shellWidth,
-          shellHeight: resolveWorkspaceTutorialRenderedShellHeight({
-            family: tutorialPresentation.family,
-            estimatedShellHeight: tutorialPresentation.shellHeight,
-            measuredShellHeight: tutorialShellMeasuredHeight,
-          }),
+          shellWidth: tutorialShellWidth,
+          shellHeight: tutorialShellHeight,
           primaryCardId: tutorialScenePrimaryCardId,
           cardPositionOverrides: tutorialSceneCardPositionOverrides ?? {},
           guideGap: tutorialSceneGuideGap,
-          layoutMode: tutorialPresentation.layoutMode,
+          layoutMode: tutorialShellLayoutMode,
         })
       : null
 
   const tutorialNodeWithPresentation = useMemo(() => {
-    if (!tutorialNodeData || !tutorialPresentation) {
+    if (!tutorialNodeData) {
       return tutorialNodeData
     }
 
     const tutorialNodeState = tutorialNodeData.data as WorkspaceCanvasTutorialNodeData
-    const tutorialPresentationCardId = tutorialPresentation.surface?.cardId
+    const tutorialPresentationCardId = tutorialPresentation?.surface?.cardId
     const tutorialPresentationCardData = tutorialPresentationCardId
       ? cardDataLookup[tutorialPresentationCardId]
       : null
-    const resolvedTutorialShellHeight = resolveWorkspaceTutorialRenderedShellHeight(
-      {
-        family: tutorialPresentation.family,
-        estimatedShellHeight: tutorialPresentation.shellHeight,
-        measuredShellHeight: tutorialShellMeasuredHeight,
-      },
-    )
-    const usesMeasuredShellHeight = shouldWorkspaceTutorialUseMeasuredShellHeight(
-      tutorialPresentation.family,
-    )
+    const usesMeasuredShellHeight =
+      tutorialShellFamily !== null
+        ? shouldWorkspaceTutorialUseMeasuredShellHeight(tutorialShellFamily)
+        : false
     const nextPosition =
       tutorialLayoutContract?.tutorialNodePosition ?? tutorialNodeData.position
     const nextStyle =
       tutorialLayoutContract?.tutorialNodeStyle ?? {
-        width: tutorialPresentation.shellWidth,
-        height: resolvedTutorialShellHeight,
-        minHeight: resolvedTutorialShellHeight,
+        width:
+          tutorialPresentation?.shellWidth ??
+          tutorialNodeData.style?.width,
+        height:
+          tutorialShellHeight ||
+          tutorialPresentation?.shellHeight ||
+          tutorialNodeData.style?.height,
+        minHeight:
+          tutorialShellHeight ||
+          tutorialPresentation?.shellHeight ||
+          tutorialNodeData.style?.minHeight,
       }
 
     return {
@@ -162,30 +198,29 @@ export function useWorkspaceTutorialNodeState({
       },
       data: {
         ...tutorialNodeState,
-        presentationContent: tutorialPresentation.content,
-        presentationKey: tutorialPresentation.key,
-        presentationSurface: tutorialPresentation.surface,
-        suppressedNodeIds: tutorialPresentation.suppressedNodeIds,
+        presentationContent: tutorialPresentation?.content,
+        presentationKey: tutorialPresentation?.key ?? null,
+        presentationSurface: tutorialPresentation?.surface ?? null,
+        suppressedNodeIds: tutorialPresentation?.suppressedNodeIds ?? [],
         onMeasuredShellHeightChange:
-          tutorialPresentation.content &&
           usesMeasuredShellHeight &&
           tutorialSceneSignature &&
           onTutorialShellMeasuredHeightChange
-            ? (height) => onTutorialShellMeasuredHeightChange(height)
+            ? (height: number) => onTutorialShellMeasuredHeightChange(height)
             : undefined,
         onMeasuredHeightChange:
-          tutorialPresentation.content &&
+          tutorialPresentation?.content &&
           shouldWorkspaceTutorialMeasurePresentationContentHeight(
             tutorialPresentation.family,
           ) &&
           tutorialPresentationCardData?.onMeasuredHeightChange
             ? (height: number) =>
                 tutorialPresentationCardData.onMeasuredHeightChange?.(
-                  tutorialPresentation.cardSize,
+                tutorialPresentation.cardSize,
                   height,
                 )
             : undefined,
-        onPresentationMaskLayoutChange: tutorialPresentation.content
+        onPresentationMaskLayoutChange: tutorialPresentation?.content
           ? undefined
           : tutorialNodeState.onPresentationMaskLayoutChange,
       },
@@ -196,8 +231,9 @@ export function useWorkspaceTutorialNodeState({
     tutorialLayoutContract,
     tutorialNodeData,
     tutorialPresentation,
+    tutorialShellFamily,
+    tutorialShellHeight,
     tutorialSceneSignature,
-    tutorialShellMeasuredHeight,
   ])
 
   const tutorialDockTargets = useMemo<

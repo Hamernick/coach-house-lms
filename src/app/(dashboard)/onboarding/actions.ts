@@ -2,8 +2,8 @@
 
 import { redirect } from "next/navigation"
 
+import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-import { resolvePricingPlanTier } from "@/lib/billing/plan-tier"
 import type { Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
@@ -122,20 +122,12 @@ export async function completeOnboardingAction(form: FormData) {
     intentFocus === "build" && onboardingMode !== "post_signup_access"
 
   if (intentFocus === "build") {
-    const { data: activeSubscription, error: activeSubscriptionError } = await supabase
-      .from("subscriptions")
-      .select("status, metadata")
-      .eq("user_id", user.id)
-      .in("status", ["active", "trialing", "past_due", "incomplete"])
-      .not("stripe_subscription_id", "ilike", "stub_%")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle<{ status: string | null; metadata: Json | null }>()
-
-    if (activeSubscriptionError) {
-      throw supabaseErrorToError(activeSubscriptionError, "Unable to load builder plan status.")
-    }
-    if (resolvePricingPlanTier(activeSubscription ?? null) === "free") {
+    const entitlements = await fetchLearningEntitlements({
+      supabase,
+      userId: user.id,
+      forceStripeSync: onboardingMode === "post_signup_access",
+    })
+    if (!entitlements.hasActiveSubscription) {
       redirect(
         buildOnboardingErrorRedirect({
           intentFocus,

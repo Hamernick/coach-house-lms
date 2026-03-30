@@ -79,6 +79,22 @@ describe("auth recovery flow", () => {
     expect(location.searchParams.get("notice")).toBe("email_confirmed_sign_in")
   })
 
+  it("keeps PKCE fallback on the login notice path even when the callback lacks an explicit signup type", async () => {
+    const supabase = buildRouteSupabaseStub({
+      exchangeCodeError: { message: "PKCE code verifier not found in storage" },
+    })
+    createSupabaseRouteHandlerClientMock.mockReturnValue(supabase)
+
+    const { handleSupabaseAuthCallback } = await import("@/lib/supabase/auth-callback")
+    const response = await handleSupabaseAuthCallback(
+      new NextRequest("http://localhost/auth/callback?code=test-code"),
+    )
+
+    const location = new URL(response.headers.get("location") ?? "http://localhost/")
+    expect(location.pathname).toBe("/login")
+    expect(location.searchParams.get("notice")).toBe("email_confirmed_sign_in")
+  })
+
   it("resolves the update-password page to retry immediately when recovery is invalid", async () => {
     const { resolveUpdatePasswordPageState } = await import("@/app/(auth)/update-password/page")
 

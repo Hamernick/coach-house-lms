@@ -18,6 +18,7 @@ import {
   resolveOnboardingPricingPlanOverride,
 } from "./onboarding-dialog/helpers"
 import { useOnboardingAvatar } from "./onboarding-dialog/hooks/use-onboarding-avatar"
+import { useAutoSubmitPaidPricingReturn } from "./onboarding-dialog/hooks/use-auto-submit-paid-pricing-return"
 import { useOnboardingDefaults } from "./onboarding-dialog/hooks/use-onboarding-defaults"
 import { useOnboardingCarryForwardRefs } from "./onboarding-dialog/hooks/use-onboarding-carry-forward-refs"
 import { useOnboardingDraftState } from "./onboarding-dialog/hooks/use-onboarding-draft-state"
@@ -415,6 +416,15 @@ export function OnboardingFlow({
     setIntentFocus,
     setStep,
     visibleStepIds: effectiveVisibleStepIds,
+  })
+  useAutoSubmitPaidPricingReturn({
+    open,
+    submitting,
+    currentStepId: currentStep.id,
+    searchParams,
+    mode,
+    builderPlanTier,
+    formRef,
   })
   useEffect(() => {
     setAttemptedStep(null)

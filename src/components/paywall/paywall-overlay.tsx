@@ -1,5 +1,6 @@
 "use client"
 
+import { useCallback, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import ArrowUpDownIcon from "lucide-react/dist/esm/icons/arrow-up-down"
@@ -7,7 +8,13 @@ import LockIcon from "lucide-react/dist/esm/icons/lock"
 import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
 
 import { StripePoweredBadge } from "@/components/billing/stripe-powered-badge"
-import { PAYWALL_QUERY_KEYS, OVERLAY_TIERS, getCheckoutErrorMessage, getPaywallReasonCopy } from "@/components/paywall/paywall-overlay/config"
+import {
+  OVERLAY_TIERS,
+  buildDismissedPaywallHref,
+  getCheckoutErrorMessage,
+  getPaywallReasonCopy,
+  shouldAutoDismissPaywallOverlay,
+} from "@/components/paywall/paywall-overlay/config"
 import { PaywallTierCard } from "@/components/paywall/paywall-overlay/paywall-tier-card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -32,17 +39,25 @@ export function PaywallOverlay({ currentPlanTier = "free" }: PaywallOverlayProps
   const checkoutErrorDebug = searchParams.get("checkout_debug")
   const checkoutErrorMessage = getCheckoutErrorMessage(checkoutErrorCode)
   const reasonCopy = getPaywallReasonCopy({ isOnboardingSource, paywallKind })
+  const dismissHref = useMemo(
+    () => buildDismissedPaywallHref({ pathname, searchParams }),
+    [pathname, searchParams],
+  )
+  const shouldAutoDismiss = shouldAutoDismissPaywallOverlay({
+    currentPlanTier,
+    paywallKind,
+  })
 
-  const close = () => {
-    const next = new URLSearchParams(searchParams.toString())
-    for (const key of PAYWALL_QUERY_KEYS) {
-      next.delete(key)
-    }
-    const query = next.toString()
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
-  }
+  const close = useCallback(() => {
+    router.replace(dismissHref, { scroll: false })
+  }, [dismissHref, router])
 
-  if (!isOpen) return null
+  useEffect(() => {
+    if (!shouldAutoDismiss) return
+    close()
+  }, [close, shouldAutoDismiss])
+
+  if (!isOpen || shouldAutoDismiss) return null
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && close()}>

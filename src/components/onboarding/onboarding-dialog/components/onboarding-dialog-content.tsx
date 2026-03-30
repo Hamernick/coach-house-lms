@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { ONBOARDING_PRICING_RETURN } from "@/lib/onboarding/pricing-return"
 
 import {
   AccountStep,
@@ -269,7 +270,7 @@ export function OnboardingDialogContent({
                 attemptedStep={attemptedStep}
                 errors={errors}
                 currentPlanTier={builderPlanTier}
-                checkoutReturnTo="/onboarding?source=onboarding_pricing"
+                checkoutReturnTo={ONBOARDING_PRICING_RETURN}
               />
             ) : null}
 

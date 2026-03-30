@@ -11,6 +11,8 @@ export const PAYWALL_QUERY_KEYS = [
   "checkout_debug",
 ] as const
 
+type SearchParamsLike = Pick<URLSearchParams, "toString">
+
 export type OverlayTier = {
   id: PricingPlanTier
   eyebrow: string
@@ -183,4 +185,29 @@ export function getPaywallReasonCopy({
     return "Electives are included with paid plans."
   }
   return "Pick the plan that fits your current stage. You can switch between paid tiers anytime."
+}
+
+export function shouldAutoDismissPaywallOverlay({
+  currentPlanTier,
+  paywallKind,
+}: {
+  currentPlanTier: PricingPlanTier
+  paywallKind: string | null
+}) {
+  return currentPlanTier !== "free" && Boolean(paywallKind)
+}
+
+export function buildDismissedPaywallHref({
+  pathname,
+  searchParams,
+}: {
+  pathname: string
+  searchParams: SearchParamsLike
+}) {
+  const next = new URLSearchParams(searchParams.toString())
+  for (const key of PAYWALL_QUERY_KEYS) {
+    next.delete(key)
+  }
+  const query = next.toString()
+  return query ? `${pathname}?${query}` : pathname
 }

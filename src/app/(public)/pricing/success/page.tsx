@@ -258,6 +258,13 @@ export default async function PricingSuccessPage({
         throw error
       }
       console.warn("Unable to read Stripe checkout session", error)
+      if (redirectTarget) {
+        redirect(
+          appendInternalRedirectParams(redirectTarget, {
+            checkout_error: "checkout_failed",
+          }),
+        )
+      }
     }
   }
 

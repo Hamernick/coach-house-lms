@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { shouldAutoSubmitPaidOnboardingPricingReturn } from "@/lib/onboarding/pricing-return"
 import {
   resolveOnboardingPricingEntryStepId,
   resolveOnboardingPricingPlanOverride,
@@ -41,5 +42,53 @@ describe("onboarding pricing return helpers", () => {
     )
 
     expect(resolveOnboardingPricingPlanOverride(searchParams)).toBe("organization")
+  })
+
+  it("auto-submits the paid post-signup builder return without requiring a checkout success query", () => {
+    const searchParams = createSearchParams("source=onboarding_pricing")
+
+    expect(
+      shouldAutoSubmitPaidOnboardingPricingReturn({
+        searchParams,
+        mode: "post_signup_access",
+        builderPlanTier: "organization",
+      }),
+    ).toBe(true)
+  })
+
+  it("does not auto-submit the paid pricing return when checkout failed or was cancelled", () => {
+    const failedSearchParams = createSearchParams(
+      "source=onboarding_pricing&checkout_error=checkout_failed",
+    )
+    const cancelledSearchParams = createSearchParams(
+      "source=onboarding_pricing&cancelled=true",
+    )
+
+    expect(
+      shouldAutoSubmitPaidOnboardingPricingReturn({
+        searchParams: failedSearchParams,
+        mode: "post_signup_access",
+        builderPlanTier: "organization",
+      }),
+    ).toBe(false)
+    expect(
+      shouldAutoSubmitPaidOnboardingPricingReturn({
+        searchParams: cancelledSearchParams,
+        mode: "post_signup_access",
+        builderPlanTier: "operations_support",
+      }),
+    ).toBe(false)
+  })
+
+  it("does not auto-submit onboarding pricing returns outside the post-signup access flow", () => {
+    const searchParams = createSearchParams("source=onboarding_pricing")
+
+    expect(
+      shouldAutoSubmitPaidOnboardingPricingReturn({
+        searchParams,
+        mode: "full",
+        builderPlanTier: "organization",
+      }),
+    ).toBe(false)
   })
 })

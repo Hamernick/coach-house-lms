@@ -18,6 +18,28 @@ type UseHomeCanvasNavigationArgs = {
   initialSection?: string
 }
 
+export function resolveHomeCanvasSectionTransition(
+  currentSection: CanvasSectionId,
+  nextSection: CanvasSectionId,
+) {
+  if (currentSection === nextSection) {
+    return {
+      shouldChange: false,
+      direction: null as 1 | -1 | null,
+    }
+  }
+
+  const currentIndex = VISIBLE_CANVAS_NAV.findIndex((item) => item.id === currentSection)
+  const nextIndex = VISIBLE_CANVAS_NAV.findIndex((item) => item.id === nextSection)
+  const direction: 1 | -1 | null =
+    currentIndex >= 0 && nextIndex >= 0 ? (nextIndex > currentIndex ? 1 : -1) : null
+
+  return {
+    shouldChange: true,
+    direction,
+  }
+}
+
 export function useHomeCanvasNavigation({ initialSection }: UseHomeCanvasNavigationArgs) {
   const parsedInitialSection = parseInitialSection(initialSection)
   const [activeSection, setActiveSection] = useState<CanvasSectionId>(() => parsedInitialSection)
@@ -62,12 +84,11 @@ export function useHomeCanvasNavigation({ initialSection }: UseHomeCanvasNavigat
   const changeSection = useCallback(
     (nextSection: CanvasSectionId) => {
       const currentSection = activeSectionRef.current
-      if (nextSection === currentSection) return
+      const transition = resolveHomeCanvasSectionTransition(currentSection, nextSection)
+      if (!transition.shouldChange) return
 
-      const currentIndex = VISIBLE_CANVAS_NAV.findIndex((item) => item.id === currentSection)
-      const nextIndex = VISIBLE_CANVAS_NAV.findIndex((item) => item.id === nextSection)
-      if (currentIndex >= 0 && nextIndex >= 0) {
-        setDirection(nextIndex > currentIndex ? 1 : -1)
+      if (transition.direction) {
+        setDirection(transition.direction)
       }
 
       activeSectionRef.current = nextSection
@@ -96,12 +117,11 @@ export function useHomeCanvasNavigation({ initialSection }: UseHomeCanvasNavigat
 
   useEffect(() => {
     const next = parseInitialSection(initialSection)
-    const currentIndex = VISIBLE_CANVAS_NAV.findIndex((item) => item.id === activeSectionRef.current)
-    const nextIndex = VISIBLE_CANVAS_NAV.findIndex((item) => item.id === next)
-    if (currentIndex < 0 || activeSectionRef.current === next) return
+    const transition = resolveHomeCanvasSectionTransition(activeSectionRef.current, next)
+    if (!transition.shouldChange) return
 
-    if (nextIndex >= 0) {
-      setDirection(nextIndex > currentIndex ? 1 : -1)
+    if (transition.direction) {
+      setDirection(transition.direction)
     }
     activeSectionRef.current = next
     setActiveSection(next)

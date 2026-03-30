@@ -12,6 +12,7 @@ type AccessOptions = {
   userId: string
   orgUserId?: string
   isAdmin?: boolean
+  forceStripeSync?: boolean
 }
 
 export type LearningEntitlements = {
@@ -61,12 +62,14 @@ function uniqueStrings(values: Array<string | null | undefined>) {
 async function trySyncSubscriptionFromStripe({
   userId,
   orgUserId,
+  forceStripeSync = false,
 }: {
   userId: string
   orgUserId: string
+  forceStripeSync?: boolean
 }) {
   const stripeConfigs = resolveStripeRuntimeConfigsForFallback({ preferTester: false })
-  if (!ENABLE_STRIPE_ENTITLEMENT_SYNC || stripeConfigs.length === 0 || process.env.NODE_ENV === "test") {
+  if ((!ENABLE_STRIPE_ENTITLEMENT_SYNC && !forceStripeSync) || stripeConfigs.length === 0 || process.env.NODE_ENV === "test") {
     return false
   }
 
@@ -158,6 +161,7 @@ export async function fetchLearningEntitlements({
   userId,
   orgUserId,
   isAdmin = false,
+  forceStripeSync = false,
 }: AccessOptions): Promise<LearningEntitlements> {
   if (isAdmin) {
     return {
@@ -237,6 +241,7 @@ export async function fetchLearningEntitlements({
       const synced = await trySyncSubscriptionFromStripe({
         userId,
         orgUserId: primarySubscriptionOwnerId,
+        forceStripeSync,
       })
       if (synced) {
         hasActiveSubscription = await hasActiveOrgSubscription(primarySubscriptionOwnerId)

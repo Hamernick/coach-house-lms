@@ -178,7 +178,7 @@ export async function handleSupabaseAuthCallback(request: NextRequest) {
       )
     }
 
-    if (type === "signup" && isPkceVerifierMissingError(error.message)) {
+    if (isPkceVerifierMissingError(error.message)) {
       return NextResponse.redirect(
         toLoginUrl(requestUrl, {
           redirect: redirectParam,

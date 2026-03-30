@@ -3,7 +3,11 @@ import type { WorkspaceTutorialPresentationFamily } from "./workspace-canvas-sur
 export function shouldWorkspaceTutorialUseMeasuredShellHeight(
   family: WorkspaceTutorialPresentationFamily,
 ) {
-  return family === "tool" || family === "accelerator-module"
+  return (
+    family === "welcome" ||
+    family === "tool" ||
+    family === "accelerator-module"
+  )
 }
 
 export function shouldWorkspaceTutorialMeasurePresentationContentHeight(

@@ -304,4 +304,31 @@ describe("pricing success return handling", () => {
       "/workspace?onboarding_flow=1&source=onboarding_pricing&checkout_error=checkout_failed&subscription=incomplete",
     )
   })
+
+  it("returns checkout errors to the onboarding pricing path instead of dropping users on a bare redirect target", async () => {
+    resolveStripeRuntimeConfigsForFallbackMock.mockReturnValue([
+      {
+        client: {
+          checkout: {
+            sessions: {
+              retrieve: vi.fn().mockRejectedValue(new Error("session_lookup_failed")),
+            },
+          },
+        },
+        mode: "live",
+      },
+    ])
+
+    const Page = (await import("@/app/(public)/pricing/success/page")).default
+    const destination = await captureRedirect(() =>
+      Page({
+        searchParams: Promise.resolve({
+          session_id: "cs_test_failed_lookup",
+          redirect: "/onboarding?source=onboarding_pricing",
+        }),
+      }),
+    )
+
+    expect(destination).toBe("/onboarding?source=onboarding_pricing&checkout_error=checkout_failed")
+  })
 })

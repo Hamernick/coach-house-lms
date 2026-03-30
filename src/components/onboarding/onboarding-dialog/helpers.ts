@@ -1,4 +1,5 @@
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
+import { isOnboardingPricingSource } from "@/lib/onboarding/pricing-return"
 import type {
   FormationStatus,
   IntentFocus,
@@ -48,7 +49,7 @@ type SearchParamReader = {
 export function resolveOnboardingPricingPlanOverride(
   searchParams: SearchParamReader,
 ): PricingPlanTier | null {
-  if (searchParams.get("source") !== "onboarding_pricing") return null
+  if (!isOnboardingPricingSource(searchParams)) return null
   if (searchParams.get("checkout") !== "success") return null
 
   const plan = searchParams.get("plan")
@@ -60,7 +61,7 @@ export function resolveOnboardingPricingEntryStepId(
   searchParams: SearchParamReader,
   mode: OnboardingFlowMode = "full",
 ): OnboardingStepId | null {
-  if (searchParams.get("source") !== "onboarding_pricing") return null
+  if (!isOnboardingPricingSource(searchParams)) return null
   if (searchParams.get("checkout") === "success") {
     return mode === "post_signup_access" ? "pricing" : "org"
   }

@@ -16,9 +16,24 @@ export function resolveWorkspaceCanvasTransitionTiming({
   prefersReducedMotion: boolean
   initialScene?: boolean
 }): WorkspaceCanvasTransitionTiming {
-  return resolveWorkspaceCanvasSceneTransitionTiming({
+  const baseTiming = resolveWorkspaceCanvasSceneTransitionTiming({
     transitionKind,
     prefersReducedMotion,
     initialScene,
   })
+
+  if (
+    transitionKind === "accelerator-entry" &&
+    !prefersReducedMotion &&
+    !initialScene
+  ) {
+    return {
+      ...baseTiming,
+      layoutDurationMs: 360,
+      cameraDelayMs: 72,
+      cameraDurationMs: 420,
+    }
+  }
+
+  return baseTiming
 }

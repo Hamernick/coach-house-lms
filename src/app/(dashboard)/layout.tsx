@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 
 import { AppShell } from "@/components/app-shell"
 import { FrameEscape } from "@/components/navigation/frame-escape"
+import { MemberWorkspaceSidebarHeaderEntry } from "./_components/member-workspace-sidebar-header-entry"
 
 import { resolveDashboardLayoutState } from "./_lib/dashboard-layout-state"
 
@@ -16,6 +17,9 @@ export default async function DashboardLayout({
     <>
       <FrameEscape />
       <AppShell
+        sidebarHeaderContent={
+          <MemberWorkspaceSidebarHeaderEntry state={state.memberWorkspaceHeader} />
+        }
         sidebarTree={state.sidebarTree}
         user={state.user}
         isAdmin={state.isAdmin}

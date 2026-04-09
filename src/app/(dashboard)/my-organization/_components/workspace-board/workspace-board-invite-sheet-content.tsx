@@ -1,17 +1,19 @@
 "use client"
 
 import { useMemo } from "react"
+import type {
+  OrganizationAccessInvite,
+  OrganizationAccessRequest,
+} from "@/app/actions/organization-access"
 
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 import ChevronUpIcon from "lucide-react/dist/esm/icons/chevron-up"
 import Clock4Icon from "lucide-react/dist/esm/icons/clock-4"
-import InfoIcon from "lucide-react/dist/esm/icons/info"
 import Loader2Icon from "lucide-react/dist/esm/icons/loader-2"
 import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -39,6 +41,7 @@ import {
   type InviteRow,
   WorkspaceTemporaryInvitePicker,
 } from "./workspace-board-invite-sheet-content-support"
+import { WorkspaceBoardInviteSheetTeamSection } from "./workspace-board-invite-sheet-team-section"
 import type {
   WorkspaceCollaborationInviteStatus,
   WorkspaceDurationUnit,
@@ -46,8 +49,14 @@ import type {
 } from "./workspace-board-types"
 
 export function WorkspaceBoardInviteSheetBody({
-  canInvite,
+  canInviteTemporary,
+  canInviteTeam,
   isPending,
+  organizationAccessLoading,
+  organizationAccessMessage,
+  organizationInvites,
+  organizationRequests,
+  inviteUrlBase,
   memberOptions,
   inviteAudience,
   onInviteAudienceChange,
@@ -66,9 +75,18 @@ export function WorkspaceBoardInviteSheetBody({
   activeInvites,
   historicalInvites,
   onRevoke,
+  onCopyOrganizationInviteLink,
+  onRevokeOrganizationInvite,
+  onRevokeOrganizationAccessRequest,
 }: {
-  canInvite: boolean
+  canInviteTemporary: boolean
+  canInviteTeam: boolean
   isPending: boolean
+  organizationAccessLoading: boolean
+  organizationAccessMessage?: string | null
+  organizationInvites: OrganizationAccessInvite[]
+  organizationRequests: OrganizationAccessRequest[]
+  inviteUrlBase: string
   memberOptions: WorkspaceMemberOption[]
   inviteAudience: WorkspaceInviteAudience
   onInviteAudienceChange: (value: WorkspaceInviteAudience) => void
@@ -87,6 +105,9 @@ export function WorkspaceBoardInviteSheetBody({
   activeInvites: InviteRow[]
   historicalInvites: InviteRow[]
   onRevoke: (inviteId: string) => void
+  onCopyOrganizationInviteLink: (link: string) => void
+  onRevokeOrganizationInvite: (inviteId: string) => void
+  onRevokeOrganizationAccessRequest: (requestId: string) => void
 }) {
   const coachShortcuts = useMemo(() => listWorkspaceCoachInviteShortcuts(), [])
   const coachTargets = useMemo(
@@ -181,26 +202,22 @@ export function WorkspaceBoardInviteSheetBody({
         </div>
 
         {isTeamInvite ? (
-          <div className="grid gap-2">
-            <Label htmlFor="workspace-team-invite-email">Email</Label>
-            <Input
-              id="workspace-team-invite-email"
-              type="email"
-              placeholder="name@example.com"
-              value={teamInviteEmail}
-              onChange={(event) => onTeamInviteEmailChange(event.currentTarget.value)}
-              disabled={isPending || !canInvite}
-            />
-            <Button
-              type="button"
-              className="h-9 w-full"
-              onClick={onCreateTeamInvite}
-              disabled={isPending || !canInvite || teamInviteEmail.trim().length === 0}
-            >
-              {isPending ? <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden /> : null}
-              {inviteAccessLevel === "viewer" ? "Create viewer invite" : "Create editor invite"}
-            </Button>
-          </div>
+          <WorkspaceBoardInviteSheetTeamSection
+            canInviteTeam={canInviteTeam}
+            isPending={isPending}
+            organizationAccessLoading={organizationAccessLoading}
+            organizationAccessMessage={organizationAccessMessage}
+            organizationInvites={organizationInvites}
+            organizationRequests={organizationRequests}
+            inviteUrlBase={inviteUrlBase}
+            inviteAccessLevel={inviteAccessLevel}
+            teamInviteEmail={teamInviteEmail}
+            onTeamInviteEmailChange={onTeamInviteEmailChange}
+            onCreateTeamInvite={onCreateTeamInvite}
+            onCopyOrganizationInviteLink={onCopyOrganizationInviteLink}
+            onRevokeOrganizationInvite={onRevokeOrganizationInvite}
+            onRevokeOrganizationAccessRequest={onRevokeOrganizationAccessRequest}
+          />
         ) : accessAvailable ? (
           <>
             <WorkspaceTemporaryInvitePicker
@@ -224,7 +241,7 @@ export function WorkspaceBoardInviteSheetBody({
                     size="icon"
                     className="h-8 w-8"
                     onClick={() => onDurationValueChange(clampDurationValue(durationValue - 1))}
-                    disabled={!canInvite}
+                    disabled={!canInviteTemporary}
                     aria-label="Decrease invite duration"
                   >
                     <ChevronDownIcon className="h-4 w-4" aria-hidden />
@@ -238,7 +255,7 @@ export function WorkspaceBoardInviteSheetBody({
                     size="icon"
                     className="h-8 w-8"
                     onClick={() => onDurationValueChange(clampDurationValue(durationValue + 1))}
-                    disabled={!canInvite}
+                    disabled={!canInviteTemporary}
                     aria-label="Increase invite duration"
                   >
                     <ChevronUpIcon className="h-4 w-4" aria-hidden />
@@ -264,7 +281,7 @@ export function WorkspaceBoardInviteSheetBody({
               type="button"
               className="h-9 w-full"
               onClick={onCreate}
-              disabled={isPending || !canInvite || !selectedMemberId}
+              disabled={isPending || !canInviteTemporary || !selectedMemberId}
             >
               {isPending ? <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden /> : null}
               Create temporary invite
@@ -311,7 +328,7 @@ export function WorkspaceBoardInviteSheetBody({
                   size="icon"
                   className="h-7 w-7"
                   onClick={() => onRevoke(invite.id)}
-                  disabled={isPending || !canInvite}
+                  disabled={isPending || !canInviteTemporary}
                   aria-label="Revoke invite"
                 >
                   <XIcon className="h-3.5 w-3.5" aria-hidden />
@@ -321,39 +338,7 @@ export function WorkspaceBoardInviteSheetBody({
           </ul>
         )}
         </section>
-      ) : (
-        <section className="space-y-2">
-          <div className="flex items-center gap-1.5">
-            <h3 className="text-sm font-medium">Team access</h3>
-            <HoverCard openDelay={120} closeDelay={120}>
-              <HoverCardTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Team invite details"
-                  className="size-6 rounded-full text-muted-foreground"
-                >
-                  <InfoIcon aria-hidden />
-                </Button>
-              </HoverCardTrigger>
-              <HoverCardContent
-                align="start"
-                side="right"
-                sideOffset={8}
-                className="w-[18rem] rounded-xl p-0"
-              >
-                <div className="flex flex-col gap-1 px-3 py-3">
-                  <p className="text-sm font-medium text-foreground">Team invite details</p>
-                  <p className="text-xs leading-5 text-muted-foreground">
-                    Team invites create full organization access and stay active for 7 days. Existing Coach House users receive an in-app request, while new users are emailed a secure invite.
-                  </p>
-                </div>
-              </HoverCardContent>
-            </HoverCard>
-          </div>
-        </section>
-      )}
+      ) : null}
 
       {!isTeamInvite ? (
         <section className="space-y-2">

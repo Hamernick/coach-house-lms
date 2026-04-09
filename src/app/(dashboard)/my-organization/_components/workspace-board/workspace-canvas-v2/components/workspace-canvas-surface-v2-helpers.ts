@@ -2,12 +2,11 @@
 
 import type { Node } from "reactflow"
 
-import type {
-  WorkspaceAcceleratorCardRuntimeSnapshot,
-  WorkspaceAcceleratorTutorialCallout,
-  WorkspaceAcceleratorTutorialInteractionPolicy,
+import {
+  type WorkspaceAcceleratorCardRuntimeSnapshot,
+  type WorkspaceAcceleratorTutorialCallout,
+  type WorkspaceAcceleratorTutorialInteractionPolicy,
 } from "@/features/workspace-accelerator-card"
-import { resolveWorkspaceAcceleratorCollapsedCardSize } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support"
 import type {
   WorkspaceCanvasTutorialNodeData,
   WorkspaceCanvasTutorialStepId,
@@ -41,6 +40,7 @@ import {
 import {
   resolveOrgCardSize,
 } from "./workspace-canvas-surface-v2-positioning"
+import { resolveWorkspaceCanvasCollapsedAcceleratorCardSize } from "./workspace-canvas-surface-v2-accelerator-card-size"
 import { reconcileWorkspaceCanvasV2Nodes } from "./workspace-canvas-surface-v2-reconcile"
 
 export { reconcileWorkspaceCanvasV2Nodes } from "./workspace-canvas-surface-v2-reconcile"
@@ -97,7 +97,7 @@ export function resolveWorkspaceCanvasAcceleratorCardSize({
     return "lg"
   }
 
-  return resolveWorkspaceAcceleratorCollapsedCardSize({
+  return resolveWorkspaceCanvasCollapsedAcceleratorCardSize({
     currentSize: persistedSize,
     previousCollapsedSize: null,
   })
@@ -243,6 +243,21 @@ export function buildWorkspaceCanvasV2CardDataLookup({
         ? (size, height) => onCardMeasuredHeightChange("roadmap", size, height)
         : undefined,
     },
+    deck: {
+      ...baseData,
+      cardId: "deck",
+      size: resolveContractCardSize({
+        cardId: "deck",
+        nodes,
+      }),
+      vaultViewMode: WORKSPACE_CANVAS_V2_VAULT_MODE,
+      isJourneyTarget: journeyGuideState.targetCardId === "deck",
+      onSizeChange: (_cardId, nextSize) => onSizeChange("deck", nextSize),
+      onVaultViewModeChange: NOOP_ON_VAULT_VIEW_MODE_CHANGE,
+      onMeasuredHeightChange: onCardMeasuredHeightChange
+        ? (size, height) => onCardMeasuredHeightChange("deck", size, height)
+        : undefined,
+    },
     accelerator: {
       ...baseData,
       cardId: "accelerator",
@@ -328,18 +343,6 @@ export function buildWorkspaceCanvasV2CardDataLookup({
       onMeasuredHeightChange: onCardMeasuredHeightChange
         ? (size, height) =>
             onCardMeasuredHeightChange("communications", size, height)
-        : undefined,
-    },
-    deck: {
-      ...baseData,
-      cardId: "deck",
-      size: "md",
-      vaultViewMode: WORKSPACE_CANVAS_V2_VAULT_MODE,
-      isJourneyTarget: journeyGuideState.targetCardId === "deck",
-      onSizeChange,
-      onVaultViewModeChange: NOOP_ON_VAULT_VIEW_MODE_CHANGE,
-      onMeasuredHeightChange: onCardMeasuredHeightChange
-        ? (size, height) => onCardMeasuredHeightChange("deck", size, height)
         : undefined,
     },
     atlas: {

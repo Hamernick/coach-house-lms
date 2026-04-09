@@ -49,6 +49,7 @@ export function WorkspaceAcceleratorStepBody({
   tutorialInteractionPolicy,
   onBlockedPreviewAction,
   onWorkspaceOnboardingSubmit,
+  immersiveOnboarding = false,
 }: {
   step: WorkspaceAcceleratorCardStep
   placeholderVideoUrl?: string | null
@@ -64,6 +65,7 @@ export function WorkspaceAcceleratorStepBody({
     controlId: string,
   ) => void
   onWorkspaceOnboardingSubmit?: (form: FormData) => Promise<void>
+  immersiveOnboarding?: boolean
 }) {
   const [fallbackNotesValue, setFallbackNotesValue] = useState(
     "<p>Capture your notes for this class.</p>",
@@ -126,13 +128,14 @@ export function WorkspaceAcceleratorStepBody({
         view={workspaceOnboardingView}
         defaults={step.moduleContext?.workspaceOnboarding?.defaults ?? null}
         onSubmit={onWorkspaceOnboardingSubmit}
+        immersive={immersiveOnboarding}
       />
     )
   }
 
   if (showVideo) {
     return (
-      <div className="px-4 py-3">
+      <div className="px-3 py-3 sm:px-4">
         <VideoSection
           embedUrl={null}
           videoUrl={effectiveVideoUrl}
@@ -145,7 +148,7 @@ export function WorkspaceAcceleratorStepBody({
   }
 
   return (
-    <div className="space-y-4 px-5 py-4">
+    <div className="space-y-4 px-4 py-4 sm:px-5">
       {step.stepDescription && !showAssignment ? (
         <p className="text-foreground text-sm leading-relaxed">
           {step.stepDescription}

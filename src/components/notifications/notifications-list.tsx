@@ -1,5 +1,6 @@
 "use client"
 
+import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -9,24 +10,26 @@ import { type NotificationItem } from "@/components/notifications/types"
 
 type NotificationsListProps = {
   items: NotificationItem[]
+  selectedId: string | null
   loading: boolean
   error: string | null
   onRetry?: () => void
   emptyLabel?: string
-  onPrimaryAction: (item: NotificationItem) => void
+  onSelect: (item: NotificationItem) => void
 }
 
 export function NotificationsList({
   items,
+  selectedId,
   loading,
   error,
   onRetry,
   emptyLabel = "Inbox is empty",
-  onPrimaryAction,
+  onSelect,
 }: NotificationsListProps) {
   if (loading) {
     return (
-      <ScrollArea className="h-[360px]">
+      <ScrollArea className="min-h-[12rem] max-h-[min(34dvh,18rem)] md:min-h-0 md:max-h-none">
         <div className="space-y-2 px-4 py-4">
           {Array.from({ length: 4 }).map((_, idx) => (
             <div key={idx} className="border-border/60 bg-background/60 flex items-start gap-3 rounded-lg border px-3 py-3">
@@ -61,15 +64,22 @@ export function NotificationsList({
   }
 
   return (
-    <ScrollArea className="h-[360px]">
+    <ScrollArea className="min-h-[12rem] max-h-[min(34dvh,18rem)] md:min-h-0 md:max-h-none">
       <div className="divide-border/60 divide-y">
         {items.map((item) => (
-          <div key={item.id} className="group hover:bg-accent/40 flex items-start gap-3 px-4 py-3 transition">
+          <div
+            key={item.id}
+            className="px-4 py-3"
+          >
             <Button
               type="button"
               variant="ghost"
-              className="h-auto min-w-0 flex-1 justify-start gap-3 whitespace-normal p-0 text-left hover:bg-transparent"
-              onClick={() => onPrimaryAction(item)}
+              className={cn(
+                "h-auto min-w-0 flex-1 justify-start gap-3 whitespace-normal rounded-lg p-2 text-left hover:bg-transparent",
+                selectedId === item.id ? "bg-accent/50" : "hover:bg-accent/30",
+              )}
+              aria-pressed={selectedId === item.id}
+              onClick={() => onSelect(item)}
             >
               <NotificationToneIcon tone={item.tone} />
               <div className="min-w-0 flex-1">

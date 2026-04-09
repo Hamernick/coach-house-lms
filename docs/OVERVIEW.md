@@ -45,15 +45,15 @@ Long‑term it aims at a broader “operating system for nonprofits” (see Road
 ### 3.2 Organization Profile
 
 - Single `organizations` row per user with JSONB `profile`.
-- My Organization page (`/my-organization`):
+- Organization workspace profile surface (legacy `/my-organization` alias now redirects to `/workspace`):
   - Org profile fields (name, description, tagline, EIN, contact, address, social links, mission, vision, need, values, programs, reports, boilerplate, brand colors, public slug, is_public).
   - Programs list with basic fields.
 - Public org surfaces:
   - Community listing and per‑org public page using `public_slug` + `is_public`.
 
-### 3.3 Dashboard & Admin
+### 3.3 Workspace & Admin
 
-- Dashboard (`/dashboard`) with:
+- Authenticated workspace (`/workspace`) with:
   - “Today / Backlog / In progress / Done” cards (currently mostly placeholder).
   - Progress cards (Organization Completeness, Your Next Class, per‑class progress).
 - Admin functions:

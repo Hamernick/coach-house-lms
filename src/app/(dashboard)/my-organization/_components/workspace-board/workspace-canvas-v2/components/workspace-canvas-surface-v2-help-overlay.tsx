@@ -42,7 +42,8 @@ const WORKSPACE_CANVAS_HELP_ITEMS: WorkspaceCanvasHelpItem[] = [
   {
     icon: PanelLeftOpenIcon,
     label: "Open tools",
-    description: "Use the buttons on the Organization card to toggle tools on and off.",
+    description:
+      "Use the tool rail, or the cards drawer on smaller screens, to open and hide workspace cards.",
   },
 ]
 

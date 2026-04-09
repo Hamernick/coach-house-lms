@@ -75,6 +75,10 @@ export function resolveWorkspaceTutorialPresentationMotionPreset({
 export function resolveWorkspaceTutorialPresentationHandoffDelayMs(
   preset: WorkspaceTutorialPresentationMotionPreset,
 ) {
+  if (preset === "accelerator-entry") {
+    return 0
+  }
+
   return resolveWorkspaceCanvasPresentationHandoffDelayMs(preset)
 }
 

@@ -79,6 +79,7 @@ vi.mock("@/lib/logger", () => ({
 export const stripeConstructorMock = vi.fn()
 export const stripeCheckoutCreateMock = vi.fn()
 export const stripeCheckoutRetrieveMock = vi.fn()
+export const stripeSubscriptionRetrieveMock = vi.fn()
 export const stripeBillingPortalCreateMock = vi.fn()
 
 class StripeMock {
@@ -92,6 +93,9 @@ class StripeMock {
     sessions: {
       create: stripeBillingPortalCreateMock,
     },
+  }
+  subscriptions = {
+    retrieve: stripeSubscriptionRetrieveMock,
   }
 
   constructor(...args: unknown[]) {
@@ -116,6 +120,7 @@ export function resetTestMocks() {
   stripeConstructorMock.mockClear()
   stripeCheckoutCreateMock.mockClear()
   stripeCheckoutRetrieveMock.mockClear()
+  stripeSubscriptionRetrieveMock.mockClear()
   stripeBillingPortalCreateMock.mockClear()
 }
 

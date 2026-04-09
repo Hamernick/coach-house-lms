@@ -3,8 +3,10 @@
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
 import BookOpenIcon from "lucide-react/dist/esm/icons/book-open"
 import Building2Icon from "lucide-react/dist/esm/icons/building-2"
+import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
 import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
 import FileTextIcon from "lucide-react/dist/esm/icons/file-text"
+import FolderKanbanIcon from "lucide-react/dist/esm/icons/folder-kanban"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
 import LayersIcon from "lucide-react/dist/esm/icons/layers"
 import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
@@ -65,6 +67,8 @@ export function getResultIcon(item: SearchResult) {
   if (href.startsWith("/billing")) return CreditCardIcon
   if (href.startsWith("/internal")) return ShieldIcon
   if (href.startsWith("/admin")) return ShieldIcon
+  if (href.startsWith("/projects")) return FolderKanbanIcon
+  if (href.startsWith("/my-tasks")) return ClipboardListIcon
   if (href.startsWith("/people")) return UsersIcon
   if (href.startsWith("/community")) return MapPinIcon
   if (href.startsWith("/marketplace")) return ShoppingBagIcon
@@ -73,6 +77,95 @@ export function getResultIcon(item: SearchResult) {
   if (href.startsWith("/organization")) return Building2Icon
 
   return ArrowUpRight
+}
+
+export function buildBaseSearchItems({
+  enableAccelerator,
+  showOrgAdmin,
+  showMemberWorkspace,
+  showPlatformLab,
+}: {
+  enableAccelerator: boolean
+  showOrgAdmin: boolean
+  showMemberWorkspace: boolean
+  showPlatformLab: boolean
+}): SearchResult[] {
+  return [
+    ...(enableAccelerator
+      ? [
+          {
+            id: "page-accelerator",
+            label: "Accelerator",
+            href: "/accelerator",
+            group: "Pages",
+            keywords: ["classes", "modules"],
+          } satisfies SearchResult,
+        ]
+      : []),
+    ...(showMemberWorkspace
+      ? [
+          {
+            id: "page-workspace",
+            label: "Workspace",
+            href: "/workspace",
+            group: "Pages",
+            keywords: ["organization", "canvas", "workspace"],
+          } satisfies SearchResult,
+          {
+            id: "page-projects",
+            label: "Projects",
+            href: "/projects",
+            group: "Pages",
+            keywords: ["workspace", "organization", "projects"],
+          } satisfies SearchResult,
+          {
+            id: "page-my-tasks",
+            label: "My Tasks",
+            href: "/my-tasks",
+            group: "Pages",
+            keywords: ["assigned", "tasks", "work"],
+          } satisfies SearchResult,
+        ]
+      : [
+          {
+            id: "page-organization",
+            label: "Organization",
+            href: "/workspace",
+            group: "Pages",
+            keywords: ["profile"],
+          } satisfies SearchResult,
+        ]),
+    { id: "page-roadmap", label: "Roadmap", href: "/roadmap", group: "Pages", keywords: ["strategic"] },
+    { id: "page-programs", label: "Programs", href: "/workspace?view=editor&tab=programs", group: "Pages" },
+    { id: "page-people", label: "People", href: "/people", group: "Pages", keywords: ["team", "org chart"] },
+    { id: "page-supporters", label: "Supporters", href: "/workspace?view=editor&tab=supporters", group: "Pages" },
+    { id: "page-documents", label: "Documents", href: "/organization/documents", group: "Pages" },
+    { id: "page-billing", label: "Billing", href: "/billing", group: "Pages", keywords: ["subscription", "plan"] },
+    { id: "page-community", label: "Community", href: "/community", group: "Pages", keywords: ["map", "network"] },
+    { id: "page-marketplace", label: "Marketplace", href: "/marketplace", group: "Pages", keywords: ["tools", "resources"] },
+    ...(showOrgAdmin
+      ? [
+          {
+            id: "page-admin",
+            label: "Admin",
+            href: "/admin",
+            group: "Pages",
+            keywords: ["access", "invites", "roles"],
+          } satisfies SearchResult,
+        ]
+      : []),
+    ...(showPlatformLab
+      ? [
+          {
+            id: "page-platform-lab",
+            label: "Platform Lab",
+            href: "/internal/platform-lab",
+            group: "Pages",
+            keywords: ["internal", "dashboard", "lab", "projects"],
+          } satisfies SearchResult,
+        ]
+      : []),
+  ]
 }
 
 export function groupSearchResults(items: SearchResult[]) {

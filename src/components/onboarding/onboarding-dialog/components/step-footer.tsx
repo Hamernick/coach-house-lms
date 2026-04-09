@@ -36,7 +36,7 @@ export function StepFooter({
   const isLastStep = step === totalSteps - 1
 
   return (
-    <div className="border-border/70 bg-background/70 relative z-20 shrink-0 border-t px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6">
+    <div className="border-border/70 bg-background/70 relative z-20 mt-auto shrink-0 border-t px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-2">
         {step > 0 ? (

@@ -62,6 +62,7 @@ export type WorkspaceCanvasStageMotion = {
 export const WORKSPACE_CANVAS_STAGED_EASE = [0.22, 1, 0.36, 1] as const
 
 const WORKSPACE_TUTORIAL_SURFACE_HANDOFF_DELAY_MS = 110
+const WORKSPACE_ACCELERATOR_ENTRY_HANDOFF_DELAY_MS = 140
 
 export function resolveWorkspaceCanvasSceneTransitionTiming({
   transitionKind,
@@ -102,9 +103,9 @@ export function resolveWorkspaceCanvasSceneTransitionTiming({
   if (transitionKind === "accelerator-entry") {
     return {
       transitionKind,
-      layoutDurationMs: 360,
-      cameraDelayMs: 72,
-      cameraDurationMs: 420,
+      layoutDurationMs: 300,
+      cameraDelayMs: 40,
+      cameraDurationMs: 360,
     }
   }
 
@@ -128,9 +129,15 @@ export function resolveWorkspaceCanvasSceneTransitionTiming({
 export function resolveWorkspaceCanvasPresentationHandoffDelayMs(
   preset: WorkspaceCanvasPresentationMotionPreset,
 ) {
-  return preset === "surface-handoff"
-      ? WORKSPACE_TUTORIAL_SURFACE_HANDOFF_DELAY_MS
-      : 0
+  if (preset === "surface-handoff") {
+    return WORKSPACE_TUTORIAL_SURFACE_HANDOFF_DELAY_MS
+  }
+
+  if (preset === "accelerator-entry") {
+    return WORKSPACE_ACCELERATOR_ENTRY_HANDOFF_DELAY_MS
+  }
+
+  return 0
 }
 
 export function shouldWorkspaceCanvasAnimateInitialPresentation(
@@ -148,9 +155,9 @@ function resolveWorkspaceCanvasPresentationFrameTransition(
 ) {
   if (preset === "accelerator-entry") {
     return {
-      opacity: { duration: 0.34, ease: WORKSPACE_CANVAS_STAGED_EASE, delay: 0.06 },
-      y: { duration: 0.42, ease: WORKSPACE_CANVAS_STAGED_EASE, delay: 0.06 },
-      scale: { duration: 0.42, ease: WORKSPACE_CANVAS_STAGED_EASE, delay: 0.06 },
+      opacity: { duration: 0.34, ease: WORKSPACE_CANVAS_STAGED_EASE, delay: 0.04 },
+      y: { duration: 0.42, ease: WORKSPACE_CANVAS_STAGED_EASE, delay: 0.04 },
+      scale: { duration: 0.42, ease: WORKSPACE_CANVAS_STAGED_EASE, delay: 0.04 },
     } satisfies WorkspaceCanvasMotionTransition
   }
 
@@ -174,8 +181,8 @@ function resolveWorkspaceCanvasBottomFadeTransition(
 ) {
   if (preset === "accelerator-entry") {
     return {
-      opacity: { duration: 0.24, ease: WORKSPACE_CANVAS_STAGED_EASE, delay: 0.24 },
-      y: { duration: 0.3, ease: WORKSPACE_CANVAS_STAGED_EASE, delay: 0.24 },
+      opacity: { duration: 0.24, ease: WORKSPACE_CANVAS_STAGED_EASE, delay: 0.18 },
+      y: { duration: 0.3, ease: WORKSPACE_CANVAS_STAGED_EASE, delay: 0.18 },
     } satisfies WorkspaceCanvasMotionTransition
   }
 

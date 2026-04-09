@@ -6,6 +6,7 @@ import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 export type AppShellProps = {
   children: ReactNode
   breadcrumbs?: ReactNode
+  sidebarHeaderContent?: ReactNode
   sidebarTree: SidebarClass[]
   user?: {
     name: string | null

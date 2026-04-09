@@ -25,8 +25,10 @@ import {
   isMissingModuleProgressTableError,
   isMissingRoadmapCalendarInternalEventsTableError,
   isUuidLike,
+  isMissingWorkspaceBoardsTableError,
   isMissingWorkspaceCommunicationChannelsTableError,
   isMissingWorkspaceCommunicationsTableError,
+  isMissingWorkspaceInvitesTableError,
   isMissingWorkspaceObjectiveAssigneesTableError,
   isMissingWorkspaceObjectiveGroupsTableError,
   isMissingWorkspaceObjectivesTableError,
@@ -219,10 +221,16 @@ export async function buildWorkspaceViewSeed<
       .returns<Array<{ objective_id: string; user_id: string }>>(),
   ])
 
-  if (boardResult.error) {
+  if (
+    boardResult.error &&
+    !isMissingWorkspaceBoardsTableError(boardResult.error)
+  ) {
     throw supabaseErrorToError(boardResult.error, "Unable to load workspace board state.")
   }
-  if (workspaceInvitesResult.error) {
+  if (
+    workspaceInvitesResult.error &&
+    !isMissingWorkspaceInvitesTableError(workspaceInvitesResult.error)
+  ) {
     throw supabaseErrorToError(workspaceInvitesResult.error, "Unable to load workspace collaboration invites.")
   }
   if (

@@ -49,6 +49,12 @@ export type WorkspaceCanvasTutorialCallout =
       instruction: string
     }
   | {
+      kind: "calendar-viewport-button"
+      cardId: "calendar"
+      label: string
+      instruction: string
+    }
+  | {
       kind: "organization-map-button"
       label: string
       instruction: string
@@ -80,6 +86,7 @@ export type WorkspaceCanvasTutorialStep = {
   calloutInstruction?: string | null
   calloutTarget?:
     | "shortcut-button"
+    | "calendar-viewport-button"
     | "organization-map-button"
     | "team-access"
     | "accelerator-picker"

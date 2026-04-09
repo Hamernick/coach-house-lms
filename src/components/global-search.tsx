@@ -8,10 +8,12 @@ import type { SidebarClass } from "@/lib/academy"
 import type { SearchResult } from "@/lib/search/types"
 import { GlobalSearchCommandDialog } from "@/components/global-search/global-search-command-dialog"
 import {
+  buildBaseSearchItems,
   SEARCH_MIN_WIDTH,
   formatClassTitle,
   groupSearchResults,
 } from "@/components/global-search/global-search-helpers"
+import { platformLabEnabled } from "@/lib/feature-flags"
 import { GlobalSearchTriggers } from "@/components/global-search/global-search-triggers"
 
 type GlobalSearchProps = {
@@ -20,6 +22,7 @@ type GlobalSearchProps = {
   context?: "platform" | "accelerator"
   classes?: SidebarClass[]
   showAccelerator?: boolean
+  showMemberWorkspace?: boolean
 }
 
 export function GlobalSearch({
@@ -28,6 +31,7 @@ export function GlobalSearch({
   context = "platform",
   classes = [],
   showAccelerator = false,
+  showMemberWorkspace = false,
 }: GlobalSearchProps) {
   const router = useRouter()
   const isMobile = useIsMobile()
@@ -38,6 +42,7 @@ export function GlobalSearch({
   const [error, setError] = useState<string | null>(null)
   const [compact, setCompact] = useState(false)
   const enableAccelerator = Boolean(isAdmin || showAccelerator)
+  const showPlatformLab = isAdmin && platformLabEnabled
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -94,41 +99,13 @@ export function GlobalSearch({
   )
 
   const baseItems = useMemo<SearchResult[]>(() => {
-    const showOrgAdminLink = showOrgAdmin
-    return [
-      ...(enableAccelerator
-        ? [
-            {
-              id: "page-accelerator",
-              label: "Accelerator",
-              href: "/accelerator",
-              group: "Pages",
-              keywords: ["classes", "modules"],
-            } satisfies SearchResult,
-          ]
-        : []),
-      { id: "page-organization", label: "Organization", href: "/workspace", group: "Pages", keywords: ["profile"] },
-      { id: "page-roadmap", label: "Roadmap", href: "/roadmap", group: "Pages", keywords: ["strategic"] },
-      { id: "page-programs", label: "Programs", href: "/workspace?view=editor&tab=programs", group: "Pages" },
-      { id: "page-people", label: "People", href: "/people", group: "Pages", keywords: ["team", "org chart"] },
-      { id: "page-supporters", label: "Supporters", href: "/workspace?view=editor&tab=supporters", group: "Pages" },
-      { id: "page-documents", label: "Documents", href: "/workspace/documents", group: "Pages" },
-      { id: "page-billing", label: "Billing", href: "/billing", group: "Pages", keywords: ["subscription", "plan"] },
-      { id: "page-community", label: "Community", href: "/community", group: "Pages", keywords: ["map", "network"] },
-      { id: "page-marketplace", label: "Marketplace", href: "/marketplace", group: "Pages", keywords: ["tools", "resources"] },
-      ...(showOrgAdminLink
-        ? [
-            {
-              id: "page-admin",
-              label: "Admin",
-              href: "/admin",
-              group: "Pages",
-              keywords: ["access", "invites", "roles"],
-            } satisfies SearchResult,
-          ]
-        : []),
-    ]
-  }, [enableAccelerator, showOrgAdmin])
+    return buildBaseSearchItems({
+      enableAccelerator,
+      showOrgAdmin,
+      showMemberWorkspace,
+      showPlatformLab,
+    })
+  }, [enableAccelerator, showMemberWorkspace, showOrgAdmin, showPlatformLab])
 
   const acceleratorItems = useMemo<SearchResult[]>(
     () =>

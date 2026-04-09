@@ -4,7 +4,7 @@ import {
   buildReactGrabDebugSurfaceRecord,
   debugSurfaceClass,
   type ReactGrabDebugSurfaceAttributes,
-} from "@/components/dev/react-grab-debug-surface"
+} from "@/lib/react-grab-debug-surface"
 import { cn } from "@/lib/utils"
 
 const CARD_SOURCE = "src/components/ui/card.tsx"
@@ -63,7 +63,7 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
         props,
         className,
         baseClassName:
-          "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 pt-4 pb-3 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
+          "@container/card-header rounded-t-[inherit] bg-inherit grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 pt-4 pb-3 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
         fallbackComponent: "CardHeader",
         defaultSlot: "card-header",
       })}

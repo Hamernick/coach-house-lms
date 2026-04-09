@@ -23,6 +23,7 @@ function isWorkspaceTreeCardId(cardId: WorkspaceCardId) {
     cardId === "organization-overview" ||
     cardId === "programs" ||
     cardId === "roadmap" ||
+    cardId === "deck" ||
     cardId === "accelerator" ||
     cardId === "economic-engine" ||
     cardId === "calendar" ||

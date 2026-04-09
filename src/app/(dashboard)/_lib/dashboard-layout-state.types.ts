@@ -1,6 +1,7 @@
 import type { SidebarClass } from "@/lib/academy"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import type { OnboardingFlowDefaults } from "@/components/onboarding/onboarding-dialog/types"
+import type { MemberWorkspaceHeaderState } from "@/features/member-workspace"
 
 export type DashboardLayoutState = {
   userPresent: boolean
@@ -34,6 +35,7 @@ export type DashboardLayoutState = {
   onboardingLocked: boolean
   onboardingIntentFocus: "build" | "find" | "fund" | "support" | null
   formationStatus: string | null
+  memberWorkspaceHeader: MemberWorkspaceHeaderState | null
 }
 
 export const EMPTY_STATE: DashboardLayoutState = {
@@ -68,4 +70,5 @@ export const EMPTY_STATE: DashboardLayoutState = {
   onboardingLocked: false,
   onboardingIntentFocus: null,
   formationStatus: null,
+  memberWorkspaceHeader: null,
 }

@@ -5,16 +5,18 @@ Mode: Execute steps sequentially in CLI; no code in this runbook. Each step link
 
 Stack baseline: Next.js 16.0.1 with React 19.1.0. Dev + prod builds use Turbopack; align guidance with this baseline before adopting new tooling.
 
+Route naming note (2026-04-09): `src/app/(dashboard)/**` is the internal authenticated app shell route group, not a literal browser URL. User-facing entry routes are `/workspace`, `/projects`, `/my-tasks`, `/people`, and related app surfaces. The current automated performance budget script tracks `/community` and `/admin`; older `/dashboard` references below are historical shorthand for the authenticated shell.
+
 ## Checklist Status (2025-10-22)
 
-- [x] 0) Preflight & Baseline — `npm run build` + `npm run check:perf` run under Turbopack. Current first-load JS over budget: `/dashboard` 1472.9 KB (target 750 KB), `/admin` 641.8 KB (target 400 KB). Track remediation in Step 7.
+- [x] 0) Preflight & Baseline — `npm run build` + `npm run check:perf` run under Turbopack. Historical notes below referred to the authenticated app shell as `/dashboard`; current automated budgets track `/community` and `/admin`. Track remediation in Step 7.
 - [x] 1) TypeScript & Lint Hardening — strict mode is enabled in `tsconfig.json` and Next’s lint rules are active.
 - [x] 2) Global Performance Configuration — `reactStrictMode` on, powered-by header disabled, and `modularizeImports` keeps lucide imports tree-shaken under Turbopack.
 - [ ] 3) Caching Model (Static-by-Default) — audit partially logged; re-verify after recent content refactors.
 - [ ] 4) Data Fetching Strategy (RSC-first) — client fetch remnants pending catalog.
 - [ ] 5) Streaming UX — loading states exist for class/module dashboards; verify remaining segments before closing.
 - [ ] 6) Navigation & Prefetch — confirm prefetch strategy + disabled cases.
-- [ ] 7) Client JS Budget & Code-Splitting — ongoing. Current `/dashboard` first-load JS: 738.7 KB (under the 750 KB cap) after deferring Sonner and replacing Radix-driven nav elements; `/admin` remains 608.7 KB and needs further trimming.
+- [ ] 7) Client JS Budget & Code-Splitting — ongoing. Historical notes in this section may still mention `/dashboard` as shorthand for the authenticated app shell; use the current script output as the source of truth for `/community` and `/admin`.
 - [ ] 8) Fonts — assess next/font rollout (currently mixed usage).
 - [ ] 9) Images — final pass to confirm `next/image` coverage (legacy admin assets remain).
 - [x] 10) Edge vs. Node Runtimes — runtime assignments documented; revisit after Supabase client consolidation.
@@ -52,7 +54,7 @@ Docs: Getting Started index, configuration overview nextjs.org
 
 
 Audit each route: prefer static with revalidation; mark truly dynamic routes explicitly.
-Marketing surfaces (e.g., `/pricing`) should lean on ISR, while authed dashboards stay `cache: "no-store"` to respect Supabase session reads.
+Marketing surfaces (e.g., `/pricing`) should lean on ISR, while authed app surfaces stay `cache: "no-store"` to respect Supabase session reads.
 Record per-route caching decisions in `/docs/RUNLOG.md` and include revalidate intervals for `/pricing`, `/community`, and any other static marketing pages so the perf budget stays enforceable.
 
 
@@ -162,7 +164,7 @@ Images use the image component with sizes.
 
 
 Per-page client JS within budget; largest chunk reduced vs. baseline.
-After the build completes, run `npm run check:perf` so the automated budget script validates `/dashboard` and `/admin` bundle sizes.
+After the build completes, run `npm run check:perf` so the automated budget script validates `/community` and `/admin` bundle sizes.
 Docs: Getting Started (build/analyze entry points) nextjs.org
 
 
@@ -322,7 +324,7 @@ Require: loading.tsx per segment; next/font only; next/image only; analyzer regr
 
 
 Record budgets in PRs and docs/changelog; fail CI on regressions.
-Automated guard: `scripts/check-performance-budgets.mjs` enforces uncompressed first-load budgets (currently 750KB for `/dashboard`, 400KB for `/admin`, roughly aligning with the 150KB/80KB gzip targets).
+Automated guard: `scripts/check-performance-budgets.mjs` enforces uncompressed first-load budgets (currently 900KB for `/community` and 1000KB for `/admin`).
 
 
 24) Repo Tooling Quick Reference
@@ -384,7 +386,7 @@ Client JS diet | Run `next build --analyze`, lazy-load heavy widgets (charts/map
 Fonts & media | Use `next/font` for all typography (with fallbacks) and `next/image` with accurate `sizes`, `priority`, and `loading` hints; preload favicons/icons when not handled by the font stack.
 
 
-Partial prerendering | Evaluate PPR for `/dashboard`, `/admin/classes/[id]`, `/class/[slug]` shells; measure TTFB/LCP before enabling; combine with `dynamic = "force-dynamic"` only where unavoidable.
+Partial prerendering | Evaluate PPR for `/workspace`, `/admin/classes/[id]`, `/class/[slug]` shells; measure TTFB/LCP before enabling; combine with `dynamic = "force-dynamic"` only where unavoidable.
 
 
 Runtime assignment | Explicitly set `export const runtime` (`"edge"` vs `"nodejs"`), keep marketing/community read-only routes on Edge, and document Node-only reasons (Supabase admin, Stripe) in code + run log.

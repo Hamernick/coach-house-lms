@@ -77,6 +77,20 @@ describe("workspace canvas v2 card node builder", () => {
     expect(node.style?.height).toBeUndefined()
   })
 
+  it("builds the execution card node with intrinsic height on the canvas", () => {
+    const node = buildWorkspaceCanvasV2CardNode({
+      cardId: "deck",
+      position: { x: 0, y: 0 },
+      data: { size: "md" } as WorkspaceBoardNodeData,
+      allowEditing: true,
+    })
+
+    expect(node.className).toContain("h-auto")
+    expect(node.style?.width).toBe(552)
+    expect(node.style?.minHeight).toBeUndefined()
+    expect(node.style?.height).toBeUndefined()
+  })
+
   it("promotes the accelerator canvas card to lg while the module viewer is open", () => {
     expect(
       resolveWorkspaceCanvasAcceleratorCardSize({

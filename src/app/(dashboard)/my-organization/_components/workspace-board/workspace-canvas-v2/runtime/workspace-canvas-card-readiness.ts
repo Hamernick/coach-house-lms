@@ -161,6 +161,7 @@ export function resolveWorkspaceCanvasCardReadinessMap({
     "organization-overview": resolveOrganizationReadiness(seed),
     programs: resolveProgramsReadiness(seed),
     roadmap: resolveRoadmapReadiness(seed),
+    deck: resolveAcceleratorReadiness({ seed, boardState }),
     accelerator: resolveAcceleratorReadiness({ seed, boardState }),
     "economic-engine": resolveEconomicEngineReadiness(seed),
     calendar: resolveCalendarReadiness(seed),

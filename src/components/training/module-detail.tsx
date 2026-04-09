@@ -86,7 +86,7 @@ export function ModuleDetail({
   }, [completedModuleIds])
 
   return (
-    <div className="flex min-h-full w-full flex-col gap-5">
+    <div className="flex min-h-full w-full flex-col gap-4 sm:gap-5">
       <RightRailSlot priority={5} align="bottom">
         <ModuleRightRail
           moduleId={m.id}
@@ -96,7 +96,7 @@ export function ModuleDetail({
           hasDeck={Boolean(m.hasDeck)}
         />
       </RightRailSlot>
-      <ModuleHeader title={m.title} subtitle={undefined} titlePlacement="header" showMobileBody={false} />
+      <ModuleHeader title={m.title} subtitle={undefined} titlePlacement="header" showMobileBody />
 
       {isAdmin && lockedForLearners ? (
         <Alert className="border-amber-500/40 bg-amber-500/10 text-amber-900 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-100">

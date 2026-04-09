@@ -60,11 +60,17 @@ export function OrganizationAccessRequestsPanel({
   acceptRequestAction,
   declineRequestAction,
   highlightedRequestId = null,
+  successHref = "/workspace?joined=1",
+  emptyHref = "/workspace",
+  emptyLabel = "Go to workspace",
 }: {
   initialRequests: OrganizationAccessRequest[]
   acceptRequestAction: OrganizationAccessRequestAction
   declineRequestAction: OrganizationAccessRequestAction
   highlightedRequestId?: string | null
+  successHref?: string
+  emptyHref?: string
+  emptyLabel?: string
 }) {
   const router = useRouter()
   const [requests, setRequests] = useState(initialRequests)
@@ -112,7 +118,7 @@ export function OrganizationAccessRequestsPanel({
       )
 
       if (result.status === "accepted") {
-        router.push("/workspace?joined=1")
+        router.push(successHref)
       }
     })
   }
@@ -154,8 +160,8 @@ export function OrganizationAccessRequestsPanel({
               </p>
             </div>
             <Button asChild>
-              <Link href="/workspace">
-                Go to workspace
+              <Link href={emptyHref}>
+                {emptyLabel}
                 <ArrowRightIcon data-icon="inline-end" />
               </Link>
             </Button>

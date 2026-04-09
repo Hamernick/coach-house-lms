@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import {
   buildWorkspaceAcceleratorChecklistModules,
@@ -13,6 +13,7 @@ import type {
   WorkspaceAcceleratorTutorialInteractionPolicy,
 } from "../types"
 import { shouldWorkspaceAcceleratorTutorialBlockClassSelection } from "./workspace-accelerator-card-tutorial-guards"
+import { resolveWorkspaceAcceleratorLessonGroupFilter } from "./workspace-accelerator-card-panel-lesson-groups-state"
 
 export function useWorkspaceAcceleratorLessonGroupState({
   controller,
@@ -26,6 +27,8 @@ export function useWorkspaceAcceleratorLessonGroupState({
   setOpenModuleId: (next: string | null) => void
 }) {
   const [lessonGroupFilter, setLessonGroupFilter] = useState("")
+  const pendingLessonGroupSelectionRef = useRef<string | null>(null)
+  const previousCurrentLessonGroupKeyRef = useRef("")
   const lessonGroupOptions = useMemo(
     () => buildWorkspaceAcceleratorLessonGroupOptions(controller.steps),
     [controller.steps],
@@ -35,20 +38,25 @@ export function useWorkspaceAcceleratorLessonGroupState({
     : ""
 
   useEffect(() => {
-    if (lessonGroupOptions.length === 0) {
-      if (lessonGroupFilter !== "") {
-        setLessonGroupFilter("")
-      }
-      return
-    }
+    const {
+      nextLessonGroupFilter,
+      nextPendingLessonGroupSelectionKey,
+    } = resolveWorkspaceAcceleratorLessonGroupFilter({
+      lessonGroupOptions,
+      currentLessonGroupKey,
+      previousCurrentLessonGroupKey:
+        previousCurrentLessonGroupKeyRef.current,
+      previousLessonGroupFilter: lessonGroupFilter,
+      pendingLessonGroupSelectionKey:
+        pendingLessonGroupSelectionRef.current,
+    })
 
-    const preferredGroupKey =
-      lessonGroupOptions.find((option) => option.key === currentLessonGroupKey)?.key ??
-      lessonGroupOptions[0]?.key ??
-      ""
-    if (preferredGroupKey && preferredGroupKey !== lessonGroupFilter) {
-      setLessonGroupFilter(preferredGroupKey)
-    }
+    previousCurrentLessonGroupKeyRef.current = currentLessonGroupKey
+    pendingLessonGroupSelectionRef.current =
+      nextPendingLessonGroupSelectionKey
+    setLessonGroupFilter((previous) =>
+      previous === nextLessonGroupFilter ? previous : nextLessonGroupFilter,
+    )
   }, [currentLessonGroupKey, lessonGroupFilter, lessonGroupOptions])
 
   const selectedLessonGroupKey =
@@ -80,6 +88,7 @@ export function useWorkspaceAcceleratorLessonGroupState({
         return
       }
 
+      pendingLessonGroupSelectionRef.current = nextValue
       setLessonGroupFilter(nextValue)
       const nextGroup = lessonGroupOptions.find((option) => option.key === nextValue)
       const nextModuleId = nextGroup?.moduleIds[0] ?? null

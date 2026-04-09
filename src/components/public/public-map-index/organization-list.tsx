@@ -11,6 +11,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { PUBLIC_MAP_GROUP_LABELS } from "@/lib/public-map/groups"
 import { cn } from "@/lib/utils"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import { PublicMapMediaImage } from "./media-image"
 
 const PUBLIC_MAP_LIST_CARD_PERF_STYLE = {
   contentVisibility: "auto",
@@ -41,6 +42,7 @@ export function PublicMapOrganizationList({
   selectedOrgId,
   favorites,
   query,
+  constrainedLayout = false,
   onSelectOrg,
   onToggleFavorite,
   onOpenDetails,
@@ -49,6 +51,7 @@ export function PublicMapOrganizationList({
   selectedOrgId: string | null
   favorites: string[]
   query?: string
+  constrainedLayout?: boolean
   onSelectOrg: (id: string) => void
   onToggleFavorite: (id: string) => void
   onOpenDetails?: (id: string) => void
@@ -95,8 +98,36 @@ export function PublicMapOrganizationList({
               aria-label={`Open details for ${org.name}`}
             />
 
-            <div className="pointer-events-none relative z-10 flex items-start justify-between gap-2">
-              <div className="pointer-events-none min-w-0 flex flex-1 items-start gap-3">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "pointer-events-auto absolute z-20",
+                constrainedLayout ? "right-2.5 top-2.5" : "right-3 top-3",
+                "inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors",
+                isFavorite
+                  ? "border-primary/45 bg-primary/10 text-primary"
+                  : "border-border/70 bg-background/80 text-muted-foreground hover:bg-muted",
+              )}
+              onClick={() => onToggleFavorite(org.id)}
+              aria-label={isFavorite ? `Remove ${org.name} from favorites` : `Add ${org.name} to favorites`}
+            >
+              <HeartIcon className={cn("h-4 w-4", isFavorite && "fill-current")} aria-hidden />
+            </Button>
+
+            <div
+              className={cn(
+                "pointer-events-none relative z-10 flex min-w-0 items-start pr-10",
+                constrainedLayout ? "gap-2.5" : "gap-3",
+              )}
+            >
+              <div
+                className={cn(
+                  "pointer-events-none min-w-0 flex flex-1 items-start",
+                  constrainedLayout ? "gap-2.5" : "gap-3",
+                )}
+              >
                 <Avatar className="mt-0.5 size-10 rounded-xl border border-border/60">
                   <AvatarImage src={org.logoUrl ?? org.headerUrl ?? undefined} alt={org.name} className="object-cover" />
                   <AvatarFallback className="rounded-xl bg-muted/45 text-[11px] font-semibold text-foreground">
@@ -118,23 +149,6 @@ export function PublicMapOrganizationList({
                   ) : null}
                 </span>
               </div>
-
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className={cn(
-                  "pointer-events-auto relative z-20",
-                  "inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors",
-                  isFavorite
-                    ? "border-primary/45 bg-primary/10 text-primary"
-                    : "border-border/70 bg-background/80 text-muted-foreground hover:bg-muted",
-                )}
-                onClick={() => onToggleFavorite(org.id)}
-                aria-label={isFavorite ? `Remove ${org.name} from favorites` : `Add ${org.name} to favorites`}
-              >
-                <HeartIcon className={cn("h-4 w-4", isFavorite && "fill-current")} aria-hidden />
-              </Button>
             </div>
 
             {org.programPreview?.title ? (
@@ -153,15 +167,11 @@ export function PublicMapOrganizationList({
                     key={`${org.id}:program:${program.id}`}
                     className="overflow-hidden rounded-lg border border-border/70 bg-muted/25"
                   >
-                    <div className="relative h-20 bg-muted/30">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={program.imageUrl ?? ""}
-                        alt=""
-                        className="h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    </div>
+                    <PublicMapMediaImage
+                      src={program.imageUrl ?? ""}
+                      alt=""
+                      wrapperClassName="h-20 bg-muted/30"
+                    />
                     <div className="px-2 py-1.5">
                       <p className="line-clamp-1 text-[11px] font-medium text-foreground">{program.title}</p>
                     </div>
@@ -170,8 +180,15 @@ export function PublicMapOrganizationList({
               </div>
             ) : null}
 
-            <div className="pointer-events-none relative z-10 mt-3 flex items-end justify-between gap-2">
-              <div className="pointer-events-none flex min-w-0 flex-wrap items-center gap-1.5">
+            <div
+              className={cn(
+                "pointer-events-none relative z-10 mt-3 min-w-0",
+                constrainedLayout
+                  ? "grid grid-cols-1 gap-2"
+                  : "flex flex-wrap items-end gap-2",
+              )}
+            >
+              <div className="pointer-events-none flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
                 <Badge variant="outline" className="rounded-md border-border/70 bg-background/80 text-[10px] text-foreground">
                   {PUBLIC_MAP_GROUP_LABELS[org.primaryGroup]}
                 </Badge>
@@ -186,7 +203,10 @@ export function PublicMapOrganizationList({
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="pointer-events-auto relative z-20 h-auto rounded-none border-0 bg-transparent px-0 py-0 text-[11px] text-foreground shadow-none hover:bg-transparent hover:text-foreground/80"
+                className={cn(
+                  "pointer-events-auto relative z-20 h-auto shrink-0 rounded-none border-0 bg-transparent px-0 py-0 text-[11px] text-foreground shadow-none hover:bg-transparent hover:text-foreground/80",
+                  constrainedLayout ? "justify-self-end" : "ml-auto",
+                )}
                 onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}
               >
                 Details

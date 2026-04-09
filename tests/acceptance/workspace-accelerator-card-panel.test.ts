@@ -1,7 +1,11 @@
-import { describe, expect, it } from "vitest"
+import React from "react"
+import { renderToStaticMarkup } from "react-dom/server"
+import { describe, expect, it, vi } from "vitest"
 
 import { resolveWorkspaceAcceleratorPlaceholderVideoUrl } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel"
 import { buildWorkspaceAcceleratorFullscreenHref } from "@/features/workspace-accelerator-card"
+import { WorkspaceAcceleratorCardPanel } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel"
+import { RightRailProvider } from "@/components/app-shell/right-rail"
 import {
   resolveWorkspaceAcceleratorCollapsedCardSize,
   shouldWorkspaceAcceleratorSyncModuleViewerSize,
@@ -9,6 +13,13 @@ import {
   shouldWorkspaceAcceleratorTutorialAdvanceFromFooterContinue,
   shouldWorkspaceAcceleratorTutorialKeepModuleViewerOpen,
 } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support"
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: () => undefined,
+  }),
+  useSearchParams: () => new URLSearchParams(),
+}))
 
 describe("workspace accelerator tutorial panel state", () => {
   it("builds workspace accelerator fullscreen hrefs with optional deep-link state", () => {
@@ -225,5 +236,64 @@ describe("workspace accelerator tutorial panel state", () => {
         ],
       }),
     ).toBe("https://cdn.example.com/welcome.mp4")
+  })
+
+  it("keeps the fullscreen accelerator panel on a full-height flex column for immersive onboarding routes", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(
+        RightRailProvider,
+        null,
+        React.createElement(WorkspaceAcceleratorCardPanel, {
+          input: {
+            steps: [
+              {
+                id: "workspace-onboarding-organization-setup:lesson",
+                moduleId: "workspace-onboarding-organization-setup",
+                moduleTitle: "Organization setup",
+                stepKind: "lesson",
+                stepTitle: "Organization setup",
+                stepDescription: null,
+                href: "/onboarding?source=formation-setup",
+                status: "in_progress",
+                stepSequenceIndex: 1,
+                stepSequenceTotal: 1,
+                moduleSequenceIndex: 1,
+                moduleSequenceTotal: 1,
+                groupTitle: "Formation",
+                videoUrl: null,
+                durationMinutes: null,
+                resources: [],
+                hasAssignment: false,
+                hasDeck: false,
+                moduleContext: {
+                  classTitle: "Formation",
+                  lessonNotesContent: null,
+                  moduleResources: [],
+                  assignmentFields: [],
+                  assignmentSubmission: null,
+                  completeOnSubmit: false,
+                  workspaceOnboarding: {
+                    view: "organization-setup",
+                    defaults: null,
+                  },
+                },
+              },
+            ],
+            size: "lg",
+            readinessSummary: null,
+            allowAutoResize: false,
+            storageKey: "org:viewer",
+            initialCurrentStepId: "workspace-onboarding-organization-setup:lesson",
+            initialCompletedStepIds: [],
+            onWorkspaceOnboardingSubmit: async () => undefined,
+          },
+          presentationMode: "fullscreen-route",
+          initialModuleViewerOpen: true,
+        }),
+      ),
+    )
+
+    expect(markup).toContain('class="relative flex h-full min-h-0 flex-1 flex-col"')
+    expect(markup).toContain('class="grid min-h-0 flex-1 gap-0 grid-cols-1"')
   })
 })

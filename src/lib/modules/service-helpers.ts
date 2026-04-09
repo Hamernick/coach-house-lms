@@ -21,6 +21,23 @@ export type ClassWithModules = Database["public"]["Tables"]["classes"]["Row"] & 
   > | null
 }
 
+export type ClassWithLightModules = Database["public"]["Tables"]["classes"]["Row"] & {
+  modules: Array<
+    Pick<
+      Database["public"]["Tables"]["modules"]["Row"],
+      | "id"
+      | "idx"
+      | "slug"
+      | "title"
+      | "description"
+      | "is_published"
+      | "video_url"
+      | "duration_minutes"
+      | "deck_path"
+    >
+  > | null
+}
+
 export function inferResourceProvider(rawUrl: string | null | undefined): ModuleResourceProvider {
   return inferProviderSlug(rawUrl) as ModuleResourceProvider
 }

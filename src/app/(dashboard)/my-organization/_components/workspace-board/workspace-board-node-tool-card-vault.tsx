@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { parseAsString, useQueryState } from "nuqs"
 
 import { WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME } from "@/components/workspace/workspace-tutorial-theme"
+import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
 import type {
@@ -70,10 +71,11 @@ function WorkspaceBoardVaultTutorialInteractionShield() {
   return (
     <Tooltip open={open} onOpenChange={setOpen}>
       <TooltipTrigger asChild>
-        <button
+        <Button
           type="button"
+          variant="ghost"
           aria-label={WORKSPACE_BOARD_VAULT_TUTORIAL_LOCK_MESSAGE}
-          className="absolute inset-0 z-20 cursor-help bg-transparent"
+          className="absolute inset-0 z-20 h-auto cursor-help rounded-none border-0 bg-transparent p-0 shadow-none hover:bg-transparent focus-visible:border-transparent focus-visible:ring-0"
           onPointerDown={(event) => {
             event.preventDefault()
             event.stopPropagation()

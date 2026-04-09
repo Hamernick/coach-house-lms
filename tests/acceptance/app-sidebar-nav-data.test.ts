@@ -20,4 +20,41 @@ describe("app sidebar nav data", () => {
       }).map((item) => item.title),
     ).not.toContain("Platform")
   })
+
+  it("shows Platform Lab only when explicitly enabled for platform admins", () => {
+    expect(
+      buildMainNav({
+        isAdmin: true,
+        showOrgAdmin: true,
+        canAccessOrgAdmin: true,
+        showPlatformLab: true,
+      }).map((item) => item.title),
+    ).toContain("Platform Lab")
+
+    expect(
+      buildMainNav({
+        isAdmin: true,
+        showOrgAdmin: true,
+        canAccessOrgAdmin: true,
+        showPlatformLab: false,
+      }).map((item) => item.title),
+    ).not.toContain("Platform Lab")
+  })
+
+  it("replaces the workspace nav with the member workspace routes when enabled", () => {
+    expect(
+      buildMainNav({
+        isAdmin: false,
+        showOrgAdmin: false,
+        canAccessOrgAdmin: false,
+        showMemberWorkspace: true,
+      }).map((item) => item.title),
+    ).toEqual([
+      "Workspace",
+      "Projects",
+      "My Tasks",
+      "People",
+      "Documents",
+    ])
+  })
 })

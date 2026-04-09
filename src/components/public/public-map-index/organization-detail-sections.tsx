@@ -14,6 +14,7 @@ import type { FormationStatusOption } from "@/lib/organization/formation-status"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { cn } from "@/lib/utils"
 
+import { PublicMapMediaImage } from "./media-image"
 import {
   truncateAtWordBoundary,
   type OrganizationDetailContactRow,
@@ -104,14 +105,12 @@ function OrganizationDetailLogoCard({
   return (
     <div className="rounded-xl border border-border/70 bg-background/80 p-2">
       <p className="text-[11px] text-muted-foreground">{label}</p>
-      <div className="mt-2 flex h-16 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-muted/20 p-2">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imageUrl}
-          alt={alt}
-          className="max-h-full max-w-full rounded-lg object-contain"
-        />
-      </div>
+      <PublicMapMediaImage
+        src={imageUrl}
+        alt={alt}
+        wrapperClassName="mt-2 flex h-16 items-center justify-center rounded-xl border border-border/60 bg-muted/20 p-2"
+        className="max-h-full max-w-full rounded-lg object-contain"
+      />
     </div>
   )
 }
@@ -282,15 +281,11 @@ export function OrganizationDetailProgramsSection({
             className="rounded-lg border border-border/70 bg-card/80 px-2 py-1.5"
           >
             {program.imageUrl ? (
-              <div className="mb-1.5 h-24 overflow-hidden rounded-md border border-border/70 bg-muted/30">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={program.imageUrl}
-                  alt=""
-                  className="h-full w-full object-cover"
-                  loading="lazy"
-                />
-              </div>
+              <PublicMapMediaImage
+                src={program.imageUrl}
+                alt=""
+                wrapperClassName="mb-1.5 h-24 rounded-md border border-border/70 bg-muted/30"
+              />
             ) : null}
             <p className="line-clamp-1 text-xs font-medium text-foreground">
               {program.title}

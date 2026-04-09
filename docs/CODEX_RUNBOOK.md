@@ -1,5 +1,7 @@
 # CODEX\_RUNBOOK — Stepper & Prompts
 
+Historical naming note (2026-04-09): older entries in this runbook refer to `/dashboard` as the authenticated app shell. The current user-facing primary app entry is `/workspace`, while `src/app/(dashboard)/**` remains the internal Next.js route group name.
+
 > **Goal**: Deterministic, PR‑first build using AGENTS.md (v4). One step per PR. Codex drives; humans review.
 
 ## How to use

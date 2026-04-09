@@ -56,6 +56,12 @@ export function resolveWorkspaceCanvasV2InitialPositionLookup(
           y: byId.get("roadmap")!.y,
         }
       : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS.roadmap,
+    deck: byId.has("deck")
+      ? {
+          x: byId.get("deck")!.x,
+          y: byId.get("deck")!.y,
+        }
+      : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS.deck,
     calendar: byId.has("calendar")
       ? {
           x: byId.get("calendar")!.x,

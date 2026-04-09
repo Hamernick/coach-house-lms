@@ -44,10 +44,11 @@ function resolveHiddenUtilityPosition(cardId: WorkspaceCardId) {
 }
 
 const WORKSPACE_TRUNK_CARD_IDS = [
-  "organization-overview",
-  "programs",
   "roadmap",
   "accelerator",
+  "organization-overview",
+  "programs",
+  "deck",
 ] as const satisfies readonly WorkspaceCardId[]
 
 const WORKSPACE_LEAF_CARD_IDS = [
@@ -203,9 +204,7 @@ function buildTimelineLayout({
   }
 
   if (visibleLeafCards.length > 0) {
-    const leafAnchorId = visibleCardSet.has("accelerator")
-      ? "accelerator"
-      : lastTrunkCardId
+    const leafAnchorId = lastTrunkCardId
     const anchorPosition = positions[leafAnchorId]
     const anchorDimensions = resolveCardDimensions(
       resolveNodeSize(leafAnchorId, sizeLookup),

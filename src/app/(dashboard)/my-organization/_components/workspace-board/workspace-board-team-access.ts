@@ -1,4 +1,9 @@
 import type {
+  OrganizationAccessInvite,
+  OrganizationAccessRequest,
+} from "@/app/actions/organization-access"
+
+import type {
   WorkspaceCollaborationInvite,
   WorkspaceMemberOption,
 } from "./workspace-board-types"
@@ -60,12 +65,55 @@ export function countActiveWorkspaceInvites(
   }).length
 }
 
+export function listPendingWorkspaceTeamInvites(
+  invites: OrganizationAccessInvite[],
+  nowMs: number,
+) {
+  return invites.filter((invite) => {
+    if (invite.acceptedAt) return false
+    const expiresAt = new Date(invite.expiresAt).getTime()
+    return Number.isFinite(expiresAt) && expiresAt > nowMs
+  })
+}
+
+export function listPendingWorkspaceAccessRequests(
+  requests: OrganizationAccessRequest[],
+  nowMs: number,
+) {
+  return requests.filter((request) => {
+    if (request.status !== "pending") return false
+    const expiresAt = new Date(request.expiresAt).getTime()
+    return Number.isFinite(expiresAt) && expiresAt > nowMs
+  })
+}
+
+export function countPendingWorkspaceTeamAccess({
+  invites,
+  requests,
+  nowMs,
+}: {
+  invites: OrganizationAccessInvite[]
+  requests: OrganizationAccessRequest[]
+  nowMs: number
+}) {
+  return (
+    listPendingWorkspaceTeamInvites(invites, nowMs).length +
+    listPendingWorkspaceAccessRequests(requests, nowMs).length
+  )
+}
+
 export function shouldShowWorkspaceTeamAccessEmptyState({
   accessPeopleCount,
   activeInviteCount,
+  pendingTeamAccessCount,
 }: {
   accessPeopleCount: number
   activeInviteCount: number
+  pendingTeamAccessCount: number
 }) {
-  return accessPeopleCount <= 1 && activeInviteCount === 0
+  return (
+    accessPeopleCount <= 1 &&
+    activeInviteCount === 0 &&
+    pendingTeamAccessCount === 0
+  )
 }

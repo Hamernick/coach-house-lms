@@ -26,6 +26,7 @@ const WORKSPACE_SHORTCUT_ICON_BY_ID: WorkspaceShortcutIconMap = {
   "organization-overview": Building2Icon,
   programs: FolderPlusIcon,
   roadmap: RouteIcon,
+  deck: WaypointsIcon,
   accelerator: WaypointsIcon,
   "brand-kit": FolderTreeIcon,
   "economic-engine": BadgeDollarSignIcon,
@@ -55,6 +56,7 @@ const WORKSPACE_SHORTCUT_HIDDEN_CARD_IDS = new Set<WorkspaceCanvasV2CardId>([
 ])
 
 const WORKSPACE_SHORTCUT_FOCUS_OPEN_CARD_IDS = new Set<WorkspaceCanvasV2CardId>([
+  "deck",
   "accelerator",
   "roadmap",
 ])
@@ -62,6 +64,18 @@ const WORKSPACE_SHORTCUT_COMING_SOON_CARD_IDS = new Set<WorkspaceCanvasV2CardId>
   "economic-engine",
   "communications",
 ])
+
+function shouldRenderWorkspaceShortcutCard(cardId: WorkspaceCanvasV2CardId) {
+  if (WORKSPACE_SHORTCUT_HIDDEN_CARD_IDS.has(cardId)) {
+    return false
+  }
+
+  if (cardId === "calendar" || cardId === "deck") {
+    return false
+  }
+
+  return true
+}
 
 export function buildWorkspaceCardShortcutItemModels({
   hiddenCardIds,
@@ -85,7 +99,7 @@ export function buildWorkspaceCardShortcutItemModels({
   onTutorialAdvance?: (() => void) | null
 }): WorkspaceCardShortcutItemModel[] {
   return resolveWorkspaceCanvasRailCardOrder()
-    .filter((cardId) => !WORKSPACE_SHORTCUT_HIDDEN_CARD_IDS.has(cardId))
+    .filter((cardId) => shouldRenderWorkspaceShortcutCard(cardId))
     .map((cardId) => {
       const contract = WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId]
       const boardVisible = !hiddenCardIds.includes(cardId)

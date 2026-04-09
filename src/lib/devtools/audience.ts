@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { cache } from "react"
 
 import type { Database } from "@/lib/supabase"
 
@@ -107,11 +108,11 @@ export function resolveTesterMetadata(userMetadata: unknown): boolean {
   return meta.is_tester === true || meta.tester === true || meta.qa_tester === true
 }
 
-export async function resolveDevtoolsAudience({
-  supabase,
-  userId,
-  fallbackIsTester = false,
-}: DevtoolsAudienceOptions): Promise<DevtoolsAudience> {
+const resolveDevtoolsAudienceCached = cache(async (
+  supabase: SupabaseClient<Database, "public">,
+  userId: string,
+  fallbackIsTester: boolean,
+): Promise<DevtoolsAudience> => {
   const withTester = await lookupProfileRow<ProfileRowWithTester>({
     supabase,
     userId,
@@ -143,13 +144,21 @@ export async function resolveDevtoolsAudience({
     isAdmin: withoutTester.data?.role === "admin",
     isTester: fallbackIsTester,
   }
-}
+})
 
-export async function resolveProfileAudience({
+export async function resolveDevtoolsAudience({
   supabase,
   userId,
   fallbackIsTester = false,
-}: DevtoolsAudienceOptions): Promise<ProfileAudience> {
+}: DevtoolsAudienceOptions): Promise<DevtoolsAudience> {
+  return resolveDevtoolsAudienceCached(supabase, userId, fallbackIsTester)
+}
+
+const resolveProfileAudienceCached = cache(async (
+  supabase: SupabaseClient<Database, "public">,
+  userId: string,
+  fallbackIsTester: boolean,
+): Promise<ProfileAudience> => {
   const withTester = await lookupProfileRow<ProfileAudienceWithTester>({
     supabase,
     userId,
@@ -192,4 +201,12 @@ export async function resolveProfileAudience({
     isAdmin: withoutTester.data?.role === "admin",
     isTester: fallbackIsTester,
   }
+})
+
+export async function resolveProfileAudience({
+  supabase,
+  userId,
+  fallbackIsTester = false,
+}: DevtoolsAudienceOptions): Promise<ProfileAudience> {
+  return resolveProfileAudienceCached(supabase, userId, fallbackIsTester)
 }

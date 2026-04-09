@@ -93,4 +93,17 @@ export type ClassModuleResult = {
   progressMap: Record<string, ModuleProgressStatus>
 }
 
+export type ClassModulePageResult = {
+  classId: string
+  classTitle: string
+  classDescription: string | null
+  classSubtitle?: string | null
+  classPublished: boolean
+  classVideoUrl?: string | null
+  classResources?: ModuleResource[]
+  modules: ModuleRecord[]
+  progressMap: Record<string, ModuleProgressStatus>
+  currentModuleId: string | null
+}
+
 export type ModuleProgressInsert = Database["public"]["Tables"]["module_progress"]["Insert"]

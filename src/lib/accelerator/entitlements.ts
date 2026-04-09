@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
+import { cache } from "react"
 import Stripe from "stripe"
 
 import type { Database } from "@/lib/supabase"
@@ -156,13 +157,13 @@ async function trySyncSubscriptionFromStripe({
   return true
 }
 
-export async function fetchLearningEntitlements({
+const fetchLearningEntitlementsCached = cache(async ({
   supabase,
   userId,
   orgUserId,
   isAdmin = false,
   forceStripeSync = false,
-}: AccessOptions): Promise<LearningEntitlements> {
+}: AccessOptions): Promise<LearningEntitlements> => {
   if (isAdmin) {
     return {
       hasAcceleratorPurchase: true,
@@ -281,4 +282,15 @@ export async function fetchLearningEntitlements({
     hasElectiveAccess: hasAcceleratorAccess || ownedElectiveModuleSlugs.length > 0,
     ownedElectiveModuleSlugs,
   }
+})
+
+export async function fetchLearningEntitlements(
+  options: AccessOptions,
+): Promise<LearningEntitlements> {
+  return fetchLearningEntitlementsCached({
+    ...options,
+    orgUserId: options.orgUserId,
+    isAdmin: options.isAdmin ?? false,
+    forceStripeSync: options.forceStripeSync ?? false,
+  })
 }

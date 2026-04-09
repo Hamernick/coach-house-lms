@@ -43,10 +43,20 @@ describe("workspace card shortcuts", () => {
 
     expect(items.map((item) => item.id)).toEqual([
       "accelerator",
-      "calendar",
       "programs",
       "roadmap",
     ])
+  })
+
+  it("keeps calendar off the live shortcut rail outside the tutorial", () => {
+    const items = buildWorkspaceCardShortcutItemModels({
+      hiddenCardIds: [],
+      selectedCardId: null,
+      onToggle: vi.fn(),
+      onFocusCard: vi.fn(),
+    })
+
+    expect(items.some((item) => item.id === "calendar")).toBe(false)
   })
 
   it("forces the tutorial shortcut button to advance without triggering a competing card focus", () => {
@@ -60,14 +70,14 @@ describe("workspace card shortcuts", () => {
       onToggle,
       onFocusCard,
       tutorialTargetCardId: "programs",
-      tutorialInstruction: "Click to open the Programs tool and continue.",
+      tutorialInstruction: "Click the Programs button and continue.",
       onTutorialAdvance,
     })
 
     const programsItem = items.find((item) => item.id === "programs")
 
     expect(programsItem?.tutorialCallout?.instruction).toContain(
-      "Programs tool",
+      "Programs button",
     )
     programsItem?.onPress()
 
@@ -76,28 +86,19 @@ describe("workspace card shortcuts", () => {
     expect(onTutorialAdvance).toHaveBeenCalledTimes(1)
   })
 
-  it("lets the tutorial step own hidden-card reveals instead of toggling board visibility", () => {
-    const onToggle = vi.fn()
-    const onFocusCard = vi.fn()
-    const onTutorialAdvance = vi.fn()
+  it("does not resurrect calendar in the shortcut rail for tutorial-owned flows", () => {
     const items = buildWorkspaceCardShortcutItemModels({
       hiddenCardIds: ["calendar"],
       visibleCardIds: ["organization-overview"],
       selectedCardId: null,
-      onToggle,
-      onFocusCard,
+      onToggle: vi.fn(),
+      onFocusCard: vi.fn(),
       tutorialTargetCardId: "calendar",
-      tutorialInstruction: "Click to open the Calendar tool and continue.",
-      onTutorialAdvance,
+      tutorialInstruction: "Click the Calendar button and continue.",
+      onTutorialAdvance: vi.fn(),
     })
 
-    const calendarItem = items.find((item) => item.id === "calendar")
-
-    calendarItem?.onPress()
-
-    expect(onToggle).not.toHaveBeenCalled()
-    expect(onFocusCard).not.toHaveBeenCalled()
-    expect(onTutorialAdvance).toHaveBeenCalledTimes(1)
+    expect(items.some((item) => item.id === "calendar")).toBe(false)
   })
 
   it("does not toggle a board-visible tutorial target closed when the tutorial scene has not revealed it yet", () => {
@@ -111,7 +112,7 @@ describe("workspace card shortcuts", () => {
       onToggle,
       onFocusCard,
       tutorialTargetCardId: "accelerator",
-      tutorialInstruction: "Click to open the Accelerator tool and continue.",
+      tutorialInstruction: "Click the Accelerator button and continue.",
       onTutorialAdvance,
     })
 
@@ -213,6 +214,7 @@ describe("workspace card shortcuts", () => {
     expect(items.length).toBeGreaterThan(0)
     expect(items.every((item) => item.tutorialHighlighted)).toBe(true)
     expect(items.every((item) => item.tutorialCallout === null)).toBe(true)
+    expect(items.some((item) => item.id === "calendar")).toBe(false)
   })
 
   it("uses the blue highlight treatment for the tutorial tools step", () => {
@@ -248,7 +250,7 @@ describe("workspace card shortcuts", () => {
           comingSoon: false,
           tutorialHighlighted: false,
           tutorialCallout: {
-            instruction: "Click to open the Accelerator tool and continue.",
+            instruction: "Click the Accelerator button and continue.",
           },
           onPress: vi.fn(),
         },

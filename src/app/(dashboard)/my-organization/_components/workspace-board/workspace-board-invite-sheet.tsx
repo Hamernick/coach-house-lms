@@ -3,7 +3,11 @@
 import { type ReactNode, useEffect, useMemo, useState, useTransition } from "react"
 import UserPlus2Icon from "lucide-react/dist/esm/icons/user-plus-2"
 
-import { createOrganizationInviteAction } from "@/app/actions/organization-access"
+import {
+  createOrganizationInviteAction,
+  revokeOrganizationAccessRequestAction,
+  revokeOrganizationInviteAction,
+} from "@/app/actions/organization-access"
 import {
   createWorkspaceCollaborationInviteAction,
   revokeWorkspaceCollaborationInviteAction,
@@ -22,6 +26,10 @@ import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 import { WorkspaceBoardInviteSheetBody } from "./workspace-board-invite-sheet-content"
+import {
+  useWorkspaceBoardOrganizationAccessState,
+  type WorkspaceBoardOrganizationAccessSnapshot,
+} from "./workspace-board-organization-access-state"
 import {
   clampDurationValue,
   resolveInviteStatus,
@@ -51,6 +59,7 @@ export function WorkspaceBoardInviteSheet({
   members,
   invites,
   onInvitesChange,
+  organizationAccessState,
   triggerClassName,
   triggerContent,
   triggerAriaLabel,
@@ -61,6 +70,7 @@ export function WorkspaceBoardInviteSheet({
   members: WorkspaceMemberOption[]
   invites: WorkspaceCollaborationInvite[]
   onInvitesChange: (nextInvites: WorkspaceCollaborationInvite[]) => void
+  organizationAccessState?: WorkspaceBoardOrganizationAccessSnapshot
   triggerClassName?: string
   triggerContent?: ReactNode
   triggerAriaLabel?: string
@@ -77,6 +87,11 @@ export function WorkspaceBoardInviteSheet({
   const [nowMs, setNowMs] = useState(() => Date.now())
   const [origin, setOrigin] = useState("")
   const [isPending, startTransition] = useTransition()
+  const fallbackOrganizationAccessState = useWorkspaceBoardOrganizationAccessState({
+    enabled: open && !organizationAccessState,
+  })
+  const resolvedOrganizationAccessState =
+    organizationAccessState ?? fallbackOrganizationAccessState
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -113,6 +128,8 @@ export function WorkspaceBoardInviteSheet({
     const invited = new Set(activeInvites.map((entry) => entry.invite.userId))
     return members.filter((member) => !invited.has(member.userId))
   }, [activeInvites, members])
+
+  const canOpenInviteSheet = canInvite || resolvedOrganizationAccessState.canInviteTeam
 
   const handleCreate = () => {
     if (!selectedMemberId) {
@@ -182,22 +199,33 @@ export function WorkspaceBoardInviteSheet({
 
           try {
             await copyInviteLink(link)
-            toast.success("Invite link copied because email delivery failed")
+            toast.warning("Invite created, but email delivery failed. Link copied instead.", {
+              description: result.emailError ?? undefined,
+            })
           } catch {
-            toast.success(result.emailError ?? "Invite created")
+            toast.warning("Invite created, but email delivery failed.", {
+              description: result.emailError ?? undefined,
+            })
           }
         }
       } else {
-        toast.success(
-          result.emailSent
-            ? result.outcome === "existing_user_request_resent"
-              ? "Access request sent again"
-              : "Access request sent"
-            : `${result.outcome === "existing_user_request_resent" ? "Access request sent again" : "Access request sent"}. ${result.emailError ?? "Heads-up email skipped."}`,
-        )
+        const requestLabel =
+          result.outcome === "existing_user_request_resent"
+            ? "Access request sent again"
+            : "Access request sent"
+        if (result.emailSent) {
+          toast.success(requestLabel)
+        } else {
+          toast.warning(requestLabel, {
+            description:
+              result.emailError ??
+              "The request is pending in Team Access, but the email notification failed.",
+          })
+        }
       }
 
       setTeamInviteEmail("")
+      await resolvedOrganizationAccessState.refresh()
     })
   }
 
@@ -213,6 +241,41 @@ export function WorkspaceBoardInviteSheet({
     })
   }
 
+  const handleCopyOrganizationInviteLink = (link: string) => {
+    startTransition(async () => {
+      try {
+        await copyInviteLink(link)
+        toast.success("Invite link copied")
+      } catch {
+        toast.error("Unable to copy invite link")
+      }
+    })
+  }
+
+  const handleRevokeOrganizationInvite = (inviteId: string) => {
+    startTransition(async () => {
+      const result = await revokeOrganizationInviteAction(inviteId)
+      if ("error" in result) {
+        toast.error(result.error)
+        return
+      }
+      toast.success("Team invite revoked")
+      await resolvedOrganizationAccessState.refresh()
+    })
+  }
+
+  const handleRevokeOrganizationAccessRequest = (requestId: string) => {
+    startTransition(async () => {
+      const result = await revokeOrganizationAccessRequestAction(requestId)
+      if ("error" in result) {
+        toast.error(result.error)
+        return
+      }
+      toast.success("Access request cancelled")
+      await resolvedOrganizationAccessState.refresh()
+    })
+  }
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>
@@ -221,7 +284,7 @@ export function WorkspaceBoardInviteSheet({
           size={triggerSize}
           variant={triggerVariant}
           className={cn("h-8", triggerClassName)}
-          disabled={!canInvite}
+          disabled={!canOpenInviteSheet}
           aria-label={triggerAriaLabel}
         >
           {triggerContent ?? (
@@ -241,8 +304,14 @@ export function WorkspaceBoardInviteSheet({
         </SheetHeader>
 
         <WorkspaceBoardInviteSheetBody
-          canInvite={canInvite}
+          canInviteTemporary={canInvite}
+          canInviteTeam={resolvedOrganizationAccessState.canInviteTeam}
           isPending={isPending}
+          organizationAccessLoading={resolvedOrganizationAccessState.loading}
+          organizationAccessMessage={resolvedOrganizationAccessState.inviteCapabilityMessage}
+          organizationInvites={resolvedOrganizationAccessState.invites}
+          organizationRequests={resolvedOrganizationAccessState.requests}
+          inviteUrlBase={origin}
           memberOptions={memberOptions}
           inviteAudience={inviteAudience}
           onInviteAudienceChange={setInviteAudience}
@@ -261,6 +330,9 @@ export function WorkspaceBoardInviteSheet({
           activeInvites={activeInvites}
           historicalInvites={historicalInvites}
           onRevoke={handleRevoke}
+          onCopyOrganizationInviteLink={handleCopyOrganizationInviteLink}
+          onRevokeOrganizationInvite={handleRevokeOrganizationInvite}
+          onRevokeOrganizationAccessRequest={handleRevokeOrganizationAccessRequest}
         />
 
         <SheetFooter className="border-t border-border/60 bg-background/90">

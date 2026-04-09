@@ -130,13 +130,11 @@ function PrototypeTreeFolder({
 function NavMainTreeItem({
   activeEntryId,
   isActive,
-  isOrganizationItem,
   item,
   tourId,
 }: {
   activeEntryId: string
   isActive: boolean
-  isOrganizationItem: boolean
   item: NavMainItem
   tourId?: string
 }) {
@@ -159,29 +157,16 @@ function NavMainTreeItem({
           asChild
           isActive={isActive}
           tooltip={item.title}
-          className={cn(
-            "justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0",
-            isOrganizationItem && "h-auto min-h-8 py-2.5",
-          )}
+          className="justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
         >
           <Link
             href={item.href ?? "#"}
             title={item.title}
             data-tour={tourId}
-            className={cn(
-              "flex w-full items-center gap-2",
-              isOrganizationItem && "items-start py-0.5",
-            )}
+            className="flex w-full items-center gap-2"
           >
             {item.icon ? <item.icon className="size-4 shrink-0" /> : null}
-            <span
-              className={cn(
-                "flex-1 min-w-0 leading-snug group-data-[collapsible=icon]:hidden",
-                isOrganizationItem
-                  ? "line-clamp-2 whitespace-normal break-words"
-                  : "truncate whitespace-nowrap",
-              )}
-            >
+            <span className="flex-1 min-w-0 truncate whitespace-nowrap leading-snug group-data-[collapsible=icon]:hidden">
               {item.title}
             </span>
             {item.href === "/roadmap" ? (
@@ -284,24 +269,14 @@ export function NavMain({
             if (!item.href || item.locked) {
               return (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    tooltip={item.title}
-                    className={cn(
-                      "justify-start gap-2 opacity-90 cursor-default hover:bg-transparent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0",
-                      isOrganizationItem && "h-auto min-h-8 py-2.5",
-                    )}
-                  >
+                <SidebarMenuButton
+                  asChild
+                  tooltip={item.title}
+                  className="justify-start gap-2 opacity-90 cursor-default hover:bg-transparent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
+                >
                     <div aria-disabled className="flex w-full items-center gap-2">
                       {item.icon ? <item.icon className="size-4 shrink-0" /> : null}
-                      <span
-                        className={cn(
-                          "flex-1 min-w-0 leading-snug group-data-[collapsible=icon]:hidden",
-                          isOrganizationItem
-                            ? "line-clamp-2 whitespace-normal break-words"
-                            : "truncate whitespace-nowrap",
-                        )}
-                      >
+                      <span className="flex-1 min-w-0 truncate whitespace-nowrap leading-snug group-data-[collapsible=icon]:hidden">
                         {item.title}
                       </span>
                       <span className="ml-auto flex shrink-0 items-center gap-1.5 group-data-[collapsible=icon]:hidden">
@@ -331,7 +306,6 @@ export function NavMain({
                   key={item.title}
                   activeEntryId={prototypeActiveEntryId}
                   isActive={isActive}
-                  isOrganizationItem={isOrganizationItem}
                   item={item}
                   tourId={tourId}
                 />
@@ -344,30 +318,17 @@ export function NavMain({
                   asChild
                   isActive={isActive}
                   tooltip={item.title}
-                  className={cn(
-                    "justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0",
-                    isOrganizationItem && "h-auto min-h-8 py-2.5",
-                  )}
+                  className="justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
                 >
                   <Link
                     href={item.href}
                     title={item.title}
                     data-tour={tourId}
-                    className={cn(
-                      "flex w-full items-center gap-2",
-                      isOrganizationItem && "items-start py-0.5",
-                    )}
-                    >
+                    className="flex w-full items-center gap-2"
+                  >
                       {item.icon ? <item.icon className="size-4 shrink-0" /> : null}
-                      <span
-                      className={cn(
-                        "flex-1 min-w-0 leading-snug group-data-[collapsible=icon]:hidden",
-                        isOrganizationItem
-                          ? "line-clamp-2 whitespace-normal break-words"
-                          : "truncate whitespace-nowrap",
-                      )}
-                      >
-                      {item.title}
+                      <span className="flex-1 min-w-0 truncate whitespace-nowrap leading-snug group-data-[collapsible=icon]:hidden">
+                        {item.title}
                       </span>
                       <span className="ml-auto flex shrink-0 items-center gap-2 group-data-[collapsible=icon]:hidden">
                         {item.href === "/roadmap" ? (

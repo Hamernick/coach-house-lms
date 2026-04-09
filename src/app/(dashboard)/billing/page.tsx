@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation"
-import Link from "next/link"
 import CalendarClockIcon from "lucide-react/dist/esm/icons/calendar-clock"
 import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
 import CircleDotIcon from "lucide-react/dist/esm/icons/circle-dot"
@@ -7,21 +6,23 @@ import CoinsIcon from "lucide-react/dist/esm/icons/coins"
 import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import { resolvePricingPlanTier } from "@/lib/billing/plan-tier"
-import { env } from "@/lib/env"
+import {
+  resolveStripeRuntimeConfigForAudience,
+} from "@/lib/billing/stripe-runtime"
 import type { Json } from "@/lib/supabase"
 import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { StripePoweredBadge } from "@/components/billing/stripe-powered-badge"
+import {
+  resolveDevtoolsAudience,
+  resolveTesterMetadata,
+} from "@/lib/devtools/audience"
 
-import { BillingPortalButton } from "./billing-portal-button"
-
-const PORTAL_READY = Boolean(env.STRIPE_SECRET_KEY || env.STRIPE_TEST_SECRET_KEY)
-const CHECKOUT_ORGANIZATION_READY = Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_ORGANIZATION_PRICE_ID)
-const CHECKOUT_OPERATIONS_READY = Boolean(env.STRIPE_SECRET_KEY && env.STRIPE_OPERATIONS_SUPPORT_PRICE_ID)
+import { BillingPlanCard } from "./_components/billing-plan-card"
+import { BillingPortalCard } from "./_components/billing-portal-card"
 
 function formatDate(dateValue: string | null) {
   if (!dateValue) return null
@@ -44,16 +45,33 @@ export default async function BillingPage() {
     redirect("/login?redirect=/billing")
   }
 
+  const fallbackIsTester = resolveTesterMetadata(user.user_metadata ?? null)
+  const audience = await resolveDevtoolsAudience({
+    supabase,
+    userId: user.id,
+    fallbackIsTester,
+  })
+  const stripeConfig = resolveStripeRuntimeConfigForAudience({
+    isTester: audience.isTester,
+  })
   const { orgId } = await resolveActiveOrganization(supabase, user.id)
   const { data: subscription } = await supabase
     .from("subscriptions")
-    .select("status, metadata, current_period_end")
+    .select(
+      "status, metadata, current_period_end, stripe_customer_id, stripe_subscription_id",
+    )
     .eq("user_id", orgId)
     .in("status", ["active", "trialing", "past_due", "incomplete"])
     .not("stripe_subscription_id", "ilike", "stub_%")
     .order("created_at", { ascending: false })
     .limit(1)
-    .maybeSingle<{ status: string | null; metadata: Json | null; current_period_end: string | null }>()
+    .maybeSingle<{
+      status: string | null
+      metadata: Json | null
+      current_period_end: string | null
+      stripe_customer_id: string | null
+      stripe_subscription_id: string | null
+    }>()
 
   const currentPlanTier = resolvePricingPlanTier(subscription ?? null)
   const periodEnd = formatDate(subscription?.current_period_end ?? null)
@@ -61,6 +79,12 @@ export default async function BillingPage() {
   const organizationIsCurrent = currentPlanTier === "organization"
   const operationsIsCurrent = currentPlanTier === "operations_support"
   const hasPaidPlan = organizationIsCurrent || operationsIsCurrent
+  const portalReady = Boolean(stripeConfig)
+  const checkoutOrganizationReady = Boolean(stripeConfig?.organizationPriceId)
+  const checkoutOperationsReady = Boolean(stripeConfig?.operationsSupportPriceId)
+  const hasPortalReference = Boolean(
+    subscription?.stripe_customer_id || subscription?.stripe_subscription_id,
+  )
 
   return (
     <div className="space-y-6 px-4 py-6 lg:px-6">
@@ -113,141 +137,56 @@ export default async function BillingPage() {
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card className="border-border/70">
-          <CardHeader className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle className="text-xl tracking-tight">Organization</CardTitle>
-              {organizationIsCurrent ? (
-                <Badge variant="secondary" className="rounded-full border border-border/70 bg-muted/50">
-                  Current
-                </Badge>
-              ) : null}
-            </div>
-            <CardDescription>
-              $20/month. Team seats, accelerator access, and collaboration workflows.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <CircleDotIcon className="h-3.5 w-3.5" aria-hidden />
-                Unlimited Admin & Staff Seats
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDotIcon className="h-3.5 w-3.5" aria-hidden />
-                Asynchronous Accelerator Access
-              </li>
-              <li className="flex items-center gap-2">
-                <CircleDotIcon className="h-3.5 w-3.5" aria-hidden />
-                Fundability Lens + weekly support sessions
-              </li>
-            </ul>
-            {organizationIsCurrent ? (
-              <p className="rounded-xl border border-border/70 bg-muted/35 px-3 py-2 text-center text-xs font-medium text-muted-foreground">
-                You are currently on this plan.
-              </p>
-            ) : !CHECKOUT_ORGANIZATION_READY ? (
-              <Button type="button" className="w-full rounded-xl" disabled>
-                Organization checkout unavailable
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                className="w-full rounded-xl"
-                onClick={() =>
-                  window.location.assign("/api/stripe/checkout?plan=organization&source=billing")
-                }
-              >
-                {operationsIsCurrent ? "Downgrade to Organization" : "Upgrade to Organization"}
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <BillingPlanCard
+          title="Organization"
+          description="$20/month. Team seats, accelerator access, and collaboration workflows."
+          icon={CircleDotIcon}
+          bullets={[
+            "Unlimited Admin & Staff Seats",
+            "Asynchronous Accelerator Access",
+            "Fundability Lens + weekly support sessions",
+          ]}
+          plan="organization"
+          checkoutReady={checkoutOrganizationReady}
+          buttonLabel={
+            operationsIsCurrent
+              ? "Downgrade to Organization"
+              : "Upgrade to Organization"
+          }
+          current={organizationIsCurrent}
+          currentBadgeLabel="Current"
+          unavailableLabel="Organization checkout unavailable"
+        />
 
-        <Card className="border-primary/30 ring-1 ring-primary/15">
-          <CardHeader className="space-y-3">
-            <div className="flex items-center justify-between gap-2">
-              <CardTitle className="text-xl tracking-tight">Operations Support</CardTitle>
-              {operationsIsCurrent ? (
-                <Badge variant="secondary" className="rounded-full border border-border/70 bg-muted/50">
-                  Current
-                </Badge>
-              ) : (
-                <Badge variant="secondary" className="rounded-full border border-border/70 bg-muted/50">
-                  Upgrade
-                </Badge>
-              )}
-            </div>
-            <CardDescription>
-              $58/month. Coaching plus expert-network access for operational execution.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <SparklesIcon className="h-3.5 w-3.5" aria-hidden />
-                One hour monthly 1:1 coaching
-              </li>
-              <li className="flex items-center gap-2">
-                <SparklesIcon className="h-3.5 w-3.5" aria-hidden />
-                Access expert network (bookkeeping, grant writing, accounting)
-              </li>
-              <li className="flex items-center gap-2">
-                <SparklesIcon className="h-3.5 w-3.5" aria-hidden />
-                Expanded delivery and operations support
-              </li>
-            </ul>
-            {operationsIsCurrent ? (
-              <p className="rounded-xl border border-border/70 bg-muted/35 px-3 py-2 text-center text-xs font-medium text-muted-foreground">
-                You are currently on this plan.
-              </p>
-            ) : !CHECKOUT_OPERATIONS_READY ? (
-              <Button type="button" className="w-full rounded-xl" variant="secondary" disabled>
-                Operations plan unavailable
-              </Button>
-            ) : (
-              <Button
-                type="button"
-                className="w-full rounded-xl"
-                variant="secondary"
-                onClick={() =>
-                  window.location.assign("/api/stripe/checkout?plan=operations_support&source=billing")
-                }
-              >
-                {organizationIsCurrent ? "Upgrade to Operations Support" : "Choose Operations Support"}
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <BillingPlanCard
+          title="Operations Support"
+          description="$58/month. Coaching plus expert-network access for operational execution."
+          icon={SparklesIcon}
+          bullets={[
+            "One hour monthly 1:1 coaching",
+            "Access expert network (bookkeeping, grant writing, accounting)",
+            "Expanded delivery and operations support",
+          ]}
+          plan="operations_support"
+          checkoutReady={checkoutOperationsReady}
+          buttonLabel={
+            organizationIsCurrent
+              ? "Upgrade to Operations Support"
+              : "Choose Operations Support"
+          }
+          current={operationsIsCurrent}
+          currentBadgeLabel="Current"
+          unavailableLabel="Operations plan unavailable"
+          variant="secondary"
+          highlighted
+        />
       </div>
 
-      <Card className="border-border/70">
-        <CardHeader>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <CardTitle>Billing portal</CardTitle>
-            <StripePoweredBadge />
-          </div>
-          <CardDescription>
-            Open Stripe to manage payment methods, invoices, cancelation, renewal, and subscription details.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-3">
-          {PORTAL_READY ? (
-            <BillingPortalButton />
-          ) : (
-            <Button disabled variant="outline">
-              Billing portal unavailable
-            </Button>
-          )}
-          <p className="text-sm text-muted-foreground">
-            Need help? Contact{" "}
-            <a href="mailto:support@coachhouse.io" className="font-medium text-primary underline-offset-4 hover:underline">
-              support@coachhouse.io
-            </a>
-            .
-          </p>
-        </CardContent>
-      </Card>
+      <BillingPortalCard
+        portalReady={portalReady}
+        hasPortalReference={hasPortalReference}
+        hasPaidPlan={hasPaidPlan}
+      />
     </div>
   )
 }

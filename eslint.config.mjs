@@ -25,6 +25,20 @@ const config = [
     },
   },
   {
+    files: ["src/features/platform-admin-dashboard/upstream/**/*.{ts,tsx}"],
+    rules: {
+      complexity: "off",
+      "max-lines": "off",
+      "max-lines-per-function": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "react-hooks/immutability": "off",
+      "react-hooks/preserve-manual-memoization": "off",
+      "react/no-unescaped-entities": "off",
+      "import/no-anonymous-default-export": "off",
+      "@next/next/no-img-element": "off",
+    },
+  },
+  {
     rules: {
       "react-hooks/set-state-in-effect": "off",
       "react-hooks/refs": "off",

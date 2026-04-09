@@ -57,11 +57,11 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
   {
     id: "tool-buttons",
     sceneId: "overview",
-    title: "Tools",
+    title: "Tool controls",
     message:
-      "Buttons on the left side of your Organization card will open different tools to help you plan and build your org.",
+      "Use the workspace tool controls to open different tools that help you plan and build your org. On desktop they live in the left rail, and on smaller screens they move into the cards drawer.",
     targetCardId: null,
-    targetLabel: "Tools",
+    targetLabel: "Tool controls",
     revealedCardIds: ["organization-overview"],
     continueMode: "next",
     highlightShortcutButtons: true,
@@ -77,7 +77,7 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     revealedCardIds: ["organization-overview"],
     continueMode: "shortcut",
     calloutTarget: "shortcut-button",
-    calloutInstruction: "Click to open the Accelerator tool and continue.",
+    calloutInstruction: "Click the Accelerator button and continue.",
   },
   {
     id: "accelerator-picker",
@@ -127,8 +127,8 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     targetLabel: "Calendar",
     revealedCardIds: ["organization-overview"],
     continueMode: "shortcut",
-    calloutTarget: "shortcut-button",
-    calloutInstruction: "Click to open the Calendar tool and continue.",
+    calloutTarget: "calendar-viewport-button",
+    calloutInstruction: "Click the Calendar button and continue.",
   },
   {
     id: "programs",
@@ -141,7 +141,7 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     revealedCardIds: ["organization-overview"],
     continueMode: "shortcut",
     calloutTarget: "shortcut-button",
-    calloutInstruction: "Click to open the Programs tool and continue.",
+    calloutInstruction: "Click the Programs button and continue.",
   },
   {
     id: "roadmap",
@@ -154,7 +154,7 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     revealedCardIds: ["organization-overview"],
     continueMode: "shortcut",
     calloutTarget: "shortcut-button",
-    calloutInstruction: "Click to open the Roadmap tool and continue.",
+    calloutInstruction: "Click the Roadmap button and continue.",
   },
   {
     id: "collaboration",
@@ -306,7 +306,11 @@ export function resolveWorkspaceCanvasTutorialPromptTargetCardId(
   openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
   const callout = resolveWorkspaceCanvasTutorialCallout(stepIndex, openedStepIds)
-  if (!callout || callout.kind !== "shortcut-button") {
+  if (
+    !callout ||
+    (callout.kind !== "shortcut-button" &&
+      callout.kind !== "calendar-viewport-button")
+  ) {
     return null
   }
   return callout.cardId
@@ -361,7 +365,11 @@ export function resolveWorkspaceCanvasTutorialShortcutInstruction(
   openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
   const callout = resolveWorkspaceCanvasTutorialCallout(stepIndex, openedStepIds)
-  if (!callout || callout.kind !== "shortcut-button") {
+  if (
+    !callout ||
+    (callout.kind !== "shortcut-button" &&
+      callout.kind !== "calendar-viewport-button")
+  ) {
     return null
   }
   return callout.instruction
@@ -412,6 +420,19 @@ export function resolveWorkspaceCanvasTutorialCallout(
     return {
       kind: "shortcut-button",
       cardId: step.targetCardId,
+      label,
+      instruction,
+    }
+  }
+
+  if (
+    step.calloutTarget === "calendar-viewport-button" &&
+    continueMode === "shortcut" &&
+    step.targetCardId === "calendar"
+  ) {
+    return {
+      kind: "calendar-viewport-button",
+      cardId: "calendar",
       label,
       instruction,
     }
@@ -477,7 +498,6 @@ export function buildWorkspaceCanvasTutorialCompletionHiddenCardIds() {
     "economic-engine",
     "calendar",
     "communications",
-    "deck",
     "atlas",
   ]
 

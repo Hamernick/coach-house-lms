@@ -17,67 +17,30 @@ import type {
 } from "./workspace-board-types"
 import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
 import { normalizeWorkspaceHiddenCardIds } from "./workspace-board-hidden-cards"
+import {
+  getNextOnboardingStage,
+  getPreviousOnboardingStage,
+  isOnboardingStage,
+  normalizeCompletedFromStage,
+  resolveWorkspaceOnboardingStageFromSearchParam,
+  stageRank,
+  WORKSPACE_ONBOARDING_STAGE_DEFINITIONS,
+  WORKSPACE_ONBOARDING_STAGE_ORDER,
+  type WorkspaceOnboardingStageDefinition,
+} from "./workspace-board-onboarding-stages"
 
-export type WorkspaceOnboardingStageDefinition = {
-  stage: WorkspaceOnboardingStage
-  title: string
-  description: string
-  checklist: [string, string, string]
-  targetCardId: WorkspaceCardId
-  primaryLabel: string
-  primaryHref: string | null
+export {
+  getNextOnboardingStage,
+  getPreviousOnboardingStage,
+  resolveWorkspaceOnboardingStageFromSearchParam,
+  WORKSPACE_ONBOARDING_STAGE_DEFINITIONS,
+  WORKSPACE_ONBOARDING_STAGE_ORDER,
 }
+export type { WorkspaceOnboardingStageDefinition }
 
 const WORKSPACE_TUTORIAL_MANAGED_CARD_ID_SET = new Set<WorkspaceCardId>(
   WORKSPACE_CANVAS_TUTORIAL_MANAGED_CARD_IDS,
 )
-
-export const WORKSPACE_ONBOARDING_STAGE_ORDER: WorkspaceOnboardingStage[] = [2, 3, 4]
-
-export const WORKSPACE_ONBOARDING_STAGE_DEFINITIONS: Record<
-  WorkspaceOnboardingStage,
-  WorkspaceOnboardingStageDefinition
-> = {
-  2: {
-    stage: 2,
-    title: "Build your organization foundation",
-    description: "Set up the essentials so your workspace and collaborators have clear context.",
-    checklist: [
-      "Complete your organization profile",
-      "Add at least one teammate or board member",
-      "Upload your first operating document",
-    ],
-    targetCardId: "organization-overview",
-    primaryLabel: "Open organization editor",
-    primaryHref: "/workspace?view=editor&tab=company",
-  },
-  3: {
-    stage: 3,
-    title: "Open your active step node",
-    description: "Use the canvas step node to work through a class step without losing your workspace context.",
-    checklist: [
-      "Open the current accelerator step node",
-      "Review the step details and resources",
-      "Advance or complete one step action",
-    ],
-    targetCardId: "accelerator",
-    primaryLabel: "Open step node",
-    primaryHref: null,
-  },
-  4: {
-    stage: 4,
-    title: "Start your accelerator run",
-    description: "Move from setup to execution by opening your next accelerator step.",
-    checklist: [
-      "Open your next accelerator step",
-      "Complete one class step",
-      "Return to workspace to continue building",
-    ],
-    targetCardId: "accelerator",
-    primaryLabel: "Open accelerator",
-    primaryHref: "/accelerator",
-  },
-}
 
 export function buildDefaultWorkspaceOnboardingFlowState(): WorkspaceBoardOnboardingFlowState {
   return {
@@ -204,8 +167,7 @@ function ensureWorkspaceTutorialCompletionConnections(
 
 const WORKSPACE_TUTORIAL_COMPLETION_LEFT_X = 96
 const WORKSPACE_TUTORIAL_COMPLETION_TOP_Y = 192
-const WORKSPACE_TUTORIAL_COMPLETION_COLUMN_GAP = 40
-const WORKSPACE_TUTORIAL_COMPLETION_ROW_GAP = 28
+const WORKSPACE_TUTORIAL_COMPLETION_COLUMN_GAP = 72
 
 function buildWorkspaceTutorialCompletionNodes({
   existingNodes,
@@ -234,46 +196,40 @@ function buildWorkspaceTutorialCompletionNodes({
   }
 
   const roadmapDimensions = resolveCardDimensions(roadmapNode.size, "roadmap")
-  const organizationDimensions = resolveCardDimensions(
-    organizationNode.size,
-    "organization-overview",
-  )
   const acceleratorDimensions = resolveCardDimensions(
     acceleratorNode.size,
     "accelerator",
   )
-
+  const organizationDimensions = resolveCardDimensions(
+    organizationNode.size,
+    "organization-overview",
+  )
   const roadmapX = roundToSnap(WORKSPACE_TUTORIAL_COMPLETION_LEFT_X)
   const topY = roundToSnap(WORKSPACE_TUTORIAL_COMPLETION_TOP_Y)
-  const organizationX = roundToSnap(
+  const acceleratorX = roundToSnap(
     roadmapX +
       roadmapDimensions.width +
       WORKSPACE_TUTORIAL_COMPLETION_COLUMN_GAP,
   )
-  const programsY = roundToSnap(
-    topY + organizationDimensions.height + WORKSPACE_TUTORIAL_COMPLETION_ROW_GAP,
+  const organizationX = roundToSnap(
+    acceleratorX +
+      acceleratorDimensions.width +
+      WORKSPACE_TUTORIAL_COMPLETION_COLUMN_GAP,
   )
-  const acceleratorX = roundToSnap(
+  const programsX = roundToSnap(
     organizationX +
       organizationDimensions.width +
       WORKSPACE_TUTORIAL_COMPLETION_COLUMN_GAP,
   )
-  const acceleratorY = topY
 
   const completionPositionByCardId = new Map<
     WorkspaceCardId,
     { x: number; y: number }
   >([
     ["roadmap", { x: roadmapX, y: topY }],
+    ["accelerator", { x: acceleratorX, y: topY }],
     ["organization-overview", { x: organizationX, y: topY }],
-    ["programs", { x: organizationX, y: programsY }],
-    [
-      "accelerator",
-      {
-        x: Math.max(organizationX + acceleratorDimensions.width / 4, acceleratorX),
-        y: acceleratorY,
-      },
-    ],
+    ["programs", { x: programsX, y: topY }],
   ])
 
   return autoLayoutNodes.map((node) => {
@@ -364,10 +320,6 @@ export function areWorkspaceOnboardingFlowStatesEqual(
   )
 }
 
-function isOnboardingStage(value: unknown): value is WorkspaceOnboardingStage {
-  return value === 2 || value === 3 || value === 4
-}
-
 function normalizeTutorialStepIds(
   value: unknown,
 ): WorkspaceCanvasTutorialStepId[] {
@@ -427,25 +379,6 @@ export function normalizeWorkspaceOnboardingFlowState(
   }
 }
 
-export function resolveWorkspaceOnboardingStageFromSearchParam(
-  value: string | null | undefined,
-): WorkspaceOnboardingStage | null {
-  if (!value) return null
-  const numeric = Number.parseInt(value, 10)
-  if (!Number.isFinite(numeric)) return null
-  return isOnboardingStage(numeric) ? numeric : null
-}
-
-function stageRank(stage: WorkspaceOnboardingStage) {
-  return WORKSPACE_ONBOARDING_STAGE_ORDER.indexOf(stage)
-}
-
-function normalizeCompletedFromStage(stage: WorkspaceOnboardingStage) {
-  const rank = stageRank(stage)
-  if (rank <= 0) return []
-  return WORKSPACE_ONBOARDING_STAGE_ORDER.slice(0, rank)
-}
-
 export function applyWorkspaceOnboardingStageOverride(
   boardState: WorkspaceBoardState,
   requestedStage: WorkspaceOnboardingStage | null,
@@ -498,18 +431,4 @@ export function applyWorkspaceOnboardingStageOverride(
       updatedAt: new Date().toISOString(),
     },
   }
-}
-
-export function getNextOnboardingStage(
-  stage: WorkspaceOnboardingStage,
-): WorkspaceOnboardingStage | null {
-  const nextIndex = stageRank(stage) + 1
-  return WORKSPACE_ONBOARDING_STAGE_ORDER[nextIndex] ?? null
-}
-
-export function getPreviousOnboardingStage(
-  stage: WorkspaceOnboardingStage,
-): WorkspaceOnboardingStage | null {
-  const previousIndex = stageRank(stage) - 1
-  return WORKSPACE_ONBOARDING_STAGE_ORDER[previousIndex] ?? null
 }

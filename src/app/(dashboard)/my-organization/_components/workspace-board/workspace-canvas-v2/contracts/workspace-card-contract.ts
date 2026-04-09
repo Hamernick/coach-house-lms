@@ -7,6 +7,7 @@ export const WORKSPACE_CANVAS_V2_CARD_IDS = [
   "atlas",
   "programs",
   "roadmap",
+  "deck",
   "accelerator",
   "brand-kit",
   "economic-engine",
@@ -150,6 +151,31 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
       role: "trunk",
     },
   },
+  deck: {
+    id: "deck",
+    laneIndex: 3,
+    defaultPosition: { x: 1560, y: 208 },
+    dockEnabled: true,
+    allowedSizes: ["md", "lg"],
+    defaultSize: "md",
+    scrollPolicy: "none",
+    layoutRoles: {
+      hub: "ring",
+      timeline: "lane",
+    },
+    ports: {
+      inputs: ["program-plan", "tasks", "workspace-link"],
+      outputs: ["tasks", "workspace-link"],
+    },
+    rail: {
+      label: "Tasks",
+      order: 5,
+      enabled: true,
+      rootBehavior: "toggle",
+      parentId: "roadmap",
+      role: "trunk",
+    },
+  },
   programs: {
     id: "programs",
     laneIndex: 1,
@@ -177,7 +203,7 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
   },
   accelerator: {
     id: "accelerator",
-    laneIndex: 3,
+    laneIndex: 4,
     defaultPosition: { x: 1656, y: 208 },
     dockEnabled: true,
     allowedSizes: ["sm", "md", "lg"],
@@ -202,7 +228,7 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
   },
   "brand-kit": {
     id: "brand-kit",
-    laneIndex: 7,
+    laneIndex: 9,
     defaultPosition: { x: 2168, y: 600 },
     dockEnabled: false,
     allowedSizes: ["sm", "md"],
@@ -227,7 +253,7 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
   },
   "economic-engine": {
     id: "economic-engine",
-    laneIndex: 5,
+    laneIndex: 6,
     defaultPosition: { x: 2680, y: 208 },
     dockEnabled: false,
     allowedSizes: ["sm", "md"],
@@ -252,7 +278,7 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
   },
   calendar: {
     id: "calendar",
-    laneIndex: 6,
+    laneIndex: 7,
     defaultPosition: { x: 3192, y: 208 },
     dockEnabled: true,
     allowedSizes: ["sm", "md"],
@@ -277,7 +303,7 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
   },
   communications: {
     id: "communications",
-    laneIndex: 4,
+    laneIndex: 5,
     defaultPosition: { x: 2168, y: 208 },
     dockEnabled: false,
     allowedSizes: ["md", "lg"],
@@ -308,6 +334,7 @@ export const WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS = Object.freeze({
   atlas: WORKSPACE_CANVAS_V2_CARD_CONTRACT.atlas.defaultPosition,
   roadmap: WORKSPACE_CANVAS_V2_CARD_CONTRACT.roadmap.defaultPosition,
   programs: WORKSPACE_CANVAS_V2_CARD_CONTRACT.programs.defaultPosition,
+  deck: WORKSPACE_CANVAS_V2_CARD_CONTRACT.deck.defaultPosition,
   accelerator: WORKSPACE_CANVAS_V2_CARD_CONTRACT.accelerator.defaultPosition,
   "brand-kit": WORKSPACE_CANVAS_V2_CARD_CONTRACT["brand-kit"].defaultPosition,
   "economic-engine":

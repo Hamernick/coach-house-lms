@@ -10,7 +10,7 @@ import {
   buildReactGrabDebugSurfaceRecord,
   debugSurfaceClass,
   type ReactGrabDebugSurfaceAttributes,
-} from "@/components/dev/react-grab-debug-surface"
+} from "@/lib/react-grab-debug-surface"
 import { cn } from "@/lib/utils"
 
 const SELECT_SOURCE = "src/components/ui/select.tsx"

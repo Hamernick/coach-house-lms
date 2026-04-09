@@ -1,6 +1,6 @@
 "use client"
 
-import type { SyntheticEvent } from "react"
+import type { ComponentProps, SyntheticEvent } from "react"
 
 import {
   getReactGrabLinkedSurfaceProps,
@@ -55,8 +55,10 @@ export function renderWorkspaceCardShortcutTooltipContent({
 
 export function WorkspaceCardShortcutButton({
   item,
+  tooltipSide = "left",
 }: {
   item: WorkspaceCardShortcutItemModel
+  tooltipSide?: ComponentProps<typeof TooltipContent>["side"]
 }) {
   const Icon = item.icon
   const tutorialCallout = item.tutorialCallout
@@ -143,7 +145,7 @@ export function WorkspaceCardShortcutButton({
         <Tooltip>
           <TooltipTrigger asChild>{button}</TooltipTrigger>
           <TooltipContent
-            side="left"
+            side={tooltipSide}
             align="center"
             sideOffset={12}
             {...getReactGrabLinkedSurfaceProps({
@@ -171,7 +173,7 @@ export function WorkspaceCardShortcutButton({
     <Tooltip>
       <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent
-        side="left"
+        side={tooltipSide}
         align="center"
         sideOffset={12}
         {...getReactGrabLinkedSurfaceProps({

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
@@ -9,8 +9,6 @@ import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { MAP_STYLE, RECENT_ORGANIZATIONS_LIMIT } from "./public-map-index/constants"
 import { organizationHasMapLocation, type PublicMapBounds } from "./public-map-index/helpers"
 import {
-  observePublicMapContainer,
-  resolveMapBounds,
   useSyncPublicMapAuthFavorite,
   useSyncPublicMapLayout,
 } from "./public-map-index/layout-sync"
@@ -23,9 +21,15 @@ import {
   focusOrganizationOnMap,
   normalizeSlug,
   removeAuthParams,
-  resolvePublicMapCameraPadding,
   resolveBounds,
 } from "./public-map-index/map-view-helpers"
+import {
+  type PublicMapMapboxApi,
+  useInitializePublicMap,
+  useResolveInitialPublicMapViewport,
+  useSyncSelectedOrganization,
+  useSyncSidebarCameraPadding,
+} from "./public-map-index/public-map-index-runtime"
 import { PublicMapSurface } from "./public-map-index/map-surface"
 import {
   PublicMapBoardAlert,
@@ -44,8 +48,6 @@ import {
   filterPublicMapOrganizationIds,
 } from "./public-map-index/search-index"
 
-type MapboxApi = typeof import("mapbox-gl")["default"]
-
 type PublicMapIndexProps = {
   organizations: PublicMapOrganization[]
   mapboxToken?: string
@@ -54,307 +56,6 @@ type PublicMapIndexProps = {
   joinedOrganizations?: PublicMapJoinedOrganization[]
   boardAlerts?: PublicMapBoardAlert[]
   memberProfile?: PublicMapMemberProfile | null
-}
-
-function useSyncSelectedOrganization({
-  filteredOrganizations,
-  organizationById,
-  selectedOrgId,
-  selectedOrganization,
-  setSelectedOrgId,
-}: {
-  filteredOrganizations: PublicMapOrganization[]
-  organizationById: Map<string, PublicMapOrganization>
-  selectedOrgId: string | null
-  selectedOrganization: PublicMapOrganization | null
-  setSelectedOrgId: (value: string | null) => void
-}) {
-  useEffect(() => {
-    if (!selectedOrganization && filteredOrganizations.length > 0) {
-      setSelectedOrgId(filteredOrganizations[0]!.id)
-      return
-    }
-
-    if (selectedOrgId && !organizationById.has(selectedOrgId) && filteredOrganizations.length > 0) {
-      setSelectedOrgId(filteredOrganizations[0]!.id)
-    }
-  }, [filteredOrganizations, organizationById, selectedOrgId, selectedOrganization, setSelectedOrgId])
-}
-
-function useSyncSidebarCameraPadding({
-  mapRef,
-  mapLoadedRef,
-  initialViewportResolved,
-  sidebarInsetLeft,
-}: {
-  mapRef: RefObject<mapboxgl.Map | null>
-  mapLoadedRef: RefObject<boolean>
-  initialViewportResolved: boolean
-  sidebarInsetLeft: number
-}) {
-  const hasAppliedInitialPaddingRef = useRef(false)
-  const lastMapRef = useRef<mapboxgl.Map | null>(null)
-
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !mapLoadedRef.current || !initialViewportResolved) return
-
-    if (lastMapRef.current !== map) {
-      lastMapRef.current = map
-      hasAppliedInitialPaddingRef.current = false
-    }
-
-    const duration = hasAppliedInitialPaddingRef.current ? 320 : 0
-    hasAppliedInitialPaddingRef.current = true
-
-    const frame = requestAnimationFrame(() => {
-      if (mapRef.current !== map) return
-      map.easeTo({
-        padding: resolvePublicMapCameraPadding(sidebarInsetLeft),
-        duration,
-        essential: true,
-      })
-    })
-
-    return () => cancelAnimationFrame(frame)
-  }, [initialViewportResolved, mapLoadedRef, mapRef, sidebarInsetLeft])
-}
-
-function markInitialViewportResolved({
-  status,
-  hasResolvedInitialViewportRef,
-  setUserLocationStatus,
-  setInitialViewportResolved,
-}: {
-  status: UserLocationStatus
-  hasResolvedInitialViewportRef: RefObject<boolean>
-  setUserLocationStatus: (status: UserLocationStatus) => void
-  setInitialViewportResolved: (resolved: boolean) => void
-}) {
-  setUserLocationStatus(status)
-  hasResolvedInitialViewportRef.current = true
-  setInitialViewportResolved(true)
-}
-
-function useResolveInitialPublicMapViewport({
-  mapRef,
-  mapLoadedRef,
-  hasResolvedInitialViewportRef,
-  initialOrganization,
-  setUserLocationStatus,
-  setInitialViewportResolved,
-}: {
-  mapRef: RefObject<mapboxgl.Map | null>
-  mapLoadedRef: RefObject<boolean>
-  hasResolvedInitialViewportRef: RefObject<boolean>
-  initialOrganization: PublicMapOrganization | null
-  setUserLocationStatus: (status: UserLocationStatus) => void
-  setInitialViewportResolved: (resolved: boolean) => void
-}) {
-  useEffect(() => {
-    const map = mapRef.current
-    if (!map || !mapLoadedRef.current || hasResolvedInitialViewportRef.current) return
-
-    if (initialOrganization && organizationHasMapLocation(initialOrganization)) {
-      focusOrganizationOnMap({ map, organization: initialOrganization })
-      markInitialViewportResolved({
-        status: "idle",
-        hasResolvedInitialViewportRef,
-        setUserLocationStatus,
-        setInitialViewportResolved,
-      })
-      return
-    }
-
-    if (typeof window === "undefined" || !("geolocation" in window.navigator)) {
-      focusChicagoFallback({ map })
-      markInitialViewportResolved({
-        status: "unavailable",
-        hasResolvedInitialViewportRef,
-        setUserLocationStatus,
-        setInitialViewportResolved,
-      })
-      return
-    }
-
-    setUserLocationStatus("requesting")
-    window.navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const activeMap = mapRef.current
-        if (!activeMap) return
-        activeMap.flyTo({
-          center: [position.coords.longitude, position.coords.latitude],
-          zoom: 9.25,
-          duration: 900,
-          essential: true,
-        })
-        markInitialViewportResolved({
-          status: "centered",
-          hasResolvedInitialViewportRef,
-          setUserLocationStatus,
-          setInitialViewportResolved,
-        })
-      },
-      (error) => {
-        const activeMap = mapRef.current
-        if (!activeMap) return
-        focusChicagoFallback({ map: activeMap })
-        markInitialViewportResolved({
-          status: error.code === 1 ? "denied" : "error",
-          hasResolvedInitialViewportRef,
-          setUserLocationStatus,
-          setInitialViewportResolved,
-        })
-      },
-      {
-        enableHighAccuracy: false,
-        timeout: 7000,
-        maximumAge: 60_000,
-      },
-    )
-  }, [
-    hasResolvedInitialViewportRef,
-    initialOrganization,
-    mapLoadedRef,
-    mapRef,
-    setInitialViewportResolved,
-    setUserLocationStatus,
-  ])
-}
-
-function useInitializePublicMap({
-  token,
-  tokenAvailable,
-  containerRef,
-  mapRef,
-  mapboxRef,
-  mapLoadedRef,
-  hasResolvedInitialViewportRef,
-  setInitialViewportResolved,
-  setMapLoadVersion,
-  setMapError,
-  setAppliedBounds,
-}: {
-  token: string
-  tokenAvailable: boolean
-  containerRef: RefObject<HTMLDivElement | null>
-  mapRef: RefObject<mapboxgl.Map | null>
-  mapboxRef: RefObject<MapboxApi | null>
-  mapLoadedRef: RefObject<boolean>
-  hasResolvedInitialViewportRef: RefObject<boolean>
-  setInitialViewportResolved: (resolved: boolean) => void
-  setMapLoadVersion: (value: number | ((current: number) => number)) => void
-  setMapError: (value: string | null) => void
-  setAppliedBounds: (value: PublicMapBounds | null) => void
-}) {
-  useEffect(() => {
-    if (!tokenAvailable) return
-    if (!containerRef.current) return
-    if (mapRef.current) return
-
-    let cancelled = false
-    let stopObservingMapContainer = () => {}
-    setInitialViewportResolved(false)
-
-    async function initializeMap() {
-      try {
-        const mapboxModule = await import("mapbox-gl")
-        const mapboxgl = (mapboxModule.default ?? mapboxModule) as MapboxApi
-        if (!mapboxgl?.Map) {
-          throw new Error("Mapbox failed to initialize.")
-        }
-
-        mapboxgl.accessToken = token
-        mapboxRef.current = mapboxgl
-        if (!containerRef.current || cancelled) return
-
-        const map = new mapboxgl.Map({
-          container: containerRef.current,
-          style: MAP_STYLE,
-          center: FALLBACK_CENTER,
-          zoom: FALLBACK_ZOOM,
-          projection: "globe",
-          cooperativeGestures: true,
-        })
-
-        if (typeof map.setRenderWorldCopies === "function") {
-          map.setRenderWorldCopies(false)
-        }
-
-        map.dragRotate.disable()
-        map.boxZoom.disable()
-        if (typeof map.touchZoomRotate.disableRotation === "function") map.touchZoomRotate.disableRotation()
-
-        map.on("error", (event) => {
-          if (!event?.error) return
-          console.error("Public map error:", event.error)
-          setMapError("Mapbox couldn't load the map. Check your token and domain restrictions.")
-        })
-
-        map.on("style.load", () => {
-          map.setProjection("globe")
-          if (typeof map.setRenderWorldCopies === "function") {
-            map.setRenderWorldCopies(false)
-          }
-        })
-
-        map.on("load", () => {
-          mapLoadedRef.current = true
-          setMapLoadVersion((current) => current + 1)
-          requestAnimationFrame(() => {
-            if (mapRef.current !== map) return
-            map.resize()
-            setAppliedBounds(resolveMapBounds(map))
-          })
-          setAppliedBounds(resolveMapBounds(map))
-        })
-
-        map.on("moveend", () => {
-          setAppliedBounds(resolveMapBounds(map))
-        })
-
-        mapRef.current = map
-
-        stopObservingMapContainer = observePublicMapContainer({
-          containerRef,
-          map,
-          mapRef,
-          mapLoadedRef,
-          onViewportChange: (activeMap) => {
-            setAppliedBounds(resolveMapBounds(activeMap))
-          },
-        })
-      } catch (error) {
-        console.error("Public map init error:", error)
-        setMapError("Mapbox couldn't start. Check your token and domain restrictions.")
-      }
-    }
-
-    void initializeMap()
-
-    return () => {
-      cancelled = true
-      if (mapRef.current) {
-        mapRef.current.remove()
-        mapRef.current = null
-      }
-      stopObservingMapContainer()
-      mapLoadedRef.current = false
-      hasResolvedInitialViewportRef.current = false
-    }
-  }, [
-    containerRef,
-    hasResolvedInitialViewportRef,
-    mapLoadedRef,
-    mapRef,
-    mapboxRef,
-    setAppliedBounds,
-    setInitialViewportResolved,
-    setMapLoadVersion,
-    setMapError,
-    token,
-    tokenAvailable,
-  ])
 }
 
 export function PublicMapIndex({
@@ -370,7 +71,7 @@ export function PublicMapIndex({
   const searchParams = useSearchParams()
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
-  const mapboxRef = useRef<MapboxApi | null>(null)
+  const mapboxRef = useRef<PublicMapMapboxApi | null>(null)
   const hasResolvedInitialViewportRef = useRef(false)
   const mapLoadedRef = useRef(false)
   const token = (mapboxToken ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "").trim()

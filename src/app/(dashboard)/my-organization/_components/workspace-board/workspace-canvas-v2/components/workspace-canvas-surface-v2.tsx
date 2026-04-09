@@ -4,20 +4,13 @@ import { useCallback, useMemo, useRef, useState } from "react"
 import { type ReactFlowInstance } from "reactflow"
 import "reactflow/dist/style.css"
 
-import {
-  resolveWorkspaceCanvasTutorialCallout,
-  resolveWorkspaceCanvasTutorialStep,
-} from "@/features/workspace-canvas-tutorial"
-
 import { buildAcceleratorStepNodeData } from "../../workspace-board-flow-surface-accelerator-graph-composition"
 import { resolveWorkspaceCanvasOrgNodePosition } from "../adapters/workspace-canvas-from-board-state"
 import { useWorkspaceCanvasCameraController } from "../runtime/workspace-canvas-camera-controller"
 import { useWorkspaceCanvasConnectionsController } from "../runtime/workspace-canvas-connections-controller"
 import { useWorkspaceCanvasLifecycleLogs } from "../runtime/workspace-canvas-lifecycle-logs"
 import { useWorkspaceCanvasAcceleratorRuntime } from "./workspace-canvas-surface-v2-accelerator-runtime"
-import {
-  useWorkspaceAcceleratorTutorialActionComplete,
-} from "./workspace-canvas-surface-v2-accelerator-tutorial"
+import { useWorkspaceAcceleratorTutorialActionComplete } from "./workspace-canvas-surface-v2-accelerator-tutorial"
 import {
   WORKSPACE_CANVAS_V2_ACCELERATOR_FOCUS_OPTIONS,
   WORKSPACE_CANVAS_V2_CARD_FOCUS_OPTIONS,
@@ -37,18 +30,17 @@ import { useWorkspaceCanvasRenderState } from "./workspace-canvas-surface-v2-ren
 import type { WorkspaceCanvasSurfaceV2Props } from "./workspace-canvas-surface-v2-types"
 import { WorkspaceCanvasSurfaceV2View } from "./workspace-canvas-surface-v2-view"
 import { useWorkspaceCanvasViewportControls } from "./workspace-canvas-surface-v2-viewport-controls"
-import {
-  WORKSPACE_CANVAS_V2_CARD_IDS,
-  WORKSPACE_CANVAS_V2_VAULT_MODE,
-  type WorkspaceCanvasNode,
-  type WorkspaceCanvasNodeData,
-  type WorkspaceCanvasV2CardId,
-} from "./workspace-canvas-surface-v2-helpers"
-import { useWorkspaceCanvasCardDataLookup } from "./workspace-canvas-surface-v2-card-data"
-import { shouldShowWorkspaceCanvasInternalTutorialRestart } from "./workspace-canvas-surface-v2-debug-controls"
+import { WORKSPACE_CANVAS_V2_VAULT_MODE, type WorkspaceCanvasV2CardId } from "./workspace-canvas-surface-v2-helpers"
 import { resolveWorkspaceCanvasV2InitialPositionLookup } from "./workspace-canvas-surface-v2-positioning"
 import { useWorkspaceTutorialNodeState } from "./workspace-canvas-surface-v2-tutorial-node-state"
 import { useWorkspaceCanvasTutorialScene } from "./workspace-canvas-surface-v2-tutorial"
+import {
+  buildVisibleWorkspaceCanvasCardIdSet,
+  buildWorkspaceCanvasBoardNodeLookup,
+  resolveWorkspaceCanvasAcceleratorNode,
+  resolveWorkspaceCanvasTutorialSurfaceProps,
+  useWorkspaceCanvasSurfaceCardDataLookup,
+} from "./workspace-canvas-surface-v2-support-helpers"
 import {
   useWorkspaceAcceleratorStepNodeData,
   useWorkspaceAcceleratorTutorialCallout,
@@ -135,7 +127,7 @@ export function WorkspaceCanvasSurfaceV2({
     onNext: onTutorialNext,
     acceleratorModuleViewerOpen: acceleratorRuntimeSnapshot?.isModuleViewerOpen === true,
   })
-  const boardNodeLookup = useMemo(() => new Map(boardState.nodes.map((node) => [node.id, node])), [boardState.nodes])
+  const boardNodeLookup = useMemo(() => buildWorkspaceCanvasBoardNodeLookup(boardState.nodes), [boardState.nodes])
   const { tutorialCardMeasuredHeights, handleCardMeasuredHeightChange, tutorialShellMeasuredHeight, handleCurrentTutorialShellMeasuredHeightChange } = useWorkspaceTutorialMeasurements({ tutorialSceneSignature })
   const { tutorialCardPositionOverrides, setTutorialCardPositionOverrides } = useWorkspaceTutorialCardPositionOverrides({
     tutorialActive,
@@ -148,8 +140,14 @@ export function WorkspaceCanvasSurfaceV2({
     openedTutorialStepIds: boardState.onboardingFlow.openedTutorialStepIds,
   })
   const acceleratorCardVisible = visibleCardIds.includes("accelerator")
-  const acceleratorWorkspaceNode = boardNodeLookup.get("accelerator") ?? null
-  const acceleratorWorkspaceNodeId = useMemo(() => resolveAcceleratorWorkspaceNodeId(acceleratorWorkspaceNode), [acceleratorWorkspaceNode])
+  const acceleratorWorkspaceNode = useMemo(
+    () => resolveWorkspaceCanvasAcceleratorNode({ boardNodeLookup }),
+    [boardNodeLookup],
+  )
+  const acceleratorWorkspaceNodeId = useMemo(
+    () => resolveAcceleratorWorkspaceNodeId(acceleratorWorkspaceNode),
+    [acceleratorWorkspaceNode],
+  )
   const acceleratorStepNodeVisible = boardState.acceleratorUi?.stepOpen === true
   const readinessMap = useWorkspaceCardReadinessMap({ seed, boardState })
   const shortcutItems = useWorkspaceTutorialAwareShortcutItems({
@@ -163,11 +161,7 @@ export function WorkspaceCanvasSurfaceV2({
     onFocusCard,
     onTutorialShortcutOpened,
   })
-  const {
-    tutorialCallout,
-    handleTutorialActionComplete,
-    handleOpenCard,
-  } = useWorkspaceTutorialActionHandlers({
+  const { tutorialCallout, handleTutorialActionComplete, handleOpenCard } = useWorkspaceTutorialActionHandlers({
     tutorialActive,
     tutorialStepIndex: boardState.onboardingFlow.tutorialStepIndex,
     openedTutorialStepIds: boardState.onboardingFlow.openedTutorialStepIds,
@@ -200,13 +194,16 @@ export function WorkspaceCanvasSurfaceV2({
     onClose: handleHideStepNode,
     onWorkspaceOnboardingSubmit: onInitialOnboardingSubmit,
   })
-  const cardDataLookup = useWorkspaceCanvasCardDataLookup({
+  const { showTutorialRestart, tutorialCalendarButtonCallout, onTutorialCalendarButtonComplete, organizationMapButtonCallout, onOrganizationMapButtonTutorialComplete } = resolveWorkspaceCanvasTutorialSurfaceProps({
     allowEditing,
     presentationMode,
-    acceleratorState: boardState.accelerator,
-    communications: boardState.communications,
-    tracker: boardState.tracker,
-    nodes: boardState.nodes,
+    tutorialCallout,
+    onTutorialComplete: handleTutorialActionComplete,
+  })
+  const cardDataLookup = useWorkspaceCanvasSurfaceCardDataLookup({
+    boardState,
+    allowEditing,
+    presentationMode,
     seed,
     organizationEditorData,
     onSizeChange,
@@ -230,19 +227,10 @@ export function WorkspaceCanvasSurfaceV2({
     onOpenCard: handleOpenCard,
     onCardMeasuredHeightChange: handleCardMeasuredHeightChange,
     organizationShortcutItems: shortcutItems,
-    organizationMapButtonCallout:
-      tutorialCallout?.kind === "organization-map-button"
-        ? { instruction: tutorialCallout.instruction }
-        : null,
-    onOrganizationMapButtonTutorialComplete:
-      tutorialCallout?.kind === "organization-map-button"
-        ? handleTutorialActionComplete
-        : undefined,
-    tutorialStepId: tutorialActive
-      ? resolveWorkspaceCanvasTutorialStep(
-          boardState.onboardingFlow.tutorialStepIndex,
-        ).id
-      : null,
+    organizationMapButtonCallout,
+    onOrganizationMapButtonTutorialComplete,
+    tutorialActive,
+    tutorialStepIndex: boardState.onboardingFlow.tutorialStepIndex,
   })
   const {
     tutorialNodeData: tutorialNodeWithPresentation,
@@ -270,21 +258,19 @@ export function WorkspaceCanvasSurfaceV2({
     acceleratorRuntimeSnapshot,
     onTutorialShellMeasuredHeightChange: handleCurrentTutorialShellMeasuredHeightChange,
   })
-  const { resolvedTutorialCardPositionOverrides, setTutorialUndockedCardIds } =
-    useWorkspaceTutorialDockingState({
-      tutorialActive,
-      tutorialSceneSignature,
-      tutorialCardPositionOverrides,
-      tutorialSceneCardPositionOverrides,
-      tutorialDockTargets,
-    })
+  const { resolvedTutorialCardPositionOverrides, setTutorialUndockedCardIds } = useWorkspaceTutorialDockingState({
+    tutorialActive,
+    tutorialSceneSignature,
+    tutorialCardPositionOverrides,
+    tutorialSceneCardPositionOverrides,
+    tutorialDockTargets,
+  })
   const visibleCardIdSet = useMemo(
     () =>
-      new Set<WorkspaceCanvasV2CardId>(
-        visibleCardIds.filter(
-          (cardId) => !tutorialSuppressedNodeIds.includes(cardId),
-        ),
-      ),
+      buildVisibleWorkspaceCanvasCardIdSet({
+        visibleCardIds,
+        tutorialSuppressedNodeIds,
+      }),
     [tutorialSuppressedNodeIds, visibleCardIds],
   )
   const {
@@ -353,9 +339,7 @@ export function WorkspaceCanvasSurfaceV2({
     visibleCardIdSet,
     presentationMode,
     readinessMap,
-    acceleratorStepNodeVisible: Boolean(
-      acceleratorStepNodeData && acceleratorWorkspaceNodeId,
-    ),
+    acceleratorStepNodeVisible: Boolean(acceleratorStepNodeData && acceleratorWorkspaceNodeId),
     autoLayoutMode: boardState.autoLayoutMode,
     acceleratorWorkspaceNodeId,
     tutorialEdgeTargetId,
@@ -379,6 +363,7 @@ export function WorkspaceCanvasSurfaceV2({
     <WorkspaceCanvasSurfaceV2View
       nodes={renderNodes}
       edges={edges}
+      calendar={seed.calendar}
       allowEditing={allowEditing}
       nodesDraggable={allowEditing || tutorialActive}
       tutorialActive={tutorialActive}
@@ -386,8 +371,9 @@ export function WorkspaceCanvasSurfaceV2({
       presentationMode={presentationMode}
       edgeContextMenuState={edgeContextMenuState}
       shortcutItems={shortcutItems}
+      tutorialCalendarButtonCallout={tutorialCalendarButtonCallout}
       emptyStateMessage={emptyStateMessage}
-      showTutorialRestart={shouldShowWorkspaceCanvasInternalTutorialRestart({ allowEditing, presentationMode, environment: process.env.NODE_ENV })}
+      showTutorialRestart={showTutorialRestart}
       onNodesChange={onNodesChange}
       onNodeDragStop={handleNodeDragStop}
       onConnect={handleConnect}
@@ -397,6 +383,7 @@ export function WorkspaceCanvasSurfaceV2({
       onError={handleWorkspaceReactFlowError}
       onInit={handleFlowInit}
       onTutorialRestart={onTutorialRestart}
+      onTutorialCalendarButtonComplete={onTutorialCalendarButtonComplete}
       onRecenterView={handleRecenterView}
       onResetView={handleResetView}
       onZoomIn={handleZoomIn}

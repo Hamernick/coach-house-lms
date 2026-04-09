@@ -8,10 +8,12 @@ export function WorkspaceAcceleratorOnboardingStepBody({
   view,
   defaults,
   onSubmit,
+  immersive = false,
 }: {
   view: "welcome" | "organization-setup"
   defaults?: OnboardingFlowDefaults | null
   onSubmit?: (form: FormData) => Promise<void>
+  immersive?: boolean
 }) {
   if (view === "welcome") {
     return (
@@ -53,6 +55,28 @@ export function WorkspaceAcceleratorOnboardingStepBody({
           <p className="mt-1 text-sm leading-6 text-foreground">
             Complete this step to open workspace setup, then save your
             organization basics before moving into the first Formation module.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (immersive) {
+    return onSubmit ? (
+      <div className="flex h-full min-h-full flex-1 flex-col overflow-hidden">
+        <OnboardingWorkspaceCard
+          {...(defaults ?? {})}
+          mode="workspace_setup"
+          onSubmit={onSubmit}
+          className="h-full min-h-full flex-1 rounded-none border-0 bg-transparent shadow-none backdrop-blur-0 md:rounded-none"
+        />
+      </div>
+    ) : (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="border-border/60 bg-background/70 m-4 rounded-xl border p-4">
+          <p className="text-sm leading-6 text-foreground">
+            Organization setup is unavailable right now. Reload this page and try
+            again.
           </p>
         </div>
       </div>

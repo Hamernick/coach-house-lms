@@ -17,6 +17,7 @@ export const CHICAGO_FALLBACK_ZOOM = 4.85
 export const ORGANIZATION_PADDING = 120
 export const PUBLIC_MAP_SIDEBAR_MAX_WIDTH = 390
 export const PUBLIC_MAP_SIDEBAR_MIN_WIDTH = 220
+export const PUBLIC_MAP_COMFORTABLE_RAIL_WIDTH = 336
 export const PUBLIC_MAP_SIDEBAR_MIN_VISIBLE_MAP_WIDTH = 56
 export const PUBLIC_MAP_CAMERA_EDGE_PADDING = 24
 export const PUBLIC_MAP_ORGANIZATION_SOURCE_ID = "public-map-organizations"
@@ -48,6 +49,8 @@ export type PublicMapOrganizationFeatureCollection = {
     }
   }>
 }
+
+export type PublicMapPanelPresentation = "rail" | "drawer"
 
 export function normalizeSlug(value: string | null | undefined) {
   return typeof value === "string" ? value.trim().toLowerCase() : ""
@@ -172,7 +175,15 @@ export function resolvePublicMapSidebarWidth({
     return PUBLIC_MAP_SIDEBAR_MAX_WIDTH
   }
 
-  const preferredWidth = Math.round(surfaceWidth * 0.34)
+  const preferredWidthRatio =
+    surfaceWidth < 760
+      ? 0.52
+      : surfaceWidth < 980
+        ? 0.48
+        : surfaceWidth < 1180
+          ? 0.4
+          : 0.34
+  const preferredWidth = Math.round(surfaceWidth * preferredWidthRatio)
   const maxWidthForViewport = Math.max(
     0,
     surfaceWidth - PUBLIC_MAP_SIDEBAR_MIN_VISIBLE_MAP_WIDTH,
@@ -186,6 +197,19 @@ export function resolvePublicMapSidebarWidth({
       maxWidthForViewport,
     ),
   )
+}
+
+export function resolvePublicMapPanelPresentation(surfaceWidth: number): PublicMapPanelPresentation {
+  if (!Number.isFinite(surfaceWidth) || surfaceWidth <= 0) {
+    return "rail"
+  }
+
+  const railWidth = resolvePublicMapSidebarWidth({
+    surfaceWidth,
+    sidebarMode: "search",
+  })
+
+  return railWidth < PUBLIC_MAP_COMFORTABLE_RAIL_WIDTH ? "drawer" : "rail"
 }
 
 export function focusChicagoFallback({

@@ -1,35 +1,30 @@
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
-import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
 import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 import type { RefObject } from "react"
 
-import { ROADMAP_SECTION_ICONS } from "@/components/roadmap/roadmap-icons"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
 
 import type { RoadmapDraft, RoadmapTocItem } from "../types"
 
-function RoadmapTocIcon({
-  sectionId,
-  active,
-  compact = false,
+function RoadmapTocStatusDot({
+  status,
 }: {
-  sectionId: string
-  active: boolean
-  compact?: boolean
+  status: RoadmapSectionStatus
 }) {
-  const Icon = ROADMAP_SECTION_ICONS[sectionId] ?? SparklesIcon
+  const statusClass =
+    status === "complete"
+      ? "bg-emerald-500"
+      : status === "in_progress"
+        ? "bg-amber-500"
+        : "bg-border"
+
   return (
     <span
       aria-hidden
-      className={cn(
-        "flex shrink-0 items-center justify-center",
-        active ? "text-foreground" : "text-muted-foreground",
-      )}
-    >
-      <Icon className={compact ? "h-3.5 w-3.5" : "h-4 w-4"} aria-hidden />
-    </span>
+      className={cn("h-2 w-2 shrink-0 rounded-full", statusClass)}
+    />
   )
 }
 
@@ -124,12 +119,6 @@ export function RoadmapEditorToc({
               ? item.section.templateTitle
               : draftTitle || item.section.title?.trim() || ""
             const itemStatus = resolveSectionStatus(item.section)
-            const itemStatusClass =
-              itemStatus === "complete"
-                ? "bg-emerald-500"
-                : itemStatus === "in_progress"
-                ? "bg-amber-500"
-                : "bg-border"
             return (
               <div key={item.section.id} className="space-y-1 snap-start snap-always">
                 <div className="group flex items-center gap-2">
@@ -152,15 +141,11 @@ export function RoadmapEditorToc({
                     }
                   >
                     <span className="flex min-w-0 flex-1 items-center gap-2">
-                      <RoadmapTocIcon sectionId={item.section.id} active={isActive} />
+                      <RoadmapTocStatusDot status={itemStatus} />
                       <span className="min-w-0 flex-1 truncate text-sm font-medium">
                         {displayTitle}
                       </span>
                     </span>
-                    <span
-                      aria-hidden
-                      className={cn("h-2 w-2 shrink-0 rounded-full", itemStatusClass)}
-                    />
                   </Button>
                   <Button
                     type="button"
@@ -193,12 +178,6 @@ export function RoadmapEditorToc({
                         ? child.templateTitle
                         : childTitle || child.title?.trim() || ""
                       const childStatus = resolveSectionStatus(child)
-                      const childStatusClass =
-                        childStatus === "complete"
-                          ? "bg-emerald-500"
-                          : childStatus === "in_progress"
-                            ? "bg-amber-500"
-                            : "bg-border"
                       return (
                         <div
                           key={child.id}
@@ -223,19 +202,11 @@ export function RoadmapEditorToc({
                             }
                           >
                             <span className="flex min-w-0 flex-1 items-center gap-2">
-                              <RoadmapTocIcon
-                                sectionId={child.id}
-                                active={childIsActive}
-                                compact
-                              />
+                              <RoadmapTocStatusDot status={childStatus} />
                               <span className="min-w-0 flex-1 truncate text-[13px] font-medium">
                                 {childDisplayTitle}
                               </span>
                             </span>
-                            <span
-                              aria-hidden
-                              className={cn("h-2 w-2 shrink-0 rounded-full", childStatusClass)}
-                            />
                           </Button>
                         </div>
                       )
@@ -252,12 +223,6 @@ export function RoadmapEditorToc({
             ? item.section.templateTitle
             : draftTitle || item.section.title?.trim() || ""
           const itemStatus = resolveSectionStatus(item.section)
-          const itemStatusClass =
-            itemStatus === "complete"
-              ? "bg-emerald-500"
-              : itemStatus === "in_progress"
-                ? "bg-amber-500"
-                : "bg-border"
 
           return (
             <div key={item.section.id} className="group flex items-center gap-2 snap-start snap-always">
@@ -280,13 +245,9 @@ export function RoadmapEditorToc({
                 }
               >
                 <span className="flex min-w-0 flex-1 items-center gap-2">
-                  <RoadmapTocIcon sectionId={item.section.id} active={isActive} />
+                  <RoadmapTocStatusDot status={itemStatus} />
                   <span className="min-w-0 flex-1 truncate text-sm font-medium">{displayTitle}</span>
                 </span>
-                <span
-                  aria-hidden
-                  className={cn("h-2 w-2 shrink-0 rounded-full", itemStatusClass)}
-                />
               </Button>
             </div>
           )

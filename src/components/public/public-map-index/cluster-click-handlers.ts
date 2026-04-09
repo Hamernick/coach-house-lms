@@ -16,6 +16,7 @@ import {
   resolveClusterClickTarget,
   resolveOrganizationId,
 } from "./public-map-cluster-runtime"
+import { getMapSourceSafely, isMapStyleAccessError } from "./map-style-guards"
 
 type MapboxApi = typeof import("mapbox-gl")["default"]
 
@@ -224,9 +225,11 @@ export function executeClusterSelection({
     clusterId,
     fallbackCoordinates: coordinates,
   })
-  const source = clickMap.getSource(PUBLIC_MAP_ORGANIZATION_SOURCE_ID) as
-    | mapboxgl.GeoJSONSource
-    | undefined
+  const source = getMapSourceSafely<mapboxgl.GeoJSONSource>(
+    clickMap,
+    PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+  )
+  if (isMapStyleAccessError(source)) return
   const fallbackZoomTarget = Math.min(
     clickMap.getZoom() + CLUSTER_CLICK_FALLBACK_ZOOM_DELTA,
     CLUSTER_CLICK_MAX_ZOOM,

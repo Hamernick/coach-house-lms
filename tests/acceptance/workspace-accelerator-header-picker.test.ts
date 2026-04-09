@@ -1,12 +1,20 @@
 import React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 
 import {
+  WorkspaceAcceleratorCardFullscreenRailContent,
   resolveWorkspaceAcceleratorHeaderPickerScrollDistance,
+  WorkspaceAcceleratorCardSidebar,
   WorkspaceAcceleratorHeaderPicker,
 } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support"
 import { WORKSPACE_ACCELERATOR_TUTORIAL_GUARD_CHROME_CLASSNAME } from "@/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip"
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: () => {},
+  }),
+}))
 
 function extractTriggerMarkup(markup: string) {
   const match = markup.match(/<button[^>]*aria-label="Choose a class track\.[^"]*"[^>]*>[\s\S]*?<\/button>/)
@@ -73,7 +81,7 @@ describe("workspace accelerator header picker", () => {
     expect(triggerMarkup).toContain(
       'data-react-grab-owner-source="src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx"',
     )
-    expect(triggerMarkup).toContain("w-[164px]")
+    expect(triggerMarkup).toContain("w-[196px]")
     expect(markup).toContain('class="inline-flex items-start pb-1"')
   })
 
@@ -224,8 +232,246 @@ describe("workspace accelerator header picker", () => {
       }),
     )
 
-    expect(extractTriggerMarkup(compactMarkup)).toContain("w-[164px]")
-    expect(extractTriggerMarkup(compactMarkup)).not.toContain("w-[216px]")
-    expect(extractTriggerMarkup(expandedMarkup)).toContain("w-[216px]")
+    expect(extractTriggerMarkup(compactMarkup)).toContain("w-[196px]")
+    expect(extractTriggerMarkup(compactMarkup)).not.toContain("w-[248px]")
+    expect(extractTriggerMarkup(expandedMarkup)).toContain("w-[248px]")
+  })
+
+  it("uses a full-width trigger inside the accelerator right rail layout", () => {
+    const railMarkup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorHeaderPicker, {
+        lessonGroupOptions: [{ key: "formation", label: "Formation" }],
+        selectedLessonGroupKey: "formation",
+        tutorialCallout: null,
+        viewerOpen: true,
+        layout: "rail",
+        onLessonGroupChange: () => {},
+      }),
+    )
+
+    expect(extractTriggerMarkup(railMarkup)).toContain("w-full")
+    expect(extractTriggerMarkup(railMarkup)).toContain("max-w-none")
+    expect(extractTriggerMarkup(railMarkup)).not.toContain("w-[248px]")
+    expect(railMarkup).toContain('class="flex w-full items-start"')
+  })
+
+  it("renders header controls above the progress strip in the accelerator rail sidebar", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorCardSidebar, {
+        selectedLessonGroup: {
+          key: "formation",
+          label: "Formation",
+          moduleIds: ["workspace-onboarding-welcome"],
+        },
+        tutorialCallout: null,
+        filteredProgressPercent: 14,
+        readinessSummary: null,
+        checklistModules: [
+          {
+            id: "workspace-onboarding-welcome",
+            title: "Welcome",
+            groupTitle: "Formation",
+            totalSteps: 1,
+            completedStepCount: 0,
+            isCurrent: true,
+            steps: [
+              {
+                id: "workspace-onboarding-welcome:lesson",
+                moduleId: "workspace-onboarding-welcome",
+                moduleTitle: "Welcome",
+                stepKind: "lesson",
+                stepTitle: "Welcome to Workspace",
+                stepDescription: null,
+                href: "/accelerator/class/formation/module/welcome",
+                status: "in_progress",
+                stepSequenceIndex: 1,
+                stepSequenceTotal: 1,
+                moduleSequenceIndex: 1,
+                moduleSequenceTotal: 1,
+                groupTitle: "Formation",
+                videoUrl: null,
+                durationMinutes: null,
+                resources: [],
+                hasAssignment: false,
+                hasDeck: false,
+              },
+            ],
+          },
+        ],
+        currentStepId: "workspace-onboarding-welcome:lesson",
+        completedStepIds: [],
+        openModuleId: "workspace-onboarding-welcome",
+        onOpenModuleIdChange: () => {},
+        onStepSelect: () => {},
+        tutorialTargetStepId: null,
+        headerControls: React.createElement("div", null, "Header picker"),
+      }),
+    )
+
+    expect(markup).toContain("Header picker")
+    expect(markup.indexOf("Header picker")).toBeLessThan(markup.indexOf("Progress"))
+  })
+
+  it("renders the roadmap/accelerator rail switcher above the class picker and includes roadmap content", () => {
+    const acceleratorMarkup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorCardFullscreenRailContent, {
+        selectedLessonGroup: {
+          key: "formation",
+          label: "Formation",
+          moduleIds: ["workspace-onboarding-welcome"],
+        },
+        lessonGroupOptions: [
+          { key: "formation", label: "Formation" },
+          { key: "fundraising", label: "Fundraising" },
+        ],
+        selectedLessonGroupKey: "formation",
+        onLessonGroupChange: () => {},
+        tutorialCallout: null,
+        filteredProgressPercent: 14,
+        readinessSummary: null,
+        checklistModules: [
+          {
+            id: "workspace-onboarding-welcome",
+            title: "Welcome",
+            groupTitle: "Formation",
+            totalSteps: 1,
+            completedStepCount: 0,
+            isCurrent: true,
+            steps: [
+              {
+                id: "workspace-onboarding-welcome:lesson",
+                moduleId: "workspace-onboarding-welcome",
+                moduleTitle: "Welcome",
+                stepKind: "lesson",
+                stepTitle: "Welcome to Workspace",
+                stepDescription: null,
+                href: "/accelerator/class/formation/module/welcome",
+                status: "in_progress",
+                stepSequenceIndex: 1,
+                stepSequenceTotal: 1,
+                moduleSequenceIndex: 1,
+                moduleSequenceTotal: 1,
+                groupTitle: "Formation",
+                videoUrl: null,
+                durationMinutes: null,
+                resources: [],
+                hasAssignment: false,
+                hasDeck: false,
+              },
+            ],
+          },
+        ],
+        currentStepId: "workspace-onboarding-welcome:lesson",
+        completedStepIds: [],
+        openModuleId: "workspace-onboarding-welcome",
+        onOpenModuleIdChange: () => {},
+        onStepSelect: () => {},
+        tutorialTargetStepId: null,
+        roadmapSections: [
+          {
+            id: "mission-vision-values",
+            title: "Mission, Vision, Values",
+            subtitle: "Clarify your north star",
+            slug: "mission-vision-values",
+            content: "Define the principles that guide the organization.",
+            lastUpdated: null,
+            isPublic: false,
+            layout: "vertical",
+            status: "in_progress",
+            templateTitle: "Mission, Vision, Values",
+            templateSubtitle: "Clarify your north star",
+            titleIsTemplate: false,
+            subtitleIsTemplate: false,
+          },
+        ],
+      }),
+    )
+    const roadmapMarkup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorCardFullscreenRailContent, {
+        selectedLessonGroup: {
+          key: "formation",
+          label: "Formation",
+          moduleIds: ["workspace-onboarding-welcome"],
+        },
+        lessonGroupOptions: [
+          { key: "formation", label: "Formation" },
+          { key: "fundraising", label: "Fundraising" },
+        ],
+        selectedLessonGroupKey: "formation",
+        onLessonGroupChange: () => {},
+        tutorialCallout: null,
+        filteredProgressPercent: 14,
+        readinessSummary: null,
+        checklistModules: [
+          {
+            id: "workspace-onboarding-welcome",
+            title: "Welcome",
+            groupTitle: "Formation",
+            totalSteps: 1,
+            completedStepCount: 0,
+            isCurrent: true,
+            steps: [
+              {
+                id: "workspace-onboarding-welcome:lesson",
+                moduleId: "workspace-onboarding-welcome",
+                moduleTitle: "Welcome",
+                stepKind: "lesson",
+                stepTitle: "Welcome to Workspace",
+                stepDescription: null,
+                href: "/accelerator/class/formation/module/welcome",
+                status: "in_progress",
+                stepSequenceIndex: 1,
+                stepSequenceTotal: 1,
+                moduleSequenceIndex: 1,
+                moduleSequenceTotal: 1,
+                groupTitle: "Formation",
+                videoUrl: null,
+                durationMinutes: null,
+                resources: [],
+                hasAssignment: false,
+                hasDeck: false,
+              },
+            ],
+          },
+        ],
+        currentStepId: "workspace-onboarding-welcome:lesson",
+        completedStepIds: [],
+        openModuleId: "workspace-onboarding-welcome",
+        onOpenModuleIdChange: () => {},
+        onStepSelect: () => {},
+        tutorialTargetStepId: null,
+        roadmapSections: [
+          {
+            id: "mission-vision-values",
+            title: "Mission, Vision, Values",
+            subtitle: "Clarify your north star",
+            slug: "mission-vision-values",
+            content: "Define the principles that guide the organization.",
+            lastUpdated: null,
+            isPublic: false,
+            layout: "vertical",
+            status: "in_progress",
+            templateTitle: "Mission, Vision, Values",
+            templateSubtitle: "Clarify your north star",
+            titleIsTemplate: false,
+            subtitleIsTemplate: false,
+          },
+        ],
+        initialView: "roadmap",
+      }),
+    )
+
+    expect(acceleratorMarkup).toContain("Roadmap")
+    expect(acceleratorMarkup).toContain("Accelerator")
+    expect(acceleratorMarkup).toContain('data-slot="tabs-list"')
+    expect(acceleratorMarkup).toContain("w-full gap-1 rounded-full")
+    expect(acceleratorMarkup).toContain("min-w-0 flex-1")
+    expect(acceleratorMarkup).not.toContain(
+      'data-react-grab-owner-id="workspace-accelerator-checklist:workspace-onboarding-welcome:lesson"',
+    )
+    expect(acceleratorMarkup.indexOf("Roadmap")).toBeLessThan(
+      acceleratorMarkup.indexOf('aria-label="Choose a class track. Current selection: Formation"'),
+    )
+    expect(roadmapMarkup).toContain("Mission, Vision, Values")
   })
 })

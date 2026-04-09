@@ -1,16 +1,16 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
 
 import type { SidebarMode } from "./constants"
 import { PublicMapAuthSheet } from "./auth-sheet"
+import { resolvePublicMapSurfacePanelState } from "./map-surface-helpers"
 import type { UserLocationFeedback } from "./user-location"
 import { PublicMapSidebar } from "./sidebar"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import { resolvePublicMapSidebarWidth } from "./map-view-helpers"
 
 type PublicMapSurfaceProps = {
   containerRef: RefObject<HTMLDivElement | null>
@@ -56,13 +56,18 @@ export function PublicMapSurface({
   onSidebarInsetChange,
 }: PublicMapSurfaceProps) {
   const surfaceRef = useRef<HTMLDivElement | null>(null)
+  const [panelPortalContainer, setPanelPortalContainer] = useState<HTMLDivElement | null>(null)
   const [surfaceWidth, setSurfaceWidth] = useState(0)
+  const [surfaceHeight, setSurfaceHeight] = useState(0)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const element = surfaceRef.current
     if (!element) return
 
-    const updateSize = () => setSurfaceWidth(element.clientWidth)
+    const updateSize = () => {
+      setSurfaceWidth(element.clientWidth)
+      setSurfaceHeight(element.clientHeight)
+    }
     updateSize()
 
     if (typeof ResizeObserver === "undefined") {
@@ -74,15 +79,22 @@ export function PublicMapSurface({
       const entry = entries[0]
       if (!entry) return
       setSurfaceWidth(entry.contentRect.width)
+      setSurfaceHeight(entry.contentRect.height)
     })
 
     observer.observe(element)
     return () => observer.disconnect()
   }, [])
 
-  const sidebarWidth = useMemo(
-    () => resolvePublicMapSidebarWidth({ surfaceWidth, sidebarMode }),
-    [sidebarMode, surfaceWidth],
+  const { panelPresentation, panelReady, sidebarWidth } = useMemo(
+    () =>
+      resolvePublicMapSurfacePanelState({
+        surfaceWidth,
+        surfaceHeight,
+        sidebarMode,
+        portalContainerReady: panelPortalContainer !== null,
+      }),
+    [panelPortalContainer, sidebarMode, surfaceHeight, surfaceWidth],
   )
 
   useEffect(() => {
@@ -90,19 +102,28 @@ export function PublicMapSurface({
   }, [onSidebarInsetChange, sidebarWidth])
 
   return (
-    <div className="relative h-full min-h-0 overflow-hidden bg-background">
-      <PublicMapSidebar
-        sidebarMode={sidebarMode}
-        sidebarWidth={sidebarWidth}
-        filteredOrganizations={filteredOrganizations}
-        selectedOrganization={selectedOrganization}
-        favorites={favorites}
-        query={query}
-        setQuery={onQueryChange}
-        toggleFavorite={onToggleFavorite}
-        setSelectedOrgId={onSelectOrg}
-        setSidebarMode={onSidebarModeChange}
+    <div ref={surfaceRef} className="relative h-full min-h-0 overflow-hidden bg-background">
+      <div
+        ref={setPanelPortalContainer}
+        className="pointer-events-none absolute inset-0 z-30 overflow-hidden transform-gpu"
       />
+      {panelReady && panelPresentation ? (
+        <PublicMapSidebar
+          sidebarMode={sidebarMode}
+          sidebarWidth={sidebarWidth}
+          surfaceHeight={surfaceHeight}
+          panelPresentation={panelPresentation}
+          portalContainer={panelPortalContainer}
+          filteredOrganizations={filteredOrganizations}
+          selectedOrganization={selectedOrganization}
+          favorites={favorites}
+          query={query}
+          setQuery={onQueryChange}
+          toggleFavorite={onToggleFavorite}
+          setSelectedOrgId={onSelectOrg}
+          setSidebarMode={onSidebarModeChange}
+        />
+      ) : null}
 
       {!tokenAvailable ? (
         <div className="flex h-full min-h-[480px] items-center justify-center px-6">
@@ -113,7 +134,7 @@ export function PublicMapSurface({
           </Alert>
         </div>
       ) : (
-        <div ref={surfaceRef} className="relative h-full min-h-[520px]">
+        <div className="relative h-full min-h-[520px]">
           <div className="absolute inset-0">
             <div
               ref={containerRef}

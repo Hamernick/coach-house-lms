@@ -10,6 +10,12 @@ const PROTECTED_PREFIXES = [
   "/academy",
   "/classes",
   "/organizations",
+  "/workspace",
+  "/projects",
+  "/my-tasks",
+  "/notifications",
+  "/people",
+  "/access-requests",
   "/billing",
   "/admin",
   "/internal",
@@ -54,7 +60,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && isAuthRoute) {
-    const redirectResponse = NextResponse.redirect(new URL("/workspace", request.url))
+    const redirectResponse = NextResponse.redirect(new URL("/projects", request.url))
     copyCookies(response, redirectResponse)
     return redirectResponse
   }

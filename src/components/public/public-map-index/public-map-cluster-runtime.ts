@@ -13,10 +13,16 @@ import {
   resolveFeatureCoordinatesForMap,
 } from "./map-coordinate-normalization"
 import {
+  buildClusterPreviewMembers,
+  buildPreviewSignature,
+  coalesceClusterReconcileFeaturesFromSupport,
+} from "./public-map-cluster-runtime-support"
+import {
   PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
   PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
   PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
 } from "./map-view-helpers"
+import { getMapSourceSafely, isMapStyleAccessError } from "./map-style-guards"
 
 export type ClusteredMarkerEntry = {
   marker: mapboxgl.Marker
@@ -51,52 +57,6 @@ export function resolveClusterId(value: unknown) {
   return null
 }
 
-function buildClusterPreviewMembers({
-  leaves,
-  organizationById,
-}: {
-  leaves: mapboxgl.MapboxGeoJSONFeature[]
-  organizationById: Map<string, PublicMapOrganization>
-}): ClusterMarkerPreviewMember[] {
-  const previewMembers: ClusterMarkerPreviewMember[] = []
-  const seen = new Set<string>()
-  for (const leaf of leaves) {
-    const properties = (leaf.properties ?? {}) as Record<string, unknown>
-    const organizationId = resolveOrganizationId(properties.organizationId)
-    if (!organizationId || seen.has(organizationId)) continue
-    seen.add(organizationId)
-
-    const organization = organizationById.get(organizationId)
-    if (organization) {
-      const imageUrl = organization.logoUrl?.trim() || organization.headerUrl?.trim() || null
-      previewMembers.push({
-        id: organization.id,
-        name: organization.name,
-        imageUrl,
-      })
-    } else {
-      const fallbackName =
-        typeof properties.name === "string" && properties.name.trim().length > 0
-          ? properties.name.trim()
-          : "Organization"
-      previewMembers.push({
-        id: organizationId,
-        name: fallbackName,
-        imageUrl: null,
-      })
-    }
-
-    if (previewMembers.length >= CLUSTER_PREVIEW_MAX_MEMBERS) break
-  }
-  return previewMembers
-}
-
-function buildPreviewSignature(previewMembers: ClusterMarkerPreviewMember[]) {
-  return previewMembers
-    .map((member) => `${member.id}:${member.imageUrl ?? ""}`)
-    .join("|")
-}
-
 export function syncClusterPreviewForMarker({
   markersByKey,
   markerKey,
@@ -129,6 +89,7 @@ export function syncClusterPreviewForMarker({
     const previewMembers = buildClusterPreviewMembers({
       leaves: leaves as mapboxgl.MapboxGeoJSONFeature[],
       organizationById,
+      resolveOrganizationId,
     })
     const previewSignature = buildPreviewSignature(previewMembers)
     if (entry.previewSignature === previewSignature && entry.pointCount === pointCount) return
@@ -207,7 +168,8 @@ export function queryClusterReconcileFeatures({
 }: {
   map: mapboxgl.Map
 }) {
-  if (!map.getSource(PUBLIC_MAP_ORGANIZATION_SOURCE_ID)) return []
+  const source = getMapSourceSafely(map, PUBLIC_MAP_ORGANIZATION_SOURCE_ID)
+  if (isMapStyleAccessError(source) || !source) return []
   const moving = typeof map.isMoving === "function" ? map.isMoving() : false
   if (moving) return []
   return map.queryRenderedFeatures({
@@ -223,7 +185,8 @@ export function queryVisibleUnclusteredOrganizationFeatures({
 }: {
   map: mapboxgl.Map
 }) {
-  if (!map.getSource(PUBLIC_MAP_ORGANIZATION_SOURCE_ID)) return []
+  const source = getMapSourceSafely(map, PUBLIC_MAP_ORGANIZATION_SOURCE_ID)
+  if (isMapStyleAccessError(source) || !source) return []
 
   if (typeof map.querySourceFeatures !== "function") {
     return map
@@ -259,71 +222,6 @@ export function queryVisibleUnclusteredOrganizationFeatures({
   return [...featureByOrganizationId.values()]
 }
 
-function resolveLogicalFeatureKey(properties: Record<string, unknown>) {
-  if (isClusterFeature(properties)) {
-    const clusterId = resolveClusterId(properties.cluster_id)
-    return clusterId === null ? null : `cluster:${clusterId}`
-  }
-  const organizationId = resolveOrganizationId(properties.organizationId)
-  return organizationId ? `organization:${organizationId}` : null
-}
-
-function resolveViewportReferencePoint(map: mapboxgl.Map) {
-  const canvas = map.getCanvas()
-  return {
-    x: canvas.clientWidth / 2,
-    y: canvas.clientHeight / 2,
-  }
-}
-
-function resolveMarkerReferencePoint({
-  map,
-  entry,
-}: {
-  map: mapboxgl.Map
-  entry: ClusteredMarkerEntry | undefined
-}) {
-  if (!entry) return null
-  const markerElement = entry.marker.getElement()
-  const canvasContainer = map.getCanvasContainer()
-  const markerRect = markerElement.getBoundingClientRect()
-  const containerRect = canvasContainer.getBoundingClientRect()
-  if (
-    markerRect.width <= 0 ||
-    markerRect.height <= 0 ||
-    containerRect.width <= 0 ||
-    containerRect.height <= 0
-  ) {
-    return null
-  }
-  return {
-    x: markerRect.left - containerRect.left + markerRect.width / 2,
-    y: markerRect.top - containerRect.top + markerRect.height / 2,
-  }
-}
-
-function resolveFeatureSelectionScore({
-  map,
-  coordinates,
-  rawCoordinates,
-  referencePoint,
-}: {
-  map: mapboxgl.Map
-  coordinates: [number, number]
-  rawCoordinates: [number, number]
-  referencePoint: { x: number; y: number }
-}) {
-  const projected = map.project(coordinates)
-  const viewportCenter = resolveViewportReferencePoint(map)
-  return {
-    referenceDistance:
-      Math.abs(projected.x - referencePoint.x) + Math.abs(projected.y - referencePoint.y),
-    centerDistance:
-      Math.abs(projected.x - viewportCenter.x) + Math.abs(projected.y - viewportCenter.y),
-    wrapPenalty: Math.abs(rawCoordinates[0] - coordinates[0]),
-  }
-}
-
 export function coalesceClusterReconcileFeatures({
   map,
   features,
@@ -333,56 +231,14 @@ export function coalesceClusterReconcileFeatures({
   features: mapboxgl.MapboxGeoJSONFeature[]
   markersByKey: Map<string, ClusteredMarkerEntry>
 }) {
-  const featureByKey = new Map<
-    string,
-    {
-      feature: mapboxgl.MapboxGeoJSONFeature
-      score: ReturnType<typeof resolveFeatureSelectionScore>
-    }
-  >()
-  const defaultReferencePoint = resolveViewportReferencePoint(map)
-
-  for (const feature of features) {
-    const rawCoordinates = resolveFeatureCoordinates(feature)
-    if (!rawCoordinates) continue
-    const coordinates = normalizeCoordinatesForMap({
-      map,
-      coordinates: rawCoordinates,
-    })
-    const properties = (feature.properties ?? {}) as Record<string, unknown>
-    const key = resolveLogicalFeatureKey(properties)
-    if (!key) continue
-
-    const existingEntry = markersByKey.get(key)
-    const referencePoint =
-      resolveMarkerReferencePoint({
-        map,
-        entry: existingEntry,
-      }) ?? defaultReferencePoint
-    const score = resolveFeatureSelectionScore({
-      map,
-      coordinates,
-      rawCoordinates,
-      referencePoint,
-    })
-
-    const currentBest = featureByKey.get(key)
-    if (
-      !currentBest ||
-      score.referenceDistance < currentBest.score.referenceDistance ||
-      (score.referenceDistance === currentBest.score.referenceDistance &&
-        (score.centerDistance < currentBest.score.centerDistance ||
-          (score.centerDistance === currentBest.score.centerDistance &&
-            score.wrapPenalty < currentBest.score.wrapPenalty)))
-    ) {
-      featureByKey.set(key, {
-        feature,
-        score,
-      })
-    }
-  }
-
-  return Array.from(featureByKey.values()).map((entry) => entry.feature)
+  return coalesceClusterReconcileFeaturesFromSupport({
+    map,
+    features,
+    markersByKey,
+    isClusterFeature,
+    resolveClusterId,
+    resolveOrganizationId,
+  })
 }
 
 export function shouldScheduleClusterRenderFromSourceData({

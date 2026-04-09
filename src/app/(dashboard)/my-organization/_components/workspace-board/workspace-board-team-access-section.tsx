@@ -13,13 +13,17 @@ import { WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME } from "@/components/works
 import { cn } from "@/lib/utils"
 
 import { WorkspaceBoardInviteSheet } from "./workspace-board-invite-sheet"
+import { useWorkspaceBoardOrganizationAccessState } from "./workspace-board-organization-access-state"
+import { WorkspaceBoardTeamAccessHoverCard } from "./workspace-board-team-access-hover-card"
 import { WorkspaceTutorialCallout } from "./workspace-tutorial-callout"
 import {
   buildWorkspaceAccessPeople,
   countActiveWorkspaceInvites,
+  countPendingWorkspaceTeamAccess,
+  listPendingWorkspaceAccessRequests,
+  listPendingWorkspaceTeamInvites,
   shouldShowWorkspaceTeamAccessEmptyState,
 } from "./workspace-board-team-access"
-import { formatRemaining } from "./workspace-board-invite-sheet-helpers"
 import type {
   WorkspaceCollaborationInvite,
   WorkspaceMemberOption,
@@ -75,7 +79,21 @@ export function WorkspaceBoardTeamAccessSection({
   onInvitesChange: (nextInvites: WorkspaceCollaborationInvite[]) => void
 }) {
   const nowMs = Date.now()
+  const organizationAccessState = useWorkspaceBoardOrganizationAccessState()
   const activeInviteCount = countActiveWorkspaceInvites(invites, nowMs)
+  const pendingTeamInvites = useMemo(
+    () => listPendingWorkspaceTeamInvites(organizationAccessState.invites, nowMs).slice(0, 4),
+    [nowMs, organizationAccessState.invites],
+  )
+  const pendingAccessRequests = useMemo(
+    () => listPendingWorkspaceAccessRequests(organizationAccessState.requests, nowMs).slice(0, 4),
+    [nowMs, organizationAccessState.requests],
+  )
+  const pendingTeamAccessCount = countPendingWorkspaceTeamAccess({
+    invites: organizationAccessState.invites,
+    requests: organizationAccessState.requests,
+    nowMs,
+  })
   const accessPeople = useMemo(
     () =>
       buildWorkspaceAccessPeople({
@@ -102,6 +120,7 @@ export function WorkspaceBoardTeamAccessSection({
   const showEmptyState = shouldShowWorkspaceTeamAccessEmptyState({
     accessPeopleCount: accessPeople.length,
     activeInviteCount,
+    pendingTeamAccessCount,
   })
 
   const content = (
@@ -149,6 +168,7 @@ export function WorkspaceBoardTeamAccessSection({
                 members={members}
                 invites={invites}
                 onInvitesChange={onInvitesChange}
+                organizationAccessState={organizationAccessState}
                 triggerSize="sm"
                 triggerVariant="secondary"
                 triggerClassName="h-9 rounded-full px-4"
@@ -221,108 +241,19 @@ export function WorkspaceBoardTeamAccessSection({
                   </div>
                 </Button>
               </HoverCardTrigger>
-              <HoverCardContent align="start" side="bottom" className="w-[22rem] rounded-xl p-0">
-                <div className="border-b border-border/60 px-3 py-2.5">
-                  <p className="text-sm font-semibold">Team access</p>
-                  <p className="text-xs text-muted-foreground">
-                    People with access to this workspace and temporary invite status.
-                  </p>
-                </div>
-
-                <div className="max-h-72 space-y-1 overflow-y-auto p-2">
-                  {accessPeople.slice(0, 8).map((person) => {
-                    const hue = hueFromSeed(person.id)
-                    return (
-                      <div
-                        key={person.id}
-                        className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/40 px-2.5 py-2"
-                      >
-                        <Avatar className="h-8 w-8 border border-border/50">
-                          {person.avatarUrl ? <AvatarImage src={person.avatarUrl} alt={person.name} /> : null}
-                          <AvatarFallback
-                            className="text-[10px] font-semibold"
-                            style={{
-                              backgroundColor: `hsl(${hue} 28% 88%)`,
-                              color: `hsl(${hue} 32% 26%)`,
-                            }}
-                          >
-                            {toInitials(person.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium">{person.name}</p>
-                          <p className="truncate text-xs text-muted-foreground">{person.subtitle}</p>
-                        </div>
-                      </div>
-                    )
-                  })}
-
-                  {activeInviteRows.length > 0 ? (
-                    <>
-                      <div className="px-1 pt-2">
-                        <p className="text-xs font-medium text-muted-foreground">
-                          Active invites
-                        </p>
-                      </div>
-                      {activeInviteRows.map((invite) => {
-                        const displayName =
-                          invite.userName?.trim() || invite.userEmail || "Temporary collaborator"
-                        const hue = hueFromSeed(invite.userId)
-
-                        return (
-                          <div
-                            key={invite.id}
-                            className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/40 px-2.5 py-2"
-                          >
-                            <Avatar className="h-8 w-8 border border-border/50">
-                              <AvatarFallback
-                                className="text-[10px] font-semibold"
-                                style={{
-                                  backgroundColor: `hsl(${hue} 28% 88%)`,
-                                  color: `hsl(${hue} 32% 26%)`,
-                                }}
-                              >
-                                {toInitials(displayName)}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="min-w-0 flex-1">
-                              <p className="truncate text-sm font-medium">
-                                {displayName}
-                              </p>
-                              <p className="truncate text-xs text-muted-foreground">
-                                Temporary access · {formatRemaining(invite.expiresAt)}
-                              </p>
-                            </div>
-                            <Badge variant="secondary" className="rounded-full">
-                              Invited
-                            </Badge>
-                          </div>
-                        )
-                      })}
-                    </>
-                  ) : null}
-                </div>
-
-                <div className="flex items-center justify-between gap-2 border-t border-border/60 px-3 py-2.5">
-                  <div className="text-xs text-muted-foreground">
-                    <span className="tabular-nums">{activeInviteCount}</span> active{" "}
-                    {activeInviteCount === 1 ? "invite" : "invites"}
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <WorkspaceBoardInviteSheet
-                      canInvite={canInvite}
-                      members={members}
-                      invites={invites}
-                      onInvitesChange={onInvitesChange}
-                      triggerVariant="ghost"
-                      triggerClassName="h-8 rounded-md px-2.5"
-                    />
-                    <Button asChild variant="ghost" size="sm" className="h-8 rounded-md px-2.5">
-                      <Link href="/workspace?view=editor&tab=people">Manage members</Link>
-                    </Button>
-                  </div>
-                </div>
-              </HoverCardContent>
+              <WorkspaceBoardTeamAccessHoverCard
+                accessPeople={accessPeople}
+                activeInviteRows={activeInviteRows}
+                activeInviteCount={activeInviteCount}
+                pendingTeamAccessCount={pendingTeamAccessCount}
+                pendingTeamInvites={pendingTeamInvites}
+                pendingAccessRequests={pendingAccessRequests}
+                canInvite={canInvite}
+                members={members}
+                invites={invites}
+                onInvitesChange={onInvitesChange}
+                organizationAccessState={organizationAccessState}
+              />
             </HoverCard>
 
             <WorkspaceBoardInviteSheet
@@ -330,6 +261,7 @@ export function WorkspaceBoardTeamAccessSection({
               members={members}
               invites={invites}
               onInvitesChange={onInvitesChange}
+              organizationAccessState={organizationAccessState}
               triggerSize="icon"
               triggerVariant="outline"
               triggerAriaLabel="Invite collaborator"
@@ -343,6 +275,12 @@ export function WorkspaceBoardTeamAccessSection({
             {accessPeople.length === 1 ? "member" : "members"} ·{" "}
             <span className="tabular-nums">{activeInviteCount}</span> active{" "}
             {activeInviteCount === 1 ? "invite" : "invites"}
+            {pendingTeamAccessCount > 0 ? (
+              <>
+                {" "}· <span className="tabular-nums">{pendingTeamAccessCount}</span> pending team{" "}
+                {pendingTeamAccessCount === 1 ? "item" : "items"}
+              </>
+            ) : null}
           </p>
         </>
       )}

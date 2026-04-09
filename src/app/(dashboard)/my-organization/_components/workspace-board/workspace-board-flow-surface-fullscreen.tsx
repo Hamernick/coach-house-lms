@@ -1,8 +1,9 @@
 "use client"
 
-import { useMemo } from "react"
+import dynamic from "next/dynamic"
+import { useMemo, type ComponentProps } from "react"
 
-import { MyOrganizationEditorView } from "../my-organization-editor-view"
+import { Skeleton } from "@/components/ui/skeleton"
 import { WorkspaceBoardCard, type WorkspaceBoardNodeData } from "./workspace-board-node"
 import { cn } from "@/lib/utils"
 import type {
@@ -15,6 +16,23 @@ import type {
   WorkspaceTrackerState,
   WorkspaceVaultViewMode,
 } from "./workspace-board-types"
+
+const MyOrganizationEditorView = dynamic<
+  ComponentProps<typeof import("../my-organization-editor-view").MyOrganizationEditorView>
+>(
+  () =>
+    import("../my-organization-editor-view").then(
+      (mod) => mod.MyOrganizationEditorView,
+    ),
+  {
+    loading: () => (
+      <div className="flex h-full min-h-0 flex-col gap-4 p-4">
+        <Skeleton className="h-10 w-48 rounded-xl" />
+        <Skeleton className="h-full min-h-[24rem] w-full rounded-2xl" />
+      </div>
+    ),
+  },
+)
 
 type UseWorkspaceBoardFullscreenCardDataArgs = {
   fullscreenCardId: WorkspaceCardId | null

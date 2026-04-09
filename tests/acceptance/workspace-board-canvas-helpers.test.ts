@@ -98,10 +98,11 @@ describe("workspace board canvas helpers", () => {
     expect(calendar).toBeTruthy()
     expect(accelerator?.size).toBe("sm")
     expect((roadmap?.x ?? 0)).toBeLessThan(organization?.x ?? 0)
-    expect((programs?.x ?? 0)).toBe(organization?.x ?? 0)
-    expect((programs?.y ?? 0)).toBeGreaterThan(organization?.y ?? 0)
-    expect((accelerator?.x ?? 0)).toBeGreaterThan(organization?.x ?? 0)
-    expect((calendar?.x ?? 0)).toBeGreaterThanOrEqual(accelerator?.x ?? 0)
+    expect((roadmap?.x ?? 0)).toBeLessThan(accelerator?.x ?? 0)
+    expect((accelerator?.x ?? 0)).toBeLessThan(organization?.x ?? 0)
+    expect((organization?.x ?? 0)).toBeLessThan(programs?.x ?? 0)
+    expect((programs?.y ?? 0)).toBe(organization?.y ?? 0)
+    expect((calendar?.x ?? 0)).toBeGreaterThanOrEqual(programs?.x ?? 0)
   })
 
   it("resolves one explicit completion exit request from the completed board state", () => {

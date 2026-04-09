@@ -24,6 +24,12 @@ import type { OrganizationMembershipsTable } from "./organization_memberships"
 import type { OrganizationInvitesTable } from "./organization_invites"
 import type { OrganizationAccessRequestsTable } from "./organization_access_requests"
 import type { OrganizationAccessSettingsTable } from "./organization_access_settings"
+import type { OrganizationProjectAssetsTable } from "./organization_project_assets"
+import type { OrganizationProjectNotesTable } from "./organization_project_notes"
+import type { OrganizationProjectsTable } from "./organization_projects"
+import type { OrganizationProjectQuickLinksTable } from "./organization_project_quick_links"
+import type { OrganizationTaskAssigneesTable } from "./organization_task_assignees"
+import type { OrganizationTasksTable } from "./organization_tasks"
 import type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
 import type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
 import type { OrganizationWorkspaceCommunicationDeliveriesTable } from "./organization_workspace_communication_deliveries"
@@ -35,6 +41,7 @@ import type { OrganizationWorkspaceObjectiveGroupsTable } from "./organization_w
 import type { OrganizationWorkspaceObjectiveLinksTable } from "./organization_workspace_objective_links"
 import type { OrganizationWorkspaceObjectiveStepsTable } from "./organization_workspace_objective_steps"
 import type { OrganizationWorkspaceObjectivesTable } from "./organization_workspace_objectives"
+import type { OrganizationWorkspaceStarterStateTable } from "./organization_workspace_starter_state"
 import type { NotificationsTable } from "./notifications"
 
 export type { OrganizationsTable } from "./organizations"
@@ -63,6 +70,12 @@ export type { OrganizationMembershipsTable } from "./organization_memberships"
 export type { OrganizationInvitesTable } from "./organization_invites"
 export type { OrganizationAccessRequestsTable } from "./organization_access_requests"
 export type { OrganizationAccessSettingsTable } from "./organization_access_settings"
+export type { OrganizationProjectAssetsTable } from "./organization_project_assets"
+export type { OrganizationProjectNotesTable } from "./organization_project_notes"
+export type { OrganizationProjectsTable } from "./organization_projects"
+export type { OrganizationProjectQuickLinksTable } from "./organization_project_quick_links"
+export type { OrganizationTaskAssigneesTable } from "./organization_task_assignees"
+export type { OrganizationTasksTable } from "./organization_tasks"
 export type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
 export type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
 export type { OrganizationWorkspaceCommunicationDeliveriesTable } from "./organization_workspace_communication_deliveries"
@@ -74,6 +87,7 @@ export type { OrganizationWorkspaceObjectiveGroupsTable } from "./organization_w
 export type { OrganizationWorkspaceObjectiveLinksTable } from "./organization_workspace_objective_links"
 export type { OrganizationWorkspaceObjectiveStepsTable } from "./organization_workspace_objective_steps"
 export type { OrganizationWorkspaceObjectivesTable } from "./organization_workspace_objectives"
+export type { OrganizationWorkspaceStarterStateTable } from "./organization_workspace_starter_state"
 export type { NotificationsTable } from "./notifications"
 
 export type PublicTables = {
@@ -103,6 +117,12 @@ export type PublicTables = {
   organization_invites: OrganizationInvitesTable
   organization_access_requests: OrganizationAccessRequestsTable
   organization_access_settings: OrganizationAccessSettingsTable
+  organization_project_assets: OrganizationProjectAssetsTable
+  organization_project_notes: OrganizationProjectNotesTable
+  organization_projects: OrganizationProjectsTable
+  organization_project_quick_links: OrganizationProjectQuickLinksTable
+  organization_task_assignees: OrganizationTaskAssigneesTable
+  organization_tasks: OrganizationTasksTable
   organization_workspace_boards: OrganizationWorkspaceBoardsTable
   organization_workspace_communication_channels: OrganizationWorkspaceCommunicationChannelsTable
   organization_workspace_communication_deliveries: OrganizationWorkspaceCommunicationDeliveriesTable
@@ -114,5 +134,6 @@ export type PublicTables = {
   organization_workspace_objective_links: OrganizationWorkspaceObjectiveLinksTable
   organization_workspace_objective_steps: OrganizationWorkspaceObjectiveStepsTable
   organization_workspace_objectives: OrganizationWorkspaceObjectivesTable
+  organization_workspace_starter_state: OrganizationWorkspaceStarterStateTable
   notifications: NotificationsTable
 }

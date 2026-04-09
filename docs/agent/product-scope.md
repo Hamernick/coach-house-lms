@@ -5,19 +5,27 @@
 - Public: Landing, Pricing.
 - Auth: email/password, magic link, verify, reset.
 - Payments: Stripe subscriptions (checkout -> webhook -> subscription record -> access).
-- Student: dashboard, classes/modules (video, markdown, inputs, deck download), sequential unlock.
-- Admin: class/module/content CRUD, reorder modules, PDF upload, publish/unpublish, user management, dashboard KPIs.
+- Student/member: workspace, classes/modules (video, markdown, inputs, deck download), sequential unlock.
+- Admin: class/module/content CRUD, reorder modules, PDF upload, publish/unpublish, user management, admin KPIs.
 
 ## Routing And Navigation
 
-- Route groups: `(public)`, `(auth)`, `(dashboard)`, plus `/admin/**` and `/billing`.
+- Route groups: `(public)`, `(auth)`, internal authenticated app shell `(dashboard)`, plus `(community)` and `(admin)`.
 - Canonical URLs:
-  - `/dashboard`
+  - `/workspace`
+  - `/workspace/present`
+  - `/projects`
+  - `/my-tasks`
+  - `/people`
+  - `/organization/documents`
   - `/class/{slug}`
   - `/class/{slug}/module/{index}`
-  - `/pricing`
   - `/billing`
+  - `/community`
   - `/admin/*`
+- Legacy aliases:
+  - `/my-organization` -> `/workspace`
+  - `/organization` -> `/workspace`
 - Breadcrumbs are contextual, with loading skeletons and mobile truncation.
 - Guards:
   - 401 -> login
@@ -29,7 +37,7 @@
 
 ### Student
 
-- Dashboard: Next Up, Progress Overview, Nonprofit Canvas, Upcoming Schedule, Classes, Assignments Due, Recent Activity.
+- Workspace: Next Up, progress overview, nonprofit canvas, upcoming schedule, classes, assignments due, recent activity.
 - Class: module sidebar with progress.
 - Module: video, markdown, inputs, Prev/Next actions.
 - Nonprofit: compiled canvas from submissions.
@@ -47,7 +55,7 @@
 - Auth: signup -> verify -> signin -> reset.
 - Payments: pricing -> checkout -> return; webhook syncs subscription state.
 - Billing management: card update, invoices, cancel/resubscribe.
-- Onboarding: first-login wizard, inactivity nudge.
+- Onboarding: first-login wizard -> `/workspace` or `/find` based on intent, inactivity nudge.
 - Admin: content CRUD, reorder, upload, preview, publish.
 
 ## State Coverage
@@ -57,9 +65,9 @@
 
 ## Acceptance Criteria
 
-- Paid signup reaches dashboard with active subscription reflected.
+- Paid signup reaches the intended post-auth surface (`/workspace` for builders, `/find` for find/fund/support intents) with active subscription reflected.
 - Module completion unlocks the next module.
-- Dashboard Next Up/progress values are accurate.
+- Workspace Next Up/progress values are accurate.
 - Nonprofit Canvas reflects submissions immediately.
 - Admin can manage users, submissions, and learning content.
 - Meets WCAG AA, performance budgets, and zero console errors.
@@ -72,7 +80,7 @@
 4. Webhooks/subscription sync.
 5. Student flow (class list + module unlocks).
 6. Admin content CRUD.
-7. Admin users/dashboard.
+7. Admin users/app shell.
 8. Billing management.
 9. Performance and accessibility polish.
 

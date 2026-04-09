@@ -1,13 +1,7 @@
 #!/usr/bin/env node
 import fs from "node:fs"
 import path from "node:path"
-
-const budgets = [
-  // Dashboard home route currently lives at /(dashboard)/community/page.
-  { routeKey: "/(dashboard)/community/page", label: "/dashboard", maxFirstLoadKB: 900 },
-  // Transitional ceiling while admin shell/client islands are actively slimming down.
-  { routeKey: "/(admin)/admin/page", label: "/admin", maxFirstLoadKB: 1000 },
-]
+import { performanceRouteBudgets } from "./performance-route-budgets.mjs"
 
 const buildDir = ".next"
 const results = []
@@ -102,7 +96,7 @@ if (fs.existsSync(manifestPath)) {
   process.exit(1)
 }
 
-for (const { routeKey, label, maxFirstLoadKB } of budgets) {
+for (const { routeKey, urlLabel, shell, maxFirstLoadKB } of performanceRouteBudgets) {
   const { files, error } = getFilesForRoute(routeKey)
   if (error) {
     failures.push(error)
@@ -123,16 +117,20 @@ for (const { routeKey, label, maxFirstLoadKB } of budgets) {
   }
 
   if (missing.length > 0) {
-    failures.push(`Missing build assets for ${label}: ${missing.join(", ")}`)
+    failures.push(`Missing build assets for ${urlLabel} [${routeKey}]: ${missing.join(", ")}`)
     continue
   }
 
   const totalKB = totalBytes / 1024
   const rounded = Number(totalKB.toFixed(1))
-  results.push(`${label}: ${rounded}KB (budget ≤ ${maxFirstLoadKB}KB)`)
+  results.push(
+    `${urlLabel} (${shell} shell, route key ${routeKey}): ${rounded}KB (budget ≤ ${maxFirstLoadKB}KB)`,
+  )
 
   if (totalKB > maxFirstLoadKB) {
-    failures.push(`${label} first-load bundle is ${rounded}KB (budget ≤ ${maxFirstLoadKB}KB)`)
+    failures.push(
+      `${urlLabel} first-load bundle is ${rounded}KB (budget ≤ ${maxFirstLoadKB}KB) [route key ${routeKey}]`,
+    )
   }
 }
 

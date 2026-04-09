@@ -73,6 +73,12 @@ function isWorkspaceCanvasV2CardId(value: string): value is WorkspaceCanvasV2Car
   return WORKSPACE_CANVAS_V2_CARD_ID_SET.has(value as WorkspaceCanvasV2CardId)
 }
 
+function isWorkspaceCanvasConnectableCardId(
+  value: string,
+): value is WorkspaceCanvasV2CardId {
+  return isWorkspaceCanvasV2CardId(value) && value !== "deck"
+}
+
 export function resolveWorkspaceCanvasConnectAttempt({
   connection,
   allowEditing,
@@ -91,8 +97,8 @@ export function resolveWorkspaceCanvasConnectAttempt({
   }
 
   if (
-    !isWorkspaceCanvasV2CardId(connection.source) ||
-    !isWorkspaceCanvasV2CardId(connection.target)
+    !isWorkspaceCanvasConnectableCardId(connection.source) ||
+    !isWorkspaceCanvasConnectableCardId(connection.target)
   ) {
     return { allowed: false, reason: "unknown-node-id" }
   }
@@ -162,8 +168,8 @@ export function buildWorkspaceCanvasV2Edges({
 
   for (const connection of connections) {
     if (
-      !isWorkspaceCanvasV2CardId(connection.source) ||
-      !isWorkspaceCanvasV2CardId(connection.target)
+      !isWorkspaceCanvasConnectableCardId(connection.source) ||
+      !isWorkspaceCanvasConnectableCardId(connection.target)
     ) {
       droppedConnectionIds.push(connection.id)
       droppedConnections.push({

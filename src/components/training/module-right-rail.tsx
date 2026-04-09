@@ -58,8 +58,8 @@ export function ModuleRightRail({
   const normalizedResources = useMemo(() => (Array.isArray(resources) ? resources : []), [resources])
 
   return (
-    <div className="grid min-h-full grid-rows-[minmax(0,1fr)_auto] gap-4">
-      <div className="min-h-0 overflow-y-auto pr-1">
+    <div className="grid min-h-full grid-rows-[minmax(0,1fr)_auto] gap-3 md:gap-4">
+      <div className="min-h-0 overflow-y-auto md:pr-1">
         <div className="space-y-3">
         {activeTool === "notes" ? <ModuleNotesPanel moduleId={moduleId} /> : null}
         {activeTool === "resources" ? (

@@ -285,10 +285,12 @@ function useBindPublicMapLayerInteractions({
     })
     const enablePointerCursor = () => {
       const canvas = map.getCanvas()
+      if (!canvas) return
       canvas.style.cursor = "pointer"
     }
     const disablePointerCursor = () => {
       const canvas = map.getCanvas()
+      if (!canvas) return
       canvas.style.cursor = ""
     }
 

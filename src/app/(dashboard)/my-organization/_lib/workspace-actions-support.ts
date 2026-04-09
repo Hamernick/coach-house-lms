@@ -18,6 +18,7 @@ import {
   readWorkspaceCollaborationInvitesFromRows,
   type WorkspaceCollaborationInviteRow,
 } from "./workspace-state"
+import { isMissingWorkspaceInvitesTableError } from "./workspace-view-helpers"
 
 export type ActorContext = {
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>
@@ -65,7 +66,7 @@ export async function loadWorkspaceInvites(
     .order("created_at", { ascending: false })
     .returns<WorkspaceCollaborationInviteRow[]>()
 
-  if (error) {
+  if (error && !isMissingWorkspaceInvitesTableError(error)) {
     return { error: "Unable to load collaboration invites." as const }
   }
 

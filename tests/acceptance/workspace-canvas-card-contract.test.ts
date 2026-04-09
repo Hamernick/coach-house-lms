@@ -49,7 +49,11 @@ describe("workspace canvas card contract", () => {
     }
   })
 
-  it("keeps communications and fundraising out of the dock while brand-kit stays deprecated", () => {
+  it("keeps execution in the dock while communications and fundraising stay out and brand-kit stays deprecated", () => {
+    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.deck.allowedSizes).toEqual(["md", "lg"])
+    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.deck.defaultSize).toBe("md")
+    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.deck.dockEnabled).toBe(true)
+    expect(WORKSPACE_CANVAS_V2_DOCK_CARD_IDS.includes("deck")).toBe(true)
     expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.allowedSizes).toEqual(["md", "lg"])
     expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.defaultSize).toBe("md")
     expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.dockEnabled).toBe(false)

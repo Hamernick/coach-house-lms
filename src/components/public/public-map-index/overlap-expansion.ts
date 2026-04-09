@@ -5,6 +5,11 @@ import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import {
   createOrganizationMarkerElement,
 } from "./map-markers"
+import {
+  getMapLayerSafely,
+  getMapSourceSafely,
+  isMapStyleAccessError,
+} from "./map-style-guards"
 
 type MapboxApi = typeof import("mapbox-gl")["default"]
 
@@ -67,31 +72,43 @@ function resolveBucketAngleOffset(key: string) {
 }
 
 export function ensureSpiderfyRailLayer(map: mapboxgl.Map) {
-  const existingSource = map.getSource(PUBLIC_MAP_SPIDERFY_RAILS_SOURCE_ID) as
-    | mapboxgl.GeoJSONSource
-    | undefined
+  const existingSource = getMapSourceSafely<mapboxgl.GeoJSONSource>(
+    map,
+    PUBLIC_MAP_SPIDERFY_RAILS_SOURCE_ID,
+  )
+  if (isMapStyleAccessError(existingSource)) return
   if (!existingSource) {
-    map.addSource(PUBLIC_MAP_SPIDERFY_RAILS_SOURCE_ID, {
-      type: "geojson",
-      data: EMPTY_SPIDERFY_RAILS,
-    })
+    try {
+      map.addSource(PUBLIC_MAP_SPIDERFY_RAILS_SOURCE_ID, {
+        type: "geojson",
+        data: EMPTY_SPIDERFY_RAILS,
+      })
+    } catch {
+      return
+    }
   }
 
-  if (!map.getLayer(PUBLIC_MAP_SPIDERFY_RAILS_LAYER_ID)) {
-    map.addLayer({
-      id: PUBLIC_MAP_SPIDERFY_RAILS_LAYER_ID,
-      type: "line",
-      source: PUBLIC_MAP_SPIDERFY_RAILS_SOURCE_ID,
-      layout: {
-        "line-cap": "round",
-        "line-join": "round",
-      },
-      paint: {
-        "line-color": "rgba(255, 255, 255, 0.56)",
-        "line-width": 1.6,
-        "line-opacity": 0.82,
-      },
-    })
+  const existingLayer = getMapLayerSafely(map, PUBLIC_MAP_SPIDERFY_RAILS_LAYER_ID)
+  if (isMapStyleAccessError(existingLayer)) return
+  if (!existingLayer) {
+    try {
+      map.addLayer({
+        id: PUBLIC_MAP_SPIDERFY_RAILS_LAYER_ID,
+        type: "line",
+        source: PUBLIC_MAP_SPIDERFY_RAILS_SOURCE_ID,
+        layout: {
+          "line-cap": "round",
+          "line-join": "round",
+        },
+        paint: {
+          "line-color": "rgba(255, 255, 255, 0.56)",
+          "line-width": 1.6,
+          "line-opacity": 0.82,
+        },
+      })
+    } catch {
+      return
+    }
   }
 }
 
@@ -107,9 +124,11 @@ export function clearSpiderfyOverlay({
   }
   state.markers = []
 
-  const source = map.getSource(PUBLIC_MAP_SPIDERFY_RAILS_SOURCE_ID) as
-    | mapboxgl.GeoJSONSource
-    | undefined
+  const source = getMapSourceSafely<mapboxgl.GeoJSONSource>(
+    map,
+    PUBLIC_MAP_SPIDERFY_RAILS_SOURCE_ID,
+  )
+  if (isMapStyleAccessError(source)) return
   source?.setData(EMPTY_SPIDERFY_RAILS)
 }
 
@@ -295,9 +314,11 @@ export function openSpiderfyOverlay({
     })
   })
 
-  const source = map.getSource(PUBLIC_MAP_SPIDERFY_RAILS_SOURCE_ID) as
-    | mapboxgl.GeoJSONSource
-    | undefined
+  const source = getMapSourceSafely<mapboxgl.GeoJSONSource>(
+    map,
+    PUBLIC_MAP_SPIDERFY_RAILS_SOURCE_ID,
+  )
+  if (isMapStyleAccessError(source)) return
   source?.setData({
     type: "FeatureCollection",
     features: lineFeatures,

@@ -146,6 +146,32 @@ export async function markNotificationReadAction(
   return { ok: true }
 }
 
+export async function markNotificationUnreadAction(
+  notificationId: string
+): Promise<NotificationActionResult> {
+  if (isPlatformSetupNotificationId(notificationId)) return { ok: true }
+
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error && !isSupabaseAuthSessionMissingError(error))
+    return { error: "Unable to load user." }
+  if (!user) return { error: "Not authenticated." }
+
+  const { error: updateError } = await supabase
+    .from("notifications")
+    .update({ read_at: null })
+    .eq("id", notificationId)
+    .eq("user_id", user.id)
+    .is("archived_at", null)
+
+  if (updateError) return { error: "Unable to update notification." }
+  return { ok: true }
+}
+
 export async function archiveNotificationAction(
   notificationId: string
 ): Promise<NotificationActionResult> {
@@ -214,6 +240,28 @@ export async function archiveAllNotificationsAction(): Promise<NotificationActio
     .is("archived_at", null)
 
   if (updateError) return { error: "Unable to archive notifications." }
+  return { ok: true }
+}
+
+export async function markAllNotificationsReadAction(): Promise<NotificationActionResult> {
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+
+  if (error && !isSupabaseAuthSessionMissingError(error))
+    return { error: "Unable to load user." }
+  if (!user) return { error: "Not authenticated." }
+
+  const { error: updateError } = await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .is("archived_at", null)
+    .is("read_at", null)
+
+  if (updateError) return { error: "Unable to update notifications." }
   return { ok: true }
 }
 

@@ -50,9 +50,11 @@ const WORKSPACE_ACCELERATOR_TUTORIAL_PICKER_TRIGGER_CLASSNAME =
     WORKSPACE_TUTORIAL_NEUTRAL_SURFACE_CLASSNAME,
   )
 const WORKSPACE_ACCELERATOR_COMPACT_PICKER_TRIGGER_CLASSNAME =
-  "w-[164px] max-w-[44vw]"
+  "w-[196px] max-w-[48vw]"
 const WORKSPACE_ACCELERATOR_EXPANDED_PICKER_TRIGGER_CLASSNAME =
-  "w-[216px] max-w-[32vw]"
+  "w-[248px] max-w-[36vw]"
+const WORKSPACE_ACCELERATOR_RAIL_PICKER_TRIGGER_CLASSNAME =
+  "w-full max-w-none px-1.5"
 
 function WorkspaceAcceleratorHeaderPickerLabel({
   label,
@@ -117,6 +119,7 @@ export function WorkspaceAcceleratorHeaderPicker({
   tutorialCallout,
   tutorialInteractionPolicy = null,
   viewerOpen = false,
+  layout = "inline",
   onLessonGroupChange,
 }: {
   lessonGroupOptions: WorkspaceAcceleratorLessonGroupSummary[]
@@ -124,6 +127,7 @@ export function WorkspaceAcceleratorHeaderPicker({
   tutorialCallout: WorkspaceAcceleratorTutorialCallout | null
   tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
   viewerOpen?: boolean
+  layout?: "inline" | "rail"
   onLessonGroupChange: (nextLessonGroupKey: string) => void
 }) {
   const selectedLessonGroup =
@@ -182,9 +186,11 @@ export function WorkspaceAcceleratorHeaderPicker({
         {...reactGrabOwnerProps}
         className={cn(
           "relative h-8 min-h-8 gap-1.5 overflow-visible border-border/65 bg-background/80 px-2 text-left text-xs",
-          viewerOpen
-            ? WORKSPACE_ACCELERATOR_EXPANDED_PICKER_TRIGGER_CLASSNAME
-            : WORKSPACE_ACCELERATOR_COMPACT_PICKER_TRIGGER_CLASSNAME,
+          layout === "rail"
+            ? WORKSPACE_ACCELERATOR_RAIL_PICKER_TRIGGER_CLASSNAME
+            : viewerOpen
+              ? WORKSPACE_ACCELERATOR_EXPANDED_PICKER_TRIGGER_CLASSNAME
+              : WORKSPACE_ACCELERATOR_COMPACT_PICKER_TRIGGER_CLASSNAME,
           tutorialManagedPicker &&
             WORKSPACE_ACCELERATOR_TUTORIAL_PICKER_TRIGGER_CLASSNAME,
         )}
@@ -219,7 +225,11 @@ export function WorkspaceAcceleratorHeaderPicker({
   return (
     <div
       {...reactGrabWrapperProps}
-      className="inline-flex items-start pb-1"
+      className={cn(
+        layout === "rail"
+          ? "flex w-full items-start"
+          : "inline-flex items-start pb-1",
+      )}
     >
       <Select
         value={selectedLessonGroupKey}

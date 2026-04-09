@@ -32,6 +32,7 @@ import type { AppShellProps } from "./types"
 export function AppShellInner({
   children,
   breadcrumbs,
+  sidebarHeaderContent,
   sidebarTree,
   user,
   isAdmin,
@@ -68,6 +69,11 @@ export function AppShellInner({
     isAcceleratorContext &&
     !isAcceleratorRoadmapRoute &&
     sidebarTree.length > 0
+  const showMemberWorkspaceNav =
+    !onboardingLocked &&
+    !isAdminContext &&
+    !isAcceleratorContext &&
+    onboardingIntentFocus !== "fund"
 
   const hasRightRail = useRightRailPresence()
   const isMobile = useIsMobile()
@@ -154,11 +160,13 @@ export function AppShellInner({
         "h-svh min-h-0 overflow-hidden text-foreground bg-[var(--shell-bg)]",
         "[--shell-bg:var(--background)] [--shell-rail:var(--background)] [--shell-panel:var(--background)]",
         "[--shell-card:var(--background)] [--shell-border:var(--border)]",
-        "[--shell-gutter:1.25rem] [--shell-content-pad:1rem] sm:[--shell-content-pad:1.25rem] lg:[--shell-content-pad:1.5rem] [--shell-rail-padding:0.75rem] [--shell-rail-item-padding:0.5rem] [--shell-rail-gap:1rem]",
+        "[--shell-gutter:1.25rem] [--shell-content-pad:1rem] sm:[--shell-content-pad:1.25rem] lg:[--shell-content-pad:1.5rem] [--shell-rail-padding:0.75rem] [--shell-right-rail-pad:0.75rem] [--shell-rail-item-padding:0.5rem] [--shell-rail-gap:1rem]",
         "[--shell-right-rail-width:var(--sidebar-width)]",
         "[--sidebar:var(--background)] [--sidebar-foreground:var(--foreground)] [--sidebar-border:var(--border)]",
-        isAcceleratorContext && "[--shell-right-rail-width:16rem]",
-        isModulePage && "[--shell-right-rail-width:17rem]",
+        isAcceleratorContext &&
+          "[--shell-right-rail-width:26rem] [--shell-right-rail-pad:0rem]",
+        isModulePage &&
+          "[--shell-right-rail-width:27rem] [--shell-right-rail-pad:0rem]",
       )}
       >
       <SidebarAutoCollapse active={isAcceleratorContext} />
@@ -182,7 +190,7 @@ export function AppShellInner({
           className="bg-[var(--shell-rail)] border-0"
         >
           <SidebarHeader>
-            <SidebarBrand href={brandHref} />
+            {sidebarHeaderContent ?? <SidebarBrand href={brandHref} />}
           </SidebarHeader>
           <SidebarBody
             isAdmin={isAdmin}
@@ -199,6 +207,7 @@ export function AppShellInner({
             ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
             formationStatus={formationStatus}
             onboardingLocked={onboardingLocked}
+            onboardingIntentFocus={onboardingIntentFocus}
             organizationName={organizationName}
             showCoachScheduling={!isAcceleratorContext}
           />
@@ -295,6 +304,7 @@ export function AppShellInner({
           context={isAcceleratorContext ? "accelerator" : "platform"}
           classes={sidebarTree}
           showAccelerator={showAccelerator}
+          showMemberWorkspace={showMemberWorkspaceNav}
         />
       ) : null}
       {!isAdminContext ? <PaywallOverlay currentPlanTier={currentPlanTier} /> : null}

@@ -48,9 +48,9 @@ export const WORKSPACE_CARD_META: Record<WorkspaceCardId, WorkspaceCardMeta> = {
     fullHref: "",
   },
   deck: {
-    title: "Deck",
-    subtitle: "Single PDF or PPT canvas",
-    fullHref: "",
+    title: "Tasks",
+    subtitle: "Roadmap priorities and accelerator classes in one surface",
+    fullHref: "/workspace/accelerator",
   },
   atlas: {
     title: "Map",
@@ -71,6 +71,11 @@ export const WORKSPACE_EDGE_SPECS: WorkspaceConnectionState[] = [
     target: "roadmap",
   },
   {
+    id: "edge-roadmap-to-deck",
+    source: "roadmap",
+    target: "deck",
+  },
+  {
     id: "edge-organization-to-atlas",
     source: "organization-overview",
     target: "atlas",
@@ -78,6 +83,11 @@ export const WORKSPACE_EDGE_SPECS: WorkspaceConnectionState[] = [
   {
     id: "edge-roadmap-to-accelerator",
     source: "roadmap",
+    target: "accelerator",
+  },
+  {
+    id: "edge-deck-to-accelerator",
+    source: "deck",
     target: "accelerator",
   },
   {

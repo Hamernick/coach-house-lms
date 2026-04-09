@@ -161,7 +161,7 @@ export function ModuleStepper({
     <>
       {useHeaderStepper ? (
         <ShellContentHeaderPortal>
-          <header className="flex min-w-0 flex-wrap items-center gap-3">
+          <header className="flex min-w-0 flex-wrap items-center gap-2 sm:gap-3">
             <div className="hidden min-w-0 flex-1 items-center gap-3 lg:flex">
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-muted/40 text-muted-foreground">
                 <ModuleIcon className="h-4 w-4" aria-hidden />
@@ -173,7 +173,7 @@ export function ModuleStepper({
                 ) : null}
               </div>
             </div>
-            <div className="flex w-full min-w-0 items-center justify-center lg:ml-auto lg:w-auto lg:max-w-[560px] lg:justify-end">
+            <div className="flex w-full min-w-0 items-center justify-start sm:justify-center lg:ml-auto lg:w-auto lg:max-w-[560px] lg:justify-end">
               {stepperRail}
             </div>
           </header>
@@ -182,9 +182,10 @@ export function ModuleStepper({
 
       <section
         className={cn(
-          "mx-auto flex w-full max-w-3xl flex-col py-6",
+          "mx-auto flex w-full max-w-3xl flex-col py-4 sm:py-6",
           showBodyStepperContext ? "gap-8" : "gap-0",
-          activeStep?.type === "video" && "min-h-[clamp(420px,68vh,760px)] justify-center",
+          activeStep?.type === "video" &&
+            "min-h-[min(48svh,420px)] justify-center sm:min-h-[clamp(420px,68vh,760px)]",
         )}
       >
         {showBodyStepperContext ? (
@@ -205,9 +206,10 @@ export function ModuleStepper({
           className={cn(
             "w-full",
             activeStep?.type === "video"
-              ? "flex min-h-[clamp(360px,62vh,680px)] items-center justify-center"
+              ? "flex min-h-[min(44svh,380px)] items-center justify-center sm:min-h-[clamp(360px,62vh,680px)]"
               : "min-h-[360px]",
-            activeStep?.type === "assignment" && "flex min-h-[calc(100vh-320px)]",
+            activeStep?.type === "assignment" &&
+              "flex min-h-[calc(100svh-280px)] sm:min-h-[calc(100vh-320px)]",
           )}
         >
           <AnimatePresence mode="wait">

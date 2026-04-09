@@ -1,4 +1,7 @@
-export { WorkspaceCanvasTutorialNode, WorkspaceCanvasTutorialPanel } from "./components"
+export {
+  WorkspaceCanvasTutorialNode,
+  WorkspaceCanvasTutorialPanel,
+} from "./public-components"
 export {
   WORKSPACE_CANVAS_TUTORIAL_MANAGED_CARD_IDS,
   buildWorkspaceCanvasTutorialCompletionHiddenCardIds,
@@ -26,6 +29,7 @@ export type {
   WorkspaceCanvasTutorialCardId,
   WorkspaceCanvasTutorialNodeData,
   WorkspaceCanvasTutorialPresentationSurface,
+  WorkspaceCanvasTutorialPresentationChrome,
   WorkspaceCanvasTutorialPresentationMaskLayout,
   WorkspaceCanvasTutorialNodeVariant,
   WorkspaceCanvasTutorialProgress,

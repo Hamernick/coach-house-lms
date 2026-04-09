@@ -33,6 +33,14 @@ export function isMissingWorkspaceCommunicationsTableError(error: unknown) {
   return isMissingWorkspaceTableError(error, "organization_workspace_communications")
 }
 
+export function isMissingWorkspaceBoardsTableError(error: unknown) {
+  return isMissingWorkspaceTableError(error, "organization_workspace_boards")
+}
+
+export function isMissingWorkspaceInvitesTableError(error: unknown) {
+  return isMissingWorkspaceTableError(error, "organization_workspace_invites")
+}
+
 export function isMissingWorkspaceCommunicationChannelsTableError(error: unknown) {
   return isMissingWorkspaceTableError(error, "organization_workspace_communication_channels")
 }

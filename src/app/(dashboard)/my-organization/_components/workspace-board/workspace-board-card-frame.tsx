@@ -85,7 +85,7 @@ export function WorkspaceBoardCardFrame({
           cardId === "calendar" ? "pb-3" : "pb-4",
           presentationMode && "px-3.5 pt-0.5 pb-3",
           isCanvasFullscreen &&
-            (cardId === "roadmap"
+            (cardId === "roadmap" || cardId === "deck"
               ? "overflow-hidden px-0 pt-0 pb-0"
               : "overflow-y-auto px-5 pt-2 pb-5"),
           contentClassName

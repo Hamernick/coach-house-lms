@@ -26,16 +26,9 @@ import {
   isWorkspaceCanvasV2CardId,
   type WorkspaceCanvasV2CardId,
 } from "./workspace-canvas-surface-v2-helpers"
+import { resolveVisibleWorkspaceCanvasCardIds } from "./workspace-canvas-surface-v2-visible-cards"
 import { buildWorkspaceCardShortcutItemModels } from "../shortcuts/workspace-card-shortcut-model"
 import { resolveWorkspaceCanvasCardReadinessMap } from "../runtime/workspace-canvas-card-readiness"
-
-function resolveVisibleWorkspaceCanvasCardIds(
-  hiddenCardIds: WorkspaceBoardState["hiddenCardIds"],
-) {
-  return (
-    ["organization-overview", "programs", "roadmap", "accelerator", "brand-kit", "economic-engine", "calendar", "communications"] as const
-  ).filter((cardId) => !hiddenCardIds.includes(cardId))
-}
 
 function resolveTutorialWorkspaceCanvasVisibleCardIds({
   tutorialActive,
@@ -235,7 +228,7 @@ export function useWorkspaceCanvasTutorialVisibility({
       tutorialSelectedCardId,
       emptyStateMessage: tutorialActive
         ? null
-        : "No cards visible. Use the Organization shortcuts to show a card.",
+        : "No cards visible. Use the tool rail or cards drawer to show a card.",
     }
   }, [
     boardState.onboardingFlow.active,

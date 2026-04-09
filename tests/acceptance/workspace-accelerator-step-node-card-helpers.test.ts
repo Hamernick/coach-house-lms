@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import {
+  resolveWorkspaceAcceleratorDisplayStepTitle,
   resolveWorkspaceAcceleratorStepVideoUrl,
   shouldShowWorkspaceAcceleratorModuleTitle,
 } from "@/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card-helpers"
@@ -45,6 +46,21 @@ function createStep(
 }
 
 describe("workspace accelerator step node card helpers", () => {
+  it("promotes the module title when the step title is only a generic step-kind label", () => {
+    expect(
+      resolveWorkspaceAcceleratorDisplayStepTitle({
+        moduleTitle: "NFP registration",
+        stepTitle: "Video",
+      }),
+    ).toBe("NFP registration")
+    expect(
+      resolveWorkspaceAcceleratorDisplayStepTitle({
+        moduleTitle: "Formation",
+        stepTitle: "Welcome to Workspace",
+      }),
+    ).toBe("Welcome to Workspace")
+  })
+
   it("suppresses the module eyebrow when module and step titles are identical", () => {
     expect(
       shouldShowWorkspaceAcceleratorModuleTitle({

@@ -3,13 +3,10 @@ import { notFound, redirect } from "next/navigation"
 import { ModuleDetail as TrainingModuleDetail } from "@/components/training/module-detail"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
+import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { buildModuleStates } from "@/lib/module-progress"
-import { getClassModulesForUser } from "@/lib/modules"
-import { resolveActiveOrganization } from "@/lib/organization/active-org"
+import { getClassModulePageForUser } from "@/lib/modules/module-page-service"
 import { resolveRoadmapSections, type RoadmapSectionStatus } from "@/lib/roadmap"
-import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
-import { supabaseErrorToError } from "@/lib/supabase/errors"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 type ModuleParams = {
   slug: string
@@ -34,55 +31,44 @@ export async function ModulePage({
     notFound()
   }
 
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-
-  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw supabaseErrorToError(userError, "Unable to load user.")
-  }
-
-  if (!user) {
+  const requestContext = await resolveOptionalAuthenticatedAppContext()
+  if (!requestContext) {
     redirect(`/login?redirect=/class/${slug}/module/${index}`)
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle<{ role: string | null }>()
-  const isAdmin = (profile?.role ?? "").toLowerCase() === "admin"
+  const { supabase, user, profileAudience, activeOrg } = requestContext
+  const isAdmin = profileAudience.isAdmin
 
-  const { orgId } = await resolveActiveOrganization(supabase, user.id)
+  const [orgRowResult, entitlements, classContext] = await Promise.all([
+    supabase
+      .from("organizations")
+      .select("profile")
+      .eq("user_id", activeOrg.orgId)
+      .maybeSingle<{ profile: Record<string, unknown> | null }>(),
+    fetchLearningEntitlements({
+      supabase,
+      userId: user.id,
+      orgUserId: activeOrg.orgId,
+      isAdmin,
+    }),
+    getClassModulePageForUser({
+      classSlug: slug,
+      moduleIndex,
+      userId: user.id,
+      forceAdmin: isAdmin,
+      supabase,
+    }),
+  ])
 
-  const { data: orgRow } = await supabase
-    .from("organizations")
-    .select("profile")
-    .eq("user_id", orgId)
-    .maybeSingle<{ profile: Record<string, unknown> | null }>()
-  const roadmapStatusBySectionId = resolveRoadmapSections(orgRow?.profile ?? {}).reduce(
+  const roadmapStatusBySectionId = resolveRoadmapSections(
+    orgRowResult.data?.profile ?? {},
+  ).reduce(
     (acc, section) => {
       acc[section.id] = (section.status ?? "not_started") as RoadmapSectionStatus
       return acc
     },
     {} as Record<string, RoadmapSectionStatus>,
   )
-
-  const entitlements = await fetchLearningEntitlements({
-    supabase,
-    userId: user.id,
-    orgUserId: orgId,
-    isAdmin,
-  })
-
-  const classContext = await getClassModulesForUser({
-    classSlug: slug,
-    userId: user.id,
-    forceAdmin: isAdmin,
-    supabase,
-  })
 
   if (classContext.modules.length === 0) {
     notFound()
@@ -122,20 +108,15 @@ export async function ModulePage({
     id: classContext.classId,
     title: classContext.classTitle,
     blurb: classContext.classDescription ?? "",
-    description: classContext.classDescription ?? "",
-    slug,
-    modules: classContext.modules.map((module) => ({
-      id: module.id,
-      idx: module.idx,
-      title: module.title,
-      subtitle: module.description ?? undefined,
-      videoUrl: module.videoUrl ?? null,
-      resources: module.resources,
-      assignment: module.assignment,
-      assignmentSubmission: module.assignmentSubmission,
-      hasDeck: module.hasDeck,
-    })),
-  }
+      description: classContext.classDescription ?? "",
+      slug,
+      modules: classContext.modules.map((module) => ({
+        id: module.id,
+        idx: module.idx,
+        title: module.title,
+        subtitle: module.description ?? undefined,
+      })),
+    }
 
   const contentMd = (currentState.module as { contentMd?: string | null }).contentMd ?? null
   const moduleTitle = currentState.module.title

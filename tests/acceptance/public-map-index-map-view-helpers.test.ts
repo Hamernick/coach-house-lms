@@ -11,6 +11,7 @@ import {
   PUBLIC_MAP_SIDEBAR_MIN_WIDTH,
   PUBLIC_MAP_SIDEBAR_MIN_VISIBLE_MAP_WIDTH,
   resolvePublicMapCameraPadding,
+  resolvePublicMapPanelPresentation,
   resolvePublicMapSidebarWidth,
 } from "@/components/public/public-map-index/map-view-helpers"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
@@ -70,6 +71,25 @@ describe("resolvePublicMapSidebarWidth", () => {
         sidebarMode: "details",
       }),
     ).toBe(240 - PUBLIC_MAP_SIDEBAR_MIN_VISIBLE_MAP_WIDTH)
+  })
+})
+
+describe("resolvePublicMapPanelPresentation", () => {
+  it("uses the rail presentation when the rail can stay comfortably wide", () => {
+    expect(resolvePublicMapPanelPresentation(700)).toBe("rail")
+  })
+
+  it("switches to the drawer presentation once the rail would become cramped", () => {
+    expect(resolvePublicMapPanelPresentation(620)).toBe("drawer")
+  })
+
+  it("keeps the rail on medium desktop widths by widening it more aggressively", () => {
+    expect(
+      resolvePublicMapSidebarWidth({
+        surfaceWidth: 720,
+        sidebarMode: "search",
+      }),
+    ).toBe(374)
   })
 })
 

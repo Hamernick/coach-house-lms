@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 
+import { cn } from "@/lib/utils"
 import {
 } from "@/features/workspace-brand-kit"
 import { resolveFormationStatusOption } from "@/lib/organization/formation-status"
@@ -42,12 +43,14 @@ type PublicMapOrganizationDetailProps = {
   organization: PublicMapOrganization
   onBack: () => void
   onHidePanel: () => void
+  compact?: boolean
 }
 
 export function PublicMapOrganizationDetail({
   organization,
   onBack,
   onHidePanel,
+  compact = false,
 }: PublicMapOrganizationDetailProps) {
   const [aboutExpanded, setAboutExpanded] = useState(false)
   const [expandedStoryFields, setExpandedStoryFields] = useState<
@@ -74,7 +77,14 @@ export function PublicMapOrganizationDetail({
   const brandKitDownloadHref = resolveBrandKitDownloadHref(organization)
 
   return (
-    <div className="space-y-3 border-b border-border/60 bg-transparent px-2 pb-3 pt-3 text-card-foreground">
+    <div
+      className={cn(
+        "space-y-3 border-b border-border/60 bg-transparent pt-3 text-card-foreground",
+        compact
+          ? "px-1.5 pb-[max(env(safe-area-inset-bottom),0.75rem)]"
+          : "px-2 pb-3",
+      )}
+    >
       <OrganizationDetailPanelChrome
         organization={organization}
         onBack={onBack}

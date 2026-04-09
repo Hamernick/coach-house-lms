@@ -15,8 +15,6 @@ import type {
   WorkspaceCardOverflowAction,
   WorkspaceCardSize,
 } from "./workspace-board-types"
-import type { WorkspaceCardShortcutItemModel } from "./workspace-canvas-v2/shortcuts/workspace-card-shortcut-model"
-import { WorkspaceOrganizationCardShortcuts } from "./workspace-canvas-v2/shortcuts/workspace-organization-card-shortcuts"
 
 export function WorkspaceBoardOrganizationCardShell({
   title,
@@ -30,7 +28,6 @@ export function WorkspaceBoardOrganizationCardShell({
   editorHref = null,
   menuActions = [],
   contentClassName,
-  shortcutItems,
   isCanvasFullscreen = false,
   onToggleCanvasFullscreen,
   children,
@@ -46,7 +43,6 @@ export function WorkspaceBoardOrganizationCardShell({
   editorHref?: string | null
   menuActions?: WorkspaceCardOverflowAction[]
   contentClassName?: string
-  shortcutItems: WorkspaceCardShortcutItemModel[]
   isCanvasFullscreen?: boolean
   onToggleCanvasFullscreen?: () => void
   children: ReactNode
@@ -70,29 +66,24 @@ export function WorkspaceBoardOrganizationCardShell({
         })
       )}
     >
-      <div className="grid min-h-0 min-w-0 grid-cols-1 grid-rows-[auto_auto] md:grid-cols-[64px_minmax(0,1fr)]">
-        <aside className="nodrag nopan border-border/70 bg-muted/24 row-span-2 hidden min-h-0 border-r px-2 py-3 md:flex md:flex-col md:items-center">
-          <WorkspaceOrganizationCardShortcuts items={shortcutItems} />
-        </aside>
-        <div className="min-w-0 md:col-start-2">
-          <WorkspaceBoardCardHeader
-            title={title}
-            subtitle={subtitle}
-            presentationMode={presentationMode}
-            fullHref={fullHref}
-            canEdit={canEdit}
-            editorHref={editorHref}
-            menuActions={menuActions}
-            headerMeta={headerMeta}
-            headerAction={headerAction}
-            hideSubtitle
-            isCanvasFullscreen={isCanvasFullscreen}
-            onToggleCanvasFullscreen={onToggleCanvasFullscreen}
-          />
-        </div>
+      <div className="min-h-0 min-w-0 flex flex-1 flex-col">
+        <WorkspaceBoardCardHeader
+          title={title}
+          subtitle={subtitle}
+          presentationMode={presentationMode}
+          fullHref={fullHref}
+          canEdit={canEdit}
+          editorHref={editorHref}
+          menuActions={menuActions}
+          headerMeta={headerMeta}
+          headerAction={headerAction}
+          hideSubtitle
+          isCanvasFullscreen={isCanvasFullscreen}
+          onToggleCanvasFullscreen={onToggleCanvasFullscreen}
+        />
         <CardContent
           className={cn(
-            "nodrag nopan px-5 pt-0 pb-5 md:col-start-2",
+            "nodrag nopan px-5 pt-0 pb-5",
             WORKSPACE_CARD_LAYOUT_SYSTEM.flexColumn,
             presentationMode && "px-4 pt-0.5 pb-3.5",
             isCanvasFullscreen && "overflow-y-auto px-5 pt-2 pb-5",

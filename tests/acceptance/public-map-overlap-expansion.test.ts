@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest"
+import { describe, expect, it, vi } from "vitest"
 import type mapboxgl from "mapbox-gl"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import {
+  clearSpiderfyOverlay,
   resolveSpiderfyCandidateBucket,
   resolveSpiderfyCandidateBuckets,
 } from "@/components/public/public-map-index/overlap-expansion"
@@ -179,5 +180,23 @@ describe("resolveSpiderfyCandidateBuckets", () => {
       "b-2",
       "b-3",
     ])
+  })
+})
+
+describe("clearSpiderfyOverlay", () => {
+  it("clears marker state without crashing when the map style is already gone", () => {
+    const remove = vi.fn()
+    const state = {
+      markers: [{ remove }] as unknown as mapboxgl.Marker[],
+    }
+    const map = {
+      getSource: vi.fn(() => {
+        throw new TypeError("Cannot read properties of undefined (reading 'getOwnSource')")
+      }),
+    } as unknown as mapboxgl.Map
+
+    expect(() => clearSpiderfyOverlay({ map, state })).not.toThrow()
+    expect(remove).toHaveBeenCalledTimes(1)
+    expect(state.markers).toEqual([])
   })
 })

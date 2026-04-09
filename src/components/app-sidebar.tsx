@@ -41,6 +41,7 @@ export type AppSidebarProps = {
   ownedElectiveModuleSlugs?: string[]
   formationStatus?: string | null
   onboardingLocked?: boolean
+  onboardingIntentFocus?: "build" | "find" | "fund" | "support" | null
   organizationName?: string | null
   showCoachScheduling?: boolean
 }
@@ -58,6 +59,7 @@ export function AppSidebar({
   ownedElectiveModuleSlugs,
   formationStatus,
   onboardingLocked = false,
+  onboardingIntentFocus = null,
   organizationName = null,
   showCoachScheduling = false,
 }: AppSidebarProps) {
@@ -86,6 +88,7 @@ export function AppSidebar({
         ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
         formationStatus={formationStatus}
         onboardingLocked={onboardingLocked}
+        onboardingIntentFocus={onboardingIntentFocus}
         organizationName={organizationName}
         showCoachScheduling={showCoachScheduling}
       />
@@ -113,6 +116,7 @@ type SidebarBodyProps = {
   ownedElectiveModuleSlugs?: string[]
   formationStatus?: string | null
   onboardingLocked?: boolean
+  onboardingIntentFocus?: "build" | "find" | "fund" | "support" | null
   organizationName?: string | null
   showCoachScheduling?: boolean
 }
@@ -132,12 +136,19 @@ export function SidebarBody({
   ownedElectiveModuleSlugs = [],
   formationStatus = null,
   onboardingLocked = false,
+  onboardingIntentFocus = null,
   organizationName = null,
   showCoachScheduling = false,
 }: SidebarBodyProps) {
   const shouldShowAccelerator = !onboardingLocked && Boolean(isAdmin || showAccelerator)
   const hasUser = Boolean(user.email)
-  const mainNavItems = buildMainNav({ isAdmin, showOrgAdmin, canAccessOrgAdmin })
+  const showMemberWorkspace = !onboardingLocked && onboardingIntentFocus !== "fund"
+  const mainNavItems = buildMainNav({
+    isAdmin,
+    showOrgAdmin,
+    canAccessOrgAdmin,
+    showMemberWorkspace,
+  })
 
   return (
     <>

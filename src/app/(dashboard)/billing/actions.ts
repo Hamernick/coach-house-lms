@@ -32,7 +32,7 @@ export async function createBillingPortalSession() {
 
   const baseLookup = supabase
     .from("subscriptions")
-    .select("stripe_customer_id, metadata")
+    .select("stripe_customer_id, stripe_subscription_id, metadata")
     .eq("user_id", orgId)
   const filteredLookup =
     typeof (baseLookup as { not?: unknown }).not === "function"
@@ -57,18 +57,17 @@ export async function createBillingPortalSession() {
     typeof (limitedLookup as { maybeSingle?: unknown }).maybeSingle === "function"
       ? await (limitedLookup as {
           maybeSingle: <T>() => Promise<{ data: T | null; error: unknown | null }>
-        }).maybeSingle<{ stripe_customer_id: string | null; metadata: Record<string, string> | null }>()
+        }).maybeSingle<{
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          metadata: Record<string, string> | null
+        }>()
       : { data: null, error: null }
   const { data: subscription, error } = lookupResult
 
   if (error) {
     logger.error("billing_portal_subscription_lookup_failed", error, { userId: user.id })
     return { error: "Unable to locate your subscription." }
-  }
-
-  const customerId = subscription?.stripe_customer_id
-  if (!customerId) {
-    return { error: "No Stripe customer linked to this account yet." }
   }
 
   const headerStore = await headers()
@@ -84,9 +83,25 @@ export async function createBillingPortalSession() {
       ]
     : stripeConfigs
 
+  let customerId = subscription?.stripe_customer_id ?? null
+  const subscriptionId = subscription?.stripe_subscription_id ?? null
   let lastPortalError: unknown = null
   for (const config of orderedConfigs) {
     try {
+      if (!customerId && subscriptionId) {
+        const stripeSubscription = await config.client.subscriptions.retrieve(
+          subscriptionId,
+        )
+        customerId =
+          typeof stripeSubscription.customer === "string"
+            ? stripeSubscription.customer
+            : null
+      }
+
+      if (!customerId) {
+        continue
+      }
+
       const portalSession = await config.client.billingPortal.sessions.create({
         customer: customerId,
         return_url: `${origin}/billing`,
@@ -101,6 +116,10 @@ export async function createBillingPortalSession() {
     } catch (portalError) {
       lastPortalError = portalError
     }
+  }
+
+  if (!customerId) {
+    return { error: "No Stripe customer linked to this account yet." }
   }
 
   logger.error("billing_portal_session_failed", lastPortalError, { userId: user.id })

@@ -1,5 +1,6 @@
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
-import type { OnboardingFlowMode } from "@/components/onboarding/onboarding-dialog/types"
+
+type OnboardingFlowMode = "full" | "post_signup_access" | "workspace_setup"
 
 type SearchParamReader = {
   get: (key: string) => string | null

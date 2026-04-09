@@ -538,6 +538,575 @@ async function run() {
     })
   }
 
+  let memberWorkspaceProjectsTableAvailable = false
+  let memberWorkspaceProjectNotesTableAvailable = false
+  let memberWorkspaceProjectQuickLinksTableAvailable = false
+  let memberWorkspaceProjectAssetsTableAvailable = false
+  let memberWorkspaceStarterStateTableAvailable = false
+  let memberWorkspaceTasksTableAvailable = false
+  let memberWorkspaceTaskAssigneesTableAvailable = false
+  let memberWorkspaceProjectId = null
+
+  if (orgAccessReady) {
+    const { error: projectProbeError } = await memberClient
+      .from("organization_projects")
+      .select("id")
+      .limit(1)
+
+    memberWorkspaceProjectsTableAvailable = !projectProbeError
+    results.push({
+      name: "member workspace project tables available",
+      passed: memberWorkspaceProjectsTableAvailable,
+    })
+
+    if (memberWorkspaceProjectsTableAvailable) {
+      const { error: starterStateProbeError } = await memberClient
+        .from("organization_workspace_starter_state")
+        .select("org_id")
+        .limit(1)
+      memberWorkspaceStarterStateTableAvailable = !starterStateProbeError
+      results.push({
+        name: "member workspace starter state table available",
+        passed: memberWorkspaceStarterStateTableAvailable,
+      })
+    }
+  }
+
+  if (orgAccessReady && memberWorkspaceProjectsTableAvailable) {
+    const projectId = randomUUID()
+
+    const { data: staffProject, error: staffProjectError } = await staffClient
+      .from("organization_projects")
+      .insert({
+        id: projectId,
+        org_id: member.id,
+        name: "Staff seeded project",
+        status: "active",
+        priority: "high",
+        progress: 25,
+        start_date: "2026-01-10",
+        end_date: "2026-01-24",
+        task_count: 3,
+        created_source: "user",
+        created_by: staff.id,
+        updated_by: staff.id,
+      })
+      .select("id")
+      .maybeSingle()
+    results.push({
+      name: "staff can insert organization projects",
+      passed: !!staffProject && !staffProjectError,
+    })
+
+    if (staffProject?.id) {
+      memberWorkspaceProjectId = staffProject.id
+    }
+
+    const { data: boardReadsProject, error: boardReadsProjectError } =
+      await boardClient
+        .from("organization_projects")
+        .select("id")
+        .eq("id", projectId)
+        .maybeSingle()
+    results.push({
+      name: "board can read organization projects",
+      passed: !!boardReadsProject && !boardReadsProjectError,
+    })
+
+    const { data: deniedBoardInsert, error: deniedBoardInsertError } =
+      await boardClient
+        .from("organization_projects")
+        .insert({
+          org_id: member.id,
+          name: "Board denied project",
+          status: "planned",
+          priority: "medium",
+          progress: 0,
+          start_date: "2026-02-01",
+          end_date: "2026-02-15",
+          task_count: 1,
+          created_source: "user",
+          created_by: board.id,
+          updated_by: board.id,
+        })
+        .select("id")
+    results.push({
+      name: "board cannot insert organization projects",
+      passed:
+        !!deniedBoardInsertError ||
+        (Array.isArray(deniedBoardInsert) && deniedBoardInsert.length === 0),
+    })
+
+    const { data: deniedBoardUpdate, error: deniedBoardUpdateError } =
+      await boardClient
+        .from("organization_projects")
+        .update({ progress: 80 })
+        .eq("id", projectId)
+        .select("id")
+    results.push({
+      name: "board cannot update organization projects",
+      passed:
+        !!deniedBoardUpdateError ||
+        (Array.isArray(deniedBoardUpdate) && deniedBoardUpdate.length === 0),
+    })
+
+    const { data: orgAdminUpdate, error: orgAdminUpdateError } =
+      await orgAdminClient
+        .from("organization_projects")
+        .update({ progress: 80, updated_by: orgAdmin.id })
+        .eq("id", projectId)
+        .select("id")
+    results.push({
+      name: "org admin can update organization projects",
+      passed:
+        !orgAdminUpdateError &&
+        Array.isArray(orgAdminUpdate) &&
+        orgAdminUpdate.length === 1,
+    })
+
+    const { data: adminReadsProject, error: adminReadsProjectError } =
+      await adminSessionClient
+        .from("organization_projects")
+        .select("id")
+        .eq("id", projectId)
+        .maybeSingle()
+    results.push({
+      name: "platform admin can read organization projects",
+      passed: !!adminReadsProject && !adminReadsProjectError,
+    })
+  }
+
+  if (orgAccessReady && memberWorkspaceProjectsTableAvailable) {
+    const { error: projectNotesProbeError } = await memberClient
+      .from("organization_project_notes")
+      .select("id")
+      .limit(1)
+    memberWorkspaceProjectNotesTableAvailable = !projectNotesProbeError
+    results.push({
+      name: "member workspace project note tables available",
+      passed: memberWorkspaceProjectNotesTableAvailable,
+    })
+
+    const { error: projectQuickLinksProbeError } = await memberClient
+      .from("organization_project_quick_links")
+      .select("id")
+      .limit(1)
+    memberWorkspaceProjectQuickLinksTableAvailable = !projectQuickLinksProbeError
+    results.push({
+      name: "member workspace project quick link tables available",
+      passed: memberWorkspaceProjectQuickLinksTableAvailable,
+    })
+
+    const { error: projectAssetsProbeError } = await memberClient
+      .from("organization_project_assets")
+      .select("id")
+      .limit(1)
+    memberWorkspaceProjectAssetsTableAvailable = !projectAssetsProbeError
+    results.push({
+      name: "member workspace project asset tables available",
+      passed: memberWorkspaceProjectAssetsTableAvailable,
+    })
+  }
+
+  if (orgAccessReady && memberWorkspaceProjectsTableAvailable) {
+    const { error: tasksProbeError } = await memberClient
+      .from("organization_tasks")
+      .select("id")
+      .limit(1)
+    memberWorkspaceTasksTableAvailable = !tasksProbeError
+    results.push({
+      name: "member workspace task tables available",
+      passed: memberWorkspaceTasksTableAvailable,
+    })
+
+    if (memberWorkspaceTasksTableAvailable) {
+      const { error: assigneesProbeError } = await memberClient
+        .from("organization_task_assignees")
+        .select("id")
+        .limit(1)
+      memberWorkspaceTaskAssigneesTableAvailable = !assigneesProbeError
+      results.push({
+        name: "member workspace task assignee tables available",
+        passed: memberWorkspaceTaskAssigneesTableAvailable,
+      })
+    }
+  }
+
+  if (
+    orgAccessReady &&
+    memberWorkspaceTasksTableAvailable &&
+    memberWorkspaceTaskAssigneesTableAvailable &&
+    memberWorkspaceProjectId
+  ) {
+    const taskId = randomUUID()
+
+    const { data: staffTask, error: staffTaskError } = await staffClient
+      .from("organization_tasks")
+      .insert({
+        id: taskId,
+        org_id: member.id,
+        project_id: memberWorkspaceProjectId,
+        title: "Staff task",
+        task_type: "task",
+        status: "todo",
+        start_date: "2026-01-10",
+        end_date: "2026-01-12",
+        created_source: "user",
+        created_by: staff.id,
+        updated_by: staff.id,
+      })
+      .select("id")
+      .maybeSingle()
+    results.push({
+      name: "staff can insert organization tasks",
+      passed: !!staffTask && !staffTaskError,
+    })
+
+    const { data: staffAssignment, error: staffAssignmentError } = await staffClient
+      .from("organization_task_assignees")
+      .insert({
+        org_id: member.id,
+        task_id: taskId,
+        user_id: board.id,
+        created_by: staff.id,
+      })
+      .select("id")
+      .maybeSingle()
+    results.push({
+      name: "staff can insert organization task assignees",
+      passed: !!staffAssignment && !staffAssignmentError,
+    })
+
+    const { data: boardReadsTask, error: boardReadsTaskError } = await boardClient
+      .from("organization_tasks")
+      .select("id")
+      .eq("id", taskId)
+      .maybeSingle()
+    results.push({
+      name: "board can read organization tasks",
+      passed: !!boardReadsTask && !boardReadsTaskError,
+    })
+
+    const { data: boardReadsAssignment, error: boardReadsAssignmentError } =
+      await boardClient
+        .from("organization_task_assignees")
+        .select("task_id")
+        .eq("task_id", taskId)
+        .eq("user_id", board.id)
+        .maybeSingle()
+    results.push({
+      name: "board can read own organization task assignment",
+      passed: !!boardReadsAssignment && !boardReadsAssignmentError,
+    })
+
+    const { data: deniedBoardTaskInsert, error: deniedBoardTaskInsertError } =
+      await boardClient
+        .from("organization_tasks")
+        .insert({
+          org_id: member.id,
+          project_id: memberWorkspaceProjectId,
+          title: "Board denied task",
+          task_type: "task",
+          status: "todo",
+          start_date: "2026-01-12",
+          end_date: "2026-01-13",
+          created_source: "user",
+          created_by: board.id,
+          updated_by: board.id,
+        })
+        .select("id")
+    results.push({
+      name: "board cannot insert organization tasks",
+      passed:
+        !!deniedBoardTaskInsertError ||
+        (Array.isArray(deniedBoardTaskInsert) && deniedBoardTaskInsert.length === 0),
+    })
+
+    const { data: deniedBoardTaskUpdate, error: deniedBoardTaskUpdateError } =
+      await boardClient
+        .from("organization_tasks")
+        .update({ status: "done" })
+        .eq("id", taskId)
+        .select("id")
+    results.push({
+      name: "board cannot update organization tasks directly",
+      passed:
+        !!deniedBoardTaskUpdateError ||
+        (Array.isArray(deniedBoardTaskUpdate) && deniedBoardTaskUpdate.length === 0),
+    })
+
+    const { data: adminReadsTask, error: adminReadsTaskError } =
+      await adminSessionClient
+        .from("organization_tasks")
+        .select("id")
+        .eq("id", taskId)
+        .maybeSingle()
+    results.push({
+      name: "platform admin can read organization tasks",
+      passed: !!adminReadsTask && !adminReadsTaskError,
+    })
+  }
+
+  if (
+    orgAccessReady &&
+    memberWorkspaceProjectsTableAvailable &&
+    memberWorkspaceProjectNotesTableAvailable &&
+    memberWorkspaceProjectId
+  ) {
+    const noteId = randomUUID()
+
+    const { data: staffNote, error: staffNoteError } = await staffClient
+      .from("organization_project_notes")
+      .insert({
+        id: noteId,
+        org_id: member.id,
+        project_id: memberWorkspaceProjectId,
+        title: "Staff note",
+        content: "Real organization note",
+        note_type: "general",
+        status: "completed",
+        created_by: staff.id,
+        updated_by: staff.id,
+      })
+      .select("id")
+      .maybeSingle()
+    results.push({
+      name: "staff can insert organization project notes",
+      passed: !!staffNote && !staffNoteError,
+    })
+
+    const { data: boardReadsNote, error: boardReadsNoteError } = await boardClient
+      .from("organization_project_notes")
+      .select("id")
+      .eq("id", noteId)
+      .maybeSingle()
+    results.push({
+      name: "board can read organization project notes",
+      passed: !!boardReadsNote && !boardReadsNoteError,
+    })
+
+    const { data: deniedBoardNoteInsert, error: deniedBoardNoteInsertError } =
+      await boardClient
+        .from("organization_project_notes")
+        .insert({
+          org_id: member.id,
+          project_id: memberWorkspaceProjectId,
+          title: "Board denied note",
+          content: "Should not save",
+          note_type: "general",
+          status: "completed",
+          created_by: board.id,
+          updated_by: board.id,
+        })
+        .select("id")
+    results.push({
+      name: "board cannot insert organization project notes",
+      passed:
+        !!deniedBoardNoteInsertError ||
+        (Array.isArray(deniedBoardNoteInsert) && deniedBoardNoteInsert.length === 0),
+    })
+
+    const { data: adminReadsNote, error: adminReadsNoteError } =
+      await adminSessionClient
+        .from("organization_project_notes")
+        .select("id")
+        .eq("id", noteId)
+        .maybeSingle()
+    results.push({
+      name: "platform admin can read organization project notes",
+      passed: !!adminReadsNote && !adminReadsNoteError,
+    })
+  }
+
+  if (
+    orgAccessReady &&
+    memberWorkspaceProjectsTableAvailable &&
+    memberWorkspaceProjectQuickLinksTableAvailable &&
+    memberWorkspaceProjectId
+  ) {
+    const linkId = randomUUID()
+
+    const { data: staffLink, error: staffLinkError } = await staffClient
+      .from("organization_project_quick_links")
+      .insert({
+        id: linkId,
+        org_id: member.id,
+        project_id: memberWorkspaceProjectId,
+        name: "Program brief",
+        url: "https://example.com/program-brief.pdf",
+        link_type: "pdf",
+        size_mb: 2.4,
+        created_by: staff.id,
+        updated_by: staff.id,
+      })
+      .select("id")
+      .maybeSingle()
+    results.push({
+      name: "staff can insert organization project quick links",
+      passed: !!staffLink && !staffLinkError,
+    })
+
+    const { data: boardReadsLink, error: boardReadsLinkError } = await boardClient
+      .from("organization_project_quick_links")
+      .select("id")
+      .eq("id", linkId)
+      .maybeSingle()
+    results.push({
+      name: "board can read organization project quick links",
+      passed: !!boardReadsLink && !boardReadsLinkError,
+    })
+
+    const { data: deniedBoardLinkInsert, error: deniedBoardLinkInsertError } =
+      await boardClient
+        .from("organization_project_quick_links")
+        .insert({
+          org_id: member.id,
+          project_id: memberWorkspaceProjectId,
+          name: "Board denied link",
+          url: "https://example.com/denied.pdf",
+          link_type: "pdf",
+          size_mb: 1.0,
+          created_by: board.id,
+          updated_by: board.id,
+        })
+        .select("id")
+    results.push({
+      name: "board cannot insert organization project quick links",
+      passed:
+        !!deniedBoardLinkInsertError ||
+        (Array.isArray(deniedBoardLinkInsert) && deniedBoardLinkInsert.length === 0),
+    })
+
+    const { data: adminReadsLink, error: adminReadsLinkError } =
+      await adminSessionClient
+        .from("organization_project_quick_links")
+        .select("id")
+        .eq("id", linkId)
+        .maybeSingle()
+    results.push({
+      name: "platform admin can read organization project quick links",
+      passed: !!adminReadsLink && !adminReadsLinkError,
+    })
+  }
+
+  if (
+    orgAccessReady &&
+    memberWorkspaceProjectsTableAvailable &&
+    memberWorkspaceProjectAssetsTableAvailable &&
+    memberWorkspaceProjectId
+  ) {
+    const assetId = randomUUID()
+
+    const { data: staffAsset, error: staffAssetError } = await staffClient
+      .from("organization_project_assets")
+      .insert({
+        id: assetId,
+        org_id: member.id,
+        project_id: memberWorkspaceProjectId,
+        name: "Org intake packet.pdf",
+        description: "Seeded project asset",
+        asset_type: "pdf",
+        external_url: "https://example.com/intake-packet.pdf",
+        created_by: staff.id,
+        updated_by: staff.id,
+      })
+      .select("id")
+      .maybeSingle()
+    results.push({
+      name: "staff can insert organization project assets",
+      passed: !!staffAsset && !staffAssetError,
+    })
+
+    const { data: boardReadsAsset, error: boardReadsAssetError } = await boardClient
+      .from("organization_project_assets")
+      .select("id")
+      .eq("id", assetId)
+      .maybeSingle()
+    results.push({
+      name: "board can read organization project assets",
+      passed: !!boardReadsAsset && !boardReadsAssetError,
+    })
+
+    const { data: deniedBoardAssetInsert, error: deniedBoardAssetInsertError } =
+      await boardClient
+        .from("organization_project_assets")
+        .insert({
+          org_id: member.id,
+          project_id: memberWorkspaceProjectId,
+          name: "Board denied asset",
+          description: "Should not save",
+          asset_type: "pdf",
+          external_url: "https://example.com/denied-asset.pdf",
+          created_by: board.id,
+          updated_by: board.id,
+        })
+        .select("id")
+    results.push({
+      name: "board cannot insert organization project assets",
+      passed:
+        !!deniedBoardAssetInsertError ||
+        (Array.isArray(deniedBoardAssetInsert) && deniedBoardAssetInsert.length === 0),
+    })
+
+    const { data: adminReadsAsset, error: adminReadsAssetError } =
+      await adminSessionClient
+        .from("organization_project_assets")
+        .select("id")
+        .eq("id", assetId)
+        .maybeSingle()
+    results.push({
+      name: "platform admin can read organization project assets",
+      passed: !!adminReadsAsset && !adminReadsAssetError,
+    })
+  }
+
+  if (orgAccessReady && memberWorkspaceStarterStateTableAvailable) {
+    const seededAt = new Date().toISOString()
+
+    const { data: starterState, error: starterStateError } = await staffClient
+      .from("organization_workspace_starter_state")
+      .upsert(
+        {
+          org_id: member.id,
+          seed_version: 1,
+          seeded_at: seededAt,
+          updated_by: staff.id,
+        },
+        { onConflict: "org_id" }
+      )
+      .select("org_id")
+      .maybeSingle()
+    results.push({
+      name: "staff can upsert organization starter state",
+      passed: !!starterState && !starterStateError,
+    })
+
+    const { data: boardReadsStarterState, error: boardReadsStarterStateError } =
+      await boardClient
+        .from("organization_workspace_starter_state")
+        .select("org_id")
+        .eq("org_id", member.id)
+        .maybeSingle()
+    results.push({
+      name: "board can read organization starter state",
+      passed: !!boardReadsStarterState && !boardReadsStarterStateError,
+    })
+
+    const { data: deniedStarterStateUpdate, error: deniedStarterStateUpdateError } =
+      await boardClient
+        .from("organization_workspace_starter_state")
+        .update({ seed_version: 2 })
+        .eq("org_id", member.id)
+        .select("org_id")
+    results.push({
+      name: "board cannot update organization starter state",
+      passed:
+        !!deniedStarterStateUpdateError ||
+        (Array.isArray(deniedStarterStateUpdate) &&
+          deniedStarterStateUpdate.length === 0),
+    })
+  }
+
   // Org-admin invite gating (admins_can_invite toggle)
   if (orgAccessReady) {
     const expiresAt = new Date(Date.now() + 3600_000).toISOString()
@@ -1236,6 +1805,11 @@ async function run() {
     .eq("module_id", assets.moduleId)
   await adminClient.from("attachments").delete().eq("scope_id", assets.moduleId)
   await adminClient.from("programs").delete().eq("user_id", member.id)
+  await adminClient
+    .from("organization_workspace_starter_state")
+    .delete()
+    .eq("org_id", member.id)
+  await adminClient.from("organization_projects").delete().eq("org_id", member.id)
   await adminClient.from("organizations").delete().eq("user_id", member.id)
   await adminClient.from("enrollments").delete().eq("user_id", member.id)
   await adminClient

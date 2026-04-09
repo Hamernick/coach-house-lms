@@ -41,10 +41,10 @@ describe("workspace board layout", () => {
     }
     expect(state.hiddenCardIds).toEqual(
       expect.arrayContaining([
+        "deck",
         "brand-kit",
         "economic-engine",
         "communications",
-        "deck",
         "atlas",
       ]),
     )
@@ -85,6 +85,17 @@ describe("workspace board layout", () => {
     })
   })
 
+  it("keeps the tasks card aligned to the organization card width", () => {
+    expect(resolveCardDimensions("md", "deck")).toEqual({
+      width: 552,
+      height: 708,
+    })
+    expect(resolveCardDimensions("lg", "deck")).toEqual({
+      width: 560,
+      height: 780,
+    })
+  })
+
   it("derives card shell height mode from the shared layout contract", () => {
     expect(resolveWorkspaceCardHeightModeClassName("organization-overview")).toBe(
       "h-auto",
@@ -92,6 +103,7 @@ describe("workspace board layout", () => {
     expect(resolveWorkspaceCardHeightModeClassName("programs")).toBe("h-auto")
     expect(resolveWorkspaceCardHeightModeClassName("accelerator")).toBe("h-auto")
     expect(resolveWorkspaceCardHeightModeClassName("roadmap")).toBe("h-auto")
+    expect(resolveWorkspaceCardHeightModeClassName("deck")).toBe("h-auto")
   })
 
   it("keeps auto-height card shells intrinsic while fixed cards retain canvas heights", () => {
@@ -121,6 +133,32 @@ describe("workspace board layout", () => {
         cardId: "roadmap",
       }),
     ).toContain("h-auto")
+    expect(
+      resolveWorkspaceCardCanvasShellStyle({
+        size: "md",
+        cardId: "deck",
+      }),
+    ).toBeUndefined()
+    expect(
+      resolveWorkspaceCardCanvasShellClassName({
+        size: "md",
+        cardId: "deck",
+      }),
+    ).toContain("h-auto")
+  })
+
+  it("keeps deck hidden when restoring legacy hidden-card defaults", () => {
+    const normalized = normalizeWorkspaceBoardState({
+      hiddenCardIds: [
+        "brand-kit",
+        "deck",
+        "atlas",
+        "economic-engine",
+        "communications",
+      ],
+    })
+
+    expect(normalized.hiddenCardIds).toContain("deck")
   })
 
   it("normalizes partial payloads into a full board", () => {
@@ -598,18 +636,25 @@ describe("workspace board layout", () => {
     const state = buildDefaultBoardState("balanced")
     const laidOut = await applyAutoLayout(state.nodes, "timeline")
 
-    const organization = findNode(laidOut, "organization-overview")
     const vault = findNode(laidOut, "roadmap")
     const accelerator = findNode(laidOut, "accelerator")
+    const organization = findNode(laidOut, "organization-overview")
+    const programs = findNode(laidOut, "programs")
+    const deck = findNode(laidOut, "deck")
     const communications = findNode(laidOut, "communications")
     const economicEngine = findNode(laidOut, "economic-engine")
     const calendar = findNode(laidOut, "calendar")
 
-    expect(organization.x).toBeLessThan(vault.x)
     expect(vault.x).toBeLessThan(accelerator.x)
-    expect(accelerator.x).toBeLessThan(economicEngine.x)
+    expect(accelerator.x).toBeLessThan(organization.x)
+    expect(organization.x).toBeLessThan(programs.x)
+    expect(programs.x).toBeLessThan(deck.x)
+    expect(economicEngine.x).toBeGreaterThan(deck.x)
     expect(economicEngine.x).toBe(calendar.x)
     expect(calendar.x).toBe(communications.x)
+    expect(vault.y).toBe(accelerator.y)
+    expect(accelerator.y).toBe(organization.y)
+    expect(organization.y).toBe(programs.y)
     expect(economicEngine.y).toBeLessThan(calendar.y)
     expect(calendar.y).toBeLessThan(communications.y)
   })

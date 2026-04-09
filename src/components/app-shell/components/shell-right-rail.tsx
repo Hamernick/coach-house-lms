@@ -41,7 +41,7 @@ export function ShellRightRail({
           <SheetHeader className="sr-only">
             <SheetTitle>Details</SheetTitle>
           </SheetHeader>
-          <div className="h-full overflow-y-auto px-4 py-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          <div className="h-full overflow-y-auto px-[var(--shell-right-rail-pad,var(--shell-rail-padding))] py-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             {content}
           </div>
         </SheetContent>
@@ -62,7 +62,7 @@ export function ShellRightRail({
       <div
         data-state={open ? "open" : "closed"}
         className={cn(
-          "h-full w-full overflow-y-auto px-[var(--shell-rail-padding)] pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4",
+          "h-full w-full overflow-y-auto px-[var(--shell-right-rail-pad,var(--shell-rail-padding))] pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4",
           "transition-opacity duration-150 ease-out motion-reduce:transition-none",
           "data-[state=closed]:opacity-0 data-[state=open]:opacity-100",
         )}

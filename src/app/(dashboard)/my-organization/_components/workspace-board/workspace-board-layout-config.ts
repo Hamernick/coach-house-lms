@@ -21,6 +21,7 @@ const AUTO_HEIGHT_CARD_IDS = new Set<WorkspaceCardId>([
   "organization-overview",
   "programs",
   "roadmap",
+  "deck",
   "calendar",
   "communications",
 ])
@@ -71,7 +72,8 @@ export const CARD_DIMENSION_OVERRIDES: Partial<
     lg: { width: 640, height: 720 },
   },
   deck: {
-    sm: { height: 332 },
+    md: { width: 552, height: 708 },
+    lg: { width: 560, height: 780 },
   },
   atlas: {
     sm: { width: 400, height: 372 },
@@ -81,20 +83,20 @@ export const CARD_DIMENSION_OVERRIDES: Partial<
 
 export const DASHBOARD_GRID_ROWS: WorkspaceCardId[][] = [
   ["organization-overview", "programs", "accelerator", "calendar"],
-  ["roadmap", "brand-kit", "economic-engine", "communications"],
-  ["deck", "atlas"],
+  ["roadmap", "deck", "brand-kit", "economic-engine"],
+  ["communications", "atlas"],
 ]
 
 const CALENDAR_FOCUSED_GRID_ROWS: WorkspaceCardId[][] = [
   ["organization-overview", "programs", "calendar", "accelerator"],
-  ["roadmap", "brand-kit", "communications", "economic-engine"],
-  ["deck", "atlas"],
+  ["roadmap", "deck", "communications", "economic-engine"],
+  ["brand-kit", "atlas"],
 ]
 
 const COMMUNICATIONS_FOCUSED_GRID_ROWS: WorkspaceCardId[][] = [
   ["organization-overview", "programs", "communications", "accelerator"],
-  ["roadmap", "brand-kit", "calendar", "economic-engine"],
-  ["deck", "atlas"],
+  ["roadmap", "deck", "calendar", "economic-engine"],
+  ["brand-kit", "atlas"],
 ]
 
 export const PRESET_GRID_ROWS: Record<

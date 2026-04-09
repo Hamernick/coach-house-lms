@@ -26,7 +26,7 @@ export function WorkspaceAcceleratorCardProgressStrip({
   showMilestoneTooltips = true,
 }: WorkspaceAcceleratorCardProgressStripProps) {
   const content = (
-    <div className="rounded-lg border border-transparent bg-transparent px-3 py-3">
+    <div className="rounded-lg border border-transparent bg-transparent px-0 py-3">
       <div className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">

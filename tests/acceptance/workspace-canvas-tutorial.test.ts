@@ -61,7 +61,7 @@ describe("workspace canvas tutorial", () => {
     )
     expect(resolveWorkspaceCanvasTutorialContinueMode(3)).toBe("shortcut")
     expect(resolveWorkspaceCanvasTutorialShortcutInstruction(3)).toContain(
-      "Accelerator tool",
+      "Accelerator button",
     )
     expect(resolveWorkspaceCanvasTutorialContinueMode(4, ["accelerator"])).toBe("next")
     expect(resolveWorkspaceCanvasTutorialContinueMode(5, ["accelerator"])).toBe(
@@ -70,15 +70,16 @@ describe("workspace canvas tutorial", () => {
     expect(resolveWorkspaceCanvasTutorialContinueMode(6, ["accelerator"])).toBe("next")
     expect(resolveWorkspaceCanvasTutorialContinueMode(7)).toBe("shortcut")
     expect(resolveWorkspaceCanvasTutorialShortcutInstruction(7)).toContain(
-      "Calendar tool",
+      "Calendar button",
     )
+    expect(resolveWorkspaceCanvasTutorialPromptTargetCardId(7)).toBe("calendar")
     expect(resolveWorkspaceCanvasTutorialContinueMode(8)).toBe("shortcut")
     expect(resolveWorkspaceCanvasTutorialShortcutInstruction(8)).toContain(
-      "Programs tool",
+      "Programs button",
     )
     expect(resolveWorkspaceCanvasTutorialContinueMode(9)).toBe("shortcut")
     expect(resolveWorkspaceCanvasTutorialShortcutInstruction(9)).toContain(
-      "Roadmap tool",
+      "Roadmap button",
     )
     expect(resolveWorkspaceCanvasTutorialContinueMode(10)).toBe("next")
     expect(resolveWorkspaceCanvasTutorialContinueMode(1)).toBe("next")
@@ -119,6 +120,15 @@ describe("workspace canvas tutorial", () => {
       "organization-overview",
     ])
     expect(resolveWorkspaceCanvasTutorialSelectedCardId(7, [...openedStepIds])).toBeNull()
+  })
+
+  it("targets the viewport calendar control instead of the shortcut rail during the calendar step", () => {
+    expect(resolveWorkspaceCanvasTutorialCallout(7)).toEqual({
+      kind: "calendar-viewport-button",
+      cardId: "calendar",
+      label: "Calendar",
+      instruction: "Click the Calendar button and continue.",
+    })
   })
 
   it("keeps accelerator internal steps focused on the accelerator card only", () => {
@@ -265,7 +275,6 @@ describe("workspace canvas tutorial", () => {
       "economic-engine",
       "calendar",
       "communications",
-      "deck",
       "atlas",
     ])
   })

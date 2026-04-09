@@ -1,9 +1,9 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentProps } from "react"
 import { cn } from "@/lib/utils"
+import type { RoadmapSection } from "@/lib/roadmap"
 
 import {
   areWorkspaceAcceleratorRuntimeSnapshotsEqual,
@@ -26,24 +26,23 @@ import {
   shouldWorkspaceAcceleratorTutorialAdvanceFromFooterContinue,
   useWorkspaceAcceleratorTutorialViewerState,
   WorkspaceAcceleratorCardEmptyState,
+  WorkspaceAcceleratorCardFullscreenRail,
   WorkspaceAcceleratorCardSidebar,
   useModuleViewerSizeSync,
 } from "./workspace-accelerator-card-panel-support"
-import {
-  canWorkspaceAcceleratorTutorialActivateStep,
-} from "./workspace-accelerator-card-tutorial-guards"
+import { canWorkspaceAcceleratorTutorialActivateStep } from "./workspace-accelerator-card-tutorial-guards"
 import { useWorkspaceAcceleratorLessonGroupState } from "./workspace-accelerator-card-panel-lesson-groups"
 import { WorkspaceAcceleratorStepNodeCard } from "./workspace-accelerator-step-node-card"
 
 type WorkspaceAcceleratorCardPanelProps = {
   input: WorkspaceAcceleratorCardInput
+  roadmapSections?: RoadmapSection[]
+  roadmapBasePath?: string
   presentationMode?: "embedded" | "fullscreen-route"
   initialModuleViewerOpen?: boolean
   initialOpenModuleId?: string | null
   onRuntimeChange?: (snapshot: WorkspaceAcceleratorCardRuntimeSnapshot) => void
-  onRuntimeActionsChange?: (
-    actions: WorkspaceAcceleratorCardRuntimeActions
-  ) => void
+  onRuntimeActionsChange?: (actions: WorkspaceAcceleratorCardRuntimeActions) => void
   onRequestOpenStep?: (args: {
     step: WorkspaceAcceleratorCardStep
     selectedLessonGroupKey: string | null
@@ -52,9 +51,7 @@ type WorkspaceAcceleratorCardPanelProps = {
   tutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
   tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
   tutorialMode?: "module-preview" | null
-  onTutorialActionComplete?: (
-    mode?: "complete" | "complete-and-advance",
-  ) => void
+  onTutorialActionComplete?: (mode?: "complete" | "complete-and-advance") => void
 }
 
 function buildAcceleratorRuntimeSnapshot(
@@ -142,18 +139,14 @@ function buildAcceleratorRuntimeSnapshotSignature(
   })
 }
 
-function buildWorkspaceAcceleratorControllerInput(
-  input: WorkspaceAcceleratorCardInput,
-): WorkspaceAcceleratorCardInput {
+function buildWorkspaceAcceleratorControllerInput(input: WorkspaceAcceleratorCardInput): WorkspaceAcceleratorCardInput {
   const visibleSteps = input.steps.filter(
     (step) =>
       (step.stepKind !== "lesson" ||
         Boolean(step.moduleContext?.workspaceOnboarding)) &&
       step.stepKind !== "complete",
   )
-  if (visibleSteps.length === input.steps.length) {
-    return input
-  }
+  if (visibleSteps.length === input.steps.length) return input
   const visibleStepIds = new Set(visibleSteps.map((step) => step.id))
   const nextInitialCurrentStepId =
     input.initialCurrentStepId && visibleStepIds.has(input.initialCurrentStepId)
@@ -170,9 +163,7 @@ function buildWorkspaceAcceleratorControllerInput(
   }
 }
 
-function isWorkspaceAcceleratorWelcomePreviewCandidate(
-  step: WorkspaceAcceleratorCardInput["steps"][number],
-) {
+function isWorkspaceAcceleratorWelcomePreviewCandidate(step: WorkspaceAcceleratorCardInput["steps"][number]) {
   return (
     step.moduleContext?.workspaceOnboarding?.view === "welcome" ||
     step.moduleId === "workspace-onboarding-welcome" ||
@@ -180,9 +171,7 @@ function isWorkspaceAcceleratorWelcomePreviewCandidate(
   )
 }
 
-function hasWorkspaceAcceleratorStepVideo(
-  step: WorkspaceAcceleratorCardInput["steps"][number],
-) {
+function hasWorkspaceAcceleratorStepVideo(step: WorkspaceAcceleratorCardInput["steps"][number]) {
   return typeof step.videoUrl === "string" && step.videoUrl.trim().length > 0
 }
 
@@ -201,9 +190,7 @@ export function resolveWorkspaceAcceleratorPlaceholderVideoUrl({
         isWorkspaceAcceleratorWelcomePreviewCandidate(step),
     )?.videoUrl ?? null
 
-  if (welcomeVideoUrl) {
-    return welcomeVideoUrl
-  }
+  if (welcomeVideoUrl) return welcomeVideoUrl
 
   return (
     steps.find(
@@ -227,9 +214,7 @@ function useWorkspaceAcceleratorRuntimeSync({
   runtimeActions: WorkspaceAcceleratorCardRuntimeActions
   runtimeActionsSignature: string
   onRuntimeChange?: (snapshot: WorkspaceAcceleratorCardRuntimeSnapshot) => void
-  onRuntimeActionsChange?: (
-    actions: WorkspaceAcceleratorCardRuntimeActions,
-  ) => void
+  onRuntimeActionsChange?: (actions: WorkspaceAcceleratorCardRuntimeActions) => void
 }) {
   const lastRuntimeSnapshotRef =
     useRef<WorkspaceAcceleratorCardRuntimeSnapshot | null>(null)
@@ -261,6 +246,8 @@ function useWorkspaceAcceleratorRuntimeSync({
 // eslint-disable-next-line max-lines-per-function
 export function WorkspaceAcceleratorCardPanel({
   input,
+  roadmapSections = [],
+  roadmapBasePath = "/workspace/roadmap",
   presentationMode = "embedded",
   initialModuleViewerOpen = false,
   initialOpenModuleId = null,
@@ -306,12 +293,9 @@ export function WorkspaceAcceleratorCardPanel({
     router.prefetch(runtimeStep.href)
   }, [router, runtimeStep?.href])
 
-  const [openModuleId, setOpenModuleId] = useState<string | null>(
-    initialOpenModuleId,
-  )
+  const [openModuleId, setOpenModuleId] = useState<string | null>(initialOpenModuleId)
   const [isModuleViewerOpen, setIsModuleViewerOpen] = useState(
-    presentationMode === "fullscreen-route" || initialModuleViewerOpen,
-  )
+    presentationMode === "fullscreen-route" || initialModuleViewerOpen)
   const previousCurrentModuleIdRef = useRef<string | null>(null)
   const previousTutorialManagedViewerOpenRef = useRef(false)
   const pendingFirstModuleTutorialAdvanceRef = useRef(false)
@@ -383,10 +367,7 @@ export function WorkspaceAcceleratorCardPanel({
       selectedLessonGroupKey,
     ],
   )
-  const runtimeSnapshotSignature = useMemo(
-    () => buildAcceleratorRuntimeSnapshotSignature(runtimeSnapshot),
-    [runtimeSnapshot],
-  )
+  const runtimeSnapshotSignature = useMemo(() => buildAcceleratorRuntimeSnapshotSignature(runtimeSnapshot), [runtimeSnapshot])
   const runtimeActionsSignature = useMemo(
     () =>
       buildWorkspaceAcceleratorRuntimeActionsSignature({
@@ -408,10 +389,7 @@ export function WorkspaceAcceleratorCardPanel({
       selectedLessonGroupKey,
     ],
   )
-  const checklistModuleIds = useMemo(
-    () => checklistModules.map((module) => module.id),
-    [checklistModules],
-  )
+  const checklistModuleIds = useMemo(() => checklistModules.map((module) => module.id), [checklistModules])
   const checklistModuleIdsSignature = useMemo(() => checklistModuleIds.join("|"), [checklistModuleIds])
   const { onSizeChange, size, readinessSummary } = controllerInput
   const shouldSyncModuleViewerSize = shouldWorkspaceAcceleratorSyncModuleViewerSize({
@@ -580,37 +558,54 @@ export function WorkspaceAcceleratorCardPanel({
     return <WorkspaceAcceleratorCardEmptyState href={fallbackAcceleratorHref} />
   }
 
+  const fullscreenEmbedded = presentationMode === "fullscreen-route"
+  const renderSidebarInline = !fullscreenEmbedded
+  const sidebarProps = {
+    selectedLessonGroup,
+    tutorialCallout,
+    tutorialInteractionPolicy,
+    filteredProgressPercent,
+    readinessSummary,
+    showMilestoneTooltips,
+    checklistModules,
+    currentStepId: currentStep.id,
+    completedStepIds: controller.completedStepIds,
+    openModuleId,
+    onOpenModuleIdChange: setOpenModuleId,
+    onStepSelect: handleStepSelect,
+    tutorialTargetStepId:
+      tutorialCallout?.focus === "first-module"
+        ? firstVisibleChecklistStepId
+        : null,
+  } satisfies ComponentProps<typeof WorkspaceAcceleratorCardSidebar>
+
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col">
+    <div className="relative flex h-full min-h-0 flex-1 flex-col">
+      {!renderSidebarInline ? (
+        <WorkspaceAcceleratorCardFullscreenRail
+          {...sidebarProps}
+          lessonGroupOptions={lessonGroupSummaries}
+          selectedLessonGroupKey={selectedLessonGroupKey}
+          viewerOpen={isModuleViewerOpen}
+          onLessonGroupChange={handleLessonGroupChange}
+          roadmapSections={roadmapSections}
+          roadmapBasePath={roadmapBasePath}
+        />
+      ) : null}
       <div
         className={cn(
-          "grid min-h-0 flex-1 gap-3",
-          isModuleViewerOpen
+          "grid min-h-0 flex-1",
+          fullscreenEmbedded ? "gap-0" : "gap-3",
+          renderSidebarInline && isModuleViewerOpen
             ? "grid-cols-[minmax(250px,290px)_minmax(0,1fr)]"
             : "grid-cols-1",
         )}
       >
-        <div className="flex min-h-0 flex-col gap-2">
-          <WorkspaceAcceleratorCardSidebar
-            selectedLessonGroup={selectedLessonGroup}
-            tutorialCallout={tutorialCallout}
-            tutorialInteractionPolicy={tutorialInteractionPolicy}
-            filteredProgressPercent={filteredProgressPercent}
-            readinessSummary={readinessSummary}
-            showMilestoneTooltips={showMilestoneTooltips}
-            checklistModules={checklistModules}
-            currentStepId={currentStep.id}
-            completedStepIds={controller.completedStepIds}
-            openModuleId={openModuleId}
-            onOpenModuleIdChange={setOpenModuleId}
-            onStepSelect={handleStepSelect}
-            tutorialTargetStepId={
-              tutorialCallout?.focus === "first-module"
-                ? firstVisibleChecklistStepId
-                : null
-            }
-          />
-        </div>
+        {renderSidebarInline ? (
+          <div className="flex min-h-0 flex-col gap-2">
+            <WorkspaceAcceleratorCardSidebar {...sidebarProps} />
+          </div>
+        ) : null}
 
         {isModuleViewerOpen ? (
           <WorkspaceAcceleratorStepNodeCard
@@ -632,6 +627,7 @@ export function WorkspaceAcceleratorCardPanel({
             }
             tutorialInteractionPolicy={tutorialInteractionPolicy}
             onWorkspaceOnboardingSubmit={input.onWorkspaceOnboardingSubmit}
+            immersive={fullscreenEmbedded}
           />
         ) : null}
       </div>

@@ -76,6 +76,21 @@ function buildOrganization(overrides: Partial<PublicMapOrganization> = {}): Publ
 }
 
 describe("queryClusterReconcileFeatures", () => {
+  it("returns an empty snapshot when source access throws during style teardown", () => {
+    const map = {
+      getSource: vi.fn(() => {
+        throw new TypeError("Cannot read properties of undefined (reading 'getOwnSource')")
+      }),
+      isMoving: vi.fn().mockReturnValue(false),
+      queryRenderedFeatures: vi.fn(),
+      querySourceFeatures: vi.fn(),
+    } as unknown as mapboxgl.Map
+
+    expect(queryClusterReconcileFeatures({ map })).toEqual([])
+    expect(map.queryRenderedFeatures).not.toHaveBeenCalled()
+    expect(map.querySourceFeatures).not.toHaveBeenCalled()
+  })
+
   it("does not reconcile from rendered or source features while the map is moving", () => {
     const queryRenderedFeatures = vi.fn()
     const querySourceFeatures = vi.fn()
@@ -117,6 +132,20 @@ describe("queryClusterReconcileFeatures", () => {
 })
 
 describe("queryVisibleUnclusteredOrganizationFeatures", () => {
+  it("returns an empty list when source access throws during style teardown", () => {
+    const map = {
+      getSource: vi.fn(() => {
+        throw new TypeError("Cannot read properties of undefined (reading 'getOwnSource')")
+      }),
+      querySourceFeatures: vi.fn(),
+      queryRenderedFeatures: vi.fn(),
+    } as unknown as mapboxgl.Map
+
+    expect(queryVisibleUnclusteredOrganizationFeatures({ map })).toEqual([])
+    expect(map.querySourceFeatures).not.toHaveBeenCalled()
+    expect(map.queryRenderedFeatures).not.toHaveBeenCalled()
+  })
+
   it("uses source features and keeps duplicate-coordinate organizations stable", () => {
     const inBoundsA = {
       geometry: {
@@ -416,6 +445,29 @@ describe("coalesceClusterReconcileFeatures", () => {
 })
 
 describe("syncClusterSourceAndLayers", () => {
+  it("returns cleanly when source access throws during style teardown", () => {
+    const map = {
+      getSource: vi.fn(() => {
+        throw new TypeError("Cannot read properties of undefined (reading 'getOwnSource')")
+      }),
+      addSource: vi.fn(),
+      getLayer: vi.fn(),
+      addLayer: vi.fn(),
+      setFilter: vi.fn(),
+      setPaintProperty: vi.fn(),
+      setLayoutProperty: vi.fn(),
+    } as unknown as mapboxgl.Map
+
+    expect(() =>
+      syncClusterSourceAndLayers({
+        map,
+        organizations: [buildOrganization()],
+      }),
+    ).not.toThrow()
+    expect(map.addSource).not.toHaveBeenCalled()
+    expect(map.addLayer).not.toHaveBeenCalled()
+  })
+
   it("creates visible cluster, count, point, and selected layers", () => {
     const layers = new Set<string>()
     const map = {
@@ -494,5 +546,22 @@ describe("syncClusterSourceAndLayers", () => {
         ["==", ["get", "organizationId"], "org-42"],
       ],
     )
+  })
+
+  it("returns cleanly when layer access throws during style teardown", () => {
+    const map = {
+      getLayer: vi.fn(() => {
+        throw new TypeError("Cannot read properties of undefined (reading 'getOwnLayer')")
+      }),
+      setFilter: vi.fn(),
+    } as unknown as mapboxgl.Map
+
+    expect(() =>
+      syncSelectedOrganizationLayers({
+        map,
+        selectedOrganizationId: "org-42",
+      }),
+    ).not.toThrow()
+    expect(map.setFilter).not.toHaveBeenCalled()
   })
 })

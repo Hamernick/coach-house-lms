@@ -1,14 +1,12 @@
+import { cache } from "react"
+
 import { fetchSidebarTree, type SidebarClass } from "@/lib/academy"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
-import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
+import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { resolvePricingPlanTier, type PricingPlanTier } from "@/lib/billing/plan-tier"
-import { resolveProfileAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
+import { loadAccessibleOrganizations } from "@/features/member-workspace"
 import { publicSharingEnabled } from "@/lib/feature-flags"
-import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import type { Json } from "@/lib/supabase"
-import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
-import { supabaseErrorToError } from "@/lib/supabase/errors"
-import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { buildOnboardingFlowDefaults } from "@/lib/onboarding/defaults"
 import {
   EMPTY_STATE,
@@ -17,20 +15,14 @@ import {
 
 export type { DashboardLayoutState } from "./dashboard-layout-state.types"
 
-export async function resolveDashboardLayoutState(): Promise<DashboardLayoutState> {
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
+const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayoutState> => {
+  const requestContext = await resolveOptionalAuthenticatedAppContext()
 
-  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw supabaseErrorToError(userError, "Unable to load user.")
-  }
-
-  if (!user) {
+  if (!requestContext) {
     return EMPTY_STATE
   }
+
+  const { supabase, user, profileAudience, activeOrg } = requestContext
 
   let displayName: string | null = null
   let email: string | null = user.email ?? null
@@ -52,8 +44,8 @@ export async function resolveDashboardLayoutState(): Promise<DashboardLayoutStat
   let formationStatus: string | null = null
   let organizationName: string | null = null
   let currentPlanTier: PricingPlanTier = "free"
+  let memberWorkspaceHeader: DashboardLayoutState["memberWorkspaceHeader"] = null
 
-  const fallbackIsTester = resolveTesterMetadata(user.user_metadata ?? null)
   const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
   const metadataFirstName = typeof userMeta?.first_name === "string" ? userMeta.first_name.trim() : ""
   const metadataLastName = typeof userMeta?.last_name === "string" ? userMeta.last_name.trim() : ""
@@ -72,15 +64,6 @@ export async function resolveDashboardLayoutState(): Promise<DashboardLayoutStat
     typeof userMeta?.marketing_opt_in === "boolean" ? userMeta.marketing_opt_in : null
   const metadataNewsletterOptIn =
     typeof userMeta?.newsletter_opt_in === "boolean" ? userMeta.newsletter_opt_in : null
-
-  const [profileAudience, activeOrg] = await Promise.all([
-    resolveProfileAudience({
-      supabase,
-      userId: user.id,
-      fallbackIsTester,
-    }),
-    resolveActiveOrganization(supabase, user.id),
-  ])
 
   displayName =
     profileAudience.fullName ??
@@ -108,7 +91,13 @@ export async function resolveDashboardLayoutState(): Promise<DashboardLayoutStat
     needsOnboarding = false
   }
 
-  const [orgRowResult, entitlements] = await Promise.all([
+  const accessibleOrganizationsPromise =
+    metadataIntentFocus !== "fund"
+      ? loadAccessibleOrganizations(supabase, user.id)
+      : Promise.resolve([])
+
+  const [accessibleOrganizations, orgRowResult, entitlements] = await Promise.all([
+    accessibleOrganizationsPromise,
     supabase
       .from("organizations")
       .select("profile, public_slug, is_public, is_public_roadmap")
@@ -126,6 +115,20 @@ export async function resolveDashboardLayoutState(): Promise<DashboardLayoutStat
       isAdmin,
     }),
   ])
+
+  if (metadataIntentFocus !== "fund") {
+    const resolvedActiveOrganization =
+      accessibleOrganizations.find((organization) => organization.orgId === orgId) ??
+      accessibleOrganizations[0] ??
+      null
+
+    if (resolvedActiveOrganization) {
+      memberWorkspaceHeader = {
+        activeOrganization: resolvedActiveOrganization,
+        accessibleOrganizations,
+      }
+    }
+  }
 
   const orgProfile = (orgRowResult.data?.profile as Record<string, unknown> | null) ?? null
   const orgPeople = Array.isArray(orgProfile?.org_people)
@@ -207,20 +210,6 @@ export async function resolveDashboardLayoutState(): Promise<DashboardLayoutStat
     sidebarTree = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
   }
 
-  if (showAccelerator && sidebarTree.length > 0) {
-    try {
-      const { percent } = await fetchAcceleratorProgressSummary({
-        supabase,
-        userId: user.id,
-        isAdmin,
-        classes: sidebarTree,
-      })
-      acceleratorProgress = percent
-    } catch {
-      acceleratorProgress = null
-    }
-  }
-
   return {
     userPresent: true,
     sidebarTree,
@@ -260,5 +249,10 @@ export async function resolveDashboardLayoutState(): Promise<DashboardLayoutStat
         ? metadataIntentFocus
         : null,
     formationStatus,
+    memberWorkspaceHeader,
   }
+})
+
+export async function resolveDashboardLayoutState(): Promise<DashboardLayoutState> {
+  return resolveDashboardLayoutStateCached()
 }

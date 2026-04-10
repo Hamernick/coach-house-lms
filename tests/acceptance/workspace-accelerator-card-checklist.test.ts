@@ -287,9 +287,7 @@ describe("workspace accelerator checklist helpers", () => {
         onStepSelect: () => {},
       }),
     )
-    const buttonMatch = markup.match(
-      /<button[^>]*data-react-grab-owner-id="workspace-accelerator-checklist:m-1:video"[^>]*class="([^"]+)"/,
-    )
+    const buttonMatch = markup.match(/<button[^>]*class="([^"]+)"/)
     const buttonClassName = buttonMatch?.[1] ?? ""
     expect(buttonClassName).toContain("hover:bg-muted/60")
     expect(buttonClassName).toContain("text-foreground")
@@ -297,10 +295,74 @@ describe("workspace accelerator checklist helpers", () => {
     expect(buttonClassName).toContain("bg-background")
     expect(buttonClassName).toContain("transition-[color,background-color,opacity,transform]")
     expect(buttonClassName).toContain("border-border/60")
+    expect(markup).not.toContain('data-react-grab-owner-id="workspace-accelerator-checklist:')
     expect(markup).toContain("Naming your NFP")
-    expect(markup).toContain("Video")
+    expect(markup).toContain("video • review")
+    expect(markup).toContain("assignment • start")
+    expect(markup).toContain("12 min")
+    expect(markup).not.toContain(
+      'class="inline-flex h-5 shrink-0 self-center items-center text-[10px] leading-none text-muted-foreground"',
+    )
     expect(markup).toContain("size-4 shrink-0 rounded-full border border-border bg-background shadow-xs transition-shadow")
     expect(markup).toContain('class="space-y-2"')
+  })
+
+  it("renders the step-kind plus action subtitle for organization-setup onboarding rows", () => {
+    const modules = buildWorkspaceAcceleratorChecklistModules({
+      steps: [
+        {
+          id: "workspace-onboarding-organization-setup:lesson",
+          moduleId: "workspace-onboarding-organization-setup",
+          moduleTitle: "Organization setup",
+          stepKind: "lesson",
+          stepTitle: "Organization setup",
+          stepDescription: "Set up your organization, roadmap, and operating foundation.",
+          href: "/onboarding?source=formation-setup",
+          status: "in_progress",
+          stepSequenceIndex: 1,
+          stepSequenceTotal: 1,
+          moduleSequenceIndex: 1,
+          moduleSequenceTotal: 1,
+          groupTitle: "Formation",
+          videoUrl: null,
+          durationMinutes: null,
+          resources: [],
+          hasAssignment: false,
+          hasDeck: false,
+          moduleContext: {
+            classTitle: "Formation",
+            lessonNotesContent: null,
+            moduleResources: [],
+            assignmentFields: [],
+            assignmentSubmission: null,
+            completeOnSubmit: false,
+            workspaceOnboarding: {
+              view: "organization-setup",
+              defaults: null,
+            },
+          },
+        },
+      ],
+      completedStepIds: [],
+      selectedGroupKey: "formation",
+      currentStepId: "workspace-onboarding-organization-setup:lesson",
+    })
+
+    const markup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorCardChecklist, {
+        modules,
+        selectedLessonGroupLabel: "Formation",
+        currentStepId: "workspace-onboarding-organization-setup:lesson",
+        completedStepIds: [],
+        openModuleId: "workspace-onboarding-organization-setup",
+        onOpenModuleIdChange: () => {},
+        onStepSelect: () => {},
+      }),
+    )
+
+    expect(markup).toContain("Organization setup")
+    expect(markup).toContain("lesson • start")
+    expect(markup).not.toContain("Set up your organization, roadmap, and operating foundation.")
   })
 
   it("renders checklist rows directly without accordion chevrons or card shells", () => {
@@ -325,7 +387,7 @@ describe("workspace accelerator checklist helpers", () => {
 
     expect(markup.match(/data-slot="accordion-trigger"/g)?.length ?? 0).toBe(0)
     expect(markup).toContain("NFP Registration")
-    expect(markup).toContain("Resources")
+    expect(markup).toContain("resources • review")
     expect(markup).not.toContain("rounded-2xl border border-border/70 bg-muted/30 p-2")
     expect(markup).not.toContain("shadow-[0_10px_28px_-24px_rgba(15,23,42,0.42)]")
   })

@@ -3,7 +3,6 @@
 import type { ReactNode } from "react"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 
-import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import { WorkspaceTutorialCallout } from "@/components/workspace/workspace-tutorial-callout"
 import { WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME } from "@/components/workspace/workspace-tutorial-theme"
 import { cn } from "@/lib/utils"
@@ -15,17 +14,12 @@ import type {
   WorkspaceAcceleratorTutorialInteractionPolicy,
 } from "../types"
 import { canWorkspaceAcceleratorTutorialActivateStep } from "./workspace-accelerator-card-tutorial-guards"
-
-const WORKSPACE_ACCELERATOR_CARD_CHECKLIST_SOURCE =
-  "src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx"
 const WORKSPACE_ACCELERATOR_CHECKLIST_STEP_BUTTON_CLASSNAME =
   "flex w-full items-center gap-3 rounded-lg border border-transparent bg-background px-2.5 py-2 text-left text-sm text-foreground transition-[color,background-color,opacity,transform] outline-hidden ring-ring/0 focus-visible:ring-2 focus-visible:ring-inset"
 const WORKSPACE_ACCELERATOR_CHECKLIST_STEP_ICON_CLASSNAME =
   "peer size-4 shrink-0 rounded-full border border-border bg-background shadow-xs transition-shadow"
 const WORKSPACE_ACCELERATOR_CHECKLIST_STEP_ICON_GLYPH_CLASSNAME =
   "size-3 text-primary-foreground"
-const WORKSPACE_ACCELERATOR_CHECKLIST_STEP_ACTION_CLASSNAME =
-  "inline-flex h-5 shrink-0 self-center items-center text-[10px] leading-none text-muted-foreground"
 
 type WorkspaceAcceleratorCardChecklistProps = {
   modules: WorkspaceAcceleratorChecklistModule[]
@@ -69,6 +63,16 @@ function resolveChecklistStepActionLabel(isCompletedChecklistStep: boolean) {
   return isCompletedChecklistStep ? "Review" : "Start"
 }
 
+function resolveChecklistStepSubtitle({
+  stepKind,
+  isCompletedChecklistStep,
+}: {
+  stepKind: WorkspaceAcceleratorCardStep["stepKind"]
+  isCompletedChecklistStep: boolean
+}) {
+  return `${stepKind} • ${resolveChecklistStepActionLabel(isCompletedChecklistStep)}`.toLowerCase()
+}
+
 function ChecklistStepRow({
   completedStepIds,
   currentStepId,
@@ -97,17 +101,13 @@ function ChecklistStepRow({
     stepId: step.id,
     moduleId: module.id,
   })
-  const reactGrabOwnerDescriptor = {
-    ownerId: `workspace-accelerator-checklist:${step.id}`,
-    component: "WorkspaceAcceleratorCardChecklist",
-    source: WORKSPACE_ACCELERATOR_CARD_CHECKLIST_SOURCE,
-    slot: "step-button",
-    variant: step.id,
-  } as const
+  const subtitle = resolveChecklistStepSubtitle({
+    stepKind: step.stepKind,
+    isCompletedChecklistStep,
+  })
   const button = (
     <button
       type="button"
-      {...getReactGrabOwnerProps(reactGrabOwnerDescriptor)}
       onClick={() => {
         if (!canSelectStep) {
           return
@@ -151,20 +151,14 @@ function ChecklistStepRow({
           </span>
         </div>
         <div className="mt-0.5 truncate text-xs text-muted-foreground">
-          {step.stepTitle}
-          {step.stepDescription ? <span>{" · "}{step.stepDescription}</span> : null}
+          {subtitle}
         </div>
       </div>
-      <span className="ml-2 flex shrink-0 items-center gap-2 text-xs">
-        {step.durationMinutes ? (
-          <span className="hidden text-muted-foreground sm:inline">
-            {step.durationMinutes} min
-          </span>
-        ) : null}
-        <span className={WORKSPACE_ACCELERATOR_CHECKLIST_STEP_ACTION_CLASSNAME}>
-          {resolveChecklistStepActionLabel(isCompletedChecklistStep)}
+      {step.durationMinutes ? (
+        <span className="ml-2 hidden shrink-0 text-xs text-muted-foreground sm:inline">
+          {step.durationMinutes} min
         </span>
-      </span>
+      ) : null}
     </button>
   )
 
@@ -172,7 +166,7 @@ function ChecklistStepRow({
     return (
       <div className="relative space-y-2">
         <WorkspaceTutorialCallout
-          reactGrabOwnerId={`${reactGrabOwnerDescriptor.ownerId}:callout`}
+          reactGrabOwnerId={`workspace-accelerator-checklist-callout:${step.id}`}
           mode="indicator"
           tooltipContentClassName={WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME}
           indicatorAnchorAlign="end"

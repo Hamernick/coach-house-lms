@@ -524,11 +524,7 @@ describe("syncClusterSourceAndLayers", () => {
 
     expect(map.setFilter).toHaveBeenCalledWith(
       PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
-      [
-        "all",
-        ["!", ["has", "point_count"]],
-        ["!=", ["get", "organizationId"], "org-42"],
-      ],
+      ["!", ["has", "point_count"]],
     )
     expect(map.setFilter).toHaveBeenCalledWith(
       PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID,

@@ -31,8 +31,9 @@ export const PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID =
   "public-map-organizations-selected-halo"
 export const PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID =
   "public-map-organizations-selected-core"
-export const PUBLIC_MAP_CLUSTER_RADIUS = 16
-export const PUBLIC_MAP_CLUSTER_MAX_ZOOM = 6
+export const PUBLIC_MAP_CLUSTER_RADIUS = 50
+export const PUBLIC_MAP_CLUSTER_MAX_ZOOM = 14
+export const PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM = 15.1
 
 export type PublicMapOrganizationFeatureCollection = {
   type: "FeatureCollection"
@@ -135,7 +136,7 @@ export function fitMapToOrganizations({
     const only = markerOrganizations[0]
     map.flyTo({
       center: [only.longitude, only.latitude],
-      zoom: 8.6,
+      zoom: PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM,
       offset: [0, ORGANIZATION_MARKER_OFFSET_Y],
       duration,
       essential: true,
@@ -248,7 +249,7 @@ export function focusOrganizationOnMap({
 }) {
   map.flyTo({
     center: [organization.longitude, organization.latitude],
-    zoom: 9.2,
+    zoom: PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM,
     offset: [0, ORGANIZATION_MARKER_OFFSET_Y],
     duration: 780,
     essential: true,

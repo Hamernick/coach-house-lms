@@ -23,19 +23,12 @@ import {
   setMapLayoutPropertySafely,
   setMapPaintPropertySafely,
 } from "./map-style-guards"
-import { ensureSpiderfyRailLayer } from "./overlap-expansion"
 
 const PUBLIC_MAP_NO_SELECTION_FILTER_ID = "__public-map-no-selection__"
 
 function resolveVisiblePointFilter(selectedOrganizationId: string | null) {
-  if (!selectedOrganizationId) {
-    return ["!", ["has", "point_count"]] as mapboxgl.FilterSpecification
-  }
-  return [
-    "all",
-    ["!", ["has", "point_count"]],
-    ["!=", ["get", "organizationId"], selectedOrganizationId],
-  ] as mapboxgl.FilterSpecification
+  void selectedOrganizationId
+  return ["!", ["has", "point_count"]] as mapboxgl.FilterSpecification
 }
 
 function resolveSelectedPointFilter(selectedOrganizationId: string | null) {
@@ -93,7 +86,6 @@ export function syncClusterSourceAndLayers({
   map: mapboxgl.Map
   organizations: PublicMapOrganization[]
 }) {
-  ensureSpiderfyRailLayer(map)
   const sourceData = buildPublicMapOrganizationFeatureCollection(organizations)
   if (process.env.NODE_ENV !== "production") {
     const expectedFeatures = organizations.filter(
@@ -162,7 +154,7 @@ export function syncClusterSourceAndLayers({
         ],
         "circle-stroke-color": "rgba(255, 255, 255, 0.72)",
         "circle-stroke-width": 2,
-        "circle-opacity": 0.96,
+        "circle-opacity": 0.01,
       },
     })
     if (!layerAdded) return
@@ -187,7 +179,7 @@ export function syncClusterSourceAndLayers({
     "rgba(255, 255, 255, 0.72)",
   )
   setMapPaintPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID, "circle-stroke-width", 2)
-  setMapPaintPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID, "circle-opacity", 0.96)
+  setMapPaintPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID, "circle-opacity", 0.01)
 
   const countLayer = getMapLayerSafely(
     map,
@@ -217,7 +209,7 @@ export function syncClusterSourceAndLayers({
         "text-allow-overlap": true,
       },
       paint: {
-        "text-color": "rgba(248, 250, 252, 0.98)",
+        "text-color": "rgba(248, 250, 252, 0.01)",
       },
     })
     if (!layerAdded) return
@@ -247,7 +239,7 @@ export function syncClusterSourceAndLayers({
     map,
     PUBLIC_MAP_CLUSTER_SOURCE_COUNT_LAYER_ID,
     "text-color",
-    "rgba(248, 250, 252, 0.98)",
+    "rgba(248, 250, 252, 0.01)",
   )
 
   const pointLayer = getMapLayerSafely(map, PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID)

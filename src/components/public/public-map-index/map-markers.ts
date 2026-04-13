@@ -8,6 +8,7 @@ import {
   bindMarkerActivation,
   bindMarkerInteractionState,
   type MarkerInteractionState,
+  setMarkerActivationHandler,
 } from "./marker-interaction-utils"
 import {
   createMarkerImageSurface,
@@ -224,15 +225,23 @@ export function updateOrganizationMarkerElement({
   element,
   organization,
   selected,
+  onSelect,
 }: {
   element: HTMLElement
   organization: PublicMapOrganization
   selected: boolean
+  onSelect?: (() => void) | undefined
 }) {
   if (!(element instanceof HTMLButtonElement)) return
 
   element.title = organization.name
   element.ariaLabel = `Open ${organization.name}`
+  if (onSelect) {
+    setMarkerActivationHandler({
+      button: element,
+      onActivate: onSelect,
+    })
+  }
   syncMarkerAvatarImage({ button: element, organization })
   const interactionState =
     element.dataset.interactionState === "hover" || element.dataset.interactionState === "pressed"

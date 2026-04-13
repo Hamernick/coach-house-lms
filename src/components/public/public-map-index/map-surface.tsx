@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react"
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { cn } from "@/lib/utils"
@@ -11,6 +11,7 @@ import { resolvePublicMapSurfacePanelState } from "./map-surface-helpers"
 import type { UserLocationFeedback } from "./user-location"
 import { PublicMapSidebar } from "./sidebar"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import type { PublicMapSidebarSearchContext } from "./sidebar"
 
 type PublicMapSurfaceProps = {
   containerRef: RefObject<HTMLDivElement | null>
@@ -28,10 +29,12 @@ type PublicMapSurfaceProps = {
   authRedirectTo: string
   onQueryChange: (value: string) => void
   onToggleFavorite: (orgId: string) => void
-  onSelectOrg: (orgId: string) => void
+  onOpenOrgDetails: (orgId: string, options?: { preserveSearchContext?: boolean }) => void
   onSidebarModeChange: (mode: SidebarMode) => void
   onAuthSheetOpenChange: (nextOpen: boolean) => void
   onSidebarInsetChange?: (value: number) => void
+  searchContext?: PublicMapSidebarSearchContext | null
+  mapOverlay?: ReactNode
 }
 
 export function PublicMapSurface({
@@ -50,10 +53,12 @@ export function PublicMapSurface({
   authRedirectTo,
   onQueryChange,
   onToggleFavorite,
-  onSelectOrg,
+  onOpenOrgDetails,
   onSidebarModeChange,
   onAuthSheetOpenChange,
   onSidebarInsetChange,
+  searchContext = null,
+  mapOverlay = null,
 }: PublicMapSurfaceProps) {
   const surfaceRef = useRef<HTMLDivElement | null>(null)
   const [panelPortalContainer, setPanelPortalContainer] = useState<HTMLDivElement | null>(null)
@@ -118,9 +123,10 @@ export function PublicMapSurface({
           selectedOrganization={selectedOrganization}
           favorites={favorites}
           query={query}
+          searchContext={searchContext}
           setQuery={onQueryChange}
           toggleFavorite={onToggleFavorite}
-          setSelectedOrgId={onSelectOrg}
+          onOpenDetails={onOpenOrgDetails}
           setSidebarMode={onSidebarModeChange}
         />
       ) : null}
@@ -138,10 +144,12 @@ export function PublicMapSurface({
           <div className="absolute inset-0">
             <div
               ref={containerRef}
-              className="h-full w-full"
+              className="h-full w-full saturate-[0.82] brightness-[1.03] contrast-[0.94]"
               aria-label="Public organization map"
             />
           </div>
+          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(248,250,252,0.22),rgba(248,250,252,0.1)_28%,rgba(241,245,249,0.08)_58%,rgba(248,250,252,0.18))]" />
+          {mapOverlay}
 
           <div className="pointer-events-none absolute right-4 top-4 z-20 flex max-w-[min(24rem,calc(100vw-2rem))] flex-col items-end gap-2">
             {mapError ? (

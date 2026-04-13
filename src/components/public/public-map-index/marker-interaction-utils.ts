@@ -1,5 +1,21 @@
 export type MarkerInteractionState = "idle" | "hover" | "pressed"
 
+const MARKER_ACTIVATION_HANDLER = Symbol("public-map-marker-activation-handler")
+
+type ActivatableMarkerButton = HTMLButtonElement & {
+  [MARKER_ACTIVATION_HANDLER]?: () => void
+}
+
+export function setMarkerActivationHandler({
+  button,
+  onActivate,
+}: {
+  button: HTMLButtonElement
+  onActivate: () => void
+}) {
+  ;(button as ActivatableMarkerButton)[MARKER_ACTIVATION_HANDLER] = onActivate
+}
+
 export function bindMarkerActivation({
   button,
   onActivate,
@@ -8,8 +24,12 @@ export function bindMarkerActivation({
   onActivate: () => void
 }) {
   let lastPointerActivationAt = 0
+  setMarkerActivationHandler({
+    button,
+    onActivate,
+  })
   const activate = () => {
-    onActivate()
+    ;(button as ActivatableMarkerButton)[MARKER_ACTIVATION_HANDLER]?.()
   }
   const handlePointerActivation = (event: PointerEvent) => {
     if (event.button !== 0) return

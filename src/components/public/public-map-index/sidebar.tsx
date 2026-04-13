@@ -30,6 +30,13 @@ import { PublicMapSearchCard } from "./search-card"
 import { buildPublicMapDrawerSnapPoints } from "./sidebar-snap-points"
 import type { PublicMapPanelPresentation } from "./map-view-helpers"
 
+export type PublicMapSidebarSearchContext = {
+  title: string
+  description?: string | null
+  organizations: PublicMapOrganization[]
+  onClear: () => void
+}
+
 type PublicMapSidebarProps = {
   sidebarMode: SidebarMode
   sidebarWidth: number
@@ -40,10 +47,41 @@ type PublicMapSidebarProps = {
   selectedOrganization: PublicMapOrganization | null
   favorites: string[]
   query: string
+  searchContext?: PublicMapSidebarSearchContext | null
   setQuery: (value: string) => void
   toggleFavorite: (orgId: string) => void
-  setSelectedOrgId: (orgId: string) => void
+  onOpenDetails: (orgId: string, options?: { preserveSearchContext?: boolean }) => void
   setSidebarMode: (mode: SidebarMode) => void
+}
+
+function PublicMapSearchContextCard({
+  context,
+}: {
+  context: PublicMapSidebarSearchContext
+}) {
+  return (
+    <div className="mb-2 rounded-2xl border border-border/70 bg-background/82 px-3 py-3 shadow-sm">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-semibold text-foreground">{context.title}</p>
+          {context.description ? (
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {context.description}
+            </p>
+          ) : null}
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-8 rounded-full px-3 text-xs"
+          onClick={context.onClear}
+        >
+          Show all
+        </Button>
+      </div>
+    </div>
+  )
 }
 
 export function PublicMapSidebar({
@@ -56,9 +94,10 @@ export function PublicMapSidebar({
   selectedOrganization,
   favorites,
   query,
+  searchContext = null,
   setQuery,
   toggleFavorite,
-  setSelectedOrgId,
+  onOpenDetails,
   setSidebarMode,
 }: PublicMapSidebarProps) {
   const mapSidebarProviderStyle = {
@@ -97,11 +136,7 @@ export function PublicMapSidebar({
     setActiveSnapIndex(0)
     setSidebarMode("search")
   }
-
-  const openDetails = (orgId: string) => {
-    setSelectedOrgId(orgId)
-    setSidebarMode("details")
-  }
+  const listOrganizations = searchContext?.organizations ?? filteredOrganizations
 
   const railPanel = (
     <SidebarProvider
@@ -128,15 +163,22 @@ export function PublicMapSidebar({
               <SidebarGroupContent className="h-full min-h-0 pl-0">
                 <ScrollArea className="h-full min-h-0">
                   <div className="pt-1 pb-1 pl-1 pr-3">
+                    {searchContext ? (
+                      <PublicMapSearchContextCard context={searchContext} />
+                    ) : null}
                     <PublicMapOrganizationList
-                      organizations={filteredOrganizations}
+                      organizations={listOrganizations}
                       selectedOrgId={selectedOrganization?.id ?? null}
                       favorites={favorites}
                       query={query}
                       constrainedLayout={constrainedRailLayout}
-                      onSelectOrg={setSelectedOrgId}
+                      onSelectOrg={() => undefined}
                       onToggleFavorite={toggleFavorite}
-                      onOpenDetails={openDetails}
+                      onOpenDetails={(organizationId) =>
+                        onOpenDetails(organizationId, {
+                          preserveSearchContext: Boolean(searchContext),
+                        })
+                      }
                     />
                   </div>
                 </ScrollArea>
@@ -179,14 +221,21 @@ export function PublicMapSidebar({
           )}
         >
           <div className="pb-1 pt-2">
+            {searchContext ? (
+              <PublicMapSearchContextCard context={searchContext} />
+            ) : null}
             <PublicMapOrganizationList
-              organizations={filteredOrganizations}
+              organizations={listOrganizations}
               selectedOrgId={selectedOrganization?.id ?? null}
               favorites={favorites}
               query={query}
-              onSelectOrg={setSelectedOrgId}
+              onSelectOrg={() => undefined}
               onToggleFavorite={toggleFavorite}
-              onOpenDetails={openDetails}
+              onOpenDetails={(organizationId) =>
+                onOpenDetails(organizationId, {
+                  preserveSearchContext: Boolean(searchContext),
+                })
+              }
             />
           </div>
         </div>

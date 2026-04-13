@@ -12,16 +12,11 @@ import {
   animateMarkerEntrance,
   animateMarkerPositionTransition,
 } from "./marker-motion"
-import {
-  clearSpiderfyOverlay,
-  type SpiderfyOverlayState,
-} from "./overlap-expansion"
 import { resolveFeatureCoordinatesForMap } from "./map-coordinate-normalization"
 import {
   queryVisibleUnclusteredOrganizationFeatures,
   resolveOrganizationId,
 } from "./public-map-cluster-runtime"
-import { resolveUnclusteredDisplayCoordinates } from "./unclustered-display-coordinates"
 
 type MapboxApi = typeof import("mapbox-gl")["default"]
 
@@ -32,9 +27,7 @@ export type OrganizationMarkerEntry = {
 
 export const ORGANIZATION_MARKER_RECONCILE_MAX_MISSES = 1
 
-export function clearOrganizationMarkers(
-  markersByKey: Map<string, OrganizationMarkerEntry>,
-) {
+export function clearOrganizationMarkers(markersByKey: Map<string, OrganizationMarkerEntry>) {
   for (const entry of markersByKey.values()) {
     entry.marker.remove()
   }
@@ -48,8 +41,6 @@ export function reconcileOrganizationMarkers({
   organizationById,
   selectedOrganizationId,
   onSelectOrganization,
-  spiderfyOverlayState,
-  spiderfyRequestIdRef,
 }: {
   map: mapboxgl.Map
   mapbox: MapboxApi
@@ -57,15 +48,8 @@ export function reconcileOrganizationMarkers({
   organizationById: Map<string, PublicMapOrganization>
   selectedOrganizationId: string | null
   onSelectOrganization: (organizationId: string) => void
-  spiderfyOverlayState: SpiderfyOverlayState
-  spiderfyRequestIdRef: { current: number }
 }) {
   const features = queryVisibleUnclusteredOrganizationFeatures({ map })
-  const displayCoordinatesById = resolveUnclusteredDisplayCoordinates({
-    map,
-    features,
-    organizationById,
-  })
   const nextKeys = new Set<string>()
 
   for (const feature of features) {
@@ -80,9 +64,6 @@ export function reconcileOrganizationMarkers({
       feature,
     })
     if (!baseCoordinates) continue
-    const displayCoordinates =
-      displayCoordinatesById.get(organizationId) ?? baseCoordinates
-
     const markerKey = `organization:${organizationId}`
     nextKeys.add(markerKey)
     const selected = selectedOrganizationId === organizationId
@@ -93,17 +74,18 @@ export function reconcileOrganizationMarkers({
         existing.marker.getLngLat().lng,
         existing.marker.getLngLat().lat,
       ]
-      existing.marker.setLngLat(displayCoordinates)
+      existing.marker.setLngLat(baseCoordinates)
       animateMarkerPositionTransition({
         map,
         marker: existing.marker,
         previousCoordinates,
-        nextCoordinates: displayCoordinates,
+        nextCoordinates: baseCoordinates,
       })
       updateOrganizationMarkerElement({
         element: existing.marker.getElement(),
         organization,
         selected,
+        onSelect: () => onSelectOrganization(organizationId),
       })
       existing.missCount = 0
       continue
@@ -113,34 +95,16 @@ export function reconcileOrganizationMarkers({
       element: createOrganizationMarkerElement({
         organization,
         selected,
-        onSelect: () => {
-          clearSpiderfyOverlay({
-            map,
-            state: spiderfyOverlayState,
-          })
-          spiderfyRequestIdRef.current += 1
-          onSelectOrganization(organizationId)
-        },
+        onSelect: () => onSelectOrganization(organizationId),
       }),
       anchor: "center",
       offset: [0, 0],
     })
-      .setLngLat(displayCoordinates)
+      .setLngLat(baseCoordinates)
       .addTo(map)
-
-    if (displayCoordinates[0] !== baseCoordinates[0] || displayCoordinates[1] !== baseCoordinates[1]) {
-      animateMarkerPositionTransition({
-        map,
-        marker,
-        previousCoordinates: baseCoordinates,
-        nextCoordinates: displayCoordinates,
-        entering: true,
-      })
-    } else {
-      animateMarkerEntrance({
-        marker,
-      })
-    }
+    animateMarkerEntrance({
+      marker,
+    })
 
     markersByKey.set(markerKey, {
       marker,

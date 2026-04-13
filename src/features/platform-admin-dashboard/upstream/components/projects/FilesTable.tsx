@@ -23,6 +23,7 @@ type FilesTableProps = {
 export function FilesTable({ files, onAddFile, onEditFile, onDeleteFile }: FilesTableProps) {
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedFiles, setSelectedFiles] = useState<string[]>([])
+    const canManageFiles = Boolean(onAddFile || onEditFile || onDeleteFile)
 
     const filteredFiles = files.filter((file) =>
         file.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -55,10 +56,12 @@ export function FilesTable({ files, onAddFile, onEditFile, onDeleteFile }: Files
                         className="pl-9"
                     />
                 </div>
-                <Button variant="ghost" size="sm" onClick={onAddFile}>
-                    <Plus className="h-4 w-4" />
-                    Add File
-                </Button>
+                {onAddFile ? (
+                    <Button variant="ghost" size="sm" onClick={onAddFile}>
+                        <Plus className="h-4 w-4" />
+                        Add File
+                    </Button>
+                ) : null}
             </div>
 
             <div className="rounded-lg border border-border bg-card">
@@ -78,7 +81,7 @@ export function FilesTable({ files, onAddFile, onEditFile, onDeleteFile }: Files
                             <TableHead>Name</TableHead>
                             <TableHead>Added by</TableHead>
                             <TableHead>Added date</TableHead>
-                            <TableHead className="w-12" />
+                            {canManageFiles ? <TableHead className="w-12" /> : null}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -119,31 +122,37 @@ export function FilesTable({ files, onAddFile, onEditFile, onDeleteFile }: Files
                                     <TableCell className="text-muted-foreground">
                                         {format(file.addedDate, "d MMM")}
                                     </TableCell>
-                                    <TableCell
-                                        onClick={(e) => {
-                                            e.stopPropagation()
-                                        }}
-                                    >
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon-sm"
-                                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                                >
-                                                    <DotsThree className="h-4 w-4" weight="bold" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => onEditFile?.(file.id)}>
-                                                    Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => onDeleteFile?.(file.id)}>
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
+                                    {canManageFiles ? (
+                                        <TableCell
+                                            onClick={(e) => {
+                                                e.stopPropagation()
+                                            }}
+                                        >
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon-sm"
+                                                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                    >
+                                                        <DotsThree className="h-4 w-4" weight="bold" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    {onEditFile ? (
+                                                        <DropdownMenuItem onClick={() => onEditFile(file.id)}>
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                    ) : null}
+                                                    {onDeleteFile ? (
+                                                        <DropdownMenuItem onClick={() => onDeleteFile(file.id)}>
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    ) : null}
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    ) : null}
                                 </TableRow>
                             )
                         })}

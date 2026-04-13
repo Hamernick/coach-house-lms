@@ -50,6 +50,10 @@ export {
   TimelineGantt,
   WorkstreamTab,
 } from "./components/public-heavy-exports"
+export type {
+  NoteUploadKind,
+  UploadedNoteAsset,
+} from "./upstream/components/projects/note-upload"
 export {
   type CreateTaskContext,
   type TaskQuickCreateSubmitValue,

@@ -197,7 +197,6 @@ function mapTimelineStatus(
 function buildProjectMeta(project: OrganizationProjectRecord): ProjectMeta {
   return {
     priorityLabel: toTitleCase(project.priority),
-    locationLabel: "Organization workspace",
     sprintLabel:
       [project.type_label, project.duration_label].filter(Boolean).join(" ") ||
       `${differenceInCalendarDays(parseDateOnly(project.end_date), parseDateOnly(project.start_date)) + 1} days`,
@@ -264,7 +263,6 @@ function buildProjectWorkstreams(
   tasks: MemberWorkspaceProjectTaskRecord[],
   members: User[],
 ): WorkstreamGroup[] {
-  const defaultAssignee = members[0]
   const groups = new Map<string, WorkstreamTask[]>()
 
   for (const task of tasks) {
@@ -288,13 +286,13 @@ function buildProjectWorkstreams(
               name: task.assignee_name,
               avatarUrl: task.assignee_avatar_url?.trim() || undefined,
             }
-          : defaultAssignee,
+          : undefined,
       startDate: parseDateOnly(task.start_date),
-      priority:
-        (task.priority as WorkstreamTask["priority"]) ||
-        (project.priority as WorkstreamTask["priority"]),
+      endDate: parseDateOnly(task.end_date),
+      sortOrder: task.sort_order ?? 0,
+      priority: task.priority as WorkstreamTask["priority"],
       tag: task.tag_label?.trim() || toTitleCase(task.task_type),
-      description: task.description?.trim() || `${toTitleCase(task.task_type)} for ${project.name}`,
+      description: task.description?.trim() || undefined,
     })
     groups.set(groupName, list)
   }
@@ -302,7 +300,14 @@ function buildProjectWorkstreams(
   return Array.from(groups.entries()).map(([name, items], index) => ({
     id: `${project.id}-group-${index + 1}`,
     name,
-    tasks: items.sort((left, right) => left.startDate!.getTime() - right.startDate!.getTime()),
+    tasks: items.sort((left, right) => {
+      const sortOrderDiff = (left.sortOrder ?? 0) - (right.sortOrder ?? 0)
+      if (sortOrderDiff !== 0) {
+        return sortOrderDiff
+      }
+
+      return left.startDate!.getTime() - right.startDate!.getTime()
+    }),
   }))
 }
 
@@ -425,7 +430,7 @@ export function buildMemberWorkspaceProjectDetails({
     workstreams: buildProjectWorkstreams(project, tasks, members),
     time: buildProjectTime(project),
     backlog: buildProjectBacklog(project, members),
-    quickLinks: explicitQuickLinks.length > 0 ? explicitQuickLinks : files.slice(0, 3),
+    quickLinks: explicitQuickLinks,
     files,
     notes: buildProjectNotes(notes ?? []),
     source: mapOrganizationProjectToViewModel(project),

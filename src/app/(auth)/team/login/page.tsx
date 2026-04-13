@@ -3,6 +3,7 @@ import { redirect as redirectTo } from "next/navigation"
 import { AuthCard } from "@/components/auth/auth-card"
 import { LoginForm } from "@/components/auth/login-form"
 import { AuthScreenShell } from "@/components/auth/auth-screen-shell"
+import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -13,22 +14,15 @@ type TeamLoginPageProps = {
   searchParams?: Promise<SearchParams>
 }
 
-function getSafeRedirect(value: unknown) {
-  if (typeof value !== "string") return undefined
-  if (!value.startsWith("/")) return undefined
-  if (value.startsWith("//")) return undefined
-  return value
-}
-
 export default async function TeamLoginPage({ searchParams }: TeamLoginPageProps) {
   const resolved = searchParams ? await searchParams : {}
   const redirectParamRaw = Array.isArray(resolved.redirect) ? resolved.redirect[0] : resolved.redirect
-  const redirectParam = getSafeRedirect(redirectParamRaw)
+  const redirectParam = getSafeRedirectPath(redirectParamRaw)
   const error = Array.isArray(resolved.error) ? resolved.error[0] : resolved.error
   const plan = Array.isArray(resolved.plan) ? resolved.plan[0] : resolved.plan
   const addon = Array.isArray(resolved.addon) ? resolved.addon[0] : resolved.addon
 
-  const redirectTarget = redirectParam ?? "/organization"
+  const redirectTarget = redirectParam ?? DEFAULT_POST_AUTH_REDIRECT
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },

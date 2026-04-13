@@ -1,4 +1,5 @@
 import type { OrganizationsTable } from "./organizations"
+import type { AppPricingFeedbackResponsesTable } from "./app_pricing_feedback_responses"
 import type { ModuleAssignmentsTable } from "./module_assignments"
 import type { AssignmentSubmissionsTable } from "./assignment_submissions"
 import type { AttachmentsTable } from "./attachments"
@@ -45,6 +46,7 @@ import type { OrganizationWorkspaceStarterStateTable } from "./organization_work
 import type { NotificationsTable } from "./notifications"
 
 export type { OrganizationsTable } from "./organizations"
+export type { AppPricingFeedbackResponsesTable } from "./app_pricing_feedback_responses"
 export type { ModuleAssignmentsTable } from "./module_assignments"
 export type { AssignmentSubmissionsTable } from "./assignment_submissions"
 export type { AttachmentsTable } from "./attachments"
@@ -92,6 +94,7 @@ export type { NotificationsTable } from "./notifications"
 
 export type PublicTables = {
   organizations: OrganizationsTable
+  app_pricing_feedback_responses: AppPricingFeedbackResponsesTable
   module_assignments: ModuleAssignmentsTable
   assignment_submissions: AssignmentSubmissionsTable
   attachments: AttachmentsTable

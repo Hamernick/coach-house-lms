@@ -15,9 +15,16 @@ import {
 } from "./task-starter-data"
 import { MEMBER_WORKSPACE_STARTER_VERSION } from "./starter-data"
 import { normalizeMemberWorkspaceCreateProjectInput } from "./project-create-input"
-import { isMissingOrganizationProjectsTableError } from "./table-errors"
+import {
+  isMissingOrganizationProjectsTableError,
+  isMissingOrganizationWorkspaceStarterStateTableError,
+} from "./table-errors"
 
 export type MemberWorkspaceResetStarterProjectsResult =
+  | { ok: true }
+  | { error: string }
+
+export type MemberWorkspaceClearStarterDataResult =
   | { ok: true }
   | { error: string }
 
@@ -30,6 +37,23 @@ type OrganizationProjectInsert =
 
 type OrganizationProjectUpdate =
   Database["public"]["Tables"]["organization_projects"]["Update"]
+
+const PLATFORM_ADMIN_PROJECT_MUTATION_ERROR =
+  "Platform admins can view organization projects here, but cannot edit them."
+
+function ensureProjectMutationAllowed(
+  actor: Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>,
+) {
+  if (actor.isAdmin) {
+    return { error: PLATFORM_ADMIN_PROJECT_MUTATION_ERROR } as const
+  }
+
+  if (!actor.canEdit) {
+    return { error: "Only organization editors can manage projects." } as const
+  }
+
+  return null
+}
 
 async function resolveProjectCreateOrgId({
   actor,
@@ -73,6 +97,10 @@ export async function createMemberWorkspaceProjectAction(
   input: MemberWorkspaceCreateProjectFormInput,
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
+  const mutationAccessResult = ensureProjectMutationAllowed(actor)
+  if (mutationAccessResult) {
+    return mutationAccessResult
+  }
   const targetOrg = await resolveProjectCreateOrgId({ actor, input })
   if ("error" in targetOrg) return targetOrg
 
@@ -127,9 +155,9 @@ export async function updateMemberWorkspaceProjectAction(
   input: MemberWorkspaceCreateProjectFormInput,
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-
-  if (!actor.isAdmin && !actor.canEdit) {
-    return { error: "Only project editors can update projects." }
+  const mutationAccessResult = ensureProjectMutationAllowed(actor)
+  if (mutationAccessResult) {
+    return mutationAccessResult
   }
 
   const normalized = normalizeMemberWorkspaceCreateProjectInput(input)
@@ -153,7 +181,7 @@ export async function updateMemberWorkspaceProjectAction(
     return { error: "Unable to find that project." }
   }
 
-  if (!actor.isAdmin && existingProject.org_id !== actor.activeOrg.orgId) {
+  if (existingProject.org_id !== actor.activeOrg.orgId) {
     return { error: "You can only update projects for the active organization." }
   }
 
@@ -197,9 +225,9 @@ export async function updateMemberWorkspaceProjectStatusAction(
   status: Database["public"]["Tables"]["organization_projects"]["Update"]["status"],
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-
-  if (!actor.isAdmin && !actor.canEdit) {
-    return { error: "Only project editors can update projects." }
+  const mutationAccessResult = ensureProjectMutationAllowed(actor)
+  if (mutationAccessResult) {
+    return mutationAccessResult
   }
 
   const { data: existingProject, error: existingProjectError } = await actor.supabase
@@ -218,7 +246,7 @@ export async function updateMemberWorkspaceProjectStatusAction(
     return { error: "Unable to find that project." }
   }
 
-  if (!actor.isAdmin && existingProject.org_id !== actor.activeOrg.orgId) {
+  if (existingProject.org_id !== actor.activeOrg.orgId) {
     return { error: "You can only update projects for the active organization." }
   }
 
@@ -251,9 +279,9 @@ export async function updateMemberWorkspaceProjectScheduleAction(
   endDate: string,
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-
-  if (!actor.isAdmin && !actor.canEdit) {
-    return { error: "Only project editors can update project dates." }
+  const mutationAccessResult = ensureProjectMutationAllowed(actor)
+  if (mutationAccessResult) {
+    return mutationAccessResult
   }
 
   const normalizedProjectId = projectId.trim()
@@ -293,7 +321,7 @@ export async function updateMemberWorkspaceProjectScheduleAction(
     return { error: "Unable to find that project." }
   }
 
-  if (!actor.isAdmin && existingProject.org_id !== actor.activeOrg.orgId) {
+  if (existingProject.org_id !== actor.activeOrg.orgId) {
     return { error: "You can only update projects for the active organization." }
   }
 
@@ -324,7 +352,7 @@ export async function updateMemberWorkspaceProjectScheduleAction(
 export async function resetMemberWorkspaceStarterProjectsAction(): Promise<MemberWorkspaceResetStarterProjectsResult> {
   const actor = await resolveMemberWorkspaceActorContext()
 
-  if (!actor.canEdit) {
+  if (actor.isAdmin || !actor.canEdit) {
     return { error: "Only organization editors can reset starter data." }
   }
 
@@ -418,6 +446,60 @@ export async function resetMemberWorkspaceStarterProjectsAction(): Promise<Membe
 
   if (starterStateError) {
     return { error: "Unable to update starter state." }
+  }
+
+  revalidatePath("/projects")
+  revalidatePath("/my-tasks")
+  return { ok: true }
+}
+
+export async function clearMemberWorkspaceStarterDataAction(): Promise<MemberWorkspaceClearStarterDataResult> {
+  const actor = await resolveMemberWorkspaceActorContext()
+
+  if (actor.isAdmin || !actor.canEdit) {
+    return { error: "Only organization editors can clear demo data." }
+  }
+
+  const timestamp = new Date().toISOString()
+  const { error: starterStateError } = await actor.supabase
+    .from("organization_workspace_starter_state")
+    .upsert(
+      {
+        org_id: actor.activeOrg.orgId,
+        seed_version: MEMBER_WORKSPACE_STARTER_VERSION,
+        seeded_at: timestamp,
+        last_reset_at: timestamp,
+        updated_by: actor.userId,
+      },
+      { onConflict: "org_id" },
+    )
+
+  if (
+    starterStateError &&
+    !isMissingOrganizationWorkspaceStarterStateTableError(starterStateError)
+  ) {
+    return { error: "Unable to update starter-data state." }
+  }
+
+  const { error: deleteTasksError } = await actor.supabase
+    .from("organization_tasks")
+    .delete()
+    .eq("org_id", actor.activeOrg.orgId)
+    .eq("created_source", "starter_seed")
+
+  if (deleteTasksError) {
+    return { error: "Unable to clear demo tasks." }
+  }
+
+  const { error: deleteProjectsError } = await actor.supabase
+    .from("organization_projects")
+    .delete()
+    .eq("org_id", actor.activeOrg.orgId)
+    .eq("project_kind", "standard")
+    .eq("created_source", "starter_seed")
+
+  if (deleteProjectsError) {
+    return { error: "Unable to clear demo projects." }
   }
 
   revalidatePath("/projects")

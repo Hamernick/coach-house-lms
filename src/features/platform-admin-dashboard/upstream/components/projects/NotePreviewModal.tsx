@@ -30,6 +30,8 @@ import {
     CollapsibleTrigger,
 } from "@/features/platform-admin-dashboard/upstream/components/ui/collapsible"
 import { cn } from "@/features/platform-admin-dashboard/upstream/lib/utils"
+import { hasHtmlNoteContent } from "@/features/platform-admin-dashboard/upstream/components/projects/note-upload"
+import { sanitizeHtml } from "@/lib/markdown/sanitize"
 
 const WAVEFORM_BAR_HEIGHTS = Array.from({ length: 60 }, (_, i) => {
     const base = [25, 60, 40, 80, 55, 70, 35, 90]
@@ -41,6 +43,33 @@ type NotePreviewModalProps = {
     onOpenChange: (open: boolean) => void
     note: ProjectNote | null
     onEditNote?: (noteId: string) => void
+}
+
+export function RenderedNoteContent({ content }: { content?: string }) {
+    const trimmed = content?.trim() ?? ""
+
+    if (!trimmed) {
+        return (
+            <div className="text-sm text-muted-foreground">
+                No content available for this note.
+            </div>
+        )
+    }
+
+    if (!hasHtmlNoteContent(trimmed)) {
+        return (
+            <div className="whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+                {trimmed}
+            </div>
+        )
+    }
+
+    return (
+        <div
+            className="prose prose-sm max-w-none break-words text-foreground prose-a:text-primary prose-p:text-muted-foreground prose-li:text-muted-foreground"
+            dangerouslySetInnerHTML={{ __html: sanitizeHtml(trimmed) }}
+        />
+    )
 }
 
 export function NotePreviewModal({
@@ -151,9 +180,7 @@ export function NotePreviewModal({
                                     </CollapsibleSection>
                                 </>
                             ) : (
-                                <div className="text-sm text-muted-foreground">
-                                    {note.content || "No content available for this note."}
-                                </div>
+                                <RenderedNoteContent content={note.content} />
                             )}
                         </div>
                     </div>

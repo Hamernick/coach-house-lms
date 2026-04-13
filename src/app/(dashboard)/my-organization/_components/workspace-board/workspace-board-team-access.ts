@@ -106,14 +106,50 @@ export function shouldShowWorkspaceTeamAccessEmptyState({
   accessPeopleCount,
   activeInviteCount,
   pendingTeamAccessCount,
+  organizationAccessLoading = false,
+  organizationAccessError = false,
 }: {
   accessPeopleCount: number
   activeInviteCount: number
   pendingTeamAccessCount: number
+  organizationAccessLoading?: boolean
+  organizationAccessError?: boolean
 }) {
   return (
+    !organizationAccessLoading &&
+    !organizationAccessError &&
     accessPeopleCount <= 1 &&
     activeInviteCount === 0 &&
     pendingTeamAccessCount === 0
   )
+}
+
+export function resolveWorkspaceTeamAccessSummary({
+  accessPeopleCount,
+  activeInviteCount,
+  pendingTeamAccessCount,
+  organizationAccessLoading = false,
+  organizationAccessError = false,
+}: {
+  accessPeopleCount: number
+  activeInviteCount: number
+  pendingTeamAccessCount: number
+  organizationAccessLoading?: boolean
+  organizationAccessError?: boolean
+}) {
+  if (organizationAccessError) {
+    return "Team access unavailable right now."
+  }
+  if (organizationAccessLoading) {
+    return "Checking team access…"
+  }
+
+  const memberSummary = `${accessPeopleCount} ${accessPeopleCount === 1 ? "member" : "members"}`
+  const inviteSummary = `${activeInviteCount} active ${activeInviteCount === 1 ? "invite" : "invites"}`
+
+  if (pendingTeamAccessCount > 0) {
+    return `${memberSummary} · ${inviteSummary} · ${pendingTeamAccessCount} pending team ${pendingTeamAccessCount === 1 ? "item" : "items"}`
+  }
+
+  return `${memberSummary} · ${inviteSummary}`
 }

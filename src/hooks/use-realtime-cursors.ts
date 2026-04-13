@@ -56,6 +56,25 @@ type CursorEventPayload = {
 
 export type RealtimeConnectionState = "connecting" | "live" | "degraded"
 
+export function resolveRealtimeCursorConnectionState({
+  networkAvailable,
+  subscribeStatus,
+}: {
+  networkAvailable: boolean
+  subscribeStatus: string | null
+}): RealtimeConnectionState {
+  if (!networkAvailable) return "degraded"
+  if (subscribeStatus === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) return "live"
+  if (
+    subscribeStatus === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR ||
+    subscribeStatus === REALTIME_SUBSCRIBE_STATES.TIMED_OUT ||
+    subscribeStatus === REALTIME_SUBSCRIBE_STATES.CLOSED
+  ) {
+    return "degraded"
+  }
+  return "connecting"
+}
+
 function generateColor() {
   return `hsl(${Math.floor(Math.random() * 360)}, 100%, 70%)`
 }
@@ -64,6 +83,11 @@ function generateUserId() {
   const maybeId = globalThis.crypto?.randomUUID?.()
   if (maybeId) return maybeId
   return `cursor-${Math.floor(Math.random() * 1_000_000)}`
+}
+
+function isNavigatorOnline() {
+  if (typeof navigator === "undefined") return true
+  return navigator.onLine
 }
 
 export const useRealtimeCursors = ({
@@ -81,6 +105,7 @@ export const useRealtimeCursors = ({
   const [userId] = useState(generateUserId)
   const [cursors, setCursors] = useState<Record<string, CursorEventPayload>>({})
   const [connectionState, setConnectionState] = useState<RealtimeConnectionState>("connecting")
+  const [networkAvailable, setNetworkAvailable] = useState(isNavigatorOnline)
 
   const channelRef = useRef<RealtimeChannel | null>(null)
   const payloadRef = useRef<CursorEventPayload | null>(null)
@@ -116,8 +141,40 @@ export const useRealtimeCursors = ({
   const handleMouseMove = useThrottleCallback(publishCursor, throttleMs)
 
   useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const handleOnline = () => setNetworkAvailable(true)
+    const handleOffline = () => setNetworkAvailable(false)
+
+    window.addEventListener("online", handleOnline)
+    window.addEventListener("offline", handleOffline)
+
+    return () => {
+      window.removeEventListener("online", handleOnline)
+      window.removeEventListener("offline", handleOffline)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!networkAvailable) {
+      setConnectionState(
+        resolveRealtimeCursorConnectionState({
+          networkAvailable,
+          subscribeStatus: null,
+        }),
+      )
+      setCursors({})
+      channelRef.current = null
+      return
+    }
+
     const channel = supabase.channel(safeRoomName)
-    setConnectionState("connecting")
+    setConnectionState(
+      resolveRealtimeCursorConnectionState({
+        networkAvailable,
+        subscribeStatus: null,
+      }),
+    )
 
     channel
       .on("presence", { event: "leave" }, (event: { leftPresences: Array<{ key: string }> }) => {
@@ -146,23 +203,26 @@ export const useRealtimeCursors = ({
         }))
       })
       .subscribe(async (status: string) => {
-        if (status === REALTIME_SUBSCRIBE_STATES.SUBSCRIBED) {
+        const nextConnectionState = resolveRealtimeCursorConnectionState({
+          networkAvailable,
+          subscribeStatus: status,
+        })
+
+        if (nextConnectionState === "live") {
           await channel.track({ key: userId })
           channelRef.current = channel
-          setConnectionState("live")
+          setConnectionState(nextConnectionState)
           return
         }
-        if (
-          status === REALTIME_SUBSCRIBE_STATES.CHANNEL_ERROR ||
-          status === REALTIME_SUBSCRIBE_STATES.TIMED_OUT ||
-          status === REALTIME_SUBSCRIBE_STATES.CLOSED
-        ) {
-          setConnectionState("degraded")
+
+        if (nextConnectionState === "degraded") {
+          setConnectionState(nextConnectionState)
           setCursors({})
           channelRef.current = null
           return
         }
-        setConnectionState("connecting")
+
+        setConnectionState(nextConnectionState)
       })
 
     return () => {
@@ -171,7 +231,7 @@ export const useRealtimeCursors = ({
       setCursors({})
       setConnectionState("connecting")
     }
-  }, [safeRoomName, userId])
+  }, [networkAvailable, safeRoomName, userId])
 
   useEffect(() => {
     const timer = window.setInterval(() => {

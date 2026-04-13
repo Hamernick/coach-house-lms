@@ -21,6 +21,14 @@ type TutorialStartEventDetail = {
   tutorial?: TutorialKey
 }
 
+function dispatchTutorialLifecycleEvent(
+  name: "coachhouse:tutorial:completed" | "coachhouse:tutorial:dismissed",
+  tutorial: TutorialKey,
+) {
+  if (typeof window === "undefined") return
+  window.dispatchEvent(new CustomEvent(name, { detail: { tutorial } }))
+}
+
 function normalizeTutorialKey(value: unknown): TutorialKey | null {
   if (
     value === "platform" ||
@@ -242,6 +250,7 @@ export function TutorialManager() {
       if (typeof window !== "undefined") {
         window.localStorage.setItem(getLocalStorageKey("tutorial_dismissed", tutorial), "1")
       }
+      dispatchTutorialLifecycleEvent("coachhouse:tutorial:dismissed", tutorial)
       void dismissTutorialAction(tutorial)
     },
     [],
@@ -255,6 +264,7 @@ export function TutorialManager() {
           window.localStorage.setItem("coachhouse_tour_completed", "1")
         }
       }
+      dispatchTutorialLifecycleEvent("coachhouse:tutorial:completed", tutorial)
       void markTutorialCompletedAction(tutorial)
     },
     [],

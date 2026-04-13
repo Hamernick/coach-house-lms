@@ -1,5 +1,18 @@
 "use client"
 
+export type ProjectAssetUploadResult = {
+  assets: {
+    id: string
+    projectId: string
+    name: string
+    description: string | null
+    assetType: string
+    externalUrl: string | null
+    sizeBytes: number | null
+    url: string
+  }[]
+}
+
 async function getErrorMessage(response: Response, fallback: string) {
   const payload = await response.json().catch(() => ({}))
   return payload?.error || fallback
@@ -11,7 +24,7 @@ export async function createProjectAssets(input: {
   description?: string
   link?: string
   files: File[]
-}) {
+}): Promise<ProjectAssetUploadResult> {
   const form = new FormData()
   form.append("projectId", input.projectId)
   if (input.title) {
@@ -36,7 +49,7 @@ export async function createProjectAssets(input: {
     throw new Error(await getErrorMessage(response, "Unable to save assets."))
   }
 
-  return response.json()
+  return response.json() as Promise<ProjectAssetUploadResult>
 }
 
 export async function updateProjectAsset(input: {

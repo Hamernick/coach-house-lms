@@ -8,6 +8,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
+import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -31,13 +32,6 @@ type LoginFormProps = {
   redirectTo?: string
   initialError?: string | null
   signUpHref?: string
-}
-
-function getSafeRedirect(value: string | null): string | null {
-  if (!value) return null
-  if (!value.startsWith("/")) return null
-  if (value.startsWith("//")) return null
-  return value
 }
 
 function mapAuthErrorMessage(raw: string | null | undefined) {
@@ -79,8 +73,9 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
   const searchParams = useSearchParams()
   const searchError = mapAuthErrorMessage(searchParams.get("error"))
   const noticeMessage = mapAuthNoticeMessage(searchParams.get("notice"))
-  const redirectFromSearch = getSafeRedirect(searchParams.get("redirect"))
-  const resolvedRedirectTo = redirectFromSearch ?? redirectTo ?? "/organization"
+  const redirectFromSearch = getSafeRedirectPath(searchParams.get("redirect"))
+  const resolvedRedirectTo =
+    redirectFromSearch ?? getSafeRedirectPath(redirectTo) ?? DEFAULT_POST_AUTH_REDIRECT
   const [errorMessage, setErrorMessage] = useState<string | null>(
     mapAuthErrorMessage(initialError) ?? searchError,
   )

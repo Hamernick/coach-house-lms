@@ -155,6 +155,7 @@ function runClusterSpiderfyOverlayFlow({
     const activeMapbox = mapboxRef.current
     if (!activeMap || !activeMapbox || !mapLoadedRef.current) return
     const candidateBuckets = resolveSpiderfyCandidateBuckets({
+      map: activeMap,
       leaves,
       organizationById: organizationByIdRef.current,
       targetCoordinates: target.coordinates,

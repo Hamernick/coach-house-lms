@@ -27,6 +27,10 @@ export type MemberWorkspacePersonOption = {
   id: string
   name: string
   avatarUrl: string | null
+  email?: string | null
+  roleLabel?: string | null
+  groupKey?: "platform-admins" | "organization-team"
+  groupLabel?: string | null
 }
 
 export type MemberWorkspaceHeaderState = {
@@ -127,6 +131,7 @@ export type MemberWorkspaceCreateProjectNoteInput = {
   projectId: string
   title: string
   content?: string
+  noteType?: "general" | "meeting" | "audio"
 }
 
 export type MemberWorkspaceUpdateProjectNoteInput = {
@@ -134,6 +139,7 @@ export type MemberWorkspaceUpdateProjectNoteInput = {
   noteId: string
   title: string
   content?: string
+  noteType?: "general" | "meeting" | "audio"
 }
 
 export type MemberWorkspaceCreateProjectQuickLinkInput = {
@@ -164,20 +170,32 @@ export type MemberWorkspaceAdminOrganizationMember = {
   isOwner: boolean
 }
 
+export type MemberWorkspaceAdminOrganizationSetupItem = {
+  id: string
+  label: string
+  complete: boolean
+}
+
 export type MemberWorkspaceAdminOrganizationSummary = {
   orgId: string
   canonicalProjectId: string | null
   name: string
+  ownerName: string
+  ownerAvatarUrl: string | null
   publicSlug: string | null
   organizationStatus: "pending" | "approved" | "n/a"
   isPublic: boolean
   createdAt: string
   updatedAt: string
+  acceleratorProgress: number
   setupProgress: number
+  setupCompletedCount: number
+  setupTotalCount: number
   missingSetupCount: number
   memberCount: number
   tags: string[]
   members: MemberWorkspaceAdminOrganizationMember[]
+  setupItems: MemberWorkspaceAdminOrganizationSetupItem[]
   profile: Record<string, unknown>
 }
 

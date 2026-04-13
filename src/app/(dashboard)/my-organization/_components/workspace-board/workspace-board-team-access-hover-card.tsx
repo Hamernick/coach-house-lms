@@ -48,6 +48,8 @@ export function WorkspaceBoardTeamAccessHoverCard({
   pendingTeamAccessCount,
   pendingTeamInvites,
   pendingAccessRequests,
+  organizationAccessLoading,
+  organizationAccessLoadError,
   canInvite,
   members,
   invites,
@@ -60,6 +62,8 @@ export function WorkspaceBoardTeamAccessHoverCard({
   pendingTeamAccessCount: number
   pendingTeamInvites: WorkspaceBoardOrganizationAccessSnapshot["invites"]
   pendingAccessRequests: WorkspaceBoardOrganizationAccessSnapshot["requests"]
+  organizationAccessLoading: boolean
+  organizationAccessLoadError: string | null
   canInvite: boolean
   members: WorkspaceMemberOption[]
   invites: WorkspaceCollaborationInvite[]
@@ -74,6 +78,17 @@ export function WorkspaceBoardTeamAccessHoverCard({
           People with access to this workspace, temporary collaboration invites, and pending team access.
         </p>
       </div>
+
+      {organizationAccessLoading ? (
+        <div className="border-b border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+          Checking pending team access…
+        </div>
+      ) : null}
+      {organizationAccessLoadError ? (
+        <div className="border-b border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+          Team access could not be refreshed. {organizationAccessLoadError}
+        </div>
+      ) : null}
 
       <div className="max-h-72 space-y-1 overflow-y-auto p-2">
         {accessPeople.slice(0, 8).map((person) => {

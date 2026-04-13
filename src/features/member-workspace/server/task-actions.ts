@@ -8,6 +8,7 @@ import type {
   MemberWorkspaceTaskStatus,
 } from "../types"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
+import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
 
 export type MemberWorkspaceUpdateTaskStatusResult =
   | { ok: true; taskId: string; status: MemberWorkspaceTaskStatus }
@@ -25,6 +26,10 @@ export type MemberWorkspaceUpdateTaskOrderResult =
   | { ok: true; projectId: string }
   | { error: string }
 
+export type MemberWorkspaceDeleteTaskResult =
+  | { ok: true; taskId: string; projectId: string }
+  | { error: string }
+
 const VALID_TASK_STATUSES = new Set<MemberWorkspaceTaskStatus>([
   "todo",
   "in-progress",
@@ -34,6 +39,9 @@ const VALID_TASK_STATUSES = new Set<MemberWorkspaceTaskStatus>([
 const VALID_TASK_PRIORITIES = new Set<
   NonNullable<MemberWorkspaceCreateTaskInput["priority"]>
 >(["no-priority", "low", "medium", "high", "urgent"])
+
+const PLATFORM_ADMIN_TASK_MUTATION_ERROR =
+  "Platform admins can view organization tasks here, but cannot edit them."
 
 function toDateOnly(input: string) {
   return new Date(`${input}T00:00:00.000Z`)
@@ -53,14 +61,28 @@ async function resolveTaskTargetProject({
   actor: Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>
   projectId: string
 }): Promise<
-  | { project: { id: string; org_id: string; task_count: number } }
+  | {
+      project: {
+        id: string
+        org_id: string
+        task_count: number
+        project_kind: string
+        created_source: string
+      }
+    }
   | { error: string }
 > {
   const { data: project, error: projectError } = await actor.supabase
     .from("organization_projects")
-    .select("id, org_id, task_count")
+    .select("id, org_id, task_count, project_kind, created_source")
     .eq("id", projectId)
-    .maybeSingle<{ id: string; org_id: string; task_count: number }>()
+    .maybeSingle<{
+      id: string
+      org_id: string
+      task_count: number
+      project_kind: string
+      created_source: string
+    }>()
 
   if (projectError || !project) {
     return { error: "Choose a valid project." } as const
@@ -68,6 +90,10 @@ async function resolveTaskTargetProject({
 
   if (!actor.isAdmin && project.org_id !== actor.activeOrg.orgId) {
     return { error: "You do not have access to manage tasks for that project." } as const
+  }
+
+  if (project.project_kind !== "standard" || project.created_source === "system") {
+    return { error: "Choose a valid project." } as const
   }
 
   return { project } as const
@@ -87,23 +113,21 @@ async function resolveAssignableUserId({
     return { userId: null } as const
   }
 
-  if (candidateUserId === orgId) {
-    return { userId: candidateUserId } as const
-  }
+  try {
+    const assignablePeople = await loadMemberWorkspacePersonOptionsForOrganizations({
+      orgIds: [orgId],
+      supabase: actor.supabase,
+      includePlatformAdmins: actor.isAdmin,
+    })
+    const assignableUserIds = new Set(
+      assignablePeople.map((person) => person.id.trim()).filter(Boolean),
+    )
 
-  const { data: membership, error: membershipError } = await actor.supabase
-    .from("organization_memberships")
-    .select("member_id")
-    .eq("org_id", orgId)
-    .eq("member_id", candidateUserId)
-    .maybeSingle<{ member_id: string }>()
-
-  if (membershipError) {
+    if (!assignableUserIds.has(candidateUserId)) {
+      return { error: "Choose a valid assignee." } as const
+    }
+  } catch {
     return { error: "Unable to validate the selected assignee." } as const
-  }
-
-  if (!membership) {
-    return { error: "Choose a valid assignee." } as const
   }
 
   return { userId: candidateUserId } as const
@@ -186,7 +210,11 @@ export async function createMemberWorkspaceTaskAction(
   input: MemberWorkspaceCreateTaskInput,
 ): Promise<MemberWorkspaceCreateTaskResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!actor.isAdmin && !actor.canEdit) {
+  if (actor.isAdmin) {
+    return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
+  }
+
+  if (!actor.canEdit) {
     return { error: "You do not have access to create tasks." }
   }
 
@@ -303,7 +331,11 @@ export async function updateMemberWorkspaceTaskAction(
   input: MemberWorkspaceCreateTaskInput,
 ): Promise<MemberWorkspaceUpdateTaskResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!actor.isAdmin && !actor.canEdit) {
+  if (actor.isAdmin) {
+    return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
+  }
+
+  if (!actor.canEdit) {
     return { error: "You do not have access to edit tasks." }
   }
 
@@ -448,10 +480,13 @@ export async function updateMemberWorkspaceTaskStatusAction(
   }
 
   const actor = await resolveMemberWorkspaceActorContext()
+  if (actor.isAdmin) {
+    return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
+  }
 
-  let canUpdateTask = actor.isAdmin || actor.canEdit
+  let canUpdateTask = actor.canEdit
 
-  if (!actor.isAdmin && !canUpdateTask) {
+  if (!canUpdateTask) {
     const { data: assignment, error: assignmentError } = await actor.supabase
       .from("organization_task_assignees")
       .select("task_id")
@@ -476,21 +511,14 @@ export async function updateMemberWorkspaceTaskStatusAction(
     .select("id, org_id, project_id, status")
     .eq("id", normalizedTaskId)
 
-  const { data: task, error: taskError } = await (actor.isAdmin
-    ? taskQuery.maybeSingle<{
-        id: string
-        org_id: string
-        project_id: string
-        status: string
-      }>()
-    : taskQuery
-        .eq("org_id", actor.activeOrg.orgId)
-        .maybeSingle<{
-          id: string
-          org_id: string
-          project_id: string
-          status: string
-        }>())
+  const { data: task, error: taskError } = await taskQuery
+    .eq("org_id", actor.activeOrg.orgId)
+    .maybeSingle<{
+      id: string
+      org_id: string
+      project_id: string
+      status: string
+    }>()
 
   if (taskError || !task) {
     return { error: "Task not found." }
@@ -527,7 +555,11 @@ export async function updateMemberWorkspaceTaskOrderAction(
 ): Promise<MemberWorkspaceUpdateTaskOrderResult> {
   const actor = await resolveMemberWorkspaceActorContext()
 
-  if (!actor.isAdmin && !actor.canEdit) {
+  if (actor.isAdmin) {
+    return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
+  }
+
+  if (!actor.canEdit) {
     return { error: "You do not have access to reorder tasks." }
   }
 
@@ -597,4 +629,70 @@ export async function updateMemberWorkspaceTaskOrderAction(
   revalidatePath(`/projects/${project.id}`)
 
   return { ok: true, projectId: project.id }
+}
+
+export async function deleteMemberWorkspaceTaskAction(
+  taskId: string,
+): Promise<MemberWorkspaceDeleteTaskResult> {
+  const actor = await resolveMemberWorkspaceActorContext()
+
+  if (actor.isAdmin) {
+    return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
+  }
+
+  if (!actor.canEdit) {
+    return { error: "You do not have access to delete tasks." }
+  }
+
+  const normalizedTaskId = taskId.trim()
+  if (!normalizedTaskId) {
+    return { error: "Choose a task." }
+  }
+
+  const taskQuery = actor.supabase
+    .from("organization_tasks")
+    .select("id, org_id, project_id")
+    .eq("id", normalizedTaskId)
+
+  const { data: task, error: taskError } = await taskQuery
+    .eq("org_id", actor.activeOrg.orgId)
+    .maybeSingle<{ id: string; org_id: string; project_id: string }>()
+
+  if (taskError || !task) {
+    return { error: "Task not found." }
+  }
+
+  const admin = createSupabaseAdminClient()
+
+  const { error: assigneeDeleteError } = await admin
+    .from("organization_task_assignees")
+    .delete()
+    .eq("task_id", normalizedTaskId)
+
+  if (assigneeDeleteError) {
+    return { error: "Unable to delete task assignees." }
+  }
+
+  const { error: taskDeleteError } = await admin
+    .from("organization_tasks")
+    .delete()
+    .eq("id", normalizedTaskId)
+    .eq("org_id", task.org_id)
+
+  if (taskDeleteError) {
+    return { error: "Unable to delete task." }
+  }
+
+  await adjustProjectTaskCount({
+    admin,
+    projectId: task.project_id,
+    delta: -1,
+    updatedBy: actor.userId,
+  })
+
+  revalidatePath("/my-tasks")
+  revalidatePath("/projects")
+  revalidatePath(`/projects/${task.project_id}`)
+
+  return { ok: true, taskId: normalizedTaskId, projectId: task.project_id }
 }

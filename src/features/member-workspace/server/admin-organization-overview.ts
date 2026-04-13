@@ -1,5 +1,6 @@
 import { addDays } from "date-fns"
 
+import { fetchAcceleratorProgressTotalsByUserId } from "@/lib/accelerator/progress"
 import type { Database, Json } from "@/lib/supabase"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -12,6 +13,7 @@ import type {
   PlatformAdminDashboardLabProject,
   PlatformAdminDashboardLabStatus,
 } from "@/features/platform-admin-dashboard"
+import { computeAdminOrganizationSetupSummary } from "./admin-organization-setup"
 import type { OrganizationProjectRecord } from "./project-starter-data"
 
 type ServerSupabase = Awaited<ReturnType<typeof createSupabaseServerClient>>
@@ -39,7 +41,18 @@ type ProfileRow = Pick<
   "id" | "full_name" | "avatar_url" | "headline" | "email" | "role"
 >
 
+type ProgramRow = {
+  user_id: string
+  title: string | null
+  goal_cents: number | null
+}
+
 function toRecord(value: Json | null): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {}
+  return value as Record<string, unknown>
+}
+
+function toUnknownRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {}
   return value as Record<string, unknown>
 }
@@ -72,6 +85,28 @@ function resolveOrganizationName({
   return "Organization"
 }
 
+function resolveOrganizationOwner({
+  organization,
+  ownerProfile,
+  members,
+}: {
+  organization: OrganizationRow
+  ownerProfile: ProfileRow | null
+  members: MemberWorkspaceAdminOrganizationMember[]
+}) {
+  const ownerMember = members.find((member) => member.isOwner) ?? null
+  const name =
+    toTrimmedString(ownerMember?.name) ||
+    toTrimmedString(ownerProfile?.full_name) ||
+    toTrimmedString(ownerProfile?.email) ||
+    toTrimmedString(organization.public_slug) ||
+    "Organization owner"
+  const avatarUrl =
+    toTrimmedString(ownerMember?.avatarUrl) || toTrimmedString(ownerProfile?.avatar_url) || null
+
+  return { name, avatarUrl }
+}
+
 function rolePriority(role: string) {
   switch (role) {
     case "owner":
@@ -90,30 +125,18 @@ function rolePriority(role: string) {
 function computeSetupSummary({
   organization,
   memberCount,
+  programs,
 }: {
   organization: OrganizationRow
   memberCount: number
+  programs: ProgramRow[]
 }) {
-  const profile = toRecord(organization.profile)
-  const checks = [
-    hasText(profile.name),
-    hasText(profile.tagline) || hasText(profile.mission) || hasText(profile.vision),
-    hasText(profile.logoUrl),
-    Boolean(organization.public_slug) || hasText(profile.website),
-    Boolean(organization.location_lat && organization.location_lng) ||
-      hasText(profile.address) ||
-      hasText(profile.addressCity) ||
-      hasText(profile.addressState),
-    memberCount > 0,
-  ]
-
-  const completedCount = checks.filter(Boolean).length
-  const totalCount = checks.length
-
-  return {
-    setupProgress: Math.round((completedCount / totalCount) * 100),
-    missingSetupCount: totalCount - completedCount,
-  }
+  return computeAdminOrganizationSetupSummary({
+    profile: organization.profile,
+    publicSlug: organization.public_slug,
+    memberCount,
+    programs,
+  })
 }
 
 function resolveProjectStatus({
@@ -222,10 +245,14 @@ function buildOrganizationSummary({
   organization,
   memberships,
   profilesById,
+  programsByOrgId,
+  acceleratorProgressByOrgId,
 }: {
   organization: OrganizationRow
   memberships: MembershipRow[]
   profilesById: Map<string, ProfileRow>
+  programsByOrgId: Map<string, ProgramRow[]>
+  acceleratorProgressByOrgId: Map<string, { percent: number }>
 }): MemberWorkspaceAdminOrganizationSummary {
   const ownerProfile = profilesById.get(organization.user_id) ?? null
   const members = buildOrganizationMembers({
@@ -233,27 +260,76 @@ function buildOrganizationSummary({
     memberships,
     profilesById,
   })
-  const { setupProgress, missingSetupCount } = computeSetupSummary({
+  const owner = resolveOrganizationOwner({
+    organization,
+    ownerProfile,
+    members,
+  })
+  const { setupProgress, setupCompletedCount, setupTotalCount, missingSetupCount, setupItems } = computeSetupSummary({
     organization,
     memberCount: members.length,
+    programs: programsByOrgId.get(organization.user_id) ?? [],
   })
 
   return {
     orgId: organization.user_id,
     canonicalProjectId: null,
     name: resolveOrganizationName({ organization, ownerProfile }),
+    ownerName: owner.name,
+    ownerAvatarUrl: owner.avatarUrl,
     publicSlug: organization.public_slug ?? null,
     organizationStatus: organization.status,
     isPublic: Boolean(organization.is_public),
     createdAt: organization.created_at,
     updatedAt: organization.updated_at,
+    acceleratorProgress: acceleratorProgressByOrgId.get(organization.user_id)?.percent ?? 0,
     setupProgress,
+    setupCompletedCount,
+    setupTotalCount,
     missingSetupCount,
     memberCount: members.length,
     tags: buildSummaryTags({ organization, setupProgress }),
     members,
+    setupItems,
     profile: toRecord(organization.profile),
   }
+}
+
+async function loadProgramsByOrgId({
+  supabase,
+  orgIds,
+}: {
+  supabase: ServerSupabase
+  orgIds: string[]
+}) {
+  const uniqueIds = Array.from(new Set(orgIds.filter(Boolean)))
+  const programsByOrgId = new Map<string, ProgramRow[]>()
+
+  if (uniqueIds.length === 0) {
+    return programsByOrgId
+  }
+
+  const { data, error } = await supabase
+    .from("programs")
+    .select("user_id, title, goal_cents")
+    .in("user_id", uniqueIds)
+    .returns<ProgramRow[]>()
+
+  if (error) {
+    const code = (error as { code?: string }).code
+    if (code === "42P01" || code === "42703") {
+      return programsByOrgId
+    }
+    throw supabaseErrorToError(error, "Unable to load organization programs.")
+  }
+
+  for (const program of data ?? []) {
+    const list = programsByOrgId.get(program.user_id) ?? []
+    list.push(program)
+    programsByOrgId.set(program.user_id, list)
+  }
+
+  return programsByOrgId
 }
 
 async function loadProfilesById({
@@ -306,13 +382,24 @@ export async function loadAdminOrganizationSummaries({
 
   const organizationRows = organizations ?? []
   const membershipRows = memberships ?? []
-  const profilesById = await loadProfilesById({
-    supabase,
-    ids: [
-      ...organizationRows.map((organization) => organization.user_id),
-      ...membershipRows.map((membership) => membership.member_id),
-    ],
-  })
+  const [profilesById, programsByOrgId, acceleratorProgressByOrgId] = await Promise.all([
+    loadProfilesById({
+      supabase,
+      ids: [
+        ...organizationRows.map((organization) => organization.user_id),
+        ...membershipRows.map((membership) => membership.member_id),
+      ],
+    }),
+    loadProgramsByOrgId({
+      supabase,
+      orgIds: organizationRows.map((organization) => organization.user_id),
+    }),
+    fetchAcceleratorProgressTotalsByUserId({
+      supabase,
+      userIds: organizationRows.map((organization) => organization.user_id),
+      isAdmin: false,
+    }),
+  ])
 
   const membershipsByOrgId = new Map<string, MembershipRow[]>()
   for (const membership of membershipRows) {
@@ -327,6 +414,8 @@ export async function loadAdminOrganizationSummaries({
         organization,
         memberships: membershipsByOrgId.get(organization.user_id) ?? [],
         profilesById,
+        programsByOrgId,
+        acceleratorProgressByOrgId,
       }),
     )
     .sort((left, right) => left.name.localeCompare(right.name))
@@ -363,15 +452,28 @@ export async function loadAdminOrganizationSummaryById({
     throw supabaseErrorToError(membershipsError, "Unable to load organization memberships.")
   }
 
-  const profilesById = await loadProfilesById({
-    supabase,
-    ids: [organization.user_id, ...(memberships ?? []).map((membership) => membership.member_id)],
-  })
+  const [profilesById, programsByOrgId, acceleratorProgressByOrgId] = await Promise.all([
+    loadProfilesById({
+      supabase,
+      ids: [organization.user_id, ...(memberships ?? []).map((membership) => membership.member_id)],
+    }),
+    loadProgramsByOrgId({
+      supabase,
+      orgIds: [organization.user_id],
+    }),
+    fetchAcceleratorProgressTotalsByUserId({
+      supabase,
+      userIds: [organization.user_id],
+      isAdmin: false,
+    }),
+  ])
 
   return buildOrganizationSummary({
     organization,
     memberships: memberships ?? [],
     profilesById,
+    programsByOrgId,
+    acceleratorProgressByOrgId,
   })
 }
 
@@ -390,16 +492,20 @@ export function mapAdminOrganizationSummaryToProject(
   })
 
   return {
-    id: organization.orgId,
+    id: organization.canonicalProjectId ?? organization.orgId,
+    organizationId: organization.orgId,
+    projectKind: "organization_admin",
     name: organization.name,
-    taskCount: organization.missingSetupCount,
-    progress: organization.setupProgress,
+    taskCount: organization.setupTotalCount,
+    progress: organization.acceleratorProgress,
     startDate: createdAt,
     endDate,
     status,
     priority: resolveProjectPriority(organization.setupProgress),
     tags: organization.tags,
     members: organization.members.slice(0, 4).map((member) => member.name),
+    primaryPersonName: organization.ownerName,
+    primaryPersonAvatarUrl: organization.ownerAvatarUrl,
     client:
       organization.publicSlug && organization.publicSlug.length > 0
         ? `/${organization.publicSlug}`
@@ -413,7 +519,16 @@ export function mapAdminOrganizationSummaryToProject(
           ? "Pending setup"
           : "Organization account",
     durationLabel: `${organization.memberCount} member${organization.memberCount === 1 ? "" : "s"}`,
-    tasks: [],
+    taskSummaryLabel: "Setup items",
+    tasks: organization.setupItems.map((item) => ({
+      id: `${organization.orgId}-${item.id}`,
+      name: item.label,
+      type: "task",
+      assignee: organization.ownerName,
+      status: item.complete ? "done" : "todo",
+      startDate: createdAt,
+      endDate,
+    })),
   }
 }
 

@@ -95,6 +95,19 @@ describe("auth recovery flow", () => {
     expect(location.searchParams.get("notice")).toBe("email_confirmed_sign_in")
   })
 
+  it("falls back to workspace after a successful non-recovery auth callback without an explicit redirect", async () => {
+    const supabase = buildRouteSupabaseStub()
+    createSupabaseRouteHandlerClientMock.mockReturnValue(supabase)
+
+    const { handleSupabaseAuthCallback } = await import("@/lib/supabase/auth-callback")
+    const response = await handleSupabaseAuthCallback(
+      new NextRequest("http://localhost/auth/callback?code=test-code"),
+    )
+
+    const location = new URL(response.headers.get("location") ?? "http://localhost/")
+    expect(location.pathname).toBe("/workspace")
+  })
+
   it("resolves the update-password page to retry immediately when recovery is invalid", async () => {
     const { resolveUpdatePasswordPageState } = await import("@/app/(auth)/update-password/page")
 

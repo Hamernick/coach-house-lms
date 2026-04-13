@@ -4,6 +4,7 @@ import { fetchSidebarTree, type SidebarClass } from "@/lib/academy"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { resolvePricingPlanTier, type PricingPlanTier } from "@/lib/billing/plan-tier"
+import { loadAppPricingFeedbackPrompt } from "@/features/app-pricing-feedback"
 import { loadAccessibleOrganizations } from "@/features/member-workspace"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import type { Json } from "@/lib/supabase"
@@ -35,6 +36,7 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
   let showAccelerator = false
   let tutorialWelcomePlatform = false
   let tutorialWelcomeAccelerator = false
+  let appPricingFeedbackPrompt: DashboardLayoutState["appPricingFeedbackPrompt"] = null
   let hasActiveSubscription = false
   let hasAcceleratorAccess = false
   let hasElectiveAccess = false
@@ -95,8 +97,12 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
     metadataIntentFocus !== "fund"
       ? loadAccessibleOrganizations(supabase, user.id)
       : Promise.resolve([])
+  const appPricingFeedbackPromptPromise = loadAppPricingFeedbackPrompt({
+    supabase,
+    userId: user.id,
+  })
 
-  const [accessibleOrganizations, orgRowResult, entitlements] = await Promise.all([
+  const [accessibleOrganizations, orgRowResult, entitlements, resolvedPricingFeedbackPrompt] = await Promise.all([
     accessibleOrganizationsPromise,
     supabase
       .from("organizations")
@@ -114,7 +120,10 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
       orgUserId: orgId,
       isAdmin,
     }),
+    appPricingFeedbackPromptPromise,
   ])
+
+  appPricingFeedbackPrompt = resolvedPricingFeedbackPrompt
 
   if (metadataIntentFocus !== "fund") {
     const resolvedActiveOrganization =
@@ -236,6 +245,7 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
       platform: tutorialWelcomePlatform,
       accelerator: tutorialWelcomeAccelerator,
     },
+    appPricingFeedbackPrompt,
     onboardingDefaults: {
       open: needsOnboarding,
       ...onboardingDefaults,

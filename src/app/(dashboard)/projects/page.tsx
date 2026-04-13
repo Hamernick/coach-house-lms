@@ -1,8 +1,8 @@
 import {
+  clearMemberWorkspaceStarterDataAction,
   createMemberWorkspaceProjectAction,
   loadMemberWorkspaceProjectsPage,
   MemberWorkspaceProjectsPage,
-  resetMemberWorkspaceStarterProjectsAction,
   updateMemberWorkspaceProjectAction,
   updateMemberWorkspaceProjectScheduleAction,
   updateMemberWorkspaceProjectStatusAction,
@@ -26,7 +26,7 @@ export default async function ProjectsPage() {
       storageMode={storageMode}
       canResetStarterData={canResetStarterData}
       starterProjectCount={starterProjectCount}
-      resetStarterProjectsAction={resetMemberWorkspaceStarterProjectsAction}
+      clearStarterDataAction={clearMemberWorkspaceStarterDataAction}
       createProjectAction={canCreateProjects ? createMemberWorkspaceProjectAction : undefined}
       updateProjectAction={canCreateProjects ? updateMemberWorkspaceProjectAction : undefined}
       updateProjectScheduleAction={

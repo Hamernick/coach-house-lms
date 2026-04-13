@@ -38,6 +38,7 @@ import type {
   MemberWorkspaceTaskItem,
   MemberWorkspaceTaskStatus,
 } from "../../types"
+import { MemberWorkspaceClearStarterDataButton } from "../shared/member-workspace-clear-starter-data-button"
 
 type MemberWorkspaceTaskFilterCounts = {
   status?: Record<string, number>
@@ -124,9 +125,9 @@ export function MemberWorkspaceTasksPage({
   storageMode: _storageMode,
   starterTaskCount: _starterTaskCount,
   hasAnyOrgTasks,
-  canResetStarterData: _canResetStarterData,
+  canResetStarterData,
   canManageTasks,
-  resetStarterProjectsAction: _resetStarterProjectsAction,
+  clearStarterDataAction,
   updateTaskStatusAction,
   createTaskAction,
   updateTaskAction,
@@ -141,8 +142,8 @@ export function MemberWorkspaceTasksPage({
   hasAnyOrgTasks: boolean
   canResetStarterData: boolean
   canManageTasks: boolean
-  resetStarterProjectsAction?: () => Promise<{ ok: true } | { error: string }>
-  updateTaskStatusAction: (
+  clearStarterDataAction?: () => Promise<{ ok: true } | { error: string }>
+  updateTaskStatusAction?: (
     taskId: string,
     nextStatus: MemberWorkspaceTaskStatus,
   ) => Promise<{ ok: true; taskId: string; status: MemberWorkspaceTaskStatus } | { error: string }>
@@ -311,6 +312,10 @@ export function MemberWorkspaceTasksPage({
   }
 
   const handleToggleTask = (taskId: string) => {
+    if (!canManageTasks || !updateTaskStatusAction) {
+      return
+    }
+
     const currentTask = groups
       .flatMap((group) => group.tasks)
       .find((task) => task.id === taskId)
@@ -400,15 +405,22 @@ export function MemberWorkspaceTasksPage({
           <p className="text-base font-medium text-foreground">Tasks</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => openCreateTask()}
-            disabled={!canOpenTaskCreate}
-          >
-            <Plus className="mr-1.5 h-4 w-4" />
-            New Task
-          </Button>
+          {canResetStarterData && clearStarterDataAction ? (
+            <MemberWorkspaceClearStarterDataButton
+              clearStarterDataAction={clearStarterDataAction}
+            />
+          ) : null}
+          {canManageTasks ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => openCreateTask()}
+              disabled={!canOpenTaskCreate}
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              New Task
+            </Button>
+          ) : null}
         </div>
       </div>
 

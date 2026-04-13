@@ -94,6 +94,7 @@ export function MemberWorkspaceProjectProgress({
 }) {
   const { totalTasks, doneTasks, percent } = getProjectProgress(project)
   const color = getProgressColor(percent)
+  const taskSummaryLabel = project.taskSummaryLabel ?? "Tasks"
 
   return (
     <div className={cn("flex items-center gap-2 text-sm text-muted-foreground", className)}>
@@ -103,7 +104,7 @@ export function MemberWorkspaceProjectProgress({
         {showTaskSummary && totalTasks > 0 ? (
           <span className="flex items-center gap-1 text-sm">
             <ListChecks className="h-4 w-4" />
-            {doneTasks} / {totalTasks} Tasks
+            {doneTasks} / {totalTasks} {taskSummaryLabel}
           </span>
         ) : null}
       </div>

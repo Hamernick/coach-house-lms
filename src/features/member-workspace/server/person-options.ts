@@ -5,16 +5,19 @@ import type { MemberWorkspacePersonOption } from "../types"
 
 type ServerSupabase = Awaited<ReturnType<typeof createSupabaseServerClient>>
 
-type OrganizationPeopleRow = Pick<Database["public"]["Tables"]["organizations"]["Row"], "user_id">
+type OrganizationPeopleRow = Pick<
+  Database["public"]["Tables"]["organizations"]["Row"],
+  "user_id"
+>
 
 type MembershipPeopleRow = Pick<
   Database["public"]["Tables"]["organization_memberships"]["Row"],
-  "org_id" | "member_id" | "member_email"
+  "org_id" | "member_id" | "member_email" | "role"
 >
 
 type ProfilePeopleRow = Pick<
   Database["public"]["Tables"]["profiles"]["Row"],
-  "id" | "full_name" | "avatar_url" | "email"
+  "id" | "full_name" | "avatar_url" | "email" | "role"
 >
 
 function toTrimmedString(value: unknown) {
@@ -35,18 +38,82 @@ function optionKey({
   return `name:${name.toLowerCase()}`
 }
 
+function buildFallbackId({
+  id,
+  email,
+  name,
+}: {
+  id: string | null
+  email: string | null
+  name: string
+}) {
+  return id ?? email ?? name.toLowerCase().replace(/\s+/g, "-")
+}
+
+function normalizeOrganizationRoleLabel(role: string | null | undefined) {
+  switch (role) {
+    case "owner":
+      return "Owner"
+    case "admin":
+      return "Org admin"
+    case "staff":
+      return "Staff"
+    case "board":
+      return "Board member"
+    case "member":
+      return "Member"
+    default:
+      return "Team member"
+  }
+}
+
+function sortGroupPriority(groupKey: MemberWorkspacePersonOption["groupKey"]) {
+  if (groupKey === "platform-admins") return 0
+  return 1
+}
+
+function mergeGroupKey(
+  existing: MemberWorkspacePersonOption["groupKey"] | undefined,
+  next: MemberWorkspacePersonOption["groupKey"] | undefined,
+) {
+  if (existing === "platform-admins" || next === "platform-admins") {
+    return "platform-admins" as const
+  }
+
+  return next ?? existing
+}
+
+function mergeGroupLabel({
+  existing,
+  next,
+  groupKey,
+}: {
+  existing: string | null | undefined
+  next: string | null | undefined
+  groupKey: MemberWorkspacePersonOption["groupKey"] | undefined
+}) {
+  if (groupKey === "platform-admins") return "Coach House admins"
+  return next ?? existing ?? null
+}
+
 function upsertPersonOption({
   map,
   id,
   name,
   email,
   avatarUrl,
+  roleLabel,
+  groupKey,
+  groupLabel,
 }: {
   map: Map<string, MemberWorkspacePersonOption>
   id: string | null
   name: string | null
   email?: string | null
   avatarUrl?: string | null
+  roleLabel?: string | null
+  groupKey?: MemberWorkspacePersonOption["groupKey"]
+  groupLabel?: string | null
 }) {
   const normalizedName = toTrimmedString(name)
   if (!normalizedName) return
@@ -54,45 +121,130 @@ function upsertPersonOption({
   const normalizedId = toTrimmedString(id) || null
   const normalizedEmail = toTrimmedString(email) || null
   const normalizedAvatarUrl = toTrimmedString(avatarUrl) || null
+  const normalizedRoleLabel = toTrimmedString(roleLabel) || null
+  const normalizedGroupKey = mergeGroupKey(undefined, groupKey)
+  const normalizedGroupLabel =
+    toTrimmedString(groupLabel) ||
+    (normalizedGroupKey === "platform-admins" ? "Coach House admins" : null)
   const key = optionKey({
     id: normalizedId,
     email: normalizedEmail,
     name: normalizedName,
   })
   const existing = map.get(key)
+  const mergedGroupKey = mergeGroupKey(existing?.groupKey, normalizedGroupKey)
 
   map.set(key, {
-    id: normalizedId ?? normalizedEmail ?? normalizedName.toLowerCase().replace(/\s+/g, "-"),
+    id: buildFallbackId({
+      id: normalizedId ?? existing?.id ?? null,
+      email: normalizedEmail ?? existing?.email ?? null,
+      name: normalizedName,
+    }),
     name: normalizedName,
     avatarUrl: normalizedAvatarUrl ?? existing?.avatarUrl ?? null,
+    email: normalizedEmail ?? existing?.email ?? null,
+    roleLabel: normalizedRoleLabel ?? existing?.roleLabel ?? null,
+    groupKey: mergedGroupKey,
+    groupLabel: mergeGroupLabel({
+      existing: existing?.groupLabel,
+      next: normalizedGroupLabel,
+      groupKey: mergedGroupKey,
+    }),
   })
+}
+
+async function loadProfilesByIds({
+  profileIds,
+  supabase,
+}: {
+  profileIds: string[]
+  supabase: ServerSupabase
+}) {
+  if (profileIds.length === 0) {
+    return new Map<string, ProfilePeopleRow>()
+  }
+
+  const { data: profiles, error: profilesError } = await supabase
+    .from("profiles")
+    .select("id, full_name, avatar_url, email, role")
+    .in("id", profileIds)
+    .returns<ProfilePeopleRow[]>()
+
+  if (profilesError) {
+    throw supabaseErrorToError(profilesError, "Unable to load member profiles.")
+  }
+
+  return new Map((profiles ?? []).map((profile) => [profile.id, profile] as const))
+}
+
+async function loadPlatformAdminProfiles({
+  includePlatformAdmins,
+  supabase,
+}: {
+  includePlatformAdmins: boolean
+  supabase: ServerSupabase
+}) {
+  if (!includePlatformAdmins) {
+    return [] as ProfilePeopleRow[]
+  }
+
+  const { data: platformAdmins, error: platformAdminsError } = await supabase
+    .from("profiles")
+    .select("id, full_name, avatar_url, email, role")
+    .eq("role", "admin")
+    .returns<ProfilePeopleRow[]>()
+
+  if (platformAdminsError) {
+    throw supabaseErrorToError(platformAdminsError, "Unable to load Coach House admins.")
+  }
+
+  return platformAdmins ?? []
 }
 
 export async function loadMemberWorkspacePersonOptionsForOrganizations({
   orgIds,
   supabase,
+  includePlatformAdmins = false,
 }: {
   orgIds: string[]
   supabase: ServerSupabase
+  includePlatformAdmins?: boolean
 }): Promise<MemberWorkspacePersonOption[]> {
   const uniqueOrgIds = Array.from(new Set(orgIds.filter(Boolean)))
-  if (uniqueOrgIds.length === 0) {
+  if (uniqueOrgIds.length === 0 && !includePlatformAdmins) {
     return []
   }
 
-  const [{ data: organizations, error: organizationsError }, { data: memberships, error: membershipsError }] =
-    await Promise.all([
-      supabase
-        .from("organizations")
-        .select("user_id")
-        .in("user_id", uniqueOrgIds)
-        .returns<OrganizationPeopleRow[]>(),
-      supabase
-        .from("organization_memberships")
-        .select("org_id, member_id, member_email")
-        .in("org_id", uniqueOrgIds)
-        .returns<MembershipPeopleRow[]>(),
-    ])
+  const [
+    { data: organizations, error: organizationsError },
+    { data: memberships, error: membershipsError },
+    platformAdminProfiles,
+  ] = await Promise.all([
+    uniqueOrgIds.length > 0
+      ? supabase
+          .from("organizations")
+          .select("user_id")
+          .in("user_id", uniqueOrgIds)
+          .returns<OrganizationPeopleRow[]>()
+      : Promise.resolve({
+          data: [] as OrganizationPeopleRow[],
+          error: null,
+        }),
+    uniqueOrgIds.length > 0
+      ? supabase
+          .from("organization_memberships")
+          .select("org_id, member_id, member_email, role")
+          .in("org_id", uniqueOrgIds)
+          .returns<MembershipPeopleRow[]>()
+      : Promise.resolve({
+          data: [] as MembershipPeopleRow[],
+          error: null,
+        }),
+    loadPlatformAdminProfiles({
+      includePlatformAdmins,
+      supabase,
+    }),
+  ])
 
   if (organizationsError) {
     throw supabaseErrorToError(organizationsError, "Unable to load organization people.")
@@ -107,26 +259,30 @@ export async function loadMemberWorkspacePersonOptionsForOrganizations({
       [
         ...(organizations ?? []).map((organization) => organization.user_id),
         ...(memberships ?? []).map((membership) => membership.member_id),
+        ...platformAdminProfiles.map((profile) => profile.id),
       ].filter(Boolean),
     ),
   )
 
-  let profilesById = new Map<string, ProfilePeopleRow>()
-  if (profileIds.length > 0) {
-    const { data: profiles, error: profilesError } = await supabase
-      .from("profiles")
-      .select("id, full_name, avatar_url, email")
-      .in("id", profileIds)
-      .returns<ProfilePeopleRow[]>()
-
-    if (profilesError) {
-      throw supabaseErrorToError(profilesError, "Unable to load member profiles.")
-    }
-
-    profilesById = new Map((profiles ?? []).map((profile) => [profile.id, profile] as const))
-  }
+  const profilesById = await loadProfilesByIds({
+    profileIds,
+    supabase,
+  })
 
   const options = new Map<string, MemberWorkspacePersonOption>()
+
+  for (const platformAdmin of platformAdminProfiles) {
+    upsertPersonOption({
+      map: options,
+      id: platformAdmin.id,
+      name: platformAdmin.full_name ?? platformAdmin.email ?? "Coach House admin",
+      email: platformAdmin.email ?? null,
+      avatarUrl: platformAdmin.avatar_url ?? null,
+      roleLabel: "Coach House admin",
+      groupKey: "platform-admins",
+      groupLabel: "Coach House admins",
+    })
+  }
 
   for (const organization of organizations ?? []) {
     const ownerProfile = profilesById.get(organization.user_id) ?? null
@@ -136,6 +292,9 @@ export async function loadMemberWorkspacePersonOptionsForOrganizations({
       name: ownerProfile?.full_name ?? ownerProfile?.email ?? "Organization owner",
       email: ownerProfile?.email ?? null,
       avatarUrl: ownerProfile?.avatar_url ?? null,
+      roleLabel: "Owner",
+      groupKey: "organization-team",
+      groupLabel: "Organization team",
     })
   }
 
@@ -147,10 +306,15 @@ export async function loadMemberWorkspacePersonOptionsForOrganizations({
       name: profile?.full_name ?? membership.member_email ?? "Unknown member",
       email: profile?.email ?? membership.member_email ?? null,
       avatarUrl: profile?.avatar_url ?? null,
+      roleLabel: normalizeOrganizationRoleLabel(membership.role),
+      groupKey: "organization-team",
+      groupLabel: "Organization team",
     })
   }
 
-  return Array.from(options.values()).sort((left, right) =>
-    left.name.localeCompare(right.name),
-  )
+  return Array.from(options.values()).sort((left, right) => {
+    const groupDiff = sortGroupPriority(left.groupKey) - sortGroupPriority(right.groupKey)
+    if (groupDiff !== 0) return groupDiff
+    return left.name.localeCompare(right.name)
+  })
 }

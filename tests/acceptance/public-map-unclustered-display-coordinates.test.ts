@@ -133,4 +133,37 @@ describe("resolveUnclusteredDisplayCoordinates", () => {
     expect(displayCoordinates.get("org-2")).toBeTruthy()
     expect(displayCoordinates.get("org-1")).not.toEqual(displayCoordinates.get("org-2"))
   })
+
+  it("fans out near-identical coordinates when their markers would still overlap on screen", () => {
+    const map = {
+      getCenter: vi.fn().mockReturnValue({ lng: -87.6298, lat: 41.8781 }),
+      project: vi.fn(([longitude, latitude]: [number, number]) => ({
+        x: 320 + (longitude + 87.6298) * 10_000,
+        y: 240 + (latitude - 41.8781) * 10_000,
+      })),
+      unproject: vi.fn(([x, y]: [number, number]) => ({
+        lng: -87.6298 + (x - 320) / 10_000,
+        lat: 41.8781 + (y - 240) / 10_000,
+      })),
+    } as unknown as mapboxgl.Map
+
+    const organizationById = new Map<string, PublicMapOrganization>([
+      ["org-1", buildOrganization("org-1", -87.6298, 41.8781)],
+      ["org-2", buildOrganization("org-2", -87.6294, 41.8781)],
+    ])
+
+    const displayCoordinates = resolveUnclusteredDisplayCoordinates({
+      map,
+      features: [
+        buildFeature("org-1", -87.6298, 41.8781),
+        buildFeature("org-2", -87.6294, 41.8781),
+      ],
+      organizationById,
+    })
+
+    expect(displayCoordinates.get("org-1")).toBeTruthy()
+    expect(displayCoordinates.get("org-2")).toBeTruthy()
+    expect(displayCoordinates.get("org-1")).not.toEqual([-87.6298, 41.8781])
+    expect(displayCoordinates.get("org-2")).not.toEqual([-87.6294, 41.8781])
+  })
 })

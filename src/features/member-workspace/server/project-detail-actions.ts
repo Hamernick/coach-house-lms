@@ -49,6 +49,9 @@ type OrganizationProjectQuickLinkInsert =
 type OrganizationProjectQuickLinkUpdate =
   Database["public"]["Tables"]["organization_project_quick_links"]["Update"]
 
+const PLATFORM_ADMIN_PROJECT_DETAIL_MUTATION_ERROR =
+  "Platform admins can view organization project details here, but cannot edit them."
+
 function normalizeProjectNoteTitle(value: string) {
   return value.trim()
 }
@@ -56,6 +59,14 @@ function normalizeProjectNoteTitle(value: string) {
 function normalizeProjectNoteContent(value: string | undefined) {
   const trimmed = value?.trim() ?? ""
   return trimmed.length > 0 ? trimmed : null
+}
+
+function normalizeProjectNoteType(value: string | undefined) {
+  if (value === "audio" || value === "meeting") {
+    return value
+  }
+
+  return "general"
 }
 
 async function resolveProjectForDetailMutation({
@@ -85,11 +96,15 @@ async function resolveProjectForDetailMutation({
     return { error: "Unable to find that project." }
   }
 
-  if (!actor.isAdmin && project.org_id !== actor.activeOrg.orgId) {
+  if (actor.isAdmin) {
+    return { error: PLATFORM_ADMIN_PROJECT_DETAIL_MUTATION_ERROR }
+  }
+
+  if (project.org_id !== actor.activeOrg.orgId) {
     return { error: "You can only manage project details for the active organization." }
   }
 
-  if (!actor.isAdmin && !actor.canEdit) {
+  if (!actor.canEdit) {
     return { error: "Only organization editors can manage project details." }
   }
 
@@ -124,7 +139,7 @@ export async function createMemberWorkspaceProjectNoteAction(
     project_id: project.project.id,
     title,
     content: normalizeProjectNoteContent(input.content),
-    note_type: "general",
+    note_type: normalizeProjectNoteType(input.noteType),
     status: "completed",
     created_by: actor.userId,
     updated_by: actor.userId,
@@ -172,6 +187,10 @@ export async function updateMemberWorkspaceProjectNoteAction(
     title,
     content: normalizeProjectNoteContent(input.content),
     updated_by: actor.userId,
+  }
+
+  if (input.noteType) {
+    payload.note_type = normalizeProjectNoteType(input.noteType)
   }
 
   const { error } = await actor.supabase

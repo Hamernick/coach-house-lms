@@ -8,6 +8,7 @@ import {
   buildStarterOrganizationTaskAssignees,
   buildStarterOrganizationTasks,
 } from "./task-starter-data"
+import { loadTaskProjectScope } from "./task-project-scope"
 import {
   isMissingOrganizationProjectsTableError,
   isMissingOrganizationTaskAssigneesTableError,
@@ -28,20 +29,7 @@ export async function ensureStarterTasksForOrg({
   userId: string
   supabase: ServerSupabaseClient
 }) {
-  const { count, error: existingTasksError } = await supabase
-    .from("organization_tasks")
-    .select("id", { count: "exact", head: true })
-    .eq("org_id", orgId)
-
-  if (existingTasksError) {
-    if (isMissingOrganizationTasksTableError(existingTasksError)) return
-    throw toMemberWorkspaceDataError(
-      existingTasksError,
-      "Unable to load workspace tasks.",
-    )
-  }
-
-  if ((count ?? 0) > 0 || !canEdit) {
+  if (!canEdit) {
     return
   }
 
@@ -51,6 +39,33 @@ export async function ensureStarterTasksForOrg({
     userId,
     supabase,
   })
+
+  const { projectIds } = await loadTaskProjectScope({
+    orgId,
+    supabase,
+  })
+
+  if (projectIds.size === 0) {
+    return
+  }
+
+  const { count, error: existingTasksError } = await supabase
+    .from("organization_tasks")
+    .select("id", { count: "exact", head: true })
+    .eq("org_id", orgId)
+    .in("project_id", Array.from(projectIds))
+
+  if (existingTasksError) {
+    if (isMissingOrganizationTasksTableError(existingTasksError)) return
+    throw toMemberWorkspaceDataError(
+      existingTasksError,
+      "Unable to load workspace tasks.",
+    )
+  }
+
+  if ((count ?? 0) > 0) {
+    return
+  }
 
   const projectIdByStarterKey = await loadOrganizationProjectStarterIdMap({
     orgId,

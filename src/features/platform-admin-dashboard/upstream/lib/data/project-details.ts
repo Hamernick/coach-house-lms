@@ -17,7 +17,7 @@ export type User = {
 
 export type ProjectMeta = {
   priorityLabel: string
-  locationLabel: string
+  locationLabel?: string
   sprintLabel: string
   lastSyncLabel: string
 }
@@ -52,6 +52,10 @@ export type WorkstreamTask = {
   assignee?: User
   /** Optional start date for the task (used in task views). */
   startDate?: Date
+  /** Optional end date for the task (used in editors and scheduling views). */
+  endDate?: Date
+  /** Optional persisted order inside the project. */
+  sortOrder?: number
   /** Optional priority identifier for the task. */
   priority?: "no-priority" | "low" | "medium" | "high" | "urgent"
   /** Optional tag label for the task (e.g. Feature, Bug). */

@@ -109,6 +109,10 @@ describe("buildMemberWorkspaceProjectDetails", () => {
     expect(details.timelineTasks).toHaveLength(2)
     expect(details.backlog.statusLabel).toBe("Active")
     expect(details.meta.sprintLabel).toBe("Launch 3 weeks")
+    expect(details.meta.locationLabel).toBeUndefined()
+    expect(details.workstreams[0]?.tasks[0]?.assignee).toBeUndefined()
+    expect(details.workstreams[0]?.tasks[0]?.description).toBeUndefined()
+    expect(details.workstreams[0]?.tasks[0]?.priority).toBeUndefined()
     expect(details.notes).toEqual([
       expect.objectContaining({
           id: "note-1",
@@ -140,7 +144,7 @@ describe("buildMemberWorkspaceProjectDetails", () => {
     ])
   })
 
-  it("maps persisted project assets into files and falls back to them for quick links", () => {
+  it("maps persisted project assets into files without fabricating quick links", () => {
     const project: OrganizationProjectRecord = {
       id: "project-2",
       org_id: "org-1",
@@ -222,15 +226,75 @@ describe("buildMemberWorkspaceProjectDetails", () => {
         isLinkAsset: true,
       }),
     ])
-    expect(details.quickLinks).toEqual([
-      expect.objectContaining({
-        id: "asset-1",
-        name: "Org Intake Packet.pdf",
-      }),
-      expect.objectContaining({
-        id: "asset-2",
-        name: "Figma Board",
-      }),
+    expect(details.quickLinks).toEqual([])
+  })
+
+  it("preserves persisted task ordering inside a workstream and carries end dates", () => {
+    const project: OrganizationProjectRecord = {
+      id: "project-3",
+      org_id: "org-1",
+      name: "Member Workspace Refresh",
+      status: "active",
+      priority: "medium",
+      progress: 30,
+      start_date: "2026-04-01",
+      end_date: "2026-04-30",
+      client_name: "Coach House",
+      type_label: "Product",
+      duration_label: "4 weeks",
+      tags: [],
+      member_labels: ["Alex Rivera"],
+      task_count: 2,
+      description: "Inline editing rollout",
+      created_source: "user",
+      starter_seed_key: null,
+      starter_seed_version: null,
+      created_by: "user-1",
+      updated_by: "user-1",
+      created_at: "2026-04-01T00:00:00.000Z",
+      updated_at: "2026-04-02T00:00:00.000Z",
+    }
+
+    const details = buildMemberWorkspaceProjectDetails({
+      project,
+      tasks: [
+        {
+          id: "task-b",
+          project_id: "project-3",
+          title: "Second by date, first by order",
+          task_type: "task",
+          status: "todo",
+          start_date: "2026-04-20",
+          end_date: "2026-04-22",
+          sort_order: 0,
+        },
+        {
+          id: "task-a",
+          project_id: "project-3",
+          title: "First by date, second by order",
+          task_type: "task",
+          status: "todo",
+          start_date: "2026-04-05",
+          end_date: "2026-04-06",
+          sort_order: 1,
+        },
+      ],
+      assigneeOptions: [
+        {
+          id: "user-1",
+          name: "Alex Rivera",
+          avatarUrl: null,
+        },
+      ],
+    })
+
+    expect(details.workstreams).toHaveLength(1)
+    expect(details.workstreams[0]?.tasks.map((task) => task.id)).toEqual([
+      "task-b",
+      "task-a",
     ])
+    expect(details.workstreams[0]?.tasks[0]?.endDate?.toISOString()).toContain(
+      "2026-04-22"
+    )
   })
 })

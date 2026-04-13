@@ -1,4 +1,5 @@
 export {
+  clearMemberWorkspaceStarterDataAction,
   createMemberWorkspaceProjectAction,
   resetMemberWorkspaceStarterProjectsAction,
   updateMemberWorkspaceProjectAction,

@@ -288,6 +288,8 @@ export function createOrganizationClusterMarkerElement({
   button.style.setProperty("-webkit-tap-highlight-color", "transparent")
   button.style.userSelect = "none"
   button.style.overflow = "visible"
+  button.dataset.markerPlacement = "clustered"
+  button.dataset.markerState = "clustered"
   attachClusterMarkerReactGrabMetadata({
     button,
     clusterId,

@@ -3,6 +3,7 @@
 import { memo } from "react"
 
 import { WorkspaceCanvasSurfaceV2 } from "./workspace-canvas-v2"
+import { WorkspaceRealtimeCursorsOverlay } from "./workspace-board-flow-surface-cursors"
 
 import { type WorkspaceBoardToggleContext } from "./workspace-board-debug"
 import type {
@@ -65,38 +66,46 @@ export const WorkspaceBoardFlowSurface = memo(function WorkspaceBoardFlowSurface
   props: WorkspaceBoardFlowSurfaceProps,
 ) {
   return (
-    <WorkspaceCanvasSurfaceV2
-      boardState={props.boardState}
-      allowEditing={props.allowEditing}
-      presentationMode={props.presentationMode}
-      seed={props.seed}
-      organizationEditorData={props.organizationEditorData}
-      layoutFitRequestKey={props.layoutFitRequestKey}
-      acceleratorFocusRequestKey={props.acceleratorFocusRequestKey}
-      tutorialRestartRequestKey={props.tutorialRestartRequestKey}
-      onInitialOnboardingSubmit={props.onInitialOnboardingSubmit}
-      focusCardRequest={props.focusCardRequest}
-      tutorialCompletionExitRequest={props.tutorialCompletionExitRequest}
-      journeyGuideState={props.journeyGuideState}
-      onSizeChange={props.onSizeChange}
-      onCommunicationsChange={props.onCommunicationsChange}
-      onTrackerChange={props.onTrackerChange}
-      onAcceleratorStateChange={props.onAcceleratorStateChange}
-      onOpenAcceleratorStepNode={props.onOpenAcceleratorStepNode}
-      onCloseAcceleratorStepNode={props.onCloseAcceleratorStepNode}
-      onTutorialPrevious={props.onTutorialPrevious}
-      onTutorialNext={props.onTutorialNext}
-      onTutorialRestart={props.onTutorialRestart}
-      onTutorialShortcutOpened={props.onTutorialShortcutOpened}
-      onFocusCard={props.onFocusCard}
-      onPersistNodePosition={props.onPersistNodePosition}
-      onConnectCards={props.onConnectCards}
-      onDisconnectConnection={props.onDisconnectConnection}
-      onDisconnectAllConnections={props.onDisconnectAllConnections}
-      onToggleCardVisibility={props.onToggleCardVisibility}
-      onResetToBaseLayout={props.onResetToBaseLayout}
-      onTutorialCompletionExitHandled={props.onTutorialCompletionExitHandled}
-    />
+    <>
+      <WorkspaceCanvasSurfaceV2
+        boardState={props.boardState}
+        allowEditing={props.allowEditing}
+        presentationMode={props.presentationMode}
+        seed={props.seed}
+        organizationEditorData={props.organizationEditorData}
+        layoutFitRequestKey={props.layoutFitRequestKey}
+        acceleratorFocusRequestKey={props.acceleratorFocusRequestKey}
+        tutorialRestartRequestKey={props.tutorialRestartRequestKey}
+        onInitialOnboardingSubmit={props.onInitialOnboardingSubmit}
+        focusCardRequest={props.focusCardRequest}
+        tutorialCompletionExitRequest={props.tutorialCompletionExitRequest}
+        journeyGuideState={props.journeyGuideState}
+        onSizeChange={props.onSizeChange}
+        onCommunicationsChange={props.onCommunicationsChange}
+        onTrackerChange={props.onTrackerChange}
+        onAcceleratorStateChange={props.onAcceleratorStateChange}
+        onOpenAcceleratorStepNode={props.onOpenAcceleratorStepNode}
+        onCloseAcceleratorStepNode={props.onCloseAcceleratorStepNode}
+        onTutorialPrevious={props.onTutorialPrevious}
+        onTutorialNext={props.onTutorialNext}
+        onTutorialRestart={props.onTutorialRestart}
+        onTutorialShortcutOpened={props.onTutorialShortcutOpened}
+        onFocusCard={props.onFocusCard}
+        onPersistNodePosition={props.onPersistNodePosition}
+        onConnectCards={props.onConnectCards}
+        onDisconnectConnection={props.onDisconnectConnection}
+        onDisconnectAllConnections={props.onDisconnectAllConnections}
+        onToggleCardVisibility={props.onToggleCardVisibility}
+        onResetToBaseLayout={props.onResetToBaseLayout}
+        onTutorialCompletionExitHandled={props.onTutorialCompletionExitHandled}
+      />
+      <WorkspaceRealtimeCursorsOverlay
+        roomName={props.workspaceRoomName}
+        username={props.seed.viewerName}
+        suspendPublishing={props.presentationMode}
+        onConnectionStateChange={props.onCursorConnectionStateChange}
+      />
+    </>
   )
 })
 

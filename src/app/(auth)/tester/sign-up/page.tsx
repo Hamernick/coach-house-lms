@@ -3,6 +3,7 @@ import { redirect as redirectTo } from "next/navigation"
 import { AuthCard } from "@/components/auth/auth-card"
 import { AuthScreenShell } from "@/components/auth/auth-screen-shell"
 import { SignUpForm } from "@/components/auth/sign-up-form"
+import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
@@ -13,16 +14,9 @@ type TesterSignUpPageProps = {
   searchParams?: Promise<SearchParams>
 }
 
-function getSafeRedirect(value: unknown) {
-  if (typeof value !== "string") return undefined
-  if (!value.startsWith("/")) return undefined
-  if (value.startsWith("//")) return undefined
-  return value
-}
-
 export default async function TesterSignUpPage({ searchParams }: TesterSignUpPageProps) {
   const resolved = searchParams ? await searchParams : {}
-  const redirect = getSafeRedirect(resolved.redirect)
+  const redirect = getSafeRedirectPath(resolved.redirect)
 
   const supabase = await createSupabaseServerClient()
   const {
@@ -35,10 +29,10 @@ export default async function TesterSignUpPage({ searchParams }: TesterSignUpPag
   }
 
   if (user) {
-    redirectTo(redirect ?? "/organization")
+    redirectTo(redirect ?? DEFAULT_POST_AUTH_REDIRECT)
   }
 
-  const redirectTarget = redirect ?? "/organization"
+  const redirectTarget = redirect ?? DEFAULT_POST_AUTH_REDIRECT
   const loginHref = `/tester/login?redirect=${encodeURIComponent(redirectTarget)}`
 
   return (
@@ -56,4 +50,3 @@ export default async function TesterSignUpPage({ searchParams }: TesterSignUpPag
     </AuthScreenShell>
   )
 }
-

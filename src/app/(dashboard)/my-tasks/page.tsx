@@ -1,8 +1,8 @@
 import {
+  clearMemberWorkspaceStarterDataAction,
   createMemberWorkspaceTaskAction,
   loadMemberWorkspaceTasksPage,
   MemberWorkspaceTasksPage,
-  resetMemberWorkspaceStarterProjectsAction,
   updateMemberWorkspaceTaskOrderAction,
   updateMemberWorkspaceTaskAction,
   updateMemberWorkspaceTaskStatusAction,
@@ -29,11 +29,15 @@ export default async function MyTasksPage() {
       hasAnyOrgTasks={hasAnyOrgTasks}
       canResetStarterData={canResetStarterData}
       canManageTasks={canManageTasks}
-      resetStarterProjectsAction={resetMemberWorkspaceStarterProjectsAction}
-      updateTaskStatusAction={updateMemberWorkspaceTaskStatusAction}
-      createTaskAction={createMemberWorkspaceTaskAction}
-      updateTaskAction={updateMemberWorkspaceTaskAction}
-      updateTaskOrderAction={updateMemberWorkspaceTaskOrderAction}
+      clearStarterDataAction={clearMemberWorkspaceStarterDataAction}
+      updateTaskStatusAction={
+        canManageTasks ? updateMemberWorkspaceTaskStatusAction : undefined
+      }
+      createTaskAction={canManageTasks ? createMemberWorkspaceTaskAction : undefined}
+      updateTaskAction={canManageTasks ? updateMemberWorkspaceTaskAction : undefined}
+      updateTaskOrderAction={
+        canManageTasks ? updateMemberWorkspaceTaskOrderAction : undefined
+      }
       scope={scope}
       assigneeOptions={assigneeOptions}
       projectOptions={projectOptions}

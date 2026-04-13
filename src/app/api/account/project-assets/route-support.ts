@@ -59,7 +59,7 @@ export async function canAccessProjectOrg({
   userId: string
 }) {
   if (await isPlatformAdmin({ supabase, userId })) {
-    return true
+    return !requireEdit
   }
 
   if (orgId === userId) {

@@ -71,21 +71,34 @@ export function MemberWorkspaceProjectCard({
 }: MemberWorkspaceProjectCardProps) {
   const router = useRouter()
   const status = getStatusConfig(project.status)
-  const assignee = project.members[0]
+  const primaryPersonName = project.primaryPersonName ?? project.members[0] ?? null
+  const primaryPersonAvatarUrl = project.primaryPersonAvatarUrl ?? null
   const isBoard = variant === "board"
   const draggingRef = useRef(false)
   const startPosRef = useRef<{ x: number; y: number } | null>(null)
   const initials = useMemo(() => {
-    if (!assignee) return null
-    return assignee
+    if (!primaryPersonName) return null
+    return primaryPersonName
       .split(" ")
       .map((part) => part[0])
       .join("")
       .slice(0, 2)
       .toUpperCase()
-  }, [assignee])
+  }, [primaryPersonName])
 
   const secondaryLine = (() => {
+    if (project.projectKind === "organization_admin") {
+      const summary = [
+        primaryPersonName ? `Created by ${primaryPersonName}` : null,
+        project.typeLabel,
+        project.client,
+        project.durationLabel,
+      ].filter(Boolean)
+      if (summary.length > 0) {
+        return summary.join(" • ")
+      }
+    }
+
     const summary = [project.client, project.typeLabel, project.durationLabel].filter(Boolean)
     if (summary.length > 0) {
       return summary.join(" • ")
@@ -104,7 +117,7 @@ export function MemberWorkspaceProjectCard({
     <div
       role="button"
       tabIndex={0}
-      aria-label={`Open project ${project.name}`}
+      aria-label={`Open ${project.projectKind === "organization_admin" ? "organization" : "project"} ${project.name}`}
       onClick={() => {
         if (isBoard && draggingRef.current) {
           draggingRef.current = false
@@ -219,6 +232,9 @@ export function MemberWorkspaceProjectCard({
           <MemberWorkspaceProjectProgress project={project} size={isBoard ? 20 : 18} />
           {showAssignee ? (
             <Avatar className="size-6 border border-border">
+              {primaryPersonAvatarUrl ? (
+                <AvatarImage src={primaryPersonAvatarUrl} alt={primaryPersonName ?? project.name} />
+              ) : null}
               <AvatarFallback className="text-xs">
                 {initials ? initials : <User className="h-4 w-4 text-muted-foreground" />}
               </AvatarFallback>

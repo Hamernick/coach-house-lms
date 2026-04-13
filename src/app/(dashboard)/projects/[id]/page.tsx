@@ -5,12 +5,15 @@ import {
   createMemberWorkspaceProjectNoteAction,
   createMemberWorkspaceProjectQuickLinkAction,
   createMemberWorkspaceTaskAction,
+  deleteMemberWorkspaceTaskAction,
   deleteMemberWorkspaceProjectNoteAction,
   deleteMemberWorkspaceProjectQuickLinkAction,
   loadMemberWorkspaceProjectDetailPage,
   MemberWorkspaceProjectDetailPage,
+  updateMemberWorkspaceProjectAction,
   updateMemberWorkspaceProjectNoteAction,
   updateMemberWorkspaceProjectQuickLinkAction,
+  updateMemberWorkspaceTaskAction,
   updateMemberWorkspaceTaskOrderAction,
   updateMemberWorkspaceTaskStatusAction,
 } from "@/features/member-workspace"
@@ -45,15 +48,49 @@ export default async function ProjectDetailPage({ params }: PageProps) {
       assigneeOptions={result.assigneeOptions}
       currentUser={result.currentUser}
       organizationSummary={result.organizationSummary}
-      createTaskAction={createMemberWorkspaceTaskAction}
-      updateTaskStatusAction={updateMemberWorkspaceTaskStatusAction}
-      updateTaskOrderAction={updateMemberWorkspaceTaskOrderAction}
-      createNoteAction={createMemberWorkspaceProjectNoteAction}
-      updateNoteAction={updateMemberWorkspaceProjectNoteAction}
-      deleteNoteAction={deleteMemberWorkspaceProjectNoteAction}
-      createQuickLinkAction={createMemberWorkspaceProjectQuickLinkAction}
-      updateQuickLinkAction={updateMemberWorkspaceProjectQuickLinkAction}
-      deleteQuickLinkAction={deleteMemberWorkspaceProjectQuickLinkAction}
+      canManageProject={result.scope === "organization"}
+      createTaskAction={
+        result.scope === "organization" ? createMemberWorkspaceTaskAction : undefined
+      }
+      updateTaskAction={
+        result.scope === "organization" ? updateMemberWorkspaceTaskAction : undefined
+      }
+      deleteTaskAction={
+        result.scope === "organization" ? deleteMemberWorkspaceTaskAction : undefined
+      }
+      updateProjectAction={
+        result.scope === "organization" ? updateMemberWorkspaceProjectAction : undefined
+      }
+      updateTaskStatusAction={
+        result.scope === "organization" ? updateMemberWorkspaceTaskStatusAction : undefined
+      }
+      updateTaskOrderAction={
+        result.scope === "organization" ? updateMemberWorkspaceTaskOrderAction : undefined
+      }
+      createNoteAction={
+        result.scope === "organization" ? createMemberWorkspaceProjectNoteAction : undefined
+      }
+      updateNoteAction={
+        result.scope === "organization" ? updateMemberWorkspaceProjectNoteAction : undefined
+      }
+      deleteNoteAction={
+        result.scope === "organization" ? deleteMemberWorkspaceProjectNoteAction : undefined
+      }
+      createQuickLinkAction={
+        result.scope === "organization"
+          ? createMemberWorkspaceProjectQuickLinkAction
+          : undefined
+      }
+      updateQuickLinkAction={
+        result.scope === "organization"
+          ? updateMemberWorkspaceProjectQuickLinkAction
+          : undefined
+      }
+      deleteQuickLinkAction={
+        result.scope === "organization"
+          ? deleteMemberWorkspaceProjectQuickLinkAction
+          : undefined
+      }
     />
   )
 }

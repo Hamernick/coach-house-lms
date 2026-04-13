@@ -6,6 +6,7 @@ import {
   countActiveWorkspaceInvites,
   listPendingWorkspaceAccessRequests,
   listPendingWorkspaceTeamInvites,
+  resolveWorkspaceTeamAccessSummary,
   shouldShowWorkspaceTeamAccessEmptyState,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-team-access"
 
@@ -44,6 +45,24 @@ describe("workspace board team access", () => {
         pendingTeamAccessCount: 0,
       }),
     ).toBe(true)
+
+    expect(
+      shouldShowWorkspaceTeamAccessEmptyState({
+        accessPeopleCount: 1,
+        activeInviteCount: 0,
+        pendingTeamAccessCount: 0,
+        organizationAccessLoading: true,
+      }),
+    ).toBe(false)
+
+    expect(
+      shouldShowWorkspaceTeamAccessEmptyState({
+        accessPeopleCount: 1,
+        activeInviteCount: 0,
+        pendingTeamAccessCount: 0,
+        organizationAccessError: true,
+      }),
+    ).toBe(false)
 
     expect(
       shouldShowWorkspaceTeamAccessEmptyState({
@@ -250,5 +269,33 @@ describe("workspace board team access", () => {
         nowMs,
       }),
     ).toBe(2)
+  })
+
+  it("summarizes loading, degraded, and loaded team access states clearly", () => {
+    expect(
+      resolveWorkspaceTeamAccessSummary({
+        accessPeopleCount: 1,
+        activeInviteCount: 0,
+        pendingTeamAccessCount: 0,
+        organizationAccessLoading: true,
+      }),
+    ).toBe("Checking team access…")
+
+    expect(
+      resolveWorkspaceTeamAccessSummary({
+        accessPeopleCount: 1,
+        activeInviteCount: 0,
+        pendingTeamAccessCount: 0,
+        organizationAccessError: true,
+      }),
+    ).toBe("Team access unavailable right now.")
+
+    expect(
+      resolveWorkspaceTeamAccessSummary({
+        accessPeopleCount: 3,
+        activeInviteCount: 2,
+        pendingTeamAccessCount: 1,
+      }),
+    ).toBe("3 members · 2 active invites · 1 pending team item")
   })
 })

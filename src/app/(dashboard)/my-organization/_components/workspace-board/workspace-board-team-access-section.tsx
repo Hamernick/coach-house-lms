@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import PlusIcon from "lucide-react/dist/esm/icons/plus"
 
@@ -22,6 +22,7 @@ import {
   countPendingWorkspaceTeamAccess,
   listPendingWorkspaceAccessRequests,
   listPendingWorkspaceTeamInvites,
+  resolveWorkspaceTeamAccessSummary,
   shouldShowWorkspaceTeamAccessEmptyState,
 } from "./workspace-board-team-access"
 import type {
@@ -78,8 +79,17 @@ export function WorkspaceBoardTeamAccessSection({
   } | null
   onInvitesChange: (nextInvites: WorkspaceCollaborationInvite[]) => void
 }) {
-  const nowMs = Date.now()
+  const [nowMs, setNowMs] = useState(() => Date.now())
   const organizationAccessState = useWorkspaceBoardOrganizationAccessState()
+
+  useEffect(() => {
+    setNowMs(Date.now())
+    const timer = globalThis.setInterval(() => {
+      setNowMs(Date.now())
+    }, 60_000)
+    return () => globalThis.clearInterval(timer)
+  }, [])
+
   const activeInviteCount = countActiveWorkspaceInvites(invites, nowMs)
   const pendingTeamInvites = useMemo(
     () => listPendingWorkspaceTeamInvites(organizationAccessState.invites, nowMs).slice(0, 4),
@@ -121,6 +131,15 @@ export function WorkspaceBoardTeamAccessSection({
     accessPeopleCount: accessPeople.length,
     activeInviteCount,
     pendingTeamAccessCount,
+    organizationAccessLoading: organizationAccessState.loading,
+    organizationAccessError: Boolean(organizationAccessState.loadError),
+  })
+  const summaryText = resolveWorkspaceTeamAccessSummary({
+    accessPeopleCount: accessPeople.length,
+    activeInviteCount,
+    pendingTeamAccessCount,
+    organizationAccessLoading: organizationAccessState.loading,
+    organizationAccessError: Boolean(organizationAccessState.loadError),
   })
 
   const content = (
@@ -248,6 +267,8 @@ export function WorkspaceBoardTeamAccessSection({
                 pendingTeamAccessCount={pendingTeamAccessCount}
                 pendingTeamInvites={pendingTeamInvites}
                 pendingAccessRequests={pendingAccessRequests}
+                organizationAccessLoading={organizationAccessState.loading}
+                organizationAccessLoadError={organizationAccessState.loadError}
                 canInvite={canInvite}
                 members={members}
                 invites={invites}
@@ -270,18 +291,7 @@ export function WorkspaceBoardTeamAccessSection({
             />
           </div>
 
-          <p className="px-1 text-xs text-muted-foreground">
-            <span className="tabular-nums">{accessPeople.length}</span>{" "}
-            {accessPeople.length === 1 ? "member" : "members"} ·{" "}
-            <span className="tabular-nums">{activeInviteCount}</span> active{" "}
-            {activeInviteCount === 1 ? "invite" : "invites"}
-            {pendingTeamAccessCount > 0 ? (
-              <>
-                {" "}· <span className="tabular-nums">{pendingTeamAccessCount}</span> pending team{" "}
-                {pendingTeamAccessCount === 1 ? "item" : "items"}
-              </>
-            ) : null}
-          </p>
+          <p className="px-1 text-xs text-muted-foreground">{summaryText}</p>
         </>
       )}
     </section>

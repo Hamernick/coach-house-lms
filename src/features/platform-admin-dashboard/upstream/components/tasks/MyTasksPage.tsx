@@ -6,7 +6,10 @@ import { ChartBar, DotsSixVertical, FolderSimple, Plus, Sparkle } from "@phospho
 import {
   DndContext,
   type DragEndEvent,
+  PointerSensor,
   closestCenter,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core"
 import {
   SortableContext,
@@ -56,6 +59,11 @@ export function MyTasksPage() {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false)
   const [createContext, setCreateContext] = useState<CreateTaskContext | undefined>(undefined)
   const [editingTask, setEditingTask] = useState<ProjectTask | undefined>(undefined)
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+  )
 
   const counts = useMemo<FilterCounts>(() => {
     const allTasks = groups.flatMap((g) => g.tasks)
@@ -324,7 +332,11 @@ export function MyTasksPage() {
 
       <div className="flex-1 min-h-0 space-y-4 overflow-y-auto px-4 py-4">
         {viewOptions.viewType === "list" && (
-          <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <DndContext
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+            sensors={sensors}
+          >
             <ProjectTaskListView
               groups={visibleGroups}
               onToggleTask={toggleTask}

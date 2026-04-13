@@ -36,6 +36,11 @@ export type AcceleratorProgressSummary = {
   percent: number
 }
 
+export type AcceleratorProgressTotals = Pick<
+  AcceleratorProgressSummary,
+  "totalModules" | "completedModules" | "inProgressModules" | "percent"
+>
+
 type ProgressOptions = {
   supabase?: SupabaseClient<Database, "public">
   userId?: string
@@ -111,6 +116,151 @@ function hasSavedNotes(value: Json | null | undefined): boolean {
 function normalizeModuleProgressStatus(value: string | null | undefined): ModuleCardStatus {
   if (value === "completed" || value === "in_progress") return value
   return "not_started"
+}
+
+function buildAcceleratorProgressTotals({
+  moduleIds,
+  progressStatusByModuleId,
+  submissionStatusByModuleId,
+  completeOnSubmit,
+}: {
+  moduleIds: string[]
+  progressStatusByModuleId: Map<string, ModuleCardStatus>
+  submissionStatusByModuleId: Map<string, string>
+  completeOnSubmit: Set<string>
+}): AcceleratorProgressTotals {
+  let completedModules = 0
+  let inProgressModules = 0
+
+  for (const moduleId of moduleIds) {
+    const progressStatus = progressStatusByModuleId.get(moduleId)
+    if (progressStatus && progressStatus !== "not_started") {
+      if (progressStatus === "completed") completedModules += 1
+      if (progressStatus === "in_progress") inProgressModules += 1
+      continue
+    }
+
+    const submissionStatus = submissionStatusByModuleId.get(moduleId)
+    if (!submissionStatus) continue
+
+    const completed = completeOnSubmit.has(moduleId) && submissionStatus !== "revise"
+    if (completed) {
+      completedModules += 1
+      continue
+    }
+
+    inProgressModules += 1
+  }
+
+  const totalModules = moduleIds.length
+  const percent = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0
+
+  return { totalModules, completedModules, inProgressModules, percent }
+}
+
+export async function fetchAcceleratorProgressTotalsByUserId({
+  supabase: supabaseOverride,
+  userIds,
+  isAdmin = false,
+  classes,
+}: Omit<ProgressOptions, "userId" | "basePath"> & {
+  userIds: string[]
+}): Promise<Map<string, AcceleratorProgressTotals>> {
+  const supabase = supabaseOverride ?? (await createSupabaseServerClient())
+  const uniqueUserIds = Array.from(new Set(userIds.filter(Boolean)))
+  const summaries = new Map<string, AcceleratorProgressTotals>()
+
+  if (uniqueUserIds.length === 0) {
+    return summaries
+  }
+
+  const classSource =
+    classes ?? (await fetchSidebarTree({ includeDrafts: Boolean(isAdmin), forceAdmin: Boolean(isAdmin) }))
+  const normalizedClasses = normalizeClassesForProgress(classSource, Boolean(isAdmin))
+  const filteredClasses = normalizedClasses.filter((klass) => !isLegacyClass(klass))
+  const moduleIds = filteredClasses.flatMap((klass) => klass.modules.map((module) => module.id))
+
+  if (moduleIds.length === 0) {
+    for (const userId of uniqueUserIds) {
+      summaries.set(userId, { totalModules: 0, completedModules: 0, inProgressModules: 0, percent: 0 })
+    }
+    return summaries
+  }
+
+  const [progressResult, submissionResult, assignmentResult] = await Promise.all([
+    supabase
+      .from("module_progress")
+      .select("user_id, module_id, status")
+      .in("user_id", uniqueUserIds)
+      .in("module_id", moduleIds)
+      .returns<Array<{ user_id: string; module_id: string; status: ModuleCardStatus }>>(),
+    supabase
+      .from("assignment_submissions")
+      .select("user_id, module_id, status")
+      .in("user_id", uniqueUserIds)
+      .in("module_id", moduleIds)
+      .returns<Array<{ user_id: string; module_id: string; status: string | null }>>(),
+    supabase
+      .from("module_assignments")
+      .select("module_id, complete_on_submit")
+      .in("module_id", moduleIds)
+      .returns<Array<{ module_id: string; complete_on_submit: boolean | null }>>(),
+  ])
+
+  if (progressResult.error) {
+    const code = (progressResult.error as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      console.error("[accelerator-progress] Unable to load module progress.", progressResult.error)
+    }
+  }
+  if (submissionResult.error) {
+    const code = (submissionResult.error as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      console.error("[accelerator-progress] Unable to load assignment submissions.", submissionResult.error)
+    }
+  }
+  if (assignmentResult.error) {
+    const code = (assignmentResult.error as { code?: string }).code
+    if (code !== "42P01" && code !== "42703") {
+      console.error("[accelerator-progress] Unable to load module assignments.", assignmentResult.error)
+    }
+  }
+
+  const progressStatusByUserId = new Map<string, Map<string, ModuleCardStatus>>()
+  for (const row of progressResult.error ? [] : progressResult.data ?? []) {
+    const statuses = progressStatusByUserId.get(row.user_id) ?? new Map<string, ModuleCardStatus>()
+    statuses.set(row.module_id, normalizeModuleProgressStatus(row.status))
+    progressStatusByUserId.set(row.user_id, statuses)
+  }
+
+  const submissionStatusByUserId = new Map<string, Map<string, string>>()
+  for (const row of submissionResult.error ? [] : submissionResult.data ?? []) {
+    if (!row.status) continue
+    const statuses = submissionStatusByUserId.get(row.user_id) ?? new Map<string, string>()
+    statuses.set(row.module_id, row.status)
+    submissionStatusByUserId.set(row.user_id, statuses)
+  }
+
+  const completeOnSubmit = new Set<string>()
+  for (const row of assignmentResult.error ? [] : assignmentResult.data ?? []) {
+    if (row.complete_on_submit) {
+      completeOnSubmit.add(row.module_id)
+    }
+  }
+
+  for (const userId of uniqueUserIds) {
+    summaries.set(
+      userId,
+      buildAcceleratorProgressTotals({
+        moduleIds,
+        progressStatusByModuleId: progressStatusByUserId.get(userId) ?? new Map<string, ModuleCardStatus>(),
+        submissionStatusByModuleId: submissionStatusByUserId.get(userId) ?? new Map<string, string>(),
+        completeOnSubmit,
+      }),
+    )
+  }
+
+  return summaries
 }
 
 export async function fetchAcceleratorProgressSummary({
@@ -220,15 +370,10 @@ export async function fetchAcceleratorProgressSummary({
     }
   }
 
-  let completedModules = 0
-  let inProgressModules = 0
-
   for (const moduleId of moduleIds) {
     const progressStatus = progressStatusByModuleId.get(moduleId)
     if (progressStatus && progressStatus !== "not_started") {
       progressMap.set(moduleId, progressStatus)
-      if (progressStatus === "completed") completedModules += 1
-      if (progressStatus === "in_progress") inProgressModules += 1
       continue
     }
 
@@ -238,8 +383,6 @@ export async function fetchAcceleratorProgressSummary({
     const completed = completeOnSubmit.has(moduleId) && submissionStatus !== "revise"
     const status: ModuleCardStatus = completed ? "completed" : "in_progress"
     progressMap.set(moduleId, status)
-    if (status === "completed") completedModules += 1
-    if (status === "in_progress") inProgressModules += 1
   }
 
   const groups = buildModuleGroups({
@@ -249,8 +392,12 @@ export async function fetchAcceleratorProgressSummary({
     basePath,
   })
 
-  const totalModules = moduleIds.length
-  const percent = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0
+  const { totalModules, completedModules, inProgressModules, percent } = buildAcceleratorProgressTotals({
+    moduleIds,
+    progressStatusByModuleId,
+    submissionStatusByModuleId,
+    completeOnSubmit,
+  })
 
   return { groups, totalModules, completedModules, inProgressModules, percent }
 }

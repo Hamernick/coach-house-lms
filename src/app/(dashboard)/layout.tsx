@@ -35,6 +35,7 @@ export default async function DashboardLayout({
         currentPlanTier={state.currentPlanTier}
         organizationName={state.organizationName}
         tutorialWelcome={state.tutorialWelcome}
+        pricingFeedbackPrompt={state.appPricingFeedbackPrompt}
         isTester={state.isTester}
         onboardingLocked={state.onboardingLocked}
         onboardingIntentFocus={state.onboardingIntentFocus}

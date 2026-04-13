@@ -25,6 +25,7 @@ export {
   loadMemberWorkspaceTasksPage,
 } from "./loaders"
 export {
+  clearMemberWorkspaceStarterDataAction,
   createMemberWorkspaceProjectAction,
   resetMemberWorkspaceStarterProjectsAction,
   updateMemberWorkspaceProjectAction,
@@ -41,6 +42,7 @@ export {
 } from "./project-detail-actions"
 export {
   createMemberWorkspaceTaskAction,
+  deleteMemberWorkspaceTaskAction,
   updateMemberWorkspaceTaskAction,
   updateMemberWorkspaceTaskOrderAction,
   updateMemberWorkspaceTaskStatusAction,

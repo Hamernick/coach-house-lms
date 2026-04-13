@@ -25,6 +25,7 @@ import { MemberWorkspaceProjectFilterPopover } from "./member-workspace-project-
 import { MemberWorkspaceProjectTimelineView } from "./member-workspace-project-timeline-view"
 import { MemberWorkspaceProjectViewOptionsPopover } from "./member-workspace-project-view-options-popover"
 import { MemberWorkspaceProjectWizard } from "./member-workspace-project-wizard"
+import { MemberWorkspaceClearStarterDataButton } from "../shared/member-workspace-clear-starter-data-button"
 import styles from "./member-workspace-projects-surface-theme.module.css"
 import {
   applyViewOptionsToParams,
@@ -40,7 +41,7 @@ export function MemberWorkspaceProjectsPage(props: {
   storageMode: MemberWorkspaceStorageMode
   canResetStarterData: boolean
   starterProjectCount: number
-  resetStarterProjectsAction?: () => Promise<{ ok: true } | { error: string }>
+  clearStarterDataAction?: () => Promise<{ ok: true } | { error: string }>
   createProjectAction?: (
     input: MemberWorkspaceCreateProjectFormInput,
   ) => Promise<{ ok: true; id: string } | { error: string }>
@@ -65,9 +66,9 @@ export function MemberWorkspaceProjectsPage(props: {
   const {
     projects,
     storageMode: _storageMode,
-    canResetStarterData: _canResetStarterData,
+    canResetStarterData,
     starterProjectCount: _starterProjectCount,
-    resetStarterProjectsAction: _resetStarterProjectsAction,
+    clearStarterDataAction,
     createProjectAction,
     updateProjectAction,
     updateProjectScheduleAction,
@@ -152,6 +153,11 @@ export function MemberWorkspaceProjectsPage(props: {
               <p className="text-base font-medium text-foreground">Projects</p>
             </div>
             <div className="flex items-center gap-2">
+              {canResetStarterData && clearStarterDataAction ? (
+                <MemberWorkspaceClearStarterDataButton
+                  clearStarterDataAction={clearStarterDataAction}
+                />
+              ) : null}
               {canCreateProjects ? (
                 <Button
                   variant="ghost"

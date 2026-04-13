@@ -6,6 +6,10 @@ import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { fetchSidebarTree } from "@/lib/academy"
 import { AppShell } from "@/components/app-shell"
+import {
+  loadAppPricingFeedbackPrompt,
+  type AppPricingFeedbackPromptState,
+} from "@/features/app-pricing-feedback"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { resolveProfileAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
@@ -34,6 +38,7 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   let isAdmin = false
   let isTester = false
   let tutorialWelcome = false
+  let pricingFeedbackPrompt: AppPricingFeedbackPromptState | null = null
   let showOrgAdmin = false
   let canAccessOrgAdmin = false
   let organizationName: string | null = null
@@ -74,7 +79,7 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   const { orgId, role } = activeOrg
   showOrgAdmin = role === "owner" || role === "admin" || isAdmin
 
-  const [entitlements, orgRowResult] = await Promise.all([
+  const [entitlements, orgRowResult, resolvedPricingFeedbackPrompt] = await Promise.all([
     fetchLearningEntitlements({
       supabase,
       userId: user.id,
@@ -86,7 +91,12 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
       .select("profile")
       .eq("user_id", orgId)
       .maybeSingle<{ profile: Json | null }>(),
+    loadAppPricingFeedbackPrompt({
+      supabase,
+      userId: user.id,
+    }),
   ])
+  pricingFeedbackPrompt = resolvedPricingFeedbackPrompt
   canAccessOrgAdmin = showOrgAdmin && (isAdmin || entitlements.hasActiveSubscription)
 
   const orgProfile = (orgRowResult.data?.profile as Record<string, unknown> | null) ?? null
@@ -140,6 +150,7 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
       ownedElectiveModuleSlugs={entitlements.ownedElectiveModuleSlugs}
       currentPlanTier={currentPlanTier}
       organizationName={organizationName}
+      pricingFeedbackPrompt={pricingFeedbackPrompt}
       context="accelerator"
     >
       {children}

@@ -36,6 +36,7 @@ type NotesTableProps = {
 export function NotesTable({ notes, onAddNote, onEditNote, onDeleteNote, onNoteClick }: NotesTableProps) {
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedNotes, setSelectedNotes] = useState<string[]>([])
+    const canManageNotes = Boolean(onAddNote || onEditNote || onDeleteNote)
 
     const filteredNotes = notes.filter((note) =>
         note.title.toLowerCase().includes(searchQuery.toLowerCase())
@@ -70,10 +71,12 @@ export function NotesTable({ notes, onAddNote, onEditNote, onDeleteNote, onNoteC
                         className="pl-9"
                     />
                 </div>
-                <Button variant="ghost" size="sm" onClick={onAddNote}>
-                    <Plus className="h-4 w-4" />
-                    Add notes
-                </Button>
+                {onAddNote ? (
+                    <Button variant="ghost" size="sm" onClick={onAddNote}>
+                        <Plus className="h-4 w-4" />
+                        Add notes
+                    </Button>
+                ) : null}
             </div>
 
             <div className="rounded-lg border border-border bg-card">
@@ -93,7 +96,7 @@ export function NotesTable({ notes, onAddNote, onEditNote, onDeleteNote, onNoteC
                             <TableHead>Added by</TableHead>
                             <TableHead>Added date</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead className="w-12"></TableHead>
+                            {canManageNotes ? <TableHead className="w-12"></TableHead> : null}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -115,27 +118,33 @@ export function NotesTable({ notes, onAddNote, onEditNote, onDeleteNote, onNoteC
                                 <TableCell>
                                     <StatusBadge status={note.status} />
                                 </TableCell>
-                                <TableCell onClick={(e: React.MouseEvent) => e.stopPropagation()}>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon-sm"
-                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                            >
-                                                <DotsThree className="h-4 w-4" weight="bold" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => onEditNote?.(note.id)}>
-                                                Edit
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => onDeleteNote?.(note.id)}>
-                                                Delete
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                </TableCell>
+                                {canManageNotes ? (
+                                    <TableCell onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon-sm"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                >
+                                                    <DotsThree className="h-4 w-4" weight="bold" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                {onEditNote ? (
+                                                    <DropdownMenuItem onClick={() => onEditNote(note.id)}>
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                ) : null}
+                                                {onDeleteNote ? (
+                                                    <DropdownMenuItem onClick={() => onDeleteNote(note.id)}>
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                ) : null}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                ) : null}
                             </TableRow>
                         ))}
                     </TableBody>

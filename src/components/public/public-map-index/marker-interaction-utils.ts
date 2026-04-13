@@ -1,3 +1,5 @@
+export type MarkerInteractionState = "idle" | "hover" | "pressed"
+
 export function bindMarkerActivation({
   button,
   onActivate,
@@ -31,6 +33,38 @@ export function bindMarkerActivation({
     event.preventDefault()
     event.stopPropagation()
     activate()
+  })
+}
+
+export function bindMarkerInteractionState({
+  button,
+  onStateChange,
+}: {
+  button: HTMLButtonElement
+  onStateChange: (state: MarkerInteractionState) => void
+}) {
+  const setState = (state: MarkerInteractionState) => {
+    button.dataset.interactionState = state
+    onStateChange(state)
+  }
+
+  button.addEventListener("pointerenter", () => {
+    setState("hover")
+  })
+  button.addEventListener("pointerleave", () => {
+    setState("idle")
+  })
+  button.addEventListener("pointerdown", () => {
+    setState("pressed")
+  })
+  button.addEventListener("pointerup", () => {
+    setState("hover")
+  })
+  button.addEventListener("focus", () => {
+    setState("hover")
+  })
+  button.addEventListener("blur", () => {
+    setState("idle")
   })
 }
 

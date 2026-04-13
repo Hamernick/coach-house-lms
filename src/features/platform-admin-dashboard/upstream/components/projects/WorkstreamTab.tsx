@@ -34,10 +34,17 @@ import type { CreateTaskContext } from "@/features/platform-admin-dashboard/upst
 
 type WorkstreamTabProps = {
   workstreams: WorkstreamGroup[] | undefined
+  canReorder?: boolean
+  canToggleTasks?: boolean
   onCreateTask?: (context?: CreateTaskContext) => void
 }
 
-export function WorkstreamTab({ workstreams, onCreateTask }: WorkstreamTabProps) {
+export function WorkstreamTab({
+  workstreams,
+  canReorder = true,
+  canToggleTasks = true,
+  onCreateTask,
+}: WorkstreamTabProps) {
   const [state, setState] = useState<WorkstreamGroup[]>(() => workstreams ?? [])
   const [openValues, setOpenValues] = useState<string[]>(() =>
     workstreams && workstreams.length ? [workstreams[0].id] : [],
@@ -47,7 +54,7 @@ export function WorkstreamTab({ workstreams, onCreateTask }: WorkstreamTabProps)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
+      activationConstraint: { distance: 6 },
     }),
   )
 
@@ -65,6 +72,10 @@ export function WorkstreamTab({ workstreams, onCreateTask }: WorkstreamTabProps)
   const activeTask = findTaskById(activeTaskId)
 
   const toggleTask = (groupId: string, taskId: string) => {
+    if (!canToggleTasks) {
+      return
+    }
+
     setState((prev) =>
       prev.map((group) =>
         group.id === groupId
@@ -187,6 +198,8 @@ export function WorkstreamTab({ workstreams, onCreateTask }: WorkstreamTabProps)
     )
   }
 
+  const canCreateTask = Boolean(onCreateTask)
+
   return (
     <section className="rounded-2xl border border-border bg-muted shadow-[var(--shadow-workstream)] p-3 space-y-3">
       <div className="flex items-center justify-between gap-3 px-2">
@@ -248,22 +261,26 @@ export function WorkstreamTab({ workstreams, onCreateTask }: WorkstreamTabProps)
                       </span>
                     </div>
                     <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground shrink-0">
-                      <Button asChild size="icon-sm" variant="ghost" className="size-6 rounded-md">
-                        <span
-                          role="button"
-                          aria-label="Add task"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            onCreateTask?.({
-                              workstreamId: group.id,
-                              workstreamName: group.name,
-                            })
-                          }}
-                        >
-                          <Plus className="h-3.5 w-3.5" />
-                        </span>
-                      </Button>
-                      <Separator orientation="vertical" className="h-4" />
+                      {canCreateTask ? (
+                        <>
+                          <Button asChild size="icon-sm" variant="ghost" className="size-6 rounded-md">
+                            <span
+                              role="button"
+                              aria-label="Add task"
+                              onClick={(event) => {
+                                event.stopPropagation()
+                                onCreateTask?.({
+                                  workstreamId: group.id,
+                                  workstreamName: group.name,
+                                })
+                              }}
+                            >
+                              <Plus className="h-3.5 w-3.5" />
+                            </span>
+                          </Button>
+                          <Separator orientation="vertical" className="h-4" />
+                        </>
+                      ) : null}
                       <GroupSummary group={group} />
                     </div>
                   </div>
@@ -273,6 +290,7 @@ export function WorkstreamTab({ workstreams, onCreateTask }: WorkstreamTabProps)
                   group={group}
                   activeTaskId={activeTaskId}
                   overTaskId={overTaskId}
+                  canReorder={canReorder}
                   onToggleTask={(taskId) => toggleTask(group.id, taskId)}
                 />
               </AccordionItem>
@@ -323,10 +341,17 @@ type WorkstreamTasksProps = {
   group: WorkstreamGroup
   activeTaskId: string | null
   overTaskId: string | null
+  canReorder?: boolean
   onToggleTask: (taskId: string) => void
 }
 
-function WorkstreamTasks({ group, activeTaskId, overTaskId, onToggleTask }: WorkstreamTasksProps) {
+function WorkstreamTasks({
+  group,
+  activeTaskId,
+  overTaskId,
+  canReorder = true,
+  onToggleTask,
+}: WorkstreamTasksProps) {
   const { setNodeRef } = useDroppable({ id: `group:${group.id}` })
 
   return (
@@ -340,6 +365,7 @@ function WorkstreamTasks({ group, activeTaskId, overTaskId, onToggleTask }: Work
               onToggle={() => onToggleTask(task.id)}
               activeTaskId={activeTaskId}
               overTaskId={overTaskId}
+              canReorder={canReorder}
             />
           ))}
         </div>
@@ -353,13 +379,21 @@ type TaskRowProps = {
   onToggle: () => void
   activeTaskId: string | null
   overTaskId: string | null
+  canReorder?: boolean
 }
 
-function TaskRow({ task, onToggle, activeTaskId, overTaskId }: TaskRowProps) {
+function TaskRow({
+  task,
+  onToggle,
+  activeTaskId,
+  overTaskId,
+  canReorder = true,
+}: TaskRowProps) {
   const isDone = task.status === "done"
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging, isOver } = useSortable({
     id: task.id,
+    disabled: !canReorder,
   })
 
   const style = {
@@ -398,17 +432,21 @@ function TaskRow({ task, onToggle, activeTaskId, overTaskId }: TaskRowProps) {
                 <AvatarFallback>{task.assignee.name.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
             )}
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="ghost"
-              className="size-7 rounded-md text-muted-foreground cursor-grab active:cursor-grabbing"
-              aria-label="Reorder task"
-              {...attributes}
-              {...listeners}
-            >
-              <DotsSixVertical className="h-4 w-4" weight="regular" />
-            </Button>
+            {canReorder ? (
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="ghost"
+                className="size-7 rounded-md text-muted-foreground cursor-grab active:cursor-grabbing"
+                aria-label="Reorder task"
+                onClick={(event) => event.stopPropagation()}
+                onKeyDown={(event) => event.stopPropagation()}
+                {...attributes}
+                {...listeners}
+              >
+                <DotsSixVertical className="h-4 w-4" weight="regular" />
+              </Button>
+            ) : null}
           </>
         }
         className={cn(isDragging && "opacity-60")}

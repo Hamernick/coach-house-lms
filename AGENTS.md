@@ -5,7 +5,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 ## Non-Negotiables
 
 - Source of truth: this file + linked `docs/agent/**` documents.
-- Continuation protocol: after this file, read exactly `docs/agent/HANDOFF.md` to resume the active thread.
+- Continuation protocol: after this file, read the latest dated entries in `docs/RUNLOG.md` and inspect the current git worktree; `docs/agent/HANDOFF.md` is deprecated and not authoritative.
 - Implement changes in `src/**`, `app/**`, `migrations/**`, or `docs/**`.
 - Keep PRs small and pass: `pnpm lint`, `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls`.
 - Keep PRs small and pass guardrails: `pnpm check:structure`, `pnpm check:routes`, `pnpm check:features`, `pnpm check:feature-scaffold`, `pnpm check:thresholds`, `pnpm check:boundaries`, `pnpm check:workspace-storage`, `pnpm check:interaction-locks`, `pnpm check:react-grab`, `pnpm check:workspace-surfaces`, `pnpm check:raw-buttons`.

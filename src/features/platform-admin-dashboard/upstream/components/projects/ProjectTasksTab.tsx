@@ -5,7 +5,10 @@ import { DotsThreeVertical, Plus } from "@phosphor-icons/react/dist/ssr"
 import {
   DndContext,
   type DragEndEvent,
+  PointerSensor,
   closestCenter,
+  useSensor,
+  useSensors,
 } from "@dnd-kit/core"
 import {
   SortableContext,
@@ -34,6 +37,7 @@ import type { CreateTaskContext } from "@/features/platform-admin-dashboard/upst
 
 type ProjectTasksTabProps = {
   project: ProjectDetails
+  canReorder?: boolean
   onCreateTask?: (context?: CreateTaskContext) => void
   onUpdateTaskStatus?: (
     taskId: string,
@@ -47,6 +51,7 @@ type ProjectTasksTabProps = {
 
 export function ProjectTasksTab({
   project,
+  canReorder = true,
   onCreateTask,
   onUpdateTaskStatus,
   onReorderTasks,
@@ -60,6 +65,13 @@ export function ProjectTasksTab({
   }, [project])
 
   const counts = useMemo(() => computeTaskFilterCounts(tasks, filters), [tasks, filters])
+  const canCreateTask = Boolean(onCreateTask)
+  const canToggleTasks = Boolean(onUpdateTaskStatus)
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 6 },
+    }),
+  )
 
   const memberOptions = useMemo(() => {
     const options = new Map<
@@ -99,6 +111,10 @@ export function ProjectTasksTab({
   )
 
   const toggleTask = (taskId: string) => {
+    if (!canToggleTasks) {
+      return
+    }
+
     const currentTask = tasks.find((task) => task.id === taskId)
     if (!currentTask) return
 
@@ -114,12 +130,8 @@ export function ProjectTasksTab({
       ),
     )
 
-    if (!onUpdateTaskStatus) {
-      return
-    }
-
     startTransition(async () => {
-      const result = await onUpdateTaskStatus(taskId, nextStatus)
+      const result = await onUpdateTaskStatus!(taskId, nextStatus)
       if ("error" in result) {
         setTasks((prev) =>
           prev.map((task) =>
@@ -201,30 +213,37 @@ export function ProjectTasksTab({
           >
             View
           </Button>
-          <Button
-            size="sm"
-            className="h-8 rounded-lg px-3 text-xs font-medium"
-            type="button"
-            onClick={() =>
-              onCreateTask?.({
-                projectId: project.id,
-              })
-            }
-          >
-            <Plus className="mr-1.5 h-4 w-4" />
-            New Task
-          </Button>
+          {canCreateTask ? (
+            <Button
+              size="sm"
+              className="h-8 rounded-lg px-3 text-xs font-medium"
+              type="button"
+              onClick={() =>
+                onCreateTask?.({
+                  projectId: project.id,
+                })
+              }
+            >
+              <Plus className="mr-1.5 h-4 w-4" />
+              New Task
+            </Button>
+          ) : null}
         </div>
       </header>
 
       <div className="space-y-1 px-2 py-3">
-        <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          sensors={sensors}
+        >
           <SortableContext items={filteredTasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
             {filteredTasks.map((task) => (
               <TaskRowDnD
                 key={task.id}
                 task={task}
                 onToggle={() => toggleTask(task.id)}
+                canReorder={canReorder}
               />
             ))}
           </SortableContext>
@@ -284,13 +303,15 @@ function getStatusColor(status: ProjectTask["status"]): string {
 type TaskRowDnDProps = {
   task: ProjectTask
   onToggle: () => void
+  canReorder?: boolean
 }
 
-function TaskRowDnD({ task, onToggle }: TaskRowDnDProps) {
+function TaskRowDnD({ task, onToggle, canReorder = true }: TaskRowDnDProps) {
   const isDone = task.status === "done"
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
+    disabled: !canReorder,
   })
 
   const style = {
@@ -320,17 +341,21 @@ function TaskRowDnD({ task, onToggle }: TaskRowDnDProps) {
                 <AvatarFallback>{task.assignee.name.charAt(0).toUpperCase()}</AvatarFallback>
               </Avatar>
             )}
-            <Button
-              type="button"
-              size="icon-sm"
-              variant="ghost"
-              className="size-7 rounded-md text-muted-foreground cursor-grab active:cursor-grabbing"
-              aria-label="Reorder task"
-              {...attributes}
-              {...listeners}
-            >
-              <DotsThreeVertical className="h-4 w-4" weight="regular" />
-            </Button>
+            {canReorder ? (
+              <Button
+                type="button"
+                size="icon-sm"
+                variant="ghost"
+                className="size-7 rounded-md text-muted-foreground cursor-grab active:cursor-grabbing"
+                aria-label="Reorder task"
+                onClick={(event) => event.stopPropagation()}
+                onKeyDown={(event) => event.stopPropagation()}
+                {...attributes}
+                {...listeners}
+              >
+                <DotsThreeVertical className="h-4 w-4" weight="regular" />
+              </Button>
+            ) : null}
           </>
         }
         className={isDragging ? "opacity-60" : ""}

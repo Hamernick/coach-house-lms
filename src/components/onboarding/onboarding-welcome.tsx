@@ -13,6 +13,11 @@ function dispatchTutorialStart(tutorial: TutorialKey) {
   window.dispatchEvent(new CustomEvent("coachhouse:tutorial:start", { detail: { tutorial } }))
 }
 
+function dispatchTutorialDismissed(tutorial: TutorialKey) {
+  if (typeof window === "undefined") return
+  window.dispatchEvent(new CustomEvent("coachhouse:tutorial:dismissed", { detail: { tutorial } }))
+}
+
 const WELCOME_CONTENT: Record<
   "platform" | "accelerator",
   { eyebrow: string; title: string; description: string; checklist: string[] }
@@ -138,6 +143,7 @@ export function OnboardingWelcome({
                 router.refresh()
                 setOpen(false)
                 startTransition(async () => {
+                  dispatchTutorialDismissed(resolvedTutorial)
                   await dismissTutorialAction(resolvedTutorial)
                 })
               }}

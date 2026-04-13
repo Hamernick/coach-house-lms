@@ -23,6 +23,8 @@ function buildOrganization(
     mission: null,
     values: null,
     needStatement: null,
+    originStory: null,
+    theoryOfChange: null,
     formationStatus: null,
     contactName: null,
     logoUrl: null,
@@ -99,13 +101,24 @@ function resolveFeatureCoordinates(feature: mapboxgl.MapboxGeoJSONFeature) {
 }
 
 describe("resolveSpiderfyCandidateBuckets", () => {
-  it("returns multiple duplicate-coordinate buckets sorted by density then distance", () => {
+  it("returns multiple overlapping buckets sorted by density then distance", () => {
+    const map = {
+      project: vi.fn(([longitude, latitude]: [number, number]) => ({
+        x: Math.round((longitude + 88) * 1_000),
+        y: Math.round((latitude - 41) * 1_000),
+      })),
+      unproject: vi.fn(([x, y]: [number, number]) => ({
+        lng: x / 1_000 - 88,
+        lat: y / 1_000 + 41,
+      })),
+    } as unknown as mapboxgl.Map
+
     const organizationById = new Map<string, PublicMapOrganization>([
       ["a-1", buildOrganization("a-1", -87.63, 41.88)],
-      ["a-2", buildOrganization("a-2", -87.63, 41.88)],
-      ["b-1", buildOrganization("b-1", -87.64, 41.89)],
-      ["b-2", buildOrganization("b-2", -87.64, 41.89)],
-      ["b-3", buildOrganization("b-3", -87.64, 41.89)],
+      ["a-2", buildOrganization("a-2", -87.629, 41.88)],
+      ["b-1", buildOrganization("b-1", -87.66, 41.89)],
+      ["b-2", buildOrganization("b-2", -87.659, 41.89)],
+      ["b-3", buildOrganization("b-3", -87.661, 41.89)],
       ["solo", buildOrganization("solo", -87.7, 41.91)],
     ])
 
@@ -119,25 +132,25 @@ describe("resolveSpiderfyCandidateBuckets", () => {
       buildFeature({
         organizationId: "a-2",
         name: "A2",
-        longitude: -87.63,
+        longitude: -87.629,
         latitude: 41.88,
       }),
       buildFeature({
         organizationId: "b-1",
         name: "B1",
-        longitude: -87.64,
+        longitude: -87.66,
         latitude: 41.89,
       }),
       buildFeature({
         organizationId: "b-2",
         name: "B2",
-        longitude: -87.64,
+        longitude: -87.659,
         latitude: 41.89,
       }),
       buildFeature({
         organizationId: "b-3",
         name: "B3",
-        longitude: -87.64,
+        longitude: -87.661,
         latitude: 41.89,
       }),
       buildFeature({
@@ -149,6 +162,7 @@ describe("resolveSpiderfyCandidateBuckets", () => {
     ]
 
     const buckets = resolveSpiderfyCandidateBuckets({
+      map,
       leaves,
       organizationById,
       targetCoordinates: [-87.63, 41.88],
@@ -169,6 +183,7 @@ describe("resolveSpiderfyCandidateBuckets", () => {
     ])
 
     const primary = resolveSpiderfyCandidateBucket({
+      map,
       leaves,
       organizationById,
       targetCoordinates: [-87.63, 41.88],

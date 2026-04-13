@@ -31,6 +31,7 @@ export type PlatformAdminDashboardLabTask = {
 export type PlatformAdminDashboardLabProject = {
   id: string
   organizationId?: string
+  projectKind?: "standard" | "organization_admin"
   name: string
   description?: string
   taskCount: number
@@ -41,9 +42,12 @@ export type PlatformAdminDashboardLabProject = {
   priority: PlatformAdminDashboardLabPriority
   tags: string[]
   members: string[]
+  primaryPersonName?: string
+  primaryPersonAvatarUrl?: string | null
   client?: string
   typeLabel?: string
   durationLabel?: string
+  taskSummaryLabel?: string
   tasks: PlatformAdminDashboardLabTask[]
 }
 

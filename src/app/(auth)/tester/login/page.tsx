@@ -3,6 +3,7 @@ import { redirect as redirectTo } from "next/navigation"
 import { AuthCard } from "@/components/auth/auth-card"
 import { AuthScreenShell } from "@/components/auth/auth-screen-shell"
 import { LoginPanel } from "@/components/auth/login-panel"
+import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
@@ -13,16 +14,9 @@ type TesterLoginPageProps = {
   searchParams?: Promise<SearchParams>
 }
 
-function getSafeRedirect(value: unknown) {
-  if (typeof value !== "string") return undefined
-  if (!value.startsWith("/")) return undefined
-  if (value.startsWith("//")) return undefined
-  return value
-}
-
 export default async function TesterLoginPage({ searchParams }: TesterLoginPageProps) {
   const resolved = searchParams ? await searchParams : {}
-  const redirect = getSafeRedirect(resolved.redirect)
+  const redirect = getSafeRedirectPath(resolved.redirect)
   const initialError = typeof resolved.error === "string" ? resolved.error : null
 
   const supabase = await createSupabaseServerClient()
@@ -36,7 +30,7 @@ export default async function TesterLoginPage({ searchParams }: TesterLoginPageP
   }
 
   if (user) {
-    redirectTo(redirect ?? "/organization")
+    redirectTo(redirect ?? DEFAULT_POST_AUTH_REDIRECT)
   }
 
   const signUpHref = redirect
@@ -50,7 +44,7 @@ export default async function TesterLoginPage({ searchParams }: TesterLoginPageP
         description="Internal tester access for validating onboarding, billing, and workspace flows."
       >
         <LoginPanel
-          redirectTo={redirect ?? "/organization"}
+          redirectTo={redirect ?? DEFAULT_POST_AUTH_REDIRECT}
           initialError={initialError}
           signUpHref={signUpHref}
           className="max-w-none"
@@ -59,4 +53,3 @@ export default async function TesterLoginPage({ searchParams }: TesterLoginPageP
     </AuthScreenShell>
   )
 }
-

@@ -5,19 +5,13 @@ import {
   type UpdatePasswordFormStatus,
   type UpdatePasswordRecoveryError,
 } from "@/components/auth/update-password-form"
+import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 type SearchParams = Record<string, string | string[] | undefined>
 
 type UpdatePasswordPageProps = {
   searchParams?: Promise<SearchParams>
-}
-
-function getSafeRedirect(value: unknown) {
-  if (typeof value !== "string") return undefined
-  if (!value.startsWith("/")) return undefined
-  if (value.startsWith("//")) return undefined
-  return value
 }
 
 function getFirstSearchParam(value: string | string[] | undefined) {
@@ -32,7 +26,7 @@ export function resolveUpdatePasswordPageState(
   searchParams: SearchParams,
   options: { hasServerUser: boolean },
 ) {
-  const redirect = getSafeRedirect(getFirstSearchParam(searchParams.redirect))
+  const redirect = getSafeRedirectPath(getFirstSearchParam(searchParams.redirect))
   const recoveryError = getSafeRecoveryError(getFirstSearchParam(searchParams.recovery_error))
 
   let initialStatus: UpdatePasswordFormStatus = "checking"
@@ -69,7 +63,7 @@ export default async function UpdatePasswordPage({ searchParams }: UpdatePasswor
         description="Passwords must be at least 8 characters."
       >
         <UpdatePasswordForm
-          redirectTo={pageState.redirect ?? "/organization"}
+          redirectTo={pageState.redirect ?? DEFAULT_POST_AUTH_REDIRECT}
           initialStatus={pageState.initialStatus}
           recoveryError={pageState.recoveryError}
           retryHref={retryHref}

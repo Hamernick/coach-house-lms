@@ -6,15 +6,15 @@ import type { ComponentProps } from "react"
 import { Skeleton } from "@/components/ui/skeleton"
 
 type WorkspaceAcceleratorCardPanelProps = ComponentProps<
-  typeof import("@/features/workspace-accelerator-card").WorkspaceAcceleratorCardPanel
+  typeof import("@/features/workspace-accelerator-card").WorkspaceAcceleratorCardPanelComponent
 >
 
 type WorkspaceAcceleratorHeaderPickerProps = ComponentProps<
-  typeof import("@/features/workspace-accelerator-card").WorkspaceAcceleratorHeaderPicker
+  typeof import("@/features/workspace-accelerator-card").WorkspaceAcceleratorHeaderPickerComponent
 >
 
 type WorkspaceAcceleratorStepNodeCardProps = ComponentProps<
-  typeof import("@/features/workspace-accelerator-card").WorkspaceAcceleratorStepNodeCard
+  typeof import("@/features/workspace-accelerator-card").WorkspaceAcceleratorStepNodeCardComponent
 >
 
 function WorkspaceBoardAcceleratorCardPanelFallback() {
@@ -60,10 +60,7 @@ function WorkspaceBoardAcceleratorStepNodeCardFallback() {
 
 export const WorkspaceBoardLazyAcceleratorCardPanel =
   dynamic<WorkspaceAcceleratorCardPanelProps>(
-    () =>
-      import("@/features/workspace-accelerator-card").then(
-        (mod) => mod.WorkspaceAcceleratorCardPanel,
-      ),
+    () => import("@/features/workspace-accelerator-card").then((mod) => mod.WorkspaceAcceleratorCardPanelComponent),
     {
       loading: () => <WorkspaceBoardAcceleratorCardPanelFallback />,
     },
@@ -71,10 +68,7 @@ export const WorkspaceBoardLazyAcceleratorCardPanel =
 
 export const WorkspaceBoardLazyAcceleratorHeaderPicker =
   dynamic<WorkspaceAcceleratorHeaderPickerProps>(
-    () =>
-      import("@/features/workspace-accelerator-card").then(
-        (mod) => mod.WorkspaceAcceleratorHeaderPicker,
-      ),
+    () => import("@/features/workspace-accelerator-card").then((mod) => mod.WorkspaceAcceleratorHeaderPickerComponent),
     {
       loading: () => <WorkspaceBoardAcceleratorHeaderPickerFallback />,
     },
@@ -82,10 +76,7 @@ export const WorkspaceBoardLazyAcceleratorHeaderPicker =
 
 export const WorkspaceBoardLazyAcceleratorStepNodeCard =
   dynamic<WorkspaceAcceleratorStepNodeCardProps>(
-    () =>
-      import("@/features/workspace-accelerator-card").then(
-        (mod) => mod.WorkspaceAcceleratorStepNodeCard,
-      ),
+    () => import("@/features/workspace-accelerator-card").then((mod) => mod.WorkspaceAcceleratorStepNodeCardComponent),
     {
       loading: () => <WorkspaceBoardAcceleratorStepNodeCardFallback />,
     },

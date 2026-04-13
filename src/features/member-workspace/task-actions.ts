@@ -1,5 +1,6 @@
 export {
   createMemberWorkspaceTaskAction,
+  deleteMemberWorkspaceTaskAction,
   updateMemberWorkspaceTaskAction,
   updateMemberWorkspaceTaskOrderAction,
   updateMemberWorkspaceTaskStatusAction,

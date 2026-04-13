@@ -55,6 +55,10 @@ export function mapOrganizationProjectToViewModel(
   return {
     id: project.id,
     organizationId: project.org_id,
+    projectKind:
+      project.project_kind === "organization_admin"
+        ? "organization_admin"
+        : "standard",
     name: project.name,
     description: project.description ?? undefined,
     taskCount: project.task_count,

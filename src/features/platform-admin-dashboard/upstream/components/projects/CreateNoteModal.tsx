@@ -8,8 +8,10 @@ import { Button } from "@/features/platform-admin-dashboard/upstream/components/
 import { Avatar, AvatarFallback, AvatarImage } from "@/features/platform-admin-dashboard/upstream/components/ui/avatar"
 import { QuickCreateModalLayout } from "@/features/platform-admin-dashboard/upstream/components/QuickCreateModalLayout"
 import { ProjectDescriptionEditor } from "@/features/platform-admin-dashboard/upstream/components/project-wizard/ProjectDescriptionEditor"
+import type { NoteUploadKind } from "@/features/platform-admin-dashboard/upstream/components/projects/note-upload"
 
 type CreateNoteModalProps = {
+    canUploadAttachments?: boolean
     open: boolean
     onOpenChange: (open: boolean) => void
     currentUser: User
@@ -17,10 +19,15 @@ type CreateNoteModalProps = {
     initialContent?: string
     submitLabel?: string
     onCreateNote: (title: string, content: string) => void
-    onUploadAudio: () => void
+    onRequestUpload: (input: {
+        content: string
+        kind: NoteUploadKind
+        title: string
+    }) => void
 }
 
 export function CreateNoteModal({
+    canUploadAttachments = true,
     open,
     onOpenChange,
     currentUser,
@@ -28,7 +35,7 @@ export function CreateNoteModal({
     initialContent,
     submitLabel,
     onCreateNote,
-    onUploadAudio,
+    onRequestUpload,
 }: CreateNoteModalProps) {
     const [title, setTitle] = useState("")
     const [description, setDescription] = useState<string | undefined>(undefined)
@@ -53,8 +60,12 @@ export function CreateNoteModal({
         onOpenChange(false)
     }
 
-    const handleUploadClick = () => {
-        onUploadAudio()
+    const handleUploadClick = (kind: NoteUploadKind) => {
+        onRequestUpload({
+            kind,
+            title,
+            content: description ?? "",
+        })
     }
 
     return (
@@ -120,19 +131,44 @@ export function CreateNoteModal({
             {/* Footer */}
             <div className="flex items-center justify-between mt-auto w-full pt-4 shrink-0">
                 <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon-sm" className="text-muted-foreground">
-                        <Paperclip className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon-sm" className="text-muted-foreground">
-                        <Microphone className="h-4 w-4" />
-                    </Button>
+                    {canUploadAttachments ? (
+                        <>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Attach files to note"
+                                className="h-11 w-11 touch-manipulation text-muted-foreground sm:h-8 sm:w-8"
+                                onClick={() => handleUploadClick("files")}
+                            >
+                                <Paperclip className="h-4 w-4" />
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon-sm"
+                                aria-label="Upload audio for note"
+                                className="h-11 w-11 touch-manipulation text-muted-foreground sm:h-8 sm:w-8"
+                                onClick={() => handleUploadClick("audio")}
+                            >
+                                <Microphone className="h-4 w-4" />
+                            </Button>
+                        </>
+                    ) : null}
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <Button variant="secondary" size="sm" onClick={handleUploadClick}>
-                        <UploadSimple className="h-4 w-4" />
-                        Upload audio file
-                    </Button>
+                    {canUploadAttachments ? (
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleUploadClick("audio")}
+                        >
+                            <UploadSimple className="h-4 w-4" />
+                            Upload audio file
+                        </Button>
+                    ) : null}
                     <Button size="sm" onClick={handleCreate}>
                         {submitLabel ?? "Create Note"}
                     </Button>

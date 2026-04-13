@@ -7,11 +7,12 @@ import {
   resolveFeatureCoordinatesForMap,
 } from "./map-coordinate-normalization"
 import {
+  resolveMarkerOverlapBuckets,
+} from "./marker-overlap-buckets"
+import {
   isClusterFeature,
   resolveOrganizationId,
 } from "./public-map-cluster-runtime"
-
-const OVERLAP_COORDINATE_PRECISION = 6
 
 function resolveOverlapBucketAngleOffset(key: string) {
   let hash = 0
@@ -19,10 +20,6 @@ function resolveOverlapBucketAngleOffset(key: string) {
     hash = (hash * 33 + key.charCodeAt(index)) >>> 0
   }
   return ((hash % 360) * Math.PI) / 180
-}
-
-function resolveOverlapCoordinateKey(coordinates: [number, number]) {
-  return `${coordinates[0].toFixed(OVERLAP_COORDINATE_PRECISION)}:${coordinates[1].toFixed(OVERLAP_COORDINATE_PRECISION)}`
 }
 
 export function resolveUnclusteredDisplayCoordinates({
@@ -34,11 +31,11 @@ export function resolveUnclusteredDisplayCoordinates({
   features: mapboxgl.MapboxGeoJSONFeature[]
   organizationById: Map<string, PublicMapOrganization>
 }) {
-  const buckets = new Map<
+  const coordinateCandidates = new Map<
     string,
     {
+      organizationId: string
       coordinates: [number, number]
-      members: string[]
     }
   >()
 
@@ -67,41 +64,38 @@ export function resolveUnclusteredDisplayCoordinates({
       })
     if (!resolvedCoordinates) continue
 
-    const key = resolveOverlapCoordinateKey(resolvedCoordinates)
-    const bucket = buckets.get(key)
-    if (!bucket) {
-      buckets.set(key, {
-        coordinates: resolvedCoordinates,
-        members: [organizationId],
-      })
-      continue
-    }
-    if (!bucket.members.includes(organizationId)) {
-      bucket.members.push(organizationId)
-    }
+    coordinateCandidates.set(organizationId, {
+      organizationId,
+      coordinates: resolvedCoordinates,
+    })
   }
 
   const displayCoordinatesById = new Map<string, [number, number]>()
-  for (const [key, bucket] of buckets.entries()) {
-    const members = bucket.members.slice().sort((left, right) => left.localeCompare(right))
-    if (members.length < 2) {
-      const [onlyId] = members
-      if (onlyId) {
-        displayCoordinatesById.set(onlyId, bucket.coordinates)
+  const overlapBuckets = resolveMarkerOverlapBuckets({
+    map,
+    items: Array.from(coordinateCandidates.values()),
+    getKey: (item) => item.organizationId,
+    getCoordinates: (item) => item.coordinates,
+  })
+
+  for (const bucket of overlapBuckets) {
+    if (bucket.members.length < 2) {
+      const [onlyMember] = bucket.members
+      if (onlyMember) {
+        displayCoordinatesById.set(onlyMember.item.organizationId, onlyMember.coordinates)
       }
       continue
     }
 
-    const centerPoint = map.project(bucket.coordinates)
-    const radius = Math.max(18, Math.min(34, 16 + members.length * 2.1))
-    const angleOffset = resolveOverlapBucketAngleOffset(key) - Math.PI / 2
-    members.forEach((organizationId, index) => {
-      const angle = angleOffset + (index * (2 * Math.PI)) / members.length
+    const radius = Math.max(18, Math.min(34, 16 + bucket.members.length * 2.1))
+    const angleOffset = resolveOverlapBucketAngleOffset(bucket.key) - Math.PI / 2
+    bucket.members.forEach((member, index) => {
+      const angle = angleOffset + (index * (2 * Math.PI)) / bucket.members.length
       const lngLat = map.unproject([
-        centerPoint.x + Math.cos(angle) * radius,
-        centerPoint.y + Math.sin(angle) * radius,
+        bucket.point.x + Math.cos(angle) * radius,
+        bucket.point.y + Math.sin(angle) * radius,
       ])
-      displayCoordinatesById.set(organizationId, [lngLat.lng, lngLat.lat])
+      displayCoordinatesById.set(member.item.organizationId, [lngLat.lng, lngLat.lat])
     })
   }
 

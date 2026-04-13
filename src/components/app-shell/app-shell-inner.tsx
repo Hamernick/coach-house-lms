@@ -6,6 +6,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 import { SidebarBody } from "@/components/app-sidebar"
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import {
+  AppPricingFeedbackPrompt,
   GlobalSearch,
   OnboardingWelcome,
   PaywallOverlay,
@@ -29,6 +30,10 @@ import { useAppShellRightRailState } from "./use-app-shell-right-rail-state"
 
 import type { AppShellProps } from "./types"
 
+function isPricingFeedbackWorkspaceRoute(pathname: string | null) {
+  return pathname === "/workspace" || Boolean(pathname?.startsWith("/workspace/"))
+}
+
 export function AppShellInner({
   children,
   breadcrumbs,
@@ -47,6 +52,8 @@ export function AppShellInner({
   ownedElectiveModuleSlugs = [],
   currentPlanTier = "free",
   organizationName = null,
+  tutorialWelcome = { platform: false, accelerator: false },
+  pricingFeedbackPrompt = null,
   onboardingLocked = false,
   onboardingIntentFocus = null,
   context,
@@ -126,6 +133,13 @@ export function AppShellInner({
   })
 
   const brandHref = hasUser ? (isAcceleratorContext ? "/accelerator" : "/workspace") : "/"
+  const pricingFeedbackTutorialPending =
+    tutorialKey === "accelerator" ? tutorialWelcome.accelerator : tutorialWelcome.platform
+  const showPricingFeedbackPrompt =
+    hasUser &&
+    !onboardingLocked &&
+    !isAdminContext &&
+    isPricingFeedbackWorkspaceRoute(pathname)
 
   useEffect(() => {
     const run = () => releaseStaleInteractionLocks()
@@ -309,8 +323,16 @@ export function AppShellInner({
       ) : null}
       {!isAdminContext ? <PaywallOverlay currentPlanTier={currentPlanTier} /> : null}
       {!isAdminContext ? <TutorialManager /> : null}
+      {showPricingFeedbackPrompt ? (
+        <AppPricingFeedbackPrompt
+          prompt={pricingFeedbackPrompt}
+          tutorial={tutorialKey}
+          tutorialPending={pricingFeedbackTutorialPending}
+        />
+      ) : null}
       {hasUser && !isAdminContext ? (
         <OnboardingWelcome
+          defaultOpen={pricingFeedbackTutorialPending}
           tutorial={tutorialKey}
           hasActiveSubscription={hasActiveSubscription}
         />

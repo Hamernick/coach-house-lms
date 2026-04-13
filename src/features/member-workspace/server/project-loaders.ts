@@ -2,7 +2,10 @@ import {
   loadAdminOrganizationSummaries,
   mapAdminOrganizationSummaryToProject,
 } from "./admin-organization-overview"
-import { ensureCanonicalAdminProjects } from "./admin-projects"
+import {
+  attachCanonicalProjectIdsToOrganizations,
+  ensureCanonicalAdminProjects,
+} from "./admin-projects"
 import { loadAccessibleOrganizations } from "./load-accessible-organizations"
 import {
   mapOrganizationProjectToViewModel,
@@ -30,27 +33,16 @@ export async function loadMemberWorkspaceProjectsPage() {
       orgId: organization.orgId,
       name: organization.name,
     }))
-    const [assigneeOptions, canonicalProjects, projectResult] = await Promise.all([
+    const [assigneeOptions, canonicalProjects] = await Promise.all([
       loadMemberWorkspacePersonOptionsForOrganizations({
         orgIds,
         supabase: actor.supabase,
+        includePlatformAdmins: true,
       }),
       ensureCanonicalAdminProjects({
         organizations,
         supabase: actor.supabase,
       }),
-      orgIds.length > 0
-        ? actor.supabase
-            .from("organization_projects")
-            .select(organizationProjectSelectFields)
-            .in("org_id", orgIds)
-            .order("updated_at", { ascending: false })
-            .order("created_at", { ascending: false })
-            .returns<OrganizationProjectRecord[]>()
-        : Promise.resolve({
-            data: [] as OrganizationProjectRecord[],
-            error: null,
-          }),
     ])
 
     if (!canonicalProjects) {
@@ -67,37 +59,18 @@ export async function loadMemberWorkspaceProjectsPage() {
       }
     }
 
-    const { data: allProjects, error } = projectResult
-
-    if (error) {
-      if (isMissingOrganizationProjectsTableError(error)) {
-        return {
-          projects: canonicalProjects.map(mapOrganizationProjectToViewModel),
-          storageMode: "custom" as const,
-          starterProjectCount: 0,
-          hasUserProjects: canonicalProjects.length > 0,
-          canResetStarterData: false,
-          canCreateProjects: false,
-          scope: "platform-admin" as const,
-          organizationOptions,
-          assigneeOptions,
-        }
-      }
-      throw toMemberWorkspaceDataError(error, "Unable to load workspace projects.")
-    }
-
-    const rows = allProjects ?? []
+    const organizationsWithProjectIds = attachCanonicalProjectIdsToOrganizations({
+      canonicalProjects,
+      organizations,
+    })
 
     return {
-      projects:
-        rows.length > 0
-          ? rows.map(mapOrganizationProjectToViewModel)
-          : canonicalProjects.map(mapOrganizationProjectToViewModel),
+      projects: organizationsWithProjectIds.map(mapAdminOrganizationSummaryToProject),
       storageMode: "custom" as const,
       starterProjectCount: 0,
-      hasUserProjects: rows.length > 0 || canonicalProjects.length > 0,
+      hasUserProjects: organizationsWithProjectIds.length > 0,
       canResetStarterData: false,
-      canCreateProjects: true,
+      canCreateProjects: false,
       scope: "platform-admin" as const,
       organizationOptions,
       assigneeOptions,
@@ -144,14 +117,14 @@ export async function loadMemberWorkspaceProjectsPage() {
         projects: [],
         storageMode: "empty" as const,
         starterProjectCount: 0,
-      hasUserProjects: false,
-      canResetStarterData: false,
-      canCreateProjects: actor.canEdit,
-      scope: "organization" as const,
-      organizationOptions,
-      assigneeOptions,
+        hasUserProjects: false,
+        canResetStarterData: false,
+        canCreateProjects: actor.canEdit,
+        scope: "organization" as const,
+        organizationOptions,
+        assigneeOptions,
+      }
     }
-  }
     throw toMemberWorkspaceDataError(error, "Unable to load workspace projects.")
   }
 

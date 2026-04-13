@@ -1,6 +1,7 @@
 import type { SidebarClass } from "@/lib/academy"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import type { OnboardingFlowDefaults } from "@/components/onboarding/onboarding-dialog/types"
+import type { AppPricingFeedbackPromptState } from "@/features/app-pricing-feedback"
 import type { MemberWorkspaceHeaderState } from "@/features/member-workspace"
 
 export type DashboardLayoutState = {
@@ -29,6 +30,7 @@ export type DashboardLayoutState = {
     platform: boolean
     accelerator: boolean
   }
+  appPricingFeedbackPrompt: AppPricingFeedbackPromptState | null
   onboardingDefaults: OnboardingFlowDefaults & {
     open: boolean
   }
@@ -64,6 +66,7 @@ export const EMPTY_STATE: DashboardLayoutState = {
     platform: false,
     accelerator: false,
   },
+  appPricingFeedbackPrompt: null,
   onboardingDefaults: {
     open: false,
   },

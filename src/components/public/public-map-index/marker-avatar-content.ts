@@ -7,6 +7,16 @@ import {
   setMarkerImageLoadingState,
 } from "./marker-image-loading"
 
+function setMarkerImageState({
+  button,
+  state,
+}: {
+  button: HTMLButtonElement
+  state: "fallback" | "loading" | "loaded" | "failed"
+}) {
+  button.dataset.markerImageState = state
+}
+
 export function buildMarkerInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) return "O"
@@ -33,6 +43,7 @@ export function createMarkerFallbackLabel({
   fallback.style.fontSize = fontSize
   fallback.style.fontWeight = "700"
   fallback.style.color = color
+  fallback.style.letterSpacing = "0.04em"
   fallback.style.position = "relative"
   fallback.style.zIndex = "1"
   return fallback
@@ -58,6 +69,7 @@ export function syncMarkerAvatarImage({
     existingImage?.remove()
     fallback.style.display = "inline-flex"
     setMarkerImageLoadingState({ shimmer, loading: false })
+    setMarkerImageState({ button, state: "fallback" })
     return
   }
 
@@ -65,6 +77,7 @@ export function syncMarkerAvatarImage({
     existingImage?.remove()
     fallback.style.display = "inline-flex"
     setMarkerImageLoadingState({ shimmer, loading: false })
+    setMarkerImageState({ button, state: "failed" })
     return
   }
 
@@ -74,16 +87,22 @@ export function syncMarkerAvatarImage({
       existingImage.style.display = "block"
       fallback.style.display = "none"
       setMarkerImageLoadingState({ shimmer, loading: false })
+      setMarkerImageState({ button, state: "loaded" })
       return
     }
     fallback.style.display = "inline-flex"
     setMarkerImageLoadingState({ shimmer, loading: true })
+    setMarkerImageState({ button, state: "loading" })
     return
   }
 
   existingImage?.remove()
   fallback.style.display = "inline-flex"
   setMarkerImageLoadingState({ shimmer, loading: cachedState !== "loaded" })
+  setMarkerImageState({
+    button,
+    state: cachedState === "loaded" ? "loaded" : "loading",
+  })
 
   const image = document.createElement("img")
   image.dataset.markerPart = "image"
@@ -102,12 +121,14 @@ export function syncMarkerAvatarImage({
     image.style.display = "block"
     fallback.style.display = "none"
     setMarkerImageLoadingState({ shimmer, loading: false })
+    setMarkerImageState({ button, state: "loaded" })
   })
   image.addEventListener("error", () => {
     markMarkerImageFailed(imageSource)
     image.remove()
     fallback.style.display = "inline-flex"
     setMarkerImageLoadingState({ shimmer, loading: false })
+    setMarkerImageState({ button, state: "failed" })
   })
   image.src = imageSource
   avatar.insertBefore(image, fallback)
@@ -117,5 +138,6 @@ export function syncMarkerAvatarImage({
     image.style.display = "block"
     fallback.style.display = "none"
     setMarkerImageLoadingState({ shimmer, loading: false })
+    setMarkerImageState({ button, state: "loaded" })
   }
 }

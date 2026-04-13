@@ -2,18 +2,12 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import type { EmailOtpType } from "@supabase/supabase-js"
 
+import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 
 export type RecoveryCallbackError = "invalid_or_expired" | "missing_code"
 
 const UPDATE_PASSWORD_PATH = "/update-password"
-
-function getSafeRedirect(path?: string | null) {
-  if (!path) return null
-  if (!path.startsWith("/")) return null
-  if (path.startsWith("//")) return null
-  return path
-}
 
 function getSafeType(type?: string | null): EmailOtpType | null {
   if (!type) return null
@@ -88,7 +82,7 @@ export function toUpdatePasswordUrl(
   if (
     options.destination &&
     !options.destination.startsWith(UPDATE_PASSWORD_PATH) &&
-    getSafeRedirect(options.destination)
+    getSafeRedirectPath(options.destination)
   ) {
     updatePasswordUrl.searchParams.set("redirect", options.destination)
   }
@@ -104,10 +98,10 @@ export async function handleSupabaseAuthCallback(request: NextRequest) {
   const code = requestUrl.searchParams.get("code")
   const tokenHash = requestUrl.searchParams.get("token_hash")
   const type = getSafeType(requestUrl.searchParams.get("type"))
-  const redirectParam = getSafeRedirect(requestUrl.searchParams.get("redirect"))
+  const redirectParam = getSafeRedirectPath(requestUrl.searchParams.get("redirect"))
   const isRecoveryFlow = isRecoveryAuthFlow({ type, redirect: redirectParam })
 
-  const fallback = isRecoveryFlow ? UPDATE_PASSWORD_PATH : "/organization"
+  const fallback = isRecoveryFlow ? UPDATE_PASSWORD_PATH : DEFAULT_POST_AUTH_REDIRECT
   const destination = new URL(redirectParam ?? fallback, requestUrl.origin)
   const response = NextResponse.redirect(destination)
   const supabase = createSupabaseRouteHandlerClient(request, response)

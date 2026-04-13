@@ -5,14 +5,14 @@ export const ACCELERATOR_FUNDABLE_THRESHOLD = 70
 export const ACCELERATOR_VERIFIED_THRESHOLD = 90
 
 const CORE_FORMATION_MODULE_SLUGS = new Set(["naming-your-nfp", "nfp-registration", "filing-1023"])
-const CORE_ROADMAP_SECTION_IDS = new Set([
+export const CORE_ROADMAP_SECTION_IDS = new Set([
   "origin_story",
   "need",
   "mission_vision_values",
   "theory_of_change",
   "program",
 ])
-const PROFILE_COMPLETENESS_KEYS = [
+export const PROFILE_COMPLETENESS_KEYS = [
   "name",
   "tagline",
   "mission",
@@ -21,7 +21,13 @@ const PROFILE_COMPLETENESS_KEYS = [
   "address_city",
   "address_state",
 ] as const
-const VERIFIED_DOC_KEYS = ["verificationLetter", "bylaws", "stateRegistration", "goodStandingCertificate", "w9"] as const
+export const VERIFIED_DOC_KEYS = [
+  "verificationLetter",
+  "bylaws",
+  "stateRegistration",
+  "goodStandingCertificate",
+  "w9",
+] as const
 
 type ReadinessModule = {
   slug: string

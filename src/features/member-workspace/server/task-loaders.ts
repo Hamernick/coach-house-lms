@@ -5,6 +5,7 @@ import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-con
 import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
 import { loadTaskAssigneeMap, type TaskAssigneeProfile } from "./task-assignees"
 import { ensureStarterTasksForOrg } from "./task-persistence"
+import { loadTaskProjectScope } from "./task-project-scope"
 import {
   mapTaskRowsToGroups,
   type OrganizationTaskRecord,
@@ -126,11 +127,6 @@ type AdminTaskQueryRow = Pick<
     | null
 }
 
-type TaskProjectOption = {
-  id: string
-  label: string
-}
-
 function mapAdminTaskRowsToItems(
   rows: AdminTaskQueryRow[],
   assigneeByTaskId: Map<string, TaskAssigneeProfile>,
@@ -170,37 +166,6 @@ function mapAdminTaskRowsToItems(
     .sort(compareTaskItems)
 }
 
-async function loadTaskProjectOptions({
-  orgId,
-  supabase,
-}: {
-  orgId?: string
-  supabase: Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>["supabase"]
-}): Promise<TaskProjectOption[]> {
-  let query = supabase
-    .from("organization_projects")
-    .select("id, name")
-    .order("name", { ascending: true })
-
-  if (orgId) {
-    query = query.eq("org_id", orgId)
-  }
-
-  const { data, error } = await query.returns<Array<{ id: string; name: string }>>()
-
-  if (error) {
-    if (isMissingOrganizationProjectsTableError(error)) {
-      return []
-    }
-    throw toMemberWorkspaceDataError(error, "Unable to load task projects.")
-  }
-
-  return (data ?? []).map((project) => ({
-    id: project.id,
-    label: project.name,
-  }))
-}
-
 export async function loadMemberWorkspaceTasksPage() {
   const actor = await resolveMemberWorkspaceActorContext()
 
@@ -236,7 +201,7 @@ export async function loadMemberWorkspaceTasksPage() {
           starterTaskCount: 0,
           hasAnyOrgTasks: false,
           canResetStarterData: false,
-          canManageTasks: true,
+          canManageTasks: false,
           scope: "platform-admin" as const,
           assigneeOptions: [],
           projectOptions: [],
@@ -251,8 +216,9 @@ export async function loadMemberWorkspaceTasksPage() {
       loadMemberWorkspacePersonOptionsForOrganizations({
         orgIds: adminOrgIds,
         supabase: actor.supabase,
+        includePlatformAdmins: true,
       }),
-      loadTaskProjectOptions({
+      loadTaskProjectScope({
         supabase: actor.supabase,
       }),
       loadTaskAssigneeMap({
@@ -263,20 +229,20 @@ export async function loadMemberWorkspaceTasksPage() {
 
     return {
       taskGroups: mapTaskRowsToGroups(
-        mapAdminTaskRowsToItems(rows, assigneeByTaskId, true),
+        mapAdminTaskRowsToItems(rows, assigneeByTaskId, false),
       ),
       storageMode: resolveMemberWorkspaceStorageMode(rows),
       starterTaskCount: rows.filter((task) => task.created_source === "starter_seed").length,
       hasAnyOrgTasks: rows.length > 0,
       canResetStarterData: false,
-      canManageTasks: true,
+      canManageTasks: false,
       scope: "platform-admin" as const,
       assigneeOptions,
-      projectOptions,
+      projectOptions: projectOptions.projectOptions,
     }
   }
 
-  const [, assigneeOptions, projectOptions] = await Promise.all([
+  const [, assigneeOptions, taskProjectScope] = await Promise.all([
     ensureStarterTasksForOrg({
       canEdit: actor.canEdit,
       orgId: actor.activeOrg.orgId,
@@ -287,20 +253,36 @@ export async function loadMemberWorkspaceTasksPage() {
       orgIds: [actor.activeOrg.orgId],
       supabase: actor.supabase,
     }),
-    loadTaskProjectOptions({
+    loadTaskProjectScope({
       orgId: actor.activeOrg.orgId,
       supabase: actor.supabase,
     }),
   ])
 
+  const { projectIds, projectOptions } = taskProjectScope
+
+  if (projectIds.size === 0) {
+    return {
+      taskGroups: [],
+      storageMode: "empty" as const,
+      starterTaskCount: 0,
+      hasAnyOrgTasks: false,
+      canResetStarterData: false,
+      canManageTasks: actor.canEdit,
+      scope: "organization" as const,
+      assigneeOptions,
+      projectOptions,
+    }
+  }
+
   const [{ data: organizationTaskRows, error: organizationTasksError }, { data: assignedRows, error: assignedRowsError }] =
     await Promise.all([
       actor.supabase
         .from("organization_tasks")
-        .select("id, created_source")
+        .select("id, project_id, created_source")
         .eq("org_id", actor.activeOrg.orgId)
         .neq("created_source", "system")
-        .returns<Array<Pick<OrganizationTaskRecord, "id" | "created_source">>>(),
+        .returns<Array<Pick<OrganizationTaskRecord, "id" | "project_id" | "created_source">>>(),
       actor.supabase
         .from("organization_task_assignees")
         .select(
@@ -355,15 +337,20 @@ export async function loadMemberWorkspaceTasksPage() {
     )
   }
 
-  const taskRows = organizationTaskRows ?? []
+  const taskRows = (organizationTaskRows ?? []).filter((task) =>
+    projectIds.has(task.project_id),
+  )
+  const scopedAssignedRows = (assignedRows ?? []).filter((row) =>
+    projectIds.has(row.organization_tasks?.project_id ?? ""),
+  )
   const assigneeByTaskId = new Map(
-    (assignedRows ?? [])
+    scopedAssignedRows
       .map((row) => row.organization_tasks?.id)
       .filter((id): id is string => Boolean(id))
       .map((taskId) => [taskId, actor.currentUser] as const),
   )
   const taskItems = mapTaskAssignmentRowsToItems(
-    assignedRows ?? [],
+    scopedAssignedRows,
     assigneeByTaskId,
     actor.canEdit,
   )

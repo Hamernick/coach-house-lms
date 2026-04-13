@@ -94,6 +94,7 @@ export type MemberWorkspaceProjectDetailLoadResult =
   | { state: "not-found" }
   | {
       state: "ready"
+      scope: "organization" | "platform-admin"
       assigneeOptions: MemberWorkspacePersonOption[]
       currentUser: User
       organizationSummary: MemberWorkspaceAdminOrganizationSummary
@@ -345,6 +346,7 @@ async function buildReadyProjectDetailResult({
     loadMemberWorkspacePersonOptionsForOrganizations({
       orgIds: [project.org_id],
       supabase: actor.supabase,
+      includePlatformAdmins: actor.isAdmin,
     }),
     loadCurrentUser({
       supabase: actor.supabase,
@@ -374,6 +376,7 @@ async function buildReadyProjectDetailResult({
 
   return {
     state: "ready",
+    scope: actor.isAdmin ? "platform-admin" : "organization",
     assigneeOptions,
     currentUser,
     organizationSummary,

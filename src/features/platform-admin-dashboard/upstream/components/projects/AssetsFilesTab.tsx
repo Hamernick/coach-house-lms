@@ -14,12 +14,12 @@ import {
 
 type AssetsFilesTabProps = {
     files: ProjectFile[]
-    onCreateAsset: (input: AddFileModalSubmitInput) => Promise<void>
-    onUpdateAsset: (
+    onCreateAsset?: (input: AddFileModalSubmitInput) => Promise<void>
+    onUpdateAsset?: (
         fileId: string,
         input: AddFileModalSubmitInput,
     ) => Promise<void>
-    onDeleteAsset: (fileId: string) => Promise<void>
+    onDeleteAsset?: (fileId: string) => Promise<void>
 }
 
 export function AssetsFilesTab({
@@ -32,6 +32,7 @@ export function AssetsFilesTab({
     const [items, setItems] = useState<ProjectFile[]>(files)
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [editingFile, setEditingFile] = useState<ProjectFile | null>(null)
+    const canManageAssets = Boolean(onCreateAsset || onUpdateAsset || onDeleteAsset)
 
     useEffect(() => {
         setItems(files)
@@ -40,6 +41,7 @@ export function AssetsFilesTab({
     const recentFiles = useMemo(() => items.slice(0, 6), [items])
 
     const handleAddFile = () => {
+        if (!onCreateAsset) return
         setEditingFile(null)
         setIsAddOpen(true)
     }
@@ -47,9 +49,15 @@ export function AssetsFilesTab({
     const handleCreateFiles = async (input: AddFileModalSubmitInput) => {
         try {
             if (editingFile) {
+                if (!onUpdateAsset) {
+                    throw new Error("Asset editing is unavailable.")
+                }
                 await onUpdateAsset(editingFile.id, input)
                 toast.success("Asset updated")
             } else {
+                if (!onCreateAsset) {
+                    throw new Error("Asset creation is unavailable.")
+                }
                 await onCreateAsset(input)
                 toast.success("Asset created")
             }
@@ -64,6 +72,7 @@ export function AssetsFilesTab({
     }
 
     const handleEditFile = (fileId: string) => {
+        if (!onUpdateAsset) return
         const file = items.find((item) => item.id === fileId) ?? null
         if (!file) return
         setEditingFile(file)
@@ -71,6 +80,7 @@ export function AssetsFilesTab({
     }
 
     const handleDeleteFile = async (fileId: string) => {
+        if (!onDeleteAsset) return
         try {
             await onDeleteAsset(fileId)
             setItems((prev) => prev.filter((file) => file.id !== fileId))
@@ -90,8 +100,8 @@ export function AssetsFilesTab({
                         <RecentFileCard
                             key={file.id}
                             file={file}
-                            onEdit={handleEditFile}
-                            onDelete={handleDeleteFile}
+                            onEdit={canManageAssets ? handleEditFile : undefined}
+                            onDelete={canManageAssets ? handleDeleteFile : undefined}
                         />
                     ))}
                 </div>
@@ -101,23 +111,25 @@ export function AssetsFilesTab({
                 <h2 className="mb-4 text-sm font-semibold text-accent-foreground">All files</h2>
                 <FilesTable
                     files={items}
-                    onAddFile={handleAddFile}
-                    onEditFile={handleEditFile}
-                    onDeleteFile={handleDeleteFile}
+                    onAddFile={canManageAssets ? handleAddFile : undefined}
+                    onEditFile={canManageAssets ? handleEditFile : undefined}
+                    onDeleteFile={canManageAssets ? handleDeleteFile : undefined}
                 />
             </section>
 
-            <AddFileModal
-                open={isAddOpen}
-                onOpenChange={(open) => {
-                    setIsAddOpen(open)
-                    if (!open) {
-                        setEditingFile(null)
-                    }
-                }}
-                editingFile={editingFile}
-                onCreate={handleCreateFiles}
-            />
+            {canManageAssets ? (
+                <AddFileModal
+                    open={isAddOpen}
+                    onOpenChange={(open) => {
+                        setIsAddOpen(open)
+                        if (!open) {
+                            setEditingFile(null)
+                        }
+                    }}
+                    editingFile={editingFile}
+                    onCreate={handleCreateFiles}
+                />
+            ) : null}
         </div>
     )
 }

@@ -7,6 +7,14 @@ export const GlobalSearch = dynamic(
   { loading: () => null, ssr: false },
 )
 
+export const AppPricingFeedbackPrompt = dynamic(
+  () =>
+    import("@/features/app-pricing-feedback").then((mod) => ({
+      default: mod.AppPricingFeedbackPrompt,
+    })),
+  { loading: () => null, ssr: false },
+)
+
 export const OnboardingDialogEntry = dynamic(
   () =>
     import("@/components/onboarding/onboarding-dialog-entry").then((mod) => ({

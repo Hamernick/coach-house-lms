@@ -6,6 +6,9 @@ import {
   createOrganizationMarkerElement,
 } from "./map-markers"
 import {
+  resolveMarkerOverlapBuckets,
+} from "./marker-overlap-buckets"
+import {
   getMapLayerSafely,
   getMapSourceSafely,
   isMapStyleAccessError,
@@ -26,9 +29,9 @@ export type SpiderfyOverlayState = {
 export const PUBLIC_MAP_SPIDERFY_RAILS_SOURCE_ID = "public-map-spiderfy-rails"
 export const PUBLIC_MAP_SPIDERFY_RAILS_LAYER_ID = "public-map-spiderfy-rails-layer"
 export const SPIDERFY_MAX_LEAVES = 180
-const SPIDERFY_COORDINATE_PRECISION = 6
 const SPIDERFY_MAX_BUCKET_ITEMS = 10
 const SPIDERFY_MAX_BUCKETS = 6
+const SPIDERFY_OVERLAP_BUCKET_THRESHOLD_PX = 16
 
 const EMPTY_SPIDERFY_RAILS: {
   type: "FeatureCollection"
@@ -45,21 +48,14 @@ const EMPTY_SPIDERFY_RAILS: {
   features: [],
 }
 
-function resolveCoordinateKey(longitude: number, latitude: number) {
-  return `${longitude.toFixed(SPIDERFY_COORDINATE_PRECISION)}:${latitude.toFixed(SPIDERFY_COORDINATE_PRECISION)}`
-}
-
 function resolveBucketDistance({
-  coordinates,
-  targetCoordinates,
+  point,
+  targetPoint,
 }: {
-  coordinates: [number, number]
-  targetCoordinates: [number, number]
+  point: { x: number; y: number }
+  targetPoint: { x: number; y: number }
 }) {
-  return (
-    Math.abs(coordinates[0] - targetCoordinates[0]) +
-    Math.abs(coordinates[1] - targetCoordinates[1])
-  )
+  return Math.abs(point.x - targetPoint.x) + Math.abs(point.y - targetPoint.y)
 }
 
 function resolveBucketAngleOffset(key: string) {
@@ -133,6 +129,7 @@ export function clearSpiderfyOverlay({
 }
 
 export function resolveSpiderfyCandidateBuckets({
+  map,
   leaves,
   organizationById,
   targetCoordinates,
@@ -140,6 +137,7 @@ export function resolveSpiderfyCandidateBuckets({
   resolveFeatureCoordinates,
   maxBuckets = SPIDERFY_MAX_BUCKETS,
 }: {
+  map: mapboxgl.Map
   leaves: mapboxgl.MapboxGeoJSONFeature[]
   organizationById: Map<string, PublicMapOrganization>
   targetCoordinates: [number, number]
@@ -147,7 +145,13 @@ export function resolveSpiderfyCandidateBuckets({
   resolveFeatureCoordinates: (feature: mapboxgl.MapboxGeoJSONFeature) => [number, number] | null
   maxBuckets?: number
 }) {
-  const buckets = new Map<string, SpiderfyBucket>()
+  const overlapCandidates = new Map<
+    string,
+    {
+      organization: PublicMapOrganization
+      coordinates: [number, number]
+    }
+  >()
 
   for (const leaf of leaves) {
     const properties = (leaf.properties ?? {}) as Record<string, unknown>
@@ -168,27 +172,30 @@ export function resolveSpiderfyCandidateBuckets({
     const coordinates = leafCoordinates ?? fallbackCoordinates
     if (!coordinates) continue
 
-    const key = resolveCoordinateKey(coordinates[0], coordinates[1])
-    const bucket = buckets.get(key)
-    if (bucket) {
-      bucket.organizations.push(organization)
-      continue
-    }
-
-    buckets.set(key, {
-      key,
+    overlapCandidates.set(organization.id, {
+      organization,
       coordinates,
-      organizations: [organization],
     })
   }
 
-  const duplicateBuckets = Array.from(buckets.values())
-    .filter((bucket) => bucket.organizations.length > 1)
+  const targetPoint = map.project(targetCoordinates)
+  const duplicateBuckets = resolveMarkerOverlapBuckets({
+    map,
+    items: Array.from(overlapCandidates.values()),
+    getKey: (item) => item.organization.id,
+    getCoordinates: (item) => item.coordinates,
+    thresholdPx: SPIDERFY_OVERLAP_BUCKET_THRESHOLD_PX,
+  })
+    .filter((bucket) => bucket.members.length > 1)
     .map((bucket) => ({
-      bucket,
-      distance: resolveBucketDistance({
+      bucket: {
+        key: bucket.key,
         coordinates: bucket.coordinates,
-        targetCoordinates,
+        organizations: bucket.members.map((member) => member.item.organization),
+      } satisfies SpiderfyBucket,
+      distance: resolveBucketDistance({
+        point: bucket.point,
+        targetPoint,
       }),
     }))
     .sort((left, right) => {
@@ -204,12 +211,14 @@ export function resolveSpiderfyCandidateBuckets({
 }
 
 export function resolveSpiderfyCandidateBucket({
+  map,
   leaves,
   organizationById,
   targetCoordinates,
   resolveOrganizationId,
   resolveFeatureCoordinates,
 }: {
+  map: mapboxgl.Map
   leaves: mapboxgl.MapboxGeoJSONFeature[]
   organizationById: Map<string, PublicMapOrganization>
   targetCoordinates: [number, number]
@@ -217,6 +226,7 @@ export function resolveSpiderfyCandidateBucket({
   resolveFeatureCoordinates: (feature: mapboxgl.MapboxGeoJSONFeature) => [number, number] | null
 }) {
   const [primaryBucket] = resolveSpiderfyCandidateBuckets({
+    map,
     leaves,
     organizationById,
     targetCoordinates,
@@ -280,6 +290,7 @@ export function openSpiderfyOverlay({
       const element = createOrganizationMarkerElement({
         organization,
         selected: organization.id === selectedOrganizationId,
+        placement: "spiderfied",
         onSelect: () => {
           clearSpiderfyOverlay({ map, state })
           onSelectOrganization(organization.id)

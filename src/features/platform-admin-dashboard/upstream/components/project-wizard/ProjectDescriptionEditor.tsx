@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { cn } from "@/features/platform-admin-dashboard/upstream/lib/utils";
+import Link from "@tiptap/extension-link";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -54,6 +55,14 @@ import { Plus, StarFour, ArrowsOutSimple } from "@phosphor-icons/react/dist/ssr"
   const editor = useEditor({
     extensions: [
       StarterKit,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        linkOnPaste: true,
+        HTMLAttributes: {
+          class: "text-primary underline underline-offset-2",
+        },
+      }),
       Placeholder.configure({
         placeholder: ({ node }: { node: any }) => {
           if (node.type.name === "heading") {

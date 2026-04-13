@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation"
 import type { SupabaseClient, Session } from "@supabase/supabase-js"
 
+import { DEFAULT_POST_AUTH_REDIRECT } from "@/lib/auth/redirects"
 import { createSupabaseServerClient as createFromServer } from "@/lib/supabase/server"
 import { createSupabaseServerClient as createFromIndex } from "@/lib/supabase"
 import { createClient, type SupabaseClient as CoreClient } from "@supabase/supabase-js"
@@ -64,7 +65,7 @@ export async function getServerSession(): Promise<ServerSessionResult> {
   return { supabase, session: null }
 }
 
-export async function requireServerSession(redirectPath: string = "/organization"): Promise<
+export async function requireServerSession(redirectPath: string = DEFAULT_POST_AUTH_REDIRECT): Promise<
   { supabase: SupabaseClient<Database>; session: Session }
 > {
   const { supabase, session } = await getServerSession()

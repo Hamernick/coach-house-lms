@@ -19,6 +19,7 @@ type NoteCardProps = {
 
 export function NoteCard({ note, onEdit, onDelete, onClick }: NoteCardProps) {
     const isAudio = note.noteType === "audio"
+    const canManageNote = Boolean(onEdit || onDelete)
     return (
         <div
             className="flex flex-col gap-1 rounded-xl border border-border bg-muted p-1 hover:shadow-sm hover:cursor-pointer transition-shadow"
@@ -32,25 +33,31 @@ export function NoteCard({ note, onEdit, onDelete, onClick }: NoteCardProps) {
                         <File className="h-4 w-4 text-muted-foreground" />
                     )}
                 </div>
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            className="h-6 w-6 text-muted-foreground hover:text-foreground"
-                        >
-                            <DotsThree className="h-4 w-4" weight="bold" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onEdit?.(note.id)}>
-                            Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => onDelete?.(note.id)}>
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                {canManageNote ? (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                className="h-6 w-6 text-muted-foreground hover:text-foreground"
+                            >
+                                <DotsThree className="h-4 w-4" weight="bold" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {onEdit ? (
+                                <DropdownMenuItem onClick={() => onEdit(note.id)}>
+                                    Edit
+                                </DropdownMenuItem>
+                            ) : null}
+                            {onDelete ? (
+                                <DropdownMenuItem onClick={() => onDelete(note.id)}>
+                                    Delete
+                                </DropdownMenuItem>
+                            ) : null}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                ) : null}
             </div>
 
             <div className="rounded-lg bg-background px-3 py-3">

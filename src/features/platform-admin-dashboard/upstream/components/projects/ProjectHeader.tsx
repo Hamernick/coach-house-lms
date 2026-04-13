@@ -20,7 +20,7 @@ export function ProjectHeader({ project, onEditProject }: ProjectHeaderProps) {
     { label: "", value: project.meta.locationLabel, icon: <Globe className="h-4 w-4" /> },
     { label: "Sprints", value: project.meta.sprintLabel, icon: <Timer className="h-4 w-4" /> },
     { label: "Last sync", value: project.meta.lastSyncLabel, icon: <ArrowsClockwise className="h-4 w-4" /> },
-  ]
+  ].filter((item) => item.value !== undefined && item.value !== null && item.value !== "")
 
   return (
     <section className="mt-4 space-y-5">

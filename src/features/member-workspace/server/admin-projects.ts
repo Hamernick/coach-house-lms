@@ -13,10 +13,20 @@ type ServerSupabaseClient = Awaited<ReturnType<typeof createSupabaseServerClient
 
 type OrganizationProjectInsert =
   Database["public"]["Tables"]["organization_projects"]["Insert"]
+type OrganizationProjectUpdate =
+  Database["public"]["Tables"]["organization_projects"]["Update"]
 
-export function buildCanonicalAdminOrganizationProject(
+function stringArraysEqual(left: string[], right: string[]) {
+  if (left.length !== right.length) return false
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) return false
+  }
+  return true
+}
+
+function buildCanonicalAdminOrganizationProjectFields(
   organization: MemberWorkspaceAdminOrganizationSummary,
-): OrganizationProjectInsert {
+) {
   const project = mapAdminOrganizationSummaryToProject(organization)
 
   return {
@@ -37,9 +47,80 @@ export function buildCanonicalAdminOrganizationProject(
     member_labels: project.members,
     task_count: project.taskCount,
     created_source: "system",
+  } as const
+}
+
+export function buildCanonicalAdminOrganizationProject(
+  organization: MemberWorkspaceAdminOrganizationSummary,
+): OrganizationProjectInsert {
+  return {
+    ...buildCanonicalAdminOrganizationProjectFields(organization),
     created_by: organization.orgId,
     updated_by: organization.orgId,
   }
+}
+
+function buildCanonicalAdminOrganizationProjectUpdate(
+  organization: MemberWorkspaceAdminOrganizationSummary,
+): OrganizationProjectUpdate {
+  return {
+    ...buildCanonicalAdminOrganizationProjectFields(organization),
+    updated_by: organization.orgId,
+  }
+}
+
+function canonicalAdminProjectNeedsRefresh({
+  organization,
+  existing,
+}: {
+  organization: MemberWorkspaceAdminOrganizationSummary
+  existing: OrganizationProjectRecord
+}) {
+  const desired = buildCanonicalAdminOrganizationProjectFields(organization)
+
+  return (
+    existing.org_id !== desired.org_id ||
+    (existing.canonical_org_id ?? null) !== (desired.canonical_org_id ?? null) ||
+    existing.project_kind !== desired.project_kind ||
+    existing.name !== desired.name ||
+    (existing.description ?? null) !== (desired.description ?? null) ||
+    existing.status !== desired.status ||
+    existing.priority !== desired.priority ||
+    existing.progress !== desired.progress ||
+    existing.start_date !== desired.start_date ||
+    existing.end_date !== desired.end_date ||
+    (existing.client_name ?? null) !== (desired.client_name ?? null) ||
+    (existing.type_label ?? null) !== (desired.type_label ?? null) ||
+    (existing.duration_label ?? null) !== (desired.duration_label ?? null) ||
+    existing.task_count !== desired.task_count ||
+    existing.created_source !== desired.created_source ||
+    !stringArraysEqual(existing.tags ?? [], desired.tags ?? []) ||
+    !stringArraysEqual(existing.member_labels ?? [], desired.member_labels ?? [])
+  )
+}
+
+async function loadCanonicalAdminProjectsByOrgIds({
+  orgIds,
+  supabase,
+}: {
+  orgIds: string[]
+  supabase: ServerSupabaseClient
+}) {
+  const { data, error } = await supabase
+    .from("organization_projects")
+    .select(organizationProjectSelectFields)
+    .eq("project_kind", "organization_admin")
+    .in("canonical_org_id", orgIds)
+    .returns<OrganizationProjectRecord[]>()
+
+  if (error) {
+    if (isMissingOrganizationProjectsTableError(error)) {
+      return null
+    }
+    throw toMemberWorkspaceDataError(error, "Unable to load organization projects.")
+  }
+
+  return data ?? []
 }
 
 export async function ensureCanonicalAdminProjects({
@@ -54,25 +135,14 @@ export async function ensureCanonicalAdminProjects({
   }
 
   const orgIds = organizations.map((organization) => organization.orgId)
-  const { data: existingRows, error: existingError } = await supabase
-    .from("organization_projects")
-    .select(organizationProjectSelectFields)
-    .eq("project_kind", "organization_admin")
-    .in("canonical_org_id", orgIds)
-    .returns<OrganizationProjectRecord[]>()
-
-  if (existingError) {
-    if (isMissingOrganizationProjectsTableError(existingError)) {
-      return null
-    }
-    throw toMemberWorkspaceDataError(
-      existingError,
-      "Unable to load organization projects.",
-    )
-  }
+  const existingRows = await loadCanonicalAdminProjectsByOrgIds({
+    orgIds,
+    supabase,
+  })
+  if (existingRows === null) return null
 
   const existingRowsByOrgId = new Map<string, OrganizationProjectRecord>()
-  for (const row of existingRows ?? []) {
+  for (const row of existingRows) {
     existingRowsByOrgId.set(row.canonical_org_id ?? row.org_id, row)
   }
 
@@ -119,6 +189,51 @@ export async function ensureCanonicalAdminProjects({
     for (const row of insertedRows ?? []) {
       existingRowsByOrgId.set(row.canonical_org_id ?? row.org_id, row)
     }
+  }
+
+  const staleOrganizations = organizations.flatMap((organization) => {
+    const existing = existingRowsByOrgId.get(organization.orgId)
+    if (!existing) return []
+    if (!canonicalAdminProjectNeedsRefresh({ organization, existing })) return []
+    return [{ organization, existing }] as const
+  })
+
+  if (staleOrganizations.length > 0) {
+    const updateResults = await Promise.all(
+      staleOrganizations.map(async ({ organization, existing }) => {
+        const { error } = await supabase
+          .from("organization_projects")
+          .update(buildCanonicalAdminOrganizationProjectUpdate(organization))
+          .eq("id", existing.id)
+        return error
+      }),
+    )
+
+    const updateError = updateResults.find(Boolean)
+    if (updateError) {
+      if (isMissingOrganizationProjectsTableError(updateError)) {
+        return null
+      }
+      throw toMemberWorkspaceDataError(
+        updateError,
+        "Unable to synchronize organization projects.",
+      )
+    }
+
+    const synchronizedRows = await loadCanonicalAdminProjectsByOrgIds({
+      orgIds,
+      supabase,
+    })
+    if (synchronizedRows === null) return null
+
+    const synchronizedRowsByOrgId = new Map<string, OrganizationProjectRecord>()
+    for (const row of synchronizedRows) {
+      synchronizedRowsByOrgId.set(row.canonical_org_id ?? row.org_id, row)
+    }
+
+    return organizations
+      .map((organization) => synchronizedRowsByOrgId.get(organization.orgId) ?? null)
+      .filter((row): row is OrganizationProjectRecord => Boolean(row))
   }
 
   return organizations

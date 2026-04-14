@@ -433,6 +433,20 @@ export async function loadMemberWorkspaceProjectDetailPage(
         return { state: "not-found" }
       }
 
+      if (projectRow.project_kind === "organization_admin") {
+        const canonicalProjects = await ensureCanonicalAdminProjects({
+          organizations: [organizationSummary],
+          supabase: actor.supabase,
+        })
+        const canonicalProject = canonicalProjects?.[0] ?? null
+
+        return buildReadyProjectDetailResult({
+          actor,
+          organizationSummary,
+          project: canonicalProject ?? mapAdminOrganizationSummaryToProjectRecord(organizationSummary),
+        })
+      }
+
       return buildReadyProjectDetailResult({
         actor,
         organizationSummary,

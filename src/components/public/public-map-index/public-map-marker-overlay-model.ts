@@ -196,8 +196,8 @@ function resolveVisibleClusterItems({
         clusterId,
         pointCount,
         coordinates,
-        projectedX: Math.round(projected.x),
-        projectedY: Math.round(projected.y),
+        projectedX: projected.x,
+        projectedY: projected.y,
       },
     ]
   })
@@ -305,8 +305,8 @@ function resolveVisibleOrganizationAndGroupItems({
         kind: "organization",
         key: `organization:${entry.organization.id}`,
         organization: entry.organization,
-        projectedX: Math.round(projected.x),
-        projectedY: Math.round(projected.y),
+        projectedX: projected.x,
+        projectedY: projected.y,
         selected: selectedOrganizationId === entry.organization.id,
       })
     }
@@ -332,8 +332,8 @@ function resolveVisibleOrganizationAndGroupItems({
       organizationIds: group.organizations.map((organization) => organization.id),
       organizations: group.organizations,
       locationLabel: group.locationLabel,
-      projectedX: Math.round(projected.x),
-      projectedY: Math.round(projected.y),
+      projectedX: projected.x,
+      projectedY: projected.y,
       selected:
         group.key === activeSameLocationGroupKey ||
         group.organizations.some((organization) => organization.id === selectedOrganizationId),

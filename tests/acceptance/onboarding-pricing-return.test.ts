@@ -56,9 +56,21 @@ describe("onboarding pricing return helpers", () => {
     ).toBe(true)
   })
 
-  it("does not auto-submit the paid pricing return when checkout failed or was cancelled", () => {
+  it("auto-submits a paid post-signup pricing step even after the user lands on the generic onboarding route", () => {
+    const searchParams = createSearchParams("source=onboarding")
+
+    expect(
+      shouldAutoSubmitPaidOnboardingPricingReturn({
+        searchParams,
+        mode: "post_signup_access",
+        builderPlanTier: "organization",
+      }),
+    ).toBe(true)
+  })
+
+  it("recovers paid post-signup pricing steps even when stale checkout error params remain in the URL", () => {
     const failedSearchParams = createSearchParams(
-      "source=onboarding_pricing&checkout_error=checkout_failed",
+      "source=onboarding&checkout_error=checkout_failed",
     )
     const cancelledSearchParams = createSearchParams(
       "source=onboarding_pricing&cancelled=true",
@@ -70,12 +82,24 @@ describe("onboarding pricing return helpers", () => {
         mode: "post_signup_access",
         builderPlanTier: "organization",
       }),
-    ).toBe(false)
+    ).toBe(true)
     expect(
       shouldAutoSubmitPaidOnboardingPricingReturn({
         searchParams: cancelledSearchParams,
         mode: "post_signup_access",
         builderPlanTier: "operations_support",
+      }),
+    ).toBe(true)
+  })
+
+  it("does not auto-submit non-onboarding sources even when a paid plan is already active", () => {
+    const searchParams = createSearchParams("source=billing")
+
+    expect(
+      shouldAutoSubmitPaidOnboardingPricingReturn({
+        searchParams,
+        mode: "post_signup_access",
+        builderPlanTier: "organization",
       }),
     ).toBe(false)
   })

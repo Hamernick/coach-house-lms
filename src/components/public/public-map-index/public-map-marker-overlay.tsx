@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type RefObject } from "react"
 import type mapboxgl from "mapbox-gl"
+import { flushSync } from "react-dom"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
@@ -17,8 +18,6 @@ import {
   type PublicMapMarkerOverlayItem,
   type PublicMapSameLocationSelection,
 } from "./public-map-marker-overlay-model"
-
-const MARKER_REFRESH_INTERVAL_MS = 32
 
 export type { PublicMapSameLocationSelection } from "./public-map-marker-overlay-model"
 
@@ -47,10 +46,6 @@ export function PublicMapMarkerOverlay({
     const map = mapRef.current
     if (!map || !mapLoadedRef.current) return
 
-    let animationFrame = 0
-    let renderTimeout: number | null = null
-    let lastRefreshAt = 0
-
     const refreshItems = () => {
       const activeMap = mapRef.current
       if (!activeMap || !mapLoadedRef.current) return
@@ -67,42 +62,46 @@ export function PublicMapMarkerOverlay({
         return
       }
 
-      setOverlayItems((current) => {
-        if (
-          nextItems.length === 0 &&
-          typeof activeMap.isMoving === "function" &&
-          activeMap.isMoving()
-        ) {
-          return current
-        }
-        return shallowEqualOverlayItems(current, nextItems) ? current : nextItems
-      })
-    }
+      const commitItems = () => {
+        setOverlayItems((current) => {
+          if (
+            nextItems.length === 0 &&
+            typeof activeMap.isMoving === "function" &&
+            activeMap.isMoving()
+          ) {
+            return current
+          }
+          return shallowEqualOverlayItems(current, nextItems) ? current : nextItems
+        })
+      }
 
-    const flushRefresh = () => {
-      cancelAnimationFrame(animationFrame)
-      animationFrame = requestAnimationFrame(() => {
-        lastRefreshAt = performance.now()
-        refreshItems()
-      })
-    }
-
-    const scheduleRefresh = () => {
-      const elapsed = performance.now() - lastRefreshAt
-      if (elapsed >= MARKER_REFRESH_INTERVAL_MS) {
-        if (renderTimeout !== null) {
-          window.clearTimeout(renderTimeout)
-          renderTimeout = null
-        }
-        flushRefresh()
+      if (typeof activeMap.isMoving === "function" && activeMap.isMoving()) {
+        flushSync(commitItems)
         return
       }
 
-      if (renderTimeout !== null) return
-      renderTimeout = window.setTimeout(() => {
-        renderTimeout = null
-        flushRefresh()
-      }, Math.max(0, MARKER_REFRESH_INTERVAL_MS - elapsed))
+      commitItems()
+    }
+
+    const handleRender = () => {
+      refreshItems()
+    }
+
+    const handleStyleLoad = () => {
+      setOverlayItems([])
+      refreshItems()
+    }
+
+    const handleIdle = () => {
+      refreshItems()
+    }
+
+    const handleResize = () => {
+      refreshItems()
+    }
+
+    const handleMoveEnd = () => {
+      refreshItems()
     }
 
     const handleSourceData = (event: mapboxgl.MapSourceDataEvent) => {
@@ -114,33 +113,24 @@ export function PublicMapMarkerOverlay({
       ) {
         return
       }
-      scheduleRefresh()
+      refreshItems()
     }
 
-    scheduleRefresh()
-    map.on("move", scheduleRefresh)
-    map.on("zoom", scheduleRefresh)
-    map.on("rotate", scheduleRefresh)
-    map.on("pitch", scheduleRefresh)
-    map.on("resize", scheduleRefresh)
-    map.on("idle", scheduleRefresh)
-    map.on("style.load", scheduleRefresh)
+    refreshItems()
+    map.on("render", handleRender)
+    map.on("moveend", handleMoveEnd)
+    map.on("resize", handleResize)
+    map.on("idle", handleIdle)
+    map.on("style.load", handleStyleLoad)
     map.on("sourcedata", handleSourceData)
 
     return () => {
-      cancelAnimationFrame(animationFrame)
-      if (renderTimeout !== null) {
-        window.clearTimeout(renderTimeout)
-      }
-      map.off("move", scheduleRefresh)
-      map.off("zoom", scheduleRefresh)
-      map.off("rotate", scheduleRefresh)
-      map.off("pitch", scheduleRefresh)
-      map.off("resize", scheduleRefresh)
-      map.off("idle", scheduleRefresh)
-      map.off("style.load", scheduleRefresh)
+      map.off("render", handleRender)
+      map.off("moveend", handleMoveEnd)
+      map.off("resize", handleResize)
+      map.off("idle", handleIdle)
+      map.off("style.load", handleStyleLoad)
       map.off("sourcedata", handleSourceData)
-      setOverlayItems([])
     }
   }, [
     activeSameLocationGroupKey,

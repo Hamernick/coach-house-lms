@@ -21,9 +21,14 @@ export function shouldAutoSubmitPaidOnboardingPricingReturn({
   mode: OnboardingFlowMode
   builderPlanTier: PricingPlanTier
 }) {
-  if (!isOnboardingPricingSource(searchParams)) return false
   if (mode !== "post_signup_access") return false
-  if (searchParams.get("cancelled") === "true") return false
-  if (typeof searchParams.get("checkout_error") === "string") return false
+  const onboardingSource = searchParams.get("source")
+  if (
+    onboardingSource !== null &&
+    onboardingSource !== "onboarding" &&
+    onboardingSource !== "onboarding_pricing"
+  ) {
+    return false
+  }
   return builderPlanTier === "organization" || builderPlanTier === "operations_support"
 }

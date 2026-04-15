@@ -4,7 +4,15 @@ import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
 import { organizationHasMapLocation } from "./helpers"
 import { resolveFeatureCoordinatesForMap } from "./map-coordinate-normalization"
-import { PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID } from "./map-view-helpers"
+import {
+  PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
+  PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+} from "./map-view-helpers"
+import {
+  getMapLayerSafely,
+  getMapSourceSafely,
+  isMapStyleAccessError,
+} from "./map-style-guards"
 import {
   coalesceClusterReconcileFeatures,
   queryVisibleUnclusteredOrganizationFeatures,
@@ -159,9 +167,21 @@ function resolveVisibleClusterItems({
 }: {
   map: mapboxgl.Map
 }): PublicMapMarkerOverlayItem[] {
-  const rawClusterFeatures = map.queryRenderedFeatures({
-    layers: [PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID],
-  })
+  const source = getMapSourceSafely(map, PUBLIC_MAP_ORGANIZATION_SOURCE_ID)
+  if (isMapStyleAccessError(source) || !source) return []
+
+  const clusterLayer = getMapLayerSafely(map, PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID)
+  if (isMapStyleAccessError(clusterLayer) || !clusterLayer) return []
+
+  let rawClusterFeatures: mapboxgl.MapboxGeoJSONFeature[] = []
+  try {
+    rawClusterFeatures = map.queryRenderedFeatures({
+      layers: [PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID],
+    })
+  } catch {
+    return []
+  }
+
   const coalescedClusterFeatures = coalesceClusterReconcileFeatures({
     map,
     features: rawClusterFeatures,

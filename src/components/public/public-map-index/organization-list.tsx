@@ -59,9 +59,9 @@ export function PublicMapOrganizationList({
   if (organizations.length === 0) {
     const hasSearchQuery = Boolean(query?.trim().length)
     return (
-      <div className="rounded-xl border border-border/70 bg-background/80 px-3 py-5 text-center">
+      <div className="flex flex-col gap-1 rounded-2xl border border-border/70 bg-card/92 px-4 py-6 text-center shadow-[0_16px_32px_-28px_hsl(var(--foreground)/0.5)]">
         <p className="text-sm font-medium text-foreground">No organizations yet</p>
-        <p className="mt-1 text-xs text-muted-foreground">
+        <p className="text-xs leading-relaxed text-muted-foreground">
           {hasSearchQuery
             ? "No organizations matched your search."
             : "Public organizations will appear here once they are published. Map markers appear when an address is available."}
@@ -71,12 +71,15 @@ export function PublicMapOrganizationList({
   }
 
   return (
-    <div className="space-y-2.5">
+    <div className="flex w-full min-w-0 max-w-full flex-col gap-2.5">
       {organizations.map((org) => {
         const selected = selectedOrgId === org.id
         const location = formatLocation(org)
         const isFavorite = favorites.includes(org.id)
         const previewPrograms = buildProgramPreviewCards(org)
+        const visiblePreviewPrograms = constrainedLayout
+          ? previewPrograms.slice(0, 2)
+          : previewPrograms
         const fallbackInitials = buildInitials(org.name)
 
         return (
@@ -84,16 +87,16 @@ export function PublicMapOrganizationList({
             key={org.id}
             style={PUBLIC_MAP_LIST_CARD_PERF_STYLE}
             className={cn(
-              "group relative overflow-hidden rounded-2xl border bg-background/85 p-3 transition-colors",
+              "group relative w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-border/70 bg-card/94 p-3 shadow-[0_18px_36px_-30px_hsl(var(--foreground)/0.55)] transition-[border-color,background-color,box-shadow]",
               selected
-                ? "bg-card"
-                : "hover:bg-background",
+                ? "border-primary/35 bg-card shadow-[0_22px_44px_-30px_hsl(var(--foreground)/0.65)]"
+                : "hover:border-border/90 hover:bg-card",
             )}
           >
             <Button
               type="button"
               variant="ghost"
-              className="absolute inset-0 z-0 h-auto w-auto rounded-[inherit] border border-white/15 bg-background/25 p-0 text-transparent shadow-none transition-colors hover:bg-background/35 dark:border-white/30 dark:bg-white/12 dark:hover:bg-white/18 focus-visible:ring-2 focus-visible:ring-primary/35 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="absolute inset-0 z-0 h-auto w-auto rounded-[inherit] border border-white/15 bg-background/25 p-0 text-transparent shadow-none transition-colors hover:bg-background/35 dark:border-white/30 dark:bg-white/12 dark:hover:bg-white/18 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35"
               onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}
               aria-label={`Open details for ${org.name}`}
             />
@@ -118,7 +121,7 @@ export function PublicMapOrganizationList({
 
             <div
               className={cn(
-                "pointer-events-none relative z-10 flex min-w-0 items-start pr-10",
+                "pointer-events-none relative z-10 flex min-w-0 items-start pr-11",
                 constrainedLayout ? "gap-2.5" : "gap-3",
               )}
             >
@@ -137,7 +140,12 @@ export function PublicMapOrganizationList({
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15px] font-semibold text-foreground">{org.name}</span>
                   {org.tagline ? (
-                    <span className="mt-0.5 block line-clamp-3 min-w-0 break-words text-xs leading-relaxed text-muted-foreground">
+                    <span
+                      className={cn(
+                        "mt-0.5 block min-w-0 break-words text-xs leading-relaxed text-muted-foreground",
+                        constrainedLayout ? "line-clamp-2" : "line-clamp-3",
+                      )}
+                    >
                       {org.tagline}
                     </span>
                   ) : null}
@@ -160,9 +168,14 @@ export function PublicMapOrganizationList({
               </div>
             ) : null}
 
-            {previewPrograms.length > 0 ? (
-              <div className="pointer-events-none relative z-10 mt-2 grid grid-cols-3 gap-1.5">
-                {previewPrograms.map((program) => (
+            {visiblePreviewPrograms.length > 0 ? (
+              <div
+                className={cn(
+                  "pointer-events-none relative z-10 mt-2 grid gap-1.5",
+                  constrainedLayout ? "grid-cols-2" : "grid-cols-3",
+                )}
+              >
+                {visiblePreviewPrograms.map((program) => (
                   <div
                     key={`${org.id}:program:${program.id}`}
                     className="overflow-hidden rounded-lg border border-border/70 bg-muted/25"
@@ -170,7 +183,10 @@ export function PublicMapOrganizationList({
                     <PublicMapMediaImage
                       src={program.imageUrl ?? ""}
                       alt=""
-                      wrapperClassName="h-20 bg-muted/30"
+                      wrapperClassName={cn(
+                        "bg-muted/30",
+                        constrainedLayout ? "h-[4.5rem]" : "h-20",
+                      )}
                     />
                     <div className="px-2 py-1.5">
                       <p className="line-clamp-1 text-[11px] font-medium text-foreground">{program.title}</p>
@@ -201,10 +217,10 @@ export function PublicMapOrganizationList({
               </div>
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 size="sm"
                 className={cn(
-                  "pointer-events-auto relative z-20 h-auto shrink-0 rounded-none border-0 bg-transparent px-0 py-0 text-[11px] text-foreground shadow-none hover:bg-transparent hover:text-foreground/80",
+                  "pointer-events-auto relative z-20 h-8 shrink-0 rounded-full border-border/70 bg-background/75 px-3 text-[11px] text-foreground shadow-sm hover:bg-muted",
                   constrainedLayout ? "justify-self-end" : "ml-auto",
                 )}
                 onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}

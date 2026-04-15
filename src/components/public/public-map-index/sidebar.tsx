@@ -12,30 +12,22 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
+import { Sidebar, SidebarProvider } from "@/components/ui/sidebar"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
 import type { SidebarMode } from "./constants"
-import { PublicMapOrganizationDetail } from "./organization-detail"
-import { PublicMapOrganizationList } from "./organization-list"
-import { PublicMapSearchCard } from "./search-card"
 import { buildPublicMapDrawerSnapPoints } from "./sidebar-snap-points"
 import type { PublicMapPanelPresentation } from "./map-view-helpers"
+import {
+  PublicMapDrawerDetailPanel,
+  PublicMapDrawerSearchPanel,
+  PublicMapRailDetailPanel,
+  PublicMapRailSearchPanel,
+  type PublicMapSidebarSearchContext,
+} from "./sidebar-panels"
 
-export type PublicMapSidebarSearchContext = {
-  title: string
-  description?: string | null
-  organizations: PublicMapOrganization[]
-  onClear: () => void
-}
+export type { PublicMapSidebarSearchContext } from "./sidebar-panels"
 
 type PublicMapSidebarProps = {
   sidebarMode: SidebarMode
@@ -52,36 +44,6 @@ type PublicMapSidebarProps = {
   toggleFavorite: (orgId: string) => void
   onOpenDetails: (orgId: string, options?: { preserveSearchContext?: boolean }) => void
   setSidebarMode: (mode: SidebarMode) => void
-}
-
-function PublicMapSearchContextCard({
-  context,
-}: {
-  context: PublicMapSidebarSearchContext
-}) {
-  return (
-    <div className="mb-2 rounded-2xl border border-border/70 bg-background/82 px-3 py-3 shadow-sm">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground">{context.title}</p>
-          {context.description ? (
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              {context.description}
-            </p>
-          ) : null}
-        </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          className="h-8 rounded-full px-3 text-xs"
-          onClick={context.onClear}
-        >
-          Show all
-        </Button>
-      </div>
-    </div>
-  )
 }
 
 export function PublicMapSidebar({
@@ -107,7 +69,7 @@ export function PublicMapSidebar({
   const effectiveSidebarMode =
     compact && sidebarMode === "hidden" ? "search" : sidebarMode
   const panelOpen = compact ? true : effectiveSidebarMode !== "hidden"
-  const constrainedRailLayout = panelPresentation === "rail" && sidebarWidth < 352
+  const constrainedRailLayout = panelPresentation === "rail" && sidebarWidth < 376
   const snapPoints = useMemo(
     () => buildPublicMapDrawerSnapPoints(surfaceHeight),
     [surfaceHeight],
@@ -149,54 +111,28 @@ export function PublicMapSidebar({
         className="pointer-events-auto h-full w-full overflow-hidden border-r border-white/30 bg-background/40 shadow-[0_20px_45px_-28px_hsl(var(--foreground)/0.6)] backdrop-blur-2xl supports-[backdrop-filter]:bg-background/34 dark:bg-black/28"
       >
         {effectiveSidebarMode === "search" ? (
-          <SidebarContent className="h-full min-h-0 gap-2 overflow-hidden bg-background/38 pt-0 pb-2 pl-1 pr-2 dark:bg-black/28">
-            <SidebarGroup className="px-0 pt-0 pb-0">
-              <SidebarGroupContent>
-                <PublicMapSearchCard
-                  query={query}
-                  onQueryChange={setQuery}
-                  onHidePanel={() => setSidebarMode("hidden")}
-                />
-              </SidebarGroupContent>
-            </SidebarGroup>
-            <SidebarGroup className="min-h-0 flex-1 overflow-hidden px-2 py-0">
-              <SidebarGroupContent className="h-full min-h-0 pl-0">
-                <ScrollArea className="h-full min-h-0">
-                  <div className="pt-1 pb-1 pl-1 pr-3">
-                    {searchContext ? (
-                      <PublicMapSearchContextCard context={searchContext} />
-                    ) : null}
-                    <PublicMapOrganizationList
-                      organizations={listOrganizations}
-                      selectedOrgId={selectedOrganization?.id ?? null}
-                      favorites={favorites}
-                      query={query}
-                      constrainedLayout={constrainedRailLayout}
-                      onSelectOrg={() => undefined}
-                      onToggleFavorite={toggleFavorite}
-                      onOpenDetails={(organizationId) =>
-                        onOpenDetails(organizationId, {
-                          preserveSearchContext: Boolean(searchContext),
-                        })
-                      }
-                    />
-                  </div>
-                </ScrollArea>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
+          <PublicMapRailSearchPanel
+            query={query}
+            searchContext={searchContext}
+            organizations={listOrganizations}
+            selectedOrgId={selectedOrganization?.id ?? null}
+            favorites={favorites}
+            constrainedLayout={constrainedRailLayout}
+            onQueryChange={setQuery}
+            onHidePanel={() => setSidebarMode("hidden")}
+            onToggleFavorite={toggleFavorite}
+            onOpenDetails={(organizationId) =>
+              onOpenDetails(organizationId, {
+                preserveSearchContext: Boolean(searchContext),
+              })
+            }
+          />
         ) : selectedOrganization ? (
-          <SidebarContent className="h-full min-h-0 overflow-hidden bg-background/38 pt-0 pb-2 pl-0 pr-1 dark:bg-black/28">
-            <SidebarGroup className="h-full min-h-0 px-1 py-0">
-              <SidebarGroupContent className="h-full min-h-0 overflow-y-auto pl-0 pr-0 [scrollbar-width:thin]">
-                <PublicMapOrganizationDetail
-                  organization={selectedOrganization}
-                  onBack={() => setSidebarMode("search")}
-                  onHidePanel={() => setSidebarMode("hidden")}
-                />
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
+          <PublicMapRailDetailPanel
+            organization={selectedOrganization}
+            onBack={() => setSidebarMode("search")}
+            onHidePanel={() => setSidebarMode("hidden")}
+          />
         ) : null}
       </Sidebar>
     </SidebarProvider>
@@ -204,60 +140,28 @@ export function PublicMapSidebar({
 
   const drawerPanel =
     effectiveSidebarMode === "search" ? (
-      <div className="flex min-h-0 flex-1 flex-col bg-transparent">
-        <div className="shrink-0 px-2.5">
-          <PublicMapSearchCard
-            query={query}
-            onQueryChange={setQuery}
-            compact
-          />
-        </div>
-        <div
-          className={cn(
-            "min-h-0 flex-1 px-2 pb-[max(env(safe-area-inset-bottom),0.75rem)]",
-            drawerBodyScrollable
-              ? "overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
-              : "overflow-hidden",
-          )}
-        >
-          <div className="pb-1 pt-2">
-            {searchContext ? (
-              <PublicMapSearchContextCard context={searchContext} />
-            ) : null}
-            <PublicMapOrganizationList
-              organizations={listOrganizations}
-              selectedOrgId={selectedOrganization?.id ?? null}
-              favorites={favorites}
-              query={query}
-              onSelectOrg={() => undefined}
-              onToggleFavorite={toggleFavorite}
-              onOpenDetails={(organizationId) =>
-                onOpenDetails(organizationId, {
-                  preserveSearchContext: Boolean(searchContext),
-                })
-              }
-            />
-          </div>
-        </div>
-      </div>
+      <PublicMapDrawerSearchPanel
+        query={query}
+        searchContext={searchContext}
+        organizations={listOrganizations}
+        selectedOrgId={selectedOrganization?.id ?? null}
+        favorites={favorites}
+        drawerBodyScrollable={drawerBodyScrollable}
+        onQueryChange={setQuery}
+        onToggleFavorite={toggleFavorite}
+        onOpenDetails={(organizationId) =>
+          onOpenDetails(organizationId, {
+            preserveSearchContext: Boolean(searchContext),
+          })
+        }
+      />
     ) : selectedOrganization ? (
-      <div
-        className={cn(
-          "min-h-0 flex-1 px-1 pb-[max(env(safe-area-inset-bottom),0.75rem)]",
-          drawerBodyScrollable
-            ? "overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
-            : "overflow-hidden",
-        )}
-      >
-        <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200">
-          <PublicMapOrganizationDetail
-            organization={selectedOrganization}
-            onBack={() => setSidebarMode("search")}
-            onHidePanel={resetDrawerToSearch}
-            compact
-          />
-        </div>
-      </div>
+      <PublicMapDrawerDetailPanel
+        organization={selectedOrganization}
+        drawerBodyScrollable={drawerBodyScrollable}
+        onBack={() => setSidebarMode("search")}
+        onHidePanel={resetDrawerToSearch}
+      />
     ) : null
 
   return (

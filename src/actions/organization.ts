@@ -4,7 +4,8 @@
 import { revalidatePath } from "next/cache"
 
 import { requireServerSession } from "@/lib/auth"
-import { geocodeAddress } from "@/lib/mapbox/geocode"
+import { geocodeAddress } from "@/lib/geocoding/geocode"
+import { buildOrganizationAddress } from "@/lib/geocoding/organization-address"
 import type { BrandTypographyConfig } from "@/lib/organization/org-profile-brand-types"
 import type { Database } from "@/lib/supabase"
 import { sanitizeOrgProfileText, shouldStripOrgProfileHtml } from "@/lib/organization/profile-cleanup"
@@ -168,29 +169,21 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
     delete next[camel as string]
   }
 
-  const street = typeof next["address_street"] === "string" ? (next["address_street"] as string).trim() : ""
-  const city = typeof next["address_city"] === "string" ? (next["address_city"] as string).trim() : ""
-  const state = typeof next["address_state"] === "string" ? (next["address_state"] as string).trim() : ""
-  const postal = typeof next["address_postal"] === "string" ? (next["address_postal"] as string).trim() : ""
-  const country = typeof next["address_country"] === "string" ? (next["address_country"] as string).trim() : ""
+  const fallbackAddress =
+    typeof payload.address === "string" && payload.address.trim().length > 0
+      ? payload.address.trim()
+      : (typeof current["address"] === "string" && current["address"]?.trim()?.length
+          ? (current["address"] as string).trim()
+          : null)
 
-  const addressLines: string[] = []
-  if (street) addressLines.push(street)
-  const locality = [city, state, postal].filter(Boolean).join(", ")
-  if (locality) addressLines.push(locality)
-  if (country) addressLines.push(country)
-
-  if (addressLines.length > 0) {
-    next.address = addressLines.join("\n")
-  } else {
-    const fallbackAddress =
-      typeof payload.address === "string" && payload.address.trim().length > 0
-        ? payload.address.trim()
-        : (typeof current["address"] === "string" && current["address"]?.trim()?.length
-            ? (current["address"] as string).trim()
-            : null)
-    next.address = fallbackAddress
-  }
+  next.address = buildOrganizationAddress({
+    street: next["address_street"],
+    city: next["address_city"],
+    state: next["address_state"],
+    postal: next["address_postal"],
+    country: next["address_country"],
+    fallbackAddress,
+  })
 
   // Do not delete unknown keys; preserve previously stored profile fields for forward compatibility.
 

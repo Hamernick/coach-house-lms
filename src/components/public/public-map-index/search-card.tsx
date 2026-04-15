@@ -23,10 +23,10 @@ export function PublicMapSearchCard({
   return (
     <div
       className={cn(
-        "space-y-3 bg-transparent pb-3 pt-3 text-card-foreground",
+        "flex flex-col gap-3 bg-transparent pb-3 pt-3 text-card-foreground",
         compact
-          ? "border-b border-white/20 px-2.5"
-          : "border-b border-white/30 px-3",
+          ? "border-b border-white/20"
+          : "border-b border-white/30",
       )}
     >
       <div className="flex items-center justify-between gap-2">

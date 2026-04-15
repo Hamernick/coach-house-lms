@@ -7,12 +7,17 @@ import ArrowDownIcon from "lucide-react/dist/esm/icons/arrow-down"
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
 import PanelRightCloseIcon from "lucide-react/dist/esm/icons/panel-right-close"
 import PanelRightOpenIcon from "lucide-react/dist/esm/icons/panel-right-open"
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 
 import { RIGHT_RAIL_ID } from "@/components/app-shell/constants"
 import { ShellRightRail } from "@/components/app-shell/components/shell-right-rail"
 import { RightRailProvider, useRightRailPresence } from "@/components/app-shell/right-rail"
 import { useAppShellRightRailState } from "@/components/app-shell/use-app-shell-right-rail-state"
+import {
+  HomeCanvasSidebarSlotProvider,
+  useHomeCanvasSidebarContent,
+  useHomeCanvasSidebarPresence,
+} from "@/components/public/home-canvas-sidebar-slot"
 import { PublicThemeToggle } from "@/components/organization/public-theme-toggle"
 import {
   ABOUT_LINK_HREF,
@@ -50,11 +55,13 @@ const HOME_CANVAS_NAV_MENU_CLASSNAME = "gap-[var(--shell-rail-item-gap,0.5rem)]"
 export function HomeCanvasPreview({ initialSection, pricingPanel, findPanel }: HomeCanvasPreviewProps) {
   return (
     <RightRailProvider>
-      <HomeCanvasPreviewContent
-        initialSection={initialSection}
-        pricingPanel={pricingPanel}
-        findPanel={findPanel}
-      />
+      <HomeCanvasSidebarSlotProvider>
+        <HomeCanvasPreviewContent
+          initialSection={initialSection}
+          pricingPanel={pricingPanel}
+          findPanel={findPanel}
+        />
+      </HomeCanvasSidebarSlotProvider>
     </RightRailProvider>
   )
 }
@@ -73,12 +80,16 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
     handleTouchEnd,
   } = useHomeCanvasNavigation({ initialSection })
   const hasRightRail = useRightRailPresence()
+  const hasSidebarSlot = useHomeCanvasSidebarPresence()
+  const sidebarSlotContent = useHomeCanvasSidebarContent()
   const isMobile = useIsMobile()
   const { rightOpen, handleRightOpenChangeUser, handleRightOpenChangeAuto } =
     useAppShellRightRailState({
       hasRightRail,
       isMobile,
     })
+  const showFindSidebarShell = activeSection === "find" && hasSidebarSlot
+  const hideShellSidebar = activeSection === "find" && !hasSidebarSlot
   const railToggleClassName =
     "size-8 rounded-md border border-[color:var(--shell-border)] text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
 
@@ -86,6 +97,13 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
     <SidebarProvider
       defaultOpen
       data-shell-root
+      style={
+        showFindSidebarShell
+          ? ({
+              "--sidebar-width": "23rem",
+            } as CSSProperties)
+          : undefined
+      }
       className={cn(
         "h-svh min-h-0 overflow-hidden text-foreground bg-[var(--shell-bg)]",
         "[--shell-bg:var(--background)] [--shell-rail:var(--background)] [--shell-border:var(--border)]",
@@ -94,96 +112,106 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
       )}
     >
       <div className="flex min-h-0 flex-1">
-        <Sidebar collapsible="icon" variant="sidebar" className="border-0 bg-[var(--shell-rail)]">
-          <SidebarHeader>
-            <Link
-              href="/"
-              className="flex items-center gap-2 rounded-lg px-2 py-2 text-foreground transition-colors hover:bg-sidebar-accent"
-              aria-label="Coach House home"
-            >
-              <span className="relative flex h-8 w-8 shrink-0 items-center justify-center">
-                <Image
-                  src="/coach-house-logo-light.png"
-                  alt="Coach House logo"
-                  width={32}
-                  height={32}
-                  className="block dark:hidden"
-                  priority
-                />
-                <Image
-                  src="/coach-house-logo-dark.png"
-                  alt="Coach House logo"
-                  width={32}
-                  height={32}
-                  className="hidden dark:block"
-                  priority
-                />
-              </span>
-              <span className="truncate text-base font-bold leading-none tracking-tight group-data-[collapsible=icon]:hidden">
-                Coach House
-              </span>
-            </Link>
-          </SidebarHeader>
+        {hideShellSidebar ? null : (
+          <Sidebar
+            collapsible={showFindSidebarShell ? "offcanvas" : "icon"}
+            variant="sidebar"
+            className="border-0 bg-[var(--shell-rail)]"
+          >
+            <SidebarHeader>
+              <Link
+                href="/"
+                className="flex items-center gap-2 rounded-lg px-2 py-2 text-foreground transition-colors hover:bg-sidebar-accent"
+                aria-label="Coach House home"
+              >
+                <span className="relative flex h-8 w-8 shrink-0 items-center justify-center">
+                  <Image
+                    src="/coach-house-logo-light.png"
+                    alt="Coach House logo"
+                    width={32}
+                    height={32}
+                    className="block dark:hidden"
+                    priority
+                  />
+                  <Image
+                    src="/coach-house-logo-dark.png"
+                    alt="Coach House logo"
+                    width={32}
+                    height={32}
+                    className="hidden dark:block"
+                    priority
+                  />
+                </span>
+                <span className="truncate text-base font-bold leading-none tracking-tight group-data-[collapsible=icon]:hidden">
+                  Coach House
+                </span>
+              </Link>
+            </SidebarHeader>
 
-          <SidebarContent className="pt-3">
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu className={HOME_CANVAS_NAV_MENU_CLASSNAME}>
-                  {SIDEBAR_CANVAS_NAV.map((item) => (
-                    <SidebarMenuItem key={item.id}>
-                      <SidebarMenuButton
-                        type="button"
-                        isActive={activeSection === item.id}
-                        tooltip={item.label}
-                        aria-current={activeSection === item.id ? "page" : undefined}
-                        onClick={() => changeSection(item.id)}
-                      >
-                        <span>{item.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      tooltip="Find organizations"
-                      isActive={activeSection === "find"}
-                      aria-current={activeSection === "find" ? "page" : undefined}
-                    >
-                      <Link href="/find" className="flex w-full items-center gap-2">
-                        <span>Find</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-            <SidebarGroup className="mt-auto pt-1 pb-[calc(var(--shell-rail-padding,0.75rem)+0.25rem)]">
-              <SidebarGroupContent>
-                <SidebarMenu className={HOME_CANVAS_NAV_MENU_CLASSNAME}>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      type="button"
-                      isActive={activeSection === "signup"}
-                      tooltip="Sign up"
-                      className="h-8 w-fit justify-center rounded-full border px-3 bg-background hover:bg-accent hover:text-accent-foreground data-[active=true]:border-transparent data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
-                      onClick={() => changeSection("signup")}
-                    >
-                      <span>Sign up</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
-                      <a href={ABOUT_LINK_HREF} target="_blank" rel="noreferrer noopener">
-                        <span className="truncate">About</span>
-                        <ArrowUpRight className="ml-auto h-4 w-4 text-muted-foreground/65" aria-hidden />
-                      </a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-        </Sidebar>
+            {showFindSidebarShell ? (
+              sidebarSlotContent ?? <SidebarContent className="min-h-0 flex-1" />
+            ) : (
+              <SidebarContent className="pt-3">
+                <SidebarGroup>
+                  <SidebarGroupContent>
+                    <SidebarMenu className={HOME_CANVAS_NAV_MENU_CLASSNAME}>
+                      {SIDEBAR_CANVAS_NAV.map((item) => (
+                        <SidebarMenuItem key={item.id}>
+                          <SidebarMenuButton
+                            type="button"
+                            isActive={activeSection === item.id}
+                            tooltip={item.label}
+                            aria-current={activeSection === item.id ? "page" : undefined}
+                            onClick={() => changeSection(item.id)}
+                          >
+                            <span>{item.label}</span>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      ))}
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          asChild
+                          tooltip="Find organizations"
+                          isActive={activeSection === "find"}
+                          aria-current={activeSection === "find" ? "page" : undefined}
+                        >
+                          <Link href="/find" className="flex w-full items-center gap-2">
+                            <span>Find</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+                <SidebarGroup className="mt-auto pt-1 pb-[calc(var(--shell-rail-padding,0.75rem)+0.25rem)]">
+                  <SidebarGroupContent>
+                    <SidebarMenu className={HOME_CANVAS_NAV_MENU_CLASSNAME}>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          type="button"
+                          isActive={activeSection === "signup"}
+                          tooltip="Sign up"
+                          className="h-8 w-fit justify-center rounded-full border px-3 bg-background hover:bg-accent hover:text-accent-foreground data-[active=true]:border-transparent data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
+                          onClick={() => changeSection("signup")}
+                        >
+                          <span>Sign up</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild>
+                          <a href={ABOUT_LINK_HREF} target="_blank" rel="noreferrer noopener">
+                            <span className="truncate">About</span>
+                            <ArrowUpRight className="ml-auto h-4 w-4 text-muted-foreground/65" aria-hidden />
+                          </a>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              </SidebarContent>
+            )}
+          </Sidebar>
+        )}
 
         <div className="flex min-h-0 flex-1">
           <SidebarInset className="h-full min-h-0 overflow-hidden bg-[var(--shell-bg)]">
@@ -191,11 +219,15 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
               className="flex min-h-14 shrink-0 items-center justify-between gap-2 py-2 px-[var(--shell-content-pad)] text-sm text-muted-foreground"
             >
               <div className="flex min-w-0 items-center gap-2">
-                <SidebarTrigger
-                  className={railToggleClassName}
-                  aria-label="Toggle sidebar"
-                />
-                <Separator orientation="vertical" className="h-4 bg-border" />
+                {hideShellSidebar ? null : (
+                  <>
+                    <SidebarTrigger
+                      className={railToggleClassName}
+                      aria-label="Toggle sidebar"
+                    />
+                    <Separator orientation="vertical" className="h-4 bg-border" />
+                  </>
+                )}
                 <div id="site-header-title" className="min-w-0 overflow-hidden">
                   <p className="truncate text-sm font-medium text-foreground">{activeLabel}</p>
                 </div>

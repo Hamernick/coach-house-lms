@@ -12,6 +12,7 @@ import type { UserLocationFeedback } from "./user-location"
 import { PublicMapSidebar } from "./sidebar"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { PublicMapSidebarSearchContext } from "./sidebar"
+import type { PublicMapPanelPresentation } from "./map-view-helpers"
 
 type PublicMapSurfaceProps = {
   containerRef: RefObject<HTMLDivElement | null>
@@ -35,6 +36,8 @@ type PublicMapSurfaceProps = {
   onSidebarInsetChange?: (value: number) => void
   searchContext?: PublicMapSidebarSearchContext | null
   mapOverlay?: ReactNode
+  renderDesktopSidebar?: boolean
+  onPanelPresentationChange?: (presentation: PublicMapPanelPresentation | null) => void
 }
 
 export function PublicMapSurface({
@@ -59,6 +62,8 @@ export function PublicMapSurface({
   onSidebarInsetChange,
   searchContext = null,
   mapOverlay = null,
+  renderDesktopSidebar = true,
+  onPanelPresentationChange,
 }: PublicMapSurfaceProps) {
   const surfaceRef = useRef<HTMLDivElement | null>(null)
   const [panelPortalContainer, setPanelPortalContainer] = useState<HTMLDivElement | null>(null)
@@ -102,9 +107,16 @@ export function PublicMapSurface({
     [panelPortalContainer, sidebarMode, surfaceHeight, surfaceWidth],
   )
 
+  const sidebarInset =
+    panelPresentation === "rail" && renderDesktopSidebar ? sidebarWidth : 0
+
   useEffect(() => {
-    onSidebarInsetChange?.(sidebarWidth)
-  }, [onSidebarInsetChange, sidebarWidth])
+    onSidebarInsetChange?.(sidebarInset)
+  }, [onSidebarInsetChange, sidebarInset])
+
+  useLayoutEffect(() => {
+    onPanelPresentationChange?.(panelReady ? panelPresentation : null)
+  }, [onPanelPresentationChange, panelPresentation, panelReady])
 
   return (
     <div ref={surfaceRef} className="relative h-full min-h-0 overflow-hidden bg-background">
@@ -112,7 +124,7 @@ export function PublicMapSurface({
         ref={setPanelPortalContainer}
         className="pointer-events-none absolute inset-0 z-30 overflow-hidden transform-gpu"
       />
-      {panelReady && panelPresentation ? (
+      {panelReady && panelPresentation && (panelPresentation === "drawer" || renderDesktopSidebar) ? (
         <PublicMapSidebar
           sidebarMode={sidebarMode}
           sidebarWidth={sidebarWidth}

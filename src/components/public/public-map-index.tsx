@@ -6,6 +6,7 @@ import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import { HomeCanvasSidebarSlot } from "@/components/public/home-canvas-sidebar-slot"
 import { organizationHasMapLocation, type PublicMapBounds } from "./public-map-index/helpers"
 import {
   useSyncPublicMapAuthFavorite,
@@ -25,11 +26,13 @@ import {
   useSyncSidebarCameraPadding,
 } from "./public-map-index/public-map-index-runtime"
 import { PublicMapSurface } from "./public-map-index/map-surface"
+import type { PublicMapPanelPresentation } from "./public-map-index/map-view-helpers"
 import {
   PublicMapBoardAlert,
   PublicMapJoinedOrganization,
 } from "./public-map-index/member-rail"
 import { PublicMapRightRail } from "./public-map-index/right-rail"
+import { PublicMapShellSidebarPanel } from "./public-map-index/sidebar"
 import {
   buildLocationFeedback,
   type UserLocationStatus,
@@ -96,6 +99,8 @@ export function PublicMapIndex({
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
   const [pendingAuthOrgId, setPendingAuthOrgId] = useState<string | null>(null)
   const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
+  const [panelPresentation, setPanelPresentation] =
+    useState<PublicMapPanelPresentation | null>(null)
   const [initialViewportResolved, setInitialViewportResolved] = useState(false)
   const [mapLoadVersion, setMapLoadVersion] = useState(0)
   const [sameLocationSelection, setSameLocationSelection] =
@@ -268,8 +273,39 @@ export function PublicMapIndex({
     focusOrganizationOnMap({ map, organization })
   }, [cameraTargetOrgId, organizationById])
 
+  const listOrganizations = sameLocationSearchContext?.organizations ?? filteredOrganizations
+
   return (
     <>
+      {panelPresentation === "rail" ? (
+        <HomeCanvasSidebarSlot>
+          <PublicMapShellSidebarPanel
+            sidebarMode={sidebarMode}
+            organizations={listOrganizations}
+            selectedOrganization={selectedOrganization}
+            favorites={favorites}
+            query={query}
+            searchContext={sameLocationSearchContext}
+            onQueryChange={(value) => {
+              setSameLocationSelection(null)
+              setQuery(value)
+            }}
+            onToggleFavorite={toggleFavorite}
+            onOpenDetails={(organizationId, options) => {
+              if (!options?.preserveSearchContext) {
+                setSameLocationSelection(null)
+              }
+              handleSelectOrganization({
+                organizationId,
+                openDetails: true,
+                shouldFocusMap: false,
+              })
+            }}
+            setSidebarMode={setSidebarMode}
+          />
+        </HomeCanvasSidebarSlot>
+      ) : null}
+
       <PublicMapRightRail
         isAuthenticated={isAuthenticated}
         memberProfile={memberProfile}
@@ -344,6 +380,8 @@ export function PublicMapIndex({
         onSidebarModeChange={setSidebarMode}
         onAuthSheetOpenChange={setAuthSheetOpen}
         onSidebarInsetChange={setSidebarInsetLeft}
+        onPanelPresentationChange={setPanelPresentation}
+        renderDesktopSidebar={false}
       />
     </>
   )

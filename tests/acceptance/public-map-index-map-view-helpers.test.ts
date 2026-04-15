@@ -14,6 +14,7 @@ import {
   resolvePublicMapPanelPresentation,
   resolvePublicMapSidebarWidth,
 } from "@/components/public/public-map-index/map-view-helpers"
+import { resolvePublicMapSurfacePanelState } from "@/components/public/public-map-index/map-surface-helpers"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
 describe("focusChicagoFallback", () => {
@@ -90,6 +91,38 @@ describe("resolvePublicMapPanelPresentation", () => {
         sidebarMode: "search",
       }),
     ).toBe(374)
+  })
+})
+
+describe("resolvePublicMapSurfacePanelState", () => {
+  it("holds drawer presentation until the portal container is ready", () => {
+    expect(
+      resolvePublicMapSurfacePanelState({
+        surfaceWidth: 620,
+        surfaceHeight: 720,
+        sidebarMode: "search",
+        portalContainerReady: false,
+      }),
+    ).toEqual({
+      panelPresentation: "drawer",
+      panelReady: false,
+      sidebarWidth: 0,
+    })
+  })
+
+  it("keeps rail presentation ready immediately on wider surfaces", () => {
+    expect(
+      resolvePublicMapSurfacePanelState({
+        surfaceWidth: 720,
+        surfaceHeight: 720,
+        sidebarMode: "search",
+        portalContainerReady: false,
+      }),
+    ).toEqual({
+      panelPresentation: "rail",
+      panelReady: true,
+      sidebarWidth: 374,
+    })
   })
 })
 

@@ -1,6 +1,5 @@
 "use client"
 
-import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
 import GlobeIcon from "lucide-react/dist/esm/icons/globe"
 import HeartIcon from "lucide-react/dist/esm/icons/heart"
 import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
@@ -198,10 +197,7 @@ export function PublicMapOrganizationList({
 
             <div
               className={cn(
-                "pointer-events-none relative z-10 mt-3 min-w-0",
-                constrainedLayout
-                  ? "grid grid-cols-1 gap-2"
-                  : "flex flex-wrap items-end gap-2",
+                "pointer-events-none relative z-10 mt-3 flex min-w-0 items-center gap-2",
               )}
             >
               <div className="pointer-events-none flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
@@ -217,16 +213,17 @@ export function PublicMapOrganizationList({
               </div>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 className={cn(
-                  "pointer-events-auto relative z-20 h-8 shrink-0 rounded-full border-border/70 bg-background/75 px-3 text-[11px] text-foreground shadow-sm hover:bg-muted",
-                  constrainedLayout ? "justify-self-end" : "ml-auto",
+                  "pointer-events-auto relative z-20 ml-auto h-auto shrink-0 rounded-none border-0 bg-transparent px-0 py-0 text-[11px] font-medium text-muted-foreground shadow-none",
+                  "opacity-0 transition-[opacity,color] duration-150 ease-out motion-reduce:transition-none",
+                  "group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100",
+                  "hover:bg-transparent hover:text-foreground focus-visible:bg-transparent",
                 )}
                 onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}
               >
-                Details
-                <ArrowRightIcon className="h-3.5 w-3.5" aria-hidden />
+                View
               </Button>
             </div>
           </article>

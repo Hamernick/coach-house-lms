@@ -12,9 +12,9 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
-import { cn } from "@/lib/utils"
-import { Sidebar, SidebarProvider } from "@/components/ui/sidebar"
+import { Sidebar, SidebarProvider, useSidebar } from "@/components/ui/sidebar"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import { cn } from "@/lib/utils"
 
 import type { SidebarMode } from "./constants"
 import { buildPublicMapDrawerSnapPoints } from "./sidebar-snap-points"
@@ -44,6 +44,71 @@ type PublicMapSidebarProps = {
   toggleFavorite: (orgId: string) => void
   onOpenDetails: (orgId: string, options?: { preserveSearchContext?: boolean }) => void
   setSidebarMode: (mode: SidebarMode) => void
+}
+
+type PublicMapShellSidebarPanelProps = {
+  sidebarMode: SidebarMode
+  organizations: PublicMapOrganization[]
+  selectedOrganization: PublicMapOrganization | null
+  favorites: string[]
+  query: string
+  searchContext?: PublicMapSidebarSearchContext | null
+  onQueryChange: (value: string) => void
+  onToggleFavorite: (orgId: string) => void
+  onOpenDetails: (orgId: string, options?: { preserveSearchContext?: boolean }) => void
+  setSidebarMode: (mode: SidebarMode) => void
+}
+
+export function PublicMapShellSidebarPanel({
+  sidebarMode,
+  organizations,
+  selectedOrganization,
+  favorites,
+  query,
+  searchContext = null,
+  onQueryChange,
+  onToggleFavorite,
+  onOpenDetails,
+  setSidebarMode,
+}: PublicMapShellSidebarPanelProps) {
+  const { setOpen } = useSidebar()
+  const effectiveSidebarMode =
+    sidebarMode === "details" && selectedOrganization ? "details" : "search"
+  const constrainedRailLayout = true
+
+  useEffect(() => {
+    if (sidebarMode === "hidden") return
+    setOpen(true)
+  }, [selectedOrganization?.id, setOpen, sidebarMode])
+
+  if (effectiveSidebarMode === "details" && selectedOrganization) {
+    return (
+      <PublicMapRailDetailPanel
+        organization={selectedOrganization}
+        onBack={() => setSidebarMode("search")}
+        onHidePanel={() => setOpen(false)}
+      />
+    )
+  }
+
+  return (
+    <PublicMapRailSearchPanel
+      query={query}
+      searchContext={searchContext}
+      organizations={organizations}
+      selectedOrgId={selectedOrganization?.id ?? null}
+      favorites={favorites}
+      constrainedLayout={constrainedRailLayout}
+      onQueryChange={onQueryChange}
+      onHidePanel={() => setOpen(false)}
+      onToggleFavorite={onToggleFavorite}
+      onOpenDetails={(organizationId) =>
+        onOpenDetails(organizationId, {
+          preserveSearchContext: Boolean(searchContext),
+        })
+      }
+    />
+  )
 }
 
 export function PublicMapSidebar({

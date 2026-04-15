@@ -1,9 +1,7 @@
 "use client"
 
 import SearchIcon from "lucide-react/dist/esm/icons/search"
-import XIcon from "lucide-react/dist/esm/icons/x"
 
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -17,7 +15,6 @@ export type PublicMapSearchCardProps = {
 export function PublicMapSearchCard({
   query,
   onQueryChange,
-  onHidePanel,
   compact = false,
 }: PublicMapSearchCardProps) {
   return (
@@ -29,7 +26,7 @@ export function PublicMapSearchCard({
           : "border-b border-white/30",
       )}
     >
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center gap-2">
         <p
           className={cn(
             "font-semibold leading-tight tracking-tight",
@@ -38,23 +35,6 @@ export function PublicMapSearchCard({
         >
           Resource map
         </p>
-        {onHidePanel ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={onHidePanel}
-            className={cn(
-              "rounded-full text-foreground shadow-sm backdrop-blur-xl",
-              compact
-                ? "h-9 w-9 border border-white/25 bg-background/72 supports-[backdrop-filter]:bg-background/64 hover:bg-background/80"
-                : "h-8 w-8 border border-white/35 bg-background/48 supports-[backdrop-filter]:bg-background/40 hover:bg-background/62",
-            )}
-            aria-label="Hide search panel"
-          >
-            <XIcon className="h-4 w-4" aria-hidden />
-          </Button>
-        ) : null}
       </div>
 
       <label className="relative block">

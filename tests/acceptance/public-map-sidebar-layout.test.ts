@@ -3,7 +3,11 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
 import { PublicMapOrganizationList } from "@/components/public/public-map-index/organization-list"
-import { PublicMapSidebar } from "@/components/public/public-map-index/sidebar"
+import {
+  PublicMapShellSidebarPanel,
+  PublicMapSidebar,
+} from "@/components/public/public-map-index/sidebar"
+import { Sidebar, SidebarProvider } from "@/components/ui/sidebar"
 import type {
   PublicMapOrganization,
   PublicMapProgramPreview,
@@ -173,5 +177,69 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("grid-cols-2")
     expect(markup).not.toContain("grid-cols-3")
     expect(markup).toContain("w-full min-w-0 max-w-full overflow-hidden")
+    expect(markup).toContain(">View<")
+    expect(markup).toContain("group-hover:opacity-100")
+  })
+
+  it("can mount the find search panel into the shell sidebar without the map overlay rail", () => {
+    const organization = buildOrganization()
+    const markup = renderToStaticMarkup(
+      React.createElement(
+        SidebarProvider,
+        { defaultOpen: true },
+        React.createElement(
+          Sidebar,
+          { collapsible: "offcanvas", variant: "sidebar" },
+          React.createElement(PublicMapShellSidebarPanel, {
+            sidebarMode: "search",
+            organizations: [organization],
+            selectedOrganization: organization,
+            favorites: [],
+            query: "",
+            searchContext: null,
+            onQueryChange: () => {},
+            onToggleFavorite: () => {},
+            onOpenDetails: () => {},
+            setSidebarMode: () => {},
+          }),
+        ),
+      ),
+    )
+
+    expect(markup).toContain("Resource map")
+    expect(markup).toContain('aria-label="Search public organizations"')
+    expect(markup).toContain('data-public-map-sidebar-section="rail-organizations-scroll"')
+    expect(markup).not.toContain('data-public-map-sidebar-section="rail-detail-scroll"')
+    expect(markup).not.toContain("Hide search panel")
+  })
+
+  it("shows organization details in the shell sidebar when the find panel is in detail mode", () => {
+    const organization = buildOrganization()
+    const markup = renderToStaticMarkup(
+      React.createElement(
+        SidebarProvider,
+        { defaultOpen: true },
+        React.createElement(
+          Sidebar,
+          { collapsible: "offcanvas", variant: "sidebar" },
+          React.createElement(PublicMapShellSidebarPanel, {
+            sidebarMode: "details",
+            organizations: [organization],
+            selectedOrganization: organization,
+            favorites: [],
+            query: "",
+            searchContext: null,
+            onQueryChange: () => {},
+            onToggleFavorite: () => {},
+            onOpenDetails: () => {},
+            setSidebarMode: () => {},
+          }),
+        ),
+      ),
+    )
+
+    expect(markup).toContain(organization.name)
+    expect(markup).toContain('data-public-map-sidebar-section="rail-detail-scroll"')
+    expect(markup).not.toContain('aria-label="Search public organizations"')
   })
 })

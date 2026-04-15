@@ -4,13 +4,19 @@ import ArrowRightIcon from "lucide-react/dist/esm/icons/arrow-right"
 
 import { Button } from "@/components/ui/button"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
-import type { FormationStatus, IntentFocus, OnboardingStepId } from "../types"
+import type {
+  FormationStatus,
+  IntentFocus,
+  OnboardingFlowMode,
+  OnboardingStepId,
+} from "../types"
 
 type StepFooterProps = {
   step: number
   totalSteps: number
   submitting: boolean
   currentStepId: OnboardingStepId
+  onboardingMode: OnboardingFlowMode
   intentFocus: IntentFocus | ""
   slugStatus: "idle" | "checking" | "available" | "unavailable"
   formationStatus: FormationStatus | ""
@@ -25,6 +31,7 @@ export function StepFooter({
   totalSteps,
   submitting,
   currentStepId,
+  onboardingMode,
   intentFocus,
   slugStatus,
   formationStatus,
@@ -34,6 +41,11 @@ export function StepFooter({
   onNext,
 }: StepFooterProps) {
   const isLastStep = step === totalSteps - 1
+  const isPaidPostSignupPricingStep =
+    isLastStep &&
+    currentStepId === "pricing" &&
+    onboardingMode === "post_signup_access" &&
+    builderPlanTier !== "free"
 
   return (
     <div className="border-border/70 bg-background/70 relative z-20 mt-auto shrink-0 border-t px-4 py-4 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6">
@@ -72,7 +84,7 @@ export function StepFooter({
         >
           {isLastStep ? (
             <>
-              Finish
+              {isPaidPostSignupPricingStep ? "Enter workspace" : "Finish"}
               <ArrowRightIcon className="h-4 w-4" aria-hidden />
             </>
           ) : (

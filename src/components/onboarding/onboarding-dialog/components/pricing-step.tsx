@@ -24,6 +24,8 @@ type PricingStepProps = {
   errors: Record<string, string>
   currentPlanTier: PricingPlanTier
   checkoutReturnTo: string
+  onboardingMode: "full" | "post_signup_access" | "workspace_setup"
+  submitting: boolean
 }
 
 const BUILDER_TIER_IDS = new Set(["organization", "operations"])
@@ -66,6 +68,8 @@ export function PricingStep({
   errors,
   currentPlanTier,
   checkoutReturnTo,
+  onboardingMode,
+  submitting,
 }: PricingStepProps) {
   const searchParams = useSearchParams()
   const builderTiers = PLATFORM_TIERS.filter((tier) => BUILDER_TIER_IDS.has(tier.id))
@@ -73,6 +77,7 @@ export function PricingStep({
   const checkoutErrorDetail = searchParams.get("checkout_detail")
   const checkoutErrorDebug = searchParams.get("checkout_debug")
   const checkoutErrorMessage = getCheckoutErrorMessage(checkoutErrorCode)
+  const showManualPaidContinue = onboardingMode === "post_signup_access"
 
   return (
     <div className="space-y-5 py-5" data-onboarding-step-id="pricing">
@@ -155,9 +160,19 @@ export function PricingStep({
                 </CardDescription>
 
                 {isCurrentTier ? (
-                  <Button type="button" className="w-full rounded-xl" disabled>
-                    Builder access active
-                  </Button>
+                  showManualPaidContinue ? (
+                    <Button
+                      type="submit"
+                      className="w-full rounded-xl"
+                      disabled={submitting}
+                    >
+                      Continue to workspace
+                    </Button>
+                  ) : (
+                    <Button type="button" className="w-full rounded-xl" disabled>
+                      Builder access active
+                    </Button>
+                  )
                 ) : (
                   <Button
                     type="button"

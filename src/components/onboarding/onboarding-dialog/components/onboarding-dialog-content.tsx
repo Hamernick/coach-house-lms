@@ -271,6 +271,8 @@ export function OnboardingDialogContent({
                 errors={errors}
                 currentPlanTier={builderPlanTier}
                 checkoutReturnTo={ONBOARDING_PRICING_RETURN}
+                onboardingMode={onboardingMode}
+                submitting={submitting}
               />
             ) : null}
 
@@ -303,6 +305,7 @@ export function OnboardingDialogContent({
           totalSteps={totalSteps}
           submitting={submitting}
           currentStepId={currentStep.id}
+          onboardingMode={onboardingMode}
           intentFocus={intentFocus}
           slugStatus={slugStatus}
           formationStatus={formationStatus}

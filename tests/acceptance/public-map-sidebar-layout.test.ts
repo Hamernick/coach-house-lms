@@ -178,7 +178,7 @@ describe("public map sidebar layout", () => {
     expect(markup).not.toContain("grid-cols-3")
     expect(markup).toContain("w-full min-w-0 max-w-full overflow-hidden")
     expect(markup).toContain(">View<")
-    expect(markup).toContain("group-hover:opacity-100")
+    expect(markup).toContain("group-hover:bg-background/80")
   })
 
   it("can mount the find search panel into the shell sidebar without the map overlay rail", () => {

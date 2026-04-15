@@ -216,10 +216,11 @@ export function PublicMapOrganizationList({
                 variant="ghost"
                 size="sm"
                 className={cn(
-                  "pointer-events-auto relative z-20 ml-auto h-auto shrink-0 rounded-none border-0 bg-transparent px-0 py-0 text-[11px] font-medium text-muted-foreground shadow-none",
-                  "opacity-0 transition-[opacity,color] duration-150 ease-out motion-reduce:transition-none",
-                  "group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100",
-                  "hover:bg-transparent hover:text-foreground focus-visible:bg-transparent",
+                  "pointer-events-auto relative z-20 ml-auto h-auto shrink-0 rounded-full border border-transparent bg-transparent px-2.5 py-1 text-[11px] font-medium text-muted-foreground shadow-none",
+                  "transition-[background-color,border-color,color] duration-150 ease-out motion-reduce:transition-none",
+                  "group-hover:border-border/70 group-hover:bg-background/80 group-hover:text-foreground",
+                  "group-focus-within:border-border/70 group-focus-within:bg-background/80 group-focus-within:text-foreground",
+                  "hover:bg-background/90 hover:text-foreground focus-visible:bg-background/80",
                 )}
                 onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}
               >

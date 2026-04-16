@@ -68,7 +68,9 @@ export function getResultIcon(item: SearchResult) {
   if (href.startsWith("/internal")) return ShieldIcon
   if (href.startsWith("/admin")) return ShieldIcon
   if (href.startsWith("/projects")) return FolderKanbanIcon
-  if (href.startsWith("/my-tasks")) return ClipboardListIcon
+  if (href.startsWith("/tasks") || href.startsWith("/my-tasks")) {
+    return ClipboardListIcon
+  }
   if (href.startsWith("/people")) return UsersIcon
   if (href.startsWith("/community")) return MapPinIcon
   if (href.startsWith("/marketplace")) return ShoppingBagIcon
@@ -119,9 +121,9 @@ export function buildBaseSearchItems({
             keywords: ["workspace", "organization", "projects"],
           } satisfies SearchResult,
           {
-            id: "page-my-tasks",
-            label: "My Tasks",
-            href: "/my-tasks",
+            id: "page-tasks",
+            label: "Tasks",
+            href: "/tasks",
             group: "Pages",
             keywords: ["assigned", "tasks", "work"],
           } satisfies SearchResult,

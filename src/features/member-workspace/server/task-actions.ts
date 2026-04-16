@@ -319,7 +319,7 @@ export async function createMemberWorkspaceTaskAction(
     .eq("id", project.id)
     .eq("org_id", project.org_id)
 
-  revalidatePath("/my-tasks")
+  revalidatePath("/tasks")
   revalidatePath("/projects")
   revalidatePath(`/projects/${project.id}`)
 
@@ -455,7 +455,7 @@ export async function updateMemberWorkspaceTaskAction(
     ])
   }
 
-  revalidatePath("/my-tasks")
+  revalidatePath("/tasks")
   revalidatePath("/projects")
   revalidatePath(`/projects/${existingTask.project_id}`)
   if (existingTask.project_id !== project.id) {
@@ -542,7 +542,7 @@ export async function updateMemberWorkspaceTaskStatusAction(
     return { error: "Unable to update task status." }
   }
 
-  revalidatePath("/my-tasks")
+  revalidatePath("/tasks")
   revalidatePath("/projects")
   revalidatePath(`/projects/${task.project_id}`)
 
@@ -625,7 +625,7 @@ export async function updateMemberWorkspaceTaskOrderAction(
     return { error: "Unable to save task order." }
   }
 
-  revalidatePath("/my-tasks")
+  revalidatePath("/tasks")
   revalidatePath(`/projects/${project.id}`)
 
   return { ok: true, projectId: project.id }
@@ -690,7 +690,7 @@ export async function deleteMemberWorkspaceTaskAction(
     updatedBy: actor.userId,
   })
 
-  revalidatePath("/my-tasks")
+  revalidatePath("/tasks")
   revalidatePath("/projects")
   revalidatePath(`/projects/${task.project_id}`)
 

@@ -5,7 +5,7 @@ Mode: Execute steps sequentially in CLI; no code in this runbook. Each step link
 
 Stack baseline: Next.js 16.0.1 with React 19.1.0. Dev + prod builds use Turbopack; align guidance with this baseline before adopting new tooling.
 
-Route naming note (2026-04-09): `src/app/(dashboard)/**` is the internal authenticated app shell route group, not a literal browser URL. User-facing entry routes are `/workspace`, `/projects`, `/my-tasks`, `/people`, and related app surfaces. The current automated performance budget script tracks `/community` and `/admin`; older `/dashboard` references below are historical shorthand for the authenticated shell.
+Route naming note (2026-04-09): `src/app/(dashboard)/**` is the internal authenticated app shell route group, not a literal browser URL. User-facing entry routes are `/workspace`, `/projects`, `/tasks`, `/people`, and related app surfaces. The current automated performance budget script tracks `/community` and `/admin`; older `/dashboard` references below are historical shorthand for the authenticated shell.
 
 ## Checklist Status (2025-10-22)
 

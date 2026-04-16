@@ -449,7 +449,7 @@ export async function resetMemberWorkspaceStarterProjectsAction(): Promise<Membe
   }
 
   revalidatePath("/projects")
-  revalidatePath("/my-tasks")
+  revalidatePath("/tasks")
   return { ok: true }
 }
 
@@ -503,6 +503,6 @@ export async function clearMemberWorkspaceStarterDataAction(): Promise<MemberWor
   }
 
   revalidatePath("/projects")
-  revalidatePath("/my-tasks")
+  revalidatePath("/tasks")
   return { ok: true }
 }

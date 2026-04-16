@@ -1,6 +1,7 @@
 import { createNotification } from "@/lib/notifications"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { buildOrganizationAccessRequestNotificationMetadata } from "@/features/organization-access"
 import {
   ensureInvitedMemberInOrgDirectory,
   mapOrganizationAccessRequestRow,
@@ -197,10 +198,15 @@ export async function createOrganizationInviteActionImpl({
         role: requestRole,
       }),
       metadata: {
-        requestId: requestRow.id,
+        ...buildOrganizationAccessRequestNotificationMetadata({
+          requestId: requestRow.id,
+          organizationName,
+          inviterName,
+          role: requestRole,
+          status: "pending",
+        }),
         orgId: inviteContext.orgId,
         inviteeUserId: existingUser.id,
-        role: requestRole,
       },
     })
 

@@ -94,7 +94,7 @@ describe("member workspace starter-data actions", () => {
     expect(projectDeleteEqKind).toHaveBeenCalledWith("project_kind", "standard")
     expect(projectDeleteEqSource).toHaveBeenCalledWith("created_source", "starter_seed")
     expect(revalidatePathMock).toHaveBeenCalledWith("/projects")
-    expect(revalidatePathMock).toHaveBeenCalledWith("/my-tasks")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/tasks")
   })
 
   it("rejects non-editors", async () => {

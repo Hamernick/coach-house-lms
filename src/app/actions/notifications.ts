@@ -2,6 +2,7 @@
 
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import type { Json } from "@/lib/supabase"
 import type { NotificationTone } from "@/lib/notifications"
 import {
   buildPlatformSetupNotification,
@@ -20,6 +21,8 @@ export type AppNotification = {
   createdAt: string
   readAt: string | null
   archivedAt: string | null
+  type: string | null
+  metadata: Json | null
 }
 
 type NotificationsListResult =
@@ -57,6 +60,8 @@ function normalizeNotificationRow(row: {
   created_at: string
   read_at: string | null
   archived_at: string | null
+  type: string | null
+  metadata: Json | null
 }): AppNotification {
   return {
     id: row.id,
@@ -67,6 +72,8 @@ function normalizeNotificationRow(row: {
     createdAt: row.created_at,
     readAt: row.read_at,
     archivedAt: row.archived_at,
+    type: row.type,
+    metadata: row.metadata,
   }
 }
 
@@ -82,7 +89,7 @@ export async function listNotificationsAction(): Promise<NotificationsListResult
   if (!user) return { error: "Not authenticated." }
 
   const selectColumns =
-    "id,title,description,href,tone,created_at,read_at,archived_at" as const
+    "id,title,description,href,tone,created_at,read_at,archived_at,type,metadata" as const
 
   const inboxResult = await supabase
     .from("notifications")
@@ -101,6 +108,8 @@ export async function listNotificationsAction(): Promise<NotificationsListResult
         created_at: string
         read_at: string | null
         archived_at: string | null
+        type: string | null
+        metadata: Json | null
       }>
     >()
 

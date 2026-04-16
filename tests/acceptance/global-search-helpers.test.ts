@@ -37,9 +37,10 @@ describe("global search helper base items", () => {
       expect.arrayContaining([
         "Workspace",
         "Projects",
-        "My Tasks",
+        "Tasks",
       ]),
     )
+    expect(items.find((item) => item.label === "Tasks")?.href).toBe("/tasks")
     expect(items.map((item) => item.label)).not.toContain("Organization")
     expect(items.map((item) => item.label)).not.toContain("Access Requests")
   })

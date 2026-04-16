@@ -1,4 +1,5 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { writeActiveOrganizationCookie } from "@/lib/organization/active-org-cookie"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import {
   ensureInvitedMemberInOrgDirectory,
@@ -214,6 +215,10 @@ async function respondToOrganizationAccessRequest({
     requestId: requestRow.id,
     userId: user.id,
   })
+
+  if (nextStatus === "accepted") {
+    await writeActiveOrganizationCookie(requestRow.org_id)
+  }
 
   return {
     ok: true,

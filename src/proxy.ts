@@ -12,6 +12,7 @@ const PROTECTED_PREFIXES = [
   "/organizations",
   "/workspace",
   "/projects",
+  "/tasks",
   "/my-tasks",
   "/notifications",
   "/people",

@@ -12,16 +12,23 @@ type NotificationPreviewProps = {
   item: NotificationItem | null
   loading: boolean
   updating: boolean
+  requestUpdating: "accepted" | "declined" | null
   onOpen: (item: NotificationItem) => void
   onToggleRead: (item: NotificationItem) => void
+  onRespondToOrganizationAccessRequest: (
+    item: NotificationItem,
+    nextStatus: "accepted" | "declined",
+  ) => void
 }
 
 export function NotificationPreview({
   item,
   loading,
   updating,
+  requestUpdating,
   onOpen,
   onToggleRead,
+  onRespondToOrganizationAccessRequest,
 }: NotificationPreviewProps) {
   if (loading && !item) {
     return (
@@ -67,25 +74,59 @@ export function NotificationPreview({
         </div>
       </ScrollArea>
 
-      <div className="flex items-center justify-end gap-2 border-t border-border/60 px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 px-4 py-3">
         <Button
           type="button"
           size="sm"
           variant="ghost"
           onClick={() => onToggleRead(item)}
-          disabled={updating}
+          disabled={updating || requestUpdating !== null}
         >
           {updating ? <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden /> : null}
           {item.unread ? "Mark as read" : "Mark as unread"}
         </Button>
-        <Button
-          type="button"
-          size="sm"
-          onClick={() => onOpen(item)}
-          disabled={!item.href}
-        >
-          Open
-        </Button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          {item.organizationAccessRequestId ? (
+            <>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  onRespondToOrganizationAccessRequest(item, "declined")
+                }
+                disabled={updating || requestUpdating !== null}
+              >
+                {requestUpdating === "declined" ? (
+                  <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden />
+                ) : null}
+                Decline
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() =>
+                  onRespondToOrganizationAccessRequest(item, "accepted")
+                }
+                disabled={updating || requestUpdating !== null}
+              >
+                {requestUpdating === "accepted" ? (
+                  <Loader2Icon className="h-4 w-4 animate-spin" aria-hidden />
+                ) : null}
+                Accept access
+              </Button>
+            </>
+          ) : null}
+          <Button
+            type="button"
+            size="sm"
+            variant={item.organizationAccessRequestId ? "ghost" : "default"}
+            onClick={() => onOpen(item)}
+            disabled={!item.href || updating || requestUpdating !== null}
+          >
+            {item.openLabel ?? "Open"}
+          </Button>
+        </div>
       </div>
     </div>
   )

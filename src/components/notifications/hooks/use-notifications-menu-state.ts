@@ -4,11 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 
 import {
+  acceptOrganizationAccessRequestAction,
+  declineOrganizationAccessRequestAction,
+} from "@/app/actions/organization-access"
+import {
   listNotificationsAction,
   markAllNotificationsReadAction,
   markNotificationReadAction,
   markNotificationUnreadAction,
-  type AppNotification,
 } from "@/app/actions/notifications"
 import { toast } from "@/lib/toast"
 
@@ -35,6 +38,9 @@ export function useNotificationsMenuState() {
   const [loadError, setLoadError] = useState<string | null>(null)
   const [bulkUpdating, setBulkUpdating] = useState(false)
   const [selectedUpdating, setSelectedUpdating] = useState(false)
+  const [requestUpdating, setRequestUpdating] = useState<
+    "accepted" | "declined" | null
+  >(null)
 
   const filteredItems = useMemo(
     () => filterNotificationItems(inboxItems, tab),
@@ -146,6 +152,50 @@ export function useNotificationsMenuState() {
     [markReadOptimistic, markUnreadOptimistic, refreshNotifications],
   )
 
+  const handleRespondToOrganizationAccessRequest = useCallback(
+    (item: NotificationItem, nextStatus: "accepted" | "declined") => {
+      const requestId = item.organizationAccessRequestId?.trim()
+      if (!requestId) return
+
+      setRequestUpdating(nextStatus)
+
+      if (item.unread) {
+        markReadOptimistic(item.id)
+        void markNotificationReadAction(item.id)
+      }
+
+      const respondAction =
+        nextStatus === "accepted"
+          ? acceptOrganizationAccessRequestAction
+          : declineOrganizationAccessRequestAction
+
+      void respondAction(requestId).then((result) => {
+        setRequestUpdating(null)
+
+        if ("error" in result) {
+          toast.error(result.error)
+          void refreshNotifications()
+          return
+        }
+
+        toast.success(
+          nextStatus === "accepted"
+            ? "Organization access accepted"
+            : "Organization access declined",
+        )
+
+        if (nextStatus === "accepted") {
+          setOpen(false)
+          router.push("/workspace?joined=1")
+          return
+        }
+
+        void refreshNotifications()
+      })
+    },
+    [markReadOptimistic, refreshNotifications, router],
+  )
+
   const handleMarkAllRead = useCallback(() => {
     if (unreadCount === 0) return
 
@@ -165,6 +215,7 @@ export function useNotificationsMenuState() {
     setOpen(nextOpen)
     if (!nextOpen) {
       setSelectedUpdating(false)
+      setRequestUpdating(null)
     }
   }, [])
 
@@ -180,6 +231,7 @@ export function useNotificationsMenuState() {
     loadError,
     bulkUpdating,
     selectedUpdating,
+    requestUpdating,
     unreadCount,
     showBellUnreadCue,
     refreshNotifications,
@@ -187,6 +239,7 @@ export function useNotificationsMenuState() {
     handleSelect,
     handleOpenSelected,
     handleToggleRead,
+    handleRespondToOrganizationAccessRequest,
     handleMarkAllRead,
     handleOpenChange,
   }

@@ -42,20 +42,21 @@ describe("app sidebar nav data", () => {
   })
 
   it("replaces the workspace nav with the member workspace routes when enabled", () => {
-    expect(
-      buildMainNav({
-        isAdmin: false,
-        showOrgAdmin: false,
-        canAccessOrgAdmin: false,
-        showMemberWorkspace: true,
-      }).map((item) => item.title),
-    ).toEqual([
+    const nav = buildMainNav({
+      isAdmin: false,
+      showOrgAdmin: false,
+      canAccessOrgAdmin: false,
+      showMemberWorkspace: true,
+    })
+
+    expect(nav.map((item) => item.title)).toEqual([
       "Workspace",
       "Projects",
-      "My Tasks",
+      "Tasks",
       "People",
       "Documents",
     ])
+    expect(nav.find((item) => item.title === "Tasks")?.href).toBe("/tasks")
   })
 
   it("does not show Marketplace in the sidebar resource nav", () => {

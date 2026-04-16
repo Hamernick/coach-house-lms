@@ -58,6 +58,7 @@ export function NotificationsMenu() {
     loadError,
     bulkUpdating,
     selectedUpdating,
+    requestUpdating,
     unreadCount,
     showBellUnreadCue,
     refreshNotifications,
@@ -65,6 +66,7 @@ export function NotificationsMenu() {
     handleSelect,
     handleOpenSelected,
     handleToggleRead,
+    handleRespondToOrganizationAccessRequest,
     handleMarkAllRead,
     handleOpenChange,
   } = useNotificationsMenuState()
@@ -142,8 +144,12 @@ export function NotificationsMenu() {
           item={selectedItem}
           loading={loading}
           updating={selectedUpdating}
+          requestUpdating={requestUpdating}
           onOpen={handleOpenSelected}
           onToggleRead={handleToggleRead}
+          onRespondToOrganizationAccessRequest={
+            handleRespondToOrganizationAccessRequest
+          }
         />
       </div>
     </>

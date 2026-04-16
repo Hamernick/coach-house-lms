@@ -8,4 +8,6 @@ export type NotificationItem = {
   tone?: NotificationTone
   unread: boolean
   href?: string | null
+  openLabel?: string
+  organizationAccessRequestId?: string | null
 }

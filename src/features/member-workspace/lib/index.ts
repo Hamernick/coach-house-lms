@@ -18,7 +18,7 @@ export function getMemberWorkspaceSectionLabel(section: MemberWorkspaceSection) 
     case "projects":
       return "Projects"
     case "my-tasks":
-      return "My Tasks"
+      return "Tasks"
     case "people":
       return "People"
   }

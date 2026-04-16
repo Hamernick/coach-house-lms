@@ -21,7 +21,7 @@ describe("member-workspace feature contract", () => {
       ),
     ).toEqual([
       "Projects",
-      "My Tasks",
+      "Tasks",
       "People",
     ])
   })

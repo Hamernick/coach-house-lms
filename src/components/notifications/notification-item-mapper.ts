@@ -1,5 +1,35 @@
 import { type AppNotification } from "@/app/actions/notifications"
 import { type NotificationItem } from "@/components/notifications/types"
+import { readOrganizationAccessRequestNotificationMetadata } from "@/features/organization-access"
+
+export function readOrganizationAccessRequestIdFromNotificationHref(
+  href: string | null | undefined,
+) {
+  if (typeof href !== "string" || href.trim().length === 0) {
+    return null
+  }
+
+  try {
+    const url = new URL(href, "https://coachhouse.test")
+    if (url.pathname !== "/access-requests") {
+      return null
+    }
+
+    const requestId = url.searchParams.get("request")?.trim() ?? ""
+    return requestId.length > 0 ? requestId : null
+  } catch {
+    return null
+  }
+}
+
+function resolveOrganizationAccessRequestId(item: AppNotification) {
+  const metadata = readOrganizationAccessRequestNotificationMetadata(item.metadata)
+  if (metadata?.requestId) {
+    return metadata.requestId
+  }
+
+  return readOrganizationAccessRequestIdFromNotificationHref(item.href)
+}
 
 export function formatNotificationTime(createdAt: string) {
   const date = new Date(createdAt)
@@ -25,6 +55,8 @@ export function formatNotificationTime(createdAt: string) {
 }
 
 export function toNotificationItem(item: AppNotification): NotificationItem {
+  const organizationAccessRequestId = resolveOrganizationAccessRequestId(item)
+
   return {
     id: item.id,
     title: item.title,
@@ -33,5 +65,7 @@ export function toNotificationItem(item: AppNotification): NotificationItem {
     tone: item.tone ?? "info",
     time: formatNotificationTime(item.createdAt),
     unread: item.readAt == null,
+    openLabel: organizationAccessRequestId ? "Review request" : undefined,
+    organizationAccessRequestId,
   }
 }

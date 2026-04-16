@@ -12,6 +12,8 @@ export type PlatformSetupNotification = {
   createdAt: string
   readAt: string | null
   archivedAt: string | null
+  type: string | null
+  metadata: null
 }
 
 export function hasSupabaseManagementApiToken() {
@@ -35,5 +37,7 @@ export function buildPlatformSetupNotification(
     createdAt,
     readAt: null,
     archivedAt: null,
+    type: null,
+    metadata: null,
   }
 }

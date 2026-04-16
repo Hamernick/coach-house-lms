@@ -57,7 +57,7 @@ export function buildMainNav({
       ? [
           { title: "Workspace", href: "/workspace", icon: LayoutGridIcon },
           { title: "Projects", href: "/projects", icon: FolderKanbanIcon },
-          { title: "My Tasks", href: "/my-tasks", icon: ClipboardListIcon },
+          { title: "Tasks", href: "/tasks", icon: ClipboardListIcon },
           { title: "People", href: "/people", icon: UsersIcon },
           { title: "Documents", href: "/organization/documents", icon: LockIcon },
         ]

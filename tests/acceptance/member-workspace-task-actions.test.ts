@@ -519,7 +519,7 @@ describe("member workspace task actions", () => {
       task_count: 1,
       updated_by: "user-1",
     })
-    expect(revalidatePathMock).toHaveBeenCalledWith("/my-tasks")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/tasks")
     expect(revalidatePathMock).toHaveBeenCalledWith("/projects")
     expect(revalidatePathMock).toHaveBeenCalledWith("/projects/project-standard")
   })

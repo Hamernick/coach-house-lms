@@ -1,18 +1,33 @@
+import {
+  acceptOrganizationAccessRequestAction,
+  declineOrganizationAccessRequestAction,
+  listMyOrganizationAccessRequestsAction,
+} from "@/app/actions/organization-access"
+import { OrganizationAccessRequestsPanel } from "@/features/organization-access"
 import { redirect } from "next/navigation"
 
 export default async function AccessRequestsPage({
   searchParams,
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
-}) {
+} = {}) {
+  const result = await listMyOrganizationAccessRequestsAction()
+  if ("error" in result) {
+    redirect("/workspace")
+  }
+
   const resolvedSearchParams = searchParams ? await searchParams : undefined
   const highlightedRequestId =
     typeof resolvedSearchParams?.request === "string"
       ? resolvedSearchParams.request.trim()
       : null
-  redirect(
-    highlightedRequestId
-      ? `/notifications?request=${encodeURIComponent(highlightedRequestId)}`
-      : "/notifications",
+
+  return (
+    <OrganizationAccessRequestsPanel
+      initialRequests={result.requests}
+      acceptRequestAction={acceptOrganizationAccessRequestAction}
+      declineRequestAction={declineOrganizationAccessRequestAction}
+      highlightedRequestId={highlightedRequestId}
+    />
   )
 }

@@ -75,4 +75,19 @@ describe("workspace route aliases", () => {
 
     expect(destination).toBe("/workspace?source=legacy_alias&onboarding_flow=1")
   })
+
+  it("redirects /my-tasks to /tasks and preserves query params", async () => {
+    const { default: Page } = await import("@/app/(dashboard)/my-tasks/page")
+
+    const destination = await captureRedirect(() =>
+      Page({
+        searchParams: Promise.resolve({
+          view: "week",
+          assignee: ["me", "team"],
+        }),
+      }),
+    )
+
+    expect(destination).toBe("/tasks?view=week&assignee=me&assignee=team")
+  })
 })

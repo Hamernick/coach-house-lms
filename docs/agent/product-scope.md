@@ -15,7 +15,7 @@
   - `/workspace`
   - `/workspace/present`
   - `/projects`
-  - `/my-tasks`
+  - `/tasks`
   - `/people`
   - `/organization/documents`
   - `/class/{slug}`
@@ -26,6 +26,7 @@
 - Legacy aliases:
   - `/my-organization` -> `/workspace`
   - `/organization` -> `/workspace`
+  - `/my-tasks` -> `/tasks`
 - Breadcrumbs are contextual, with loading skeletons and mobile truncation.
 - Guards:
   - 401 -> login

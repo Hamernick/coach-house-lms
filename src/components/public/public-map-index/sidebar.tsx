@@ -26,6 +26,10 @@ import {
   PublicMapRailSearchPanel,
   type PublicMapSidebarSearchContext,
 } from "./sidebar-panels"
+import {
+  PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
+  PUBLIC_MAP_SIDEBAR_RAIL_CLASSNAME,
+} from "./sidebar-theme"
 
 export type { PublicMapSidebarSearchContext } from "./sidebar-panels"
 
@@ -173,7 +177,7 @@ export function PublicMapSidebar({
     >
       <Sidebar
         collapsible="none"
-        className="pointer-events-auto h-full w-full overflow-hidden border-r border-white/30 bg-background/40 shadow-[0_20px_45px_-28px_hsl(var(--foreground)/0.6)] backdrop-blur-2xl supports-[backdrop-filter]:bg-background/34 dark:bg-black/28"
+        className={cn("pointer-events-auto h-full w-full overflow-hidden", PUBLIC_MAP_SIDEBAR_RAIL_CLASSNAME)}
       >
         {effectiveSidebarMode === "search" ? (
           <PublicMapRailSearchPanel
@@ -243,7 +247,7 @@ export function PublicMapSidebar({
           type="button"
           variant="ghost"
           onClick={() => setSidebarMode("search")}
-          className="h-10 rounded-full border border-white/35 bg-background/60 px-3 text-foreground shadow-sm backdrop-blur-xl hover:bg-background/75"
+          className={cn("h-10 rounded-full px-3 shadow-sm backdrop-blur-xl", PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME)}
         >
           <SearchIcon className="h-4 w-4" aria-hidden />
           <span className="sr-only">Open resource map panel</span>

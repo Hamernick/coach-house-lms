@@ -38,9 +38,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 
@@ -50,7 +48,7 @@ type HomeCanvasPreviewProps = {
   findPanel?: ReactNode
 }
 
-const HOME_CANVAS_NAV_MENU_CLASSNAME = "gap-[var(--shell-rail-item-gap,0.5rem)]"
+const HOME_CANVAS_NAV_MENU_CLASSNAME = "gap-1"
 
 export function HomeCanvasPreview({ initialSection, pricingPanel, findPanel }: HomeCanvasPreviewProps) {
   return (
@@ -70,7 +68,6 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
   const {
     activeSection,
     direction,
-    activeLabel,
     activeSectionBehavior,
     setActivePanelRef,
     changeSection,
@@ -90,6 +87,7 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
     })
   const showFindSidebarShell = activeSection === "find" && hasSidebarSlot
   const hideShellSidebar = activeSection === "find" && !hasSidebarSlot
+  const showRightRailToggle = hasRightRail && !isMobile
   const railToggleClassName =
     "size-8 rounded-md border border-[color:var(--shell-border)] text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
 
@@ -216,22 +214,8 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
         <div className="flex min-h-0 flex-1">
           <SidebarInset className="h-full min-h-0 overflow-hidden bg-[var(--shell-bg)]">
             <header
-              className="flex min-h-14 shrink-0 items-center justify-between gap-2 py-2 px-[var(--shell-content-pad)] text-sm text-muted-foreground"
+              className="flex min-h-14 shrink-0 items-center justify-end gap-2 py-2 px-[var(--shell-content-pad)] text-sm text-muted-foreground"
             >
-              <div className="flex min-w-0 items-center gap-2">
-                {hideShellSidebar ? null : (
-                  <>
-                    <SidebarTrigger
-                      className={railToggleClassName}
-                      aria-label="Toggle sidebar"
-                    />
-                    <Separator orientation="vertical" className="h-4 bg-border" />
-                  </>
-                )}
-                <div id="site-header-title" className="min-w-0 overflow-hidden">
-                  <p className="truncate text-sm font-medium text-foreground">{activeLabel}</p>
-                </div>
-              </div>
               <div className="flex shrink-0 items-center gap-2">
                 <Button
                   variant={activeSection === "login" ? "default" : "outline"}
@@ -242,7 +226,7 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
                   Login
                 </Button>
                 <PublicThemeToggle variant="outline" size="icon" />
-                {hasRightRail && !isMobile ? (
+                {showRightRailToggle ? (
                   <Button
                     variant="ghost"
                     size="icon"

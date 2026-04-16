@@ -12,12 +12,18 @@ import { Button } from "@/components/ui/button"
 import { PUBLIC_MAP_GROUP_LABELS } from "@/lib/public-map/groups"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 
 import {
   SOCIAL_ICON_MAP,
   type OrganizationDetailActionLink,
   type OrganizationDetailSocialLink,
 } from "./organization-detail-helpers"
+import {
+  PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
+  PUBLIC_MAP_SIDEBAR_PILL_CLASSNAME,
+  PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME,
+} from "./sidebar-theme"
 
 type DetailPanelChromeProps = {
   organization: PublicMapOrganization
@@ -55,7 +61,7 @@ export function OrganizationDetailPanelChrome({
           variant="ghost"
           size="icon"
           onClick={onBack}
-          className="h-8 w-8 rounded-full border border-border/70 bg-background/85 text-foreground hover:bg-muted"
+          className={cn("h-8 w-8 rounded-full", PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME)}
           aria-label="Back to search"
         >
           <ArrowLeftIcon className="h-4 w-4" aria-hidden />
@@ -70,7 +76,7 @@ export function OrganizationDetailPanelChrome({
             iconOnly
             buttonVariant="ghost"
             buttonSize="icon"
-            className="h-8 w-8 rounded-full border border-border/70 bg-background/85 text-foreground hover:bg-muted"
+            className={cn("h-8 w-8 rounded-full", PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME)}
           />
         ) : null}
         <Button
@@ -78,7 +84,7 @@ export function OrganizationDetailPanelChrome({
           variant="ghost"
           size="icon"
           onClick={onHidePanel}
-          className="h-8 w-8 rounded-full border border-border/70 bg-background/85 text-foreground hover:bg-muted"
+          className={cn("h-8 w-8 rounded-full", PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME)}
           aria-label="Hide organization panel"
         >
           <XIcon className="h-4 w-4" aria-hidden />
@@ -121,7 +127,7 @@ export function OrganizationDetailIdentitySection({
         </p>
       ) : null}
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex items-center rounded-full border border-border/70 bg-background/80 px-2 py-0.5 text-[10px] text-foreground">
+        <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-[10px]", PUBLIC_MAP_SIDEBAR_PILL_CLASSNAME)}>
           {PUBLIC_MAP_GROUP_LABELS[organization.primaryGroup]}
         </span>
         {organization.isOnlineOnly ? (
@@ -177,7 +183,7 @@ export function OrganizationDetailActionLinks({
               variant="ghost"
               onClick={() => void handleCopyAction(action)}
               disabled={copyingActionKey === action.key}
-              className="h-16 rounded-xl border border-border/70 bg-background/85 px-2 text-[11px] text-foreground hover:bg-muted"
+              className={cn("h-16 rounded-xl px-2 text-[11px]", PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME)}
             >
               <span className="flex h-full w-full flex-col items-center justify-center gap-0.5 text-center">
                 <Icon className="h-4.5 w-4.5" aria-hidden />
@@ -192,7 +198,7 @@ export function OrganizationDetailActionLinks({
             key={action.key}
             asChild
             variant="ghost"
-            className="h-16 rounded-xl border border-border/70 bg-background/85 px-2 text-[11px] text-foreground hover:bg-muted"
+            className={cn("h-16 rounded-xl px-2 text-[11px]", PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME)}
           >
             <a
               href={action.href}
@@ -217,7 +223,7 @@ export function OrganizationDetailAboutSection({
   onToggle,
 }: DetailAboutProps) {
   return (
-    <section className="rounded-xl border border-border/70 bg-background/70 p-2.5">
+    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
       <p className="text-sm font-medium">About</p>
       <p className="mt-1 text-sm text-muted-foreground">
         {aboutCopy}
@@ -248,7 +254,7 @@ export function OrganizationDetailSocialsSection({
   if (socials.length === 0) return null
 
   return (
-    <section className="rounded-xl border border-border/70 bg-background/70 p-2.5">
+    <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
       <p className="text-sm font-medium">Socials</p>
       <div className="mt-1.5 flex flex-wrap gap-2">
         {socials.map((social) => {
@@ -260,7 +266,7 @@ export function OrganizationDetailSocialsSection({
               asChild
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-lg border border-border/70 bg-background/80 text-foreground hover:bg-muted"
+              className={cn("h-9 w-9 rounded-lg", PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME)}
             >
               <a
                 href={social.href}

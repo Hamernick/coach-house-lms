@@ -149,6 +149,7 @@ describe("public map sidebar layout", () => {
     expect(headerClassName).toContain("px-3")
     expect(shellClassName).toContain("px-3")
     expect(scrollClassName).not.toContain("px-")
+    expect(scrollClassName).toContain("pr-2.5")
     expect(viewportClassName).toContain("[&amp;&gt;div]:!block")
     expect(viewportClassName).toContain("[&amp;&gt;div]:!w-full")
     expect(markup.match(/data-slot="scroll-area"/g)).toHaveLength(1)
@@ -157,6 +158,8 @@ describe("public map sidebar layout", () => {
     expect(stackClassName).toContain("w-full")
     expect(stackClassName).toContain("max-w-full")
     expect(stackClassName).not.toContain("px-")
+    expect(markup).toContain("bg-sidebar/95")
+    expect(markup).not.toContain("border-white/30")
   })
 
   it("keeps constrained rail cards compact without relying on a wider three-column preview grid", () => {
@@ -178,7 +181,9 @@ describe("public map sidebar layout", () => {
     expect(markup).not.toContain("grid-cols-3")
     expect(markup).toContain("w-full min-w-0 max-w-full overflow-hidden")
     expect(markup).toContain(">View<")
-    expect(markup).toContain("group-hover:bg-background/80")
+    expect(markup).toContain("rounded-2xl border shadow-sm")
+    expect(markup).toContain("group-hover:bg-background/85")
+    expect(markup).not.toContain("dark:border-white/30")
   })
 
   it("can mount the find search panel into the shell sidebar without the map overlay rail", () => {

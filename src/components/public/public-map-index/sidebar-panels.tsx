@@ -9,6 +9,7 @@ import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { PublicMapOrganizationDetail } from "./organization-detail"
 import { PublicMapOrganizationList } from "./organization-list"
 import { PublicMapSearchCard } from "./search-card"
+import { PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME } from "./sidebar-theme"
 
 export type PublicMapSidebarSearchContext = {
   title: string
@@ -23,7 +24,7 @@ function PublicMapSearchContextCard({
   context: PublicMapSidebarSearchContext
 }) {
   return (
-    <div className="w-full max-w-full rounded-2xl border border-border/70 bg-card/92 px-3 py-3 shadow-[0_16px_32px_-28px_hsl(var(--foreground)/0.5)]">
+    <div className={cn("w-full max-w-full px-3 py-3", PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME)}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <p className="text-sm font-semibold text-foreground">{context.title}</p>
@@ -138,7 +139,7 @@ export function PublicMapRailSearchPanel({
         </SidebarGroupLabel>
         <ScrollArea
           data-public-map-sidebar-section="rail-organizations-scroll"
-          className="min-h-0 flex-1"
+          className="min-h-0 flex-1 pr-2.5"
           viewportClassName="[&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
           contentClassName="px-1 pb-4"
         >
@@ -173,7 +174,7 @@ export function PublicMapRailDetailPanel({
     <SidebarContent className="h-full min-h-0 overflow-hidden bg-transparent pt-0 pb-0">
       <ScrollArea
         data-public-map-sidebar-section="rail-detail-scroll"
-        className="min-h-0 flex-1 px-1"
+        className="min-h-0 flex-1 px-1 pr-3.5"
         viewportClassName="[&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
         contentClassName="pb-3 pr-1"
       >

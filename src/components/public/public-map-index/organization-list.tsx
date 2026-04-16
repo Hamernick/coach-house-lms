@@ -11,6 +11,12 @@ import { PUBLIC_MAP_GROUP_LABELS } from "@/lib/public-map/groups"
 import { cn } from "@/lib/utils"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { PublicMapMediaImage } from "./media-image"
+import {
+  PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
+  PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME,
+  PUBLIC_MAP_SIDEBAR_MEDIA_SURFACE_CLASSNAME,
+  PUBLIC_MAP_SIDEBAR_PILL_CLASSNAME,
+} from "./sidebar-theme"
 
 const PUBLIC_MAP_LIST_CARD_PERF_STYLE = {
   contentVisibility: "auto",
@@ -58,7 +64,7 @@ export function PublicMapOrganizationList({
   if (organizations.length === 0) {
     const hasSearchQuery = Boolean(query?.trim().length)
     return (
-      <div className="flex flex-col gap-1 rounded-2xl border border-border/70 bg-card/92 px-4 py-6 text-center shadow-[0_16px_32px_-28px_hsl(var(--foreground)/0.5)]">
+      <div className={cn("flex flex-col gap-1 px-4 py-6 text-center", PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME)}>
         <p className="text-sm font-medium text-foreground">No organizations yet</p>
         <p className="text-xs leading-relaxed text-muted-foreground">
           {hasSearchQuery
@@ -86,16 +92,17 @@ export function PublicMapOrganizationList({
             key={org.id}
             style={PUBLIC_MAP_LIST_CARD_PERF_STYLE}
             className={cn(
-              "group relative w-full min-w-0 max-w-full overflow-hidden rounded-2xl border border-border/70 bg-card/94 p-3 shadow-[0_18px_36px_-30px_hsl(var(--foreground)/0.55)] transition-[border-color,background-color,box-shadow]",
+              "group relative w-full min-w-0 max-w-full overflow-hidden p-3 transition-[border-color,background-color,box-shadow]",
+              PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME,
               selected
-                ? "border-primary/35 bg-card shadow-[0_22px_44px_-30px_hsl(var(--foreground)/0.65)]"
+                ? "border-primary/35 bg-sidebar-accent/95"
                 : "hover:border-border/90 hover:bg-card",
             )}
           >
             <Button
               type="button"
               variant="ghost"
-              className="absolute inset-0 z-0 h-auto w-auto rounded-[inherit] border border-white/15 bg-background/25 p-0 text-transparent shadow-none transition-colors hover:bg-background/35 dark:border-white/30 dark:bg-white/12 dark:hover:bg-white/18 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35"
+              className="absolute inset-0 z-0 h-auto w-auto rounded-[inherit] border border-transparent bg-transparent p-0 text-transparent shadow-none transition-[background-color,border-color] hover:border-border/60 hover:bg-background/35 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/35"
               onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}
               aria-label={`Open details for ${org.name}`}
             />
@@ -107,10 +114,11 @@ export function PublicMapOrganizationList({
               className={cn(
                 "pointer-events-auto absolute z-20",
                 constrainedLayout ? "right-2.5 top-2.5" : "right-3 top-3",
-                "inline-flex h-8 w-8 items-center justify-center rounded-full border transition-colors",
+                "inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+                PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
                 isFavorite
-                  ? "border-primary/45 bg-primary/10 text-primary"
-                  : "border-border/70 bg-background/80 text-muted-foreground hover:bg-muted",
+                  ? "border-primary/45 bg-primary/10 text-primary hover:bg-primary/15"
+                  : "text-muted-foreground",
               )}
               onClick={() => onToggleFavorite(org.id)}
               aria-label={isFavorite ? `Remove ${org.name} from favorites` : `Add ${org.name} to favorites`}
@@ -177,7 +185,7 @@ export function PublicMapOrganizationList({
                 {visiblePreviewPrograms.map((program) => (
                   <div
                     key={`${org.id}:program:${program.id}`}
-                    className="overflow-hidden rounded-lg border border-border/70 bg-muted/25"
+                    className={cn("overflow-hidden rounded-lg", PUBLIC_MAP_SIDEBAR_MEDIA_SURFACE_CLASSNAME)}
                   >
                     <PublicMapMediaImage
                       src={program.imageUrl ?? ""}
@@ -201,7 +209,7 @@ export function PublicMapOrganizationList({
               )}
             >
               <div className="pointer-events-none flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
-                <Badge variant="outline" className="rounded-md border-border/70 bg-background/80 text-[10px] text-foreground">
+                <Badge variant="outline" className={cn("text-[10px]", PUBLIC_MAP_SIDEBAR_PILL_CLASSNAME)}>
                   {PUBLIC_MAP_GROUP_LABELS[org.primaryGroup]}
                 </Badge>
                 {org.isOnlineOnly ? (
@@ -218,9 +226,9 @@ export function PublicMapOrganizationList({
                 className={cn(
                   "pointer-events-auto relative z-20 ml-auto h-auto shrink-0 rounded-full border border-transparent bg-transparent px-2.5 py-1 text-[11px] font-medium text-muted-foreground shadow-none",
                   "transition-[background-color,border-color,color] duration-150 ease-out motion-reduce:transition-none",
-                  "group-hover:border-border/70 group-hover:bg-background/80 group-hover:text-foreground",
-                  "group-focus-within:border-border/70 group-focus-within:bg-background/80 group-focus-within:text-foreground",
-                  "hover:bg-background/90 hover:text-foreground focus-visible:bg-background/80",
+                  "group-hover:border-border/70 group-hover:bg-background/85 group-hover:text-foreground",
+                  "group-focus-within:border-border/70 group-focus-within:bg-background/85 group-focus-within:text-foreground",
+                  "hover:bg-background/90 hover:text-foreground focus-visible:bg-background/85",
                 )}
                 onClick={() => (onOpenDetails ? onOpenDetails(org.id) : onSelectOrg(org.id))}
               >

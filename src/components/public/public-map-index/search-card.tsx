@@ -4,6 +4,7 @@ import SearchIcon from "lucide-react/dist/esm/icons/search"
 
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
+import { PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME } from "./sidebar-theme"
 
 export type PublicMapSearchCardProps = {
   query: string
@@ -21,9 +22,7 @@ export function PublicMapSearchCard({
     <div
       className={cn(
         "flex flex-col gap-3 bg-transparent pb-3 pt-3 text-card-foreground",
-        compact
-          ? "border-b border-white/20"
-          : "border-b border-white/30",
+        "border-b border-border/60",
       )}
     >
       <div className="flex items-center gap-2">
@@ -46,7 +45,7 @@ export function PublicMapSearchCard({
           value={query}
           onChange={(event) => onQueryChange(event.currentTarget.value)}
           className={cn(
-            "rounded-xl border-border/70 bg-background/95 pl-8 text-base text-foreground placeholder:text-muted-foreground",
+            cn("rounded-xl pl-8 text-base placeholder:text-muted-foreground", PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME),
             compact ? "h-10" : "h-11",
           )}
           placeholder="Search organizations, locations, or programs…"

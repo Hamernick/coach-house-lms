@@ -12,7 +12,6 @@ import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
 import PanelTopIcon from "lucide-react/dist/esm/icons/panel-top"
 import ShieldIcon from "lucide-react/dist/esm/icons/shield"
-import ShoppingBagIcon from "lucide-react/dist/esm/icons/shopping-bag"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
 
 import {
@@ -113,11 +112,6 @@ export const RESOURCE_NAV = [
     name: "Community",
     url: "/community",
     icon: MessageCircleIcon,
-  },
-  {
-    name: "Marketplace",
-    url: "/marketplace",
-    icon: ShoppingBagIcon,
   },
 ]
 

@@ -41,11 +41,7 @@ export function AcceleratorPreviewRightPanel({
 }: AcceleratorPreviewRightPanelProps) {
   return (
     <div className="flex h-full min-h-0 flex-col overflow-hidden rounded-[24px] border border-border/60 bg-background p-5">
-      <div className="mb-2 flex items-center justify-between gap-2">
-        <div />
-      </div>
-
-      <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+      <div className="min-h-0 flex-1 overflow-y-auto">
         {slide.id === "support" ? (
           <AnimatePresence mode="wait" initial={false}>
             <motion.div

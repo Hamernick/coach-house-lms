@@ -80,8 +80,8 @@ export function PricingStep({
   const showManualPaidContinue = onboardingMode === "post_signup_access"
 
   return (
-    <div className="space-y-5 py-5" data-onboarding-step-id="pricing">
-      <div className="rounded-2xl border border-border/70 bg-muted/25 p-4">
+    <div className="space-y-4 py-4 sm:space-y-5 sm:py-5" data-onboarding-step-id="pricing">
+      <div className="rounded-2xl border border-border/70 bg-muted/25 p-3.5 sm:p-4">
         <p className="text-sm font-medium text-foreground">
           Want to build your own organization?
         </p>
@@ -106,7 +106,7 @@ export function PricingStep({
         </Alert>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         {builderTiers.map((tier) => {
           const eyebrow = splitTierEyebrow(tier.eyebrow)
           const isCurrentTier =
@@ -121,12 +121,12 @@ export function PricingStep({
             <Card
               key={tier.id}
               className={cn(
-                "rounded-[26px] border border-border/70 shadow-none",
+                "rounded-[22px] border border-border/70 shadow-none sm:rounded-[26px]",
                 tier.featured && "border-primary/35 ring-1 ring-primary/10",
                 isCurrentTier && "border-emerald-500/45 bg-emerald-500/[0.06]",
               )}
             >
-              <CardHeader className="space-y-4">
+              <CardHeader className="space-y-3 sm:space-y-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -135,7 +135,7 @@ export function PricingStep({
                         <span className="mt-0.5 block">{eyebrow.secondary}</span>
                       ) : null}
                     </p>
-                    <CardTitle className="mt-2 text-2xl">{tier.title}</CardTitle>
+                    <CardTitle className="mt-2 text-xl sm:text-2xl">{tier.title}</CardTitle>
                   </div>
                   {isCurrentTier ? (
                     <Badge className="rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
@@ -149,7 +149,7 @@ export function PricingStep({
                 </div>
 
                 <div className="flex items-end gap-2">
-                  <span className="text-4xl font-semibold tracking-tight">{tier.priceLine}</span>
+                  <span className="text-3xl font-semibold tracking-tight sm:text-4xl">{tier.priceLine}</span>
                   {tier.priceNote ? (
                     <span className="pb-1 text-sm text-muted-foreground">{tier.priceNote}</span>
                   ) : null}
@@ -184,7 +184,7 @@ export function PricingStep({
                 )}
               </CardHeader>
 
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 sm:space-y-4">
                 <div className="h-px bg-border/70" aria-hidden />
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value={`${tier.id}-includes`} className="border-b-0">

@@ -61,6 +61,8 @@ describe("onboarding gate", () => {
 
     expect(result).toBeTruthy()
     expect(redirectMock).not.toHaveBeenCalled()
+    expect((result as { props: { className: string } }).props.className).toContain("min-h-0")
+    expect((result as { props: { className: string } }).props.className).toContain("py-0")
   })
 
   it("recovers a paid onboarding pricing return from Stripe-backed entitlements when the local subscription row was missing before sync", async () => {

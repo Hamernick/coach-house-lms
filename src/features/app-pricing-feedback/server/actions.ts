@@ -1,13 +1,28 @@
 "use server"
 
+import type { SupabaseClient } from "@supabase/supabase-js"
+
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
 import type { Database } from "@/lib/supabase"
 import { normalizeAppPricingFeedbackInput } from "../lib"
 import type { AppPricingFeedbackInput, SaveAppPricingFeedbackResult } from "../types"
-import { isMissingAppPricingFeedbackResponsesTableError } from "./table-errors"
+import {
+  isAppPricingFeedbackOrgReferenceError,
+  isMissingAppPricingFeedbackResponsesTableError,
+} from "./table-errors"
 
 type AppPricingFeedbackInsert =
   Database["public"]["Tables"]["app_pricing_feedback_responses"]["Insert"]
+type AppPricingFeedbackMutationClient = Pick<SupabaseClient<Database, "public">, "from">
+
+function upsertAppPricingFeedbackResponse(
+  supabase: AppPricingFeedbackMutationClient,
+  payload: AppPricingFeedbackInsert,
+) {
+  return supabase
+    .from("app_pricing_feedback_responses")
+    .upsert(payload, { onConflict: "user_id,survey_key" })
+}
 
 export async function saveAppPricingFeedback(
   input: AppPricingFeedbackInput,
@@ -28,9 +43,15 @@ export async function saveAppPricingFeedback(
     feedback: null,
   }
 
-  const { error } = await supabase
-    .from("app_pricing_feedback_responses")
-    .upsert(payload, { onConflict: "user_id,survey_key" })
+  let { error } = await upsertAppPricingFeedbackResponse(supabase, payload)
+
+  if (error && payload.org_id && isAppPricingFeedbackOrgReferenceError(error)) {
+    const retryResult = await upsertAppPricingFeedbackResponse(supabase, {
+      ...payload,
+      org_id: null,
+    })
+    error = retryResult.error
+  }
 
   if (error) {
     if (isMissingAppPricingFeedbackResponsesTableError(error)) {
@@ -39,6 +60,7 @@ export async function saveAppPricingFeedback(
           "Pricing feedback is not available until the latest database migrations are applied.",
       }
     }
+    console.error("Unable to save app pricing feedback.", error)
     return { error: "Unable to save pricing feedback right now." }
   }
 

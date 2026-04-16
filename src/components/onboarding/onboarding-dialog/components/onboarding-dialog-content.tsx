@@ -198,9 +198,9 @@ export function OnboardingDialogContent({
 
         <div
           data-onboarding-scroll-region="true"
-          className="nodrag nopan min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-0 md:px-6"
+          className="nodrag nopan min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-0 [scroll-padding-bottom:8rem] md:px-6"
         >
-          <div className="mx-auto w-full max-w-[640px] space-y-5 pb-5 md:space-y-6 md:pb-6">
+          <div className="mx-auto w-full max-w-[640px] space-y-4 pb-4 sm:space-y-5 sm:pb-5 md:space-y-6 md:pb-6">
             <input type="hidden" name="intentFocus" value={intentFocus} />
             <input type="hidden" name="onboardingMode" value={onboardingMode} />
             <input type="hidden" name="roleInterest" value={roleInterest} />

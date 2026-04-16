@@ -1,11 +1,11 @@
 "use client"
 
 import CheckIcon from "lucide-react/dist/esm/icons/check"
+import { ToggleGroup as ToggleGroupPrimitive } from "radix-ui"
 
 import { OrganizationFormationStatusSummary } from "@/components/organization/organization-formation-status-summary"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { cn } from "@/lib/utils"
 import { FORMATION_OPTIONS } from "../constants"
 import type { FormationStatus } from "../types"
@@ -98,7 +98,7 @@ export function OrganizationStep({
 
       <div className="grid gap-2">
         <Label>Formation status</Label>
-        <ToggleGroup
+        <ToggleGroupPrimitive.Root
           type="single"
           value={formationStatus || undefined}
           onValueChange={(value) => {
@@ -106,30 +106,34 @@ export function OrganizationStep({
             onFormationStatusSelect(value as FormationStatus)
           }}
           aria-label="Formation status"
-          className="grid w-full gap-2 sm:grid-cols-3"
+          data-slot="toggle-group"
+          className="box-border grid min-w-0 w-full max-w-full items-stretch gap-2 sm:grid-cols-3"
         >
           {FORMATION_OPTIONS.map((option) => {
             const selected = formationStatus === option.value
             return (
-              <ToggleGroupItem
+              <ToggleGroupPrimitive.Item
                 key={option.value}
                 value={option.value}
-                variant="outline"
+                data-slot="toggle-group-item"
                 className={cn(
-                  "h-auto min-w-0 justify-start rounded-xl p-3 text-left",
+                  "flex h-full w-full min-w-0 items-stretch justify-start rounded-2xl border p-0 text-left whitespace-normal shadow-none outline-none transition-colors",
+                  "focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50",
+                  "data-[state=on]:border-primary/60 data-[state=on]:bg-primary/5 data-[state=on]:text-foreground",
                   selected
                     ? "border-primary/60 bg-primary/5"
-                    : "border-border/70 bg-background/60 hover:bg-background",
+                    : "border-border/70 bg-background/60 text-foreground hover:bg-background",
                 )}
               >
                 <OrganizationFormationStatusSummary
                   formationStatus={option}
                   contained={false}
+                  className="flex h-full w-full min-w-0 flex-col gap-2 rounded-2xl p-3 text-left"
                 />
-              </ToggleGroupItem>
+              </ToggleGroupPrimitive.Item>
             )
           })}
-        </ToggleGroup>
+        </ToggleGroupPrimitive.Root>
         {attemptedStep === step && errors.formationStatus ? (
           <p className="text-destructive text-xs">{errors.formationStatus}</p>
         ) : null}

@@ -1,4 +1,6 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { env } from "@/lib/env"
+import { unstable_cache } from "next/cache"
 import {
   isFormationStatus,
 } from "@/lib/organization/formation-status"
@@ -87,7 +89,7 @@ function readProfileFormationStatus(profile: Record<string, unknown>) {
   return isFormationStatus(value) ? value : null
 }
 
-export async function fetchPublicMapOrganizations(): Promise<PublicMapOrganization[]> {
+async function fetchPublicMapOrganizationsUncached(): Promise<PublicMapOrganization[]> {
   const supabase = createSupabaseAdminClient()
   const { data: orgRows, error: orgError } = await supabase
     .from("organizations")
@@ -249,4 +251,18 @@ export async function fetchPublicMapOrganizations(): Promise<PublicMapOrganizati
       } satisfies PublicMapOrganization
     })
     .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: "base" }))
+}
+
+const fetchPublicMapOrganizationsCached = unstable_cache(
+  async (): Promise<PublicMapOrganization[]> => fetchPublicMapOrganizationsUncached(),
+  ["public-map-organizations-v1"],
+  { revalidate: 300, tags: ["public-map-organizations"] },
+)
+
+export async function fetchPublicMapOrganizations(): Promise<PublicMapOrganization[]> {
+  if (env.SUPABASE_SERVICE_ROLE_KEY) {
+    return fetchPublicMapOrganizationsCached()
+  }
+
+  return fetchPublicMapOrganizationsUncached()
 }

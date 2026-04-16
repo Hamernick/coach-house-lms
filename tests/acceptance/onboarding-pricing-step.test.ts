@@ -75,5 +75,23 @@ describe("onboarding step footer", () => {
 
     expect(markup).toContain("Enter workspace")
     expect(markup).not.toContain("Finish")
+    expect(markup).toContain("pb-[max(1rem,env(safe-area-inset-bottom))]")
+  })
+
+  it("keeps the pricing step compact on smaller screens", () => {
+    const markup = renderToStaticMarkup(
+      createElement(PricingStep, {
+        step: 1,
+        attemptedStep: null,
+        errors: {},
+        currentPlanTier: "free",
+        checkoutReturnTo: "/onboarding?source=onboarding_pricing",
+        onboardingMode: "post_signup_access",
+        submitting: false,
+      }),
+    )
+
+    expect(markup).toContain("space-y-4 py-4 sm:space-y-5 sm:py-5")
+    expect(markup).toContain("text-3xl font-semibold tracking-tight sm:text-4xl")
   })
 })

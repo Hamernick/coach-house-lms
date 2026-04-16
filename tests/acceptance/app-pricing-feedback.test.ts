@@ -1,4 +1,6 @@
-import { describe, expect, it } from "vitest"
+import "./test-utils"
+
+import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import {
   APP_PRICING_FEEDBACK_PRICE_PER_MONTH_USD,
@@ -10,8 +12,23 @@ import {
   normalizeAppPricingFeedbackInput,
   resolveAppPricingFeedbackPrompt,
 } from "@/features/app-pricing-feedback"
+import { saveAppPricingFeedback } from "@/features/app-pricing-feedback/server/actions"
+import { resetTestMocks } from "./test-utils"
+
+const { resolveAuthenticatedAppContextMock } = vi.hoisted(() => ({
+  resolveAuthenticatedAppContextMock: vi.fn(),
+}))
+
+vi.mock("@/lib/auth/request-context", () => ({
+  resolveAuthenticatedAppContext: resolveAuthenticatedAppContextMock,
+}))
 
 describe("app pricing feedback feature contract", () => {
+  beforeEach(() => {
+    resetTestMocks()
+    resolveAuthenticatedAppContextMock.mockReset()
+  })
+
   it("requires a yes or no answer", () => {
     expect(
       normalizeAppPricingFeedbackInput({
@@ -106,5 +123,85 @@ describe("app pricing feedback feature contract", () => {
       "coachhouse_tutorial_dismissed_accelerator",
     ])
     expect(APP_PRICING_FEEDBACK_REVEAL_DELAY_MS).toBe(650)
+  })
+
+  it("retries without org context when the active organization reference is missing", async () => {
+    const upsert = vi
+      .fn()
+      .mockResolvedValueOnce({
+        error: {
+          code: "23503",
+          message:
+            'insert or update on table "app_pricing_feedback_responses" violates foreign key constraint "app_pricing_feedback_responses_org_id_fkey"',
+        },
+      })
+      .mockResolvedValueOnce({ error: null })
+
+    resolveAuthenticatedAppContextMock.mockResolvedValue({
+      supabase: {
+        from: vi.fn(() => ({
+          upsert,
+        })),
+      },
+      user: { id: "user-1" },
+      activeOrg: { orgId: "org-missing", role: "owner" },
+    })
+
+    await expect(
+      saveAppPricingFeedback({
+        selection: "yes",
+      }),
+    ).resolves.toEqual({ ok: true })
+
+    expect(upsert).toHaveBeenCalledTimes(2)
+    expect(upsert).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({
+        user_id: "user-1",
+        org_id: "org-missing",
+        survey_key: APP_PRICING_FEEDBACK_SURVEY_KEY,
+        would_pay: true,
+        response_kind: "answered",
+      }),
+      { onConflict: "user_id,survey_key" },
+    )
+    expect(upsert).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({
+        user_id: "user-1",
+        org_id: null,
+        survey_key: APP_PRICING_FEEDBACK_SURVEY_KEY,
+        would_pay: true,
+        response_kind: "answered",
+      }),
+      { onConflict: "user_id,survey_key" },
+    )
+  })
+
+  it("keeps the migrations toast scoped to missing table or column errors", async () => {
+    const upsert = vi.fn().mockResolvedValue({
+      error: {
+        code: "42703",
+        message: 'column "response_kind" of relation "app_pricing_feedback_responses" does not exist',
+      },
+    })
+
+    resolveAuthenticatedAppContextMock.mockResolvedValue({
+      supabase: {
+        from: vi.fn(() => ({
+          upsert,
+        })),
+      },
+      user: { id: "user-1" },
+      activeOrg: { orgId: "org-1", role: "owner" },
+    })
+
+    await expect(
+      saveAppPricingFeedback({
+        selection: "no",
+      }),
+    ).resolves.toEqual({
+      error: "Pricing feedback is not available until the latest database migrations are applied.",
+    })
   })
 })

@@ -2,12 +2,14 @@
 
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { AnimatePresence, motion } from "framer-motion"
 import ArrowDownIcon from "lucide-react/dist/esm/icons/arrow-down"
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
+import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
 import PanelRightCloseIcon from "lucide-react/dist/esm/icons/panel-right-close"
 import PanelRightOpenIcon from "lucide-react/dist/esm/icons/panel-right-open"
-import type { CSSProperties, ReactNode } from "react"
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react"
 
 import { RIGHT_RAIL_ID } from "@/components/app-shell/constants"
 import { ShellRightRail } from "@/components/app-shell/components/shell-right-rail"
@@ -24,6 +26,7 @@ import {
   SIDEBAR_CANVAS_NAV,
   isHomeSectionId,
 } from "@/components/public/home-canvas-preview-config"
+import { isPrimaryPlainNavigationIntent } from "@/components/public/home-canvas-route-link-helpers"
 import { useHomeCanvasNavigation } from "@/components/public/home-canvas-preview-navigation"
 import { CanvasAuthPanel, HomeSectionPanel } from "@/components/public/home-canvas-preview-panels"
 import { Button } from "@/components/ui/button"
@@ -65,6 +68,7 @@ export function HomeCanvasPreview({ initialSection, pricingPanel, findPanel }: H
 }
 
 function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: HomeCanvasPreviewProps) {
+  const router = useRouter()
   const {
     activeSection,
     direction,
@@ -80,6 +84,7 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
   const hasSidebarSlot = useHomeCanvasSidebarPresence()
   const sidebarSlotContent = useHomeCanvasSidebarContent()
   const isMobile = useIsMobile()
+  const [isFindRoutePending, setIsFindRoutePending] = useState(false)
   const { rightOpen, handleRightOpenChangeUser, handleRightOpenChangeAuto } =
     useAppShellRightRailState({
       hasRightRail,
@@ -90,6 +95,37 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
   const showRightRailToggle = hasRightRail && !isMobile
   const railToggleClassName =
     "size-8 rounded-md border border-[color:var(--shell-border)] text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+
+  useEffect(() => {
+    if (activeSection === "find") {
+      setIsFindRoutePending(false)
+      return
+    }
+    router.prefetch("/find")
+  }, [activeSection, router])
+
+  function primeFindRoute() {
+    if (activeSection === "find") return
+    router.prefetch("/find")
+  }
+
+  function handleFindRouteClick(event: React.MouseEvent<HTMLAnchorElement>) {
+    if (
+      !isPrimaryPlainNavigationIntent({
+        defaultPrevented: event.defaultPrevented,
+        button: event.button,
+        metaKey: event.metaKey,
+        altKey: event.altKey,
+        ctrlKey: event.ctrlKey,
+        shiftKey: event.shiftKey,
+        target: event.currentTarget.target,
+      })
+    ) {
+      return
+    }
+
+    setIsFindRoutePending(true)
+  }
 
   return (
     <SidebarProvider
@@ -173,8 +209,24 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
                           isActive={activeSection === "find"}
                           aria-current={activeSection === "find" ? "page" : undefined}
                         >
-                          <Link href="/find" className="flex w-full items-center gap-2">
-                            <span>Find</span>
+                          <Link
+                            href="/find"
+                            prefetch
+                            aria-busy={isFindRoutePending || undefined}
+                            onClick={handleFindRouteClick}
+                            onFocus={primeFindRoute}
+                            onMouseEnter={primeFindRoute}
+                            onTouchStart={primeFindRoute}
+                            className="flex w-full items-center gap-2"
+                          >
+                            {isFindRoutePending ? (
+                              <>
+                                <LoaderCircleIcon className="h-4 w-4 animate-spin" aria-hidden />
+                                <span>Opening…</span>
+                              </>
+                            ) : (
+                              <span>Find</span>
+                            )}
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -248,6 +300,17 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
 
             <div className="flex min-h-0 flex-1 p-[var(--shell-content-pad)] md:pb-[var(--shell-content-pad)] md:pr-[var(--shell-content-pad)] md:pl-0 md:pt-0">
               <div className="relative flex min-h-0 w-full flex-1 overflow-hidden rounded-[28px] border border-[color:var(--shell-border)] bg-[var(--shell-bg)]">
+                {isFindRoutePending ? (
+                  <div className="pointer-events-none absolute inset-x-4 top-4 z-30 flex justify-center md:justify-start">
+                    <div
+                      className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/92 px-3 py-1.5 text-xs font-medium text-foreground shadow-sm backdrop-blur"
+                      aria-live="polite"
+                    >
+                      <LoaderCircleIcon className="h-4 w-4 animate-spin text-muted-foreground" aria-hidden />
+                      <span>Opening Find…</span>
+                    </div>
+                  </div>
+                ) : null}
                 <AnimatePresence custom={direction} initial={false} mode="wait">
                   <motion.div
                     key={activeSection}
@@ -305,7 +368,17 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
                           <div className="w-full max-w-xl rounded-2xl border border-border/60 bg-card/60 p-6 text-center">
                             <p className="text-sm text-muted-foreground">Find organizations is currently unavailable.</p>
                             <Button asChild className="mt-4 rounded-xl">
-                              <Link href="/find">Open map</Link>
+                              <Link
+                                href="/find"
+                                prefetch
+                                aria-busy={isFindRoutePending || undefined}
+                                onClick={handleFindRouteClick}
+                                onFocus={primeFindRoute}
+                                onMouseEnter={primeFindRoute}
+                                onTouchStart={primeFindRoute}
+                              >
+                                {isFindRoutePending ? "Opening…" : "Open map"}
+                              </Link>
                             </Button>
                           </div>
                         </div>

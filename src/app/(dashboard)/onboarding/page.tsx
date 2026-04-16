@@ -82,7 +82,7 @@ export default async function OnboardingPage({
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-[980px] flex-1 flex-col py-2 md:py-4">
+    <div className="mx-auto flex w-full max-w-[980px] min-h-0 flex-1 flex-col py-0 sm:py-2 md:py-4">
       <OnboardingWorkspaceCard
         {...state.onboardingDefaults}
         defaultBuilderPlanTier={pricingReturnPlanTierOverride ?? state.currentPlanTier}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { buildMainNav } from "@/components/app-sidebar/nav-data"
+import { RESOURCE_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
 
 describe("app sidebar nav data", () => {
   it("shows the internal platform item only for true platform admins", () => {
@@ -55,6 +55,13 @@ describe("app sidebar nav data", () => {
       "My Tasks",
       "People",
       "Documents",
+    ])
+  })
+
+  it("does not show Marketplace in the sidebar resource nav", () => {
+    expect(RESOURCE_NAV.map((item) => item.name)).toEqual([
+      "Knowledge base",
+      "Community",
     ])
   })
 })

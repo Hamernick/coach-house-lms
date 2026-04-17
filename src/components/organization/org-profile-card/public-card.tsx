@@ -73,8 +73,16 @@ export function OrgProfilePublicCard({
     typeof profile.mission === "string" ? stripHtml(profile.mission) : ""
   const vision =
     typeof profile.vision === "string" ? stripHtml(profile.vision) : ""
+  const need =
+    typeof profile.need === "string" ? stripHtml(profile.need) : ""
   const values =
     typeof profile.values === "string" ? stripHtml(profile.values) : ""
+  const originStory =
+    typeof profile.originStory === "string" ? stripHtml(profile.originStory) : ""
+  const theoryOfChange =
+    typeof profile.theoryOfChange === "string"
+      ? stripHtml(profile.theoryOfChange)
+      : ""
   const boilerplate =
     typeof profile.boilerplate === "string"
       ? stripHtml(profile.boilerplate)
@@ -89,9 +97,12 @@ export function OrgProfilePublicCard({
 
         <OrgProfilePublicAboutSection
           description={description}
+          originStory={originStory}
+          need={need}
           mission={mission}
           vision={vision}
           values={values}
+          theoryOfChange={theoryOfChange}
         />
 
         <Separator />

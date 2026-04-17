@@ -79,6 +79,8 @@ export const organizationProfileSchema = z.object({
   mission: z.string().max(5000).optional().or(z.literal("")),
   need: z.string().max(5000).optional().or(z.literal("")),
   values: z.string().max(5000).optional().or(z.literal("")),
+  originStory: z.string().max(5000).optional().or(z.literal("")),
+  theoryOfChange: z.string().max(5000).optional().or(z.literal("")),
   programs: z.string().max(5000).optional().or(z.literal("")),
   reports: z.string().max(5000).optional().or(z.literal("")),
   boilerplate: z.string().max(5000).optional().or(z.literal("")),

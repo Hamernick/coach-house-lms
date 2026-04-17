@@ -4,9 +4,21 @@ const { geocodeAddressMock } = vi.hoisted(() => ({
   geocodeAddressMock: vi.fn(),
 }))
 
-vi.mock("@/lib/geocoding/geocode", () => ({
-  geocodeAddress: geocodeAddressMock,
-}))
+vi.mock("@/lib/geocoding/geocode", async () => {
+  const { buildOrganizationGeocodeQueries } = await import("@/lib/location/organization-location")
+
+  return {
+    geocodeAddress: geocodeAddressMock,
+    geocodeOrganizationLocation: async (input: Parameters<typeof buildOrganizationGeocodeQueries>[0]) => {
+      const queries = buildOrganizationGeocodeQueries(input)
+      for (const query of queries) {
+        const result = await geocodeAddressMock(query)
+        if (result) return result
+      }
+      return null
+    },
+  }
+})
 
 import {
   authorizeOrganizationGeocodingCronRequest,
@@ -82,7 +94,7 @@ describe("organization geocoding", () => {
 
   it("repairs public organizations with addresses and missing coordinates", async () => {
     geocodeAddressMock.mockImplementation(async (address: string) => {
-      if (address.startsWith("123 Main St")) {
+      if (address === "Chicago, IL, 60601, United States") {
         return { lat: 41.8781, lng: -87.6298 }
       }
       return null
@@ -145,6 +157,8 @@ describe("organization geocoding", () => {
     expect(calls.organizationsTable.order).toHaveBeenCalledWith("updated_at", { ascending: false })
     expect(calls.organizationsTable.limit).toHaveBeenCalledWith(10)
     expect(geocodeAddressMock).toHaveBeenCalledWith("123 Main St, Chicago, IL, 60601, United States")
+    expect(geocodeAddressMock).toHaveBeenCalledWith("123 Main St, Chicago, IL, United States")
+    expect(geocodeAddressMock).toHaveBeenCalledWith("Chicago, IL, 60601, United States")
     expect(geocodeAddressMock).toHaveBeenCalledWith("Definitely not resolvable")
     expect(result).toEqual({
       scanned: 4,

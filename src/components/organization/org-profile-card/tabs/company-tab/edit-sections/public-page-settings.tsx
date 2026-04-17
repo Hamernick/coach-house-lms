@@ -185,6 +185,19 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
             </div>
           </div>
         ) : null}
+        {company.isPublic && hasAddress && !isOnlineOnly ? (
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3">
+            <div className="flex items-start gap-2">
+              <MapPinIcon className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden />
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-foreground">Map marker coordinates are populated automatically</p>
+                <p className="text-xs text-muted-foreground">
+                  When you save this profile, Coach House geocodes the address from the Address section and falls back to broader locality matching if the exact street lookup misses.
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
         {company.isPublic && isOnlineOnly ? (
           <div className="rounded-xl border border-primary/30 bg-primary/5 p-3">
             <div className="flex items-start gap-2">

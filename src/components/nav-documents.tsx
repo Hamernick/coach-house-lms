@@ -5,6 +5,11 @@ import type { LucideIcon } from "lucide-react"
 import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 
 import {
+  buildAppSidebarMenuButtonOwnerProps,
+  buildAppSidebarOwnerId,
+  buildAppSidebarTooltipProps,
+} from "@/components/app-sidebar/react-grab"
+import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -12,6 +17,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+
+const NAV_DOCUMENTS_SOURCE = "src/components/nav-documents.tsx"
 
 export function NavDocuments({
   items,
@@ -34,12 +41,30 @@ export function NavDocuments({
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>
-          {items.map((item) => (
+          {items.map((item) => {
+            const ownerId = buildAppSidebarOwnerId("resources", item.url || item.name)
+            const notes = `Sidebar resource nav item: ${item.name}`
+
+            return (
             <SidebarMenuItem key={item.name}>
               <SidebarMenuButton
                 asChild
-                tooltip={{ children: item.name, className: "whitespace-nowrap" }}
+                tooltip={buildAppSidebarTooltipProps({
+                  ownerId,
+                  component: "AppSidebarResourceNavItem",
+                  source: NAV_DOCUMENTS_SOURCE,
+                  children: item.name,
+                  className: "whitespace-nowrap",
+                  notes,
+                })}
                 className="justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
+                {...buildAppSidebarMenuButtonOwnerProps({
+                  ownerId,
+                  component: "AppSidebarResourceNavItem",
+                  source: NAV_DOCUMENTS_SOURCE,
+                  variant: item.external ? "external" : "link",
+                  notes,
+                })}
               >
                 {item.external ? (
                   <a
@@ -68,7 +93,8 @@ export function NavDocuments({
                 )}
               </SidebarMenuButton>
             </SidebarMenuItem>
-          ))}
+            )
+          })}
         </SidebarMenu>
       </SidebarGroupContent>
     </SidebarGroup>

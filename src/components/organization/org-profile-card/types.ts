@@ -56,6 +56,8 @@ export type OrgProfile = {
   mission?: string | null
   need?: string | null
   values?: string | null
+  originStory?: string | null
+  theoryOfChange?: string | null
   programs?: string | null
   reports?: string | null
   boilerplate?: string | null

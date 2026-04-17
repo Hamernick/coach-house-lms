@@ -10,6 +10,11 @@ import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
 import FileTextIcon from "lucide-react/dist/esm/icons/file-text"
 import FolderIcon from "lucide-react/dist/esm/icons/folder"
 import {
+  buildAppSidebarMenuButtonOwnerProps,
+  buildAppSidebarOwnerId,
+  buildAppSidebarTooltipProps,
+} from "@/components/app-sidebar/react-grab"
+import {
   resolvePrototypeLabSidebarActiveEntryId,
   resolvePrototypeLabSidebarOpenFolderIds,
   type PrototypeLabSidebarTreeFolderNode,
@@ -35,6 +40,8 @@ import {
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
 
+const NAV_MAIN_SOURCE = "src/components/nav-main.tsx"
+
 type NavMainItem = {
   title: string
   href?: string
@@ -44,6 +51,28 @@ type NavMainItem = {
   badge?: string
   upgradeHref?: string
   upgradeLabel?: string
+}
+
+function buildMainNavItemReactGrabProps(item: NavMainItem) {
+  const ownerId = buildAppSidebarOwnerId("main", item.href ?? item.title)
+  const notes = `Main sidebar nav item: ${item.title}`
+
+  return {
+    ownerProps: buildAppSidebarMenuButtonOwnerProps({
+      ownerId,
+      component: "AppSidebarMainNavItem",
+      source: NAV_MAIN_SOURCE,
+      variant: item.tree?.length ? "tree" : item.locked ? "locked" : "link",
+      notes,
+    }),
+    tooltipProps: buildAppSidebarTooltipProps({
+      ownerId,
+      component: "AppSidebarMainNavItem",
+      source: NAV_MAIN_SOURCE,
+      children: item.title,
+      notes,
+    }),
+  }
 }
 
 function PrototypeTreeEntry({
@@ -142,6 +171,7 @@ function NavMainTreeItem({
   const [treeOpen, setTreeOpen] = useState(isActive)
   const previousIsActiveRef = useRef(isActive)
   const isTreeExpanded = isActive && treeOpen
+  const reactGrabProps = buildMainNavItemReactGrabProps(item)
 
   useEffect(() => {
     if (!previousIsActiveRef.current && isActive) {
@@ -156,8 +186,9 @@ function NavMainTreeItem({
         <SidebarMenuButton
           asChild
           isActive={isActive}
-          tooltip={item.title}
+          tooltip={reactGrabProps.tooltipProps}
           className="justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
+          {...reactGrabProps.ownerProps}
         >
           <Link
             href={item.href ?? "#"}
@@ -257,6 +288,7 @@ export function NavMain({
           {items.map((item) => {
             const isActive = Boolean(item.href && item.href === activeHref)
             const isOrganizationItem = Boolean(item.href && isWorkspaceHref(item.href))
+            const reactGrabProps = buildMainNavItemReactGrabProps(item)
             const tourId =
               isOrganizationItem
                 ? "nav-organization"
@@ -271,8 +303,9 @@ export function NavMain({
                 <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton
                   asChild
-                  tooltip={item.title}
+                  tooltip={reactGrabProps.tooltipProps}
                   className="justify-start gap-2 opacity-90 cursor-default hover:bg-transparent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
+                  {...reactGrabProps.ownerProps}
                 >
                     <div aria-disabled className="flex w-full items-center gap-2">
                       {item.icon ? <item.icon className="size-4 shrink-0" /> : null}
@@ -317,8 +350,9 @@ export function NavMain({
                 <SidebarMenuButton
                   asChild
                   isActive={isActive}
-                  tooltip={item.title}
+                  tooltip={reactGrabProps.tooltipProps}
                   className="justify-start gap-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0"
+                  {...reactGrabProps.ownerProps}
                 >
                   <Link
                     href={item.href}

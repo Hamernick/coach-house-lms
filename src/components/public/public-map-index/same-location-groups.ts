@@ -1,4 +1,5 @@
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import { formatFullOrganizationLocation } from "@/lib/location/organization-location"
 
 const SAME_LOCATION_COORDINATE_PRECISION = 6
 
@@ -38,13 +39,13 @@ export function resolveSameLocationLabel(
   const directAddress = organization.address?.trim()
   if (directAddress) return directAddress
 
-  const fallback = [
-    organization.addressStreet,
-    organization.city,
-    organization.state,
-    organization.country,
-  ]
-    .filter((entry): entry is string => Boolean(entry && entry.trim().length > 0))
+  const locality = formatFullOrganizationLocation({
+    city: organization.city,
+    state: organization.state,
+    country: organization.country,
+  })
+  const fallback = [organization.addressStreet?.trim(), locality]
+    .filter((entry): entry is string => Boolean(entry && entry.length > 0))
     .join(", ")
 
   return fallback.length > 0 ? fallback : null

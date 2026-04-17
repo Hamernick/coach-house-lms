@@ -144,16 +144,20 @@ export function resolveOrganizationProfileComplete(initialProfile: {
   description?: string | null
   tagline?: string | null
   formationStatus?: string | null
+  originStory?: string | null
   mission?: string | null
   vision?: string | null
   need?: string | null
+  theoryOfChange?: string | null
 }) {
   const storyFieldCount = [
     initialProfile.description,
     initialProfile.tagline,
+    initialProfile.originStory,
     initialProfile.mission,
     initialProfile.vision,
     initialProfile.need,
+    initialProfile.theoryOfChange,
   ].filter((value) => typeof value === "string" && value.trim().length > 0).length
 
   return (

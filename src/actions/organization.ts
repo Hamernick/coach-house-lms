@@ -4,8 +4,9 @@
 import { revalidatePath } from "next/cache"
 
 import { requireServerSession } from "@/lib/auth"
-import { geocodeAddress } from "@/lib/geocoding/geocode"
+import { geocodeOrganizationLocation } from "@/lib/geocoding/geocode"
 import { buildOrganizationAddress } from "@/lib/geocoding/organization-address"
+import { normalizeOrganizationLocationFields, normalizeWhitespace } from "@/lib/location/organization-location"
 import type { BrandTypographyConfig } from "@/lib/organization/org-profile-brand-types"
 import type { Database } from "@/lib/supabase"
 import { sanitizeOrgProfileText, shouldStripOrgProfileHtml } from "@/lib/organization/profile-cleanup"
@@ -46,6 +47,8 @@ type OrgProfilePayload = {
   mission?: string | null
   need?: string | null
   values?: string | null
+  originStory?: string | null
+  theoryOfChange?: string | null
   programs?: string | null
   reports?: string | null
   boilerplate?: string | null
@@ -157,31 +160,45 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
     const raw = payload[camel]
     let normalized: string | null
     if (typeof raw === "string") {
-      const trimmed = raw.trim()
+      const trimmed = normalizeWhitespace(raw)
       normalized = trimmed.length > 0 ? trimmed : null
     } else if (raw === null) {
       normalized = null
     } else {
       const existing = next[snake] as string | null | undefined
-      normalized = typeof existing === "string" && existing.trim().length > 0 ? existing.trim() : null
+      const trimmed = normalizeWhitespace(existing)
+      normalized = trimmed.length > 0 ? trimmed : null
     }
     next[snake] = normalized
     delete next[camel as string]
   }
 
-  const fallbackAddress =
-    typeof payload.address === "string" && payload.address.trim().length > 0
-      ? payload.address.trim()
-      : (typeof current["address"] === "string" && current["address"]?.trim()?.length
-          ? (current["address"] as string).trim()
-          : null)
-
-  next.address = buildOrganizationAddress({
+  const normalizedLocation = normalizeOrganizationLocationFields({
     street: next["address_street"],
     city: next["address_city"],
     state: next["address_state"],
     postal: next["address_postal"],
     country: next["address_country"],
+  })
+  next["address_street"] = normalizedLocation.street || null
+  next["address_city"] = normalizedLocation.city || null
+  next["address_state"] = normalizedLocation.state || null
+  next["address_postal"] = normalizedLocation.postal || null
+  next["address_country"] = normalizedLocation.country || null
+
+  const fallbackAddress =
+    typeof payload.address === "string" && normalizeWhitespace(payload.address).length > 0
+      ? normalizeWhitespace(payload.address)
+      : (typeof current["address"] === "string" && normalizeWhitespace(current["address"]).length > 0
+          ? normalizeWhitespace(current["address"])
+          : null)
+
+  next.address = buildOrganizationAddress({
+    street: normalizedLocation.street,
+    city: normalizedLocation.city,
+    state: normalizedLocation.state,
+    postal: normalizedLocation.postal,
+    country: normalizedLocation.country,
     fallbackAddress,
   })
 
@@ -224,13 +241,19 @@ export async function updateOrganizationProfileAction(payload: OrgProfilePayload
     if (cleanupPath) cleanupPaths.add(cleanupPath)
   }
 
-  const addressForGeocode = typeof next.address === "string" ? next.address.replace(/\n+/g, ", ") : ""
   const isOnlineOnly = next.location_type === "online"
-  if (isOnlineOnly || !addressForGeocode) {
+  if (isOnlineOnly || (typeof next.address !== "string" && !fallbackAddress)) {
     locationLat = null
     locationLng = null
   } else {
-    const coords = await geocodeAddress(addressForGeocode)
+    const coords = await geocodeOrganizationLocation({
+      street: normalizedLocation.street,
+      city: normalizedLocation.city,
+      state: normalizedLocation.state,
+      postal: normalizedLocation.postal,
+      country: normalizedLocation.country,
+      fallbackAddress,
+    })
     if (coords) {
       locationLat = coords.lat
       locationLng = coords.lng

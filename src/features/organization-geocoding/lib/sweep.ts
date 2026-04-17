@@ -2,11 +2,11 @@ import { timingSafeEqual } from "node:crypto"
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 
-import { geocodeAddress } from "@/lib/geocoding/geocode"
+import { geocodeOrganizationLocation } from "@/lib/geocoding/geocode"
 import {
-  getOrganizationAddressForGeocoding,
   readOrganizationLocationType,
 } from "@/lib/geocoding/organization-address"
+import { buildOrganizationGeocodeQueries } from "@/lib/location/organization-location"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import type { Database } from "@/lib/supabase/types"
 
@@ -104,13 +104,27 @@ export async function runOrganizationGeocodeSweep({
       continue
     }
 
-    const address = getOrganizationAddressForGeocoding(profile)
-    if (!address) {
+    const geocodeQueries = buildOrganizationGeocodeQueries({
+      street: profile["address_street"],
+      city: profile["address_city"],
+      state: profile["address_state"],
+      postal: profile["address_postal"],
+      country: profile["address_country"],
+      fallbackAddress: profile["address"],
+    })
+    if (geocodeQueries.length === 0) {
       skippedMissingAddress += 1
       continue
     }
 
-    const coords = await geocodeAddress(address)
+    const coords = await geocodeOrganizationLocation({
+      street: profile["address_street"],
+      city: profile["address_city"],
+      state: profile["address_state"],
+      postal: profile["address_postal"],
+      country: profile["address_country"],
+      fallbackAddress: profile["address"],
+    })
     if (!coords) {
       failed += 1
       continue

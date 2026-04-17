@@ -2,6 +2,7 @@ import BuildingIcon from "lucide-react/dist/esm/icons/building-2"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
 
+import { normalizeOrganizationLocationFields } from "@/lib/location/organization-location"
 import type {
   BrandTypographyConfig,
   BrandTypographyTracking,
@@ -74,6 +75,14 @@ function normalizeTypography(source: OrgProfile): BrandTypographyConfig | null {
 }
 
 export function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
+  const normalizedLocation = normalizeOrganizationLocationFields({
+    street: source.addressStreet,
+    city: source.addressCity,
+    state: source.addressState,
+    postal: source.addressPostal,
+    country: source.addressCountry,
+  })
+
   return {
     name: source.name ?? "",
     description: source.description ?? "",
@@ -89,11 +98,11 @@ export function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
     email: source.email ?? "",
     phone: source.phone ?? "",
     address: source.address ?? "",
-    addressStreet: source.addressStreet ?? "",
-    addressCity: source.addressCity ?? "",
-    addressState: source.addressState ?? "",
-    addressPostal: source.addressPostal ?? "",
-    addressCountry: source.addressCountry ?? "",
+    addressStreet: normalizedLocation.street,
+    addressCity: normalizedLocation.city,
+    addressState: normalizedLocation.state,
+    addressPostal: normalizedLocation.postal,
+    addressCountry: normalizedLocation.country,
     locationType: source.locationType === "online" ? "online" : "in_person",
     locationUrl: source.locationUrl ?? "",
     logoUrl: source.logoUrl ?? "",
@@ -112,6 +121,8 @@ export function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
     mission: source.mission ?? "",
     need: source.need ?? "",
     values: source.values ?? "",
+    originStory: source.originStory ?? "",
+    theoryOfChange: source.theoryOfChange ?? "",
     programs: source.programs ?? "",
     reports: source.reports ?? "",
     boilerplate: source.boilerplate ?? "",

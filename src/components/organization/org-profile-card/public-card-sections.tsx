@@ -21,6 +21,10 @@ import { ORG_BANNER_ASPECT_RATIO } from "@/lib/organization/banner-spec"
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
 
 import type { OrgProfile, OrgProgram } from "./types"
+import {
+  PUBLIC_CARD_HEADER_SQUARES,
+  PUBLIC_CARD_SOCIAL_FIELDS,
+} from "./public-card-sections-config"
 import { locationSummary } from "./utils"
 import {
   AddressDisplay,
@@ -33,44 +37,6 @@ import {
 export function hasPublicProfileValue(value?: string | null) {
   return typeof value === "string" && value.trim().length > 0
 }
-
-export const PUBLIC_CARD_SOCIAL_FIELDS: Array<{
-  label: string
-  key: keyof Pick<
-    OrgProfile,
-    | "twitter"
-    | "facebook"
-    | "linkedin"
-    | "instagram"
-    | "youtube"
-    | "tiktok"
-    | "github"
-  >
-  icon: keyof typeof PROVIDER_ICON
-}> = [
-  { label: "Twitter / X", key: "twitter", icon: "link" },
-  { label: "Facebook", key: "facebook", icon: "facebook" },
-  { label: "LinkedIn", key: "linkedin", icon: "linkedin" },
-  { label: "Instagram", key: "instagram", icon: "instagram" },
-  { label: "YouTube", key: "youtube", icon: "youtube" },
-  { label: "TikTok", key: "tiktok", icon: "link" },
-  { label: "GitHub", key: "github", icon: "github" },
-]
-
-const HEADER_SQUARES: Array<[number, number]> = [
-  [4, 4],
-  [5, 1],
-  [8, 2],
-  [5, 3],
-  [5, 5],
-  [10, 10],
-  [12, 15],
-  [15, 10],
-  [10, 15],
-  [15, 10],
-  [10, 15],
-  [15, 10],
-]
 
 function createIcon(slug: keyof typeof PROVIDER_ICON) {
   const Icon = PROVIDER_ICON[slug] ?? PROVIDER_ICON.generic
@@ -105,7 +71,7 @@ export function OrgProfilePublicHeader({
             <div className="from-background/5 via-background/10 to-background/40 absolute inset-0 bg-gradient-to-b" />
             <GridPattern
               patternId="org-public-header-pattern"
-              squares={HEADER_SQUARES}
+              squares={PUBLIC_CARD_HEADER_SQUARES}
               className={cn(
                 "inset-x-0 inset-y-[-30%] h-[200%] skew-y-12 [mask-image:radial-gradient(320px_circle_at_center,white,transparent)] opacity-70"
               )}
@@ -194,24 +160,46 @@ export function OrgProfilePublicHeader({
 
 export function OrgProfilePublicAboutSection({
   description,
+  originStory,
+  need,
   mission,
   vision,
   values,
+  theoryOfChange,
 }: {
   description: string
+  originStory: string
+  need: string
   mission: string
   vision: string
   values: string
+  theoryOfChange: string
 }) {
   return (
     <FormRow
       title="About"
-      description="Mission, vision, and values"
+      description="Story, purpose, and values"
       inset={false}
     >
       <div className="space-y-4 text-sm">
         {description.trim().length > 0 ? (
           <FieldText text={description} multiline />
+        ) : null}
+        {originStory.trim().length > 0 ? (
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-xs tracking-wide uppercase">
+              Origin story
+            </p>
+            <FieldText text={originStory} multiline />
+          </div>
+        ) : null}
+        {need.trim().length > 0 ? (
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-xs tracking-wide uppercase">
+              Need statement
+            </p>
+            <FieldText text={need} multiline />
+          </div>
         ) : null}
         {mission.trim().length > 0 ? (
           <div className="space-y-1">
@@ -235,6 +223,14 @@ export function OrgProfilePublicAboutSection({
               Values
             </p>
             <FieldText text={values} multiline />
+          </div>
+        ) : null}
+        {theoryOfChange.trim().length > 0 ? (
+          <div className="space-y-1">
+            <p className="text-muted-foreground text-xs tracking-wide uppercase">
+              Theory of change
+            </p>
+            <FieldText text={theoryOfChange} multiline />
           </div>
         ) : null}
       </div>

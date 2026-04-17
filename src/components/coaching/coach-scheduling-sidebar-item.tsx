@@ -2,6 +2,11 @@
 
 import { CoachingAvatarGroup } from "@/components/coaching/coaching-avatar-group"
 import {
+  buildAppSidebarMenuButtonOwnerProps,
+  buildAppSidebarOwnerId,
+  buildAppSidebarTooltipProps,
+} from "@/components/app-sidebar/react-grab"
+import {
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
@@ -10,8 +15,13 @@ import {
 } from "@/components/ui/sidebar"
 import { useCoachingBooking } from "@/hooks/use-coaching-booking"
 
+const COACH_SCHEDULING_SIDEBAR_ITEM_SOURCE =
+  "src/components/coaching/coach-scheduling-sidebar-item.tsx"
+
 export function CoachSchedulingSidebarItem() {
   const { schedule, pending } = useCoachingBooking()
+  const ownerId = buildAppSidebarOwnerId("utility", "coaching")
+  const notes = "Sidebar utility nav item: Coaching"
 
   return (
     <SidebarGroup className="px-0 py-0">
@@ -20,13 +30,27 @@ export function CoachSchedulingSidebarItem() {
           <SidebarMenuItem>
             <SidebarMenuButton
               type="button"
-              tooltip={{ children: "Coaching", className: "whitespace-nowrap" }}
+              tooltip={buildAppSidebarTooltipProps({
+                ownerId,
+                component: "AppSidebarUtilityNavItem",
+                source: COACH_SCHEDULING_SIDEBAR_ITEM_SOURCE,
+                children: "Coaching",
+                className: "whitespace-nowrap",
+                notes,
+              })}
               className="justify-start gap-2"
               onClick={() => {
                 void schedule()
               }}
               aria-label="Open coaching scheduling"
               disabled={pending}
+              {...buildAppSidebarMenuButtonOwnerProps({
+                ownerId,
+                component: "AppSidebarUtilityNavItem",
+                source: COACH_SCHEDULING_SIDEBAR_ITEM_SOURCE,
+                variant: "action",
+                notes,
+              })}
             >
               <CoachingAvatarGroup
                 size="sm"

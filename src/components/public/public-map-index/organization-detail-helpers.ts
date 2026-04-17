@@ -10,6 +10,10 @@ import MailIcon from "lucide-react/dist/esm/icons/mail"
 import PhoneIcon from "lucide-react/dist/esm/icons/phone"
 import TwitterIcon from "lucide-react/dist/esm/icons/twitter"
 
+import {
+  formatFullOrganizationLocation,
+  normalizeOrganizationLocationFields,
+} from "@/lib/location/organization-location"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
 export type PublicMapSocialKey = keyof Pick<
@@ -116,21 +120,28 @@ export function truncateAtWordBoundary(value: string, maxLength: number) {
 }
 
 export function formatLocation(organization: PublicMapOrganization) {
-  return [organization.city, organization.state, organization.country]
-    .filter((entry) => Boolean(entry && entry.trim().length > 0))
-    .join(", ")
+  return formatFullOrganizationLocation({
+    city: organization.city,
+    state: organization.state,
+    country: organization.country,
+  })
 }
 
 export function formatAddressLines(organization: PublicMapOrganization) {
-  const street = normalizeText(organization.addressStreet)
+  const normalizedLocation = normalizeOrganizationLocationFields({
+    street: organization.addressStreet,
+    city: organization.city,
+    state: organization.state,
+    postal: organization.addressPostal,
+    country: organization.country,
+  })
+  const street = normalizeText(normalizedLocation.street)
   const locality = [
-    organization.city,
-    organization.state,
-    organization.addressPostal,
-  ]
-    .map((entry) => normalizeText(entry))
-    .filter((entry) => entry.length > 0)
-  const country = normalizeText(organization.country)
+    normalizedLocation.city,
+    normalizedLocation.state,
+    normalizedLocation.postal,
+  ].filter((entry) => entry.length > 0)
+  const country = normalizeText(normalizedLocation.country)
   const fallback = normalizeText(organization.address)
 
   const lines: string[] = []

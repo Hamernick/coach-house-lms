@@ -1,4 +1,5 @@
 import type { ModuleCardStatus } from "@/lib/accelerator/progress"
+import { normalizeOrganizationLocationFields } from "@/lib/location/organization-location"
 import type {
   BrandTypographyConfig,
   BrandTypographyTracking,
@@ -147,6 +148,13 @@ export function buildInitialOrganizationProfile({
   const formationStatus: FormationStatus = isFormationStatus(formationStatusRaw)
     ? formationStatusRaw
     : "in_progress"
+  const normalizedLocation = normalizeOrganizationLocationFields({
+    street: profile["address_street"],
+    city: profile["address_city"],
+    state: profile["address_state"],
+    postal: profile["address_postal"],
+    country: profile["address_country"],
+  })
 
   return {
     name: String(profile["name"] ?? ""),
@@ -158,11 +166,11 @@ export function buildInitialOrganizationProfile({
     email: String(profile["email"] ?? ""),
     phone: String(profile["phone"] ?? ""),
     address: String(profile["address"] ?? ""),
-    addressStreet: String(profile["address_street"] ?? ""),
-    addressCity: String(profile["address_city"] ?? ""),
-    addressState: String(profile["address_state"] ?? ""),
-    addressPostal: String(profile["address_postal"] ?? ""),
-    addressCountry: String(profile["address_country"] ?? ""),
+    addressStreet: normalizedLocation.street,
+    addressCity: normalizedLocation.city,
+    addressState: normalizedLocation.state,
+    addressPostal: normalizedLocation.postal,
+    addressCountry: normalizedLocation.country,
     locationType:
       profile["location_type"] === "online" || profile["locationType"] === "online"
         ? "online"
@@ -184,6 +192,8 @@ export function buildInitialOrganizationProfile({
     mission: String(profile["mission"] ?? ""),
     need: String(profile["need"] ?? ""),
     values: String(profile["values"] ?? ""),
+    originStory: String(profile["originStory"] ?? profile["origin_story"] ?? ""),
+    theoryOfChange: String(profile["theoryOfChange"] ?? profile["theory_of_change"] ?? ""),
     programs: String(profile["programs"] ?? ""),
     reports: String(profile["reports"] ?? ""),
     boilerplate: String(profile["boilerplate"] ?? ""),

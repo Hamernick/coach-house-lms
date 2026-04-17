@@ -1,6 +1,7 @@
 import "server-only"
 
 import { env } from "@/lib/env"
+import { buildOrganizationGeocodeQueries } from "@/lib/location/organization-location"
 
 const MAPBOX_GEOCODE_ENDPOINT = "https://api.mapbox.com/geocoding/v5/mapbox.places"
 const NOMINATIM_GEOCODE_BASE_URL = "https://nominatim.openstreetmap.org"
@@ -139,4 +140,36 @@ export async function geocodeAddress(address: string): Promise<GeocodeResult | n
   }
 
   return geocodeWithNominatim(query)
+}
+
+export async function geocodeOrganizationLocation({
+  street,
+  city,
+  state,
+  postal,
+  country,
+  fallbackAddress,
+}: {
+  street?: unknown
+  city?: unknown
+  state?: unknown
+  postal?: unknown
+  country?: unknown
+  fallbackAddress?: unknown
+}) {
+  const queries = buildOrganizationGeocodeQueries({
+    street,
+    city,
+    state,
+    postal,
+    country,
+    fallbackAddress,
+  })
+
+  for (const query of queries) {
+    const result = await geocodeAddress(query)
+    if (result) return result
+  }
+
+  return null
 }

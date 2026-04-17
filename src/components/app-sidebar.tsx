@@ -1,8 +1,6 @@
 "use client"
 
-import Link from "next/link"
 import { useMemo } from "react"
-import ListChecksIcon from "lucide-react/dist/esm/icons/list-checks"
 
 import { CoachSchedulingCard } from "@/components/coaching/coach-scheduling-card"
 import { CoachSchedulingSidebarItem } from "@/components/coaching/coach-scheduling-sidebar-item"
@@ -13,14 +11,7 @@ import type { SidebarClass } from "@/lib/academy"
 
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import { RESOURCE_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
-import {
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-} from "@/components/ui/sidebar"
+import { SidebarContent, SidebarFooter } from "@/components/ui/sidebar"
 
 export type AppSidebarProps = {
   user?: {
@@ -153,26 +144,7 @@ export function SidebarBody({
   return (
     <>
       <SidebarContent className="gap-0">
-        {onboardingLocked ? (
-          <SidebarGroup className="pt-3 pb-1">
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  asChild
-                  isActive
-                >
-                  <Link
-                    href="/onboarding?source=onboarding"
-                    className="flex w-full min-w-0 items-center gap-2"
-                  >
-                    <ListChecksIcon className="size-4" />
-                    <span className="min-w-0 flex-1 truncate whitespace-nowrap">Welcome</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroup>
-        ) : (
+        {onboardingLocked ? null : (
           <NavMain items={mainNavItems} className="py-0" />
         )}
         {shouldShowAccelerator && showClasses ? (

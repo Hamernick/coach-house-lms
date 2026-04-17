@@ -128,7 +128,7 @@ export function OrganizationDetailOriginSection({
 }: DetailOriginProps) {
   return (
     <section className={cn("p-2.5", PUBLIC_MAP_SIDEBAR_SECTION_CLASSNAME)}>
-      <p className="text-sm font-medium">Origin</p>
+      <p className="text-sm font-medium">About</p>
       <Accordion type="single" collapsible className="mt-1 w-full">
         {storyFields.map((field) => {
           const hasCopy = field.value.length > 0

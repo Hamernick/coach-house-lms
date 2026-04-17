@@ -40,7 +40,7 @@ export const CANVAS_NAV: CanvasNavItem[] = [
 
 const HIDDEN_CANVAS_SECTION_IDS = new Set<CanvasSectionId>(["find", "login", "signup"])
 export const VISIBLE_CANVAS_NAV = CANVAS_NAV.filter((item) => !HIDDEN_CANVAS_SECTION_IDS.has(item.id))
-const HIDDEN_SIDEBAR_NAV_IDS = new Set<CanvasSectionId>()
+const HIDDEN_SIDEBAR_NAV_IDS = new Set<CanvasSectionId>(["hero"])
 export const SIDEBAR_CANVAS_NAV = VISIBLE_CANVAS_NAV.filter((item) => !HIDDEN_SIDEBAR_NAV_IDS.has(item.id))
 
 const HOME_SECTION_IDS = new Set<LegacyHomeSectionId>(LEGACY_HOME_SECTION_NAV.map((item) => item.id))

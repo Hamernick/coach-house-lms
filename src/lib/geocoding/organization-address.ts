@@ -1,8 +1,8 @@
-function normalizeAddressPart(value: unknown) {
-  if (typeof value !== "string") return null
-  const trimmed = value.trim()
-  return trimmed.length > 0 ? trimmed : null
-}
+import {
+  buildOrganizationGeocodeQueries,
+  normalizeOrganizationLocationFields,
+  normalizeWhitespace,
+} from "@/lib/location/organization-location"
 
 export function buildOrganizationAddress({
   street,
@@ -19,24 +19,27 @@ export function buildOrganizationAddress({
   country?: unknown
   fallbackAddress?: unknown
 }) {
-  const normalizedStreet = normalizeAddressPart(street)
-  const normalizedCity = normalizeAddressPart(city)
-  const normalizedState = normalizeAddressPart(state)
-  const normalizedPostal = normalizeAddressPart(postal)
-  const normalizedCountry = normalizeAddressPart(country)
+  const normalized = normalizeOrganizationLocationFields({
+    street,
+    city,
+    state,
+    postal,
+    country,
+  })
 
   const addressLines: string[] = []
-  if (normalizedStreet) addressLines.push(normalizedStreet)
+  if (normalized.street) addressLines.push(normalized.street)
 
-  const locality = [normalizedCity, normalizedState, normalizedPostal].filter(Boolean).join(", ")
+  const locality = [normalized.city, normalized.state, normalized.postal].filter(Boolean).join(", ")
   if (locality) addressLines.push(locality)
-  if (normalizedCountry) addressLines.push(normalizedCountry)
+  if (normalized.country) addressLines.push(normalized.country)
 
   if (addressLines.length > 0) {
     return addressLines.join("\n")
   }
 
-  return normalizeAddressPart(fallbackAddress)
+  const normalizedFallback = normalizeWhitespace(fallbackAddress)
+  return normalizedFallback.length > 0 ? normalizedFallback : null
 }
 
 export function readOrganizationLocationType(profile: Record<string, unknown>) {
@@ -50,7 +53,7 @@ export function readOrganizationLocationType(profile: Record<string, unknown>) {
 }
 
 export function getOrganizationAddressForGeocoding(profile: Record<string, unknown>) {
-  const address = buildOrganizationAddress({
+  const queries = buildOrganizationGeocodeQueries({
     street: profile["address_street"],
     city: profile["address_city"],
     state: profile["address_state"],
@@ -59,6 +62,5 @@ export function getOrganizationAddressForGeocoding(profile: Record<string, unkno
     fallbackAddress: profile["address"],
   })
 
-  if (!address) return null
-  return address.replace(/\n+/g, ", ")
+  return queries[0] ?? null
 }

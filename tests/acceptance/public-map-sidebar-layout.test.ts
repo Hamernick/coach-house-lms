@@ -179,11 +179,86 @@ describe("public map sidebar layout", () => {
 
     expect(markup).toContain("grid-cols-2")
     expect(markup).not.toContain("grid-cols-3")
-    expect(markup).toContain("w-full min-w-0 max-w-full overflow-hidden")
+    expect(markup).toContain("w-full min-w-0 max-w-full")
+    expect(markup).toContain("overflow-hidden")
+    expect(markup).toContain("cursor-pointer")
+    expect(markup).not.toContain(organization.tagline)
+    expect(markup).not.toContain(organization.description ?? "")
+    expect(markup).toContain("gap-x-1.5 gap-y-0.5")
+    expect(markup).toContain("•")
     expect(markup).toContain(">View<")
     expect(markup).toContain("rounded-2xl border shadow-sm")
-    expect(markup).toContain("group-hover:bg-background/85")
+    expect(markup).toContain("text-[#06c]")
+    expect(markup).not.toContain("rounded-full border border-transparent bg-transparent")
     expect(markup).not.toContain("dark:border-white/30")
+  })
+
+  it("prioritizes web-resource metadata inside the constrained inline strip without overflowing badge chrome", () => {
+    const organization = buildOrganization({
+      isOnlineOnly: true,
+    })
+    const markup = renderToStaticMarkup(
+      React.createElement(PublicMapOrganizationList, {
+        organizations: [organization],
+        selectedOrgId: null,
+        favorites: [],
+        query: "",
+        constrainedLayout: true,
+        onSelectOrg: () => {},
+        onToggleFavorite: () => {},
+        onOpenDetails: () => {},
+      }),
+    )
+
+    expect(markup).toContain(">Chicago, IL<")
+    expect(markup).toContain(">Web resource<")
+    expect(markup).not.toContain(">Community<")
+    expect(markup).not.toContain("rounded-md border-border/70 bg-background/85")
+  })
+
+  it("renders logo avatars on a white contained surface so transparent logos stay visible", () => {
+    const organization = buildOrganization({
+      logoUrl: "https://example.com/logo.png",
+    })
+    const markup = renderToStaticMarkup(
+      React.createElement(PublicMapOrganizationList, {
+        organizations: [organization],
+        selectedOrgId: null,
+        favorites: [],
+        query: "",
+        constrainedLayout: true,
+        onSelectOrg: () => {},
+        onToggleFavorite: () => {},
+        onOpenDetails: () => {},
+      }),
+    )
+
+    expect(markup).toContain("bg-white")
+    expect(markup).toContain('data-slot="avatar"')
+  })
+
+  it("shortens all-caps location labels to a readable city-and-state-code format on list cards", () => {
+    const organization = buildOrganization({
+      city: "CHICAGO",
+      state: "IL",
+      country: "UNITED STATES",
+    })
+    const markup = renderToStaticMarkup(
+      React.createElement(PublicMapOrganizationList, {
+        organizations: [organization],
+        selectedOrgId: null,
+        favorites: [],
+        query: "",
+        constrainedLayout: true,
+        onSelectOrg: () => {},
+        onToggleFavorite: () => {},
+        onOpenDetails: () => {},
+      }),
+    )
+
+    expect(markup).toContain(">Chicago, IL<")
+    expect(markup).not.toContain("CHICAGO")
+    expect(markup).not.toContain("UNITED STATES")
   })
 
   it("can mount the find search panel into the shell sidebar without the map overlay rail", () => {

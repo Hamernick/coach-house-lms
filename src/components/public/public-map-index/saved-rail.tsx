@@ -6,13 +6,8 @@ import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { formatCompactOrganizationLocation } from "@/lib/location/organization-location"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-
-function formatLocation(organization: PublicMapOrganization) {
-  return [organization.city, organization.state, organization.country]
-    .filter((entry) => Boolean(entry && entry.trim().length > 0))
-    .join(", ")
-}
 
 type PublicMapSavedRailProps = {
   savedOrganizations: PublicMapOrganization[]
@@ -51,7 +46,11 @@ export function PublicMapSavedRail({
           ) : (
             <div className="space-y-2.5">
               {savedOrganizations.map((organization) => {
-                const location = formatLocation(organization)
+                const location = formatCompactOrganizationLocation({
+                  city: organization.city,
+                  state: organization.state,
+                  country: organization.country,
+                })
                 return (
                   <article
                     key={organization.id}

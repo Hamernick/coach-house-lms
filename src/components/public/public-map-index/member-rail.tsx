@@ -13,13 +13,8 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { formatCompactOrganizationLocation } from "@/lib/location/organization-location"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-
-function formatLocation(organization: PublicMapOrganization) {
-  return [organization.city, organization.state, organization.country]
-    .filter((entry) => Boolean(entry && entry.trim().length > 0))
-    .join(", ")
-}
 
 function buildInitials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean)
@@ -278,7 +273,11 @@ function PublicMapOrganizationsRailSection({
         ) : (
           <div className="space-y-2.5">
             {organizations.map((organization) => {
-              const location = formatLocation(organization)
+                const location = formatCompactOrganizationLocation({
+                  city: organization.city,
+                  state: organization.state,
+                  country: organization.country,
+                })
               return (
                 <article
                   key={organization.id}

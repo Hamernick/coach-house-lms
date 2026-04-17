@@ -106,18 +106,30 @@ const socialFields: Array<{ key: keyof CompanyViewProps["company"]; label: strin
 ]
 
 export function StoryPreview({ company }: CompanyViewProps) {
+  const originStory = typeof company.originStory === "string" ? stripHtml(company.originStory) : ""
   const vision = typeof company.vision === "string" ? stripHtml(company.vision) : ""
   const need = typeof company.need === "string" ? stripHtml(company.need) : ""
   const mission = typeof company.mission === "string" ? stripHtml(company.mission) : ""
   const values = typeof company.values === "string" ? stripHtml(company.values) : ""
+  const theoryOfChange = typeof company.theoryOfChange === "string" ? stripHtml(company.theoryOfChange) : ""
 
-  if (!([vision, need, mission, values].some((value) => value.trim().length > 0))) {
+  if (!([originStory, vision, need, mission, values, theoryOfChange].some((value) => value.trim().length > 0))) {
     return null
   }
 
   return (
     <FormRow title="About us">
       <div className="grid gap-4 md:grid-cols-2 md:items-start">
+        {originStory.trim().length > 0 ? (
+          <ProfileField label="Origin story">
+            <FieldText text={originStory} multiline />
+          </ProfileField>
+        ) : null}
+        {need.trim().length > 0 ? (
+          <ProfileField label="Need statement">
+            <FieldText text={need} multiline />
+          </ProfileField>
+        ) : null}
         {mission.trim().length > 0 ? (
           <ProfileField label="Mission">
             <FieldText text={mission} multiline />
@@ -133,9 +145,9 @@ export function StoryPreview({ company }: CompanyViewProps) {
             <FieldText text={values} multiline />
           </ProfileField>
         ) : null}
-        {need.trim().length > 0 ? (
-          <ProfileField label="Need statement">
-            <FieldText text={need} multiline />
+        {theoryOfChange.trim().length > 0 ? (
+          <ProfileField label="Theory of change">
+            <FieldText text={theoryOfChange} multiline />
           </ProfileField>
         ) : null}
       </div>

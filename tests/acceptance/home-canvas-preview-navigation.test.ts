@@ -10,9 +10,19 @@ vi.mock("@/components/public/legacy-home-sections", () => ({
   ],
 }))
 
+import {
+  SIDEBAR_CANVAS_NAV,
+  VISIBLE_CANVAS_NAV,
+} from "@/components/public/home-canvas-preview-config"
 import { resolveHomeCanvasSectionTransition } from "@/components/public/home-canvas-preview-navigation"
 
 describe("home canvas preview navigation", () => {
+  it("keeps the hero section available while hiding Welcome from the sidebar nav", () => {
+    expect(VISIBLE_CANVAS_NAV.map((item) => item.id)).toContain("hero")
+    expect(SIDEBAR_CANVAS_NAV.map((item) => item.id)).not.toContain("hero")
+    expect(SIDEBAR_CANVAS_NAV.map((item) => item.label)).not.toContain("Welcome")
+  })
+
   it("still syncs hidden auth panels when the section changes via URL", () => {
     expect(resolveHomeCanvasSectionTransition("signup", "login")).toEqual({
       shouldChange: true,

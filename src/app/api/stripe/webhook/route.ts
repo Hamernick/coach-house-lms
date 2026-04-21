@@ -12,6 +12,23 @@ import {
 
 export const runtime = "nodejs"
 
+function buildWebhookLogContext({
+  event,
+  stripeMode,
+  stage,
+}: {
+  event?: Stripe.Event | null
+  stripeMode?: "live" | "test" | null
+  stage: "signature" | "idempotency" | "processing" | "mark_processed"
+}) {
+  return {
+    stage,
+    eventId: event?.id ?? null,
+    eventType: event?.type ?? null,
+    stripeMode: stripeMode ?? null,
+  }
+}
+
 export async function POST(request: NextRequest) {
   const runtimeConfigs = resolveStripeWebhookRuntimeConfigs()
   if (runtimeConfigs.length === 0) {
@@ -48,7 +65,13 @@ export async function POST(request: NextRequest) {
   }
 
   if (!event || !stripeClient) {
-    console.error("Stripe signature verification failed")
+    console.error("Stripe signature verification failed", {
+      stage: "signature",
+      configuredTargets: runtimeConfigs.map((config) => ({
+        mode: config.mode,
+        target: config.target,
+      })),
+    })
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 })
   }
 
@@ -61,7 +84,15 @@ export async function POST(request: NextRequest) {
       )
     }
   } catch (error) {
-    console.error("Stripe webhook idempotency check failed", error)
+    console.error(
+      "Stripe webhook idempotency check failed",
+      buildWebhookLogContext({
+        event,
+        stripeMode,
+        stage: "idempotency",
+      }),
+      error,
+    )
     return NextResponse.json(
       { received: true, error: "processing_failed" },
       { status: 500 },
@@ -76,11 +107,27 @@ export async function POST(request: NextRequest) {
       organizationPriceId,
     })
   } catch (error) {
-    console.error("Failed to process Stripe webhook", error)
+    console.error(
+      "Failed to process Stripe webhook",
+      buildWebhookLogContext({
+        event,
+        stripeMode,
+        stage: "processing",
+      }),
+      error,
+    )
     try {
       await markWebhookEventFailed(event, error)
     } catch (cleanupError) {
-      console.error("Unable to cleanup failed webhook lock", cleanupError)
+      console.error(
+        "Unable to cleanup failed webhook lock",
+        buildWebhookLogContext({
+          event,
+          stripeMode,
+          stage: "processing",
+        }),
+        cleanupError,
+      )
     }
     return NextResponse.json(
       { received: true, error: "processing_failed" },
@@ -91,7 +138,15 @@ export async function POST(request: NextRequest) {
   try {
     await markWebhookEventProcessed(event)
   } catch (error) {
-    console.error("Unable to mark Stripe webhook processed", error)
+    console.error(
+      "Unable to mark Stripe webhook processed",
+      buildWebhookLogContext({
+        event,
+        stripeMode,
+        stage: "mark_processed",
+      }),
+      error,
+    )
   }
 
   return NextResponse.json({ received: true }, { status: 200 })

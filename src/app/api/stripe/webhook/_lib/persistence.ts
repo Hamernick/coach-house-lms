@@ -33,9 +33,13 @@ export async function upsertSubscription({
     metadata: metadata ?? null,
   }
 
-  await uncheckedAdmin
+  const { error } = await uncheckedAdmin
     .from("subscriptions")
     .upsert(payload, { onConflict: "user_id,stripe_subscription_id" })
+
+  if (error) {
+    throw supabaseErrorToError(error, "Stripe webhook: unable to upsert subscription.")
+  }
 }
 
 export async function upsertAcceleratorPurchase({
@@ -64,9 +68,16 @@ export async function upsertAcceleratorPurchase({
     status,
   }
 
-  await uncheckedAdmin
+  const { error } = await uncheckedAdmin
     .from("accelerator_purchases")
     .upsert(payload, { onConflict: "stripe_checkout_session_id" })
+
+  if (error) {
+    throw supabaseErrorToError(
+      error,
+      "Stripe webhook: unable to upsert accelerator purchase.",
+    )
+  }
 }
 
 export async function upsertElectivePurchase({
@@ -95,9 +106,16 @@ export async function upsertElectivePurchase({
     status,
   }
 
-  await uncheckedAdmin
+  const { error } = await uncheckedAdmin
     .from("elective_purchases")
     .upsert(payload, { onConflict: "user_id,module_slug" })
+
+  if (error) {
+    throw supabaseErrorToError(
+      error,
+      "Stripe webhook: unable to upsert elective purchase.",
+    )
+  }
 }
 
 export async function shouldProcessEvent(event: Stripe.Event): Promise<boolean> {
@@ -154,7 +172,7 @@ export async function markWebhookEventFailed(
 ) {
   const admin = createSupabaseAdminClient()
   const uncheckedAdmin = admin as SupabaseClient<any>
-  await uncheckedAdmin
+  const { error: updateError } = await uncheckedAdmin
     .from("stripe_webhook_events")
     .update({
       payload:
@@ -165,12 +183,19 @@ export async function markWebhookEventFailed(
         }) as unknown as Database["public"]["Tables"]["stripe_webhook_events"]["Update"]["payload"],
     })
     .eq("id", event.id)
+
+  if (updateError) {
+    throw supabaseErrorToError(
+      updateError,
+      "Stripe webhook: unable to mark failed event.",
+    )
+  }
 }
 
 export async function markWebhookEventProcessed(event: Stripe.Event) {
   const admin = createSupabaseAdminClient()
   const uncheckedAdmin = admin as SupabaseClient<any>
-  await uncheckedAdmin
+  const { error } = await uncheckedAdmin
     .from("stripe_webhook_events")
     .update({
       payload:
@@ -180,4 +205,11 @@ export async function markWebhookEventProcessed(event: Stripe.Event) {
         }) as unknown as Database["public"]["Tables"]["stripe_webhook_events"]["Update"]["payload"],
     })
     .eq("id", event.id)
+
+  if (error) {
+    throw supabaseErrorToError(
+      error,
+      "Stripe webhook: unable to mark processed event.",
+    )
+  }
 }

@@ -62,21 +62,34 @@ function createAdminSupabaseStub(options?: {
   existingActiveSubscription?: boolean
   eventInsertError?: { code: string } | null
   existingEventProcessed?: boolean
+  subscriptionsUpsertError?: { code?: string; message?: string } | null
+  acceleratorPurchasesUpsertError?: { code?: string; message?: string } | null
+  electivePurchasesUpsertError?: { code?: string; message?: string } | null
+  stripeEventsUpdateError?: { code?: string; message?: string } | null
 }) {
   const existingActiveSubscription = options?.existingActiveSubscription ?? false
   const eventInsertError = options?.eventInsertError ?? null
   const existingEventProcessed = options?.existingEventProcessed ?? false
+  const subscriptionsUpsertError = options?.subscriptionsUpsertError ?? null
+  const acceleratorPurchasesUpsertError =
+    options?.acceleratorPurchasesUpsertError ?? null
+  const electivePurchasesUpsertError = options?.electivePurchasesUpsertError ?? null
+  const stripeEventsUpdateError = options?.stripeEventsUpdateError ?? null
 
   const stripeEventsInsert = vi.fn().mockResolvedValue({ error: eventInsertError })
   const stripeEventsSelectMaybeSingle = vi
     .fn()
     .mockResolvedValue({ data: { payload: { processed: existingEventProcessed } }, error: null })
-  const stripeEventsUpdateEq = vi.fn().mockResolvedValue({ error: null })
+  const stripeEventsUpdateEq = vi
+    .fn()
+    .mockResolvedValue({ error: stripeEventsUpdateError })
   const stripeEventsUpdate = vi.fn().mockReturnValue({
     eq: stripeEventsUpdateEq,
   })
 
-  const subscriptionsUpsert = vi.fn().mockResolvedValue({ error: null })
+  const subscriptionsUpsert = vi
+    .fn()
+    .mockResolvedValue({ error: subscriptionsUpsertError })
   const subscriptionsMaybeSingle = vi.fn().mockResolvedValue({
     data: existingActiveSubscription ? { id: "sub_existing", status: "active" } : null,
     error: null,
@@ -95,7 +108,12 @@ function createAdminSupabaseStub(options?: {
     upsert: subscriptionsUpsert,
   }
 
-  const acceleratorPurchasesUpsert = vi.fn().mockResolvedValue({ error: null })
+  const acceleratorPurchasesUpsert = vi
+    .fn()
+    .mockResolvedValue({ error: acceleratorPurchasesUpsertError })
+  const electivePurchasesUpsert = vi
+    .fn()
+    .mockResolvedValue({ error: electivePurchasesUpsertError })
 
   const from = vi.fn((table: string) => {
     if (table === "stripe_webhook_events") {
@@ -111,7 +129,7 @@ function createAdminSupabaseStub(options?: {
     }
     if (table === "subscriptions") return subscriptionsTable
     if (table === "accelerator_purchases") return { upsert: acceleratorPurchasesUpsert }
-    if (table === "elective_purchases") return { upsert: vi.fn().mockResolvedValue({ error: null }) }
+    if (table === "elective_purchases") return { upsert: electivePurchasesUpsert }
     throw new Error(`Unexpected table: ${table}`)
   })
 
@@ -123,6 +141,8 @@ function createAdminSupabaseStub(options?: {
       subscriptionsUpdate: subscriptionsUpdateMock,
       subscriptionsUpsert,
       acceleratorPurchasesUpsert,
+      electivePurchasesUpsert,
+      stripeEventsUpdateEq,
     },
   }
 }
@@ -582,6 +602,45 @@ describe("stripe webhook route acceptance", () => {
 
     expect(response.status).toBe(500)
     expect(payload).toMatchObject({ received: true, error: "processing_failed" })
+  })
+
+  it("returns 500 when a subscription upsert fails during webhook processing", async () => {
+    const { admin, calls } = createAdminSupabaseStub({
+      subscriptionsUpsertError: {
+        code: "23514",
+        message: "subscription upsert failed",
+      },
+    })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    constructEventMock.mockReturnValue({
+      id: "evt_checkout_subscription_upsert_failure",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_subscription_upsert_failure",
+          mode: "subscription",
+          status: "active",
+          client_reference_id: "user_sub_mode_failure",
+          subscription: "sub_accelerator_failure",
+          customer: "cus_sub_mode_failure",
+          metadata: {
+            kind: "accelerator",
+            user_id: "user_sub_mode_failure",
+            planName: "Accelerator Pro",
+            accelerator_billing: "monthly",
+          },
+        },
+      },
+    })
+
+    const response = await runWebhook()
+    const payload = await response.json()
+
+    expect(response.status).toBe(500)
+    expect(payload).toMatchObject({ received: true, error: "processing_failed" })
+    expect(calls.subscriptionsUpsert).toHaveBeenCalledTimes(1)
+    expect(calls.stripeEventsUpdateEq).toHaveBeenCalled()
   })
 
   it("increments monthly installment metadata and enables cancel-at-period-end on limit", async () => {

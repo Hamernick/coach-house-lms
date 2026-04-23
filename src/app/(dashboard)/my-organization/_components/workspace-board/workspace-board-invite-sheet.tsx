@@ -26,6 +26,7 @@ import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
 import { WorkspaceBoardInviteSheetBody } from "./workspace-board-invite-sheet-content"
+import { resolveOrganizationInviteEmailDeliveryDescription } from "./workspace-board-invite-sheet-feedback"
 import {
   useWorkspaceBoardOrganizationAccessState,
   type WorkspaceBoardOrganizationAccessSnapshot,
@@ -183,9 +184,9 @@ export function WorkspaceBoardInviteSheet({
         return
       }
 
-      if ("invite" in result) {
-        if (result.emailSent) {
-          toast.success(
+        if ("invite" in result) {
+          if (result.emailSent) {
+            toast.success(
             result.outcome === "external_invite_resent"
               ? "Invite email sent again"
               : inviteAccessLevel === "viewer"
@@ -200,11 +201,17 @@ export function WorkspaceBoardInviteSheet({
           try {
             await copyInviteLink(link)
             toast.warning("Invite created, but email delivery failed. Link copied instead.", {
-              description: result.emailError ?? undefined,
+              description: resolveOrganizationInviteEmailDeliveryDescription({
+                emailError: result.emailError,
+                kind: "external_invite",
+              }),
             })
           } catch {
             toast.warning("Invite created, but email delivery failed.", {
-              description: result.emailError ?? undefined,
+              description: resolveOrganizationInviteEmailDeliveryDescription({
+                emailError: result.emailError,
+                kind: "external_invite",
+              }),
             })
           }
         }
@@ -216,10 +223,11 @@ export function WorkspaceBoardInviteSheet({
         if (result.emailSent) {
           toast.success(requestLabel)
         } else {
-          toast.warning(requestLabel, {
-            description:
-              result.emailError ??
-              "The request is pending in Team Access, but the email notification failed.",
+          toast.success(requestLabel, {
+            description: resolveOrganizationInviteEmailDeliveryDescription({
+              emailError: result.emailError,
+              kind: "existing_user_request",
+            }),
           })
         }
       }

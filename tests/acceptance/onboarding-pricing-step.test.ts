@@ -36,6 +36,24 @@ describe("onboarding pricing step", () => {
     expect(markup).not.toContain("Builder access active")
   })
 
+  it("renders the Individual free tier as a real continuation path during post-signup onboarding", () => {
+    const markup = renderToStaticMarkup(
+      createElement(PricingStep, {
+        step: 1,
+        attemptedStep: null,
+        errors: {},
+        currentPlanTier: "free",
+        checkoutReturnTo: "/onboarding?source=onboarding_pricing",
+        onboardingMode: "post_signup_access",
+        submitting: false,
+      }),
+    )
+
+    expect(markup).toContain("Individual")
+    expect(markup).toContain("Current plan")
+    expect(markup).toContain("Continue with Individual")
+  })
+
   it("keeps the generic current-plan button label outside the post-signup access recovery flow", () => {
     const markup = renderToStaticMarkup(
       createElement(PricingStep, {
@@ -76,6 +94,28 @@ describe("onboarding step footer", () => {
     expect(markup).toContain("Enter workspace")
     expect(markup).not.toContain("Finish")
     expect(markup).toContain("pb-[max(1rem,env(safe-area-inset-bottom))]")
+  })
+
+  it("uses a free-plan submit label for post-signup Individual onboarding", () => {
+    const markup = renderToStaticMarkup(
+      createElement(StepFooter, {
+        step: 1,
+        totalSteps: 2,
+        submitting: false,
+        currentStepId: "pricing",
+        onboardingMode: "post_signup_access",
+        intentFocus: "build",
+        slugStatus: "available",
+        formationStatus: "approved",
+        accountStepReady: true,
+        builderPlanTier: "free",
+        onPrev: () => undefined,
+        onNext: () => undefined,
+      }),
+    )
+
+    expect(markup).toContain("Continue with Individual")
+    expect(markup).not.toContain("Enter workspace")
   })
 
   it("keeps the pricing step compact on smaller screens", () => {

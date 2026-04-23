@@ -98,6 +98,11 @@ export async function completeOnboardingAction(form: FormData) {
     onboardingModeRaw === "workspace_setup"
       ? onboardingModeRaw
       : "full"
+  const builderPlanTierRaw = String(form.get("builderPlanTier") || "").trim()
+  const builderPlanTier =
+    builderPlanTierRaw === "organization" || builderPlanTierRaw === "operations_support"
+      ? builderPlanTierRaw
+      : "free"
 
   const formationStatusRaw = String(form.get("formationStatus") || "").trim()
   const formationStatus =
@@ -122,18 +127,20 @@ export async function completeOnboardingAction(form: FormData) {
     intentFocus === "build" && onboardingMode !== "post_signup_access"
 
   if (intentFocus === "build") {
-    const entitlements = await fetchLearningEntitlements({
-      supabase,
-      userId: user.id,
-      forceStripeSync: onboardingMode === "post_signup_access",
-    })
-    if (!entitlements.hasActiveSubscription) {
-      redirect(
-        buildOnboardingErrorRedirect({
-          intentFocus,
-          error: "builder_plan_required",
-        }),
-      )
+    if (builderPlanTier !== "free") {
+      const entitlements = await fetchLearningEntitlements({
+        supabase,
+        userId: user.id,
+        forceStripeSync: onboardingMode === "post_signup_access",
+      })
+      if (!entitlements.hasActiveSubscription) {
+        redirect(
+          buildOnboardingErrorRedirect({
+            intentFocus,
+            error: "builder_plan_required",
+          }),
+        )
+      }
     }
 
     if (requiresOrganizationSetup) {

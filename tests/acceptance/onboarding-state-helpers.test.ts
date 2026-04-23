@@ -31,7 +31,7 @@ describe("onboarding state helpers", () => {
     ).toBe(true)
   })
 
-  it("requires a paid builder plan on the pricing step", () => {
+  it("allows both free and paid builder plans on the pricing step", () => {
     const form = new FormData()
     form.set("intentFocus", "build")
 
@@ -45,9 +45,7 @@ describe("onboarding state helpers", () => {
         slugHint: null,
         builderPlanTier: "free",
       }),
-    ).toEqual({
-      builderPlanTier: "Choose a builder plan to continue.",
-    })
+    ).toEqual({})
 
     expect(
       validateOnboardingStep({

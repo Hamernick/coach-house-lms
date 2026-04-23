@@ -41,11 +41,10 @@ export function StepFooter({
   onNext,
 }: StepFooterProps) {
   const isLastStep = step === totalSteps - 1
-  const isPaidPostSignupPricingStep =
+  const isPostSignupPricingStep =
     isLastStep &&
     currentStepId === "pricing" &&
-    onboardingMode === "post_signup_access" &&
-    builderPlanTier !== "free"
+    onboardingMode === "post_signup_access"
 
   return (
     <div className="border-border/70 bg-background/70 relative z-20 mt-auto shrink-0 border-t px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6 md:py-4">
@@ -75,7 +74,6 @@ export function StepFooter({
           disabled={
             submitting ||
             (currentStepId === "intent" && !intentFocus) ||
-            (currentStepId === "pricing" && builderPlanTier === "free") ||
             (currentStepId === "org" &&
               (slugStatus !== "available" || !formationStatus)) ||
             (currentStepId === "account" && !accountStepReady)
@@ -84,7 +82,11 @@ export function StepFooter({
         >
           {isLastStep ? (
             <>
-              {isPaidPostSignupPricingStep ? "Enter workspace" : "Finish"}
+              {isPostSignupPricingStep
+                ? builderPlanTier === "free"
+                  ? "Continue with Individual"
+                  : "Enter workspace"
+                : "Finish"}
               <ArrowRightIcon className="h-4 w-4" aria-hidden />
             </>
           ) : (

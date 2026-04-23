@@ -28,7 +28,7 @@ type PricingStepProps = {
   submitting: boolean
 }
 
-const BUILDER_TIER_IDS = new Set(["organization", "operations"])
+const BUILDER_TIER_IDS = new Set(["formation", "organization", "operations"])
 
 function splitTierEyebrow(eyebrow: string) {
   const match = eyebrow.match(/^(.*?)(\s*\(.*\))$/)
@@ -43,6 +43,12 @@ function splitTierEyebrow(eyebrow: string) {
     primary: match[1]?.trim() ?? eyebrow,
     secondary: match[2]?.trim() ?? null,
   }
+}
+
+function resolveTierPlanTier(tierId: string): PricingPlanTier {
+  if (tierId === "operations") return "operations_support"
+  if (tierId === "organization") return "organization"
+  return "free"
 }
 
 function buildCheckoutHref({
@@ -77,7 +83,7 @@ export function PricingStep({
   const checkoutErrorDetail = searchParams.get("checkout_detail")
   const checkoutErrorDebug = searchParams.get("checkout_debug")
   const checkoutErrorMessage = getCheckoutErrorMessage(checkoutErrorCode)
-  const showManualPaidContinue = onboardingMode === "post_signup_access"
+  const showPostSignupContinue = onboardingMode === "post_signup_access"
 
   return (
     <div className="space-y-4 py-4 sm:space-y-5 sm:py-5" data-onboarding-step-id="pricing">
@@ -86,9 +92,9 @@ export function PricingStep({
           Want to build your own organization?
         </p>
         <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-          Choose a builder plan to unlock organization creation, workspace setup,
-          teammate access, and the accelerator. You can go back and choose a
-          free member journey if you only want the internal map experience.
+          Start with Individual for free, or choose a paid plan when you want
+          team access and the accelerator. You can go back and choose a free
+          member journey if you only want the internal map experience.
         </p>
       </div>
 
@@ -109,13 +115,15 @@ export function PricingStep({
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-2">
         {builderTiers.map((tier) => {
           const eyebrow = splitTierEyebrow(tier.eyebrow)
-          const isCurrentTier =
-            (tier.id === "organization" && currentPlanTier === "organization") ||
-            (tier.id === "operations" && currentPlanTier === "operations_support")
-          const checkoutHref = buildCheckoutHref({
-            tierId: tier.id === "operations" ? "operations" : "organization",
-            checkoutReturnTo,
-          })
+          const tierPlanTier = resolveTierPlanTier(tier.id)
+          const isCurrentTier = tierPlanTier === currentPlanTier
+          const isFreeTier = tierPlanTier === "free"
+          const checkoutHref = isFreeTier
+            ? null
+            : buildCheckoutHref({
+                tierId: tier.id === "operations" ? "operations" : "organization",
+                checkoutReturnTo,
+              })
 
           return (
             <Card
@@ -160,24 +168,31 @@ export function PricingStep({
                 </CardDescription>
 
                 {isCurrentTier ? (
-                  showManualPaidContinue ? (
+                  isFreeTier || showPostSignupContinue ? (
                     <Button
                       type="submit"
                       className="w-full rounded-xl"
                       disabled={submitting}
                     >
-                      Continue to workspace
+                      {isFreeTier ? "Continue with Individual" : "Continue to workspace"}
                     </Button>
                   ) : (
                     <Button type="button" className="w-full rounded-xl" disabled>
-                      Builder access active
+                      {isFreeTier ? "Individual selected" : "Builder access active"}
                     </Button>
                   )
+                ) : isFreeTier ? (
+                  <Button type="button" className="w-full rounded-xl" disabled>
+                    Included with every account
+                  </Button>
                 ) : (
                   <Button
                     type="button"
                     className="w-full rounded-xl"
-                    onClick={() => window.location.assign(checkoutHref)}
+                    onClick={() => {
+                      if (!checkoutHref) return
+                      window.location.assign(checkoutHref)
+                    }}
                   >
                     {tier.ctaLabel}
                   </Button>

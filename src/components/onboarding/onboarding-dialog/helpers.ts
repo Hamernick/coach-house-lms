@@ -34,7 +34,7 @@ export function resolveOnboardingError(raw: string | null) {
     case "missing_intent_focus":
       return "Select your focus to continue."
     case "builder_plan_required":
-      return "Choose a builder plan before continuing with workspace setup."
+      return "We could not confirm your paid builder plan yet. Retry checkout and try again."
     case "intent_focus_coming_soon":
       return "That onboarding focus is coming soon. Select Build nonprofits to continue."
     default:

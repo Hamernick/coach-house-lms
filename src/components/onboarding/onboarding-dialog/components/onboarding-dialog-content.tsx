@@ -205,6 +205,7 @@ export function OnboardingDialogContent({
             <input type="hidden" name="onboardingMode" value={onboardingMode} />
             <input type="hidden" name="roleInterest" value={roleInterest} />
             <input type="hidden" name="formationStatus" value={formationStatus} />
+            <input type="hidden" name="builderPlanTier" value={builderPlanTier} />
             {currentStep.id !== "org" ? (
               <>
                 <input type="hidden" name="orgName" value={orgNameValue} />

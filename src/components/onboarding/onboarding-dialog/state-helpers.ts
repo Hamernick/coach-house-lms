@@ -267,10 +267,6 @@ export function validateOnboardingStep({
     }
   }
 
-  if (active === "pricing" && builderPlanTier === "free") {
-    nextErrors.builderPlanTier = "Choose a builder plan to continue."
-  }
-
   if (active === "org") {
     const orgName = String(form.get("orgName") ?? "").trim()
     const orgSlug = slugify(String(form.get("orgSlug") ?? "").trim())

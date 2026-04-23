@@ -24,7 +24,7 @@ export const BUILDER_STEPS: Step[] = [
     id: "pricing",
     title: "Unlock the builder workspace",
     description:
-      "Choose a builder plan before you set up your organization workspace.",
+      "Start with Individual for free or choose a paid plan for team access and the accelerator.",
   },
   {
     id: "org",

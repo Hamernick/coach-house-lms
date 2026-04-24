@@ -216,7 +216,7 @@ describe("workspace canvas tutorial", () => {
     expect(resolveWorkspaceCanvasTutorialCallout(5, ["accelerator"])).toEqual({
       kind: "accelerator-first-module",
       label: "First module",
-      instruction: "Click the Welcome module here to continue.",
+      instruction: "Click the Organization Set up option here to continue.",
     })
     expect(resolveWorkspaceCanvasTutorialCallout(6, ["accelerator"])).toBeNull()
     expect(resolveWorkspaceCanvasTutorialStep(6)).toMatchObject({

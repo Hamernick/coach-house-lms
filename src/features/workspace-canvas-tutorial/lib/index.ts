@@ -71,7 +71,7 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     sceneId: "overview",
     title: "The Accelerator",
     message:
-      "Built from raising $30M+ over 25+ years operating nonprofits, the Accelerator helps you move through classes, complete key setup work, and keep momentum without leaving the workspace.",
+      "The accelerator offers a sequence of nine strategic lessons, delivered through smaller video modules and corresponding homework assignments. This program is designed to guide you through building your strategic foundations, developing your programs, and then transitioning into essential organizational functions such as evaluation, budgeting, communications, and fundraising for both your specific program and your entire organization.",
     targetCardId: "accelerator",
     targetLabel: "Accelerator",
     revealedCardIds: ["organization-overview"],
@@ -84,7 +84,7 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     sceneId: "accelerator",
     title: "Classes",
     message:
-      "Use this picker to switch between class tracks so you can see the right modules, progress, and next steps for each part of the Accelerator.",
+      "Switch between class tracks here to see the right modules, progress, and next steps for each part of the Accelerator.",
     targetCardId: "accelerator",
     targetLabel: "Class picker",
     revealedCardIds: ["accelerator"],
@@ -97,14 +97,15 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     id: "accelerator-first-module",
     sceneId: "accelerator",
     title: "Modules",
-    message: "Click the Welcome module to open it from the list below.",
+    message:
+      "Click on the Organization Set up option below to open it from the list.",
     targetCardId: "accelerator",
     targetLabel: "First module",
     revealedCardIds: ["accelerator"],
     continueMode: "action",
     calloutTarget: "accelerator-first-module",
     calloutInstruction:
-      "Click the Welcome module here to continue.",
+      "Click the Organization Set up option here to continue.",
   },
   {
     id: "accelerator-close-module",

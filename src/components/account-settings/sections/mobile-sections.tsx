@@ -85,6 +85,7 @@ export function MobileSubpage({
   about,
   phone,
   email,
+  hasActiveSubscription,
   errors,
   marketingOptIn,
   newsletterOptIn,
@@ -116,6 +117,7 @@ export function MobileSubpage({
   about: string
   phone: string
   email: string
+  hasActiveSubscription: boolean
   errors: Partial<Record<AccountSettingsErrorKey, string>>
   marketingOptIn: boolean
   newsletterOptIn: boolean
@@ -220,6 +222,11 @@ export function MobileSubpage({
           </header>
           <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4">
             <p className="text-sm">This action is permanent and cannot be undone.</p>
+            {hasActiveSubscription ? (
+              <p className="mt-2 text-sm text-muted-foreground">
+                Deleting your account does not cancel Stripe billing. Cancel your subscription in the billing portal before you continue.
+              </p>
+            ) : null}
             <div className="mt-3">
               <Button variant="destructive" onClick={onDeleteAccount}>
                 Delete my account

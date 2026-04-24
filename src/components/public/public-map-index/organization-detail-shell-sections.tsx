@@ -4,7 +4,6 @@ import { useState } from "react"
 import ArrowLeftIcon from "lucide-react/dist/esm/icons/arrow-left"
 import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
 import WifiIcon from "lucide-react/dist/esm/icons/wifi"
-import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { ShareButton } from "@/components/shared/share-button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -28,7 +27,6 @@ import {
 type DetailPanelChromeProps = {
   organization: PublicMapOrganization
   onBack: () => void
-  onHidePanel: () => void
 }
 
 type DetailIdentityProps = {
@@ -48,7 +46,6 @@ type DetailAboutProps = {
 export function OrganizationDetailPanelChrome({
   organization,
   onBack,
-  onHidePanel,
 }: DetailPanelChromeProps) {
   const shareUrl =
     organization.publicSlug ? `/find/${encodeURIComponent(organization.publicSlug)}` : undefined
@@ -79,16 +76,6 @@ export function OrganizationDetailPanelChrome({
             className={cn("h-8 w-8 rounded-full", PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME)}
           />
         ) : null}
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={onHidePanel}
-          className={cn("h-8 w-8 rounded-full", PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME)}
-          aria-label="Hide organization panel"
-        >
-          <XIcon className="h-4 w-4" aria-hidden />
-        </Button>
       </div>
     </div>
   )

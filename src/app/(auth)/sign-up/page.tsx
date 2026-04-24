@@ -32,8 +32,33 @@ function getSafeIntent(value: unknown): IntentFocus | undefined {
   return undefined
 }
 
+function buildCanonicalSignUpHref(searchParams: SearchParams) {
+  const nextParams = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (key === "plan" && value === "individual") continue
+
+    if (typeof value === "string") {
+      nextParams.set(key, value)
+      continue
+    }
+    if (Array.isArray(value)) {
+      for (const item of value) {
+        nextParams.append(key, item)
+      }
+    }
+  }
+
+  const query = nextParams.toString()
+  return query ? `/sign-up?${query}` : "/sign-up"
+}
+
 export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   const resolved = searchParams ? await searchParams : {}
+  if (resolved.plan === "individual") {
+    redirectTo(buildCanonicalSignUpHref(resolved))
+  }
+
   const redirect = getSafeRedirect(resolved.redirect)
   const explicitIntent = getSafeIntent(resolved.intent)
   const plan = typeof resolved.plan === "string" ? resolved.plan : undefined

@@ -298,7 +298,6 @@ export function PublicMapIndex({
               handleSelectOrganization({
                 organizationId,
                 openDetails: true,
-                shouldFocusMap: false,
               })
             }}
             setSidebarMode={setSidebarMode}
@@ -374,7 +373,6 @@ export function PublicMapIndex({
           handleSelectOrganization({
             organizationId,
             openDetails: true,
-            shouldFocusMap: false,
           })
         }}
         onSidebarModeChange={setSidebarMode}

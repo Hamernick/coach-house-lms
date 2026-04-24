@@ -156,7 +156,7 @@ export function PublicMapOrganizationList({
                 "size-8 rounded-full transition-colors",
                 PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
                 isFavorite
-                  ? "border-primary/45 bg-primary/10 text-primary hover:bg-primary/15"
+                  ? "border-sky-400/55 bg-sky-500/12 text-sky-600 hover:bg-sky-500/18 dark:border-sky-400/45 dark:bg-sky-400/14 dark:text-sky-300 dark:hover:bg-sky-400/20"
                   : "text-muted-foreground",
               )}
               onPointerDown={(event) => event.stopPropagation()}

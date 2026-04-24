@@ -8,7 +8,6 @@ import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import {
   AppPricingFeedbackPrompt,
   GlobalSearch,
-  OnboardingWelcome,
   PaywallOverlay,
   TutorialManager,
 } from "@/components/app-shell/dynamic-components"
@@ -214,6 +213,7 @@ export function AppShellInner({
             classes={sidebarTree}
             user={navUser}
             showAccelerator={showAccelerator}
+            hasActiveSubscription={Boolean(hasActiveSubscription)}
             showClasses={showLeftClasses}
             classesBasePath={classesBasePath}
             hasAcceleratorAccess={resolvedHasAcceleratorAccess}
@@ -328,13 +328,6 @@ export function AppShellInner({
           prompt={pricingFeedbackPrompt}
           tutorial={tutorialKey}
           tutorialPending={pricingFeedbackTutorialPending}
-        />
-      ) : null}
-      {hasUser && !isAdminContext ? (
-        <OnboardingWelcome
-          defaultOpen={pricingFeedbackTutorialPending}
-          tutorial={tutorialKey}
-          hasActiveSubscription={hasActiveSubscription}
         />
       ) : null}
       </SidebarProvider>

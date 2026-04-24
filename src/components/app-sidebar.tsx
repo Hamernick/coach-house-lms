@@ -27,6 +27,7 @@ export type AppSidebarProps = {
   classes?: SidebarClass[]
   acceleratorProgress?: number | null
   showAccelerator?: boolean
+  hasActiveSubscription?: boolean
   hasAcceleratorAccess?: boolean
   hasElectiveAccess?: boolean
   ownedElectiveModuleSlugs?: string[]
@@ -45,6 +46,7 @@ export function AppSidebar({
   canAccessOrgAdmin = true,
   classes,
   showAccelerator,
+  hasActiveSubscription = false,
   hasAcceleratorAccess,
   hasElectiveAccess,
   ownedElectiveModuleSlugs,
@@ -72,6 +74,7 @@ export function AppSidebar({
         classes={classes}
         user={resolvedUser}
         showAccelerator={showAccelerator}
+        hasActiveSubscription={hasActiveSubscription}
         showOrgAdmin={showOrgAdmin}
         canAccessOrgAdmin={canAccessOrgAdmin}
         hasAcceleratorAccess={hasAcceleratorAccess}
@@ -98,6 +101,7 @@ type SidebarBodyProps = {
     avatar?: string | null
   }
   showAccelerator?: boolean
+  hasActiveSubscription?: boolean
   showClasses?: boolean
   classesBasePath?: string
   showOrgAdmin?: boolean
@@ -118,6 +122,7 @@ export function SidebarBody({
   classes,
   user,
   showAccelerator,
+  hasActiveSubscription = false,
   showClasses = false,
   classesBasePath,
   showOrgAdmin = false,
@@ -176,7 +181,15 @@ export function SidebarBody({
             <NavDocuments items={RESOURCE_NAV} label="Resources" />
           </div>
         )}
-        {hasUser ? <NavUser user={user} isAdmin={isAdmin} isTester={isTester} showDivider={false} /> : null}
+        {hasUser ? (
+          <NavUser
+            user={user}
+            isAdmin={isAdmin}
+            isTester={isTester}
+            showDivider={false}
+            hasActiveSubscription={hasActiveSubscription}
+          />
+        ) : null}
       </SidebarFooter>
     </>
   )

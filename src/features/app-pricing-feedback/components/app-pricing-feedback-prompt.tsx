@@ -1,12 +1,12 @@
 "use client"
 
-import { useEffect, useRef, type CSSProperties } from "react"
+import { usePathname } from "next/navigation"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import { motion, useReducedMotion } from "motion/react"
-import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { isAppPricingFeedbackWorkspaceRoute } from "../lib"
 import { useAppPricingFeedbackController } from "../hooks/use-app-pricing-feedback-controller"
 import type {
   AppPricingFeedbackPrompt as AppPricingFeedbackPromptState,
@@ -19,15 +19,6 @@ type AppPricingFeedbackPromptProps = {
   tutorial: AppPricingFeedbackTutorialKey
   tutorialPending: boolean
 }
-
-const BANNER_TOAST_ID_PREFIX = "app-pricing-feedback-banner"
-const APP_PRICING_FEEDBACK_BANNER_WIDTH = "min(calc(100vw - 1.5rem), 60rem)"
-const APP_PRICING_FEEDBACK_BANNER_TOAST_STYLE: CSSProperties = {
-  left: "50%",
-  width: APP_PRICING_FEEDBACK_BANNER_WIDTH,
-  translate: "-50% 0",
-  "--offset": "0px",
-} as CSSProperties & Record<"--offset", string>
 
 function AppPricingFeedbackBanner({
   prompt,
@@ -133,25 +124,20 @@ export function AppPricingFeedbackPrompt({
   tutorial,
   tutorialPending,
 }: AppPricingFeedbackPromptProps) {
-  const bannerToastIdRef = useRef<string | number | null>(null)
+  const pathname = usePathname()
+  const routeActive = isAppPricingFeedbackWorkspaceRoute(pathname)
   const controller = useAppPricingFeedbackController({
     prompt,
     tutorial,
     tutorialPending,
+    routeActive,
   })
 
-  useEffect(() => {
-    if (!controller.bannerVisible || !prompt) {
-      if (bannerToastIdRef.current !== null) {
-        toast.dismiss(bannerToastIdRef.current)
-        bannerToastIdRef.current = null
-      }
-      return
-    }
+  if (!prompt || !routeActive || !controller.bannerVisible) return null
 
-    const toastId = bannerToastIdRef.current ?? `${BANNER_TOAST_ID_PREFIX}-${prompt.surveyKey}`
-    bannerToastIdRef.current = toast.custom(
-      () => (
+  return (
+    <div className="pointer-events-none fixed inset-x-0 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-[120] flex justify-center px-3 sm:bottom-4 sm:px-6">
+      <div className="w-full max-w-[60rem]">
         <AppPricingFeedbackBanner
           prompt={prompt}
           error={controller.error}
@@ -159,34 +145,7 @@ export function AppPricingFeedbackPrompt({
           showConfirmation={controller.showConfirmation}
           onSubmit={controller.submit}
         />
-      ),
-      {
-        id: toastId,
-        position: "bottom-center",
-        duration: Number.POSITIVE_INFINITY,
-        dismissible: false,
-        closeButton: false,
-        style: APP_PRICING_FEEDBACK_BANNER_TOAST_STYLE,
-      },
-    )
-  }, [
-    controller.bannerVisible,
-    controller.error,
-    controller.isPending,
-    controller.showConfirmation,
-    controller.submit,
-    prompt,
-  ])
-
-  useEffect(() => {
-    return () => {
-      if (bannerToastIdRef.current !== null) {
-        toast.dismiss(bannerToastIdRef.current)
-        bannerToastIdRef.current = null
-      }
-    }
-  }, [])
-
-  if (!prompt) return null
-  return null
+      </div>
+    </div>
+  )
 }

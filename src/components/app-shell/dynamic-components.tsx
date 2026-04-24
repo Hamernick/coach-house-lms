@@ -23,14 +23,6 @@ export const OnboardingDialogEntry = dynamic(
   { loading: () => null, ssr: false },
 )
 
-export const OnboardingWelcome = dynamic(
-  () =>
-    import("@/components/onboarding/onboarding-welcome").then((mod) => ({
-      default: mod.OnboardingWelcome,
-    })),
-  { loading: () => null, ssr: false },
-)
-
 export const PaywallOverlay = dynamic(
   () =>
     import("@/components/paywall/paywall-overlay").then((mod) => ({

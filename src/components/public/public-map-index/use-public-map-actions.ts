@@ -9,6 +9,41 @@ import { RECENT_ORGANIZATIONS_LIMIT } from "./constants"
 import { organizationHasMapLocation } from "./helpers"
 import { buildMapHref, normalizeSlug } from "./map-view-helpers"
 
+export function applyPublicMapOrganizationSelection({
+  organizationById,
+  organizationId,
+  openDetails = false,
+  shouldFocusMap = true,
+  setSelectedOrgId,
+  setSidebarMode,
+  setCameraTargetOrgId,
+  setRecentOrganizationIds,
+}: {
+  organizationById: Map<string, PublicMapOrganization>
+  organizationId: string
+  openDetails?: boolean
+  shouldFocusMap?: boolean
+  setSelectedOrgId: (organizationId: string) => void
+  setSidebarMode: (mode: "search" | "details" | "hidden") => void
+  setCameraTargetOrgId: (organizationId: string) => void
+  setRecentOrganizationIds: React.Dispatch<React.SetStateAction<string[]>>
+}) {
+  const organization = organizationById.get(organizationId)
+  if (!organization) return
+
+  setSelectedOrgId(organizationId)
+  if (openDetails) {
+    setSidebarMode("details")
+  }
+  if (shouldFocusMap && organizationHasMapLocation(organization)) {
+    setCameraTargetOrgId(organizationId)
+  }
+  setRecentOrganizationIds((current) => {
+    const next = [organizationId, ...current.filter((entry) => entry !== organizationId)]
+    return next.slice(0, RECENT_ORGANIZATIONS_LIMIT)
+  })
+}
+
 export function usePublicMapActions({
   organizationById,
   isAuthenticated,
@@ -47,19 +82,15 @@ export function usePublicMapActions({
     openDetails?: boolean
     shouldFocusMap?: boolean
   }) => {
-    const organization = organizationById.get(organizationId)
-    if (!organization) return
-
-    setSelectedOrgId(organizationId)
-    if (openDetails) {
-      setSidebarMode("details")
-    }
-    if (shouldFocusMap && organizationHasMapLocation(organization)) {
-      setCameraTargetOrgId(organizationId)
-    }
-    setRecentOrganizationIds((current) => {
-      const next = [organizationId, ...current.filter((entry) => entry !== organizationId)]
-      return next.slice(0, RECENT_ORGANIZATIONS_LIMIT)
+    applyPublicMapOrganizationSelection({
+      organizationById,
+      organizationId,
+      openDetails,
+      shouldFocusMap,
+      setSelectedOrgId,
+      setSidebarMode,
+      setCameraTargetOrgId,
+      setRecentOrganizationIds,
     })
   }
 

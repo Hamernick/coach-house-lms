@@ -41,6 +41,7 @@ type AccountSettingsDialogShellProps = {
   about: string
   phone: string
   email: string
+  hasActiveSubscription: boolean
   avatarUrl: string | null
   isUploadingAvatar: boolean
   errors: Partial<Record<AccountSettingsErrorKey, string>>
@@ -85,6 +86,7 @@ export function AccountSettingsDialogShell({
   about,
   phone,
   email,
+  hasActiveSubscription,
   avatarUrl,
   isUploadingAvatar,
   errors,
@@ -239,7 +241,10 @@ export function AccountSettingsDialogShell({
                 )}
 
                 {tab === "danger" && (
-                  <DangerSection onDeleteAccount={onDeleteAccount} />
+                  <DangerSection
+                    onDeleteAccount={onDeleteAccount}
+                    hasActiveSubscription={hasActiveSubscription}
+                  />
                 )}
               </section>
             </div>
@@ -272,6 +277,7 @@ export function AccountSettingsDialogShell({
             about={about}
             phone={phone}
             email={email}
+            hasActiveSubscription={hasActiveSubscription}
             errors={errors}
             marketingOptIn={marketingOptIn}
             newsletterOptIn={newsletterOptIn}

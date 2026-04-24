@@ -29,10 +29,12 @@ export function useAppPricingFeedbackController({
   prompt,
   tutorial,
   tutorialPending,
+  routeActive,
 }: {
   prompt: AppPricingFeedbackPrompt | null
   tutorial: AppPricingFeedbackTutorialKey
   tutorialPending: boolean
+  routeActive: boolean
 }) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
@@ -57,7 +59,7 @@ export function useAppPricingFeedbackController({
   }, [prompt?.surveyKey])
 
   useEffect(() => {
-    if (!prompt) {
+    if (!prompt || !routeActive) {
       setPresentationReady(false)
       setShowConfirmation(false)
       setSubmitted(false)
@@ -110,7 +112,7 @@ export function useAppPricingFeedbackController({
         handleTutorialResolved as EventListener,
       )
     }
-  }, [prompt, tutorial, tutorialPending])
+  }, [prompt, routeActive, tutorial, tutorialPending])
 
   const submit = useCallback((selection: AppPricingFeedbackSelection) => {
     if (!prompt || isPending || submitted) return
@@ -141,7 +143,7 @@ export function useAppPricingFeedbackController({
     error,
     isPending,
     showConfirmation,
-    bannerVisible: Boolean(prompt) && presentationReady && !submitted,
+    bannerVisible: routeActive && Boolean(prompt) && presentationReady && !submitted,
     submit,
   }
 }

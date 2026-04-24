@@ -32,12 +32,14 @@ type NavUserProps = {
   isAdmin?: boolean
   isTester?: boolean
   showDivider?: boolean
+  hasActiveSubscription?: boolean
 }
 
 export function NavUser({
   user,
   isAdmin = false,
   showDivider = true,
+  hasActiveSubscription = false,
 }: NavUserProps) {
   const router = useRouter()
   const [signOutPending, startSignOutTransition] = useTransition()
@@ -144,6 +146,7 @@ export function NavUser({
         defaultEmail={displayEmail}
         defaultMarketingOptIn={true}
         defaultNewsletterOptIn={true}
+        hasActiveSubscription={hasActiveSubscription}
       />
     </div>
   )

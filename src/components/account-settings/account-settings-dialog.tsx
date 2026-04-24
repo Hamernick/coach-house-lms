@@ -24,6 +24,7 @@ type AccountSettingsDialogProps = {
   defaultEmail?: string | null
   defaultMarketingOptIn?: boolean
   defaultNewsletterOptIn?: boolean
+  hasActiveSubscription?: boolean
 }
 
 export function AccountSettingsDialog({
@@ -34,6 +35,7 @@ export function AccountSettingsDialog({
   defaultEmail = "",
   defaultMarketingOptIn = true,
   defaultNewsletterOptIn = true,
+  hasActiveSubscription = false,
 }: AccountSettingsDialogProps) {
   const router = useRouter()
   const MAX_AVATAR_BYTES = 5 * 1024 * 1024
@@ -48,6 +50,8 @@ export function AccountSettingsDialog({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [deleteEmailInput, setDeleteEmailInput] = useState("")
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [billingCancellationAcknowledged, setBillingCancellationAcknowledged] =
+    useState(false)
 
   const {
     tab,
@@ -106,10 +110,12 @@ export function AccountSettingsDialog({
     normalizedAccountEmail.length > 0 &&
     normalizedDeleteEmail.length > 0 &&
     normalizedDeleteEmail === normalizedAccountEmail &&
+    (!hasActiveSubscription || billingCancellationAcknowledged) &&
     !isDeletingAccount
 
   function openDeleteAccountConfirmation() {
     setDeleteEmailInput("")
+    setBillingCancellationAcknowledged(false)
     setConfirmDeleteOpen(true)
   }
 
@@ -194,6 +200,7 @@ export function AccountSettingsDialog({
         about={about}
         phone={phone}
         email={email}
+        hasActiveSubscription={hasActiveSubscription}
         avatarUrl={avatarUrl}
         isUploadingAvatar={isUploadingAvatar}
         errors={errors}
@@ -277,6 +284,9 @@ export function AccountSettingsDialog({
         deleteEmailInput={deleteEmailInput}
         onDeleteEmailInputChange={setDeleteEmailInput}
         accountEmail={email}
+        hasActiveSubscription={hasActiveSubscription}
+        billingCancellationAcknowledged={billingCancellationAcknowledged}
+        onBillingCancellationAcknowledgedChange={setBillingCancellationAcknowledged}
         canDeleteAccount={canDeleteAccount}
         onConfirmDelete={confirmAccountDeletion}
       />

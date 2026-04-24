@@ -18,7 +18,7 @@ export function PricingFeatureBreakdownIntroSection() {
       </p>
       <div className="mt-6 flex flex-col items-stretch justify-center gap-3 sm:flex-row">
         <Button asChild className="rounded-xl">
-          <Link href="/sign-up?plan=individual">Get started</Link>
+          <Link href="/sign-up">Get started</Link>
         </Button>
         <Button asChild variant="outline" className="rounded-xl">
           <a href="mailto:joel@coachhousesolutions.org?subject=Coach%20House%20Features">Talk to us</a>

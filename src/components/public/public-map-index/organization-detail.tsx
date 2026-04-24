@@ -42,14 +42,12 @@ import {
 type PublicMapOrganizationDetailProps = {
   organization: PublicMapOrganization
   onBack: () => void
-  onHidePanel: () => void
   compact?: boolean
 }
 
 export function PublicMapOrganizationDetail({
   organization,
   onBack,
-  onHidePanel,
   compact = false,
 }: PublicMapOrganizationDetailProps) {
   const [aboutExpanded, setAboutExpanded] = useState(false)
@@ -88,7 +86,6 @@ export function PublicMapOrganizationDetail({
       <OrganizationDetailPanelChrome
         organization={organization}
         onBack={onBack}
-        onHidePanel={onHidePanel}
       />
 
       <OrganizationDetailIdentitySection

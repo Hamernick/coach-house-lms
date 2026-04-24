@@ -90,7 +90,6 @@ export function PublicMapShellSidebarPanel({
       <PublicMapRailDetailPanel
         organization={selectedOrganization}
         onBack={() => setSidebarMode("search")}
-        onHidePanel={() => setOpen(false)}
       />
     )
   }
@@ -200,7 +199,6 @@ export function PublicMapSidebar({
           <PublicMapRailDetailPanel
             organization={selectedOrganization}
             onBack={() => setSidebarMode("search")}
-            onHidePanel={() => setSidebarMode("hidden")}
           />
         ) : null}
       </Sidebar>
@@ -229,7 +227,6 @@ export function PublicMapSidebar({
         organization={selectedOrganization}
         drawerBodyScrollable={drawerBodyScrollable}
         onBack={() => setSidebarMode("search")}
-        onHidePanel={resetDrawerToSearch}
       />
     ) : null
 

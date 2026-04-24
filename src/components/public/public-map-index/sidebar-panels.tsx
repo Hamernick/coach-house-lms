@@ -162,13 +162,11 @@ export function PublicMapRailSearchPanel({
 type PublicMapRailDetailPanelProps = {
   organization: PublicMapOrganization
   onBack: () => void
-  onHidePanel: () => void
 }
 
 export function PublicMapRailDetailPanel({
   organization,
   onBack,
-  onHidePanel,
 }: PublicMapRailDetailPanelProps) {
   return (
     <SidebarContent className="h-full min-h-0 overflow-hidden bg-transparent pt-0 pb-0">
@@ -181,7 +179,6 @@ export function PublicMapRailDetailPanel({
         <PublicMapOrganizationDetail
           organization={organization}
           onBack={onBack}
-          onHidePanel={onHidePanel}
         />
       </ScrollArea>
     </SidebarContent>
@@ -247,14 +244,12 @@ type PublicMapDrawerDetailPanelProps = {
   organization: PublicMapOrganization
   drawerBodyScrollable: boolean
   onBack: () => void
-  onHidePanel: () => void
 }
 
 export function PublicMapDrawerDetailPanel({
   organization,
   drawerBodyScrollable,
   onBack,
-  onHidePanel,
 }: PublicMapDrawerDetailPanelProps) {
   return (
     <div
@@ -269,7 +264,6 @@ export function PublicMapDrawerDetailPanel({
         <PublicMapOrganizationDetail
           organization={organization}
           onBack={onBack}
-          onHidePanel={onHidePanel}
           compact
         />
       </div>

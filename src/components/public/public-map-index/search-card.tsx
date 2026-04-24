@@ -21,7 +21,7 @@ export function PublicMapSearchCard({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 bg-transparent pb-3 pt-3 text-card-foreground",
+        "flex flex-col gap-3 bg-transparent pb-3 pt-0 text-card-foreground",
         "border-b border-border/60",
       )}
     >

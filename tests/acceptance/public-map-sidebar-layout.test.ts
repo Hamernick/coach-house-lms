@@ -321,5 +321,6 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain(organization.name)
     expect(markup).toContain('data-public-map-sidebar-section="rail-detail-scroll"')
     expect(markup).not.toContain('aria-label="Search public organizations"')
+    expect(markup).not.toContain('aria-label="Hide organization panel"')
   })
 })

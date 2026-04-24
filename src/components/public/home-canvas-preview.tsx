@@ -176,8 +176,13 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
                     priority
                   />
                 </span>
-                <span className="truncate text-base font-bold leading-none tracking-tight group-data-[collapsible=icon]:hidden">
-                  Coach House
+                <span className="flex flex-col leading-none group-data-[collapsible=icon]:hidden">
+                  <span className="truncate text-base font-bold tracking-tight">
+                    Coach House
+                  </span>
+                  <span className="pt-1 text-[10px] font-semibold tracking-[0.18em] text-muted-foreground">
+                    ALPHA
+                  </span>
                 </span>
               </Link>
             </SidebarHeader>

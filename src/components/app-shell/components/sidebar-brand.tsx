@@ -40,7 +40,12 @@ export function SidebarBrand({ href }: SidebarBrandProps) {
         />
       </span>
       {isCollapsed ? null : (
-        <span className="text-sm font-semibold leading-none tracking-tight">Coach House</span>
+        <span className="flex flex-col leading-none">
+          <span className="text-sm font-semibold tracking-tight">Coach House</span>
+          <span className="pt-1 text-[10px] font-semibold tracking-[0.18em] text-muted-foreground">
+            ALPHA
+          </span>
+        </span>
       )}
     </Link>
   )

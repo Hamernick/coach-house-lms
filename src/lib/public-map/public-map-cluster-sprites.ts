@@ -283,8 +283,10 @@ export async function enrichPublicMapClusterSourceDataWithSprites({
   spriteCache,
   zoom,
 }: PublicMapClusterSourceDataSpriteInput): Promise<PublicMapFeatureCollection> {
+  type PublicMapSourceFeature = PublicMapFeatureCollection["features"][number]
+
   const features = await Promise.all(
-    sourceData.features.map(async (feature) => {
+    sourceData.features.map(async (feature: PublicMapSourceFeature) => {
       if (!isPublicMapClusterFeature(feature)) return feature
 
       const leaves = await clusterClient.getLeaves(

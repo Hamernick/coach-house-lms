@@ -2,6 +2,11 @@ import type mapboxgl from "mapbox-gl"
 
 export const MAP_STYLE_ACCESS_ERROR = Symbol("map-style-access-error")
 
+function warnPublicMapStyleFailure(message: string, details: Record<string, unknown>) {
+  if (process.env.NODE_ENV === "production") return
+  console.warn(message, details)
+}
+
 export function getMapSourceSafely<T = ReturnType<mapboxgl.Map["getSource"]>>(
   map: mapboxgl.Map,
   sourceId: string,
@@ -36,7 +41,11 @@ export function addMapSourceSafely(
   try {
     map.addSource(sourceId, source)
     return true
-  } catch {
+  } catch (error) {
+    warnPublicMapStyleFailure("[public-map] addSource failed", {
+      error,
+      sourceId,
+    })
     return false
   }
 }
@@ -48,7 +57,11 @@ export function addMapLayerSafely(
   try {
     map.addLayer(layer)
     return true
-  } catch {
+  } catch (error) {
+    warnPublicMapStyleFailure("[public-map] addLayer failed", {
+      error,
+      layerId: layer.id,
+    })
     return false
   }
 }

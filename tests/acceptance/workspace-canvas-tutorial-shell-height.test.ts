@@ -10,7 +10,7 @@ describe("workspace tutorial rendered shell height", () => {
   it("prefers the measured shell height for adaptive families when available", () => {
     expect(
       resolveWorkspaceTutorialRenderedShellHeight({
-        family: "accelerator-module",
+        family: "tool",
         estimatedShellHeight: 960,
         measuredShellHeight: 1188,
       }),
@@ -50,7 +50,7 @@ describe("workspace tutorial rendered shell height", () => {
     expect(shouldWorkspaceTutorialUseMeasuredShellHeight("tool")).toBe(true)
     expect(
       shouldWorkspaceTutorialUseMeasuredShellHeight("accelerator-module"),
-    ).toBe(true)
+    ).toBe(false)
     expect(
       shouldWorkspaceTutorialMeasurePresentationContentHeight("overview"),
     ).toBe(true)

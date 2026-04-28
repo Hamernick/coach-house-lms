@@ -4,6 +4,8 @@ import {
   resolveWorkspaceTutorialBodyLayoutClass,
   resolveWorkspaceTutorialBodyGridClass,
   resolveWorkspaceTutorialCopyRailClass,
+  resolveWorkspaceTutorialPresentationFrameMaxHeight,
+  resolveWorkspaceTutorialPresentationFrameOverflowClass,
   resolveWorkspaceTutorialPresentationSlotClass,
 } from "@/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-layout"
 import {
@@ -41,15 +43,15 @@ const ACCELERATOR_MODULE_SURFACE: WorkspaceCanvasTutorialPresentationSurface = {
   frameHeight: 740,
   cardWidth: 1180,
   cardHeight: 720,
-  heightMode: "content",
+  heightMode: "fill",
   chrome: {
-    shellOverflow: "visible",
-    bodyOverflow: "visible",
+    shellOverflow: "hidden",
+    bodyOverflow: "hidden",
     bodyJustify: "start",
-    slotOverflow: "visible",
+    slotOverflow: "hidden",
     slotPaddingTop: 0,
-    collapseBodyBottomPadding: false,
-    showBottomFade: false,
+    collapseBodyBottomPadding: true,
+    showBottomFade: true,
     allowCalloutOverflow: true,
   },
 }
@@ -133,7 +135,7 @@ describe("workspace canvas tutorial panel layout", () => {
     ).toBe("gap-4 px-5 py-4 sm:px-5")
   })
 
-  it("keeps content-mode presentation slots intrinsic instead of stretching them full-height", () => {
+  it("keeps content-mode presentation slots intrinsic and module previews fill-clipped", () => {
     expect(
       resolveWorkspaceTutorialPresentationSlotClass({
         presentationSurface: ACCELERATOR_SURFACE,
@@ -144,7 +146,7 @@ describe("workspace canvas tutorial panel layout", () => {
       resolveWorkspaceTutorialPresentationSlotClass({
         presentationSurface: ACCELERATOR_MODULE_SURFACE,
       }),
-    ).toBe("relative h-auto min-h-0 self-start")
+    ).toBe("relative h-full min-h-0")
 
     expect(
       resolveWorkspaceTutorialPresentationSlotClass({
@@ -153,7 +155,7 @@ describe("workspace canvas tutorial panel layout", () => {
     ).toBe("relative h-auto min-h-0 self-start")
   })
 
-  it("uses an intrinsic body grid for content-mode presentations so the frame does not leave a dead stretch track below it", () => {
+  it("uses fill rows for clipped accelerator previews and intrinsic rows for content-mode cards", () => {
     expect(
       resolveWorkspaceTutorialBodyGridClass({
         presentationSurface: ACCELERATOR_SURFACE,
@@ -164,13 +166,34 @@ describe("workspace canvas tutorial panel layout", () => {
       resolveWorkspaceTutorialBodyGridClass({
         presentationSurface: ACCELERATOR_MODULE_SURFACE,
       }),
-    ).toBe("relative grid min-h-0 h-auto content-start grid-rows-[auto_auto]")
+    ).toBe("relative grid min-h-0 h-full grid-rows-[auto_minmax(0,1fr)]")
 
     expect(
       resolveWorkspaceTutorialBodyGridClass({
         presentationSurface: TOOL_SURFACE,
       }),
     ).toBe("relative grid min-h-0 h-auto content-start grid-rows-[auto_auto]")
+  })
+
+  it("clips the close-module accelerator presentation at the frame layer", () => {
+    expect(
+      resolveWorkspaceTutorialPresentationFrameOverflowClass({
+        stepId: "accelerator-close-module",
+        presentationSurface: ACCELERATOR_MODULE_SURFACE,
+      }),
+    ).toBe("overflow-hidden")
+    expect(
+      resolveWorkspaceTutorialPresentationFrameMaxHeight({
+        stepId: "accelerator-close-module",
+        presentationSurface: ACCELERATOR_MODULE_SURFACE,
+      }),
+    ).toBe("min(740px, calc(100dvh - 14rem))")
+    expect(
+      resolveWorkspaceTutorialPresentationFrameOverflowClass({
+        stepId: "accelerator-picker",
+        presentationSurface: ACCELERATOR_SURFACE,
+      }),
+    ).toBe("overflow-visible")
   })
 
   it("uses the dedicated accelerator-entry motion preset when the accelerator surface first appears", () => {

@@ -32,6 +32,10 @@ import {
 } from "./workspace-accelerator-card-panel-support"
 import { canWorkspaceAcceleratorTutorialActivateStep } from "./workspace-accelerator-card-tutorial-guards"
 import { useWorkspaceAcceleratorLessonGroupState } from "./workspace-accelerator-card-panel-lesson-groups"
+import {
+  resolveWorkspaceAcceleratorModuleStepNavigation,
+  resolveWorkspaceAcceleratorPlaceholderVideoUrl,
+} from "./workspace-accelerator-module-navigation"
 import { WorkspaceAcceleratorStepNodeCard } from "./workspace-accelerator-step-node-card"
 
 type WorkspaceAcceleratorCardPanelProps = {
@@ -163,44 +167,6 @@ function buildWorkspaceAcceleratorControllerInput(input: WorkspaceAcceleratorCar
   }
 }
 
-function isWorkspaceAcceleratorWelcomePreviewCandidate(step: WorkspaceAcceleratorCardInput["steps"][number]) {
-  return (
-    step.moduleContext?.workspaceOnboarding?.view === "welcome" ||
-    step.moduleId === "workspace-onboarding-welcome" ||
-    step.id.startsWith("workspace-onboarding-welcome")
-  )
-}
-
-function hasWorkspaceAcceleratorStepVideo(step: WorkspaceAcceleratorCardInput["steps"][number]) {
-  return typeof step.videoUrl === "string" && step.videoUrl.trim().length > 0
-}
-
-export function resolveWorkspaceAcceleratorPlaceholderVideoUrl({
-  steps,
-  currentStepId,
-}: {
-  steps: WorkspaceAcceleratorCardInput["steps"]
-  currentStepId?: string | null
-}) {
-  const welcomeVideoUrl =
-    steps.find(
-      (step) =>
-        step.id !== currentStepId &&
-        hasWorkspaceAcceleratorStepVideo(step) &&
-        isWorkspaceAcceleratorWelcomePreviewCandidate(step),
-    )?.videoUrl ?? null
-
-  if (welcomeVideoUrl) return welcomeVideoUrl
-
-  return (
-    steps.find(
-      (step) =>
-        step.id !== currentStepId &&
-        hasWorkspaceAcceleratorStepVideo(step),
-    )?.videoUrl ?? null
-  )
-}
-
 function useWorkspaceAcceleratorRuntimeSync({
   runtimeSnapshot,
   runtimeSnapshotSignature,
@@ -322,17 +288,34 @@ export function WorkspaceAcceleratorCardPanel({
       }),
     [controller.steps, currentStep?.id],
   )
+  const moduleStepNavigation = useMemo(
+    () =>
+      resolveWorkspaceAcceleratorModuleStepNavigation({
+        steps: controller.steps,
+        currentModuleSteps: controller.currentModuleSteps,
+        currentStepId: currentStep?.id,
+      }),
+    [controller.currentModuleSteps, controller.steps, currentStep?.id],
+  )
+  const goPreviousWithinModule = useCallback(() => {
+    if (!moduleStepNavigation.previousStepId) return
+    controller.goToStep(moduleStepNavigation.previousStepId)
+  }, [controller, moduleStepNavigation.previousStepId])
+  const goNextWithinModule = useCallback(() => {
+    if (!moduleStepNavigation.nextStepId) return
+    controller.goToStep(moduleStepNavigation.nextStepId)
+  }, [controller, moduleStepNavigation.nextStepId])
   const runtimeActions = useMemo<WorkspaceAcceleratorCardRuntimeActions>(
     () => ({
-      goPrevious: controller.goPrevious,
-      goNext: controller.goNext,
+      goPrevious: goPreviousWithinModule,
+      goNext: goNextWithinModule,
       markCurrentStepComplete: controller.markCurrentStepComplete,
       selectLessonGroup: handleLessonGroupChange,
     }),
     [
       handleLessonGroupChange,
-      controller.goNext,
-      controller.goPrevious,
+      goNextWithinModule,
+      goPreviousWithinModule,
       controller.markCurrentStepComplete,
     ],
   )
@@ -506,8 +489,8 @@ export function WorkspaceAcceleratorCardPanel({
       return
     }
     controller.markCurrentStepComplete()
-    if (controller.canGoNext) {
-      controller.goNext()
+    if (moduleStepNavigation.nextStepId) {
+      controller.goToStep(moduleStepNavigation.nextStepId)
     }
     handleCloseModuleViewer()
   }
@@ -614,12 +597,12 @@ export function WorkspaceAcceleratorCardPanel({
             placeholderVideoUrl={placeholderVideoUrl}
             stepIndex={controller.currentModuleStepIndex}
             stepTotal={Math.max(controller.currentModuleSteps.length, 1)}
-            canGoPrevious={controller.canGoPrevious}
-            canGoNext={controller.canGoNext}
+            canGoPrevious={moduleStepNavigation.canGoPrevious}
+            canGoNext={moduleStepNavigation.canGoNext}
             completed={controller.isCurrentStepCompleted}
             moduleCompleted={controller.isCurrentModuleCompleted}
-            onPrevious={controller.goPrevious}
-            onNext={controller.goNext}
+            onPrevious={goPreviousWithinModule}
+            onNext={goNextWithinModule}
             onComplete={handleCompleteModuleStep}
             onClose={handleCloseModuleViewer}
             tutorialCallout={

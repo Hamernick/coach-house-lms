@@ -3,10 +3,10 @@ import type mapboxgl from "mapbox-gl"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { SidebarMode } from "./constants"
 import { organizationHasMapLocation } from "./helpers"
-
 import {
-  ORGANIZATION_MARKER_OFFSET_Y,
-} from "./map-markers"
+  buildPublicMapOrganizationFeatureCollection,
+  type PublicMapFeatureCollection,
+} from "@/lib/public-map/public-map-layer-api"
 
 type MapboxApi = typeof import("mapbox-gl")["default"]
 
@@ -21,35 +21,32 @@ export const PUBLIC_MAP_COMFORTABLE_RAIL_WIDTH = 360
 export const PUBLIC_MAP_SIDEBAR_MIN_VISIBLE_MAP_WIDTH = 56
 export const PUBLIC_MAP_CAMERA_EDGE_PADDING = 24
 export const PUBLIC_MAP_ORGANIZATION_SOURCE_ID = "public-map-organizations"
+export const PUBLIC_MAP_CLUSTER_SHADOW_LAYER_ID =
+  "public-map-organizations-cluster-badge-shadow"
 export const PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID =
-  "public-map-organizations-cluster"
+  "public-map-organizations-cluster-badge"
 export const PUBLIC_MAP_CLUSTER_SOURCE_COUNT_LAYER_ID =
   "public-map-organizations-cluster-count"
+export const PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID =
+  "public-map-organizations-point-shadow"
 export const PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID =
-  "public-map-organizations-point"
+  "public-map-organizations-point-image"
+export const PUBLIC_MAP_SAME_LOCATION_COUNT_LAYER_ID =
+  "public-map-organizations-same-location-count"
 export const PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID =
   "public-map-organizations-selected-halo"
+export const PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID =
+  "public-map-organizations-selected-shadow"
 export const PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID =
   "public-map-organizations-selected-core"
+export const PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID =
+  "public-map-organizations-selected-badge"
 export const PUBLIC_MAP_CLUSTER_RADIUS = 50
 export const PUBLIC_MAP_CLUSTER_MAX_ZOOM = 14
 export const PUBLIC_MAP_FOCUS_ORGANIZATION_ZOOM = 15.1
+export const ORGANIZATION_MARKER_OFFSET_Y = 0
 
-export type PublicMapOrganizationFeatureCollection = {
-  type: "FeatureCollection"
-  features: Array<{
-    type: "Feature"
-    geometry: {
-      type: "Point"
-      coordinates: [number, number]
-    }
-    properties: {
-      organizationId: string
-      name: string
-      primaryGroup: PublicMapOrganization["primaryGroup"]
-    }
-  }>
-}
+export type PublicMapOrganizationFeatureCollection = PublicMapFeatureCollection
 
 export type PublicMapPanelPresentation = "rail" | "drawer"
 
@@ -78,27 +75,7 @@ export function removeAuthParams(searchParams: URLSearchParams) {
   return next
 }
 
-export function buildPublicMapOrganizationFeatureCollection(
-  organizations: PublicMapOrganization[],
-): PublicMapOrganizationFeatureCollection {
-  return {
-    type: "FeatureCollection",
-    features: organizations
-      .filter(organizationHasMapLocation)
-      .map((organization) => ({
-        type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: [organization.longitude, organization.latitude] as [number, number],
-        },
-        properties: {
-          organizationId: organization.id,
-          name: organization.name,
-          primaryGroup: organization.primaryGroup,
-        },
-      })),
-  }
-}
+export { buildPublicMapOrganizationFeatureCollection }
 
 export function resolveMarkerOrganizations(organizations: PublicMapOrganization[]) {
   return organizations.filter(

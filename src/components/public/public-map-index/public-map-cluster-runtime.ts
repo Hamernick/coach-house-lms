@@ -1,52 +1,28 @@
 import type mapboxgl from "mapbox-gl"
 
-import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-
-import {
-  CLUSTER_PREVIEW_MAX_MEMBERS,
-  type ClusterMarkerPreviewMember,
-  updateOrganizationClusterMarkerElement,
-} from "./map-markers"
 import {
   normalizeCoordinatesForMap,
-  resolveFeatureCoordinates,
   resolveFeatureCoordinatesForMap,
 } from "./map-coordinate-normalization"
-import {
-  buildClusterPreviewMembers,
-  buildPreviewSignature,
-  coalesceClusterReconcileFeaturesFromSupport,
-} from "./public-map-cluster-runtime-support"
 import {
   PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
   PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
   PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+  PUBLIC_MAP_SAME_LOCATION_COUNT_LAYER_ID,
+  PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID,
+  PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
 } from "./map-view-helpers"
 import { getMapSourceSafely, isMapStyleAccessError } from "./map-style-guards"
+import { parsePublicMapOrganizationIds } from "@/lib/public-map/public-map-layer-api"
+import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-layer-api"
 
-export type ClusteredMarkerEntry = {
-  marker: mapboxgl.Marker
-  kind: "cluster" | "organization"
-  pointCount?: number
-  previewSignature?: string
-  previewRequestId?: number
-  missCount?: number
-  clusterActionState?: {
-    clusterId: number
-    pointCount: number
-    coordinates: [number, number]
-  }
-}
-
-export const MARKER_RECONCILE_MIN_INTERVAL_MS = 48
-export const MARKER_RECONCILE_MAX_MISSES = 1
-
-export function clearClusteredMarkers(markersByKey: Map<string, ClusteredMarkerEntry>) {
-  for (const entry of markersByKey.values()) {
-    entry.marker.remove()
-  }
-  markersByKey.clear()
-}
+export const PUBLIC_MAP_INTERACTIVE_LAYER_IDS = [
+  PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
+  PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
+  PUBLIC_MAP_SAME_LOCATION_COUNT_LAYER_ID,
+  PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
+  PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID,
+] as const
 
 export function resolveClusterId(value: unknown) {
   if (typeof value === "number" && Number.isFinite(value)) return value
@@ -55,53 +31,6 @@ export function resolveClusterId(value: unknown) {
     return Number.isFinite(parsed) ? parsed : null
   }
   return null
-}
-
-export function syncClusterPreviewForMarker({
-  markersByKey,
-  markerKey,
-  clusterId,
-  pointCount,
-  source,
-  organizationById,
-}: {
-  markersByKey: Map<string, ClusteredMarkerEntry>
-  markerKey: string
-  clusterId: number
-  pointCount: number
-  source: mapboxgl.GeoJSONSource
-  organizationById: Map<string, PublicMapOrganization>
-}) {
-  const currentEntry = markersByKey.get(markerKey)
-  if (!currentEntry || currentEntry.kind !== "cluster") return
-  if (currentEntry.pointCount === pointCount && currentEntry.previewSignature) return
-
-  const requestId = (currentEntry.previewRequestId ?? 0) + 1
-  currentEntry.previewRequestId = requestId
-  const leafLimit = Math.max(1, Math.min(pointCount, CLUSTER_PREVIEW_MAX_MEMBERS))
-
-  source.getClusterLeaves(clusterId, leafLimit, 0, (error, leaves) => {
-    const entry = markersByKey.get(markerKey)
-    if (!entry || entry.kind !== "cluster") return
-    if (entry.previewRequestId !== requestId) return
-    if (error || !Array.isArray(leaves)) return
-
-    const previewMembers = buildClusterPreviewMembers({
-      leaves: leaves as mapboxgl.MapboxGeoJSONFeature[],
-      organizationById,
-      resolveOrganizationId,
-    })
-    const previewSignature = buildPreviewSignature(previewMembers)
-    if (entry.previewSignature === previewSignature && entry.pointCount === pointCount) return
-
-    updateOrganizationClusterMarkerElement({
-      element: entry.marker.getElement(),
-      pointCount,
-      previewMembers,
-    })
-    entry.previewSignature = previewSignature
-    entry.pointCount = pointCount
-  })
 }
 
 export function resolvePointCount(value: unknown) {
@@ -119,6 +48,70 @@ export function resolveOrganizationId(value: unknown) {
     return normalized.length > 0 ? normalized : null
   }
   return null
+}
+
+export type PublicMapPointClickAction =
+  | {
+      type: "organization"
+      organizationId: string
+    }
+  | {
+      type: "same-location"
+      group: PublicMapSameLocationSelection
+    }
+
+export function resolvePublicMapPointClickAction(
+  properties: Record<string, unknown>,
+): PublicMapPointClickAction | null {
+  const organizationId = resolveOrganizationId(properties.organizationId)
+  if (!organizationId) return null
+
+  const organizationIds = parsePublicMapOrganizationIds(properties.organizationIds)
+  const sameLocationCount = resolvePointCount(properties.sameLocationCount)
+  const sameLocationKey =
+    typeof properties.sameLocationKey === "string" ? properties.sameLocationKey : ""
+  const sameLocationLabel =
+    typeof properties.sameLocationLabel === "string" ? properties.sameLocationLabel : null
+
+  if (sameLocationCount > 1 && organizationIds.length > 1 && sameLocationKey) {
+    return {
+      type: "same-location",
+      group: {
+        key: sameLocationKey,
+        organizationIds,
+        locationLabel: sameLocationLabel,
+      },
+    }
+  }
+
+  return {
+    type: "organization",
+    organizationId,
+  }
+}
+
+export function bindPublicMapPointerCursor(
+  map: mapboxgl.Map,
+  layerIds: readonly string[] = PUBLIC_MAP_INTERACTIVE_LAYER_IDS,
+) {
+  const enable = () => {
+    map.getCanvas().style.cursor = "pointer"
+  }
+  const disable = () => {
+    map.getCanvas().style.cursor = ""
+  }
+
+  for (const layerId of layerIds) {
+    map.on("mouseenter", layerId, enable)
+    map.on("mouseleave", layerId, disable)
+  }
+
+  return () => {
+    for (const layerId of layerIds) {
+      map.off("mouseenter", layerId, enable)
+      map.off("mouseleave", layerId, disable)
+    }
+  }
 }
 
 export function isClusterFeature(properties: Record<string, unknown>) {
@@ -163,23 +156,6 @@ export function isCoordinateWithinMapBounds({
   return isLongitudeWithinBounds({ longitude: longitude - 360, west, east })
 }
 
-export function queryClusterReconcileFeatures({
-  map,
-}: {
-  map: mapboxgl.Map
-}) {
-  const source = getMapSourceSafely(map, PUBLIC_MAP_ORGANIZATION_SOURCE_ID)
-  if (isMapStyleAccessError(source) || !source) return []
-  const moving = typeof map.isMoving === "function" ? map.isMoving() : false
-  if (moving) return []
-  return map.queryRenderedFeatures({
-    layers: [
-      PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
-      PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
-    ],
-  })
-}
-
 export function queryVisibleUnclusteredOrganizationFeatures({
   map,
 }: {
@@ -222,25 +198,6 @@ export function queryVisibleUnclusteredOrganizationFeatures({
   return [...featureByOrganizationId.values()]
 }
 
-export function coalesceClusterReconcileFeatures({
-  map,
-  features,
-  markersByKey,
-}: {
-  map: mapboxgl.Map
-  features: mapboxgl.MapboxGeoJSONFeature[]
-  markersByKey: Map<string, ClusteredMarkerEntry>
-}) {
-  return coalesceClusterReconcileFeaturesFromSupport({
-    map,
-    features,
-    markersByKey,
-    isClusterFeature,
-    resolveClusterId,
-    resolveOrganizationId,
-  })
-}
-
 export function shouldScheduleClusterRenderFromSourceData({
   map,
   event,
@@ -271,7 +228,8 @@ export function resolveClusterClickTarget({
   const rendered = map.queryRenderedFeatures({
     layers: [PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID],
   })
-  let bestTarget: { clusterId: number; coordinates: [number, number]; score: number } | null = null
+  let bestTarget: { clusterId: number; coordinates: [number, number]; score: number } | null =
+    null
 
   for (const feature of rendered) {
     const properties = (feature.properties ?? {}) as Record<string, unknown>

@@ -77,7 +77,8 @@ export const WORKSPACE_TUTORIAL_PRESENTATION_SHELL_SIDE_PADDING = 24
 const WORKSPACE_TUTORIAL_ACCELERATOR_CHECKLIST_SHELL_WIDTH = 520
 const WORKSPACE_TUTORIAL_ACCELERATOR_CHECKLIST_SHELL_HEIGHT = 724
 const WORKSPACE_TUTORIAL_ACCELERATOR_MODULE_SHELL_WIDTH = 560
-const WORKSPACE_TUTORIAL_ACCELERATOR_MODULE_SHELL_HEIGHT = 960
+const WORKSPACE_TUTORIAL_ACCELERATOR_MODULE_SHELL_HEIGHT =
+  WORKSPACE_TUTORIAL_ACCELERATOR_CHECKLIST_SHELL_HEIGHT
 const WORKSPACE_TUTORIAL_PRESENTATION_SHELL_SPECS: Record<
   Exclude<WorkspaceTutorialPresentationFamily, "welcome">,
   WorkspaceTutorialPresentationShellSpec
@@ -358,6 +359,10 @@ export function resolveWorkspaceTutorialPresentationShellHeight({
 
   if (family === "tool") {
     return surfaceFrameHeight + chromeHeight
+  }
+
+  if (family === "accelerator-module") {
+    return shellHeight
   }
 
   return Math.max(shellHeight, surfaceFrameHeight + chromeHeight)

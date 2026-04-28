@@ -58,7 +58,7 @@ describe("AppPricingFeedbackPrompt", () => {
   })
 
   it("does not render the banner outside workspace routes", async () => {
-    usePathnameMock.mockReturnValue("/organization")
+    usePathnameMock.mockReturnValue("/find/a-more-just-chicago")
     const { AppPricingFeedbackPrompt } = await import(
       "@/features/app-pricing-feedback/components/app-pricing-feedback-prompt"
     )

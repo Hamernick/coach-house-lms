@@ -142,6 +142,7 @@ export function resolveWorkspaceAcceleratorTutorialInteractionPolicy({
       acceleratorRuntimeSnapshot?.openModuleId ??
       null,
     allowedStepId: acceleratorRuntimeSnapshot?.currentStep?.id ?? null,
+    allowClassDropdownOpen: false,
     allowPreviewPlayback: true,
   }
 }

@@ -195,7 +195,7 @@ describe("workspace tutorial presentation", () => {
     expect(shellSpec.pairGap).toBeNull()
   })
 
-  it("uses the larger accelerator shell only after a lesson opens", () => {
+  it("uses the wider clipped accelerator shell only after a lesson opens", () => {
     const checklistShellSpec = resolveWorkspaceTutorialStageShellSpec({
       tutorialStepIndex: 4,
       openedStepIds: ["accelerator"],
@@ -209,7 +209,7 @@ describe("workspace tutorial presentation", () => {
     expect(checklistShellSpec.shellWidth).toBe(520)
     expect(checklistShellSpec.shellHeight).toBe(724)
     expect(moduleShellSpec.shellWidth).toBe(560)
-    expect(moduleShellSpec.shellHeight).toBe(960)
+    expect(moduleShellSpec.shellHeight).toBe(724)
   })
 
   it("falls back to the compact accelerator shell once the close-module viewer is dismissed", () => {
@@ -269,7 +269,7 @@ describe("workspace tutorial presentation", () => {
       }),
     ).toMatchObject({
       shellWidth: 560,
-      shellHeight: 960,
+      shellHeight: 724,
     })
   })
 
@@ -345,7 +345,7 @@ describe("workspace tutorial presentation", () => {
     ).toBe(796)
   })
 
-  it("grows the guide shell around the opened accelerator lesson", () => {
+  it("keeps the opened accelerator lesson clipped inside the guide shell", () => {
     const surfaceSpec = resolveWorkspaceTutorialPresentationSurfaceSpec({
       cardId: "accelerator",
       cardSize: "lg",
@@ -373,7 +373,7 @@ describe("workspace tutorial presentation", () => {
         shellHeight: shellSpec.shellHeight,
         surfaceFrameHeight: surfaceSpec.frameHeight,
       }),
-    ).toBe(960)
+    ).toBe(724)
   })
 
   it("uses the dashed outer frame for tutorial presentations", () => {
@@ -397,7 +397,7 @@ describe("workspace tutorial presentation", () => {
     ).toBe("dashed-frame")
   })
 
-  it("keeps module-preview overflow visible without collapsing the bottom guide inset", () => {
+  it("clips the module preview while keeping the close-module callout active", () => {
     const previewStepIndex = findTutorialStepIndex("accelerator-close-module")
 
     expect(
@@ -407,13 +407,13 @@ describe("workspace tutorial presentation", () => {
         cardWidth: 1180,
       }),
     ).toEqual({
-      shellOverflow: "visible",
-      bodyOverflow: "visible",
+      shellOverflow: "hidden",
+      bodyOverflow: "hidden",
       bodyJustify: "start",
-      slotOverflow: "visible",
+      slotOverflow: "hidden",
       slotPaddingTop: 0,
-      collapseBodyBottomPadding: false,
-      showBottomFade: false,
+      collapseBodyBottomPadding: true,
+      showBottomFade: true,
       allowCalloutOverflow: true,
     })
   })

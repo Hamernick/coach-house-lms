@@ -94,11 +94,22 @@ export function WorkspaceAcceleratorOnboardingStepBody({
       </section>
 
       {onSubmit ? (
-        <div className="min-h-0 overflow-hidden rounded-[24px]">
-          <OnboardingWorkspaceCard
-            {...(defaults ?? {})}
-            mode="workspace_setup"
-            onSubmit={onSubmit}
+        <div className="relative min-h-0 overflow-hidden rounded-[24px] border border-border/60 bg-background/70">
+          <div
+            className="pointer-events-none min-h-0 select-none"
+            aria-hidden="true"
+            inert
+          >
+            <OnboardingWorkspaceCard
+              {...(defaults ?? {})}
+              mode="workspace_setup"
+              onSubmit={onSubmit}
+              className="min-h-[520px] border-0 shadow-none"
+            />
+          </div>
+          <div
+            className="absolute inset-0 z-10 cursor-default"
+            aria-hidden="true"
           />
         </div>
       ) : (

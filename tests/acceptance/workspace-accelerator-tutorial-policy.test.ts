@@ -179,6 +179,7 @@ describe("workspace accelerator tutorial interaction policy", () => {
       stepId: "accelerator-close-module",
       allowedModuleId: "workspace-onboarding-welcome",
       allowedStepId: "workspace-onboarding-welcome:lesson",
+      allowClassDropdownOpen: false,
       allowPreviewPlayback: true,
       allowPreviewNavigation: false,
       allowPreviewClose: false,

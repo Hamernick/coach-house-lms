@@ -1147,7 +1147,7 @@ select
         )
       )
   end::jsonb,
-  false
+  true
 from need_modules nm
 on conflict (module_id) do update set
   schema = excluded.schema,
@@ -1273,7 +1273,7 @@ select
         )
       )
   end::jsonb,
-  false
+  true
 from mvv_modules mv
 on conflict (module_id) do update set
   schema = excluded.schema,

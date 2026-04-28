@@ -113,19 +113,16 @@ export function resolveWorkspaceTutorialPresentationChrome({
   const isAcceleratorCard = cardId === "accelerator"
   const allowCalloutOverflow =
     step.id === "accelerator-close-module" && isAcceleratorCard
-  const shouldClipCompactAcceleratorPresentation =
-    isAcceleratorCard && !allowCalloutOverflow && cardWidth < 1000
+  const shouldClipAcceleratorPresentation = isAcceleratorCard
 
   return {
-    shellOverflow: allowCalloutOverflow ? "visible" : "hidden",
-    bodyOverflow: allowCalloutOverflow ? "visible" : "hidden",
+    shellOverflow: "hidden",
+    bodyOverflow: "hidden",
     bodyJustify: "start",
-    slotOverflow: shouldClipCompactAcceleratorPresentation
-      ? "hidden"
-      : "visible",
+    slotOverflow: shouldClipAcceleratorPresentation ? "hidden" : "visible",
     slotPaddingTop: 0,
-    collapseBodyBottomPadding: shouldClipCompactAcceleratorPresentation,
-    showBottomFade: shouldClipCompactAcceleratorPresentation,
+    collapseBodyBottomPadding: shouldClipAcceleratorPresentation,
+    showBottomFade: shouldClipAcceleratorPresentation,
     allowCalloutOverflow,
   }
 }

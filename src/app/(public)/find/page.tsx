@@ -1,10 +1,8 @@
 import type { Metadata } from "next"
 
-import { completeOnboardingAction } from "@/app/(dashboard)/onboarding/actions"
 import { HomeCanvasPreview } from "@/components/public/home-canvas-preview"
 import { PricingSurface } from "@/components/public/pricing-surface"
 import { PublicMapIndex } from "@/components/public/public-map-index"
-import { PublicMapMemberOnboardingOverlay } from "@/components/public/public-map-index/member-onboarding-overlay"
 import { fetchPublicMapViewerState } from "@/features/find-map"
 import { fetchPublicMapOrganizations } from "@/lib/queries/public-map-index"
 
@@ -39,12 +37,6 @@ export default async function PublicFindPage() {
             boardAlerts={viewerState.boardAlerts}
             memberProfile={viewerState.memberProfile}
           />
-          {viewerState.needsMemberOnboarding && viewerState.onboardingDefaults ? (
-            <PublicMapMemberOnboardingOverlay
-              defaults={viewerState.onboardingDefaults}
-              onSubmit={completeOnboardingAction}
-            />
-          ) : null}
         </div>
       }
     />

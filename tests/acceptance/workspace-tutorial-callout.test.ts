@@ -1,9 +1,13 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
 import { TOOLTIP_ARROW_CLASSNAME } from "@/components/ui/tooltip"
 import { WorkspaceTutorialCallout } from "@/components/workspace/workspace-tutorial-callout"
+
+const ROOT = process.cwd()
 
 describe("workspace tutorial callout", () => {
   it("renders an inspectable indicator wrapper for the arrow callout", () => {
@@ -29,6 +33,37 @@ describe("workspace tutorial callout", () => {
     expect(TOOLTIP_ARROW_CLASSNAME).toContain("bg-popover")
     expect(markup).not.toContain("workspace-tutorial-pointer")
     expect(markup).not.toContain("rounded-xl border border-border/70 bg-popover/95")
+  })
+
+  it("keeps labeled indicator text before the arrow with compact spacing", () => {
+    const source = readFileSync(
+      join(ROOT, "src/components/workspace/workspace-tutorial-callout.tsx"),
+      "utf8",
+    )
+
+    expect(
+      source.indexOf('data-slot="workspace-tutorial-indicator-label"'),
+    ).toBeLessThan(
+      source.indexOf('data-slot="workspace-tutorial-indicator-icon-wrap"'),
+    )
+    expect(source).toContain('"flex items-center whitespace-nowrap"')
+    expect(source).toContain('? "gap-1.5"')
+    expect(source).not.toContain("WORKSPACE_TUTORIAL_INDICATOR_TRIGGER_SIZE")
+    expect(source).not.toContain("width: tapHereLabel")
+  })
+
+  it("keeps the calendar indicator bubble compact", () => {
+    const source = readFileSync(
+      join(
+        ROOT,
+        "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-viewport-controls-panel.tsx",
+      ),
+      "utf8",
+    )
+
+    expect(source).toContain('tapHereLabel="Open calendar"')
+    expect(source).toContain("!px-2 !py-1")
+    expect(source).toContain("indicatorSideOffset={6}")
   })
 
   it("supports explicit indicator anchor geometry without class-based offsets", () => {

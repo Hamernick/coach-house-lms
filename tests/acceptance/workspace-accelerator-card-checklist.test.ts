@@ -147,6 +147,56 @@ describe("workspace accelerator checklist helpers", () => {
     ).toEqual(["formation", "strategic-foundations"])
   })
 
+  it("moves the Idea to Impact intro module into its own Introduction picker group", () => {
+    const introStep: WorkspaceAcceleratorCardStep = {
+      ...CHECKLIST_STEPS[3]!,
+      id: "intro-idea-to-impact-accelerator:video",
+      moduleId: "intro-module-id",
+      moduleSlug: "intro-idea-to-impact-accelerator",
+      moduleTitle: "Introduction: Idea to Impact Accelerator",
+      groupTitle: "Strategic Foundations",
+    }
+
+    expect(
+      buildWorkspaceAcceleratorLessonGroupOptions([
+        CHECKLIST_STEPS[0]!,
+        CHECKLIST_STEPS[3]!,
+        introStep,
+      ]),
+    ).toEqual([
+      {
+        key: "introduction",
+        label: "Introduction",
+        moduleIds: ["intro-module-id"],
+      },
+      {
+        key: "formation",
+        label: "Formation",
+        moduleIds: ["m-1"],
+      },
+      {
+        key: "strategic-foundations",
+        label: "Strategic Foundations",
+        moduleIds: ["m-3"],
+      },
+    ])
+
+    expect(
+      buildWorkspaceAcceleratorChecklistModules({
+        steps: [introStep, CHECKLIST_STEPS[3]!],
+        completedStepIds: [],
+        selectedGroupKey: "introduction",
+        currentStepId: introStep.id,
+      }),
+    ).toMatchObject([
+      {
+        id: "intro-module-id",
+        title: "Introduction: Idea to Impact Accelerator",
+        groupTitle: "Introduction",
+      },
+    ])
+  })
+
   it("groups checklist rows by module within the selected lesson group", () => {
     expect(
       buildWorkspaceAcceleratorChecklistModules({

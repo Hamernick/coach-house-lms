@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from "vitest"
 
 import { applyPublicMapOrganizationSelection } from "@/components/public/public-map-index/use-public-map-actions"
+import {
+  resolvePublicMapSelectedOrganization,
+  resolveSyncedPublicMapSelectedOrgId,
+} from "@/components/public/public-map-index/public-map-index-runtime"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
 function buildOrganization(overrides: Partial<PublicMapOrganization> = {}): PublicMapOrganization {
@@ -56,6 +60,40 @@ function buildOrganization(overrides: Partial<PublicMapOrganization> = {}): Publ
 }
 
 describe("public map actions", () => {
+  it("keeps the find page unselected until an organization is explicitly selected", () => {
+    const organizationById = new Map([["org-1", buildOrganization()]])
+
+    expect(
+      resolvePublicMapSelectedOrganization({
+        organizationById,
+        selectedOrgId: null,
+      }),
+    ).toBeNull()
+    expect(
+      resolveSyncedPublicMapSelectedOrgId({
+        organizationById,
+        selectedOrgId: null,
+      }),
+    ).toBeNull()
+  })
+
+  it("clears stale selected organizations instead of selecting the first available result", () => {
+    const organizationById = new Map([["org-1", buildOrganization()]])
+
+    expect(
+      resolvePublicMapSelectedOrganization({
+        organizationById,
+        selectedOrgId: "missing-org",
+      }),
+    ).toBeNull()
+    expect(
+      resolveSyncedPublicMapSelectedOrgId({
+        organizationById,
+        selectedOrgId: "missing-org",
+      }),
+    ).toBeNull()
+  })
+
   it("targets the selected organization on the map when opening mapped details", () => {
     const setSelectedOrgId = vi.fn()
     const setSidebarMode = vi.fn()
@@ -84,6 +122,26 @@ describe("public map actions", () => {
       "org-2",
       "org-3",
     ])
+  })
+
+  it("requests map focus for repeated explicit selections of the same organization", () => {
+    const setCameraTargetOrgId = vi.fn()
+    const selectionArgs = {
+      organizationById: new Map([["org-1", buildOrganization()]]),
+      organizationId: "org-1",
+      openDetails: true,
+      setSelectedOrgId: vi.fn(),
+      setSidebarMode: vi.fn(),
+      setCameraTargetOrgId,
+      setRecentOrganizationIds: vi.fn(),
+    }
+
+    applyPublicMapOrganizationSelection(selectionArgs)
+    applyPublicMapOrganizationSelection(selectionArgs)
+
+    expect(setCameraTargetOrgId).toHaveBeenCalledTimes(2)
+    expect(setCameraTargetOrgId).toHaveBeenNthCalledWith(1, "org-1")
+    expect(setCameraTargetOrgId).toHaveBeenNthCalledWith(2, "org-1")
   })
 
   it("does not target the map when the organization has no coordinates", () => {

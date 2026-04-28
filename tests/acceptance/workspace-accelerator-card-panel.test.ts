@@ -2,7 +2,10 @@ import React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
-import { resolveWorkspaceAcceleratorPlaceholderVideoUrl } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel"
+import {
+  resolveWorkspaceAcceleratorModuleStepNavigation,
+  resolveWorkspaceAcceleratorPlaceholderVideoUrl,
+} from "@/features/workspace-accelerator-card/components/workspace-accelerator-module-navigation"
 import { buildWorkspaceAcceleratorFullscreenHref } from "@/features/workspace-accelerator-card"
 import { WorkspaceAcceleratorCardPanel } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel"
 import { RightRailProvider } from "@/components/app-shell/right-rail"
@@ -22,6 +25,171 @@ vi.mock("next/navigation", () => ({
 }))
 
 describe("workspace accelerator tutorial panel state", () => {
+  it("keeps module viewer arrow navigation inside the current module", () => {
+    const moduleSteps = [
+      {
+        id: "need:video",
+        moduleId: "need",
+        moduleTitle: "Need?",
+        stepKind: "video",
+        stepTitle: "Video",
+        stepDescription: null,
+        href: "/accelerator/class/strategic-foundations/module/3",
+        status: "in_progress",
+        stepSequenceIndex: 1,
+        stepSequenceTotal: 3,
+        moduleSequenceIndex: 1,
+        moduleSequenceTotal: 2,
+        groupTitle: "Strategic Foundations",
+        videoUrl: "https://cdn.example.com/need.mp4",
+        durationMinutes: 8,
+        resources: [],
+        hasAssignment: true,
+        hasDeck: false,
+      },
+      {
+        id: "need:assignment",
+        moduleId: "need",
+        moduleTitle: "Need?",
+        stepKind: "assignment",
+        stepTitle: "Assignment",
+        stepDescription: null,
+        href: "/accelerator/class/strategic-foundations/module/3",
+        status: "not_started",
+        stepSequenceIndex: 2,
+        stepSequenceTotal: 3,
+        moduleSequenceIndex: 1,
+        moduleSequenceTotal: 2,
+        groupTitle: "Strategic Foundations",
+        videoUrl: null,
+        durationMinutes: null,
+        resources: [],
+        hasAssignment: true,
+        hasDeck: false,
+      },
+    ] as const
+
+    expect(
+      resolveWorkspaceAcceleratorModuleStepNavigation({
+        currentModuleSteps: [...moduleSteps],
+        currentStepId: "need:video",
+      }),
+    ).toMatchObject({
+      canGoPrevious: false,
+      canGoNext: true,
+      previousStepId: null,
+      nextStepId: "need:assignment",
+    })
+
+    expect(
+      resolveWorkspaceAcceleratorModuleStepNavigation({
+        currentModuleSteps: [...moduleSteps],
+        currentStepId: "need:assignment",
+      }),
+    ).toMatchObject({
+      canGoPrevious: true,
+      canGoNext: false,
+      previousStepId: "need:video",
+      nextStepId: null,
+    })
+  })
+
+  it("keeps the Need videos adjacent without routing through homework", () => {
+    const needVideo = {
+      id: "what-is-the-need:video",
+      moduleId: "module-need",
+      moduleSlug: "what-is-the-need",
+      moduleTitle: "Need?",
+      stepKind: "video",
+      stepTitle: "Video",
+      stepDescription: null,
+      href: "/accelerator/class/strategic-foundations/module/what-is-the-need",
+      status: "in_progress",
+      stepSequenceIndex: 1,
+      stepSequenceTotal: 2,
+      moduleSequenceIndex: 3,
+      moduleSequenceTotal: 6,
+      groupTitle: "Strategic Foundations",
+      videoUrl: "https://cdn.example.com/need.mp4",
+      durationMinutes: 8,
+      resources: [],
+      hasAssignment: true,
+      hasDeck: false,
+    } as const
+    const needAssignment = {
+      ...needVideo,
+      id: "what-is-the-need:assignment",
+      stepKind: "assignment",
+      stepTitle: "Assignment",
+      videoUrl: null,
+      durationMinutes: null,
+      status: "not_started",
+      stepSequenceIndex: 2,
+    } as const
+    const aiNeedVideo = {
+      id: "ai-the-need:video",
+      moduleId: "module-ai-need",
+      moduleSlug: "ai-the-need",
+      moduleTitle: "Writing a Need Statement",
+      stepKind: "video",
+      stepTitle: "Video",
+      stepDescription: null,
+      href: "/accelerator/class/strategic-foundations/module/ai-the-need",
+      status: "not_started",
+      stepSequenceIndex: 1,
+      stepSequenceTotal: 2,
+      moduleSequenceIndex: 4,
+      moduleSequenceTotal: 6,
+      groupTitle: "Strategic Foundations",
+      videoUrl: "https://cdn.example.com/ai-need.mp4",
+      durationMinutes: 8,
+      resources: [],
+      hasAssignment: true,
+      hasDeck: false,
+    } as const
+    const aiNeedAssignment = {
+      ...aiNeedVideo,
+      id: "ai-the-need:assignment",
+      stepKind: "assignment",
+      stepTitle: "Assignment",
+      videoUrl: null,
+      durationMinutes: null,
+      stepSequenceIndex: 2,
+    } as const
+    const steps = [
+      needVideo,
+      needAssignment,
+      aiNeedVideo,
+      aiNeedAssignment,
+    ]
+
+    expect(
+      resolveWorkspaceAcceleratorModuleStepNavigation({
+        steps,
+        currentModuleSteps: [needVideo, needAssignment],
+        currentStepId: "what-is-the-need:video",
+      }),
+    ).toMatchObject({
+      canGoPrevious: false,
+      canGoNext: true,
+      previousStepId: null,
+      nextStepId: "ai-the-need:video",
+    })
+
+    expect(
+      resolveWorkspaceAcceleratorModuleStepNavigation({
+        steps,
+        currentModuleSteps: [aiNeedVideo, aiNeedAssignment],
+        currentStepId: "ai-the-need:video",
+      }),
+    ).toMatchObject({
+      canGoPrevious: true,
+      canGoNext: true,
+      previousStepId: "what-is-the-need:video",
+      nextStepId: "ai-the-need:assignment",
+    })
+  })
+
   it("builds workspace accelerator fullscreen hrefs with optional deep-link state", () => {
     expect(
       buildWorkspaceAcceleratorFullscreenHref({

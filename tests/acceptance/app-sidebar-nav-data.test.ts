@@ -62,7 +62,11 @@ describe("app sidebar nav data", () => {
   it("does not show Marketplace in the sidebar resource nav", () => {
     expect(RESOURCE_NAV.map((item) => item.name)).toEqual([
       "Knowledge base",
+      "Find organizations",
       "Community",
     ])
+    expect(RESOURCE_NAV.find((item) => item.name === "Find organizations")).toMatchObject({
+      url: "/find",
+    })
   })
 })

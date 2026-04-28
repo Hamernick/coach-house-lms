@@ -14,6 +14,7 @@ export {
   buildWorkspaceAcceleratorLessonGroupOptions,
   formatWorkspaceAcceleratorModuleCompletionLabel,
   resolveWorkspaceAcceleratorOpenModuleId,
+  resolveWorkspaceAcceleratorLessonGroupTitle,
 } from "./checklist"
 export {
   areWorkspaceAcceleratorRuntimeSnapshotsEqual,

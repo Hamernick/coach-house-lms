@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
@@ -22,6 +22,7 @@ import {
   type PublicMapMapboxApi,
   useInitializePublicMap,
   useResolveInitialPublicMapViewport,
+  resolvePublicMapSelectedOrganization,
   useSyncSelectedOrganization,
   useSyncSidebarCameraPadding,
 } from "./public-map-index/public-map-index-runtime"
@@ -38,10 +39,7 @@ import {
   type UserLocationStatus,
 } from "./public-map-index/user-location"
 import { usePublicMapActions } from "./public-map-index/use-public-map-actions"
-import {
-  PublicMapMarkerOverlay,
-  type PublicMapSameLocationSelection,
-} from "./public-map-index/public-map-marker-overlay"
+import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-layer-api"
 import { usePublicMapClusteredMarkers } from "./public-map-index/use-public-map-clustered-markers"
 import { usePublicMapPreferences } from "./public-map-index/use-public-map-preferences"
 import {
@@ -57,6 +55,11 @@ type PublicMapIndexProps = {
   joinedOrganizations?: PublicMapJoinedOrganization[]
   boardAlerts?: PublicMapBoardAlert[]
   memberProfile?: PublicMapMemberProfile | null
+}
+
+type PublicMapCameraTarget = {
+  organizationId: string
+  requestId: number
 }
 
 export function PublicMapIndex({
@@ -75,11 +78,11 @@ export function PublicMapIndex({
   const mapboxRef = useRef<PublicMapMapboxApi | null>(null)
   const hasResolvedInitialViewportRef = useRef(false)
   const mapLoadedRef = useRef(false)
+  const appliedBoundsRef = useRef<PublicMapBounds | null>(null)
   const token = (mapboxToken ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "").trim()
   const tokenAvailable = Boolean(token)
   const [mapError, setMapError] = useState<string | null>(null)
   const [query, setQuery] = useState("")
-  const [, setAppliedBounds] = useState<PublicMapBounds | null>(null)
   const [sidebarMode, setSidebarMode] = useState<"search" | "details" | "hidden">(
     initialPublicSlug ? "details" : "search",
   )
@@ -89,10 +92,10 @@ export function PublicMapIndex({
         normalizeSlug(organization.publicSlug) === normalizeSlug(initialPublicSlug),
     ) ?? null
   const [selectedOrgId, setSelectedOrgId] = useState<string | null>(
-    initialOrganization?.id ?? organizations[0]?.id ?? null,
-  )
-  const [cameraTargetOrgId, setCameraTargetOrgId] = useState<string | null>(
     initialOrganization?.id ?? null,
+  )
+  const [cameraTarget, setCameraTarget] = useState<PublicMapCameraTarget | null>(
+    initialOrganization ? { organizationId: initialOrganization.id, requestId: 0 } : null,
   )
   const [userLocationStatus, setUserLocationStatus] =
     useState<UserLocationStatus>("idle")
@@ -144,10 +147,10 @@ export function PublicMapIndex({
     [favorites, organizationById, organizations, query, searchIndex],
   )
 
-  const selectedOrganization =
-    (selectedOrgId ? organizationById.get(selectedOrgId) ?? null : null) ??
-    filteredOrganizations[0] ??
-    null
+  const selectedOrganization = resolvePublicMapSelectedOrganization({
+    organizationById,
+    selectedOrgId,
+  })
 
   const savedOrganizations = useMemo(
     () =>
@@ -185,12 +188,18 @@ export function PublicMapIndex({
       onClear: () => setSameLocationSelection(null),
     }
   }, [sameLocationOrganizations, sameLocationSelection])
+  const setAppliedBounds = useCallback((bounds: PublicMapBounds | null) => {
+    appliedBoundsRef.current = bounds
+  }, [])
+  const handleViewportChange = useCallback((map: mapboxgl.Map) => {
+    appliedBoundsRef.current = resolveBounds(map)
+  }, [])
 
   useSyncPublicMapLayout({
     containerRef,
     mapRef,
     mapLoadedRef,
-    onViewportChange: (map) => setAppliedBounds(resolveBounds(map)),
+    onViewportChange: handleViewportChange,
     sidebarMode,
   })
   useSyncPublicMapAuthFavorite({
@@ -213,17 +222,20 @@ export function PublicMapIndex({
       pendingAuthOrgId,
       setSelectedOrgId,
       setSidebarMode,
-      setCameraTargetOrgId,
+      setCameraTargetOrgId: (organizationId) => {
+        setCameraTarget((current) => ({
+          organizationId,
+          requestId: (current?.requestId ?? 0) + 1,
+        }))
+      },
       setRecentOrganizationIds,
       setPendingAuthOrgId,
       setAuthSheetOpen,
       setFavorites,
     })
   useSyncSelectedOrganization({
-    filteredOrganizations,
     organizationById,
     selectedOrgId,
-    selectedOrganization,
     setSelectedOrgId,
   })
 
@@ -247,6 +259,19 @@ export function PublicMapIndex({
     organizations,
     mapLoadVersion,
     selectedOrganizationId: selectedOrganization?.id ?? null,
+    activeSameLocationGroupKey: sameLocationSelection?.key ?? null,
+    onSelectOrganization: (organizationId) => {
+      setSameLocationSelection(null)
+      handleSelectOrganization({
+        organizationId,
+        openDetails: true,
+        shouldFocusMap: false,
+      })
+    },
+    onOpenSameLocationGroup: (group) => {
+      setSameLocationSelection(group)
+      setSidebarMode("search")
+    },
   })
 
   useResolveInitialPublicMapViewport({
@@ -267,11 +292,11 @@ export function PublicMapIndex({
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !cameraTargetOrgId) return
-    const organization = organizationById.get(cameraTargetOrgId)
+    if (!map || !cameraTarget) return
+    const organization = organizationById.get(cameraTarget.organizationId)
     if (!organization || !organizationHasMapLocation(organization)) return
     focusOrganizationOnMap({ map, organization })
-  }, [cameraTargetOrgId, organizationById])
+  }, [cameraTarget, organizationById])
 
   const listOrganizations = sameLocationSearchContext?.organizations ?? filteredOrganizations
 
@@ -337,30 +362,6 @@ export function PublicMapIndex({
         isSavingPreferences={isSavingPreferences}
         authSheetOpen={authSheetOpen}
         authRedirectTo={authRedirectTo}
-        mapOverlay={
-          tokenAvailable ? (
-            <PublicMapMarkerOverlay
-              mapRef={mapRef}
-              mapLoadedRef={mapLoadedRef}
-              mapLoadVersion={mapLoadVersion}
-              organizationById={organizationById}
-              selectedOrganizationId={selectedOrganization?.id ?? null}
-              activeSameLocationGroupKey={sameLocationSelection?.key ?? null}
-              onSelectOrganization={(organizationId) => {
-                setSameLocationSelection(null)
-                handleSelectOrganization({
-                  organizationId,
-                  openDetails: true,
-                  shouldFocusMap: false,
-                })
-              }}
-              onOpenSameLocationGroup={(group) => {
-                setSameLocationSelection(group)
-                setSidebarMode("search")
-              }}
-            />
-          ) : null
-        }
         onQueryChange={(value) => {
           setSameLocationSelection(null)
           setQuery(value)

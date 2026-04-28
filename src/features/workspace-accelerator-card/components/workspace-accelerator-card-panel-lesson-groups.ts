@@ -6,6 +6,7 @@ import {
   buildWorkspaceAcceleratorChecklistModules,
   buildWorkspaceAcceleratorLessonGroupKey,
   buildWorkspaceAcceleratorLessonGroupOptions,
+  resolveWorkspaceAcceleratorLessonGroupTitle,
 } from "../lib"
 import { useWorkspaceAcceleratorCardController } from "../hooks/use-workspace-accelerator-card-controller"
 import type {
@@ -34,7 +35,9 @@ export function useWorkspaceAcceleratorLessonGroupState({
     [controller.steps],
   )
   const currentLessonGroupKey = currentStep
-    ? buildWorkspaceAcceleratorLessonGroupKey(currentStep.groupTitle)
+    ? buildWorkspaceAcceleratorLessonGroupKey(
+        resolveWorkspaceAcceleratorLessonGroupTitle(currentStep),
+      )
     : ""
 
   useEffect(() => {

@@ -63,11 +63,13 @@ export function executeClusterSelection({
   coordinates,
   mapRef,
   mapLoadedRef,
+  getExpansionZoom,
 }: {
   clusterId: number
   coordinates: [number, number]
   mapRef: RefObject<mapboxgl.Map | null>
   mapLoadedRef: RefObject<boolean>
+  getExpansionZoom?: (clusterId: number) => Promise<number | null>
 }) {
   const clickMap = mapRef.current
   if (!clickMap || !mapLoadedRef.current) return
@@ -85,6 +87,26 @@ export function executeClusterSelection({
     clickMap.getZoom() + CLUSTER_CLICK_FALLBACK_ZOOM_DELTA,
     CLUSTER_CLICK_MAX_ZOOM,
   )
+
+  if (getExpansionZoom) {
+    void getExpansionZoom(target.clusterId).then((zoom) => {
+      const callbackMap = mapRef.current
+      if (!callbackMap || !mapLoadedRef.current) return
+      const requestedZoom =
+        typeof zoom === "number" && Number.isFinite(zoom)
+          ? zoom + 0.35
+          : fallbackZoomTarget
+      animateToClusterTarget({
+        map: callbackMap,
+        targetCoordinates: target.coordinates,
+        targetClusterId: target.clusterId,
+        zoom: requestedZoom,
+        duration: typeof zoom === "number" ? 460 : 420,
+        reason: typeof zoom === "number" ? "worker-expansion" : "fallback:worker-expansion",
+      })
+    })
+    return
+  }
 
   if (!source || typeof source.getClusterExpansionZoom !== "function") {
     animateToClusterTarget({

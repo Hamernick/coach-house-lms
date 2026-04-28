@@ -107,6 +107,49 @@ export function resolveWorkspaceTutorialPresentationSlotClass({
   return "relative h-auto min-h-0 self-start"
 }
 
+export function shouldClipWorkspaceTutorialPresentationFrame({
+  stepId,
+  presentationSurface,
+}: {
+  stepId: WorkspaceCanvasTutorialStepId
+  presentationSurface: WorkspaceCanvasTutorialPresentationSurface
+}) {
+  return (
+    presentationSurface.cardId === "accelerator" &&
+    (stepId === "accelerator-close-module" ||
+      presentationSurface.cardWidth >= 1000)
+  )
+}
+
+export function resolveWorkspaceTutorialPresentationFrameOverflowClass({
+  stepId,
+  presentationSurface,
+}: {
+  stepId: WorkspaceCanvasTutorialStepId
+  presentationSurface: WorkspaceCanvasTutorialPresentationSurface
+}) {
+  return shouldClipWorkspaceTutorialPresentationFrame({
+    stepId,
+    presentationSurface,
+  })
+    ? "overflow-hidden"
+    : "overflow-visible"
+}
+
+export function resolveWorkspaceTutorialPresentationFrameMaxHeight({
+  stepId,
+  presentationSurface,
+}: {
+  stepId: WorkspaceCanvasTutorialStepId
+  presentationSurface: WorkspaceCanvasTutorialPresentationSurface
+}) {
+  if (!shouldClipWorkspaceTutorialPresentationFrame({ stepId, presentationSurface })) {
+    return undefined
+  }
+
+  return `min(${presentationSurface.frameHeight}px, calc(100dvh - 14rem))`
+}
+
 export function resolveWorkspaceTutorialBodyGridClass({
   presentationSurface,
 }: {

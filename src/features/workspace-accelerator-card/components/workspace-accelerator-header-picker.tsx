@@ -33,6 +33,7 @@ import type {
 } from "../types"
 import {
   isWorkspaceAcceleratorTutorialPinnedClassGroup,
+  shouldWorkspaceAcceleratorTutorialBlockClassDropdownOpen,
   shouldWorkspaceAcceleratorTutorialBlockClassSelection,
 } from "./workspace-accelerator-card-tutorial-guards"
 import { WorkspaceAcceleratorTutorialGuardTooltip } from "./workspace-accelerator-tutorial-guard-tooltip"
@@ -139,6 +140,10 @@ export function WorkspaceAcceleratorHeaderPicker({
   const selectedLessonGroupLabel = selectedLessonGroup?.label ?? "Classes"
   const pickerHighlighted = tutorialCallout?.focus === "picker"
   const tutorialManagedPicker = Boolean(tutorialInteractionPolicy)
+  const classDropdownLocked =
+    shouldWorkspaceAcceleratorTutorialBlockClassDropdownOpen({
+      tutorialInteractionPolicy,
+    })
   const classSelectionGuard = useWorkspaceAcceleratorTutorialGuard({
     enabled: Boolean(tutorialInteractionPolicy),
     defaultMessage:
@@ -195,6 +200,10 @@ export function WorkspaceAcceleratorHeaderPicker({
             WORKSPACE_ACCELERATOR_TUTORIAL_PICKER_TRIGGER_CLASSNAME,
         )}
         aria-label={`Choose a class track. Current selection: ${selectedLessonGroupLabel}`}
+        aria-disabled={classDropdownLocked ? "true" : undefined}
+        data-tutorial-interaction-locked={
+          classDropdownLocked ? "true" : undefined
+        }
       >
         {pickerHighlighted ? (
           <WorkspaceTutorialCallout
@@ -233,6 +242,12 @@ export function WorkspaceAcceleratorHeaderPicker({
     >
       <Select
         value={selectedLessonGroupKey}
+        open={classDropdownLocked ? false : undefined}
+        onOpenChange={(nextOpen) => {
+          if (nextOpen && classDropdownLocked) {
+            classSelectionGuard.showBlockedFeedback("class-selection")
+          }
+        }}
         onValueChange={(nextLessonGroupKey) => {
           if (
             shouldWorkspaceAcceleratorTutorialBlockClassSelection({

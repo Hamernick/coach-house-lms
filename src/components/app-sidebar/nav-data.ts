@@ -8,6 +8,7 @@ import FolderKanbanIcon from "lucide-react/dist/esm/icons/folder-kanban"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
 import LayoutGridIcon from "lucide-react/dist/esm/icons/layout-grid"
 import LockIcon from "lucide-react/dist/esm/icons/lock"
+import MapPinnedIcon from "lucide-react/dist/esm/icons/map-pinned"
 import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
 import PanelTopIcon from "lucide-react/dist/esm/icons/panel-top"
@@ -107,6 +108,11 @@ export const RESOURCE_NAV = [
     url: "https://coach-house.gitbook.io/coach-house",
     icon: NotebookIcon,
     external: true,
+  },
+  {
+    name: "Find organizations",
+    url: "/find",
+    icon: MapPinnedIcon,
   },
   {
     name: "Community",

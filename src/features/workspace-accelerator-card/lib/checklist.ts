@@ -56,8 +56,14 @@ const ROADMAP_LESSON_GROUP_ALIASES = new Map<string, string>([
 ])
 
 const PREFERRED_LESSON_GROUP_ORDER = new Map<string, number>([
-  [normalizeLessonGroupOrderLabel("Formation"), 0],
-  [normalizeLessonGroupOrderLabel("Strategic Foundations"), 1],
+  [normalizeLessonGroupOrderLabel("Introduction"), 0],
+  [normalizeLessonGroupOrderLabel("Formation"), 1],
+  [normalizeLessonGroupOrderLabel("Strategic Foundations"), 2],
+])
+
+const INTRODUCTION_MODULE_SLUGS = new Set([
+  "intro-idea-to-impact-accelerator",
+  "introduction-idea-to-impact-accelerator",
 ])
 
 function resolvePreferredLessonGroupOrderRank(label: string) {
@@ -77,6 +83,30 @@ function resolvePreferredLessonGroupOrderRank(label: string) {
   }
 
   return null
+}
+
+function normalizeModuleSignal(value: string | null | undefined) {
+  return typeof value === "string" ? value.trim().toLowerCase() : ""
+}
+
+function isWorkspaceAcceleratorIntroductionStep(
+  step: WorkspaceAcceleratorCardStep,
+) {
+  const moduleSlug = normalizeModuleSignal(step.moduleSlug)
+  if (INTRODUCTION_MODULE_SLUGS.has(moduleSlug)) return true
+
+  const moduleId = normalizeModuleSignal(step.moduleId)
+  if (INTRODUCTION_MODULE_SLUGS.has(moduleId)) return true
+
+  return normalizeModuleSignal(step.moduleTitle) ===
+    "introduction: idea to impact accelerator"
+}
+
+export function resolveWorkspaceAcceleratorLessonGroupTitle(
+  step: WorkspaceAcceleratorCardStep,
+) {
+  if (isWorkspaceAcceleratorIntroductionStep(step)) return "Introduction"
+  return normalizeLessonGroupLabel(step.groupTitle)
 }
 
 function resolveLessonGroupOrderRank(label: string) {
@@ -155,7 +185,7 @@ export function buildWorkspaceAcceleratorLessonGroupOptions(
   const explicitGroupOrder = new Map<string, number>()
 
   for (const step of steps) {
-    const label = normalizeLessonGroupLabel(step.groupTitle)
+    const label = resolveWorkspaceAcceleratorLessonGroupTitle(step)
     const key = buildWorkspaceAcceleratorLessonGroupKey(label)
     const existing = groups.get(key)
 
@@ -236,7 +266,9 @@ export function buildWorkspaceAcceleratorChecklistModules({
   const modules = new Map<string, WorkspaceAcceleratorChecklistModule>()
 
   for (const step of steps) {
-    const groupKey = buildWorkspaceAcceleratorLessonGroupKey(step.groupTitle)
+    const groupKey = buildWorkspaceAcceleratorLessonGroupKey(
+      resolveWorkspaceAcceleratorLessonGroupTitle(step),
+    )
     if (selectedGroupKey && groupKey !== selectedGroupKey) continue
 
     const existing = modules.get(step.moduleId)
@@ -251,7 +283,7 @@ export function buildWorkspaceAcceleratorChecklistModules({
     modules.set(step.moduleId, {
       id: step.moduleId,
       title: step.moduleTitle,
-      groupTitle: normalizeLessonGroupLabel(step.groupTitle),
+      groupTitle: resolveWorkspaceAcceleratorLessonGroupTitle(step),
       steps: [step],
       totalSteps: 1,
       completedStepCount: completed.has(step.id) ? 1 : 0,

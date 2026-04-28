@@ -40,6 +40,14 @@ export function shouldWorkspaceAcceleratorTutorialBlockClassSelection({
   })
 }
 
+export function shouldWorkspaceAcceleratorTutorialBlockClassDropdownOpen({
+  tutorialInteractionPolicy,
+}: {
+  tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
+}) {
+  return tutorialInteractionPolicy?.allowClassDropdownOpen === false
+}
+
 export function canWorkspaceAcceleratorTutorialToggleModule({
   tutorialInteractionPolicy,
 }: {

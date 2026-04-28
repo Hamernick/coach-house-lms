@@ -1,0 +1,198 @@
+flowchart TD
+  %% /find public map architecture, generated 2026-04-26.
+
+  subgraph Routes["Next.js App Router"]
+    FindPage["src/app/(public)/find/page.tsx<br/>PublicFindPage"]
+    FindSlugPage["src/app/(public)/find/[slug]/page.tsx<br/>PublicFindOrganizationPage"]
+    FindLoading["src/app/(public)/find/loading.tsx<br/>route skeleton"]
+  end
+
+  subgraph ServerData["Server Data"]
+    PublicMapQuery["src/lib/queries/public-map-index.ts<br/>fetchPublicMapOrganizations"]
+    ViewerState["src/features/find-map<br/>fetchPublicMapViewerState"]
+    Supabase["Supabase<br/>organizations, programs, viewer state"]
+    MapboxToken["NEXT_PUBLIC_MAPBOX_TOKEN or MAPBOX_TOKEN<br/>public pk token only"]
+  end
+
+  subgraph PublicShell["Public Page Shell"]
+    HomeCanvasPreview["src/components/public/home-canvas-preview.tsx<br/>public shell + section routing"]
+    PricingSurface["src/components/public/pricing-surface<br/>embedded pricing panel"]
+    MemberOnboarding["src/components/public/public-map-index/member-onboarding-overlay.tsx<br/>optional onboarding overlay"]
+  end
+
+  subgraph PublicMapIndex["src/components/public/public-map-index.tsx<br/>PublicMapIndex client orchestrator"]
+    StatePrefs["state: query, sidebarMode, selectedOrgId,<br/>sameLocationSelection, authSheetOpen"]
+    DerivedData["memo: organizationById, searchIndex,<br/>filteredOrganizations, selectedOrganization"]
+    ActionsHook["use-public-map-actions.ts<br/>select org, favorite, auth redirects"]
+    PrefsHook["use-public-map-preferences.ts<br/>favorites + recent orgs"]
+    LayoutHook["layout-sync.ts<br/>resize + auth favorite sync"]
+    RuntimeHook["public-map-index-runtime.ts<br/>Mapbox init, viewport, camera, geolocation"]
+    MarkerHook["use-public-map-clustered-markers.ts<br/>WebGL marker lifecycle"]
+  end
+
+  subgraph SurfaceUI["Map UI and Panels"]
+    MapSurface["map-surface.tsx<br/>canvas container, alerts, auth sheet"]
+    SurfaceHelpers["map-surface-helpers.ts<br/>rail vs drawer presentation"]
+    Sidebar["sidebar.tsx<br/>responsive sidebar wrapper"]
+    SearchCard["search-card.tsx<br/>search input + context"]
+    SidebarPanels["sidebar-panels.tsx<br/>search/details mode"]
+    OrganizationList["organization-list.tsx<br/>cards + favorites"]
+    OrganizationDetail["organization-detail.tsx<br/>detail panel composition"]
+    DetailShell["organization-detail-shell-sections.tsx<br/>identity, actions, socials"]
+    DetailSections["organization-detail-sections.tsx<br/>brand, story, contact, programs"]
+    RightRail["right-rail.tsx<br/>member rail wrapper"]
+    MemberRail["member-rail.tsx<br/>saved, joined, board alerts"]
+    SavedRail["saved-rail.tsx<br/>saved/recent org summaries"]
+    MediaImage["media-image.tsx<br/>public image rendering"]
+    SidebarTheme["sidebar-theme.ts<br/>surface tokens"]
+    SnapPoints["sidebar-snap-points.ts<br/>drawer snap math"]
+    ReactGrab["react-grab.ts<br/>debug ownership tags"]
+  end
+
+  subgraph MapboxRuntime["Mapbox Runtime"]
+    Constants["constants.ts<br/>MAP_STYLE + storage keys"]
+    ViewHelpers["map-view-helpers.ts<br/>source/layer ids, camera helpers,<br/>bounds, hrefs"]
+    CoordinateNormalization["map-coordinate-normalization.ts<br/>wrapped coordinate handling"]
+    StyleGuards["map-style-guards.ts<br/>safe get/add/set wrappers"]
+    LayerSync["map-layer-sync.ts<br/>GeoJSON source + WebGL layer contract"]
+    ClusterRuntime["public-map-cluster-runtime.ts<br/>click/hover/feature parsing"]
+    ClusterClick["cluster-click-handlers.ts<br/>cluster easeTo expansion"]
+    UserLocation["user-location.ts<br/>geolocation UI + camera"]
+  end
+
+  subgraph MarkerData["Marker Data and Worker Pipeline"]
+    LayerApi["src/lib/public-map/public-map-layer-api.ts<br/>barrel exports"]
+    GeoJson["src/lib/public-map/public-map-geojson.ts<br/>orgs to GeoJSON point features"]
+    SameLocationLib["src/lib/public-map/public-map-same-location.ts<br/>same-coordinate grouping"]
+    Bounds["src/lib/public-map/public-map-bounds.ts<br/>bbox + zoom + query key"]
+    ClusterClient["src/lib/public-map/public-map-cluster-client.ts<br/>Comlink client + local fallback"]
+    ClusterWorker["src/lib/public-map/public-map-cluster.worker.ts<br/>Supercluster worker index"]
+    MarkerImages["src/lib/public-map/public-map-marker-images.ts<br/>fallback sprites, image sprites,<br/>cluster badge sprites"]
+    MarkerStyle["src/lib/public-map/public-map-marker-style.ts<br/>sprite keys + icon expressions"]
+    Groups["src/lib/public-map/groups.ts<br/>group labels + inference"]
+  end
+
+  subgraph Tests["Focused Test Coverage"]
+    FindMapTest["tests/acceptance/find-map.test.ts"]
+    WebglDataTest["tests/acceptance/public-map-webgl-data.test.ts"]
+    ClusterRuntimeTest["tests/acceptance/public-map-cluster-runtime.test.ts"]
+    SidebarLayoutTest["tests/acceptance/public-map-sidebar-layout.test.ts"]
+    SurfaceHelperTest["tests/acceptance/public-map-surface-helpers.test.ts"]
+    SearchIndexTest["tests/acceptance/public-map-search-index.test.ts"]
+    ActionsTest["tests/acceptance/public-map-actions.test.ts"]
+    DetailTests["tests/acceptance/public-map-organization-detail-*.test.ts"]
+    SameLocationTests["tests/acceptance/public-map-same-location-groups.test.ts<br/>tests/acceptance/public-map-cluster-leaves.test.ts"]
+  end
+
+  subgraph DeletedLegacy["Deleted Legacy DOM Marker Layer"]
+    LegacyOverlay["public-map-marker-overlay.tsx<br/>deleted"]
+    LegacyButtons["public-map-marker-overlay-buttons.test.ts<br/>deleted"]
+    LegacyModel["public-map-marker-overlay-model.ts<br/>deleted"]
+    LegacyMapMarkers["map-markers.ts<br/>deleted"]
+    LegacyClusterElements["cluster-marker-elements.ts<br/>deleted"]
+    LegacyAvatar["cluster-avatar-layout.ts + marker-avatar-content.ts<br/>deleted"]
+    LegacyMotion["marker-motion.ts<br/>deleted"]
+    LegacyImageLoading["marker-image-loading.ts<br/>deleted"]
+    LegacyRuntimeSupport["public-map-cluster-runtime-support.ts<br/>deleted"]
+  end
+
+  FindPage --> PublicMapQuery
+  FindSlugPage --> PublicMapQuery
+  FindPage --> ViewerState
+  FindSlugPage --> ViewerState
+  PublicMapQuery --> Supabase
+  ViewerState --> Supabase
+  FindPage --> MapboxToken
+  FindSlugPage --> MapboxToken
+
+  FindPage --> HomeCanvasPreview
+  FindSlugPage --> HomeCanvasPreview
+  FindLoading --> HomeCanvasPreview
+  HomeCanvasPreview --> PricingSurface
+  HomeCanvasPreview --> PublicMapIndex
+  HomeCanvasPreview --> MemberOnboarding
+
+  PublicMapIndex --> StatePrefs
+  PublicMapIndex --> DerivedData
+  PublicMapIndex --> ActionsHook
+  PublicMapIndex --> PrefsHook
+  PublicMapIndex --> LayoutHook
+  PublicMapIndex --> RuntimeHook
+  PublicMapIndex --> MarkerHook
+  PublicMapIndex --> MapSurface
+  PublicMapIndex --> RightRail
+  PublicMapIndex --> Sidebar
+
+  MapSurface --> SurfaceHelpers
+  MapSurface --> Sidebar
+  MapSurface --> MemberOnboarding
+  Sidebar --> SearchCard
+  Sidebar --> SidebarPanels
+  SidebarPanels --> OrganizationList
+  SidebarPanels --> OrganizationDetail
+  OrganizationDetail --> DetailShell
+  OrganizationDetail --> DetailSections
+  OrganizationList --> MediaImage
+  DetailShell --> MediaImage
+  DetailSections --> MediaImage
+  RightRail --> MemberRail
+  RightRail --> SavedRail
+  Sidebar --> SidebarTheme
+  Sidebar --> SnapPoints
+  OrganizationList --> ReactGrab
+
+  RuntimeHook --> Constants
+  RuntimeHook --> ViewHelpers
+  RuntimeHook --> LayoutHook
+  RuntimeHook --> UserLocation
+  RuntimeHook --> MapboxGL["mapbox-gl<br/>Map object + style"]
+
+  MarkerHook --> LayerApi
+  MarkerHook --> GeoJson
+  MarkerHook --> Bounds
+  MarkerHook --> ClusterClient
+  MarkerHook --> MarkerImages
+  MarkerHook --> LayerSync
+  MarkerHook --> ClusterRuntime
+  MarkerHook --> ClusterClick
+
+  LayerSync --> ViewHelpers
+  LayerSync --> StyleGuards
+  LayerSync --> MarkerStyle
+  LayerSync --> MarkerImages
+  ClusterRuntime --> ViewHelpers
+  ClusterRuntime --> CoordinateNormalization
+  ClusterRuntime --> StyleGuards
+  ClusterClick --> ClusterRuntime
+  ClusterClick --> StyleGuards
+
+  GeoJson --> SameLocationLib
+  GeoJson --> PublicMapQuery
+  GeoJson --> Groups
+  ClusterClient --> ClusterWorker
+  ClusterClient --> Supercluster["supercluster"]
+  ClusterWorker --> Supercluster
+  ClusterClient --> Comlink["comlink"]
+  ClusterWorker --> Comlink
+  MarkerImages --> MarkerStyle
+
+  FindMapTest --> FindPage
+  WebglDataTest --> GeoJson
+  WebglDataTest --> ClusterClient
+  WebglDataTest --> Bounds
+  WebglDataTest --> MarkerImages
+  ClusterRuntimeTest --> LayerSync
+  ClusterRuntimeTest --> ClusterRuntime
+  ClusterRuntimeTest --> ClusterClick
+  SidebarLayoutTest --> Sidebar
+  SurfaceHelperTest --> SurfaceHelpers
+  SearchIndexTest --> SearchCard
+  ActionsTest --> ActionsHook
+  DetailTests --> OrganizationDetail
+  SameLocationTests --> SameLocationLib
+
+  LegacyOverlay -.replaced by.-> MarkerHook
+  LegacyMapMarkers -.replaced by.-> LayerSync
+  LegacyClusterElements -.replaced by.-> ClusterClient
+  LegacyImageLoading -.replaced by.-> MarkerImages
+  LegacyRuntimeSupport -.partly replaced by.-> ClusterRuntime

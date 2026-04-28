@@ -176,6 +176,47 @@ describe("workspace accelerator header picker", () => {
     expect(triggerMarkup).toContain("border-border/60")
   })
 
+  it("marks the picker trigger as locked when the onboarding policy blocks opening the class dropdown", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorHeaderPicker, {
+        lessonGroupOptions: [
+          { key: "formation", label: "Formation" },
+          {
+            key: "strategic-foundations",
+            label: "Strategic Foundations",
+          },
+        ],
+        selectedLessonGroupKey: "formation",
+        tutorialCallout: null,
+        tutorialInteractionPolicy: {
+          stepId: "accelerator-close-module",
+          allowedClassGroupKey: "formation",
+          allowClassDropdownOpen: false,
+          allowClassSelection: false,
+          allowAccordionToggle: true,
+          allowedModuleId: "workspace-onboarding-welcome",
+          allowedStepId: "workspace-onboarding-welcome:lesson",
+          allowPreviewPlayback: true,
+          allowPreviewNavigation: false,
+          allowPreviewClose: false,
+          allowPreviewLinks: false,
+          allowPreviewSubmit: false,
+          blockedMessage: "We'll go over this soon, I promise! :)",
+          blockedMessageDurationMs: 3000,
+        },
+        viewerOpen: true,
+        onLessonGroupChange: () => {},
+      }),
+    )
+
+    const triggerMarkup = extractTriggerMarkup(markup)
+
+    expect(triggerMarkup).toContain('aria-disabled="true"')
+    expect(triggerMarkup).toContain('data-tutorial-interaction-locked="true"')
+    expect(triggerMarkup).toContain("w-[248px]")
+    expect(triggerMarkup).toContain("bg-muted/70")
+  })
+
   it("uses the same inverse tooltip chrome as the workspace shortcut rail", () => {
     expect(WORKSPACE_ACCELERATOR_TUTORIAL_GUARD_CHROME_CLASSNAME).toContain(
       "bg-foreground",

@@ -28,6 +28,8 @@ import {
   resolveWorkspaceTutorialBodyLayoutClass,
   resolveWorkspaceTutorialBodyGridClass,
   resolveWorkspaceTutorialCopyRailClass,
+  resolveWorkspaceTutorialPresentationFrameMaxHeight,
+  resolveWorkspaceTutorialPresentationFrameOverflowClass,
   resolveWorkspaceTutorialPresentationSlotClass,
 } from "./workspace-canvas-tutorial-panel-layout"
 import {
@@ -186,10 +188,13 @@ function WorkspaceTutorialPresentationFrame({
   const presentationFrameRadius =
     presentationSurface.frameRadius ??
     (presentationSurface.kind === "dashed-frame" ? 32 : 30)
-  const presentationFrameClasses =
-    presentationSurface.kind === "dashed-frame"
-      ? "mx-auto relative box-border flex justify-center overflow-visible bg-transparent"
-      : "mx-auto relative box-border flex justify-center overflow-visible bg-transparent"
+  const presentationFrameClasses = cn(
+    "mx-auto relative box-border flex justify-center bg-transparent",
+    resolveWorkspaceTutorialPresentationFrameOverflowClass({
+      stepId,
+      presentationSurface,
+    }),
+  )
   const presentationFrameBorderClasses =
     presentationSurface.kind === "dashed-frame"
       ? "border-2 border-dashed border-border/70"
@@ -239,6 +244,10 @@ function WorkspaceTutorialPresentationFrame({
             width: presentationSurface.frameWidth,
             padding: presentationSurface.frameInset,
             borderRadius: presentationFrameRadius,
+            maxHeight: resolveWorkspaceTutorialPresentationFrameMaxHeight({
+              stepId,
+              presentationSurface,
+            }),
             height:
               presentationSurface.heightMode === "fill" ? "100%" : undefined,
           }}
@@ -389,7 +398,7 @@ export function WorkspaceCanvasTutorialPanel({
           shouldUseWelcomeShellShadow &&
             "!shadow-[0_18px_44px_-34px_rgba(15,23,42,0.24)]",
           attached && "rounded-b-[26px]",
-          presentationChrome?.allowCalloutOverflow && "overflow-visible",
+          presentationChrome?.shellOverflow === "visible" && "overflow-visible",
           className,
         )}
       >

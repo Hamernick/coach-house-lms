@@ -1,17 +1,26 @@
 import type mapboxgl from "mapbox-gl"
 
-import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import {
+  buildPublicMapIconImageExpression,
+  buildPublicMapSelectedIconImageExpression,
+  buildEmptyPublicMapFeatureCollection,
+  PUBLIC_MAP_POINT_SHADOW_KEY,
+  resolvePublicMapPointIconSize,
+  resolvePublicMapPointShadowOpacity,
+  resolvePublicMapSelectedPointIconSize,
+  type PublicMapFeatureCollection,
+} from "@/lib/public-map/public-map-layer-api"
 
 import {
-  buildPublicMapOrganizationFeatureCollection,
-  PUBLIC_MAP_CLUSTER_MAX_ZOOM,
-  PUBLIC_MAP_CLUSTER_RADIUS,
   PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
-  PUBLIC_MAP_CLUSTER_SOURCE_COUNT_LAYER_ID,
   PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
   PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+  PUBLIC_MAP_SAME_LOCATION_COUNT_LAYER_ID,
+  PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID,
   PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
   PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID,
+  PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID,
+  PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID,
 } from "./map-view-helpers"
 import {
   addMapLayerSafely,
@@ -23,32 +32,27 @@ import {
   setMapLayoutPropertySafely,
   setMapPaintPropertySafely,
 } from "./map-style-guards"
+import {
+  resolveSameLocationBadgeFilter,
+  resolveSelectedPointFilter,
+  resolveSelectedSameLocationBadgeFilter,
+  resolveVisiblePointFilter,
+} from "./map-layer-filters"
 
-const PUBLIC_MAP_NO_SELECTION_FILTER_ID = "__public-map-no-selection__"
-
-function resolveVisiblePointFilter(selectedOrganizationId: string | null) {
-  void selectedOrganizationId
-  return ["!", ["has", "point_count"]] as mapboxgl.FilterSpecification
-}
-
-function resolveSelectedPointFilter(selectedOrganizationId: string | null) {
-  return [
-    "all",
-    ["!", ["has", "point_count"]],
-    [
-      "==",
-      ["get", "organizationId"],
-      selectedOrganizationId ?? PUBLIC_MAP_NO_SELECTION_FILTER_ID,
-    ],
-  ] as mapboxgl.FilterSpecification
-}
+const PUBLIC_MAP_CLUSTER_ICON_SIZE = 1
+const REQUIRED_PUBLIC_MAP_LAYER_IDS = [
+  PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
+  PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
+] as const
 
 export function syncSelectedOrganizationLayers({
   map,
   selectedOrganizationId,
+  activeSameLocationGroupKey = null,
 }: {
   map: mapboxgl.Map
   selectedOrganizationId: string | null
+  activeSameLocationGroupKey?: string | null
 }) {
   const pointLayer = getMapLayerSafely(map, PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID)
   if (isMapStyleAccessError(pointLayer)) return
@@ -56,297 +60,364 @@ export function syncSelectedOrganizationLayers({
     setMapFilterSafely(
       map,
       PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
-      resolveVisiblePointFilter(selectedOrganizationId),
+      resolveVisiblePointFilter(),
     )
   }
 
-  const selectedFilter = resolveSelectedPointFilter(selectedOrganizationId)
-  const selectedHaloLayer = getMapLayerSafely(
-    map,
-    PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID,
-  )
-  if (isMapStyleAccessError(selectedHaloLayer)) return
-  if (selectedHaloLayer) {
-    setMapFilterSafely(map, PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID, selectedFilter)
-  }
-  const selectedCoreLayer = getMapLayerSafely(
-    map,
-    PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
-  )
-  if (isMapStyleAccessError(selectedCoreLayer)) return
-  if (selectedCoreLayer) {
-    setMapFilterSafely(map, PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID, selectedFilter)
+  const selectedFilter = resolveSelectedPointFilter({
+    selectedOrganizationId,
+    activeSameLocationGroupKey,
+  })
+  const selectedBadgeFilter = resolveSelectedSameLocationBadgeFilter(selectedFilter)
+  const selectedLayerFilters = [
+    [PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID, selectedFilter],
+    [PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID, selectedFilter],
+    [PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID, selectedFilter],
+    [PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID, selectedBadgeFilter],
+  ] as const
+
+  for (const [layerId, filter] of selectedLayerFilters) {
+    const layer = getMapLayerSafely(map, layerId)
+    if (isMapStyleAccessError(layer)) return
+    if (layer) {
+      setMapFilterSafely(map, layerId, filter)
+    }
   }
 }
 
-export function syncClusterSourceAndLayers({
+function ensurePublicMapSource({
   map,
-  organizations,
+  sourceData,
 }: {
   map: mapboxgl.Map
-  organizations: PublicMapOrganization[]
+  sourceData: PublicMapFeatureCollection
 }) {
-  const sourceData = buildPublicMapOrganizationFeatureCollection(organizations)
-  if (process.env.NODE_ENV !== "production") {
-    const expectedFeatures = organizations.filter(
-      (organization) =>
-        typeof organization.longitude === "number" &&
-        Number.isFinite(organization.longitude) &&
-        typeof organization.latitude === "number" &&
-        Number.isFinite(organization.latitude),
-    ).length
-    const uniqueFeatureIds = new Set(
-      sourceData.features.map((feature) => feature.properties.organizationId),
-    ).size
-    if (
-      sourceData.features.length !== expectedFeatures ||
-      uniqueFeatureIds !== sourceData.features.length
-    ) {
-      console.warn("[public-map] source integrity mismatch", {
-        expectedFeatures,
-        actualFeatures: sourceData.features.length,
-        uniqueFeatureIds,
+  try {
+    if (map.getSource(PUBLIC_MAP_ORGANIZATION_SOURCE_ID)) return true
+  } catch (error) {
+    if (process.env.NODE_ENV !== "production") {
+      console.warn("[public-map] getSource failed before source creation", {
+        error,
+        sourceId: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
       })
     }
+    return false
   }
 
-  const existingSource = getMapSourceSafely<mapboxgl.GeoJSONSource>(
-    map,
-    PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
-  )
-  if (isMapStyleAccessError(existingSource)) return
-  if (existingSource) {
-    existingSource.setData(sourceData)
-  } else {
-    const sourceAdded = addMapSourceSafely(map, PUBLIC_MAP_ORGANIZATION_SOURCE_ID, {
-      type: "geojson",
-      data: sourceData,
-      cluster: true,
-      clusterRadius: PUBLIC_MAP_CLUSTER_RADIUS,
-      clusterMaxZoom: PUBLIC_MAP_CLUSTER_MAX_ZOOM,
-    })
-    if (!sourceAdded) return
-  }
+  return addMapSourceSafely(map, PUBLIC_MAP_ORGANIZATION_SOURCE_ID, {
+    type: "geojson",
+    data: sourceData,
+  })
+}
 
-  const clusterLayer = getMapLayerSafely(
-    map,
-    PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
-  )
-  if (isMapStyleAccessError(clusterLayer)) return
-  if (!clusterLayer) {
-    const layerAdded = addMapLayerSafely(map, {
+function canAttachToMap(map: mapboxgl.Map) {
+  try {
+    return Boolean(map.getStyle())
+  } catch {
+    return false
+  }
+}
+
+function ensureClusterLayers(map: mapboxgl.Map) {
+  if (!getMapLayerSafely(map, PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID)) {
+    addMapLayerSafely(map, {
       id: PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
-      type: "circle",
-      source: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
-      filter: ["has", "point_count"],
-      paint: {
-        "circle-color": "rgba(10, 18, 34, 0.88)",
-        "circle-radius": [
-          "step",
-          ["get", "point_count"],
-          18,
-          5,
-          24,
-          20,
-          30,
-          100,
-          36,
-        ],
-        "circle-stroke-color": "rgba(255, 255, 255, 0.72)",
-        "circle-stroke-width": 2,
-        "circle-opacity": 0.01,
-      },
-    })
-    if (!layerAdded) return
-  }
-  setMapFilterSafely(map, PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID, ["has", "point_count"])
-  setMapPaintPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID, "circle-color", "rgba(10, 18, 34, 0.88)")
-  setMapPaintPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID, "circle-radius", [
-    "step",
-    ["get", "point_count"],
-    18,
-    5,
-    24,
-    20,
-    30,
-    100,
-    36,
-  ])
-  setMapPaintPropertySafely(
-    map,
-    PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
-    "circle-stroke-color",
-    "rgba(255, 255, 255, 0.72)",
-  )
-  setMapPaintPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID, "circle-stroke-width", 2)
-  setMapPaintPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID, "circle-opacity", 0.01)
-
-  const countLayer = getMapLayerSafely(
-    map,
-    PUBLIC_MAP_CLUSTER_SOURCE_COUNT_LAYER_ID,
-  )
-  if (isMapStyleAccessError(countLayer)) return
-  if (!countLayer) {
-    const layerAdded = addMapLayerSafely(map, {
-      id: PUBLIC_MAP_CLUSTER_SOURCE_COUNT_LAYER_ID,
       type: "symbol",
       source: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
       filter: ["has", "point_count"],
       layout: {
-        "text-field": ["get", "point_count_abbreviated"],
-        "text-size": [
-          "step",
-          ["get", "point_count"],
-          12,
-          5,
-          13,
-          20,
-          14,
-          100,
-          15,
-        ],
-        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
-        "text-allow-overlap": true,
-      },
-      paint: {
-        "text-color": "rgba(248, 250, 252, 0.01)",
+        "icon-image": ["get", "clusterImageId"],
+        "icon-size": PUBLIC_MAP_CLUSTER_ICON_SIZE,
+        "icon-anchor": "center",
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
       },
     })
-    if (!layerAdded) return
   }
-  setMapFilterSafely(map, PUBLIC_MAP_CLUSTER_SOURCE_COUNT_LAYER_ID, ["has", "point_count"])
-  setMapLayoutPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_COUNT_LAYER_ID, "text-field", [
-    "get",
-    "point_count_abbreviated",
-  ])
-  setMapLayoutPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_COUNT_LAYER_ID, "text-size", [
-    "step",
-    ["get", "point_count"],
-    12,
-    5,
-    13,
-    20,
-    14,
-    100,
-    15,
-  ])
-  setMapLayoutPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_COUNT_LAYER_ID, "text-font", [
-    "Open Sans Semibold",
-    "Arial Unicode MS Bold",
-  ])
-  setMapLayoutPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_COUNT_LAYER_ID, "text-allow-overlap", true)
-  setMapPaintPropertySafely(
-    map,
-    PUBLIC_MAP_CLUSTER_SOURCE_COUNT_LAYER_ID,
-    "text-color",
-    "rgba(248, 250, 252, 0.01)",
-  )
+}
 
-  const pointLayer = getMapLayerSafely(map, PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID)
-  if (isMapStyleAccessError(pointLayer)) return
-  if (!pointLayer) {
-    const layerAdded = addMapLayerSafely(map, {
-      id: PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
-      type: "circle",
+function ensurePointLayers(map: mapboxgl.Map) {
+  if (!getMapLayerSafely(map, PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID)) {
+    addMapLayerSafely(map, {
+      id: PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID,
+      type: "symbol",
       source: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
-      filter: ["!", ["has", "point_count"]],
+      filter: resolveVisiblePointFilter(),
+      layout: {
+        "icon-image": PUBLIC_MAP_POINT_SHADOW_KEY,
+        "icon-size": resolvePublicMapPointIconSize(),
+        "icon-anchor": "center",
+        "icon-offset": [0, 1],
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+      },
       paint: {
-        "circle-radius": 7,
-        "circle-color": "rgba(10, 18, 34, 0.88)",
-        "circle-stroke-color": "rgba(255, 255, 255, 0.9)",
-        "circle-stroke-width": 2,
-        "circle-opacity": 0.01,
+        "icon-opacity": resolvePublicMapPointShadowOpacity(),
       },
     })
-    if (!layerAdded) return
   }
-  setMapPaintPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID, "circle-radius", 7)
-  setMapPaintPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID, "circle-color", "rgba(10, 18, 34, 0.88)")
-  setMapPaintPropertySafely(
-    map,
-    PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
-    "circle-stroke-color",
-    "rgba(255, 255, 255, 0.9)",
-  )
-  setMapPaintPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID, "circle-stroke-width", 2)
-  setMapPaintPropertySafely(map, PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID, "circle-opacity", 0.01)
 
-  const selectedHaloLayer = getMapLayerSafely(
-    map,
-    PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID,
-  )
-  if (isMapStyleAccessError(selectedHaloLayer)) return
-  if (!selectedHaloLayer) {
-    const layerAdded = addMapLayerSafely(map, {
+  if (!getMapLayerSafely(map, PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID)) {
+    addMapLayerSafely(map, {
+      id: PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
+      type: "symbol",
+      source: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+      filter: resolveVisiblePointFilter(),
+      layout: {
+        "icon-image": buildPublicMapIconImageExpression(),
+        "icon-size": resolvePublicMapPointIconSize(),
+        "icon-anchor": "center",
+        "icon-allow-overlap": false,
+        "icon-ignore-placement": false,
+        "icon-padding": 4,
+      },
+    })
+  }
+
+  if (!getMapLayerSafely(map, PUBLIC_MAP_SAME_LOCATION_COUNT_LAYER_ID)) {
+    addMapLayerSafely(map, {
+      id: PUBLIC_MAP_SAME_LOCATION_COUNT_LAYER_ID,
+      type: "symbol",
+      source: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+      filter: resolveSameLocationBadgeFilter(),
+      layout: {
+        "text-field": ["to-string", ["get", "sameLocationCount"]],
+        "text-size": 9,
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-offset": [0.78, 0.78],
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: {
+        "text-color": "#FFFFFF",
+        "text-halo-color": "rgba(15, 23, 42, 0.88)",
+        "text-halo-width": 4,
+      },
+    })
+  }
+}
+
+function ensureSelectedLayers(map: mapboxgl.Map) {
+  const selectedFilter = resolveSelectedPointFilter({
+    selectedOrganizationId: null,
+    activeSameLocationGroupKey: null,
+  })
+
+  if (!getMapLayerSafely(map, PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID)) {
+    addMapLayerSafely(map, {
       id: PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID,
       type: "circle",
       source: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
-      filter: resolveSelectedPointFilter(null),
+      filter: selectedFilter,
       paint: {
-        "circle-radius": 17,
-        "circle-color": "rgba(255, 255, 255, 0.18)",
-        "circle-stroke-color": "rgba(255, 255, 255, 0.72)",
-        "circle-stroke-width": 2,
-        "circle-opacity": 0.01,
+        "circle-color": "rgba(0, 0, 0, 0)",
+        "circle-radius": 1,
+        "circle-opacity": 0,
+        "circle-stroke-color": "rgba(0, 0, 0, 0)",
+        "circle-stroke-opacity": 0,
+        "circle-stroke-width": 0,
       },
     })
-    if (!layerAdded) return
   }
-  setMapPaintPropertySafely(map, PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID, "circle-radius", 17)
-  setMapPaintPropertySafely(
-    map,
-    PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID,
-    "circle-color",
-    "rgba(255, 255, 255, 0.18)",
-  )
-  setMapPaintPropertySafely(
-    map,
-    PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID,
-    "circle-stroke-color",
-    "rgba(255, 255, 255, 0.72)",
-  )
-  setMapPaintPropertySafely(map, PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID, "circle-stroke-width", 2)
-  setMapPaintPropertySafely(map, PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID, "circle-opacity", 0.01)
 
-  const selectedCoreLayer = getMapLayerSafely(
-    map,
-    PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
-  )
-  if (isMapStyleAccessError(selectedCoreLayer)) return
-  if (!selectedCoreLayer) {
-    const layerAdded = addMapLayerSafely(map, {
-      id: PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
-      type: "circle",
+  if (!getMapLayerSafely(map, PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID)) {
+    addMapLayerSafely(map, {
+      id: PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID,
+      type: "symbol",
       source: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
-      filter: resolveSelectedPointFilter(null),
+      filter: selectedFilter,
+      layout: {
+        "icon-image": PUBLIC_MAP_POINT_SHADOW_KEY,
+        "icon-size": resolvePublicMapSelectedPointIconSize(),
+        "icon-anchor": "center",
+        "icon-offset": [0, 1.5],
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+      },
       paint: {
-        "circle-radius": 10,
-        "circle-color": "rgba(12, 22, 44, 0.96)",
-        "circle-stroke-color": "rgba(255, 255, 255, 0.96)",
-        "circle-stroke-width": 3,
-        "circle-opacity": 0.01,
+        "icon-opacity": 0.78,
       },
     })
-    if (!layerAdded) return
   }
-  setMapPaintPropertySafely(map, PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID, "circle-radius", 10)
-  setMapPaintPropertySafely(
-    map,
-    PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
-    "circle-color",
-    "rgba(12, 22, 44, 0.96)",
-  )
-  setMapPaintPropertySafely(
-    map,
-    PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
-    "circle-stroke-color",
-    "rgba(255, 255, 255, 0.96)",
-  )
-  setMapPaintPropertySafely(map, PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID, "circle-stroke-width", 3)
-  setMapPaintPropertySafely(map, PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID, "circle-opacity", 0.01)
 
-  syncSelectedOrganizationLayers({
+  if (!getMapLayerSafely(map, PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID)) {
+    addMapLayerSafely(map, {
+      id: PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
+      type: "symbol",
+      source: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+      filter: selectedFilter,
+      layout: {
+        "icon-image": buildPublicMapSelectedIconImageExpression(),
+        "icon-size": resolvePublicMapSelectedPointIconSize(),
+        "icon-anchor": "center",
+        "icon-allow-overlap": true,
+        "icon-ignore-placement": true,
+      },
+    })
+  }
+
+  if (!getMapLayerSafely(map, PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID)) {
+    addMapLayerSafely(map, {
+      id: PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID,
+      type: "symbol",
+      source: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+      filter: resolveSelectedSameLocationBadgeFilter(selectedFilter),
+      layout: {
+        "text-field": ["to-string", ["get", "sameLocationCount"]],
+        "text-size": 9,
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"],
+        "text-offset": [0.86, 0.86],
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      },
+      paint: {
+        "text-color": "#FFFFFF",
+        "text-halo-color": "rgba(28, 28, 30, 0.88)",
+        "text-halo-width": 4,
+      },
+    })
+  }
+}
+
+function refreshLayerContracts(map: mapboxgl.Map) {
+  setMapFilterSafely(map, PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID, ["has", "point_count"])
+  setMapFilterSafely(map, PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID, resolveVisiblePointFilter())
+  setMapFilterSafely(map, PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID, resolveVisiblePointFilter())
+  setMapFilterSafely(map, PUBLIC_MAP_SAME_LOCATION_COUNT_LAYER_ID, resolveSameLocationBadgeFilter())
+  setMapLayoutPropertySafely(
     map,
-    selectedOrganizationId: null,
+    PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
+    "icon-image",
+    ["get", "clusterImageId"],
+  )
+  setMapLayoutPropertySafely(
+    map,
+    PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
+    "icon-size",
+    PUBLIC_MAP_CLUSTER_ICON_SIZE,
+  )
+  setMapLayoutPropertySafely(
+    map,
+    PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID,
+    "icon-image",
+    PUBLIC_MAP_POINT_SHADOW_KEY,
+  )
+  setMapLayoutPropertySafely(
+    map,
+    PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID,
+    "icon-size",
+    resolvePublicMapPointIconSize(),
+  )
+  setMapLayoutPropertySafely(
+    map,
+    PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID,
+    "icon-size",
+    resolvePublicMapSelectedPointIconSize(),
+  )
+  setMapPaintPropertySafely(
+    map,
+    PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID,
+    "icon-opacity",
+    resolvePublicMapPointShadowOpacity(),
+  )
+  setMapPaintPropertySafely(
+    map,
+    PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID,
+    "icon-opacity",
+    0.78,
+  )
+  setMapLayoutPropertySafely(
+    map,
+    PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
+    "icon-image",
+    buildPublicMapIconImageExpression(),
+  )
+  setMapLayoutPropertySafely(
+    map,
+    PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
+    "icon-allow-overlap",
+    false,
+  )
+  setMapLayoutPropertySafely(
+    map,
+    PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
+    "icon-ignore-placement",
+    false,
+  )
+}
+
+function assertPublicMapLayerContract(map: mapboxgl.Map) {
+  const missingLayerIds = REQUIRED_PUBLIC_MAP_LAYER_IDS.filter((layerId) => {
+    const layer = getMapLayerSafely(map, layerId)
+    return isMapStyleAccessError(layer) || !layer
   })
+
+  if (missingLayerIds.length === 0) return true
+
+  if (process.env.NODE_ENV !== "production") {
+    console.error("[public-map] required marker layers missing after ensure", {
+      missingLayerIds,
+    })
+  }
+
+  ensureClusterLayers(map)
+  ensurePointLayers(map)
+
+  return REQUIRED_PUBLIC_MAP_LAYER_IDS.every((layerId) => {
+    const layer = getMapLayerSafely(map, layerId)
+    return !isMapStyleAccessError(layer) && Boolean(layer)
+  })
+}
+
+export function ensurePublicMapClusterLayers(
+  map: mapboxgl.Map,
+  latestData?: PublicMapFeatureCollection | null,
+) {
+  if (!canAttachToMap(map)) return false
+
+  const sourceData = latestData ?? buildEmptyPublicMapFeatureCollection()
+  if (!ensurePublicMapSource({ map, sourceData })) return false
+  ensureClusterLayers(map)
+  ensurePointLayers(map)
+  ensureSelectedLayers(map)
+  refreshLayerContracts(map)
+  return assertPublicMapLayerContract(map)
+}
+
+export function syncClusterSourceAndLayers({
+  map,
+  sourceData,
+}: {
+  map: mapboxgl.Map
+  sourceData?: PublicMapFeatureCollection
+}) {
+  return ensurePublicMapClusterLayers(map, sourceData)
+}
+
+export function setPublicMapClusterSourceData({
+  map,
+  sourceData,
+}: {
+  map: mapboxgl.Map
+  sourceData: PublicMapFeatureCollection
+}) {
+  if (!canAttachToMap(map)) return false
+  const source = getMapSourceSafely<mapboxgl.GeoJSONSource>(
+    map,
+    PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+  )
+  if (isMapStyleAccessError(source)) {
+    console.error("[public-map] cluster source access failed at setData", {
+      sourceId: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+    })
+    return false
+  }
+  if (!source) {
+    console.error("[public-map] cluster source missing at setData", {
+      sourceId: PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+    })
+    return false
+  }
+  source.setData(sourceData)
+  return true
 }

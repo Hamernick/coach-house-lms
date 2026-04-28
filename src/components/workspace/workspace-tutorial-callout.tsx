@@ -16,7 +16,6 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { WORKSPACE_TUTORIAL_OUTLINE_BUTTON_SURFACE_CLASSNAME } from "@/components/workspace/workspace-tutorial-theme"
 import { cn } from "@/lib/utils"
 
-const WORKSPACE_TUTORIAL_INDICATOR_TRIGGER_SIZE = 40
 const WORKSPACE_TUTORIAL_CALLOUT_SETTLE_DELAY_MS = 420
 const WORKSPACE_TUTORIAL_CALLOUT_REDUCED_MOTION_DELAY_MS = 120
 const WORKSPACE_TUTORIAL_CALLOUT_SOURCE =
@@ -230,36 +229,29 @@ export function WorkspaceTutorialCallout({
               data-slot="workspace-tutorial-indicator"
               data-workspace-tutorial-indicator={tapHereLabel ? "labeled" : "icon"}
               className={cn(
-                "flex items-center gap-2 whitespace-nowrap",
+                "flex items-center whitespace-nowrap",
                 tapHereLabel
-                  ? undefined
+                  ? "gap-1.5"
                   : "justify-center",
               )}
             >
+              {tapHereLabel ? (
+                <span
+                  data-slot="workspace-tutorial-indicator-label"
+                  className="inline-flex min-w-0 items-center"
+                >
+                  {tapHereLabel}
+                </span>
+              ) : null}
               <span
                 data-slot="workspace-tutorial-indicator-icon-wrap"
                 className="inline-flex shrink-0 items-center justify-center"
-                style={{
-                  width: tapHereLabel
-                    ? indicatorSide === "right"
-                      ? undefined
-                      : `${WORKSPACE_TUTORIAL_INDICATOR_TRIGGER_SIZE}px`
-                    : undefined,
-                }}
               >
                 <IndicatorIcon
                   data-slot="workspace-tutorial-indicator-icon"
                   className="size-4"
                 />
               </span>
-              {tapHereLabel ? (
-                <span
-                  data-slot="workspace-tutorial-indicator-label"
-                  className="inline-flex items-center"
-                >
-                  {tapHereLabel}
-                </span>
-              ) : null}
             </div>
           </TooltipContent>
         </Tooltip>

@@ -108,7 +108,12 @@ describe("app pricing feedback feature contract", () => {
   it("scopes the banner to /workspace routes", () => {
     expect(isAppPricingFeedbackWorkspaceRoute("/workspace")).toBe(true)
     expect(isAppPricingFeedbackWorkspaceRoute("/workspace/roadmap")).toBe(true)
+    expect(isAppPricingFeedbackWorkspaceRoute("/workspace/documents")).toBe(true)
+    expect(isAppPricingFeedbackWorkspaceRoute("/find")).toBe(false)
+    expect(isAppPricingFeedbackWorkspaceRoute("/find/a-more-just-chicago")).toBe(false)
     expect(isAppPricingFeedbackWorkspaceRoute("/organization")).toBe(false)
+    expect(isAppPricingFeedbackWorkspaceRoute("/organization/workspace")).toBe(false)
+    expect(isAppPricingFeedbackWorkspaceRoute("/my-organization")).toBe(false)
     expect(isAppPricingFeedbackWorkspaceRoute("/accelerator")).toBe(false)
   })
 

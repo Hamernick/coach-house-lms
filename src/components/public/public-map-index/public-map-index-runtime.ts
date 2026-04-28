@@ -21,39 +21,97 @@ import type { UserLocationStatus } from "./user-location"
 
 export type PublicMapMapboxApi = typeof import("mapbox-gl")["default"]
 
+const MAPBOX_LOAD_ERROR_MESSAGE =
+  "Mapbox couldn't load the map. Check your token and domain restrictions."
+
+type PublicMapRuntimeErrorLike = {
+  message?: unknown
+  status?: unknown
+  statusCode?: unknown
+  url?: unknown
+  request?: {
+    url?: unknown
+  }
+}
+
+function readMapboxRuntimeError(error: unknown): PublicMapRuntimeErrorLike {
+  return error && typeof error === "object" ? error as PublicMapRuntimeErrorLike : {}
+}
+
+function readMapboxRuntimeErrorStatus(error: unknown) {
+  const candidate = readMapboxRuntimeError(error)
+  const status = candidate.status ?? candidate.statusCode
+  return typeof status === "number" && Number.isFinite(status) ? status : null
+}
+
+function readMapboxRuntimeErrorMessage(error: unknown) {
+  const message = readMapboxRuntimeError(error).message
+  return typeof message === "string" ? message : ""
+}
+
+function readMapboxRuntimeErrorUrl(error: unknown) {
+  const candidate = readMapboxRuntimeError(error)
+  const url = candidate.url ?? candidate.request?.url
+  return typeof url === "string" ? url : ""
+}
+
+export function isRecoverablePublicMapTileError(error: unknown) {
+  const status = readMapboxRuntimeErrorStatus(error)
+  if (status !== 401 && status !== 403) return false
+
+  const details = `${readMapboxRuntimeErrorUrl(error)} ${readMapboxRuntimeErrorMessage(error)}`
+  return (
+    details.includes("/v4/") ||
+    details.includes(".pbf") ||
+    details.includes("vector.pbf") ||
+    details.includes("mapbox.mapbox-")
+  )
+}
+
 export function useSyncSelectedOrganization({
-  filteredOrganizations,
   organizationById,
   selectedOrgId,
-  selectedOrganization,
   setSelectedOrgId,
 }: {
-  filteredOrganizations: PublicMapOrganization[]
   organizationById: Map<string, PublicMapOrganization>
   selectedOrgId: string | null
-  selectedOrganization: PublicMapOrganization | null
   setSelectedOrgId: (value: string | null) => void
 }) {
   useEffect(() => {
-    if (!selectedOrganization && filteredOrganizations.length > 0) {
-      setSelectedOrgId(filteredOrganizations[0]!.id)
-      return
-    }
+    const syncedSelectedOrgId = resolveSyncedPublicMapSelectedOrgId({
+      organizationById,
+      selectedOrgId,
+    })
 
-    if (
-      selectedOrgId &&
-      !organizationById.has(selectedOrgId) &&
-      filteredOrganizations.length > 0
-    ) {
-      setSelectedOrgId(filteredOrganizations[0]!.id)
+    if (syncedSelectedOrgId !== selectedOrgId) {
+      setSelectedOrgId(null)
     }
   }, [
-    filteredOrganizations,
     organizationById,
     selectedOrgId,
-    selectedOrganization,
     setSelectedOrgId,
   ])
+}
+
+export function resolvePublicMapSelectedOrganization({
+  organizationById,
+  selectedOrgId,
+}: {
+  organizationById: Map<string, PublicMapOrganization>
+  selectedOrgId: string | null
+}) {
+  return selectedOrgId ? organizationById.get(selectedOrgId) ?? null : null
+}
+
+export function resolveSyncedPublicMapSelectedOrgId({
+  organizationById,
+  selectedOrgId,
+}: {
+  organizationById: Map<string, PublicMapOrganization>
+  selectedOrgId: string | null
+}) {
+  if (!selectedOrgId) return null
+  return organizationById.has(selectedOrgId) ? selectedOrgId : null
 }
 
 export function useSyncSidebarCameraPadding({
@@ -231,6 +289,7 @@ export function useInitializePublicMap({
 
     let cancelled = false
     let stopObservingMapContainer = () => {}
+    let hasMarkedMapReady = false
     setInitialViewportResolved(false)
 
     async function initializeMap() {
@@ -253,6 +312,7 @@ export function useInitializePublicMap({
           projection: "globe",
           cooperativeGestures: false,
         })
+        mapRef.current = map
 
         if (typeof map.setRenderWorldCopies === "function") {
           map.setRenderWorldCopies(false)
@@ -264,12 +324,29 @@ export function useInitializePublicMap({
           map.touchZoomRotate.disableRotation()
         }
 
+        const markMapReady = () => {
+          if (cancelled || mapRef.current !== map) return
+
+          if (!hasMarkedMapReady) {
+            hasMarkedMapReady = true
+            mapLoadedRef.current = true
+            setMapLoadVersion((current) => current + 1)
+          }
+
+          requestAnimationFrame(() => {
+            if (mapRef.current !== map) return
+            map.resize()
+            setAppliedBounds(resolveMapBounds(map))
+          })
+          setAppliedBounds(resolveMapBounds(map))
+        }
+
         map.on("error", (event) => {
           if (!event?.error) return
+          if (isRecoverablePublicMapTileError(event.error)) return
+
           console.error("Public map error:", event.error)
-          setMapError(
-            "Mapbox couldn't load the map. Check your token and domain restrictions.",
-          )
+          setMapError(MAPBOX_LOAD_ERROR_MESSAGE)
         })
 
         map.on("style.load", () => {
@@ -277,24 +354,16 @@ export function useInitializePublicMap({
           if (typeof map.setRenderWorldCopies === "function") {
             map.setRenderWorldCopies(false)
           }
+          markMapReady()
         })
 
         map.on("load", () => {
-          mapLoadedRef.current = true
-          setMapLoadVersion((current) => current + 1)
-          requestAnimationFrame(() => {
-            if (mapRef.current !== map) return
-            map.resize()
-            setAppliedBounds(resolveMapBounds(map))
-          })
-          setAppliedBounds(resolveMapBounds(map))
+          markMapReady()
         })
 
         map.on("moveend", () => {
           setAppliedBounds(resolveMapBounds(map))
         })
-
-        mapRef.current = map
 
         stopObservingMapContainer = observePublicMapContainer({
           containerRef,

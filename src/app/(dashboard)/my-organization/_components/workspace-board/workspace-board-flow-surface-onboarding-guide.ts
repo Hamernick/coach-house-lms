@@ -10,6 +10,7 @@ import {
   WORKSPACE_ONBOARDING_STAGE_ORDER,
 } from "./workspace-board-onboarding-flow"
 import { WORKSPACE_CARD_META } from "./workspace-board-copy"
+import { getWorkspaceAcceleratorPaywallPath } from "@/lib/workspace/routes"
 import { resolveCardDimensions } from "./workspace-board-layout"
 import type { WorkspaceBoardOnboardingNodeData } from "./workspace-board-onboarding-guide-node"
 import type {
@@ -150,8 +151,7 @@ export function useWorkspaceBoardOnboardingGuide({
     if (!onboardingStageDefinition || !onboardingGuidePosition) return null
     if (isCanvasFullscreen || presentationMode) return null
 
-    const acceleratorPaywallHref =
-      "/workspace?paywall=organization&plan=organization&upgrade=accelerator-access&source=accelerator"
+    const acceleratorPaywallHref = getWorkspaceAcceleratorPaywallPath()
     const fallbackAcceleratorHref = seed.hasAcceleratorAccess
       ? acceleratorCurrentStepHref ?? "/accelerator"
       : acceleratorPaywallHref

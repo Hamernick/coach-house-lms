@@ -2,10 +2,73 @@ import React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
-import { ExecutionAcceleratorPane } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-tool-card-execution-content"
+import {
+  ExecutionAcceleratorPane,
+  resolveRoadmapSectionRowTone,
+} from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-tool-card-execution-content"
 import type { WorkspaceAcceleratorChecklistModule } from "@/features/workspace-accelerator-card/lib/checklist"
+import type { RoadmapSection } from "@/lib/roadmap"
+
+function makeRoadmapSection(
+  overrides: Partial<RoadmapSection> = {},
+): RoadmapSection {
+  return {
+    id: "need",
+    title: "Need",
+    subtitle: "Describe the need",
+    slug: "need",
+    titleExample: undefined,
+    subtitleExample: undefined,
+    prompt: "",
+    placeholder: "",
+    content: "",
+    imageUrl: undefined,
+    lastUpdated: null,
+    isPublic: false,
+    layout: "square",
+    status: "not_started",
+    ctaLabel: undefined,
+    ctaUrl: undefined,
+    homework: null,
+    templateTitle: "Need",
+    templateSubtitle: "Describe the need",
+    titleIsTemplate: false,
+    subtitleIsTemplate: false,
+    ...overrides,
+  }
+}
 
 describe("workspace board execution content", () => {
+  it("derives roadmap row tone from content when stored status is stale", () => {
+    expect(
+      resolveRoadmapSectionRowTone(
+        makeRoadmapSection({
+          status: "not_started",
+          content: "Families in our neighborhood need after-school support.",
+        }),
+      ),
+    ).toBe("active")
+  })
+
+  it("derives roadmap row tone from linked homework completion", () => {
+    expect(
+      resolveRoadmapSectionRowTone(
+        makeRoadmapSection({
+          status: "not_started",
+          homework: {
+            href: "/accelerator/class/formation/module/1",
+            label: "Need statement",
+            status: "complete",
+            moduleId: "module-1",
+            moduleTitle: "Need",
+            classSlug: "formation",
+            moduleIdx: 1,
+          },
+        }),
+      ),
+    ).toBe("done")
+  })
+
   it("renders accelerator rows as a single fullscreen-trigger button per step", () => {
     const checklistModules: WorkspaceAcceleratorChecklistModule[] = [
       {

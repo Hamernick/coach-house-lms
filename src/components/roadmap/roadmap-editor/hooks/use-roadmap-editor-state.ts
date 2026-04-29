@@ -7,6 +7,11 @@ import { saveRoadmapSectionAction } from "@/actions/roadmap"
 import { uploadOrgMedia, validateOrgMediaFile } from "@/lib/organization/org-media"
 import { toast } from "@/lib/toast"
 import { type RoadmapSection, type RoadmapSectionStatus } from "@/lib/roadmap"
+import {
+  WORKSPACE_PATH,
+  WORKSPACE_ROADMAP_PATH,
+  getWorkspaceRoadmapSectionPath,
+} from "@/lib/workspace/routes"
 
 import { resolveRoadmapBasePath } from "../paths"
 import { deriveRoadmapEditorSectionUi } from "../ui-state"
@@ -51,10 +56,16 @@ export function useRoadmapEditorState({
   const activeIdRef = useRef(activeId)
   const pathname = usePathname()
   const basePath = useMemo(() => resolveRoadmapBasePath(pathname), [pathname])
-  const isWorkspaceRoadmapView = basePath === "/workspace/roadmap"
-  const roadmapReturnHref = isWorkspaceRoadmapView ? "/workspace" : null
+  const isWorkspaceRoadmapView = basePath === WORKSPACE_ROADMAP_PATH
+  const roadmapReturnHref = isWorkspaceRoadmapView ? WORKSPACE_PATH : null
   const roadmapReturnLabel = isWorkspaceRoadmapView ? "Return To Workspace" : null
-  const getSectionHref = useCallback((slug: string) => `${basePath}/${slug}`, [basePath])
+  const getSectionHref = useCallback(
+    (slug: string) =>
+      basePath === WORKSPACE_ROADMAP_PATH
+        ? getWorkspaceRoadmapSectionPath(slug)
+        : `${basePath}/${slug}`,
+    [basePath],
+  )
 
   useEffect(() => {
     sectionsRef.current = sections

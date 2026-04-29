@@ -12,6 +12,10 @@ import {
   type WorkspaceAcceleratorCardStep,
 } from "@/features/workspace-accelerator-card"
 import { Badge } from "@/components/ui/badge"
+import {
+  getWorkspaceAcceleratorPaywallPath,
+  getWorkspaceEditorPath,
+} from "@/lib/workspace/routes"
 import { cn } from "@/lib/utils"
 
 import { WorkspaceCardErrorBoundary } from "./workspace-board-card-error-boundary"
@@ -150,9 +154,8 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
     cardId === "communications" ||
     cardId === "deck"
   const frameFullscreenToggle = onToggleCanvasFullscreen ? () => onToggleCanvasFullscreen(cardId) : undefined
-  const organizationEditorHref = "/workspace?view=editor&tab=company"
-  const acceleratorPaywallHref =
-    "/workspace?paywall=organization&plan=organization&upgrade=accelerator-access&source=accelerator"
+  const organizationEditorHref = getWorkspaceEditorPath({ tab: "company" })
+  const acceleratorPaywallHref = getWorkspaceAcceleratorPaywallPath()
   const acceleratorCardHref = seed.hasAcceleratorAccess ? cardMeta.fullHref : acceleratorPaywallHref
   const effectiveCardSize: WorkspaceCardSize = cardId === "communications" && size === "sm" ? "md" : size
   const acceleratorHostCardId: WorkspaceCardId =
@@ -298,6 +301,7 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
       handleAcceleratorSizeChange,
       size,
       acceleratorReadinessSummary,
+      acceleratorPaywallHref,
       seed.acceleratorTimeline,
       seed.hasAcceleratorAccess,
       seed.orgId,

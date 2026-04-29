@@ -1,7 +1,6 @@
 "use client"
 
 import { resolveAcceleratorReadiness } from "@/lib/accelerator/readiness"
-import { resolveRoadmapSections } from "@/lib/roadmap"
 
 import type { WorkspaceBoardNodeData } from "./workspace-board-node-types"
 
@@ -12,7 +11,7 @@ export function resolveWorkspaceAcceleratorReadinessSummary({
 }: Pick<WorkspaceBoardNodeData, "acceleratorState" | "seed"> & {
   programs: Array<{ goal_cents: number | null }>
 }) {
-  const roadmapSections = resolveRoadmapSections(seed.initialProfile)
+  const roadmapSections = seed.roadmapSections
   const moduleStatusById = new Map<
     string,
     { slug: string; completed: boolean; touched: boolean }

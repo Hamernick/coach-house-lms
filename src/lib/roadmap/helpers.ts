@@ -1,4 +1,10 @@
 import { SECTION_DEFINITIONS } from "./definitions"
+import {
+  MY_ORGANIZATION_PATH,
+  WORKSPACE_PATH,
+  WORKSPACE_ROADMAP_PATH,
+  getWorkspaceRoadmapSectionPath,
+} from "@/lib/workspace/routes"
 import type {
   RoadmapSection,
   RoadmapSectionDefinition,
@@ -28,6 +34,16 @@ export const isRecord = (
 
 export const normalizeText = (value: unknown): string =>
   typeof value === "string" ? value.trim() : ""
+
+function normalizeRoadmapSectionStatus(
+  value: unknown,
+): RoadmapSectionStatus | null {
+  if (value === "completed") return "complete"
+  return typeof value === "string" &&
+    ROADMAP_SECTION_STATUSES.has(value as RoadmapSectionStatus)
+    ? (value as RoadmapSectionStatus)
+    : null
+}
 
 export function isTestSectionValue(value: unknown): boolean {
   const normalized = normalizeText(value).toLowerCase()
@@ -106,12 +122,8 @@ export function buildRoadmapSection(
       ? (stored.layout as RoadmapSection["layout"])
       : "square"
   const status =
-    typeof stored?.status === "string" &&
-    ROADMAP_SECTION_STATUSES.has(stored.status as RoadmapSectionStatus)
-      ? (stored.status as RoadmapSectionStatus)
-      : content.trim().length > 0
-        ? "in_progress"
-        : "not_started"
+    normalizeRoadmapSectionStatus(stored?.status) ??
+    (content.trim().length > 0 ? "in_progress" : "not_started")
   const ctaLabel =
     typeof stored?.ctaLabel === "string" && stored.ctaLabel.trim().length > 0
       ? stored.ctaLabel.trim()
@@ -160,6 +172,47 @@ export function buildRoadmapSection(
     titleIsTemplate,
     subtitleIsTemplate,
   }
+}
+
+export function resolveRoadmapSectionDerivedStatus(
+  section: RoadmapSection,
+): RoadmapSectionStatus {
+  if (section.status === "complete") return "complete"
+  if (section.status === "in_progress") return "in_progress"
+
+  if (section.homework?.status === "complete") return "complete"
+  if (
+    section.homework?.status === "in_progress" ||
+    section.content.trim().length > 0
+  ) {
+    return "in_progress"
+  }
+
+  return "not_started"
+}
+
+export function getRoadmapWorkspaceRevalidationPaths({
+  publicSlug,
+  sectionSlug,
+  includePublicRoadmap = true,
+}: {
+  publicSlug?: string | null
+  sectionSlug?: string | null
+  includePublicRoadmap?: boolean
+}): string[] {
+  const normalizedSectionSlug =
+    typeof sectionSlug === "string" ? sectionSlug.trim() : ""
+  const paths = [WORKSPACE_PATH, MY_ORGANIZATION_PATH, WORKSPACE_ROADMAP_PATH]
+
+  if (normalizedSectionSlug) {
+    paths.push(getWorkspaceRoadmapSectionPath(normalizedSectionSlug))
+  }
+
+  if (includePublicRoadmap && publicSlug) {
+    paths.push(`/${publicSlug}/roadmap`)
+  }
+
+  return paths
 }
 
 export function ensureUniqueSlugs(sections: RoadmapSection[]): RoadmapSection[] {

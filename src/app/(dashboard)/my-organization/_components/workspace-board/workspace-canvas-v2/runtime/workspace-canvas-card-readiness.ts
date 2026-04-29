@@ -1,4 +1,5 @@
-import { resolveBrandKitReadiness } from "@/features/workspace-brand-kit"
+import { resolveBrandKitReadiness } from "@/lib/organization/brand-kit-readiness"
+import { resolveRoadmapSectionDerivedStatus } from "@/lib/roadmap/helpers"
 
 import type {
   WorkspaceBoardState,
@@ -38,12 +39,31 @@ function resolveOrganizationReadiness(seed: WorkspaceSeedData) {
 }
 
 function resolveRoadmapReadiness(seed: WorkspaceSeedData) {
+  const roadmapSections = seed.roadmapSections
+  const roadmapSectionStatuses = roadmapSections.map((section) =>
+    resolveRoadmapSectionDerivedStatus(section),
+  )
+  const completedCount = roadmapSectionStatuses.filter(
+    (status) => status === "complete",
+  ).length
+  const startedCount = roadmapSectionStatuses.filter(
+    (status) => status !== "not_started",
+  ).length
+
+  if (roadmapSections.length > 0 && completedCount === roadmapSections.length) {
+    return buildReadiness("ready")
+  }
+
+  if (startedCount > 0) {
+    return buildReadiness("partial")
+  }
+
   const hasPlanningSignal =
     seed.programsCount > 0 ||
     Boolean(seed.calendar.nextEvent) ||
     seed.calendar.upcomingEvents.length > 0
 
-  return buildReadiness(hasPlanningSignal ? "ready" : "partial")
+  return buildReadiness(hasPlanningSignal ? "partial" : "empty")
 }
 
 function resolveProgramsReadiness(seed: WorkspaceSeedData) {

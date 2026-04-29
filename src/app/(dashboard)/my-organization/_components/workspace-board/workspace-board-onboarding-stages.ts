@@ -1,3 +1,5 @@
+import { getWorkspaceEditorPath } from "@/lib/workspace/routes"
+
 import type {
   WorkspaceCardId,
   WorkspaceOnboardingStage,
@@ -35,7 +37,7 @@ export const WORKSPACE_ONBOARDING_STAGE_DEFINITIONS: Record<
     ],
     targetCardId: "organization-overview",
     primaryLabel: "Open organization editor",
-    primaryHref: "/workspace?view=editor&tab=company",
+    primaryHref: getWorkspaceEditorPath({ tab: "company" }),
   },
   3: {
     stage: 3,

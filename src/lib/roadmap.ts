@@ -9,6 +9,10 @@ export {
   resolveRoadmapHeroUrl,
   resolveRoadmapSections,
 } from "./roadmap/sections"
+export {
+  getRoadmapWorkspaceRevalidationPaths,
+  resolveRoadmapSectionDerivedStatus,
+} from "./roadmap/helpers"
 export type {
   RoadmapHomeworkLink,
   RoadmapHomeworkStatus,

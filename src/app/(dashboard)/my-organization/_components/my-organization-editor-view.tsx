@@ -7,6 +7,7 @@ import type { OrgProgram, OrgProfile, ProfileTab } from "@/components/organizati
 import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
 import { cn } from "@/lib/utils"
+import { WORKSPACE_PATH } from "@/lib/workspace/routes"
 
 type MyOrganizationEditorViewProps = {
   initialProfile: OrgProfile
@@ -30,7 +31,7 @@ export function MyOrganizationEditorView({
   onClose,
 }: MyOrganizationEditorViewProps) {
   const router = useRouter()
-  const handleClose = onClose ?? (() => router.push("/workspace"))
+  const handleClose = onClose ?? (() => router.push(WORKSPACE_PATH))
 
   return (
     <div className={cn("flex flex-col", embedded ? "h-full min-h-0 gap-4" : "gap-5 md:gap-6")}>

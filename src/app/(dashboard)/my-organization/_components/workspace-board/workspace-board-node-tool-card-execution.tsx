@@ -19,16 +19,17 @@ import {
   WorkspaceAcceleratorTutorialCallout,
   WorkspaceAcceleratorTutorialInteractionPolicy,
 } from "@/features/workspace-accelerator-card"
-import { resolveRoadmapSections, type RoadmapSection } from "@/lib/roadmap"
+import type { RoadmapSection } from "@/lib/roadmap"
+import { getWorkspaceRoadmapSectionPath } from "@/lib/workspace/routes"
 
 import {
   ExecutionAcceleratorPane,
   ExecutionRoadmapPane,
-  resolveRoadmapRowTone,
+  resolveRoadmapSectionRowTone,
 } from "./workspace-board-node-tool-card-execution-content"
 
 type WorkspaceBoardExecutionCardProps = {
-  profile: Parameters<typeof resolveRoadmapSections>[0]
+  roadmapSections: RoadmapSection[]
   acceleratorInput: WorkspaceAcceleratorCardInput
   onRuntimeChange?: (snapshot: WorkspaceAcceleratorCardRuntimeSnapshot) => void
   onRuntimeActionsChange?: (
@@ -80,7 +81,7 @@ function buildExecutionRuntimeSnapshotSignature(
 }
 
 export function WorkspaceBoardExecutionCard({
-  profile,
+  roadmapSections,
   acceleratorInput,
   onRuntimeChange,
   onRuntimeActionsChange,
@@ -89,7 +90,6 @@ export function WorkspaceBoardExecutionCard({
   tutorialInteractionPolicy = null,
 }: WorkspaceBoardExecutionCardProps) {
   const router = useRouter()
-  const roadmapSections = useMemo(() => resolveRoadmapSections(profile), [profile])
   const normalizedAcceleratorInput = useMemo(
     () => normalizeWorkspaceAcceleratorCardInput(acceleratorInput),
     [acceleratorInput],
@@ -244,7 +244,7 @@ export function WorkspaceBoardExecutionCard({
 
   const roadmapDoneCount = useMemo(
     () =>
-      roadmapSections.filter((section) => resolveRoadmapRowTone(section.status) === "done")
+      roadmapSections.filter((section) => resolveRoadmapSectionRowTone(section) === "done")
         .length,
     [roadmapSections],
   )
@@ -264,7 +264,7 @@ export function WorkspaceBoardExecutionCard({
 
   const handleOpenRoadmapSection = useCallback(
     (section: RoadmapSection) => {
-      router.push(`/workspace/roadmap/${section.slug}`)
+      router.push(getWorkspaceRoadmapSectionPath(section.slug))
     },
     [router],
   )

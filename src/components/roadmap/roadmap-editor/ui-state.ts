@@ -1,7 +1,7 @@
 import { type RoadmapSection, type RoadmapSectionStatus } from "@/lib/roadmap"
 
 import { DEFAULT_PLACEHOLDER } from "./constants"
-import { createDraft, isFrameworkSection } from "./helpers"
+import { createDraft, isFrameworkSection, resolveRoadmapSectionStatus } from "./helpers"
 import { type RoadmapDraft } from "./types"
 
 type DeriveRoadmapEditorSectionUiArgs = {
@@ -21,7 +21,9 @@ export function deriveRoadmapEditorSectionUi({ sections, activeId, drafts }: Der
     : ""
   const showSectionHeader = Boolean(headerTitle || headerSubtitle)
   const editorPlaceholder = activeSection?.placeholder ?? activeSection?.subtitleExample ?? DEFAULT_PLACEHOLDER
-  const status: RoadmapSectionStatus = activeSection?.status ?? "not_started"
+  const status: RoadmapSectionStatus = activeSection
+    ? resolveRoadmapSectionStatus(activeSection, activeDraft)
+    : "not_started"
   const isCalendarSection = activeSection?.id === "board_calendar"
   const contentMaxWidth = isCalendarSection ? "max-w-none" : "max-w-3xl"
 

@@ -1,6 +1,7 @@
 import type { createSupabaseServerClient } from "@/lib/supabase"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import type { OrganizationMemberRole } from "@/lib/organization/active-org"
+import type { RoadmapSection } from "@/lib/roadmap"
 import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import type { OnboardingFlowDefaults } from "@/components/onboarding/onboarding-dialog/types"
 
@@ -65,6 +66,7 @@ type BuildWorkspaceViewSeedInput<
   organizationProfileComplete: boolean
   workspaceDocumentCount: number
   initialProfile: TInitialProfile
+  roadmapSections: RoadmapSection[]
   formationSummary: TFormationSummary
   acceleratorTimeline: WorkspaceAcceleratorCardStep[]
   calendar: TCalendarView
@@ -118,6 +120,7 @@ export async function buildWorkspaceViewSeed<
   organizationProfileComplete,
   workspaceDocumentCount,
   initialProfile,
+  roadmapSections,
   formationSummary,
   acceleratorTimeline,
   calendar,
@@ -435,15 +438,15 @@ export async function buildWorkspaceViewSeed<
       organizationProfileComplete,
       teammateCount,
       workspaceDocumentCount,
-      acceleratorStarted: Array.isArray(acceleratorTimeline)
-        ? acceleratorTimeline.some((step) => step.status !== "not_started")
-        : false,
-      acceleratorCompletedStepCount: Array.isArray(acceleratorTimeline)
-        ? acceleratorTimeline.filter((step) => step.status === "completed")
-            .length
-        : 0,
+      acceleratorStarted: acceleratorTimeline.some(
+        (step) => step.status !== "not_started",
+      ),
+      acceleratorCompletedStepCount: acceleratorTimeline.filter(
+        (step) => step.status === "completed",
+      ).length,
     },
     initialProfile,
+    roadmapSections,
     formationSummary,
     acceleratorTimeline,
     activityFeed,

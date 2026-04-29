@@ -31,6 +31,7 @@ function buildSeed(
       boilerplate: null,
       ...(overrides?.initialProfile ?? {}),
     },
+    roadmapSections: overrides?.roadmapSections ?? [],
     calendar: {
       nextEvent: null,
       upcomingEvents: [],

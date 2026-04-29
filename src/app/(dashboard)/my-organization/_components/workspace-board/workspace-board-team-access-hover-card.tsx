@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { HoverCardContent } from "@/components/ui/hover-card"
+import { getWorkspaceEditorPath } from "@/lib/workspace/routes"
 
 import { WorkspaceBoardInviteSheet } from "./workspace-board-invite-sheet"
 import type { WorkspaceBoardOrganizationAccessSnapshot } from "./workspace-board-organization-access-state"
@@ -226,7 +227,9 @@ export function WorkspaceBoardTeamAccessHoverCard({
             triggerClassName="h-8 rounded-md px-2.5"
           />
           <Button asChild variant="ghost" size="sm" className="h-8 rounded-md px-2.5">
-            <Link href="/workspace?view=editor&tab=people">Manage members</Link>
+            <Link href={getWorkspaceEditorPath({ tab: "people" })}>
+              Manage members
+            </Link>
           </Button>
         </div>
       </div>

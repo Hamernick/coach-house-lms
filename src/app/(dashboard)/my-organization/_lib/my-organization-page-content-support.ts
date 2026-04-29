@@ -7,6 +7,7 @@ import { canInviteWorkspaceCollaborators } from "./workspace-state"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import type { resolveActiveOrganization } from "@/lib/organization/active-org"
+import type { RoadmapSection } from "@/lib/roadmap"
 import { buildOnboardingFlowDefaults } from "@/lib/onboarding/defaults"
 import { buildInitialOrganizationProfile } from "./helpers"
 import { hydrateWorkspaceSeedAcceleratorState } from "./my-organization-page-content-helpers"
@@ -115,6 +116,7 @@ export function buildAcceleratorWorkspaceSeed({
   teammateCount,
   workspaceDocumentCount,
   initialProfile,
+  roadmapSections,
   formationSummary,
   acceleratorTimeline,
   calendarView,
@@ -147,6 +149,7 @@ export function buildAcceleratorWorkspaceSeed({
   teammateCount: number
   workspaceDocumentCount: number
   initialProfile: ReturnType<typeof buildInitialOrganizationProfile>
+  roadmapSections: RoadmapSection[]
   formationSummary: FormationSummary
   acceleratorTimeline: WorkspaceAcceleratorCardStep[]
   calendarView: ReturnType<typeof buildMyOrganizationCalendarView>
@@ -187,6 +190,7 @@ export function buildAcceleratorWorkspaceSeed({
         ).length,
       },
       initialProfile,
+      roadmapSections,
       formationSummary,
       acceleratorTimeline,
       activityFeed: [],

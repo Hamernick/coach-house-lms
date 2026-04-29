@@ -1,24 +1,21 @@
 "use client"
 
-import { useMemo } from "react"
-
 import { RoadmapNavigatorSection } from "@/components/roadmap/roadmap-navigator-section"
-import { resolveRoadmapSections } from "@/lib/roadmap"
+import type { RoadmapSection } from "@/lib/roadmap"
+import { WORKSPACE_ROADMAP_PATH } from "@/lib/workspace/routes"
 
 type WorkspaceBoardRoadmapCardProps = {
-  profile: Parameters<typeof resolveRoadmapSections>[0]
+  sections: RoadmapSection[]
 }
 
 export function WorkspaceBoardRoadmapCard({
-  profile,
+  sections,
 }: WorkspaceBoardRoadmapCardProps) {
-  const roadmapSections = useMemo(() => resolveRoadmapSections(profile), [profile])
-
   return (
     <div className="px-1 pb-1">
       <RoadmapNavigatorSection
-        sections={roadmapSections}
-        basePath="/workspace/roadmap"
+        sections={sections}
+        basePath={WORKSPACE_ROADMAP_PATH}
       />
     </div>
   )

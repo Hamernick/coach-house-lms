@@ -13,7 +13,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { ProgressCircle } from "@/features/platform-admin-dashboard"
 import { getTrackIcon } from "@/lib/accelerator/track-icons"
-import { type RoadmapSection, type RoadmapSectionStatus } from "@/lib/roadmap"
+import { resolveRoadmapSectionDerivedStatus } from "@/lib/roadmap/helpers"
+import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
 import { cn } from "@/lib/utils"
 
 export type ExecutionRowTone = "todo" | "active" | "done"
@@ -41,6 +42,12 @@ export function resolveRoadmapRowTone(
   if (status === "complete") return "done"
   if (status === "in_progress") return "active"
   return "todo"
+}
+
+export function resolveRoadmapSectionRowTone(
+  section: RoadmapSection,
+): ExecutionRowTone {
+  return resolveRoadmapRowTone(resolveRoadmapSectionDerivedStatus(section))
 }
 
 export function resolveAcceleratorRowTone({
@@ -245,7 +252,7 @@ export function ExecutionRoadmapPane({
     >
       <div className="space-y-1">
         {sections.map((section) => {
-          const tone = resolveRoadmapRowTone(section.status)
+          const tone = resolveRoadmapSectionRowTone(section)
 
           return (
             <ExecutionRow

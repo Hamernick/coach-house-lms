@@ -142,6 +142,7 @@ describe("workspace view seed", () => {
       organizationProfileComplete: false,
       workspaceDocumentCount: 0,
       initialProfile: {},
+      roadmapSections: [],
       formationSummary: {},
       acceleratorTimeline: [],
       calendar: {},
@@ -189,6 +190,7 @@ describe("workspace view seed", () => {
       organizationProfileComplete: false,
       workspaceDocumentCount: 0,
       initialProfile: {},
+      roadmapSections: [],
       formationSummary: {},
       acceleratorTimeline: [],
       calendar: {},
@@ -258,6 +260,7 @@ describe("workspace view seed", () => {
       organizationProfileComplete: true,
       workspaceDocumentCount: 3,
       initialProfile: {},
+      roadmapSections: [],
       formationSummary: {},
       acceleratorTimeline: [],
       calendar: {},
@@ -331,6 +334,7 @@ describe("workspace view seed", () => {
       organizationProfileComplete: true,
       workspaceDocumentCount: 3,
       initialProfile: {},
+      roadmapSections: [],
       formationSummary: {},
       acceleratorTimeline: [
         {

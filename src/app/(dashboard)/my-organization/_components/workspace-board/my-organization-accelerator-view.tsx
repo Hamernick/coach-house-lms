@@ -8,7 +8,10 @@ import {
   WorkspaceAcceleratorCardPanel,
   type WorkspaceAcceleratorCardInput,
 } from "@/features/workspace-accelerator-card"
-import { resolveRoadmapSections } from "@/lib/roadmap"
+import {
+  WORKSPACE_PATH,
+  WORKSPACE_ROADMAP_PATH,
+} from "@/lib/workspace/routes"
 
 import { resolveWorkspaceAcceleratorReadinessSummary } from "./workspace-board-accelerator-card-helpers"
 import type { WorkspaceSeedData } from "./workspace-board-types"
@@ -40,10 +43,6 @@ export function MyOrganizationAcceleratorView({
       }),
     [programFundingTargets, seed],
   )
-  const roadmapSections = useMemo(
-    () => resolveRoadmapSections(seed.initialProfile),
-    [seed.initialProfile],
-  )
   const acceleratorCardInput = useMemo<WorkspaceAcceleratorCardInput>(
     () => ({
       steps: seed.acceleratorTimeline ?? [],
@@ -67,7 +66,7 @@ export function MyOrganizationAcceleratorView({
     ],
   )
   const handleCloseFullscreen = useCallback(() => {
-    router.push("/workspace")
+    router.push(WORKSPACE_PATH)
   }, [router])
   const handleRequestOpenStep = useCallback(
     ({
@@ -93,8 +92,8 @@ export function MyOrganizationAcceleratorView({
         <div className="nodrag nopan flex h-full min-h-0 flex-1 flex-col overflow-hidden">
           <WorkspaceAcceleratorCardPanel
             input={acceleratorCardInput}
-            roadmapSections={roadmapSections}
-            roadmapBasePath="/workspace/roadmap"
+            roadmapSections={seed.roadmapSections}
+            roadmapBasePath={WORKSPACE_ROADMAP_PATH}
             presentationMode="fullscreen-route"
             initialModuleViewerOpen
             initialOpenModuleId={initialModuleId}

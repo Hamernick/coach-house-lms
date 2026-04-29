@@ -2,6 +2,7 @@
 
 import type { OrgProfile } from "@/components/organization/org-profile-card/types"
 import { WorkspaceMapPreviewButton } from "@/features/workspace-map-card"
+import { getWorkspaceEditorPath } from "@/lib/workspace/routes"
 
 export function WorkspaceBoardOrganizationMapButton({
   orgId,
@@ -22,7 +23,7 @@ export function WorkspaceBoardOrganizationMapButton({
         orgId,
         title: "Map",
         profile,
-        companyHref: "/workspace?view=editor&tab=company",
+        companyHref: getWorkspaceEditorPath({ tab: "company" }),
         presentationMode: false,
       }}
       highlighted={highlighted}

@@ -7,6 +7,7 @@ import type { OrgPersonWithImage } from "@/components/people/supporters-showcase
 import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
 import type { OrganizationMemberRole } from "@/lib/organization/active-org"
+import type { RoadmapSection } from "@/lib/roadmap"
 import type { ReactNode } from "react"
 
 import type {
@@ -326,6 +327,7 @@ export type WorkspaceSeedData = {
   peopleCount: number
   journeyReadiness: WorkspaceJourneyReadiness
   initialProfile: OrgProfile
+  roadmapSections: RoadmapSection[]
   formationSummary: FormationSummary
   acceleratorTimeline?: WorkspaceAcceleratorCardStep[]
   activityFeed: WorkspaceActivityRecord[]
@@ -341,6 +343,7 @@ export type WorkspaceSeedData = {
 
 export type WorkspaceOrganizationEditorData = {
   initialProfile: OrgProfile
+  roadmapSections: RoadmapSection[]
   people: OrgPersonWithImage[]
   programs: OrgProgram[]
   canEdit: boolean

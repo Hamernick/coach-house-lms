@@ -1,8 +1,6 @@
-import {
-  ROADMAP_SECTION_IDS,
-  type RoadmapSection,
-  type RoadmapSectionStatus,
-} from "@/lib/roadmap"
+import { ROADMAP_SECTION_IDS } from "@/lib/roadmap"
+import { resolveRoadmapSectionDerivedStatus } from "@/lib/roadmap/helpers"
+import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
 
 import {
   DEFAULT_PLACEHOLDER,
@@ -180,10 +178,18 @@ export function persistRoadmapDraftsToStorage({
 
 export function resolveRoadmapSectionStatus(
   section: RoadmapSection,
+  draft?: RoadmapDraft | null,
 ): RoadmapSectionStatus {
-  if (section.status) return section.status
-  if (section.content.trim().length > 0) return "in_progress"
-  if (section.homework?.status === "complete") return "complete"
-  if (section.homework?.status === "in_progress") return "in_progress"
-  return "not_started"
+  if (section.status === "complete") return "complete"
+  if (
+    draft &&
+    (draft.content.trim().length > 0 ||
+      draft.title.trim().length > 0 ||
+      draft.subtitle.trim().length > 0 ||
+      draft.imageUrl.trim().length > 0) &&
+    isRoadmapDraftDirty(section, draft)
+  ) {
+    return "in_progress"
+  }
+  return resolveRoadmapSectionDerivedStatus(section)
 }

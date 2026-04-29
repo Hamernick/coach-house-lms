@@ -38,7 +38,7 @@ export function DocumentsBanner({
                 ? "This filing system combines roadmap sections, policies, and organization files in one index so your team can find what matters and keep documentation current."
                 : "Keep your organization's policies and core files in one secure index so your team can quickly find, update, and manage required documents."}
             </p>
-            <p>Uploads support PDF files up to 15 MB.</p>
+            <p>Uploads support PDF files up to 50 MB.</p>
           </div>
           {!canEdit ? (
             <div className="mt-3 inline-flex w-fit items-center gap-2 rounded-md border border-border/70 bg-background/70 px-2.5 py-1.5 text-xs text-muted-foreground">

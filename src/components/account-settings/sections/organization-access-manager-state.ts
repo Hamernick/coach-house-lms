@@ -17,6 +17,9 @@ import {
   type OrganizationAccessRequest,
   type OrganizationMemberRole,
 } from "@/app/actions/organization-access"
+import {
+  resolveOrganizationInviteEmailDeliveryDescription,
+} from "@/features/organization-access"
 import { toast } from "@/lib/toast"
 
 import {
@@ -186,11 +189,21 @@ export function useOrganizationAccessManagerState(): UseOrganizationAccessManage
             : `/join-organization?token=${res.invite.token}`
           try {
             await copyToClipboard(link)
-            toast.success("Invite link copied because email delivery failed", {
+            toast.warning("Invite created, but email delivery failed. Link copied instead.", {
               id: toastId,
+              description: resolveOrganizationInviteEmailDeliveryDescription({
+                emailError: res.emailError,
+                kind: "external_invite",
+              }),
             })
           } catch {
-            toast.success(res.emailError ?? "Invite created", { id: toastId })
+            toast.warning("Invite created, but email delivery failed.", {
+              id: toastId,
+              description: resolveOrganizationInviteEmailDeliveryDescription({
+                emailError: res.emailError,
+                kind: "external_invite",
+              }),
+            })
           }
         }
       } else {
@@ -201,8 +214,16 @@ export function useOrganizationAccessManagerState(): UseOrganizationAccessManage
         toast.success(
           res.emailSent
             ? successLabel
-            : `${successLabel}. ${res.emailError ?? "Heads-up email skipped."}`,
-          { id: toastId },
+            : successLabel,
+          res.emailSent
+            ? { id: toastId }
+            : {
+                id: toastId,
+                description: resolveOrganizationInviteEmailDeliveryDescription({
+                  emailError: res.emailError,
+                  kind: "existing_user_request",
+                }),
+              },
         )
       }
       setInviteEmail("")

@@ -128,7 +128,33 @@ describe("workspace accelerator tutorial interaction policy", () => {
     })
   })
 
-  it("allows only the guided Welcome path during the first-module step", () => {
+  it("allows only the guided Organization setup path during the first-module step", () => {
+    expect(
+      resolveWorkspaceAcceleratorTutorialInteractionPolicy({
+        tutorialActive: true,
+        tutorialStepIndex: findTutorialStepIndex("accelerator-first-module"),
+        acceleratorRuntimeSnapshot: buildRuntimeSnapshot({
+          currentStep: {
+            ...buildRuntimeSnapshot().currentStep!,
+            id: "workspace-onboarding-organization-setup:lesson",
+            moduleId: "workspace-onboarding-organization-setup",
+            moduleTitle: "Organization setup",
+            stepTitle: "Organization setup",
+          },
+          firstVisibleChecklistStepId:
+            "workspace-onboarding-organization-setup:lesson",
+          openModuleId: "workspace-onboarding-organization-setup",
+        }),
+      }),
+    ).toMatchObject({
+      stepId: "accelerator-first-module",
+      allowedModuleId: "workspace-onboarding-organization-setup",
+      allowedStepId: "workspace-onboarding-organization-setup:lesson",
+      allowPreviewPlayback: false,
+    })
+  })
+
+  it("falls back to the guided Welcome path for older Welcome-only runtime data", () => {
     expect(
       resolveWorkspaceAcceleratorTutorialInteractionPolicy({
         tutorialActive: true,
@@ -139,7 +165,6 @@ describe("workspace accelerator tutorial interaction policy", () => {
       stepId: "accelerator-first-module",
       allowedModuleId: "workspace-onboarding-welcome",
       allowedStepId: "workspace-onboarding-welcome:lesson",
-      allowPreviewPlayback: false,
     })
   })
 

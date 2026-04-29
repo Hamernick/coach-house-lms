@@ -1,6 +1,7 @@
 import type { DocumentDefinition } from "./types"
 
-export const MAX_BYTES = 15 * 1024 * 1024
+export const MAX_UPLOAD_MB = 50
+export const MAX_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 
 export const DOCUMENTS: DocumentDefinition[] = [
   {

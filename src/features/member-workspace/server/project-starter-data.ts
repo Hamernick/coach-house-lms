@@ -1,8 +1,8 @@
 import type { Database } from "@/lib/supabase"
 import {
-  platformAdminDashboardLabProjects,
   type PlatformAdminDashboardLabProject,
 } from "@/features/platform-admin-dashboard"
+import { memberWorkspaceStarterProjects } from "./member-workspace-starter-projects"
 import { MEMBER_WORKSPACE_STARTER_VERSION } from "./starter-data"
 
 export type OrganizationProjectRecord =
@@ -22,7 +22,7 @@ export function buildStarterOrganizationProjects({
   orgId: string
   actorId: string
 }): OrganizationProjectInsert[] {
-  return platformAdminDashboardLabProjects.map((project) => ({
+  return memberWorkspaceStarterProjects.map((project) => ({
     org_id: orgId,
     name: project.name,
     description: project.description ?? null,

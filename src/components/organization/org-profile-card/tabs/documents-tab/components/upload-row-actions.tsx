@@ -158,7 +158,7 @@ export function UploadRowActions({
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top">
-              {isUploading ? "Uploading…" : "Upload PDF (15 MB max)"}
+              {isUploading ? "Uploading…" : "Upload PDF (50 MB max)"}
             </TooltipContent>
           </Tooltip>
         )

@@ -71,7 +71,7 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     sceneId: "overview",
     title: "The Accelerator",
     message:
-      "The accelerator offers a sequence of nine strategic lessons, delivered through smaller video modules and corresponding homework assignments. This program is designed to guide you through building your strategic foundations, developing your programs, and then transitioning into essential organizational functions such as evaluation, budgeting, communications, and fundraising for both your specific program and your entire organization.",
+      "The Accelerator guides you through nine strategic lessons with short videos and homework, from foundations and programs into evaluation, budgeting, communications, and fundraising for each program and your organization.",
     targetCardId: "accelerator",
     targetLabel: "Accelerator",
     revealedCardIds: ["organization-overview"],
@@ -86,7 +86,7 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     message:
       "Switch between class tracks here to see the right modules, progress, and next steps for each part of the Accelerator.",
     targetCardId: "accelerator",
-    targetLabel: "Class picker",
+    targetLabel: "Class tracks",
     revealedCardIds: ["accelerator"],
     continueMode: "next",
     calloutTarget: "accelerator-picker",
@@ -236,6 +236,12 @@ function isTutorialShortcutStep(step: WorkspaceCanvasTutorialStep) {
   return step.continueMode === "shortcut" && step.targetCardId !== null
 }
 
+export function isWorkspaceCanvasTutorialGatedStep(
+  step: WorkspaceCanvasTutorialStep,
+) {
+  return step.continueMode === "shortcut" || step.continueMode === "action"
+}
+
 export function resolveWorkspaceCanvasTutorialTrimmedStepIds(
   stepIndex: number,
   stepIds: WorkspaceCanvasTutorialStepId[] = [],
@@ -270,7 +276,7 @@ export function resolveWorkspaceCanvasTutorialContinueMode(
   openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
-  if (step.continueMode === "shortcut" || step.continueMode === "action") {
+  if (isWorkspaceCanvasTutorialGatedStep(step)) {
     return isWorkspaceCanvasTutorialStepOpened(stepIndex, openedStepIds)
       ? "next"
       : step.continueMode

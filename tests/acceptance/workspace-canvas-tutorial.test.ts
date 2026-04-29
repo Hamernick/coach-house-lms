@@ -209,7 +209,7 @@ describe("workspace canvas tutorial", () => {
   it("surfaces accelerator internal callouts only for the interactive accelerator controls", () => {
     expect(resolveWorkspaceCanvasTutorialCallout(4, ["accelerator"])).toEqual({
       kind: "accelerator-picker",
-      label: "Class picker",
+      label: "Class tracks",
       instruction:
         "Choose a class track here to update the module list and focus on a different part of the Accelerator.",
     })

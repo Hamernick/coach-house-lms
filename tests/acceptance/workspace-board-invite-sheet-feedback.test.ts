@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest"
 
-import { resolveOrganizationInviteEmailDeliveryDescription } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet-feedback"
+import { resolveOrganizationInviteEmailDeliveryDescription } from "@/features/organization-access"
 
 describe("workspace board invite sheet feedback", () => {
   it("hides internal resend config details for existing-user access requests", () => {

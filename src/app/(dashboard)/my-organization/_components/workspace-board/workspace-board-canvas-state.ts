@@ -11,6 +11,7 @@ import {
 
 import {
   clampWorkspaceCanvasTutorialStepIndex,
+  isWorkspaceCanvasTutorialGatedStep,
   isWorkspaceCanvasTutorialFinalStep,
   resolveWorkspaceCanvasTutorialStep,
 } from "@/features/workspace-canvas-tutorial"
@@ -75,7 +76,7 @@ export function buildPreviousWorkspaceTutorialFlowState(
   )
   const tutorialStep = resolveWorkspaceCanvasTutorialStep(tutorialStepIndex)
   const openedTutorialStepIds =
-    tutorialStep.continueMode === "shortcut"
+    isWorkspaceCanvasTutorialGatedStep(tutorialStep)
       ? flowState.openedTutorialStepIds.filter(
           (stepId) => stepId !== tutorialStep.id,
         )

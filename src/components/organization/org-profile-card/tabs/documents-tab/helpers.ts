@@ -1,4 +1,4 @@
-import { MAX_BYTES, ROADMAP_CATEGORY_BY_ID } from "./constants"
+import { MAX_BYTES, MAX_UPLOAD_MB, ROADMAP_CATEGORY_BY_ID } from "./constants"
 import type {
   DocumentIndexRow,
   DocumentStatus,
@@ -54,7 +54,7 @@ export function validatePdf(file: File) {
   const isPdf =
     file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
   if (!isPdf) return "Only PDF files are supported."
-  if (file.size > MAX_BYTES) return "PDF must be 15 MB or less."
+  if (file.size > MAX_BYTES) return `PDF must be ${MAX_UPLOAD_MB} MB or less.`
   return null
 }
 

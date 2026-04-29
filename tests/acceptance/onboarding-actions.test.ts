@@ -97,8 +97,20 @@ describe("completeOnboardingAction", () => {
     expect(destination).toBe("/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding")
   })
 
-  it("lets free workspace setup finish organization creation without a subscription check", async () => {
+  it("saves free workspace setup changes to the active organization", async () => {
     const profilesUpsertMock = vi.fn().mockResolvedValue({ error: null })
+    const membershipsEqMock = vi.fn().mockReturnValue({
+      returns: vi.fn().mockResolvedValue({
+        data: [
+          {
+            org_id: "org_active",
+            role: "admin",
+            created_at: "2026-04-01T00:00:00.000Z",
+          },
+        ],
+        error: null,
+      }),
+    })
     const organizationsSlugCountQueryMock = vi.fn().mockResolvedValue({
       data: null,
       error: null,
@@ -128,6 +140,13 @@ describe("completeOnboardingAction", () => {
         if (table === "profiles") {
           return {
             upsert: profilesUpsertMock,
+          }
+        }
+        if (table === "organization_memberships") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: membershipsEqMock,
+            }),
           }
         }
         if (table === "organizations") {
@@ -169,9 +188,23 @@ describe("completeOnboardingAction", () => {
 
     expect(fetchLearningEntitlementsMock).not.toHaveBeenCalled()
     expect(profilesUpsertMock).toHaveBeenCalled()
-    expect(organizationsSlugCountQueryMock).toHaveBeenCalled()
+    expect(membershipsEqMock).toHaveBeenCalledWith("member_id", "user_123")
+    expect(organizationsSlugCountQueryMock).toHaveBeenCalledWith(
+      "user_id",
+      "org_active",
+    )
     expect(organizationsSelectMaybeSingleMock).toHaveBeenCalled()
-    expect(organizationsUpsertMock).toHaveBeenCalled()
+    expect(organizationsUpsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "org_active",
+        public_slug: "bright-futures-collective",
+        profile: expect.objectContaining({
+          name: "Bright Futures Collective",
+          formationStatus: "approved",
+        }),
+      }),
+      { onConflict: "user_id" },
+    )
     expect(updateUserMock).toHaveBeenCalled()
     expect(destination).toBe("/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding")
   })

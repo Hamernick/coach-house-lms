@@ -8,6 +8,7 @@ export {
   clampWorkspaceCanvasTutorialStepIndex,
   resolveWorkspaceCanvasTutorialCallout,
   isWorkspaceCanvasTutorialFinalStep,
+  isWorkspaceCanvasTutorialGatedStep,
   isWorkspaceCanvasTutorialStepAcknowledged,
   isWorkspaceCanvasTutorialStepCompleted,
   isWorkspaceCanvasTutorialStepOpened,

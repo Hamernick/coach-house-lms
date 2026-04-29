@@ -62,4 +62,57 @@ describe("workspace board tutorial previous navigation", () => {
       "calendar",
     ])
   })
+
+  it("rewinds action steps back to their blocked prompt state", () => {
+    const openedTutorialStepIds: WorkspaceCanvasTutorialStepId[] = [
+      "accelerator",
+      "accelerator-first-module",
+    ]
+    const acknowledgedTutorialStepIds: WorkspaceCanvasTutorialStepId[] = [
+      "accelerator",
+      "accelerator-first-module",
+    ]
+    const firstModuleStepIndex = resolveTutorialStepIndex(
+      "accelerator-first-module",
+    )
+    const previousFlowState = {
+      ...buildDefaultWorkspaceOnboardingFlowState(),
+      active: true,
+      tutorialStepIndex: resolveTutorialStepIndex("accelerator-close-module"),
+      openedTutorialStepIds,
+      acknowledgedTutorialStepIds,
+    }
+
+    const nextFlowState =
+      buildPreviousWorkspaceTutorialFlowState(previousFlowState)
+
+    expect(nextFlowState.tutorialStepIndex).toBe(firstModuleStepIndex)
+    expect(nextFlowState.openedTutorialStepIds).toEqual(["accelerator"])
+    expect(nextFlowState.acknowledgedTutorialStepIds).toEqual([
+      "accelerator",
+      "accelerator-first-module",
+    ])
+  })
+
+  it("marks action steps opened without auto-advancing past the current prompt", () => {
+    const previousFlowState = {
+      ...buildDefaultWorkspaceOnboardingFlowState(),
+      active: true,
+      tutorialStepIndex: resolveTutorialStepIndex("accelerator-first-module"),
+      openedTutorialStepIds: ["accelerator"] satisfies WorkspaceCanvasTutorialStepId[],
+      acknowledgedTutorialStepIds: ["accelerator"] satisfies WorkspaceCanvasTutorialStepId[],
+    }
+
+    const nextFlowState = buildOpenedWorkspaceTutorialFlowState(previousFlowState)
+
+    expect(nextFlowState.tutorialStepIndex).toBe(previousFlowState.tutorialStepIndex)
+    expect(nextFlowState.openedTutorialStepIds).toEqual([
+      "accelerator",
+      "accelerator-first-module",
+    ])
+    expect(nextFlowState.acknowledgedTutorialStepIds).toEqual([
+      "accelerator",
+      "accelerator-first-module",
+    ])
+  })
 })

@@ -15,6 +15,9 @@ export {
   formatWorkspaceAcceleratorModuleCompletionLabel,
   resolveWorkspaceAcceleratorOpenModuleId,
   resolveWorkspaceAcceleratorLessonGroupTitle,
+  resolveWorkspaceAcceleratorGuidedFirstModuleStepId,
+  isWorkspaceAcceleratorOrganizationSetupStep,
+  shouldHideWorkspaceAcceleratorFormationAddOnStep,
 } from "./checklist"
 export {
   areWorkspaceAcceleratorRuntimeSnapshotsEqual,

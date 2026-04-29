@@ -417,10 +417,15 @@ export function WorkspaceAcceleratorCardPanel({
 
   useEffect(() => {
     if (tutorialCallout?.focus !== "first-module") return
-    const nextModuleId = checklistModules[0]?.id ?? null
+    const nextModuleId =
+      checklistModules
+        .flatMap((module) => module.steps)
+        .find((step) => step.id === firstVisibleChecklistStepId)?.moduleId ??
+      checklistModules[0]?.id ??
+      null
     if (!nextModuleId) return
     setOpenModuleId((previous) => (previous === nextModuleId ? previous : nextModuleId))
-  }, [checklistModules, tutorialCallout?.focus])
+  }, [checklistModules, firstVisibleChecklistStepId, tutorialCallout?.focus])
 
   useWorkspaceAcceleratorTutorialViewerState({
     currentModuleId: currentStep?.moduleId ?? null,

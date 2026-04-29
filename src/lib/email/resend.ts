@@ -14,7 +14,7 @@ type SendResendEmailResult =
   | { ok: false; error: string }
 
 const RESEND_API_URL = "https://api.resend.com/emails"
-const DEFAULT_FROM_EMAIL = "no-reply@coachhouse.app"
+const DEFAULT_FROM_EMAIL = "hello@coachhouse.app"
 const DEFAULT_FROM_NAME = "Coach House"
 
 function resolveReplyTo(input: string | null | undefined) {
@@ -23,6 +23,28 @@ function resolveReplyTo(input: string | null | undefined) {
     return env.RESEND_REPLY_TO_EMAIL.trim()
   }
   return null
+}
+
+function resolveUnsubscribeHeaders(replyTo: string | null) {
+  const unsubscribeEmail =
+    typeof env.RESEND_UNSUBSCRIBE_EMAIL === "string" && env.RESEND_UNSUBSCRIBE_EMAIL.trim().length > 0
+      ? env.RESEND_UNSUBSCRIBE_EMAIL.trim()
+      : replyTo
+  const unsubscribeUrl =
+    typeof env.RESEND_UNSUBSCRIBE_URL === "string" && env.RESEND_UNSUBSCRIBE_URL.trim().length > 0
+      ? env.RESEND_UNSUBSCRIBE_URL.trim()
+      : null
+  const listUnsubscribe = [
+    unsubscribeEmail ? `<mailto:${unsubscribeEmail}>` : null,
+    unsubscribeUrl ? `<${unsubscribeUrl}>` : null,
+  ].filter(Boolean)
+
+  if (listUnsubscribe.length === 0) return null
+
+  return {
+    "List-Unsubscribe": listUnsubscribe.join(", "),
+    ...(unsubscribeUrl ? { "List-Unsubscribe-Post": "List-Unsubscribe=One-Click" } : {}),
+  }
 }
 
 export function canSendResendEmail() {
@@ -40,6 +62,12 @@ export async function sendResendEmail(
     typeof env.RESEND_FROM_EMAIL === "string" && env.RESEND_FROM_EMAIL.trim().length > 0
       ? env.RESEND_FROM_EMAIL.trim()
       : DEFAULT_FROM_EMAIL
+  const fromName =
+    typeof env.RESEND_FROM_NAME === "string" && env.RESEND_FROM_NAME.trim().length > 0
+      ? env.RESEND_FROM_NAME.trim()
+      : DEFAULT_FROM_NAME
+  const replyTo = resolveReplyTo(input.replyTo)
+  const unsubscribeHeaders = resolveUnsubscribeHeaders(replyTo)
 
   const response = await fetch(RESEND_API_URL, {
     method: "POST",
@@ -48,12 +76,13 @@ export async function sendResendEmail(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: `${DEFAULT_FROM_NAME} <${fromEmail}>`,
+      from: `${fromName} <${fromEmail}>`,
       to: Array.isArray(input.to) ? input.to : [input.to],
       subject: input.subject,
       html: input.html,
       text: input.text,
-      reply_to: resolveReplyTo(input.replyTo),
+      ...(replyTo ? { reply_to: replyTo } : {}),
+      ...(unsubscribeHeaders ? { headers: unsubscribeHeaders } : {}),
       tags: input.tags,
     }),
   })

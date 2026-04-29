@@ -6,6 +6,7 @@ import {
   buildWorkspaceAcceleratorChecklistModules,
   buildWorkspaceAcceleratorLessonGroupOptions,
   formatWorkspaceAcceleratorModuleCompletionLabel,
+  resolveWorkspaceAcceleratorGuidedFirstModuleStepId,
   resolveWorkspaceAcceleratorOpenModuleId,
 } from "@/features/workspace-accelerator-card/lib"
 import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
@@ -197,6 +198,92 @@ describe("workspace accelerator checklist helpers", () => {
     ])
   })
 
+  it("keeps Organization setup in Formation and uses it as the guided first-module target", () => {
+    const organizationSetupStep: WorkspaceAcceleratorCardStep = {
+      ...CHECKLIST_STEPS[0]!,
+      id: "workspace-onboarding-organization-setup:lesson",
+      moduleId: "workspace-onboarding-organization-setup",
+      moduleSlug: "organization-setup",
+      moduleTitle: "Organization setup",
+      stepKind: "lesson",
+      stepTitle: "Organization setup",
+      groupTitle: "Electives",
+    }
+    const steps = [
+      CHECKLIST_STEPS[0]!,
+      organizationSetupStep,
+      CHECKLIST_STEPS[3]!,
+    ]
+
+    expect(buildWorkspaceAcceleratorLessonGroupOptions(steps)).toEqual([
+      {
+        key: "formation",
+        label: "Formation",
+        moduleIds: ["m-1", "workspace-onboarding-organization-setup"],
+      },
+      {
+        key: "strategic-foundations",
+        label: "Strategic Foundations",
+        moduleIds: ["m-3"],
+      },
+    ])
+    expect(resolveWorkspaceAcceleratorGuidedFirstModuleStepId(steps)).toBe(
+      "workspace-onboarding-organization-setup:lesson",
+    )
+  })
+
+  it("hides operational add-on modules from the Formation checklist groups", () => {
+    const operationalSteps: WorkspaceAcceleratorCardStep[] = [
+      {
+        ...CHECKLIST_STEPS[0]!,
+        id: "financial-handbook:video",
+        moduleId: "financial-handbook",
+        moduleSlug: "financial-handbook",
+        moduleTitle: "Financial Handbook",
+        stepTitle: "Financial Handbook",
+      },
+      {
+        ...CHECKLIST_STEPS[0]!,
+        id: "due-diligence:video",
+        moduleId: "due-diligence",
+        moduleSlug: "due-diligence",
+        moduleTitle: "Due Diligence",
+        stepTitle: "Due Diligence",
+      },
+      {
+        ...CHECKLIST_STEPS[0]!,
+        id: "retention-and-security:video",
+        moduleId: "retention-and-security",
+        moduleSlug: "retention-and-security",
+        moduleTitle: "Retention and Security",
+        stepTitle: "Retention and Security",
+      },
+    ]
+    const steps = [CHECKLIST_STEPS[0]!, ...operationalSteps, CHECKLIST_STEPS[3]!]
+
+    expect(buildWorkspaceAcceleratorLessonGroupOptions(steps)).toEqual([
+      {
+        key: "formation",
+        label: "Formation",
+        moduleIds: ["m-1"],
+      },
+      {
+        key: "strategic-foundations",
+        label: "Strategic Foundations",
+        moduleIds: ["m-3"],
+      },
+    ])
+    expect(
+      buildWorkspaceAcceleratorChecklistModules({
+        steps,
+        completedStepIds: [],
+        selectedGroupKey: "formation",
+        currentStepId: null,
+      }).map((module) => module.title),
+    ).toEqual(["Naming your NFP"])
+    expect(resolveWorkspaceAcceleratorGuidedFirstModuleStepId(operationalSteps)).toBeNull()
+  })
+
   it("groups checklist rows by module within the selected lesson group", () => {
     expect(
       buildWorkspaceAcceleratorChecklistModules({
@@ -357,7 +444,7 @@ describe("workspace accelerator checklist helpers", () => {
     expect(markup).toContain('class="space-y-2"')
   })
 
-  it("renders the step-kind plus action subtitle for organization-setup onboarding rows", () => {
+  it("renders setup action copy for organization-setup onboarding rows", () => {
     const modules = buildWorkspaceAcceleratorChecklistModules({
       steps: [
         {
@@ -411,7 +498,8 @@ describe("workspace accelerator checklist helpers", () => {
     )
 
     expect(markup).toContain("Organization setup")
-    expect(markup).toContain("lesson • start")
+    expect(markup).toContain("setup • start")
+    expect(markup).not.toContain("lesson • start")
     expect(markup).not.toContain("Set up your organization, roadmap, and operating foundation.")
   })
 

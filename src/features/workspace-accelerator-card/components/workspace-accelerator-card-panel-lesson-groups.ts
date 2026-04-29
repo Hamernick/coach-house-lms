@@ -6,6 +6,7 @@ import {
   buildWorkspaceAcceleratorChecklistModules,
   buildWorkspaceAcceleratorLessonGroupKey,
   buildWorkspaceAcceleratorLessonGroupOptions,
+  resolveWorkspaceAcceleratorGuidedFirstModuleStepId,
   resolveWorkspaceAcceleratorLessonGroupTitle,
 } from "../lib"
 import { useWorkspaceAcceleratorCardController } from "../hooks/use-workspace-accelerator-card-controller"
@@ -149,7 +150,8 @@ export function useWorkspaceAcceleratorLessonGroupState({
     checklistModules,
     filteredSteps,
     filteredProgressPercent,
-    firstVisibleChecklistStepId: filteredSteps[0]?.id ?? null,
+    firstVisibleChecklistStepId:
+      resolveWorkspaceAcceleratorGuidedFirstModuleStepId(filteredSteps),
     handleLessonGroupChange,
   }
 }

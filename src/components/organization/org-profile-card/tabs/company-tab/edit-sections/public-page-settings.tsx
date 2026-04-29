@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useEffect, useMemo, useRef, useState } from "react"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 import GlobeIcon from "lucide-react/dist/esm/icons/globe"
+import InfoIcon from "lucide-react/dist/esm/icons/info"
 import MapPinIcon from "lucide-react/dist/esm/icons/map-pin"
 
 import { Button } from "@/components/ui/button"
@@ -125,6 +126,19 @@ export function PublicPageSettings({ company, errors, onUpdate, onDirty, slugSta
                 className="text-inherit underline underline-offset-2"
               >
                 our map
+              </Link>
+              .
+            </p>
+          </div>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-background/70 p-3">
+          <div className="flex items-start gap-2">
+            <InfoIcon className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+            <p className="text-xs text-muted-foreground">
+              Turning this off only hides the public map profile. It does not cancel Stripe billing;
+              manage subscription changes from{" "}
+              <Link href="/billing" className="text-inherit underline underline-offset-2">
+                Billing
               </Link>
               .
             </p>

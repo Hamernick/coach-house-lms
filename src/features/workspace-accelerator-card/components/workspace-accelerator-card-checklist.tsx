@@ -64,13 +64,17 @@ function resolveChecklistStepActionLabel(isCompletedChecklistStep: boolean) {
 }
 
 function resolveChecklistStepSubtitle({
-  stepKind,
+  step,
   isCompletedChecklistStep,
 }: {
-  stepKind: WorkspaceAcceleratorCardStep["stepKind"]
+  step: WorkspaceAcceleratorCardStep
   isCompletedChecklistStep: boolean
 }) {
-  return `${stepKind} • ${resolveChecklistStepActionLabel(isCompletedChecklistStep)}`.toLowerCase()
+  const stepKindLabel =
+    step.moduleContext?.workspaceOnboarding?.view === "organization-setup"
+      ? "setup"
+      : step.stepKind
+  return `${stepKindLabel} • ${resolveChecklistStepActionLabel(isCompletedChecklistStep)}`.toLowerCase()
 }
 
 function ChecklistStepRow({
@@ -102,7 +106,7 @@ function ChecklistStepRow({
     moduleId: module.id,
   })
   const subtitle = resolveChecklistStepSubtitle({
-    stepKind: step.stepKind,
+    step,
     isCompletedChecklistStep,
   })
   const button = (
@@ -208,13 +212,13 @@ export function WorkspaceAcceleratorCardChecklist({
           </p>
           <p className="text-[11px] text-muted-foreground">
             {tutorialInteractionPolicy?.stepId === "accelerator"
-              ? "The guide will open the Welcome module next. For now, stay on the Accelerator overview."
+              ? "The guide will open Organization setup next. For now, stay on the Accelerator overview."
               : tutorialInteractionPolicy?.stepId === "accelerator-picker"
                 ? "Browse the class structure here. The guide will keep this path on Formation for now."
                 : tutorialInteractionPolicy?.stepId === "accelerator-first-module"
-                  ? "Open the highlighted Welcome module to see how a class launches inside Workspace."
+                  ? "Open the highlighted Organization setup module to see how a class launches inside Workspace."
                   : tutorialInteractionPolicy?.stepId === "accelerator-close-module"
-                    ? "This preview stays centered on the Welcome module until you continue to Calendar."
+                    ? "This preview stays centered on Organization setup until you continue to Calendar."
                     : "Review each module and open the step you want to work on."}
           </p>
         </div>

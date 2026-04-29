@@ -122,7 +122,7 @@ export function PolicyFileField({
           ) : null}
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          Only PDF files are supported (15 MB max).
+          Only PDF files are supported (50 MB max).
         </p>
       </div>
     </div>

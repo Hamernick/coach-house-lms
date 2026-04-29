@@ -13,19 +13,22 @@ describe("member workspace task starter data", () => {
       actorId: "user-1",
       projectIdByStarterKey: new Map([
         ["1", "project-db-1"],
-        ["2", "project-db-2"],
       ]),
     })
 
-    expect(tasks.length).toBeGreaterThan(0)
+    expect(tasks).toHaveLength(3)
     expect(tasks[0]).toMatchObject({
       org_id: "org-1",
       project_id: "project-db-1",
+      title: "Review the sample project",
       created_by: "user-1",
       updated_by: "user-1",
       created_source: "starter_seed",
     })
     expect(tasks[0]?.starter_seed_key).toContain(":")
+    expect(tasks.map((task) => task.title).join(" ")).not.toMatch(
+      /fintech|internal|crm|acme/i,
+    )
   })
 
   it("builds task assignees from seeded starter tasks", () => {

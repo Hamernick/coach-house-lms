@@ -7,6 +7,11 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
+import {
+  type ActiveOrganization,
+  canEditOrganization,
+  resolveActiveOrganization,
+} from "@/lib/organization/active-org"
 import type { ProfilesTable } from "@/lib/supabase/schema/tables"
 import { uploadAvatarWithUser } from "@/lib/storage/avatars"
 
@@ -125,6 +130,19 @@ export async function completeOnboardingAction(form: FormData) {
 
   const requiresOrganizationSetup =
     intentFocus === "build" && onboardingMode !== "post_signup_access"
+  let organizationTarget: ActiveOrganization = { orgId: user.id, role: "owner" }
+  if (requiresOrganizationSetup && onboardingMode === "workspace_setup") {
+    organizationTarget = await resolveActiveOrganization(supabase, user.id)
+    if (!canEditOrganization(organizationTarget.role)) {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error: "organization_access_required",
+        }),
+      )
+    }
+  }
+  const targetOrgId = organizationTarget.orgId
 
   if (intentFocus === "build") {
     if (builderPlanTier !== "free") {
@@ -183,7 +201,7 @@ export async function completeOnboardingAction(form: FormData) {
         .from("organizations")
         .select("user_id", { count: "exact", head: true })
         .ilike("public_slug", normalizedSlug)
-        .neq("user_id", user.id)
+        .neq("user_id", targetOrgId)
 
       if (slugError) throw supabaseErrorToError(slugError, "Unable to validate organization URL.")
       if ((slugCount ?? 0) > 0) {
@@ -228,7 +246,7 @@ export async function completeOnboardingAction(form: FormData) {
     const { data: existingOrg, error: existingOrgError } = await supabase
       .from("organizations")
       .select("profile")
-      .eq("user_id", user.id)
+      .eq("user_id", targetOrgId)
       .maybeSingle<{ profile: Record<string, unknown> | null }>()
 
     if (existingOrgError) throw supabaseErrorToError(existingOrgError, "Unable to load organization profile.")
@@ -279,7 +297,7 @@ export async function completeOnboardingAction(form: FormData) {
 
     const { error: organizationUpsertError } = await supabase.from("organizations").upsert(
       {
-        user_id: user.id,
+        user_id: targetOrgId,
         public_slug: normalizedSlug,
         profile: orgProfilePayload,
       },

@@ -30,7 +30,8 @@ function CanvasPanelShell({ children, centered = false }: { children: ReactNode;
 export function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
   const isLogin = mode === "login"
   const heading = "Create account"
-  const description = "Join Coach House and start building your organization workspace."
+  const description =
+    "Create a free Individual account first. After email verification, you can set up your organization workspace and choose whether to stay free or upgrade for team access and the accelerator."
   const builderRedirectTo = "/onboarding?source=home_signup"
   const builderLoginHref = "/?section=login"
 
@@ -47,7 +48,9 @@ export function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
           <>
             <div className="mb-5 space-y-1">
               <h2 className="text-2xl font-semibold tracking-tight text-foreground">{heading}</h2>
-              <p className="text-sm text-muted-foreground">{description}</p>
+              <p className="text-sm leading-relaxed text-muted-foreground">
+                {description}
+              </p>
             </div>
             <SignUpForm
               lockedIntentFocus="build"

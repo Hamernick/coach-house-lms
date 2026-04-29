@@ -6,7 +6,8 @@ import { canEditOrganization, resolveActiveOrganization } from "@/lib/organizati
 import { createNotification } from "@/lib/notifications"
 
 const BUCKET = "org-documents"
-const MAX_BYTES = 15 * 1024 * 1024
+const MAX_UPLOAD_MB = 50
+const MAX_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 const ALLOWED = new Set(["application/pdf"])
 const KIND_KEY_MAP = {
   "verification-letter": "verificationLetter",
@@ -152,7 +153,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Only PDF files are supported." }, { status: 400 })
   }
   if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "File too large. Max size is 15 MB." }, { status: 400 })
+    return NextResponse.json(
+      { error: `File too large. Max size is ${MAX_UPLOAD_MB} MB.` },
+      { status: 400 },
+    )
   }
 
   try {

@@ -1,4 +1,5 @@
 import { SECTION_DEFINITIONS } from "@/lib/roadmap/definitions"
+import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
 import type { WorkspaceAcceleratorCardStep } from "../types"
 
 export type WorkspaceAcceleratorLessonGroupOption = {
@@ -65,6 +66,15 @@ const INTRODUCTION_MODULE_SLUGS = new Set([
   "intro-idea-to-impact-accelerator",
   "introduction-idea-to-impact-accelerator",
 ])
+const ORGANIZATION_SETUP_MODULE_SLUGS = [
+  "organization-setup",
+  "workspace-setup",
+  "workspace-onboarding-organization-setup",
+] as const
+const ORGANIZATION_SETUP_MODULE_TITLES = new Set([
+  "organization setup",
+  "workspace setup",
+])
 
 function resolvePreferredLessonGroupOrderRank(label: string) {
   const normalizedLabel = normalizeLessonGroupOrderLabel(label)
@@ -102,11 +112,57 @@ function isWorkspaceAcceleratorIntroductionStep(
     "introduction: idea to impact accelerator"
 }
 
+function normalizeWorkspaceAcceleratorTitleSignal(
+  value: string | null | undefined,
+) {
+  return normalizeModuleSignal(value)
+    .replace(/[’']/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+export function isWorkspaceAcceleratorOrganizationSetupStep(
+  step: Pick<
+    WorkspaceAcceleratorCardStep,
+    "moduleId" | "moduleSlug" | "moduleTitle" | "stepTitle"
+  >,
+) {
+  const moduleSlug = normalizeModuleSignal(step.moduleSlug)
+  const moduleId = normalizeModuleSignal(step.moduleId)
+  if (
+    ORGANIZATION_SETUP_MODULE_SLUGS.some(
+      (signal) => moduleSlug.includes(signal) || moduleId.includes(signal),
+    )
+  ) {
+    return true
+  }
+
+  return (
+    ORGANIZATION_SETUP_MODULE_TITLES.has(
+      normalizeWorkspaceAcceleratorTitleSignal(step.moduleTitle),
+    ) ||
+    ORGANIZATION_SETUP_MODULE_TITLES.has(
+      normalizeWorkspaceAcceleratorTitleSignal(step.stepTitle),
+    )
+  )
+}
+
 export function resolveWorkspaceAcceleratorLessonGroupTitle(
   step: WorkspaceAcceleratorCardStep,
 ) {
   if (isWorkspaceAcceleratorIntroductionStep(step)) return "Introduction"
+  if (isWorkspaceAcceleratorOrganizationSetupStep(step)) return "Formation"
   return normalizeLessonGroupLabel(step.groupTitle)
+}
+
+export function shouldHideWorkspaceAcceleratorFormationAddOnStep(
+  step: Pick<WorkspaceAcceleratorCardStep, "moduleSlug" | "moduleTitle">,
+) {
+  return isElectiveAddOnModule({
+    slug: step.moduleSlug,
+    title: step.moduleTitle,
+  })
 }
 
 function resolveLessonGroupOrderRank(label: string) {
@@ -185,6 +241,8 @@ export function buildWorkspaceAcceleratorLessonGroupOptions(
   const explicitGroupOrder = new Map<string, number>()
 
   for (const step of steps) {
+    if (shouldHideWorkspaceAcceleratorFormationAddOnStep(step)) continue
+
     const label = resolveWorkspaceAcceleratorLessonGroupTitle(step)
     const key = buildWorkspaceAcceleratorLessonGroupKey(label)
     const existing = groups.get(key)
@@ -266,6 +324,8 @@ export function buildWorkspaceAcceleratorChecklistModules({
   const modules = new Map<string, WorkspaceAcceleratorChecklistModule>()
 
   for (const step of steps) {
+    if (shouldHideWorkspaceAcceleratorFormationAddOnStep(step)) continue
+
     const groupKey = buildWorkspaceAcceleratorLessonGroupKey(
       resolveWorkspaceAcceleratorLessonGroupTitle(step),
     )
@@ -292,4 +352,18 @@ export function buildWorkspaceAcceleratorChecklistModules({
   }
 
   return Array.from(modules.values())
+}
+
+export function resolveWorkspaceAcceleratorGuidedFirstModuleStepId(
+  steps: WorkspaceAcceleratorCardStep[],
+) {
+  const visibleSteps = steps.filter(
+    (step) => !shouldHideWorkspaceAcceleratorFormationAddOnStep(step),
+  )
+  return (
+    visibleSteps.find((step) => isWorkspaceAcceleratorOrganizationSetupStep(step))
+      ?.id ??
+    visibleSteps[0]?.id ??
+    null
+  )
 }

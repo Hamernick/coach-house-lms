@@ -266,7 +266,7 @@ describe("workspace accelerator tutorial panel state", () => {
     const firstModuleCallout = {
       focus: "first-module" as const,
       title: "First module",
-      instruction: "Click the Welcome module here to continue.",
+      instruction: "Click the Organization setup module here to continue.",
     }
 
     expect(
@@ -274,8 +274,8 @@ describe("workspace accelerator tutorial panel state", () => {
         tutorialCallout: firstModuleCallout,
         pendingAdvance: true,
         isModuleViewerOpen: false,
-        currentStepId: "welcome-step",
-        tutorialTargetStepId: "welcome-step",
+        currentStepId: "organization-setup-step",
+        tutorialTargetStepId: "organization-setup-step",
       }),
     ).toBe(false)
 
@@ -285,7 +285,7 @@ describe("workspace accelerator tutorial panel state", () => {
         pendingAdvance: true,
         isModuleViewerOpen: true,
         currentStepId: "other-step",
-        tutorialTargetStepId: "welcome-step",
+        tutorialTargetStepId: "organization-setup-step",
       }),
     ).toBe(false)
 
@@ -294,8 +294,8 @@ describe("workspace accelerator tutorial panel state", () => {
         tutorialCallout: firstModuleCallout,
         pendingAdvance: true,
         isModuleViewerOpen: true,
-        currentStepId: "welcome-step",
-        tutorialTargetStepId: "welcome-step",
+        currentStepId: "organization-setup-step",
+        tutorialTargetStepId: "organization-setup-step",
       }),
     ).toBe(true)
   })

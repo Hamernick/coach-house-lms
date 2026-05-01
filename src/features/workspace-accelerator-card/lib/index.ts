@@ -7,6 +7,10 @@ import type {
   WorkspaceAcceleratorStepStatus,
   WorkspaceAcceleratorTimelineModuleSeed,
 } from "../types"
+import {
+  buildAssignmentSections,
+  type AssignmentSection,
+} from "@/lib/modules/assignment-sections"
 
 export {
   buildWorkspaceAcceleratorChecklistModules,
@@ -57,9 +61,14 @@ function buildModuleStepKinds(module: WorkspaceAcceleratorTimelineModuleSeed): W
     return ["lesson"]
   }
 
+  const hasAssignmentOverview = buildAssignmentStepSections(module).some(
+    (section) => section.id === "assignment-overview",
+  )
   const next: WorkspaceAcceleratorStepKind[] = ["lesson"]
   if (module.videoUrl) next.push("video")
-  if (module.resources.length > 0 || module.hasDeck) next.push("resources")
+  if (!hasAssignmentOverview && (module.resources.length > 0 || module.hasDeck)) {
+    next.push("resources")
+  }
   if (module.hasAssignment) next.push("assignment")
   next.push("complete")
   return next
@@ -97,6 +106,18 @@ function resolveStepDescription({
   if (stepKind === "complete") return "Mark this lesson complete and continue to the next lesson."
   if (hasDeck) return "Review supporting deck materials."
   return null
+}
+
+function buildAssignmentStepSections(
+  module: WorkspaceAcceleratorTimelineModuleSeed,
+): AssignmentSection[] {
+  const fields = module.moduleContext?.assignmentFields ?? []
+  if (fields.length === 0) return []
+  return buildAssignmentSections(fields).tabSections.filter(
+    (section) =>
+      section.fields.length > 0 ||
+      Boolean(section.title?.trim() || section.description?.trim()),
+  )
 }
 
 function normalizeResourceKind(value: unknown) {
@@ -176,6 +197,45 @@ export function buildWorkspaceAcceleratorCardSteps(
     const moduleStepKinds = buildModuleStepKinds(timelineModule)
 
     for (const stepKind of moduleStepKinds) {
+      const assignmentSections =
+        stepKind === "assignment" ? buildAssignmentStepSections(timelineModule) : []
+      if (stepKind === "assignment" && assignmentSections.length > 1) {
+        assignmentSections.forEach((section, sectionIndex) => {
+          flattened.push({
+            id: `${timelineModule.id}:assignment:${section.id}`,
+            moduleId: timelineModule.id,
+            moduleSlug: timelineModule.slug ?? null,
+            moduleTitle: timelineModule.title,
+            stepKind,
+            stepTitle: section.title ?? `Assignment ${sectionIndex + 1}`,
+            stepDescription:
+              section.description ??
+              resolveStepDescription({
+                stepKind,
+                moduleDescription: timelineModule.description,
+                resourceCount: timelineModule.resources.length,
+                hasDeck: timelineModule.hasDeck,
+              }),
+            assignmentSectionId: section.id,
+            href: timelineModule.href,
+            status: resolveDerivedStepStatus(moduleStatus, stepKind),
+            stepSequenceIndex: 0,
+            stepSequenceTotal: 0,
+            moduleSequenceIndex: moduleIndex + 1,
+            moduleSequenceTotal: moduleTotal,
+            groupTitle: timelineModule.groupTitle || "Accelerator",
+            groupOrder: timelineModule.groupOrder ?? null,
+            videoUrl: timelineModule.videoUrl,
+            durationMinutes: typeof timelineModule.durationMinutes === "number" ? timelineModule.durationMinutes : null,
+            resources: timelineModule.resources,
+            hasAssignment: Boolean(timelineModule.hasAssignment),
+            hasDeck: Boolean(timelineModule.hasDeck),
+            moduleContext: timelineModule.moduleContext ?? null,
+          })
+        })
+        continue
+      }
+
       const workspaceOnboarding = timelineModule.moduleContext?.workspaceOnboarding ?? null
       const stepTitle =
         workspaceOnboarding && stepKind === "lesson"
@@ -195,6 +255,8 @@ export function buildWorkspaceAcceleratorCardSteps(
           resourceCount: timelineModule.resources.length,
           hasDeck: timelineModule.hasDeck,
         }),
+        assignmentSectionId:
+          stepKind === "assignment" ? assignmentSections[0]?.id ?? null : null,
         href: timelineModule.href,
         status: resolveDerivedStepStatus(moduleStatus, stepKind),
         stepSequenceIndex: 0,
@@ -231,6 +293,15 @@ export function normalizeWorkspaceAcceleratorCardInput(
   input: WorkspaceAcceleratorCardInput,
 ): WorkspaceAcceleratorCardInput {
   const normalizedSteps = Array.isArray(input.steps) ? input.steps : EMPTY_ACCELERATOR_STEPS
+  const resolveInitialCurrentStepId = (value: unknown): string | null => {
+    if (typeof value !== "string" || value.trim().length === 0) return null
+    const trimmed = value.trim()
+    if (normalizedSteps.some((step) => step.id === trimmed)) return trimmed
+    if (trimmed.endsWith(":assignment")) {
+      return normalizedSteps.find((step) => step.id.startsWith(`${trimmed}:`))?.id ?? null
+    }
+    return trimmed
+  }
   const normalizeInitialCompletedStepIds = (value: unknown): string[] => {
     if (!Array.isArray(value)) return EMPTY_COMPLETED_STEP_IDS
     if (value.length === 0) return EMPTY_COMPLETED_STEP_IDS
@@ -273,10 +344,7 @@ export function normalizeWorkspaceAcceleratorCardInput(
     allowAutoResize: Boolean(input.allowAutoResize),
     storageKey: typeof input.storageKey === "string" ? input.storageKey : undefined,
     onSizeChange: input.onSizeChange,
-    initialCurrentStepId:
-      typeof input.initialCurrentStepId === "string" && input.initialCurrentStepId.trim().length > 0
-        ? input.initialCurrentStepId
-        : null,
+    initialCurrentStepId: resolveInitialCurrentStepId(input.initialCurrentStepId),
     initialCompletedStepIds,
     onProgressChange: input.onProgressChange,
     onWorkspaceOnboardingSubmit: input.onWorkspaceOnboardingSubmit,

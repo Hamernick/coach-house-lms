@@ -28,6 +28,7 @@ export type WorkspaceAcceleratorCardStep = {
   stepKind: WorkspaceAcceleratorStepKind
   stepTitle: string
   stepDescription: string | null
+  assignmentSectionId?: string | null
   href: string
   status: WorkspaceAcceleratorStepStatus
   stepSequenceIndex: number

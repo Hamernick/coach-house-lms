@@ -13,6 +13,7 @@ vi.mock("next/navigation", () => ({
     replace: () => undefined,
     prefetch: () => Promise.resolve(),
   }),
+  usePathname: () => "/workspace/accelerator",
   useSearchParams: () => new URLSearchParams(),
 }))
 
@@ -292,6 +293,141 @@ describe("workspace accelerator step node card", () => {
 
     expect(markup).toContain("NFP registration")
     expect(markup.match(/NFP registration/g)).toHaveLength(1)
+  })
+
+  it("replaces the embedded Complete footer button with assignment step navigation", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorStepNodeCard, {
+        step: {
+          id: "origin-module:assignment:assignment-overview",
+          moduleId: "origin-module",
+          moduleTitle: "Start with your why",
+          stepKind: "assignment",
+          stepTitle: "Overview",
+          stepDescription: null,
+          assignmentSectionId: "assignment-overview",
+          href: "/workspace/accelerator?step=origin-module%3Aassignment%3Aassignment-overview",
+          status: "in_progress",
+          stepSequenceIndex: 1,
+          stepSequenceTotal: 2,
+          moduleSequenceIndex: 1,
+          moduleSequenceTotal: 1,
+          groupTitle: "Strategic Foundations",
+          videoUrl: null,
+          durationMinutes: null,
+          resources: [],
+          hasAssignment: true,
+          hasDeck: false,
+          moduleContext: {
+            classTitle: "Strategic Foundations",
+            lessonNotesContent: null,
+            moduleResources: [],
+            assignmentSubmission: null,
+            completeOnSubmit: true,
+            assignmentFields: [
+              {
+                name: "origin_intro",
+                label: "How to approach this exercise",
+                type: "subtitle",
+                screen: "intro",
+                description: "Review the context first.",
+              },
+              {
+                name: "origin_roots_place",
+                label: "Where did you grow up?",
+                type: "long_text",
+                screen: "question",
+              },
+            ],
+          },
+        },
+        stepIndex: 0,
+        stepTotal: 2,
+        canGoPrevious: false,
+        canGoNext: true,
+        completed: false,
+        moduleCompleted: false,
+        onPrevious: () => undefined,
+        onNext: () => undefined,
+        onComplete: () => undefined,
+        onClose: () => undefined,
+        variant: "embedded",
+      }),
+    )
+
+    expect(markup).toContain("border-t px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 sm:px-4 sm:pb-2")
+    expect(markup.match(/Start questions/g)).toHaveLength(1)
+    expect(markup).toContain("rounded-full")
+    expect(markup).toContain("w-full")
+    expect(markup).toContain("sm:w-auto")
+    expect(markup).not.toContain(">Complete</button>")
+    expect(markup).not.toContain("sm:h-7 sm:w-auto")
+  })
+
+  it("uses the lesson title in assignment headers so question labels are not duplicated", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorStepNodeCard, {
+        step: {
+          id: "origin-module:assignment:section-1",
+          moduleId: "origin-module",
+          moduleTitle: "Start with your why",
+          stepKind: "assignment",
+          stepTitle: "Where did you grow up?",
+          stepDescription: null,
+          assignmentSectionId: "section-1",
+          href: "/workspace/accelerator?step=origin-module%3Aassignment%3Asection-1",
+          status: "in_progress",
+          stepSequenceIndex: 2,
+          stepSequenceTotal: 2,
+          moduleSequenceIndex: 1,
+          moduleSequenceTotal: 1,
+          groupTitle: "Strategic Foundations",
+          videoUrl: null,
+          durationMinutes: null,
+          resources: [],
+          hasAssignment: true,
+          hasDeck: false,
+          moduleContext: {
+            classTitle: "Strategic Foundations",
+            lessonNotesContent: null,
+            moduleResources: [],
+            assignmentSubmission: null,
+            completeOnSubmit: true,
+            assignmentFields: [
+              {
+                name: "origin_roots_place",
+                label: "Where did you grow up?",
+                type: "long_text",
+                screen: "question",
+              },
+            ],
+          },
+        },
+        stepIndex: 1,
+        stepTotal: 2,
+        canGoPrevious: true,
+        canGoNext: false,
+        completed: false,
+        moduleCompleted: false,
+        onPrevious: () => undefined,
+        onNext: () => undefined,
+        onComplete: () => undefined,
+        onClose: () => undefined,
+        variant: "embedded",
+      }),
+    )
+
+    expect(markup).toContain("Start with your why")
+    expect(markup.match(/Start with your why/g)).toHaveLength(1)
+    expect(markup).toContain('aria-label="Done reviewing this lesson"')
+    expect(markup).toContain("Done")
+    expect(markup).toContain("min-w-[76px]")
+    expect(markup).toContain("bg-background/90")
+    expect(markup).not.toContain("bg-sky-500/12")
+    expect(markup).not.toContain("h-7 w-auto")
+    expect(markup).toContain(">Complete<")
+    expect(markup).not.toContain("Finish lesson")
+    expect(markup.match(/Where did you grow up\\?/g)).toHaveLength(1)
   })
 
   it("moves module details into a mobile drawer flow instead of stacking the rail below the content", () => {

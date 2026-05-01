@@ -173,6 +173,16 @@ export function parseAssignmentFields(schema: unknown): ModuleAssignmentField[] 
           : ""
     const assistContext = assistContextRaw.trim().length > 0 ? assistContextRaw.trim() : undefined
 
+    const screenRaw =
+      typeof (field as { screen?: unknown }).screen === "string"
+        ? (field as { screen: string }).screen
+        : typeof (field as { screen_kind?: unknown }).screen_kind === "string"
+          ? (field as { screen_kind: string }).screen_kind
+          : typeof (field as { screenKind?: unknown }).screenKind === "string"
+            ? (field as { screenKind: string }).screenKind
+            : ""
+    const screen = screenRaw === "intro" || screenRaw === "question" ? screenRaw : undefined
+
     const assignmentField: ModuleAssignmentField = {
       name,
       label,
@@ -212,6 +222,7 @@ export function parseAssignmentFields(schema: unknown): ModuleAssignmentField[] 
     if (orgKey) assignmentField.orgKey = orgKey
     if (roadmapSectionId) assignmentField.roadmapSectionId = roadmapSectionId
     if (assistContext) assignmentField.assistContext = assistContext
+    if (screen) assignmentField.screen = screen
 
     normalized.push(assignmentField)
   })

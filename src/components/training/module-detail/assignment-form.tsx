@@ -4,10 +4,11 @@ import { usePathname } from "next/navigation"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { cn } from "@/lib/utils"
 
-import type { ModuleAssignmentField } from "../types"
+import type { ModuleAssignmentField, ModuleResource } from "../types"
 import { AssignmentFieldsContent } from "./assignment-form/assignment-fields-content"
 import { AssignmentFormSubmitRow } from "./assignment-form/assignment-form-submit-row"
 import { AssignmentProgressPanel } from "./assignment-form/assignment-progress-panel"
+import { AssignmentStepNavigation } from "./assignment-form/assignment-step-navigation"
 import { useAssignmentFormValues } from "./assignment-form/hooks/use-assignment-form-values"
 import { useAssignmentProgress } from "./assignment-form/hooks/use-assignment-progress"
 import { useAssignmentSectionNavigation } from "./assignment-form/hooks/use-assignment-section-navigation"
@@ -37,6 +38,11 @@ type AssignmentFormProps = {
   nextHref?: string | null
   currentStep?: number
   totalSteps?: number
+  onStepPrevious?: () => void
+  onStepNext?: () => void
+  overviewResources?: ModuleResource[]
+  overviewHasDeck?: boolean
+  showStepNavigation?: boolean
   headerSlot?: React.ReactNode
   progressPlacement?: "sidebar" | "header"
 }
@@ -72,6 +78,11 @@ function AssignmentFormInner({
   nextHref = null,
   currentStep,
   totalSteps,
+  onStepPrevious,
+  onStepNext,
+  overviewResources = [],
+  overviewHasDeck = false,
+  showStepNavigation = true,
   headerSlot,
   progressPlacement = "sidebar",
 }: AssignmentFormProps) {
@@ -104,6 +115,17 @@ function AssignmentFormInner({
   })
   const { fieldAnswered, overall } = useAssignmentProgress(tabSections, values)
   const showProgressPanel = !isStepper && overall.total > 1
+  const activeSectionIndex = tabSections.findIndex((section) => section.id === activeSectionKey)
+  const activeSectionForNavigation = activeSectionIndex >= 0 ? tabSections[activeSectionIndex] : null
+  const nextSectionForNavigation =
+    activeSectionIndex >= 0 ? tabSections[activeSectionIndex + 1] : null
+  const canGoPreviousStep =
+    typeof currentStep === "number" && currentStep > 1 && Boolean(onStepPrevious)
+  const canGoNextStep =
+    typeof currentStep === "number" &&
+    typeof totalSteps === "number" &&
+    currentStep < totalSteps &&
+    Boolean(onStepNext)
 
   const fieldContext = useMemo<AssignmentFieldRenderContext>(
     () => ({
@@ -173,19 +195,35 @@ function AssignmentFormInner({
         progressPanel
       ) : null}
 
-      <div className={cn("space-y-3 self-start", isStepper && "flex min-h-0 flex-1 flex-col self-stretch")}>
-        <AssignmentFieldsContent
-          isStepper={isStepper}
-          shouldUseTabs={shouldUseTabs}
-          useInlineTabs={useInlineTabs}
-          baseSections={baseSections}
-          tabSections={tabSections}
-          activeSection={activeSection}
-          activeSectionKey={activeSectionKey}
-          onActiveSectionChange={setActiveSection}
-          inlineActiveIndex={inlineActiveIndex}
-          fieldContext={fieldContext}
-        />
+      <div
+        className={cn(
+          "self-start",
+          isStepper
+            ? "flex min-h-0 flex-1 flex-col self-stretch overflow-hidden"
+            : "space-y-3",
+        )}
+      >
+        <div
+          className={cn(
+            isStepper && "min-h-0 flex-1 overflow-y-auto overscroll-contain pb-5 pr-1",
+          )}
+        >
+          <AssignmentFieldsContent
+            isStepper={isStepper}
+            shouldUseTabs={shouldUseTabs}
+            useInlineTabs={useInlineTabs}
+            baseSections={baseSections}
+            tabSections={tabSections}
+            activeSection={activeSection}
+            activeSectionKey={activeSectionKey}
+            hasDeck={overviewHasDeck}
+            moduleId={moduleId}
+            onActiveSectionChange={setActiveSection}
+            resources={overviewResources}
+            inlineActiveIndex={inlineActiveIndex}
+            fieldContext={fieldContext}
+          />
+        </div>
 
         {!isStepper ? (
           <AssignmentFormSubmitRow
@@ -198,6 +236,15 @@ function AssignmentFormInner({
             nextHref={nextHref}
             currentStep={currentStep}
             totalSteps={totalSteps}
+          />
+        ) : showStepNavigation ? (
+          <AssignmentStepNavigation
+            canGoPrevious={canGoPreviousStep}
+            canGoNext={canGoNextStep}
+            currentSection={activeSectionForNavigation}
+            nextSection={nextSectionForNavigation}
+            onPrevious={onStepPrevious}
+            onNext={onStepNext}
           />
         ) : null}
       </div>

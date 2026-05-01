@@ -63,9 +63,12 @@ type ModuleStepperActiveStepContentProps = Pick<
   contentCacheRef: MutableRefObject<Record<string, ReactNode>>
   completionCount: number
   progressPercent: number
+  totalSteps: number
   schedulePending: boolean
   coachingTier: CoachingTier | null
   coachingRemaining: number | null
+  onPreviousStep: () => void
+  onNextStep: () => void
   onContinue: () => void
   onSchedule: () => void
 }
@@ -101,9 +104,12 @@ export function ModuleStepperActiveStepContent({
   nextLocked = false,
   completionCount,
   progressPercent,
+  totalSteps,
   schedulePending,
   coachingTier,
   coachingRemaining,
+  onPreviousStep,
+  onNextStep,
   onContinue,
   onSchedule,
 }: ModuleStepperActiveStepContentProps) {
@@ -168,6 +174,12 @@ export function ModuleStepperActiveStepContent({
               moduleId={moduleId}
               moduleTitle={moduleTitle}
               classTitle={classTitle}
+              currentStep={activeStep.stepIndex}
+              totalSteps={totalSteps}
+              onStepPrevious={onPreviousStep}
+              onStepNext={onNextStep}
+              overviewResources={resources ?? []}
+              overviewHasDeck={hasDeck}
             />
           )
         case "complete":

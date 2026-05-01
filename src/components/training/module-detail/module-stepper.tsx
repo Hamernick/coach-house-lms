@@ -136,6 +136,14 @@ export function ModuleStepper({
     })
   }, [markModuleComplete, nextHref, router])
 
+  const handlePreviousStep = useCallback(() => {
+    setActiveIndex((prev) => Math.max(prev - 1, 0))
+  }, [setActiveIndex])
+
+  const handleNextStep = useCallback(() => {
+    setActiveIndex((prev) => Math.min(prev + 1, Math.max(totalSteps - 1, 0)))
+  }, [setActiveIndex, totalSteps])
+
   const handleSchedule = useCallback(async () => {
     const payload = await schedule()
     if (!payload) return
@@ -256,9 +264,12 @@ export function ModuleStepper({
                 nextLocked={nextLocked}
                 completionCount={completionCount}
                 progressPercent={progressPercent}
+                totalSteps={totalSteps}
                 schedulePending={schedulePending}
                 coachingTier={coachingTier}
                 coachingRemaining={coachingRemaining}
+                onPreviousStep={handlePreviousStep}
+                onNextStep={handleNextStep}
                 onContinue={() => void handleContinue()}
                 onSchedule={() => void handleSchedule()}
               />

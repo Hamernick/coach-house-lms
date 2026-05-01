@@ -21,6 +21,7 @@ session_modules as (
     (1, 2, 'start-with-your-why', 'Start with your why', 'How does your personal story relate to what you want to do?', null, 'Use this section to develop your origin story and connect it to your personal background. Write one to two pages and craft a background story that grounds your organizational why.'),
     (1, 3, 'what-is-the-need', 'What is the Need?', 'Using AI to explore how to establish a clearly articulated need statement.', null, 'Give thought to defining the need you are addressing as narrowly as possible in a brief statement or paragraph. Then move to the next module where you will refine the need statement with AI.'),
     (1, 4, 'ai-the-need', 'AI The Need', null, null, 'Use this section to develop your need statement. Be very clear about the problem, how serious it is, and any data that helps explain it. Do not yet describe your organization or solution.'),
+    (1, 5, 'who-we-serve', 'Who We Serve', 'Clarify the specific people your work is focused on serving.', null, 'Use this section to clearly describe the population you are trying to reach, including their context, strengths, barriers, and boundaries.'),
     (2, 1, 'mission', 'Mission', 'Why do you exist?', 'Simon Sinek on Start with Why', 'Draft three or more mission statements, share them with others, and refine to a final draft. Check that accomplishing your mission would genuinely address the need.'),
     (2, 2, 'vision', 'Vision', 'Where do you want to go?', 'Peter Senge on Shared Vision', 'Reflect on your personal vision, draft a few versions of a potential vision statement, share for feedback, and refine. Compare it to the need and mission to ensure they fit together.'),
     (2, 3, 'values', 'Values', 'What do you believe?', null, 'Articulate the principles you feel so strongly about that you would not want to do the work without them. Describe the culture you want to build.'),
@@ -202,6 +203,7 @@ session_modules as (
     (1, 2, 'start-with-your-why', 'Start with your why', 'How does your personal story relate to what you want to do?', null, 'Use this section to develop your origin story and connect it to your personal background. Write one to two pages and craft a background story that grounds your organizational why.'),
     (1, 3, 'what-is-the-need', 'What is the Need?', 'Using AI to explore how to establish a clearly articulated need statement.', null, 'Give thought to defining the need you are addressing as narrowly as possible in a brief statement or paragraph. Then move to the next module where you will refine the need statement with AI.'),
     (1, 4, 'ai-the-need', 'AI The Need', null, null, 'Use this section to develop your need statement. Be very clear about the problem, how serious it is, and any data that helps explain it. Do not yet describe your organization or solution.'),
+    (1, 5, 'who-we-serve', 'Who We Serve', 'Clarify the specific people your work is focused on serving.', null, 'Use this section to clearly describe the population you are trying to reach, including their context, strengths, barriers, and boundaries.'),
     (2, 1, 'mission', 'Mission', 'Why do you exist?', 'Simon Sinek on Start with Why', 'Draft three or more mission statements, share them with others, and refine to a final draft. Check that accomplishing your mission would genuinely address the need.'),
     (2, 2, 'vision', 'Vision', 'Where do you want to go?', 'Peter Senge on Shared Vision', 'Reflect on your personal vision, draft a few versions of a potential vision statement, share for feedback, and refine. Compare it to the need and mission to ensure they fit together.'),
     (2, 3, 'values', 'Values', 'What do you believe?', null, 'Articulate the principles you feel so strongly about that you would not want to do the work without them. Describe the culture you want to build.'),
@@ -283,51 +285,180 @@ insert into module_assignments (module_id, schema, complete_on_submit)
 select
   tm.id,
   jsonb_build_object(
-    'title', 'Origin Story Worksheet',
+    'title', 'Origin Story',
+    'roadmap_section', 'origin_story',
+    'completion_mode', 'all_answered',
     'fields', jsonb_build_array(
       jsonb_build_object(
-        'name', 'origin_intro',
-        'label', 'Origin Story',
+        'name', 'origin_approach_intro',
+        'label', 'How to approach this exercise',
         'type', 'subtitle',
-        'description', 'Answer the questions below to capture the raw material for your origin story.'
+        'screen', 'intro',
+        'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Some answers may be a few sentences; others may be longer reflections. The goal is to give the future AI drafting step rich, authentic input that reflects your real experiences, perspective, and voice.'
       ),
       jsonb_build_object(
-        'name', 'origin_home',
-        'label', 'Where are you from?',
-        'type', 'short_text',
-        'description', 'This can be a place, a community, a family context, or a formative environment.',
-        'placeholder', 'City, region, or community you call home.',
+        'name', 'origin_start_with_why_intro',
+        'label', 'Start with your why',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Every strong organization begins with a personal or community story. Before defining programs or strategies, reflect on the experiences that shaped your desire to do this work.\n\nThis exercise will help clarify your connection to the problem, the experiences that shaped your perspective, the deeper motivation behind your work, and the narrative of where this organization came from.'
+      ),
+      jsonb_build_object(
+        'name', 'origin_roots_intro',
+        'label', 'Section 1 — Roots & background',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'These questions ground your story in place, culture, and upbringing.'
+      ),
+      jsonb_build_object(
+        'name', 'origin_roots_place',
+        'label', 'Where did you grow up?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'What communities, neighborhoods, or environments shaped you?',
+        'placeholder', 'Describe the places, communities, neighborhoods, or environments that shaped you…',
         'required', false
       ),
       jsonb_build_object(
-        'name', 'origin_background',
-        'label', 'What experiences in your life led to your concern about and commitment to addressing the problem you are working on?',
+        'name', 'origin_roots_influences',
+        'label', 'What were the major influences in your early life?',
         'type', 'long_text',
-        'description', 'Moments, patterns, or lived experiences that shaped how you see this issue.',
-        'placeholder', 'List the moments or patterns that shaped your commitment.',
+        'screen', 'question',
+        'description', 'This could include family, culture, faith, school, mentors, community organizations, or other early influences.',
+        'placeholder', 'List the people, institutions, traditions, or experiences that influenced you early on…',
         'required', false
       ),
       jsonb_build_object(
-        'name', 'origin_why_now',
-        'label', 'Why do you believe this work matters now?',
+        'name', 'origin_roots_worldview',
+        'label', 'Were there experiences from your childhood or early life that shaped how you see the world today?',
         'type', 'long_text',
-        'placeholder', 'Share why this work is urgent right now.',
+        'screen', 'question',
+        'placeholder', 'Share the early experiences that still shape your perspective…',
         'required', false
       ),
       jsonb_build_object(
-        'name', 'origin_why_called',
-        'label', 'Why do you feel called to be part of it?',
+        'name', 'origin_problem_connection_intro',
+        'label', 'Section 2 — Personal connection to the problem',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Many nonprofit founders begin their work because they have seen or experienced the problem firsthand.'
+      ),
+      jsonb_build_object(
+        'name', 'origin_problem_issue',
+        'label', 'What issue or challenge do you feel called to address?',
         'type', 'long_text',
-        'placeholder', 'Describe why you feel called to this work.',
+        'screen', 'question',
+        'placeholder', 'Name the issue or challenge in plain language…',
         'required', false
       ),
       jsonb_build_object(
-        'name', 'origin_story_draft',
-        'label', 'Origin story draft (optional)',
+        'name', 'origin_problem_experiences',
+        'label', 'What personal experiences have connected you to this issue?',
         'type', 'long_text',
-        'org_key', 'boilerplate',
-        'description', 'Optional: pull your responses together into a narrative you can refine later.',
-        'placeholder', 'Write or paste a draft if you have one.',
+        'screen', 'question',
+        'placeholder', 'Describe the lived experiences, moments, or patterns that connected you to this issue…',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'origin_problem_witnessed',
+        'label', 'Have you seen this problem affect people you care about or communities you belong to?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'If so, describe what you witnessed or experienced.',
+        'placeholder', 'Share what you saw, who was affected, and how it stayed with you…',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'origin_turning_points_intro',
+        'label', 'Section 3 — Turning points',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Often there are moments that transform concern into commitment.'
+      ),
+      jsonb_build_object(
+        'name', 'origin_turning_point',
+        'label', 'Was there a specific moment when you realized you wanted to do something about this issue?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Describe the moment, what changed for you, and what you decided to do next…',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'origin_turning_people',
+        'label', 'Were there key people who encouraged or inspired you to pursue this work?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Name the people, mentors, leaders, or community members who influenced your commitment…',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'origin_turning_obstacles',
+        'label', 'Have you experienced hardships, obstacles, or injustices that shaped your motivation?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Share the obstacles or injustices that shaped why this work matters to you…',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'origin_calling_intro',
+        'label', 'Section 4 — Your sense of calling',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Now reflect on the deeper motivation behind your work.'
+      ),
+      jsonb_build_object(
+        'name', 'origin_calling_matter',
+        'label', 'Why does this issue matter to you personally?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Explain why this issue matters to you beyond strategy or opportunity…',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'origin_calling_commitment',
+        'label', 'What keeps you committed to this work even when it is difficult?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Share the beliefs, people, values, or hopes that keep you moving…',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'origin_calling_success',
+        'label', 'If your work succeeds, how will people''s lives be different?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Describe what changes for people, families, or communities when this work succeeds…',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'origin_story_to_work_intro',
+        'label', 'Section 5 — Connecting your story to your work',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Finally, connect your personal story to the organization or program you want to build.'
+      ),
+      jsonb_build_object(
+        'name', 'origin_story_leadership',
+        'label', 'How does your story uniquely position you to lead this work?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Connect your background, relationships, and perspective to your ability to lead…',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'origin_story_insights',
+        'label', 'What insights do you bring because of your lived experience?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Describe the insight, sensitivity, credibility, or practical understanding you bring…',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'origin_story_call',
+        'label', 'Describe why you feel called to do this work.',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Bring together your story, the problem, and the reason you feel called to act…',
         'required', false
       )
     )
@@ -1086,44 +1217,130 @@ select
   case
     when nm.slug = 'what-is-the-need' then
       jsonb_build_object(
-        'title', 'Need statement (draft)',
+        'title', 'Need Statement',
+        'roadmap_section', 'need',
+        'completion_mode', 'all_answered',
         'fields', jsonb_build_array(
           jsonb_build_object(
-            'name', 'need_intro',
-            'label', 'Need snapshot',
+            'name', 'need_statement_intro',
+            'label', 'Need Statement',
             'type', 'subtitle',
-            'description', 'Articulate the problem. This can be a few sentences or up to a full page. Focus on who is affected, what is happening, and the consequences of inaction.'
+            'screen', 'intro',
+            'description', 'Now that you have reflected on your story and your why, define the problem your work is responding to.\n\nStrong nonprofit leaders describe a problem with clarity before proposing a solution. That clarity helps funders, partners, and community members understand what is at stake.\n\nA strong Need Statement answers three questions: who has the need, what problem they face, and how serious or widespread the problem is.\n\nFor this exercise, focus only on the problem. Do not describe your organization, your program, or your solution yet.'
+          ),
+          jsonb_build_object(
+            'name', 'need_approach_intro',
+            'label', 'How to approach this exercise',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Some answers may be a few sentences; others may be longer reflections. The goal is to give the future AI drafting step rich, authentic input that reflects your real experience, perspective, and voice.'
+          ),
+          jsonb_build_object(
+            'name', 'need_population_intro',
+            'label', 'Section 1 — Who is experiencing the problem',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Start by identifying the specific people, community, or population experiencing the problem and the rough scale of the need.'
           ),
           jsonb_build_object(
             'name', 'need_who',
-            'label', 'Who is experiencing the need?',
+            'label', 'Who specifically is experiencing this problem?',
             'type', 'long_text',
-            'placeholder', 'Describe the specific people or communities impacted.'
+            'screen', 'question',
+            'description', 'Be as specific as possible. Consider age group, community, identity, situation, or shared experience. Examples: young people in Roseland exposed to gun violence; immigrant mothers navigating school systems and social services; children living in older housing with lead exposure; seniors experiencing isolation and limited digital literacy; young adults returning from incarceration and struggling to find stable work.',
+            'placeholder', 'Describe the specific people or communities impacted...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'need_location',
+            'label', 'Where does this problem occur?',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'Name the neighborhood, city, school system, region, or specific community where this problem shows up.',
+            'placeholder', 'Describe the place or community context where the problem occurs...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'need_scale',
+            'label', 'How many people do you believe are affected by this problem?',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'You do not need exact numbers yet. Focus on the scale: dozens, hundreds, thousands, a percentage of a group, or a large portion of a neighborhood.',
+            'placeholder', 'Estimate the scale of the problem in plain language...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'need_problem_intro',
+            'label', 'Section 2 — What the problem is',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Describe the condition people are facing and the root causes or factors that contribute to it.'
           ),
           jsonb_build_object(
             'name', 'need_problem',
-            'label', 'What is the problem?',
+            'label', 'What exactly is the problem this group is experiencing?',
             'type', 'long_text',
-            'placeholder', 'Explain the challenge in clear, concrete language.'
+            'screen', 'question',
+            'description', 'Describe the condition people are facing in plain terms.',
+            'placeholder', 'Explain the challenge in clear, concrete language...',
+            'required', false
           ),
           jsonb_build_object(
-            'name', 'need_data_points',
-            'label', 'What are some key data points to help communicate the problem?',
+            'name', 'need_contributing_factors',
+            'label', 'What factors contribute to this problem?',
             'type', 'long_text',
-            'placeholder', 'Cite data points, trends, or facts that help communicate the need.'
+            'screen', 'question',
+            'description', 'Think about root causes such as lack of access to services, economic barriers, trauma exposure, unstable housing, language barriers, or other structural conditions.',
+            'placeholder', 'List the root causes or contributing factors...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'need_daily_life',
+            'label', 'How does this problem show up in people''s day-to-day lives?',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'Describe what people are actually experiencing because of the problem.',
+            'placeholder', 'Share the daily realities, pressures, or consequences people experience...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'need_impact_intro',
+            'label', 'Section 3 — Long-term impact',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Name what happens if the problem continues without change. Consider the impact on individuals, families, neighborhoods, broader communities, or the city.'
           ),
           jsonb_build_object(
             'name', 'need_consequence',
-            'label', 'What happens if it is not addressed?',
+            'label', 'What happens if this problem continues without change?',
             'type', 'long_text',
-            'placeholder', 'What gets worse? What is at stake if nothing changes?'
+            'screen', 'question',
+            'description', 'Think about long-term effects such as educational setbacks, health consequences, cycles of poverty, increased violence, social isolation, or limited economic mobility.',
+            'placeholder', 'Describe what gets worse and what is at stake if nothing changes...',
+            'required', false
           ),
           jsonb_build_object(
-            'name', 'need_statement_draft',
-            'label', 'Begin developing your need statement',
+            'name', 'need_data_intro',
+            'label', 'Section 4 — Understanding the scale using data',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Now begin identifying data that can demonstrate how serious or widespread the issue is.\n\nYou do not need to find the data yourself yet. Use AI to help identify the types of data or statistics that would support the need, examples of specific metrics, possible sources, and qualitative or quantitative evidence to look for. Do not make up statistics.'
+          ),
+          jsonb_build_object(
+            'name', 'need_data_points',
+            'label', 'What data, metrics, or sources could help demonstrate the scale of this issue?',
             'type', 'long_text',
-            'org_key', 'need',
-            'placeholder', 'Summarize the problem, who it affects, and why it matters. A few sentences to a full page is fine.'
+            'screen', 'question',
+            'description', 'Capture the types of data or statistics that would help, examples of metrics that would strengthen the need statement, where the data might be found, and any qualitative or quantitative evidence that speaks to the problem.',
+            'placeholder', 'Paste AI guidance or your notes about metrics, sources, and evidence to look for...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'need_next_steps_intro',
+            'label', 'What happens next',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'After these questions, your responses can be combined into multiple 2-3 paragraph need statement drafts. You will select the version that best captures the problem, then refine it into shorter versions for proposals, decks, and conversations.'
           )
         )
       )
@@ -1149,6 +1366,191 @@ select
   end::jsonb,
   true
 from need_modules nm
+on conflict (module_id) do update set
+  schema = excluded.schema,
+  complete_on_submit = excluded.complete_on_submit;
+
+-- Seed assignment schema for Strategic Foundations "Who We Serve"
+-- so the document's third exercise appears as its own guided lesson.
+with who_we_serve_module as (
+  select m.id
+  from classes c
+  join modules m on m.class_id = c.id
+  where c.slug = 'strategic-foundations'
+    and m.slug = 'who-we-serve'
+  limit 1
+)
+insert into module_assignments (module_id, schema, complete_on_submit)
+select
+  wsm.id,
+  jsonb_build_object(
+    'title', 'Who We Serve',
+    'roadmap_section', 'who_we_serve',
+    'completion_mode', 'all_answered',
+    'fields', jsonb_build_array(
+      jsonb_build_object(
+        'name', 'who_serve_intro',
+        'label', 'Who We Serve',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'This section builds on your Need Statement by helping you clearly define who your work is focused on.\n\nWhile your Need Statement describes who is experiencing the problem, this exercise sharpens that into a more precise understanding of the specific people you are trying to reach and serve.\n\nThere is no formal training video for this section, but it is an important step in strengthening your Strategic Roadmap. Clarity on who you serve helps you design stronger programs, communicate clearly with funders and partners, and focus your efforts where they can have the greatest impact.'
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_approach_intro',
+        'label', 'How to approach this exercise',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Your responses will later help generate a clear Who We Serve statement for your Strategic Roadmap.'
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_population_intro',
+        'label', 'Section 1 — Defining your core population',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Start by naming the primary audience or population you are trying to reach, including key characteristics and location.'
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_primary_population',
+        'label', 'Who is your primary audience or population?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Be as specific as possible. Examples: youth ages 14-18 in Roseland, single mothers on the South Side of Chicago, returning citizens within two years of release, or seniors living alone in urban neighborhoods.',
+        'placeholder', 'Describe the specific people you are trying to reach...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_characteristics',
+        'label', 'What are the key characteristics of this group?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Consider age range, gender if relevant, cultural or community identity, life stage, and shared experiences.',
+        'placeholder', 'List the characteristics that help define this group...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_location',
+        'label', 'Where are they located?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Examples include a specific neighborhood, city or region, school system, or community network.',
+        'placeholder', 'Describe the geography, system, or community network...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_context_intro',
+        'label', 'Section 2 — Lived experience and context',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Describe what this group is experiencing in daily life, including both challenges and strengths.'
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_daily_life',
+        'label', 'What is this group experiencing in their daily lives?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Think about challenges they face, environments they navigate, and pressures or realities that shape their decisions.',
+        'placeholder', 'Describe the daily context and realities this group is navigating...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_patterns',
+        'label', 'What are some common experiences or patterns you see within this group?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Describe repeated experiences, themes, or patterns you have noticed...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_strengths',
+        'label', 'What strengths or assets does this group already have?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Avoid defining people only by challenges. Examples: resilience, strong family ties, cultural identity, informal support networks, creativity, or entrepreneurship.',
+        'placeholder', 'Name the strengths, assets, and forms of resilience this group already carries...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_barriers_intro',
+        'label', 'Section 3 — Barriers and gaps',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Identify the barriers this group faces and why existing systems or services are not fully reaching them.'
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_barriers',
+        'label', 'What barriers does this group face that make it difficult to access opportunities or support?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Examples include transportation, cost, language, trust in institutions, or lack of awareness of available resources.',
+        'placeholder', 'List the practical, social, institutional, or financial barriers...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_system_gaps',
+        'label', 'Why are existing systems or services not fully reaching or supporting this group?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Describe the gaps between this group and existing supports...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_focus_intro',
+        'label', 'Section 4 — Focus and boundaries',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Clarify your focus inside the larger population and name who you are not trying to serve right now so the work does not become too broad.'
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_specific_focus',
+        'label', 'Within the larger population, is there a more specific group you feel most called to focus on?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Describe the narrower focus that feels most aligned or urgent...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_out_of_scope',
+        'label', 'Are there groups you are not trying to serve right now?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'This helps clarify focus and avoid overextension.',
+        'placeholder', 'Name any groups, geographies, or needs outside your current focus...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_clarity_intro',
+        'label', 'Section 5 — Clarity statement',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Bring the answers together into a natural first draft. This does not need to be polished.'
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_clarity_statement',
+        'label', 'In your own words, describe the people you are trying to serve.',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Aim for 1-2 paragraphs, spoken naturally.',
+        'placeholder', 'Describe who you serve in a clear, natural paragraph or two...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_ai_prompt_intro',
+        'label', 'What happens next',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Your responses can later be used to generate three versions of a Who We Serve statement: one paragraph, 3-4 sentences, and 1-2 sentences. Each version should define the population, include relevant characteristics, reflect both challenges and strengths, and avoid describing programs or solutions.'
+      ),
+      jsonb_build_object(
+        'name', 'who_serve_examples_intro',
+        'label', 'Examples to notice',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Strong Who We Serve statements are specific, include context beyond demographics, describe both challenges and strengths, and do not describe programs or solutions.'
+      )
+    )
+  )::jsonb,
+  true
+from who_we_serve_module wsm
 on conflict (module_id) do update set
   schema = excluded.schema,
   complete_on_submit = excluded.complete_on_submit;
@@ -1187,88 +1589,540 @@ select
   case
     when mv.slug = 'mission' then
       jsonb_build_object(
-        'title', 'Mission statement',
+        'title', 'Mission Statement',
+        'roadmap_section', 'mission_vision_values',
+        'completion_mode', 'all_answered',
         'fields', jsonb_build_array(
           jsonb_build_object(
             'name', 'mission_intro',
-            'label', 'Draft Mission Statement',
+            'label', 'Defining your mission',
             'type', 'subtitle',
-            'description', 'Collect examples you admire, then draft a starting point you can refine later.'
+            'screen', 'intro',
+            'description', 'Your mission is a clear, concise statement of what you do and the difference your work makes.\n\nIf your origin story explains where this work comes from and your need statement explains the problem, your mission answers: what do you do, who do you do it for, and what difference does your work make?\n\nStrong nonprofit missions do not just describe activity. They describe impact: not just what you do, but how the world is different as a result.\n\nA strong mission is clear, specific, grounded in real work, and focused on the difference being made in people''s lives or communities.'
           ),
           jsonb_build_object(
-            'name', 'mission_examples',
-            'label', 'Six favorite mission statements',
+            'name', 'mission_approach_intro',
+            'label', 'How to approach this exercise',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Some answers may be a few sentences; others may be longer reflections. Your responses will later help generate draft mission statements that reflect your real experience, perspective, and intentions.'
+          ),
+          jsonb_build_object(
+            'name', 'mission_what_you_do_intro',
+            'label', 'Section 1 — What you do',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Describe your work in simple, direct terms and name the main activities or approaches you plan to use.'
+          ),
+          jsonb_build_object(
+            'name', 'mission_work_in_world',
+            'label', 'What are you trying to do in the world?',
             'type', 'long_text',
-            'placeholder', 'List six mission statements you admire.'
+            'screen', 'question',
+            'description', 'Describe your work in simple, direct terms.',
+            'placeholder', 'Describe what you are trying to do in plain language...',
+            'required', false
           ),
           jsonb_build_object(
-            'name', 'mission',
-            'label', 'Mission statement',
+            'name', 'mission_main_activities',
+            'label', 'What are the main activities or approaches you plan to use?',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'Examples include mentorship, education or training, workforce development, counseling or healing support, community-building, and advocacy.',
+            'placeholder', 'List the activities, supports, or approaches you expect to use...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'mission_who_for_intro',
+            'label', 'Section 2 — Who you do it for',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Connect your mission to the people you serve. Stay consistent with your Who We Serve section.'
+          ),
+          jsonb_build_object(
+            'name', 'mission_who_for',
+            'label', 'Who are you doing this work for?',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'Be consistent with your Who We Serve section.',
+            'placeholder', 'Describe the people or community your work is focused on...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'mission_group_importance',
+            'label', 'What makes this group important to focus on?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Explain why this group, community, or population matters for your work...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'mission_difference_intro',
+            'label', 'Section 3 — The difference you make',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Move beyond activity and describe the change your work creates in people''s lives, families, or communities.'
+          ),
+          jsonb_build_object(
+            'name', 'mission_difference',
+            'label', 'What difference does your work make in people''s lives?',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'Think about what is different because your work exists, what changes for individuals or families, and what improves in the community.',
+            'placeholder', 'Describe the changes your work is meant to create...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'mission_missing_without_work',
+            'label', 'If your work did not exist, what would be missing?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Describe the gap your work fills and what would be absent without it...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'mission_success_3_years',
+            'label', 'If your work is successful, what will be different 3-5 years from now?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Describe what changes over time if the work succeeds...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'mission_approach_distinctiveness_intro',
+            'label', 'Section 4 — Your approach and distinctiveness',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Name what is distinctive about how you approach the work and why that approach can be effective.'
+          ),
+          jsonb_build_object(
+            'name', 'mission_unique_approach',
+            'label', 'What is unique about how you approach this work?',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'Examples include lived experience, a community-based approach, culturally responsive work, long-term relationships instead of short-term programs, or combining multiple supports.',
+            'placeholder', 'Describe what makes your approach different or especially suited to this work...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'mission_effective_approach',
+            'label', 'Why do you believe your approach will be effective?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Explain why this approach can work for the people and problem you are focused on...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'mission_pulling_together_intro',
+            'label', 'Section 5 — Pulling it together',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Bring together what you do, who you do it for, and the difference it makes. This can be a natural 1-2 paragraph draft.'
+          ),
+          jsonb_build_object(
+            'name', 'mission_pulling_together',
+            'label', 'In your own words, describe what you do, for whom, and the difference it makes.',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'Speak this naturally in 1-2 paragraphs.',
+            'placeholder', 'Describe your work, who it serves, and the impact it is meant to create...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'mission_ai_prompt_intro',
+            'label', 'What happens next',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Your responses can later be used to generate four mission statement options, each clearly describing what the organization does, who it serves, and the difference or impact the work makes. After choosing a preferred version, refine it into a concise public mission statement.'
+          ),
+          jsonb_build_object(
+            'name', 'mission_final_statement',
+            'label', 'Write or paste your preferred mission statement draft.',
             'type', 'long_text',
             'org_key', 'mission',
-            'placeholder', 'Write a clear, specific statement of why your organization exists.'
+            'screen', 'question',
+            'description', 'Aim for one clear sentence. This can evolve later.',
+            'placeholder', 'Write a clear, specific mission statement...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'mission_examples_intro',
+            'label', 'Examples to notice',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Strong mission statements clearly describe what the organization does, identify who is served, communicate the difference being made, stay concise and easy to understand, and avoid vague or overly broad language.'
           )
         )
       )
     when mv.slug = 'vision' then
       jsonb_build_object(
-        'title', 'Vision statement',
+        'title', 'Vision Statement',
+        'roadmap_section', 'mission_vision_values',
+        'completion_mode', 'all_answered',
         'fields', jsonb_build_array(
           jsonb_build_object(
             'name', 'vision_intro',
-            'label', 'Draft Vision Statement',
+            'label', 'Defining your vision',
             'type', 'subtitle',
-            'description', 'Are you choosing a practical near-future vision or a bold, aspirational one? Draft a couple of options you can revisit as you progress.'
+            'screen', 'intro',
+            'description', 'Your vision describes the future you are working toward.\n\nIf your origin story explains where this work comes from, your need statement defines the problem, and your mission describes what you do and the difference you make, your vision answers: what does the world look like if your work succeeds, what is different for the people and communities you serve, and what long-term change are you working toward?\n\nA strong vision does not describe programs or activities. It describes the end result: a desired future that is meaningfully different from what exists today.'
           ),
           jsonb_build_object(
-            'name', 'vision_personal',
-            'label', 'In a few sentences, how would you describe your personal vision statement?',
+            'name', 'vision_realistic_aspirational_intro',
+            'label', 'Realistic or aspirational vision',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'There are two valid approaches to vision statements.\n\nA realistic vision describes a concrete, measurable future outcome, such as 200 quality jobs created along 61st Street.\n\nAn aspirational vision describes a broader, values-driven future, such as no family will be left to suffer alone.\n\nBoth approaches are valid, but choose intentionally. A realistic vision provides clarity and measurable direction. An aspirational vision provides inspiration and long-term purpose.'
+          ),
+          jsonb_build_object(
+            'name', 'vision_approach_intro',
+            'label', 'How to approach this exercise',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Your responses will later help generate draft vision statements that reflect your perspective and aspirations for the future.'
+          ),
+          jsonb_build_object(
+            'name', 'vision_people_intro',
+            'label', 'Section 1 — The future for the people you serve',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Start with the future you want for the people you serve: the opportunities they will have, the challenges they will no longer face, and how daily life will improve.'
+          ),
+          jsonb_build_object(
+            'name', 'vision_people_difference',
+            'label', 'If your work is successful, what will be different in the lives of the people you serve?',
             'type', 'long_text',
-            'placeholder', 'Describe your personal vision in a few sentences.'
+            'screen', 'question',
+            'description', 'Think about opportunities they will have, challenges they will no longer face, and how their daily lives will improve.',
+            'placeholder', 'Describe what changes for the people you serve...',
+            'required', false
           ),
           jsonb_build_object(
-            'name', 'vision_examples',
-            'label', 'Six favorite vision statements',
+            'name', 'vision_individual_success',
+            'label', 'What does success look like for individuals?',
             'type', 'long_text',
-            'placeholder', 'List six vision statements you admire.'
+            'screen', 'question',
+            'placeholder', 'Describe what success looks like at the individual level...',
+            'required', false
           ),
           jsonb_build_object(
-            'name', 'vision',
-            'label', 'Vision statement',
+            'name', 'vision_community_intro',
+            'label', 'Section 2 — The future for the community',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Now widen the lens to the broader community or environment, including neighborhoods, systems, culture, or norms.'
+          ),
+          jsonb_build_object(
+            'name', 'vision_community_difference',
+            'label', 'What will be different in the broader community or environment?',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'Think about neighborhoods, systems such as education, workforce, or health, and culture or norms.',
+            'placeholder', 'Describe what changes in the broader community...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'vision_visible_changes',
+            'label', 'What positive changes would others be able to see or feel?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Describe the visible or felt changes others would notice...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'vision_long_term_intro',
+            'label', 'Section 3 — Long-term change',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Look beyond the near term and name the lasting change you hope your work can help create.'
+          ),
+          jsonb_build_object(
+            'name', 'vision_lasting_change',
+            'label', 'Looking 5-10 years ahead, what lasting change do you hope to see?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Describe the long-term change you hope to see...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'vision_scaled_impact',
+            'label', 'If your work scaled or grew, what larger impact could it have?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Describe the larger impact your work could have over time...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'vision_problem_removed_intro',
+            'label', 'Section 4 — Removing the problem',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Connect the vision back to the need statement by naming what would be different if the problem were meaningfully addressed.'
+          ),
+          jsonb_build_object(
+            'name', 'vision_need_addressed',
+            'label', 'If the problem you described in your need statement were addressed, what would be different?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Describe what changes if the need is meaningfully addressed...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'vision_problem_lower_level',
+            'label', 'What would no longer exist, or would exist at a much lower level?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Describe what decreases, disappears, or becomes far less common...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'vision_type_intro',
+            'label', 'Section 5 — Choosing your vision type',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Choose intentionally between a concrete measurable vision and a broader values-driven vision.'
+          ),
+          jsonb_build_object(
+            'name', 'vision_type',
+            'label', 'Do you want your vision to be more concrete and measurable, or broad and values-driven?',
+            'type', 'select',
+            'screen', 'question',
+            'options', jsonb_build_array(
+              'Concrete and measurable',
+              'Broad and values-driven',
+              'A blend of both'
+            ),
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'vision_type_reason',
+            'label', 'Why does this approach fit your work?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Explain why this kind of vision fits your work and audience...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'vision_pulling_together_intro',
+            'label', 'Section 6 — Pulling it together',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Bring the answers together into a natural description of the future you are working toward.'
+          ),
+          jsonb_build_object(
+            'name', 'vision_pulling_together',
+            'label', 'In your own words, describe the future you are working toward.',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'Speak this naturally in 1-2 paragraphs.',
+            'placeholder', 'Describe the future you are working toward...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'vision_ai_prompt_intro',
+            'label', 'What happens next',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Your responses can later be used to generate four vision statement options that describe a desired future meaningfully different from today, focus on what is different for people and communities, reflect long-term change, and align with your selected vision type.'
+          ),
+          jsonb_build_object(
+            'name', 'vision_final_statement',
+            'label', 'Write or paste your preferred vision statement draft.',
             'type', 'long_text',
             'org_key', 'vision',
-            'placeholder', 'Describe the future you are working toward if your mission succeeds.'
+            'screen', 'question',
+            'description', 'Aim for one clear sentence focused on the desired future.',
+            'placeholder', 'Write a clear, compelling vision statement...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'vision_examples_intro',
+            'label', 'Examples to notice',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Strong vision statements describe a future state, not current work. They reflect a desired future different from today, focus on people and outcomes, choose realistic or aspirational intentionally, and stay clear and concise.'
           )
         )
       )
     else
       jsonb_build_object(
-        'title', 'Values',
+        'title', 'Core Values',
+        'roadmap_section', 'mission_vision_values',
+        'completion_mode', 'all_answered',
         'fields', jsonb_build_array(
           jsonb_build_object(
             'name', 'values_intro',
-            'label', 'Draft Core Values',
+            'label', 'Defining your core values',
             'type', 'subtitle',
-            'description', 'Draft your core values, focusing on the principles you want to consistently model as you grow.'
+            'screen', 'intro',
+            'description', 'Your core values define how your organization operates and makes decisions.\n\nIf your origin story explains where this work comes from, your need statement defines the problem, your mission describes what you do and the difference you make, and your vision defines the future you are working toward, your values answer: how do you show up in this work, what principles guide your decisions, and what does it look like to do this work well?\n\nCore values are deeply held beliefs: the principles you are unwilling to compromise, even under pressure.'
           ),
           jsonb_build_object(
-            'name', 'values_personal',
-            'label', 'In a few words, how would you describe your personal core values?',
-            'type', 'short_text',
-            'placeholder', 'List a few words or phrases that describe your personal values.'
+            'name', 'values_quality_intro',
+            'label', 'What makes a value real',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Core values are not aspirational slogans or marketing language. They should be enduring, authentic, behavioral, and distinctive.\n\nA useful value reflects what you truly believe, shows up in how you act and make decisions, and differentiates how your organization operates from others.'
           ),
           jsonb_build_object(
-            'name', 'values_examples',
-            'label', 'Six favorite values statements',
+            'name', 'values_approach_intro',
+            'label', 'How to approach this exercise',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Your responses will later help generate a set of core values that reflect your beliefs, standards, and approach to this work.'
+          ),
+          jsonb_build_object(
+            'name', 'values_deep_beliefs_intro',
+            'label', 'Section 1 — Your deepest beliefs',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Start by naming what you believe deeply about the work and the people you serve.'
+          ),
+          jsonb_build_object(
+            'name', 'values_deep_beliefs',
+            'label', 'What do you believe deeply about this work and the people you serve?',
             'type', 'long_text',
-            'placeholder', 'List six values statements you admire.'
+            'screen', 'question',
+            'description', 'Think about what you know to be true from experience, what others often get wrong, and what you feel strongly about even when it is not easy.',
+            'placeholder', 'Describe the beliefs that sit underneath your work...',
+            'required', false
           ),
           jsonb_build_object(
-            'name', 'values',
-            'label', 'Define your core organizational values',
+            'name', 'values_hard_principles',
+            'label', 'What principles would you hold onto, even if they made your work harder?',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'This is a key Good to Great test of real values.',
+            'placeholder', 'Name the principles you would keep even under pressure...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'values_stand_for_intro',
+            'label', 'Section 2 — What you stand for and against',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Real values often become clear when you name what you are committed to doing differently.'
+          ),
+          jsonb_build_object(
+            'name', 'values_stand_for',
+            'label', 'What do you stand for in how this work should be done?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Describe what you stand for in how the work is carried out...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'values_do_differently',
+            'label', 'What have you seen done poorly that you are committed to doing differently?',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'Real values often emerge from frustration with what does not work.',
+            'placeholder', 'Describe what you have seen done poorly and how you want to operate differently...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'values_refuse_accept',
+            'label', 'What would you push back on or refuse to accept in your field?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Name the patterns, shortcuts, or compromises you would refuse...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'values_behavior_intro',
+            'label', 'Section 3 — Behavior and standards',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Values must show up in action. Describe the behaviors, treatment, and standards that make the values real.'
+          ),
+          jsonb_build_object(
+            'name', 'values_best_operating',
+            'label', 'What does it look like when your organization is operating at its best?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Describe what people would see, feel, and experience when the organization is at its best...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'values_treatment',
+            'label', 'How should people be treated in your work?',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'Consider participants, staff, partners, and community members.',
+            'placeholder', 'Describe the standard of treatment you want to uphold...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'values_non_negotiable_behaviors',
+            'label', 'What behaviors are non-negotiable?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'List the behaviors and standards that must be consistently protected...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'values_pressure_intro',
+            'label', 'Section 4 — Decision-making under pressure',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Values matter most when decisions are hard. Name the principles that guide tradeoffs and boundaries.'
+          ),
+          jsonb_build_object(
+            'name', 'values_decision_principles',
+            'label', 'When faced with a difficult decision, what principles will guide your choices?',
+            'type', 'long_text',
+            'screen', 'question',
+            'placeholder', 'Describe the principles you would use when the decision is hard...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'values_never_do',
+            'label', 'What would you never do, even if it would lead to more funding, growth, or visibility?',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'This question often reveals the most important values.',
+            'placeholder', 'Name the compromises you would not make...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'values_pulling_together_intro',
+            'label', 'Section 5 — Pulling it together',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Bring the answers together into a natural description of the principles that should guide the organization.'
+          ),
+          jsonb_build_object(
+            'name', 'values_pulling_together',
+            'label', 'In your own words, describe the principles that should guide your organization.',
+            'type', 'long_text',
+            'screen', 'question',
+            'description', 'Speak this naturally in 1-2 paragraphs.',
+            'placeholder', 'Describe the principles that should guide the organization...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'values_ai_prompt_intro',
+            'label', 'What happens next',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Your responses can later be used to generate 5-7 core values. Each value should include a concise title and a brief description explaining what the value means in practice.'
+          ),
+          jsonb_build_object(
+            'name', 'values_final_set',
+            'label', 'Write or paste your preferred core values set.',
             'type', 'long_text',
             'org_key', 'values',
-            'placeholder', 'List the principles you are unwilling to compromise and the culture you want to build.'
+            'screen', 'question',
+            'description', 'Include 5-7 values with a short title and practical description for each.',
+            'placeholder', 'List each core value with a brief practical description...',
+            'required', false
+          ),
+          jsonb_build_object(
+            'name', 'values_examples_intro',
+            'label', 'Examples to notice',
+            'type', 'subtitle',
+            'screen', 'intro',
+            'description', 'Strong core values reflect deep beliefs, describe how the organization behaves, guide real decisions under pressure, and stay specific and meaningful rather than generic.'
           )
         )
       )
@@ -1485,38 +2339,246 @@ $MD$
 from toc_module t
 where m.id = t.id;
 
-update module_assignments ma
-set schema = jsonb_build_object(
-  'title', 'IF / THEN / SO exploration',
-  'fields', jsonb_build_array(
-    jsonb_build_object(
-      'name', 'statement_intro',
-      'label', 'Draft Theory of Change',
-      'type', 'subtitle',
-      'description', 'Using your need, mission, vision, and values, work with AI (or teammates) to develop multiple IF-THEN-SO statements.'
-    ),
-    jsonb_build_object(
-      'name', 'statement_one',
-      'label', 'Statement 1 (IF / THEN / SO)',
-      'type', 'long_text',
-      'placeholder', 'If we..., then..., so that...'
-    ),
-    jsonb_build_object(
-      'name', 'statement_two',
-      'label', 'Statement 2 (IF / THEN / SO)',
-      'type', 'long_text',
-      'placeholder', 'Experiment with a different angle or audience.'
-    ),
-    jsonb_build_object(
-      'name', 'statement_three',
-      'label', 'Statement 3 (IF / THEN / SO)',
-      'type', 'long_text',
-      'placeholder', 'Stress test a bold or aspirational scenario.'
+insert into module_assignments (module_id, schema, complete_on_submit)
+select
+  t.id,
+  jsonb_build_object(
+    'title', 'Theory of Change',
+    'roadmap_section', 'theory_of_change',
+    'completion_mode', 'all_answered',
+    'fields', jsonb_build_array(
+      jsonb_build_object(
+        'name', 'toc_intro',
+        'label', 'Developing your Theory of Change',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Your Theory of Change explains in broad strokes how change is expected to happen.\n\nIf your origin story explains where this work comes from, your need statement defines the problem, your mission describes what you do and the difference you make, and your vision defines the future you are working toward, your Theory of Change lays out the logic between action, near-term change, and longer-term impact.'
+      ),
+      jsonb_build_object(
+        'name', 'toc_framework_intro',
+        'label', 'If, Then, So That',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'At Coach House, we use a simple structure: If we do this with these people, then this change will happen, so that over time these longer-term outcomes can occur.\n\nThe If statement describes the broad activity and people involved. The Then statement predicts the near-term change. The So That statement connects the work to longer-term impact, evaluation, and fundraising.'
+      ),
+      jsonb_build_object(
+        'name', 'toc_approach_intro',
+        'label', 'How to approach this exercise',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Your responses will later help generate a clear, testable Theory of Change that you can describe, predict, measure, and adjust.'
+      ),
+      jsonb_build_object(
+        'name', 'toc_problem_context_intro',
+        'label', 'Section 1 — The problem and context',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Start with the problem, the people most affected, and the conditions that keep the problem in place.'
+      ),
+      jsonb_build_object(
+        'name', 'toc_core_problem',
+        'label', 'What is the core problem you are trying to address?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Refer back to your Need Statement.',
+        'placeholder', 'Describe the core problem in plain language...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_affected_population',
+        'label', 'Who is most affected by this problem?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Refer back to your Who We Serve section.',
+        'placeholder', 'Describe the people, group, or community most affected...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_conditions_patterns',
+        'label', 'What conditions or patterns keep this problem in place?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Name the conditions, patterns, gaps, or systems that keep the problem going...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_if_intro',
+        'label', 'Section 2 — IF: what you will do, with whom',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'This section defines the If statement: the core things you will do and the people who will participate in or experience the work.'
+      ),
+      jsonb_build_object(
+        'name', 'toc_core_activities',
+        'label', 'What are the core things you will do to address this problem?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Examples include mentoring, training, counseling, workforce development, community engagement, or other direct supports.',
+        'placeholder', 'List the activities, supports, or approaches you expect to use...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_participants',
+        'label', 'Who will participate in or experience this work?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Be specific about the population.',
+        'placeholder', 'Describe who will participate in or directly experience the work...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_participant_experience',
+        'label', 'What will participants actually experience?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Describe what engagement looks like in practice.',
+        'placeholder', 'Describe sessions, relationships, services, supports, or other participant experiences...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_then_intro',
+        'label', 'Section 3 — THEN: near-term change',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'This section defines the Then statement: the change you expect to see shortly after people engage with the work.'
+      ),
+      jsonb_build_object(
+        'name', 'toc_near_term_change',
+        'label', 'As a result of your work, what changes in the near term?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Think about knowledge gained, skills developed, behaviors changed, relationships built, confidence increased, or access improved.',
+        'placeholder', 'Describe the near-term changes you expect...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_shortly_after_engaging',
+        'label', 'What is different for participants shortly after engaging?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Describe what is different soon after participation...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_short_term_measures',
+        'label', 'What would you expect to observe or measure in the short term?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Describe the signs, metrics, or observations that would show near-term progress...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_so_that_intro',
+        'label', 'Section 4 — SO THAT: longer-term implications',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'This section connects near-term change to broader outcomes and ultimate impact.'
+      ),
+      jsonb_build_object(
+        'name', 'toc_longer_term_leads_to',
+        'label', 'If those near-term changes happen, what do they lead to over time?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Describe what the near-term changes should make possible over time...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_broader_outcomes',
+        'label', 'What broader outcomes do you expect for individuals, families, or communities?',
+        'type', 'long_text',
+        'screen', 'question',
+        'placeholder', 'Describe the broader outcomes you expect...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_ultimate_impact',
+        'label', 'What is the ultimate impact this contributes to?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'This should connect to your Vision.',
+        'placeholder', 'Describe the ultimate impact this work contributes to...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_assumptions_intro',
+        'label', 'Section 5 — Your assumptions',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Every Theory of Change includes assumptions. Name why you believe this sequence will work and what you are assuming about how change happens.'
+      ),
+      jsonb_build_object(
+        'name', 'toc_sequence_reason',
+        'label', 'Why do you believe this sequence will work?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Think about lived experience, patterns you have observed, research or evidence, and what you have seen succeed or fail.',
+        'placeholder', 'Explain why you believe this pathway from action to change makes sense...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_change_assumptions',
+        'label', 'What assumptions are you making about how change happens?',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'These do not need to be perfect. Be thoughtful and honest.',
+        'placeholder', 'Name the assumptions this Theory of Change depends on...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_pulling_together_intro',
+        'label', 'Section 6 — Pulling it together',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Bring the answers together using the If, Then, So That structure.'
+      ),
+      jsonb_build_object(
+        'name', 'toc_pulling_together',
+        'label', 'In your own words, describe your full Theory of Change using the If, Then, So That structure.',
+        'type', 'long_text',
+        'screen', 'question',
+        'description', 'Speak this naturally in 1-2 paragraphs.',
+        'placeholder', 'If we do this with these people, then this change will happen, so that over time...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_ai_prompt_intro',
+        'label', 'What happens next',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'Your responses can later be used to generate a clear structured Theory of Change with a short narrative and a breakdown of the problem, IF, THEN, and SO THAT logic.'
+      ),
+      jsonb_build_object(
+        'name', 'toc_summary',
+        'label', 'Write or paste your preferred Theory of Change.',
+        'type', 'long_text',
+        'org_key', 'theory_of_change',
+        'roadmap_section', 'theory_of_change',
+        'screen', 'question',
+        'description', 'Include a polished narrative version and, when useful, a clean If, Then, So That version.',
+        'placeholder', 'Write the Theory of Change you want to carry into your Strategic Roadmap...',
+        'required', false
+      ),
+      jsonb_build_object(
+        'name', 'toc_refine_prompt_intro',
+        'label', 'Refining your Theory of Change',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'When refining, look for clearer cause-and-effect relationships, stronger alignment with the If, Then, So That framework, and language that is useful for program design, evaluation, and fundraising.'
+      ),
+      jsonb_build_object(
+        'name', 'toc_examples_intro',
+        'label', 'What to notice',
+        'type', 'subtitle',
+        'screen', 'intro',
+        'description', 'The If defines your program basics. The Then defines what you think will happen as a result and what you intend to measure. The So That connects to long-term impact and creates a structure you can test and improve over time.'
+      )
     )
-  )
-)::jsonb
+  )::jsonb,
+  true
 from toc_module t
-where ma.module_id = t.id;
+on conflict (module_id) do update set
+  schema = excluded.schema,
+  complete_on_submit = excluded.complete_on_submit;
 
 with systems_module as (
   select m.id from classes c join modules m on m.class_id = c.id

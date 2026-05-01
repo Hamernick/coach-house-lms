@@ -1,8 +1,8 @@
 import dynamic from "next/dynamic"
 
 import { Checkbox } from "@/components/ui/checkbox"
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
 import type { ModuleAssignmentField } from "../../types"
@@ -56,17 +56,19 @@ export function AssignmentField({
     hideLabel && "sr-only",
   )
   const description = field.description ? (
-    <p className="text-xs text-muted-foreground whitespace-pre-line">{field.description}</p>
+    <FieldDescription className="whitespace-pre-line">
+      {field.description}
+    </FieldDescription>
   ) : null
   const fieldId = field.name
 
   switch (field.type) {
     case "short_text":
       return (
-        <div className="space-y-2">
-          <Label htmlFor={fieldId} className={labelClassName}>
+        <Field className="gap-2">
+          <FieldLabel htmlFor={fieldId} className={labelClassName}>
             {labelText}
-          </Label>
+          </FieldLabel>
           {description}
           <Input
             id={fieldId}
@@ -75,7 +77,7 @@ export function AssignmentField({
             required={field.required}
             onChange={(event) => updateValue(field.name, event.target.value)}
           />
-        </div>
+        </Field>
       )
     case "long_text": {
       const value = (values[field.name] as string) ?? ""
@@ -96,14 +98,14 @@ export function AssignmentField({
         }
       }
       return (
-        <div className="space-y-3">
-          <Label htmlFor={fieldId} className={cn(labelClassName, "w-full")}>
+        <Field className="gap-3">
+          <FieldLabel htmlFor={fieldId} className={cn(labelClassName, "w-full")}>
             {labelText}
-          </Label>
+          </FieldLabel>
           {field.description ? (
-            <p className="text-left text-xs text-muted-foreground whitespace-pre-line">
+            <FieldDescription className="text-left whitespace-pre-line">
               {field.description}
-            </p>
+            </FieldDescription>
           ) : null}
           <div className={cn(isAcceleratorShell ? "min-h-[560px]" : "min-h-[420px]")}>
             <RichTextEditorLazy
@@ -114,7 +116,7 @@ export function AssignmentField({
               minHeight={richTextMinHeight}
             />
           </div>
-        </div>
+        </Field>
       )
     }
     case "select": {
@@ -126,8 +128,8 @@ export function AssignmentField({
           ? selectedValueRaw
           : undefined
       return (
-        <div className="space-y-2">
-          <Label className={labelClassName}>{labelText}</Label>
+        <Field className="gap-2">
+          <FieldLabel className={labelClassName}>{labelText}</FieldLabel>
           {description}
           <Select
             value={selectedValue}
@@ -150,18 +152,18 @@ export function AssignmentField({
             </SelectContent>
           </Select>
           {normalizedOptions.length === 0 ? (
-            <p className="mt-1 text-xs text-muted-foreground">No options configured.</p>
+            <FieldDescription>No options configured.</FieldDescription>
           ) : null}
-        </div>
+        </Field>
       )
     }
     case "multi_select": {
       const normalizedOptions = normalizeOptions(field.options ?? [])
       return (
-        <div className="space-y-2">
-          <Label className={labelClassName}>{labelText}</Label>
+        <Field className="gap-2">
+          <FieldLabel className={labelClassName}>{labelText}</FieldLabel>
           {description}
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             {normalizedOptions.map((option) => {
               const selected = Array.isArray(values[field.name]) ? (values[field.name] as string[]) : []
               const checked = selected.includes(option.value)
@@ -187,10 +189,10 @@ export function AssignmentField({
               )
             })}
             {normalizedOptions.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No options configured.</p>
+              <FieldDescription>No options configured.</FieldDescription>
             ) : null}
           </div>
-        </div>
+        </Field>
       )
     }
     case "budget_table":
@@ -210,16 +212,16 @@ export function AssignmentField({
       const max = field.max ?? min + 100
       const step = field.step ?? 1
       return (
-        <div className="space-y-2">
+        <Field className="gap-2">
           <div className="flex items-center justify-between">
-            <Label
+            <FieldLabel
               className={cn(
                 "text-sm font-medium leading-tight select-text",
                 hideLabel && "sr-only",
               )}
             >
               {labelText}
-            </Label>
+            </FieldLabel>
             <span className="text-xs text-muted-foreground">{sliderValue}</span>
           </div>
           {description}
@@ -230,15 +232,15 @@ export function AssignmentField({
             step={step}
             onValueChange={(next) => updateValue(field.name, next[0] ?? min)}
           />
-        </div>
+        </Field>
       )
     }
     case "custom_program":
       return (
-        <div className="space-y-2">
-          <Label htmlFor={fieldId} className={labelClassName}>
+        <Field className="gap-2">
+          <FieldLabel htmlFor={fieldId} className={labelClassName}>
             {labelText}
-          </Label>
+          </FieldLabel>
           {description}
           {field.programTemplate ? (
             <p className="rounded-md border border-dashed bg-muted/40 p-3 text-xs text-muted-foreground">
@@ -254,7 +256,7 @@ export function AssignmentField({
               minHeight={richTextMinHeight}
             />
           </div>
-        </div>
+        </Field>
       )
     default:
       return null

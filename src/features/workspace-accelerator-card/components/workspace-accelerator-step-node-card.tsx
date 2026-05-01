@@ -40,6 +40,10 @@ import {
   canWorkspaceAcceleratorTutorialPerformPreviewAction,
   isWorkspaceAcceleratorTutorialPreviewLocked,
 } from "./workspace-accelerator-card-tutorial-guards"
+import {
+  resolveAssignmentFooterNavigation,
+  WorkspaceAcceleratorStepFooter,
+} from "./workspace-accelerator-step-node-card-footer"
 import { WorkspaceAcceleratorTutorialGuardTooltip } from "./workspace-accelerator-tutorial-guard-tooltip"
 import { useWorkspaceAcceleratorTutorialGuard } from "./use-workspace-accelerator-tutorial-guard"
 
@@ -72,6 +76,10 @@ function headerButtonClassName() {
   return "h-9 w-9 touch-manipulation rounded-lg border border-border/65 bg-background/80 hover:bg-background/95 sm:h-8 sm:w-8"
 }
 
+function headerDoneButtonClassName() {
+  return "h-9 min-w-[76px] touch-manipulation gap-1.5 rounded-full border border-border/70 bg-background/90 px-3 text-xs font-medium text-foreground shadow-xs hover:border-border hover:bg-muted/70 hover:text-foreground sm:h-8 sm:min-w-[72px] sm:px-3 dark:bg-background/75 dark:hover:bg-muted/45"
+}
+
 function clampStepTitle(title: string) {
   const trimmed = title.trim()
   if (!trimmed) return "Accelerator step"
@@ -91,12 +99,14 @@ function normalizeRailResources(step: WorkspaceAcceleratorCardStep): ModuleResou
 }
 
 function AcceleratorStepCloseButton({
+  done,
   moduleCompleted,
   onClose,
   reactGrabOwnerProps,
   tutorialCallout,
   variant,
 }: {
+  done?: boolean
   moduleCompleted: boolean
   onClose: () => void
   reactGrabOwnerProps?: Record<string, string>
@@ -106,25 +116,33 @@ function AcceleratorStepCloseButton({
   const button = (
     <Button
       type="button"
-      size="icon"
-      variant="ghost"
+      size={done ? "sm" : "icon"}
+      variant={done ? "outline" : "ghost"}
       {...reactGrabOwnerProps}
       className={cn(
-        headerButtonClassName(),
-        "h-7 w-7",
-        moduleCompleted &&
-          "border-sky-500/45 bg-sky-500/12 text-sky-600 hover:bg-sky-500/20 dark:text-sky-400",
+        done ? headerDoneButtonClassName() : headerButtonClassName(),
+        !done && "h-7 w-7",
+        !done &&
+          moduleCompleted &&
+          "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300",
       )}
       onClick={onClose}
       aria-label={
-        moduleCompleted
+        done
+          ? "Done reviewing this lesson"
+          : moduleCompleted
           ? "Lesson complete"
           : variant === "embedded"
             ? "Close accelerator lesson"
             : "Close accelerator step node"
       }
     >
-      {moduleCompleted ? (
+      {done ? (
+        <>
+          <CheckIcon className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden />
+          <span>Done</span>
+        </>
+      ) : moduleCompleted ? (
         <CheckIcon className="h-4 w-4" aria-hidden />
       ) : (
         <XIcon className="h-4 w-4" aria-hidden />
@@ -174,44 +192,6 @@ function WorkspaceAcceleratorStepMobileDetailsDrawer({
   )
 }
 
-function WorkspaceAcceleratorStepFooterAction({
-  completed,
-  disabled,
-  label,
-  onComplete,
-}: {
-  completed: boolean
-  disabled: boolean
-  label: string
-  onComplete: () => void
-}) {
-  return (
-    <Button
-      type="button"
-      size="sm"
-      variant={completed ? "default" : "secondary"}
-      className="h-10 w-full rounded-lg px-3 text-sm touch-manipulation sm:h-7 sm:w-auto sm:px-2.5 sm:text-[11px]"
-      onClick={onComplete}
-      disabled={disabled}
-    >
-      {label}
-    </Button>
-  )
-}
-
-function resolveWorkspaceAcceleratorPrimaryActionLabel({
-  completed,
-  workspaceOnboardingView,
-}: {
-  completed: boolean
-  workspaceOnboardingView: string | null
-}) {
-  if (completed) return "Completed"
-  if (workspaceOnboardingView === "welcome") return "Continue"
-  if (workspaceOnboardingView === "organization-setup") return "Save to continue"
-  return "Complete"
-}
-
 export function WorkspaceAcceleratorStepNodeCard({
   step,
   placeholderVideoUrl = null,
@@ -248,15 +228,19 @@ export function WorkspaceAcceleratorStepNodeCard({
   const [blockedControlId, setBlockedControlId] = useState<string | null>(null)
   const [mobileRailOpen, setMobileRailOpen] = useState(false)
   const stepTitle = clampStepTitle(
-    resolveWorkspaceAcceleratorDisplayStepTitle({
-      moduleTitle: step.moduleTitle,
-      stepTitle: step.stepTitle,
-    }),
+    step.stepKind === "assignment" && step.moduleTitle.trim()
+      ? step.moduleTitle
+      : resolveWorkspaceAcceleratorDisplayStepTitle({
+          moduleTitle: step.moduleTitle,
+          stepTitle: step.stepTitle,
+        }),
   )
-  const showModuleTitle = shouldShowWorkspaceAcceleratorModuleTitle({
-    moduleTitle: step.moduleTitle,
-    stepTitle,
-  })
+  const showModuleTitle =
+    step.stepKind !== "assignment" &&
+    shouldShowWorkspaceAcceleratorModuleTitle({
+      moduleTitle: step.moduleTitle,
+      stepTitle,
+    })
   const stepCount = Math.max(stepTotal, 1)
   const currentCount = Math.min(stepIndex + 1, stepCount)
   const workspaceOnboardingView =
@@ -326,7 +310,10 @@ export function WorkspaceAcceleratorStepNodeCard({
     prefersReducedMotion: !!prefersReducedMotion,
   })
   const showMobileRailDrawer = Boolean(resolvedSidePanel) && isMobile
-  const primaryActionLabel = resolveWorkspaceAcceleratorPrimaryActionLabel({ completed, workspaceOnboardingView })
+  const assignmentFooterNavigation = resolveAssignmentFooterNavigation(step)
+  const isFinalAssignmentSection = Boolean(
+    assignmentFooterNavigation && !assignmentFooterNavigation.nextSection,
+  )
   useEffect(() => {
     setMobileRailOpen(false)
   }, [isMobile, step.id])
@@ -471,6 +458,7 @@ export function WorkspaceAcceleratorStepNodeCard({
                 >
                   <div className="inline-flex">
                     <AcceleratorStepCloseButton
+                      done={isFinalAssignmentSection}
                       moduleCompleted={moduleCompleted}
                       onClose={() => {
                         if (canClosePreview) {
@@ -510,9 +498,7 @@ export function WorkspaceAcceleratorStepNodeCard({
               <div
                 className={cn(
                   "min-h-0",
-                  immersiveOnboarding
-                    ? "flex h-full flex-col overflow-hidden"
-                    : "overflow-y-auto",
+                  immersiveOnboarding || step.stepKind === "assignment" ? "flex h-full flex-col overflow-hidden" : "overflow-y-auto",
                 )}
               >
                 {stepBody}
@@ -525,7 +511,7 @@ export function WorkspaceAcceleratorStepNodeCard({
             <div
               className={cn(
                 "min-h-0",
-                embedded && !immersiveOnboarding && "overflow-y-auto",
+                embedded && !immersiveOnboarding && (step.stepKind === "assignment" ? "flex h-full flex-1 flex-col overflow-hidden" : "overflow-y-auto"),
                 immersiveOnboarding && "flex h-full flex-col overflow-hidden",
               )}
             >
@@ -535,19 +521,17 @@ export function WorkspaceAcceleratorStepNodeCard({
         </motion.div>
       </AnimatePresence>
 
-      {!immersiveOnboarding ? (
-        <footer className="border-border/60 bg-muted/15 flex items-center justify-stretch border-t px-3 py-3 sm:justify-end sm:px-4 sm:py-2.5">
-          <div className="flex w-full sm:w-auto sm:flex-row sm:items-center">
-            <WorkspaceAcceleratorStepFooterAction
-              completed={completed}
-              disabled={
-                workspaceOnboardingView === "organization-setup" && !completed
-              }
-              label={primaryActionLabel}
-              onComplete={onComplete}
-            />
-          </div>
-        </footer>
+      {!immersiveOnboarding && assignmentFooterNavigation ? (
+        <WorkspaceAcceleratorStepFooter
+          assignmentFooterNavigation={assignmentFooterNavigation}
+          canGoNext={canGoNext}
+          canGoPrevious={canGoPrevious}
+          completed={completed}
+          isFinalAssignmentSection={isFinalAssignmentSection}
+          onComplete={onComplete}
+          onNext={onNext}
+          onPrevious={onPrevious}
+        />
       ) : null}
 
       {showMobileRailDrawer ? (

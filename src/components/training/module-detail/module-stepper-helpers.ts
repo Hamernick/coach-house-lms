@@ -39,12 +39,18 @@ export function buildModuleStepperSteps({
   if (lessonNotesContent) {
     list.push({ id: "notes", label: "Class notes", type: "notes" })
   }
-  if ((resources && resources.length > 0) || hasDeck) {
+  const hasAssignmentOverview = tabSections.some(
+    (section) => section.id === "assignment-overview",
+  )
+  if (!hasAssignmentOverview && ((resources && resources.length > 0) || hasDeck)) {
     list.push({ id: "resources", label: "Resources", type: "resources" })
   }
   if (assignmentFields.length > 0) {
     tabSections.forEach((section, index) => {
-      if (section.fields.length === 0) return
+      const hasVisibleInfo =
+        section.fields.length === 0 &&
+        Boolean(section.title?.trim() || section.description?.trim())
+      if (section.fields.length === 0 && !hasVisibleInfo) return
       const isRoadmap = section.fields.some((field) => Boolean(field.roadmapSectionId))
       assignmentIndex += 1
       list.push({

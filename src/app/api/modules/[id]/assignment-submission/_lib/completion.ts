@@ -1,5 +1,10 @@
 import type { Database } from "@/lib/supabase"
-import { markModuleCompleted } from "@/lib/modules"
+import {
+  markModuleCompleted,
+  parseAssignmentCompletionMode,
+  parseAssignmentFields,
+  shouldTreatAssignmentSubmissionAsComplete,
+} from "@/lib/modules"
 import { createNotification } from "@/lib/notifications"
 
 import type { ModuleMeta, SupabaseServerClient } from "./types"
@@ -60,15 +65,15 @@ export async function processModuleCompletion({
         .returns<Array<{ module_id: string; status: string | null }>>(),
       supabase
         .from("assignment_submissions")
-        .select("module_id, status")
+        .select("module_id, answers, status")
         .eq("user_id", userId)
         .in("module_id", classModuleIds)
-        .returns<Array<{ module_id: string; status: string | null }>>(),
+        .returns<Array<{ module_id: string; answers: unknown; status: string | null }>>(),
       supabase
         .from("module_assignments")
-        .select("module_id, complete_on_submit")
+        .select("module_id, schema, complete_on_submit")
         .in("module_id", classModuleIds)
-        .returns<Array<{ module_id: string; complete_on_submit: boolean | null }>>(),
+        .returns<Array<{ module_id: string; schema: unknown; complete_on_submit: boolean | null }>>(),
     ])
 
     if (progressResult.error) {
@@ -86,16 +91,34 @@ export async function processModuleCompletion({
       if (row.status) progressStatusByModuleId.set(row.module_id, row.status)
     }
 
-    const submissionStatusByModuleId = new Map<string, string>()
+    const submissionByModuleId = new Map<string, { answers: Record<string, unknown>; status: string }>()
     for (const row of submissionResult.error ? [] : submissionResult.data ?? []) {
-      if (row.status) submissionStatusByModuleId.set(row.module_id, row.status)
+      if (!row.status) continue
+      submissionByModuleId.set(row.module_id, {
+        answers:
+          row.answers &&
+          typeof row.answers === "object" &&
+          !Array.isArray(row.answers)
+            ? (row.answers as Record<string, unknown>)
+            : {},
+        status: row.status,
+      })
     }
 
-    const completeOnSubmit = new Set<string>()
-    for (const row of assignmentResult.error ? [] : assignmentResult.data ?? []) {
-      if (row.complete_on_submit) {
-        completeOnSubmit.add(row.module_id)
+    const assignmentByModuleId = new Map<
+      string,
+      {
+        completeOnSubmit: boolean
+        completionMode: ReturnType<typeof parseAssignmentCompletionMode>
+        fields: ReturnType<typeof parseAssignmentFields>
       }
+    >()
+    for (const row of assignmentResult.error ? [] : assignmentResult.data ?? []) {
+      assignmentByModuleId.set(row.module_id, {
+        completeOnSubmit: Boolean(row.complete_on_submit),
+        completionMode: parseAssignmentCompletionMode(row.schema),
+        fields: parseAssignmentFields(row.schema),
+      })
     }
 
     const completedModuleIds = new Set<string>()
@@ -105,8 +128,19 @@ export async function processModuleCompletion({
         completedModuleIds.add(classModuleId)
         continue
       }
-      const submissionStatus = submissionStatusByModuleId.get(classModuleId)
-      if (submissionStatus && completeOnSubmit.has(classModuleId) && submissionStatus !== "revise") {
+      const submission = submissionByModuleId.get(classModuleId)
+      const assignment = assignmentByModuleId.get(classModuleId)
+      if (
+        submission &&
+        assignment &&
+        shouldTreatAssignmentSubmissionAsComplete({
+          completeOnSubmit: assignment.completeOnSubmit,
+          completionMode: assignment.completionMode,
+          fields: assignment.fields,
+          answers: submission.answers,
+          status: submission.status,
+        })
+      ) {
         completedModuleIds.add(classModuleId)
       }
     }

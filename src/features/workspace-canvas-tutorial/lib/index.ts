@@ -284,6 +284,12 @@ export function resolveWorkspaceCanvasTutorialContinueMode(
   return step.continueMode ?? "next"
 }
 
+export function shouldWorkspaceCanvasTutorialBlockPanelNext(
+  continueMode: "next" | "shortcut" | "action" | undefined,
+) {
+  return continueMode === "shortcut"
+}
+
 export function resolveWorkspaceCanvasTutorialVisibleCardIds(
   stepIndex: number,
   openedStepIds: WorkspaceCanvasTutorialStepId[] = [],

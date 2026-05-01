@@ -250,13 +250,13 @@ describe("workspace canvas tutorial runtime", () => {
       runtime.cardPositionOverrides["organization-overview"]!.y,
     )
     expect(runtime.tutorialNodeStyle).toEqual({
-      width: 520,
-      height: 724,
-      minHeight: 724,
+      width: 468,
+      height: 492,
+      minHeight: 492,
     })
     expect(runtime.cameraViewport).toEqual({
-      x: 1012,
-      y: 412,
+      x: 986,
+      y: 296,
       zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.64),
       duration: 240,
     })
@@ -276,11 +276,11 @@ describe("workspace canvas tutorial runtime", () => {
       x: 932,
       y: 208,
     })
-    expect(runtime.tutorialNodePosition).toEqual({ x: 564, y: 48 })
+    expect(runtime.tutorialNodePosition).toEqual({ x: 590, y: 164 })
     expect(runtime.tutorialNodeStyle).toEqual({
-      width: 520,
-      height: 724,
-      minHeight: 724,
+      width: 468,
+      height: 492,
+      minHeight: 492,
     })
     expect(runtime.tutorialNodeAttached).toBe(false)
     expect(runtime.cameraViewport).toEqual({
@@ -367,11 +367,11 @@ describe("workspace canvas tutorial runtime", () => {
       x: 88,
       y: 324,
     })
-    expect(runtime.tutorialNodePosition).toEqual({ x: 240, y: 48 })
+    expect(runtime.tutorialNodePosition).toEqual({ x: 266, y: 164 })
     expect(runtime.tutorialNodeStyle).toEqual({
-      width: 520,
-      height: 724,
-      minHeight: 724,
+      width: 468,
+      height: 492,
+      minHeight: 492,
     })
     expect(runtime.cameraViewport).toEqual({
       x: 500,
@@ -451,26 +451,26 @@ describe("workspace canvas tutorial runtime", () => {
     })
 
     expect(acceleratorRuntime.tutorialNodeStyle).toEqual({
-      width: 520,
-      height: 724,
-      minHeight: 724,
+      width: 468,
+      height: 492,
+      minHeight: 492,
     })
     expect(pickerRuntime.tutorialNodeStyle).toEqual({
-      width: 520,
-      height: 724,
-      minHeight: 724,
+      width: 468,
+      height: 492,
+      minHeight: 492,
     })
     expect(firstModuleRuntime.tutorialNodeStyle).toEqual({
-      width: 520,
-      height: 724,
-      minHeight: 724,
+      width: 468,
+      height: 492,
+      minHeight: 492,
     })
     expect(moduleRuntime.tutorialNodeStyle).toEqual({
       width: 560,
       height: 724,
       minHeight: 724,
     })
-    expect(acceleratorRuntime.tutorialNodePosition).toEqual({ x: 564, y: 48 })
+    expect(acceleratorRuntime.tutorialNodePosition).toEqual({ x: 590, y: 164 })
     expect(pickerRuntime.tutorialNodePosition).toEqual({ x: 752, y: 50 })
     expect(firstModuleRuntime.tutorialNodePosition).toEqual({ x: 752, y: 50 })
     expect(moduleRuntime.tutorialNodePosition).toEqual({ x: 752, y: 50 })
@@ -481,8 +481,8 @@ describe("workspace canvas tutorial runtime", () => {
       duration: 240,
     })
     expect(pickerRuntime.cameraViewport).toEqual({
-      x: 1012,
-      y: 412,
+      x: 986,
+      y: 296,
       zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.64),
       duration: 240,
     })

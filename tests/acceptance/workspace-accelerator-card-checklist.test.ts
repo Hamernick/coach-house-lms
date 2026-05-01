@@ -14,6 +14,7 @@ import {
 import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import {
   canWorkspaceAcceleratorTutorialSelectLessonStep,
+  resolveWorkspaceAcceleratorChecklistSelectableStep,
   shouldWorkspaceAcceleratorTutorialRestrictLessonSelection,
   WorkspaceAcceleratorCardChecklist,
 } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist"
@@ -453,6 +454,54 @@ describe("workspace accelerator checklist helpers", () => {
         },
         stepId: "m-1:video",
         moduleId: "m-1",
+      }),
+    ).toBe(true)
+  })
+
+  it("selects the guided Organization setup step from a highlighted lesson row even when it is not the first step", () => {
+    const organizationLessonStep: WorkspaceAcceleratorCardStep = {
+      ...CHECKLIST_STEPS[0]!,
+      id: "workspace-onboarding-organization-setup:lesson",
+      moduleId: "workspace-onboarding-organization-setup",
+      moduleSlug: "organization-setup",
+      moduleTitle: "Organization setup",
+      stepKind: "lesson",
+      stepTitle: "Organization setup",
+    }
+    const organizationResourceStep: WorkspaceAcceleratorCardStep = {
+      ...organizationLessonStep,
+      id: "workspace-onboarding-organization-setup:resources",
+      stepKind: "resources",
+      stepTitle: "Resources",
+    }
+    const checklistModule = {
+      id: "workspace-onboarding-organization-setup",
+      title: "Organization setup",
+      groupTitle: "Formation",
+      steps: [organizationResourceStep, organizationLessonStep],
+      totalSteps: 2,
+      completedStepCount: 0,
+      isCurrent: false,
+    }
+
+    expect(
+      resolveWorkspaceAcceleratorChecklistSelectableStep({
+        fallbackStep: organizationResourceStep,
+        isTutorialTarget: true,
+        module: checklistModule,
+        tutorialTargetStepId: organizationLessonStep.id,
+      }).id,
+    ).toBe("workspace-onboarding-organization-setup:lesson")
+
+    expect(
+      canWorkspaceAcceleratorTutorialSelectLessonStep({
+        tutorialInteractionPolicy: {
+          ...tutorialInteractionPolicy,
+          allowedModuleId: checklistModule.id,
+          allowedStepId: organizationLessonStep.id,
+        },
+        stepId: organizationLessonStep.id,
+        moduleId: checklistModule.id,
       }),
     ).toBe(true)
   })

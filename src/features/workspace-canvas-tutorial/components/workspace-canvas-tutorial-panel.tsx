@@ -23,7 +23,7 @@ import {
 import { cn } from "@/lib/utils"
 import type { WorkspaceCanvasTutorialNodeVariant, WorkspaceCanvasTutorialPresentationSurface, WorkspaceCanvasTutorialStepId } from "../types"
 import { useWorkspaceCanvasTutorialController } from "../hooks/use-workspace-canvas-tutorial-controller"
-import { resolveWorkspaceCanvasTutorialProgressPercent } from "../lib"
+import { resolveWorkspaceCanvasTutorialProgressPercent, shouldWorkspaceCanvasTutorialBlockPanelNext } from "../lib"
 import {
   resolveWorkspaceTutorialBodyLayoutClass,
   resolveWorkspaceTutorialBodyGridClass,
@@ -321,7 +321,8 @@ export function WorkspaceCanvasTutorialPanel({
   const [isContentRevealReady, setIsContentRevealReady] = useState(true)
   const isFirstStep = stepIndex <= 0
   const isFinalStep = stepIndex >= stepCount - 1
-  const continueBlocked = continueMode !== "next"
+  const continueBlocked =
+    shouldWorkspaceCanvasTutorialBlockPanelNext(continueMode)
   const continueHelperText =
     continueMode === "shortcut"
       ? "Click on the highlighted button on the card to continue."

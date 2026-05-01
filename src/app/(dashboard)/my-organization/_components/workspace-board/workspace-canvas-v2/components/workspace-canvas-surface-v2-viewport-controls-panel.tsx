@@ -76,6 +76,7 @@ export function WorkspaceCanvasSurfaceV2ViewportControls({
                     title={tutorialCalendarButtonCallout.title}
                     instruction={tutorialCalendarButtonCallout.instruction}
                     tapHereLabel="Open calendar"
+                    indicatorIconPosition="after"
                     tooltipContentClassName={
                       `${WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME} !px-2 !py-1`
                     }

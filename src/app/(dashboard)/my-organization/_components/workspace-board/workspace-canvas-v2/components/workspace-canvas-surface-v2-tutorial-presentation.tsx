@@ -140,11 +140,7 @@ function buildCardPresentation({
       presentationSurfaceKind === "dashed-frame"
         ? WORKSPACE_TUTORIAL_DASHED_FRAME_RADIUS
         : WORKSPACE_TUTORIAL_FRAMED_SURFACE_FRAME_RADIUS,
-    heightMode:
-      layoutSpec.family === "accelerator" ||
-      layoutSpec.family === "accelerator-module"
-        ? "fill"
-        : "content",
+    heightMode: layoutSpec.family === "accelerator-module" ? "fill" : "content",
     chrome: layoutSpec.chrome,
   }
   const acceleratorCardShellProps = getReactGrabLinkedSurfaceProps({

@@ -157,7 +157,7 @@ describe("workspace tutorial presentation", () => {
     ).toBe(false)
   })
 
-  it("preserves the accelerator card intrinsic size inside the paired guide shell", () => {
+  it("keeps the compact accelerator shell tight around the shrunken card", () => {
     const shellSpec = resolveWorkspaceTutorialStageShellSpec({
       tutorialStepIndex: 4,
       openedStepIds: ["accelerator"],
@@ -165,20 +165,19 @@ describe("workspace tutorial presentation", () => {
     const surfaceSpec = resolveWorkspaceTutorialPresentationSurfaceSpec({
       cardId: "accelerator",
       cardSize: "sm",
-      measuredHeight: 520,
     })
 
-    expect(shellSpec.shellWidth).toBe(520)
-    expect(shellSpec.shellHeight).toBe(724)
+    expect(shellSpec.shellWidth).toBe(468)
+    expect(shellSpec.shellHeight).toBe(492)
     expect(shellSpec.layoutMode).toBe("paired-right-rail")
     expect(surfaceSpec).toEqual({
       cardWidth: 400,
-      cardHeight: 520,
+      cardHeight: 252,
       frameWidth: 420,
-      frameHeight: 540,
+      frameHeight: 272,
     })
     expect(WORKSPACE_TUTORIAL_PRESENTATION_FRAME_INSET).toBe(10)
-    expect(shellSpec.shellWidth).toBeGreaterThan(surfaceSpec.frameWidth)
+    expect(shellSpec.shellWidth - surfaceSpec.frameWidth).toBe(48)
     expect(shellSpec.shellHeight).toBeGreaterThan(surfaceSpec.frameHeight)
   })
 
@@ -189,8 +188,8 @@ describe("workspace tutorial presentation", () => {
       openedStepIds: ["accelerator"],
     })
 
-    expect(shellSpec.shellWidth).toBe(520)
-    expect(shellSpec.shellHeight).toBe(724)
+    expect(shellSpec.shellWidth).toBe(468)
+    expect(shellSpec.shellHeight).toBe(492)
     expect(shellSpec.layoutMode).toBe("centered")
     expect(shellSpec.pairGap).toBeNull()
   })
@@ -206,8 +205,8 @@ describe("workspace tutorial presentation", () => {
       acceleratorModuleViewerOpen: true,
     })
 
-    expect(checklistShellSpec.shellWidth).toBe(520)
-    expect(checklistShellSpec.shellHeight).toBe(724)
+    expect(checklistShellSpec.shellWidth).toBe(468)
+    expect(checklistShellSpec.shellHeight).toBe(492)
     expect(moduleShellSpec.shellWidth).toBe(560)
     expect(moduleShellSpec.shellHeight).toBe(724)
   })
@@ -219,8 +218,8 @@ describe("workspace tutorial presentation", () => {
       acceleratorModuleViewerOpen: false,
     })
 
-    expect(closedModuleShellSpec.shellWidth).toBe(520)
-    expect(closedModuleShellSpec.shellHeight).toBe(724)
+    expect(closedModuleShellSpec.shellWidth).toBe(468)
+    expect(closedModuleShellSpec.shellHeight).toBe(492)
     expect(
       resolveWorkspaceTutorialPresentationCardSize({
         cardId: "accelerator",
@@ -353,6 +352,7 @@ describe("workspace tutorial presentation", () => {
     const shellSpec = resolveWorkspaceTutorialStageShellSpec({
       tutorialStepIndex: 6,
       openedStepIds: ["accelerator", "accelerator-first-module"],
+      acceleratorModuleViewerOpen: true,
     })
 
     expect(surfaceSpec).toEqual({

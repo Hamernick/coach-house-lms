@@ -95,6 +95,25 @@ function resolveChecklistModuleSubtitle({
   return `${module.totalSteps} ${stepLabel} • ${actionLabel}`.toLowerCase()
 }
 
+export function resolveWorkspaceAcceleratorChecklistSelectableStep({
+  fallbackStep,
+  isTutorialTarget,
+  module,
+  tutorialTargetStepId,
+}: {
+  fallbackStep: WorkspaceAcceleratorCardStep
+  isTutorialTarget: boolean
+  module: WorkspaceAcceleratorChecklistModule
+  tutorialTargetStepId: string | null
+}) {
+  if (!isTutorialTarget || !tutorialTargetStepId) return fallbackStep
+
+  return (
+    module.steps.find((moduleStep) => moduleStep.id === tutorialTargetStepId) ??
+    fallbackStep
+  )
+}
+
 function ChecklistStepRow({
   completedStepIds,
   currentStepId,
@@ -125,10 +144,16 @@ function ChecklistStepRow({
   const isTutorialTarget =
     tutorialCallout !== null &&
     module.steps.some((moduleStep) => tutorialTargetStepId === moduleStep.id)
+  const selectableStep = resolveWorkspaceAcceleratorChecklistSelectableStep({
+    fallbackStep: primaryStep,
+    isTutorialTarget,
+    module,
+    tutorialTargetStepId,
+  })
   const canSelectStep = canWorkspaceAcceleratorTutorialSelectLessonStep({
     tutorialInteractionPolicy,
-    stepId: primaryStep.id,
-    moduleId: module.id,
+    stepId: selectableStep.id,
+    moduleId: selectableStep.moduleId,
   })
   const subtitle = resolveChecklistModuleSubtitle({
     module,
@@ -150,7 +175,7 @@ function ChecklistStepRow({
         if (!canSelectStep) {
           return
         }
-        onStepSelect(primaryStep)
+        onStepSelect(selectableStep)
       }}
       className={cn(
         WORKSPACE_ACCELERATOR_CHECKLIST_STEP_BUTTON_CLASSNAME,

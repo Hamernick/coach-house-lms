@@ -8,6 +8,7 @@ import {
   resolveWorkspaceTutorialPresentationFrameOverflowClass,
   resolveWorkspaceTutorialPresentationSlotClass,
 } from "@/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-layout"
+import { shouldWorkspaceCanvasTutorialBlockPanelNext } from "@/features/workspace-canvas-tutorial/lib"
 import {
   resolveWorkspaceTutorialPresentationHandoffDelayMs,
   resolveWorkspaceTutorialPresentationMotionPreset,
@@ -20,11 +21,11 @@ const ACCELERATOR_SURFACE: WorkspaceCanvasTutorialPresentationSurface = {
   kind: "dashed-frame",
   cardId: "accelerator",
   cardWidth: 400,
-  cardHeight: 520,
+  cardHeight: 252,
   frameWidth: 420,
-  frameHeight: 540,
+  frameHeight: 272,
   frameInset: 10,
-  heightMode: "fill",
+  heightMode: "content",
   chrome: {
     shellOverflow: "hidden",
     bodyOverflow: "hidden",
@@ -78,6 +79,12 @@ const TOOL_SURFACE: WorkspaceCanvasTutorialPresentationSurface = {
 }
 
 describe("workspace canvas tutorial panel layout", () => {
+  it("keeps the guide Next button available for action steps as a recovery path", () => {
+    expect(shouldWorkspaceCanvasTutorialBlockPanelNext("action")).toBe(false)
+    expect(shouldWorkspaceCanvasTutorialBlockPanelNext("next")).toBe(false)
+    expect(shouldWorkspaceCanvasTutorialBlockPanelNext("shortcut")).toBe(true)
+  })
+
   it("uses the compact accelerator copy rail for picker and first-module steps", () => {
     expect(
       resolveWorkspaceTutorialCopyRailClass({
@@ -135,12 +142,12 @@ describe("workspace canvas tutorial panel layout", () => {
     ).toBe("gap-4 px-5 py-4 sm:px-5")
   })
 
-  it("keeps content-mode presentation slots intrinsic and module previews fill-clipped", () => {
+  it("keeps compact accelerator presentation slots intrinsic and module previews fill-clipped", () => {
     expect(
       resolveWorkspaceTutorialPresentationSlotClass({
         presentationSurface: ACCELERATOR_SURFACE,
       }),
-    ).toBe("relative h-full min-h-0")
+    ).toBe("relative h-auto min-h-0 self-start")
 
     expect(
       resolveWorkspaceTutorialPresentationSlotClass({
@@ -155,12 +162,12 @@ describe("workspace canvas tutorial panel layout", () => {
     ).toBe("relative h-auto min-h-0 self-start")
   })
 
-  it("uses fill rows for clipped accelerator previews and intrinsic rows for content-mode cards", () => {
+  it("uses intrinsic rows for compact accelerator cards and fill rows for module previews", () => {
     expect(
       resolveWorkspaceTutorialBodyGridClass({
         presentationSurface: ACCELERATOR_SURFACE,
       }),
-    ).toBe("relative grid min-h-0 h-full grid-rows-[auto_minmax(0,1fr)]")
+    ).toBe("relative grid min-h-0 h-auto content-start grid-rows-[auto_auto]")
 
     expect(
       resolveWorkspaceTutorialBodyGridClass({

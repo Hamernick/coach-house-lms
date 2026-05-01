@@ -35,21 +35,34 @@ describe("workspace tutorial callout", () => {
     expect(markup).not.toContain("rounded-xl border border-border/70 bg-popover/95")
   })
 
-  it("keeps labeled indicator arrow before the text with compact spacing", () => {
+  it("keeps the default labeled indicator arrow before the text with compact spacing", () => {
     const source = readFileSync(
       join(ROOT, "src/components/workspace/workspace-tutorial-callout.tsx"),
       "utf8",
     )
-
     expect(
-      source.indexOf('data-slot="workspace-tutorial-indicator-icon-wrap"'),
-    ).toBeLessThan(
-      source.indexOf('data-slot="workspace-tutorial-indicator-label"'),
+      source.indexOf('{indicatorIconPosition === "before" || !tapHereLabel'),
+    ).toBeLessThan(source.indexOf("{indicatorLabel}"))
+    expect(source.indexOf("{indicatorLabel}")).toBeLessThan(
+      source.indexOf('{indicatorIconPosition === "after" && tapHereLabel'),
     )
     expect(source).toContain('"flex items-center whitespace-nowrap"')
     expect(source).toContain('? "gap-1.5"')
     expect(source).not.toContain("WORKSPACE_TUTORIAL_INDICATOR_TRIGGER_SIZE")
     expect(source).not.toContain("width: tapHereLabel")
+  })
+
+  it("can place the labeled indicator arrow after the text for viewport controls", () => {
+    const source = readFileSync(
+      join(ROOT, "src/components/workspace/workspace-tutorial-callout.tsx"),
+      "utf8",
+    )
+
+    expect(source).toContain('indicatorIconPosition = "before"')
+    expect(source).toContain(
+      'data-workspace-tutorial-indicator-icon-position=',
+    )
+    expect(source).toContain('{indicatorIconPosition === "after" && tapHereLabel')
   })
 
   it("keeps the calendar indicator bubble compact", () => {
@@ -62,6 +75,7 @@ describe("workspace tutorial callout", () => {
     )
 
     expect(source).toContain('tapHereLabel="Open calendar"')
+    expect(source).toContain('indicatorIconPosition="after"')
     expect(source).toContain("!px-2 !py-1")
     expect(source).toContain("indicatorSideOffset={6}")
   })

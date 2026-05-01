@@ -35,16 +35,16 @@ describe("workspace tutorial callout", () => {
     expect(markup).not.toContain("rounded-xl border border-border/70 bg-popover/95")
   })
 
-  it("keeps labeled indicator text before the arrow with compact spacing", () => {
+  it("keeps labeled indicator arrow before the text with compact spacing", () => {
     const source = readFileSync(
       join(ROOT, "src/components/workspace/workspace-tutorial-callout.tsx"),
       "utf8",
     )
 
     expect(
-      source.indexOf('data-slot="workspace-tutorial-indicator-label"'),
-    ).toBeLessThan(
       source.indexOf('data-slot="workspace-tutorial-indicator-icon-wrap"'),
+    ).toBeLessThan(
+      source.indexOf('data-slot="workspace-tutorial-indicator-label"'),
     )
     expect(source).toContain('"flex items-center whitespace-nowrap"')
     expect(source).toContain('? "gap-1.5"')

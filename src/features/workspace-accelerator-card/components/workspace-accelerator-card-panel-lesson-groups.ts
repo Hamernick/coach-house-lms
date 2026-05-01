@@ -6,6 +6,7 @@ import {
   buildWorkspaceAcceleratorChecklistModules,
   buildWorkspaceAcceleratorLessonGroupKey,
   buildWorkspaceAcceleratorLessonGroupOptions,
+  calculateWorkspaceAcceleratorChecklistProgressPercent,
   resolveWorkspaceAcceleratorGuidedFirstModuleStepId,
   resolveWorkspaceAcceleratorLessonGroupTitle,
 } from "../lib"
@@ -122,21 +123,21 @@ export function useWorkspaceAcceleratorLessonGroupState({
     () => checklistModules.flatMap((module) => module.steps),
     [checklistModules],
   )
-  const filteredCompletedCount = useMemo(
+  const allChecklistModules = useMemo(
     () =>
-      checklistModules.reduce(
-        (sum, module) => sum + module.completedStepCount,
-        0,
-      ),
-    [checklistModules],
+      buildWorkspaceAcceleratorChecklistModules({
+        steps: controller.steps,
+        completedStepIds: controller.completedStepIds,
+        selectedGroupKey: "",
+        currentStepId: currentStep?.id ?? null,
+      }),
+    [controller.completedStepIds, controller.steps, currentStep?.id],
   )
   const filteredProgressPercent =
-    filteredSteps.length === 0
-      ? 0
-      : Math.min(
-          100,
-          Math.round((filteredCompletedCount / filteredSteps.length) * 100),
-        )
+    calculateWorkspaceAcceleratorChecklistProgressPercent({
+      modules: allChecklistModules,
+      completedStepIds: controller.completedStepIds,
+    })
   const lessonGroupSummaries = useMemo(
     () =>
       lessonGroupOptions.map((option) => ({ key: option.key, label: option.label })),

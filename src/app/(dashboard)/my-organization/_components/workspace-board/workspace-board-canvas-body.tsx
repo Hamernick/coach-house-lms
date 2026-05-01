@@ -18,7 +18,6 @@ import { WorkspaceBoardRightRail } from "./workspace-board-right-rail"
 import { resolveWorkspaceJourneyGuideState } from "./workspace-board-journey"
 import { shouldAutoOpenRightRailForWorkspaceTutorialCallout } from "./workspace-board-tutorial-right-rail"
 import type {
-  WorkspaceAutoLayoutMode,
   WorkspaceBoardAcceleratorState,
   WorkspaceBoardOnboardingFlowState,
   WorkspaceBoardState,
@@ -48,7 +47,6 @@ export function WorkspaceBoardCanvasBody({
   journeyGuideState,
   organizationEditorData,
   onInitialOnboardingSubmit,
-  onAutoLayoutModeChange,
   onInvitesChange,
   onSizeChange,
   onCommunicationsChange,
@@ -91,7 +89,6 @@ export function WorkspaceBoardCanvasBody({
   journeyGuideState: ReturnType<typeof resolveWorkspaceJourneyGuideState>
   organizationEditorData: WorkspaceOrganizationEditorData
   onInitialOnboardingSubmit: (form: FormData) => Promise<void>
-  onAutoLayoutModeChange: (mode: WorkspaceAutoLayoutMode) => void
   onInvitesChange: (nextInvites: WorkspaceCollaborationInvite[]) => void
   onSizeChange: (cardId: WorkspaceCardId, size: WorkspaceCardSize) => void
   onCommunicationsChange: (next: WorkspaceCommunicationsState) => void
@@ -149,8 +146,6 @@ export function WorkspaceBoardCanvasBody({
   return (
     <>
       <WorkspaceBoardRightRail
-        autoLayoutMode={boardState.autoLayoutMode}
-        canEdit={allowEditing}
         canInvite={seed.canInviteCollaborators}
         members={seed.members}
         invites={invites}
@@ -164,7 +159,6 @@ export function WorkspaceBoardCanvasBody({
               }
             : null
         }
-        onAutoLayoutModeChange={onAutoLayoutModeChange}
         onInvitesChange={onInvitesChange}
       />
 

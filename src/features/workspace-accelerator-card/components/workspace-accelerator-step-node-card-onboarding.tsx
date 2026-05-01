@@ -54,7 +54,7 @@ export function WorkspaceAcceleratorOnboardingStepBody({
           <p className={WORKSPACE_TEXT_STYLES.meta}>Next</p>
           <p className="mt-1 text-sm leading-6 text-foreground">
             Complete this step to open workspace setup, then save your
-            organization basics before moving into the first Formation module.
+            organization basics before moving into the first Formation lesson.
           </p>
         </div>
       </div>

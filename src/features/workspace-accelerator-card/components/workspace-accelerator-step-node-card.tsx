@@ -118,9 +118,9 @@ function AcceleratorStepCloseButton({
       onClick={onClose}
       aria-label={
         moduleCompleted
-          ? "Module complete"
+          ? "Lesson complete"
           : variant === "embedded"
-            ? "Close accelerator module"
+            ? "Close accelerator lesson"
             : "Close accelerator step node"
       }
     >
@@ -309,7 +309,7 @@ export function WorkspaceAcceleratorStepNodeCard({
         hasDeck={step.hasDeck}
         breakAction={{
           kind: "button",
-          label: "Close module",
+          label: "Close lesson",
           onClick: () => {
             if (canClosePreview) {
               onClose()

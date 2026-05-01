@@ -257,7 +257,7 @@ export function WorkspaceAcceleratorStepBody({
               Assignment
             </p>
             <p className={WORKSPACE_TEXT_STYLES.bodyMuted}>
-              This module assignment schema is not available yet. Use notes below
+              This lesson assignment schema is not available yet. Use notes below
               until it is published.
             </p>
             <RichTextEditor
@@ -293,7 +293,7 @@ export function WorkspaceAcceleratorStepBody({
               Deck
             </p>
             <p className={WORKSPACE_TEXT_STYLES.bodyMuted}>
-              No deck is attached to this module yet.
+              No deck is attached to this lesson yet.
             </p>
           </div>
         )
@@ -336,7 +336,7 @@ export function WorkspaceAcceleratorStepBody({
             Step focus
           </p>
           <p className={WORKSPACE_TEXT_STYLES.bodyMuted}>
-            Complete this step here, then keep moving through the module.
+            Complete this step here, then keep moving through the lesson.
           </p>
           <Button
             asChild

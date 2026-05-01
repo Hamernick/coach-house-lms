@@ -6,9 +6,7 @@ import type {
 } from "@/features/workspace-accelerator-card"
 
 import type { WorkspaceBoardNodeData } from "./workspace-board-node-types"
-import { WorkspaceBoardAcceleratorHeaderSummary } from "./workspace-board-accelerator-header-summary"
 import { WorkspaceBoardAcceleratorTitleIcon } from "./workspace-board-accelerator-title-icon"
-import { WorkspaceBoardLazyAcceleratorHeaderPicker } from "./workspace-board-accelerator-lazy"
 
 export function resolveAcceleratorHeaderMeta({
   acceleratorRuntimeActions,
@@ -21,26 +19,11 @@ export function resolveAcceleratorHeaderMeta({
   acceleratorTutorialCallout: WorkspaceBoardNodeData["acceleratorTutorialCallout"]
   acceleratorTutorialInteractionPolicy: WorkspaceBoardNodeData["acceleratorTutorialInteractionPolicy"]
 }) {
-  if (!acceleratorRuntimeSnapshot || !acceleratorRuntimeActions) {
-    return undefined
-  }
-
-  return (
-    <WorkspaceBoardLazyAcceleratorHeaderPicker
-      lessonGroupOptions={acceleratorRuntimeSnapshot.lessonGroupOptions ?? []}
-      selectedLessonGroupKey={
-        acceleratorRuntimeSnapshot.selectedLessonGroupKey ?? ""
-      }
-      viewerOpen={acceleratorRuntimeSnapshot.isModuleViewerOpen === true}
-      tutorialCallout={
-        acceleratorTutorialCallout?.focus === "picker"
-          ? acceleratorTutorialCallout
-          : null
-      }
-      tutorialInteractionPolicy={acceleratorTutorialInteractionPolicy ?? null}
-      onLessonGroupChange={acceleratorRuntimeActions.selectLessonGroup}
-    />
-  )
+  void acceleratorRuntimeActions
+  void acceleratorRuntimeSnapshot
+  void acceleratorTutorialCallout
+  void acceleratorTutorialInteractionPolicy
+  return undefined
 }
 
 export function resolveAcceleratorHeaderDetails({
@@ -48,14 +31,8 @@ export function resolveAcceleratorHeaderDetails({
 }: {
   acceleratorRuntimeSnapshot: WorkspaceAcceleratorCardRuntimeSnapshot | null
 }) {
-  if (!acceleratorRuntimeSnapshot) return undefined
-
-  return (
-    <WorkspaceBoardAcceleratorHeaderSummary
-      moduleCount={acceleratorRuntimeSnapshot.checklistModuleCount ?? 0}
-      stepCount={acceleratorRuntimeSnapshot.filteredStepCount ?? 0}
-    />
-  )
+  void acceleratorRuntimeSnapshot
+  return undefined
 }
 
 export function renderAcceleratorTitleIcon() {

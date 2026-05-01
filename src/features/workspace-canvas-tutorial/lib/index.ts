@@ -84,23 +84,23 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     sceneId: "accelerator",
     title: "Classes",
     message:
-      "Switch between class tracks here to see the right modules, progress, and next steps for each part of the Accelerator.",
+      "Switch between class tracks here to see the right lessons, progress, and next steps for each part of the Accelerator.",
     targetCardId: "accelerator",
     targetLabel: "Class tracks",
     revealedCardIds: ["accelerator"],
     continueMode: "next",
     calloutTarget: "accelerator-picker",
     calloutInstruction:
-      "Choose a class track here to update the module list and focus on a different part of the Accelerator.",
+      "Choose a class track here to update the lesson list and focus on a different part of the Accelerator.",
   },
   {
     id: "accelerator-first-module",
     sceneId: "accelerator",
-    title: "Modules",
+    title: "Lessons",
     message:
       "Click on the Organization Set up option below to open it from the list.",
     targetCardId: "accelerator",
-    targetLabel: "First module",
+    targetLabel: "First lesson",
     revealedCardIds: ["accelerator"],
     continueMode: "action",
     calloutTarget: "accelerator-first-module",
@@ -110,11 +110,11 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
   {
     id: "accelerator-close-module",
     sceneId: "accelerator-module",
-    title: "Module preview",
+    title: "Lesson preview",
     message:
-      "This is what an accelerator module looks like inside the workspace. Use Continue below, or the guide Next button, when you're ready to move on.",
+      "This is what an accelerator lesson looks like inside the workspace. Use Continue below, or the guide Next button, when you're ready to move on.",
     targetCardId: "accelerator",
-    targetLabel: "Module preview",
+    targetLabel: "Lesson preview",
     revealedCardIds: ["accelerator"],
     continueMode: "next",
   },

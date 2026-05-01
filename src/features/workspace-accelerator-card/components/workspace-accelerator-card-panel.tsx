@@ -27,6 +27,7 @@ import {
   useWorkspaceAcceleratorTutorialViewerState,
   WorkspaceAcceleratorCardEmptyState,
   WorkspaceAcceleratorCardFullscreenRail,
+  WorkspaceAcceleratorCardInlinePicker,
   WorkspaceAcceleratorCardSidebar,
   useModuleViewerSizeSync,
 } from "./workspace-accelerator-card-panel-support"
@@ -547,7 +548,6 @@ export function WorkspaceAcceleratorCardPanel({
   }
 
   const fullscreenEmbedded = presentationMode === "fullscreen-route"
-  const renderSidebarInline = !fullscreenEmbedded
   const sidebarProps = {
     selectedLessonGroup,
     tutorialCallout,
@@ -569,7 +569,7 @@ export function WorkspaceAcceleratorCardPanel({
 
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col">
-      {!renderSidebarInline ? (
+      {fullscreenEmbedded ? (
         <WorkspaceAcceleratorCardFullscreenRail
           {...sidebarProps}
           lessonGroupOptions={lessonGroupSummaries}
@@ -584,14 +584,26 @@ export function WorkspaceAcceleratorCardPanel({
         className={cn(
           "grid min-h-0 flex-1",
           fullscreenEmbedded ? "gap-0" : "gap-3",
-          renderSidebarInline && isModuleViewerOpen
+          !fullscreenEmbedded && isModuleViewerOpen
             ? "grid-cols-[minmax(250px,290px)_minmax(0,1fr)]"
             : "grid-cols-1",
         )}
       >
-        {renderSidebarInline ? (
+        {!fullscreenEmbedded ? (
           <div className="flex min-h-0 flex-col gap-2">
-            <WorkspaceAcceleratorCardSidebar {...sidebarProps} />
+            <WorkspaceAcceleratorCardSidebar
+              {...sidebarProps}
+              checklistHeaderControls={
+                <WorkspaceAcceleratorCardInlinePicker
+                  lessonGroupOptions={lessonGroupSummaries}
+                  selectedLessonGroupKey={selectedLessonGroupKey}
+                  tutorialCallout={tutorialCallout}
+                  tutorialInteractionPolicy={tutorialInteractionPolicy ?? null}
+                  viewerOpen={isModuleViewerOpen}
+                  onLessonGroupChange={handleLessonGroupChange}
+                />
+              }
+            />
           </div>
         ) : null}
 

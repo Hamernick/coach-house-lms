@@ -12,7 +12,9 @@ export {
   buildWorkspaceAcceleratorChecklistModules,
   buildWorkspaceAcceleratorLessonGroupKey,
   buildWorkspaceAcceleratorLessonGroupOptions,
+  calculateWorkspaceAcceleratorChecklistProgressPercent,
   formatWorkspaceAcceleratorModuleCompletionLabel,
+  isWorkspaceAcceleratorChecklistModuleComplete,
   resolveWorkspaceAcceleratorOpenModuleId,
   resolveWorkspaceAcceleratorLessonGroupTitle,
   resolveWorkspaceAcceleratorGuidedFirstModuleStepId,
@@ -91,8 +93,8 @@ function resolveStepDescription({
     if (hasDeck) return "Deck materials available."
     return "No resources attached yet."
   }
-  if (stepKind === "assignment") return "Complete the assignment to move this module forward."
-  if (stepKind === "complete") return "Mark this module complete and continue to the next module."
+  if (stepKind === "assignment") return "Complete the assignment to move this lesson forward."
+  if (stepKind === "complete") return "Mark this lesson complete and continue to the next lesson."
   if (hasDeck) return "Review supporting deck materials."
   return null
 }

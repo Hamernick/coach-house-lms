@@ -406,6 +406,73 @@ describe("workspace accelerator tutorial panel state", () => {
     ).toBe("https://cdn.example.com/welcome.mp4")
   })
 
+  it("renders progress across all accelerator lessons, not just the selected class track", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(
+        RightRailProvider,
+        null,
+        React.createElement(WorkspaceAcceleratorCardPanel, {
+          input: {
+            steps: [
+              {
+                id: "formation-intro:video",
+                moduleId: "formation-intro",
+                moduleTitle: "Formation intro",
+                stepKind: "video",
+                stepTitle: "Video",
+                stepDescription: null,
+                href: "/accelerator/class/formation/module/intro",
+                status: "in_progress",
+                stepSequenceIndex: 1,
+                stepSequenceTotal: 2,
+                moduleSequenceIndex: 1,
+                moduleSequenceTotal: 2,
+                groupTitle: "Formation",
+                videoUrl: "https://cdn.example.com/formation.mp4",
+                durationMinutes: 5,
+                resources: [],
+                hasAssignment: false,
+                hasDeck: false,
+              },
+              {
+                id: "budgeting:video",
+                moduleId: "budgeting",
+                moduleTitle: "Budgeting",
+                stepKind: "video",
+                stepTitle: "Video",
+                stepDescription: null,
+                href: "/accelerator/class/strategic-foundations/module/budgeting",
+                status: "in_progress",
+                stepSequenceIndex: 2,
+                stepSequenceTotal: 2,
+                moduleSequenceIndex: 2,
+                moduleSequenceTotal: 2,
+                groupTitle: "Strategic Foundations",
+                videoUrl: "https://cdn.example.com/budgeting.mp4",
+                durationMinutes: 7,
+                resources: [],
+                hasAssignment: false,
+                hasDeck: false,
+              },
+            ],
+            size: "sm",
+            readinessSummary: null,
+            allowAutoResize: false,
+            initialCurrentStepId: "budgeting:video",
+            initialCompletedStepIds: ["formation-intro:video"],
+          },
+        }),
+      ),
+    )
+
+    const progressPercentMatch = markup.match(
+      /<span[^>]*data-slot="workspace-accelerator-progress-percent"[^>]*>(.*?)<\/span>/,
+    )
+
+    expect(markup).toContain("Strategic Foundations")
+    expect(progressPercentMatch?.[1]).toBe("50%")
+  })
+
   it("keeps the fullscreen accelerator panel on a full-height flex column for immersive onboarding routes", () => {
     const markup = renderToStaticMarkup(
       React.createElement(

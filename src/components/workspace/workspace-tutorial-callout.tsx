@@ -235,14 +235,6 @@ export function WorkspaceTutorialCallout({
                   : "justify-center",
               )}
             >
-              {tapHereLabel ? (
-                <span
-                  data-slot="workspace-tutorial-indicator-label"
-                  className="inline-flex min-w-0 items-center"
-                >
-                  {tapHereLabel}
-                </span>
-              ) : null}
               <span
                 data-slot="workspace-tutorial-indicator-icon-wrap"
                 className="inline-flex shrink-0 items-center justify-center"
@@ -252,6 +244,14 @@ export function WorkspaceTutorialCallout({
                   className="size-4"
                 />
               </span>
+              {tapHereLabel ? (
+                <span
+                  data-slot="workspace-tutorial-indicator-label"
+                  className="inline-flex min-w-0 items-center"
+                >
+                  {tapHereLabel}
+                </span>
+              ) : null}
             </div>
           </TooltipContent>
         </Tooltip>

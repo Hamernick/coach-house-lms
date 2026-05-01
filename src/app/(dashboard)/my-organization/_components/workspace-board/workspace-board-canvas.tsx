@@ -18,7 +18,6 @@ import {
   useWorkspaceTutorialCompletion,
 } from "./workspace-board-canvas-helpers"
 import { logWorkspaceBoardDebug, summarizeWorkspaceBoardVisibility } from "./workspace-board-debug"
-import { applyAutoLayout } from "./workspace-board-layout"
 import {
   applyWorkspaceTutorialSnapshot,
   areWorkspaceOnboardingFlowStatesEqual,
@@ -33,7 +32,6 @@ import {
 } from "./workspace-board-canvas-state"
 import { reduceWorkspaceBoardVisibility } from "./workspace-board-visibility-reducer"
 import type {
-  WorkspaceAutoLayoutMode,
   WorkspaceBoardAcceleratorState,
   WorkspaceBoardOnboardingFlowState,
   WorkspaceBoardState,
@@ -86,7 +84,6 @@ export function WorkspaceBoardCanvas({
   const [focusCardRequest, setFocusCardRequest] = useState<WorkspaceCardFocusRequest>(null)
   const [tutorialCompletionExitRequest, setTutorialCompletionExitRequest] =
     useState<WorkspaceTutorialCompletionExitRequest>(null)
-  const layoutRequestIdRef = useRef(0)
   const lastPersistedBoardContentRef = useRef<WorkspaceBoardState>(hydratedSeedBoardState)
   const persistRequestIdRef = useRef(0)
   const acceleratorStepNodeVisible = boardState.acceleratorUi?.stepOpen === true
@@ -207,43 +204,6 @@ export function WorkspaceBoardCanvas({
       ),
     }))
   }, [])
-  const handleAutoLayoutModeChange = useCallback(
-    (mode: WorkspaceAutoLayoutMode) => {
-      if (!allowEditing) return
-      const sourceNodes = boardState.nodes
-      const requestId = layoutRequestIdRef.current + 1
-      layoutRequestIdRef.current = requestId
-      logWorkspaceBoardDebug("autolayout_requested", {
-        mode,
-        requestId,
-        sourceNodeCount: sourceNodes.length,
-      })
-
-      setBoardState((previous) => ({
-        ...previous,
-        autoLayoutMode: mode,
-      }))
-      void (async () => {
-        const nextNodes = await applyAutoLayout(sourceNodes, mode, {
-          hiddenCardIds: boardState.hiddenCardIds,
-          connections: boardState.connections,
-        })
-        if (layoutRequestIdRef.current !== requestId) return
-        logWorkspaceBoardDebug("autolayout_applied", {
-          mode,
-          requestId,
-          nodeCount: nextNodes.length,
-        })
-        setBoardState((previous) => ({
-          ...previous,
-          autoLayoutMode: mode,
-          nodes: nextNodes,
-        }))
-        setLayoutFitRequestKey((previous) => previous + 1)
-      })()
-    },
-    [allowEditing, boardState.connections, boardState.hiddenCardIds, boardState.nodes],
-  )
   const handleFocusCard = useCallback((cardId: WorkspaceCardId) => {
     setFocusCardRequest((previous) => ({
       cardId,
@@ -378,7 +338,6 @@ export function WorkspaceBoardCanvas({
         journeyGuideState={journeyGuideState}
         organizationEditorData={organizationEditorData}
         onInitialOnboardingSubmit={onInitialOnboardingSubmit}
-        onAutoLayoutModeChange={handleAutoLayoutModeChange}
         onInvitesChange={setInvites}
         onSizeChange={handleSizeChange}
         onCommunicationsChange={handleCommunicationsChange}

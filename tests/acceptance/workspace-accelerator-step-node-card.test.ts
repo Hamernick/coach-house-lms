@@ -81,7 +81,7 @@ describe("workspace accelerator step node card", () => {
     expect(markup).toContain("grid-cols-1 lg:grid-cols-[minmax(0,1fr)_240px]")
     expect(markup).toContain("border-t bg-muted/10")
     expect(markup).toContain("Notes")
-    expect(markup).toContain("Close module")
+    expect(markup).toContain("Close lesson")
   })
 
   it("renders the embedded organization setup flow as a clipped read-only preview", () => {
@@ -249,7 +249,7 @@ describe("workspace accelerator step node card", () => {
     expect(markup).toContain("border-0")
     expect(markup).toContain("rounded-none")
     expect(markup).toContain("Previous accelerator step")
-    expect(markup).toContain("Close accelerator module")
+    expect(markup).toContain("Close accelerator lesson")
     expect(markup).toContain("px-3 py-3 sm:px-4")
   })
 

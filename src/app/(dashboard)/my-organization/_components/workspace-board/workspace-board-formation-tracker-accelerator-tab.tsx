@@ -35,7 +35,7 @@ export function TrackerAcceleratorTab({
   if (groups.length === 0) {
     return (
       <p className="text-xs text-muted-foreground">
-        Accelerator modules will appear as soon as your roadmap is available.
+        Accelerator lessons will appear as soon as your roadmap is available.
       </p>
     )
   }
@@ -70,7 +70,7 @@ export function TrackerAcceleratorTab({
                   </p>
                 ) : openModules.length === 0 ? (
                   <p className="px-0.5 text-[11px] text-muted-foreground">
-                    All modules complete.
+                    All lessons complete.
                   </p>
                 ) : (
                   <>
@@ -123,7 +123,7 @@ export function TrackerAcceleratorTab({
                     })}
                     {hiddenCount > 0 ? (
                       <p className="px-0.5 text-[11px] text-muted-foreground tabular-nums">
-                        +{hiddenCount} more modules
+                        +{hiddenCount} more lessons
                       </p>
                     ) : null}
                   </>

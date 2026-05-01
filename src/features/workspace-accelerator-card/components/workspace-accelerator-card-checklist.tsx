@@ -3,17 +3,24 @@
 import type { ReactNode } from "react"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
 
+import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import { WorkspaceTutorialCallout } from "@/components/workspace/workspace-tutorial-callout"
 import { WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME } from "@/components/workspace/workspace-tutorial-theme"
 import { cn } from "@/lib/utils"
 
-import type { WorkspaceAcceleratorChecklistModule } from "../lib"
+import {
+  isWorkspaceAcceleratorChecklistModuleComplete,
+  type WorkspaceAcceleratorChecklistModule,
+} from "../lib"
 import type {
   WorkspaceAcceleratorCardStep,
   WorkspaceAcceleratorTutorialCallout,
   WorkspaceAcceleratorTutorialInteractionPolicy,
 } from "../types"
 import { canWorkspaceAcceleratorTutorialActivateStep } from "./workspace-accelerator-card-tutorial-guards"
+
+const WORKSPACE_ACCELERATOR_CHECKLIST_SOURCE =
+  "src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx"
 const WORKSPACE_ACCELERATOR_CHECKLIST_STEP_BUTTON_CLASSNAME =
   "flex w-full items-center gap-3 rounded-lg border border-transparent bg-background px-2.5 py-2 text-left text-sm text-foreground transition-[color,background-color,opacity,transform] outline-hidden ring-ring/0 focus-visible:ring-2 focus-visible:ring-inset"
 const WORKSPACE_ACCELERATOR_CHECKLIST_STEP_ICON_CLASSNAME =
@@ -59,22 +66,33 @@ export function canWorkspaceAcceleratorTutorialSelectLessonStep({
   })
 }
 
-function resolveChecklistStepActionLabel(isCompletedChecklistStep: boolean) {
-  return isCompletedChecklistStep ? "Review" : "Start"
+function resolveChecklistModuleActionLabel({
+  isCompletedChecklistModule,
+  isCurrentChecklistModule,
+}: {
+  isCompletedChecklistModule: boolean
+  isCurrentChecklistModule: boolean
+}) {
+  if (isCompletedChecklistModule) return "Review"
+  if (isCurrentChecklistModule) return "Continue"
+  return "Start"
 }
 
-function resolveChecklistStepSubtitle({
-  step,
-  isCompletedChecklistStep,
+function resolveChecklistModuleSubtitle({
+  module,
+  isCompletedChecklistModule,
+  isCurrentChecklistModule,
 }: {
-  step: WorkspaceAcceleratorCardStep
-  isCompletedChecklistStep: boolean
+  module: WorkspaceAcceleratorChecklistModule
+  isCompletedChecklistModule: boolean
+  isCurrentChecklistModule: boolean
 }) {
-  const stepKindLabel =
-    step.moduleContext?.workspaceOnboarding?.view === "organization-setup"
-      ? "setup"
-      : step.stepKind
-  return `${stepKindLabel} • ${resolveChecklistStepActionLabel(isCompletedChecklistStep)}`.toLowerCase()
+  const actionLabel = resolveChecklistModuleActionLabel({
+    isCompletedChecklistModule,
+    isCurrentChecklistModule,
+  })
+  const stepLabel = module.totalSteps === 1 ? "step" : "steps"
+  return `${module.totalSteps} ${stepLabel} • ${actionLabel}`.toLowerCase()
 }
 
 function ChecklistStepRow({
@@ -96,27 +114,43 @@ function ChecklistStepRow({
   tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
   tutorialTargetStepId: string | null
 }) {
-  const isCurrentChecklistStep = step.id === currentStepId
-  const isCompletedChecklistStep = completedStepIds.includes(step.id)
+  const primaryStep = module.steps[0] ?? step
+  const isCurrentChecklistStep = module.steps.some(
+    (moduleStep) => moduleStep.id === currentStepId,
+  )
+  const isCompletedChecklistStep = isWorkspaceAcceleratorChecklistModuleComplete({
+    module,
+    completedStepIds,
+  })
   const isTutorialTarget =
-    tutorialCallout !== null && tutorialTargetStepId === step.id
+    tutorialCallout !== null &&
+    module.steps.some((moduleStep) => tutorialTargetStepId === moduleStep.id)
   const canSelectStep = canWorkspaceAcceleratorTutorialSelectLessonStep({
     tutorialInteractionPolicy,
-    stepId: step.id,
+    stepId: primaryStep.id,
     moduleId: module.id,
   })
-  const subtitle = resolveChecklistStepSubtitle({
-    step,
-    isCompletedChecklistStep,
+  const subtitle = resolveChecklistModuleSubtitle({
+    module,
+    isCompletedChecklistModule: isCompletedChecklistStep,
+    isCurrentChecklistModule: isCurrentChecklistStep,
   })
+  const reactGrabOwnerId = `workspace-accelerator-checklist:${primaryStep.id}`
   const button = (
     <button
+      {...getReactGrabOwnerProps({
+        ownerId: reactGrabOwnerId,
+        component: "WorkspaceAcceleratorChecklistStepRow",
+        source: WORKSPACE_ACCELERATOR_CHECKLIST_SOURCE,
+        slot: "lesson-row",
+        variant: step.stepKind,
+      })}
       type="button"
       onClick={() => {
         if (!canSelectStep) {
           return
         }
-        onStepSelect(step)
+        onStepSelect(primaryStep)
       }}
       className={cn(
         WORKSPACE_ACCELERATOR_CHECKLIST_STEP_BUTTON_CLASSNAME,
@@ -206,43 +240,47 @@ export function WorkspaceAcceleratorCardChecklist({
             : "flex items-center justify-between gap-2",
         )}
       >
-        <div className="min-w-0">
-          <p className="truncate text-xs font-medium text-foreground">
-            {selectedLessonGroupLabel ?? "Lesson checklist"}
-          </p>
-          <p className="text-[11px] text-muted-foreground">
-            {tutorialInteractionPolicy?.stepId === "accelerator"
-              ? "The guide will open Organization setup next. For now, stay on the Accelerator overview."
-              : tutorialInteractionPolicy?.stepId === "accelerator-picker"
-                ? "Browse the class structure here. The guide will keep this path on Formation for now."
-                : tutorialInteractionPolicy?.stepId === "accelerator-first-module"
-                  ? "Open the highlighted Organization setup module to see how a class launches inside Workspace."
-                  : tutorialInteractionPolicy?.stepId === "accelerator-close-module"
-                    ? "This preview stays centered on Organization setup until you continue to Calendar."
-                    : "Review each module and open the step you want to work on."}
-          </p>
-        </div>
         {headerControls ? (
           <div className="w-full max-w-full">{headerControls}</div>
-        ) : null}
+        ) : (
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium text-foreground">
+              {selectedLessonGroupLabel ?? "Lesson checklist"}
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              {tutorialInteractionPolicy?.stepId === "accelerator"
+                ? "The guide will open Organization setup next. For now, stay on the Accelerator overview."
+                : tutorialInteractionPolicy?.stepId === "accelerator-picker"
+                  ? "Browse the class structure here. The guide will keep this path on Formation for now."
+                  : tutorialInteractionPolicy?.stepId === "accelerator-first-module"
+                    ? "Open the highlighted Organization setup lesson to see how a class launches inside Workspace."
+                    : tutorialInteractionPolicy?.stepId === "accelerator-close-module"
+                      ? "This preview stays centered on Organization setup until you continue to Calendar."
+                      : "Review each lesson and open the step you want to work on."}
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="space-y-1 px-0">
-        {modules.flatMap((module) =>
-          module.steps.map((step) => (
+        {modules.flatMap((module) => {
+          const firstStep = module.steps[0]
+          if (!firstStep) return []
+
+          return [
             <ChecklistStepRow
-              key={step.id}
+              key={module.id}
               completedStepIds={completedStepIds}
               currentStepId={currentStepId}
               module={module}
               onStepSelect={onStepSelect}
-              step={step}
+              step={firstStep}
               tutorialCallout={tutorialCallout}
               tutorialInteractionPolicy={tutorialInteractionPolicy}
               tutorialTargetStepId={tutorialTargetStepId}
-            />
-          )),
-        )}
+            />,
+          ]
+        })}
       </div>
     </div>
   )

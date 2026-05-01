@@ -25,7 +25,7 @@ export const WORKSPACE_CARD_META: Record<WorkspaceCardId, WorkspaceCardMeta> = {
   },
   accelerator: {
     title: "Accelerator",
-    subtitle: "Class tracks, modules, and resources",
+    subtitle: "Class tracks, lessons, and resources",
     fullHref: WORKSPACE_ACCELERATOR_PATH,
   },
   roadmap: {

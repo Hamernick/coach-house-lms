@@ -211,18 +211,18 @@ describe("workspace canvas tutorial", () => {
       kind: "accelerator-picker",
       label: "Class tracks",
       instruction:
-        "Choose a class track here to update the module list and focus on a different part of the Accelerator.",
+        "Choose a class track here to update the lesson list and focus on a different part of the Accelerator.",
     })
     expect(resolveWorkspaceCanvasTutorialCallout(5, ["accelerator"])).toEqual({
       kind: "accelerator-first-module",
-      label: "First module",
+      label: "First lesson",
       instruction: "Click the Organization Set up option here to continue.",
     })
     expect(resolveWorkspaceCanvasTutorialCallout(6, ["accelerator"])).toBeNull()
     expect(resolveWorkspaceCanvasTutorialStep(6)).toMatchObject({
-      title: "Module preview",
+      title: "Lesson preview",
       message:
-        "This is what an accelerator module looks like inside the workspace. Use Continue below, or the guide Next button, when you're ready to move on.",
+        "This is what an accelerator lesson looks like inside the workspace. Use Continue below, or the guide Next button, when you're ready to move on.",
     })
   })
 

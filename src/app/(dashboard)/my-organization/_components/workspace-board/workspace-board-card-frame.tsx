@@ -41,6 +41,16 @@ export function WorkspaceBoardCardFrame({
     cardId,
     isCanvasFullscreen,
   })
+  const showHeader =
+    cardId !== "accelerator" ||
+    !hideTitle ||
+    !hideSubtitle ||
+    Boolean(headerDetails) ||
+    Boolean(headerMeta) ||
+    Boolean(headerAction) ||
+    Boolean(editorHref) ||
+    menuActions.length > 0 ||
+    Boolean(onToggleCanvasFullscreen)
 
   return (
     <Card
@@ -57,26 +67,28 @@ export function WorkspaceBoardCardFrame({
         })
       )}
     >
-      <WorkspaceBoardCardHeader
-        title={title}
-        subtitle={subtitle}
-        tone={tone}
-        titleIcon={titleIcon}
-        titleBadge={titleBadge}
-        headerDetails={headerDetails}
-        headerMeta={headerMeta}
-        headerAction={headerAction}
-        hideTitle={hideTitle}
-        hideSubtitle={hideSubtitle}
-        presentationMode={presentationMode}
-        fullHref={fullHref}
-        canEdit={canEdit}
-        editorHref={editorHref}
-        menuActions={menuActions}
-        isCanvasFullscreen={isCanvasFullscreen}
-        onToggleCanvasFullscreen={onToggleCanvasFullscreen}
-        fullscreenControlMode={fullscreenControlMode}
-      />
+      {showHeader ? (
+        <WorkspaceBoardCardHeader
+          title={title}
+          subtitle={subtitle}
+          tone={tone}
+          titleIcon={titleIcon}
+          titleBadge={titleBadge}
+          headerDetails={headerDetails}
+          headerMeta={headerMeta}
+          headerAction={headerAction}
+          hideTitle={hideTitle}
+          hideSubtitle={hideSubtitle}
+          presentationMode={presentationMode}
+          fullHref={fullHref}
+          canEdit={canEdit}
+          editorHref={editorHref}
+          menuActions={menuActions}
+          isCanvasFullscreen={isCanvasFullscreen}
+          onToggleCanvasFullscreen={onToggleCanvasFullscreen}
+          fullscreenControlMode={fullscreenControlMode}
+        />
+      ) : null}
       <CardContent
         className={cn(
           "nodrag nopan overflow-hidden px-4",

@@ -354,6 +354,48 @@ export function buildWorkspaceAcceleratorChecklistModules({
   return Array.from(modules.values())
 }
 
+export function isWorkspaceAcceleratorChecklistModuleComplete({
+  module,
+  completedStepIds,
+}: {
+  module: WorkspaceAcceleratorChecklistModule
+  completedStepIds: string[]
+}) {
+  const primaryStep = module.steps[0] ?? null
+  if (
+    primaryStep &&
+    (primaryStep.status === "completed" || completedStepIds.includes(primaryStep.id))
+  ) {
+    return true
+  }
+
+  return module.totalSteps > 0 && module.completedStepCount >= module.totalSteps
+}
+
+export function calculateWorkspaceAcceleratorChecklistProgressPercent({
+  modules,
+  completedStepIds,
+}: {
+  modules: WorkspaceAcceleratorChecklistModule[]
+  completedStepIds: string[]
+}) {
+  if (modules.length === 0) return 0
+
+  const completedCount = modules.reduce(
+    (sum, module) =>
+      sum +
+      (isWorkspaceAcceleratorChecklistModuleComplete({
+        module,
+        completedStepIds,
+      })
+        ? 1
+        : 0),
+    0,
+  )
+
+  return Math.min(100, Math.round((completedCount / modules.length) * 100))
+}
+
 export function resolveWorkspaceAcceleratorGuidedFirstModuleStepId(
   steps: WorkspaceAcceleratorCardStep[],
 ) {

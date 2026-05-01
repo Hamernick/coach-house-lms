@@ -384,6 +384,11 @@ export function resolveReactGrabSemanticTarget(element: Element): Element | null
   const directAnchor = element.closest("[data-react-grab-anchor]")
   if (directAnchor) return directAnchor
 
+  const selectedSlot = readElementAttribute(element, "data-slot")
+  if (selectedSlot && !hasExplicitReactGrabMetadata(element)) {
+    return null
+  }
+
   const linkedSurface =
     (typeof element.closest === "function"
       ? element.closest("[data-react-grab-link-id], [data-react-grab-owner-id]")

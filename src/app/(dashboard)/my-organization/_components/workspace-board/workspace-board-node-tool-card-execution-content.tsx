@@ -296,7 +296,7 @@ export function ExecutionAcceleratorPane({
     <ExecutionGroup
       icon={<AcceleratorTrackIcon className="size-5" aria-hidden />}
       title={selectedLessonGroupLabel ?? "Accelerator"}
-      subtitle="Classes, modules, and steps from the selected track, styled like the platform task surface."
+      subtitle="Classes, lessons, and steps from the selected track, styled like the platform task surface."
       doneCount={doneCount}
       totalCount={totalCount}
       progressPercent={progressPercent}

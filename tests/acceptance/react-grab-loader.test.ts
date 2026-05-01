@@ -122,6 +122,28 @@ describe("react grab loader", () => {
     }
   })
 
+  it("does not resolve a generic slotted wrapper through a child owner", () => {
+    const linkedSurface = createMockElement({
+      "data-react-grab-link-id": "picker-owner",
+    })
+    const wrapper = createMockElement(
+      {
+        "data-slot": "card-content",
+      },
+      {
+        closestMap: {
+          "[data-react-grab-anchor]": null,
+          "[data-react-grab-link-id], [data-react-grab-owner-id]": null,
+        },
+        queryMap: {
+          "[data-react-grab-link-id], [data-react-grab-owner-id]": linkedSurface,
+        },
+      },
+    )
+
+    expect(resolveReactGrabSemanticTarget(wrapper)).toBeNull()
+  })
+
   it("builds resolved clipboard output for a primitive-owned surface", async () => {
     vi.stubGlobal("window", { __REACT_GRAB_SURFACES__: {} })
     const button = createMockElement(

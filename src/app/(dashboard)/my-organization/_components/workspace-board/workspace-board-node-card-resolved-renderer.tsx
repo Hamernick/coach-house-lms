@@ -186,7 +186,7 @@ export function renderWorkspaceBoardResolvedCard({
       titleBadge={comingSoonTitleBadge}
       tone={cardId === "accelerator" ? "accelerator" : "default"}
       titleIcon={cardId === "accelerator" ? renderAcceleratorTitleIcon() : null}
-      hideTitle={false}
+      hideTitle={cardId === "accelerator"}
       hideSubtitle={hideHeaderSubtitle}
       headerDetails={
         cardId === "accelerator" ? acceleratorHeaderDetails : undefined

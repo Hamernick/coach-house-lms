@@ -5,7 +5,9 @@ import { describe, expect, it } from "vitest"
 import {
   buildWorkspaceAcceleratorChecklistModules,
   buildWorkspaceAcceleratorLessonGroupOptions,
+  calculateWorkspaceAcceleratorChecklistProgressPercent,
   formatWorkspaceAcceleratorModuleCompletionLabel,
+  isWorkspaceAcceleratorChecklistModuleComplete,
   resolveWorkspaceAcceleratorGuidedFirstModuleStepId,
   resolveWorkspaceAcceleratorOpenModuleId,
 } from "@/features/workspace-accelerator-card/lib"
@@ -323,6 +325,55 @@ describe("workspace accelerator checklist helpers", () => {
     expect(formatWorkspaceAcceleratorModuleCompletionLabel(2, 2)).toBe("2 of 2 complete")
   })
 
+  it("treats the primary module row as complete when its first step is complete", () => {
+    const [module] = buildWorkspaceAcceleratorChecklistModules({
+      steps: CHECKLIST_STEPS,
+      completedStepIds: ["m-1:video"],
+      selectedGroupKey: "formation",
+      currentStepId: "m-1:video",
+    })
+
+    expect(module?.steps.map((step) => step.id)).toEqual([
+      "m-1:video",
+      "m-1:assignment",
+    ])
+    expect(
+      isWorkspaceAcceleratorChecklistModuleComplete({
+        module: module!,
+        completedStepIds: ["m-1:video"],
+      }),
+    ).toBe(true)
+  })
+
+  it("calculates progress across every visible lesson instead of the selected class track only", () => {
+    const allModules = buildWorkspaceAcceleratorChecklistModules({
+      steps: CHECKLIST_STEPS,
+      completedStepIds: ["m-1:video"],
+      selectedGroupKey: "",
+      currentStepId: "m-3:video",
+    })
+    const selectedGroupModules = buildWorkspaceAcceleratorChecklistModules({
+      steps: CHECKLIST_STEPS,
+      completedStepIds: ["m-1:video"],
+      selectedGroupKey: "strategic-foundations",
+      currentStepId: "m-3:video",
+    })
+
+    expect(selectedGroupModules).toHaveLength(1)
+    expect(
+      calculateWorkspaceAcceleratorChecklistProgressPercent({
+        modules: selectedGroupModules,
+        completedStepIds: ["m-1:video"],
+      }),
+    ).toBe(0)
+    expect(
+      calculateWorkspaceAcceleratorChecklistProgressPercent({
+        modules: allModules,
+        completedStepIds: ["m-1:video"],
+      }),
+    ).toBe(33)
+  })
+
   it("opens the current module when navigation moves into a new module", () => {
     expect(
       resolveWorkspaceAcceleratorOpenModuleId({
@@ -426,16 +477,20 @@ describe("workspace accelerator checklist helpers", () => {
     )
     const buttonMatch = markup.match(/<button[^>]*class="([^"]+)"/)
     const buttonClassName = buttonMatch?.[1] ?? ""
-    expect(buttonClassName).toContain("hover:bg-muted/60")
+    expect(buttonClassName).toContain("border-border/70")
+    expect(buttonClassName).toContain("bg-muted/70")
     expect(buttonClassName).toContain("text-foreground")
     expect(buttonClassName).toContain("rounded-lg")
-    expect(buttonClassName).toContain("bg-background")
     expect(buttonClassName).toContain("transition-[color,background-color,opacity,transform]")
-    expect(buttonClassName).toContain("border-border/60")
-    expect(markup).not.toContain('data-react-grab-owner-id="workspace-accelerator-checklist:')
+    expect(markup).toContain('data-react-grab-anchor="WorkspaceAcceleratorChecklistStepRow"')
+    expect(markup).toContain('data-react-grab-owner-id="workspace-accelerator-checklist:m-1:video"')
+    expect(markup).toContain(
+      'data-react-grab-owner-source="src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx"',
+    )
+    expect(markup).toContain('data-react-grab-owner-slot="lesson-row"')
     expect(markup).toContain("Naming your NFP")
-    expect(markup).toContain("video • review")
-    expect(markup).toContain("assignment • start")
+    expect(markup).toContain("2 steps • review")
+    expect(markup).not.toContain("assignment • start")
     expect(markup).toContain("12 min")
     expect(markup).not.toContain(
       'class="inline-flex h-5 shrink-0 self-center items-center text-[10px] leading-none text-muted-foreground"',
@@ -498,7 +553,7 @@ describe("workspace accelerator checklist helpers", () => {
     )
 
     expect(markup).toContain("Organization setup")
-    expect(markup).toContain("setup • start")
+    expect(markup).toContain("1 step • continue")
     expect(markup).not.toContain("lesson • start")
     expect(markup).not.toContain("Set up your organization, roadmap, and operating foundation.")
   })
@@ -525,7 +580,7 @@ describe("workspace accelerator checklist helpers", () => {
 
     expect(markup.match(/data-slot="accordion-trigger"/g)?.length ?? 0).toBe(0)
     expect(markup).toContain("NFP Registration")
-    expect(markup).toContain("resources • review")
+    expect(markup).toContain("1 step • review")
     expect(markup).not.toContain("rounded-2xl border border-border/70 bg-muted/30 p-2")
     expect(markup).not.toContain("shadow-[0_10px_28px_-24px_rgba(15,23,42,0.42)]")
   })

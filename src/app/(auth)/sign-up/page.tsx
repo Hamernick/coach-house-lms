@@ -6,6 +6,7 @@ import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { redirect as redirectTo } from "next/navigation"
 import type { IntentFocus } from "@/components/onboarding/onboarding-dialog/types"
+import { FIND_PATH } from "@/lib/find/routes"
 
 type SearchParams = Record<string, string | string[] | undefined>
 
@@ -80,7 +81,9 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   const builderRedirectTarget = redirect ?? "/onboarding?source=signup"
   const memberRedirectTarget =
     redirect ??
-    (fallbackQuery ? `/find?member_onboarding=1&source=signup&${fallbackQuery}` : "/find?member_onboarding=1&source=signup")
+    (fallbackQuery
+      ? `${FIND_PATH}?member_onboarding=1&source=signup&${fallbackQuery}`
+      : `${FIND_PATH}?member_onboarding=1&source=signup`)
 
   const supabase = await createSupabaseServerClient()
   const {

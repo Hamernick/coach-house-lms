@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 
+import { resolvePaidPlanTierFromMetadata } from "@/lib/billing/plan-tier"
 import type { Json } from "@/lib/supabase"
 import type { Database } from "@/lib/supabase/types"
 
@@ -13,12 +14,7 @@ export function hasPaidTeamAccessFromSubscription(subscription: SubscriptionLike
 
   const status = subscription.status ?? null
   const active = status === "active" || status === "trialing"
-  const metadata = (subscription.metadata ?? null) as Record<string, string | null> | null
-  const planHints = [metadata?.planName, metadata?.plan_tier, metadata?.tier]
-    .map((value) => (typeof value === "string" ? value.toLowerCase() : ""))
-    .join(" ")
-
-  return active && !planHints.includes("free")
+  return active && resolvePaidPlanTierFromMetadata(subscription.metadata ?? null) !== null
 }
 
 export async function resolvePaidTeamAccessForOrgSubscription({

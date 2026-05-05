@@ -57,6 +57,8 @@ export function AppShellInner({
   onboardingIntentFocus = null,
   context,
   formationStatus,
+  brandHref: brandHrefOverride,
+  showWorkspaceHome = true,
 }: AppShellProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -131,7 +133,15 @@ export function AppShellInner({
     pathname,
   })
 
-  const brandHref = hasUser ? (isAcceleratorContext ? "/accelerator" : "/workspace") : "/"
+  const brandHref =
+    brandHrefOverride ??
+    (hasUser
+      ? isAcceleratorContext
+        ? "/accelerator"
+        : derivedContext === "public"
+          ? "/find"
+          : "/workspace"
+      : "/")
   const pricingFeedbackTutorialPending =
     tutorialKey === "accelerator" ? tutorialWelcome.accelerator : tutorialWelcome.platform
   const showPricingFeedbackPrompt =
@@ -224,6 +234,7 @@ export function AppShellInner({
             onboardingIntentFocus={onboardingIntentFocus}
             organizationName={organizationName}
             showCoachScheduling={!isAcceleratorContext}
+            showWorkspaceHome={showWorkspaceHome}
           />
         </Sidebar>
 

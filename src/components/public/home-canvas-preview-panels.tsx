@@ -12,6 +12,8 @@ import {
   LegacyHomeTeamSection,
   type LegacyHomeSectionId,
 } from "@/components/public/legacy-home-sections"
+import { DEFAULT_POST_AUTH_REDIRECT } from "@/lib/auth/redirects"
+import { FIND_PATH } from "@/lib/find/routes"
 
 function CanvasPanelShell({ children, centered = false }: { children: ReactNode; centered?: boolean }) {
   return (
@@ -40,7 +42,7 @@ export function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
       <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card/60 p-5 sm:p-6">
         {isLogin ? (
           <LoginPanel
-            redirectTo={builderRedirectTo}
+            redirectTo={DEFAULT_POST_AUTH_REDIRECT}
             className="max-w-none space-y-5"
             signUpHref="/?section=signup"
           />
@@ -55,7 +57,7 @@ export function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
             <SignUpForm
               lockedIntentFocus="build"
               builderRedirectTo={builderRedirectTo}
-              memberRedirectTo="/find?member_onboarding=1&source=home_signup"
+              memberRedirectTo={`${FIND_PATH}?member_onboarding=1&source=home_signup`}
               loginHref={builderLoginHref}
             />
           </>

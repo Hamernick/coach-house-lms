@@ -1,25 +1,30 @@
 import { redirect } from "next/navigation"
 
+import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
+
 type SearchParams = Record<string, string | string[] | undefined>
 
 type LoginPageProps = {
   searchParams?: Promise<SearchParams>
 }
 
-function getSafeRedirect(value: unknown) {
-  if (typeof value !== "string") return undefined
-  if (!value.startsWith("/")) return undefined
-  if (value.startsWith("//")) return undefined
-  return value
-}
-
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const resolved = searchParams ? await searchParams : {}
   const redirectParamRaw = Array.isArray(resolved.redirect) ? resolved.redirect[0] : resolved.redirect
-  const redirectParam = getSafeRedirect(redirectParamRaw)
+  const redirectParam = getSafeRedirectPath(redirectParamRaw)
   const error = Array.isArray(resolved.error) ? resolved.error[0] : resolved.error
   const plan = Array.isArray(resolved.plan) ? resolved.plan[0] : resolved.plan
   const addon = Array.isArray(resolved.addon) ? resolved.addon[0] : resolved.addon
+
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user) {
+    redirect(redirectParam ?? DEFAULT_POST_AUTH_REDIRECT)
+  }
 
   const params = new URLSearchParams()
   params.set("section", "login")

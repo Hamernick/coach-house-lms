@@ -46,6 +46,11 @@ import {
   buildPublicMapSearchIndex,
   filterPublicMapOrganizationIds,
 } from "./public-map-index/search-index"
+import {
+  shouldRenderPublicMapDesktopSidebar,
+  shouldUsePublicMapHomeCanvasSidebarSlot,
+  type PublicMapIndexPresentationMode,
+} from "./public-map-index/presentation-mode"
 
 type PublicMapIndexProps = {
   organizations: PublicMapOrganization[]
@@ -55,6 +60,7 @@ type PublicMapIndexProps = {
   joinedOrganizations?: PublicMapJoinedOrganization[]
   boardAlerts?: PublicMapBoardAlert[]
   memberProfile?: PublicMapMemberProfile | null
+  presentationMode?: PublicMapIndexPresentationMode
 }
 
 type PublicMapCameraTarget = {
@@ -70,6 +76,7 @@ export function PublicMapIndex({
   joinedOrganizations = [],
   boardAlerts = [],
   memberProfile = null,
+  presentationMode = "home-canvas",
 }: PublicMapIndexProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -299,10 +306,12 @@ export function PublicMapIndex({
   }, [cameraTarget, organizationById])
 
   const listOrganizations = sameLocationSearchContext?.organizations ?? filteredOrganizations
+  const renderDesktopSidebar = shouldRenderPublicMapDesktopSidebar(presentationMode)
+  const useHomeCanvasSidebarSlot = shouldUsePublicMapHomeCanvasSidebarSlot(presentationMode)
 
   return (
     <>
-      {panelPresentation === "rail" ? (
+      {useHomeCanvasSidebarSlot && panelPresentation === "rail" ? (
         <HomeCanvasSidebarSlot>
           <PublicMapShellSidebarPanel
             sidebarMode={sidebarMode}
@@ -380,7 +389,7 @@ export function PublicMapIndex({
         onAuthSheetOpenChange={setAuthSheetOpen}
         onSidebarInsetChange={setSidebarInsetLeft}
         onPanelPresentationChange={setPanelPresentation}
-        renderDesktopSidebar={false}
+        renderDesktopSidebar={renderDesktopSidebar}
       />
     </>
   )

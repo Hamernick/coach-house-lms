@@ -23,4 +23,11 @@ describe("public find routes", () => {
       expect(source).not.toContain("completeOnboardingAction")
     }
   })
+
+  it("renders authenticated users inside the app shell without moving find under workspace", () => {
+    const source = readRoute("src/app/(public)/find/page.tsx")
+    expect(source).toContain("AuthenticatedFindShell")
+    expect(source).toContain('presentationMode="app-shell"')
+    expect(source).not.toContain("/workspace/find")
+  })
 })

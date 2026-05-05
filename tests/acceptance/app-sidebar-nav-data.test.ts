@@ -52,12 +52,35 @@ describe("app sidebar nav data", () => {
 
     expect(nav.map((item) => item.title)).toEqual([
       "Workspace",
+      "Find",
       "Projects",
       "Tasks",
       "People",
       "Documents",
     ])
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
     expect(nav.find((item) => item.title === "Tasks")?.href).toBe("/tasks")
+  })
+
+  it("can make Find the first app-shell nav item when workspace home is unavailable", () => {
+    const nav = buildMainNav({
+      isAdmin: false,
+      showOrgAdmin: false,
+      canAccessOrgAdmin: false,
+      showMemberWorkspace: true,
+      hasMemberWorkspaceAccess: false,
+      showWorkspaceHome: false,
+    })
+
+    expect(nav.map((item) => item.title)).toEqual([
+      "Find",
+      "Projects",
+      "Tasks",
+      "People",
+      "Documents",
+    ])
+    expect(nav.find((item) => item.title === "Workspace")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
   })
 
   it("locks project and task nav for free member workspace users", () => {
@@ -74,6 +97,8 @@ describe("app sidebar nav data", () => {
       upgradeHref:
         "?paywall=organization&plan=organization&upgrade=member-workspace-access&source=nav-projects",
     })
+    expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
+    expect(nav.find((item) => item.title === "Find")?.locked).not.toBe(true)
     expect(nav.find((item) => item.title === "Projects")?.href).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toMatchObject({
       locked: true,

@@ -6,6 +6,7 @@ import { resolvePricingPlanTier, type PricingPlanTier } from "@/lib/billing/plan
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import type { Json } from "@/lib/supabase"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { FIND_PATH } from "@/lib/find/routes"
 import { resolveDashboardLayoutState } from "../_lib/dashboard-layout-state"
 import { completeOnboardingAction } from "./actions"
 
@@ -75,7 +76,7 @@ export default async function OnboardingPage({
       state.onboardingIntentFocus === "fund" ||
       state.onboardingIntentFocus === "support"
     ) {
-      redirect("/find?member_onboarding=0&source=onboarding")
+      redirect(`${FIND_PATH}?member_onboarding=0&source=onboarding`)
     }
 
     redirect("/workspace")

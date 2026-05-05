@@ -34,6 +34,18 @@ type LoginFormProps = {
   signUpHref?: string
 }
 
+type ExistingAuthSession = { access_token?: string | null } | null | undefined
+
+export function resolveExistingAuthSessionRedirect({
+  session,
+  redirectTo,
+}: {
+  session: ExistingAuthSession
+  redirectTo: string
+}) {
+  return session ? redirectTo : null
+}
+
 function mapAuthErrorMessage(raw: string | null | undefined) {
   if (!raw) return null
   const normalized = raw.toLowerCase()
@@ -79,6 +91,7 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
   const [errorMessage, setErrorMessage] = useState<string | null>(
     mapAuthErrorMessage(initialError) ?? searchError,
   )
+  const [isRedirectingExistingSession, setIsRedirectingExistingSession] = useState(false)
   const [isPending, startTransition] = useTransition()
   const resolvedSignUpHref = useMemo(() => {
     const base = signUpHref ?? "/sign-up"
@@ -105,6 +118,32 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
     setErrorMessage(mapAuthErrorMessage(initialError) ?? searchError)
   }, [initialError, searchError])
 
+  useEffect(() => {
+    let cancelled = false
+
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (cancelled) return
+        const redirectPath = resolveExistingAuthSessionRedirect({
+          session: data.session,
+          redirectTo: resolvedRedirectTo,
+        })
+        if (!redirectPath) return
+
+        setIsRedirectingExistingSession(true)
+        router.replace(redirectPath)
+        router.refresh()
+      })
+      .catch(() => {
+        // A failed session check should leave the sign-in form usable.
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [resolvedRedirectTo, router, supabase])
+
   async function onSubmit(values: LoginFormValues) {
     setErrorMessage(null)
 
@@ -123,6 +162,14 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
       router.replace(resolvedRedirectTo)
       router.refresh()
     })
+  }
+
+  if (isRedirectingExistingSession) {
+    return (
+      <p className="text-sm text-muted-foreground" role="status">
+        Taking you back to your workspace…
+      </p>
+    )
   }
 
   return (

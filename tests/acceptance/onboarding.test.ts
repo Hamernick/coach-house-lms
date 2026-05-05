@@ -42,6 +42,23 @@ describe("onboarding gate", () => {
     expect(destination).toBe("/workspace")
   })
 
+  it("redirects completed member-intent users to find", async () => {
+    vi.doMock("@/app/(dashboard)/_lib/dashboard-layout-state", () => ({
+      resolveDashboardLayoutState: async () => ({
+        userPresent: true,
+        onboardingLocked: false,
+        onboardingIntentFocus: "find",
+      }),
+    }))
+    vi.doMock("@/components/onboarding/onboarding-workspace-card", () => ({
+      OnboardingWorkspaceCard: () => null,
+    }))
+
+    const { default: Page } = await import("@/app/(dashboard)/onboarding/page")
+    const destination = await captureRedirect(() => Page())
+    expect(destination).toBe("/find?member_onboarding=0&source=onboarding")
+  })
+
   it("renders onboarding workspace card while onboarding is still locked", async () => {
     vi.doMock("@/app/(dashboard)/_lib/dashboard-layout-state", () => ({
       resolveDashboardLayoutState: async () => ({

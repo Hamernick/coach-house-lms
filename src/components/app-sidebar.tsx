@@ -36,6 +36,7 @@ export type AppSidebarProps = {
   onboardingIntentFocus?: "build" | "find" | "fund" | "support" | null
   organizationName?: string | null
   showCoachScheduling?: boolean
+  showWorkspaceHome?: boolean
 }
 
 export function AppSidebar({
@@ -114,6 +115,7 @@ type SidebarBodyProps = {
   onboardingIntentFocus?: "build" | "find" | "fund" | "support" | null
   organizationName?: string | null
   showCoachScheduling?: boolean
+  showWorkspaceHome?: boolean
 }
 
 export function SidebarBody({
@@ -135,6 +137,7 @@ export function SidebarBody({
   onboardingIntentFocus = null,
   organizationName = null,
   showCoachScheduling = false,
+  showWorkspaceHome = true,
 }: SidebarBodyProps) {
   const shouldShowAccelerator = !onboardingLocked && Boolean(isAdmin || showAccelerator)
   const hasUser = Boolean(user.email)
@@ -146,6 +149,7 @@ export function SidebarBody({
     canAccessOrgAdmin,
     showMemberWorkspace,
     hasMemberWorkspaceAccess,
+    showWorkspaceHome,
   })
 
   return (

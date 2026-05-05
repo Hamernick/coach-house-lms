@@ -97,6 +97,47 @@ describe("completeOnboardingAction", () => {
     expect(destination).toBe("/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding")
   })
 
+  it("sends completed member onboarding to find", async () => {
+    const profilesUpsertMock = vi.fn().mockResolvedValue({ error: null })
+    const updateUserMock = vi.fn().mockResolvedValue({ error: null })
+    createSupabaseServerClientServerMock.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: {
+              id: "user_123",
+              email: "member@example.com",
+            },
+          },
+          error: null,
+        }),
+        updateUser: updateUserMock,
+      },
+      from: vi.fn((table: string) => {
+        if (table === "profiles") {
+          return {
+            upsert: profilesUpsertMock,
+          }
+        }
+        throw new Error(`Unexpected table lookup: ${table}`)
+      }),
+    })
+
+    const form = new FormData()
+    form.set("intentFocus", "find")
+    form.set("onboardingMode", "post_signup_access")
+    form.set("firstName", "Ada")
+    form.set("lastName", "Lovelace")
+
+    const { completeOnboardingAction } = await import("@/app/(dashboard)/onboarding/actions")
+    const destination = await captureRedirect(() => completeOnboardingAction(form))
+
+    expect(fetchLearningEntitlementsMock).not.toHaveBeenCalled()
+    expect(profilesUpsertMock).toHaveBeenCalled()
+    expect(updateUserMock).toHaveBeenCalled()
+    expect(destination).toBe("/find?member_onboarding=0&source=member_onboarding")
+  })
+
   it("saves free workspace setup changes to the active organization", async () => {
     const profilesUpsertMock = vi.fn().mockResolvedValue({ error: null })
     const membershipsEqMock = vi.fn().mockReturnValue({

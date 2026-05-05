@@ -20,6 +20,7 @@ import {
   type PrototypeLabSidebarTreeNode,
 } from "@/features/prototype-lab"
 import type { SidebarClass } from "@/lib/academy"
+import { FIND_PATH } from "@/lib/find/routes"
 import { platformLabEnabled } from "@/lib/feature-flags"
 
 type MainNavItem = {
@@ -39,6 +40,7 @@ export function buildMainNav({
   canAccessOrgAdmin,
   showMemberWorkspace = false,
   hasMemberWorkspaceAccess = true,
+  showWorkspaceHome = true,
   showPlatformLab = platformLabEnabled,
 }: {
   isAdmin: boolean
@@ -46,8 +48,12 @@ export function buildMainNav({
   canAccessOrgAdmin: boolean
   showMemberWorkspace?: boolean
   hasMemberWorkspaceAccess?: boolean
+  showWorkspaceHome?: boolean
   showPlatformLab?: boolean
 }): MainNavItem[] {
+  const workspaceHomeItem = showWorkspaceHome
+    ? [{ title: "Workspace", href: "/workspace", icon: LayoutGridIcon }]
+    : []
   const lockedMemberWorkspaceItems: MainNavItem[] = [
     {
       title: "Projects",
@@ -77,13 +83,15 @@ export function buildMainNav({
   const items: MainNavItem[] = [
     ...(showMemberWorkspace
       ? [
-          { title: "Workspace", href: "/workspace", icon: LayoutGridIcon },
+          ...workspaceHomeItem,
+          { title: "Find", href: FIND_PATH, icon: MapPinnedIcon },
           ...memberWorkspaceItems,
           { title: "People", href: "/people", icon: UsersIcon },
           { title: "Documents", href: "/organization/documents", icon: LockIcon },
         ]
       : [
-          { title: "Workspace", href: "/workspace", icon: LayoutGridIcon },
+          ...workspaceHomeItem,
+          { title: "Find", href: FIND_PATH, icon: MapPinnedIcon },
           { title: "People", href: "/people", icon: UsersIcon },
           { title: "Documents", href: "/organization/documents", icon: LockIcon },
         ]),
@@ -131,7 +139,7 @@ export const RESOURCE_NAV = [
   },
   {
     name: "Find organizations",
-    url: "/find",
+    url: FIND_PATH,
     icon: MapPinnedIcon,
   },
   {

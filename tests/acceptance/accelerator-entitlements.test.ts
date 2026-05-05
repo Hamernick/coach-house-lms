@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { hasPaidTeamAccessFromSubscription } from "@/lib/billing/subscription-access"
+import { resolvePricingPlanTier } from "@/lib/billing/plan-tier"
 
 type QueryResponse = {
   data: unknown
@@ -113,5 +114,50 @@ describe("fetchLearningEntitlements", () => {
         metadata: { plan_tier: "free" },
       }),
     ).toBe(false)
+  })
+
+  it("does not treat metadata-less active rows as paid team access", () => {
+    expect(
+      hasPaidTeamAccessFromSubscription({
+        status: "active",
+        metadata: null,
+      }),
+    ).toBe(false)
+    expect(
+      hasPaidTeamAccessFromSubscription({
+        status: "active",
+        metadata: { stripe_mode: "test" },
+      }),
+    ).toBe(false)
+  })
+
+  it("still treats explicit paid plan metadata as paid team access", () => {
+    expect(
+      hasPaidTeamAccessFromSubscription({
+        status: "active",
+        metadata: { plan_tier: "organization" },
+      }),
+    ).toBe(true)
+    expect(
+      hasPaidTeamAccessFromSubscription({
+        status: "trialing",
+        metadata: { planName: "Operations Support" },
+      }),
+    ).toBe(true)
+  })
+
+  it("resolves metadata-less active rows as free in billing surfaces", () => {
+    expect(
+      resolvePricingPlanTier({
+        status: "active",
+        metadata: { stripe_mode: "test" },
+      }),
+    ).toBe("free")
+    expect(
+      resolvePricingPlanTier({
+        status: "active",
+        metadata: { planName: "Organization" },
+      }),
+    ).toBe("organization")
   })
 })

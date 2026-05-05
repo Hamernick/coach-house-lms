@@ -24,9 +24,10 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { FIND_PATH } from "@/lib/find/routes"
 
 const DEFAULT_BUILDER_REDIRECT = "/onboarding?source=signup"
-const DEFAULT_MEMBER_REDIRECT = "/find?member_onboarding=1&source=signup"
+const DEFAULT_MEMBER_REDIRECT = `${FIND_PATH}?member_onboarding=1&source=signup`
 
 const JOURNEY_OPTIONS: Array<{
   value: IntentFocus

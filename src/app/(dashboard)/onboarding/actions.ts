@@ -7,6 +7,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
+import { FIND_PATH } from "@/lib/find/routes"
 import {
   type ActiveOrganization,
   canEditOrganization,
@@ -49,7 +50,7 @@ function buildOnboardingErrorRedirect({
   }
   if (intentFocus && intentFocus !== "build") {
     params.set("member_onboarding", "1")
-    return `/find?${params.toString()}`
+    return `${FIND_PATH}?${params.toString()}`
   }
   return `/onboarding?${params.toString()}`
 }
@@ -352,5 +353,5 @@ export async function completeOnboardingAction(form: FormData) {
     redirect("/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding")
   }
 
-  redirect("/find?member_onboarding=0&source=member_onboarding")
+  redirect(`${FIND_PATH}?member_onboarding=0&source=member_onboarding`)
 }

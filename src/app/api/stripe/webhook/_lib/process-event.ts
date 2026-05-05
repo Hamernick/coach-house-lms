@@ -4,6 +4,8 @@ import { isElectiveAddOnModuleSlug } from "@/lib/accelerator/elective-modules"
 import {
   extractOrganizationUserIdFromMetadata,
   extractUserIdFromMetadata,
+  getCancelAtIso,
+  getCanceledAtIso,
   getCurrentPeriodEndIso,
   toStatus,
 } from "./metadata"
@@ -107,6 +109,8 @@ export async function processStripeWebhookEvent({
         customerId: typeof session.customer === "string" ? session.customer : null,
         subscriptionId,
         status: toStatus(session.status ?? "trialing"),
+        cancelAt: null,
+        canceledAt: null,
         metadata:
           session.metadata && Object.keys(session.metadata).length > 0
             ? ({
@@ -125,6 +129,8 @@ export async function processStripeWebhookEvent({
           customerId: typeof session.customer === "string" ? session.customer : null,
           subscriptionId,
           status: toStatus(session.status ?? "trialing"),
+          cancelAt: null,
+          canceledAt: null,
           metadata:
             session.metadata && Object.keys(session.metadata).length > 0
               ? ({
@@ -162,6 +168,8 @@ export async function processStripeWebhookEvent({
         subscriptionId: subscription.id,
         status: toStatus(subscription.status),
         currentPeriodEnd: getCurrentPeriodEndIso(subscription),
+        cancelAt: getCancelAtIso(subscription),
+        canceledAt: getCanceledAtIso(subscription),
         metadata: {
           ...(subscription.metadata as Record<string, string>),
           stripe_mode:

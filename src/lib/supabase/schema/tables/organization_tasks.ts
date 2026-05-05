@@ -16,7 +16,7 @@ export type OrganizationTasksTable = {
     created_source: string
     starter_seed_key: string | null
     starter_seed_version: number | null
-    created_by: string
+    created_by: string | null
     updated_by: string | null
     created_at: string
     updated_at: string
@@ -38,7 +38,7 @@ export type OrganizationTasksTable = {
     created_source?: string
     starter_seed_key?: string | null
     starter_seed_version?: number | null
-    created_by: string
+    created_by?: string | null
     updated_by?: string | null
     created_at?: string
     updated_at?: string
@@ -60,7 +60,7 @@ export type OrganizationTasksTable = {
     created_source?: string
     starter_seed_key?: string | null
     starter_seed_version?: number | null
-    created_by?: string
+    created_by?: string | null
     updated_by?: string | null
     created_at?: string
     updated_at?: string

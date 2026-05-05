@@ -44,8 +44,8 @@ function resolveHiddenUtilityPosition(cardId: WorkspaceCardId) {
 }
 
 const WORKSPACE_TRUNK_CARD_IDS = [
-  "roadmap",
   "accelerator",
+  "roadmap",
   "organization-overview",
   "programs",
   "deck",

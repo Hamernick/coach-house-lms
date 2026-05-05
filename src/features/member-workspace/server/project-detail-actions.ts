@@ -9,6 +9,7 @@ import type {
   MemberWorkspaceUpdateProjectNoteInput,
   MemberWorkspaceUpdateProjectQuickLinkInput,
 } from "../types"
+import { ensureMemberWorkspaceFeatureAccess } from "./access"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import {
   isMissingOrganizationProjectNotesTableError,
@@ -76,6 +77,13 @@ async function resolveProjectForDetailMutation({
   actor: Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>
   projectId: string
 }): Promise<{ ok: true; project: ProjectNoteMutationProjectRow } | { error: string }> {
+  if (actor.isAdmin) {
+    return { error: PLATFORM_ADMIN_PROJECT_DETAIL_MUTATION_ERROR }
+  }
+
+  const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
+  if (featureAccess) return featureAccess
+
   const { data: project, error } = await actor.supabase
     .from("organization_projects")
     .select("id, org_id")
@@ -94,10 +102,6 @@ async function resolveProjectForDetailMutation({
 
   if (!project) {
     return { error: "Unable to find that project." }
-  }
-
-  if (actor.isAdmin) {
-    return { error: PLATFORM_ADMIN_PROJECT_DETAIL_MUTATION_ERROR }
   }
 
   if (project.org_id !== actor.activeOrg.orgId) {

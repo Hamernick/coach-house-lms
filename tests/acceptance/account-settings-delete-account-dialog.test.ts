@@ -30,11 +30,11 @@ describe("account settings delete account flow", () => {
     )
 
     expect(dangerMarkup).toContain("Deleting your account does not cancel Stripe billing.")
-    expect(dialogMarkup).toContain("Deleting your profile does not cancel Stripe subscription billing.")
+    expect(dialogMarkup).toContain("If Stripe billing is still active, account deletion will not cancel it.")
     expect(dialogMarkup).toContain(">1. Cancel your subscription billing<")
     expect(dialogMarkup).toContain(">Open billing portal<")
     expect(dialogMarkup).toContain(
-      "I understand I need to cancel Stripe billing separately before deleting my account.",
+      "I have canceled Stripe billing, or I understand account deletion will not stop it.",
     )
     expect(dialogMarkup).toContain(">2. Confirm your email<")
   })
@@ -57,6 +57,6 @@ describe("account settings delete account flow", () => {
 
     expect(dialogMarkup).not.toContain("Open billing portal")
     expect(dialogMarkup).not.toContain("2. Confirm your email")
-    expect(dialogMarkup).not.toContain("Deleting your profile does not cancel Stripe subscription billing.")
+    expect(dialogMarkup).not.toContain("If Stripe billing is still active")
   })
 })

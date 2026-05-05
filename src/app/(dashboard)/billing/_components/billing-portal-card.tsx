@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { StripePoweredBadge } from "@/components/billing/stripe-powered-badge"
+import { SUPPORT_EMAIL } from "@/components/app-shell/constants"
 
 import { BillingPortalButton } from "../billing-portal-button"
 
@@ -44,10 +45,10 @@ export function BillingPortalCard({
               <>
                 We found your plan but not a complete Stripe billing record yet. Contact{" "}
                 <a
-                  href="mailto:support@coachhouse.io"
+                  href={`mailto:${SUPPORT_EMAIL}`}
                   className="font-medium text-primary underline-offset-4 hover:underline"
                 >
-                  support@coachhouse.io
+                  {SUPPORT_EMAIL}
                 </a>{" "}
                 and we can reconnect it.
               </>
@@ -56,10 +57,10 @@ export function BillingPortalCard({
                 Start a paid plan first, then you&apos;ll be able to manage payment methods and invoices in Stripe.{" "}
                 Need help? Contact{" "}
                 <a
-                  href="mailto:support@coachhouse.io"
+                  href={`mailto:${SUPPORT_EMAIL}`}
                   className="font-medium text-primary underline-offset-4 hover:underline"
                 >
-                  support@coachhouse.io
+                  {SUPPORT_EMAIL}
                 </a>
                 .
               </>
@@ -68,10 +69,10 @@ export function BillingPortalCard({
             <>
               Need help? Contact{" "}
               <a
-                href="mailto:support@coachhouse.io"
+                href={`mailto:${SUPPORT_EMAIL}`}
                 className="font-medium text-primary underline-offset-4 hover:underline"
               >
-                support@coachhouse.io
+                {SUPPORT_EMAIL}
               </a>
               .
             </>

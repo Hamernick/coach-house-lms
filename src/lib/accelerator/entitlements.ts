@@ -5,6 +5,7 @@ import Stripe from "stripe"
 import type { Database } from "@/lib/supabase"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { getElectiveAddOnModuleSlugs, isElectiveAddOnModuleSlug } from "@/lib/accelerator/elective-modules"
+import { hasPaidTeamAccessFromSubscription } from "@/lib/billing/subscription-access"
 import { resolveStripeRuntimeConfigsForFallback } from "@/lib/billing/stripe-runtime"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 
@@ -58,6 +59,10 @@ function uniqueStrings(values: Array<string | null | undefined>) {
         .filter((value) => value.length > 0),
     ),
   )
+}
+
+function stripeTimestampToIso(value: number | null | undefined) {
+  return typeof value === "number" ? new Date(value * 1000).toISOString() : null
 }
 
 async function trySyncSubscriptionFromStripe({
@@ -143,6 +148,8 @@ async function trySyncSubscriptionFromStripe({
     stripe_subscription_id: latest.id,
     status: normalizeSubscriptionStatus(latest.status),
     current_period_end: currentPeriodEnd,
+    cancel_at: stripeTimestampToIso(latest.cancel_at),
+    canceled_at: stripeTimestampToIso(latest.canceled_at),
     metadata,
   }
 
@@ -177,7 +184,7 @@ const fetchLearningEntitlementsCached = cache(async ({
   async function hasActiveOrgSubscription(targetUserId: string): Promise<boolean> {
     const subscriptionsBaseQuery = supabase
       .from("subscriptions")
-      .select("id")
+      .select("id, status, metadata")
       .eq("user_id", targetUserId)
       .in("status", ["active", "trialing"])
       .not("stripe_subscription_id", "ilike", "stub_%")
@@ -195,7 +202,7 @@ const fetchLearningEntitlementsCached = cache(async ({
       }
     })
       .limit(1)
-      .maybeSingle<{ id: string }>()
+      .maybeSingle<{ id: string; status: string | null; metadata: Database["public"]["Tables"]["subscriptions"]["Row"]["metadata"] }>()
 
     if (result.error) {
       if (isMissingRelationError(result.error)) {
@@ -204,7 +211,7 @@ const fetchLearningEntitlementsCached = cache(async ({
       throw supabaseErrorToError(result.error, "Unable to load subscription entitlements.")
     }
 
-    return Boolean(result.data?.id)
+    return hasPaidTeamAccessFromSubscription(result.data ?? null)
   }
 
   const [acceleratorResult, electivesResult] = await Promise.all([

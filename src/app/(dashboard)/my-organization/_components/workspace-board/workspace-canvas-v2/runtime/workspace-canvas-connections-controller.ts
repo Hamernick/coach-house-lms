@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { Connection, EdgeMouseHandler, IsValidConnection } from "reactflow"
 
 import { ACCELERATOR_STEP_EDGE_ID } from "../../workspace-board-flow-surface-accelerator-graph-composition"
+import type { WorkspaceCardEdgeGeometryLookup } from "../../workspace-board-connection-handles"
 import { WORKSPACE_CARD_META } from "../../workspace-board-copy"
 import type {
   WorkspaceAutoLayoutMode,
@@ -57,6 +58,7 @@ export function useWorkspaceCanvasConnectionsController({
   autoLayoutMode,
   acceleratorWorkspaceNodeId,
   tutorialEdgeTargetId,
+  nodeGeometryLookup,
   onConnectCards,
   onDisconnectConnection,
   onDisconnectAllConnections,
@@ -70,6 +72,7 @@ export function useWorkspaceCanvasConnectionsController({
   autoLayoutMode: WorkspaceAutoLayoutMode
   acceleratorWorkspaceNodeId: WorkspaceCanvasV2CardId | null
   tutorialEdgeTargetId: WorkspaceCardId | null
+  nodeGeometryLookup: WorkspaceCardEdgeGeometryLookup
   onConnectCards: (source: WorkspaceCardId, target: WorkspaceCardId) => void
   onDisconnectConnection: (connectionId: string) => void
   onDisconnectAllConnections: () => void
@@ -88,12 +91,14 @@ export function useWorkspaceCanvasConnectionsController({
         autoLayoutMode,
         acceleratorWorkspaceNodeId,
         tutorialEdgeTargetId,
+        nodeGeometryLookup,
       }),
     [
       acceleratorStepNodeVisible,
       autoLayoutMode,
       acceleratorWorkspaceNodeId,
       connections,
+      nodeGeometryLookup,
       presentationMode,
       readinessMap,
       tutorialEdgeTargetId,

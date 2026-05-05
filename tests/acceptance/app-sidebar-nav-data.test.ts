@@ -47,6 +47,7 @@ describe("app sidebar nav data", () => {
       showOrgAdmin: false,
       canAccessOrgAdmin: false,
       showMemberWorkspace: true,
+      hasMemberWorkspaceAccess: true,
     })
 
     expect(nav.map((item) => item.title)).toEqual([
@@ -57,6 +58,29 @@ describe("app sidebar nav data", () => {
       "Documents",
     ])
     expect(nav.find((item) => item.title === "Tasks")?.href).toBe("/tasks")
+  })
+
+  it("locks project and task nav for free member workspace users", () => {
+    const nav = buildMainNav({
+      isAdmin: false,
+      showOrgAdmin: false,
+      canAccessOrgAdmin: false,
+      showMemberWorkspace: true,
+      hasMemberWorkspaceAccess: false,
+    })
+
+    expect(nav.find((item) => item.title === "Projects")).toMatchObject({
+      locked: true,
+      upgradeHref:
+        "?paywall=organization&plan=organization&upgrade=member-workspace-access&source=nav-projects",
+    })
+    expect(nav.find((item) => item.title === "Projects")?.href).toBeUndefined()
+    expect(nav.find((item) => item.title === "Tasks")).toMatchObject({
+      locked: true,
+      upgradeHref:
+        "?paywall=organization&plan=organization&upgrade=member-workspace-access&source=nav-tasks",
+    })
+    expect(nav.find((item) => item.title === "Tasks")?.href).toBeUndefined()
   })
 
   it("does not show Marketplace in the sidebar resource nav", () => {

@@ -139,11 +139,13 @@ export function SidebarBody({
   const shouldShowAccelerator = !onboardingLocked && Boolean(isAdmin || showAccelerator)
   const hasUser = Boolean(user.email)
   const showMemberWorkspace = !onboardingLocked && onboardingIntentFocus !== "fund"
+  const hasMemberWorkspaceAccess = isAdmin || hasActiveSubscription
   const mainNavItems = buildMainNav({
     isAdmin,
     showOrgAdmin,
     canAccessOrgAdmin,
     showMemberWorkspace,
+    hasMemberWorkspaceAccess,
   })
 
   return (

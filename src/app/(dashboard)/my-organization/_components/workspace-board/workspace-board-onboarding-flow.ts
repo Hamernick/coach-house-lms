@@ -195,25 +195,25 @@ function buildWorkspaceTutorialCompletionNodes({
     return autoLayoutNodes
   }
 
-  const roadmapDimensions = resolveCardDimensions(roadmapNode.size, "roadmap")
   const acceleratorDimensions = resolveCardDimensions(
     acceleratorNode.size,
     "accelerator",
   )
+  const roadmapDimensions = resolveCardDimensions(roadmapNode.size, "roadmap")
   const organizationDimensions = resolveCardDimensions(
     organizationNode.size,
     "organization-overview",
   )
-  const roadmapX = roundToSnap(WORKSPACE_TUTORIAL_COMPLETION_LEFT_X)
+  const acceleratorX = roundToSnap(WORKSPACE_TUTORIAL_COMPLETION_LEFT_X)
   const topY = roundToSnap(WORKSPACE_TUTORIAL_COMPLETION_TOP_Y)
-  const acceleratorX = roundToSnap(
-    roadmapX +
-      roadmapDimensions.width +
+  const roadmapX = roundToSnap(
+    acceleratorX +
+      acceleratorDimensions.width +
       WORKSPACE_TUTORIAL_COMPLETION_COLUMN_GAP,
   )
   const organizationX = roundToSnap(
-    acceleratorX +
-      acceleratorDimensions.width +
+    roadmapX +
+      roadmapDimensions.width +
       WORKSPACE_TUTORIAL_COMPLETION_COLUMN_GAP,
   )
   const programsX = roundToSnap(
@@ -226,8 +226,8 @@ function buildWorkspaceTutorialCompletionNodes({
     WorkspaceCardId,
     { x: number; y: number }
   >([
-    ["roadmap", { x: roadmapX, y: topY }],
     ["accelerator", { x: acceleratorX, y: topY }],
+    ["roadmap", { x: roadmapX, y: topY }],
     ["organization-overview", { x: organizationX, y: topY }],
     ["programs", { x: programsX, y: topY }],
   ])

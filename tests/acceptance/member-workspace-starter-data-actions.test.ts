@@ -74,6 +74,7 @@ describe("member workspace starter-data actions", () => {
       userId: "user-1",
       activeOrg: { orgId: "org-1", role: "owner" },
       canEdit: true,
+      hasMemberWorkspaceAccess: true,
     })
 
     await expect(clearMemberWorkspaceStarterDataAction()).resolves.toEqual({
@@ -100,6 +101,7 @@ describe("member workspace starter-data actions", () => {
   it("rejects non-editors", async () => {
     resolveMemberWorkspaceActorContextMock.mockResolvedValue({
       canEdit: false,
+      hasMemberWorkspaceAccess: true,
     })
 
     await expect(clearMemberWorkspaceStarterDataAction()).resolves.toEqual({

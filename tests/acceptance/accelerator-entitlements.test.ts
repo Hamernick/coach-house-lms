@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
+import { hasPaidTeamAccessFromSubscription } from "@/lib/billing/subscription-access"
 
 type QueryResponse = {
   data: unknown
@@ -82,5 +83,35 @@ describe("fetchLearningEntitlements", () => {
         isAdmin: false,
       }),
     ).rejects.toThrow("permission denied")
+  })
+
+  it("does not treat free-plan subscription rows as paid access", async () => {
+    const supabase = createSupabaseStub({
+      accelerator_purchases: { data: null, error: null },
+      elective_purchases: { data: [], error: null },
+      subscriptions: {
+        data: { id: "sub-free", status: "active", metadata: { planName: "Free" } },
+        error: null,
+      },
+    })
+
+    const entitlements = await fetchLearningEntitlements({
+      supabase: supabase as never,
+      userId: "free-user",
+      orgUserId: "free-org",
+      isAdmin: false,
+    })
+
+    expect(entitlements.hasActiveSubscription).toBe(false)
+    expect(entitlements.hasAcceleratorAccess).toBe(false)
+  })
+
+  it("does not treat free plan-tier metadata as paid team access", () => {
+    expect(
+      hasPaidTeamAccessFromSubscription({
+        status: "active",
+        metadata: { plan_tier: "free" },
+      }),
+    ).toBe(false)
   })
 })

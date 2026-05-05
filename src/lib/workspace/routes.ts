@@ -41,3 +41,14 @@ export function getWorkspaceAcceleratorPaywallPath(source = "accelerator") {
 
   return `${WORKSPACE_PATH}?${params.toString()}`
 }
+
+export function getMemberWorkspacePaywallPath(source = "member-workspace") {
+  const params = new URLSearchParams({
+    paywall: "organization",
+    plan: "organization",
+    upgrade: "member-workspace-access",
+    source,
+  })
+
+  return `${WORKSPACE_PATH}?${params.toString()}`
+}

@@ -13,6 +13,10 @@ import {
   resolveWorkspaceAcceleratorStepPlacement,
 } from "./workspace-board-accelerator-step-layout"
 import {
+  buildWorkspaceCardEdgeGeometryLookupFromBoardNodes,
+  resolveWorkspaceCardConnectionHandleIds,
+} from "./workspace-board-connection-handles"
+import {
   resolveCardDimensions,
   resolveWorkspaceCardNodeStyle,
 } from "./workspace-board-layout"
@@ -235,6 +239,7 @@ export function buildWorkspaceEdges({
   onboardingGuideNodeData,
   onboardingTargetWorkspaceNode,
   presentationMode,
+  visibleWorkspaceNodes,
 }: {
   connections: WorkspaceBoardState["connections"]
   visibleEdgeCardIds: Set<WorkspaceCardId>
@@ -245,18 +250,30 @@ export function buildWorkspaceEdges({
   onboardingGuideNodeData: WorkspaceFlowNode | null
   onboardingTargetWorkspaceNode: WorkspaceBoardState["nodes"][number] | null
   presentationMode: boolean
+  visibleWorkspaceNodes: WorkspaceBoardState["nodes"]
 }): Edge[] {
+  const nodeGeometryLookup =
+    buildWorkspaceCardEdgeGeometryLookupFromBoardNodes(visibleWorkspaceNodes)
   const baseEdges: Edge[] = connections
     .filter(
       (edge) =>
         visibleEdgeCardIds.has(edge.source) && visibleEdgeCardIds.has(edge.target)
     )
-    .map((edge) => ({
-      ...edge,
-      type: "smoothstep",
-      animated: false,
-      style: edgeStyle,
-    }))
+    .map((edge) => {
+      const handleIds = resolveWorkspaceCardConnectionHandleIds({
+        source: nodeGeometryLookup[edge.source],
+        target: nodeGeometryLookup[edge.target],
+      })
+
+      return {
+        ...edge,
+        sourceHandle: handleIds?.sourceHandle,
+        targetHandle: handleIds?.targetHandle,
+        type: "smoothstep",
+        animated: false,
+        style: edgeStyle,
+      }
+    })
 
   if (acceleratorStepNodeData && acceleratorWorkspaceNode) {
     const handleIds = resolveWorkspaceAcceleratorStepEdgeHandles(autoLayoutMode)

@@ -47,14 +47,23 @@ function resolveUnsubscribeHeaders(replyTo: string | null) {
   }
 }
 
+function resolveResendApiKey() {
+  const canonicalKey = env.RESEND_API_KEY?.trim()
+  if (canonicalKey) return canonicalKey
+
+  return env.RESEND_AUTH_EMAIL_API_KEY?.trim() || null
+}
+
 export function canSendResendEmail() {
-  return Boolean(env.RESEND_API_KEY?.trim())
+  return Boolean(resolveResendApiKey())
 }
 
 export async function sendResendEmail(
   input: SendResendEmailInput,
 ): Promise<SendResendEmailResult> {
-  if (!canSendResendEmail()) {
+  const resendApiKey = resolveResendApiKey()
+
+  if (!resendApiKey) {
     return { ok: false, error: "RESEND_API_KEY is not configured." }
   }
 
@@ -72,7 +81,7 @@ export async function sendResendEmail(
   const response = await fetch(RESEND_API_URL, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      Authorization: `Bearer ${resendApiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({

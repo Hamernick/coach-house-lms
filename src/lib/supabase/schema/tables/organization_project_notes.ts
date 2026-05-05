@@ -7,7 +7,7 @@ export type OrganizationProjectNotesTable = {
     content: string | null
     note_type: string
     status: string
-    created_by: string
+    created_by: string | null
     updated_by: string | null
     created_at: string
     updated_at: string
@@ -20,7 +20,7 @@ export type OrganizationProjectNotesTable = {
     content?: string | null
     note_type?: string
     status?: string
-    created_by: string
+    created_by?: string | null
     updated_by?: string | null
     created_at?: string
     updated_at?: string
@@ -33,7 +33,7 @@ export type OrganizationProjectNotesTable = {
     content?: string | null
     note_type?: string
     status?: string
-    created_by?: string
+    created_by?: string | null
     updated_by?: string | null
     created_at?: string
     updated_at?: string

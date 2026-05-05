@@ -89,6 +89,10 @@ function toTrimmedString(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
 }
 
+function isNonEmptyString(value: string | null | undefined): value is string {
+  return typeof value === "string" && value.trim().length > 0
+}
+
 export type MemberWorkspaceProjectDetailLoadResult =
   | { state: "schema-unavailable" }
   | { state: "not-found" }
@@ -170,7 +174,7 @@ async function loadProjectNoteRows({
   }
 
   const authorIds = Array.from(
-    new Set((noteRows ?? []).map((note) => note.created_by).filter(Boolean)),
+    new Set((noteRows ?? []).map((note) => note.created_by).filter(isNonEmptyString)),
   )
   const authorsById = new Map<string, ProfileLiteRow>()
 
@@ -191,7 +195,7 @@ async function loadProjectNoteRows({
   }
 
   return (noteRows ?? []).map((note) => {
-    const author = authorsById.get(note.created_by) ?? null
+    const author = note.created_by ? (authorsById.get(note.created_by) ?? null) : null
     return {
       id: note.id,
       title: note.title,
@@ -199,7 +203,7 @@ async function loadProjectNoteRows({
       note_type: note.note_type,
       status: note.status,
       created_at: note.created_at,
-      created_by: note.created_by,
+      created_by: note.created_by ?? `deleted-author:${note.id}`,
       created_by_name:
         toTrimmedString(author?.full_name) || toTrimmedString(author?.email) || "Unknown member",
       created_by_avatar_url: toTrimmedString(author?.avatar_url) || null,
@@ -267,7 +271,7 @@ async function loadProjectAssetRows({
   }
 
   const authorIds = Array.from(
-    new Set((assetRows ?? []).map((asset) => asset.created_by).filter(Boolean)),
+    new Set((assetRows ?? []).map((asset) => asset.created_by).filter(isNonEmptyString)),
   )
   const authorsById = new Map<string, ProfileLiteRow>()
 
@@ -288,7 +292,7 @@ async function loadProjectAssetRows({
   }
 
   return (assetRows ?? []).map((asset) => {
-    const author = authorsById.get(asset.created_by) ?? null
+    const author = asset.created_by ? (authorsById.get(asset.created_by) ?? null) : null
     return {
       id: asset.id,
       project_id: asset.project_id,
@@ -298,7 +302,7 @@ async function loadProjectAssetRows({
       external_url: asset.external_url,
       size_bytes: asset.size_bytes,
       created_at: asset.created_at,
-      created_by: asset.created_by,
+      created_by: asset.created_by ?? `deleted-author:${asset.id}`,
       created_by_name:
         toTrimmedString(author?.full_name) || toTrimmedString(author?.email) || "Unknown member",
       created_by_avatar_url: toTrimmedString(author?.avatar_url) || null,

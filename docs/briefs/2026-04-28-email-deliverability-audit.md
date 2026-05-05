@@ -5,6 +5,8 @@ Scope: Apr 24 backlog item, “Email confirmation went to spam.”
 ## Current App State
 
 - App-owned organization invite emails send through Resend in `src/lib/email/resend.ts`.
+- The canonical Vercel/server env key is `RESEND_API_KEY`; the app also accepts
+  `RESEND_AUTH_EMAIL_API_KEY` as a compatibility alias for the same Resend API key.
 - Default app sender is `Coach House <hello@coachhouse.app>` unless `RESEND_FROM_EMAIL` or `RESEND_FROM_NAME` overrides it.
 - Resend payloads omit `reply_to` unless `RESEND_REPLY_TO_EMAIL` or a per-send reply-to value is configured.
 - Resend payloads only include `List-Unsubscribe` when a real configured unsubscribe email/URL or reply-to address exists; the code no longer hard-codes a fake unsubscribe inbox.
@@ -51,4 +53,4 @@ The in-app template/sender-code check is complete, and the app-owned Resend help
 - Live Supabase Auth config, read through the Management API with SMTP secrets redacted, is using `smtp_admin_email = no-reply@coachhouse.app` and `smtp_sender_name = Coach House`.
 - Supabase Auth custom SMTP is configured (`smtp_host`, `smtp_user`, and `smtp_pass` are present but redacted); Supabase Auth confirmation/recovery/invite/magic-link/email-change/reauthentication subjects match the Coach House templates.
 - Supabase Auth `site_url` is `https://coachhouse.app`; redirect allow-list includes `https://coachhouse.app/auth/callback`, the prior Vercel callback/wildcard entries, and local development callbacks.
-- Vercel metadata confirms the linked project is `caleb-hamernicks-projects/coach-house-platform` and has recent ready production deployments, but `vercel env ls` reports no project environment variables for that linked project. If production app-owned Resend invites are expected to send from Vercel, verify that `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, `RESEND_FROM_NAME`, and `RESEND_REPLY_TO_EMAIL` are configured on the exact linked Vercel project or on the deployment environment actually serving `coachhouse.app`.
+- Vercel metadata confirms the linked project is `caleb-hamernicks-projects/coach-house-platform` and has recent ready production deployments, but `vercel env ls` reports no project environment variables for that linked project. If production app-owned Resend invites are expected to send from Vercel, verify that `RESEND_API_KEY` or its compatibility alias `RESEND_AUTH_EMAIL_API_KEY`, plus optional `RESEND_FROM_EMAIL`, `RESEND_FROM_NAME`, and `RESEND_REPLY_TO_EMAIL`, are configured on the exact linked Vercel project or on the deployment environment actually serving `coachhouse.app`.

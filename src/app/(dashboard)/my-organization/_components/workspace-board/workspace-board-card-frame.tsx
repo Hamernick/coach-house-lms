@@ -51,6 +51,7 @@ export function WorkspaceBoardCardFrame({
     Boolean(editorHref) ||
     menuActions.length > 0 ||
     Boolean(onToggleCanvasFullscreen)
+  const contentCanDrag = canEdit && !presentationMode && !isCanvasFullscreen
 
   return (
     <Card
@@ -91,7 +92,10 @@ export function WorkspaceBoardCardFrame({
       ) : null}
       <CardContent
         className={cn(
-          "nodrag nopan overflow-hidden px-4",
+          "overflow-hidden px-4",
+          contentCanDrag
+            ? "workspace-card-drag-handle cursor-grab touch-manipulation active:cursor-grabbing"
+            : "nodrag nopan",
           WORKSPACE_CARD_LAYOUT_SYSTEM.flexColumn,
           cardId === "organization-overview" ? "pt-0" : "pt-1",
           cardId === "calendar" ? "pb-3" : "pb-4",

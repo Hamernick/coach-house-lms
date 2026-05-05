@@ -7,6 +7,10 @@ import {
   ACCELERATOR_STEP_NODE_ID,
 } from "../../workspace-board-flow-surface-accelerator-graph-composition"
 import { resolveWorkspaceAcceleratorStepEdgeHandles } from "../../workspace-board-accelerator-step-layout"
+import {
+  type WorkspaceCardEdgeGeometryLookup,
+  resolveWorkspaceCardConnectionHandleIds,
+} from "../../workspace-board-connection-handles"
 import type {
   WorkspaceAutoLayoutMode,
   WorkspaceBoardState,
@@ -148,6 +152,7 @@ export function buildWorkspaceCanvasV2Edges({
   autoLayoutMode = "dagre-tree",
   acceleratorWorkspaceNodeId,
   tutorialEdgeTargetId,
+  nodeGeometryLookup = {},
 }: {
   connections: WorkspaceBoardState["connections"]
   visibleCardIdSet: ReadonlySet<WorkspaceCanvasV2CardId>
@@ -157,6 +162,7 @@ export function buildWorkspaceCanvasV2Edges({
   autoLayoutMode?: WorkspaceAutoLayoutMode
   acceleratorWorkspaceNodeId: WorkspaceCanvasV2CardId | null
   tutorialEdgeTargetId: WorkspaceCardId | null
+  nodeGeometryLookup?: WorkspaceCardEdgeGeometryLookup
 }): {
   edges: Edge[]
   droppedConnectionIds: string[]
@@ -204,10 +210,17 @@ export function buildWorkspaceCanvasV2Edges({
       continue
     }
 
+    const handleIds = resolveWorkspaceCardConnectionHandleIds({
+      source: nodeGeometryLookup[connection.source],
+      target: nodeGeometryLookup[connection.target],
+    })
+
     edges.push({
       id: connection.id,
       source: connection.source,
       target: connection.target,
+      sourceHandle: handleIds?.sourceHandle,
+      targetHandle: handleIds?.targetHandle,
       type: "smoothstep",
       animated: false,
       style: resolveWorkspaceCanvasBranchStyle({

@@ -10,7 +10,12 @@ import {
   resolveOrganizationProfileComplete as resolveWorkspaceSeedProfileComplete,
 } from "@/app/(dashboard)/my-organization/_lib/my-organization-workspace-seed-helpers"
 import { OrgProfilePublicAboutSection } from "@/components/organization/org-profile-card/public-card-sections"
+import { StorySection } from "@/components/organization/org-profile-card/tabs/company-tab/edit-sections/story"
 import { StoryPreview } from "@/components/organization/org-profile-card/tabs/company-tab/display-sections"
+import {
+  organizationProfileSchema,
+  ORG_PROFILE_ROADMAP_TEXT_MAX_LENGTH,
+} from "@/components/organization/org-profile-card/validation"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
 
 describe("organization profile story contract", () => {
@@ -147,5 +152,104 @@ describe("organization profile story contract", () => {
 
     expect(resolvePageProfileComplete(profile)).toBe(true)
     expect(resolveWorkspaceSeedProfileComplete(profile)).toBe(true)
+  })
+
+  it("shows story field limits and inline errors in edit mode", () => {
+    const company = {
+      name: "Atlas Org",
+      description: "",
+      tagline: "",
+      ein: "",
+      formationStatus: "approved" as const,
+      rep: "",
+      email: "",
+      phone: "",
+      address: "",
+      addressStreet: "",
+      addressCity: "",
+      addressState: "",
+      addressPostal: "",
+      addressCountry: "",
+      locationType: "in_person" as const,
+      locationUrl: "",
+      logoUrl: "",
+      brandMarkUrl: "",
+      headerUrl: "",
+      publicUrl: "",
+      twitter: "",
+      facebook: "",
+      linkedin: "",
+      instagram: "",
+      youtube: "",
+      tiktok: "",
+      newsletter: "",
+      github: "",
+      vision: "",
+      mission: "",
+      need: "",
+      values: "",
+      originStory: "Started with repeated service gaps.",
+      theoryOfChange: "",
+      programs: "",
+      reports: "",
+      boilerplate: "",
+      brandPrimary: "",
+      brandColors: [],
+      brandThemePresetId: "",
+      brandAccentPresetId: "",
+      brandTypographyPresetId: "",
+      brandTypography: null,
+      publicSlug: "atlas-org",
+      isPublic: true,
+    }
+
+    const markup = renderToStaticMarkup(
+      createElement(StorySection, {
+        company,
+        errors: {
+          originStory: `Origin story must be ${ORG_PROFILE_ROADMAP_TEXT_MAX_LENGTH.toLocaleString()} characters or less.`,
+        },
+        onInputChange: () => undefined,
+        onUpdate: () => undefined,
+        onDirty: () => undefined,
+        onAutoSave: async () => undefined,
+        setSlugStatus: () => undefined,
+        slugStatus: null,
+      }),
+    )
+
+    expect(markup).toContain("Origin story")
+    expect(markup).toContain("maxLength=\"20000\"")
+    expect(markup).toContain(`${company.originStory.length.toLocaleString()} / 20,000`)
+    expect(markup).toContain("Origin story must be 20,000 characters or less.")
+    expect(markup).toContain("aria-invalid=\"true\"")
+  })
+
+  it("allows longer roadmap story fields while keeping a clear maximum", () => {
+    const base = {
+      name: "Atlas Org",
+      tagline: "",
+      description: "",
+      originStory: "A".repeat(6000),
+      vision: "",
+      mission: "",
+      need: "",
+      values: "",
+      theoryOfChange: "",
+    }
+
+    expect(organizationProfileSchema.safeParse(base).success).toBe(true)
+
+    const result = organizationProfileSchema.safeParse({
+      ...base,
+      originStory: "A".repeat(ORG_PROFILE_ROADMAP_TEXT_MAX_LENGTH + 1),
+    })
+
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.error.flatten().fieldErrors.originStory?.[0]).toBe(
+        "Origin story must be 20,000 characters or less.",
+      )
+    }
   })
 })

@@ -49,7 +49,7 @@ export function AccountSettingsDeleteAccountDialogBody({
         <p className="text-sm text-muted-foreground">
           This permanently deletes your account.
           {hasActiveSubscription
-            ? " Deleting your profile does not cancel Stripe subscription billing."
+            ? " If Stripe billing is still active, account deletion will not cancel it."
             : null}{" "}
           Enter your email to confirm.
         </p>
@@ -59,7 +59,7 @@ export function AccountSettingsDeleteAccountDialogBody({
           <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-4">
             <p className="text-sm font-medium text-foreground">1. Cancel your subscription billing</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Account deletion does not stop Stripe billing. Open the billing portal and cancel your subscription before deleting this account.
+              Account deletion does not stop Stripe billing. Open the billing portal to cancel first, or continue if you already canceled and your access remains active through the paid period.
             </p>
             <div className="mt-3 flex flex-col gap-3">
               <BillingPortalLaunchButton className="w-full sm:w-fit" />
@@ -70,11 +70,11 @@ export function AccountSettingsDeleteAccountDialogBody({
                     onBillingCancellationAcknowledgedChange(checked === true)
                   }
                   disabled={isDeletingAccount}
-                  aria-label="I understand I need to cancel Stripe billing separately before deleting my account"
+                  aria-label="I have canceled Stripe billing or understand account deletion will not stop it"
                   className="mt-0.5"
                 />
                 <span>
-                  I understand I need to cancel Stripe billing separately before deleting my account.
+                  I have canceled Stripe billing, or I understand account deletion will not stop it.
                 </span>
               </label>
             </div>

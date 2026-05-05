@@ -335,6 +335,9 @@ describe("stripe webhook route acceptance", () => {
           id: "sub_accel_active",
           status: "active",
           customer: "cus_active",
+          current_period_end: 1_900_000_000,
+          cancel_at: 1_900_000_000,
+          canceled_at: null,
           metadata: {
             user_id: "user_active",
             kind: "accelerator",
@@ -355,6 +358,9 @@ describe("stripe webhook route acceptance", () => {
         user_id: "user_active",
         stripe_subscription_id: "sub_accel_active",
         status: "active",
+        current_period_end: "2030-03-17T17:46:40.000Z",
+        cancel_at: "2030-03-17T17:46:40.000Z",
+        canceled_at: null,
       }),
       expect.objectContaining({ onConflict: "user_id,stripe_subscription_id" }),
     )

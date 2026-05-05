@@ -6,6 +6,7 @@ import {
   WORKSPACE_ROADMAP_PATH,
   getWorkspaceAcceleratorPaywallPath,
   getWorkspaceEditorPath,
+  getMemberWorkspacePaywallPath,
   getWorkspaceRoadmapSectionPath,
 } from "@/lib/workspace/routes"
 
@@ -34,6 +35,12 @@ describe("workspace routes", () => {
   it("builds the accelerator paywall link with a source", () => {
     expect(getWorkspaceAcceleratorPaywallPath("guide")).toBe(
       "/workspace?paywall=organization&plan=organization&upgrade=accelerator-access&source=guide",
+    )
+  })
+
+  it("builds the member workspace paywall link with a source", () => {
+    expect(getMemberWorkspacePaywallPath("tasks")).toBe(
+      "/workspace?paywall=organization&plan=organization&upgrade=member-workspace-access&source=tasks",
     )
   })
 })

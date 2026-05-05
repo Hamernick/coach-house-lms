@@ -148,8 +148,10 @@ export function useOrgProfileEditorState({
     startTransition(async () => {
       const parsed = organizationProfileSchema.safeParse(company)
       if (!parsed.success) {
-        setErrors(mapOrgProfileFieldErrors(parsed.error.flatten().fieldErrors))
-        toast.error("Please fix the highlighted fields")
+        const nextErrors = mapOrgProfileFieldErrors(parsed.error.flatten().fieldErrors)
+        const firstError = Object.values(nextErrors).find((value) => value.trim().length > 0)
+        setErrors(nextErrors)
+        toast.error(firstError ?? "Please fix the highlighted fields.")
         return
       }
 

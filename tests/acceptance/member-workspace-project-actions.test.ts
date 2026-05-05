@@ -16,6 +16,7 @@ import {
   createMemberWorkspaceProjectAction,
   updateMemberWorkspaceProjectAction,
 } from "@/features/member-workspace/server/project-actions"
+import { MEMBER_WORKSPACE_UPGRADE_MESSAGE } from "@/features/member-workspace/server/access"
 
 describe("member workspace project actions", () => {
   beforeEach(() => {
@@ -76,6 +77,34 @@ describe("member workspace project actions", () => {
     ).resolves.toEqual({
       error: "Platform admins can view organization projects here, but cannot edit them.",
     })
+
+    expect(supabase.from).not.toHaveBeenCalled()
+  })
+
+  it("rejects free users before creating organization projects", async () => {
+    const supabase = {
+      from: vi.fn(),
+    }
+
+    resolveMemberWorkspaceActorContextMock.mockResolvedValue({
+      supabase,
+      userId: "free-user-1",
+      isAdmin: false,
+      activeOrg: { orgId: "org-1", role: "owner" },
+      canEdit: true,
+      hasMemberWorkspaceAccess: false,
+    })
+
+    await expect(
+      createMemberWorkspaceProjectAction({
+        orgId: "org-1",
+        name: "Free project",
+        status: "planned",
+        priority: "medium",
+        startDate: "2026-04-09",
+        endDate: "2026-04-10",
+      }),
+    ).resolves.toEqual({ error: MEMBER_WORKSPACE_UPGRADE_MESSAGE })
 
     expect(supabase.from).not.toHaveBeenCalled()
   })

@@ -55,7 +55,7 @@ export function ShellRightRail({
       data-state={open ? "open" : "closed"}
       className={cn(
         "relative z-30 hidden h-full shrink-0 flex-col overflow-hidden bg-[var(--shell-bg)] md:flex",
-        "transition-[width] duration-200 ease-out motion-reduce:transition-none",
+        "contain-layout transition-[width] duration-180 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
         open ? "w-[var(--shell-right-rail-width)]" : "w-0 pointer-events-none",
       )}
     >
@@ -63,8 +63,8 @@ export function ShellRightRail({
         data-state={open ? "open" : "closed"}
         className={cn(
           "h-full w-full overflow-y-auto px-[var(--shell-right-rail-pad,var(--shell-rail-padding))] pb-[calc(1rem+env(safe-area-inset-bottom))] pt-4",
-          "transition-opacity duration-150 ease-out motion-reduce:transition-none",
-          "data-[state=closed]:opacity-0 data-[state=open]:opacity-100",
+          "transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          "data-[state=closed]:translate-x-2 data-[state=closed]:opacity-0 data-[state=open]:translate-x-0 data-[state=open]:opacity-100",
         )}
       >
         {content}

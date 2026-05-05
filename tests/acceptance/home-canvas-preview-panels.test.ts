@@ -17,7 +17,7 @@ vi.mock("@/components/auth/sign-up-form", () => ({
 }))
 
 vi.mock("@/components/public/legacy-home-sections", () => ({
-  LegacyHomeAcceleratorOverviewSection: () =>
+  LegacyHomeAcceleratorSection: () =>
     createElement("section", null, "Accelerator"),
   LegacyHomeHeroSection: () => createElement("section", null, "Hero"),
   LegacyHomeOfferingsSection: () => createElement("section", null, "Platform"),
@@ -47,6 +47,8 @@ describe("home canvas auth panel", () => {
     expect(markup).toContain(
       'data-member-redirect-to="/find?member_onboarding=1&amp;source=home_signup"',
     )
+    expect(markup).toContain('class="mb-3 space-y-1"')
+    expect(markup).not.toContain('class="mb-5 space-y-1"')
     expect(markup).toContain("Sign up form")
   })
 })

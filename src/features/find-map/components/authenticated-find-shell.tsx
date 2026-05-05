@@ -77,6 +77,7 @@ export function AuthenticatedFindShell({
         onboardingIntentFocus={state.onboardingIntentFocus}
         formationStatus={state.formationStatus}
         context="public"
+        contentPresentation="full-bleed"
         brandHref="/find"
         showWorkspaceHome={state.isAdmin || state.hasActiveSubscription}
       >

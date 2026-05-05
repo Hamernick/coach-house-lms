@@ -33,10 +33,8 @@ import {
 } from "./workspace-accelerator-card-panel-support"
 import { canWorkspaceAcceleratorTutorialActivateStep } from "./workspace-accelerator-card-tutorial-guards"
 import { useWorkspaceAcceleratorLessonGroupState } from "./workspace-accelerator-card-panel-lesson-groups"
-import {
-  resolveWorkspaceAcceleratorModuleStepNavigation,
-  resolveWorkspaceAcceleratorPlaceholderVideoUrl,
-} from "./workspace-accelerator-module-navigation"
+import { WorkspaceAcceleratorStepViewerTransition } from "./workspace-accelerator-step-viewer-transition"
+import { resolveWorkspaceAcceleratorModuleStepNavigation, resolveWorkspaceAcceleratorPlaceholderVideoUrl } from "./workspace-accelerator-module-navigation"
 import { WorkspaceAcceleratorStepNodeCard } from "./workspace-accelerator-step-node-card"
 
 type WorkspaceAcceleratorCardPanelProps = {
@@ -607,7 +605,7 @@ export function WorkspaceAcceleratorCardPanel({
           </div>
         ) : null}
 
-        {isModuleViewerOpen ? (
+        <WorkspaceAcceleratorStepViewerTransition open={isModuleViewerOpen}>
           <WorkspaceAcceleratorStepNodeCard
             variant="embedded"
             step={currentStep}
@@ -629,7 +627,7 @@ export function WorkspaceAcceleratorCardPanel({
             onWorkspaceOnboardingSubmit={input.onWorkspaceOnboardingSubmit}
             immersive={fullscreenEmbedded}
           />
-        ) : null}
+        </WorkspaceAcceleratorStepViewerTransition>
       </div>
     </div>
   )

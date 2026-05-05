@@ -1,5 +1,4 @@
 import type { Metadata } from "next"
-import type { ReactNode } from "react"
 
 import { HomeCanvasPreview } from "@/components/public/home-canvas-preview"
 import { PricingSurface } from "@/components/public/pricing-surface"
@@ -14,14 +13,6 @@ export const metadata: Metadata = {
 }
 
 export const revalidate = 300
-
-function FindMapFrame({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex h-[calc(100svh-8rem)] min-h-[34rem] w-full min-w-0 flex-1 overflow-hidden rounded-lg border border-border/70 bg-background shadow-sm sm:h-[calc(100svh-8.5rem)] md:min-h-[36rem]">
-      {children}
-    </div>
-  )
-}
 
 export default async function PublicFindPage() {
   const [organizations, viewerState] = await Promise.all([
@@ -38,17 +29,12 @@ export default async function PublicFindPage() {
     if (shellState.userPresent) {
       return (
         <AuthenticatedFindShell state={shellState}>
-          <FindMapFrame>
-            <PublicMapIndex
-              presentationMode="app-shell"
-              organizations={organizations}
-              mapboxToken={publicToken}
-              viewer={viewerState.viewer}
-              joinedOrganizations={viewerState.joinedOrganizations}
-              boardAlerts={viewerState.boardAlerts}
-              memberProfile={viewerState.memberProfile}
-            />
-          </FindMapFrame>
+          <PublicMapIndex
+            presentationMode="app-shell"
+            organizations={organizations}
+            mapboxToken={publicToken}
+            viewer={viewerState.viewer}
+          />
         </AuthenticatedFindShell>
       )
     }
@@ -64,9 +50,6 @@ export default async function PublicFindPage() {
             organizations={organizations}
             mapboxToken={publicToken}
             viewer={viewerState.viewer}
-            joinedOrganizations={viewerState.joinedOrganizations}
-            boardAlerts={viewerState.boardAlerts}
-            memberProfile={viewerState.memberProfile}
           />
         </div>
       }

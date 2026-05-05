@@ -15,8 +15,12 @@ import { ModuleStepperResourcesStep } from "./module-stepper-resources-step"
 import type { ModuleStepperProps, ModuleStepperStep } from "./module-stepper-types"
 import { VideoSection } from "./video-section"
 
+export function preloadAssignmentForm() {
+  return import("./assignment-form").then((mod) => mod.AssignmentForm)
+}
+
 const AssignmentFormLazy = dynamic(
-  () => import("./assignment-form").then((mod) => mod.AssignmentForm),
+  preloadAssignmentForm,
   {
     ssr: false,
     loading: () => (

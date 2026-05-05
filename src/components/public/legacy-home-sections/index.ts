@@ -1,5 +1,5 @@
 export { LEGACY_HOME_BODY_CLASSNAME } from "@/components/public/legacy-home-sections/fonts"
-export { LegacyHomeAcceleratorOverviewSection } from "@/components/public/legacy-home-sections/legacy-home-accelerator-overview-section"
+export { LegacyHomeAcceleratorSection } from "@/components/public/legacy-home-sections/legacy-home-accelerator-section"
 export { LegacyHomeCtaSection } from "@/components/public/legacy-home-sections/legacy-home-cta-section"
 export { LegacyHomeHeroSection } from "@/components/public/legacy-home-sections/legacy-home-hero-section"
 export { LegacyHomeImpactSection } from "@/components/public/legacy-home-sections/legacy-home-impact-section"

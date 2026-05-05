@@ -5,7 +5,7 @@ import type { ReactNode } from "react"
 import { LoginPanel } from "@/components/auth/login-panel"
 import { SignUpForm } from "@/components/auth/sign-up-form"
 import {
-  LegacyHomeAcceleratorOverviewSection,
+  LegacyHomeAcceleratorSection,
   LegacyHomeHeroSection,
   LegacyHomeOfferingsSection,
   LegacyHomeProcessSection,
@@ -48,7 +48,7 @@ export function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
           />
         ) : (
           <>
-            <div className="mb-5 space-y-1">
+            <div className="mb-3 space-y-1">
               <h2 className="text-2xl font-semibold tracking-tight text-foreground">{heading}</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 {description}
@@ -90,7 +90,7 @@ export function HomeSectionPanel({ sectionId }: { sectionId: LegacyHomeSectionId
     return (
       <CanvasPanelShell>
         <div className="mx-auto flex w-full justify-center">
-          <LegacyHomeAcceleratorOverviewSection />
+          <LegacyHomeAcceleratorSection />
         </div>
       </CanvasPanelShell>
     )

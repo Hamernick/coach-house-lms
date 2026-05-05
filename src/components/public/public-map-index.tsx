@@ -12,7 +12,6 @@ import {
   useSyncPublicMapAuthFavorite,
   useSyncPublicMapLayout,
 } from "./public-map-index/layout-sync"
-import type { PublicMapMemberProfile } from "./public-map-index/member-profile-card"
 import {
   focusOrganizationOnMap,
   normalizeSlug,
@@ -29,9 +28,9 @@ import {
 import { PublicMapSurface } from "./public-map-index/map-surface"
 import type { PublicMapPanelPresentation } from "./public-map-index/map-view-helpers"
 import {
-  PublicMapBoardAlert,
-  PublicMapJoinedOrganization,
-} from "./public-map-index/member-rail"
+  PublicMapDirectoryRail,
+  resolvePublicMapDirectoryRailMode,
+} from "./public-map-index/directory-rail"
 import { PublicMapRightRail } from "./public-map-index/right-rail"
 import { PublicMapShellSidebarPanel } from "./public-map-index/sidebar"
 import {
@@ -57,9 +56,6 @@ type PublicMapIndexProps = {
   mapboxToken?: string
   initialPublicSlug?: string
   viewer?: { id: string; email: string | null } | null
-  joinedOrganizations?: PublicMapJoinedOrganization[]
-  boardAlerts?: PublicMapBoardAlert[]
-  memberProfile?: PublicMapMemberProfile | null
   presentationMode?: PublicMapIndexPresentationMode
 }
 
@@ -73,9 +69,6 @@ export function PublicMapIndex({
   mapboxToken,
   initialPublicSlug,
   viewer: initialViewer = null,
-  joinedOrganizations = [],
-  boardAlerts = [],
-  memberProfile = null,
   presentationMode = "home-canvas",
 }: PublicMapIndexProps) {
   const router = useRouter()
@@ -117,7 +110,6 @@ export function PublicMapIndex({
     useState<PublicMapSameLocationSelection | null>(null)
   const {
     favorites,
-    recentOrganizationIds,
     isSavingPreferences,
     preferencesSaveError,
     viewer,
@@ -165,14 +157,6 @@ export function PublicMapIndex({
         .map((organizationId) => organizationById.get(organizationId) ?? null)
         .filter((organization): organization is PublicMapOrganization => Boolean(organization)),
     [favorites, organizationById],
-  )
-
-  const recentOrganizations = useMemo(
-    () =>
-      recentOrganizationIds
-        .map((organizationId) => organizationById.get(organizationId) ?? null)
-        .filter((organization): organization is PublicMapOrganization => Boolean(organization)),
-    [organizationById, recentOrganizationIds],
   )
 
   const authAction = searchParams.get("auth_action")
@@ -240,6 +224,22 @@ export function PublicMapIndex({
       setAuthSheetOpen,
       setFavorites,
     })
+  const handleQueryChange = useCallback((value: string) => {
+    setSameLocationSelection(null)
+    setQuery(value)
+  }, [])
+  const handleOpenDetails = useCallback(
+    (organizationId: string, options?: { preserveSearchContext?: boolean }) => {
+      if (!options?.preserveSearchContext) {
+        setSameLocationSelection(null)
+      }
+      handleSelectOrganization({
+        organizationId,
+        openDetails: true,
+      })
+    },
+    [handleSelectOrganization],
+  )
   useSyncSelectedOrganization({
     organizationById,
     selectedOrgId,
@@ -308,6 +308,53 @@ export function PublicMapIndex({
   const listOrganizations = sameLocationSearchContext?.organizations ?? filteredOrganizations
   const renderDesktopSidebar = shouldRenderPublicMapDesktopSidebar(presentationMode)
   const useHomeCanvasSidebarSlot = shouldUsePublicMapHomeCanvasSidebarSlot(presentationMode)
+  const useAppShellRightRailDirectory = presentationMode === "app-shell"
+  const renderMapOverlaySidebar = renderDesktopSidebar && !useAppShellRightRailDirectory
+  const directoryRailMode = resolvePublicMapDirectoryRailMode({
+    sidebarMode,
+    selectedOrganization,
+  })
+  const directoryRail =
+    useAppShellRightRailDirectory && panelPresentation === "rail" ? (
+      <PublicMapDirectoryRail
+        sidebarMode={sidebarMode}
+        organizations={listOrganizations}
+        selectedOrganization={selectedOrganization}
+        favorites={favorites}
+        query={query}
+        searchContext={sameLocationSearchContext}
+        onQueryChange={handleQueryChange}
+        onToggleFavorite={toggleFavorite}
+        onOpenDetails={handleOpenDetails}
+        setSidebarMode={setSidebarMode}
+      />
+    ) : null
+  const mapSurface = (
+    <PublicMapSurface
+      containerRef={containerRef}
+      sidebarMode={sidebarMode}
+      filteredOrganizations={filteredOrganizations}
+      selectedOrganization={selectedOrganization}
+      favorites={favorites}
+      query={query}
+      searchContext={sameLocationSearchContext}
+      tokenAvailable={tokenAvailable}
+      mapError={mapError}
+      locationFeedback={locationFeedback}
+      preferencesSaveError={preferencesSaveError}
+      isSavingPreferences={isSavingPreferences}
+      authSheetOpen={authSheetOpen}
+      authRedirectTo={authRedirectTo}
+      onQueryChange={handleQueryChange}
+      onToggleFavorite={toggleFavorite}
+      onOpenOrgDetails={handleOpenDetails}
+      onSidebarModeChange={setSidebarMode}
+      onAuthSheetOpenChange={setAuthSheetOpen}
+      onSidebarInsetChange={setSidebarInsetLeft}
+      onPanelPresentationChange={setPanelPresentation}
+      renderDesktopSidebar={renderMapOverlaySidebar}
+    />
+  )
 
   return (
     <>
@@ -320,20 +367,9 @@ export function PublicMapIndex({
             favorites={favorites}
             query={query}
             searchContext={sameLocationSearchContext}
-            onQueryChange={(value) => {
-              setSameLocationSelection(null)
-              setQuery(value)
-            }}
+            onQueryChange={handleQueryChange}
             onToggleFavorite={toggleFavorite}
-            onOpenDetails={(organizationId, options) => {
-              if (!options?.preserveSearchContext) {
-                setSameLocationSelection(null)
-              }
-              handleSelectOrganization({
-                organizationId,
-                openDetails: true,
-              })
-            }}
+            onOpenDetails={handleOpenDetails}
             setSidebarMode={setSidebarMode}
           />
         </HomeCanvasSidebarSlot>
@@ -341,12 +377,10 @@ export function PublicMapIndex({
 
       <PublicMapRightRail
         isAuthenticated={isAuthenticated}
-        memberProfile={memberProfile}
+        directoryRail={directoryRail}
+        directoryMode={directoryRail ? directoryRailMode : null}
         savedOrganizations={savedOrganizations}
         favorites={favorites}
-        recentOrganizations={recentOrganizations}
-        joinedOrganizations={joinedOrganizations}
-        boardAlerts={boardAlerts}
         onSelectOrganization={(organizationId) =>
           handleSelectOrganization({
             organizationId,
@@ -356,41 +390,7 @@ export function PublicMapIndex({
         onToggleFavorite={toggleFavorite}
       />
 
-      <PublicMapSurface
-        containerRef={containerRef}
-        sidebarMode={sidebarMode}
-        filteredOrganizations={filteredOrganizations}
-        selectedOrganization={selectedOrganization}
-        favorites={favorites}
-        query={query}
-        searchContext={sameLocationSearchContext}
-        tokenAvailable={tokenAvailable}
-        mapError={mapError}
-        locationFeedback={locationFeedback}
-        preferencesSaveError={preferencesSaveError}
-        isSavingPreferences={isSavingPreferences}
-        authSheetOpen={authSheetOpen}
-        authRedirectTo={authRedirectTo}
-        onQueryChange={(value) => {
-          setSameLocationSelection(null)
-          setQuery(value)
-        }}
-        onToggleFavorite={toggleFavorite}
-        onOpenOrgDetails={(organizationId, options) => {
-          if (!options?.preserveSearchContext) {
-            setSameLocationSelection(null)
-          }
-          handleSelectOrganization({
-            organizationId,
-            openDetails: true,
-          })
-        }}
-        onSidebarModeChange={setSidebarMode}
-        onAuthSheetOpenChange={setAuthSheetOpen}
-        onSidebarInsetChange={setSidebarInsetLeft}
-        onPanelPresentationChange={setPanelPresentation}
-        renderDesktopSidebar={renderDesktopSidebar}
-      />
+      {mapSurface}
     </>
   )
 }

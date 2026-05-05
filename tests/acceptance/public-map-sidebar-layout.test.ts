@@ -4,6 +4,11 @@ import { describe, expect, it } from "vitest"
 
 import { PublicMapOrganizationList } from "@/components/public/public-map-index/organization-list"
 import {
+  PublicMapDirectoryRail,
+  resolvePublicMapDirectoryRailMode,
+} from "@/components/public/public-map-index/directory-rail"
+import { PublicMapMemberRail } from "@/components/public/public-map-index/member-rail"
+import {
   PublicMapShellSidebarPanel,
   PublicMapSidebar,
 } from "@/components/public/public-map-index/sidebar"
@@ -259,6 +264,85 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain(">Chicago, IL<")
     expect(markup).not.toContain("CHICAGO")
     expect(markup).not.toContain("UNITED STATES")
+  })
+
+  it("moves the internal organization directory into the member right rail tabs", () => {
+    const organization = buildOrganization()
+    const directoryMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapDirectoryRail, {
+        sidebarMode: "search",
+        organizations: [organization],
+        selectedOrganization: null,
+        favorites: [],
+        query: "",
+        searchContext: null,
+        onQueryChange: () => {},
+        onToggleFavorite: () => {},
+        onOpenDetails: () => {},
+        setSidebarMode: () => {},
+      }),
+    )
+    const memberRailMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapMemberRail, {
+        directoryRail: React.createElement(
+          "div",
+          { "data-public-map-right-rail-section": "directory-search" },
+          "Directory",
+        ),
+        directoryMode: "search",
+        savedOrganizations: [],
+        onSelectOrganization: () => {},
+        onToggleFavorite: () => {},
+      }),
+    )
+
+    expect(directoryMarkup).toContain('data-public-map-right-rail-section="directory-search"')
+    expect(directoryMarkup).toContain("Resource map")
+    expect(directoryMarkup).toContain(organization.name)
+    expect(directoryMarkup).toContain("grid-cols-2")
+    expect(memberRailMarkup).toContain(">Find<")
+    expect(memberRailMarkup).toContain("grid-cols-2")
+    expect(memberRailMarkup).not.toContain(">Recent<")
+    expect(memberRailMarkup).not.toContain(">Joined<")
+    expect(memberRailMarkup).not.toContain(">Alerts<")
+    expect(memberRailMarkup).toContain("rounded-full border border-border/70 bg-background/70 p-1")
+    expect(memberRailMarkup).toContain("data-[state=active]:bg-muted/55")
+    expect(memberRailMarkup).toContain("Directory")
+  })
+
+  it("uses the right rail directory detail view when a map organization is selected", () => {
+    const organization = buildOrganization()
+    expect(
+      resolvePublicMapDirectoryRailMode({
+        sidebarMode: "details",
+        selectedOrganization: organization,
+      }),
+    ).toBe("details")
+    expect(
+      resolvePublicMapDirectoryRailMode({
+        sidebarMode: "details",
+        selectedOrganization: null,
+      }),
+    ).toBe("search")
+
+    const markup = renderToStaticMarkup(
+      React.createElement(PublicMapDirectoryRail, {
+        sidebarMode: "details",
+        organizations: [organization],
+        selectedOrganization: organization,
+        favorites: [],
+        query: "",
+        searchContext: null,
+        onQueryChange: () => {},
+        onToggleFavorite: () => {},
+        onOpenDetails: () => {},
+        setSidebarMode: () => {},
+      }),
+    )
+
+    expect(markup).toContain('data-public-map-right-rail-section="directory-detail"')
+    expect(markup).toContain(organization.name)
+    expect(markup).toContain('aria-label="Back to search"')
   })
 
   it("can mount the find search panel into the shell sidebar without the map overlay rail", () => {

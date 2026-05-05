@@ -15,6 +15,7 @@ import { RIGHT_RAIL_ID } from "@/components/app-shell/constants"
 import { ShellRightRail } from "@/components/app-shell/components/shell-right-rail"
 import { RightRailProvider, useRightRailPresence } from "@/components/app-shell/right-rail"
 import { useAppShellRightRailState } from "@/components/app-shell/use-app-shell-right-rail-state"
+import { HomeCanvasLoginButton } from "@/components/public/home-canvas-login-button"
 import {
   HomeCanvasSidebarSlotProvider,
   useHomeCanvasSidebarContent,
@@ -274,14 +275,10 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
               className="flex min-h-14 shrink-0 items-center justify-end gap-2 py-2 px-[var(--shell-content-pad)] text-sm text-muted-foreground"
             >
               <div className="flex shrink-0 items-center gap-2">
-                <Button
-                  variant={activeSection === "login" ? "default" : "outline"}
-                  size="sm"
-                  className="rounded-full"
-                  onClick={() => changeSection("login")}
-                >
-                  Login
-                </Button>
+                <HomeCanvasLoginButton
+                  activeSection={activeSection}
+                  changeSection={changeSection}
+                />
                 <PublicThemeToggle variant="outline" size="icon" />
                 {showRightRailToggle ? (
                   <Button

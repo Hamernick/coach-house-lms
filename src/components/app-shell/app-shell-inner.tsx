@@ -25,6 +25,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { releaseStaleInteractionLocks } from "@/lib/ui/interaction-lock-guard"
 import { cn } from "@/lib/utils"
 import { resolveAppShellOnboardingRedirectTarget } from "./onboarding-redirect"
+import { useAppShellRouteTransition } from "./use-app-shell-route-transition"
 import { useAppShellRightRailState } from "./use-app-shell-right-rail-state"
 
 import type { AppShellProps } from "./types"
@@ -56,6 +57,7 @@ export function AppShellInner({
   onboardingLocked = false,
   onboardingIntentFocus = null,
   context,
+  contentPresentation = "default",
   formationStatus,
   brandHref: brandHrefOverride,
   showWorkspaceHome = true,
@@ -123,13 +125,18 @@ export function AppShellInner({
   const hasOrganizationEditorParams = Boolean(
     searchParams.get("view") === "editor" || searchParams.get("tab") || searchParams.get("programId"),
   )
-  const useFullBleedContentBody = isOrganizationRoute && hasOrganizationEditorParams
+  const useFullBleedContent =
+    contentPresentation === "full-bleed" || (isOrganizationRoute && hasOrganizationEditorParams)
   const contentPadding = isMobile ? "pb-[calc(4.5rem+env(safe-area-inset-bottom))]" : "pb-4"
   const contentHorizontalPadding = isMobile ? "px-[var(--shell-gutter)]" : "pl-[var(--shell-outer-gutter)]"
   const onboardingRedirectTarget = resolveAppShellOnboardingRedirectTarget({
     onboardingLocked,
     onboardingIntentFocus,
     isAdminContext,
+    pathname,
+  })
+  const routeTransitionRef = useAppShellRouteTransition({
+    enabled: !onboardingRedirectTarget,
     pathname,
   })
 
@@ -190,6 +197,8 @@ export function AppShellInner({
           "[--shell-right-rail-width:26rem] [--shell-right-rail-pad:0rem]",
         isModulePage &&
           "[--shell-right-rail-width:27rem] [--shell-right-rail-pad:0rem]",
+        derivedContext === "public" &&
+          "[--shell-right-rail-width:min(22rem,calc(100vw-1rem))] md:[--shell-right-rail-width:min(22rem,36vw)]",
       )}
       >
       <SidebarAutoCollapse active={isAcceleratorContext} />
@@ -274,20 +283,29 @@ export function AppShellInner({
                     data-tour-scroll
                     data-accelerator-scroll={isAcceleratorContext ? "" : undefined}
                     role="main"
-                    className="flex h-full min-h-0 flex-1 flex-col overflow-y-auto overflow-x-hidden"
+                    className={cn(
+                      "flex h-full min-h-0 flex-1 flex-col overflow-x-hidden",
+                      useFullBleedContent ? "overflow-hidden" : "overflow-y-auto",
+                    )}
                     style={{ scrollbarGutter: "stable" }}
                   >
-                    <div className="@container/shell flex min-h-full w-full flex-col">
+                    <div
+                      className={cn(
+                        "@container/shell flex w-full flex-col",
+                        useFullBleedContent ? "h-full min-h-0" : "min-h-full",
+                      )}
+                    >
                       <div
                         id="shell-content-header"
                         className="empty:hidden border-b border-[color:var(--shell-border)] bg-[var(--shell-card)] px-[var(--shell-content-pad)] py-1"
                       />
                       <div
                         data-shell-content-body
-                        data-shell-mode="default"
+                        data-shell-mode={useFullBleedContent ? "full-bleed" : "default"}
+                        ref={routeTransitionRef}
                         className={cn(
                           "flex min-h-0 flex-1 flex-col",
-                          useFullBleedContentBody
+                          useFullBleedContent
                             ? "gap-0 px-0 py-0"
                             : "gap-6 px-[var(--shell-content-pad)] py-[var(--shell-content-pad)]",
                         )}

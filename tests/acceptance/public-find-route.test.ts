@@ -30,4 +30,58 @@ describe("public find routes", () => {
     expect(source).toContain('presentationMode="app-shell"')
     expect(source).not.toContain("/workspace/find")
   })
+
+  it("lets authenticated find use the full app-shell canvas instead of a bordered map frame", () => {
+    const routeFiles = [
+      "src/app/(public)/find/page.tsx",
+      "src/app/(public)/find/[slug]/page.tsx",
+    ]
+    const shellSource = readRoute(
+      "src/features/find-map/components/authenticated-find-shell.tsx",
+    )
+    const mapSurfaceSource = readRoute(
+      "src/components/public/public-map-index/map-surface.tsx",
+    )
+    const publicMapSource = readRoute("src/components/public/public-map-index.tsx")
+    const appShellSource = readRoute("src/components/app-shell/app-shell-inner.tsx")
+
+    for (const routeFile of routeFiles) {
+      const source = readRoute(routeFile)
+      expect(source).not.toContain("FindMapFrame")
+      expect(source).not.toContain("rounded-lg border border-border/70")
+    }
+
+    expect(shellSource).toContain('contentPresentation="full-bleed"')
+    expect(mapSurfaceSource).toContain("h-full min-h-0 w-full flex-1")
+    expect(publicMapSource).toContain('const useAppShellRightRailDirectory = presentationMode === "app-shell"')
+    expect(publicMapSource).toContain("const renderMapOverlaySidebar = renderDesktopSidebar && !useAppShellRightRailDirectory")
+    expect(publicMapSource).toContain("PublicMapDirectoryRail")
+    expect(publicMapSource).toContain("directoryRail={directoryRail}")
+    expect(publicMapSource).toContain("renderDesktopSidebar={renderMapOverlaySidebar}")
+    expect(publicMapSource).not.toContain("w-[23rem]")
+    expect(publicMapSource).not.toContain("manageShellSidebarOpen={false}")
+    expect(appShellSource).toContain('data-shell-mode={useFullBleedContent ? "full-bleed" : "default"}')
+    expect(appShellSource).toContain("md:[--shell-right-rail-width:min(22rem,36vw)]")
+    expect(appShellSource).toContain(
+      'isMobile ? "rounded-none border-0" : "rounded-[28px] border border-[color:var(--shell-border)]"',
+    )
+    expect(appShellSource).not.toContain("useFullBleedContent || isMobile")
+  })
+
+  it("does not render the member profile card in public or authenticated find rails", () => {
+    const routeFiles = [
+      "src/app/(public)/find/page.tsx",
+      "src/app/(public)/find/[slug]/page.tsx",
+    ]
+    const publicMapSource = readRoute("src/components/public/public-map-index.tsx")
+    const rightRailSource = readRoute("src/components/public/public-map-index/right-rail.tsx")
+
+    for (const routeFile of routeFiles) {
+      expect(readRoute(routeFile)).not.toContain("memberProfile={viewerState.memberProfile}")
+    }
+
+    expect(publicMapSource).not.toContain("memberProfile")
+    expect(rightRailSource).not.toContain("PublicMapMemberProfileCard")
+    expect(rightRailSource).not.toContain("flex flex-col gap-3 p-4")
+  })
 })

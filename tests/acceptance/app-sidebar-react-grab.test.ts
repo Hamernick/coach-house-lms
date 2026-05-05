@@ -11,6 +11,7 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/tasks",
+  useRouter: () => ({ prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }))
 

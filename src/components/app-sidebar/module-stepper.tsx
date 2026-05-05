@@ -55,9 +55,11 @@ export function ModuleStepper({
             ) : (
               <Link
                 href={step.href}
-                onMouseEnter={() => onHover?.(step.href)}
+                prefetch={true}
+                onFocus={() => onHover?.(step.href)}
+                onPointerEnter={() => onHover?.(step.href)}
                 className={cn(
-                  "flex min-w-0 flex-1 items-start gap-2 rounded-md px-2 py-1.5 text-sm leading-snug transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                  "flex min-w-0 flex-1 items-start gap-2 rounded-md px-2 py-1.5 text-sm leading-snug transition-[color,background-color,transform] duration-150 ease-out hover:bg-sidebar-accent hover:text-sidebar-accent-foreground active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100",
                   step.active && "bg-sidebar-accent text-sidebar-accent-foreground",
                 )}
               >

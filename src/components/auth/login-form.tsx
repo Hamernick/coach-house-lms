@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
+import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
 
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
 import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
@@ -91,8 +92,7 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
   const [errorMessage, setErrorMessage] = useState<string | null>(
     mapAuthErrorMessage(initialError) ?? searchError,
   )
-  const [isRedirectingExistingSession, setIsRedirectingExistingSession] = useState(false)
-  const [isPending, startTransition] = useTransition()
+  const [isSigningIn, setIsSigningIn] = useState(false)
   const resolvedSignUpHref = useMemo(() => {
     const base = signUpHref ?? "/sign-up"
     if (!resolvedRedirectTo || base.includes("redirect=")) return base
@@ -131,7 +131,6 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
         })
         if (!redirectPath) return
 
-        setIsRedirectingExistingSession(true)
         router.replace(redirectPath)
         router.refresh()
       })
@@ -145,9 +144,12 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
   }, [resolvedRedirectTo, router, supabase])
 
   async function onSubmit(values: LoginFormValues) {
-    setErrorMessage(null)
+    if (isSigningIn) return
 
-    startTransition(async () => {
+    setErrorMessage(null)
+    setIsSigningIn(true)
+
+    try {
       const { error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
@@ -155,21 +157,17 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
 
       if (error) {
         setErrorMessage(mapAuthErrorMessage(error.message))
+        setIsSigningIn(false)
         return
       }
 
       form.reset()
       router.replace(resolvedRedirectTo)
       router.refresh()
-    })
-  }
-
-  if (isRedirectingExistingSession) {
-    return (
-      <p className="text-sm text-muted-foreground" role="status">
-        Taking you back to your workspace…
-      </p>
-    )
+    } catch {
+      setErrorMessage("Unable to sign in. Please try again.")
+      setIsSigningIn(false)
+    }
   }
 
   return (
@@ -218,8 +216,15 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
               {noticeMessage}
             </p>
           ) : null}
-          <Button className="w-full" type="submit" disabled={isPending}>
-            {isPending ? "Signing in..." : "Sign in"}
+          <Button className="w-full" type="submit" disabled={isSigningIn} aria-busy={isSigningIn || undefined}>
+            {isSigningIn ? (
+              <>
+                <LoaderCircleIcon className="animate-spin" data-icon="inline-start" aria-hidden />
+                <span>Signing in…</span>
+              </>
+            ) : (
+              "Sign in"
+            )}
           </Button>
         </form>
       </Form>

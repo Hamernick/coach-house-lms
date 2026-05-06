@@ -3,6 +3,7 @@ import { cache } from "react"
 import { fetchSidebarTree, type SidebarClass } from "@/lib/academy"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
+import { resolveAccountBillingCancellationRisk } from "@/lib/billing/subscription-access"
 import { resolvePricingPlanTier, type PricingPlanTier } from "@/lib/billing/plan-tier"
 import { loadAppPricingFeedbackPrompt } from "@/features/app-pricing-feedback"
 import { loadAccessibleOrganizations } from "@/features/member-workspace"
@@ -38,6 +39,7 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
   let tutorialWelcomeAccelerator = false
   let appPricingFeedbackPrompt: DashboardLayoutState["appPricingFeedbackPrompt"] = null
   let hasActiveSubscription = false
+  let hasBillingCancellationRisk = false
   let hasAcceleratorAccess = false
   let hasElectiveAccess = false
   let ownedElectiveModuleSlugs: string[] = []
@@ -46,6 +48,7 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
   let formationStatus: string | null = null
   let organizationName: string | null = null
   let currentPlanTier: PricingPlanTier = "free"
+  let showMemberWorkspace = false
   let memberWorkspaceHeader: DashboardLayoutState["memberWorkspaceHeader"] = null
 
   const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
@@ -102,7 +105,13 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
     userId: user.id,
   })
 
-  const [accessibleOrganizations, orgRowResult, entitlements, resolvedPricingFeedbackPrompt] = await Promise.all([
+  const [
+    accessibleOrganizations,
+    orgRowResult,
+    entitlements,
+    resolvedPricingFeedbackPrompt,
+    accountBillingResult,
+  ] = await Promise.all([
     accessibleOrganizationsPromise,
     supabase
       .from("organizations")
@@ -121,23 +130,17 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
       isAdmin,
     }),
     appPricingFeedbackPromptPromise,
+    resolveAccountBillingCancellationRisk({
+      supabase,
+      userId: user.id,
+    }),
   ])
 
   appPricingFeedbackPrompt = resolvedPricingFeedbackPrompt
-
-  if (metadataIntentFocus !== "fund") {
-    const resolvedActiveOrganization =
-      accessibleOrganizations.find((organization) => organization.orgId === orgId) ??
-      accessibleOrganizations[0] ??
-      null
-
-    if (resolvedActiveOrganization) {
-      memberWorkspaceHeader = {
-        activeOrganization: resolvedActiveOrganization,
-        accessibleOrganizations,
-      }
-    }
-  }
+  hasBillingCancellationRisk =
+    "error" in accountBillingResult
+      ? false
+      : accountBillingResult.hasBillingCancellationRisk
 
   const orgProfile = (orgRowResult.data?.profile as Record<string, unknown> | null) ?? null
   const orgPeople = Array.isArray(orgProfile?.org_people)
@@ -173,7 +176,22 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
   hasElectiveAccess = entitlements.hasElectiveAccess
   ownedElectiveModuleSlugs = entitlements.ownedElectiveModuleSlugs
   showAccelerator = hasAcceleratorAccess || hasElectiveAccess
-  canAccessOrgAdmin = showOrgAdmin && (isAdmin || hasActiveSubscription)
+  showMemberWorkspace = isAdmin || hasActiveSubscription || orgId !== user.id
+  canAccessOrgAdmin = showOrgAdmin && showMemberWorkspace
+
+  if (metadataIntentFocus !== "fund" && showMemberWorkspace) {
+    const resolvedActiveOrganization =
+      accessibleOrganizations.find((organization) => organization.orgId === orgId) ??
+      accessibleOrganizations[0] ??
+      null
+
+    if (resolvedActiveOrganization) {
+      memberWorkspaceHeader = {
+        activeOrganization: resolvedActiveOrganization,
+        accessibleOrganizations,
+      }
+    }
+  }
 
   if (hasActiveSubscription) {
     const { data: activeSubscription } = await supabase
@@ -236,10 +254,12 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
     showAccelerator,
     showLiveBadges,
     hasActiveSubscription,
+    hasBillingCancellationRisk,
     hasAcceleratorAccess,
     hasElectiveAccess,
     ownedElectiveModuleSlugs,
     currentPlanTier,
+    showMemberWorkspace,
     organizationName,
     tutorialWelcome: {
       platform: tutorialWelcomePlatform,

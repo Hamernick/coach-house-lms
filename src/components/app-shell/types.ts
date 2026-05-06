@@ -23,6 +23,7 @@ export type AppShellProps = {
   acceleratorProgress?: number | null
   showAccelerator?: boolean
   hasActiveSubscription?: boolean
+  hasBillingCancellationRisk?: boolean
   hasAcceleratorAccess?: boolean
   hasElectiveAccess?: boolean
   ownedElectiveModuleSlugs?: string[]
@@ -37,4 +38,5 @@ export type AppShellProps = {
   formationStatus?: string | null
   brandHref?: string
   showWorkspaceHome?: boolean
+  showMemberWorkspace?: boolean
 }

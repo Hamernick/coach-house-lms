@@ -44,4 +44,25 @@ describe("global search helper base items", () => {
     expect(items.map((item) => item.label)).not.toContain("Organization")
     expect(items.map((item) => item.label)).not.toContain("Access Requests")
   })
+
+  it("omits organization workspace pages for free self-only users", () => {
+    const items = buildBaseSearchItems({
+      enableAccelerator: false,
+      showOrgAdmin: false,
+      showMemberWorkspace: false,
+      showPlatformLab: false,
+    })
+
+    expect(items.map((item) => item.label)).toContain("Find")
+    expect(items.map((item) => item.label)).not.toEqual(
+      expect.arrayContaining([
+        "Workspace",
+        "Organization",
+        "Projects",
+        "Tasks",
+        "People",
+        "Documents",
+      ]),
+    )
+  })
 })

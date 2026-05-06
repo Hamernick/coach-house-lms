@@ -62,28 +62,25 @@ describe("app sidebar nav data", () => {
     expect(nav.find((item) => item.title === "Tasks")?.href).toBe("/tasks")
   })
 
-  it("can make Find the first app-shell nav item when workspace home is unavailable", () => {
+  it("shows Find only for free self-only member accounts", () => {
     const nav = buildMainNav({
       isAdmin: false,
       showOrgAdmin: false,
       canAccessOrgAdmin: false,
-      showMemberWorkspace: true,
+      showMemberWorkspace: false,
       hasMemberWorkspaceAccess: false,
-      showWorkspaceHome: false,
     })
 
-    expect(nav.map((item) => item.title)).toEqual([
-      "Find",
-      "Projects",
-      "Tasks",
-      "People",
-      "Documents",
-    ])
+    expect(nav.map((item) => item.title)).toEqual(["Find"])
     expect(nav.find((item) => item.title === "Workspace")).toBeUndefined()
     expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
+    expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
+    expect(nav.find((item) => item.title === "People")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Documents")).toBeUndefined()
   })
 
-  it("locks project and task nav for free member workspace users", () => {
+  it("omits project and task nav instead of rendering upgrade badges without access", () => {
     const nav = buildMainNav({
       isAdmin: false,
       showOrgAdmin: false,
@@ -92,20 +89,25 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: false,
     })
 
-    expect(nav.find((item) => item.title === "Projects")).toMatchObject({
-      locked: true,
-      upgradeHref:
-        "?paywall=organization&plan=organization&upgrade=member-workspace-access&source=nav-projects",
-    })
     expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
     expect(nav.find((item) => item.title === "Find")?.locked).not.toBe(true)
-    expect(nav.find((item) => item.title === "Projects")?.href).toBeUndefined()
-    expect(nav.find((item) => item.title === "Tasks")).toMatchObject({
-      locked: true,
-      upgradeHref:
-        "?paywall=organization&plan=organization&upgrade=member-workspace-access&source=nav-tasks",
+    expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
+    expect(nav.map((item) => item.badge)).not.toContain("Upgrade")
+  })
+
+  it("omits locked admin upgrade rows when org admin is unavailable", () => {
+    const nav = buildMainNav({
+      isAdmin: false,
+      showOrgAdmin: true,
+      canAccessOrgAdmin: false,
+      showMemberWorkspace: false,
+      hasMemberWorkspaceAccess: false,
     })
-    expect(nav.find((item) => item.title === "Tasks")?.href).toBeUndefined()
+
+    expect(nav.map((item) => item.title)).toEqual(["Find"])
+    expect(nav.find((item) => item.title === "Admin")).toBeUndefined()
+    expect(nav.map((item) => item.badge)).not.toContain("Upgrade")
   })
 
   it("does not show Marketplace in the sidebar resource nav", () => {

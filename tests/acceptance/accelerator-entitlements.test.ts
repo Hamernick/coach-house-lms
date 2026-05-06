@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest"
 
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
-import { hasPaidTeamAccessFromSubscription } from "@/lib/billing/subscription-access"
+import {
+  hasBillingCancellationRiskFromSubscription,
+  hasPaidTeamAccessFromSubscription,
+} from "@/lib/billing/subscription-access"
 import { resolvePricingPlanTier } from "@/lib/billing/plan-tier"
 
 type QueryResponse = {
@@ -159,5 +162,43 @@ describe("fetchLearningEntitlements", () => {
         metadata: { planName: "Organization" },
       }),
     ).toBe("organization")
+  })
+
+  it("only flags real paid Stripe subscriptions as account deletion billing risks", () => {
+    expect(
+      hasBillingCancellationRiskFromSubscription({
+        status: "active",
+        stripe_subscription_id: "sub_live",
+        metadata: { plan_tier: "organization" },
+      }),
+    ).toBe(true)
+    expect(
+      hasBillingCancellationRiskFromSubscription({
+        status: "past_due",
+        stripe_subscription_id: "sub_live",
+        metadata: { planName: "Organization" },
+      }),
+    ).toBe(true)
+    expect(
+      hasBillingCancellationRiskFromSubscription({
+        status: "active",
+        stripe_subscription_id: "stub_free",
+        metadata: { plan_tier: "organization" },
+      }),
+    ).toBe(false)
+    expect(
+      hasBillingCancellationRiskFromSubscription({
+        status: "active",
+        stripe_subscription_id: "sub_live",
+        metadata: { planName: "Free" },
+      }),
+    ).toBe(false)
+    expect(
+      hasBillingCancellationRiskFromSubscription({
+        status: "canceled",
+        stripe_subscription_id: "sub_live",
+        metadata: { plan_tier: "organization" },
+      }),
+    ).toBe(false)
   })
 })

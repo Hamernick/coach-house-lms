@@ -54,32 +54,12 @@ export function buildMainNav({
   const workspaceHomeItem = showWorkspaceHome
     ? [{ title: "Workspace", href: "/workspace", icon: LayoutGridIcon }]
     : []
-  const lockedMemberWorkspaceItems: MainNavItem[] = [
-    {
-      title: "Projects",
-      icon: FolderKanbanIcon,
-      locked: true,
-      badge: "Upgrade",
-      upgradeLabel: "Upgrade",
-      upgradeHref:
-        "?paywall=organization&plan=organization&upgrade=member-workspace-access&source=nav-projects",
-    },
-    {
-      title: "Tasks",
-      icon: ClipboardListIcon,
-      locked: true,
-      badge: "Upgrade",
-      upgradeLabel: "Upgrade",
-      upgradeHref:
-        "?paywall=organization&plan=organization&upgrade=member-workspace-access&source=nav-tasks",
-    },
-  ]
   const memberWorkspaceItems: MainNavItem[] = hasMemberWorkspaceAccess || isAdmin
     ? [
         { title: "Projects", href: "/projects", icon: FolderKanbanIcon },
         { title: "Tasks", href: "/tasks", icon: ClipboardListIcon },
       ]
-    : lockedMemberWorkspaceItems
+    : []
   const items: MainNavItem[] = [
     ...(showMemberWorkspace
       ? [
@@ -89,27 +69,11 @@ export function buildMainNav({
           { title: "People", href: "/people", icon: UsersIcon },
           { title: "Documents", href: "/organization/documents", icon: LockIcon },
         ]
-      : [
-          ...workspaceHomeItem,
-          { title: "Find", href: FIND_PATH, icon: MapPinnedIcon },
-          { title: "People", href: "/people", icon: UsersIcon },
-          { title: "Documents", href: "/organization/documents", icon: LockIcon },
-        ]),
+      : [{ title: "Find", href: FIND_PATH, icon: MapPinnedIcon }]),
   ]
 
-  if (showOrgAdmin) {
-    if (canAccessOrgAdmin) {
-      items.push({ title: "Admin", href: "/admin", icon: ShieldIcon })
-    } else {
-      items.push({
-        title: "Admin",
-        icon: ShieldIcon,
-        locked: true,
-        badge: "Upgrade",
-        upgradeLabel: "Upgrade",
-        upgradeHref: "?paywall=organization&plan=organization&upgrade=admin-access&source=nav-admin",
-      })
-    }
+  if (showOrgAdmin && canAccessOrgAdmin) {
+    items.push({ title: "Admin", href: "/admin", icon: ShieldIcon })
   }
   if (isAdmin) {
     items.push({ title: "Platform", href: "/admin/platform", icon: DatabaseIcon })

@@ -37,6 +37,7 @@ export async function processStripeWebhookEvent({
     const subscriptionId =
       typeof session.subscription === "string" ? session.subscription : undefined
     const userId = session.client_reference_id ?? undefined
+    const sessionMetadata = session.metadata ?? {}
 
     if (session.mode === "payment" && session.metadata?.kind === "accelerator") {
       const resolvedUserId =
@@ -101,44 +102,41 @@ export async function processStripeWebhookEvent({
       }
     }
 
-    if (subscriptionId && userId) {
+    if (subscriptionId) {
       const subscriptionOwnerId =
-        extractOrganizationUserIdFromMetadata(session.metadata ?? {}) ?? userId
-      await upsertSubscription({
-        userId: subscriptionOwnerId,
-        customerId: typeof session.customer === "string" ? session.customer : null,
-        subscriptionId,
-        status: toStatus(session.status ?? "trialing"),
-        cancelAt: null,
-        canceledAt: null,
-        metadata:
-          session.metadata && Object.keys(session.metadata).length > 0
-            ? ({
-                ...session.metadata,
-                stripe_mode: session.metadata?.stripe_mode ?? stripeMode,
-              } as Record<string, string>)
-            : { planName: session.metadata?.planName ?? null, stripe_mode: stripeMode },
-      })
-    } else if (subscriptionId && session.metadata) {
-      const subscriptionOwnerId =
-        extractOrganizationUserIdFromMetadata(session.metadata ?? {}) ??
-        extractUserIdFromMetadata(session.metadata)
+        extractOrganizationUserIdFromMetadata(sessionMetadata) ??
+        extractUserIdFromMetadata(sessionMetadata) ??
+        userId
       if (subscriptionOwnerId) {
+        const subscription =
+          await stripeClient.subscriptions.retrieve(subscriptionId)
+        const subscriptionMetadata =
+          subscription.metadata && Object.keys(subscription.metadata).length > 0
+            ? (subscription.metadata as Record<string, string>)
+            : (sessionMetadata as Record<string, string>)
+        const customerId =
+          typeof subscription.customer === "string"
+            ? subscription.customer
+            : typeof session.customer === "string"
+              ? session.customer
+              : null
+
         await upsertSubscription({
           userId: subscriptionOwnerId,
-          customerId: typeof session.customer === "string" ? session.customer : null,
+          customerId,
           subscriptionId,
-          status: toStatus(session.status ?? "trialing"),
-          cancelAt: null,
-          canceledAt: null,
+          status: toStatus(subscription.status),
+          currentPeriodEnd: getCurrentPeriodEndIso(subscription),
+          cancelAt: getCancelAtIso(subscription),
+          canceledAt: getCanceledAtIso(subscription),
           metadata:
-            session.metadata && Object.keys(session.metadata).length > 0
+            Object.keys(subscriptionMetadata).length > 0
               ? ({
-                  ...session.metadata,
-                  stripe_mode: session.metadata?.stripe_mode ?? stripeMode,
+                  ...subscriptionMetadata,
+                  stripe_mode: subscriptionMetadata.stripe_mode ?? stripeMode,
                 } as Record<string, string>)
               : {
-                  planName: session.metadata?.planName ?? null,
+                  planName: sessionMetadata.planName ?? null,
                   stripe_mode: stripeMode,
                 },
         })

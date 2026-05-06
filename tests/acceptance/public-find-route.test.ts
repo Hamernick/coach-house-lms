@@ -62,6 +62,11 @@ describe("public find routes", () => {
     expect(publicMapSource).not.toContain("manageShellSidebarOpen={false}")
     expect(appShellSource).toContain('data-shell-mode={useFullBleedContent ? "full-bleed" : "default"}')
     expect(appShellSource).toContain("md:[--shell-right-rail-width:min(22rem,36vw)]")
+    expect(shellSource).toContain("showWorkspaceHome={state.showMemberWorkspace}")
+    expect(shellSource).toContain("showMemberWorkspace={state.showMemberWorkspace}")
+    expect(shellSource).toContain("sidebarHeaderContent={")
+    expect(shellSource).toContain("MemberWorkspaceOrgSwitcher")
+    expect(shellSource).toContain("state.memberWorkspaceHeader")
     expect(appShellSource).toContain(
       'isMobile ? "rounded-none border-0" : "rounded-[28px] border border-[color:var(--shell-border)]"',
     )

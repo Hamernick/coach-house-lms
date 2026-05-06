@@ -21,10 +21,12 @@ export type DashboardLayoutState = {
   showAccelerator: boolean
   showLiveBadges: boolean
   hasActiveSubscription: boolean
+  hasBillingCancellationRisk: boolean
   hasAcceleratorAccess: boolean
   hasElectiveAccess: boolean
   ownedElectiveModuleSlugs: string[]
   currentPlanTier: PricingPlanTier
+  showMemberWorkspace: boolean
   organizationName: string | null
   tutorialWelcome: {
     platform: boolean
@@ -57,10 +59,12 @@ export const EMPTY_STATE: DashboardLayoutState = {
   showAccelerator: false,
   showLiveBadges: false,
   hasActiveSubscription: false,
+  hasBillingCancellationRisk: false,
   hasAcceleratorAccess: false,
   hasElectiveAccess: false,
   ownedElectiveModuleSlugs: [],
   currentPlanTier: "free",
+  showMemberWorkspace: false,
   organizationName: null,
   tutorialWelcome: {
     platform: false,

@@ -4,6 +4,7 @@ import { BillingPortalLaunchButton } from "@/components/billing/billing-portal-l
 import { Checkbox } from "@/components/ui/checkbox"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import type { AccountDeletionPreflight } from "@/lib/account-deletion/types"
 import {
   AlertDialog,
   AlertDialogContent,
@@ -17,6 +18,9 @@ type AccountSettingsDeleteAccountDialogProps = {
   onDeleteEmailInputChange: (value: string) => void
   accountEmail: string
   hasActiveSubscription: boolean
+  deletePreflight: AccountDeletionPreflight | null
+  isDeletePreflightLoading: boolean
+  deletePreflightError: string | null
   billingCancellationAcknowledged: boolean
   onBillingCancellationAcknowledgedChange: (next: boolean) => void
   canDeleteAccount: boolean
@@ -36,6 +40,9 @@ export function AccountSettingsDeleteAccountDialogBody({
   onDeleteEmailInputChange,
   accountEmail,
   hasActiveSubscription,
+  deletePreflight,
+  isDeletePreflightLoading,
+  deletePreflightError,
   billingCancellationAcknowledged,
   onBillingCancellationAcknowledgedChange,
   canDeleteAccount,
@@ -55,6 +62,62 @@ export function AccountSettingsDeleteAccountDialogBody({
         </p>
       </div>
       <div className="space-y-4">
+        {isDeletePreflightLoading ? (
+          <div className="rounded-md border border-border/70 bg-muted/30 p-3 text-sm text-muted-foreground">
+            Checking account deletion status...
+          </div>
+        ) : null}
+
+        {deletePreflightError ? (
+          <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+            {deletePreflightError}
+          </div>
+        ) : null}
+
+        {deletePreflight?.blockingIssues.length ? (
+          <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3">
+            <p className="text-sm font-medium text-foreground">Before you can delete</p>
+            <div className="mt-2 space-y-2">
+              {deletePreflight.blockingIssues.map((issue) => (
+                <div key={issue.id} className="text-sm">
+                  <p className="font-medium text-foreground">{issue.title}</p>
+                  <p className="text-muted-foreground">{issue.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {deletePreflight?.warnings.length ? (
+          <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-3">
+            <p className="text-sm font-medium text-foreground">Deletion impact</p>
+            <div className="mt-2 space-y-2">
+              {deletePreflight.warnings.map((warning) => (
+                <div key={warning.id} className="text-sm">
+                  <p className="font-medium text-foreground">{warning.title}</p>
+                  <p className="text-muted-foreground">{warning.description}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {deletePreflight?.cleanupPreview.length ? (
+          <div className="rounded-md border border-border/70 bg-muted/20 p-3">
+            <p className="text-sm font-medium text-foreground">Cleanup preview</p>
+            <div className="mt-2 grid gap-1.5 text-sm text-muted-foreground">
+              {deletePreflight.cleanupPreview.map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-3">
+                  <span>{item.label}</span>
+                  <span className="text-xs text-foreground">
+                    {item.count} {item.disposition}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
         {hasActiveSubscription ? (
           <div className="rounded-md border border-amber-500/30 bg-amber-500/5 p-4">
             <p className="text-sm font-medium text-foreground">1. Cancel your subscription billing</p>

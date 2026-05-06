@@ -29,10 +29,12 @@ export default async function DashboardLayout({
         showAccelerator={state.showAccelerator}
         showLiveBadges={state.showLiveBadges}
         hasActiveSubscription={state.hasActiveSubscription}
+        hasBillingCancellationRisk={state.hasBillingCancellationRisk}
         hasAcceleratorAccess={state.hasAcceleratorAccess}
         hasElectiveAccess={state.hasElectiveAccess}
         ownedElectiveModuleSlugs={state.ownedElectiveModuleSlugs}
         currentPlanTier={state.currentPlanTier}
+        showMemberWorkspace={state.showMemberWorkspace}
         organizationName={state.organizationName}
         tutorialWelcome={state.tutorialWelcome}
         pricingFeedbackPrompt={state.appPricingFeedbackPrompt}

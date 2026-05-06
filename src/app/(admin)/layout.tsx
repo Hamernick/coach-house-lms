@@ -9,7 +9,10 @@ import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import type { Json } from "@/lib/supabase"
-import { hasPaidTeamAccessFromSubscription } from "@/lib/billing/subscription-access"
+import {
+  hasPaidTeamAccessFromSubscription,
+  resolveAccountBillingCancellationRisk,
+} from "@/lib/billing/subscription-access"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 
 export default async function AdminLayout({ children, breadcrumbs }: { children: ReactNode; breadcrumbs: ReactNode }) {
@@ -56,7 +59,7 @@ export default async function AdminLayout({ children, breadcrumbs }: { children:
       .maybeSingle<{ status: string | null; metadata: Json | null }>()
     canAccessOrgAdmin = hasPaidTeamAccessFromSubscription(subscription ?? null)
   }
-  const [entitlements, orgRowResult] = await Promise.all([
+  const [entitlements, orgRowResult, accountBillingResult] = await Promise.all([
     fetchLearningEntitlements({
       supabase,
       userId: user.id,
@@ -68,7 +71,15 @@ export default async function AdminLayout({ children, breadcrumbs }: { children:
       .select("profile")
       .eq("user_id", orgId)
       .maybeSingle<{ profile: Json | null }>(),
+    resolveAccountBillingCancellationRisk({
+      supabase,
+      userId: user.id,
+    }),
   ])
+  const hasBillingCancellationRisk =
+    "error" in accountBillingResult
+      ? false
+      : accountBillingResult.hasBillingCancellationRisk
   const showAccelerator = entitlements.hasAcceleratorAccess || entitlements.hasElectiveAccess
   const orgProfile = (orgRowResult.data?.profile as Record<string, unknown> | null) ?? null
   const orgName = typeof orgProfile?.name === "string" ? orgProfile.name.trim() : ""
@@ -85,6 +96,7 @@ export default async function AdminLayout({ children, breadcrumbs }: { children:
       showOrgAdmin={showOrgAdmin}
       canAccessOrgAdmin={canAccessOrgAdmin}
       showAccelerator={showAccelerator}
+      hasBillingCancellationRisk={hasBillingCancellationRisk}
       organizationName={organizationName}
       context="admin"
     >

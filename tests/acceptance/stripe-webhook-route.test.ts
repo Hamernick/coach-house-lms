@@ -162,6 +162,7 @@ describe("stripe webhook route acceptance", () => {
 
   beforeEach(() => {
     vi.clearAllMocks()
+    subscriptionsRetrieveMock.mockReset()
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
   })
 
@@ -437,6 +438,20 @@ describe("stripe webhook route acceptance", () => {
   it("upserts subscription rows for checkout.session.completed in subscription mode", async () => {
     const { admin, calls } = createAdminSupabaseStub({ existingActiveSubscription: false })
     createSupabaseAdminClientMock.mockReturnValue(admin)
+    subscriptionsRetrieveMock.mockResolvedValue({
+      id: "sub_accelerator_monthly",
+      customer: "cus_sub_mode",
+      status: "active",
+      current_period_end: 1_900_000_000,
+      cancel_at: null,
+      canceled_at: null,
+      metadata: {
+        kind: "accelerator",
+        user_id: "user_sub_mode",
+        planName: "Accelerator Pro",
+        accelerator_billing: "monthly",
+      },
+    })
 
     constructEventMock.mockReturnValue({
       id: "evt_checkout_subscription_mode",
@@ -445,7 +460,7 @@ describe("stripe webhook route acceptance", () => {
         object: {
           id: "cs_subscription_mode",
           mode: "subscription",
-          status: "active",
+          status: "complete",
           client_reference_id: "user_sub_mode",
           subscription: "sub_accelerator_monthly",
           customer: "cus_sub_mode",
@@ -462,14 +477,21 @@ describe("stripe webhook route acceptance", () => {
     const response = await runWebhook()
 
     expect(response.status).toBe(200)
+    expect(calls.subscriptionsRetrieve).toHaveBeenCalledWith(
+      "sub_accelerator_monthly",
+    )
     expect(calls.subscriptionsUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: "user_sub_mode",
         stripe_subscription_id: "sub_accelerator_monthly",
         stripe_customer_id: "cus_sub_mode",
         status: "active",
+        current_period_end: "2030-03-17T17:46:40.000Z",
+        cancel_at: null,
+        canceled_at: null,
         metadata: expect.objectContaining({
           kind: "accelerator",
+          planName: "Accelerator Pro",
           accelerator_billing: "monthly",
         }),
       }),
@@ -618,6 +640,20 @@ describe("stripe webhook route acceptance", () => {
       },
     })
     createSupabaseAdminClientMock.mockReturnValue(admin)
+    subscriptionsRetrieveMock.mockResolvedValue({
+      id: "sub_accelerator_failure",
+      customer: "cus_sub_mode_failure",
+      status: "active",
+      current_period_end: 1_900_000_000,
+      cancel_at: null,
+      canceled_at: null,
+      metadata: {
+        kind: "accelerator",
+        user_id: "user_sub_mode_failure",
+        planName: "Accelerator Pro",
+        accelerator_billing: "monthly",
+      },
+    })
 
     constructEventMock.mockReturnValue({
       id: "evt_checkout_subscription_upsert_failure",
@@ -626,7 +662,7 @@ describe("stripe webhook route acceptance", () => {
         object: {
           id: "cs_subscription_upsert_failure",
           mode: "subscription",
-          status: "active",
+          status: "complete",
           client_reference_id: "user_sub_mode_failure",
           subscription: "sub_accelerator_failure",
           customer: "cus_sub_mode_failure",

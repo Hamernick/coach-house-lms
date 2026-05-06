@@ -4,6 +4,11 @@ import { AppShell } from "@/components/app-shell"
 import { AppBreadcrumbs } from "@/components/app-shell/breadcrumbs"
 import { FrameEscape } from "@/components/navigation/frame-escape"
 import type { AppPricingFeedbackPromptState } from "@/features/app-pricing-feedback"
+import {
+  MemberWorkspaceOrgSwitcher,
+  setActiveOrganizationAction,
+  type MemberWorkspaceHeaderState,
+} from "@/features/member-workspace"
 import type { SidebarClass } from "@/lib/academy"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 
@@ -23,10 +28,13 @@ type AuthenticatedFindShellState = {
   showAccelerator: boolean
   showLiveBadges: boolean
   hasActiveSubscription: boolean
+  hasBillingCancellationRisk: boolean
   hasAcceleratorAccess: boolean
   hasElectiveAccess: boolean
   ownedElectiveModuleSlugs: string[]
   currentPlanTier: PricingPlanTier
+  showMemberWorkspace: boolean
+  memberWorkspaceHeader: MemberWorkspaceHeaderState | null
   organizationName: string | null
   tutorialWelcome: {
     platform: boolean
@@ -56,6 +64,15 @@ export function AuthenticatedFindShell({
       <FrameEscape />
       <AppShell
         breadcrumbs={<AppBreadcrumbs segments={segments} />}
+        sidebarHeaderContent={
+          state.memberWorkspaceHeader ? (
+            <MemberWorkspaceOrgSwitcher
+              activeOrganization={state.memberWorkspaceHeader.activeOrganization}
+              organizations={state.memberWorkspaceHeader.accessibleOrganizations}
+              setActiveOrganizationAction={setActiveOrganizationAction}
+            />
+          ) : null
+        }
         sidebarTree={state.sidebarTree}
         user={state.user}
         isAdmin={state.isAdmin}
@@ -66,6 +83,7 @@ export function AuthenticatedFindShell({
         showAccelerator={state.showAccelerator}
         showLiveBadges={state.showLiveBadges}
         hasActiveSubscription={state.hasActiveSubscription}
+        hasBillingCancellationRisk={state.hasBillingCancellationRisk}
         hasAcceleratorAccess={state.hasAcceleratorAccess}
         hasElectiveAccess={state.hasElectiveAccess}
         ownedElectiveModuleSlugs={state.ownedElectiveModuleSlugs}
@@ -79,7 +97,8 @@ export function AuthenticatedFindShell({
         context="public"
         contentPresentation="full-bleed"
         brandHref="/find"
-        showWorkspaceHome={state.isAdmin || state.hasActiveSubscription}
+        showWorkspaceHome={state.showMemberWorkspace}
+        showMemberWorkspace={state.showMemberWorkspace}
       >
         {children}
       </AppShell>

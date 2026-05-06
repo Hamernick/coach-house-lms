@@ -47,6 +47,7 @@ export function AppShellInner({
   acceleratorProgress,
   showAccelerator,
   hasActiveSubscription,
+  hasBillingCancellationRisk = false,
   hasAcceleratorAccess,
   hasElectiveAccess,
   ownedElectiveModuleSlugs = [],
@@ -61,6 +62,7 @@ export function AppShellInner({
   formationStatus,
   brandHref: brandHrefOverride,
   showWorkspaceHome = true,
+  showMemberWorkspace,
 }: AppShellProps) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -79,11 +81,14 @@ export function AppShellInner({
     isAcceleratorContext &&
     !isAcceleratorRoadmapRoute &&
     sidebarTree.length > 0
+  const canShowMemberWorkspace =
+    showMemberWorkspace ?? Boolean(isAdmin || hasActiveSubscription)
   const showMemberWorkspaceNav =
     !onboardingLocked &&
     !isAdminContext &&
     !isAcceleratorContext &&
-    onboardingIntentFocus !== "fund"
+    onboardingIntentFocus !== "fund" &&
+    canShowMemberWorkspace
 
   const hasRightRail = useRightRailPresence()
   const isMobile = useIsMobile()
@@ -147,7 +152,9 @@ export function AppShellInner({
         ? "/accelerator"
         : derivedContext === "public"
           ? "/find"
-          : "/workspace"
+          : canShowMemberWorkspace
+            ? "/workspace"
+            : "/find"
       : "/")
   const pricingFeedbackTutorialPending =
     tutorialKey === "accelerator" ? tutorialWelcome.accelerator : tutorialWelcome.platform
@@ -233,6 +240,7 @@ export function AppShellInner({
             user={navUser}
             showAccelerator={showAccelerator}
             hasActiveSubscription={Boolean(hasActiveSubscription)}
+            hasBillingCancellationRisk={hasBillingCancellationRisk}
             showClasses={showLeftClasses}
             classesBasePath={classesBasePath}
             hasAcceleratorAccess={resolvedHasAcceleratorAccess}
@@ -244,6 +252,7 @@ export function AppShellInner({
             organizationName={organizationName}
             showCoachScheduling={!isAcceleratorContext}
             showWorkspaceHome={showWorkspaceHome}
+            showMemberWorkspace={showMemberWorkspaceNav}
           />
         </Sidebar>
 

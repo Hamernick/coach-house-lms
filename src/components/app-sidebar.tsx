@@ -28,6 +28,7 @@ export type AppSidebarProps = {
   acceleratorProgress?: number | null
   showAccelerator?: boolean
   hasActiveSubscription?: boolean
+  hasBillingCancellationRisk?: boolean
   hasAcceleratorAccess?: boolean
   hasElectiveAccess?: boolean
   ownedElectiveModuleSlugs?: string[]
@@ -37,6 +38,7 @@ export type AppSidebarProps = {
   organizationName?: string | null
   showCoachScheduling?: boolean
   showWorkspaceHome?: boolean
+  showMemberWorkspace?: boolean
 }
 
 export function AppSidebar({
@@ -48,6 +50,7 @@ export function AppSidebar({
   classes,
   showAccelerator,
   hasActiveSubscription = false,
+  hasBillingCancellationRisk = false,
   hasAcceleratorAccess,
   hasElectiveAccess,
   ownedElectiveModuleSlugs,
@@ -56,6 +59,8 @@ export function AppSidebar({
   onboardingIntentFocus = null,
   organizationName = null,
   showCoachScheduling = false,
+  showWorkspaceHome = true,
+  showMemberWorkspace,
 }: AppSidebarProps) {
   const resolvedUser = useMemo(
     () => ({
@@ -76,6 +81,7 @@ export function AppSidebar({
         user={resolvedUser}
         showAccelerator={showAccelerator}
         hasActiveSubscription={hasActiveSubscription}
+        hasBillingCancellationRisk={hasBillingCancellationRisk}
         showOrgAdmin={showOrgAdmin}
         canAccessOrgAdmin={canAccessOrgAdmin}
         hasAcceleratorAccess={hasAcceleratorAccess}
@@ -86,6 +92,8 @@ export function AppSidebar({
         onboardingIntentFocus={onboardingIntentFocus}
         organizationName={organizationName}
         showCoachScheduling={showCoachScheduling}
+        showWorkspaceHome={showWorkspaceHome}
+        showMemberWorkspace={showMemberWorkspace}
       />
     </aside>
   )
@@ -103,6 +111,7 @@ type SidebarBodyProps = {
   }
   showAccelerator?: boolean
   hasActiveSubscription?: boolean
+  hasBillingCancellationRisk?: boolean
   showClasses?: boolean
   classesBasePath?: string
   showOrgAdmin?: boolean
@@ -116,6 +125,7 @@ type SidebarBodyProps = {
   organizationName?: string | null
   showCoachScheduling?: boolean
   showWorkspaceHome?: boolean
+  showMemberWorkspace?: boolean
 }
 
 export function SidebarBody({
@@ -125,6 +135,7 @@ export function SidebarBody({
   user,
   showAccelerator,
   hasActiveSubscription = false,
+  hasBillingCancellationRisk = false,
   showClasses = false,
   classesBasePath,
   showOrgAdmin = false,
@@ -138,16 +149,20 @@ export function SidebarBody({
   organizationName = null,
   showCoachScheduling = false,
   showWorkspaceHome = true,
+  showMemberWorkspace,
 }: SidebarBodyProps) {
   const shouldShowAccelerator = !onboardingLocked && Boolean(isAdmin || showAccelerator)
   const hasUser = Boolean(user.email)
-  const showMemberWorkspace = !onboardingLocked && onboardingIntentFocus !== "fund"
-  const hasMemberWorkspaceAccess = isAdmin || hasActiveSubscription
+  const showMemberWorkspaceNav =
+    !onboardingLocked &&
+    onboardingIntentFocus !== "fund" &&
+    Boolean(showMemberWorkspace ?? (isAdmin || hasActiveSubscription))
+  const hasMemberWorkspaceAccess = showMemberWorkspaceNav
   const mainNavItems = buildMainNav({
     isAdmin,
     showOrgAdmin,
     canAccessOrgAdmin,
-    showMemberWorkspace,
+    showMemberWorkspace: showMemberWorkspaceNav,
     hasMemberWorkspaceAccess,
     showWorkspaceHome,
   })
@@ -193,7 +208,7 @@ export function SidebarBody({
             isAdmin={isAdmin}
             isTester={isTester}
             showDivider={false}
-            hasActiveSubscription={hasActiveSubscription}
+            hasActiveSubscription={hasBillingCancellationRisk}
           />
         ) : null}
       </SidebarFooter>

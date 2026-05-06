@@ -84,4 +84,13 @@ describe("public find routes", () => {
     expect(rightRailSource).not.toContain("PublicMapMemberProfileCard")
     expect(rightRailSource).not.toContain("flex flex-col gap-3 p-4")
   })
+
+  it("keeps authenticated find viewer detection lightweight", () => {
+    const viewerStateSource = readRoute("src/features/find-map/server/viewer-state.ts")
+
+    expect(viewerStateSource).toContain("supabase.auth.getUser()")
+    expect(viewerStateSource).not.toContain(".from(\"profiles\")")
+    expect(viewerStateSource).not.toContain("buildOnboardingFlowDefaults")
+    expect(viewerStateSource).not.toContain("memberProfile")
+  })
 })

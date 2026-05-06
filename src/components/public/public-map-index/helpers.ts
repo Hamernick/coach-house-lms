@@ -159,6 +159,7 @@ export function filterPublicMapOrganizations({
   sortByFavorites?: boolean
 }) {
   const normalizedQuery = query.trim().toLowerCase()
+  const favoriteIds = sortByFavorites ? new Set(favorites) : null
 
   const groupFiltered =
     activeGroup === "all"
@@ -213,9 +214,9 @@ export function filterPublicMapOrganizations({
       if (leftRelevance !== rightRelevance) return leftRelevance - rightRelevance
     }
 
-    if (sortByFavorites) {
-      const leftFavorite = favorites.includes(left.id)
-      const rightFavorite = favorites.includes(right.id)
+    if (favoriteIds) {
+      const leftFavorite = favoriteIds.has(left.id)
+      const rightFavorite = favoriteIds.has(right.id)
       if (leftFavorite !== rightFavorite) return leftFavorite ? -1 : 1
     }
 

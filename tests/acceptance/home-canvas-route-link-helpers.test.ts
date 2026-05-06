@@ -78,4 +78,18 @@ describe("home canvas route link helpers", () => {
     expect(canvasSource).toContain("HomeCanvasLoginButton")
     expect(canvasSource).not.toContain('onClick={() => changeSection("login")}')
   })
+
+  it("keeps home canvas section motion on CSS instead of loading a JS animation runtime", () => {
+    const canvasSource = readSource("src/components/public/home-canvas-preview.tsx")
+    const flipWordsSource = readSource("src/components/ui/flip-words.tsx")
+    const globalsSource = readSource("src/app/globals.css")
+
+    expect(canvasSource).not.toContain("framer-motion")
+    expect(canvasSource).toContain("home-canvas-panel-in")
+    expect(canvasSource).toContain("--home-canvas-panel-y")
+    expect(flipWordsSource).not.toContain("framer-motion")
+    expect(flipWordsSource).toContain("flip-word-in")
+    expect(globalsSource).toContain("@keyframes home-canvas-panel-in")
+    expect(globalsSource).toContain("@keyframes flip-word-in")
+  })
 })

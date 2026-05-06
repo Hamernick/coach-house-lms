@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
@@ -108,6 +108,7 @@ export function PublicMapIndex({
   const [mapLoadVersion, setMapLoadVersion] = useState(0)
   const [sameLocationSelection, setSameLocationSelection] =
     useState<PublicMapSameLocationSelection | null>(null)
+  const deferredQuery = useDeferredValue(query)
   const {
     favorites,
     isSavingPreferences,
@@ -132,9 +133,8 @@ export function PublicMapIndex({
   const filteredOrganizations = useMemo(
     () => {
       const filteredIds = filterPublicMapOrganizationIds({
-        organizations,
         searchIndex,
-        query,
+        query: deferredQuery,
         appliedBounds: null,
         favorites,
         activeGroup: "all",
@@ -143,7 +143,7 @@ export function PublicMapIndex({
         .map((organizationId) => organizationById.get(organizationId) ?? null)
         .filter((organization): organization is PublicMapOrganization => Boolean(organization))
     },
-    [favorites, organizationById, organizations, query, searchIndex],
+    [deferredQuery, favorites, organizationById, searchIndex],
   )
 
   const selectedOrganization = resolvePublicMapSelectedOrganization({
@@ -185,6 +185,12 @@ export function PublicMapIndex({
   const handleViewportChange = useCallback((map: mapboxgl.Map) => {
     appliedBoundsRef.current = resolveBounds(map)
   }, [])
+  const handleSetCameraTargetOrgId = useCallback((organizationId: string) => {
+    setCameraTarget((current) => ({
+      organizationId,
+      requestId: (current?.requestId ?? 0) + 1,
+    }))
+  }, [])
 
   useSyncPublicMapLayout({
     containerRef,
@@ -213,12 +219,7 @@ export function PublicMapIndex({
       pendingAuthOrgId,
       setSelectedOrgId,
       setSidebarMode,
-      setCameraTargetOrgId: (organizationId) => {
-        setCameraTarget((current) => ({
-          organizationId,
-          requestId: (current?.requestId ?? 0) + 1,
-        }))
-      },
+      setCameraTargetOrgId: handleSetCameraTargetOrgId,
       setRecentOrganizationIds,
       setPendingAuthOrgId,
       setAuthSheetOpen,
@@ -238,6 +239,14 @@ export function PublicMapIndex({
         openDetails: true,
       })
     },
+    [handleSelectOrganization],
+  )
+  const handleRailSelectOrganization = useCallback(
+    (organizationId: string) =>
+      handleSelectOrganization({
+        organizationId,
+        openDetails: true,
+      }),
     [handleSelectOrganization],
   )
   useSyncSelectedOrganization({
@@ -381,12 +390,7 @@ export function PublicMapIndex({
         directoryMode={directoryRail ? directoryRailMode : null}
         savedOrganizations={savedOrganizations}
         favorites={favorites}
-        onSelectOrganization={(organizationId) =>
-          handleSelectOrganization({
-            organizationId,
-            openDetails: true,
-          })
-        }
+        onSelectOrganization={handleRailSelectOrganization}
         onToggleFavorite={toggleFavorite}
       />
 

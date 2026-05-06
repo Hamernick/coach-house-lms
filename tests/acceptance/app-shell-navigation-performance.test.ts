@@ -69,4 +69,26 @@ describe("app shell navigation performance", () => {
     expect(acceleratorViewerTransitionSource).toContain('key="accelerator-step-viewer"')
     expect(acceleratorViewerTransitionSource).toContain("useReducedMotion")
   })
+
+  it("keeps public find search and list updates responsive", () => {
+    const publicMapSource = readSource("src/components/public/public-map-index.tsx")
+    const searchIndexSource = readSource(
+      "src/components/public/public-map-index/search-index.ts",
+    )
+    const organizationListSource = readSource(
+      "src/components/public/public-map-index/organization-list.tsx",
+    )
+    const actionsSource = readSource(
+      "src/components/public/public-map-index/use-public-map-actions.ts",
+    )
+
+    expect(publicMapSource).toContain("useDeferredValue")
+    expect(publicMapSource).toContain("query: deferredQuery")
+    expect(searchIndexSource).not.toContain("new Map(organizations.map")
+    expect(searchIndexSource).toContain("const favoriteIds = sortByFavorites ? new Set(favorites) : null")
+    expect(searchIndexSource).toContain("PUBLIC_MAP_NAME_COLLATOR")
+    expect(organizationListSource).toContain("memo(PublicMapOrganizationListComponent)")
+    expect(organizationListSource).toContain("const favoriteIds = useMemo(() => new Set(favorites), [favorites])")
+    expect(actionsSource).toContain("useCallback")
+  })
 })

@@ -346,6 +346,30 @@
   }
 }
 
+@keyframes home-canvas-panel-in {
+  0% {
+    opacity: 0.96;
+    transform: translate3d(0, var(--home-canvas-panel-y, 32px), 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes flip-word-in {
+  0% {
+    opacity: 0;
+    filter: blur(8px);
+    transform: translate3d(0, 12px, 0);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0);
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 @keyframes floaty {
   0%,
   100% {

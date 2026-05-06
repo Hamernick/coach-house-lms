@@ -3,7 +3,6 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { AnimatePresence, motion } from "framer-motion"
 import ArrowDownIcon from "lucide-react/dist/esm/icons/arrow-down"
 import ArrowUpRight from "lucide-react/dist/esm/icons/arrow-up-right"
 import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
@@ -313,85 +312,83 @@ function HomeCanvasPreviewContent({ initialSection, pricingPanel, findPanel }: H
                     </div>
                   </div>
                 ) : null}
-                <AnimatePresence custom={direction} initial={false} mode="wait">
-                  <motion.div
-                    key={activeSection}
-                    custom={direction}
-                    initial={{ opacity: 0, y: direction > 0 ? 56 : -56 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: direction > 0 ? -56 : 56 }}
-                    transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-                    className={cn(
-                      "absolute inset-0 overscroll-contain",
-                      activeSectionBehavior.scrollable ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden",
-                    )}
-                    onWheel={handleWheel}
-                    onTouchStart={handleTouchStart}
-                    onTouchEnd={handleTouchEnd}
-                    onKeyDown={(event) => {
-                      if (activeSectionBehavior.lockNavigationGestures) {
-                        return
-                      }
-                      if (event.key === "ArrowDown" || event.key === "PageDown") {
-                        event.preventDefault()
-                        goToAdjacentSection(1)
-                      }
-                      if (event.key === "ArrowUp" || event.key === "PageUp") {
-                        event.preventDefault()
-                        goToAdjacentSection(-1)
-                      }
-                    }}
-                    tabIndex={0}
-                    style={{ touchAction: activeSectionBehavior.touchAction }}
-                    ref={(node) => {
-                      setActivePanelRef(activeSection, node)
-                    }}
-                  >
-                    {activeSection === "login" ? (
-                      <CanvasAuthPanel mode="login" />
-                    ) : activeSection === "signup" ? (
-                      <CanvasAuthPanel mode="signup" />
-                    ) : activeSection === "pricing" ? (
-                      pricingPanel ?? (
-                        <div className="mx-auto flex min-h-full w-full max-w-[960px] items-center justify-center px-4 py-6 md:px-6 lg:px-8">
-                          <div className="w-full max-w-xl rounded-2xl border border-border/60 bg-card/60 p-6 text-center">
-                            <p className="text-sm text-muted-foreground">
-                              Pricing is currently unavailable in this preview.
-                            </p>
-                            <Button asChild className="mt-4 rounded-xl">
-                              <Link href="/?section=pricing">Open pricing</Link>
-                            </Button>
-                          </div>
+                <div
+                  key={activeSection}
+                  className={cn(
+                    "absolute inset-0 overscroll-contain motion-safe:animate-[home-canvas-panel-in_220ms_cubic-bezier(0.22,1,0.36,1)_both]",
+                    activeSectionBehavior.scrollable ? "overflow-y-auto overflow-x-hidden" : "overflow-hidden",
+                  )}
+                  onWheel={handleWheel}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                  onKeyDown={(event) => {
+                    if (activeSectionBehavior.lockNavigationGestures) {
+                      return
+                    }
+                    if (event.key === "ArrowDown" || event.key === "PageDown") {
+                      event.preventDefault()
+                      goToAdjacentSection(1)
+                    }
+                    if (event.key === "ArrowUp" || event.key === "PageUp") {
+                      event.preventDefault()
+                      goToAdjacentSection(-1)
+                    }
+                  }}
+                  tabIndex={0}
+                  style={
+                    {
+                      "--home-canvas-panel-y": direction > 0 ? "44px" : "-44px",
+                      touchAction: activeSectionBehavior.touchAction,
+                    } as CSSProperties
+                  }
+                  ref={(node) => {
+                    setActivePanelRef(activeSection, node)
+                  }}
+                >
+                  {activeSection === "login" ? (
+                    <CanvasAuthPanel mode="login" />
+                  ) : activeSection === "signup" ? (
+                    <CanvasAuthPanel mode="signup" />
+                  ) : activeSection === "pricing" ? (
+                    pricingPanel ?? (
+                      <div className="mx-auto flex min-h-full w-full max-w-[960px] items-center justify-center px-4 py-6 md:px-6 lg:px-8">
+                        <div className="w-full max-w-xl rounded-2xl border border-border/60 bg-card/60 p-6 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            Pricing is currently unavailable in this preview.
+                          </p>
+                          <Button asChild className="mt-4 rounded-xl">
+                            <Link href="/?section=pricing">Open pricing</Link>
+                          </Button>
                         </div>
-                      )
-                    ) : activeSection === "find" ? (
-                      findPanel ?? (
-                        <div className="mx-auto flex min-h-full w-full max-w-[960px] items-center justify-center px-4 py-6 md:px-6 lg:px-8">
-                          <div className="w-full max-w-xl rounded-2xl border border-border/60 bg-card/60 p-6 text-center">
-                            <p className="text-sm text-muted-foreground">Find organizations is currently unavailable.</p>
-                            <Button asChild className="mt-4 rounded-xl">
-                              <Link
-                                href="/find"
-                                prefetch
-                                aria-busy={isFindRoutePending || undefined}
-                                onClick={handleFindRouteClick}
-                                onFocus={primeFindRoute}
-                                onMouseEnter={primeFindRoute}
-                                onTouchStart={primeFindRoute}
-                              >
-                                {isFindRoutePending ? "Opening…" : "Open map"}
-                              </Link>
-                            </Button>
-                          </div>
+                      </div>
+                    )
+                  ) : activeSection === "find" ? (
+                    findPanel ?? (
+                      <div className="mx-auto flex min-h-full w-full max-w-[960px] items-center justify-center px-4 py-6 md:px-6 lg:px-8">
+                        <div className="w-full max-w-xl rounded-2xl border border-border/60 bg-card/60 p-6 text-center">
+                          <p className="text-sm text-muted-foreground">Find organizations is currently unavailable.</p>
+                          <Button asChild className="mt-4 rounded-xl">
+                            <Link
+                              href="/find"
+                              prefetch
+                              aria-busy={isFindRoutePending || undefined}
+                              onClick={handleFindRouteClick}
+                              onFocus={primeFindRoute}
+                              onMouseEnter={primeFindRoute}
+                              onTouchStart={primeFindRoute}
+                            >
+                              {isFindRoutePending ? "Opening…" : "Open map"}
+                            </Link>
+                          </Button>
                         </div>
-                      )
-                    ) : isHomeSectionId(activeSection) ? (
-                      <HomeSectionPanel sectionId={activeSection} />
-                    ) : (
-                      <HomeSectionPanel sectionId="hero" />
-                    )}
-                  </motion.div>
-                </AnimatePresence>
+                      </div>
+                    )
+                  ) : isHomeSectionId(activeSection) ? (
+                    <HomeSectionPanel sectionId={activeSection} />
+                  ) : (
+                    <HomeSectionPanel sectionId="hero" />
+                  )}
+                </div>
                 {activeSectionBehavior.scrollable ? (
                   <div
                     className="pointer-events-none absolute right-4 bottom-4 z-20"

@@ -1,5 +1,6 @@
 "use client"
 
+import { memo, useMemo } from "react"
 import HeartIcon from "lucide-react/dist/esm/icons/heart"
 
 import { Button } from "@/components/ui/button"
@@ -59,7 +60,7 @@ function buildLocationMetadataItems({
   return items.slice(0, maxItems)
 }
 
-export function PublicMapOrganizationList({
+function PublicMapOrganizationListComponent({
   organizations,
   selectedOrgId,
   favorites,
@@ -78,6 +79,8 @@ export function PublicMapOrganizationList({
   onToggleFavorite: (id: string) => void
   onOpenDetails?: (id: string) => void
 }) {
+  const favoriteIds = useMemo(() => new Set(favorites), [favorites])
+
   if (organizations.length === 0) {
     const hasSearchQuery = Boolean(query?.trim().length)
     return (
@@ -107,7 +110,7 @@ export function PublicMapOrganizationList({
           isOnlineOnly: org.isOnlineOnly,
           constrainedLayout,
         })
-        const isFavorite = favorites.includes(org.id)
+        const isFavorite = favoriteIds.has(org.id)
         const previewPrograms = buildProgramPreviewCards(org)
         const visiblePreviewPrograms = constrainedLayout
           ? previewPrograms.slice(0, 2)
@@ -363,3 +366,5 @@ export function PublicMapOrganizationList({
     </div>
   )
 }
+
+export const PublicMapOrganizationList = memo(PublicMapOrganizationListComponent)

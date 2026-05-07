@@ -34,10 +34,13 @@ export function MyOrganizationEditorView({
   const handleClose = onClose ?? (() => router.push(WORKSPACE_PATH))
 
   return (
-    <div className={cn("flex flex-col", embedded ? "h-full min-h-0 gap-4" : "gap-5 md:gap-6")}>
+    <div className={cn("flex h-full min-h-0 flex-col", embedded ? "gap-4" : "gap-5 md:gap-6")}>
       {!embedded ? <PageTutorialButton tutorial="my-organization" /> : null}
-      <section className={cn(embedded ? "flex min-h-0 flex-1 flex-col gap-3" : "space-y-3")}>
-        <div className={cn(embedded && "min-h-0 flex-1 overflow-y-auto")}>
+      <section className="flex min-h-0 flex-1 flex-col gap-3">
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+          style={{ scrollbarGutter: "stable" }}
+        >
           <OrgProfileCard
             initial={initialProfile}
             people={people}
@@ -49,7 +52,6 @@ export function MyOrganizationEditorView({
           />
         </div>
       </section>
-      {!embedded ? <div aria-hidden className="h-5 shrink-0 md:h-6" /> : null}
     </div>
   )
 }

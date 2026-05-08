@@ -12,7 +12,7 @@ describe("resolveAuthCallbackUrl", () => {
       },
     })
 
-    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://coachhouse.vercel.app")
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://coachhouse.app")
 
     const { resolveAuthCallbackUrl } = await import("@/components/auth/auth-callback-url")
     expect(resolveAuthCallbackUrl("/update-password")).toBe(
@@ -21,11 +21,11 @@ describe("resolveAuthCallbackUrl", () => {
   })
 
   it("falls back to the configured site URL when no browser origin exists", async () => {
-    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://coachhouse.vercel.app")
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://coachhouse.app")
 
     const { resolveAuthCallbackUrl } = await import("@/components/auth/auth-callback-url")
     expect(resolveAuthCallbackUrl("/update-password")).toBe(
-      "https://coachhouse.vercel.app/auth/callback?redirect=%2Fupdate-password",
+      "https://coachhouse.app/auth/callback?redirect=%2Fupdate-password",
     )
   })
 })

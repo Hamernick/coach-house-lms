@@ -16,6 +16,8 @@ type SendResendEmailResult =
 const RESEND_API_URL = "https://api.resend.com/emails"
 const DEFAULT_FROM_EMAIL = "hello@coachhouse.app"
 const DEFAULT_FROM_NAME = "Coach House"
+const RESEND_TAG_COMPONENT_PATTERN = /[^A-Za-z0-9_-]+/g
+const RESEND_TAG_LIMIT = 75
 
 function resolveReplyTo(input: string | null | undefined) {
   if (typeof input === "string" && input.trim().length > 0) return input.trim()
@@ -54,6 +56,27 @@ function resolveResendApiKey() {
   return env.RESEND_AUTH_EMAIL_API_KEY?.trim() || null
 }
 
+export function normalizeResendTagComponent(value: string) {
+  const normalized = value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(RESEND_TAG_COMPONENT_PATTERN, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[-_]+|[-_]+$/g, "")
+
+  return normalized || "unknown"
+}
+
+function normalizeResendTags(tags: SendResendEmailInput["tags"]) {
+  if (!Array.isArray(tags) || tags.length === 0) return undefined
+
+  return tags.slice(0, RESEND_TAG_LIMIT).map((tag) => ({
+    name: normalizeResendTagComponent(tag.name),
+    value: normalizeResendTagComponent(tag.value),
+  }))
+}
+
 export function canSendResendEmail() {
   return Boolean(resolveResendApiKey())
 }
@@ -77,6 +100,7 @@ export async function sendResendEmail(
       : DEFAULT_FROM_NAME
   const replyTo = resolveReplyTo(input.replyTo)
   const unsubscribeHeaders = resolveUnsubscribeHeaders(replyTo)
+  const tags = normalizeResendTags(input.tags)
 
   const response = await fetch(RESEND_API_URL, {
     method: "POST",
@@ -92,7 +116,7 @@ export async function sendResendEmail(
       text: input.text,
       ...(replyTo ? { reply_to: replyTo } : {}),
       ...(unsubscribeHeaders ? { headers: unsubscribeHeaders } : {}),
-      tags: input.tags,
+      ...(tags ? { tags } : {}),
     }),
   })
 

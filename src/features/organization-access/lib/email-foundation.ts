@@ -307,6 +307,8 @@ function buildSupabaseAuthEmailTemplate(
 export function buildSupabaseAuthEmailPreviews(
   siteUrl: string,
 ): CoachHouseEmailPreview[] {
+  const normalizedSiteUrl = siteUrl.replace(/\/$/, "")
+
   return [
     buildSupabaseAuthEmailTemplate(siteUrl, {
       id: "supabase-confirm-sign-up",
@@ -316,7 +318,8 @@ export function buildSupabaseAuthEmailPreviews(
       description: "Supabase confirmation email used after sign up.",
       eyebrow: "Confirm sign up",
       ctaLabel: "Confirm email",
-      ctaHref: "{{ .ConfirmationURL }}",
+      ctaHref:
+        `${normalizedSiteUrl}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next={{ .RedirectTo }}`,
       intro:
         "Welcome to Coach House. Confirm your email so we can finish setting up your account.",
       body: [

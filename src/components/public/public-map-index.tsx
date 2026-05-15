@@ -6,7 +6,6 @@ import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import { HomeCanvasSidebarSlot } from "@/components/public/home-canvas-sidebar-slot"
 import { organizationHasMapLocation, type PublicMapBounds } from "./public-map-index/helpers"
 import {
   useSyncPublicMapAuthFavorite,
@@ -28,11 +27,11 @@ import {
 import { PublicMapSurface } from "./public-map-index/map-surface"
 import type { PublicMapPanelPresentation } from "./public-map-index/map-view-helpers"
 import {
-  PublicMapDirectoryRail,
-  resolvePublicMapDirectoryRailMode,
-} from "./public-map-index/directory-rail"
-import { PublicMapRightRail } from "./public-map-index/right-rail"
-import { PublicMapShellSidebarPanel } from "./public-map-index/sidebar"
+  usePublicMapMemberOnboardingMapOverlay,
+  type PublicMapAdminOnboardingPreviewConfig,
+  type PublicMapMemberOnboardingConfig,
+} from "./public-map-index/member-onboarding-preview-controls"
+import { PublicMapIndexChrome } from "./public-map-index/public-map-index-chrome"
 import {
   buildLocationFeedback,
   type UserLocationStatus,
@@ -57,6 +56,8 @@ type PublicMapIndexProps = {
   initialPublicSlug?: string
   viewer?: { id: string; email: string | null } | null
   presentationMode?: PublicMapIndexPresentationMode
+  memberOnboarding?: PublicMapMemberOnboardingConfig
+  adminOnboardingPreview?: PublicMapAdminOnboardingPreviewConfig
 }
 
 type PublicMapCameraTarget = {
@@ -70,6 +71,8 @@ export function PublicMapIndex({
   initialPublicSlug,
   viewer: initialViewer = null,
   presentationMode = "home-canvas",
+  memberOnboarding = undefined,
+  adminOnboardingPreview = undefined,
 }: PublicMapIndexProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -319,25 +322,11 @@ export function PublicMapIndex({
   const useHomeCanvasSidebarSlot = shouldUsePublicMapHomeCanvasSidebarSlot(presentationMode)
   const useAppShellRightRailDirectory = presentationMode === "app-shell"
   const renderMapOverlaySidebar = renderDesktopSidebar && !useAppShellRightRailDirectory
-  const directoryRailMode = resolvePublicMapDirectoryRailMode({
-    sidebarMode,
-    selectedOrganization,
+  const memberOnboardingMapOverlay = usePublicMapMemberOnboardingMapOverlay({
+    isAuthenticated,
+    memberOnboarding,
+    adminOnboardingPreview,
   })
-  const directoryRail =
-    useAppShellRightRailDirectory && panelPresentation === "rail" ? (
-      <PublicMapDirectoryRail
-        sidebarMode={sidebarMode}
-        organizations={listOrganizations}
-        selectedOrganization={selectedOrganization}
-        favorites={favorites}
-        query={query}
-        searchContext={sameLocationSearchContext}
-        onQueryChange={handleQueryChange}
-        onToggleFavorite={toggleFavorite}
-        onOpenDetails={handleOpenDetails}
-        setSidebarMode={setSidebarMode}
-      />
-    ) : null
   const mapSurface = (
     <PublicMapSurface
       containerRef={containerRef}
@@ -362,39 +351,29 @@ export function PublicMapIndex({
       onSidebarInsetChange={setSidebarInsetLeft}
       onPanelPresentationChange={setPanelPresentation}
       renderDesktopSidebar={renderMapOverlaySidebar}
+      mapOverlay={memberOnboardingMapOverlay}
     />
   )
 
   return (
-    <>
-      {useHomeCanvasSidebarSlot && panelPresentation === "rail" ? (
-        <HomeCanvasSidebarSlot>
-          <PublicMapShellSidebarPanel
-            sidebarMode={sidebarMode}
-            organizations={listOrganizations}
-            selectedOrganization={selectedOrganization}
-            favorites={favorites}
-            query={query}
-            searchContext={sameLocationSearchContext}
-            onQueryChange={handleQueryChange}
-            onToggleFavorite={toggleFavorite}
-            onOpenDetails={handleOpenDetails}
-            setSidebarMode={setSidebarMode}
-          />
-        </HomeCanvasSidebarSlot>
-      ) : null}
-
-      <PublicMapRightRail
-        isAuthenticated={isAuthenticated}
-        directoryRail={directoryRail}
-        directoryMode={directoryRail ? directoryRailMode : null}
-        savedOrganizations={savedOrganizations}
-        favorites={favorites}
-        onSelectOrganization={handleRailSelectOrganization}
-        onToggleFavorite={toggleFavorite}
-      />
-
-      {mapSurface}
-    </>
+    <PublicMapIndexChrome
+      directoryOrganizations={listOrganizations}
+      favorites={favorites}
+      isAuthenticated={isAuthenticated}
+      mapSurface={mapSurface}
+      onOpenDetails={handleOpenDetails}
+      onQueryChange={handleQueryChange}
+      onSelectOrganization={handleRailSelectOrganization}
+      onToggleFavorite={toggleFavorite}
+      panelPresentation={panelPresentation}
+      query={query}
+      savedOrganizations={savedOrganizations}
+      searchContext={sameLocationSearchContext}
+      selectedOrganization={selectedOrganization}
+      setSidebarMode={setSidebarMode}
+      sidebarMode={sidebarMode}
+      useAppShellRightRailDirectory={useAppShellRightRailDirectory}
+      useHomeCanvasSidebarSlot={useHomeCanvasSidebarSlot}
+    />
   )
 }

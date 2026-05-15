@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 
 import {
   WORKSPACE_ACCELERATOR_PATH,
@@ -9,6 +11,8 @@ import {
   getMemberWorkspacePaywallPath,
   getWorkspaceRoadmapSectionPath,
 } from "@/lib/workspace/routes"
+
+const ROOT = process.cwd()
 
 describe("workspace routes", () => {
   it("exposes canonical workspace surface paths", () => {
@@ -42,5 +46,17 @@ describe("workspace routes", () => {
     expect(getMemberWorkspacePaywallPath("tasks")).toBe(
       "/workspace?paywall=organization&plan=organization&upgrade=member-workspace-access&source=tasks",
     )
+  })
+
+  it("keeps self-only free users from landing on the workspace canvas", () => {
+    const source = readFileSync(
+      join(ROOT, "src/app/(dashboard)/workspace/page.tsx"),
+      "utf8",
+    )
+
+    expect(source).toContain("resolveDashboardLayoutState")
+    expect(source).toContain("!state.showMemberWorkspace")
+    expect(source).toContain("member_onboarding=1")
+    expect(source).toContain("redirect(FIND_PATH)")
   })
 })

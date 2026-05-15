@@ -67,7 +67,7 @@ describe("workspace canvas tutorial runtime", () => {
       openedTutorialStepIds: [],
       breakpoint: "desktop",
     })
-    const acceleratorShortcutClosedSignature =
+    const acceleratorSignature =
       resolveWorkspaceCanvasTutorialSceneSignature({
         tutorialActive: true,
         tutorialStepIndex: 3,
@@ -79,7 +79,7 @@ describe("workspace canvas tutorial runtime", () => {
     expect(mobileSignature).toBe("accelerator::mobile")
     expect(welcomeSignature).toBe("welcome::desktop")
     expect(organizationSignature).toBe("overview::desktop")
-    expect(acceleratorShortcutClosedSignature).toBe("overview::desktop")
+    expect(acceleratorSignature).toBe("accelerator::desktop")
     expect(
       resolveWorkspaceCanvasTutorialSceneSignature({
         tutorialActive: false,
@@ -187,41 +187,27 @@ describe("workspace canvas tutorial runtime", () => {
     })
   })
 
-  it("keeps unresolved overview shortcut steps on the shared overview shell", () => {
-    const organizationRuntime = resolveWorkspaceCanvasTutorialRuntime({
-      tutorialStepIndex: 1,
-      visibleCardIds: ["organization-overview"],
-      existingNodes: [...EXISTING_NODES],
-      breakpoint: "desktop",
-    })
+  it("shows the accelerator step on the compact accelerator shell immediately", () => {
     const runtime = resolveWorkspaceCanvasTutorialRuntime({
       tutorialStepIndex: 3,
       openedTutorialStepIds: [],
-      visibleCardIds: ["organization-overview"],
+      visibleCardIds: ["accelerator"],
       existingNodes: [...EXISTING_NODES],
       breakpoint: "desktop",
     })
 
     expect(runtime.tutorialNodeStyle).toEqual({
-      width: 620,
-      height: 664,
-      minHeight: 664,
+      width: 468,
+      height: 492,
+      minHeight: 492,
     })
-    expect(runtime.tutorialNodePosition).toEqual({ x: 514, y: 78 })
+    expect(runtime.tutorialNodePosition).toEqual({ x: 590, y: 164 })
     expect(runtime.cameraViewport).toEqual({
       x: 824,
       y: 410,
-      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.68),
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.64),
       duration: 240,
     })
-    expect(
-      resolveRectCenter(runtime.tutorialNodePosition, runtime.tutorialNodeStyle),
-    ).toEqual(
-      resolveRectCenter(
-        organizationRuntime.tutorialNodePosition,
-        organizationRuntime.tutorialNodeStyle,
-      ),
-    )
   })
 
   it("centers the accelerator family on the guide card on desktop", () => {
@@ -291,7 +277,7 @@ describe("workspace canvas tutorial runtime", () => {
     })
   })
 
-  it("keeps opened calendar shortcut steps on the centered tool shell", () => {
+  it("keeps calendar steps on the centered tool shell", () => {
     const runtime = resolveWorkspaceCanvasTutorialRuntime({
       tutorialStepIndex: resolveTutorialStepIndex("calendar"),
       openedTutorialStepIds: ["accelerator", "calendar"],
@@ -322,29 +308,25 @@ describe("workspace canvas tutorial runtime", () => {
     })
   })
 
-  it("recenters the guide on the overview shell before the Calendar shortcut is opened", () => {
+  it("centers the guide on the calendar component without a separate shortcut phase", () => {
     const runtime = resolveWorkspaceCanvasTutorialRuntime({
       tutorialStepIndex: resolveTutorialStepIndex("calendar"),
       openedTutorialStepIds: ["accelerator", "accelerator-first-module"],
-      visibleCardIds: ["organization-overview", "accelerator"],
+      visibleCardIds: ["calendar"],
       existingNodes: [...EXISTING_NODES],
       breakpoint: "desktop",
     })
 
-    expect(runtime.cardPositionOverrides["organization-overview"]).toEqual({
-      x: 152,
-      y: 248,
+    expect(runtime.cardPositionOverrides.calendar).toEqual({
+      x: 968,
+      y: 208,
     })
-    expect(runtime.cardPositionOverrides.accelerator).toEqual({
-      x: 912,
-      y: 184,
-    })
-    expect(runtime.tutorialNodePosition).toEqual({ x: 514, y: 78 })
+    expect(runtime.tutorialNodePosition).toEqual({ x: 544, y: 72 })
     expect(runtime.tutorialNodeAttached).toBe(false)
     expect(runtime.cameraViewport).toEqual({
       x: 824,
       y: 410,
-      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.68),
+      zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.62),
       duration: 240,
     })
   })

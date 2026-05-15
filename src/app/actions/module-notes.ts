@@ -3,6 +3,7 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import type { Json } from "@/lib/supabase/schema/json"
+import { trackUserJourneyMilestone } from "@/lib/user-journey"
 
 export type ModuleNotesPayload = {
   content: string
@@ -80,6 +81,22 @@ export async function saveModuleNotesAction(
     )
 
   if (upsertError) return { error: "Unable to save notes." }
+
+  if (notesPayload) {
+    await trackUserJourneyMilestone({
+      userId: user.id,
+      orgId: user.id,
+      eventName: "module_note_saved",
+      journey: "workspace_activation",
+      source: "module_notes_action",
+      surface: "module_notes",
+      checkpoint: "first_module_note_saved",
+      metadata: {
+        moduleId,
+        contentLength: notesPayload.content.length,
+      },
+    })
+  }
 
   return { ok: true, notes: notesPayload }
 }

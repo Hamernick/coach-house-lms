@@ -23,10 +23,10 @@ describe("onboarding organization step", () => {
     )
 
     expect(markup).toContain(
-      "box-border grid min-w-0 w-full max-w-full items-stretch gap-2 sm:grid-cols-3",
+      "box-border grid w-full max-w-full min-w-0 items-stretch gap-2 sm:grid-cols-3",
     )
     expect(markup).toContain(
-      "flex h-full w-full min-w-0 items-stretch justify-start rounded-2xl border p-0 text-left whitespace-normal shadow-none outline-none transition-colors",
+      "flex h-full w-full min-w-0 items-stretch justify-start rounded-2xl border p-0 text-left whitespace-normal shadow-none transition-colors outline-none",
     )
     expect(markup).toContain(
       "flex h-full w-full min-w-0 flex-col gap-2 rounded-2xl p-3 text-left",

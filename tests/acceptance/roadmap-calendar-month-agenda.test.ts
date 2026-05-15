@@ -81,11 +81,44 @@ describe("roadmap calendar month agenda", () => {
       "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-day-with-event-dots.tsx",
     )
 
-    expect(agendaPanel).toContain('month_grid: "block w-full border-collapse"')
-    expect(agendaPanel).toContain('weekdays: "grid w-full grid-cols-7')
-    expect(agendaPanel).toContain('weeks: "block w-full"')
-    expect(agendaPanel).toContain('day: "min-w-0 aspect-square')
+    expect(agendaPanel).toContain('month_grid: "w-full table-fixed border-collapse"')
+    expect(agendaPanel).toContain('weekdays: "w-full border-b border-border/40"')
+    expect(agendaPanel).toContain('"w-[14.285714%] pb-2')
+    expect(agendaPanel).toContain('weeks: "w-full"')
+    expect(agendaPanel).toContain('week: "w-full"')
+    expect(agendaPanel).toContain('day: "w-[14.285714%] min-w-0')
     expect(dayButton).toContain("min-h-10 min-w-0")
+  })
+
+  it("attributes the shared shadcn calendar root back to the roadmap month-grid owner", () => {
+    const agendaPanel = readSource(
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx",
+    )
+
+    expect(agendaPanel).toContain("getReactGrabOwnerProps")
+    expect(agendaPanel).toContain('ownerId: "roadmap-calendar-month-agenda:month-grid"')
+    expect(agendaPanel).toContain('component: "RoadmapCalendarMonthAgendaPanel"')
+    expect(agendaPanel).toContain('slot: "month-grid"')
+    expect(agendaPanel).toContain('primitiveImport: "@/components/ui/calendar"')
+  })
+
+  it("keeps the add-event menu in the visible agenda footer without letting the list push it away", () => {
+    const agendaPanel = readSource(
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx",
+    )
+    const menuUsages = agendaPanel.match(/<RoadmapCalendarAddEventMenu/g) ?? []
+    const addMenuIndex = agendaPanel.indexOf("<RoadmapCalendarAddEventMenu")
+    const agendaScrollIndex = agendaPanel.indexOf("overflow-y-auto")
+
+    expect(menuUsages).toHaveLength(1)
+    expect(addMenuIndex).toBeGreaterThan(-1)
+    expect(agendaScrollIndex).toBeGreaterThan(-1)
+    expect(addMenuIndex).toBeGreaterThan(agendaScrollIndex)
+    expect(agendaPanel).toContain("mt-3 shrink-0 border-t border-border/40 pt-3")
+    expect(agendaPanel).toContain("mt-3 flex min-h-0 flex-1")
+    expect(agendaPanel).not.toContain("min-h-[7.5rem]")
+    expect(agendaPanel).toContain("disabled={!canManageCalendar}")
+    expect(agendaPanel).toContain('variant="outline"')
   })
 
   it("keeps event-editor state changes off the month grid render path", () => {

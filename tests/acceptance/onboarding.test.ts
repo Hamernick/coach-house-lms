@@ -156,4 +156,43 @@ describe("onboarding gate", () => {
       }),
     )
   })
+
+  it("completes member map onboarding without overwriting profile fields", async () => {
+    const updateUser = vi.fn().mockResolvedValue({ error: null })
+    createSupabaseServerClientServerMock.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: {
+              id: "user_123",
+              email: "member@example.com",
+            },
+          },
+          error: null,
+        }),
+        updateUser,
+      },
+    })
+
+    const { completeMemberMapOnboardingAction } = await import(
+      "@/app/(dashboard)/onboarding/actions"
+    )
+    const form = new FormData()
+    form.set("intentFocus", "support")
+
+    const destination = await captureRedirect(() =>
+      completeMemberMapOnboardingAction(form),
+    )
+
+    expect(destination).toBe("/find?member_onboarding=0&source=member_onboarding")
+    expect(updateUser).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        onboarding_completed: true,
+        onboarding_intent_focus: "support",
+      }),
+    })
+    expect(updateUser.mock.calls[0]?.[0].data).not.toHaveProperty("first_name")
+    expect(updateUser.mock.calls[0]?.[0].data).not.toHaveProperty("last_name")
+    expect(updateUser.mock.calls[0]?.[0].data).not.toHaveProperty("full_name")
+  })
 })

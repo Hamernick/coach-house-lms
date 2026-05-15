@@ -43,6 +43,9 @@ type AuthenticatedFindShellState = {
   appPricingFeedbackPrompt: AppPricingFeedbackPromptState | null
   onboardingLocked: boolean
   onboardingIntentFocus: "build" | "find" | "fund" | "support" | null
+  memberMapOnboarding: {
+    hasOrganizationSwitcher: boolean
+  }
   formationStatus: string | null
 }
 

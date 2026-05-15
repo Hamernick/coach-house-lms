@@ -105,6 +105,7 @@ export function buildAcceleratorWorkspaceSeed({
   presentationMode,
   role,
   canEdit,
+  isPlatformAdmin = false,
   hasWorkspaceAcceleratorAccess,
   organizationTitle,
   organizationSubtitle,
@@ -138,6 +139,7 @@ export function buildAcceleratorWorkspaceSeed({
   presentationMode: boolean
   role: Awaited<ReturnType<typeof resolveActiveOrganization>>["role"]
   canEdit: boolean
+  isPlatformAdmin?: boolean
   hasWorkspaceAcceleratorAccess: boolean
   organizationTitle: string
   organizationSubtitle: string
@@ -167,6 +169,7 @@ export function buildAcceleratorWorkspaceSeed({
         viewer.email ??
         "Teammate",
       viewerAvatarUrl: profileAudience.avatarUrl ?? viewer.avatarUrl ?? null,
+      isPlatformAdmin,
       presentationMode,
       role,
       canEdit,

@@ -439,14 +439,14 @@ export function WorkspaceCanvasTutorialPanel({
                 <Button
                   type="button"
                   variant="outline"
-                  size="icon"
-                  className="nodrag nopan rounded-xl"
+                  size="sm"
+                  className="nodrag nopan h-10 gap-1.5 rounded-xl px-3"
                   onPointerDown={stopGuideInteractionPropagation}
                   onClick={onPrevious}
                   aria-label="Previous tutorial step"
-                  title="Previous tutorial step"
                 >
-                  <ChevronLeftIcon aria-hidden />
+                  <ChevronLeftIcon className="size-4" aria-hidden />
+                  <span>Back</span>
                 </Button>
               ) : null}
 
@@ -460,14 +460,14 @@ export function WorkspaceCanvasTutorialPanel({
               ) : (
                 <Button
                   type="button"
-                  size="icon"
-                  className="nodrag nopan rounded-xl"
+                  size="sm"
+                  className="nodrag nopan h-10 gap-1.5 rounded-xl px-3"
                   onPointerDown={stopGuideInteractionPropagation}
                   onClick={onNext}
                   aria-label={isFinalStep ? "Enter workspace" : "Next tutorial step"}
-                  title={isFinalStep ? "Enter workspace" : "Next tutorial step"}
                 >
-                  <ChevronRightIcon aria-hidden />
+                  <span>{isFinalStep ? "Enter workspace" : "Continue"}</span>
+                  <ChevronRightIcon className="size-4" aria-hidden />
                 </Button>
               )}
             </div>

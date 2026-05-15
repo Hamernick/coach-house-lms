@@ -404,6 +404,64 @@ describe("origin story assignment flow", () => {
     expect(migration).toContain("update assignment_submissions")
   })
 
+  it("normalizes escaped assignment description newlines before rendering", () => {
+    const fields = parseAssignmentFields({
+      title: "Origin Story",
+      fields: [
+        {
+          name: "origin_approach_intro",
+          label: "How to approach this exercise",
+          type: "subtitle",
+          screen: "intro",
+          description: "First paragraph.\\n\\nSecond paragraph.",
+        },
+      ],
+    })
+    const { tabSections } = buildAssignmentSections(fields)
+
+    expect(fields[0]?.description).toBe("First paragraph.\n\nSecond paragraph.")
+
+    const overviewMarkup = renderToStaticMarkup(
+      createElement(AssignmentFieldsContent, {
+        isStepper: true,
+        shouldUseTabs: true,
+        useInlineTabs: false,
+        baseSections: tabSections,
+        tabSections,
+        activeSection: "assignment-overview",
+        activeSectionKey: "assignment-overview",
+        hasDeck: false,
+        moduleId: "origin-module",
+        onActiveSectionChange: () => undefined,
+        resources: [],
+        inlineActiveIndex: 0,
+        fieldContext: {
+          values: {},
+          pending: false,
+          autoSaving: false,
+          isStepper: true,
+          roadmapStatusBySectionId: undefined,
+          isAcceleratorShell: false,
+          richTextMinHeight: 420,
+          updateValue: () => undefined,
+        },
+      }),
+    )
+
+    expect(overviewMarkup).toContain("First paragraph.\n\nSecond paragraph.")
+    expect(overviewMarkup).not.toContain("\\n")
+  })
+
+  it("ships a database repair for stored escaped assignment newlines", () => {
+    const migration = readFileSync(
+      "supabase/migrations/20260511143000_normalize_assignment_description_newlines.sql",
+      "utf8",
+    )
+
+    expect(migration).toContain("replace(f.value ->> 'description', '\\n', E'\\n')")
+    expect(migration).toContain("jsonb_array_elements(ma.schema -> 'fields')")
+  })
+
   it("turns intro metadata and questions into one screen per step", () => {
     const fields = parseAssignmentFields(originStorySchema())
     const { tabSections } = buildAssignmentSections(fields)

@@ -13,6 +13,8 @@ import {
   buildDismissedPaywallHref,
   getCheckoutErrorMessage,
   getPaywallReasonCopy,
+  getSafeInternalPaywallPath,
+  resolvePaywallOverlayDisplayPlanTier,
   shouldAutoDismissPaywallOverlay,
 } from "@/components/paywall/paywall-overlay/config"
 import { PaywallTierCard } from "@/components/paywall/paywall-overlay/paywall-tier-card"
@@ -34,6 +36,9 @@ export function PaywallOverlay({ currentPlanTier = "free" }: PaywallOverlayProps
   const source = searchParams.get("source")
   const isOpen = Boolean(paywallKind)
   const isOnboardingSource = source === "onboarding"
+  const isPreview = searchParams.get("paywall_preview") === "1"
+  const redirectTarget = getSafeInternalPaywallPath(searchParams.get("redirect"))
+  const cancelTarget = getSafeInternalPaywallPath(searchParams.get("cancel"))
   const checkoutErrorCode = searchParams.get("checkout_error")
   const checkoutErrorDetail = searchParams.get("checkout_detail")
   const checkoutErrorDebug = searchParams.get("checkout_debug")
@@ -46,6 +51,11 @@ export function PaywallOverlay({ currentPlanTier = "free" }: PaywallOverlayProps
   const shouldAutoDismiss = shouldAutoDismissPaywallOverlay({
     currentPlanTier,
     paywallKind,
+    preview: isPreview,
+  })
+  const displayPlanTier = resolvePaywallOverlayDisplayPlanTier({
+    currentPlanTier,
+    preview: isPreview,
   })
 
   const close = useCallback(() => {
@@ -81,7 +91,7 @@ export function PaywallOverlay({ currentPlanTier = "free" }: PaywallOverlayProps
             </DialogDescription>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="rounded-full border border-border/70 bg-background/80">
-                Current: {currentPlanTier === "operations_support" ? "Operations Support" : currentPlanTier === "organization" ? "Organization" : "Free"}
+                Current: {displayPlanTier === "operations_support" ? "Operations Support" : displayPlanTier === "organization" ? "Organization" : "Free"}
               </Badge>
               <Badge variant="secondary" className="rounded-full border border-border/70 bg-background/80">
                 <ArrowUpDownIcon className="mr-1 h-3 w-3" aria-hidden />
@@ -110,7 +120,14 @@ export function PaywallOverlay({ currentPlanTier = "free" }: PaywallOverlayProps
             ) : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               {OVERLAY_TIERS.map((tier) => (
-                <PaywallTierCard key={tier.id} tier={tier} currentPlanTier={currentPlanTier} source={source} />
+                <PaywallTierCard
+                  key={tier.id}
+                  tier={tier}
+                  currentPlanTier={displayPlanTier}
+                  source={source}
+                  redirectTarget={redirectTarget}
+                  cancelTarget={cancelTarget}
+                />
               ))}
             </div>
           </div>

@@ -7,6 +7,7 @@ import { PublicMapIndex } from "@/components/public/public-map-index"
 import { AuthenticatedFindShell, fetchPublicMapViewerState } from "@/features/find-map"
 import { fetchPublicMapOrganizations } from "@/lib/queries/public-map-index"
 import { resolveDashboardLayoutState } from "@/app/(dashboard)/_lib/dashboard-layout-state"
+import { completeMemberMapOnboardingAction } from "@/app/(dashboard)/onboarding/actions"
 
 export const revalidate = 300
 
@@ -125,6 +126,15 @@ export default async function PublicFindOrganizationPage({
   if (viewerState.viewer) {
     const shellState = await resolveDashboardLayoutState()
     if (shellState.userPresent) {
+      const memberOnboardingIntent =
+        shellState.onboardingIntentFocus === "find" ||
+        shellState.onboardingIntentFocus === "fund" ||
+        shellState.onboardingIntentFocus === "support"
+          ? shellState.onboardingIntentFocus
+          : null
+      const memberOnboardingEnabled =
+        shellState.onboardingLocked && memberOnboardingIntent !== null
+
       return (
         <AuthenticatedFindShell state={shellState} organizationDetail>
           <PublicMapIndex
@@ -133,6 +143,22 @@ export default async function PublicFindOrganizationPage({
             mapboxToken={publicToken}
             initialPublicSlug={matched.publicSlug}
             viewer={viewerState.viewer}
+            adminOnboardingPreview={{
+              canToggle: shellState.isAdmin,
+              hasOrganizationSwitcher:
+                shellState.memberMapOnboarding.hasOrganizationSwitcher,
+            }}
+            memberOnboarding={
+              memberOnboardingEnabled
+                ? {
+                    enabled: true,
+                    intentFocus: memberOnboardingIntent,
+                    hasOrganizationSwitcher:
+                      shellState.memberMapOnboarding.hasOrganizationSwitcher,
+                    onComplete: completeMemberMapOnboardingAction,
+                  }
+                : undefined
+            }
           />
         </AuthenticatedFindShell>
       )

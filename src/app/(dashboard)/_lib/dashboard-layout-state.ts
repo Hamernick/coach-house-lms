@@ -10,6 +10,7 @@ import { loadAccessibleOrganizations } from "@/features/member-workspace"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import type { Json } from "@/lib/supabase"
 import { buildOnboardingFlowDefaults } from "@/lib/onboarding/defaults"
+import { shouldForceStripeEntitlementSyncForWorkspace } from "@/lib/workspace/member-workspace-nav-access"
 import {
   EMPTY_STATE,
   type DashboardLayoutState,
@@ -128,6 +129,9 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
       userId: user.id,
       orgUserId: orgId,
       isAdmin,
+      forceStripeSync: shouldForceStripeEntitlementSyncForWorkspace({
+        isAdmin,
+      }),
     }),
     appPricingFeedbackPromptPromise,
     resolveAccountBillingCancellationRisk({
@@ -280,6 +284,9 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
         : null,
     formationStatus,
     memberWorkspaceHeader,
+    memberMapOnboarding: {
+      hasOrganizationSwitcher: accessibleOrganizations.length > 1,
+    },
   }
 })
 

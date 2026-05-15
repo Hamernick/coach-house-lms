@@ -10,7 +10,10 @@ import { useSupabaseClient } from "@/hooks/use-supabase-client"
 import { createTesterAccountAction } from "@/app/(auth)/tester/sign-up/actions"
 import { resolveAuthCallbackUrl } from "@/components/auth/auth-callback-url"
 import { clearOnboardingDraft } from "@/components/onboarding/onboarding-dialog/draft"
-import { signUpSchema, type SignUpValues } from "@/components/auth/sign-up-form-schema"
+import {
+  signUpSchema,
+  type SignUpValues,
+} from "@/components/auth/sign-up-form-schema"
 import type { IntentFocus } from "@/components/onboarding/onboarding-dialog/types"
 import { PasswordInput } from "@/components/auth/password-input"
 import { Button } from "@/components/ui/button"
@@ -23,38 +26,12 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { FIND_PATH } from "@/lib/find/routes"
 
 const DEFAULT_BUILDER_REDIRECT = "/onboarding?source=signup"
 const DEFAULT_MEMBER_REDIRECT = `${FIND_PATH}?member_onboarding=1&source=signup`
-
-const JOURNEY_OPTIONS: Array<{
-  value: IntentFocus
-  label: string
-  description: string
-}> = [
-  {
-    value: "build",
-    label: "Build a nonprofit",
-    description: "Create your organization workspace and unlock builder onboarding.",
-  },
-  {
-    value: "find",
-    label: "Find nonprofits",
-    description: "Save organizations, follow your interests, and stay connected.",
-  },
-  {
-    value: "fund",
-    label: "Fund nonprofits",
-    description: "Track organizations you support and review funder-ready updates.",
-  },
-  {
-    value: "support",
-    label: "Support teams",
-    description: "Join organizations, collaborate, and help teams execute.",
-  },
-]
+const authInlineLinkClassName =
+  "rounded-sm underline-offset-2 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 
 type SignUpFormProps = {
   redirectTo?: string
@@ -110,11 +87,18 @@ function appendRedirectToHref({
   return `${base}${separator}redirect=${encodeURIComponent(redirectTo)}`
 }
 
-function isExistingAccountResponse(user: { identities?: unknown[] } | null | undefined) {
-  return Boolean(user && Array.isArray(user.identities) && user.identities.length === 0)
+function isExistingAccountResponse(
+  user: { identities?: unknown[] } | null | undefined
+) {
+  return Boolean(
+    user && Array.isArray(user.identities) && user.identities.length === 0
+  )
 }
 
-function resolveSignUpErrorMessage(raw: string, isTesterInstantSignup: boolean) {
+function resolveSignUpErrorMessage(
+  raw: string,
+  isTesterInstantSignup: boolean
+) {
   const normalized = raw.toLowerCase()
   if (normalized.includes("email rate limit exceeded")) {
     return isTesterInstantSignup
@@ -135,14 +119,11 @@ export function SignUpForm({
 }: SignUpFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
-  const [intentFocus, setIntentFocus] = useState<IntentFocus>(
-    lockedIntentFocus ?? defaultIntentFocus,
-  )
   const [status, setStatus] = useState<"idle" | "success" | "error">("idle")
   const [message, setMessage] = useState<string>("")
   const [countdown, setCountdown] = useState(20)
   const [isPending, startTransition] = useTransition()
-  const activeIntentFocus = lockedIntentFocus ?? intentFocus
+  const activeIntentFocus = lockedIntentFocus ?? defaultIntentFocus
   const resolvedRedirectTo = useMemo(
     () =>
       resolvePostSignUpRedirect({
@@ -151,7 +132,7 @@ export function SignUpForm({
         memberRedirectTo,
         redirectTo,
       }),
-    [activeIntentFocus, builderRedirectTo, memberRedirectTo, redirectTo],
+    [activeIntentFocus, builderRedirectTo, memberRedirectTo, redirectTo]
   )
   const resolvedLoginHref = useMemo(
     () =>
@@ -159,7 +140,7 @@ export function SignUpForm({
         baseHref: loginHref,
         redirectTo: resolvedRedirectTo,
       }),
-    [loginHref, resolvedRedirectTo],
+    [loginHref, resolvedRedirectTo]
   )
   const isTesterInstantSignup = signUpMetadata?.qa_tester === true
 
@@ -243,13 +224,17 @@ export function SignUpForm({
 
       if (error) {
         setStatus("error")
-        setMessage(resolveSignUpErrorMessage(error.message, isTesterInstantSignup))
+        setMessage(
+          resolveSignUpErrorMessage(error.message, isTesterInstantSignup)
+        )
         return
       }
 
       if (isExistingAccountResponse(data.user)) {
         setStatus("error")
-        setMessage("An account with this email already exists. Sign in instead.")
+        setMessage(
+          "An account with this email already exists. Sign in instead."
+        )
         return
       }
 
@@ -266,40 +251,6 @@ export function SignUpForm({
     <div className="space-y-6">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {lockedIntentFocus ? null : (
-            <div className="space-y-2">
-              <FormLabel>How will you use Coach House?</FormLabel>
-              <Select
-                value={intentFocus}
-                onValueChange={(value) => {
-                  if (
-                    value === "build" ||
-                    value === "find" ||
-                    value === "fund" ||
-                    value === "support"
-                  ) {
-                    setIntentFocus(value)
-                  }
-                }}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose your journey" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {JOURNEY_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                Builder accounts continue into pricing and workspace onboarding. Member journeys stay on the internal map.
-              </p>
-            </div>
-          )}
           <FormField
             control={form.control}
             name="email"
@@ -307,7 +258,12 @@ export function SignUpForm({
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input {...field} type="email" autoComplete="email" placeholder="you@example.com" />
+                  <Input
+                    {...field}
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -342,35 +298,46 @@ export function SignUpForm({
           {status !== "idle" ? (
             <p
               className={`text-sm ${status === "success" ? "text-emerald-600" : "text-destructive"}`}
-              role="status"
+              role={status === "error" ? "alert" : "status"}
             >
               {message}
               {status === "success" ? (
                 <>
                   {" "}
                   Redirecting to sign in in {countdown}s.{" "}
-                  <Link href={resolvedLoginHref} className="underline underline-offset-2 hover:no-underline">
+                  <Link
+                    href={resolvedLoginHref}
+                    className={`underline hover:no-underline ${authInlineLinkClassName}`}
+                  >
                     Go now
                   </Link>
                 </>
               ) : (
                 <>
                   {" "}
-                  <Link href={resolvedLoginHref} className="underline underline-offset-2 hover:no-underline">
+                  <Link
+                    href={resolvedLoginHref}
+                    className={`underline hover:no-underline ${authInlineLinkClassName}`}
+                  >
                     Go to sign in
                   </Link>
                 </>
               )}
             </p>
           ) : null}
-          <Button className="w-full" type="submit" disabled={isPending}>
+          <Button
+            className="w-full"
+            type="submit"
+            disabled={isPending}
+            aria-busy={isPending || undefined}
+          >
             {isPending ? "Creating account..." : "Create account"}
           </Button>
         </form>
       </Form>
-      <div className="text-center text-sm text-muted-foreground">
-        Already have an account? {" "}
-        <Link href={loginHref ?? "/login"} className="hover:text-foreground">
+      <div className="text-muted-foreground text-center text-sm">
+        Already have an account?{" "}
+        <Link href={resolvedLoginHref} className={authInlineLinkClassName}>
           Sign in
         </Link>
       </div>

@@ -37,7 +37,7 @@ export function NavDocuments({
   }
 
   return (
-    <SidebarGroup className="mt-4 px-0">
+    <SidebarGroup className="px-0">
       <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarGroupContent>
         <SidebarMenu>

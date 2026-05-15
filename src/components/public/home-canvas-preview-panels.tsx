@@ -14,6 +14,11 @@ import {
 } from "@/components/public/legacy-home-sections"
 import { DEFAULT_POST_AUTH_REDIRECT } from "@/lib/auth/redirects"
 import { FIND_PATH } from "@/lib/find/routes"
+import {
+  buildPostSignupBuilderRedirect,
+  type SignupBuilderPlanTier,
+  type SignupIntentFocus,
+} from "@/lib/onboarding/signup-plan"
 
 function CanvasPanelShell({ children, centered = false }: { children: ReactNode; centered?: boolean }) {
   return (
@@ -29,20 +34,52 @@ function CanvasPanelShell({ children, centered = false }: { children: ReactNode;
   )
 }
 
-export function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
+function getPlanLabel(planTier: SignupBuilderPlanTier | null) {
+  if (planTier === "organization") return "Organization"
+  if (planTier === "operations_support") return "Operations Support"
+  if (planTier === "free") return "Individual"
+  return null
+}
+
+function buildSignupDescription(planTier: SignupBuilderPlanTier | null) {
+  const planLabel = getPlanLabel(planTier)
+  if (planTier === "organization" || planTier === "operations_support") {
+    return `Create your account to continue with ${planLabel}. After email verification, you will go to secure checkout and then workspace onboarding.`
+  }
+  if (planTier === "free") {
+    return "Create your Individual account. After email verification, you will choose your onboarding path and can continue with the free builder workspace."
+  }
+  return "Create a free account. After email verification, you will choose whether you are building, finding, funding, or supporting nonprofit work."
+}
+
+export function CanvasAuthPanel({
+  loginRedirectTo,
+  mode,
+  signupIntentFocus,
+  signupPlanTier = null,
+}: {
+  loginRedirectTo?: string
+  mode: "login" | "signup"
+  signupIntentFocus?: SignupIntentFocus | null
+  signupPlanTier?: SignupBuilderPlanTier | null
+}) {
   const isLogin = mode === "login"
   const heading = "Create account"
-  const description =
-    "Create a free Individual account first. After email verification, you can set up your organization workspace and choose whether to stay free or upgrade for team access and the accelerator."
-  const builderRedirectTo = "/onboarding?source=home_signup"
+  const description = buildSignupDescription(signupPlanTier)
+  const builderRedirectTo = buildPostSignupBuilderRedirect({
+    planTier: signupPlanTier,
+    source: "home_signup",
+  })
   const builderLoginHref = "/?section=login"
+  const shouldLockBuilderIntent = signupPlanTier !== null
+  const defaultIntentFocus = signupIntentFocus ?? "build"
 
   return (
     <CanvasPanelShell centered>
       <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card/60 p-5 sm:p-6">
         {isLogin ? (
           <LoginPanel
-            redirectTo={DEFAULT_POST_AUTH_REDIRECT}
+            redirectTo={loginRedirectTo ?? DEFAULT_POST_AUTH_REDIRECT}
             className="max-w-none space-y-5"
             signUpHref="/?section=signup"
           />
@@ -55,7 +92,8 @@ export function CanvasAuthPanel({ mode }: { mode: "login" | "signup" }) {
               </p>
             </div>
             <SignUpForm
-              lockedIntentFocus="build"
+              defaultIntentFocus={defaultIntentFocus}
+              lockedIntentFocus={shouldLockBuilderIntent ? "build" : null}
               builderRedirectTo={builderRedirectTo}
               memberRedirectTo={`${FIND_PATH}?member_onboarding=1&source=home_signup`}
               loginHref={builderLoginHref}

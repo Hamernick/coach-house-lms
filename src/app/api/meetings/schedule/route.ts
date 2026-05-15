@@ -11,6 +11,7 @@ import {
 } from "@/lib/meetings"
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
 import { createNotification } from "@/lib/notifications"
+import { trackUserJourneyMilestone } from "@/lib/user-journey"
 
 const LEGACY_MEETING_URL =
   process.env.NEXT_PUBLIC_MEETING_JOEL_URL ?? process.env.NEXT_PUBLIC_MEETING_PAULA_URL ?? ""
@@ -154,6 +155,22 @@ export async function GET(_request: Request) {
   }
 
   const remaining = hasIncludedCoaching ? getCoachingRemainingSessions(nextProfile.meeting_requests) : null
+  await trackUserJourneyMilestone({
+    userId: user.id,
+    orgId,
+    eventName: "coaching_schedule_opened",
+    journey: "coaching",
+    source: "meetings_schedule_route",
+    surface: "coaching_schedule",
+    checkpoint: "first_coaching_schedule_opened",
+    metadata: {
+      tier,
+      remaining,
+      hasIncludedCoaching,
+      previousFreeSessionsUsed: freeSessionsUsed,
+      nextFreeSessionsUsed: nextProfile.meeting_requests,
+    },
+  })
 
   return NextResponse.json({
     url: scheduleUrl,

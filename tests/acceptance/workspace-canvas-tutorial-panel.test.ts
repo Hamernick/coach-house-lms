@@ -79,10 +79,10 @@ const TOOL_SURFACE: WorkspaceCanvasTutorialPresentationSurface = {
 }
 
 describe("workspace canvas tutorial panel layout", () => {
-  it("keeps the guide Next button available for action steps as a recovery path", () => {
+  it("keeps the guide Continue button available for every step mode", () => {
     expect(shouldWorkspaceCanvasTutorialBlockPanelNext("action")).toBe(false)
     expect(shouldWorkspaceCanvasTutorialBlockPanelNext("next")).toBe(false)
-    expect(shouldWorkspaceCanvasTutorialBlockPanelNext("shortcut")).toBe(true)
+    expect(shouldWorkspaceCanvasTutorialBlockPanelNext("shortcut")).toBe(false)
   })
 
   it("uses the compact accelerator copy rail for picker and first-module steps", () => {

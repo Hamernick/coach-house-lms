@@ -14,8 +14,8 @@ describe("public pricing sign up links", () => {
       React.createElement(PricingFeatureBreakdownIntroSection),
     )
 
-    expect(callToActionMarkup).toContain('href="/sign-up"')
-    expect(featureIntroMarkup).toContain('href="/sign-up"')
+    expect(callToActionMarkup).toContain('href="/sign-up?intent=build"')
+    expect(featureIntroMarkup).toContain('href="/sign-up?intent=build"')
     expect(callToActionMarkup).not.toContain("plan=individual")
     expect(featureIntroMarkup).not.toContain("plan=individual")
   })

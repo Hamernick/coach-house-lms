@@ -34,8 +34,11 @@ import {
   isMissingWorkspaceObjectiveGroupsTableError,
   isMissingWorkspaceObjectivesTableError,
   mapObjectiveRowsToTrackerState,
-  normalizeMembershipRole,
 } from "./workspace-view-helpers"
+import {
+  loadWorkspaceViewMemberSeed,
+  type WorkspaceViewMembershipRow,
+} from "./workspace-view-members"
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>
 
@@ -48,6 +51,7 @@ type BuildWorkspaceViewSeedInput<
   orgId: string
   role: OrganizationMemberRole
   canEdit: boolean
+  isPlatformAdmin?: boolean
   hasAcceleratorAccess: boolean
   presentationMode: boolean
   viewer: {
@@ -76,28 +80,6 @@ type BuildWorkspaceViewSeedInput<
   }
 }
 
-function applyViewerWorkspaceMemberFallbacks({
-  viewer,
-  nameById,
-  emailById,
-  avatarById,
-}: {
-  viewer: BuildWorkspaceViewSeedInput<unknown, unknown, unknown>["viewer"]
-  nameById: Map<string, string>
-  emailById: Map<string, string | null>
-  avatarById: Map<string, string | null>
-}) {
-  if (viewer.fullName && viewer.fullName.trim().length > 0) {
-    nameById.set(viewer.id, viewer.fullName.trim())
-  }
-  if (viewer.email && viewer.email.trim().length > 0) {
-    emailById.set(viewer.id, viewer.email.trim())
-  }
-  if (viewer.avatarUrl && viewer.avatarUrl.trim().length > 0) {
-    avatarById.set(viewer.id, viewer.avatarUrl.trim())
-  }
-}
-
 export async function buildWorkspaceViewSeed<
   TInitialProfile,
   TFormationSummary,
@@ -106,7 +88,7 @@ export async function buildWorkspaceViewSeed<
   supabase,
   orgId,
   role,
-  canEdit,
+  canEdit, isPlatformAdmin = false,
   hasAcceleratorAccess,
   presentationMode,
   viewer,
@@ -175,7 +157,7 @@ export async function buildWorkspaceViewSeed<
       .from("organization_memberships")
       .select("member_id, role, member_email")
       .eq("org_id", orgId)
-      .returns<Array<{ member_id: string; role: string | null; member_email: string | null }>>(),
+      .returns<WorkspaceViewMembershipRow[]>(),
     supabase
       .from("roadmap_calendar_internal_events")
       .select("id, title, description, event_type, starts_at, status")
@@ -361,68 +343,20 @@ export async function buildWorkspaceViewSeed<
     boardState.tracker = mappedTrackerState
   }
 
-  const membershipRows = membershipsResult.data ?? []
-  const memberIds = Array.from(
-    new Set([orgId, ...membershipRows.map((membership) => membership.member_id)]),
-  )
-
-  const profilesResult =
-    memberIds.length > 0
-      ? await supabase
-          .from("profiles")
-          .select("id, full_name, avatar_url")
-          .in("id", memberIds)
-          .returns<Array<{ id: string; full_name: string | null; avatar_url: string | null }>>()
-      : { data: [] as Array<{ id: string; full_name: string | null; avatar_url: string | null }> }
-
-  const nameById = new Map<string, string>()
-  const avatarById = new Map<string, string | null>()
-  for (const member of profilesResult.data ?? []) {
-    if (member.full_name && member.full_name.trim().length > 0) {
-      nameById.set(member.id, member.full_name.trim())
-    }
-    avatarById.set(member.id, member.avatar_url && member.avatar_url.trim().length > 0 ? member.avatar_url : null)
-  }
-
-  const emailById = new Map<string, string | null>()
-  for (const membership of membershipRows) {
-    if (membership.member_email) {
-      emailById.set(membership.member_id, membership.member_email)
-    }
-  }
-  applyViewerWorkspaceMemberFallbacks({ viewer, nameById, emailById, avatarById })
-
-  const roleById = new Map<string, OrganizationMemberRole>([[orgId, "owner"]])
-  for (const membership of membershipRows) {
-    roleById.set(membership.member_id, normalizeMembershipRole(membership.role))
-  }
-
-  const members = memberIds.map((memberId) => ({
-    userId: memberId,
-    name: nameById.get(memberId) ?? null,
-    email: emailById.get(memberId) ?? null,
-    avatarUrl: avatarById.get(memberId) ?? null,
-    role: roleById.get(memberId) ?? "member",
-    isOwner: memberId === orgId,
-  }))
-
-  const viewerName =
-    nameById.get(viewer.id) ??
-    (viewer.fullName && viewer.fullName.trim().length > 0 ? viewer.fullName.trim() : viewer.email ?? "Teammate")
-
-  const viewerAvatarUrl = viewer.avatarUrl && viewer.avatarUrl.trim().length > 0 ? viewer.avatarUrl.trim() : null
-
-  const enrichedInvites = collaborationInvites.slice(0, 24).map((invite) => ({
-    ...invite,
-    userName: invite.userName ?? nameById.get(invite.userId) ?? null,
-    userEmail: invite.userEmail ?? emailById.get(invite.userId) ?? null,
-  }))
+  const memberSeed = await loadWorkspaceViewMemberSeed({
+    supabase,
+    orgId,
+    viewer,
+    memberships: membershipsResult.data ?? [],
+    collaborationInvites,
+  })
 
   return {
     orgId,
     viewerId: viewer.id,
-    viewerName,
-    viewerAvatarUrl,
+    viewerName: memberSeed.viewerName,
+    viewerAvatarUrl: memberSeed.viewerAvatarUrl,
+    isPlatformAdmin,
     presentationMode,
     role,
     canEdit,
@@ -451,8 +385,8 @@ export async function buildWorkspaceViewSeed<
     acceleratorTimeline,
     activityFeed,
     calendar,
-    collaborationInvites: enrichedInvites,
-    members,
+    collaborationInvites: memberSeed.collaborationInvites,
+    members: memberSeed.members,
     boardState,
     initialOnboarding: initialOnboarding ?? {
       required: false,

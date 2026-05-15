@@ -294,14 +294,14 @@ select
         'label', 'How to approach this exercise',
         'type', 'subtitle',
         'screen', 'intro',
-        'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Some answers may be a few sentences; others may be longer reflections. The goal is to give the future AI drafting step rich, authentic input that reflects your real experiences, perspective, and voice.'
+        'description', E'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Some answers may be a few sentences; others may be longer reflections. The goal is to give the future AI drafting step rich, authentic input that reflects your real experiences, perspective, and voice.'
       ),
       jsonb_build_object(
         'name', 'origin_start_with_why_intro',
         'label', 'Start with your why',
         'type', 'subtitle',
         'screen', 'intro',
-        'description', 'Every strong organization begins with a personal or community story. Before defining programs or strategies, reflect on the experiences that shaped your desire to do this work.\n\nThis exercise will help clarify your connection to the problem, the experiences that shaped your perspective, the deeper motivation behind your work, and the narrative of where this organization came from.'
+        'description', E'Every strong organization begins with a personal or community story. Before defining programs or strategies, reflect on the experiences that shaped your desire to do this work.\n\nThis exercise will help clarify your connection to the problem, the experiences that shaped your perspective, the deeper motivation behind your work, and the narrative of where this organization came from.'
       ),
       jsonb_build_object(
         'name', 'origin_roots_intro',
@@ -1118,7 +1118,7 @@ select
         'name', 'program_implications',
         'label', 'If your programs expand or change, what would need to be different?',
         'type', 'long_text',
-        'description', 'More staff or facilitators?\nMore space or longer program timelines?\nHigher per-participant costs?\nAdditional evaluation or reporting requirements?',
+        'description', E'More staff or facilitators?\nMore space or longer program timelines?\nHigher per-participant costs?\nAdditional evaluation or reporting requirements?',
         'placeholder', 'List the shifts you anticipate.'
       ),
       jsonb_build_object(
@@ -1136,7 +1136,7 @@ select
         'name', 'future_expenses',
         'label', 'Are there expenses you expect in Year 2 or Year 3 that are not included in your current budget?',
         'type', 'multi_select',
-        'description', 'Consider items such as:\n- Additional staff positions\n- Salary increases or benefits\n- Professional services (accounting, legal, HR)\n- Equipment or technology purchases\n- Vehicles or specialized tools\n- Facility costs or real estate\n- Insurance or compliance-related costs',
+        'description', E'Consider items such as:\n- Additional staff positions\n- Salary increases or benefits\n- Professional services (accounting, legal, HR)\n- Equipment or technology purchases\n- Vehicles or specialized tools\n- Facility costs or real estate\n- Insurance or compliance-related costs',
         'options', jsonb_build_array(
           'Additional staff positions',
           'Salary increases or benefits',
@@ -1162,7 +1162,7 @@ select
         'name', 'capacity_requirements',
         'label', 'What would need to be true for your organization to support this growth responsibly?',
         'type', 'long_text',
-        'description', 'Leadership capacity\nStaff or volunteer bandwidth\nFundraising or earned revenue growth\nSystems and infrastructure',
+        'description', E'Leadership capacity\nStaff or volunteer bandwidth\nFundraising or earned revenue growth\nSystems and infrastructure',
         'placeholder', 'List the capacity requirements you foresee.'
       ),
       jsonb_build_object(
@@ -1226,14 +1226,14 @@ select
             'label', 'Need Statement',
             'type', 'subtitle',
             'screen', 'intro',
-            'description', 'Now that you have reflected on your story and your why, define the problem your work is responding to.\n\nStrong nonprofit leaders describe a problem with clarity before proposing a solution. That clarity helps funders, partners, and community members understand what is at stake.\n\nA strong Need Statement answers three questions: who has the need, what problem they face, and how serious or widespread the problem is.\n\nFor this exercise, focus only on the problem. Do not describe your organization, your program, or your solution yet.'
+            'description', E'Now that you have reflected on your story and your why, define the problem your work is responding to.\n\nStrong nonprofit leaders describe a problem with clarity before proposing a solution. That clarity helps funders, partners, and community members understand what is at stake.\n\nA strong Need Statement answers three questions: who has the need, what problem they face, and how serious or widespread the problem is.\n\nFor this exercise, focus only on the problem. Do not describe your organization, your program, or your solution yet.'
           ),
           jsonb_build_object(
             'name', 'need_approach_intro',
             'label', 'How to approach this exercise',
             'type', 'subtitle',
             'screen', 'intro',
-            'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Some answers may be a few sentences; others may be longer reflections. The goal is to give the future AI drafting step rich, authentic input that reflects your real experience, perspective, and voice.'
+            'description', E'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Some answers may be a few sentences; others may be longer reflections. The goal is to give the future AI drafting step rich, authentic input that reflects your real experience, perspective, and voice.'
           ),
           jsonb_build_object(
             'name', 'need_population_intro',
@@ -1324,7 +1324,7 @@ select
             'label', 'Section 4 — Understanding the scale using data',
             'type', 'subtitle',
             'screen', 'intro',
-            'description', 'Now begin identifying data that can demonstrate how serious or widespread the issue is.\n\nYou do not need to find the data yourself yet. Use AI to help identify the types of data or statistics that would support the need, examples of specific metrics, possible sources, and qualitative or quantitative evidence to look for. Do not make up statistics.'
+            'description', E'Now begin identifying data that can demonstrate how serious or widespread the issue is.\n\nYou do not need to find the data yourself yet. Use AI to help identify the types of data or statistics that would support the need, examples of specific metrics, possible sources, and qualitative or quantitative evidence to look for. Do not make up statistics.'
           ),
           jsonb_build_object(
             'name', 'need_data_points',
@@ -1393,14 +1393,14 @@ select
         'label', 'Who We Serve',
         'type', 'subtitle',
         'screen', 'intro',
-        'description', 'This section builds on your Need Statement by helping you clearly define who your work is focused on.\n\nWhile your Need Statement describes who is experiencing the problem, this exercise sharpens that into a more precise understanding of the specific people you are trying to reach and serve.\n\nThere is no formal training video for this section, but it is an important step in strengthening your Strategic Roadmap. Clarity on who you serve helps you design stronger programs, communicate clearly with funders and partners, and focus your efforts where they can have the greatest impact.'
+        'description', E'This section builds on your Need Statement by helping you clearly define who your work is focused on.\n\nWhile your Need Statement describes who is experiencing the problem, this exercise sharpens that into a more precise understanding of the specific people you are trying to reach and serve.\n\nThere is no formal training video for this section, but it is an important step in strengthening your Strategic Roadmap. Clarity on who you serve helps you design stronger programs, communicate clearly with funders and partners, and focus your efforts where they can have the greatest impact.'
       ),
       jsonb_build_object(
         'name', 'who_serve_approach_intro',
         'label', 'How to approach this exercise',
         'type', 'subtitle',
         'screen', 'intro',
-        'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Your responses will later help generate a clear Who We Serve statement for your Strategic Roadmap.'
+        'description', E'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Your responses will later help generate a clear Who We Serve statement for your Strategic Roadmap.'
       ),
       jsonb_build_object(
         'name', 'who_serve_population_intro',
@@ -1598,14 +1598,14 @@ select
             'label', 'Defining your mission',
             'type', 'subtitle',
             'screen', 'intro',
-            'description', 'Your mission is a clear, concise statement of what you do and the difference your work makes.\n\nIf your origin story explains where this work comes from and your need statement explains the problem, your mission answers: what do you do, who do you do it for, and what difference does your work make?\n\nStrong nonprofit missions do not just describe activity. They describe impact: not just what you do, but how the world is different as a result.\n\nA strong mission is clear, specific, grounded in real work, and focused on the difference being made in people''s lives or communities.'
+            'description', E'Your mission is a clear, concise statement of what you do and the difference your work makes.\n\nIf your origin story explains where this work comes from and your need statement explains the problem, your mission answers: what do you do, who do you do it for, and what difference does your work make?\n\nStrong nonprofit missions do not just describe activity. They describe impact: not just what you do, but how the world is different as a result.\n\nA strong mission is clear, specific, grounded in real work, and focused on the difference being made in people''s lives or communities.'
           ),
           jsonb_build_object(
             'name', 'mission_approach_intro',
             'label', 'How to approach this exercise',
             'type', 'subtitle',
             'screen', 'intro',
-            'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Some answers may be a few sentences; others may be longer reflections. Your responses will later help generate draft mission statements that reflect your real experience, perspective, and intentions.'
+            'description', E'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Some answers may be a few sentences; others may be longer reflections. Your responses will later help generate draft mission statements that reflect your real experience, perspective, and intentions.'
           ),
           jsonb_build_object(
             'name', 'mission_what_you_do_intro',
@@ -1765,21 +1765,21 @@ select
             'label', 'Defining your vision',
             'type', 'subtitle',
             'screen', 'intro',
-            'description', 'Your vision describes the future you are working toward.\n\nIf your origin story explains where this work comes from, your need statement defines the problem, and your mission describes what you do and the difference you make, your vision answers: what does the world look like if your work succeeds, what is different for the people and communities you serve, and what long-term change are you working toward?\n\nA strong vision does not describe programs or activities. It describes the end result: a desired future that is meaningfully different from what exists today.'
+            'description', E'Your vision describes the future you are working toward.\n\nIf your origin story explains where this work comes from, your need statement defines the problem, and your mission describes what you do and the difference you make, your vision answers: what does the world look like if your work succeeds, what is different for the people and communities you serve, and what long-term change are you working toward?\n\nA strong vision does not describe programs or activities. It describes the end result: a desired future that is meaningfully different from what exists today.'
           ),
           jsonb_build_object(
             'name', 'vision_realistic_aspirational_intro',
             'label', 'Realistic or aspirational vision',
             'type', 'subtitle',
             'screen', 'intro',
-            'description', 'There are two valid approaches to vision statements.\n\nA realistic vision describes a concrete, measurable future outcome, such as 200 quality jobs created along 61st Street.\n\nAn aspirational vision describes a broader, values-driven future, such as no family will be left to suffer alone.\n\nBoth approaches are valid, but choose intentionally. A realistic vision provides clarity and measurable direction. An aspirational vision provides inspiration and long-term purpose.'
+            'description', E'There are two valid approaches to vision statements.\n\nA realistic vision describes a concrete, measurable future outcome, such as 200 quality jobs created along 61st Street.\n\nAn aspirational vision describes a broader, values-driven future, such as no family will be left to suffer alone.\n\nBoth approaches are valid, but choose intentionally. A realistic vision provides clarity and measurable direction. An aspirational vision provides inspiration and long-term purpose.'
           ),
           jsonb_build_object(
             'name', 'vision_approach_intro',
             'label', 'How to approach this exercise',
             'type', 'subtitle',
             'screen', 'intro',
-            'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Your responses will later help generate draft vision statements that reflect your perspective and aspirations for the future.'
+            'description', E'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Your responses will later help generate draft vision statements that reflect your perspective and aspirations for the future.'
           ),
           jsonb_build_object(
             'name', 'vision_people_intro',
@@ -1955,21 +1955,21 @@ select
             'label', 'Defining your core values',
             'type', 'subtitle',
             'screen', 'intro',
-            'description', 'Your core values define how your organization operates and makes decisions.\n\nIf your origin story explains where this work comes from, your need statement defines the problem, your mission describes what you do and the difference you make, and your vision defines the future you are working toward, your values answer: how do you show up in this work, what principles guide your decisions, and what does it look like to do this work well?\n\nCore values are deeply held beliefs: the principles you are unwilling to compromise, even under pressure.'
+            'description', E'Your core values define how your organization operates and makes decisions.\n\nIf your origin story explains where this work comes from, your need statement defines the problem, your mission describes what you do and the difference you make, and your vision defines the future you are working toward, your values answer: how do you show up in this work, what principles guide your decisions, and what does it look like to do this work well?\n\nCore values are deeply held beliefs: the principles you are unwilling to compromise, even under pressure.'
           ),
           jsonb_build_object(
             'name', 'values_quality_intro',
             'label', 'What makes a value real',
             'type', 'subtitle',
             'screen', 'intro',
-            'description', 'Core values are not aspirational slogans or marketing language. They should be enduring, authentic, behavioral, and distinctive.\n\nA useful value reflects what you truly believe, shows up in how you act and make decisions, and differentiates how your organization operates from others.'
+            'description', E'Core values are not aspirational slogans or marketing language. They should be enduring, authentic, behavioral, and distinctive.\n\nA useful value reflects what you truly believe, shows up in how you act and make decisions, and differentiates how your organization operates from others.'
           ),
           jsonb_build_object(
             'name', 'values_approach_intro',
             'label', 'How to approach this exercise',
             'type', 'subtitle',
             'screen', 'intro',
-            'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Your responses will later help generate a set of core values that reflect your beliefs, standards, and approach to this work.'
+            'description', E'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Your responses will later help generate a set of core values that reflect your beliefs, standards, and approach to this work.'
           ),
           jsonb_build_object(
             'name', 'values_deep_beliefs_intro',
@@ -2352,21 +2352,21 @@ select
         'label', 'Developing your Theory of Change',
         'type', 'subtitle',
         'screen', 'intro',
-        'description', 'Your Theory of Change explains in broad strokes how change is expected to happen.\n\nIf your origin story explains where this work comes from, your need statement defines the problem, your mission describes what you do and the difference you make, and your vision defines the future you are working toward, your Theory of Change lays out the logic between action, near-term change, and longer-term impact.'
+        'description', E'Your Theory of Change explains in broad strokes how change is expected to happen.\n\nIf your origin story explains where this work comes from, your need statement defines the problem, your mission describes what you do and the difference you make, and your vision defines the future you are working toward, your Theory of Change lays out the logic between action, near-term change, and longer-term impact.'
       ),
       jsonb_build_object(
         'name', 'toc_framework_intro',
         'label', 'If, Then, So That',
         'type', 'subtitle',
         'screen', 'intro',
-        'description', 'At Coach House, we use a simple structure: If we do this with these people, then this change will happen, so that over time these longer-term outcomes can occur.\n\nThe If statement describes the broad activity and people involved. The Then statement predicts the near-term change. The So That statement connects the work to longer-term impact, evaluation, and fundraising.'
+        'description', E'At Coach House, we use a simple structure: If we do this with these people, then this change will happen, so that over time these longer-term outcomes can occur.\n\nThe If statement describes the broad activity and people involved. The Then statement predicts the near-term change. The So That statement connects the work to longer-term impact, evaluation, and fundraising.'
       ),
       jsonb_build_object(
         'name', 'toc_approach_intro',
         'label', 'How to approach this exercise',
         'type', 'subtitle',
         'screen', 'intro',
-        'description', 'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Your responses will later help generate a clear, testable Theory of Change that you can describe, predict, measure, and adjust.'
+        'description', E'Capture your thinking in your own words. There are no right answers.\n\nWe recommend speaking your responses out loud with voice-to-text instead of trying to craft perfect sentences. Your responses will later help generate a clear, testable Theory of Change that you can describe, predict, measure, and adjust.'
       ),
       jsonb_build_object(
         'name', 'toc_problem_context_intro',

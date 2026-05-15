@@ -1,6 +1,8 @@
 "use client"
 
+import Link from "next/link"
 import { useMemo } from "react"
+import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
 
 import { CoachSchedulingCard } from "@/components/coaching/coach-scheduling-card"
 import { CoachSchedulingSidebarItem } from "@/components/coaching/coach-scheduling-sidebar-item"
@@ -11,7 +13,9 @@ import type { SidebarClass } from "@/lib/academy"
 
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import { RESOURCE_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
+import { Button } from "@/components/ui/button"
 import { SidebarContent, SidebarFooter } from "@/components/ui/sidebar"
+import { resolveMemberWorkspaceNavAccess } from "@/lib/workspace/member-workspace-nav-access"
 
 export type AppSidebarProps = {
   user?: {
@@ -156,8 +160,14 @@ export function SidebarBody({
   const showMemberWorkspaceNav =
     !onboardingLocked &&
     onboardingIntentFocus !== "fund" &&
-    Boolean(showMemberWorkspace ?? (isAdmin || hasActiveSubscription))
+    resolveMemberWorkspaceNavAccess({
+      isAdmin,
+      showMemberWorkspace,
+      hasActiveSubscription,
+    })
   const hasMemberWorkspaceAccess = showMemberWorkspaceNav
+  const showAccountUpgradeCta =
+    hasUser && (isAdmin || (!hasActiveSubscription && !showMemberWorkspaceNav))
   const mainNavItems = buildMainNav({
     isAdmin,
     showOrgAdmin,
@@ -188,7 +198,7 @@ export function SidebarBody({
 
       <SidebarFooter className="mt-auto pb-[var(--shell-rail-padding,0.75rem)]">
         {onboardingLocked ? null : (
-          <div className="space-y-4 pt-2">
+          <div className="flex flex-col gap-4 pt-2">
             {showCoachScheduling ? (
               <>
                 <div className="hidden group-data-[collapsible=icon]:hidden [@media(min-height:56rem)]:block">
@@ -199,6 +209,7 @@ export function SidebarBody({
                 </div>
               </>
             ) : null}
+            {showAccountUpgradeCta ? <FreeAccountUpgradeCta /> : null}
             <NavDocuments items={RESOURCE_NAV} label="Resources" />
           </div>
         )}
@@ -213,5 +224,21 @@ export function SidebarBody({
         ) : null}
       </SidebarFooter>
     </>
+  )
+}
+
+function FreeAccountUpgradeCta() {
+  return (
+    <div className="group-data-[collapsible=icon]:hidden">
+      <Button asChild size="sm" className="w-full justify-between px-3">
+        <Link
+          href="/find?paywall=organization&plan=organization&source=sidebar_upgrade&redirect=%2Fworkspace&cancel=%2Ffind&paywall_preview=1"
+          prefetch={false}
+        >
+          <span className="truncate">Upgrade account</span>
+          <ArrowUpRightIcon data-icon="inline-end" aria-hidden />
+        </Link>
+      </Button>
+    </div>
   )
 }

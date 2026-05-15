@@ -22,7 +22,7 @@ function resolveTutorialStepIndex(stepId: WorkspaceCanvasTutorialStepId) {
 }
 
 describe("workspace board tutorial previous navigation", () => {
-  it("rewinds shortcut steps back to their unopened prompt state", () => {
+  it("preserves legacy opened ids when rewinding through Continue-owned steps", () => {
     const openedTutorialStepIds: WorkspaceCanvasTutorialStepId[] = ["accelerator"]
     const acknowledgedTutorialStepIds: WorkspaceCanvasTutorialStepId[] = [
       "accelerator",
@@ -40,11 +40,11 @@ describe("workspace board tutorial previous navigation", () => {
       buildPreviousWorkspaceTutorialFlowState(previousFlowState)
 
     expect(nextFlowState.tutorialStepIndex).toBe(acceleratorPromptStepIndex)
-    expect(nextFlowState.openedTutorialStepIds).toEqual([])
+    expect(nextFlowState.openedTutorialStepIds).toEqual(["accelerator"])
     expect(nextFlowState.acknowledgedTutorialStepIds).toEqual(["accelerator"])
   })
 
-  it("marks shortcut steps opened without auto-advancing past the current card prompt", () => {
+  it("marks legacy shortcut events without auto-advancing past the current step", () => {
     const previousFlowState = {
       ...buildDefaultWorkspaceOnboardingFlowState(),
       active: true,
@@ -63,7 +63,7 @@ describe("workspace board tutorial previous navigation", () => {
     ])
   })
 
-  it("rewinds action steps back to their blocked prompt state", () => {
+  it("preserves legacy action ids when rewinding through Continue-owned steps", () => {
     const openedTutorialStepIds: WorkspaceCanvasTutorialStepId[] = [
       "accelerator",
       "accelerator-first-module",
@@ -87,14 +87,17 @@ describe("workspace board tutorial previous navigation", () => {
       buildPreviousWorkspaceTutorialFlowState(previousFlowState)
 
     expect(nextFlowState.tutorialStepIndex).toBe(firstModuleStepIndex)
-    expect(nextFlowState.openedTutorialStepIds).toEqual(["accelerator"])
+    expect(nextFlowState.openedTutorialStepIds).toEqual([
+      "accelerator",
+      "accelerator-first-module",
+    ])
     expect(nextFlowState.acknowledgedTutorialStepIds).toEqual([
       "accelerator",
       "accelerator-first-module",
     ])
   })
 
-  it("marks action steps opened without auto-advancing past the current prompt", () => {
+  it("marks legacy action events without auto-advancing past the current step", () => {
     const previousFlowState = {
       ...buildDefaultWorkspaceOnboardingFlowState(),
       active: true,

@@ -19,17 +19,22 @@ export function PasswordInput({ className, ...props }: PasswordInputProps) {
         {...props}
         type={visible ? "text" : "password"}
         placeholder={props.placeholder ?? "••••••••"}
-        className={cn("pr-10", className)}
+        className={cn("pr-11", className)}
       />
       <Button
         type="button"
         variant="ghost"
         size="icon"
-        className="absolute right-1 top-1/2 size-7 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground absolute top-1/2 right-0 size-9 -translate-y-1/2"
         onClick={() => setVisible((current) => !current)}
         aria-label={visible ? "Hide password" : "Show password"}
+        aria-pressed={visible}
       >
-        {visible ? <EyeOff className="h-4 w-4" aria-hidden /> : <Eye className="h-4 w-4" aria-hidden />}
+        {visible ? (
+          <EyeOff className="h-4 w-4" aria-hidden />
+        ) : (
+          <Eye className="h-4 w-4" aria-hidden />
+        )}
       </Button>
     </div>
   )

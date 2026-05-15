@@ -2,6 +2,15 @@ import {
   buildPrototypeLabInput,
   PrototypeLabPanel,
 } from "@/features/prototype-lab"
+import {
+  ActivationMonitorPanel,
+  getActivationMonitorPageInput,
+} from "@/features/activation-monitor"
+import { FiscalSponsorshipPanel } from "@/features/fiscal-sponsorship"
+import {
+  getUserJourneyAtlasPageInput,
+  UserJourneyAtlasPanel,
+} from "@/features/user-journey-atlas"
 import { requireAdmin } from "@/lib/admin/auth"
 
 function readSearchParam(value: string | string[] | undefined) {
@@ -19,6 +28,31 @@ export default async function AdminPlatformPrototypesPage({
     selectedEntryId: readSearchParam(resolvedSearchParams?.entry),
     selectedProjectId: readSearchParam(resolvedSearchParams?.project),
   })
+  const [userJourneyAtlasInput, activationMonitorInput] = await Promise.all([
+    input.selectedEntry.id === "user-journey-atlas"
+      ? getUserJourneyAtlasPageInput()
+      : Promise.resolve(null),
+    input.selectedEntry.id === "activation-monitor"
+      ? getActivationMonitorPageInput()
+      : Promise.resolve(null),
+  ])
 
-  return <PrototypeLabPanel input={input} />
+  return (
+    <PrototypeLabPanel
+      input={input}
+      activationMonitorPrototype={
+        activationMonitorInput ? (
+          <ActivationMonitorPanel input={activationMonitorInput} />
+        ) : undefined
+      }
+      fiscalSponsorshipPrototype={
+        <FiscalSponsorshipPanel input={{ id: "fiscal-sponsorship-flow" }} />
+      }
+      userJourneyAtlasPrototype={
+        userJourneyAtlasInput ? (
+          <UserJourneyAtlasPanel input={userJourneyAtlasInput} />
+        ) : undefined
+      }
+    />
+  )
 }

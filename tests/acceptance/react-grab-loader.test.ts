@@ -6,6 +6,17 @@ import {
   resolveReactGrabSemanticTarget,
 } from "@/components/dev/react-grab-loader"
 import { debugSurfaceClass } from "@/components/dev/react-grab-debug-surface"
+import { resolveReactGrabSelectedSurfaceElement } from "@/components/dev/react-grab-loader-resolution"
+
+const explicitReactGrabSurfaceSelector =
+  [
+    "[data-react-grab-surface-component]",
+    "[data-react-grab-surface-source]",
+    "[data-react-grab-surface-slot]",
+    "[data-react-grab-surface-kind]",
+  ].join(", ")
+const explicitReactGrabOwnerOrLinkSelector =
+  "[data-react-grab-link-id], [data-react-grab-owner-id]"
 
 function createMockElement(
   attributes: Record<string, string> = {},
@@ -142,6 +153,84 @@ describe("react grab loader", () => {
     )
 
     expect(resolveReactGrabSemanticTarget(wrapper)).toBeNull()
+  })
+
+  it("resolves a slotted primitive inside an explicit linked surface", () => {
+    const owner = createMockElement()
+    const linkedSurface = createMockElement({
+      "data-react-grab-link-id": "project-card",
+      "data-react-grab-surface-component": "MemberWorkspaceProjectCard",
+      "data-react-grab-surface-slot": "assignee-avatar",
+      "data-react-grab-surface-kind": "content",
+    })
+    const primitiveChild = createMockElement(
+      {
+        "data-slot": "avatar-fallback",
+      },
+      {
+        closestMap: {
+          "[data-react-grab-anchor]": null,
+          [explicitReactGrabSurfaceSelector]: linkedSurface,
+          [explicitReactGrabOwnerOrLinkSelector]: linkedSurface,
+        },
+      },
+    )
+    const originalDocument = globalThis.document
+
+    globalThis.document = {
+      querySelector: vi.fn().mockReturnValue(owner),
+    } as unknown as Document
+
+    try {
+      expect(resolveReactGrabSemanticTarget(primitiveChild)).toBe(owner)
+    } finally {
+      globalThis.document = originalDocument
+    }
+  })
+
+  it("selects an explicit linked surface before a nested primitive slot", () => {
+    const linkedSurface = createMockElement({
+      "data-react-grab-link-id": "project-card",
+      "data-react-grab-surface-component": "MemberWorkspaceProjectCard",
+      "data-react-grab-surface-source":
+        "src/features/member-workspace/components/projects/member-workspace-project-card.tsx",
+      "data-react-grab-surface-slot": "assignee-avatar",
+      "data-react-grab-surface-kind": "content",
+    })
+    const primitiveChild = createMockElement(
+      {
+        "data-slot": "avatar-fallback",
+      },
+      {
+        closestMap: {
+          [explicitReactGrabSurfaceSelector]: linkedSurface,
+          [explicitReactGrabOwnerOrLinkSelector]: linkedSurface,
+        },
+      },
+    )
+
+    expect(resolveReactGrabSelectedSurfaceElement(primitiveChild)).toBe(
+      linkedSurface,
+    )
+  })
+
+  it("keeps an intentionally selected generic primitive slot when no explicit surface wraps it", () => {
+    const owner = createMockElement({
+      "data-react-grab-owner-id": "project-card",
+    })
+    const genericSlot = createMockElement(
+      {
+        "data-slot": "card-content",
+      },
+      {
+        closestMap: {
+          [explicitReactGrabSurfaceSelector]: null,
+          [explicitReactGrabOwnerOrLinkSelector]: owner,
+        },
+      },
+    )
+
+    expect(resolveReactGrabSelectedSurfaceElement(genericSlot)).toBe(genericSlot)
   })
 
   it("builds resolved clipboard output for a primitive-owned surface", async () => {
@@ -425,6 +514,81 @@ describe("react grab loader", () => {
     expect(output).not.toContain("token: src/components/workspace/workspace-tutorial-theme.ts")
     expect(output).toContain("[CLASS]\n\"first:pt-4 px-4 pb-4 pt-0\"")
     expect(output).not.toContain("bg-foreground text-background")
+  })
+
+  it("uses owner canonical metadata for untagged nested surface reports", async () => {
+    const ownerSource =
+      "src/features/member-workspace/components/projects/member-workspace-project-card.tsx"
+    const owner = createMockElement(
+      {
+        "data-react-grab-anchor": "MemberWorkspaceProjectCard",
+        "data-react-grab-owner-id": "member-workspace-project-card:list:project-1",
+        "data-react-grab-owner-component": "MemberWorkspaceProjectCard",
+        "data-react-grab-owner-source": ownerSource,
+        "data-react-grab-canonical-owner-source": ownerSource,
+        "data-react-grab-canonical-owner-reason":
+          "Project card owns its semantic sub-surfaces.",
+      },
+      { tagName: "div" },
+    )
+    const primitiveWrapper = createMockElement(
+      {
+        class: "first:pt-4 px-4",
+        "data-slot": "card-content",
+      },
+      { tagName: "div" },
+    )
+
+    const transform = createReactGrabClipboardTransformer({
+      api: {
+        copyElement: vi.fn(),
+        registerPlugin: vi.fn(),
+        unregisterPlugin: vi.fn(),
+        getSource: vi.fn().mockImplementation((element: Element) => {
+          if (element === primitiveWrapper) {
+            return {
+              file: "src/components/ui/card.tsx",
+              line: 109,
+              importSource: "@/components/ui/card",
+              componentName: "CardContent",
+            }
+          }
+
+          return {
+            file: ownerSource,
+            line: 151,
+            componentName: "MemberWorkspaceProjectCard",
+          }
+        }),
+        getStackContext: vi.fn().mockResolvedValue([
+          "CardContent",
+          "MemberWorkspaceProjectCard",
+        ]),
+        getDisplayName: vi.fn().mockReturnValue("CardContent"),
+      },
+      getSelectionContext: () => ({
+        selectedElement: primitiveWrapper,
+        selectedSurfaceElement: primitiveWrapper,
+        targetElement: owner,
+        trace: {
+          selectedTag: "div",
+          selectedClasses: "first:pt-4 px-4",
+          resolvedOwnerId: "member-workspace-project-card:list:project-1",
+          resolvedOwnerComponent: "MemberWorkspaceProjectCard",
+          resolvedOwnerSource: ownerSource,
+          resolutionMode: "linked-surface",
+        },
+      }),
+    })
+
+    const output = await transform("<div />", [owner])
+
+    expect(output).toContain("[SURFACE]\nname: card-content\nslot: card-content\nkind: content")
+    expect(output).toContain("[OWNER]\nstatus: resolved")
+    expect(output).toContain("id: member-workspace-project-card:list:project-1")
+    expect(output).toContain(`primary: ${ownerSource}`)
+    expect(output).toContain("other: src/components/ui/card.tsx")
+    expect(output).toContain("[CLASS]\n\"first:pt-4 px-4\"")
   })
 
   it("serializes explicit tutorial panel wrapper surfaces as distinct layout containers", async () => {

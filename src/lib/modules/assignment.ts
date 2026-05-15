@@ -17,6 +17,13 @@ function normalizeAssignmentFieldType(
   return normalizeFormFieldTypeLegacy(type, variant)
 }
 
+function normalizeAssignmentText(value: string): string {
+  return value
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n")
+    .trim()
+}
+
 function normalizeBudgetRow(raw: unknown): BudgetTableRow | null {
   if (typeof raw === "string") {
     const category = raw.trim()
@@ -108,14 +115,14 @@ export function parseAssignmentFields(schema: unknown): ModuleAssignmentField[] 
         ? (field as { placeholder: string }).placeholder
         : ""
     const placeholder =
-      placeholderRaw.trim().length > 0 ? placeholderRaw.trim() : undefined
+      placeholderRaw.trim().length > 0 ? normalizeAssignmentText(placeholderRaw) : undefined
 
     const descriptionRaw =
       typeof (field as { description?: unknown }).description === "string"
         ? (field as { description: string }).description
         : ""
     const description =
-      descriptionRaw.trim().length > 0 ? descriptionRaw.trim() : undefined
+      descriptionRaw.trim().length > 0 ? normalizeAssignmentText(descriptionRaw) : undefined
 
     const optionsRaw = Array.isArray((field as { options?: unknown }).options)
       ? ((field as { options: unknown[] }).options as unknown[])

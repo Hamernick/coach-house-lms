@@ -9,7 +9,10 @@ import { z } from "zod"
 import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
 
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
-import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
+import {
+  DEFAULT_POST_AUTH_REDIRECT,
+  getSafeRedirectPath,
+} from "@/lib/auth/redirects"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -36,6 +39,9 @@ type LoginFormProps = {
 }
 
 type ExistingAuthSession = { access_token?: string | null } | null | undefined
+
+const authFooterLinkClassName =
+  "rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
 
 export function resolveExistingAuthSessionRedirect({
   session,
@@ -80,7 +86,11 @@ function mapAuthNoticeMessage(raw: string | null | undefined) {
   }
 }
 
-export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormProps) {
+export function LoginForm({
+  redirectTo,
+  initialError,
+  signUpHref,
+}: LoginFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -88,9 +98,11 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
   const noticeMessage = mapAuthNoticeMessage(searchParams.get("notice"))
   const redirectFromSearch = getSafeRedirectPath(searchParams.get("redirect"))
   const resolvedRedirectTo =
-    redirectFromSearch ?? getSafeRedirectPath(redirectTo) ?? DEFAULT_POST_AUTH_REDIRECT
+    redirectFromSearch ??
+    getSafeRedirectPath(redirectTo) ??
+    DEFAULT_POST_AUTH_REDIRECT
   const [errorMessage, setErrorMessage] = useState<string | null>(
-    mapAuthErrorMessage(initialError) ?? searchError,
+    mapAuthErrorMessage(initialError) ?? searchError
   )
   const [isSigningIn, setIsSigningIn] = useState(false)
   const resolvedSignUpHref = useMemo(() => {
@@ -112,7 +124,8 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
       password: "",
     },
   })
-  const isConfirmationMessage = errorMessage === "Email confirmed. Sign in to continue."
+  const isConfirmationMessage =
+    errorMessage === "Email confirmed. Sign in to continue."
 
   useEffect(() => {
     setErrorMessage(mapAuthErrorMessage(initialError) ?? searchError)
@@ -181,7 +194,12 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input {...field} type="email" autoComplete="email" placeholder="you@example.com" />
+                  <Input
+                    {...field}
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -205,7 +223,7 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
               className={
                 isConfirmationMessage
                   ? "text-sm text-emerald-600 dark:text-emerald-400"
-                  : "text-sm text-destructive"
+                  : "text-destructive text-sm"
               }
               role={isConfirmationMessage ? "status" : "alert"}
             >
@@ -216,10 +234,19 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
               {noticeMessage}
             </p>
           ) : null}
-          <Button className="w-full" type="submit" disabled={isSigningIn} aria-busy={isSigningIn || undefined}>
+          <Button
+            className="w-full"
+            type="submit"
+            disabled={isSigningIn}
+            aria-busy={isSigningIn || undefined}
+          >
             {isSigningIn ? (
               <>
-                <LoaderCircleIcon className="animate-spin" data-icon="inline-start" aria-hidden />
+                <LoaderCircleIcon
+                  className="animate-spin"
+                  data-icon="inline-start"
+                  aria-hidden
+                />
                 <span>Signing in…</span>
               </>
             ) : (
@@ -228,11 +255,14 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
           </Button>
         </form>
       </Form>
-      <div className="flex justify-between text-sm text-muted-foreground">
-        <Link href={resolvedSignUpHref} className="hover:text-foreground">
+      <div className="text-muted-foreground flex flex-wrap justify-between gap-x-4 gap-y-2 text-sm">
+        <Link href={resolvedSignUpHref} className={authFooterLinkClassName}>
           Need an account? Sign up
         </Link>
-        <Link href={resolvedForgotPasswordHref} className="hover:text-foreground">
+        <Link
+          href={resolvedForgotPasswordHref}
+          className={authFooterLinkClassName}
+        >
           Forgot password?
         </Link>
       </div>

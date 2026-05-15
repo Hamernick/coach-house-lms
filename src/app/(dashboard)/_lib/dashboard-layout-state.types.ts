@@ -40,6 +40,9 @@ export type DashboardLayoutState = {
   onboardingIntentFocus: "build" | "find" | "fund" | "support" | null
   formationStatus: string | null
   memberWorkspaceHeader: MemberWorkspaceHeaderState | null
+  memberMapOnboarding: {
+    hasOrganizationSwitcher: boolean
+  }
 }
 
 export const EMPTY_STATE: DashboardLayoutState = {
@@ -78,4 +81,7 @@ export const EMPTY_STATE: DashboardLayoutState = {
   onboardingIntentFocus: null,
   formationStatus: null,
   memberWorkspaceHeader: null,
+  memberMapOnboarding: {
+    hasOrganizationSwitcher: false,
+  },
 }

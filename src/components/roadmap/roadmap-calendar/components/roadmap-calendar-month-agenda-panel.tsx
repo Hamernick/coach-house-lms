@@ -13,6 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import { Separator } from "@/components/ui/separator"
 import {
   formatCalendarRecurrence,
@@ -91,11 +92,16 @@ const RoadmapCalendarAddEventMenu = memo(function RoadmapCalendarAddEventMenu({
       <DropdownMenuTrigger asChild>
         <Button
           type="button"
-          variant="ghost"
-          className="h-8 justify-start rounded-full px-0 text-sm font-medium text-muted-foreground hover:bg-transparent hover:text-foreground"
+          variant="outline"
+          className="h-8 justify-start rounded-full px-3 text-sm font-medium shadow-none"
           disabled={disabled}
+          title={
+            disabled
+              ? "Only organization owners, admins, or allowed staff can add calendar events."
+              : "Add event"
+          }
         >
-          <span className="inline-flex size-6 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <span className="inline-flex size-5 items-center justify-center rounded-full bg-muted text-muted-foreground">
             <PlusIcon data-icon="inline-start" aria-hidden />
           </span>
           Add event
@@ -249,7 +255,17 @@ export const RoadmapCalendarMonthAgendaPanel = memo(function RoadmapCalendarMont
         </div>
       </div>
 
-      <div className="flex min-h-0 flex-1 flex-col rounded-[24px] bg-background px-3 py-3">
+      <div
+        className="flex min-h-0 flex-1 flex-col rounded-[24px] bg-background px-3 py-3"
+        {...getReactGrabOwnerProps({
+          ownerId: "roadmap-calendar-month-agenda:month-grid",
+          component: "RoadmapCalendarMonthAgendaPanel",
+          source:
+            "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx",
+          slot: "month-grid",
+          primitiveImport: "@/components/ui/calendar",
+        })}
+      >
         <Calendar
           mode="single"
           selected={selectedDate}
@@ -260,17 +276,17 @@ export const RoadmapCalendarMonthAgendaPanel = memo(function RoadmapCalendarMont
           className="w-full shrink-0 bg-transparent p-0 [--cell-size:2.45rem] sm:[--cell-size:2.55rem]"
           classNames={{
             root: "w-full",
-            months: "block",
-            month: "w-full gap-2",
-            month_grid: "block w-full border-collapse",
+            months: "w-full",
+            month: "w-full",
+            month_grid: "w-full table-fixed border-collapse",
             month_caption: "sr-only",
             nav: "hidden",
-            weekdays: "grid w-full grid-cols-7 border-b border-border/40 pb-2",
+            weekdays: "w-full border-b border-border/40",
             weekday:
-              "min-w-0 text-center text-xs font-semibold text-muted-foreground/62",
-            weeks: "block w-full",
-            week: "mt-2 grid w-full grid-cols-7 gap-y-1.5",
-            day: "min-w-0 aspect-square p-0 text-center",
+              "w-[14.285714%] pb-2 text-center text-xs font-semibold text-muted-foreground/62",
+            weeks: "w-full",
+            week: "w-full",
+            day: "w-[14.285714%] min-w-0 p-0 pt-2 text-center align-middle",
             today:
               "rounded-xl bg-transparent text-foreground data-[selected=true]:rounded-xl",
             outside: "text-muted-foreground/35",
@@ -287,7 +303,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(function RoadmapCalendarMont
               eventCount: dayEvents.length,
             })}
           </p>
-          <div className="mt-3 flex min-h-[7.5rem] flex-1 flex-col gap-1 overflow-y-auto overscroll-contain pr-1">
+          <div className="mt-3 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain pr-1">
             {isLoading ? (
               <p className="px-2 py-3 text-sm text-muted-foreground">Loading…</p>
             ) : dayEvents.length > 0 ? (
@@ -312,14 +328,12 @@ export const RoadmapCalendarMonthAgendaPanel = memo(function RoadmapCalendarMont
             )}
           </div>
 
-          {canManageCalendar ? (
-            <div className="mt-3 shrink-0">
-              <RoadmapCalendarAddEventMenu
-                disabled={!canManageCalendar}
-                onOpenCreate={onOpenCreate}
-              />
-            </div>
-          ) : null}
+          <div className="mt-3 shrink-0 border-t border-border/40 pt-3">
+            <RoadmapCalendarAddEventMenu
+              disabled={!canManageCalendar}
+              onOpenCreate={onOpenCreate}
+            />
+          </div>
         </div>
       </div>
     </section>

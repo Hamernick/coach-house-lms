@@ -24,6 +24,7 @@ import { Sidebar, SidebarHeader, SidebarInset, SidebarProvider } from "@/compone
 import { useIsMobile } from "@/hooks/use-mobile"
 import { releaseStaleInteractionLocks } from "@/lib/ui/interaction-lock-guard"
 import { cn } from "@/lib/utils"
+import { resolveMemberWorkspaceNavAccess } from "@/lib/workspace/member-workspace-nav-access"
 import { resolveAppShellOnboardingRedirectTarget } from "./onboarding-redirect"
 import { useAppShellRouteTransition } from "./use-app-shell-route-transition"
 import { useAppShellRightRailState } from "./use-app-shell-right-rail-state"
@@ -81,11 +82,14 @@ export function AppShellInner({
     isAcceleratorContext &&
     !isAcceleratorRoadmapRoute &&
     sidebarTree.length > 0
-  const canShowMemberWorkspace =
-    showMemberWorkspace ?? Boolean(isAdmin || hasActiveSubscription)
+  const canShowMemberWorkspace = resolveMemberWorkspaceNavAccess({
+    isAdmin,
+    showMemberWorkspace,
+    hasActiveSubscription,
+  })
   const showMemberWorkspaceNav =
     !onboardingLocked &&
-    !isAdminContext &&
+    (!isAdminContext || isAdmin) &&
     !isAcceleratorContext &&
     onboardingIntentFocus !== "fund" &&
     canShowMemberWorkspace

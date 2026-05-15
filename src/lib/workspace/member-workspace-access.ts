@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation"
 
+import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { resolvePaidTeamAccessForOrgSubscription } from "@/lib/billing/subscription-access"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -25,15 +26,24 @@ export function ensureMemberWorkspaceFeatureAccess(actor: {
 }
 
 export async function requireMemberWorkspacePageAccess(source: string) {
-  const { profileAudience, activeOrg } = await resolveAuthenticatedAppContext()
+  const { profileAudience, activeOrg, user } = await resolveAuthenticatedAppContext()
   if (profileAudience.isAdmin) return
 
+  const admin = createSupabaseAdminClient()
   const paidAccess = await resolvePaidTeamAccessForOrgSubscription({
-    supabase: createSupabaseAdminClient(),
+    supabase: admin,
     orgId: activeOrg.orgId,
   })
 
   if ("hasPaidTeamAccess" in paidAccess && paidAccess.hasPaidTeamAccess) return
+
+  const syncedEntitlements = await fetchLearningEntitlements({
+    supabase: admin,
+    userId: user.id,
+    orgUserId: activeOrg.orgId,
+    forceStripeSync: true,
+  })
+  if (syncedEntitlements.hasActiveSubscription) return
 
   redirect(getMemberWorkspacePaywallPath(source))
 }

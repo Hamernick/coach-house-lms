@@ -140,4 +140,67 @@ describe("stripe checkout route", () => {
       }),
     )
   })
+
+  it.each([
+    ["organization", "Organization"],
+    ["operations_support", "Operations Support"],
+  ] as const)("preserves sidebar upgrade return targets in %s Stripe checkout URLs", async (planTier, planName) => {
+    const stripeCheckoutCreateMock = vi.fn().mockResolvedValue({
+      url: "https://checkout.stripe.test/sidebar-session",
+    })
+
+    createSupabaseRouteHandlerClientMock.mockReturnValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: "user_123", email: "free@example.test", user_metadata: {} } },
+        }),
+      },
+    })
+    resolveStripeRuntimeConfigForAudienceMock.mockReturnValue({
+      client: {
+        checkout: {
+          sessions: {
+            create: stripeCheckoutCreateMock,
+          },
+        },
+      },
+      mode: "live",
+      target: "live",
+    })
+
+    const { GET } = await import("@/app/api/stripe/checkout/route")
+    const request = new NextRequest(
+      `http://localhost/api/stripe/checkout?plan=${planTier}&source=sidebar_upgrade&redirect=%2Fworkspace&cancel=%2Ffind`,
+    )
+
+    const response = await GET(request)
+
+    expect(response.status).toBe(307)
+    expect(response.headers.get("location")).toBe("https://checkout.stripe.test/sidebar-session")
+    expect(resolveStripePriceIdForPlanMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        planTier,
+      }),
+    )
+    expect(stripeCheckoutCreateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        success_url: expect.stringContaining(
+          "/pricing/success?session_id=%7BCHECKOUT_SESSION_ID%7D&redirect=%2Fworkspace",
+        ),
+        cancel_url: "http://localhost/find?cancelled=true",
+        metadata: expect.objectContaining({
+          planName,
+          plan_tier: planTier,
+          redirect_after_success: "/workspace",
+        }),
+        subscription_data: expect.objectContaining({
+          metadata: expect.objectContaining({
+            planName,
+            plan_tier: planTier,
+            redirect_after_success: "/workspace",
+          }),
+        }),
+      }),
+    )
+  })
 })

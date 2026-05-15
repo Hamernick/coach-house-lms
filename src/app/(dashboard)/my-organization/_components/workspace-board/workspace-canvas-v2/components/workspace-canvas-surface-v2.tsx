@@ -196,7 +196,7 @@ export function WorkspaceCanvasSurfaceV2({
     onWorkspaceOnboardingSubmit: onInitialOnboardingSubmit,
   })
   const { showTutorialRestart, tutorialCalendarButtonCallout, onTutorialCalendarButtonComplete, organizationMapButtonCallout, onOrganizationMapButtonTutorialComplete } = resolveWorkspaceCanvasTutorialSurfaceProps({
-    allowEditing,
+    allowEditing, isPlatformAdmin: seed.isPlatformAdmin,
     presentationMode,
     tutorialCallout,
     onTutorialComplete: handleTutorialActionComplete,

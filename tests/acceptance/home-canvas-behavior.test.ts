@@ -3,8 +3,20 @@ import { describe, expect, it } from "vitest"
 import { resolveCanvasSectionBehavior } from "@/components/public/home-canvas-behavior"
 
 describe("home-canvas section behavior", () => {
-  it("marks pricing as the only scrollable section and locks map navigation gestures", () => {
+  it("marks long-form panels as scrollable and locks map navigation gestures", () => {
     expect(resolveCanvasSectionBehavior("pricing")).toEqual({
+      lockNavigationGestures: false,
+      scrollable: true,
+      touchAction: "pan-y",
+    })
+
+    expect(resolveCanvasSectionBehavior("signup")).toEqual({
+      lockNavigationGestures: false,
+      scrollable: true,
+      touchAction: "pan-y",
+    })
+
+    expect(resolveCanvasSectionBehavior("login")).toEqual({
       lockNavigationGestures: false,
       scrollable: true,
       touchAction: "pan-y",

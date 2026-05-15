@@ -4,14 +4,28 @@ import { describe, expect, it, vi } from "vitest"
 
 vi.mock("@/components/auth/login-panel", () => ({
   LoginPanel: (props: { redirectTo?: string }) =>
-    createElement("div", { "data-redirect-to": props.redirectTo }, "Login panel"),
+    createElement(
+      "div",
+      { "data-login-redirect-to": props.redirectTo },
+      "Login panel",
+    ),
 }))
 
 vi.mock("@/components/auth/sign-up-form", () => ({
-  SignUpForm: (props: { memberRedirectTo?: string }) =>
+  SignUpForm: (props: {
+    builderRedirectTo?: string
+    memberRedirectTo?: string
+    defaultIntentFocus?: string
+    lockedIntentFocus?: string | null
+  }) =>
     createElement(
       "form",
-      { "data-member-redirect-to": props.memberRedirectTo },
+      {
+        "data-builder-redirect-to": props.builderRedirectTo,
+        "data-member-redirect-to": props.memberRedirectTo,
+        "data-default-intent-focus": props.defaultIntentFocus,
+        "data-locked-intent-focus": props.lockedIntentFocus,
+      },
       "Sign up form",
     ),
 }))
@@ -33,22 +47,63 @@ describe("home canvas auth panel", () => {
       createElement(CanvasAuthPanel, { mode: "login" }),
     )
 
-    expect(markup).toContain('data-redirect-to="/workspace"')
+    expect(markup).toContain('data-login-redirect-to="/workspace"')
     expect(markup).toContain("Login panel")
   })
 
-  it("explains that signup starts free before builder onboarding", () => {
+  it("honors a selected login redirect from the home auth URL", () => {
+    const markup = renderToStaticMarkup(
+      createElement(CanvasAuthPanel, {
+        loginRedirectTo: "/api/stripe/checkout?plan=organization",
+        mode: "login",
+      }),
+    )
+
+    expect(markup).toContain(
+      'data-login-redirect-to="/api/stripe/checkout?plan=organization"',
+    )
+  })
+
+  it("defaults free signup to post-confirmation onboarding", () => {
     const markup = renderToStaticMarkup(
       createElement(CanvasAuthPanel, { mode: "signup" }),
     )
 
-    expect(markup).toContain("Create a free Individual account first")
-    expect(markup).toContain("choose whether to stay free or upgrade")
+    expect(markup).toContain("After email verification")
+    expect(markup).toContain("building, finding, funding, or supporting nonprofit work")
+    expect(markup).toContain('data-default-intent-focus="build"')
+    expect(markup).not.toContain("data-locked-intent-focus")
+    expect(markup).toContain(
+      'data-builder-redirect-to="/onboarding?source=home_signup"',
+    )
     expect(markup).toContain(
       'data-member-redirect-to="/find?member_onboarding=1&amp;source=home_signup"',
     )
     expect(markup).toContain('class="mb-3 space-y-1"')
     expect(markup).not.toContain('class="mb-5 space-y-1"')
     expect(markup).toContain("Sign up form")
+  })
+
+  it("locks paid pricing signup to builder checkout after email verification", () => {
+    const markup = renderToStaticMarkup(
+      createElement(CanvasAuthPanel, {
+        mode: "signup",
+        signupPlanTier: "organization",
+      }),
+    )
+
+    expect(markup).toContain("continue with Organization")
+    expect(markup).toContain("secure checkout")
+    expect(markup).toContain('data-default-intent-focus="build"')
+    expect(markup).toContain('data-locked-intent-focus="build"')
+    expect(markup).toContain(
+      "data-builder-redirect-to=\"/api/stripe/checkout?plan=organization&amp;source=home_signup",
+    )
+    expect(markup).toContain(
+      "redirect=%2Fonboarding%3Fsource%3Donboarding_pricing",
+    )
+    expect(markup).toContain(
+      "cancel=%2Fonboarding%3Fsource%3Donboarding_pricing",
+    )
   })
 })

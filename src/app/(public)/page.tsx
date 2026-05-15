@@ -4,6 +4,13 @@ import { redirect } from "next/navigation"
 import { HomeCanvasPreview } from "@/components/public/home-canvas-preview"
 import { resolvePublicAuthCallbackHref } from "@/components/public/public-auth-callback"
 import { PricingSurface } from "@/components/public/pricing-surface"
+import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
+import {
+  resolveSignupBuilderPlanTier,
+  resolveSignupBuilderPlanTierFromRedirect,
+  resolveSignupIntentFocus,
+} from "@/lib/onboarding/signup-plan"
+import { createSupabaseServerClient } from "@/lib/supabase/server"
 
 export const metadata: Metadata = {
   title: {
@@ -17,6 +24,10 @@ export const revalidate = 86400
 
 type LandingPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
+}
+
+function readStringParam(value: string | string[] | undefined) {
+  return typeof value === "string" ? value : undefined
 }
 
 export default async function LandingPage({ searchParams }: LandingPageProps) {
@@ -40,7 +51,33 @@ export default async function LandingPage({ searchParams }: LandingPageProps) {
   if (authCallbackHref) {
     redirect(authCallbackHref)
   }
-  const initialSection = typeof resolvedSearchParams?.section === "string" ? resolvedSearchParams.section : undefined
 
-  return <HomeCanvasPreview initialSection={initialSection} pricingPanel={<PricingSurface embedded />} />
+  const initialSection = readStringParam(resolvedSearchParams?.section)
+  const loginRedirectTo = getSafeRedirectPath(
+    readStringParam(resolvedSearchParams?.redirect),
+  )
+  const signupPlanTier =
+    resolveSignupBuilderPlanTier(readStringParam(resolvedSearchParams?.plan)) ??
+    resolveSignupBuilderPlanTierFromRedirect(loginRedirectTo)
+  const signupIntentFocus = resolveSignupIntentFocus(
+    readStringParam(resolvedSearchParams?.intent),
+  )
+  if (initialSection === "login") {
+    const supabase = await createSupabaseServerClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (user) redirect(DEFAULT_POST_AUTH_REDIRECT)
+  }
+
+  return (
+    <HomeCanvasPreview
+      initialSection={initialSection}
+      loginRedirectTo={loginRedirectTo}
+      pricingPanel={<PricingSurface embedded />}
+      signupIntentFocus={signupIntentFocus}
+      signupPlanTier={signupPlanTier}
+    />
+  )
 }

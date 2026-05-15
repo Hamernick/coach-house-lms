@@ -58,16 +58,16 @@ describe("workspace tutorial presentation", () => {
     ).toBe(true)
   })
 
-  it("keeps shortcut steps on the organization card until the target is opened", () => {
+  it("shows the accelerator card immediately on the accelerator step", () => {
     expect(
       resolveWorkspaceTutorialPresentationCardId({
         tutorialStepIndex: 3,
         openedStepIds: [],
       }),
-    ).toBe("organization-overview")
+    ).toBe("accelerator")
   })
 
-  it("switches shortcut steps to the target card after the shortcut is opened", () => {
+  it("keeps legacy opened step ids from changing the accelerator presentation", () => {
     expect(
       resolveWorkspaceTutorialPresentationCardId({
         tutorialStepIndex: 3,
@@ -76,11 +76,11 @@ describe("workspace tutorial presentation", () => {
     ).toBe("accelerator")
   })
 
-  it("shows later shortcut targets on the same step once they are opened", () => {
+  it("shows later tool targets on their own Continue steps", () => {
     expect(
       resolveWorkspaceTutorialPresentationCardId({
         tutorialStepIndex: 7,
-        openedStepIds: ["accelerator", "calendar"],
+        openedStepIds: ["accelerator"],
       }),
     ).toBe("calendar")
   })
@@ -109,12 +109,12 @@ describe("workspace tutorial presentation", () => {
     })
   })
 
-  it("keeps overview organization and shortcut steps on the authored shell heights", () => {
+  it("keeps overview steps authored and accelerator intro compact", () => {
     const organizationShellSpec = resolveWorkspaceTutorialPresentationShellSpec({
       tutorialStepIndex: 1,
       openedStepIds: [],
     })
-    const shortcutShellSpec = resolveWorkspaceTutorialPresentationShellSpec({
+    const acceleratorShellSpec = resolveWorkspaceTutorialPresentationShellSpec({
       tutorialStepIndex: 3,
       openedStepIds: [],
     })
@@ -128,11 +128,11 @@ describe("workspace tutorial presentation", () => {
     ).toBe(664)
     expect(
       resolveWorkspaceTutorialPresentationShellHeight({
-        family: shortcutShellSpec!.family,
-        shellHeight: shortcutShellSpec!.shellHeight,
-        surfaceFrameHeight: 372,
+        family: acceleratorShellSpec!.family,
+        shellHeight: acceleratorShellSpec!.shellHeight,
+        surfaceFrameHeight: 272,
       }),
-    ).toBe(664)
+    ).toBe(492)
   })
 
   it("snaps dragged tutorial cards back into the slot when dropped close enough", () => {

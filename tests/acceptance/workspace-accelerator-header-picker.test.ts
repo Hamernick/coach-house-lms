@@ -5,9 +5,11 @@ import { describe, expect, it, vi } from "vitest"
 import {
   WorkspaceAcceleratorCardFullscreenRailContent,
   resolveWorkspaceAcceleratorHeaderPickerScrollDistance,
+  WorkspaceAcceleratorCardInlinePicker,
   WorkspaceAcceleratorCardSidebar,
   WorkspaceAcceleratorHeaderPicker,
 } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support"
+import { WorkspaceAcceleratorCardProgressStrip } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip"
 import { WORKSPACE_ACCELERATOR_TUTORIAL_GUARD_CHROME_CLASSNAME } from "@/features/workspace-accelerator-card/components/workspace-accelerator-tutorial-guard-tooltip"
 
 vi.mock("next/navigation", () => ({
@@ -24,6 +26,13 @@ function extractTriggerMarkup(markup: string) {
 function extractTriggerBody(markup: string) {
   const match = markup.match(/<button[^>]*>([\s\S]*?)<\/button>/)
   return match?.[1] ?? ""
+}
+
+function extractProgressPercentMarkup(markup: string) {
+  const match = markup.match(
+    /<span[^>]*data-slot="workspace-accelerator-progress-percent"[^>]*>[\s\S]*?<\/span>/,
+  )
+  return match?.[0] ?? ""
 }
 
 describe("workspace accelerator header picker", () => {
@@ -350,7 +359,102 @@ describe("workspace accelerator header picker", () => {
     )
 
     expect(markup).toContain("Header picker")
-    expect(markup.indexOf("Header picker")).toBeLessThan(markup.indexOf("Progress"))
+    expect(markup).not.toContain("Progress")
+    expect(markup.indexOf("Header picker")).toBeLessThan(markup.indexOf("14%"))
+  })
+
+  it("can replace the checklist title copy with body controls after the progress strip", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorCardSidebar, {
+        selectedLessonGroup: {
+          key: "formation",
+          label: "Formation",
+          moduleIds: ["workspace-onboarding-welcome"],
+        },
+        tutorialCallout: null,
+        filteredProgressPercent: 14,
+        readinessSummary: null,
+        checklistModules: [
+          {
+            id: "workspace-onboarding-welcome",
+            title: "Welcome",
+            groupTitle: "Formation",
+            totalSteps: 1,
+            completedStepCount: 0,
+            isCurrent: true,
+            steps: [
+              {
+                id: "workspace-onboarding-welcome:lesson",
+                moduleId: "workspace-onboarding-welcome",
+                moduleTitle: "Welcome",
+                stepKind: "lesson",
+                stepTitle: "Welcome to Workspace",
+                stepDescription: null,
+                href: "/accelerator/class/formation/module/welcome",
+                status: "in_progress",
+                stepSequenceIndex: 1,
+                stepSequenceTotal: 1,
+                moduleSequenceIndex: 1,
+                moduleSequenceTotal: 1,
+                groupTitle: "Formation",
+                videoUrl: null,
+                durationMinutes: null,
+                resources: [],
+                hasAssignment: false,
+                hasDeck: false,
+              },
+            ],
+          },
+        ],
+        currentStepId: "workspace-onboarding-welcome:lesson",
+        completedStepIds: [],
+        openModuleId: "workspace-onboarding-welcome",
+        onOpenModuleIdChange: () => {},
+        onStepSelect: () => {},
+        tutorialTargetStepId: null,
+        checklistHeaderControls: React.createElement(
+          WorkspaceAcceleratorCardInlinePicker,
+          {
+            lessonGroupOptions: [{ key: "formation", label: "Formation" }],
+            selectedLessonGroupKey: "formation",
+            tutorialCallout: null,
+            viewerOpen: false,
+            onLessonGroupChange: () => {},
+          },
+        ),
+      }),
+    )
+
+    expect(markup).toContain(
+      'aria-label="Choose a class track. Current selection: Formation"',
+    )
+    expect(extractTriggerMarkup(markup)).toContain("w-full")
+    expect(extractTriggerMarkup(markup)).toContain("max-w-none")
+    expect(extractTriggerMarkup(markup)).not.toContain("w-[196px]")
+    expect(markup).not.toContain("Progress")
+    expect(markup.indexOf("14%")).toBeLessThan(
+      markup.indexOf('aria-label="Choose a class track. Current selection: Formation"'),
+    )
+    expect(markup).not.toContain("Review each module")
+    expect(markup).toContain("1 step • continue")
+  })
+
+  it("renders the progress percentage as plain text instead of a pill", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorCardProgressStrip, {
+        progressPercent: 42,
+      }),
+    )
+
+    const percentMarkup = extractProgressPercentMarkup(markup)
+
+    expect(percentMarkup).toContain("42%")
+    expect(percentMarkup).toContain("tabular-nums")
+    expect(percentMarkup).not.toContain("rounded-full")
+    expect(percentMarkup).not.toContain("border")
+    expect(percentMarkup).not.toContain("bg-background")
+    expect(percentMarkup).not.toContain("px-")
+    expect(percentMarkup).not.toContain("py-")
   })
 
   it("renders the roadmap/accelerator rail switcher above the class picker and includes roadmap content", () => {

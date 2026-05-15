@@ -52,10 +52,39 @@ type WorkspaceAcceleratorCardSidebarProps = {
   onStepSelect: (step: WorkspaceAcceleratorCardStep) => void
   tutorialTargetStepId: string | null
   headerControls?: ReactNode
+  checklistHeaderControls?: ReactNode
   showChecklist?: boolean
 }
 
 const WORKSPACE_ACCELERATOR_RAIL_PANEL_EASE = [0.25, 1, 0.5, 1] as const
+
+export function WorkspaceAcceleratorCardInlinePicker({
+  lessonGroupOptions,
+  selectedLessonGroupKey,
+  tutorialCallout,
+  tutorialInteractionPolicy,
+  viewerOpen,
+  onLessonGroupChange,
+}: {
+  lessonGroupOptions: WorkspaceAcceleratorLessonGroupSummary[]
+  selectedLessonGroupKey: string
+  tutorialCallout: WorkspaceAcceleratorTutorialCallout | null
+  tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
+  viewerOpen: boolean
+  onLessonGroupChange: (nextLessonGroupKey: string) => void
+}) {
+  return (
+    <WorkspaceAcceleratorHeaderPicker
+      lessonGroupOptions={lessonGroupOptions}
+      selectedLessonGroupKey={selectedLessonGroupKey}
+      tutorialCallout={tutorialCallout?.focus === "picker" ? tutorialCallout : null}
+      tutorialInteractionPolicy={tutorialInteractionPolicy ?? null}
+      viewerOpen={viewerOpen}
+      layout="rail"
+      onLessonGroupChange={onLessonGroupChange}
+    />
+  )
+}
 
 export function WorkspaceAcceleratorCardEmptyState({
   href,
@@ -281,6 +310,7 @@ export function WorkspaceAcceleratorCardSidebar({
   onStepSelect,
   tutorialTargetStepId,
   headerControls = null,
+  checklistHeaderControls = null,
   showChecklist = true,
 }: WorkspaceAcceleratorCardSidebarProps) {
   return (
@@ -310,6 +340,7 @@ export function WorkspaceAcceleratorCardSidebar({
           }
           tutorialTargetStepId={tutorialTargetStepId}
           tutorialInteractionPolicy={tutorialInteractionPolicy}
+          headerControls={checklistHeaderControls}
         />
       ) : null}
     </div>
@@ -485,7 +516,7 @@ export function WorkspaceAcceleratorHeaderSummary({
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-1.5">
       <span className="inline-flex items-center rounded-md border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] font-medium leading-none text-muted-foreground tabular-nums">
-        {moduleCount} {moduleCount === 1 ? "module" : "modules"}
+        {moduleCount} {moduleCount === 1 ? "lesson" : "lessons"}
       </span>
       <span className="inline-flex items-center rounded-md border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] font-medium leading-none text-muted-foreground tabular-nums">
         {stepCount} {stepCount === 1 ? "step" : "steps"}

@@ -3,7 +3,7 @@ import type {
   MemberWorkspaceTaskGroup,
   MemberWorkspaceTaskItem,
 } from "../types"
-import { platformAdminDashboardLabProjects } from "@/features/platform-admin-dashboard"
+import { memberWorkspaceStarterProjects } from "./member-workspace-starter-projects"
 import { MEMBER_WORKSPACE_STARTER_VERSION } from "./starter-data"
 
 export type OrganizationTaskRecord =
@@ -32,7 +32,7 @@ export function buildStarterOrganizationTasks({
   actorId: string
   projectIdByStarterKey: Map<string, string>
 }): OrganizationTaskInsert[] {
-  return platformAdminDashboardLabProjects.flatMap((project) => {
+  return memberWorkspaceStarterProjects.flatMap((project) => {
     const projectId = projectIdByStarterKey.get(project.id)
     if (!projectId) return []
 
@@ -69,7 +69,7 @@ export function buildStarterOrganizationTaskAssignees({
   assigneeUserId: string
   taskIdByStarterKey: Map<string, string>
 }): OrganizationTaskAssigneeInsert[] {
-  return platformAdminDashboardLabProjects.flatMap((project) =>
+  return memberWorkspaceStarterProjects.flatMap((project) =>
     project.tasks.flatMap((task) => {
       const taskId = taskIdByStarterKey.get(buildStarterTaskSeedKey(project.id, task.id))
       if (!taskId) return []

@@ -13,6 +13,7 @@ import {
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { resolveProfileAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
+import { resolveAccountBillingCancellationRisk } from "@/lib/billing/subscription-access"
 import { resolvePricingPlanTier, type PricingPlanTier } from "@/lib/billing/plan-tier"
 import type { Json } from "@/lib/supabase"
 
@@ -43,6 +44,7 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   let canAccessOrgAdmin = false
   let organizationName: string | null = null
   let currentPlanTier: PricingPlanTier = "free"
+  let hasBillingCancellationRisk = false
 
   const fallbackIsTester = resolveTesterMetadata(user.user_metadata ?? null)
   const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
@@ -79,7 +81,12 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   const { orgId, role } = activeOrg
   showOrgAdmin = role === "owner" || role === "admin" || isAdmin
 
-  const [entitlements, orgRowResult, resolvedPricingFeedbackPrompt] = await Promise.all([
+  const [
+    entitlements,
+    orgRowResult,
+    resolvedPricingFeedbackPrompt,
+    accountBillingResult,
+  ] = await Promise.all([
     fetchLearningEntitlements({
       supabase,
       userId: user.id,
@@ -95,8 +102,16 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
       supabase,
       userId: user.id,
     }),
+    resolveAccountBillingCancellationRisk({
+      supabase,
+      userId: user.id,
+    }),
   ])
   pricingFeedbackPrompt = resolvedPricingFeedbackPrompt
+  hasBillingCancellationRisk =
+    "error" in accountBillingResult
+      ? false
+      : accountBillingResult.hasBillingCancellationRisk
   canAccessOrgAdmin = showOrgAdmin && (isAdmin || entitlements.hasActiveSubscription)
 
   const orgProfile = (orgRowResult.data?.profile as Record<string, unknown> | null) ?? null
@@ -145,6 +160,7 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
       tutorialWelcome={{ platform: false, accelerator: tutorialWelcome }}
       user={{ name: displayName, title: displayTitle, email: email ?? null, avatar: avatar ?? null }}
       showAccelerator={true}
+      hasBillingCancellationRisk={hasBillingCancellationRisk}
       hasAcceleratorAccess={entitlements.hasAcceleratorAccess}
       hasElectiveAccess={entitlements.hasElectiveAccess}
       ownedElectiveModuleSlugs={entitlements.ownedElectiveModuleSlugs}

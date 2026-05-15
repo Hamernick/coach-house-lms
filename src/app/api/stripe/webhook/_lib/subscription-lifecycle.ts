@@ -12,6 +12,8 @@ import { createSupabaseAdminClient } from "@/lib/supabase"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import {
   extractUserIdFromMetadata,
+  getCancelAtIso,
+  getCanceledAtIso,
   getCurrentPeriodEndIso,
   toStatus,
 } from "./metadata"
@@ -94,6 +96,8 @@ export async function maybeStartOrganizationSubscription({
     subscriptionId: subscription.id,
     status: toStatus(subscription.status),
     currentPeriodEnd,
+    cancelAt: getCancelAtIso(subscription),
+    canceledAt: getCanceledAtIso(subscription),
     metadata: { planName: "Organization", context, stripe_mode: stripeMode },
   })
 }
@@ -170,6 +174,8 @@ export async function handleAcceleratorMonthlyInstallmentInvoice({
     subscriptionId: effectiveSubscription.id,
     status: toStatus(effectiveSubscription.status),
     currentPeriodEnd: getCurrentPeriodEndIso(effectiveSubscription),
+    cancelAt: getCancelAtIso(effectiveSubscription),
+    canceledAt: getCanceledAtIso(effectiveSubscription),
     metadata: effectiveSubscription.metadata as Record<string, string> | null,
   })
 }

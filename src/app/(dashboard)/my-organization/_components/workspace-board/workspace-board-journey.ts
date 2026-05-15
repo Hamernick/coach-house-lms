@@ -1,4 +1,5 @@
 import { isWorkspaceTemporarilyUnavailableCardId } from "@/lib/workspace-card-policy"
+import { getWorkspaceAcceleratorPaywallPath } from "@/lib/workspace/routes"
 import type {
   WorkspaceBoardAcceleratorState,
   WorkspaceCardId,
@@ -7,8 +8,7 @@ import type {
   WorkspaceSeedData,
 } from "./workspace-board-types"
 
-const ACCELERATOR_PAYWALL_HREF =
-  "/workspace?paywall=organization&plan=organization&upgrade=accelerator-access&source=accelerator"
+const ACCELERATOR_PAYWALL_HREF = getWorkspaceAcceleratorPaywallPath()
 
 function resolveWorkspaceDocumentStageComplete(seed: WorkspaceSeedData) {
   return seed.journeyReadiness.workspaceDocumentCount > 0

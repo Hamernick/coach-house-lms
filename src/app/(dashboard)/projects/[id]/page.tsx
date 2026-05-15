@@ -17,12 +17,15 @@ import {
   updateMemberWorkspaceTaskOrderAction,
   updateMemberWorkspaceTaskStatusAction,
 } from "@/features/member-workspace"
+import { requireMemberWorkspacePageAccess } from "@/lib/workspace/member-workspace-access"
 
 type PageProps = {
   params: Promise<{ id: string }>
 }
 
 export default async function ProjectDetailPage({ params }: PageProps) {
+  await requireMemberWorkspacePageAccess("project-detail")
+
   const { id } = await params
   const result = await loadMemberWorkspaceProjectDetailPage(id)
 

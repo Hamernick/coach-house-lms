@@ -1,0 +1,6 @@
+packages:
+  - "."
+
+# Delay brand-new package versions so poisoned publishes have time to be
+# reported/deprecated before local or CI installs consume them.
+minimumReleaseAge: 1440

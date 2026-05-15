@@ -10,16 +10,9 @@ import {
   Wand,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts'
 
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
@@ -34,6 +27,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { ResultsTable } from '@/components/results-table'
+import { QueryResultChart } from '@/components/sql-editor-chart'
 import { useRunQuery } from '@/hooks/use-run-query'
 
 interface SqlEditorProps {
@@ -381,40 +375,5 @@ export function SqlEditor({
         </div>
       )}
     </div>
-  )
-}
-
-function QueryResultChart({ data, xAxis, yAxis }: { data: any[]; xAxis: string; yAxis: string }) {
-  const chartConfig = {
-    [yAxis]: {
-      label: yAxis,
-      color: 'var(--chart-1)',
-    },
-  } satisfies ChartConfig
-
-  return (
-    <ChartContainer config={chartConfig} className="aspect-auto h-[250px] w-full">
-      <BarChart
-        accessibilityLayer
-        data={data}
-        margin={{
-          left: -24,
-          right: 12,
-        }}
-      >
-        <CartesianGrid vertical={false} />
-        <XAxis dataKey={xAxis} tickLine={false} axisLine={false} tickMargin={8} minTickGap={32} />
-        <YAxis
-          dataKey={yAxis}
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          tickCount={5}
-          allowDecimals={false}
-        />
-        <ChartTooltip content={<ChartTooltipContent className="w-[150px]" indicator="dot" />} />
-        <Bar dataKey={yAxis} fill={`var(--color-${yAxis})`} />
-      </BarChart>
-    </ChartContainer>
   )
 }

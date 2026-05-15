@@ -136,7 +136,7 @@ export function VaultDropzoneSurface({
                 "w-full max-w-[32ch] text-xs leading-relaxed text-muted-foreground",
               )}
             >
-              PDF only, up to 15 MB. Assign and finalize documents in the Documents index.
+              PDF only, up to 50 MB. Assign and finalize documents in the Documents index.
             </p>
             {stagedCount > 0 ? (
               <Badge variant="outline" className="rounded-full px-2 py-0.5 text-[11px]">

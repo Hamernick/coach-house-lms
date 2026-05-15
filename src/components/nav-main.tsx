@@ -1,13 +1,12 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { usePathname, useSearchParams } from "next/navigation"
 
 import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
-import FileTextIcon from "lucide-react/dist/esm/icons/file-text"
 import FolderIcon from "lucide-react/dist/esm/icons/folder"
 import {
   buildAppSidebarMenuButtonOwnerProps,
@@ -35,10 +34,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
-  SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import { useInternalRoutePrefetch } from "@/hooks/use-internal-route-prefetch"
 import { cn } from "@/lib/utils"
+import { PrototypeTreeEntry } from "./nav-main/prototype-tree-entry"
 
 const NAV_MAIN_SOURCE = "src/components/nav-main.tsx"
 
@@ -75,35 +75,32 @@ function buildMainNavItemReactGrabProps(item: NavMainItem) {
   }
 }
 
-function PrototypeTreeEntry({
-  href,
-  isActive,
-  label,
-}: {
-  href: string
-  isActive: boolean
-  label: string
-}) {
-  return (
-    <SidebarMenuSubItem>
-      <SidebarMenuSubButton asChild isActive={isActive}>
-        <Link href={href} scroll={false}>
-          <FileTextIcon className="size-3.5 shrink-0" aria-hidden />
-          <span>{label}</span>
-        </Link>
-      </SidebarMenuSubButton>
-    </SidebarMenuSubItem>
+function collectPrototypeTreePrefetchHrefs(nodes: PrototypeLabSidebarTreeNode[]) {
+  return nodes.flatMap((node): string[] =>
+    node.kind === "folder"
+      ? collectPrototypeTreePrefetchHrefs(node.children)
+      : [node.href],
   )
+}
+
+function collectNavMainPrefetchHrefs(items: NavMainItem[]) {
+  return items.flatMap((item) => [
+    item.href,
+    item.upgradeHref,
+    ...(item.tree ? collectPrototypeTreePrefetchHrefs(item.tree) : []),
+  ])
 }
 
 function PrototypeTreeFolder({
   activeEntryId,
   defaultOpenFolderIds,
   node,
+  onPrefetch,
 }: {
   activeEntryId: string
   defaultOpenFolderIds: string[]
   node: PrototypeLabSidebarTreeFolderNode
+  onPrefetch?: (href: string | null | undefined) => void
 }) {
   const [open, setOpen] = useState(defaultOpenFolderIds.includes(node.id))
 
@@ -139,6 +136,7 @@ function PrototypeTreeFolder({
                   activeEntryId={activeEntryId}
                   defaultOpenFolderIds={defaultOpenFolderIds}
                   node={childNode}
+                  onPrefetch={onPrefetch}
                 />
               ) : (
                 <PrototypeTreeEntry
@@ -146,6 +144,7 @@ function PrototypeTreeFolder({
                   href={childNode.href}
                   isActive={childNode.id === activeEntryId}
                   label={childNode.label}
+                  onPrefetch={onPrefetch}
                 />
               ),
             )}
@@ -160,11 +159,13 @@ function NavMainTreeItem({
   activeEntryId,
   isActive,
   item,
+  onPrefetch,
   tourId,
 }: {
   activeEntryId: string
   isActive: boolean
   item: NavMainItem
+  onPrefetch?: (href: string | null | undefined) => void
   tourId?: string
 }) {
   const defaultOpenFolderIds = resolvePrototypeLabSidebarOpenFolderIds(activeEntryId)
@@ -192,9 +193,12 @@ function NavMainTreeItem({
         >
           <Link
             href={item.href ?? "#"}
+            prefetch={true}
             title={item.title}
             data-tour={tourId}
             className="flex w-full items-center gap-2"
+            onFocus={() => onPrefetch?.(item.href ?? null)}
+            onPointerEnter={() => onPrefetch?.(item.href ?? null)}
           >
             {item.icon ? <item.icon className="size-4 shrink-0" /> : null}
             <span className="flex-1 min-w-0 truncate whitespace-nowrap leading-snug group-data-[collapsible=icon]:hidden">
@@ -229,6 +233,7 @@ function NavMainTreeItem({
                   activeEntryId={activeEntryId}
                   defaultOpenFolderIds={defaultOpenFolderIds}
                   node={node}
+                  onPrefetch={onPrefetch}
                 />
               ) : (
                 <PrototypeTreeEntry
@@ -236,6 +241,7 @@ function NavMainTreeItem({
                   href={node.href}
                   isActive={node.id === activeEntryId}
                   label={node.label}
+                  onPrefetch={onPrefetch}
                 />
               ),
             )}
@@ -257,6 +263,8 @@ export function NavMain({
 }) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const prefetchHrefs = useMemo(() => collectNavMainPrefetchHrefs(items), [items])
+  const prefetchHref = useInternalRoutePrefetch(prefetchHrefs)
   const isWorkspaceHref = (href: string) =>
     href === "/workspace" || href === "/organization" || href === "/organization/workspace"
   const matchesAliasWorkspacePath = (href: string, currentPath: string) => {
@@ -316,7 +324,10 @@ export function NavMain({
                         {item.upgradeHref ? (
                           <Link
                             href={item.upgradeHref}
+                            prefetch={true}
                             onClick={(event) => event.stopPropagation()}
+                            onFocus={() => prefetchHref(item.upgradeHref)}
+                            onPointerEnter={() => prefetchHref(item.upgradeHref)}
                             className="inline-flex items-center rounded-full border border-border/60 bg-background px-2 py-0.5 text-[10px] font-medium text-foreground transition hover:bg-muted"
                           >
                             {item.upgradeLabel ?? item.badge ?? "Upgrade"}
@@ -340,6 +351,7 @@ export function NavMain({
                   activeEntryId={prototypeActiveEntryId}
                   isActive={isActive}
                   item={item}
+                  onPrefetch={prefetchHref}
                   tourId={tourId}
                 />
               )
@@ -356,9 +368,12 @@ export function NavMain({
                 >
                   <Link
                     href={item.href}
+                    prefetch={true}
                     title={item.title}
                     data-tour={tourId}
                     className="flex w-full items-center gap-2"
+                    onFocus={() => prefetchHref(item.href)}
+                    onPointerEnter={() => prefetchHref(item.href)}
                   >
                       {item.icon ? <item.icon className="size-4 shrink-0" /> : null}
                       <span className="flex-1 min-w-0 truncate whitespace-nowrap leading-snug group-data-[collapsible=icon]:hidden">

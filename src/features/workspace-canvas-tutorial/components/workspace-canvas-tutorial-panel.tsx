@@ -23,7 +23,7 @@ import {
 import { cn } from "@/lib/utils"
 import type { WorkspaceCanvasTutorialNodeVariant, WorkspaceCanvasTutorialPresentationSurface, WorkspaceCanvasTutorialStepId } from "../types"
 import { useWorkspaceCanvasTutorialController } from "../hooks/use-workspace-canvas-tutorial-controller"
-import { resolveWorkspaceCanvasTutorialProgressPercent } from "../lib"
+import { resolveWorkspaceCanvasTutorialProgressPercent, shouldWorkspaceCanvasTutorialBlockPanelNext } from "../lib"
 import {
   resolveWorkspaceTutorialBodyLayoutClass,
   resolveWorkspaceTutorialBodyGridClass,
@@ -321,7 +321,8 @@ export function WorkspaceCanvasTutorialPanel({
   const [isContentRevealReady, setIsContentRevealReady] = useState(true)
   const isFirstStep = stepIndex <= 0
   const isFinalStep = stepIndex >= stepCount - 1
-  const continueBlocked = continueMode !== "next"
+  const continueBlocked =
+    shouldWorkspaceCanvasTutorialBlockPanelNext(continueMode)
   const continueHelperText =
     continueMode === "shortcut"
       ? "Click on the highlighted button on the card to continue."
@@ -438,14 +439,14 @@ export function WorkspaceCanvasTutorialPanel({
                 <Button
                   type="button"
                   variant="outline"
-                  size="icon"
-                  className="nodrag nopan rounded-xl"
+                  size="sm"
+                  className="nodrag nopan h-10 gap-1.5 rounded-xl px-3"
                   onPointerDown={stopGuideInteractionPropagation}
                   onClick={onPrevious}
                   aria-label="Previous tutorial step"
-                  title="Previous tutorial step"
                 >
-                  <ChevronLeftIcon aria-hidden />
+                  <ChevronLeftIcon className="size-4" aria-hidden />
+                  <span>Back</span>
                 </Button>
               ) : null}
 
@@ -459,14 +460,14 @@ export function WorkspaceCanvasTutorialPanel({
               ) : (
                 <Button
                   type="button"
-                  size="icon"
-                  className="nodrag nopan rounded-xl"
+                  size="sm"
+                  className="nodrag nopan h-10 gap-1.5 rounded-xl px-3"
                   onPointerDown={stopGuideInteractionPropagation}
                   onClick={onNext}
                   aria-label={isFinalStep ? "Enter workspace" : "Next tutorial step"}
-                  title={isFinalStep ? "Enter workspace" : "Next tutorial step"}
                 >
-                  <ChevronRightIcon aria-hidden />
+                  <span>{isFinalStep ? "Enter workspace" : "Continue"}</span>
+                  <ChevronRightIcon className="size-4" aria-hidden />
                 </Button>
               )}
             </div>

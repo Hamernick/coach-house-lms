@@ -6,6 +6,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase"
 import {
   ROADMAP_SECTION_LIMIT,
+  getRoadmapWorkspaceRevalidationPaths,
   removeRoadmapSection,
   resolveRoadmapSections,
   updateRoadmapSection,
@@ -31,6 +32,24 @@ type SaveInput = {
 
 type SaveResult = { section: RoadmapSection } | { error: string }
 type DeleteResult = { ok: true } | { error: string }
+
+function revalidateRoadmapWorkspacePaths({
+  publicSlug,
+  sectionSlug,
+  includePublicRoadmap = true,
+}: {
+  publicSlug?: string | null
+  sectionSlug?: string | null
+  includePublicRoadmap?: boolean
+}) {
+  for (const path of getRoadmapWorkspaceRevalidationPaths({
+    publicSlug,
+    sectionSlug,
+    includePublicRoadmap,
+  })) {
+    revalidatePath(path)
+  }
+}
 
 export async function saveRoadmapSectionAction({
   sectionId,
@@ -116,10 +135,10 @@ export async function saveRoadmapSectionAction({
     await supabase.storage.from(ORG_MEDIA_BUCKET).remove([cleanupPath])
   }
 
-  revalidatePath("/workspace/roadmap")
-  if (orgRow?.public_slug) {
-    revalidatePath(`/${orgRow.public_slug}/roadmap`)
-  }
+  revalidateRoadmapWorkspacePaths({
+    publicSlug: orgRow?.public_slug,
+    sectionSlug: section.slug,
+  })
 
   if (isNewSection) {
     const notifyResult = await createNotification(supabase, {
@@ -202,10 +221,10 @@ export async function deleteRoadmapSectionAction(sectionId: string | null | unde
     await supabase.storage.from(ORG_MEDIA_BUCKET).remove([cleanupPath])
   }
 
-  revalidatePath("/workspace/roadmap")
-  if (orgRow?.public_slug) {
-    revalidatePath(`/${orgRow.public_slug}/roadmap`)
-  }
+  revalidateRoadmapWorkspacePaths({
+    publicSlug: orgRow?.public_slug,
+    sectionSlug: previousSection?.slug,
+  })
 
   return { ok: true }
 }
@@ -266,10 +285,9 @@ export async function setRoadmapPublicAction(nextPublic: boolean): Promise<Toggl
     return { error: error.message }
   }
 
-  revalidatePath("/workspace/roadmap")
-  if (orgRow?.public_slug) {
-    revalidatePath(`/${orgRow.public_slug}/roadmap`)
-  }
+  revalidateRoadmapWorkspacePaths({
+    publicSlug: orgRow?.public_slug,
+  })
 
   return { ok: true }
 }
@@ -335,10 +353,10 @@ export async function setRoadmapHeroImageAction(heroUrl: string | null): Promise
     await supabase.storage.from(ORG_MEDIA_BUCKET).remove([cleanupPath])
   }
 
-  revalidatePath("/workspace/roadmap")
-  if (orgRow?.public_slug && orgRow?.is_public_roadmap) {
-    revalidatePath(`/${orgRow.public_slug}/roadmap`)
-  }
+  revalidateRoadmapWorkspacePaths({
+    publicSlug: orgRow?.public_slug,
+    includePublicRoadmap: Boolean(orgRow?.is_public_roadmap),
+  })
 
   return { ok: true }
 }

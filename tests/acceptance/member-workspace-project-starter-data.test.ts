@@ -16,14 +16,18 @@ describe("member workspace project starter data", () => {
       actorId: "user-1",
     })
 
-    expect(projects.length).toBeGreaterThan(0)
+    expect(projects).toHaveLength(1)
     expect(projects[0]).toMatchObject({
       org_id: "org-1",
+      name: "Projects preview",
+      client_name: "Organization",
+      type_label: "Preview",
       created_by: "user-1",
       updated_by: "user-1",
       created_source: "starter_seed",
       starter_seed_version: MEMBER_WORKSPACE_STARTER_VERSION,
     })
+    expect(projects[0]?.name).not.toMatch(/fintech|internal|crm|acme/i)
   })
 
   it("maps persisted project rows into the shared project card view model", () => {

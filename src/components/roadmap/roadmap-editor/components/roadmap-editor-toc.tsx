@@ -38,7 +38,10 @@ type RoadmapEditorTocProps = {
   onSectionSelect: (next: { id: string; slug: string }) => void
   onToggleGroup: (groupId: string) => void
   isFrameworkSection: (section: RoadmapSection) => boolean
-  resolveSectionStatus: (section: RoadmapSection) => RoadmapSectionStatus
+  resolveSectionStatus: (
+    section: RoadmapSection,
+    draft?: RoadmapDraft | null,
+  ) => RoadmapSectionStatus
   collapsed?: boolean
   onCollapsedChange?: (next: boolean) => void
 }
@@ -118,7 +121,7 @@ export function RoadmapEditorToc({
             const displayTitle = isFrameworkSection(item.section)
               ? item.section.templateTitle
               : draftTitle || item.section.title?.trim() || ""
-            const itemStatus = resolveSectionStatus(item.section)
+            const itemStatus = resolveSectionStatus(item.section, draft)
             return (
               <div key={item.section.id} className="space-y-1 snap-start snap-always">
                 <div className="group flex items-center gap-2">
@@ -177,7 +180,7 @@ export function RoadmapEditorToc({
                       const childDisplayTitle = isFrameworkSection(child)
                         ? child.templateTitle
                         : childTitle || child.title?.trim() || ""
-                      const childStatus = resolveSectionStatus(child)
+                      const childStatus = resolveSectionStatus(child, childDraft)
                       return (
                         <div
                           key={child.id}
@@ -222,7 +225,7 @@ export function RoadmapEditorToc({
           const displayTitle = isFrameworkSection(item.section)
             ? item.section.templateTitle
             : draftTitle || item.section.title?.trim() || ""
-          const itemStatus = resolveSectionStatus(item.section)
+          const itemStatus = resolveSectionStatus(item.section, draft)
 
           return (
             <div key={item.section.id} className="group flex items-center gap-2 snap-start snap-always">

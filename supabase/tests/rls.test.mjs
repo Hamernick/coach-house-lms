@@ -546,8 +546,22 @@ async function run() {
   let memberWorkspaceTasksTableAvailable = false
   let memberWorkspaceTaskAssigneesTableAvailable = false
   let memberWorkspaceProjectId = null
+  let memberWorkspaceSubscriptionId = null
 
   if (orgAccessReady) {
+    memberWorkspaceSubscriptionId = randomUUID()
+    const { error: paidAccessError } = await adminClient.from("subscriptions").insert({
+      id: memberWorkspaceSubscriptionId,
+      user_id: member.id,
+      stripe_subscription_id: `sub_member_workspace_${suffix}`,
+      status: "active",
+      metadata: { planName: "Organization" },
+    })
+    results.push({
+      name: "member workspace paid access fixture created",
+      passed: !paidAccessError,
+    })
+
     const { error: projectProbeError } = await memberClient
       .from("organization_projects")
       .select("id")
@@ -1625,18 +1639,22 @@ async function run() {
 
   // Subscription visibility
   {
-    const subId = randomUUID()
-    const { error } = await adminClient.from("subscriptions").insert({
-      id: subId,
-      user_id: member.id,
-      stripe_subscription_id: `sub_${suffix}`,
-      status: "active",
-    })
-    if (error) throw error
+    const subId = memberWorkspaceSubscriptionId ?? randomUUID()
+    if (!memberWorkspaceSubscriptionId) {
+      const { error } = await adminClient.from("subscriptions").insert({
+        id: subId,
+        user_id: member.id,
+        stripe_subscription_id: `sub_${suffix}`,
+        status: "active",
+        metadata: { planName: "Organization" },
+      })
+      if (error) throw error
+    }
 
     const { data, error: subscriptionError } = await memberClient
       .from("subscriptions")
       .select("id")
+      .eq("id", subId)
       .maybeSingle()
     results.push({
       name: "member can read own subscription",

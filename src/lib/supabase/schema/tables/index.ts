@@ -44,6 +44,8 @@ import type { OrganizationWorkspaceObjectiveStepsTable } from "./organization_wo
 import type { OrganizationWorkspaceObjectivesTable } from "./organization_workspace_objectives"
 import type { OrganizationWorkspaceStarterStateTable } from "./organization_workspace_starter_state"
 import type { NotificationsTable } from "./notifications"
+import type { UserJourneyEventsTable } from "./user_journey_events"
+import type { UserActivationCheckpointsTable } from "./user_activation_checkpoints"
 
 export type { OrganizationsTable } from "./organizations"
 export type { AppPricingFeedbackResponsesTable } from "./app_pricing_feedback_responses"
@@ -91,6 +93,8 @@ export type { OrganizationWorkspaceObjectiveStepsTable } from "./organization_wo
 export type { OrganizationWorkspaceObjectivesTable } from "./organization_workspace_objectives"
 export type { OrganizationWorkspaceStarterStateTable } from "./organization_workspace_starter_state"
 export type { NotificationsTable } from "./notifications"
+export type { UserJourneyEventsTable } from "./user_journey_events"
+export type { UserActivationCheckpointsTable } from "./user_activation_checkpoints"
 
 export type PublicTables = {
   organizations: OrganizationsTable
@@ -139,4 +143,6 @@ export type PublicTables = {
   organization_workspace_objectives: OrganizationWorkspaceObjectivesTable
   organization_workspace_starter_state: OrganizationWorkspaceStarterStateTable
   notifications: NotificationsTable
+  user_journey_events: UserJourneyEventsTable
+  user_activation_checkpoints: UserActivationCheckpointsTable
 }

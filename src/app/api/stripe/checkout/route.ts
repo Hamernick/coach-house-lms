@@ -12,6 +12,7 @@ import {
 } from "@/lib/billing/stripe-runtime"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase"
+import { trackUserJourneyMilestone } from "@/lib/user-journey"
 
 type CheckoutErrorCode =
   | "stripe_unavailable"
@@ -327,6 +328,26 @@ export async function GET(request: NextRequest) {
         debugToken,
       })
     }
+
+    await trackUserJourneyMilestone({
+      userId,
+      orgId,
+      eventName: "checkout_started",
+      journey: "paid_builder",
+      source: "stripe_checkout_route",
+      surface: "pricing_checkout",
+      planTier,
+      checkpoint: "checkout_started",
+      metadata: {
+        requestSource: source,
+        checkoutContext,
+        checkoutSessionId: checkout.id,
+        stripeMode: stripeConfig.mode,
+        stripeTarget: stripeConfig.target,
+        hasRedirectTarget: Boolean(redirectTarget),
+        hasCancelTarget: Boolean(cancelTarget),
+      },
+    })
 
     const response = NextResponse.redirect(checkout.url)
     copySupabaseCookies(supabaseResponse, response)

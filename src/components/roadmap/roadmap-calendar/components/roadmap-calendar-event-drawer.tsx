@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction } from "react"
+import { memo, type Dispatch, type SetStateAction } from "react"
 import RepeatIcon from "lucide-react/dist/esm/icons/repeat"
 import Trash2Icon from "lucide-react/dist/esm/icons/trash-2"
 
@@ -32,7 +32,7 @@ type RoadmapCalendarEventDrawerProps = {
   onSave: () => void
 }
 
-export function RoadmapCalendarEventDrawer({
+export const RoadmapCalendarEventDrawer = memo(function RoadmapCalendarEventDrawer({
   open,
   onOpenChange,
   editingEvent,
@@ -286,4 +286,4 @@ export function RoadmapCalendarEventDrawer({
       </DrawerContent>
     </Drawer>
   )
-}
+})

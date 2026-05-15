@@ -59,11 +59,13 @@ export function resolveWorkspaceCanvasOrganizationMapTutorialProps({
 
 export function resolveWorkspaceCanvasTutorialSurfaceProps({
   allowEditing,
+  isPlatformAdmin,
   presentationMode,
   tutorialCallout,
   onTutorialComplete,
 }: {
   allowEditing: boolean
+  isPlatformAdmin?: boolean
   presentationMode: boolean
   tutorialCallout: WorkspaceCanvasTutorialCallout | null
   onTutorialComplete: () => void
@@ -71,6 +73,7 @@ export function resolveWorkspaceCanvasTutorialSurfaceProps({
   return {
     showTutorialRestart: shouldShowWorkspaceCanvasInternalTutorialRestart({
       allowEditing,
+      isPlatformAdmin,
       presentationMode,
       environment: process.env.NODE_ENV,
     }),

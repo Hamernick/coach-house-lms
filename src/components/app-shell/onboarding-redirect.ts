@@ -1,5 +1,11 @@
+import { FIND_PATH } from "@/lib/find/routes"
+
 const WORKSPACE_ONBOARDING_REDIRECT = "/onboarding?source=onboarding"
-const MEMBER_ONBOARDING_REDIRECT = "/find?member_onboarding=1&source=onboarding"
+const MEMBER_ONBOARDING_REDIRECT = `${FIND_PATH}?member_onboarding=1&source=onboarding`
+
+function isFindPath(pathname: string) {
+  return pathname === FIND_PATH || pathname.startsWith(`${FIND_PATH}/`)
+}
 
 export function resolveAppShellOnboardingRedirectTarget({
   onboardingLocked,
@@ -22,7 +28,9 @@ export function resolveAppShellOnboardingRedirectTarget({
   if (typeof pathname !== "string" || pathname.length === 0) {
     return redirectTarget
   }
-  if (redirectTarget === MEMBER_ONBOARDING_REDIRECT && pathname.startsWith("/find")) return null
+  if (redirectTarget === MEMBER_ONBOARDING_REDIRECT && isFindPath(pathname)) {
+    return null
+  }
   if (redirectTarget === WORKSPACE_ONBOARDING_REDIRECT && pathname.startsWith("/onboarding")) return null
   return redirectTarget
 }

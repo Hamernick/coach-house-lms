@@ -1,14 +1,25 @@
 import type { PrototypeLabEntry, PrototypeLabInput } from "../types"
 
-const DEFAULT_ENTRY_ID = "team-invite-sheet"
+const DEFAULT_ENTRY_ID = "fiscal-sponsorship-flow"
 
 const PROTOTYPE_LAB_ENTRIES: PrototypeLabEntry[] = [
+  {
+    id: "fiscal-sponsorship-flow",
+    projectId: "fiscal-sponsorship",
+    folderLabel: "Flows",
+    title: "Fiscal Sponsorship flow",
+    description:
+      "Clickable intake, review, agreement, signature, and re-grant prototype.",
+    kind: "flow",
+    statusLabel: "Prototype",
+  },
   {
     id: "team-invite-sheet",
     projectId: "invites",
     folderLabel: "Flows",
     title: "Invite composer",
-    description: "Centered draft of the team invite sheet with lightweight role and routing context.",
+    description:
+      "Centered draft of the team invite sheet with lightweight role and routing context.",
     kind: "flow",
     statusLabel: "In progress",
   },
@@ -17,16 +28,38 @@ const PROTOTYPE_LAB_ENTRIES: PrototypeLabEntry[] = [
     projectId: "invites",
     folderLabel: "Flows",
     title: "Access request review",
-    description: "Signed-in review surface for existing users who accept or decline access.",
+    description:
+      "Signed-in review surface for existing users who accept or decline access.",
     kind: "flow",
     statusLabel: "Ready for review",
+  },
+  {
+    id: "user-journey-atlas",
+    projectId: "user-journeys",
+    folderLabel: "Journeys",
+    title: "User journey atlas",
+    description:
+      "Super-admin map of the account, checkout, onboarding, workspace, find, upgrade, and invite paths.",
+    kind: "flow",
+    statusLabel: "Reference",
+  },
+  {
+    id: "activation-monitor",
+    projectId: "user-journeys",
+    folderLabel: "Operations",
+    title: "Activation monitor",
+    description:
+      "Live readout of telemetry events, activation checkpoints, stuck paths, and coverage.",
+    kind: "ops",
+    statusLabel: "Live",
   },
   {
     id: "organization-external-invite",
     projectId: "email-gallery",
     folderLabel: "App emails",
     title: "Organization invite email",
-    description: "App-owned invite email for someone who does not yet have a Coach House account.",
+    description:
+      "App-owned invite email for someone who does not yet have a Coach House account.",
     kind: "email",
     statusLabel: "Reference",
   },
@@ -35,7 +68,8 @@ const PROTOTYPE_LAB_ENTRIES: PrototypeLabEntry[] = [
     projectId: "email-gallery",
     folderLabel: "App emails",
     title: "Existing user request email",
-    description: "Heads-up email that sends an existing member back to their in-app request.",
+    description:
+      "Heads-up email that sends an existing member back to their in-app request.",
     kind: "email",
     statusLabel: "Reference",
   },
@@ -112,7 +146,7 @@ export function resolvePrototypeLabSelectedEntryId({
   if (typeof projectId === "string") {
     const normalizedProjectId = projectId.trim()
     const firstProjectEntry = PROTOTYPE_LAB_ENTRIES.find(
-      (entry) => entry.projectId === normalizedProjectId,
+      (entry) => entry.projectId === normalizedProjectId
     )
     if (firstProjectEntry) return firstProjectEntry.id
   }

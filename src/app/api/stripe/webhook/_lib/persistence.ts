@@ -13,6 +13,8 @@ export async function upsertSubscription({
   subscriptionId,
   status,
   currentPeriodEnd,
+  cancelAt,
+  canceledAt,
   metadata,
 }: {
   userId: string
@@ -20,6 +22,8 @@ export async function upsertSubscription({
   subscriptionId: string
   status: Database["public"]["Enums"]["subscription_status"]
   currentPeriodEnd?: string | null
+  cancelAt?: string | null
+  canceledAt?: string | null
   metadata?: Database["public"]["Tables"]["subscriptions"]["Insert"]["metadata"]
 }) {
   const admin = createSupabaseAdminClient()
@@ -30,6 +34,8 @@ export async function upsertSubscription({
     stripe_subscription_id: subscriptionId,
     status,
     current_period_end: currentPeriodEnd ?? null,
+    cancel_at: cancelAt ?? null,
+    canceled_at: canceledAt ?? null,
     metadata: metadata ?? null,
   }
 

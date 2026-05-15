@@ -9,6 +9,7 @@ import { resolveWorkspaceCanvasOrgNodePosition } from "../adapters/workspace-can
 import { useWorkspaceCanvasCameraController } from "../runtime/workspace-canvas-camera-controller"
 import { useWorkspaceCanvasConnectionsController } from "../runtime/workspace-canvas-connections-controller"
 import { useWorkspaceCanvasLifecycleLogs } from "../runtime/workspace-canvas-lifecycle-logs"
+import { buildWorkspaceCardEdgeGeometryLookup } from "../../workspace-board-connection-handles"
 import { useWorkspaceCanvasAcceleratorRuntime } from "./workspace-canvas-surface-v2-accelerator-runtime"
 import { useWorkspaceAcceleratorTutorialActionComplete } from "./workspace-canvas-surface-v2-accelerator-tutorial"
 import {
@@ -195,7 +196,7 @@ export function WorkspaceCanvasSurfaceV2({
     onWorkspaceOnboardingSubmit: onInitialOnboardingSubmit,
   })
   const { showTutorialRestart, tutorialCalendarButtonCallout, onTutorialCalendarButtonComplete, organizationMapButtonCallout, onOrganizationMapButtonTutorialComplete } = resolveWorkspaceCanvasTutorialSurfaceProps({
-    allowEditing,
+    allowEditing, isPlatformAdmin: seed.isPlatformAdmin,
     presentationMode,
     tutorialCallout,
     onTutorialComplete: handleTutorialActionComplete,
@@ -295,6 +296,10 @@ export function WorkspaceCanvasSurfaceV2({
     tutorialSceneCameraViewport: resolvedTutorialSceneCameraViewport,
     tutorialSceneRequestSeed: tutorialRestartRequestKey,
   })
+  const nodeGeometryLookup = useMemo(
+    () => buildWorkspaceCardEdgeGeometryLookup(renderNodes),
+    [renderNodes],
+  )
   const handleFlowInit = useCallback((instance: ReactFlowInstance) => { flowInstanceRef.current = instance; setIsFlowReady(true) }, [])
   const { handleZoomIn, handleZoomOut, handleRecenterView, handleResetView } = useWorkspaceCanvasViewportControls({
     flowInstanceRef,
@@ -343,6 +348,7 @@ export function WorkspaceCanvasSurfaceV2({
     autoLayoutMode: boardState.autoLayoutMode,
     acceleratorWorkspaceNodeId,
     tutorialEdgeTargetId,
+    nodeGeometryLookup,
     onConnectCards,
     onDisconnectConnection,
     onDisconnectAllConnections,

@@ -3,8 +3,13 @@ import { NextResponse } from "next/server"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase"
 import type { Json } from "@/lib/supabase/schema/json"
-import { parseAssignmentFields } from "@/lib/modules"
+import {
+  parseAssignmentCompletionMode,
+  parseAssignmentFields,
+  shouldTreatAssignmentSubmissionAsComplete,
+} from "@/lib/modules"
 import { revalidateClassViews } from "@/app/(admin)/admin/classes/actions"
+import { trackUserJourneyMilestone } from "@/lib/user-journey"
 import { processModuleCompletion } from "./_lib/completion"
 import { syncMappedAnswersToOrganizationProfile } from "./_lib/profile-sync"
 import { extractOrgKeyMappings, sanitizeAnswers } from "./_lib/sanitize"
@@ -111,7 +116,16 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     orgKeyMapping,
   })
 
-  if (assignmentRow.complete_on_submit) {
+  const completionMode = parseAssignmentCompletionMode(assignmentRow.schema)
+  const completedOnSubmit = shouldTreatAssignmentSubmissionAsComplete({
+    completeOnSubmit: Boolean(assignmentRow.complete_on_submit),
+    completionMode,
+    fields,
+    answers: sanitizedAnswers,
+    status: desiredStatus,
+  })
+
+  if (completedOnSubmit) {
     await processModuleCompletion({
       supabase,
       moduleId,
@@ -127,10 +141,29 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     additionalTargets: modulePath ? [modulePath] : undefined,
   })
 
+  await trackUserJourneyMilestone({
+    userId: user.id,
+    orgId: user.id,
+    eventName: "homework_submitted",
+    journey: "workspace_activation",
+    source: "assignment_submission_route",
+    surface: "module_assignment",
+    checkpoint: "first_homework_submitted",
+    metadata: {
+      moduleId,
+      classId: moduleMeta.class_id,
+      classSlug: slug,
+      moduleIndex: moduleMeta.idx,
+      fieldCount: fields.length,
+      completedOnSubmit,
+      status: desiredStatus,
+    },
+  })
+
   return NextResponse.json({
     status: submissionRows?.status ?? desiredStatus,
     answers: submissionRows?.answers ?? sanitizedAnswers,
     updatedAt: submissionRows?.updated_at ?? null,
-    completeOnSubmit: Boolean(assignmentRow.complete_on_submit),
+    completeOnSubmit: completedOnSubmit,
   })
 }

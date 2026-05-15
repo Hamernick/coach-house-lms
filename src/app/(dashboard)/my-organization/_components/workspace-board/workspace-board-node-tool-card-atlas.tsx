@@ -3,6 +3,7 @@
 import type { OrgProfile } from "@/components/organization/org-profile-card/types"
 import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
 import { WorkspaceMapCardPanel } from "@/features/workspace-map-card"
+import { getWorkspaceEditorPath } from "@/lib/workspace/routes"
 
 import type { WorkspaceCardSize, WorkspaceSeedData } from "./workspace-board-types"
 
@@ -24,7 +25,7 @@ export function WorkspaceBoardAtlasCard({
         orgId: seed.orgId,
         title: "Map",
         profile,
-        companyHref: "/workspace?view=editor&tab=company",
+        companyHref: getWorkspaceEditorPath({ tab: "company" }),
         presentationMode,
         tutorialStepId,
       }}

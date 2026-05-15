@@ -47,56 +47,56 @@ export function StepFooter({
     onboardingMode === "post_signup_access"
 
   return (
-    <div className="border-border/70 bg-background/70 relative z-20 mt-auto shrink-0 border-t px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur supports-[backdrop-filter]:bg-background/60 md:px-6 md:py-4">
+    <div className="border-border/70 bg-background/70 supports-[backdrop-filter]:bg-background/60 relative z-20 mt-auto shrink-0 border-t px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur md:px-6 md:py-4">
       <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-      <div className="flex items-center gap-2">
-        {step > 0 ? (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onPrev}
-            disabled={submitting}
-            className="w-full sm:w-auto"
-          >
-            Back
-          </Button>
-        ) : (
-          <span className="text-muted-foreground text-xs">
-            You’ll be able to change this later.
-          </span>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Button
-          type={isLastStep ? "submit" : "button"}
-          onClick={isLastStep ? undefined : onNext}
-          disabled={
-            submitting ||
-            (currentStepId === "intent" && !intentFocus) ||
-            (currentStepId === "org" &&
-              (slugStatus !== "available" || !formationStatus)) ||
-            (currentStepId === "account" && !accountStepReady)
-          }
-          className="w-full gap-2 sm:w-auto"
-        >
-          {isLastStep ? (
-            <>
-              {isPostSignupPricingStep
-                ? builderPlanTier === "free"
-                  ? "Continue with Individual"
-                  : "Enter workspace"
-                : "Finish"}
-              <ArrowRightIcon className="h-4 w-4" aria-hidden />
-            </>
+        <div className="flex min-w-0 items-center gap-2">
+          {step > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onPrev}
+              disabled={submitting}
+              className="w-full sm:w-auto"
+            >
+              Back
+            </Button>
           ) : (
-            <>
-              Continue
-              <ArrowRightIcon className="h-4 w-4" aria-hidden />
-            </>
+            <span className="text-muted-foreground text-xs">
+              You’ll be able to change this later.
+            </span>
           )}
-        </Button>
-      </div>
+        </div>
+
+        <div className="flex min-w-0 items-center gap-2">
+          <Button
+            type={isLastStep ? "submit" : "button"}
+            onClick={isLastStep ? undefined : onNext}
+            disabled={
+              submitting ||
+              (currentStepId === "intent" && !intentFocus) ||
+              (currentStepId === "org" &&
+                (slugStatus !== "available" || !formationStatus)) ||
+              (currentStepId === "account" && !accountStepReady)
+            }
+            className="h-auto min-h-9 w-full gap-2 text-center whitespace-normal sm:w-auto"
+          >
+            {isLastStep ? (
+              <>
+                {isPostSignupPricingStep
+                  ? builderPlanTier === "free"
+                    ? "Continue with Individual"
+                    : "Enter workspace"
+                  : "Finish"}
+                <ArrowRightIcon className="h-4 w-4" aria-hidden />
+              </>
+            ) : (
+              <>
+                Continue
+                <ArrowRightIcon className="h-4 w-4" aria-hidden />
+              </>
+            )}
+          </Button>
+        </div>
       </div>
     </div>
   )

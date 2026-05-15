@@ -3,6 +3,7 @@ import type { NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 
 import { env } from "@/lib/env"
+import { DEFAULT_POST_AUTH_REDIRECT } from "@/lib/auth/redirects"
 import type { Database } from "@/lib/supabase/types"
 
 const PROTECTED_PREFIXES = [
@@ -61,7 +62,7 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && isAuthRoute) {
-    const redirectResponse = NextResponse.redirect(new URL("/projects", request.url))
+    const redirectResponse = NextResponse.redirect(new URL(DEFAULT_POST_AUTH_REDIRECT, request.url))
     copyCookies(response, redirectResponse)
     return redirectResponse
   }

@@ -11,6 +11,7 @@ import { MyOrganizationAddEventSheetButton } from "@/components/organization/my-
 import { RoadmapCalendar } from "@/components/roadmap/roadmap-calendar"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { WORKSPACE_ROADMAP_PATH } from "@/lib/workspace/routes"
 
 import type { MyOrganizationCalendarView } from "../../_lib/types"
 import { safeDateLabel } from "../../_lib/helpers"
@@ -189,7 +190,7 @@ export function WorkspaceBoardCalendarCard({
         </div>
 
         <Button asChild type="button" variant="ghost" size="sm" className="mt-auto h-8 justify-start px-2 text-xs">
-          <Link href="/workspace/roadmap">
+          <Link href={WORKSPACE_ROADMAP_PATH}>
             <CalendarPlus2Icon className="h-3.5 w-3.5" aria-hidden />
             View calendar
           </Link>

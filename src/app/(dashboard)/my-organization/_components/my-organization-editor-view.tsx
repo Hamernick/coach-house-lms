@@ -7,6 +7,7 @@ import type { OrgProgram, OrgProfile, ProfileTab } from "@/components/organizati
 import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
 import { cn } from "@/lib/utils"
+import { WORKSPACE_PATH } from "@/lib/workspace/routes"
 
 type MyOrganizationEditorViewProps = {
   initialProfile: OrgProfile
@@ -30,13 +31,16 @@ export function MyOrganizationEditorView({
   onClose,
 }: MyOrganizationEditorViewProps) {
   const router = useRouter()
-  const handleClose = onClose ?? (() => router.push("/workspace"))
+  const handleClose = onClose ?? (() => router.push(WORKSPACE_PATH))
 
   return (
-    <div className={cn("flex flex-col", embedded ? "h-full min-h-0 gap-4" : "gap-5 md:gap-6")}>
+    <div className={cn("flex h-full min-h-0 flex-col", embedded ? "gap-4" : "gap-5 md:gap-6")}>
       {!embedded ? <PageTutorialButton tutorial="my-organization" /> : null}
-      <section className={cn(embedded ? "flex min-h-0 flex-1 flex-col gap-3" : "space-y-3")}>
-        <div className={cn(embedded && "min-h-0 flex-1 overflow-y-auto")}>
+      <section className="flex min-h-0 flex-1 flex-col gap-3">
+        <div
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+          style={{ scrollbarGutter: "stable" }}
+        >
           <OrgProfileCard
             initial={initialProfile}
             people={people}
@@ -48,7 +52,6 @@ export function MyOrganizationEditorView({
           />
         </div>
       </section>
-      {!embedded ? <div aria-hidden className="h-5 shrink-0 md:h-6" /> : null}
     </div>
   )
 }

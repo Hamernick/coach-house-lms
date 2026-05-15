@@ -7,7 +7,7 @@ export type OrganizationProjectQuickLinksTable = {
     url: string
     link_type: string
     size_mb: number
-    created_by: string
+    created_by: string | null
     updated_by: string | null
     created_at: string
     updated_at: string
@@ -20,7 +20,7 @@ export type OrganizationProjectQuickLinksTable = {
     url: string
     link_type?: string
     size_mb?: number
-    created_by: string
+    created_by?: string | null
     updated_by?: string | null
     created_at?: string
     updated_at?: string
@@ -33,7 +33,7 @@ export type OrganizationProjectQuickLinksTable = {
     url?: string
     link_type?: string
     size_mb?: number
-    created_by?: string
+    created_by?: string | null
     updated_by?: string | null
     created_at?: string
     updated_at?: string

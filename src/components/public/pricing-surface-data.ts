@@ -28,7 +28,7 @@ const TIERS: PricingTier[] = [
       "For founders and early nonprofit teams building core structure and fundability from day one.",
     priceLine: "Free",
     ctaLabel: "Get started",
-    ctaHref: "/?section=signup",
+    ctaHref: "/?section=signup&intent=build&plan=free",
     featureHeading: "Includes",
     features: [
       "1 Admin Seat (founder only)",
@@ -49,7 +49,7 @@ const TIERS: PricingTier[] = [
     priceLine: "$20",
     priceNote: "per month",
     ctaLabel: "Get started",
-    ctaHref: "/?section=signup",
+    ctaHref: "/?section=signup&intent=build&plan=organization",
     featured: true,
     badge: "Recommended",
     featureHeading: "Everything in Individual, plus",
@@ -74,7 +74,7 @@ const TIERS: PricingTier[] = [
     priceLine: "$58",
     priceNote: "per month",
     ctaLabel: "Get started",
-    ctaHref: "/?section=signup",
+    ctaHref: "/?section=signup&intent=build&plan=operations_support",
     featureHeading: "Everything in Organization, plus",
     features: [
       "Monthly 1:1 Coaching",

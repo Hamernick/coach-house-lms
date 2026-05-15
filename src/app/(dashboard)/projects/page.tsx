@@ -7,8 +7,11 @@ import {
   updateMemberWorkspaceProjectScheduleAction,
   updateMemberWorkspaceProjectStatusAction,
 } from "@/features/member-workspace"
+import { requireMemberWorkspacePageAccess } from "@/lib/workspace/member-workspace-access"
 
 export default async function ProjectsPage() {
+  await requireMemberWorkspacePageAccess("projects")
+
   const {
     projects,
     storageMode,

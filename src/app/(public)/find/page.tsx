@@ -3,8 +3,10 @@ import type { Metadata } from "next"
 import { HomeCanvasPreview } from "@/components/public/home-canvas-preview"
 import { PricingSurface } from "@/components/public/pricing-surface"
 import { PublicMapIndex } from "@/components/public/public-map-index"
-import { fetchPublicMapViewerState } from "@/features/find-map"
+import { AuthenticatedFindShell, fetchPublicMapViewerState } from "@/features/find-map"
 import { fetchPublicMapOrganizations } from "@/lib/queries/public-map-index"
+import { resolveDashboardLayoutState } from "@/app/(dashboard)/_lib/dashboard-layout-state"
+import { completeMemberMapOnboardingAction } from "@/app/(dashboard)/onboarding/actions"
 
 export const metadata: Metadata = {
   title: "Find organizations",
@@ -23,6 +25,47 @@ export default async function PublicFindPage() {
     .map((value) => value?.trim() ?? "")
     .find((value) => value.length > 0 && value.startsWith("pk."))
 
+  if (viewerState.viewer) {
+    const shellState = await resolveDashboardLayoutState()
+    if (shellState.userPresent) {
+      const memberOnboardingIntent =
+        shellState.onboardingIntentFocus === "find" ||
+        shellState.onboardingIntentFocus === "fund" ||
+        shellState.onboardingIntentFocus === "support"
+          ? shellState.onboardingIntentFocus
+          : null
+      const memberOnboardingEnabled =
+        shellState.onboardingLocked && memberOnboardingIntent !== null
+
+      return (
+        <AuthenticatedFindShell state={shellState}>
+          <PublicMapIndex
+            presentationMode="app-shell"
+            organizations={organizations}
+            mapboxToken={publicToken}
+            viewer={viewerState.viewer}
+            adminOnboardingPreview={{
+              canToggle: shellState.isAdmin,
+              hasOrganizationSwitcher:
+                shellState.memberMapOnboarding.hasOrganizationSwitcher,
+            }}
+            memberOnboarding={
+              memberOnboardingEnabled
+                ? {
+                    enabled: true,
+                    intentFocus: memberOnboardingIntent,
+                    hasOrganizationSwitcher:
+                      shellState.memberMapOnboarding.hasOrganizationSwitcher,
+                    onComplete: completeMemberMapOnboardingAction,
+                  }
+                : undefined
+            }
+          />
+        </AuthenticatedFindShell>
+      )
+    }
+  }
+
   return (
     <HomeCanvasPreview
       initialSection="find"
@@ -33,9 +76,6 @@ export default async function PublicFindPage() {
             organizations={organizations}
             mapboxToken={publicToken}
             viewer={viewerState.viewer}
-            joinedOrganizations={viewerState.joinedOrganizations}
-            boardAlerts={viewerState.boardAlerts}
-            memberProfile={viewerState.memberProfile}
           />
         </div>
       }

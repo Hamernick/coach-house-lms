@@ -18,16 +18,16 @@ import {
   WORKSPACE_TUTORIAL_INVERSE_CONTROL_SURFACE_CLASSNAME,
   WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME,
 } from "@/components/workspace/workspace-tutorial-theme"
+import { RoadmapCalendar } from "@/components/roadmap/roadmap-calendar"
 import { cn } from "@/lib/utils"
 
 import type { MyOrganizationCalendarView } from "../../../../_lib/types"
-import { WorkspaceBoardCalendarCard } from "../../workspace-board-calendar-card"
 import { WorkspaceTutorialCallout } from "../../workspace-tutorial-callout"
 import { WorkspaceCanvasSurfaceV2HelpOverlay } from "./workspace-canvas-surface-v2-help-overlay"
 
 export function WorkspaceCanvasSurfaceV2ViewportControls({
-  calendar,
-  canEdit,
+  calendar: _calendar,
+  canEdit: _canEdit,
   tutorialCalendarButtonCallout,
   onTutorialCalendarButtonComplete,
   onRecenterView,
@@ -76,6 +76,7 @@ export function WorkspaceCanvasSurfaceV2ViewportControls({
                     title={tutorialCalendarButtonCallout.title}
                     instruction={tutorialCalendarButtonCallout.instruction}
                     tapHereLabel="Open calendar"
+                    indicatorIconPosition="after"
                     tooltipContentClassName={
                       `${WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME} !px-2 !py-1`
                     }
@@ -162,11 +163,9 @@ export function WorkspaceCanvasSurfaceV2ViewportControls({
           align="end"
           sideOffset={8}
           collisionPadding={16}
-          className="w-[min(24rem,calc(100vw-2rem))] rounded-[22px] border-border/70 bg-card/96 p-2 shadow-lg backdrop-blur data-[side=bottom]:slide-in-from-top-1 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none"
+          className="w-[min(23.5rem,calc(100vw-1rem))] overflow-hidden rounded-[30px] border-0 bg-background/95 p-0 shadow-none backdrop-blur-xl data-[side=bottom]:slide-in-from-top-1 data-[state=closed]:zoom-out-98 data-[state=open]:zoom-in-98 motion-reduce:data-[state=open]:animate-none motion-reduce:data-[state=closed]:animate-none"
         >
-          <div className="max-h-[min(32rem,calc(100svh-7rem))] overflow-y-auto overscroll-contain rounded-[18px] bg-background/60 p-2">
-            <WorkspaceBoardCalendarCard calendar={calendar} canEdit={canEdit} />
-          </div>
+          <RoadmapCalendar hideHeaderCopy />
         </PopoverContent>
       </Popover>
     </div>

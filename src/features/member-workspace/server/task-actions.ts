@@ -7,6 +7,7 @@ import type {
   MemberWorkspaceCreateTaskInput,
   MemberWorkspaceTaskStatus,
 } from "../types"
+import { ensureMemberWorkspaceFeatureAccess } from "./access"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
 
@@ -213,6 +214,8 @@ export async function createMemberWorkspaceTaskAction(
   if (actor.isAdmin) {
     return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
   }
+  const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
+  if (featureAccess) return featureAccess
 
   if (!actor.canEdit) {
     return { error: "You do not have access to create tasks." }
@@ -334,6 +337,8 @@ export async function updateMemberWorkspaceTaskAction(
   if (actor.isAdmin) {
     return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
   }
+  const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
+  if (featureAccess) return featureAccess
 
   if (!actor.canEdit) {
     return { error: "You do not have access to edit tasks." }
@@ -483,6 +488,8 @@ export async function updateMemberWorkspaceTaskStatusAction(
   if (actor.isAdmin) {
     return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
   }
+  const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
+  if (featureAccess) return featureAccess
 
   let canUpdateTask = actor.canEdit
 
@@ -558,6 +565,8 @@ export async function updateMemberWorkspaceTaskOrderAction(
   if (actor.isAdmin) {
     return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
   }
+  const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
+  if (featureAccess) return featureAccess
 
   if (!actor.canEdit) {
     return { error: "You do not have access to reorder tasks." }
@@ -639,6 +648,8 @@ export async function deleteMemberWorkspaceTaskAction(
   if (actor.isAdmin) {
     return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
   }
+  const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
+  if (featureAccess) return featureAccess
 
   if (!actor.canEdit) {
     return { error: "You do not have access to delete tasks." }

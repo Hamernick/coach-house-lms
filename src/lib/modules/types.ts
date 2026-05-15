@@ -49,12 +49,16 @@ export type ModuleAssignmentField = {
   orgKey?: string
   roadmapSectionId?: string
   assistContext?: string
+  screen?: "intro" | "question"
   rows?: BudgetTableRow[]
 }
+
+export type ModuleAssignmentCompletionMode = "on_submit" | "all_answered"
 
 export type ModuleAssignment = {
   fields: ModuleAssignmentField[]
   completeOnSubmit: boolean
+  completionMode: ModuleAssignmentCompletionMode
 }
 
 export type ModuleAssignmentSubmission = {

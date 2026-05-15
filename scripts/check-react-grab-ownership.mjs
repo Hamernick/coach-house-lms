@@ -9,6 +9,32 @@ const SRC_ROOT = path.join(ROOT, "src")
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx"])
 const ATTRIBUTE_ALLOWLIST = new Set(["data-react-grab-role"])
 const OWNER_HELPER_PATH = "src/components/dev/react-grab-surface.ts"
+const REQUIRED_REACT_GRAB_COVERAGE = [
+  {
+    file:
+      "src/features/member-workspace/components/projects/member-workspace-project-card-react-grab.ts",
+    requiredFragments: [
+      "getReactGrabOwnerProps({",
+      "getReactGrabLinkedSurfaceProps({",
+      "member-workspace-project-card:${variant}:${projectId}",
+      "canonicalOwnerSource: PROJECT_CARD_REACT_GRAB_SOURCE",
+      "canonicalOwnerReason: PROJECT_CARD_REACT_GRAB_REASON",
+    ],
+  },
+  {
+    file:
+      "src/features/member-workspace/components/projects/member-workspace-project-card.tsx",
+    requiredFragments: [
+      "getMemberWorkspaceProjectCardReactGrabOwnerProps",
+      'reactGrabSurface("status-pill", "indicator")',
+      'reactGrabSurface("date-priority-row", "content")',
+      'reactGrabSurface("priority", "indicator")',
+      'reactGrabSurface("footer-separator", "content")',
+      'reactGrabSurface("progress-row", "content")',
+      'reactGrabSurface("assignee-avatar", "content")',
+    ],
+  },
+]
 
 function toRepoRelative(absolutePath) {
   return path.relative(ROOT, absolutePath).split(path.sep).join("/")
@@ -64,6 +90,28 @@ function collectReactGrabJsxAttributes(sourceFile) {
   return attributes
 }
 
+async function checkRequiredReactGrabCoverage(errors) {
+  for (const contract of REQUIRED_REACT_GRAB_COVERAGE) {
+    let sourceText = ""
+    try {
+      sourceText = await fs.readFile(path.join(ROOT, contract.file), "utf8")
+    } catch {
+      errors.push(
+        `${contract.file}: required React Grab coverage file is missing.`,
+      )
+      continue
+    }
+
+    for (const fragment of contract.requiredFragments) {
+      if (!sourceText.includes(fragment)) {
+        errors.push(
+          `${contract.file}: required React Grab coverage fragment is missing: ${fragment}`,
+        )
+      }
+    }
+  }
+}
+
 async function run() {
   const files = await walkFiles(SRC_ROOT)
   const errors = []
@@ -91,6 +139,8 @@ async function run() {
       )
     }
   }
+
+  await checkRequiredReactGrabCoverage(errors)
 
   if (errors.length > 0) {
     console.error("React Grab ownership check failed:\n")

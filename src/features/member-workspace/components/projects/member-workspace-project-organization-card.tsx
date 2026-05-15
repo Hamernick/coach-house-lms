@@ -15,13 +15,29 @@ function organizationStatusLabel(status: MemberWorkspaceAdminOrganizationSummary
   return "N/A"
 }
 
-function resolveOrganizationHref(organization: MemberWorkspaceAdminOrganizationSummary) {
-  const website =
-    toTrimmedString(organization.profile.website) ||
-    toTrimmedString(organization.profile.publicUrl) ||
-    toTrimmedString(organization.profile.public_url)
+function resolveExternalHref(value: unknown) {
+  const href = toTrimmedString(value)
+  if (!href) return null
+  if (href.startsWith("/")) return href
+  if (/^https?:\/\//i.test(href)) return href
+  if (/^[a-z0-9.-]+\.[a-z]{2,}(\/.*)?$/i.test(href)) {
+    return `https://${href}`
+  }
+  return null
+}
 
-  return website || null
+export function resolveMemberWorkspaceOrganizationHref(
+  organization: MemberWorkspaceAdminOrganizationSummary,
+) {
+  const website =
+    resolveExternalHref(organization.profile.website) ||
+    resolveExternalHref(organization.profile.publicUrl) ||
+    resolveExternalHref(organization.profile.public_url)
+
+  if (website) return website
+
+  const publicSlug = toTrimmedString(organization.publicSlug)
+  return publicSlug ? `/find/${encodeURIComponent(publicSlug)}` : null
 }
 
 export function MemberWorkspaceProjectOrganizationCard({
@@ -33,7 +49,7 @@ export function MemberWorkspaceProjectOrganizationCard({
     organization.members.find((member) => member.isOwner) ??
     organization.members[0] ??
     null
-  const href = resolveOrganizationHref(organization)
+  const href = resolveMemberWorkspaceOrganizationHref(organization)
 
   return (
     <div className="space-y-3 rounded-lg border border-border bg-card/80 p-4">

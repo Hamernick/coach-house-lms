@@ -9,6 +9,16 @@ import type {
 } from "@/lib/accelerator/progress"
 import { getClassModulesForUser, type ModuleRecord } from "@/lib/modules"
 import type { createSupabaseServerClient } from "@/lib/supabase"
+import {
+  isOrganizationSetupTimelineModule,
+  mergeWorkspaceAcceleratorResources,
+  resolveWorkspaceAcceleratorSupplementalResources,
+} from "./my-organization-accelerator-timeline-helpers"
+
+export {
+  isOrganizationSetupTimelineModule,
+  resolveWorkspaceAcceleratorSupplementalResources,
+} from "./my-organization-accelerator-timeline-helpers"
 
 type SupabaseServerClient = Awaited<ReturnType<typeof createSupabaseServerClient>>
 
@@ -27,67 +37,6 @@ type TimelineModuleRow = {
   video_url: string | null
   duration_minutes: number | null
   deck_path: string | null
-}
-
-const ORGANIZATION_SETUP_MODULE_ID = "workspace-onboarding-organization-setup"
-const ORGANIZATION_SETUP_TITLE_SIGNALS = new Set([
-  "organization setup",
-  "workspace setup",
-])
-const ORGANIZATION_SETUP_SLUG_SIGNALS = [
-  "organization-setup",
-  "workspace-setup",
-  "onboarding-organization-setup",
-] as const
-
-function normalizeOrganizationSetupToken(value: string | null | undefined) {
-  if (typeof value !== "string") return ""
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[’']/g, "")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-}
-
-function hasOrganizationSetupSlugSignal(value: string | null | undefined) {
-  if (typeof value !== "string") return false
-  const normalized = value.trim().toLowerCase()
-  if (!normalized) return false
-  return ORGANIZATION_SETUP_SLUG_SIGNALS.some((signal) => normalized.includes(signal))
-}
-
-function hasOrganizationSetupTitleSignal(value: string | null | undefined) {
-  const normalized = normalizeOrganizationSetupToken(value)
-  if (!normalized) return false
-  return ORGANIZATION_SETUP_TITLE_SIGNALS.has(normalized)
-}
-
-export function isOrganizationSetupTimelineModule({
-  roadmapModule,
-  moduleRecord,
-}: {
-  roadmapModule: Pick<ModuleCard, "id" | "slug" | "title" | "href">
-  moduleRecord?: Pick<ModuleRecord, "slug" | "title"> | null
-}) {
-  if (roadmapModule.id === ORGANIZATION_SETUP_MODULE_ID) return true
-  if (hasOrganizationSetupSlugSignal(roadmapModule.slug)) return true
-  if (hasOrganizationSetupTitleSignal(roadmapModule.title)) return true
-  if (typeof roadmapModule.href === "string") {
-    const href = roadmapModule.href.toLowerCase()
-    if (
-      href.includes("source=formation-setup") ||
-      href.includes("source=workspace-setup")
-    ) {
-      return true
-    }
-  }
-  if (moduleRecord) {
-    if (hasOrganizationSetupSlugSignal(moduleRecord.slug)) return true
-    if (hasOrganizationSetupTitleSignal(moduleRecord.title)) return true
-  }
-  return false
 }
 
 function isIgnorableModuleSeedError(error: unknown) {
@@ -246,10 +195,16 @@ function buildModuleSeed({
       kind: resource.provider,
     })
   )
-  const resources = normalizeWorkspaceAcceleratorResources(
-    resourcesFromModuleRecord.length > 0
-      ? resourcesFromModuleRecord
-      : content?.resources ?? []
+  const resources = mergeWorkspaceAcceleratorResources(
+    normalizeWorkspaceAcceleratorResources(
+      resourcesFromModuleRecord.length > 0
+        ? resourcesFromModuleRecord
+        : content?.resources ?? [],
+    ),
+    resolveWorkspaceAcceleratorSupplementalResources({
+      slug: roadmapModule.slug ?? moduleRecord?.slug ?? null,
+      title: roadmapModule.title ?? moduleRecord?.title ?? null,
+    }),
   )
   const videoUrl = moduleRecord?.videoUrl ?? content?.videoUrl ?? meta?.videoUrl ?? null
   const isOrganizationSetupModule = isOrganizationSetupTimelineModule({

@@ -61,3 +61,15 @@ export function getCurrentPeriodEndIso(subscription: Stripe.Subscription) {
   ).current_period_end ?? null
   return periodUnix ? new Date(periodUnix * 1000).toISOString() : null
 }
+
+function getStripeTimestampIso(value: number | null | undefined) {
+  return typeof value === "number" ? new Date(value * 1000).toISOString() : null
+}
+
+export function getCancelAtIso(subscription: Stripe.Subscription) {
+  return getStripeTimestampIso(subscription.cancel_at)
+}
+
+export function getCanceledAtIso(subscription: Stripe.Subscription) {
+  return getStripeTimestampIso(subscription.canceled_at)
+}

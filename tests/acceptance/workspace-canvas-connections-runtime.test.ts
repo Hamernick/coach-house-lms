@@ -6,6 +6,11 @@ import {
   resolveWorkspaceCanvasConnectAttempt,
   shouldLogWorkspaceCanvasDroppedConnections,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-connections"
+import {
+  WORKSPACE_CARD_SOURCE_HANDLE_IDS,
+  WORKSPACE_CARD_TARGET_HANDLE_IDS,
+  resolveWorkspaceCardConnectionHandleIds,
+} from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-connection-handles"
 import type { WorkspaceCardReadiness } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-card-readiness"
 
 const READY: WorkspaceCardReadiness = { status: "ready", isReady: true }
@@ -142,6 +147,76 @@ describe("workspace canvas v2 runtime connections", () => {
       { id: "edge-unknown-node", reason: "unknown-node-id" },
       { id: "edge-hidden-target", reason: "hidden-node-id" },
     ])
+  })
+
+  it("resolves card connection handles from the closest aligned sides", () => {
+    expect(
+      resolveWorkspaceCardConnectionHandleIds({
+        source: { x: 100, y: 100, width: 200, height: 120 },
+        target: { x: 420, y: 112, width: 200, height: 120 },
+      }),
+    ).toMatchObject({
+      sourceHandle: WORKSPACE_CARD_SOURCE_HANDLE_IDS.right,
+      targetHandle: WORKSPACE_CARD_TARGET_HANDLE_IDS.left,
+    })
+
+    expect(
+      resolveWorkspaceCardConnectionHandleIds({
+        source: { x: 420, y: 112, width: 200, height: 120 },
+        target: { x: 100, y: 100, width: 200, height: 120 },
+      }),
+    ).toMatchObject({
+      sourceHandle: WORKSPACE_CARD_SOURCE_HANDLE_IDS.left,
+      targetHandle: WORKSPACE_CARD_TARGET_HANDLE_IDS.right,
+    })
+
+    expect(
+      resolveWorkspaceCardConnectionHandleIds({
+        source: { x: 100, y: 100, width: 200, height: 120 },
+        target: { x: 124, y: 380, width: 200, height: 120 },
+      }),
+    ).toMatchObject({
+      sourceHandle: WORKSPACE_CARD_SOURCE_HANDLE_IDS.bottom,
+      targetHandle: WORKSPACE_CARD_TARGET_HANDLE_IDS.top,
+    })
+  })
+
+  it("attaches built graph edges to the side nearest the connected card", () => {
+    const { edges } = buildWorkspaceCanvasV2Edges({
+      connections: [
+        {
+          id: "edge-roadmap-to-accelerator",
+          source: "roadmap",
+          target: "accelerator",
+        },
+      ],
+      visibleCardIdSet: new Set(["roadmap", "accelerator"]),
+      presentationMode: false,
+      readinessMap: {
+        "organization-overview": READY,
+        programs: READY,
+        roadmap: READY,
+        accelerator: READY,
+        "brand-kit": EMPTY,
+        "economic-engine": EMPTY,
+        calendar: READY,
+        communications: EMPTY,
+        atlas: EMPTY,
+      },
+      includeAcceleratorStepEdge: false,
+      acceleratorWorkspaceNodeId: null,
+      tutorialEdgeTargetId: null,
+      nodeGeometryLookup: {
+        roadmap: { x: 640, y: 120, width: 320, height: 560 },
+        accelerator: { x: 120, y: 144, width: 400, height: 252 },
+      },
+    })
+
+    expect(edges[0]).toMatchObject({
+      id: "edge-roadmap-to-accelerator",
+      sourceHandle: WORKSPACE_CARD_SOURCE_HANDLE_IDS.left,
+      targetHandle: WORKSPACE_CARD_TARGET_HANDLE_IDS.right,
+    })
   })
 
   it("does not log dropped-connection warnings for hidden tutorial edges alone", () => {

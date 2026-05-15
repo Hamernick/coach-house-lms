@@ -18,7 +18,7 @@ export function LegacyHomeHeroSection() {
         The Coach House Platform
       </div>
       <h1 className="text-balance text-3xl font-normal leading-tight tracking-tight text-[#525252] sm:text-4xl lg:text-5xl animate-soft-pop dark:text-[#A1A1A1]">
-        Find, Build, & Fund{" "}
+        Build, Find, & Fund{" "}
         <FlipWords
           words={HERO_FLIP_WORDS}
           className="min-w-[12ch] font-normal tracking-tight text-black dark:text-white"

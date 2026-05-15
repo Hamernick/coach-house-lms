@@ -224,7 +224,7 @@ export function MobileSubpage({
             <p className="text-sm">This action is permanent and cannot be undone.</p>
             {hasActiveSubscription ? (
               <p className="mt-2 text-sm text-muted-foreground">
-                Deleting your account does not cancel Stripe billing. Cancel your subscription in the billing portal before you continue.
+                Deleting your account does not cancel Stripe billing. Cancel in the billing portal first, or continue after cancellation if your access remains active through the paid period.
               </p>
             ) : null}
             <div className="mt-3">

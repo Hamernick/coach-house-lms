@@ -56,8 +56,8 @@ describe("workspace canvas tutorial layout contract", () => {
         tutorialStepIndex: 4,
         openedTutorialStepIds: ["accelerator"],
         breakpoint: "desktop",
-        shellWidth: 520,
-        shellHeight: 724,
+        shellWidth: 468,
+        shellHeight: 492,
         primaryCardId: "accelerator",
         cardPositionOverrides: {
           "organization-overview": { x: 136, y: 50 },
@@ -69,13 +69,13 @@ describe("workspace canvas tutorial layout contract", () => {
       stageFamily: "accelerator",
       tutorialNodePosition: { x: 752, y: 50 },
       tutorialNodeStyle: {
-        width: 520,
-        height: 724,
-        minHeight: 724,
+        width: 468,
+        height: 492,
+        minHeight: 492,
       },
       cameraViewport: {
-        x: 1012,
-        y: 412,
+        x: 986,
+        y: 296,
         zoom: resolveWorkspaceCanvasTutorialBoostedZoom(0.64),
         duration: 240,
       },
@@ -86,8 +86,8 @@ describe("workspace canvas tutorial layout contract", () => {
     const sharedInput = {
       openedTutorialStepIds: ["accelerator"] as WorkspaceCanvasTutorialStepId[],
       breakpoint: "desktop" as const,
-      shellWidth: 520,
-      shellHeight: 724,
+      shellWidth: 468,
+      shellHeight: 492,
       primaryCardId: "accelerator" as const,
       cardPositionOverrides: {
         "organization-overview": { x: 136, y: 50 },

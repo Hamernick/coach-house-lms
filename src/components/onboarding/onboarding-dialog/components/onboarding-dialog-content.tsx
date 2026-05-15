@@ -3,30 +3,14 @@
 import * as React from "react"
 import { ONBOARDING_PRICING_RETURN } from "@/lib/onboarding/pricing-return"
 
-import {
-  AccountStep,
-} from "./account-step"
-import {
-  AvatarCropDialog,
-} from "./avatar-crop-dialog"
-import {
-  CommunityStep,
-} from "./community-step"
-import {
-  IntentStep,
-} from "./intent-step"
-import {
-  PricingStep,
-} from "./pricing-step"
-import {
-  OrganizationStep,
-} from "./organization-step"
-import {
-  StepFooter,
-} from "./step-footer"
-import {
-  StepHeader,
-} from "./step-header"
+import { AccountStep } from "./account-step"
+import { AvatarCropDialog } from "./avatar-crop-dialog"
+import { CommunityStep } from "./community-step"
+import { IntentStep } from "./intent-step"
+import { PricingStep } from "./pricing-step"
+import { OrganizationStep } from "./organization-step"
+import { StepFooter } from "./step-footer"
+import { StepHeader } from "./step-header"
 import type {
   FormationStatus,
   OnboardingFlowMode,
@@ -198,14 +182,22 @@ export function OnboardingDialogContent({
 
         <div
           data-onboarding-scroll-region="true"
-          className="nodrag nopan min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-0 [scroll-padding-bottom:8rem] md:px-6"
+          className="nodrag nopan min-h-0 flex-1 [scroll-padding-bottom:8rem] overflow-y-auto overscroll-contain px-4 py-0 md:px-6"
         >
           <div className="mx-auto w-full max-w-[640px] space-y-4 pb-4 sm:space-y-5 sm:pb-5 md:space-y-6 md:pb-6">
             <input type="hidden" name="intentFocus" value={intentFocus} />
             <input type="hidden" name="onboardingMode" value={onboardingMode} />
             <input type="hidden" name="roleInterest" value={roleInterest} />
-            <input type="hidden" name="formationStatus" value={formationStatus} />
-            <input type="hidden" name="builderPlanTier" value={builderPlanTier} />
+            <input
+              type="hidden"
+              name="formationStatus"
+              value={formationStatus}
+            />
+            <input
+              type="hidden"
+              name="builderPlanTier"
+              value={builderPlanTier}
+            />
             {currentStep.id !== "org" ? (
               <>
                 <input type="hidden" name="orgName" value={orgNameValue} />
@@ -218,12 +210,28 @@ export function OnboardingDialogContent({
             ) : null}
             {currentStep.id !== "account" ? (
               <>
-                <input type="hidden" name="firstName" value={accountValues.firstName} />
-                <input type="hidden" name="lastName" value={accountValues.lastName} />
+                <input
+                  type="hidden"
+                  name="firstName"
+                  value={accountValues.firstName}
+                />
+                <input
+                  type="hidden"
+                  name="lastName"
+                  value={accountValues.lastName}
+                />
                 <input type="hidden" name="phone" value={accountValues.phone} />
-                <input type="hidden" name="publicEmail" value={accountValues.publicEmail} />
+                <input
+                  type="hidden"
+                  name="publicEmail"
+                  value={accountValues.publicEmail}
+                />
                 <input type="hidden" name="title" value={accountValues.title} />
-                <input type="hidden" name="linkedin" value={accountValues.linkedin} />
+                <input
+                  type="hidden"
+                  name="linkedin"
+                  value={accountValues.linkedin}
+                />
                 {accountValues.optInUpdates ? (
                   <input type="hidden" name="optInUpdates" value="on" />
                 ) : null}
@@ -234,7 +242,10 @@ export function OnboardingDialogContent({
             ) : null}
 
             {serverError ? (
-              <div className="border-destructive/30 bg-destructive/10 text-destructive mt-5 rounded-xl border px-4 py-3 text-sm">
+              <div
+                className="border-destructive/30 bg-destructive/10 text-destructive mt-5 rounded-xl border px-4 py-3 text-sm"
+                role="alert"
+              >
                 {serverError}
               </div>
             ) : null}

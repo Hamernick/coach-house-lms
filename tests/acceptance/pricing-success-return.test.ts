@@ -261,6 +261,73 @@ describe("pricing success return handling", () => {
     )
   })
 
+  it.each([
+    ["organization", "Organization"],
+    ["operations_support", "Operations Support"],
+  ] as const)("persists %s sidebar upgrade subscriptions before returning to the workspace", async (planTier, planName) => {
+    resolveStripeRuntimeConfigsForFallbackMock.mockReturnValue([
+      {
+        client: {
+          checkout: {
+            sessions: {
+              retrieve: vi.fn().mockResolvedValue({
+                id: "cs_test_sidebar_upgrade",
+                mode: "subscription",
+                client_reference_id: "user_123",
+                metadata: {
+                  kind: "organization",
+                  planName,
+                  plan_tier: planTier,
+                  org_user_id: "user_123",
+                },
+                subscription: {
+                  id: "sub_sidebar_upgrade",
+                  status: "active",
+                  customer: "cus_sidebar_upgrade",
+                  metadata: {
+                    kind: "organization",
+                    planName,
+                    plan_tier: planTier,
+                    org_user_id: "user_123",
+                  },
+                  current_period_end: 1_799_452_800,
+                },
+              }),
+            },
+          },
+        },
+        mode: "live",
+      },
+    ])
+
+    const Page = (await import("@/app/(public)/pricing/success/page")).default
+    const destination = await captureRedirect(() =>
+      Page({
+        searchParams: Promise.resolve({
+          session_id: "cs_test_sidebar_upgrade",
+          redirect: "/workspace",
+        }),
+      }),
+    )
+
+    expect(subscriptionsUpsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user_123",
+        stripe_subscription_id: "sub_sidebar_upgrade",
+        stripe_customer_id: "cus_sidebar_upgrade",
+        status: "active",
+        current_period_end: "2027-01-09T00:00:00.000Z",
+        metadata: expect.objectContaining({
+          kind: "organization",
+          plan_tier: planTier,
+          stripe_mode: "live",
+        }),
+      }),
+      { onConflict: "user_id,stripe_subscription_id" },
+    )
+    expect(destination).toBe(`/workspace?checkout=success&plan=${planTier}`)
+  })
+
   it("returns incomplete subscriptions to the onboarding workspace path with an error", async () => {
     resolveStripeRuntimeConfigsForFallbackMock.mockReturnValue([
       {

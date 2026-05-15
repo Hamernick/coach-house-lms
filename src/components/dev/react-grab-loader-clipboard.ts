@@ -121,16 +121,20 @@ export async function buildReactGrabClipboardOutput({
     tokenSource,
     canonicalOwnerSource:
       debugRecord?.canonicalOwnerFile ??
-      selectedSurfaceMetadata.canonicalOwnerSource,
+      selectedSurfaceMetadata.canonicalOwnerSource ??
+      ownerMetadata.canonicalOwnerSource,
     canonicalOwnerReason:
       debugRecord?.canonicalOwnerReason ??
-      selectedSurfaceMetadata.canonicalOwnerReason,
+      selectedSurfaceMetadata.canonicalOwnerReason ??
+      ownerMetadata.canonicalOwnerReason,
     currentWrongOwnerSource:
       debugRecord?.currentWrongOwnerFile ??
-      selectedSurfaceMetadata.currentWrongOwnerSource,
+      selectedSurfaceMetadata.currentWrongOwnerSource ??
+      ownerMetadata.currentWrongOwnerSource,
     currentWrongOwnerReason:
       debugRecord?.currentWrongOwnerReason ??
-      selectedSurfaceMetadata.currentWrongOwnerReason,
+      selectedSurfaceMetadata.currentWrongOwnerReason ??
+      ownerMetadata.currentWrongOwnerReason,
     finalClassName,
     chainValues,
     notes: debugRecord?.notes ?? selectedSurfaceMetadata.notes ?? null,

@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 
+import type { AccountDeletionPreflight } from "@/lib/account-deletion/types"
 import type { Database } from "@/lib/supabase"
 
 type AccountSettingsSupabaseClient = SupabaseClient<Database, "public">
@@ -54,6 +55,14 @@ type SaveCommunicationPreferencesResult = {
 
 type DeleteAccountResult =
   | { ok: true }
+  | {
+      ok: false
+      sessionExpired: boolean
+      message: string
+    }
+
+type DeleteAccountPreflightResult =
+  | { ok: true; preflight: AccountDeletionPreflight }
   | {
       ok: false
       sessionExpired: boolean
@@ -271,6 +280,48 @@ export async function requestDeleteAccount(): Promise<DeleteAccountResult> {
       ok: false,
       sessionExpired: false,
       message: DEFAULT_DELETE_ACCOUNT_ERROR,
+    }
+  }
+}
+
+export async function requestDeleteAccountPreflight(): Promise<DeleteAccountPreflightResult> {
+  try {
+    const response = await fetch("/api/account/delete/preflight", {
+      method: "GET",
+      cache: "no-store",
+    })
+    const payload = await response.json().catch(() => ({}))
+    if (response.ok && payload?.preflight) {
+      return { ok: true, preflight: payload.preflight as AccountDeletionPreflight }
+    }
+
+    const message =
+      typeof payload?.error === "string" && payload.error.length > 0
+        ? payload.error
+        : "Unable to check account deletion status."
+    const normalizedMessage = message.toLowerCase()
+    const sessionExpired =
+      response.status === 401 ||
+      SESSION_ERROR_FRAGMENTS.some((fragment) => normalizedMessage.includes(fragment))
+
+    if (sessionExpired) {
+      return {
+        ok: false,
+        sessionExpired: true,
+        message: SESSION_EXPIRED_DELETE_ACCOUNT_ERROR,
+      }
+    }
+
+    return {
+      ok: false,
+      sessionExpired: false,
+      message,
+    }
+  } catch {
+    return {
+      ok: false,
+      sessionExpired: false,
+      message: "Unable to check account deletion status.",
     }
   }
 }

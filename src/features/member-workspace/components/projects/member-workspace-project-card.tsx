@@ -12,6 +12,12 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { MemberWorkspaceProjectPriorityBadge } from "./member-workspace-project-priority"
 import { MemberWorkspaceProjectProgress } from "./member-workspace-project-progress"
+import {
+  buildMemberWorkspaceProjectCardReactGrabOwnerId,
+  getMemberWorkspaceProjectCardReactGrabOwnerProps,
+  getMemberWorkspaceProjectCardReactGrabSurfaceProps,
+  type MemberWorkspaceProjectCardReactGrabSurfaceKind,
+} from "./member-workspace-project-card-react-grab"
 
 type MemberWorkspaceProjectCardProps = {
   project: PlatformAdminDashboardLabProject
@@ -112,9 +118,26 @@ export function MemberWorkspaceProjectCard({
   const showStatus = visibleProperties.includes("status")
   const showAssignee = visibleProperties.includes("assignee")
   const showDueDate = visibleProperties.includes("dueDate")
+  const reactGrabOwnerId = buildMemberWorkspaceProjectCardReactGrabOwnerId({
+    projectId: project.id,
+    variant,
+  })
+  const reactGrabSurface = (
+    slot: string,
+    surfaceKind?: MemberWorkspaceProjectCardReactGrabSurfaceKind,
+  ) =>
+    getMemberWorkspaceProjectCardReactGrabSurfaceProps({
+      ownerId: reactGrabOwnerId,
+      slot,
+      surfaceKind,
+    })
 
   return (
     <div
+      {...getMemberWorkspaceProjectCardReactGrabOwnerProps({
+        ownerId: reactGrabOwnerId,
+        variant,
+      })}
       role="button"
       tabIndex={0}
       aria-label={`Open ${project.projectKind === "organization_admin" ? "organization" : "project"} ${project.name}`}
@@ -148,13 +171,22 @@ export function MemberWorkspaceProjectCard({
         if (!isBoard) return
         startPosRef.current = null
       }}
-      className="cursor-pointer rounded-2xl border border-border bg-background transition-shadow hover:shadow-lg/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+      className="flex h-full cursor-pointer flex-col rounded-2xl border border-border bg-background transition-shadow hover:shadow-lg/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
     >
-      <div className="p-4">
-        <div className="flex items-center justify-between">
+      <div
+        {...reactGrabSurface("body")}
+        className="flex flex-1 flex-col p-4"
+      >
+        <div
+          {...reactGrabSurface("header-row")}
+          className="flex items-center justify-between"
+        >
           {isBoard ? (
             showDueDate ? (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <div
+                {...reactGrabSurface("board-due-date", "content")}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground"
+              >
                 <Flag className="h-4 w-4" />
                 <span>{format(project.endDate, "MMM d")}</span>
               </div>
@@ -169,6 +201,7 @@ export function MemberWorkspaceProjectCard({
           <div className="flex items-center gap-2">
             {!isBoard && showStatus ? (
               <div
+                {...reactGrabSurface("status-pill", "indicator")}
                 className={cn(
                   "flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium",
                   status.pill,
@@ -178,10 +211,15 @@ export function MemberWorkspaceProjectCard({
                 {status.label}
               </div>
             ) : (
-              <MemberWorkspaceProjectPriorityBadge level={project.priority} appearance="inline" />
+              <span
+                {...reactGrabSurface("header-priority", "indicator")}
+              >
+                <MemberWorkspaceProjectPriorityBadge level={project.priority} appearance="inline" />
+              </span>
             )}
             {actions || onEditProject ? (
               <div
+                {...reactGrabSurface("actions")}
                 className="flex shrink-0 items-center gap-1"
                 onClick={(event) => event.stopPropagation()}
                 onKeyDown={(event) => event.stopPropagation()}
@@ -189,9 +227,11 @@ export function MemberWorkspaceProjectCard({
                 {actions}
                 {onEditProject ? (
                   <Button
+                    {...reactGrabSurface("edit-button", "trigger")}
                     type="button"
                     variant="ghost"
                     size="icon"
+                    aria-label={`Edit ${project.name}`}
                     className="h-8 w-8 rounded-lg"
                     onClick={() => onEditProject(project)}
                   >
@@ -203,45 +243,80 @@ export function MemberWorkspaceProjectCard({
           </div>
         </div>
 
-        <div className="mt-3">
-          <p className="text-[15px] font-semibold leading-6 text-foreground">{project.name}</p>
+        <div
+          {...reactGrabSurface("title-block", "content")}
+          className="mt-3"
+        >
+          <p
+            {...reactGrabSurface("title", "content")}
+            className="text-[15px] font-semibold leading-6 text-foreground"
+          >
+            {project.name}
+          </p>
           {secondaryLine ? (
-            <p className={cn("mt-1 text-sm text-muted-foreground", isBoard && "truncate")}>
+            <p
+              {...reactGrabSurface("metadata", "content")}
+              className={cn("mt-1 text-sm text-muted-foreground", isBoard && "truncate")}
+            >
               {secondaryLine}
             </p>
           ) : null}
         </div>
 
-        {!isBoard ? (
-          <div className="mt-2 flex items-center justify-between text-sm text-muted-foreground">
-            {showDueDate ? (
-              <div className="flex items-center gap-2">
-                <CalendarBlank className="h-4 w-4" />
-                <span>{format(project.endDate, "MMM d, yyyy")}</span>
-              </div>
+        <div
+          {...reactGrabSurface("footer")}
+          className="mt-auto pt-4"
+        >
+          {!isBoard ? (
+            <div
+              {...reactGrabSurface("date-priority-row", "content")}
+              className="mb-4 flex items-center justify-between text-sm text-muted-foreground"
+            >
+              {showDueDate ? (
+                <div
+                  {...reactGrabSurface("due-date", "content")}
+                  className="flex items-center gap-2"
+                >
+                  <CalendarBlank className="h-4 w-4" />
+                  <span>{format(project.endDate, "MMM d, yyyy")}</span>
+                </div>
+              ) : (
+                <div />
+              )}
+              <span
+                {...reactGrabSurface("priority", "indicator")}
+              >
+                <MemberWorkspaceProjectPriorityBadge level={project.priority} appearance="inline" />
+              </span>
+            </div>
+          ) : null}
+
+          <div
+            {...reactGrabSurface("footer-separator", "content")}
+            className="border-t border-border/60"
+          />
+
+          <div
+            {...reactGrabSurface("progress-row", "content")}
+            className="mt-3 flex items-center justify-between"
+          >
+            <MemberWorkspaceProjectProgress project={project} size={isBoard ? 20 : 18} />
+            {showAssignee ? (
+              <Avatar
+                {...reactGrabSurface("assignee-avatar", "content")}
+                className="size-6 border border-border"
+              >
+                {primaryPersonAvatarUrl ? (
+                  <AvatarImage src={primaryPersonAvatarUrl} alt={primaryPersonName ?? project.name} />
+                ) : null}
+                <AvatarFallback className="text-xs">
+                  {initials ? initials : <User className="h-4 w-4 text-muted-foreground" />}
+                </AvatarFallback>
+              </Avatar>
             ) : (
-              <div />
+              <div className="size-6" />
             )}
-            <MemberWorkspaceProjectPriorityBadge level={project.priority} appearance="inline" />
           </div>
-        ) : null}
-
-        <div className="mt-4 border-t border-border/60" />
-
-        <div className="mt-3 flex items-center justify-between">
-          <MemberWorkspaceProjectProgress project={project} size={isBoard ? 20 : 18} />
-          {showAssignee ? (
-            <Avatar className="size-6 border border-border">
-              {primaryPersonAvatarUrl ? (
-                <AvatarImage src={primaryPersonAvatarUrl} alt={primaryPersonName ?? project.name} />
-              ) : null}
-              <AvatarFallback className="text-xs">
-                {initials ? initials : <User className="h-4 w-4 text-muted-foreground" />}
-              </AvatarFallback>
-            </Avatar>
-          ) : (
-            <div className="size-6" />
-          )}
         </div>
       </div>
     </div>

@@ -290,6 +290,7 @@ export function useWorkspaceBoardAcceleratorGraph({
       onboardingGuideNodeData,
       onboardingTargetWorkspaceNode,
       presentationMode,
+      visibleWorkspaceNodes,
     })
   }, [
     boardState.connections,
@@ -301,6 +302,7 @@ export function useWorkspaceBoardAcceleratorGraph({
     onboardingGuideNodeData,
     onboardingTargetWorkspaceNode,
     presentationMode,
+    visibleWorkspaceNodes,
   ])
 
   const composedNodes = useMemo<WorkspaceFlowNode[]>(() => {

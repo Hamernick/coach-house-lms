@@ -228,6 +228,8 @@ export async function startCheckout(formData: FormData) {
             stripe_subscription_id: updated.id,
             status: toSubscriptionStatus(updated.status),
             current_period_end: currentPeriodEnd,
+            cancel_at: null,
+            canceled_at: null,
             metadata: {
               ...(updated.metadata ?? {}),
               planName: resolvedPlanName,

@@ -7,6 +7,13 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
+import { FIND_PATH } from "@/lib/find/routes"
+import { trackUserJourneyMilestone } from "@/lib/user-journey"
+import {
+  type ActiveOrganization,
+  canEditOrganization,
+  resolveActiveOrganization,
+} from "@/lib/organization/active-org"
 import type { ProfilesTable } from "@/lib/supabase/schema/tables"
 import { uploadAvatarWithUser } from "@/lib/storage/avatars"
 
@@ -44,7 +51,7 @@ function buildOnboardingErrorRedirect({
   }
   if (intentFocus && intentFocus !== "build") {
     params.set("member_onboarding", "1")
-    return `/find?${params.toString()}`
+    return `${FIND_PATH}?${params.toString()}`
   }
   return `/onboarding?${params.toString()}`
 }
@@ -125,6 +132,19 @@ export async function completeOnboardingAction(form: FormData) {
 
   const requiresOrganizationSetup =
     intentFocus === "build" && onboardingMode !== "post_signup_access"
+  let organizationTarget: ActiveOrganization = { orgId: user.id, role: "owner" }
+  if (requiresOrganizationSetup && onboardingMode === "workspace_setup") {
+    organizationTarget = await resolveActiveOrganization(supabase, user.id)
+    if (!canEditOrganization(organizationTarget.role)) {
+      redirect(
+        buildOnboardingErrorRedirect({
+          intentFocus,
+          error: "organization_access_required",
+        }),
+      )
+    }
+  }
+  const targetOrgId = organizationTarget.orgId
 
   if (intentFocus === "build") {
     if (builderPlanTier !== "free") {
@@ -183,7 +203,7 @@ export async function completeOnboardingAction(form: FormData) {
         .from("organizations")
         .select("user_id", { count: "exact", head: true })
         .ilike("public_slug", normalizedSlug)
-        .neq("user_id", user.id)
+        .neq("user_id", targetOrgId)
 
       if (slugError) throw supabaseErrorToError(slugError, "Unable to validate organization URL.")
       if ((slugCount ?? 0) > 0) {
@@ -228,7 +248,7 @@ export async function completeOnboardingAction(form: FormData) {
     const { data: existingOrg, error: existingOrgError } = await supabase
       .from("organizations")
       .select("profile")
-      .eq("user_id", user.id)
+      .eq("user_id", targetOrgId)
       .maybeSingle<{ profile: Record<string, unknown> | null }>()
 
     if (existingOrgError) throw supabaseErrorToError(existingOrgError, "Unable to load organization profile.")
@@ -279,7 +299,7 @@ export async function completeOnboardingAction(form: FormData) {
 
     const { error: organizationUpsertError } = await supabase.from("organizations").upsert(
       {
-        user_id: user.id,
+        user_id: targetOrgId,
         public_slug: normalizedSlug,
         profile: orgProfilePayload,
       },
@@ -331,8 +351,92 @@ export async function completeOnboardingAction(form: FormData) {
   }
 
   if (intentFocus === "build") {
+    await trackUserJourneyMilestone({
+      userId: user.id,
+      orgId: targetOrgId,
+      eventName: "onboarding_completed",
+      journey: "builder_onboarding",
+      source: "onboarding_action",
+      surface: "onboarding",
+      planTier: builderPlanTier,
+      checkpoint: "account_onboarding_completed",
+      metadata: {
+        intentFocus,
+        onboardingMode,
+        builderPlanTier,
+        hasOrganizationSetup: requiresOrganizationSetup,
+        formationStatus,
+        roleInterest,
+      },
+    })
     redirect("/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding")
   }
 
-  redirect("/find?member_onboarding=0&source=member_onboarding")
+  await trackUserJourneyMilestone({
+    userId: user.id,
+    orgId: user.id,
+    eventName: "member_onboarding_completed",
+    journey: "member_onboarding",
+    source: "onboarding_action",
+    surface: "find_map_onboarding",
+    checkpoint: "member_onboarding_completed",
+    metadata: {
+      intentFocus,
+      onboardingMode,
+      roleInterest,
+    },
+  })
+
+  redirect(`${FIND_PATH}?member_onboarding=0&source=member_onboarding`)
+}
+
+export async function completeMemberMapOnboardingAction(form: FormData) {
+  const supabase = await createSupabaseServerClient()
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser()
+  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
+    throw supabaseErrorToError(userError, "Unable to load user.")
+  }
+  if (!user) redirect(`/login?redirect=${encodeURIComponent(`${FIND_PATH}?member_onboarding=1`)}`)
+
+  const intentFocusRaw = String(form.get("intentFocus") || "").trim()
+  const intentFocus =
+    intentFocusRaw === "find" ||
+    intentFocusRaw === "fund" ||
+    intentFocusRaw === "support"
+      ? intentFocusRaw
+      : "find"
+
+  const { error: updateUserError } = await supabase.auth.updateUser({
+    data: {
+      onboarding_completed: true,
+      onboarding_completed_at: new Date().toISOString(),
+      onboarding_intent_focus: intentFocus,
+    },
+  })
+
+  if (updateUserError) {
+    console.error("completeMemberMapOnboardingAction: auth metadata update failed", {
+      userId: user.id,
+      message: updateUserError.message,
+    })
+    throw supabaseErrorToError(updateUserError, "Unable to finish onboarding.")
+  }
+
+  await trackUserJourneyMilestone({
+    userId: user.id,
+    orgId: user.id,
+    eventName: "member_onboarding_completed",
+    journey: "member_onboarding",
+    source: "member_map_onboarding_action",
+    surface: "find_map_onboarding",
+    checkpoint: "member_onboarding_completed",
+    metadata: {
+      intentFocus,
+    },
+  })
+
+  redirect(`${FIND_PATH}?member_onboarding=0&source=member_onboarding`)
 }

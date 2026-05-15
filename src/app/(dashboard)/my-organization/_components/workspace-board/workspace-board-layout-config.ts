@@ -82,8 +82,8 @@ export const CARD_DIMENSION_OVERRIDES: Partial<
 }
 
 export const DASHBOARD_GRID_ROWS: WorkspaceCardId[][] = [
-  ["organization-overview", "programs", "accelerator", "calendar"],
-  ["roadmap", "deck", "brand-kit", "economic-engine"],
+  ["organization-overview", "programs", "roadmap", "calendar"],
+  ["accelerator", "deck", "brand-kit", "economic-engine"],
   ["communications", "atlas"],
 ]
 

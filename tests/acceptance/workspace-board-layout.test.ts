@@ -557,18 +557,20 @@ describe("workspace board layout", () => {
     expect(next).toHaveLength(WORKSPACE_CARD_IDS.length)
   })
 
-  it("places programs between organization and accelerator in the dashboard grid preset", () => {
+  it("places roadmap in the former accelerator slot in the dashboard grid preset", () => {
     const nodes = buildPresetNodes("balanced")
 
     const programs = findNode(nodes, "programs")
     const accelerator = findNode(nodes, "accelerator")
+    const roadmap = findNode(nodes, "roadmap")
     const organization = findNode(nodes, "organization-overview")
     const calendar = findNode(nodes, "calendar")
     const brandKit = findNode(nodes, "brand-kit")
 
     expect(organization.x).toBeLessThan(programs.x)
-    expect(programs.x).toBeLessThan(accelerator.x)
-    expect(accelerator.x).toBeLessThan(calendar.x)
+    expect(programs.x).toBeLessThan(roadmap.x)
+    expect(roadmap.x).toBeLessThan(calendar.x)
+    expect(accelerator.y).toBeGreaterThan(organization.y)
     expect(brandKit.y).toBeGreaterThan(organization.y)
   })
 
@@ -612,17 +614,17 @@ describe("workspace board layout", () => {
     })
 
     const programs = findNode(laidOut, "programs")
-    const vault = findNode(laidOut, "roadmap")
+    const roadmap = findNode(laidOut, "roadmap")
     const organization = findNode(laidOut, "organization-overview")
     const accelerator = findNode(laidOut, "accelerator")
     const communications = findNode(laidOut, "communications")
     const economicEngine = findNode(laidOut, "economic-engine")
     const calendar = findNode(laidOut, "calendar")
 
-    expect(organization.x).toBeLessThan(vault.x)
+    expect(organization.x).toBeLessThan(roadmap.x)
     expect(organization.x).toBeLessThan(programs.x)
     expect(programs.x).toBeGreaterThan(organization.x)
-    expect(accelerator.x).toBeGreaterThan(vault.x)
+    expect(accelerator.x).toBeGreaterThan(roadmap.x)
     expect(accelerator.x).toBeGreaterThan(programs.x)
     expect(communications.x).toBeGreaterThan(accelerator.x)
     expect(economicEngine.x).toBeGreaterThan(accelerator.x)
@@ -636,7 +638,7 @@ describe("workspace board layout", () => {
     const state = buildDefaultBoardState("balanced")
     const laidOut = await applyAutoLayout(state.nodes, "timeline")
 
-    const vault = findNode(laidOut, "roadmap")
+    const roadmap = findNode(laidOut, "roadmap")
     const accelerator = findNode(laidOut, "accelerator")
     const organization = findNode(laidOut, "organization-overview")
     const programs = findNode(laidOut, "programs")
@@ -645,15 +647,15 @@ describe("workspace board layout", () => {
     const economicEngine = findNode(laidOut, "economic-engine")
     const calendar = findNode(laidOut, "calendar")
 
-    expect(vault.x).toBeLessThan(accelerator.x)
-    expect(accelerator.x).toBeLessThan(organization.x)
+    expect(accelerator.x).toBeLessThan(roadmap.x)
+    expect(roadmap.x).toBeLessThan(organization.x)
     expect(organization.x).toBeLessThan(programs.x)
     expect(programs.x).toBeLessThan(deck.x)
     expect(economicEngine.x).toBeGreaterThan(deck.x)
     expect(economicEngine.x).toBe(calendar.x)
     expect(calendar.x).toBe(communications.x)
-    expect(vault.y).toBe(accelerator.y)
-    expect(accelerator.y).toBe(organization.y)
+    expect(accelerator.y).toBe(roadmap.y)
+    expect(roadmap.y).toBe(organization.y)
     expect(organization.y).toBe(programs.y)
     expect(economicEngine.y).toBeLessThan(calendar.y)
     expect(calendar.y).toBeLessThan(communications.y)

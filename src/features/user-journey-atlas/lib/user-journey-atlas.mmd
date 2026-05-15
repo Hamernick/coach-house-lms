@@ -1,0 +1,181 @@
+%% User journey atlas source.
+%% Keep each node label in this exact form:
+%% Title<br/>route: ROUTE_OR_SURFACE<br/>file: RELATIVE_FILE_PATH<br/>desc: SHORT_DESCRIPTION
+flowchart LR
+  subgraph public["Public entry files"]
+    public_home["Public home<br/>route: /<br/>file: src/app/(public)/page.tsx<br/>desc: Resolves auth callbacks and mounts the home canvas."]
+    pricing_data["Pricing tiers<br/>route: /?section=pricing<br/>file: src/components/public/pricing-surface-data.ts<br/>desc: Defines Individual, Organization, and Operations Support CTA hrefs."]
+    home_canvas["Home canvas shell<br/>route: /?section=signup<br/>file: src/components/public/home-canvas-preview.tsx<br/>desc: Hosts the public panels and same-page navigation state."]
+    home_signup_panel["Embedded signup panel<br/>route: /?section=signup&intent=build&plan={PLAN}<br/>file: src/components/public/home-canvas-preview-panels.tsx<br/>desc: Locks paid pricing selections to the Build account path."]
+    section_link_controller["Canvas section link controller<br/>route: same-page section links<br/>file: src/components/public/home-canvas-section-link-controller.ts<br/>desc: Converts pricing CTA clicks into immediate canvas state updates."]
+  end
+
+  subgraph auth["Auth and confirmation files"]
+    sign_up_page["Sign up route<br/>route: /sign-up?intent=build&plan={PLAN}<br/>file: src/app/(auth)/sign-up/page.tsx<br/>desc: Resolves selected plan and redirects signed-in users."]
+    sign_up_form["Sign up form<br/>route: Supabase signUp<br/>file: src/components/auth/sign-up-form.tsx<br/>desc: Sends selected intent, redirect targets, and metadata into auth."]
+    auth_confirm["Email confirmation route<br/>route: /auth/confirm<br/>file: src/app/auth/confirm/page.tsx<br/>desc: Completes Supabase email verification and resumes the redirect path."]
+    auth_confirmation_rules["Confirmation safety rules<br/>route: confirmation destination resolver<br/>file: src/lib/supabase/auth-confirmation.ts<br/>desc: Validates OTP types and safe destinations for confirmation links."]
+    auth_callback["Auth callback route<br/>route: /auth/callback<br/>file: src/app/auth/callback/route.ts<br/>desc: Exchanges auth codes and preserves safe internal redirects."]
+  end
+
+  subgraph emails["Email and notification files"]
+    confirmation_email_template["Confirmation email template<br/>route: Supabase auth email<br/>file: docs/briefs/email-confirmation-template.md<br/>desc: Account verification email that carries users back to the app."]
+    email_foundation["Coach House email foundation<br/>route: app-owned email renderer<br/>file: src/features/organization-access/lib/email-foundation.ts<br/>desc: Renders invite and access-request email HTML previews."]
+    invite_email_delivery["Invite email delivery<br/>route: Resend invite/access email<br/>file: src/app/actions/organization-access/invites-side-effects.ts<br/>desc: Sends external invite and existing-user access request emails."]
+    resend_delivery["Resend delivery client<br/>route: Resend API<br/>file: src/lib/email/resend.ts<br/>desc: Normalizes sender, tags, unsubscribe headers, and delivery errors."]
+  end
+
+  subgraph billing["Billing and pricing return files"]
+    signup_plan["Signup plan resolver<br/>route: selected plan normalization<br/>file: src/lib/onboarding/signup-plan.ts<br/>desc: Normalizes free, organization, and operations_support selections."]
+    stripe_checkout["Stripe checkout route<br/>route: /api/stripe/checkout<br/>file: src/app/api/stripe/checkout/route.ts<br/>desc: Creates checkout sessions for onboarding and upgrade contexts."]
+    pricing_success["Pricing success route<br/>route: /pricing/success<br/>file: src/app/(public)/pricing/success/page.tsx<br/>desc: Verifies checkout, persists subscription state, and redirects."]
+    onboarding_return["Onboarding return helpers<br/>route: /onboarding?source=onboarding_pricing<br/>file: src/app/(public)/pricing/success/_lib/onboarding-return.ts<br/>desc: Appends checkout and plan state to safe return URLs."]
+    stripe_webhook["Stripe webhook route<br/>route: /api/stripe/webhook<br/>file: src/app/api/stripe/webhook/route.ts<br/>desc: Processes signed Stripe subscription lifecycle events."]
+  end
+
+  subgraph onboarding["Onboarding files"]
+    onboarding_page["Onboarding route<br/>route: /onboarding<br/>file: src/app/(dashboard)/onboarding/page.tsx<br/>desc: Chooses paid plan override and renders post-signup onboarding."]
+    onboarding_card["Onboarding workspace card<br/>route: onboarding card<br/>file: src/components/onboarding/onboarding-workspace-card.tsx<br/>desc: Collects workspace setup inputs and selected tier."]
+    onboarding_flow["Onboarding flow controller<br/>route: inline onboarding flow<br/>file: src/components/onboarding/onboarding-flow.tsx<br/>desc: Manages draft persistence, pricing return, steps, and submit state."]
+    onboarding_intent["Intent step<br/>route: onboarding intent<br/>file: src/components/onboarding/onboarding-dialog/components/intent-step.tsx<br/>desc: Collects build, find, fund, or support focus."]
+    onboarding_pricing["Pricing step<br/>route: onboarding pricing<br/>file: src/components/onboarding/onboarding-dialog/components/pricing-step.tsx<br/>desc: Lets builders continue free or start paid checkout."]
+    onboarding_org["Organization step<br/>route: onboarding organization<br/>file: src/components/onboarding/onboarding-dialog/components/organization-step.tsx<br/>desc: Collects organization name, URL, and formation status."]
+    onboarding_account["Account step<br/>route: onboarding account<br/>file: src/components/onboarding/onboarding-dialog/components/account-step.tsx<br/>desc: Collects profile, contact, avatar, and communication opt-ins."]
+    onboarding_actions["Complete onboarding action<br/>route: onboarding submit<br/>file: src/app/(dashboard)/onboarding/actions.ts<br/>desc: Clears onboarding lock and sends users to workspace or find."]
+  end
+
+  subgraph workspace["Workspace files"]
+    workspace_route["Workspace route<br/>route: /workspace<br/>file: src/app/(dashboard)/workspace/page.tsx<br/>desc: Guards free finder accounts and composes the organization workspace."]
+    workspace_content["Organization workspace content<br/>route: workspace content<br/>file: src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx<br/>desc: Resolves workspace seed data, billing access, and admin context."]
+    workspace_canvas["Workspace canvas surface<br/>route: workspace canvas<br/>file: src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx<br/>desc: Renders the node canvas users land in after setup."]
+    workspace_tutorial["Workspace tutorial<br/>route: workspace guide<br/>file: src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx<br/>desc: Provides the Continue-driven first-run workspace walkthrough."]
+  end
+
+  subgraph intake["Workspace data intake files"]
+    dynamic_form["Dynamic structured form<br/>route: schema-driven forms<br/>file: src/components/dynamic-form.tsx<br/>desc: Renders Zod-backed database forms for strings, numbers, booleans, enums, and arrays."]
+    module_notes_ui["Module notes UI<br/>route: module right rail notes<br/>file: src/components/training/module-right-rail.tsx<br/>desc: Captures learner notes from the module right rail."]
+    module_notes_api["Module notes persistence<br/>route: save module notes<br/>file: src/app/actions/module-notes.ts<br/>desc: Upserts markdown notes into module progress."]
+    assignment_form["Assignment form<br/>route: module homework form<br/>file: src/components/training/module-detail/assignment-form.tsx<br/>desc: Renders homework fields from module assignment schemas."]
+    assignment_submission["Assignment submission route<br/>route: /api/modules/[id]/assignment-submission<br/>file: src/app/api/modules/[id]/assignment-submission/route.ts<br/>desc: Saves sanitized answers and syncs mapped organization profile data."]
+    homework_assist["Homework assist route<br/>route: /api/homework/assist<br/>file: src/app/api/homework/assist/route.ts<br/>desc: Generates answer suggestions from module and organization context."]
+    workspace_objective_editor["Objective editor<br/>route: workspace objective edit panel<br/>file: src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-formation-tracker-editor-panel.tsx<br/>desc: Collects title, description, priority, due date, category, and assignees."]
+    workspace_calendar_form["Calendar event form<br/>route: workspace calendar event sheet<br/>file: src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-calendar-event-sheet-form.tsx<br/>desc: Captures event details, timing, roles, recurrence, and status."]
+    workspace_comms_editor["Communications editor<br/>route: workspace communications card<br/>file: src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-communications-card-editor-renderer.tsx<br/>desc: Captures channel, post copy, media mode, and schedule."]
+    org_profile_company["Organization profile editor<br/>route: company profile tabs<br/>file: src/components/organization/org-profile-card/tabs/company-tab/edit-sections.tsx<br/>desc: Groups identity, contact, address, story, presence, and social profile inputs."]
+  end
+
+  subgraph find["Find and free member files"]
+    find_route["Find route<br/>route: /find<br/>file: src/app/(public)/find/page.tsx<br/>desc: Authenticated-safe public directory route for free and paid users."]
+    public_map["Public map index<br/>route: /find<br/>file: src/components/public/public-map-index.tsx<br/>desc: Renders the map, list, saved organizations, and member rail."]
+    member_onboarding["Member onboarding overlay<br/>route: /find?member_onboarding=1<br/>file: src/components/public/public-map-index/member-onboarding-overlay.tsx<br/>desc: First-run path for free users who chose Find, Fund, or Support."]
+  end
+
+  subgraph upgrade["Upgrade and paywall files"]
+    app_sidebar["App sidebar<br/>route: sidebar upgrade CTA<br/>file: src/components/app-sidebar.tsx<br/>desc: Shows the authenticated upgrade CTA in the shell."]
+    paywall_config["Paywall config<br/>route: /find?paywall=organization<br/>file: src/components/paywall/paywall-overlay/config.ts<br/>desc: Builds Organization and Operations Support upgrade checkout hrefs."]
+    paywall_overlay["Paywall overlay<br/>route: /find?paywall=organization&source=sidebar_upgrade<br/>file: src/components/paywall/paywall-overlay.tsx<br/>desc: Displays the upgrade dialog before Stripe checkout."]
+  end
+
+  subgraph invites["Invite and access files"]
+    invite_sheet["Workspace invite sheet<br/>route: workspace invite sheet<br/>file: src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet.tsx<br/>desc: Creates temporary collaboration, team, and funder invite flows."]
+    invite_actions["Organization invite actions<br/>route: invite server action<br/>file: src/app/actions/organization-access/invites.ts<br/>desc: Sends existing-user access requests or external join links."]
+    join_org["Join organization route<br/>route: /join-organization?token={TOKEN}<br/>file: src/app/(auth)/join-organization/page.tsx<br/>desc: Handles external invite token review, login, and signup."]
+    access_requests["Access requests route<br/>route: /access-requests?request={REQUEST_ID}<br/>file: src/app/(dashboard)/access-requests/page.tsx<br/>desc: Lets existing users accept or decline requested access."]
+  end
+
+  subgraph operations["Journey operations files"]
+    workspace_activation_outcomes["Activation outcomes<br/>route: first-value checkpoints<br/>file: src/features/workspace-canvas-tutorial/lib/index.ts<br/>desc: Missing product layer for first profile, homework, invite, and coaching wins."]
+    product_analytics["Product analytics shell<br/>route: journey event taxonomy<br/>file: src/app/layout.tsx<br/>desc: Loads Vercel page analytics but not funnel-level product telemetry."]
+    otel_instrumentation["Server observability<br/>route: OTEL instrumentation<br/>file: src/instrumentation.ts<br/>desc: Initializes server tracing only when the exporter is configured."]
+    coaching_schedule["Coaching scheduling route<br/>route: /api/meetings/schedule<br/>file: src/app/api/meetings/schedule/route.ts<br/>desc: Returns Google booking links and records scheduling opens."]
+    coaching_tier_rules["Coaching tier rules<br/>route: included session resolver<br/>file: src/lib/meetings.ts<br/>desc: Resolves included, discounted, and full-rate coaching eligibility."]
+    notification_create["Notification writer<br/>route: create notification<br/>file: src/lib/notifications.ts<br/>desc: Persists in-app notifications for user follow-up loops."]
+    homework_assist_library["Homework assist generator<br/>route: deterministic suggestion helper<br/>file: src/lib/homework/assist.ts<br/>desc: Creates non-LLM homework suggestions from org and module context."]
+  end
+
+  subgraph prototype["Prototype display files"]
+    prototype_route["Prototypes route<br/>route: /admin/platform/prototypes?entry=user-journey-atlas<br/>file: src/app/(admin)/admin/platform/prototypes/page.tsx<br/>desc: Protected super-admin route that mounts prototype entries."]
+    mermaid_file["Atlas source file<br/>route: feature source<br/>file: src/features/user-journey-atlas/lib/user-journey-atlas.mmd<br/>desc: Canonical graph source for this atlas."]
+    atlas_panel["Canvas atlas panel<br/>route: user journey prototype<br/>file: src/features/user-journey-atlas/components/user-journey-atlas-panel.tsx<br/>desc: Parses and displays Mermaid nodes as workspace-canvas-style tiles."]
+  end
+
+  public_home -->|renders| home_canvas
+  pricing_data -->|CTA hrefs| home_signup_panel
+  home_canvas -->|panel content| home_signup_panel
+  home_signup_panel -->|same-page click| section_link_controller
+  section_link_controller -->|selected plan| sign_up_page
+  sign_up_page -->|form props| sign_up_form
+  sign_up_form -->|verification email| confirmation_email_template
+  confirmation_email_template -->|confirm link| auth_confirm
+  auth_confirm -->|safe destination| auth_confirmation_rules
+  auth_confirmation_rules -->|auth code exchange| auth_callback
+  auth_callback -->|resume selected path| signup_plan
+  sign_up_page -->|normalizes plan| signup_plan
+  signup_plan -->|paid plans| stripe_checkout
+  stripe_checkout -->|session success| pricing_success
+  stripe_checkout -->|signed events| stripe_webhook
+  stripe_webhook -->|subscription lifecycle| pricing_success
+  pricing_success -->|safe return| onboarding_return
+  onboarding_return -->|paid checkout success| onboarding_page
+  signup_plan -->|free builder| onboarding_page
+  onboarding_page -->|renders| onboarding_card
+  onboarding_card -->|flow state| onboarding_flow
+  onboarding_flow -->|first choice| onboarding_intent
+  onboarding_intent -->|builder pricing| onboarding_pricing
+  onboarding_pricing -->|paid checkout| stripe_checkout
+  onboarding_pricing -->|current or free plan| onboarding_org
+  onboarding_intent -->|free builder setup| onboarding_org
+  onboarding_org -->|profile details| onboarding_account
+  onboarding_account -->|submit| onboarding_actions
+  onboarding_actions -->|builder complete| workspace_route
+  workspace_route -->|compose| workspace_content
+  workspace_content -->|seed data| workspace_canvas
+  workspace_canvas -->|first-run guide| workspace_tutorial
+  workspace_tutorial -->|activation checkpoint missing| workspace_activation_outcomes
+  workspace_canvas -->|schema forms| dynamic_form
+  dynamic_form -->|profile sections| org_profile_company
+  workspace_canvas -->|module notes| module_notes_ui
+  module_notes_ui -->|save notes| module_notes_api
+  module_notes_api -->|needs next action| workspace_activation_outcomes
+  workspace_canvas -->|module homework| assignment_form
+  assignment_form -->|submit answers| assignment_submission
+  assignment_form -->|assist answer| homework_assist
+  homework_assist -->|deterministic helper| homework_assist_library
+  assignment_submission -->|needs review loop| workspace_activation_outcomes
+  workspace_canvas -->|formation tasks| workspace_objective_editor
+  workspace_canvas -->|calendar intake| workspace_calendar_form
+  workspace_calendar_form -->|schedule coaching| coaching_schedule
+  workspace_canvas -->|communications intake| workspace_comms_editor
+  workspace_canvas -->|public profile intake| org_profile_company
+  workspace_objective_editor -->|needs reminders| workspace_activation_outcomes
+  workspace_comms_editor -->|needs delivery states| workspace_activation_outcomes
+  org_profile_company -->|profile completion| workspace_activation_outcomes
+  signup_plan -->|find intent| find_route
+  find_route -->|renders| public_map
+  public_map -->|first-run free member| member_onboarding
+  member_onboarding -->|needs activation event| workspace_activation_outcomes
+  workspace_route -->|shell upgrade CTA| app_sidebar
+  app_sidebar -->|upgrade config| paywall_config
+  paywall_config -->|checkout hrefs| paywall_overlay
+  paywall_overlay -->|checkout| stripe_checkout
+  pricing_success -->|upgrade return| workspace_route
+  workspace_canvas -->|invite action| invite_sheet
+  invite_sheet -->|server action| invite_actions
+  invite_actions -->|email templates| email_foundation
+  email_foundation -->|rendered HTML| invite_email_delivery
+  invite_email_delivery -->|send request| resend_delivery
+  resend_delivery -->|new user invite| join_org
+  resend_delivery -->|existing user request| access_requests
+  join_org -->|membership accepted| workspace_route
+  access_requests -->|membership accepted| workspace_route
+  sign_up_form -->|signup telemetry missing| product_analytics
+  pricing_success -->|checkout telemetry missing| product_analytics
+  onboarding_actions -->|activation telemetry missing| product_analytics
+  workspace_canvas -->|workspace usage events missing| product_analytics
+  product_analytics -->|server traces if configured| otel_instrumentation
+  coaching_schedule -->|eligibility rules| coaching_tier_rules
+  coaching_schedule -->|opened scheduling link| notification_create
+  coaching_schedule -->|confirmed session sync missing| workspace_activation_outcomes
+  workspace_activation_outcomes -->|measurement gap| product_analytics
+  prototype_route -->|loads| mermaid_file
+  mermaid_file -->|parsed graph| atlas_panel

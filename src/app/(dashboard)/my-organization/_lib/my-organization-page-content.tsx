@@ -13,6 +13,11 @@ import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { sortAcceleratorModules } from "@/lib/accelerator/module-order"
 import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
 import { resolvePricingPlanTier } from "@/lib/billing/plan-tier"
+import { resolveRoadmapSections } from "@/lib/roadmap"
+import {
+  WORKSPACE_ROADMAP_PATH,
+  getWorkspaceAcceleratorPaywallPath,
+} from "@/lib/workspace/routes"
 import { normalizePersonCategory } from "@/lib/people/categories"
 import { resolvePeopleDisplayImages } from "@/lib/people/display-images"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
@@ -72,7 +77,7 @@ export default async function MyOrganizationPage({
   const onboardingStageOverride = resolveWorkspaceOnboardingStageFromSearchParam(
     typeof resolvedSearchParams?.onboarding_stage === "string" ? resolvedSearchParams.onboarding_stage : null,
   )
-  if (tabParam === "roadmap") redirect("/workspace/roadmap")
+  if (tabParam === "roadmap") redirect(WORKSPACE_ROADMAP_PATH)
   if (tabParam === "documents") redirect("/organization/documents")
   const supabase = await createSupabaseServerClient()
   const {
@@ -129,6 +134,7 @@ export default async function MyOrganizationPage({
     profile,
     organization: orgRow ?? null,
   })
+  const roadmapSections = resolveRoadmapSections(profile)
   const nowIso = new Date().toISOString()
   const [programsResult, upcomingEventsResult, acceleratorProgress, activeSubscriptionResult, entitlements] = await Promise.all([
     fetchWorkspacePrograms({ supabase, orgId }),
@@ -269,7 +275,7 @@ export default async function MyOrganizationPage({
     )
     if (!hasWorkspaceAcceleratorAccess) {
       redirect(
-        "/workspace?paywall=organization&plan=organization&upgrade=accelerator-access&source=accelerator",
+        getWorkspaceAcceleratorPaywallPath(),
       )
     }
 
@@ -297,6 +303,7 @@ export default async function MyOrganizationPage({
       presentationMode,
       role,
       canEdit,
+      isPlatformAdmin: isAdmin,
       hasWorkspaceAcceleratorAccess,
       organizationTitle,
       organizationSubtitle,
@@ -308,6 +315,7 @@ export default async function MyOrganizationPage({
       teammateCount,
       workspaceDocumentCount,
       initialProfile,
+      roadmapSections,
       formationSummary,
       acceleratorTimeline,
       calendarView,
@@ -333,6 +341,7 @@ export default async function MyOrganizationPage({
     orgId,
     role,
     canEdit,
+    isPlatformAdmin: isAdmin,
     hasAcceleratorAccess: hasWorkspaceAcceleratorAccess,
     presentationMode,
     viewer,
@@ -346,6 +355,7 @@ export default async function MyOrganizationPage({
     organizationProfileComplete,
     workspaceDocumentCount,
     initialProfile,
+    roadmapSections,
     formationSummary,
     acceleratorTimeline,
     calendar: calendarView,
@@ -387,6 +397,7 @@ export default async function MyOrganizationPage({
       onInitialOnboardingSubmit={completeOnboardingAction}
       organizationEditorData={{
         initialProfile,
+        roadmapSections,
         people,
         programs: (programs ?? []) as OrgProgram[],
         canEdit,

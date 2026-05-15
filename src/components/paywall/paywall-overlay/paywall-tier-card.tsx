@@ -6,16 +6,29 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import { cn } from "@/lib/utils"
 
-import { resolveTierLabel, type OverlayTier } from "@/components/paywall/paywall-overlay/config"
+import {
+  buildStripeCheckoutPath,
+  resolveTierLabel,
+  type OverlayTier,
+} from "@/components/paywall/paywall-overlay/config"
 
 type PaywallTierCardProps = {
   tier: OverlayTier
   currentPlanTier: PricingPlanTier
   source: string | null
+  redirectTarget?: string | null
+  cancelTarget?: string | null
 }
 
-export function PaywallTierCard({ tier, currentPlanTier, source }: PaywallTierCardProps) {
+export function PaywallTierCard({
+  tier,
+  currentPlanTier,
+  source,
+  redirectTarget,
+  cancelTarget,
+}: PaywallTierCardProps) {
   const details = resolveTierLabel({ tier, currentPlanTier })
+  const paidPlan = tier.id === "free" ? null : tier.id
 
   return (
     <Card
@@ -61,14 +74,19 @@ export function PaywallTierCard({ tier, currentPlanTier, source }: PaywallTierCa
           ))}
         </ul>
         <div className="mt-auto space-y-2 pt-2">
-          {details.cta && tier.planName ? (
+          {details.cta && tier.planName && paidPlan ? (
             <Button
               type="button"
               className="h-10 w-full rounded-xl"
               variant={tier.id === "organization" ? "default" : "secondary"}
               onClick={() =>
                 window.location.assign(
-                  `/api/stripe/checkout?plan=${tier.id}&source=${encodeURIComponent(source ?? "billing")}`,
+                  buildStripeCheckoutPath({
+                    plan: paidPlan,
+                    source,
+                    redirectTarget,
+                    cancelTarget,
+                  }),
                 )
               }
             >

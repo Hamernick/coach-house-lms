@@ -16,11 +16,31 @@ export type PrototypeLabSidebarTreeNode =
   | PrototypeLabSidebarTreeEntryNode
   | PrototypeLabSidebarTreeFolderNode
 
-export const DEFAULT_PROTOTYPE_LAB_ENTRY_ID = "team-invite-sheet"
+export const DEFAULT_PROTOTYPE_LAB_ENTRY_ID = "fiscal-sponsorship-flow"
 
 const PROTOTYPE_LAB_BASE_PATH = "/admin/platform/prototypes"
 
 const PROTOTYPE_LAB_SIDEBAR_TREE: PrototypeLabSidebarTreeNode[] = [
+  {
+    id: "fiscal-sponsorship",
+    label: "Fiscal Sponsorship",
+    kind: "folder",
+    children: [
+      {
+        id: "fiscal-sponsorship:flows",
+        label: "Flows",
+        kind: "folder",
+        children: [
+          {
+            id: "fiscal-sponsorship-flow",
+            label: "Application workflow",
+            href: `${PROTOTYPE_LAB_BASE_PATH}?entry=fiscal-sponsorship-flow`,
+            kind: "entry",
+          },
+        ],
+      },
+    ],
+  },
   {
     id: "invites",
     label: "Invites",
@@ -41,6 +61,39 @@ const PROTOTYPE_LAB_SIDEBAR_TREE: PrototypeLabSidebarTreeNode[] = [
             id: "access-request-review",
             label: "Access request review",
             href: `${PROTOTYPE_LAB_BASE_PATH}?entry=access-request-review`,
+            kind: "entry",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: "user-journeys",
+    label: "User Journeys",
+    kind: "folder",
+    children: [
+      {
+        id: "user-journeys:flows",
+        label: "Journeys",
+        kind: "folder",
+        children: [
+          {
+            id: "user-journey-atlas",
+            label: "Journey atlas",
+            href: `${PROTOTYPE_LAB_BASE_PATH}?entry=user-journey-atlas`,
+            kind: "entry",
+          },
+        ],
+      },
+      {
+        id: "user-journeys:operations",
+        label: "Operations",
+        kind: "folder",
+        children: [
+          {
+            id: "activation-monitor",
+            label: "Activation monitor",
+            href: `${PROTOTYPE_LAB_BASE_PATH}?entry=activation-monitor`,
             kind: "entry",
           },
         ],
@@ -124,7 +177,7 @@ export function listPrototypeLabSidebarTree() {
 
 function hasEntryId(
   nodes: PrototypeLabSidebarTreeNode[],
-  entryId: string,
+  entryId: string
 ): boolean {
   return nodes.some((node) => {
     if (node.kind === "entry") return node.id === entryId
@@ -133,7 +186,7 @@ function hasEntryId(
 }
 
 export function resolvePrototypeLabSidebarActiveEntryId(
-  entryId: string | null | undefined,
+  entryId: string | null | undefined
 ) {
   if (typeof entryId === "string") {
     const normalizedEntryId = entryId.trim()
@@ -148,7 +201,7 @@ export function resolvePrototypeLabSidebarActiveEntryId(
 function collectOpenFolderIds(
   nodes: PrototypeLabSidebarTreeNode[],
   entryId: string,
-  parentIds: string[] = [],
+  parentIds: string[] = []
 ): string[] {
   for (const node of nodes) {
     if (node.kind === "entry") {
@@ -157,7 +210,11 @@ function collectOpenFolderIds(
     }
 
     const nextParentIds = [...parentIds, node.id]
-    const nestedMatch = collectOpenFolderIds(node.children, entryId, nextParentIds)
+    const nestedMatch = collectOpenFolderIds(
+      node.children,
+      entryId,
+      nextParentIds
+    )
     if (nestedMatch.length > 0) return nestedMatch
   }
 
@@ -165,7 +222,7 @@ function collectOpenFolderIds(
 }
 
 export function resolvePrototypeLabSidebarOpenFolderIds(
-  entryId: string | null | undefined,
+  entryId: string | null | undefined
 ) {
   const activeEntryId = resolvePrototypeLabSidebarActiveEntryId(entryId)
   return collectOpenFolderIds(PROTOTYPE_LAB_SIDEBAR_TREE, activeEntryId)

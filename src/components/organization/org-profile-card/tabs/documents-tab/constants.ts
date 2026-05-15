@@ -1,6 +1,7 @@
 export {
   DOCUMENTS,
   MAX_BYTES,
+  MAX_UPLOAD_MB,
   POLICY_CATEGORY_PRESETS,
   ROADMAP_CATEGORY_BY_ID,
 } from "./document-definitions"

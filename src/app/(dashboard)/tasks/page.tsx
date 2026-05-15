@@ -7,8 +7,11 @@ import {
   updateMemberWorkspaceTaskAction,
   updateMemberWorkspaceTaskStatusAction,
 } from "@/features/member-workspace"
+import { requireMemberWorkspacePageAccess } from "@/lib/workspace/member-workspace-access"
 
 export default async function TasksPage() {
+  await requireMemberWorkspacePageAccess("tasks")
+
   const {
     taskGroups,
     storageMode,

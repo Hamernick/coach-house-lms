@@ -83,7 +83,6 @@ describe("public map search index", () => {
 
     const index = buildPublicMapSearchIndex(organizations)
     const originResults = filterPublicMapOrganizationIds({
-      organizations,
       searchIndex: index,
       query: "food rescue",
       appliedBounds: null,
@@ -91,7 +90,6 @@ describe("public map search index", () => {
       activeGroup: "all",
     })
     const programResults = filterPublicMapOrganizationIds({
-      organizations,
       searchIndex: index,
       query: "justice accelerator",
       appliedBounds: null,
@@ -123,7 +121,6 @@ describe("public map search index", () => {
 
     const index = buildPublicMapSearchIndex(organizations)
     const results = filterPublicMapOrganizationIds({
-      organizations,
       searchIndex: index,
       query: "",
       appliedBounds: {

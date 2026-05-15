@@ -61,6 +61,8 @@ type PublicMapShellSidebarPanelProps = {
   onToggleFavorite: (orgId: string) => void
   onOpenDetails: (orgId: string, options?: { preserveSearchContext?: boolean }) => void
   setSidebarMode: (mode: SidebarMode) => void
+  manageShellSidebarOpen?: boolean
+  onHidePanel?: () => void
 }
 
 export function PublicMapShellSidebarPanel({
@@ -74,16 +76,20 @@ export function PublicMapShellSidebarPanel({
   onToggleFavorite,
   onOpenDetails,
   setSidebarMode,
+  manageShellSidebarOpen = true,
+  onHidePanel,
 }: PublicMapShellSidebarPanelProps) {
   const { setOpen } = useSidebar()
   const effectiveSidebarMode =
     sidebarMode === "details" && selectedOrganization ? "details" : "search"
   const constrainedRailLayout = true
+  const handleHidePanel = onHidePanel ?? (() => setOpen(false))
 
   useEffect(() => {
+    if (!manageShellSidebarOpen) return
     if (sidebarMode === "hidden") return
     setOpen(true)
-  }, [selectedOrganization?.id, setOpen, sidebarMode])
+  }, [manageShellSidebarOpen, selectedOrganization?.id, setOpen, sidebarMode])
 
   if (effectiveSidebarMode === "details" && selectedOrganization) {
     return (
@@ -103,7 +109,7 @@ export function PublicMapShellSidebarPanel({
       favorites={favorites}
       constrainedLayout={constrainedRailLayout}
       onQueryChange={onQueryChange}
-      onHidePanel={() => setOpen(false)}
+      onHidePanel={handleHidePanel}
       onToggleFavorite={onToggleFavorite}
       onOpenDetails={(organizationId) =>
         onOpenDetails(organizationId, {

@@ -15,6 +15,7 @@ import {
 } from "./task-starter-data"
 import { MEMBER_WORKSPACE_STARTER_VERSION } from "./starter-data"
 import { normalizeMemberWorkspaceCreateProjectInput } from "./project-create-input"
+import { ensureMemberWorkspaceFeatureAccess } from "./access"
 import {
   isMissingOrganizationProjectsTableError,
   isMissingOrganizationWorkspaceStarterStateTableError,
@@ -47,6 +48,9 @@ function ensureProjectMutationAllowed(
   if (actor.isAdmin) {
     return { error: PLATFORM_ADMIN_PROJECT_MUTATION_ERROR } as const
   }
+
+  const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
+  if (featureAccess) return featureAccess
 
   if (!actor.canEdit) {
     return { error: "Only organization editors can manage projects." } as const
@@ -351,6 +355,8 @@ export async function updateMemberWorkspaceProjectScheduleAction(
 
 export async function resetMemberWorkspaceStarterProjectsAction(): Promise<MemberWorkspaceResetStarterProjectsResult> {
   const actor = await resolveMemberWorkspaceActorContext()
+  const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
+  if (featureAccess) return featureAccess
 
   if (actor.isAdmin || !actor.canEdit) {
     return { error: "Only organization editors can reset starter data." }
@@ -455,6 +461,8 @@ export async function resetMemberWorkspaceStarterProjectsAction(): Promise<Membe
 
 export async function clearMemberWorkspaceStarterDataAction(): Promise<MemberWorkspaceClearStarterDataResult> {
   const actor = await resolveMemberWorkspaceActorContext()
+  const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
+  if (featureAccess) return featureAccess
 
   if (actor.isAdmin || !actor.canEdit) {
     return { error: "Only organization editors can clear demo data." }

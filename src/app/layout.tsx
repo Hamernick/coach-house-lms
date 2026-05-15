@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import "./globals.css"
 
 import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 import { Inter, JetBrains_Mono } from "next/font/google"
 
 import { ReactGrabLoader } from "@/components/dev/react-grab-loader"
@@ -32,10 +33,10 @@ export const metadata: Metadata = {
     "A course platform built with Next.js, Tailwind CSS, and shadcn/ui. Bootstrapped in step S00.",
   icons: {
     icon: [
-      { url: "/favicon-light.svg", type: "image/svg+xml", media: "(prefers-color-scheme: light)" },
-      { url: "/favicon-dark.svg", type: "image/svg+xml", media: "(prefers-color-scheme: dark)" },
+      { url: "/coach-house-logo-dark.png", type: "image/png", media: "(prefers-color-scheme: light)" },
+      { url: "/coach-house-logo-light.png", type: "image/png", media: "(prefers-color-scheme: dark)" },
     ],
-    shortcut: "/favicon-light.svg",
+    shortcut: "/coach-house-logo-dark.png",
   },
 }
 
@@ -54,6 +55,7 @@ export default async function RootLayout({
         <ReactGrabLoader />
         <AppProviders>{children}</AppProviders>
         <Analytics />
+        <SpeedInsights sampleRate={0.5} />
       </body>
     </html>
   )

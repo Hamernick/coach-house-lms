@@ -27,6 +27,7 @@ import {
   resolveProgramProfileImageUrl,
   resolveProgramSummary,
 } from "@/lib/programs/display"
+import { getWorkspaceEditorPath } from "@/lib/workspace/routes"
 import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
 
 function sortProgramsByNewest(programs: OrgProgram[]) {
@@ -39,10 +40,10 @@ function sortProgramsByNewest(programs: OrgProgram[]) {
 
 export function buildWorkspaceProgramEditorHref(programId?: string | null) {
   if (!programId || programId.trim().length === 0) {
-    return "/workspace?view=editor&tab=programs"
+    return getWorkspaceEditorPath({ tab: "programs" })
   }
 
-  return `/workspace?view=editor&tab=programs&programId=${encodeURIComponent(programId)}`
+  return getWorkspaceEditorPath({ tab: "programs", programId })
 }
 
 export function isWorkspaceProgramRecord(program: Pick<OrgProgram, "id">) {

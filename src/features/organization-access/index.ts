@@ -13,6 +13,7 @@ export {
   buildOrganizationAccessRequestNotificationMetadata,
   formatOrganizationAccessRoleLabel,
   readOrganizationAccessRequestNotificationMetadata,
+  resolveOrganizationInviteEmailDeliveryDescription,
 } from "./lib"
 export type {
   CoachHouseEmailPreview,

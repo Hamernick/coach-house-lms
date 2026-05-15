@@ -27,15 +27,14 @@ import {
   useWorkspaceAcceleratorTutorialViewerState,
   WorkspaceAcceleratorCardEmptyState,
   WorkspaceAcceleratorCardFullscreenRail,
+  WorkspaceAcceleratorCardInlinePicker,
   WorkspaceAcceleratorCardSidebar,
   useModuleViewerSizeSync,
 } from "./workspace-accelerator-card-panel-support"
 import { canWorkspaceAcceleratorTutorialActivateStep } from "./workspace-accelerator-card-tutorial-guards"
 import { useWorkspaceAcceleratorLessonGroupState } from "./workspace-accelerator-card-panel-lesson-groups"
-import {
-  resolveWorkspaceAcceleratorModuleStepNavigation,
-  resolveWorkspaceAcceleratorPlaceholderVideoUrl,
-} from "./workspace-accelerator-module-navigation"
+import { WorkspaceAcceleratorStepViewerTransition } from "./workspace-accelerator-step-viewer-transition"
+import { resolveWorkspaceAcceleratorModuleStepNavigation, resolveWorkspaceAcceleratorPlaceholderVideoUrl } from "./workspace-accelerator-module-navigation"
 import { WorkspaceAcceleratorStepNodeCard } from "./workspace-accelerator-step-node-card"
 
 type WorkspaceAcceleratorCardPanelProps = {
@@ -417,10 +416,15 @@ export function WorkspaceAcceleratorCardPanel({
 
   useEffect(() => {
     if (tutorialCallout?.focus !== "first-module") return
-    const nextModuleId = checklistModules[0]?.id ?? null
+    const nextModuleId =
+      checklistModules
+        .flatMap((module) => module.steps)
+        .find((step) => step.id === firstVisibleChecklistStepId)?.moduleId ??
+      checklistModules[0]?.id ??
+      null
     if (!nextModuleId) return
     setOpenModuleId((previous) => (previous === nextModuleId ? previous : nextModuleId))
-  }, [checklistModules, tutorialCallout?.focus])
+  }, [checklistModules, firstVisibleChecklistStepId, tutorialCallout?.focus])
 
   useWorkspaceAcceleratorTutorialViewerState({
     currentModuleId: currentStep?.moduleId ?? null,
@@ -542,7 +546,6 @@ export function WorkspaceAcceleratorCardPanel({
   }
 
   const fullscreenEmbedded = presentationMode === "fullscreen-route"
-  const renderSidebarInline = !fullscreenEmbedded
   const sidebarProps = {
     selectedLessonGroup,
     tutorialCallout,
@@ -564,7 +567,7 @@ export function WorkspaceAcceleratorCardPanel({
 
   return (
     <div className="relative flex h-full min-h-0 flex-1 flex-col">
-      {!renderSidebarInline ? (
+      {fullscreenEmbedded ? (
         <WorkspaceAcceleratorCardFullscreenRail
           {...sidebarProps}
           lessonGroupOptions={lessonGroupSummaries}
@@ -579,18 +582,30 @@ export function WorkspaceAcceleratorCardPanel({
         className={cn(
           "grid min-h-0 flex-1",
           fullscreenEmbedded ? "gap-0" : "gap-3",
-          renderSidebarInline && isModuleViewerOpen
+          !fullscreenEmbedded && isModuleViewerOpen
             ? "grid-cols-[minmax(250px,290px)_minmax(0,1fr)]"
             : "grid-cols-1",
         )}
       >
-        {renderSidebarInline ? (
+        {!fullscreenEmbedded ? (
           <div className="flex min-h-0 flex-col gap-2">
-            <WorkspaceAcceleratorCardSidebar {...sidebarProps} />
+            <WorkspaceAcceleratorCardSidebar
+              {...sidebarProps}
+              checklistHeaderControls={
+                <WorkspaceAcceleratorCardInlinePicker
+                  lessonGroupOptions={lessonGroupSummaries}
+                  selectedLessonGroupKey={selectedLessonGroupKey}
+                  tutorialCallout={tutorialCallout}
+                  tutorialInteractionPolicy={tutorialInteractionPolicy ?? null}
+                  viewerOpen={isModuleViewerOpen}
+                  onLessonGroupChange={handleLessonGroupChange}
+                />
+              }
+            />
           </div>
         ) : null}
 
-        {isModuleViewerOpen ? (
+        <WorkspaceAcceleratorStepViewerTransition open={isModuleViewerOpen}>
           <WorkspaceAcceleratorStepNodeCard
             variant="embedded"
             step={currentStep}
@@ -612,7 +627,7 @@ export function WorkspaceAcceleratorCardPanel({
             onWorkspaceOnboardingSubmit={input.onWorkspaceOnboardingSubmit}
             immersive={fullscreenEmbedded}
           />
-        ) : null}
+        </WorkspaceAcceleratorStepViewerTransition>
       </div>
     </div>
   )

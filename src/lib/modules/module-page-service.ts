@@ -9,6 +9,10 @@ import { supabaseErrorToError } from "@/lib/supabase/errors"
 
 import { parseAssignmentFields, parseLegacyHomework } from "./assignment"
 import {
+  parseAssignmentCompletionMode,
+  shouldTreatAssignmentSubmissionAsComplete,
+} from "./assignment-completion"
+import {
   buildClassResourcesAndVideo,
   inferResourceProvider,
   resolveClassPublished,
@@ -212,15 +216,15 @@ export async function getClassModulePageForUser({
       .returns<Array<{ module_id: string; status: string }>>(),
     primary
       .from("module_assignments" satisfies keyof Database["public"]["Tables"])
-      .select("module_id, complete_on_submit")
+      .select("module_id, schema, complete_on_submit")
       .in("module_id", moduleIds)
-      .returns<Array<{ module_id: string; complete_on_submit: boolean | null }>>(),
+      .returns<Array<{ module_id: string; schema: unknown; complete_on_submit: boolean | null }>>(),
     supabase
       .from("assignment_submissions" satisfies keyof Database["public"]["Tables"])
-      .select("module_id, status")
+      .select("module_id, answers, status, updated_at")
       .eq("user_id", userId)
       .in("module_id", moduleIds)
-      .returns<Array<{ module_id: string; status: string | null }>>(),
+      .returns<Array<{ module_id: string; answers: unknown; status: string | null; updated_at: string | null }>>(),
     primary
       .from("module_content" satisfies keyof Database["public"]["Tables"])
       .select("module_id, video_url, resources, homework")
@@ -303,25 +307,31 @@ export async function getClassModulePageForUser({
     progressStatusByModuleId.set(row.module_id, row.status as ModuleProgressStatus)
   }
 
-  const assignmentCompleteOnSubmitByModuleId = new Map<string, boolean>()
+  const assignmentMetaByModuleId = new Map<string, ModuleAssignment>()
   for (const row of assignmentMetaResult.data ?? []) {
     if (!row?.module_id) continue
-    assignmentCompleteOnSubmitByModuleId.set(
-      row.module_id,
-      Boolean(row.complete_on_submit),
-    )
+    const fields = parseAssignmentFields(row.schema)
+    if (fields.length === 0) continue
+    assignmentMetaByModuleId.set(row.module_id, {
+      fields,
+      completeOnSubmit: Boolean(row.complete_on_submit),
+      completionMode: parseAssignmentCompletionMode(row.schema),
+    })
   }
 
-  const submissionStatusByModuleId = new Map<
-    string,
-    ModuleAssignmentSubmission["status"]
-  >()
+  const submissionByModuleId = new Map<string, ModuleAssignmentSubmission>()
   for (const row of submissionStatusResult.data ?? []) {
     if (!row?.module_id) continue
-    submissionStatusByModuleId.set(
-      row.module_id,
-      normalizeModuleSubmissionStatus(row.status),
-    )
+    submissionByModuleId.set(row.module_id, {
+      answers:
+        row.answers &&
+        typeof row.answers === "object" &&
+        !Array.isArray(row.answers)
+          ? (row.answers as Record<string, unknown>)
+          : {},
+      status: normalizeModuleSubmissionStatus(row.status),
+      updatedAt: row.updated_at ?? null,
+    })
   }
 
   const progressMap: Record<string, ModuleProgressStatus> = {}
@@ -332,16 +342,20 @@ export async function getClassModulePageForUser({
       continue
     }
 
-    const submissionStatus = submissionStatusByModuleId.get(moduleRecord.id)
-    if (!submissionStatus) continue
+    const submission = submissionByModuleId.get(moduleRecord.id)
+    if (!submission) continue
 
-    const completeOnSubmit = Boolean(
-      assignmentCompleteOnSubmitByModuleId.get(moduleRecord.id),
-    )
-    progressMap[moduleRecord.id] =
-      completeOnSubmit && submissionStatus !== "revise"
-        ? "completed"
-        : "in_progress"
+    const assignment = assignmentMetaByModuleId.get(moduleRecord.id)
+    const completed = assignment
+      ? shouldTreatAssignmentSubmissionAsComplete({
+          completeOnSubmit: assignment.completeOnSubmit,
+          completionMode: assignment.completionMode,
+          fields: assignment.fields,
+          answers: submission.answers,
+          status: submission.status,
+        })
+      : false
+    progressMap[moduleRecord.id] = completed ? "completed" : "in_progress"
   }
 
   const currentContentRow = currentContentResult.data
@@ -356,11 +370,13 @@ export async function getClassModulePageForUser({
       ? {
           fields: currentAssignmentFields,
           completeOnSubmit: Boolean(currentAssignmentRow?.complete_on_submit),
+          completionMode: parseAssignmentCompletionMode(currentAssignmentRow?.schema),
         }
       : currentLegacyAssignment.length > 0
         ? {
             fields: currentLegacyAssignment,
             completeOnSubmit: false,
+            completionMode: "on_submit" as const,
           }
         : null
 

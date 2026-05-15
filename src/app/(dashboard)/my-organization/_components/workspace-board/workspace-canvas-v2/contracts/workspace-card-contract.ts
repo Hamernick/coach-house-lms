@@ -119,8 +119,8 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
   },
   roadmap: {
     id: "roadmap",
-    laneIndex: 2,
-    defaultPosition: { x: 1144, y: 208 },
+    laneIndex: 4,
+    defaultPosition: { x: 1656, y: 208 },
     dockEnabled: true,
     allowedSizes: ["sm", "md", "lg"],
     defaultSize: "sm",
@@ -203,8 +203,8 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
   },
   accelerator: {
     id: "accelerator",
-    laneIndex: 4,
-    defaultPosition: { x: 1656, y: 208 },
+    laneIndex: 2,
+    defaultPosition: { x: 1144, y: 208 },
     dockEnabled: true,
     allowedSizes: ["sm", "md", "lg"],
     defaultSize: "sm",

@@ -15,6 +15,7 @@ import { VideoSection } from "@/components/training/module-detail/video-section"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { WORKSPACE_TEXT_STYLES } from "@/components/workspace/workspace-typography"
+import type { ModuleResource, ModuleResourceProvider } from "@/lib/modules"
 
 import type {
   WorkspaceAcceleratorCardStep,
@@ -35,6 +36,36 @@ function resolveWorkspaceAcceleratorStepKindLabel(
   if (stepKind === "assignment") return "Assignment"
   if (stepKind === "complete") return "Complete"
   return "Deck"
+}
+
+const MODULE_RESOURCE_PROVIDERS = new Set<ModuleResourceProvider>([
+  "youtube",
+  "google-drive",
+  "dropbox",
+  "loom",
+  "vimeo",
+  "notion",
+  "figma",
+  "generic",
+])
+
+function resolveWorkspaceStepOverviewResources(
+  step: WorkspaceAcceleratorCardStep,
+): ModuleResource[] {
+  if (step.moduleContext?.moduleResources.length) {
+    return step.moduleContext.moduleResources
+  }
+
+  return step.resources.map((resource) => {
+    const provider = MODULE_RESOURCE_PROVIDERS.has(resource.kind as ModuleResourceProvider)
+      ? (resource.kind as ModuleResourceProvider)
+      : "generic"
+    return {
+      label: resource.title,
+      url: resource.url,
+      provider,
+    }
+  })
 }
 
 export function WorkspaceAcceleratorStepBody({
@@ -75,6 +106,10 @@ export function WorkspaceAcceleratorStepBody({
   const assignmentSubmission = moduleContext?.assignmentSubmission ?? null
   const completeOnSubmit = moduleContext?.completeOnSubmit ?? false
   const classTitle = moduleContext?.classTitle ?? "Accelerator"
+  const overviewResources = useMemo(
+    () => resolveWorkspaceStepOverviewResources(step),
+    [step],
+  )
 
   const {
     formSeed,
@@ -148,7 +183,13 @@ export function WorkspaceAcceleratorStepBody({
   }
 
   return (
-    <div className="space-y-4 px-4 py-4 sm:px-5">
+    <div
+      className={
+        showAssignment
+          ? "flex h-full min-h-0 flex-col gap-4 px-4 py-4 sm:px-5"
+          : "space-y-4 px-4 py-4 sm:px-5"
+      }
+    >
       {step.stepDescription && !showAssignment ? (
         <p className="text-foreground text-sm leading-relaxed">
           {step.stepDescription}
@@ -232,32 +273,38 @@ export function WorkspaceAcceleratorStepBody({
 
       {showAssignment ? (
         assignmentFields.length > 0 ? (
-          <AssignmentForm
-            mode="stepper"
-            fields={assignmentFields}
-            initialValues={formSeed}
-            pending={isSubmitting}
-            onSubmit={handleSubmit}
-            statusLabel={statusLabel}
-            statusVariant={statusVariant}
-            statusNote={statusMeta?.note ?? null}
-            helperText={message}
-            errorMessage={submissionError}
-            updatedAt={lastSavedAt}
-            completeOnSubmit={completeOnSubmit}
-            moduleId={step.moduleId}
-            moduleTitle={step.moduleTitle}
-            classTitle={classTitle}
-            currentStep={stepIndex + 1}
-            totalSteps={stepTotal}
-          />
+          <div className="min-h-0 flex-1">
+            <AssignmentForm
+              mode="stepper"
+              fields={assignmentFields}
+              initialValues={formSeed}
+              pending={isSubmitting}
+              onSubmit={handleSubmit}
+              statusLabel={statusLabel}
+              statusVariant={statusVariant}
+              statusNote={statusMeta?.note ?? null}
+              helperText={message}
+              errorMessage={submissionError}
+              updatedAt={lastSavedAt}
+              completeOnSubmit={completeOnSubmit}
+              moduleId={step.moduleId}
+              moduleTitle={step.moduleTitle}
+              classTitle={classTitle}
+              activeSectionId={step.assignmentSectionId ?? undefined}
+              currentStep={stepIndex + 1}
+              totalSteps={stepTotal}
+              overviewResources={overviewResources}
+              overviewHasDeck={step.hasDeck}
+              showStepNavigation={false}
+            />
+          </div>
         ) : (
           <div className="space-y-2">
             <p className={WORKSPACE_TEXT_STYLES.meta}>
               Assignment
             </p>
             <p className={WORKSPACE_TEXT_STYLES.bodyMuted}>
-              This module assignment schema is not available yet. Use notes below
+              This lesson assignment schema is not available yet. Use notes below
               until it is published.
             </p>
             <RichTextEditor
@@ -293,7 +340,7 @@ export function WorkspaceAcceleratorStepBody({
               Deck
             </p>
             <p className={WORKSPACE_TEXT_STYLES.bodyMuted}>
-              No deck is attached to this module yet.
+              No deck is attached to this lesson yet.
             </p>
           </div>
         )
@@ -336,7 +383,7 @@ export function WorkspaceAcceleratorStepBody({
             Step focus
           </p>
           <p className={WORKSPACE_TEXT_STYLES.bodyMuted}>
-            Complete this step here, then keep moving through the module.
+            Complete this step here, then keep moving through the lesson.
           </p>
           <Button
             asChild

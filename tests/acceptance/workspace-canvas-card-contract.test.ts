@@ -40,6 +40,15 @@ describe("workspace canvas card contract", () => {
     }
   })
 
+  it("keeps accelerator in the former roadmap lane in the base canvas layout", () => {
+    expect(
+      WORKSPACE_CANVAS_V2_CARD_CONTRACT.accelerator.defaultPosition.x,
+    ).toBeLessThan(WORKSPACE_CANVAS_V2_CARD_CONTRACT.roadmap.defaultPosition.x)
+    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.accelerator.laneIndex).toBeLessThan(
+      WORKSPACE_CANVAS_V2_CARD_CONTRACT.roadmap.laneIndex,
+    )
+  })
+
   it("keeps each card default size inside its allowed size set", () => {
     for (const cardId of WORKSPACE_CANVAS_V2_CARD_IDS) {
       const contract = WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId]

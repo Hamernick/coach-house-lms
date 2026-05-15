@@ -20,21 +20,10 @@ import {
   type PrototypeLabSidebarTreeNode,
 } from "@/features/prototype-lab"
 import type { SidebarClass } from "@/lib/academy"
+import { FIND_PATH } from "@/lib/find/routes"
 import { platformLabEnabled } from "@/lib/feature-flags"
 
-export function buildMainNav({
-  isAdmin,
-  showOrgAdmin,
-  canAccessOrgAdmin,
-  showMemberWorkspace = false,
-  showPlatformLab = platformLabEnabled,
-}: {
-  isAdmin: boolean
-  showOrgAdmin: boolean
-  canAccessOrgAdmin: boolean
-  showMemberWorkspace?: boolean
-  showPlatformLab?: boolean
-}): Array<{
+type MainNavItem = {
   title: string
   href?: string
   icon?: LucideIcon
@@ -43,45 +32,48 @@ export function buildMainNav({
   badge?: string
   upgradeHref?: string
   upgradeLabel?: string
-}> {
-  const items: Array<{
-    title: string
-    href?: string
-    icon?: LucideIcon
-    tree?: PrototypeLabSidebarTreeNode[]
-    locked?: boolean
-    badge?: string
-    upgradeHref?: string
-    upgradeLabel?: string
-  }> = [
+}
+
+export function buildMainNav({
+  isAdmin,
+  showOrgAdmin,
+  canAccessOrgAdmin,
+  showMemberWorkspace = false,
+  hasMemberWorkspaceAccess = true,
+  showWorkspaceHome = true,
+  showPlatformLab = platformLabEnabled,
+}: {
+  isAdmin: boolean
+  showOrgAdmin: boolean
+  canAccessOrgAdmin: boolean
+  showMemberWorkspace?: boolean
+  hasMemberWorkspaceAccess?: boolean
+  showWorkspaceHome?: boolean
+  showPlatformLab?: boolean
+}): MainNavItem[] {
+  const workspaceHomeItem = showWorkspaceHome
+    ? [{ title: "Workspace", href: "/workspace", icon: LayoutGridIcon }]
+    : []
+  const memberWorkspaceItems: MainNavItem[] = hasMemberWorkspaceAccess || isAdmin
+    ? [
+        { title: "Projects", href: "/projects", icon: FolderKanbanIcon },
+        { title: "Tasks", href: "/tasks", icon: ClipboardListIcon },
+      ]
+    : []
+  const items: MainNavItem[] = [
     ...(showMemberWorkspace
       ? [
-          { title: "Workspace", href: "/workspace", icon: LayoutGridIcon },
-          { title: "Projects", href: "/projects", icon: FolderKanbanIcon },
-          { title: "Tasks", href: "/tasks", icon: ClipboardListIcon },
+          ...workspaceHomeItem,
+          { title: "Find", href: FIND_PATH, icon: MapPinnedIcon },
+          ...memberWorkspaceItems,
           { title: "People", href: "/people", icon: UsersIcon },
           { title: "Documents", href: "/organization/documents", icon: LockIcon },
         ]
-      : [
-          { title: "Workspace", href: "/workspace", icon: LayoutGridIcon },
-          { title: "People", href: "/people", icon: UsersIcon },
-          { title: "Documents", href: "/organization/documents", icon: LockIcon },
-        ]),
+      : [{ title: "Find", href: FIND_PATH, icon: MapPinnedIcon }]),
   ]
 
-  if (showOrgAdmin) {
-    if (canAccessOrgAdmin) {
-      items.push({ title: "Admin", href: "/admin", icon: ShieldIcon })
-    } else {
-      items.push({
-        title: "Admin",
-        icon: ShieldIcon,
-        locked: true,
-        badge: "Upgrade",
-        upgradeLabel: "Upgrade",
-        upgradeHref: "?paywall=organization&plan=organization&upgrade=admin-access&source=nav-admin",
-      })
-    }
+  if (showOrgAdmin && canAccessOrgAdmin) {
+    items.push({ title: "Admin", href: "/admin", icon: ShieldIcon })
   }
   if (isAdmin) {
     items.push({ title: "Platform", href: "/admin/platform", icon: DatabaseIcon })
@@ -111,7 +103,7 @@ export const RESOURCE_NAV = [
   },
   {
     name: "Find organizations",
-    url: "/find",
+    url: FIND_PATH,
     icon: MapPinnedIcon,
   },
   {

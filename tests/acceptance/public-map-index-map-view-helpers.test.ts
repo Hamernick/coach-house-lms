@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest"
 import type mapboxgl from "mapbox-gl"
 
 import {
+  buildMapHref,
   buildPublicMapOrganizationFeatureCollection,
   CHICAGO_FALLBACK_CENTER,
   CHICAGO_FALLBACK_ZOOM,
@@ -144,6 +145,18 @@ describe("resolvePublicMapCameraPadding", () => {
       left: PUBLIC_MAP_CAMERA_EDGE_PADDING,
     })
   })
+})
+
+describe("buildMapHref", () => {
+  it("builds public map links by default", () => {
+    expect(
+      buildMapHref({
+        slug: "alpha-org",
+        searchParams: new URLSearchParams("auth_action=save"),
+      }),
+    ).toBe("/find/alpha-org?auth_action=save")
+  })
+
 })
 
 describe("buildPublicMapOrganizationFeatureCollection", () => {

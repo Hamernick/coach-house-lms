@@ -1,6 +1,6 @@
 import type { MemberWorkspaceStorageMode } from "../types"
 
-export const MEMBER_WORKSPACE_STARTER_VERSION = 1
+export const MEMBER_WORKSPACE_STARTER_VERSION = 2
 
 export function resolveMemberWorkspaceStorageMode(
   records: Array<{ created_source: string }>,

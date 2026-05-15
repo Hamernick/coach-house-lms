@@ -58,7 +58,7 @@ export default async function BillingPage() {
   const { data: subscription } = await supabase
     .from("subscriptions")
     .select(
-      "status, metadata, current_period_end, stripe_customer_id, stripe_subscription_id",
+      "status, metadata, current_period_end, cancel_at, canceled_at, stripe_customer_id, stripe_subscription_id",
     )
     .eq("user_id", orgId)
     .in("status", ["active", "trialing", "past_due", "incomplete"])
@@ -69,12 +69,16 @@ export default async function BillingPage() {
       status: string | null
       metadata: Json | null
       current_period_end: string | null
+      cancel_at: string | null
+      canceled_at: string | null
       stripe_customer_id: string | null
       stripe_subscription_id: string | null
     }>()
 
   const currentPlanTier = resolvePricingPlanTier(subscription ?? null)
   const periodEnd = formatDate(subscription?.current_period_end ?? null)
+  const cancelAt = formatDate(subscription?.cancel_at ?? subscription?.canceled_at ?? null)
+  const subscriptionIsCanceling = Boolean(subscription?.cancel_at || subscription?.canceled_at)
 
   const organizationIsCurrent = currentPlanTier === "organization"
   const operationsIsCurrent = currentPlanTier === "operations_support"
@@ -101,6 +105,11 @@ export default async function BillingPage() {
               Current plan:{" "}
               {operationsIsCurrent ? "Operations Support" : organizationIsCurrent ? "Organization" : "Free"}
             </Badge>
+            {subscriptionIsCanceling ? (
+              <Badge variant="secondary" className="rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+                Canceling
+              </Badge>
+            ) : null}
             <StripePoweredBadge className="ml-auto" />
           </div>
           <div className="space-y-2">
@@ -123,7 +132,11 @@ export default async function BillingPage() {
             <p className="text-xs uppercase tracking-wide text-muted-foreground">Billing cycle</p>
             <p className="mt-1 inline-flex items-center gap-2 font-medium text-foreground">
               <CalendarClockIcon className="h-4 w-4" aria-hidden />
-              {periodEnd ? `Next renewal ${periodEnd}` : "No renewal date yet"}
+              {cancelAt
+                ? `Access through ${cancelAt}`
+                : periodEnd
+                  ? `Next renewal ${periodEnd}`
+                  : "No renewal date yet"}
             </p>
           </div>
           <div className="rounded-xl border border-border/70 bg-muted/25 p-3">

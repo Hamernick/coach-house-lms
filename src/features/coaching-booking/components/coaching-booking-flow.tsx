@@ -198,14 +198,14 @@ function SessionDetailsPanel({
   timezone: string
 }) {
   return (
-    <aside className="flex flex-col gap-6 border-b border-border p-5 sm:p-6 lg:border-b-0 lg:border-r lg:p-7">
+    <aside className="flex flex-col gap-6 border-b border-border px-4 py-5 sm:p-6 lg:border-b-0 lg:border-r lg:p-7">
       <div className="flex flex-col gap-5">
         <SessionAvatarStack coaches={coaches} />
         <div className="flex flex-col gap-2">
           <p className="text-lg font-medium text-muted-foreground">{COACHING_JOINT_COACH_LABEL}</p>
-          <h2 className="text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">lets talk business</h2>
+          <h2 className="text-2xl font-semibold tracking-normal text-foreground sm:text-3xl">{"Let's talk business"}</h2>
           <p className="text-sm leading-6 text-muted-foreground sm:text-base sm:leading-7">
-            Meet with Joel and Paula for focused support on strategy, formation, operations, and next steps.
+            Meet with coaches for focused support on strategy, formation, operations, and next steps.
           </p>
         </div>
       </div>
@@ -433,9 +433,9 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
   }
 
   return (
-    <main className="min-h-full px-3 py-4 sm:px-4 sm:py-6 lg:px-6">
+    <main className="min-h-full px-0 py-0 sm:px-4 sm:py-6 lg:px-6">
       <h1 className="sr-only">Coaching</h1>
-      <div className="mx-auto flex w-full max-w-[52.25rem] flex-col gap-5 sm:gap-6">
+      <div className="mx-auto flex w-full max-w-[52.25rem] flex-col gap-5 pb-[calc(3rem+env(safe-area-inset-bottom))] sm:gap-6 sm:pb-0">
         <section className="overflow-hidden rounded-xl border border-border/70 bg-card shadow-sm">
           <div className="grid lg:grid-cols-[20rem_minmax(0,1fr)]">
             <SessionDetailsPanel
@@ -444,10 +444,10 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
               timezone={timezone}
             />
 
-            <div className="flex min-w-0 flex-col p-5 sm:p-6 lg:pr-3">
-              <div className="mx-auto flex w-[316px] max-w-full flex-col gap-7 sm:gap-6 lg:mx-0 lg:w-[30rem]">
+            <div className="flex min-w-0 flex-col px-4 py-5 sm:p-6 lg:pr-3">
+              <div className="flex w-full flex-col gap-7 sm:mx-auto sm:w-[316px] sm:max-w-full sm:gap-6 lg:mx-0 lg:w-[30rem]">
                 <div className="grid w-full justify-items-stretch gap-x-4 gap-y-7 sm:gap-y-6 lg:grid-cols-[260px_12.75rem] lg:justify-start lg:justify-items-start">
-                  <div className="w-[316px] max-w-full min-w-0 lg:w-[260px]">
+                  <div className="w-full min-w-0 sm:w-[316px] sm:max-w-full lg:w-[260px]">
                     <Calendar
                       mode="single"
                       month={calendarMonth}
@@ -463,14 +463,14 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
                         }
                         setSelectedSlot(null)
                       }}
-                      className="w-[316px] max-w-full p-0 [--cell-size:--spacing(10)] lg:w-[260px] lg:[--cell-size:--spacing(8)]"
+                      className="w-full p-0 [--cell-size:calc((100%_-_2.25rem)/7)] sm:w-[316px] sm:max-w-full sm:[--cell-size:--spacing(10)] lg:w-[260px] lg:[--cell-size:--spacing(8)]"
                       modifiers={{
                         available: availableCalendarDates,
                         unavailable: unavailableCalendarDates,
                       }}
                     />
                   </div>
-                  <div className="flex w-[316px] max-w-full min-w-0 flex-col gap-4 lg:w-[12.75rem] lg:gap-3">
+                  <div className="flex w-full min-w-0 flex-col gap-4 sm:w-[316px] sm:max-w-full lg:w-[12.75rem] lg:gap-3">
                     <div className="flex items-center justify-between gap-3 sm:gap-2">
                       <div className="min-w-0 shrink-0">
                         <h2 className="whitespace-nowrap text-xl font-semibold text-foreground">{selectedDateHeading}</h2>

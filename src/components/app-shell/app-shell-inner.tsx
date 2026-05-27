@@ -20,6 +20,7 @@ import {
 } from "@/components/app-shell/components"
 import { RightRailSlot, useRightRailPresence } from "@/components/app-shell/right-rail"
 import { AppShellRightRailControlsProvider } from "@/components/app-shell/right-rail-controls"
+import { ScrollFadeEffect } from "@/components/scroll-fade-effect"
 import { Sidebar, SidebarHeader, SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { releaseStaleInteractionLocks } from "@/lib/ui/interaction-lock-guard"
@@ -134,10 +135,18 @@ export function AppShellInner({
   const hasOrganizationEditorParams = Boolean(
     searchParams.get("view") === "editor" || searchParams.get("tab") || searchParams.get("programId"),
   )
+  const isCoachingRoute = pathname === "/coaching" || Boolean(pathname?.startsWith("/coaching/"))
+  const useMobileSingleGutterContent = isMobile && isCoachingRoute
   const useFullBleedContent =
-    contentPresentation === "full-bleed" || (isOrganizationRoute && hasOrganizationEditorParams)
+    contentPresentation === "full-bleed" ||
+    (isOrganizationRoute && hasOrganizationEditorParams)
+  const useFlushContentBody = useFullBleedContent || useMobileSingleGutterContent
   const contentPadding = isMobile ? "pb-[calc(4.5rem+env(safe-area-inset-bottom))]" : "pb-4"
-  const contentHorizontalPadding = isMobile ? "px-[var(--shell-gutter)]" : "pl-[var(--shell-outer-gutter)]"
+  const contentHorizontalPadding = isMobile
+    ? useMobileSingleGutterContent
+      ? "px-[var(--shell-content-pad)]"
+      : "px-[var(--shell-gutter)]"
+    : "pl-[var(--shell-outer-gutter)]"
   const onboardingRedirectTarget = resolveAppShellOnboardingRedirectTarget({
     onboardingLocked,
     onboardingIntentFocus,
@@ -291,14 +300,17 @@ export function AppShellInner({
                     isMobile ? "rounded-none border-0" : "rounded-[28px] border border-[color:var(--shell-border)]",
                   )}
                 >
-                  <div
+                  <ScrollFadeEffect
                     data-shell-scroll
                     data-tour-scroll
                     data-accelerator-scroll={isAcceleratorContext ? "" : undefined}
+                    enabled={useMobileSingleGutterContent}
+                    orientation="vertical"
                     role="main"
                     className={cn(
                       "flex h-full min-h-0 flex-1 flex-col overflow-x-hidden",
                       useFullBleedContent ? "overflow-hidden" : "overflow-y-auto",
+                      useMobileSingleGutterContent && "[--mask-height:2rem] [--scroll-buffer:1.5rem]",
                     )}
                     style={{ scrollbarGutter: "stable" }}
                   >
@@ -318,7 +330,7 @@ export function AppShellInner({
                         ref={routeTransitionRef}
                         className={cn(
                           "flex min-h-0 flex-1 flex-col",
-                          useFullBleedContent
+                          useFlushContentBody
                             ? "gap-0 px-0 py-0"
                             : "gap-6 px-[var(--shell-content-pad)] py-[var(--shell-content-pad)]",
                         )}
@@ -338,7 +350,7 @@ export function AppShellInner({
                         className="empty:hidden border-t border-[color:var(--shell-border)] bg-[var(--shell-card)] px-[var(--shell-content-pad)] py-3"
                       />
                     </div>
-                  </div>
+                  </ScrollFadeEffect>
                 </div>
               </div>
 

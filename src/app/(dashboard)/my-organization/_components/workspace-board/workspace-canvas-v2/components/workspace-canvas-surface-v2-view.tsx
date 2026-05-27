@@ -1,12 +1,14 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useMemo, useRef, type ReactNode } from "react"
 import {
   Background,
   BackgroundVariant,
   ReactFlow,
+  ReactFlowProvider,
   type NodeDragHandler,
   type ReactFlowInstance,
+  useStoreApi,
   useNodesState,
 } from "reactflow"
 
@@ -34,6 +36,35 @@ import {
 } from "./workspace-canvas-surface-v2-gesture-guards"
 
 const WORKSPACE_CANVAS_V2_PRO_OPTIONS = Object.freeze({ hideAttribution: true })
+const REACT_FLOW_TYPES_WARNING_CODE = "002"
+
+type ReactFlowErrorHandler = (errorCode: string, message: string) => void
+
+function WorkspaceCanvasReactFlowErrorBootstrap({
+  onError,
+  children,
+}: {
+  onError: ReactFlowErrorHandler
+  children: (onError: ReactFlowErrorHandler) => ReactNode
+}) {
+  const store = useStoreApi()
+  const onErrorRef = useRef(onError)
+  onErrorRef.current = onError
+  const handleReactFlowError = useMemo<ReactFlowErrorHandler>(
+    () => (errorCode, message) => {
+      if (errorCode === REACT_FLOW_TYPES_WARNING_CODE) return
+      onErrorRef.current(errorCode, message)
+    },
+    [],
+  )
+
+  // React Flow v11 parses nodeTypes before StoreUpdater applies the onError prop.
+  if (store.getState().onError !== handleReactFlowError) {
+    store.setState({ onError: handleReactFlowError })
+  }
+
+  return <>{children(handleReactFlowError)}</>
+}
 
 function WorkspaceCanvasSurfaceV2MobileShortcutOverlay({
   items,
@@ -133,6 +164,9 @@ export function WorkspaceCanvasSurfaceV2View({
   >["handleContextDisconnectAll"]
 }) {
   const surfaceRef = useRef<HTMLDivElement | null>(null)
+  const nodeTypes = useMemo(() => WORKSPACE_CANVAS_V2_NODE_TYPES, [])
+  const edgeTypes = useMemo(() => WORKSPACE_CANVAS_V2_EDGE_TYPES, [])
+
   useEffect(() => {
     const surface = surfaceRef.current
     if (!surface) return
@@ -200,40 +234,46 @@ export function WorkspaceCanvasSurfaceV2View({
           onRecenterView={onRecenterView}
           onResetView={onResetView}
         />
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          nodeTypes={WORKSPACE_CANVAS_V2_NODE_TYPES}
-          edgeTypes={WORKSPACE_CANVAS_V2_EDGE_TYPES}
-          nodesDraggable={nodesDraggable}
-          nodesConnectable={allowEditing && !tutorialActive}
-          elementsSelectable={false}
-          onNodesChange={onNodesChange}
-          onNodeDragStop={onNodeDragStop}
-          onConnect={onConnect}
-          isValidConnection={isValidConnection}
-          onEdgeDoubleClick={onEdgeDoubleClick}
-          onEdgeContextMenu={onEdgeContextMenu}
-          zoomOnPinch
-          zoomOnScroll
-          zoomOnDoubleClick={false}
-          panOnDrag
-          preventScrolling
-          minZoom={0.2}
-          maxZoom={1.25}
-          proOptions={WORKSPACE_CANVAS_V2_PRO_OPTIONS}
-          onError={onError}
-          onInit={onInit}
-          className="org-flow workspace-flow"
-        >
-          <Background
-            id="workspace-v2-dot-grid"
-            variant={BackgroundVariant.Dots}
-            gap={20}
-            size={1.6}
-            color={presentationMode ? "rgba(148, 163, 184, 0.42)" : "rgba(148, 163, 184, 0.64)"}
-          />
-        </ReactFlow>
+        <ReactFlowProvider>
+          <WorkspaceCanvasReactFlowErrorBootstrap onError={onError}>
+            {(handleReactFlowError) => (
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                nodeTypes={nodeTypes}
+                edgeTypes={edgeTypes}
+                nodesDraggable={nodesDraggable}
+                nodesConnectable={allowEditing && !tutorialActive}
+                elementsSelectable={false}
+                onNodesChange={onNodesChange}
+                onNodeDragStop={onNodeDragStop}
+                onConnect={onConnect}
+                isValidConnection={isValidConnection}
+                onEdgeDoubleClick={onEdgeDoubleClick}
+                onEdgeContextMenu={onEdgeContextMenu}
+                zoomOnPinch
+                zoomOnScroll
+                zoomOnDoubleClick={false}
+                panOnDrag
+                preventScrolling
+                minZoom={0.2}
+                maxZoom={1.25}
+                proOptions={WORKSPACE_CANVAS_V2_PRO_OPTIONS}
+                onError={handleReactFlowError}
+                onInit={onInit}
+                className="org-flow workspace-flow"
+              >
+                <Background
+                  id="workspace-v2-dot-grid"
+                  variant={BackgroundVariant.Dots}
+                  gap={20}
+                  size={1.6}
+                  color={presentationMode ? "rgba(148, 163, 184, 0.42)" : "rgba(148, 163, 184, 0.64)"}
+                />
+              </ReactFlow>
+            )}
+          </WorkspaceCanvasReactFlowErrorBootstrap>
+        </ReactFlowProvider>
         {nodes.length === 0 && emptyStateMessage ? (
           <div className="pointer-events-none absolute inset-0 grid place-items-center px-6">
             <p className="rounded-md border border-border/70 bg-card/80 px-3 py-2 text-center text-xs text-muted-foreground shadow-sm backdrop-blur-sm">

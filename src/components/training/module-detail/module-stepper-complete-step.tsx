@@ -96,12 +96,12 @@ export function ModuleStepperCompleteStep({
           ) : null}
           {coachingTier === "free" && coachingRemaining === 0 ? (
             <p className="pt-2 text-xs text-muted-foreground">
-              Included sessions complete. Your next bookings use the discounted calendar.
+              Included sessions complete. Future sessions continue through checkout.
             </p>
           ) : null}
           {coachingTier === "discounted" ? (
             <p className="pt-2 text-xs text-muted-foreground">
-              Included sessions complete. You are now booking at the discounted coaching rate.
+              Operations Support discount applied to this coaching session.
             </p>
           ) : null}
           {coachingTier === "full" ? (

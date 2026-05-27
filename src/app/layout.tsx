@@ -33,10 +33,12 @@ export const metadata: Metadata = {
     "A course platform built with Next.js, Tailwind CSS, and shadcn/ui. Bootstrapped in step S00.",
   icons: {
     icon: [
+      { url: "/favicon.ico", sizes: "any" },
       { url: "/coach-house-logo-dark.png", type: "image/png", media: "(prefers-color-scheme: light)" },
       { url: "/coach-house-logo-light.png", type: "image/png", media: "(prefers-color-scheme: dark)" },
     ],
-    shortcut: "/coach-house-logo-dark.png",
+    shortcut: "/favicon.ico",
+    apple: "/coach-house-logo-dark.png",
   },
 }
 

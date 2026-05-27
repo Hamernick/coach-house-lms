@@ -20,6 +20,7 @@ import {
   shouldRollToOrganizationPlan,
   WEBHOOK_BILLING_CONSTANTS,
 } from "./subscription-lifecycle"
+import { processCoachingCheckoutSession } from "../../../../../features/coaching-booking/server/stripe"
 
 export async function processStripeWebhookEvent({
   event,
@@ -34,6 +35,9 @@ export async function processStripeWebhookEvent({
 }) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session
+    const coachingHandled = await processCoachingCheckoutSession(session)
+    if (coachingHandled) return
+
     const subscriptionId =
       typeof session.subscription === "string" ? session.subscription : undefined
     const userId = session.client_reference_id ?? undefined

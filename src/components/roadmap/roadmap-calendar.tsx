@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
-import { isSameDay } from "date-fns"
 
 import {
   createRoadmapCalendarEvent,
@@ -59,6 +58,13 @@ export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: b
       .filter((event) => roadmapCalendarEventOccursOnDay(event, selectedDate))
       .sort(sortRoadmapCalendarEventsByStart)
   }, [events, selectedDate])
+  const monthEvents = useMemo(
+    () =>
+      events.filter((event) =>
+        getRoadmapCalendarEventDates(event).some((date) => isSameRoadmapCalendarMonth(date, month)),
+      ),
+    [events, month],
+  )
 
   const upcomingEvents = useMemo(() => {
     const now = new Date()
@@ -85,7 +91,6 @@ export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: b
   const nextEvent = upcomingEvents[0] ?? null
   const selectedEvent = dayEvents[0] ?? nextEvent
   const selectedEventDuration = selectedEvent ? eventDurationMinutes(selectedEvent) : null
-  const isTodaySelected = selectedDate ? isSameDay(selectedDate, new Date()) : false
 
   const resetDraft = useCallback((event?: RoadmapCalendarEvent | null, baseDate?: Date) => {
     setDraft(buildDraft({ event, baseDate }))
@@ -322,11 +327,10 @@ export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: b
       <RoadmapCalendarMonthAgendaPanel
         month={month}
         selectedDate={selectedDate}
-        events={events}
+        events={monthEvents}
         dayEvents={dayEvents}
         isLoading={isLoading}
         canManageCalendar={canManageCalendar}
-        isTodaySelected={isTodaySelected}
         eventDatesByType={eventDatesByType}
         onMonthChange={handleMonthChange}
         onSelectDate={setSelectedDate}

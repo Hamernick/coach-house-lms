@@ -1,7 +1,10 @@
 import { cache } from "react"
 
 import { fetchSidebarTree, type SidebarClass } from "@/lib/academy"
-import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
+import {
+  fetchLearningEntitlements,
+  type LearningEntitlements,
+} from "@/lib/accelerator/entitlements"
 import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { resolveAccountBillingCancellationRisk } from "@/lib/billing/subscription-access"
 import { resolvePricingPlanTier, type PricingPlanTier } from "@/lib/billing/plan-tier"
@@ -105,6 +108,13 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
     supabase,
     userId: user.id,
   })
+  const entitlementFallback: LearningEntitlements = {
+    hasAcceleratorPurchase: false,
+    hasActiveSubscription: false,
+    hasAcceleratorAccess: false,
+    hasElectiveAccess: false,
+    ownedElectiveModuleSlugs: [],
+  }
 
   const [
     accessibleOrganizations,
@@ -129,9 +139,10 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
       userId: user.id,
       orgUserId: orgId,
       isAdmin,
-      forceStripeSync: shouldForceStripeEntitlementSyncForWorkspace({
-        isAdmin,
-      }),
+      forceStripeSync: shouldForceStripeEntitlementSyncForWorkspace({ isAdmin }),
+    }).catch((error: unknown) => {
+      console.warn("Unable to load dashboard entitlement state.", error)
+      return entitlementFallback
     }),
     appPricingFeedbackPromptPromise,
     resolveAccountBillingCancellationRisk({

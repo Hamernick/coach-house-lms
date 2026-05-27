@@ -56,11 +56,13 @@ export async function listRoadmapCalendarEvents({
     .eq("org_id", orgId)
     .order("starts_at", { ascending: true })
 
-  if (from) {
-    query = query.gte("starts_at", from)
-  }
   if (to) {
     query = query.lte("starts_at", to)
+  }
+  if (from) {
+    query = query.or(
+      `ends_at.gte.${from},and(ends_at.is.null,starts_at.gte.${from}),recurrence.not.is.null`,
+    )
   }
 
   const { data, error: listError } = await query

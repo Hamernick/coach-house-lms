@@ -4,6 +4,7 @@ import type { RoadmapCalendarEvent } from "@/lib/roadmap/calendar"
 import { type EventDraft } from "./types"
 
 const MAX_EVENT_DOT_DAYS = 370
+const MAX_RECURRENCE_OCCURRENCES = 5200
 
 export function getMonthRange(month: Date) {
   const start = startOfMonth(month)
@@ -26,6 +27,38 @@ function endOfLocalDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59, 999)
 }
 
+function getRecurrenceInterval(event: RoadmapCalendarEvent) {
+  const interval = event.recurrence?.interval
+  return typeof interval === "number" && interval > 0 ? interval : 1
+}
+
+function addMonthsClamped(date: Date, months: number) {
+  const next = new Date(date)
+  const day = next.getDate()
+  next.setDate(1)
+  next.setMonth(next.getMonth() + months)
+  next.setDate(Math.min(day, new Date(next.getFullYear(), next.getMonth() + 1, 0).getDate()))
+  return next
+}
+
+function advanceOccurrenceStart(event: RoadmapCalendarEvent, start: Date) {
+  const interval = getRecurrenceInterval(event)
+  if (event.recurrence?.frequency === "weekly") {
+    const next = new Date(start)
+    next.setDate(next.getDate() + 7 * interval)
+    return next
+  }
+  if (event.recurrence?.frequency === "quarterly") return addMonthsClamped(start, 3 * interval)
+  if (event.recurrence?.frequency === "annual") return addMonthsClamped(start, 12 * interval)
+  return addMonthsClamped(start, interval)
+}
+
+function parseRecurrenceEndDate(value: string | null | undefined) {
+  if (!value) return null
+  const date = new Date(value.includes("T") ? value : `${value}T23:59:59.999`)
+  return isValidDate(date) ? date : null
+}
+
 function getCalendarEventEndForDayComparison(event: RoadmapCalendarEvent, start: Date) {
   if (!event.endsAt) return start
   const end = new Date(event.endsAt)
@@ -43,6 +76,45 @@ function getCalendarEventEndForDayComparison(event: RoadmapCalendarEvent, start:
   }
 
   return end
+}
+
+function resolveOccurrenceEnd(event: RoadmapCalendarEvent, originalStart: Date, occurrenceStart: Date) {
+  const originalEnd = getCalendarEventEndForDayComparison(event, originalStart)
+  const duration = Math.max(originalEnd.getTime() - originalStart.getTime(), 0)
+  return new Date(occurrenceStart.getTime() + duration)
+}
+
+function eventSpanTouchesDay(start: Date, end: Date, day: Date) {
+  return (
+    start.getTime() <= endOfLocalDay(day).getTime() &&
+    end.getTime() >= startOfLocalDay(day).getTime()
+  )
+}
+
+function isOccurrenceWithinRecurrenceBounds(
+  event: RoadmapCalendarEvent,
+  occurrenceIndex: number,
+  occurrenceStart: Date,
+) {
+  const count = event.recurrence?.count
+  if (typeof count === "number" && count > 0 && occurrenceIndex >= count) return false
+
+  const endDate = parseRecurrenceEndDate(event.recurrence?.endDate)
+  return !endDate || occurrenceStart.getTime() <= endDate.getTime()
+}
+
+function collectEventSpanDates(start: Date, end: Date, dates: Date[], seen: Set<string>) {
+  const cursor = startOfLocalDay(start)
+  const last = startOfLocalDay(end)
+
+  while (cursor.getTime() <= last.getTime() && dates.length < MAX_EVENT_DOT_DAYS) {
+    const key = getRoadmapCalendarDayKey(cursor)
+    if (!seen.has(key)) {
+      seen.add(key)
+      dates.push(new Date(cursor))
+    }
+    cursor.setDate(cursor.getDate() + 1)
+  }
 }
 
 export function getRoadmapCalendarDayKey(date: Date) {
@@ -70,11 +142,26 @@ export function roadmapCalendarEventOccursOnDay(event: RoadmapCalendarEvent, day
   const start = getRoadmapCalendarEventStartDate(event)
   if (!start || !isValidDate(day)) return false
 
-  const end = getCalendarEventEndForDayComparison(event, start)
-  return (
-    start.getTime() <= endOfLocalDay(day).getTime() &&
-    end.getTime() >= startOfLocalDay(day).getTime()
-  )
+  if (!event.recurrence) {
+    return eventSpanTouchesDay(start, getCalendarEventEndForDayComparison(event, start), day)
+  }
+
+  const dayEnd = endOfLocalDay(day).getTime()
+  let occurrenceStart = start
+
+  for (let index = 0; index < MAX_RECURRENCE_OCCURRENCES; index += 1) {
+    if (!isOccurrenceWithinRecurrenceBounds(event, index, occurrenceStart)) break
+    if (occurrenceStart.getTime() > dayEnd) break
+
+    const occurrenceEnd = resolveOccurrenceEnd(event, start, occurrenceStart)
+    if (eventSpanTouchesDay(occurrenceStart, occurrenceEnd, day)) return true
+
+    const nextStart = advanceOccurrenceStart(event, occurrenceStart)
+    if (!isValidDate(nextStart) || nextStart.getTime() <= occurrenceStart.getTime()) break
+    occurrenceStart = nextStart
+  }
+
+  return false
 }
 
 export function getRoadmapCalendarEventDates(event: RoadmapCalendarEvent) {
@@ -83,15 +170,31 @@ export function getRoadmapCalendarEventDates(event: RoadmapCalendarEvent) {
 
   const end = getCalendarEventEndForDayComparison(event, start)
   const dates: Date[] = []
-  const cursor = startOfLocalDay(start)
-  const last = startOfLocalDay(end)
 
-  while (cursor.getTime() <= last.getTime() && dates.length < MAX_EVENT_DOT_DAYS) {
-    dates.push(new Date(cursor))
-    cursor.setDate(cursor.getDate() + 1)
+  if (!event.recurrence) {
+    collectEventSpanDates(start, end, dates, new Set())
+    return dates
   }
 
-  return dates
+  const seen = new Set<string>()
+  let occurrenceStart = start
+
+  for (let index = 0; index < MAX_RECURRENCE_OCCURRENCES && dates.length < MAX_EVENT_DOT_DAYS; index += 1) {
+    if (!isOccurrenceWithinRecurrenceBounds(event, index, occurrenceStart)) break
+
+    collectEventSpanDates(
+      occurrenceStart,
+      resolveOccurrenceEnd(event, start, occurrenceStart),
+      dates,
+      seen,
+    )
+
+    const nextStart = advanceOccurrenceStart(event, occurrenceStart)
+    if (!isValidDate(nextStart) || nextStart.getTime() <= occurrenceStart.getTime()) break
+    occurrenceStart = nextStart
+  }
+
+  return dates.sort((left, right) => left.getTime() - right.getTime())
 }
 
 export function sortRoadmapCalendarEventsByStart(

@@ -46,6 +46,9 @@ import type { OrganizationWorkspaceStarterStateTable } from "./organization_work
 import type { NotificationsTable } from "./notifications"
 import type { UserJourneyEventsTable } from "./user_journey_events"
 import type { UserActivationCheckpointsTable } from "./user_activation_checkpoints"
+import type { CoachingCoachesTable } from "./coaching_coaches"
+import type { CoachingBookingsTable } from "./coaching_bookings"
+import type { CoachingCreditLedgerTable } from "./coaching_credit_ledger"
 
 export type { OrganizationsTable } from "./organizations"
 export type { AppPricingFeedbackResponsesTable } from "./app_pricing_feedback_responses"
@@ -95,6 +98,9 @@ export type { OrganizationWorkspaceStarterStateTable } from "./organization_work
 export type { NotificationsTable } from "./notifications"
 export type { UserJourneyEventsTable } from "./user_journey_events"
 export type { UserActivationCheckpointsTable } from "./user_activation_checkpoints"
+export type { CoachingCoachesTable } from "./coaching_coaches"
+export type { CoachingBookingsTable } from "./coaching_bookings"
+export type { CoachingCreditLedgerTable } from "./coaching_credit_ledger"
 
 export type PublicTables = {
   organizations: OrganizationsTable
@@ -145,4 +151,7 @@ export type PublicTables = {
   notifications: NotificationsTable
   user_journey_events: UserJourneyEventsTable
   user_activation_checkpoints: UserActivationCheckpointsTable
+  coaching_coaches: CoachingCoachesTable
+  coaching_bookings: CoachingBookingsTable
+  coaching_credit_ledger: CoachingCreditLedgerTable
 }

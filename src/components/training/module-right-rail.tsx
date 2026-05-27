@@ -179,12 +179,12 @@ function ModuleCoachPanel() {
         ) : null}
         {tier === "free" && remaining === 0 ? (
           <p className="text-xs text-muted-foreground">
-            Included sessions complete. Your next bookings use the discounted calendar.
+            Included sessions complete. Future sessions continue through checkout.
           </p>
         ) : null}
         {tier === "discounted" ? (
           <p className="text-xs text-muted-foreground">
-            Included sessions complete. You are now booking at the discounted coaching rate.
+            Operations Support discount applied to this coaching session.
           </p>
         ) : null}
         {tier === "full" ? (

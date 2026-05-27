@@ -12,9 +12,22 @@ import {
   resolveWorkspaceCardConnectionHandleIds,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-connection-handles"
 import type { WorkspaceCardReadiness } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-card-readiness"
+import { WORKSPACE_EDGE_SPECS } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-copy"
 
 const READY: WorkspaceCardReadiness = { status: "ready", isReady: true }
 const EMPTY: WorkspaceCardReadiness = { status: "empty", isReady: false }
+const READINESS_MAP = {
+  "organization-overview": READY,
+  programs: READY,
+  roadmap: READY,
+  accelerator: READY,
+  "brand-kit": EMPTY,
+  "economic-engine": EMPTY,
+  calendar: READY,
+  communications: EMPTY,
+  atlas: EMPTY,
+  deck: READY,
+}
 
 describe("workspace canvas v2 runtime connections", () => {
   it("accepts valid visible connections in edit mode", () => {
@@ -62,6 +75,17 @@ describe("workspace canvas v2 runtime connections", () => {
         allowEditing: true,
         visibleCardIdSet: new Set(["organization-overview"]),
       }),
+    ).toEqual({ allowed: false, reason: "hidden-node-id" })
+
+    expect(
+      resolveWorkspaceCanvasConnectAttempt({
+        connection: {
+          source: "legacy-card",
+          target: "programs",
+        },
+        allowEditing: true,
+        visibleCardIdSet: new Set(["programs"]),
+      }),
     ).toEqual({ allowed: false, reason: "unknown-node-id" })
 
     expect(
@@ -102,7 +126,7 @@ describe("workspace canvas v2 runtime connections", () => {
         },
         {
           id: "edge-unknown-node",
-          source: "deck",
+          source: "legacy-card" as never,
           target: "roadmap",
         },
         {
@@ -128,6 +152,7 @@ describe("workspace canvas v2 runtime connections", () => {
         calendar: READY,
         communications: EMPTY,
         atlas: EMPTY,
+        deck: READY,
       },
       includeAcceleratorStepEdge: true,
       acceleratorWorkspaceNodeId: "accelerator",
@@ -147,6 +172,39 @@ describe("workspace canvas v2 runtime connections", () => {
       { id: "edge-unknown-node", reason: "unknown-node-id" },
       { id: "edge-hidden-target", reason: "hidden-node-id" },
     ])
+  })
+
+  it("keeps default hidden graph connections quiet when secondary cards are not rendered", () => {
+    const { droppedConnectionIds, droppedConnections } = buildWorkspaceCanvasV2Edges({
+      connections: WORKSPACE_EDGE_SPECS,
+      visibleCardIdSet: new Set([
+        "organization-overview",
+        "programs",
+        "roadmap",
+        "accelerator",
+      ]),
+      presentationMode: false,
+      readinessMap: READINESS_MAP,
+      includeAcceleratorStepEdge: false,
+      acceleratorWorkspaceNodeId: null,
+      tutorialEdgeTargetId: null,
+    })
+
+    expect(droppedConnectionIds).toEqual([
+      "edge-roadmap-to-deck",
+      "edge-organization-to-atlas",
+      "edge-deck-to-accelerator",
+      "edge-accelerator-to-economic",
+      "edge-accelerator-to-calendar",
+      "edge-accelerator-to-comms",
+    ])
+    expect(droppedConnections).toEqual(
+      droppedConnectionIds.map((id) => ({
+        id,
+        reason: "hidden-node-id",
+      })),
+    )
+    expect(shouldLogWorkspaceCanvasDroppedConnections(droppedConnections)).toBe(false)
   })
 
   it("resolves card connection handles from the closest aligned sides", () => {

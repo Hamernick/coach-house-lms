@@ -68,5 +68,7 @@ describe("member workspace nav access", () => {
     expect(accessSource).toContain("syncedEntitlements.hasActiveSubscription")
     expect(layoutStateSource).toContain("shouldForceStripeEntitlementSyncForWorkspace")
     expect(layoutStateSource).toContain("forceStripeSync: shouldForceStripeEntitlementSyncForWorkspace")
+    expect(layoutStateSource).toContain("Unable to load dashboard entitlement state.")
+    expect(layoutStateSource).toContain("return entitlementFallback")
   })
 })

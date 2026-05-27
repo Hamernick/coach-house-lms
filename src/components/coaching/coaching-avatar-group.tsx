@@ -3,7 +3,7 @@ import UserRoundIcon from "lucide-react/dist/esm/icons/user-round"
 
 import { cn } from "@/lib/utils"
 
-type AvatarSize = "sm" | "md"
+type AvatarSize = "xs" | "sm" | "md"
 
 type CoachingAvatarGroupProps = {
   className?: string
@@ -26,6 +26,7 @@ const COACHING_TEAM_AVATARS: Array<{ id: string; name: string; imageUrl: string 
 ]
 
 const SIZE_STYLES: Record<AvatarSize, { avatar: string; icon: string; sizes: string }> = {
+  xs: { avatar: "h-6 w-6", icon: "h-3 w-3", sizes: "24px" },
   sm: { avatar: "h-8 w-8", icon: "h-3.5 w-3.5", sizes: "32px" },
   md: { avatar: "h-10 w-10", icon: "h-4 w-4", sizes: "40px" },
 }
@@ -39,7 +40,11 @@ export function CoachingAvatarGroup({
 
   return (
     <div className={cn("inline-flex items-center", className)}>
-      <ul role="list" aria-label={label} className="flex items-center -space-x-2">
+      <ul
+        role="list"
+        aria-label={label}
+        className={cn("flex items-center", size === "xs" ? "-space-x-1.5" : "-space-x-2")}
+      >
         {COACHING_TEAM_AVATARS.map((avatar) => (
           <li
             key={avatar.id}

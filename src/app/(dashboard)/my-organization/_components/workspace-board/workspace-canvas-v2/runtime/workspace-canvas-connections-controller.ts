@@ -127,6 +127,7 @@ export function useWorkspaceCanvasConnectionsController({
     logWorkspaceCanvasWarning(WORKSPACE_CANVAS_EVENTS.CONNECTION_DROPPED_INVALID, {
       droppedCount: droppedConnectionIds.length,
       droppedConnectionIds,
+      droppedConnections,
     })
   }, [droppedConnectionIds, droppedConnectionIdsSignature, droppedConnections])
 

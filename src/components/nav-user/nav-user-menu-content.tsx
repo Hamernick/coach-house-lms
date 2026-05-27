@@ -2,6 +2,7 @@ import Link from "next/link"
 import { createPortal } from "react-dom"
 import type { CSSProperties, RefObject } from "react"
 
+import CalendarCheckIcon from "lucide-react/dist/esm/icons/calendar-check"
 import CircleUserIcon from "lucide-react/dist/esm/icons/circle-user"
 import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
 import LogOutIcon from "lucide-react/dist/esm/icons/log-out"
@@ -79,6 +80,12 @@ export function NavUserMenuContent({
       >
         <CircleUserIcon className="size-4" />
         Account settings
+      </Button>
+      <Button asChild variant="ghost" className="h-auto w-full justify-start gap-2 rounded-md px-2 py-2 text-left">
+        <Link href="/coaching" onClick={onCloseMenu}>
+          <CalendarCheckIcon className="size-4" />
+          Book coaching
+        </Link>
       </Button>
       <a
         href="mailto:joel@coachhousesolutions.org?subject=Coach%20House%20Feedback"

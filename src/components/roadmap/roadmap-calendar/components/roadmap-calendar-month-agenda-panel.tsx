@@ -1,3 +1,5 @@
+"use client"
+
 import { memo } from "react"
 import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
@@ -9,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -26,6 +29,7 @@ import {
 import { cn } from "@/lib/utils"
 
 import { RoadmapCalendarDayWithEventDots } from "./roadmap-calendar-day-with-event-dots"
+import { ROLE_OPTIONS } from "../constants"
 import {
   ROADMAP_CALENDAR_EVENT_MODIFIER_BY_TYPE,
   ROADMAP_CALENDAR_EVENT_TYPE_META,
@@ -39,7 +43,6 @@ type RoadmapCalendarMonthAgendaPanelProps = {
   dayEvents: RoadmapCalendarEvent[]
   isLoading: boolean
   canManageCalendar: boolean
-  isTodaySelected: boolean
   eventDatesByType: Record<RoadmapCalendarEventType, Date[]>
   onMonthChange: (date: Date) => void
   onSelectDate: (date: Date | undefined) => void
@@ -50,8 +53,19 @@ type RoadmapCalendarMonthAgendaPanelProps = {
   formatTimeRange: (event: RoadmapCalendarEvent) => string
 }
 
+const ROADMAP_CALENDAR_MONTH_AGENDA_PANEL_SOURCE =
+  "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
+const ROLE_LABEL_BY_ID = Object.fromEntries(ROLE_OPTIONS.map((role) => [role.id, role.label]))
+
 function addMonths(date: Date, delta: number) {
   return new Date(date.getFullYear(), date.getMonth() + delta, 1)
+}
+
+function isSameCalendarMonth(left: Date, right: Date) {
+  return (
+    left.getFullYear() === right.getFullYear() &&
+    left.getMonth() === right.getMonth()
+  )
 }
 
 function formatMonthLabel(date: Date) {
@@ -108,18 +122,20 @@ const RoadmapCalendarAddEventMenu = memo(function RoadmapCalendarAddEventMenu({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
-        {ROADMAP_CALENDAR_PRESETS.map((preset) => (
-          <DropdownMenuItem
-            key={preset.id}
-            onSelect={() => onOpenCreate({ title: preset.title, eventType: preset.eventType })}
-          >
-            {preset.label}
-          </DropdownMenuItem>
-        ))}
+        <DropdownMenuGroup>
+          {ROADMAP_CALENDAR_PRESETS.map((preset) => (
+            <DropdownMenuItem
+              key={preset.id}
+              onSelect={() => onOpenCreate({ title: preset.title, eventType: preset.eventType })}
+            >
+              {preset.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={() => onOpenCreate({})}>
-          Custom event…
-        </DropdownMenuItem>
+        <DropdownMenuGroup>
+          <DropdownMenuItem onSelect={() => onOpenCreate({})}>Custom event…</DropdownMenuItem>
+        </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   )
@@ -137,30 +153,29 @@ const RoadmapCalendarAgendaRow = memo(function RoadmapCalendarAgendaRow({
   onEditEvent: (event: RoadmapCalendarEvent) => void
 }) {
   const meta = ROADMAP_CALENDAR_EVENT_TYPE_META[event.eventType]
+  const roleLabels = event.assignedRoles.map((role) => ROLE_LABEL_BY_ID[role]).filter((label): label is string => Boolean(label))
   const content = (
     <span className="grid w-full min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-3 whitespace-normal">
       <span className={cn("mt-1 size-2.5 rounded-full", meta.dotClassName)} aria-hidden />
       <span className="flex min-w-0 flex-col gap-1 text-left">
-        <span className="line-clamp-2 text-sm font-medium leading-tight text-foreground">
+        <span className={cn("line-clamp-2 text-sm font-medium leading-tight text-foreground", event.status === "canceled" && "text-muted-foreground line-through decoration-muted-foreground/60")}>
           {event.title}
         </span>
         <span className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
           <span className="shrink-0 text-xs text-muted-foreground/70 tabular-nums">
             {event.allDay ? "all day" : formatTimeRange(event)}
           </span>
-          <Badge
-            variant="secondary"
-            className={cn(
-              "w-fit shrink-0 rounded-full border-0 px-2 py-0.5 text-[10px] leading-none",
-              meta.badgeClassName,
-            )}
-          >
+          <Badge variant="secondary" className={cn("w-fit shrink-0 rounded-full border-0 px-2 py-0.5 text-[10px] leading-none", meta.badgeClassName)}>
             {getRoadmapCalendarEventTypeLabel(event.eventType)}
           </Badge>
           {event.recurrence ? (
-            <span className="min-w-0 truncate text-xs text-muted-foreground">
-              {formatCalendarRecurrence(event.recurrence)}
-            </span>
+            <span className="min-w-0 truncate text-xs text-muted-foreground">{formatCalendarRecurrence(event.recurrence)}</span>
+          ) : null}
+          {roleLabels.length > 0 ? (
+            <span className="min-w-0 truncate text-xs text-muted-foreground">{roleLabels.join(", ")}</span>
+          ) : null}
+          {event.status === "canceled" ? (
+            <Badge variant="outline" className="h-5 rounded-full px-1.5 text-[10px]">Canceled</Badge>
           ) : null}
         </span>
       </span>
@@ -191,7 +206,6 @@ export const RoadmapCalendarMonthAgendaPanel = memo(function RoadmapCalendarMont
   dayEvents,
   isLoading,
   canManageCalendar,
-  isTodaySelected,
   eventDatesByType,
   onMonthChange,
   onSelectDate,
@@ -208,12 +222,13 @@ export const RoadmapCalendarMonthAgendaPanel = memo(function RoadmapCalendarMont
     },
     {} as Record<string, Date[]>,
   )
+  const showTodayButton = !isSameCalendarMonth(month, new Date())
 
   return (
     <section className="flex max-h-[min(39rem,calc(100svh-6.5rem))] min-h-0 w-full flex-col rounded-[30px] border border-border/60 bg-muted/45 p-2.5">
-      <div className="flex flex-wrap items-center justify-between gap-2 px-2 pb-3 pt-1">
+      <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-2 pb-3 pt-1">
         <div className="flex min-w-0 items-center gap-2">
-          <h2 className="truncate text-lg font-semibold tracking-normal text-foreground">
+          <h2 className="shrink-0 whitespace-nowrap text-lg font-semibold tracking-normal text-foreground">
             {formatMonthLabel(month)}
           </h2>
           <Badge
@@ -223,15 +238,17 @@ export const RoadmapCalendarMonthAgendaPanel = memo(function RoadmapCalendarMont
             {events.length}
           </Badge>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant={isTodaySelected ? "secondary" : "outline"}
-            className="h-8 rounded-full px-3 text-sm shadow-none"
-            onClick={onGoToToday}
-          >
-            Today
-          </Button>
+        <div className="flex min-w-0 shrink-0 items-center gap-1.5">
+          {showTodayButton ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-8 rounded-full px-3 text-sm shadow-none"
+              onClick={onGoToToday}
+            >
+              Today
+            </Button>
+          ) : null}
           <Button
             type="button"
             variant="outline"

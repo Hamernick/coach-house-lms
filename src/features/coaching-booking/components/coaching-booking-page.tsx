@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 
-import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
+import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { COACHING_PATH } from "../lib"
 import {
   cancelPendingCoachingCheckoutReturn,
@@ -18,9 +18,13 @@ function getFirstParam(value: string | string[] | undefined) {
 }
 
 export async function CoachingBookingPage({ searchParams }: CoachingBookingPageProps = {}) {
-  const context = await resolveAuthenticatedAppContext()
+  const context = await resolveOptionalAuthenticatedAppContext()
   const checkout = getFirstParam(searchParams?.checkout)
   const bookingId = getFirstParam(searchParams?.booking)
+
+  if (!context) {
+    redirect("/login?redirect=/coaching")
+  }
 
   if (checkout === "cancelled" && bookingId) {
     const result = await confirmPaidCoachingCheckoutReturn({

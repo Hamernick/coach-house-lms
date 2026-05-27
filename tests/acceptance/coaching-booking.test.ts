@@ -161,6 +161,7 @@ describe("coaching booking feature", () => {
     expect(page).toContain('checkout === "cancelled"')
     expect(page).toContain("if (!result.confirmed)")
     expect(page).toContain('checkout === "success"')
+    expect(page).toContain('redirect("/login?redirect=/coaching")')
     expect(page).toContain("redirect(COACHING_PATH)")
     expect(flow).toContain("Let's talk business")
     expect(flow).toContain("Meet with coaches for focused support")

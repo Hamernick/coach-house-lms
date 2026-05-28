@@ -105,7 +105,7 @@ export function resolveStripeRuntimeConfigForAudience({
 }): StripeRuntimeConfig | null {
   const primary = buildPrimaryConfig()
   const tester = buildTesterConfig()
-  if (isTester && tester) return tester
+  if (process.env.NODE_ENV !== "production" && isTester && tester) return tester
   return primary
 }
 

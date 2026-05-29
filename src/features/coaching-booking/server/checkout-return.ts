@@ -85,6 +85,14 @@ export async function confirmPaidCoachingCheckoutReturn({
   if (booking.status === "confirmed" && booking.google_event_id) {
     return { confirmed: true }
   }
+  if (booking.status === "confirmed") {
+    await confirmCoachingBooking({
+      admin,
+      booking,
+      attendeeEmail: userEmail,
+    })
+    return { confirmed: true }
+  }
   if (booking.status !== "pending_payment" || !booking.stripe_checkout_session_id) {
     return { confirmed: false }
   }

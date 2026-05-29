@@ -2,6 +2,11 @@ import { readFileSync } from "node:fs"
 import path from "node:path"
 import { describe, expect, it } from "vitest"
 
+import {
+  getValidGoogleCalendarEventId,
+  getValidGoogleCalendarEventUrl,
+  getValidGoogleMeetUrl,
+} from "@/features/coaching-booking/lib"
 import { listUpcomingCoachingBookings, resolveCoachingCreditSummary } from "@/features/coaching-booking/server/data"
 
 const ROOT = process.cwd()
@@ -146,6 +151,7 @@ describe("coaching booking feature", () => {
   it("adds coaching as a dashboard route backed by a feature slice", () => {
     const route = readSource("src/app/(dashboard)/coaching/page.tsx")
     const featureIndex = readSource("src/features/coaching-booking/index.ts")
+    const featureLib = readSource("src/features/coaching-booking/lib/index.ts")
     const page = readSource("src/features/coaching-booking/components/coaching-booking-page.tsx")
     const flow = readSource("src/features/coaching-booking/components/coaching-booking-flow.tsx")
     const calendar = readSource("src/components/ui/calendar.tsx")
@@ -163,9 +169,12 @@ describe("coaching booking feature", () => {
     expect(page).toContain('checkout === "success"')
     expect(page).toContain('redirect("/login?redirect=/coaching")')
     expect(page).toContain("redirect(COACHING_PATH)")
+    expect(featureLib).toContain("COACHING_SESSION_MINUTES = 45")
     expect(flow).toContain("Let's talk business")
     expect(flow).toContain("Meet with coaches for focused support")
+    expect(flow).not.toContain("Full rate")
     expect(flow).toContain("SessionDetailsPanel")
+    expect(flow).toContain("formatDurationLabel(COACHING_SESSION_MINUTES)")
     expect(flow).toContain("max-w-[52.25rem]")
     expect(flow).toContain("lg:grid-cols-[20rem_minmax(0,1fr)]")
     expect(flow).toContain("Use coaching credit")
@@ -218,6 +227,18 @@ describe("coaching booking feature", () => {
     expect(flow).toContain("listCoachingAvailabilityAction")
     expect(flow).toContain("reserveCoachingBookingAction")
     expect(flow).toContain("groupSlotsByDate")
+    expect(flow).toContain("getValidGoogleMeetUrl(booking.googleMeetUrl)")
+    expect(flow).toContain("Join Google Meet")
+    expect(flow).toContain("Use this Google Calendar invite for updates or rescheduling.")
+    expect(flow).toContain("getValidGoogleCalendarEventUrl(booking.googleEventHtmlLink)")
+    expect(flow).toContain("googleEventHtmlLink ?? buildGoogleCalendarUrl")
+    expect(flow).toContain("Calendar")
+    expect(flow).toContain("AlertDialogTrigger asChild")
+    expect(flow).toContain("Cancel this session?")
+    expect(flow).toContain("Keep session")
+    expect(flow).toContain("Cancel session")
+    expect(flow).not.toContain("Reschedule")
+    expect(flow).not.toContain("rescheduleCoachingBookingAction")
     expect(flow).not.toContain("Availability for")
     expect(flow).not.toContain("Joint availability")
     expect(flow).toContain("No open sessions on this date.")
@@ -284,6 +305,7 @@ describe("coaching booking feature", () => {
     const webhook = readSource("src/app/api/stripe/webhook/_lib/process-event.ts")
     const stripeProcessor = readSource("src/features/coaching-booking/server/stripe.ts")
     const finalizer = readSource("src/features/coaching-booking/server/booking-finalizer.ts")
+    const email = readSource("src/features/coaching-booking/server/email.ts")
     const actions = readSource("src/features/coaching-booking/server/actions.ts")
     const data = readSource("src/features/coaching-booking/server/data.ts")
     const stripeRuntime = readSource("src/lib/billing/stripe-runtime.ts")
@@ -301,6 +323,7 @@ describe("coaching booking feature", () => {
     expect(actions).toContain("booking_id: bookingId")
     expect(actions).toContain("price_tier: priceTier")
     expect(actions).toContain("resolveStripeRuntimeConfigForCoaching")
+    expect(actions).toContain("getValidGoogleCalendarEventId(booking.google_event_id)")
     expect(actions).toContain('requestHeaders.get("origin")')
     expect(actions).toContain("Unable to create the coach calendar event.")
     expect(actions).toContain("COACHING_JOINT_COACH_IDS.map")
@@ -318,12 +341,47 @@ describe("coaching booking feature", () => {
     expect(checkoutReturn).toContain("checkout.sessions.retrieve")
     expect(checkoutReturn).toContain('session.payment_status === "paid"')
     expect(checkoutReturn).toContain("confirmCoachingBooking")
+    expect(checkoutReturn).toContain('booking.status === "confirmed"')
     expect(finalizer).toContain("createGoogleCoachingEvent")
+    expect(finalizer).toContain("getValidGoogleCalendarEventId(calendarEvent.googleEventId)")
+    expect(finalizer).toContain("getValidGoogleCalendarEventUrl(calendarEvent.googleEventHtmlLink)")
+    expect(finalizer).toContain("getValidGoogleMeetUrl(calendarEvent.googleMeetUrl)")
+    expect(finalizer).toContain("sendCoachingBookingConfirmationEmails")
     expect(finalizer).toContain("internalAttendeeEmails")
     expect(finalizer).toContain("Coach House session with ${COACHING_JOINT_COACH_LABEL}")
     expect(finalizer).toContain("source: \"booking\"")
+    expect(email).toContain("sendResendEmail")
+    expect(email).toContain("Your Coach House coaching session is confirmed")
+    expect(email).toContain("New Coach House coaching session booked")
+    expect(email).toContain("getValidGoogleCalendarEventUrl(googleEventHtmlLink)")
     expect(icsRoute).toContain("COACHING_JOINT_COACH_LABEL")
-    expect(icsRoute).toContain("LOCATION:${escapeIcsText(booking.google_meet_url)}")
+    expect(icsRoute).toContain("env.NEXT_PUBLIC_SITE_URL")
+    expect(icsRoute).toContain("getValidGoogleMeetUrl(booking.google_meet_url)")
+    expect(icsRoute).toContain("LOCATION:${escapeIcsText(googleMeetUrl)}")
+  })
+
+  it("only exposes syntactically valid Google links", () => {
+    expect(getValidGoogleMeetUrl("https://meet.google.com/abc-defg-hij")).toBe(
+      "https://meet.google.com/abc-defg-hij",
+    )
+    expect(getValidGoogleMeetUrl("https://meet.google.com/abc-defg-hij?hs=122")).toBe(
+      "https://meet.google.com/abc-defg-hij?hs=122",
+    )
+    expect(getValidGoogleMeetUrl("https://meet.google.com/local-test")).toBeNull()
+    expect(getValidGoogleMeetUrl("https://example.com/abc-defg-hij")).toBeNull()
+    expect(getValidGoogleMeetUrl(null)).toBeNull()
+    expect(getValidGoogleCalendarEventUrl("https://calendar.google.com/calendar/event?eid=abc123")).toBe(
+      "https://calendar.google.com/calendar/event?eid=abc123",
+    )
+    expect(getValidGoogleCalendarEventUrl("https://www.google.com/calendar/event?eid=abc123")).toBe(
+      "https://www.google.com/calendar/event?eid=abc123",
+    )
+    expect(getValidGoogleCalendarEventUrl("http://localhost:8787/events/local-test")).toBeNull()
+    expect(getValidGoogleCalendarEventUrl("https://calendar.google.com/test")).toBeNull()
+    expect(getValidGoogleCalendarEventUrl(null)).toBeNull()
+    expect(getValidGoogleCalendarEventId("abc123")).toBe("abc123")
+    expect(getValidGoogleCalendarEventId("local-test")).toBeNull()
+    expect(getValidGoogleCalendarEventId(null)).toBeNull()
   })
 
   it("keeps Google Calendar writes behind a server adapter", () => {
@@ -343,8 +401,11 @@ describe("coaching booking feature", () => {
     expect(google).toContain("waitForMeetUrl")
     expect(google).toContain("requestId: randomUUID()")
     expect(google).toContain("Attendee: ${attendeeEmail}")
+    expect(google).toContain("buildGoogleEventAttendees({ attendeeEmail, internalAttendeeEmails: internalAttendees })")
+    expect(google).toContain("[attendeeEmail ?? \"\", ...internalAttendeeEmails]")
+    expect(google).toContain("Use this Google Calendar invite for updates or rescheduling.")
     expect(google).toContain("internalAttendeeEmails")
-    expect(google).toContain("buildGoogleEventAttendees(internalAttendees)")
+    expect(google).toContain("buildGoogleEventAttendees({ attendeeEmail, internalAttendeeEmails: internalAttendees })")
     expect(google).toContain("getGoogleCoachingParticipantEmail")
     expect(google).toContain("isLocalBrokerUrl")
     expect(google).toContain("Local Google Calendar broker proxy is not running.")
@@ -372,8 +433,11 @@ describe("coaching booking feature", () => {
     expect(broker).toContain("Google Calendar freeBusy failed")
     expect(broker).toContain("detail.slice(0, 500)")
     expect(broker).toContain("Attendee: ${payload.attendeeEmail}")
+    expect(broker).toContain("attendeeEmail: payload.attendeeEmail")
+    expect(broker).toContain("[attendeeEmail ?? \"\", ...internalAttendeeEmails]")
+    expect(broker).toContain("Use this Google Calendar invite for updates or rescheduling.")
     expect(broker).toContain("internalAttendeeEmails")
-    expect(broker).toContain("buildGoogleEventAttendees(internalAttendees)")
+    expect(broker).toContain("buildGoogleEventAttendees({")
     expect(featureReadme).toContain("keyless Cloud Run broker")
     expect(featureReadme).toContain("Vercel OIDC")
   })
@@ -454,7 +518,7 @@ describe("coaching booking feature", () => {
         ends_at: "2099-01-02T16:00:00.000Z",
         timezone: "America/New_York",
         google_meet_url: "https://meet.google.com/test",
-        google_event_html_link: "https://calendar.google.com/test",
+        google_event_html_link: "https://calendar.google.com/calendar/event?eid=abc123",
       },
     ])
 

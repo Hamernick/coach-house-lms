@@ -7,10 +7,14 @@ import { trackUserJourneyMilestone } from "@/lib/user-journey"
 import {
   COACHING_JOINT_COACH_IDS,
   COACHING_JOINT_COACH_LABEL,
+  getValidGoogleCalendarEventId,
+  getValidGoogleCalendarEventUrl,
+  getValidGoogleMeetUrl,
   normalizeCoachId,
   normalizePriceTier,
 } from "../lib"
 import type { CoachingCoachId } from "../types"
+import { sendCoachingBookingConfirmationEmails } from "./email"
 import { createGoogleCoachingEvent, getGoogleCoachingParticipantEmail } from "./google-calendar"
 
 type AdminClient = SupabaseClient<Database>
@@ -110,6 +114,9 @@ export async function confirmCoachingBooking({
     attendeeEmail,
     internalAttendeeEmails,
   })
+  const googleEventId = getValidGoogleCalendarEventId(calendarEvent.googleEventId)
+  const googleMeetUrl = getValidGoogleMeetUrl(calendarEvent.googleMeetUrl)
+  const googleEventHtmlLink = getValidGoogleCalendarEventUrl(calendarEvent.googleEventHtmlLink)
 
   if (priceTier !== "included") {
     await insertLedgerEntryIfMissing({
@@ -146,9 +153,9 @@ export async function confirmCoachingBooking({
       stripe_checkout_session_id: stripeCheckoutSessionId ?? undefined,
       stripe_payment_intent_id: stripePaymentIntentId ?? undefined,
       stripe_customer_id: stripeCustomerId ?? undefined,
-      google_event_id: calendarEvent.googleEventId,
-      google_event_html_link: calendarEvent.googleEventHtmlLink,
-      google_meet_url: calendarEvent.googleMeetUrl,
+      google_event_id: googleEventId,
+      google_event_html_link: googleEventHtmlLink,
+      google_meet_url: googleMeetUrl,
     })
     .eq("id", booking.id)
     .select("id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, google_event_id, google_meet_url")
@@ -162,7 +169,9 @@ export async function confirmCoachingBooking({
     userId: booking.user_id,
     orgId: booking.org_id,
     title: "Coaching session confirmed",
-    description: "Your Coach House session is booked. The Meet link is ready in Coaching.",
+    description: googleMeetUrl
+      ? "Your Coach House session is booked. The Meet link is ready in Coaching."
+      : "Your Coach House session is booked. The Meet link will appear in Coaching when ready.",
     href: "/coaching",
     tone: "success",
     type: "coaching_booking_confirmed",
@@ -178,6 +187,23 @@ export async function confirmCoachingBooking({
     console.error("Failed to create coaching confirmation notification", notifyResult.error)
   }
 
+  try {
+    await sendCoachingBookingConfirmationEmails({
+      attendeeEmail,
+      coachEmails: COACHING_JOINT_COACH_IDS
+        .map((participantId) => getGoogleCoachingParticipantEmail(participantId))
+        .filter((email): email is string => Boolean(email)),
+      startsAt: booking.starts_at,
+      endsAt: booking.ends_at,
+      timezone: booking.timezone,
+      googleEventHtmlLink,
+      googleMeetUrl,
+      bookingId: booking.id,
+    })
+  } catch (emailError) {
+    console.error("Failed to send coaching booking confirmation email", emailError)
+  }
+
   await trackUserJourneyMilestone({
     userId: booking.user_id,
     orgId: booking.org_id,
@@ -191,7 +217,7 @@ export async function confirmCoachingBooking({
       coachId,
       startsAt: booking.starts_at,
       priceTier,
-      hasMeetLink: Boolean(calendarEvent.googleMeetUrl),
+      hasMeetLink: Boolean(googleMeetUrl),
     },
   })
 

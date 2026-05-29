@@ -11,6 +11,17 @@ import VideoIcon from "lucide-react/dist/esm/icons/video"
 import { toast } from "sonner"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Separator } from "@/components/ui/separator"
@@ -19,12 +30,13 @@ import {
   COACHING_JOINT_COACH_LABEL,
   COACHING_PATH,
   COACHING_SESSION_MINUTES,
+  getValidGoogleMeetUrl,
+  getValidGoogleCalendarEventUrl,
 } from "../lib"
 import {
   cancelCoachingBookingAction,
   listCoachingAvailabilityAction,
   reserveCoachingBookingAction,
-  rescheduleCoachingBookingAction,
 } from "../actions"
 import {
   addMonths,
@@ -62,6 +74,7 @@ function formatDateTime(value: string, timezone: string) {
 }
 
 function buildGoogleCalendarUrl(booking: CoachingBookingRecord) {
+  const googleMeetUrl = getValidGoogleMeetUrl(booking.googleMeetUrl)
   const dates = `${booking.startsAt.replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z")}/${booking.endsAt
     .replace(/[-:]/g, "")
     .replace(/\.\d{3}Z$/, "Z")}`
@@ -69,8 +82,10 @@ function buildGoogleCalendarUrl(booking: CoachingBookingRecord) {
     action: "TEMPLATE",
     text: `Coach House session with ${booking.coachName}`,
     dates,
-    details: booking.googleMeetUrl ? `Meet link: ${booking.googleMeetUrl}` : "Coach House coaching session",
-    location: booking.googleMeetUrl ?? "Google Meet",
+    details: googleMeetUrl
+      ? `Join Google Meet: ${googleMeetUrl}\nUse this Google Calendar invite for updates or rescheduling.`
+      : "Coach House coaching session. Use this Google Calendar invite for updates or rescheduling.",
+    location: googleMeetUrl ?? "Online",
   })
   return `https://calendar.google.com/calendar/render?${params.toString()}`
 }
@@ -157,7 +172,7 @@ function formatAvailabilityMessage(message: string | null) {
 function priceTierLabel(tier: CoachingBookingPageData["creditSummary"]["priceTier"]) {
   if (tier === "included") return "Included session"
   if (tier === "discounted") return "Discounted rate"
-  return "Full rate"
+  return null
 }
 
 function SessionAvatarStack({ coaches }: { coaches: CoachingCoach[] }) {
@@ -197,6 +212,8 @@ function SessionDetailsPanel({
   creditSummary: CoachingBookingPageData["creditSummary"]
   timezone: string
 }) {
+  const priceTier = priceTierLabel(creditSummary.priceTier)
+
   return (
     <aside className="flex flex-col gap-6 border-b border-border px-4 py-5 sm:p-6 lg:border-b-0 lg:border-r lg:p-7">
       <div className="flex flex-col gap-5">
@@ -226,8 +243,8 @@ function SessionDetailsPanel({
         </SessionMetaRow>
         <SessionMetaRow icon={UsersIcon}>
           <span className="text-sm font-medium text-muted-foreground sm:text-base">
-            {creditSummary.available} credit{creditSummary.available === 1 ? "" : "s"} ·{" "}
-            {priceTierLabel(creditSummary.priceTier)}
+            {creditSummary.available} credit{creditSummary.available === 1 ? "" : "s"}
+            {priceTier ? <> · {priceTier}</> : null}
           </span>
         </SessionMetaRow>
       </div>
@@ -238,14 +255,17 @@ function SessionDetailsPanel({
 function BookingRow({
   booking,
   onCancel,
-  onReschedule,
   pending,
 }: {
   booking: CoachingBookingRecord
   onCancel: () => void
-  onReschedule: () => void
   pending: boolean
 }) {
+  const googleMeetUrl = getValidGoogleMeetUrl(booking.googleMeetUrl)
+  const formattedStart = formatDateTime(booking.startsAt, booking.timezone)
+  const googleEventHtmlLink = getValidGoogleCalendarEventUrl(booking.googleEventHtmlLink)
+  const googleCalendarUrl = googleEventHtmlLink ?? buildGoogleCalendarUrl(booking)
+
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border/70 px-3 py-3 sm:flex-row sm:items-center">
       <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -255,23 +275,23 @@ function BookingRow({
         <div className="flex min-w-0 flex-col gap-1">
           <span className="truncate text-sm font-medium">{booking.coachName}</span>
           <span className="text-xs text-muted-foreground">
-            {formatDateTime(booking.startsAt, booking.timezone)}
+            {formattedStart}
           </span>
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
-        {booking.googleMeetUrl ? (
+        {googleMeetUrl ? (
           <Button asChild size="sm" variant="outline" className="h-8 rounded-full shadow-none">
-            <a href={booking.googleMeetUrl} target="_blank" rel="noreferrer">
+            <a href={googleMeetUrl} target="_blank" rel="noreferrer">
               <ExternalLinkIcon data-icon="inline-start" aria-hidden />
               Meet
             </a>
           </Button>
         ) : null}
         <Button asChild size="sm" variant="outline" className="h-8 rounded-full shadow-none">
-          <a href={buildGoogleCalendarUrl(booking)} target="_blank" rel="noreferrer">
+          <a href={googleCalendarUrl} target="_blank" rel="noreferrer">
             <CalendarPlusIcon data-icon="inline-start" aria-hidden />
-            Google
+            Calendar
           </a>
         </Button>
         <Button asChild size="sm" variant="outline" className="h-8 rounded-full shadow-none">
@@ -282,12 +302,32 @@ function BookingRow({
         </Button>
         {booking.canManage ? (
           <>
-            <Button size="sm" variant="ghost" className="h-8 rounded-full" onClick={onReschedule}>
-              Reschedule
-            </Button>
-            <Button size="sm" variant="ghost" className="h-8 rounded-full" onClick={onCancel} disabled={pending}>
-              Cancel
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="ghost" className="h-8 rounded-full" disabled={pending}>
+                  Cancel
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancel this session?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This cancels your {formattedStart} coaching session with {booking.coachName} and removes the
+                    coach calendar event.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={pending}>Keep session</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={pending}
+                    onClick={onCancel}
+                  >
+                    Cancel session
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </>
         ) : null}
       </div>
@@ -303,7 +343,6 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
   const [availabilityLoading, setAvailabilityLoading] = useState(false)
   const [selectedSlot, setSelectedSlot] = useState<CoachingSlot | null>(null)
   const [availabilityMessage, setAvailabilityMessage] = useState<string | null>(null)
-  const [rescheduleBookingId, setRescheduleBookingId] = useState<string | null>(null)
   const [timeFormat, setTimeFormat] = useState<TimeFormat>("12h")
   const [pending, startTransition] = useTransition()
   const availabilityRequestId = useRef(0)
@@ -345,7 +384,7 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
       }),
     [availableDateKeys, calendarMonth, selectedDateKey],
   )
-  const paidCheckoutRequired = !rescheduleBookingId && initialData.creditSummary.available <= 0
+  const paidCheckoutRequired = initialData.creditSummary.available <= 0
   const checkoutUnavailable = paidCheckoutRequired && !initialData.paymentConfigured
 
   useEffect(() => {
@@ -395,17 +434,11 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
       return
     }
     startTransition(async () => {
-      const result = rescheduleBookingId
-        ? await rescheduleCoachingBookingAction({
-            bookingId: rescheduleBookingId,
-            startsAt: selectedSlot.startsAt,
-            timezone,
-          })
-        : await reserveCoachingBookingAction({
-            coachId: initialData.selectedCoachId,
-            startsAt: selectedSlot.startsAt,
-            timezone,
-          })
+      const result = await reserveCoachingBookingAction({
+        coachId: initialData.selectedCoachId,
+        startsAt: selectedSlot.startsAt,
+        timezone,
+      })
 
       if (!result.ok) {
         toast.error(result.error)
@@ -415,7 +448,7 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
         window.location.assign(result.checkoutUrl)
         return
       }
-      toast.success(rescheduleBookingId ? "Session rescheduled." : "Session booked.")
+      toast.success("Session booked.")
       setStep("done")
     })
   }
@@ -523,9 +556,7 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
                       >
                         {pending
                           ? "Confirming..."
-                          : rescheduleBookingId
-                            ? "Reschedule session"
-                            : initialData.creditSummary.available > 0
+                          : initialData.creditSummary.available > 0
                               ? "Use coaching credit"
                               : "Continue to checkout"}
                       </Button>
@@ -566,11 +597,6 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
                   booking={booking}
                   pending={pending}
                   onCancel={() => cancelBooking(booking.id)}
-                  onReschedule={() => {
-                    setRescheduleBookingId(booking.id)
-                    setSelectedSlot(null)
-                    setStep("time")
-                  }}
                 />
               ))}
             </div>

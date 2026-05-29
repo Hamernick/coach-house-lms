@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 
+import { env } from "@/lib/env"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase"
 import {
   COACHING_JOINT_COACH_LABEL,
   COACHING_PATH,
   escapeIcsText,
   formatIcsDate,
+  getValidGoogleMeetUrl,
 } from "../../../../../../features/coaching-booking/lib"
 
 export async function GET(
@@ -41,9 +43,11 @@ export async function GET(
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
 
-  const description = booking.google_meet_url
-    ? `Coach House coaching session with ${COACHING_JOINT_COACH_LABEL}\\n${booking.google_meet_url}`
+  const googleMeetUrl = getValidGoogleMeetUrl(booking.google_meet_url)
+  const description = googleMeetUrl
+    ? `Coach House coaching session with ${COACHING_JOINT_COACH_LABEL}\\n${googleMeetUrl}`
     : `Coach House coaching session with ${COACHING_JOINT_COACH_LABEL}`
+  const siteUrl = (env.NEXT_PUBLIC_SITE_URL ?? env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin).replace(/\/+$/, "")
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -55,8 +59,8 @@ export async function GET(
     `DTEND:${formatIcsDate(booking.ends_at)}`,
     `SUMMARY:${escapeIcsText(`Coach House session with ${COACHING_JOINT_COACH_LABEL}`)}`,
     `DESCRIPTION:${escapeIcsText(description)}`,
-    ...(booking.google_meet_url ? [`LOCATION:${escapeIcsText(booking.google_meet_url)}`] : []),
-    `URL:${escapeIcsText(`${request.nextUrl.origin}${COACHING_PATH}`)}`,
+    ...(googleMeetUrl ? [`LOCATION:${escapeIcsText(googleMeetUrl)}`] : []),
+    `URL:${escapeIcsText(`${siteUrl}${COACHING_PATH}`)}`,
     "END:VEVENT",
     "END:VCALENDAR",
   ]

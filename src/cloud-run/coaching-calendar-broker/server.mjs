@@ -287,8 +287,8 @@ function normalizeInternalAttendeeEmails(emails = []) {
   )
 }
 
-function buildGoogleEventAttendees(internalAttendeeEmails) {
-  return normalizeInternalAttendeeEmails(internalAttendeeEmails).map((email) => ({ email }))
+function buildGoogleEventAttendees({ attendeeEmail, internalAttendeeEmails }) {
+  return normalizeInternalAttendeeEmails([attendeeEmail ?? "", ...internalAttendeeEmails]).map((email) => ({ email }))
 }
 
 function conferenceStatus(event) {
@@ -352,7 +352,10 @@ async function createEvent(payload) {
   const calendarId = requireCalendarId(payload.coachId)
   const impersonatedUser = impersonatedUserFor(payload.coachId)
   const internalAttendees = normalizeInternalAttendeeEmails(payload.internalAttendeeEmails)
-  const attendees = buildGoogleEventAttendees(internalAttendees)
+  const attendees = buildGoogleEventAttendees({
+    attendeeEmail: payload.attendeeEmail,
+    internalAttendeeEmails: internalAttendees,
+  })
   const event = await requestCalendar({
     coachId: payload.coachId,
     path: `/calendars/${encodeURIComponent(calendarId)}/events?conferenceDataVersion=1&sendUpdates=all`,
@@ -360,8 +363,8 @@ async function createEvent(payload) {
     body: {
       summary: payload.summary,
       description: payload.attendeeEmail
-        ? `${payload.description}\n\nAttendee: ${payload.attendeeEmail}`
-        : payload.description,
+        ? `${payload.description}\n\nAttendee: ${payload.attendeeEmail}\nUse this Google Calendar invite for updates or rescheduling.`
+        : `${payload.description}\n\nUse this Google Calendar invite for updates or rescheduling.`,
       ...(attendees.length > 0
         ? {
             attendees,

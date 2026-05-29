@@ -7,7 +7,7 @@ import {
 import type { CoachingCoach, CoachingPriceTier } from "../types"
 
 export const COACHING_PATH = "/coaching"
-export const COACHING_SESSION_MINUTES = 60
+export const COACHING_SESSION_MINUTES = 45
 export const COACHING_HOLD_MINUTES = 15
 export const COACHING_DEFAULT_TIMEZONE = "America/New_York"
 export const COACHING_JOINT_PRIMARY_COACH_ID = "joel" satisfies CoachingCoachId
@@ -70,6 +70,42 @@ export function addMinutes(date: Date, minutes: number) {
 export function isValidFutureDate(value: string) {
   const parsed = Date.parse(value)
   return Number.isFinite(parsed) && parsed > Date.now()
+}
+
+export function getValidGoogleMeetUrl(value: string | null | undefined) {
+  if (!value) return null
+
+  try {
+    const url = new URL(value)
+    const meetCode = url.pathname.replace(/^\/+|\/+$/g, "")
+    if (url.protocol !== "https:" || url.hostname !== "meet.google.com") return null
+    if (!/^[a-z]{3}-[a-z]{4}-[a-z]{3}$/.test(meetCode)) return null
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
+export function getValidGoogleCalendarEventUrl(value: string | null | undefined) {
+  if (!value) return null
+
+  try {
+    const url = new URL(value)
+    const isGoogleCalendarHost =
+      url.hostname === "calendar.google.com" || url.hostname === "www.google.com"
+    if (url.protocol !== "https:" || !isGoogleCalendarHost) return null
+    if (!url.pathname.includes("/calendar/event")) return null
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
+export function getValidGoogleCalendarEventId(value: string | null | undefined) {
+  const normalized = value?.trim()
+  if (!normalized) return null
+  if (normalized.startsWith("local-")) return null
+  return normalized
 }
 
 export function toSlotId(coachId: CoachingCoachId, startsAt: string) {

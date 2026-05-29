@@ -18,6 +18,7 @@ import {
   COACHING_JOINT_PRIMARY_COACH_ID,
   COACHING_PATH,
   COACHING_SESSION_MINUTES,
+  getValidGoogleCalendarEventId,
   isValidFutureDate,
   normalizeCoachId,
 } from "../lib"
@@ -364,10 +365,11 @@ export async function cancelCoachingBookingAction(
       return { ok: false, error: "Past coaching sessions cannot be canceled here." }
     }
 
-    if (booking.google_event_id) {
+    const googleEventId = getValidGoogleCalendarEventId(booking.google_event_id)
+    if (googleEventId) {
       await deleteGoogleCoachingEvent({
         coachId: normalizeCoachId(booking.coach_id),
-        googleEventId: booking.google_event_id,
+        googleEventId,
       })
     }
     await restoreBookingCredit({ admin, booking })
@@ -445,10 +447,11 @@ export async function rescheduleCoachingBookingAction(
       return { ok: false, error: "That slot was just taken. Pick another time." }
     }
 
-    if (booking.google_event_id) {
+    const googleEventId = getValidGoogleCalendarEventId(booking.google_event_id)
+    if (googleEventId) {
       await updateGoogleCoachingEvent({
         coachId,
-        googleEventId: booking.google_event_id,
+        googleEventId,
         startsAt: startsAt.toISOString(),
         endsAt: endsAt.toISOString(),
         timezone: input.timezone || booking.timezone,

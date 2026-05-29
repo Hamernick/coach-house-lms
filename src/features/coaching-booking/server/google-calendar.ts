@@ -83,8 +83,14 @@ function normalizeInternalAttendeeEmails(emails: string[] = []) {
   )
 }
 
-function buildGoogleEventAttendees(internalAttendeeEmails: string[]) {
-  return normalizeInternalAttendeeEmails(internalAttendeeEmails).map((email) => ({ email }))
+function buildGoogleEventAttendees({
+  attendeeEmail,
+  internalAttendeeEmails,
+}: {
+  attendeeEmail: string | null
+  internalAttendeeEmails: string[]
+}) {
+  return normalizeInternalAttendeeEmails([attendeeEmail ?? "", ...internalAttendeeEmails]).map((email) => ({ email }))
 }
 
 function isBrokerConfigured() {
@@ -471,7 +477,7 @@ export async function createGoogleCoachingEvent({
   internalAttendeeEmails?: string[]
 }) {
   const internalAttendees = normalizeInternalAttendeeEmails(internalAttendeeEmails)
-  const attendees = buildGoogleEventAttendees(internalAttendees)
+  const attendees = buildGoogleEventAttendees({ attendeeEmail, internalAttendeeEmails: internalAttendees })
   if (isBrokerConfigured()) {
     return await requestGoogleCalendarBroker<BrokerEventResponse>({
       operation: "createEvent",
@@ -499,7 +505,9 @@ export async function createGoogleCoachingEvent({
     method: "POST",
     body: {
       summary,
-      description: attendeeEmail ? `${description}\n\nAttendee: ${attendeeEmail}` : description,
+      description: attendeeEmail
+        ? `${description}\n\nAttendee: ${attendeeEmail}\nUse this Google Calendar invite for updates or rescheduling.`
+        : `${description}\n\nUse this Google Calendar invite for updates or rescheduling.`,
       ...(attendees.length > 0
         ? {
             attendees,

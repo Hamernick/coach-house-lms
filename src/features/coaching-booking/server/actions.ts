@@ -13,6 +13,7 @@ import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { trackUserJourneyMilestone } from "@/lib/user-journey"
 import {
   addMinutes,
+  COACHING_DEFAULT_TIMEZONE,
   COACHING_HOLD_MINUTES,
   COACHING_JOINT_COACH_IDS,
   COACHING_JOINT_PRIMARY_COACH_ID,
@@ -23,6 +24,7 @@ import {
   normalizeCoachId,
 } from "../lib"
 import { buildCandidateSlots } from "../lib/availability"
+import { COACHING_ATTENDEE_NOTES_MAX_LENGTH } from "../types"
 import type {
   CoachingActionResult,
   CoachingAvailabilityInput,
@@ -95,11 +97,19 @@ function parseRange(input: CoachingAvailabilityInput) {
   const coachId = normalizeCoachId(input.coachId)
   const from = new Date(input.from)
   const to = new Date(input.to)
-  const timezone = input.timezone || "America/New_York"
+  const timezone = input.timezone || COACHING_DEFAULT_TIMEZONE
   if (!Number.isFinite(from.getTime()) || !Number.isFinite(to.getTime()) || from >= to) {
     throw new Error("Choose a valid date range.")
   }
   return { coachId, from, to, timezone }
+}
+
+function normalizeAttendeeNotes(value: string | undefined) {
+  const notes = value?.trim() ?? ""
+  if (notes.length > COACHING_ATTENDEE_NOTES_MAX_LENGTH) {
+    throw new Error(`Keep session notes under ${COACHING_ATTENDEE_NOTES_MAX_LENGTH} characters.`)
+  }
+  return notes.length > 0 ? notes : null
 }
 
 function hasOverlap({
@@ -238,6 +248,7 @@ export async function reserveCoachingBookingAction(
     }
 
     const endsAt = addMinutes(startsAt, COACHING_SESSION_MINUTES)
+    const attendeeNotes = normalizeAttendeeNotes(input.attendeeNotes)
     const busyWindows = await listJointBusyWindows({
       from: startsAt.toISOString(),
       to: endsAt.toISOString(),
@@ -267,10 +278,11 @@ export async function reserveCoachingBookingAction(
         price_tier: priceTier,
         starts_at: startsAt.toISOString(),
         ends_at: endsAt.toISOString(),
-        timezone: input.timezone || "America/New_York",
+        timezone: input.timezone || COACHING_DEFAULT_TIMEZONE,
+        attendee_notes: attendeeNotes,
         hold_expires_at: holdExpiresAt,
       })
-      .select("id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, google_event_id, google_meet_url")
+      .select("id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, attendee_notes, google_event_id, google_meet_url")
       .single()
 
     if (error) {

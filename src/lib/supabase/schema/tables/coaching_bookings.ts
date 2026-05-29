@@ -9,6 +9,7 @@ export type CoachingBookingsTable = {
     starts_at: string
     ends_at: string
     timezone: string
+    attendee_notes: string | null
     hold_expires_at: string | null
     confirmed_at: string | null
     canceled_at: string | null
@@ -33,6 +34,7 @@ export type CoachingBookingsTable = {
     starts_at: string
     ends_at: string
     timezone?: string
+    attendee_notes?: string | null
     hold_expires_at?: string | null
     confirmed_at?: string | null
     canceled_at?: string | null
@@ -57,6 +59,7 @@ export type CoachingBookingsTable = {
     starts_at?: string
     ends_at?: string
     timezone?: string
+    attendee_notes?: string | null
     hold_expires_at?: string | null
     confirmed_at?: string | null
     canceled_at?: string | null

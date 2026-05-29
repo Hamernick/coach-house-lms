@@ -2,6 +2,8 @@ import type { CoachingCoachId } from "@/lib/meetings"
 
 export type { CoachingCoachId } from "@/lib/meetings"
 
+export const COACHING_ATTENDEE_NOTES_MAX_LENGTH = 1000
+
 export type CoachingBookingStatus =
   | "held"
   | "pending_payment"
@@ -18,6 +20,12 @@ export type CoachingCoach = {
   focus: string
   initials: string
   imageUrl: string
+}
+
+export type CoachingParticipant = {
+  name: string
+  initials: string
+  imageUrl: string | null
 }
 
 export type CoachingCreditSummary = {
@@ -56,6 +64,7 @@ export type CoachingBookingRecord = {
 export type CoachingBookingPageData = {
   coaches: CoachingCoach[]
   selectedCoachId: CoachingCoachId
+  currentUser: CoachingParticipant
   creditSummary: CoachingCreditSummary
   upcomingBookings: CoachingBookingRecord[]
   timezone: string
@@ -74,6 +83,7 @@ export type CoachingBookingInput = {
   coachId: CoachingCoachId
   startsAt: string
   timezone: string
+  attendeeNotes?: string
 }
 
 export type CoachingManageBookingInput = {

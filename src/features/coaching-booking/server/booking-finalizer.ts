@@ -29,8 +29,15 @@ type BookingForConfirmation = {
   starts_at: string
   ends_at: string
   timezone: string
+  attendee_notes: string | null
   google_event_id: string | null
   google_meet_url: string | null
+}
+
+function buildCalendarEventDescription(booking: BookingForConfirmation) {
+  const notes = booking.attendee_notes?.trim()
+  const base = `Coach House coaching session with ${COACHING_JOINT_COACH_LABEL} booked inside the platform.`
+  return notes ? `${base}\n\nSession notes from attendee:\n${notes}` : base
 }
 
 async function insertLedgerEntryIfMissing({
@@ -107,7 +114,7 @@ export async function confirmCoachingBooking({
   const calendarEvent = await createGoogleCoachingEvent({
     coachId,
     summary: `Coach House session with ${COACHING_JOINT_COACH_LABEL}`,
-    description: `Coach House coaching session with ${COACHING_JOINT_COACH_LABEL} booked inside the platform.`,
+    description: buildCalendarEventDescription(booking),
     startsAt: booking.starts_at,
     endsAt: booking.ends_at,
     timezone: booking.timezone,
@@ -198,6 +205,7 @@ export async function confirmCoachingBooking({
       timezone: booking.timezone,
       googleEventHtmlLink,
       googleMeetUrl,
+      attendeeNotes: booking.attendee_notes,
       bookingId: booking.id,
     })
   } catch (emailError) {
@@ -233,7 +241,7 @@ export async function loadCoachingBookingForConfirmation({
 }) {
   const { data, error } = await admin
     .from("coaching_bookings")
-    .select("id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, google_event_id, google_meet_url")
+    .select("id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, attendee_notes, google_event_id, google_meet_url")
     .eq("id", bookingId)
     .maybeSingle<BookingForConfirmation>()
 

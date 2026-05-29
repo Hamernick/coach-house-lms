@@ -50,6 +50,30 @@ export function listMonthDates(month: Date) {
   return dates
 }
 
+function startOfCalendarGrid(month: Date) {
+  const cursor = startOfMonth(month)
+  cursor.setDate(cursor.getDate() - cursor.getDay())
+  return cursor
+}
+
+export function getCalendarGridRange(month: Date) {
+  const from = startOfCalendarGrid(month)
+  const to = new Date(from)
+  to.setDate(to.getDate() + 42)
+  return { from, to }
+}
+
+export function listCalendarGridDates(month: Date) {
+  const dates: Date[] = []
+  const { from } = getCalendarGridRange(month)
+  const cursor = new Date(from)
+  for (let index = 0; index < 42; index += 1) {
+    dates.push(new Date(cursor))
+    cursor.setDate(cursor.getDate() + 1)
+  }
+  return dates
+}
+
 export function formatSlotDateLabel(value: string, timezone: string) {
   return new Intl.DateTimeFormat(undefined, {
     weekday: "short",

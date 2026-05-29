@@ -15,6 +15,7 @@ type PaidCheckoutBooking = {
   starts_at: string
   ends_at: string
   timezone: string
+  attendee_notes: string | null
   google_event_id: string | null
   google_meet_url: string | null
   stripe_checkout_session_id: string | null
@@ -71,7 +72,7 @@ export async function confirmPaidCoachingCheckoutReturn({
   const { data: booking, error } = await admin
     .from("coaching_bookings")
     .select(
-      "id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, google_event_id, google_meet_url, stripe_checkout_session_id",
+      "id, org_id, user_id, coach_id, status, price_tier, starts_at, ends_at, timezone, attendee_notes, google_event_id, google_meet_url, stripe_checkout_session_id",
     )
     .eq("id", bookingId)
     .maybeSingle<PaidCheckoutBooking>()

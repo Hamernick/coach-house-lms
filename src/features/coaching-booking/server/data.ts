@@ -23,6 +23,7 @@ import type {
   CoachingCoach,
   CoachingCoachId,
   CoachingCreditSummary,
+  CoachingParticipant,
 } from "../types"
 import { isGoogleCoachingConfigured } from "./google-calendar"
 
@@ -51,6 +52,12 @@ type BookingRow = {
   google_event_html_link: string | null
 }
 
+type CurrentUserProfileRow = {
+  full_name: string | null
+  avatar_url: string | null
+  email: string | null
+}
+
 function metadataRecord(metadata: Json | null): Record<string, unknown> {
   return metadata && typeof metadata === "object" && !Array.isArray(metadata)
     ? (metadata as Record<string, unknown>)
@@ -67,6 +74,51 @@ function subscriptionIsAcceleratorWithCoaching(subscription: SubscriptionRow) {
 
 function subscriptionIsOperationsSupport(subscription: SubscriptionRow) {
   return resolvePaidPlanTierFromMetadata(subscription.metadata) === "operations_support"
+}
+
+function normalizedText(value: string | null | undefined) {
+  const text = value?.trim() ?? ""
+  return text.length > 0 ? text : null
+}
+
+function initialsFromName(value: string) {
+  const initials = value
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0))
+    .join("")
+    .toUpperCase()
+  return initials || "U"
+}
+
+export async function loadCoachingCurrentUserProfile({
+  supabase,
+  userId,
+  userEmail,
+}: {
+  supabase: AppSupabase
+  userId: string
+  userEmail?: string | null
+}): Promise<CoachingParticipant> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("full_name, avatar_url, email")
+    .eq("id", userId)
+    .maybeSingle<CurrentUserProfileRow>()
+
+  if (error) {
+    throw supabaseErrorToError(error, "Unable to load coaching attendee profile.")
+  }
+
+  const email = normalizedText(data?.email) ?? normalizedText(userEmail)
+  const name = normalizedText(data?.full_name) ?? email?.split("@")[0] ?? "You"
+
+  return {
+    name,
+    initials: initialsFromName(name),
+    imageUrl: normalizedText(data?.avatar_url),
+  }
 }
 
 export async function listCoachingCoaches(supabase: AppSupabase): Promise<CoachingCoach[]> {
@@ -242,18 +294,21 @@ export async function loadCoachingBookingPageData({
   supabase,
   userId,
   orgId,
+  userEmail,
   timezone = COACHING_DEFAULT_TIMEZONE,
 }: {
   supabase: AppSupabase
   userId: string
   orgId: string
+  userEmail?: string | null
   timezone?: string
 }): Promise<CoachingBookingPageData> {
-  const [coaches, creditSummary, upcomingBookings, audience] = await Promise.all([
+  const [coaches, creditSummary, upcomingBookings, audience, currentUser] = await Promise.all([
     listCoachingCoaches(supabase),
     resolveCoachingCreditSummary({ supabase, userId, orgId }),
     listUpcomingCoachingBookings({ supabase, orgId }),
     resolveDevtoolsAudience({ supabase, userId }),
+    loadCoachingCurrentUserProfile({ supabase, userId, userEmail }),
   ])
   const selectedCoachId = COACHING_JOINT_PRIMARY_COACH_ID
   const paidPriceTier = creditSummary.priceTier === "discounted" ? "discounted" : "full"
@@ -267,6 +322,7 @@ export async function loadCoachingBookingPageData({
   return {
     coaches,
     selectedCoachId,
+    currentUser,
     creditSummary,
     upcomingBookings,
     timezone,

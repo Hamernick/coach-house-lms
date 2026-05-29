@@ -9,7 +9,7 @@ import type { CoachingCoach, CoachingPriceTier } from "../types"
 export const COACHING_PATH = "/coaching"
 export const COACHING_SESSION_MINUTES = 45
 export const COACHING_HOLD_MINUTES = 15
-export const COACHING_DEFAULT_TIMEZONE = "America/New_York"
+export const COACHING_DEFAULT_TIMEZONE = "America/Chicago"
 export const COACHING_JOINT_PRIMARY_COACH_ID = "joel" satisfies CoachingCoachId
 export const COACHING_JOINT_COACH_IDS = ["joel", "paula"] satisfies CoachingCoachId[]
 export const COACHING_JOINT_COACH_LABEL = "Joel & Paula"

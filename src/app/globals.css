@@ -267,24 +267,40 @@
   }
 
   @keyframes show-top-mask {
+    from {
+      --top-mask-height: 0px;
+    }
+
     to {
       --top-mask-height: var(--mask-height);
     }
   }
 
   @keyframes hide-bottom-mask {
+    from {
+      --bottom-mask-height: var(--mask-height);
+    }
+
     to {
       --bottom-mask-height: 0px;
     }
   }
 
   @keyframes show-left-mask {
+    from {
+      --left-mask-width: 0px;
+    }
+
     to {
       --left-mask-width: var(--mask-width);
     }
   }
 
   @keyframes hide-right-mask {
+    from {
+      --right-mask-width: var(--mask-width);
+    }
+
     to {
       --right-mask-width: 0px;
     }

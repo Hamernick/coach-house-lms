@@ -15,6 +15,7 @@ type CoachingBookingEmailInput = {
   timezone: string
   googleEventHtmlLink: string | null
   googleMeetUrl: string | null
+  attendeeNotes?: string | null
   bookingId: string
 }
 
@@ -146,6 +147,7 @@ export async function sendCoachingBookingConfirmationEmails({
   timezone,
   googleEventHtmlLink,
   googleMeetUrl,
+  attendeeNotes,
   bookingId,
 }: CoachingBookingEmailInput) {
   const siteUrl = resolveSiteUrl()
@@ -155,6 +157,7 @@ export async function sendCoachingBookingConfirmationEmails({
   const when = formatBookingWindow({ startsAt, endsAt, timezone })
   const attendeeRecipients = dedupeEmails([attendeeEmail])
   const coachRecipients = dedupeEmails(coachEmails)
+  const normalizedAttendeeNotes = attendeeNotes?.trim()
   const sharedActions = [
     ...(calendarUrl ? [{ label: "Open Google Calendar invite", url: calendarUrl }] : []),
     ...(meetUrl ? [{ label: "Join Google Meet", url: meetUrl }] : []),
@@ -167,6 +170,7 @@ export async function sendCoachingBookingConfirmationEmails({
       `Session: Coach House session with ${COACHING_JOINT_COACH_LABEL}`,
       `When: ${when}`,
       `Timezone: ${timezone}`,
+      ...(normalizedAttendeeNotes ? [`Notes: ${normalizedAttendeeNotes}`] : []),
     ]
     sends.push(
       sendResendEmail({
@@ -198,6 +202,7 @@ export async function sendCoachingBookingConfirmationEmails({
       `When: ${when}`,
       `Timezone: ${timezone}`,
       ...(attendeeEmail ? [`Attendee: ${attendeeEmail}`] : []),
+      ...(normalizedAttendeeNotes ? [`Notes: ${normalizedAttendeeNotes}`] : []),
     ]
     sends.push(
       sendResendEmail({

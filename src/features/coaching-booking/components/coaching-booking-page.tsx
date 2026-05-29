@@ -57,6 +57,7 @@ export async function CoachingBookingPage({ searchParams }: CoachingBookingPageP
     supabase: context.supabase,
     userId: context.user.id,
     orgId: context.activeOrg.orgId,
+    userEmail: context.user.email ?? null,
   })
 
   return <CoachingBookingFlow initialData={data} />

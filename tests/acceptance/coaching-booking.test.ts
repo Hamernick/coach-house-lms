@@ -543,6 +543,10 @@ describe("coaching booking feature", () => {
     expect(icsRoute).toContain("getValidGoogleCalendarEventUrl(booking.google_event_html_link)")
     expect(icsRoute).toContain("attendee_notes")
     expect(icsRoute).toContain("Coach House Advisory Session with")
+    expect(icsRoute).toContain('const ICS_FILENAME_PREFIX = "coach-house-advisory-session"')
+    expect(icsRoute).toContain("function buildIcsDownloadFilename(startsAt: string, timeZone: string)")
+    expect(icsRoute).toContain("buildIcsDownloadFilename(booking.starts_at, booking.timezone)")
+    expect(icsRoute).toContain('filename="${downloadFilename}"')
     expect(icsRoute).toContain("STATUS:CONFIRMED")
     expect(icsRoute).toContain("TRANSP:OPAQUE")
     expect(icsRoute).toContain("CATEGORIES:Coach House,Coaching")
@@ -550,6 +554,7 @@ describe("coaching booking feature", () => {
     expect(icsRoute).toContain('CONFERENCE;VALUE=URI;FEATURE=AUDIO,VIDEO;LABEL="Google Meet"')
     expect(icsRoute).toContain("foldIcsLine")
     expect(icsRoute).not.toContain("LOCATION:${escapeIcsText(googleMeetUrl)}")
+    expect(icsRoute).not.toContain('filename="coach-house-${booking.id}.ics"')
   })
 
   it("only exposes syntactically valid Google links", () => {

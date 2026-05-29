@@ -14,6 +14,7 @@ import {
 
 const CANONICAL_SITE_URL = "https://coachhouse.app"
 const ICS_LINE_LIMIT = 75
+const ICS_FILENAME_PREFIX = "coach-house-advisory-session"
 
 function isLocalUrl(value: string) {
   try {
@@ -71,6 +72,39 @@ function buildIcsDescription({
   ].join("\n")
 }
 
+function buildIcsDownloadFilename(startsAt: string, timeZone: string) {
+  const date = new Date(startsAt)
+  if (Number.isNaN(date.getTime())) return `${ICS_FILENAME_PREFIX}.ics`
+
+  try {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    }).formatToParts(date)
+    const part = (type: Intl.DateTimeFormatPartTypes) =>
+      parts.find((entry) => entry.type === type)?.value ?? ""
+    const year = part("year")
+    const month = part("month")
+    const day = part("day")
+    const hour = part("hour").padStart(2, "0")
+    const minute = part("minute")
+    const dayPeriod = part("dayPeriod").toLowerCase()
+
+    if (year && month && day && hour && minute && dayPeriod) {
+      return `${ICS_FILENAME_PREFIX}-${year}-${month}-${day}-${hour}-${minute}-${dayPeriod}.ics`
+    }
+  } catch {
+    // Fall back to UTC below if the stored timezone cannot be formatted.
+  }
+
+  return `${ICS_FILENAME_PREFIX}-${date.toISOString().slice(0, 16).replace(/[:T]/g, "-")}-utc.ics`
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -112,6 +146,7 @@ export async function GET(
   const siteUrl = resolveSiteUrl(request)
   const coachingUrl = `${siteUrl}${COACHING_PATH}`
   const eventUrl = googleMeetUrl ?? googleEventHtmlLink ?? coachingUrl
+  const downloadFilename = buildIcsDownloadFilename(booking.starts_at, booking.timezone)
   const description = buildIcsDescription({
     googleMeetUrl,
     googleEventHtmlLink,
@@ -151,7 +186,7 @@ export async function GET(
   return new NextResponse(`${lines.map(foldIcsLine).join("\r\n")}\r\n`, {
     headers: {
       "content-type": "text/calendar; charset=utf-8",
-      "content-disposition": `attachment; filename="coach-house-${booking.id}.ics"`,
+      "content-disposition": `attachment; filename="${downloadFilename}"`,
     },
   })
 }

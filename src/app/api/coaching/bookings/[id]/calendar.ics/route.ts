@@ -3,7 +3,9 @@ import { NextRequest, NextResponse } from "next/server"
 import { env } from "@/lib/env"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase"
 import {
+  COACHING_JOINT_COACH_IDS,
   COACHING_JOINT_COACH_LABEL,
+  COACHING_JOINT_PRIMARY_COACH_ID,
   COACHING_PATH,
   COACHING_SESSION_MINUTES,
   escapeIcsText,
@@ -11,10 +13,15 @@ import {
   getValidGoogleCalendarEventUrl,
   getValidGoogleMeetUrl,
 } from "../../../../../../features/coaching-booking/lib"
+import { getGoogleCoachingParticipantEmail } from "../../../../../../features/coaching-booking/server/google-calendar"
 
 const CANONICAL_SITE_URL = "https://coachhouse.app"
 const ICS_LINE_LIMIT = 75
 const ICS_FILENAME_PREFIX = "coach-house-advisory-session"
+const COACHING_PARTICIPANT_NAMES = {
+  joel: "Joel",
+  paula: "Paula",
+} as const
 
 function isLocalUrl(value: string) {
   try {
@@ -46,6 +53,45 @@ function foldIcsLine(line: string) {
     remaining = remaining.slice(ICS_LINE_LIMIT - 1)
   }
   return chunks.join("\r\n")
+}
+
+function escapeIcsParam(value: string) {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\r?\n/g, " ")
+}
+
+function normalizeEmail(value: string | null | undefined) {
+  const normalized = value?.trim()
+  return normalized && normalized.includes("@") ? normalized : null
+}
+
+function buildIcsAttendeeLines({
+  attendeeEmail,
+  coachEmails,
+}: {
+  attendeeEmail: string | null | undefined
+  coachEmails: Array<{ name: string; email: string | null }>
+}) {
+  const seen = new Set<string>()
+  const participants = [
+    ...coachEmails.map((coach) => ({ name: coach.name, email: normalizeEmail(coach.email) })),
+    { name: "Attendee", email: normalizeEmail(attendeeEmail) },
+  ].filter((participant): participant is { name: string; email: string } => Boolean(participant.email))
+
+  return participants.flatMap((participant) => {
+    const key = participant.email.toLowerCase()
+    if (seen.has(key)) return []
+    seen.add(key)
+    return [
+      `ATTENDEE;CN="${escapeIcsParam(participant.name)}";ROLE=REQ-PARTICIPANT;PARTSTAT=NEEDS-ACTION;RSVP=FALSE:mailto:${escapeIcsText(participant.email)}`,
+    ]
+  })
+}
+
+function buildIcsOrganizerLine(email: string | null) {
+  const organizerEmail = normalizeEmail(email)
+  return organizerEmail
+    ? `ORGANIZER;CN="${escapeIcsParam("Coach House")}":mailto:${escapeIcsText(organizerEmail)}`
+    : null
 }
 
 function buildIcsDescription({
@@ -147,6 +193,11 @@ export async function GET(
   const coachingUrl = `${siteUrl}${COACHING_PATH}`
   const eventUrl = googleMeetUrl ?? googleEventHtmlLink ?? coachingUrl
   const downloadFilename = buildIcsDownloadFilename(booking.starts_at, booking.timezone)
+  const coachAttendees = COACHING_JOINT_COACH_IDS.map((coachId) => ({
+    name: COACHING_PARTICIPANT_NAMES[coachId],
+    email: getGoogleCoachingParticipantEmail(coachId),
+  }))
+  const organizerLine = buildIcsOrganizerLine(getGoogleCoachingParticipantEmail(COACHING_JOINT_PRIMARY_COACH_ID))
   const description = buildIcsDescription({
     googleMeetUrl,
     googleEventHtmlLink,
@@ -171,6 +222,8 @@ export async function GET(
     "STATUS:CONFIRMED",
     "TRANSP:OPAQUE",
     "CATEGORIES:Coach House,Coaching",
+    ...(organizerLine ? [organizerLine] : []),
+    ...buildIcsAttendeeLines({ attendeeEmail: user.email, coachEmails: coachAttendees }),
     ...(booking.timezone ? [`X-COACH-HOUSE-TIMEZONE:${escapeIcsText(booking.timezone)}`] : []),
     ...(googleMeetUrl
       ? [

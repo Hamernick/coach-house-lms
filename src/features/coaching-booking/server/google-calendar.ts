@@ -44,6 +44,10 @@ type BrokerEventResponse = {
 
 const tokenCache = new Map<string, GoogleTokenCache>()
 let brokerIdentityTokenCache: GoogleTokenCache | null = null
+const DEFAULT_COACHING_PARTICIPANT_EMAILS: Record<CoachingCoachId, string> = {
+  joel: "joel@coachhousesolutions.org",
+  paula: "paula@coachhousesolutions.org",
+}
 
 function base64Url(input: string | Buffer) {
   return Buffer.from(input).toString("base64url")
@@ -70,7 +74,12 @@ function getImpersonatedUser(coachId?: CoachingCoachId) {
 }
 
 export function getGoogleCoachingParticipantEmail(coachId: CoachingCoachId) {
-  return getImpersonatedUser(coachId) ?? getCoachCalendarId(coachId) ?? null
+  return (
+    getImpersonatedUser(coachId) ??
+    DEFAULT_COACHING_PARTICIPANT_EMAILS[coachId] ??
+    getCoachCalendarId(coachId) ??
+    null
+  )
 }
 
 function normalizeInternalAttendeeEmails(emails: string[] = []) {

@@ -20,10 +20,10 @@ describe("stripe runtime production safety", () => {
     expect(stripeRuntime).toContain('process.env.NODE_ENV !== "production" && isTester && tester')
     expect(stripeRuntime).not.toContain("if (isTester && tester) return tester")
     expect(stripeRuntime).toContain("resolveStripeRuntimeConfigForCoaching")
-    expect(stripeRuntime).toContain("if ((isTester || shouldPreferTesterForLocalCoaching")
+    expect(stripeRuntime).toContain("if ((useTesterRuntime || shouldPreferTesterForLocalCoaching")
   })
 
-  it("routes only coaching checkout to tester Stripe in production", async () => {
+  it("routes only super-admin coaching checkout to tester Stripe in production", async () => {
     vi.resetModules()
     vi.stubEnv("NODE_ENV", "production")
     vi.stubEnv("NEXT_PUBLIC_SUPABASE_URL", "https://coachhouse.test")
@@ -47,18 +47,27 @@ describe("stripe runtime production safety", () => {
     } = await import("@/lib/billing/stripe-runtime")
 
     const paidPlanConfig = resolveStripeRuntimeConfigForAudience({ isTester: true })
-    const coachingConfig = resolveStripeRuntimeConfigForCoaching({
-      isTester: true,
+    const adminCoachingConfig = resolveStripeRuntimeConfigForCoaching({
+      useTesterRuntime: true,
+      priceTier: "full",
+    })
+    const nonAdminCoachingConfig = resolveStripeRuntimeConfigForCoaching({
+      useTesterRuntime: false,
       priceTier: "full",
     })
 
     expect(paidPlanConfig?.target).toBe("primary")
     expect(paidPlanConfig?.mode).toBe("live")
     expect(resolveStripePriceIdForPlan({ config: paidPlanConfig!, planTier: "organization" })).toBe("price_live_org")
-    expect(coachingConfig?.target).toBe("tester")
-    expect(coachingConfig?.mode).toBe("test")
-    expect(resolveStripePriceIdForCoaching({ config: coachingConfig!, priceTier: "full" })).toBe(
+    expect(adminCoachingConfig?.target).toBe("tester")
+    expect(adminCoachingConfig?.mode).toBe("test")
+    expect(resolveStripePriceIdForCoaching({ config: adminCoachingConfig!, priceTier: "full" })).toBe(
       "price_test_coaching_full",
+    )
+    expect(nonAdminCoachingConfig?.target).toBe("primary")
+    expect(nonAdminCoachingConfig?.mode).toBe("live")
+    expect(resolveStripePriceIdForCoaching({ config: nonAdminCoachingConfig!, priceTier: "full" })).toBe(
+      "price_live_coaching_full",
     )
   })
 })

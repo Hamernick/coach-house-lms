@@ -131,28 +131,28 @@ function shouldPreferTesterForLocalCoaching({
 }
 
 export function resolveStripeRuntimeConfigForCoaching({
-  isTester,
+  useTesterRuntime,
   priceTier,
 }: {
-  isTester: boolean
+  useTesterRuntime: boolean
   priceTier: "discounted" | "full"
 }): StripeRuntimeConfig | null {
   const primary = buildPrimaryConfig()
   const tester = buildTesterConfig()
-  if ((isTester || shouldPreferTesterForLocalCoaching({ tester, priceTier })) && tester) {
+  if ((useTesterRuntime || shouldPreferTesterForLocalCoaching({ tester, priceTier })) && tester) {
     return tester
   }
   return primary
 }
 
 export function isStripeCoachingCheckoutConfigured({
-  isTester,
+  useTesterRuntime,
   priceTier,
 }: {
-  isTester: boolean
+  useTesterRuntime: boolean
   priceTier: "discounted" | "full"
 }) {
-  const config = resolveStripeRuntimeConfigForCoaching({ isTester, priceTier })
+  const config = resolveStripeRuntimeConfigForCoaching({ useTesterRuntime, priceTier })
   return hasConfiguredCoachingPrice({ config, priceTier })
 }
 

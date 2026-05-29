@@ -162,7 +162,7 @@ async function createStripeCheckout({
     userId,
     fallbackIsTester: resolveTesterMetadata({}),
   })
-  const config = resolveStripeRuntimeConfigForCoaching({ isTester: audience.isTester, priceTier })
+  const config = resolveStripeRuntimeConfigForCoaching({ useTesterRuntime: audience.isAdmin, priceTier })
   if (!config) {
     throw new Error("Stripe is not configured for coaching checkout.")
   }

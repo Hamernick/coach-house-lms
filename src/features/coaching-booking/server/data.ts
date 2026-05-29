@@ -315,7 +315,7 @@ export async function loadCoachingBookingPageData({
   const paymentConfigured =
     creditSummary.priceTier === "included" ||
     isStripeCoachingCheckoutConfigured({
-      isTester: audience.isTester,
+      useTesterRuntime: audience.isAdmin,
       priceTier: paidPriceTier,
     })
 

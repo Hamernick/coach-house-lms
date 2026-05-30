@@ -3,7 +3,7 @@
 Internal Coach House scheduling flow for `/coaching`.
 
 ## Ownership
-- Session model: current booking UI offers one joint Joel + Paula coaching session; availability is the intersection of both coach calendars.
+- Meeting model: current booking UI offers one joint Joel + Paula coaching meeting; availability is the intersection of both coach calendars.
 - Domain logic: `src/features/coaching-booking/lib/**`
 - Server actions/queries: `src/features/coaching-booking/server/**`
 - UI components: `src/features/coaching-booking/components/**`

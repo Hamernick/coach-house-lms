@@ -28,7 +28,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
 import { WheelPicker, WheelPickerWrapper, type WheelPickerOption } from "@/components/wheel-picker"
-import { COACHING_DEFAULT_TIMEZONE, COACHING_JOINT_COACH_LABEL, COACHING_PATH, COACHING_SESSION_MINUTES, getValidGoogleMeetUrl, getValidGoogleCalendarEventUrl } from "../lib"
+import { COACHING_DEFAULT_TIMEZONE, COACHING_PATH, COACHING_SESSION_MINUTES, getValidGoogleMeetUrl, getValidGoogleCalendarEventUrl } from "../lib"
 import { cancelCoachingBookingAction, listCoachingAvailabilityAction, reserveCoachingBookingAction } from "../actions"
 import { BookingParticipantStack, SessionAvatarStack } from "./coaching-participant-stacks"
 import { dateFromKey, dateKey, formatSlotTimeLabel, getCalendarGridRange, listCalendarGridDates, startOfMonth, zonedDateKey } from "./coaching-time-picker-utils"
@@ -41,8 +41,8 @@ type CoachingBookingFlowProps = {
 type FlowStep = "date" | "time" | "review" | "done"
 
 const SESSION_DETAILS_DESCRIPTION =
-  "Book a 45-minute advisory session with Coach House leadership to get expert support on your organization's next steps or anything else you'd like to discuss."
-const SESSION_DETAILS_PREVIEW = "Book a 45-minute advisory session with Coach House leadership"
+  "Book a 45-minute advisory meeting with Coach House leadership to get expert support on your organization's next steps or anything else you'd like to discuss."
+const SESSION_DETAILS_PREVIEW = "Book a 45-minute advisory meeting with Coach House leadership"
 
 function formatDateTime(value: string, timezone: string) {
   return new Intl.DateTimeFormat(undefined, {
@@ -60,11 +60,11 @@ function buildGoogleCalendarUrl(booking: CoachingBookingRecord) {
   const dates = `${booking.startsAt.replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z")}/${booking.endsAt.replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z")}`
   const params = new URLSearchParams({
     action: "TEMPLATE",
-    text: `Coach House session with ${booking.coachName}`,
+    text: `Coach House meeting with ${booking.coachName}`,
     dates,
     details: googleMeetUrl
       ? `Join Google Meet: ${googleMeetUrl}\nUse this Google Calendar invite for updates or rescheduling.`
-      : "Coach House coaching session. Use this Google Calendar invite for updates or rescheduling.",
+      : "Coach House coaching meeting. Use this Google Calendar invite for updates or rescheduling.",
     location: googleMeetUrl ?? "Online",
   })
   return `https://calendar.google.com/calendar/render?${params.toString()}`
@@ -76,9 +76,9 @@ function formatDurationLabel(minutes: number) {
 }
 
 function formatAvailabilityMessage(message: string | null) {
-  if (!message) return "No open sessions on this date."
+  if (!message) return "No open meetings on this date."
   if (message.includes("Local Google Calendar broker proxy is not running")) {
-    return "Calendar availability is unavailable in this local session. Start the calendar connection and refresh."
+    return "Calendar availability is unavailable in this local environment. Start the calendar connection and refresh."
   }
   if (message.includes("Google Calendar broker request failed")) {
     return "Calendar availability is temporarily unavailable. Refresh in a moment."
@@ -87,7 +87,7 @@ function formatAvailabilityMessage(message: string | null) {
 }
 
 function priceTierLabel(tier: CoachingBookingPageData["creditSummary"]["priceTier"]) {
-  if (tier === "included") return "Included session"
+  if (tier === "included") return "Included meeting"
   if (tier === "discounted") return "Discounted rate"
   return null
 }
@@ -128,7 +128,7 @@ function SessionDetailsDescription() {
             className="text-foreground hover:text-foreground/80 focus-visible:ring-ring relative inline-flex rounded-sm px-0.5 text-xs font-medium underline underline-offset-4 after:absolute after:-inset-x-2 after:-inset-y-2 after:content-[''] focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
             aria-expanded={detailsExpanded}
             aria-controls="coaching-session-details-description"
-            aria-label={detailsExpanded ? "Show less session details" : "Show more session details"}
+            aria-label={detailsExpanded ? "Show less meeting details" : "Show more meeting details"}
             onClick={() => setDetailsExpanded((current) => !current)}
           >
             {detailsExpanded ? "View less" : "View more"}
@@ -226,15 +226,15 @@ function BookingRow({ booking, onCancel, pending }: { booking: CoachingBookingRe
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Cancel this session?</AlertDialogTitle>
+                  <AlertDialogTitle>Cancel this meeting?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This cancels your {formattedStart} coaching session with {booking.coachName} and removes the coach calendar event.
+                    This cancels your {formattedStart} coaching meeting with {booking.coachName} and removes the coach calendar event.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel disabled={pending}>Keep session</AlertDialogCancel>
+                  <AlertDialogCancel disabled={pending}>Keep meeting</AlertDialogCancel>
                   <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" disabled={pending} onClick={onCancel}>
-                    Cancel session
+                    Cancel meeting
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -250,14 +250,14 @@ function SessionNotesField({ value, disabled, onChange }: { value: string; disab
   return (
     <div data-booking-notes-field="true" className="mt-1.5 flex flex-col gap-2">
       <label htmlFor="coaching-session-notes" className="text-foreground text-sm font-medium">
-        Session notes
+        Notes
       </label>
       <Textarea
         id="coaching-session-notes"
         name="attendee-notes"
         value={value}
         maxLength={COACHING_ATTENDEE_NOTES_MAX_LENGTH}
-        placeholder="Share priorities, questions, or context for the session…"
+        placeholder="Share priorities, questions, or context for the meeting…"
         className="min-h-24 resize-none"
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
@@ -443,7 +443,7 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
         window.location.assign(result.checkoutUrl)
         return
       }
-      toast.success("Session booked.")
+      toast.success("Meeting booked.")
       setStep("done")
     })
   }
@@ -455,13 +455,13 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
         toast.error(result.error)
         return
       }
-      toast.success("Session canceled.")
+      toast.success("Meeting canceled.")
       window.location.assign(COACHING_PATH)
     })
   }
 
   return (
-    <main className="min-h-full px-0 py-0 sm:px-4 sm:py-6 lg:px-6">
+    <main className="flex min-h-full flex-1 items-stretch justify-start px-0 py-0 sm:items-center sm:justify-center sm:px-4 sm:py-6 lg:px-6">
       <h1 className="sr-only">Coaching</h1>
       <div className="mx-auto flex w-full max-w-[42rem] flex-col gap-5 pb-[calc(3rem+env(safe-area-inset-bottom))] sm:gap-6 sm:pb-0">
         <section className="border-border/70 bg-card overflow-hidden rounded-xl border shadow-sm">
@@ -544,7 +544,7 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
                               <p className="text-muted-foreground text-sm">
                                 {availabilityLoading
                                   ? "Checking times…"
-                                  : formatAvailabilityMessage(availabilityMessage ?? (selectedDate ? "No open sessions on this date." : "Pick a date to see available times."))}
+                                  : formatAvailabilityMessage(availabilityMessage ?? (selectedDate ? "No open meetings on this date." : "Pick a date to see available times."))}
                               </p>
                               {!availabilityLoading ? (
                                 <Button type="button" variant="outline" size="sm" className="rounded-full shadow-none" onClick={showCalendar}>
@@ -567,18 +567,18 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
                               {step === "review" && selectedSlot ? (
                                 <motion.div
                                   key={selectedSlot.id}
-                                  className="flex flex-col gap-4"
+                                  className="flex flex-col items-center gap-4 text-center"
                                   initial={reviewMotion.initial}
                                   animate={reviewMotion.animate}
                                   exit={reviewMotion.exit}
                                   transition={stepTransition}
                                 >
-                                  <div className="flex flex-col gap-3">
+                                  <div className="flex flex-col items-center gap-3">
                                     <BookingParticipantStack coaches={initialData.coaches} currentUser={initialData.currentUser} />
                                     <div className="flex flex-col gap-1">
                                       <h2 className="text-sm font-medium">Confirm details</h2>
                                       <p className="text-muted-foreground text-sm">
-                                        {COACHING_JOINT_COACH_LABEL} · {formatDateTime(selectedSlot.startsAt, timezone)}
+                                        {formatDateTime(selectedSlot.startsAt, timezone)}
                                       </p>
                                     </div>
                                   </div>
@@ -592,7 +592,7 @@ export function CoachingBookingFlow({ initialData }: CoachingBookingFlowProps) {
                                   <div className="min-w-0 space-y-1">
                                     <h2 className="text-foreground text-sm font-medium">Choose a time</h2>
                                     <p className="text-muted-foreground text-sm">
-                                      Pick an open session above to review the session details.
+                                      Pick an open meeting above to review the meeting details.
                                     </p>
                                   </div>
                                 </motion.div>

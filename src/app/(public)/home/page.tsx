@@ -48,7 +48,7 @@ const STUDIO_BLOCKS = [
   },
   {
     title: "Coaching rhythm built in",
-    body: "Weekly prompts plus coaching sessions keep your leadership team aligned and moving.",
+    body: "Weekly prompts plus coaching meetings keep your leadership team aligned and moving.",
     icon: CalendarCheck,
   },
 ]

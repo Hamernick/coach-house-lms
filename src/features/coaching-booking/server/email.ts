@@ -167,7 +167,7 @@ export async function sendCoachingBookingConfirmationEmails({
   const sends = []
   if (attendeeRecipients.length > 0) {
     const details = [
-      `Session: Coach House session with ${COACHING_JOINT_COACH_LABEL}`,
+      `Meeting: Coach House meeting with ${COACHING_JOINT_COACH_LABEL}`,
       `When: ${when}`,
       `Timezone: ${timezone}`,
       ...(normalizedAttendeeNotes ? [`Notes: ${normalizedAttendeeNotes}`] : []),
@@ -175,16 +175,16 @@ export async function sendCoachingBookingConfirmationEmails({
     sends.push(
       sendResendEmail({
         to: attendeeRecipients,
-        subject: "Your Coach House coaching session is confirmed",
+        subject: "Your Coach House coaching meeting is confirmed",
         html: buildEmailHtml({
-          heading: "Your coaching session is confirmed",
-          intro: "Your Coach House coaching session has been booked.",
+          heading: "Your coaching meeting is confirmed",
+          intro: "Your Coach House coaching meeting has been booked.",
           details,
           actions: sharedActions,
         }),
         text: buildEmailText({
-          heading: "Your coaching session is confirmed",
-          intro: "Your Coach House coaching session has been booked.",
+          heading: "Your coaching meeting is confirmed",
+          intro: "Your Coach House coaching meeting has been booked.",
           details,
           actions: sharedActions,
         }),
@@ -198,7 +198,7 @@ export async function sendCoachingBookingConfirmationEmails({
 
   if (coachRecipients.length > 0) {
     const details = [
-      `Session: Coach House session with ${COACHING_JOINT_COACH_LABEL}`,
+      `Meeting: Coach House meeting with ${COACHING_JOINT_COACH_LABEL}`,
       `When: ${when}`,
       `Timezone: ${timezone}`,
       ...(attendeeEmail ? [`Attendee: ${attendeeEmail}`] : []),
@@ -207,16 +207,16 @@ export async function sendCoachingBookingConfirmationEmails({
     sends.push(
       sendResendEmail({
         to: coachRecipients,
-        subject: "New Coach House coaching session booked",
+        subject: "New Coach House coaching meeting booked",
         html: buildEmailHtml({
-          heading: "New coaching session booked",
-          intro: "A Coach House coaching session has been confirmed.",
+          heading: "New coaching meeting booked",
+          intro: "A Coach House coaching meeting has been confirmed.",
           details,
           actions: sharedActions,
         }),
         text: buildEmailText({
-          heading: "New coaching session booked",
-          intro: "A Coach House coaching session has been confirmed.",
+          heading: "New coaching meeting booked",
+          intro: "A Coach House coaching meeting has been confirmed.",
           details,
           actions: sharedActions,
         }),

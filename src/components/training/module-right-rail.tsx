@@ -170,21 +170,21 @@ function ModuleCoachPanel() {
           <CoachingAvatarGroup size="sm" />
         </div>
         <Button type="button" size="sm" onClick={handleSchedule} disabled={pending} className="w-full">
-          {pending ? "Opening…" : "Schedule a session"}
+          {pending ? "Opening…" : "Schedule a meeting"}
         </Button>
         {tier === "free" && typeof remaining === "number" && remaining > 0 ? (
           <p className="text-xs text-muted-foreground">
-            {remaining} included session{remaining === 1 ? "" : "s"} remaining.
+            {remaining} included meeting{remaining === 1 ? "" : "s"} remaining.
           </p>
         ) : null}
         {tier === "free" && remaining === 0 ? (
           <p className="text-xs text-muted-foreground">
-            Included sessions complete. Future sessions continue through checkout.
+            Included meetings complete. Future meetings continue through checkout.
           </p>
         ) : null}
         {tier === "discounted" ? (
           <p className="text-xs text-muted-foreground">
-            Operations Support discount applied to this coaching session.
+            Operations Support discount applied to this coaching meeting.
           </p>
         ) : null}
         {tier === "full" ? (

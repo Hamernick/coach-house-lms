@@ -29,7 +29,7 @@ export function CoachSchedulingCard({
       </CardHeader>
       <CardContent className="flex flex-col gap-3 px-4 pb-4 pt-0">
         <Button asChild size="sm" className="w-full">
-          <Link href="/coaching">Book a session</Link>
+          <Link href="/coaching">Book a meeting</Link>
         </Button>
       </CardContent>
     </Card>

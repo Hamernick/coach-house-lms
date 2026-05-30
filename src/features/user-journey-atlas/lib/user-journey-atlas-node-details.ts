@@ -322,10 +322,10 @@ export const USER_JOURNEY_NODE_DETAILS: Record<
     dataFields: ["active org", "coaching tier", "booking URL", "meeting request count"],
     systemEvents: ["Returns Google booking links and records that scheduling was opened"],
     healthStatus: "integration-gap",
-    healthSummary: "Scheduling opens an external booking link but does not sync confirmed sessions yet.",
+    healthSummary: "Scheduling opens an external booking link but does not sync confirmed meetings yet.",
   },
   coaching_tier_rules: {
-    dataFields: ["included sessions", "sessions used", "free/discounted/full tier"],
+    dataFields: ["included meetings", "meetings used", "free/discounted/full tier"],
     systemEvents: ["Chooses the coaching booking tier for the account"],
     healthStatus: "integration-gap",
     healthSummary: "Eligibility is local, but confirmed appointments are not reconciled from calendars.",

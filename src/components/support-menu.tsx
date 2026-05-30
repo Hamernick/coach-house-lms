@@ -54,7 +54,7 @@ export function SupportMenu({
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => void schedule()} disabled={pending}>
           <CalendarCheck className="h-4 w-4" aria-hidden />
-          {pending ? "Opening..." : "Book a session"}
+          {pending ? "Opening..." : "Book a meeting"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

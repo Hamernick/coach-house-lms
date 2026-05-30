@@ -36,8 +36,8 @@ type BookingForConfirmation = {
 
 function buildCalendarEventDescription(booking: BookingForConfirmation) {
   const notes = booking.attendee_notes?.trim()
-  const base = `Coach House coaching session with ${COACHING_JOINT_COACH_LABEL} booked inside the platform.`
-  return notes ? `${base}\n\nSession notes from attendee:\n${notes}` : base
+  const base = `Coach House coaching meeting with ${COACHING_JOINT_COACH_LABEL} booked inside the platform.`
+  return notes ? `${base}\n\nMeeting notes from attendee:\n${notes}` : base
 }
 
 async function insertLedgerEntryIfMissing({
@@ -113,7 +113,7 @@ export async function confirmCoachingBooking({
     .filter((email): email is string => Boolean(email))
   const calendarEvent = await createGoogleCoachingEvent({
     coachId,
-    summary: `Coach House session with ${COACHING_JOINT_COACH_LABEL}`,
+    summary: `Coach House meeting with ${COACHING_JOINT_COACH_LABEL}`,
     description: buildCalendarEventDescription(booking),
     startsAt: booking.starts_at,
     endsAt: booking.ends_at,
@@ -131,7 +131,7 @@ export async function confirmCoachingBooking({
       booking,
       source: "purchase",
       quantity: 1,
-      note: "Paid coaching session purchased through Stripe.",
+      note: "Paid coaching meeting purchased through Stripe.",
       stripeCheckoutSessionId,
       stripePaymentIntentId,
     })
@@ -175,10 +175,10 @@ export async function confirmCoachingBooking({
   const notifyResult = await createNotification(admin as never, {
     userId: booking.user_id,
     orgId: booking.org_id,
-    title: "Coaching session confirmed",
+    title: "Coaching meeting confirmed",
     description: googleMeetUrl
-      ? "Your Coach House session is booked. The Meet link is ready in Coaching."
-      : "Your Coach House session is booked. The Meet link will appear in Coaching when ready.",
+      ? "Your Coach House meeting is booked. The Meet link is ready in Coaching."
+      : "Your Coach House meeting is booked. The Meet link will appear in Coaching when ready.",
     href: "/coaching",
     tone: "success",
     type: "coaching_booking_confirmed",

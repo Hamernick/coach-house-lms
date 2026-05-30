@@ -17,7 +17,7 @@ import { getGoogleCoachingParticipantEmail } from "../../../../../../features/co
 
 const CANONICAL_SITE_URL = "https://coachhouse.app"
 const ICS_LINE_LIMIT = 75
-const ICS_FILENAME_PREFIX = "coach-house-advisory-session"
+const ICS_FILENAME_PREFIX = "coach-house-advisory-meeting"
 const COACHING_PARTICIPANT_NAMES = {
   joel: "Joel",
   paula: "Paula",
@@ -106,15 +106,15 @@ function buildIcsDescription({
   coachingUrl: string
 }) {
   return [
-    `Coach House advisory session with ${COACHING_JOINT_COACH_LABEL}.`,
+    `Coach House advisory meeting with ${COACHING_JOINT_COACH_LABEL}.`,
     "",
     `Duration: ${COACHING_SESSION_MINUTES} minutes`,
     ...(googleMeetUrl ? [`Google Meet: ${googleMeetUrl}`] : []),
     ...(googleEventHtmlLink ? [`Google Calendar invite: ${googleEventHtmlLink}`] : []),
-    `Manage session: ${coachingUrl}`,
+    `Manage meeting: ${coachingUrl}`,
     "",
     "Use the Google Calendar invite for updates or rescheduling.",
-    ...(attendeeNotes?.trim() ? ["", `Session notes: ${attendeeNotes.trim()}`] : []),
+    ...(attendeeNotes?.trim() ? ["", `Meeting notes: ${attendeeNotes.trim()}`] : []),
   ].join("\n")
 }
 
@@ -217,7 +217,7 @@ export async function GET(
     `DTSTAMP:${formatIcsDate(new Date().toISOString())}`,
     `DTSTART:${formatIcsDate(booking.starts_at)}`,
     `DTEND:${formatIcsDate(booking.ends_at)}`,
-    `SUMMARY:${escapeIcsText(`Coach House Advisory Session with ${COACHING_JOINT_COACH_LABEL}`)}`,
+    `SUMMARY:${escapeIcsText(`Coach House Advisory Meeting with ${COACHING_JOINT_COACH_LABEL}`)}`,
     `DESCRIPTION:${escapeIcsText(description)}`,
     "STATUS:CONFIRMED",
     "TRANSP:OPAQUE",

@@ -107,7 +107,7 @@ function parseRange(input: CoachingAvailabilityInput) {
 function normalizeAttendeeNotes(value: string | undefined) {
   const notes = value?.trim() ?? ""
   if (notes.length > COACHING_ATTENDEE_NOTES_MAX_LENGTH) {
-    throw new Error(`Keep session notes under ${COACHING_ATTENDEE_NOTES_MAX_LENGTH} characters.`)
+    throw new Error(`Keep notes under ${COACHING_ATTENDEE_NOTES_MAX_LENGTH} characters.`)
   }
   return notes.length > 0 ? notes : null
 }
@@ -374,7 +374,7 @@ export async function cancelCoachingBookingAction(
       return { ok: false, error: "Coaching booking not found." }
     }
     if (Date.parse(booking.starts_at) <= Date.now()) {
-      return { ok: false, error: "Past coaching sessions cannot be canceled here." }
+      return { ok: false, error: "Past coaching meetings cannot be canceled here." }
     }
 
     const googleEventId = getValidGoogleCalendarEventId(booking.google_event_id)
@@ -402,7 +402,7 @@ export async function cancelCoachingBookingAction(
     const notifyResult = await createNotification(admin as never, {
       userId: booking.user_id,
       orgId: booking.org_id,
-      title: "Coaching session canceled",
+      title: "Coaching meeting canceled",
       description: "Your coaching credit is back in your balance.",
       href: COACHING_PATH,
       tone: "info",
@@ -439,7 +439,7 @@ export async function rescheduleCoachingBookingAction(
       return { ok: false, error: "Coaching booking not found." }
     }
     if (Date.parse(booking.starts_at) <= Date.now()) {
-      return { ok: false, error: "Past coaching sessions cannot be rescheduled here." }
+      return { ok: false, error: "Past coaching meetings cannot be rescheduled here." }
     }
     if (!isValidFutureDate(input.startsAt)) {
       return { ok: false, error: "Choose a future coaching slot." }

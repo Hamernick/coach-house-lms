@@ -43,7 +43,6 @@ export function DocumentsTab({
     handleDelete,
     handleDownload,
     handleDeletePolicy,
-    handleDismissBanner,
     handlePolicyDialogOpenChange,
     handleSavePolicy,
     handleSortColumnChange,
@@ -92,7 +91,6 @@ export function DocumentsTab({
         <DocumentsBanner
           hasRoadmapDocuments={hasRoadmapDocuments}
           canEdit={canEdit}
-          onDismiss={handleDismissBanner}
         />
       ) : null}
 

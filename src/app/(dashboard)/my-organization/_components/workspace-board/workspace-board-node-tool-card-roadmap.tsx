@@ -6,16 +6,20 @@ import { WORKSPACE_ROADMAP_PATH } from "@/lib/workspace/routes"
 
 type WorkspaceBoardRoadmapCardProps = {
   sections: RoadmapSection[]
+  collapsed?: boolean
 }
 
 export function WorkspaceBoardRoadmapCard({
   sections,
+  collapsed = false,
 }: WorkspaceBoardRoadmapCardProps) {
   return (
-    <div className="px-1 pb-1">
+    <div className="px-1 pb-1.5">
       <RoadmapNavigatorSection
         sections={sections}
         basePath={WORKSPACE_ROADMAP_PATH}
+        showHeader={false}
+        collapsed={collapsed}
       />
     </div>
   )

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import EarthIcon from "lucide-react/dist/esm/icons/earth"
 
 import { RESOURCE_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
 
@@ -55,7 +56,7 @@ describe("app sidebar nav data", () => {
     ).not.toContain("Platform Lab")
   })
 
-  it("replaces the workspace nav with the member workspace routes when enabled", () => {
+  it("hides project and task nav from regular member workspace users", () => {
     const nav = buildMainNav({
       isAdmin: false,
       showOrgAdmin: false,
@@ -67,13 +68,25 @@ describe("app sidebar nav data", () => {
     expect(nav.map((item) => item.title)).toEqual([
       "Workspace",
       "Find",
-      "Projects",
-      "Tasks",
       "People",
       "Documents",
     ])
     expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
-    expect(nav.find((item) => item.title === "Tasks")?.href).toBe("/tasks")
+    expect(nav.find((item) => item.title === "Find")?.icon).toBe(EarthIcon)
+    expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
+  })
+
+  it("keeps org admin out of the main sidebar nav even when available", () => {
+    const nav = buildMainNav({
+      isAdmin: false,
+      showOrgAdmin: true,
+      canAccessOrgAdmin: true,
+      showMemberWorkspace: true,
+      hasMemberWorkspaceAccess: true,
+    })
+
+    expect(nav.find((item) => item.title === "Admin")).toBeUndefined()
   })
 
   it("includes member workspace routes alongside platform routes for platform admins", () => {
@@ -93,7 +106,6 @@ describe("app sidebar nav data", () => {
       "Tasks",
       "People",
       "Documents",
-      "Admin",
       "Platform",
       "Platform Lab",
       "Prototypes",
@@ -136,6 +148,7 @@ describe("app sidebar nav data", () => {
     })
 
     expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
+    expect(nav.find((item) => item.title === "Find")?.icon).toBe(EarthIcon)
     expect(nav.find((item) => item.title === "Find")?.locked).not.toBe(true)
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
@@ -156,14 +169,12 @@ describe("app sidebar nav data", () => {
     expect(nav.map((item) => item.badge)).not.toContain("Upgrade")
   })
 
-  it("does not show Marketplace in the sidebar resource nav", () => {
+  it("does not duplicate Find in the sidebar resource nav", () => {
     expect(RESOURCE_NAV.map((item) => item.name)).toEqual([
       "Knowledge base",
-      "Find organizations",
       "Community",
     ])
-    expect(RESOURCE_NAV.find((item) => item.name === "Find organizations")).toMatchObject({
-      url: "/find",
-    })
+    expect(RESOURCE_NAV.find((item) => item.name === "Find organizations")).toBeUndefined()
+    expect(RESOURCE_NAV.find((item) => item.url === "/find")).toBeUndefined()
   })
 })

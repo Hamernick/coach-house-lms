@@ -3,16 +3,15 @@
 import type { LucideIcon } from "lucide-react"
 import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
 import DatabaseIcon from "lucide-react/dist/esm/icons/database"
+import EarthIcon from "lucide-react/dist/esm/icons/earth"
 import FlaskConicalIcon from "lucide-react/dist/esm/icons/flask-conical"
 import FolderKanbanIcon from "lucide-react/dist/esm/icons/folder-kanban"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
 import LayoutGridIcon from "lucide-react/dist/esm/icons/layout-grid"
 import LockIcon from "lucide-react/dist/esm/icons/lock"
-import MapPinnedIcon from "lucide-react/dist/esm/icons/map-pinned"
 import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
 import PanelTopIcon from "lucide-react/dist/esm/icons/panel-top"
-import ShieldIcon from "lucide-react/dist/esm/icons/shield"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
 
 import {
@@ -36,8 +35,6 @@ type MainNavItem = {
 
 export function buildMainNav({
   isAdmin,
-  showOrgAdmin,
-  canAccessOrgAdmin,
   showMemberWorkspace = false,
   hasMemberWorkspaceAccess = true,
   showWorkspaceHome = true,
@@ -54,7 +51,7 @@ export function buildMainNav({
   const workspaceHomeItem = showWorkspaceHome
     ? [{ title: "Workspace", href: "/workspace", icon: LayoutGridIcon }]
     : []
-  const memberWorkspaceItems: MainNavItem[] = hasMemberWorkspaceAccess || isAdmin
+  const memberWorkspaceItems: MainNavItem[] = isAdmin
     ? [
         { title: "Projects", href: "/projects", icon: FolderKanbanIcon },
         { title: "Tasks", href: "/tasks", icon: ClipboardListIcon },
@@ -64,17 +61,14 @@ export function buildMainNav({
     ...(showMemberWorkspace
       ? [
           ...workspaceHomeItem,
-          { title: "Find", href: FIND_PATH, icon: MapPinnedIcon },
+          { title: "Find", href: FIND_PATH, icon: EarthIcon },
           ...memberWorkspaceItems,
           { title: "People", href: "/people", icon: UsersIcon },
           { title: "Documents", href: "/organization/documents", icon: LockIcon },
         ]
-      : [{ title: "Find", href: FIND_PATH, icon: MapPinnedIcon }]),
+      : [{ title: "Find", href: FIND_PATH, icon: EarthIcon }]),
   ]
 
-  if (showOrgAdmin && canAccessOrgAdmin) {
-    items.push({ title: "Admin", href: "/admin", icon: ShieldIcon })
-  }
   if (isAdmin) {
     items.push({ title: "Platform", href: "/admin/platform", icon: DatabaseIcon })
     if (showPlatformLab) {
@@ -100,11 +94,6 @@ export const RESOURCE_NAV = [
     url: "https://coach-house.gitbook.io/coach-house",
     icon: NotebookIcon,
     external: true,
-  },
-  {
-    name: "Find organizations",
-    url: FIND_PATH,
-    icon: MapPinnedIcon,
   },
   {
     name: "Community",

@@ -68,7 +68,11 @@ function OrganizationList({
   onSelect: (organization: MemberWorkspaceAccessibleOrganization) => void
 }) {
   return (
-    <Command className="rounded-2xl border border-border/60 bg-background">
+    <Command
+      key={activeOrganization.orgId}
+      defaultValue={activeOrganization.orgId}
+      className="rounded-2xl border border-border/60 bg-background"
+    >
       <CommandInput placeholder="Search organizations" />
       <CommandList className="max-h-[18rem]">
         <CommandEmpty>No organizations found.</CommandEmpty>
@@ -78,9 +82,14 @@ function OrganizationList({
             return (
               <CommandItem
                 key={organization.orgId}
-                value={`${organization.name} ${organization.role}`}
+                value={organization.orgId}
+                keywords={[organization.name, organization.role]}
                 onSelect={() => onSelect(organization)}
-                className="gap-3 rounded-xl px-3 py-2"
+                aria-current={isActive ? "true" : undefined}
+                className={cn(
+                  "gap-3 rounded-xl px-3 py-2",
+                  isActive && "bg-accent text-accent-foreground",
+                )}
               >
                 <Avatar className="size-8 rounded-xl border border-border/70">
                   <AvatarImage alt={organization.name} src={organization.imageUrl ?? undefined} />
@@ -89,16 +98,27 @@ function OrganizationList({
                   </AvatarFallback>
                 </Avatar>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-foreground">
+                  <p
+                    className={cn(
+                      "truncate text-sm font-medium",
+                      isActive ? "text-accent-foreground" : "text-foreground",
+                    )}
+                  >
                     {organization.name}
                   </p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p
+                    className={cn(
+                      "truncate text-xs",
+                      isActive ? "text-accent-foreground/80" : "text-muted-foreground",
+                    )}
+                  >
                     {formatRole(organization.role)}
                   </p>
                 </div>
                 <CheckIcon
                   className={cn(
-                    "size-4 text-primary transition-opacity",
+                    "size-4 transition-opacity",
+                    isActive ? "text-accent-foreground" : "text-primary",
                     isActive ? "opacity-100" : "opacity-0",
                   )}
                   aria-hidden
@@ -203,7 +223,7 @@ export function MemberWorkspaceOrgSwitcher({
         <div className="border-b border-border/60 px-4 py-3">
           <p className="text-sm font-semibold text-foreground">Switch organization</p>
           <p className="mt-1 text-xs text-muted-foreground">
-            Change the active organization for Projects, People, and Notifications.
+            Change the active organization for Workspace, Admin, and Documents.
           </p>
         </div>
         <div className="p-3">

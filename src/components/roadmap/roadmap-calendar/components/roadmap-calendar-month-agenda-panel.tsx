@@ -1,10 +1,18 @@
 "use client"
 
-import { memo } from "react"
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react"
 import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
 import PlusIcon from "lucide-react/dist/esm/icons/plus"
 
+import { ScrollFadeEffect } from "@/components/scroll-fade-effect"
 import { Calendar } from "@/components/ui/calendar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -199,6 +207,75 @@ const RoadmapCalendarAgendaRow = memo(function RoadmapCalendarAgendaRow({
   )
 })
 
+const RoadmapCalendarAgendaScroll = memo(function RoadmapCalendarAgendaScroll({
+  children,
+  fadeEligible,
+}: {
+  children: ReactNode
+  fadeEligible: boolean
+}) {
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const [hasScrollableOverflow, setHasScrollableOverflow] = useState(false)
+
+  const updateScrollableOverflow = useCallback(() => {
+    const node = scrollRef.current
+    const next =
+      Boolean(fadeEligible && node && node.scrollHeight > node.clientHeight + 1)
+
+    setHasScrollableOverflow((previous) => (previous === next ? previous : next))
+  }, [fadeEligible])
+
+  useEffect(() => {
+    updateScrollableOverflow()
+  }, [children, updateScrollableOverflow])
+
+  useEffect(() => {
+    const node = scrollRef.current
+    if (!node) return
+
+    updateScrollableOverflow()
+
+    const frameId = window.requestAnimationFrame(updateScrollableOverflow)
+    window.addEventListener("resize", updateScrollableOverflow)
+
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(updateScrollableOverflow)
+    resizeObserver?.observe(node)
+    Array.from(node.children).forEach((child) => resizeObserver?.observe(child))
+
+    const mutationObserver =
+      typeof MutationObserver === "undefined"
+        ? null
+        : new MutationObserver(updateScrollableOverflow)
+    mutationObserver?.observe(node, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      window.removeEventListener("resize", updateScrollableOverflow)
+      resizeObserver?.disconnect()
+      mutationObserver?.disconnect()
+    }
+  }, [children, updateScrollableOverflow])
+
+  const showScrollFade = fadeEligible && hasScrollableOverflow
+
+  return (
+    <ScrollFadeEffect
+      ref={scrollRef}
+      enabled={showScrollFade}
+      className="mt-3 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain pb-4 pr-1 pt-1 [--mask-height:1.5rem] [--scroll-buffer:1rem]"
+    >
+      {children}
+    </ScrollFadeEffect>
+  )
+})
+
 export const RoadmapCalendarMonthAgendaPanel = memo(function RoadmapCalendarMonthAgendaPanel({
   month,
   selectedDate,
@@ -225,7 +302,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(function RoadmapCalendarMont
   const showTodayButton = !isSameCalendarMonth(month, new Date())
 
   return (
-    <section className="flex max-h-[min(39rem,calc(100svh-6.5rem))] min-h-0 w-full flex-col rounded-[30px] border border-border/60 bg-muted/45 p-2.5">
+    <section className="flex h-[min(42rem,calc(100svh-5.5rem))] min-h-0 w-full flex-col overflow-hidden rounded-[30px] border border-border/60 bg-muted/45 p-2.5">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 px-2 pb-3 pt-1">
         <div className="flex min-w-0 items-center gap-2">
           <h2 className="shrink-0 whitespace-nowrap text-lg font-semibold tracking-normal text-foreground">
@@ -320,7 +397,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(function RoadmapCalendarMont
               eventCount: dayEvents.length,
             })}
           </p>
-          <div className="mt-3 flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto overscroll-contain pr-1">
+          <RoadmapCalendarAgendaScroll fadeEligible={dayEvents.length > 1 && !isLoading}>
             {isLoading ? (
               <p className="px-2 py-3 text-sm text-muted-foreground">Loading…</p>
             ) : dayEvents.length > 0 ? (
@@ -343,7 +420,7 @@ export const RoadmapCalendarMonthAgendaPanel = memo(function RoadmapCalendarMont
                   : "Select a date to see scheduled events."}
               </p>
             )}
-          </div>
+          </RoadmapCalendarAgendaScroll>
 
           <div className="mt-3 shrink-0 border-t border-border/40 pt-3">
             <RoadmapCalendarAddEventMenu

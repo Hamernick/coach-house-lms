@@ -2,11 +2,10 @@ import Link from "next/link"
 import { createPortal } from "react-dom"
 import type { CSSProperties, RefObject } from "react"
 
-import CalendarCheckIcon from "lucide-react/dist/esm/icons/calendar-check"
 import CircleUserIcon from "lucide-react/dist/esm/icons/circle-user"
 import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
 import LogOutIcon from "lucide-react/dist/esm/icons/log-out"
-import MessageSquareIcon from "lucide-react/dist/esm/icons/message-square"
+import ShieldIcon from "lucide-react/dist/esm/icons/shield"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -22,6 +21,8 @@ type NavUserMenuContentProps = {
   displayEmail: string
   avatarFallback: string
   isAdmin: boolean
+  showOrgAdmin: boolean
+  canAccessOrgAdmin: boolean
   signOutPending: boolean
   onCloseMenu: () => void
   onOpenSettings: () => void
@@ -37,6 +38,8 @@ export function NavUserMenuContent({
   displayEmail,
   avatarFallback,
   isAdmin,
+  showOrgAdmin,
+  canAccessOrgAdmin,
   signOutPending,
   onCloseMenu,
   onOpenSettings,
@@ -81,20 +84,16 @@ export function NavUserMenuContent({
         <CircleUserIcon className="size-4" />
         Account settings
       </Button>
-      <Button asChild variant="ghost" className="h-auto w-full justify-start gap-2 rounded-md px-2 py-2 text-left">
-        <Link href="/coaching" onClick={onCloseMenu}>
-          <CalendarCheckIcon className="size-4" />
-          Book coaching
+      {showOrgAdmin && canAccessOrgAdmin ? (
+        <Link
+          href="/admin"
+          className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+          onClick={onCloseMenu}
+        >
+          <ShieldIcon className="size-4" />
+          Admin
         </Link>
-      </Button>
-      <a
-        href="mailto:joel@coachhousesolutions.org?subject=Coach%20House%20Feedback"
-        className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
-        onClick={onCloseMenu}
-      >
-        <MessageSquareIcon className="size-4" />
-        Submit feedback
-      </a>
+      ) : null}
       {!isAdmin ? (
         <Link
           href="/billing"

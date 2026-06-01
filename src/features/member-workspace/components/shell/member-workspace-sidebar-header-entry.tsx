@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic"
 
-import type { MemberWorkspaceHeaderState } from "@/features/member-workspace"
+import type { MemberWorkspaceHeaderState } from "../../types"
 
 const MemberWorkspaceSidebarHeader = dynamic(
   () =>

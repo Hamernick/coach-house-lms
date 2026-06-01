@@ -55,12 +55,12 @@ export function DocumentsResultsTableHeader({
       <TableRow>
         <TableHead>
           <SortHeaderButton
-            column="status"
+            column="visibility"
             sortColumn={sortColumn}
             sortDirection={sortDirection}
             onToggleSortColumn={onToggleSortColumn}
           >
-            Status
+            Visibility
           </SortHeaderButton>
         </TableHead>
         <TableHead className="min-w-[300px]">
@@ -96,12 +96,12 @@ export function DocumentsResultsTableHeader({
         </TableHead>
         <TableHead>
           <SortHeaderButton
-            column="visibility"
+            column="status"
             sortColumn={sortColumn}
             sortDirection={sortDirection}
             onToggleSortColumn={onToggleSortColumn}
           >
-            Visibility
+            Status
           </SortHeaderButton>
         </TableHead>
         <TableHead>

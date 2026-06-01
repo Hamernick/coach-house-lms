@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation"
 
-import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { DocumentsNotesRightRail } from "@/components/organization/documents-notes-right-rail"
 import {
   DocumentsTab,
@@ -190,7 +189,6 @@ export default async function MyOrganizationDocumentsPage() {
   return (
     <div className="mx-auto flex w-full max-w-[90rem] flex-col gap-6">
       <DocumentsNotesRightRail notes={moduleNotes} />
-      <PageTutorialButton tutorial="documents" />
       <div className="space-y-2">
         <h1 className="text-2xl font-semibold tracking-tight">Documents</h1>
         <p className="text-sm text-muted-foreground">

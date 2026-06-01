@@ -190,7 +190,7 @@ export function WorkspaceAcceleratorHeaderPicker({
       <SelectTrigger
         {...reactGrabOwnerProps}
         className={cn(
-          "relative h-8 min-h-8 gap-1.5 overflow-visible border-border/65 bg-background/80 px-2 text-left text-xs",
+          "relative h-8 min-h-8 gap-1.5 overflow-visible border-border/65 bg-background/80 px-2 text-left text-sm",
           layout === "rail"
             ? WORKSPACE_ACCELERATOR_RAIL_PICKER_TRIGGER_CLASSNAME
             : viewerOpen

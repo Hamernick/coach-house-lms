@@ -6,7 +6,9 @@ export {
   MemberWorkspacePeoplePage,
   MemberWorkspaceProjectsPage,
   MemberWorkspaceTasksPage,
-} from "./components"
+} from "./public-components"
+export { MemberWorkspaceSidebarHeader } from "./components/shell/member-workspace-sidebar-header"
+export { MemberWorkspaceSidebarHeaderEntry } from "./components/shell/member-workspace-sidebar-header-entry"
 export {
   buildProjectAssetOpenPath,
   detectProjectAssetTypeFromName,

@@ -82,7 +82,9 @@ export function DocumentsResultsTableRow({
   return (
     <TableRow key={row.id} data-tour={tourIdForRow(row)}>
       <TableCell>
-        <StatusBadge status={row.status} />
+        <Badge variant="outline" className="capitalize">
+          {row.visibility}
+        </Badge>
       </TableCell>
       <TableCell className="whitespace-normal">
         <div className="min-w-0 space-y-0.5">
@@ -125,9 +127,7 @@ export function DocumentsResultsTableRow({
         </Badge>
       </TableCell>
       <TableCell>
-        <Badge variant="outline" className="capitalize">
-          {row.visibility}
-        </Badge>
+        <StatusBadge status={row.status} />
       </TableCell>
       <TableCell className="text-muted-foreground">
         {formatUpdatedAt(row.updatedAt)}

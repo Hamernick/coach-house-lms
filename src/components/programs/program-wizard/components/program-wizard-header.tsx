@@ -1,5 +1,4 @@
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 
 import { STEPS } from "../constants"
@@ -9,7 +8,6 @@ type ProgramWizardHeaderProps = {
   currentStep: number
   completion: number
   isAutoSaving: boolean
-  onStepSelect: (stepIndex: number) => void
 }
 
 export function ProgramWizardHeader({
@@ -17,7 +15,6 @@ export function ProgramWizardHeader({
   currentStep,
   completion,
   isAutoSaving,
-  onStepSelect,
 }: ProgramWizardHeaderProps) {
   return (
     <header className="border-b border-border/60 px-4 py-3 sm:px-6 sm:py-4">
@@ -40,22 +37,8 @@ export function ProgramWizardHeader({
           </Badge>
         </div>
       </div>
-      <div className="mt-3 space-y-2">
+      <div className="mt-3">
         <Progress value={completion} aria-label="Program builder progress" />
-        <div className="flex flex-wrap gap-1.5">
-          {STEPS.map((step, index) => (
-            <Button
-              key={step.title}
-              type="button"
-              size="sm"
-              variant={index === currentStep ? "secondary" : "outline"}
-              onClick={() => onStepSelect(index)}
-              className="h-auto rounded-full px-2.5 py-1 text-[11px]"
-            >
-              {index + 1}. {step.title}
-            </Button>
-          ))}
-        </div>
       </div>
     </header>
   )

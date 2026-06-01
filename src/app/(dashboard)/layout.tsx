@@ -2,7 +2,8 @@ import type { ReactNode } from "react"
 
 import { AppShell } from "@/components/app-shell"
 import { FrameEscape } from "@/components/navigation/frame-escape"
-import { MemberWorkspaceSidebarHeaderEntry } from "./_components/member-workspace-sidebar-header-entry"
+import { AppPricingFeedbackPrompt } from "@/features/app-pricing-feedback"
+import { MemberWorkspaceSidebarHeader } from "@/features/member-workspace"
 
 import { resolveDashboardLayoutState } from "./_lib/dashboard-layout-state"
 
@@ -18,7 +19,7 @@ export default async function DashboardLayout({
       <FrameEscape />
       <AppShell
         sidebarHeaderContent={
-          <MemberWorkspaceSidebarHeaderEntry state={state.memberWorkspaceHeader} />
+          <MemberWorkspaceSidebarHeader state={state.memberWorkspaceHeader} />
         }
         sidebarTree={state.sidebarTree}
         user={state.user}
@@ -36,8 +37,6 @@ export default async function DashboardLayout({
         currentPlanTier={state.currentPlanTier}
         showMemberWorkspace={state.showMemberWorkspace}
         organizationName={state.organizationName}
-        tutorialWelcome={state.tutorialWelcome}
-        pricingFeedbackPrompt={state.appPricingFeedbackPrompt}
         isTester={state.isTester}
         onboardingLocked={state.onboardingLocked}
         onboardingIntentFocus={state.onboardingIntentFocus}
@@ -46,6 +45,13 @@ export default async function DashboardLayout({
       >
         {children}
       </AppShell>
+      {state.user?.email && !state.onboardingLocked ? (
+        <AppPricingFeedbackPrompt
+          prompt={state.appPricingFeedbackPrompt}
+          tutorial="platform"
+          tutorialPending={state.tutorialWelcome.platform}
+        />
+      ) : null}
     </>
   )
 }

@@ -1,5 +1,6 @@
 export { MemberWorkspaceOrgSwitcher } from "./shell/member-workspace-org-switcher"
 export { MemberWorkspacePageLoading } from "./shell/member-workspace-page-loading"
+export { MemberWorkspaceSidebarHeaderEntry } from "./shell/member-workspace-sidebar-header-entry"
 export { MemberWorkspaceProjectDetailLoading } from "./projects/member-workspace-project-detail-loading"
 export { MemberWorkspaceProjectDetailPage } from "./projects/member-workspace-project-detail-page"
 export { MemberWorkspaceProjectsPage } from "./projects/member-workspace-projects-page"

@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
 import { SidebarProvider } from "@/components/ui/sidebar"
-import { MemberWorkspaceProjectDetailPage } from "@/features/member-workspace"
+import { MemberWorkspaceProjectDetailPage } from "@/features/member-workspace/components/projects/member-workspace-project-detail-page"
 import { getProjectDetailsById } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
 import {
   buildMemberWorkspaceProjectDetailDraft,

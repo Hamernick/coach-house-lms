@@ -3,7 +3,6 @@ import type { ReactNode } from "react"
 import { AppShell } from "@/components/app-shell"
 import { AppBreadcrumbs } from "@/components/app-shell/breadcrumbs"
 import { FrameEscape } from "@/components/navigation/frame-escape"
-import type { AppPricingFeedbackPromptState } from "@/features/app-pricing-feedback"
 import {
   MemberWorkspaceOrgSwitcher,
   setActiveOrganizationAction,
@@ -40,7 +39,6 @@ type AuthenticatedFindShellState = {
     platform: boolean
     accelerator: boolean
   }
-  appPricingFeedbackPrompt: AppPricingFeedbackPromptState | null
   onboardingLocked: boolean
   onboardingIntentFocus: "build" | "find" | "fund" | "support" | null
   memberMapOnboarding: {
@@ -92,8 +90,6 @@ export function AuthenticatedFindShell({
         ownedElectiveModuleSlugs={state.ownedElectiveModuleSlugs}
         currentPlanTier={state.currentPlanTier}
         organizationName={state.organizationName}
-        tutorialWelcome={state.tutorialWelcome}
-        pricingFeedbackPrompt={state.appPricingFeedbackPrompt}
         onboardingLocked={state.onboardingLocked}
         onboardingIntentFocus={state.onboardingIntentFocus}
         formationStatus={state.formationStatus}

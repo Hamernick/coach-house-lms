@@ -1,5 +1,7 @@
 "use client"
 
+import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
+import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 import type { ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -10,6 +12,7 @@ import type {
   WorkspaceAcceleratorCardRuntimeSnapshot,
   WorkspaceAcceleratorCardStep,
 } from "@/features/workspace-accelerator-card"
+import { cn } from "@/lib/utils"
 
 import { WorkspaceBoardCalendarCard } from "./workspace-board-calendar-card"
 import { WorkspaceBoardCardFrame } from "./workspace-board-card-frame"
@@ -28,7 +31,10 @@ import {
   WorkspaceBoardRoadmapCard,
 } from "./workspace-board-node-tool-cards"
 import type { WorkspaceBoardExecutionTab } from "./workspace-board-node-tool-card-execution"
-import type { WorkspaceCardOverflowAction, WorkspaceCardSize } from "./workspace-board-types"
+import type {
+  WorkspaceCardOverflowAction,
+  WorkspaceCardSize,
+} from "./workspace-board-types"
 import { WorkspaceBoardLazyAcceleratorCardPanel } from "./workspace-board-accelerator-lazy"
 import {
   renderAcceleratorTitleIcon,
@@ -65,9 +71,11 @@ export function renderWorkspaceBoardResolvedCard({
   onExecutionTabChange,
   onProgramsCreateOpenChange,
   onRequestOpenAcceleratorStep,
+  onRoadmapNavigatorCollapsedChange,
   onSizeChange,
   presentationMode,
   programsCreateOpen,
+  roadmapNavigatorCollapsed,
   seed,
   shouldTrackEmbeddedAcceleratorRuntime,
 }: {
@@ -93,16 +101,16 @@ export function renderWorkspaceBoardResolvedCard({
   hideHeaderSubtitle: boolean
   isCanvasFullscreen: boolean
   onAcceleratorRuntimeActionsChange?: (
-    actions: WorkspaceAcceleratorCardRuntimeActions,
+    actions: WorkspaceAcceleratorCardRuntimeActions
   ) => void
   onAcceleratorRuntimeChange?: (
-    snapshot: WorkspaceAcceleratorCardRuntimeSnapshot,
+    snapshot: WorkspaceAcceleratorCardRuntimeSnapshot
   ) => void
   onAcceleratorTutorialActionComplete?: (
-    mode?: "complete" | "complete-and-advance",
+    mode?: "complete" | "complete-and-advance"
   ) => void
   onCommunicationsMenuActionsChange: (
-    actions: WorkspaceCardOverflowAction[],
+    actions: WorkspaceCardOverflowAction[]
   ) => void
   onExecutionTabChange: (nextValue: string) => void
   onProgramsCreateOpenChange: (open: boolean) => void
@@ -113,9 +121,11 @@ export function renderWorkspaceBoardResolvedCard({
     step: WorkspaceAcceleratorCardStep
     selectedLessonGroupKey: string | null
   }) => boolean
+  onRoadmapNavigatorCollapsedChange: (next: boolean) => void
   onSizeChange: WorkspaceBoardNodeData["onSizeChange"]
   presentationMode: boolean
   programsCreateOpen: boolean
+  roadmapNavigatorCollapsed: boolean
   seed: WorkspaceBoardNodeData["seed"]
   shouldTrackEmbeddedAcceleratorRuntime: boolean
 }) {
@@ -175,17 +185,23 @@ export function renderWorkspaceBoardResolvedCard({
   }
 
   const programsPreviewOnly = isWorkspaceProgramsPreviewOnlyStep(
-    data.tutorialStepId,
+    data.tutorialStepId
   )
 
   return (
     <WorkspaceBoardCardFrame
       cardId={cardId}
-      title={cardMeta.title}
+      title={cardId === "roadmap" ? "Strategic Roadmap" : cardMeta.title}
       subtitle={cardMeta.subtitle}
       titleBadge={comingSoonTitleBadge}
       tone={cardId === "accelerator" ? "accelerator" : "default"}
-      titleIcon={cardId === "accelerator" ? renderAcceleratorTitleIcon() : null}
+      titleIcon={
+        cardId === "accelerator" ? (
+          renderAcceleratorTitleIcon()
+        ) : cardId === "roadmap" ? (
+          <WaypointsIcon className="size-4" aria-hidden />
+        ) : null
+      }
       hideTitle={cardId === "accelerator"}
       hideSubtitle={hideHeaderSubtitle}
       headerDetails={
@@ -193,7 +209,32 @@ export function renderWorkspaceBoardResolvedCard({
       }
       headerMeta={cardId === "accelerator" ? acceleratorHeaderMeta : undefined}
       headerAction={
-        cardId === "programs" && canEdit ? (
+        cardId === "roadmap" ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-md"
+            aria-label={
+              roadmapNavigatorCollapsed
+                ? "Expand strategic roadmap"
+                : "Collapse strategic roadmap"
+            }
+            aria-controls="roadmap-section-picker-trigger"
+            aria-expanded={!roadmapNavigatorCollapsed}
+            onClick={() =>
+              onRoadmapNavigatorCollapsedChange(!roadmapNavigatorCollapsed)
+            }
+          >
+            <ChevronDownIcon
+              className={cn(
+                "text-muted-foreground h-3.5 w-3.5 transition-transform",
+                roadmapNavigatorCollapsed && "-rotate-90"
+              )}
+              aria-hidden
+            />
+          </Button>
+        ) : cardId === "programs" && canEdit ? (
           <Button
             type="button"
             size="sm"
@@ -210,10 +251,12 @@ export function renderWorkspaceBoardResolvedCard({
       onSizeChange={(nextSize) =>
         onSizeChange(
           cardId,
-          cardId === "communications" && nextSize === "sm" ? "md" : nextSize,
+          cardId === "communications" && nextSize === "sm" ? "md" : nextSize
         )
       }
-      fullHref={cardId === "accelerator" ? acceleratorCardHref : cardMeta.fullHref}
+      fullHref={
+        cardId === "accelerator" ? acceleratorCardHref : cardMeta.fullHref
+      }
       canEdit={canEdit}
       contentClassName={contentClassName}
       menuActions={
@@ -300,9 +343,9 @@ export function renderWorkspaceBoardResolvedCard({
       ) : null}
       {cardId === "roadmap" ? (
         <WorkspaceBoardRoadmapCard
+          collapsed={roadmapNavigatorCollapsed}
           sections={
-            data.organizationEditorData?.roadmapSections ??
-            seed.roadmapSections
+            data.organizationEditorData?.roadmapSections ?? seed.roadmapSections
           }
         />
       ) : null}

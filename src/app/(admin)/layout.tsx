@@ -2,102 +2,49 @@ import type { ReactNode } from "react"
 
 import { redirect } from "next/navigation"
 
-import { fetchSidebarTree } from "@/lib/academy"
 import { AppShell } from "@/components/app-shell"
-import { createSupabaseServerClient } from "@/lib/supabase"
-import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
-import { supabaseErrorToError } from "@/lib/supabase/errors"
-import { resolveActiveOrganization } from "@/lib/organization/active-org"
-import type { Json } from "@/lib/supabase"
-import {
-  hasPaidTeamAccessFromSubscription,
-  resolveAccountBillingCancellationRisk,
-} from "@/lib/billing/subscription-access"
-import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
+import { MemberWorkspaceSidebarHeader } from "@/features/member-workspace"
+import { resolveDashboardLayoutState } from "@/app/(dashboard)/_lib/dashboard-layout-state"
 
-export default async function AdminLayout({ children, breadcrumbs }: { children: ReactNode; breadcrumbs: ReactNode }) {
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
+export default async function AdminLayout({
+  children,
+  breadcrumbs,
+}: {
+  children: ReactNode
+  breadcrumbs: ReactNode
+}) {
+  const state = await resolveDashboardLayoutState()
 
-  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw supabaseErrorToError(userError, "Unable to load user.")
-  }
-  if (!user) {
+  if (!state.userPresent) {
     redirect("/team/login?redirect=/admin")
   }
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("full_name, avatar_url")
-    .eq("id", user.id)
-    .maybeSingle<{ full_name: string | null; avatar_url: string | null }>()
-
-  const displayName = profile?.full_name ?? (user?.user_metadata?.full_name as string | undefined) ?? null
-  const email = user?.email ?? null
-  const avatar = profile?.avatar_url ?? (user?.user_metadata?.avatar_url as string | undefined) ?? null
-
-  const { data: roleRow } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle<{ role: string | null }>()
-  const isAdmin = roleRow?.role === "admin"
-  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
-  const showOrgAdmin = role === "owner" || role === "admin" || isAdmin
-  let canAccessOrgAdmin = isAdmin
-  if (!isAdmin && showOrgAdmin) {
-    const { data: subscription } = await supabase
-      .from("subscriptions")
-      .select("status, metadata, created_at")
-      .eq("user_id", orgId)
-      .not("stripe_subscription_id", "ilike", "stub_%")
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle<{ status: string | null; metadata: Json | null }>()
-    canAccessOrgAdmin = hasPaidTeamAccessFromSubscription(subscription ?? null)
-  }
-  const [entitlements, orgRowResult, accountBillingResult] = await Promise.all([
-    fetchLearningEntitlements({
-      supabase,
-      userId: user.id,
-      orgUserId: orgId,
-      isAdmin,
-    }),
-    supabase
-      .from("organizations")
-      .select("profile")
-      .eq("user_id", orgId)
-      .maybeSingle<{ profile: Json | null }>(),
-    resolveAccountBillingCancellationRisk({
-      supabase,
-      userId: user.id,
-    }),
-  ])
-  const hasBillingCancellationRisk =
-    "error" in accountBillingResult
-      ? false
-      : accountBillingResult.hasBillingCancellationRisk
-  const showAccelerator = entitlements.hasAcceleratorAccess || entitlements.hasElectiveAccess
-  const orgProfile = (orgRowResult.data?.profile as Record<string, unknown> | null) ?? null
-  const orgName = typeof orgProfile?.name === "string" ? orgProfile.name.trim() : ""
-  const organizationName = orgName.length > 0 ? orgName : null
-
-  const sidebarTree = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
 
   return (
     <AppShell
       breadcrumbs={breadcrumbs}
-      sidebarTree={sidebarTree}
-      user={{ name: displayName, email, avatar }}
-      isAdmin={isAdmin}
-      showOrgAdmin={showOrgAdmin}
-      canAccessOrgAdmin={canAccessOrgAdmin}
-      showAccelerator={showAccelerator}
-      hasBillingCancellationRisk={hasBillingCancellationRisk}
-      organizationName={organizationName}
+      sidebarHeaderContent={
+        <MemberWorkspaceSidebarHeader state={state.memberWorkspaceHeader} />
+      }
+      sidebarTree={state.sidebarTree}
+      user={state.user}
+      isAdmin={state.isAdmin}
+      isTester={state.isTester}
+      showOrgAdmin={state.showOrgAdmin}
+      canAccessOrgAdmin={state.canAccessOrgAdmin}
+      acceleratorProgress={state.acceleratorProgress}
+      showAccelerator={state.showAccelerator}
+      showLiveBadges={state.showLiveBadges}
+      hasActiveSubscription={state.hasActiveSubscription}
+      hasBillingCancellationRisk={state.hasBillingCancellationRisk}
+      hasAcceleratorAccess={state.hasAcceleratorAccess}
+      hasElectiveAccess={state.hasElectiveAccess}
+      ownedElectiveModuleSlugs={state.ownedElectiveModuleSlugs}
+      currentPlanTier={state.currentPlanTier}
+      showMemberWorkspace={state.showMemberWorkspace}
+      organizationName={state.organizationName}
+      onboardingLocked={state.onboardingLocked}
+      onboardingIntentFocus={state.onboardingIntentFocus}
+      formationStatus={state.formationStatus}
       context="admin"
     >
       {children}

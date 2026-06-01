@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+
 import { describe, expect, it } from "vitest"
 
 import { resolveAcceleratorProgressRailState } from "@/components/accelerator/accelerator-progress-rail"
@@ -5,6 +8,12 @@ import {
   ACCELERATOR_FUNDABLE_THRESHOLD,
   ACCELERATOR_VERIFIED_THRESHOLD,
 } from "@/lib/accelerator/readiness"
+
+const ROOT = process.cwd()
+
+function readSource(relativePath: string) {
+  return readFileSync(join(ROOT, relativePath), "utf8")
+}
 
 describe("accelerator progress rail", () => {
   it("fills only the first segment before the fundable checkpoint", () => {
@@ -36,5 +45,24 @@ describe("accelerator progress rail", () => {
     expect(state.verifiedReached).toBe(true)
     expect(state.firstSegmentClass).toBe("bg-emerald-500")
     expect(state.secondSegmentClass).toBe("bg-emerald-500")
+  })
+
+  it("uses one-word milestone tooltips instead of checklist bodies", () => {
+    const source = readSource(
+      "src/components/accelerator/accelerator-progress-rail.tsx",
+    )
+
+    expect(source).toMatch(
+      /<TooltipContent[\s\S]*className="font-medium"[\s\S]*>\s*Fundable\s*<\/TooltipContent>/,
+    )
+    expect(source).toMatch(
+      /<TooltipContent[\s\S]*className="font-medium"[\s\S]*>\s*Verified\s*<\/TooltipContent>/,
+    )
+    expect(source).toContain('aria-label="Fundable checkpoint"')
+    expect(source).toContain('aria-label="Verified checkpoint"')
+    expect(source).not.toContain("AcceleratorMilestoneTooltip")
+    expect(source).not.toContain('from "@/components/ui/badge"')
+    expect(source).not.toContain("No milestone requirements yet.")
+    expect(source).not.toContain("of {items.length} complete")
   })
 })

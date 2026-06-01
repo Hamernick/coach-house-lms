@@ -15,7 +15,9 @@ function readSource(relativePath: string) {
   return readFileSync(join(ROOT, relativePath), "utf8")
 }
 
-function buildEvent(overrides: Partial<RoadmapCalendarEvent> = {}): RoadmapCalendarEvent {
+function buildEvent(
+  overrides: Partial<RoadmapCalendarEvent> = {}
+): RoadmapCalendarEvent {
   return {
     id: "event-1",
     orgId: "org-1",
@@ -38,8 +40,12 @@ describe("roadmap calendar month agenda", () => {
   it("matches selected-day events by calendar day instead of the Today button path", () => {
     const event = buildEvent()
 
-    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 4, 14))).toBe(true)
-    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 4, 15))).toBe(false)
+    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 4, 14))).toBe(
+      true
+    )
+    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 4, 15))).toBe(
+      false
+    )
   })
 
   it("marks multi-day events on every visible day they touch", () => {
@@ -48,11 +54,12 @@ describe("roadmap calendar month agenda", () => {
       endsAt: new Date(2026, 4, 15, 0, 30).toISOString(),
     })
 
-    expect(getRoadmapCalendarEventDates(event).map((date) => date.getDate())).toEqual([
-      14,
-      15,
-    ])
-    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 4, 15))).toBe(true)
+    expect(
+      getRoadmapCalendarEventDates(event).map((date) => date.getDate())
+    ).toEqual([14, 15])
+    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 4, 15))).toBe(
+      true
+    )
   })
 
   it("expands recurring events into agenda days and event dots", () => {
@@ -60,12 +67,18 @@ describe("roadmap calendar month agenda", () => {
       recurrence: { frequency: "weekly", count: 3 },
     })
     const dateKeys = getRoadmapCalendarEventDates(event).map((date) =>
-      date.toISOString().slice(0, 10),
+      date.toISOString().slice(0, 10)
     )
 
-    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 4, 21))).toBe(true)
-    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 4, 28))).toBe(true)
-    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 5, 4))).toBe(false)
+    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 4, 21))).toBe(
+      true
+    )
+    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 4, 28))).toBe(
+      true
+    )
+    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 5, 4))).toBe(
+      false
+    )
     expect(dateKeys).toEqual(["2026-05-14", "2026-05-21", "2026-05-28"])
   })
 
@@ -74,11 +87,15 @@ describe("roadmap calendar month agenda", () => {
       recurrence: { frequency: "monthly", endDate: "2026-07-31" },
     })
     const dateKeys = getRoadmapCalendarEventDates(event).map((date) =>
-      date.toISOString().slice(0, 10),
+      date.toISOString().slice(0, 10)
     )
 
-    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 6, 14))).toBe(true)
-    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 7, 14))).toBe(false)
+    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 6, 14))).toBe(
+      true
+    )
+    expect(roadmapCalendarEventOccursOnDay(event, new Date(2026, 7, 14))).toBe(
+      false
+    )
     expect(dateKeys).toEqual(["2026-05-14", "2026-06-14", "2026-07-14"])
   })
 
@@ -97,33 +114,154 @@ describe("roadmap calendar month agenda", () => {
   })
 
   it("keeps the popover chrome contained and limits scrolling to the agenda list", () => {
-    const viewportControls = readSource(
-      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-viewport-controls-panel.tsx",
+    const calendarAction = readSource(
+      "src/components/app-shell/components/app-shell-calendar-action.tsx"
     )
     const agendaPanel = readSource(
-      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx",
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
+    const scrollFadeEffect = readSource("src/components/scroll-fade-effect.tsx")
+    const popover = readSource("src/components/ui/popover.tsx")
+    const drawer = readSource("src/components/ui/drawer.tsx")
     const agendaScrollContainers = agendaPanel.match(/overflow-y-auto/g) ?? []
 
-    expect(viewportControls).toContain("bg-background/95 p-0 shadow-none backdrop-blur-xl")
-    expect(viewportControls).not.toContain("bg-transparent")
-    expect(viewportControls).not.toContain("backdrop-blur-0")
-    expect(viewportControls).not.toContain("max-h-[min(43rem,calc(100svh-7rem))]")
+    expect(calendarAction).toContain("bg-background/95")
+    expect(calendarAction).toContain("p-0 shadow-none backdrop-blur-xl")
+    expect(calendarAction).not.toContain("bg-transparent")
+    expect(calendarAction).not.toContain("backdrop-blur-0")
+    expect(calendarAction).not.toContain("max-h-[min(43rem,calc(100svh-7rem))]")
+    expect(agendaPanel).toContain("h-[min(42rem,calc(100svh-5.5rem))]")
+    expect(agendaPanel).toContain("overflow-hidden rounded-[30px]")
+    expect(agendaPanel).toContain(
+      'import { ScrollFadeEffect } from "@/components/scroll-fade-effect"'
+    )
+    expect(agendaPanel).toContain("const RoadmapCalendarAgendaScroll = memo")
+    expect(agendaPanel).toContain("<ScrollFadeEffect")
+    expect(agendaPanel).toContain("enabled={showScrollFade}")
+    expect(agendaPanel).toContain(
+      "const showScrollFade = fadeEligible && hasScrollableOverflow"
+    )
+    expect(agendaPanel).toContain("node.scrollHeight > node.clientHeight + 1")
+    expect(agendaPanel).toContain(
+      "fadeEligible={dayEvents.length > 1 && !isLoading}"
+    )
+    expect(agendaPanel).toContain(
+      "[--mask-height:1.5rem] [--scroll-buffer:1rem]"
+    )
+    expect(agendaPanel).toContain("pb-4 pr-1 pt-1")
+    expect(scrollFadeEffect).toContain("forwardRef<HTMLDivElement")
+    expect(scrollFadeEffect).toContain("ref={ref}")
+    expect(popover).toContain("forceMount,")
+    expect(popover).toContain(
+      "<PopoverPrimitive.Portal forceMount={forceMount}>"
+    )
+    expect(popover).toContain("forceMount={forceMount}")
+    expect(drawer).toContain("forceMount,")
+    expect(drawer).toContain(
+      '<DrawerPortal data-slot="drawer-portal" forceMount={forceMount}>'
+    )
+    expect(drawer).toContain("forceMount={forceMount}")
+    expect(drawer).toContain("modal={open === false ? false : modal}")
+    expect(drawer).toContain("data-[state=closed]:pointer-events-none")
+    expect(drawer).toContain("data-[state=closed]:invisible")
     expect(agendaScrollContainers).toHaveLength(1)
     expect(agendaPanel).not.toContain("shadow-[")
     expect(agendaPanel).not.toContain("shadow-sm")
   })
 
+  it("renders the calendar trigger as a shell-level header action", () => {
+    const viewportControls = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-viewport-controls-panel.tsx"
+    )
+    const calendarAction = readSource(
+      "src/components/app-shell/components/app-shell-calendar-action.tsx"
+    )
+    const appShellHeader = readSource(
+      "src/components/app-shell/components/app-shell-header.tsx"
+    )
+    const headerActionSlotIndex = appShellHeader.indexOf(
+      'id="site-header-actions-right"'
+    )
+    const calendarActionIndex = appShellHeader.indexOf(
+      "<AppShellCalendarAction"
+    )
+    const notificationsIndex = appShellHeader.indexOf("<NotificationsMenu")
+
+    expect(calendarAction).toContain(
+      "const [calendarHasOpened, setCalendarHasOpened]"
+    )
+    expect(calendarAction).toContain(
+      "const [RoadmapCalendar, setRoadmapCalendar]"
+    )
+    expect(calendarAction).not.toContain('import dynamic from "next/dynamic"')
+    expect(calendarAction).toContain(
+      'await import("@/components/roadmap/roadmap-calendar")'
+    )
+    expect(calendarAction).not.toContain('import { RoadmapCalendar }')
+    expect(calendarAction).not.toContain(
+      'from "@/components/workspace/workspace-tutorial-callout"'
+    )
+    expect(calendarAction).toContain(
+      'import("@/components/workspace/workspace-tutorial-callout")'
+    )
+    expect(calendarAction).toContain(
+      "const handleCalendarOpenChange = useCallback"
+    )
+    expect(calendarAction).toContain("setCalendarHasOpened(true)")
+    expect(calendarAction).toContain("const isMobile = useIsMobile()")
+    expect(calendarAction).toContain("if (isMobile)")
+    expect(calendarAction).toContain("<Drawer")
+    expect(calendarAction).toContain("open={calendarOpen}")
+    expect(calendarAction).toContain(
+      "<DrawerTrigger asChild>{calendarTrigger}</DrawerTrigger>"
+    )
+    expect(calendarAction).toContain("handleOnly")
+    expect(calendarAction).toContain(
+      '<DrawerTitle className="sr-only">Workspace calendar</DrawerTitle>'
+    )
+    expect(calendarAction).toContain("onOpenChange={handleCalendarOpenChange}")
+    expect(calendarAction).toContain("{calendarHasOpened ? (")
+    expect(calendarAction).toContain("forceMount")
+    expect(calendarAction).toContain("data-[state=closed]:hidden")
+    expect(calendarAction).toContain("h-[88dvh] max-h-[88dvh]")
+    expect(calendarAction).toContain(
+      "data-[vaul-drawer-direction=bottom]:max-h-[88dvh]"
+    )
+    expect(calendarAction).toContain(
+      "pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+    )
+    expect(calendarAction).toContain(
+      "overflow-y-auto overscroll-contain px-3 pt-3 pb-0"
+    )
+    expect(calendarAction).toContain(
+      'aria-label={calendarOpen ? "Hide calendar" : "Show calendar"}'
+    )
+    expect(calendarAction).toContain("useAppShellCalendarActionRegistration")
+    expect(viewportControls).toContain("useRegisterAppShellCalendarTutorial")
+    expect(viewportControls).toContain(
+      "WorkspaceCanvasSurfaceV2HelpOverlay integrated"
+    )
+    expect(viewportControls).not.toContain('<HeaderActionsPortal slot="right">')
+    expect(viewportControls).not.toContain("PopoverAnchor")
+    expect(headerActionSlotIndex).toBeGreaterThan(-1)
+    expect(calendarActionIndex).toBeGreaterThan(headerActionSlotIndex)
+    expect(notificationsIndex).toBeGreaterThan(calendarActionIndex)
+  })
+
   it("stretches the month grid evenly across the calendar panel", () => {
     const agendaPanel = readSource(
-      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx",
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
     const dayButton = readSource(
-      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-day-with-event-dots.tsx",
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-day-with-event-dots.tsx"
     )
 
-    expect(agendaPanel).toContain('month_grid: "w-full table-fixed border-collapse"')
-    expect(agendaPanel).toContain('weekdays: "w-full border-b border-border/40"')
+    expect(agendaPanel).toContain(
+      'month_grid: "w-full table-fixed border-collapse"'
+    )
+    expect(agendaPanel).toContain(
+      'weekdays: "w-full border-b border-border/40"'
+    )
     expect(agendaPanel).toContain('"w-[14.285714%] pb-2')
     expect(agendaPanel).toContain('weeks: "w-full"')
     expect(agendaPanel).toContain('week: "w-full"')
@@ -133,19 +271,23 @@ describe("roadmap calendar month agenda", () => {
 
   it("attributes the shared shadcn calendar root back to the roadmap month-grid owner", () => {
     const agendaPanel = readSource(
-      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx",
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
 
     expect(agendaPanel).toContain("getReactGrabOwnerProps")
-    expect(agendaPanel).toContain('ownerId: "roadmap-calendar-month-agenda:month-grid"')
-    expect(agendaPanel).toContain('component: "RoadmapCalendarMonthAgendaPanel"')
+    expect(agendaPanel).toContain(
+      'ownerId: "roadmap-calendar-month-agenda:month-grid"'
+    )
+    expect(agendaPanel).toContain(
+      'component: "RoadmapCalendarMonthAgendaPanel"'
+    )
     expect(agendaPanel).toContain('slot: "month-grid"')
     expect(agendaPanel).toContain('primitiveImport: "@/components/ui/calendar"')
   })
 
   it("keeps the add-event menu in the visible agenda footer without letting the list push it away", () => {
     const agendaPanel = readSource(
-      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx",
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
     const menuUsages = agendaPanel.match(/<RoadmapCalendarAddEventMenu/g) ?? []
     const addMenuIndex = agendaPanel.indexOf("<RoadmapCalendarAddEventMenu")
@@ -155,7 +297,9 @@ describe("roadmap calendar month agenda", () => {
     expect(addMenuIndex).toBeGreaterThan(-1)
     expect(agendaScrollIndex).toBeGreaterThan(-1)
     expect(addMenuIndex).toBeGreaterThan(agendaScrollIndex)
-    expect(agendaPanel).toContain("mt-3 shrink-0 border-t border-border/40 pt-3")
+    expect(agendaPanel).toContain(
+      "mt-3 shrink-0 border-t border-border/40 pt-3"
+    )
     expect(agendaPanel).toContain("mt-3 flex min-h-0 flex-1")
     expect(agendaPanel).not.toContain("min-h-[7.5rem]")
     expect(agendaPanel).toContain("disabled={!canManageCalendar}")
@@ -164,7 +308,7 @@ describe("roadmap calendar month agenda", () => {
 
   it("keeps coaching out of the month-grid header", () => {
     const agendaPanel = readSource(
-      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx",
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
     const calendar = readSource("src/components/roadmap/roadmap-calendar.tsx")
 
@@ -173,11 +317,15 @@ describe("roadmap calendar month agenda", () => {
     expect(agendaPanel).not.toContain('slot: "coaching-action"')
     expect(agendaPanel).not.toContain("useCoachingBooking")
     expect(agendaPanel).toContain("shrink-0 whitespace-nowrap text-lg")
-    expect(agendaPanel).not.toContain('<span className="min-w-0 truncate whitespace-nowrap leading-snug">')
-    expect(agendaPanel).toContain('grid grid-cols-[minmax(0,1fr)_auto] items-center')
+    expect(agendaPanel).not.toContain(
+      '<span className="min-w-0 truncate whitespace-nowrap leading-snug">'
+    )
+    expect(agendaPanel).toContain(
+      "grid grid-cols-[minmax(0,1fr)_auto] items-center"
+    )
     expect(agendaPanel).toContain("flex min-w-0 shrink-0 items-center gap-1.5")
     expect(agendaPanel).toContain(
-      "const showTodayButton = !isSameCalendarMonth(month, new Date())",
+      "const showTodayButton = !isSameCalendarMonth(month, new Date())"
     )
     expect(agendaPanel).toContain("{showTodayButton ? (")
     expect(agendaPanel).toContain(") : null}")
@@ -190,26 +338,30 @@ describe("roadmap calendar month agenda", () => {
   it("keeps event-editor state changes off the month grid render path", () => {
     const calendar = readSource("src/components/roadmap/roadmap-calendar.tsx")
     const agendaPanel = readSource(
-      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx",
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
     const eventDrawer = readSource(
-      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-event-drawer.tsx",
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-event-drawer.tsx"
     )
 
     expect(calendar).toContain("useCallback")
     expect(calendar).toContain("const handleEditEvent = useCallback")
     expect(calendar).toContain("const formatTimeRange = useCallback")
-    expect(agendaPanel).toContain("export const RoadmapCalendarMonthAgendaPanel = memo")
+    expect(agendaPanel).toContain(
+      "export const RoadmapCalendarMonthAgendaPanel = memo"
+    )
     expect(agendaPanel).toContain("const RoadmapCalendarAgendaRow = memo")
-    expect(eventDrawer).toContain("export const RoadmapCalendarEventDrawer = memo")
+    expect(eventDrawer).toContain(
+      "export const RoadmapCalendarEventDrawer = memo"
+    )
   })
 
   it("keeps the add-event controls aligned with shadcn select and menu composition", () => {
     const agendaPanel = readSource(
-      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx",
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
     const eventDrawer = readSource(
-      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-event-drawer.tsx",
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-event-drawer.tsx"
     )
 
     expect(agendaPanel).toContain("DropdownMenuGroup")
@@ -223,7 +375,7 @@ describe("roadmap calendar month agenda", () => {
 
   it("shows event row status and role targeting without adding a second calendar surface", () => {
     const agendaPanel = readSource(
-      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx",
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
 
     expect(agendaPanel).toContain("ROLE_LABEL_BY_ID")
@@ -234,12 +386,14 @@ describe("roadmap calendar month agenda", () => {
 
   it("keeps full agenda times visible below the event title", () => {
     const agendaPanel = readSource(
-      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx",
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
 
     expect(agendaPanel).toContain("grid-cols-[auto_minmax(0,1fr)]")
     expect(agendaPanel).toContain("whitespace-normal")
     expect(agendaPanel).not.toContain("grid-cols-[auto_3.75rem_minmax(0,1fr)]")
-    expect(agendaPanel).not.toContain("truncate text-left text-xs text-muted-foreground/70 tabular-nums")
+    expect(agendaPanel).not.toContain(
+      "truncate text-left text-xs text-muted-foreground/70 tabular-nums"
+    )
   })
 })

@@ -2,7 +2,6 @@ import type { ReactNode } from "react"
 
 import type { SidebarClass } from "@/lib/academy"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
-import type { AppPricingFeedbackPromptState } from "@/features/app-pricing-feedback"
 
 export type AppShellProps = {
   children: ReactNode
@@ -29,8 +28,6 @@ export type AppShellProps = {
   ownedElectiveModuleSlugs?: string[]
   currentPlanTier?: PricingPlanTier
   organizationName?: string | null
-  tutorialWelcome?: { platform: boolean; accelerator: boolean }
-  pricingFeedbackPrompt?: AppPricingFeedbackPromptState | null
   onboardingLocked?: boolean
   onboardingIntentFocus?: "build" | "find" | "fund" | "support" | null
   context?: "platform" | "accelerator" | "public" | "admin"

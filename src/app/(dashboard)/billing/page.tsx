@@ -14,7 +14,6 @@ import {
   resolveStripeRuntimeConfigForAudience,
 } from "@/lib/billing/stripe-runtime"
 import type { Json } from "@/lib/supabase"
-import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { StripePoweredBadge } from "@/components/billing/stripe-powered-badge"
 import {
   resolveDevtoolsAudience,
@@ -92,8 +91,6 @@ export default async function BillingPage() {
 
   return (
     <div className="space-y-6 px-4 py-6 lg:px-6">
-      <PageTutorialButton tutorial="billing" />
-
       <Card className="overflow-hidden border-border/70">
         <div className="h-1 w-full bg-gradient-to-r from-foreground/30 via-primary/40 to-foreground/30" aria-hidden />
         <CardHeader className="space-y-4">

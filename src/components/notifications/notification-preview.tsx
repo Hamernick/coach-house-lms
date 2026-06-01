@@ -7,12 +7,14 @@ import { type NotificationItem } from "@/components/notifications/types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { cn } from "@/lib/utils"
 
 type NotificationPreviewProps = {
   item: NotificationItem | null
   loading: boolean
   updating: boolean
   requestUpdating: "accepted" | "declined" | null
+  className?: string
   onOpen: (item: NotificationItem) => void
   onToggleRead: (item: NotificationItem) => void
   onRespondToOrganizationAccessRequest: (
@@ -26,13 +28,19 @@ export function NotificationPreview({
   loading,
   updating,
   requestUpdating,
+  className,
   onOpen,
   onToggleRead,
   onRespondToOrganizationAccessRequest,
 }: NotificationPreviewProps) {
   if (loading && !item) {
     return (
-      <div className="flex min-h-[10rem] items-center justify-center border-t border-border/60 px-4 py-6 text-xs text-muted-foreground md:min-h-0 md:flex-1 md:border-t-0 md:border-l">
+      <div
+        className={cn(
+          "flex min-h-[10rem] items-center justify-center border-t border-border/60 px-4 py-6 text-xs text-muted-foreground md:min-h-0 md:flex-1 md:border-t-0 md:border-l",
+          className,
+        )}
+      >
         Loading…
       </div>
     )
@@ -40,14 +48,24 @@ export function NotificationPreview({
 
   if (!item) {
     return (
-      <div className="flex min-h-[10rem] items-center justify-center border-t border-border/60 px-4 py-6 text-xs text-muted-foreground md:min-h-0 md:flex-1 md:border-t-0 md:border-l">
+      <div
+        className={cn(
+          "flex min-h-[10rem] items-center justify-center border-t border-border/60 px-4 py-6 text-xs text-muted-foreground md:min-h-0 md:flex-1 md:border-t-0 md:border-l",
+          className,
+        )}
+      >
         No notifications in this view.
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-[10rem] max-h-[min(38dvh,20rem)] flex-col border-t border-border/60 md:min-h-0 md:max-h-none md:flex-1 md:border-t-0 md:border-l">
+    <div
+      className={cn(
+        "flex min-h-[10rem] max-h-[min(38dvh,20rem)] flex-col border-t border-border/60 md:min-h-0 md:max-h-none md:flex-1 md:border-t-0 md:border-l",
+        className,
+      )}
+    >
       <div className="border-b border-border/60 px-4 py-4">
         <div className="flex items-start gap-3">
           <NotificationToneIcon tone={item.tone} />

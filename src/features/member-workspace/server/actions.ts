@@ -1,5 +1,7 @@
 "use server"
 
+import { revalidatePath } from "next/cache"
+
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { writeActiveOrganizationCookie } from "@/lib/organization/active-org-cookie"
 import type { MemberWorkspaceSetActiveOrganizationResult } from "../types"
@@ -30,5 +32,13 @@ export async function setActiveOrganizationAction(
   }
 
   await writeActiveOrganizationCookie(organization.orgId)
+  revalidatePath("/admin")
+  revalidatePath("/my-organization")
+  revalidatePath("/organization")
+  revalidatePath("/organization/documents")
+  revalidatePath("/workspace")
+  revalidatePath("/projects")
+  revalidatePath("/tasks")
+  revalidatePath("/people")
   return { ok: true, orgId: organization.orgId }
 }

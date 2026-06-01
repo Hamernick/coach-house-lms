@@ -13,6 +13,8 @@ type NotificationsListProps = {
   selectedId: string | null
   loading: boolean
   error: string | null
+  className?: string
+  viewportClassName?: string
   onRetry?: () => void
   emptyLabel?: string
   onSelect: (item: NotificationItem) => void
@@ -23,13 +25,21 @@ export function NotificationsList({
   selectedId,
   loading,
   error,
+  className,
+  viewportClassName,
   onRetry,
   emptyLabel = "Inbox is empty",
   onSelect,
 }: NotificationsListProps) {
   if (loading) {
     return (
-      <ScrollArea className="min-h-[12rem] max-h-[min(34dvh,18rem)] md:min-h-0 md:max-h-none">
+      <ScrollArea
+        className={cn(
+          "min-h-[12rem] max-h-[min(34dvh,18rem)] overflow-hidden md:min-h-0 md:max-h-none",
+          className,
+        )}
+        viewportClassName={viewportClassName}
+      >
         <div className="space-y-2 px-4 py-4">
           {Array.from({ length: 4 }).map((_, idx) => (
             <div key={idx} className="border-border/60 bg-background/60 flex items-start gap-3 rounded-lg border px-3 py-3">
@@ -48,7 +58,12 @@ export function NotificationsList({
 
   if (error) {
     return (
-      <div className="text-muted-foreground px-4 py-6 text-center text-xs">
+      <div
+        className={cn(
+          "text-muted-foreground px-4 py-6 text-center text-xs",
+          className,
+        )}
+      >
         Unable to load notifications.
         <div className="mt-3">
           <Button type="button" size="sm" variant="outline" onClick={onRetry ?? (() => window.location.reload())}>
@@ -60,11 +75,26 @@ export function NotificationsList({
   }
 
   if (items.length === 0) {
-    return <div className="text-muted-foreground px-4 py-6 text-center text-xs">{emptyLabel}</div>
+    return (
+      <div
+        className={cn(
+          "text-muted-foreground px-4 py-6 text-center text-xs",
+          className,
+        )}
+      >
+        {emptyLabel}
+      </div>
+    )
   }
 
   return (
-    <ScrollArea className="min-h-[12rem] max-h-[min(34dvh,18rem)] md:min-h-0 md:max-h-none">
+    <ScrollArea
+      className={cn(
+        "min-h-[12rem] max-h-[min(34dvh,18rem)] overflow-hidden md:min-h-0 md:max-h-none",
+        className,
+      )}
+      viewportClassName={viewportClassName}
+    >
       <div className="divide-border/60 divide-y">
         {items.map((item) => (
           <div
@@ -75,7 +105,7 @@ export function NotificationsList({
               type="button"
               variant="ghost"
               className={cn(
-                "h-auto min-w-0 flex-1 justify-start gap-3 whitespace-normal rounded-lg p-2 text-left hover:bg-transparent",
+                "h-auto w-full min-w-0 justify-start gap-3 whitespace-normal rounded-lg p-2 text-left hover:bg-transparent",
                 selectedId === item.id ? "bg-accent/50" : "hover:bg-accent/30",
               )}
               aria-pressed={selectedId === item.id}

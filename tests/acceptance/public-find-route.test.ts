@@ -124,16 +124,17 @@ describe("public find routes", () => {
     expect(publicMapSource).toContain("renderDesktopSidebar={renderMapOverlaySidebar}")
     expect(publicMapSource).not.toContain("w-[23rem]")
     expect(publicMapSource).not.toContain("manageShellSidebarOpen={false}")
-    expect(appShellSource).toContain('data-shell-mode={useFullBleedContent ? "full-bleed" : "default"}')
+    expect(appShellSource).toContain("data-shell-mode={")
+    expect(appShellSource).toContain('useFullBleedContent ? "full-bleed" : "default"')
     expect(appShellSource).toContain("md:[--shell-right-rail-width:min(22rem,36vw)]")
     expect(shellSource).toContain("showWorkspaceHome={state.showMemberWorkspace}")
     expect(shellSource).toContain("showMemberWorkspace={state.showMemberWorkspace}")
     expect(shellSource).toContain("sidebarHeaderContent={")
     expect(shellSource).toContain("MemberWorkspaceOrgSwitcher")
     expect(shellSource).toContain("state.memberWorkspaceHeader")
-    expect(appShellSource).toContain(
-      'isMobile ? "rounded-none border-0" : "rounded-[28px] border border-[color:var(--shell-border)]"',
-    )
+    expect(appShellSource).toContain("isMobile")
+    expect(appShellSource).toContain('? "rounded-none border-0"')
+    expect(appShellSource).toContain(': "rounded-[28px] border border-[color:var(--shell-border)]"')
     expect(appShellSource).not.toContain("useFullBleedContent || isMobile")
   })
 

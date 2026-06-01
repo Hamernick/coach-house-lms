@@ -2,12 +2,9 @@ import { redirect } from "next/navigation"
 import type { OrgPerson } from "@/actions/people"
 import type { OrgProgram, ProfileTab } from "@/components/organization/org-profile-card/types"
 import { cleanupOrgProfileHtml } from "@/lib/organization/profile-cleanup"
-import { resolveProfileAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
-import {
-  canEditOrganization,
-  resolveActiveOrganization,
-} from "@/lib/organization/active-org"
-import { createSupabaseServerClient, type Json } from "@/lib/supabase"
+import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
+import { canEditOrganization } from "@/lib/organization/active-org"
+import type { Json } from "@/lib/supabase"
 import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { sortAcceleratorModules } from "@/lib/accelerator/module-order"
@@ -20,7 +17,6 @@ import {
 } from "@/lib/workspace/routes"
 import { normalizePersonCategory } from "@/lib/people/categories"
 import { resolvePeopleDisplayImages } from "@/lib/people/display-images"
-import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import {
   buildWorkspaceAcceleratorCardSteps,
@@ -79,23 +75,11 @@ export default async function MyOrganizationPage({
   )
   if (tabParam === "roadmap") redirect(WORKSPACE_ROADMAP_PATH)
   if (tabParam === "documents") redirect("/organization/documents")
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw supabaseErrorToError(userError, "Unable to load user.")
-  }
-  if (!user) redirect("/login?redirect=/organization")
-  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
+  const requestContext = await resolveOptionalAuthenticatedAppContext()
+  if (!requestContext) redirect("/login?redirect=/organization")
+  const { supabase, user, profileAudience, activeOrg } = requestContext
+  const { orgId, role } = activeOrg
   const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
-  const fallbackIsTester = resolveTesterMetadata(userMeta)
-  const profileAudience = await resolveProfileAudience({
-    supabase,
-    userId: user.id,
-    fallbackIsTester,
-  })
   const isAdmin = profileAudience.isAdmin
   const needsInitialOnboarding =
     !isAdmin && !Boolean(userMeta?.onboarding_completed) && orgId === user.id

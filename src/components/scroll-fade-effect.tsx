@@ -1,8 +1,8 @@
-import type { ComponentProps } from "react"
+import { forwardRef, type ComponentPropsWithoutRef } from "react"
 
 import { cn } from "@/lib/utils"
 
-export type ScrollFadeEffectProps = ComponentProps<"div"> & {
+export type ScrollFadeEffectProps = ComponentPropsWithoutRef<"div"> & {
   /**
    * Whether to apply the fade utility classes.
    * @defaultValue true
@@ -15,14 +15,18 @@ export type ScrollFadeEffectProps = ComponentProps<"div"> & {
   orientation?: "horizontal" | "vertical"
 }
 
-export function ScrollFadeEffect({
-  className,
-  enabled = true,
-  orientation = "vertical",
-  ...props
-}: ScrollFadeEffectProps) {
+export const ScrollFadeEffect = forwardRef<HTMLDivElement, ScrollFadeEffectProps>(function ScrollFadeEffect(
+  {
+    className,
+    enabled = true,
+    orientation = "vertical",
+    ...props
+  },
+  ref,
+) {
   return (
     <div
+      ref={ref}
       data-orientation={orientation}
       className={cn(
         enabled &&
@@ -34,4 +38,4 @@ export function ScrollFadeEffect({
       {...props}
     />
   )
-}
+})

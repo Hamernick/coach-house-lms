@@ -31,6 +31,8 @@ type NavUserProps = {
   }
   isAdmin?: boolean
   isTester?: boolean
+  showOrgAdmin?: boolean
+  canAccessOrgAdmin?: boolean
   showDivider?: boolean
   hasActiveSubscription?: boolean
 }
@@ -38,6 +40,8 @@ type NavUserProps = {
 export function NavUser({
   user,
   isAdmin = false,
+  showOrgAdmin = false,
+  canAccessOrgAdmin = true,
   showDivider = true,
   hasActiveSubscription = false,
 }: NavUserProps) {
@@ -126,6 +130,8 @@ export function NavUser({
           displayEmail={displayEmail}
           avatarFallback={avatarFallback}
           isAdmin={isAdmin}
+          showOrgAdmin={showOrgAdmin}
+          canAccessOrgAdmin={canAccessOrgAdmin}
           signOutPending={signOutPending}
           onCloseMenu={() => setMenuOpen(false)}
           onOpenSettings={() => {

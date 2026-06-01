@@ -1,7 +1,6 @@
 import { Suspense } from "react"
 
 import { ClientOnly } from "@/components/client-only"
-import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { OrgChartCanvasLite } from "@/components/people/org-chart-canvas-lite"
 import { OrgChartSkeleton } from "@/components/people/org-chart-skeleton"
 import { PeopleTableShell } from "@/components/people/people-table"
@@ -30,7 +29,6 @@ export function MemberWorkspacePeoplePage(props: MemberWorkspacePeoplePageData) 
 
   return (
     <div className="flex flex-col gap-5 pb-8">
-      <PageTutorialButton tutorial="people" />
       <section>
         <Suspense fallback={<OrgChartSkeleton />}>
           <OrgChartCanvasLite people={people} canEdit={canEdit} />

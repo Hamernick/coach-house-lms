@@ -43,14 +43,15 @@ describe("member workspace nav access", () => {
     ).toBe(false)
   })
 
-  it("does not hide member workspace nav from platform admins inside admin routes", () => {
+  it("does not hide member workspace nav from org admins inside admin routes", () => {
     const shellSource = readFileSync(
       join(ROOT, "src/components/app-shell/app-shell-inner.tsx"),
       "utf8",
     )
 
-    expect(shellSource).toContain("(!isAdminContext || isAdmin)")
+    expect(shellSource).not.toContain("(!isAdminContext || isAdmin)")
     expect(shellSource).not.toContain("!isAdminContext &&\n    !isAcceleratorContext")
+    expect(shellSource).toContain("canShowMemberWorkspace")
   })
 
   it("syncs missing Stripe subscription rows before protected member workspace pages redirect", () => {

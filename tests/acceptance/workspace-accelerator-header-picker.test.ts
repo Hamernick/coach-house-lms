@@ -90,6 +90,8 @@ describe("workspace accelerator header picker", () => {
     expect(triggerMarkup).toContain(
       'data-react-grab-owner-source="src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx"',
     )
+    expect(triggerMarkup).toContain("text-sm")
+    expect(triggerMarkup).not.toContain("text-xs")
     expect(triggerMarkup).toContain("w-[196px]")
     expect(markup).toContain('class="inline-flex items-start pb-1"')
   })

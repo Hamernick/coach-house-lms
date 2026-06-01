@@ -15,36 +15,40 @@ describe("workspace tutorial callout", () => {
       React.createElement(WorkspaceTutorialCallout, {
         mode: "indicator",
         tapHereLabel: "Open the Accelerator",
-      }),
+      })
     )
 
     expect(markup).toContain('data-slot="workspace-tutorial-indicator-anchor"')
-    expect(markup).toContain('aria-describedby=')
+    expect(markup).toContain("aria-describedby=")
     expect(markup).toContain('data-state="instant-open"')
     expect(markup).toContain('aria-hidden="true"')
-    expect(markup).toContain('data-react-grab-anchor="WorkspaceTutorialCallout"')
+    expect(markup).toContain(
+      'data-react-grab-anchor="WorkspaceTutorialCallout"'
+    )
     expect(markup).toContain("data-react-grab-owner-id=")
     expect(markup).toContain(
-      'data-react-grab-owner-source="src/components/workspace/workspace-tutorial-callout.tsx"',
+      'data-react-grab-owner-source="src/components/workspace/workspace-tutorial-callout.tsx"'
     )
     expect(markup).toContain("data-react-grab-link-id=")
     expect(TOOLTIP_ARROW_CLASSNAME).toContain("rotate-45")
     expect(TOOLTIP_ARROW_CLASSNAME).toContain("rounded-[2px]")
     expect(TOOLTIP_ARROW_CLASSNAME).toContain("bg-popover")
     expect(markup).not.toContain("workspace-tutorial-pointer")
-    expect(markup).not.toContain("rounded-xl border border-border/70 bg-popover/95")
+    expect(markup).not.toContain(
+      "rounded-xl border border-border/70 bg-popover/95"
+    )
   })
 
   it("keeps the default labeled indicator arrow before the text with compact spacing", () => {
     const source = readFileSync(
       join(ROOT, "src/components/workspace/workspace-tutorial-callout.tsx"),
-      "utf8",
+      "utf8"
     )
     expect(
-      source.indexOf('{indicatorIconPosition === "before" || !tapHereLabel'),
+      source.indexOf('{indicatorIconPosition === "before" || !tapHereLabel')
     ).toBeLessThan(source.indexOf("{indicatorLabel}"))
     expect(source.indexOf("{indicatorLabel}")).toBeLessThan(
-      source.indexOf('{indicatorIconPosition === "after" && tapHereLabel'),
+      source.indexOf('{indicatorIconPosition === "after" && tapHereLabel')
     )
     expect(source).toContain('"flex items-center whitespace-nowrap"')
     expect(source).toContain('? "gap-1.5"')
@@ -55,29 +59,37 @@ describe("workspace tutorial callout", () => {
   it("can place the labeled indicator arrow after the text for viewport controls", () => {
     const source = readFileSync(
       join(ROOT, "src/components/workspace/workspace-tutorial-callout.tsx"),
-      "utf8",
+      "utf8"
     )
 
     expect(source).toContain('indicatorIconPosition = "before"')
+    expect(source).toContain("data-workspace-tutorial-indicator-icon-position=")
     expect(source).toContain(
-      'data-workspace-tutorial-indicator-icon-position=',
+      '{indicatorIconPosition === "after" && tapHereLabel'
     )
-    expect(source).toContain('{indicatorIconPosition === "after" && tapHereLabel')
   })
 
   it("keeps the calendar indicator bubble compact", () => {
     const source = readFileSync(
       join(
         ROOT,
-        "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-viewport-controls-panel.tsx",
+        "src/components/app-shell/components/app-shell-calendar-action.tsx"
       ),
-      "utf8",
+      "utf8"
+    )
+    const viewportControls = readFileSync(
+      join(
+        ROOT,
+        "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-viewport-controls-panel.tsx"
+      ),
+      "utf8"
     )
 
     expect(source).toContain('tapHereLabel="Open calendar"')
     expect(source).toContain('indicatorIconPosition="after"')
     expect(source).toContain("!px-2 !py-1")
     expect(source).toContain("indicatorSideOffset={6}")
+    expect(viewportControls).toContain("useRegisterAppShellCalendarTutorial")
   })
 
   it("supports explicit indicator anchor geometry without class-based offsets", () => {
@@ -87,10 +99,12 @@ describe("workspace tutorial callout", () => {
         indicatorAnchorAlign: "start",
         indicatorOffsetX: 24,
         indicatorOffsetY: -12,
-      }),
+      })
     )
 
-    expect(markup).toContain('style="left:0;top:0;transform:translate(24px, -12px)"')
+    expect(markup).toContain(
+      'style="left:0;top:0;transform:translate(24px, -12px)"'
+    )
   })
 
   it("can center the persistent indicator vertically while keeping the bubble on the right", () => {
@@ -100,9 +114,11 @@ describe("workspace tutorial callout", () => {
         tapHereLabel: "Open the Accelerator",
         indicatorSide: "right",
         indicatorAnchorVerticalAlign: "center",
-      }),
+      })
     )
 
-    expect(markup).toContain('style="left:50%;top:50%;transform:translate(calc(-50% + 0px), calc(-50% + 0px))"')
+    expect(markup).toContain(
+      'style="left:50%;top:50%;transform:translate(calc(-50% + 0px), calc(-50% + 0px))"'
+    )
   })
 })

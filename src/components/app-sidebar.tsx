@@ -218,6 +218,8 @@ export function SidebarBody({
             user={user}
             isAdmin={isAdmin}
             isTester={isTester}
+            showOrgAdmin={showOrgAdmin}
+            canAccessOrgAdmin={canAccessOrgAdmin}
             showDivider={false}
             hasActiveSubscription={hasBillingCancellationRisk}
           />

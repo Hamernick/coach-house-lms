@@ -1,8 +1,6 @@
-import {
-  MemberWorkspaceOrgSwitcher,
-  setActiveOrganizationAction,
-  type MemberWorkspaceHeaderState,
-} from "@/features/member-workspace"
+import { setActiveOrganizationAction } from "../../actions"
+import type { MemberWorkspaceHeaderState } from "../../types"
+import { MemberWorkspaceOrgSwitcher } from "./member-workspace-org-switcher"
 
 export function MemberWorkspaceSidebarHeader({
   state,

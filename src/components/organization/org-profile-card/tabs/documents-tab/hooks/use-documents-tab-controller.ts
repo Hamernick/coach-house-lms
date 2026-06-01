@@ -54,7 +54,7 @@ export function useDocumentsTabController({
     togglePolicyCategory,
   } = usePolicyDraftState()
 
-  const { isBannerVisible, handleDismissBanner } = useDocumentsBannerState({ userId })
+  const { isBannerVisible } = useDocumentsBannerState({ userId })
 
   const {
     activeFilters,
@@ -124,7 +124,6 @@ export function useDocumentsTabController({
     handleDelete,
     handleDownload,
     handleDeletePolicy,
-    handleDismissBanner,
     handlePolicyDialogOpenChange,
     handleSavePolicy,
     handleSortColumnChange,

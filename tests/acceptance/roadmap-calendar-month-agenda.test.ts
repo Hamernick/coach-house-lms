@@ -191,18 +191,19 @@ describe("roadmap calendar month agenda", () => {
       "const [calendarHasOpened, setCalendarHasOpened]"
     )
     expect(calendarAction).toContain(
-      "const [RoadmapCalendar, setRoadmapCalendar]"
+      'import dynamic from "next/dynamic"'
     )
-    expect(calendarAction).not.toContain('import dynamic from "next/dynamic"')
     expect(calendarAction).toContain(
-      'await import("@/components/roadmap/roadmap-calendar")'
+      "const RoadmapCalendar = dynamic"
     )
+    expect(calendarAction).not.toContain("setRoadmapCalendar")
+    expect(calendarAction).not.toContain("await import(")
     expect(calendarAction).not.toContain('import { RoadmapCalendar }')
     expect(calendarAction).not.toContain(
       'from "@/components/workspace/workspace-tutorial-callout"'
     )
     expect(calendarAction).toContain(
-      'import("@/components/workspace/workspace-tutorial-callout")'
+      "const WorkspaceTutorialCallout = dynamic"
     )
     expect(calendarAction).toContain(
       "const handleCalendarOpenChange = useCallback"

@@ -2,12 +2,12 @@
 
 import {
   useCallback,
-  useEffect,
   useId,
   useState,
-  type ComponentType,
+  type ComponentProps,
   type MouseEvent,
 } from "react"
+import dynamic from "next/dynamic"
 import CalendarDaysIcon from "lucide-react/dist/esm/icons/calendar-days"
 
 import { useAppShellCalendarActionRegistration } from "@/components/app-shell/calendar-action-context"
@@ -30,21 +30,29 @@ import {
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 
-type RoadmapCalendarComponent = ComponentType<{ hideHeaderCopy?: boolean }>
+const RoadmapCalendar = dynamic<
+  ComponentProps<
+    typeof import("@/components/roadmap/roadmap-calendar").RoadmapCalendar
+  >
+>(
+  () =>
+    import("@/components/roadmap/roadmap-calendar").then(
+      (mod) => mod.RoadmapCalendar,
+    ),
+  { loading: () => null, ssr: false },
+)
 
-type WorkspaceTutorialCalloutComponent = ComponentType<{
-  reactGrabOwnerId?: string
-  mode?: "tooltip" | "indicator"
-  title?: string
-  instruction?: string
-  tapHereLabel?: string
-  indicatorIconPosition?: "before" | "after"
-  tooltipContentClassName?: string
-  indicatorSide?: "top" | "right" | "bottom" | "left"
-  indicatorAnchorAlign?: "center" | "start" | "end"
-  indicatorAnchorVerticalAlign?: "top" | "center" | "bottom"
-  indicatorSideOffset?: number
-}>
+const WorkspaceTutorialCallout = dynamic<
+  ComponentProps<
+    typeof import("@/components/workspace/workspace-tutorial-callout").WorkspaceTutorialCallout
+  >
+>(
+  () =>
+    import("@/components/workspace/workspace-tutorial-callout").then(
+      (mod) => mod.WorkspaceTutorialCallout,
+    ),
+  { loading: () => null, ssr: false },
+)
 
 export function AppShellCalendarAction() {
   const isMobile = useIsMobile()
@@ -52,43 +60,15 @@ export function AppShellCalendarAction() {
     useAppShellCalendarActionRegistration()
   const [calendarOpen, setCalendarOpen] = useState(false)
   const [calendarHasOpened, setCalendarHasOpened] = useState(false)
-  const [RoadmapCalendar, setRoadmapCalendar] =
-    useState<RoadmapCalendarComponent | null>(null)
-  const [WorkspaceTutorialCallout, setWorkspaceTutorialCallout] =
-    useState<WorkspaceTutorialCalloutComponent | null>(null)
   const calendarRegionId = useId()
   const tutorialCalendarButtonActive = tutorialCalendarButtonCallout !== null
-
-  const loadRoadmapCalendar = useCallback(async () => {
-    if (RoadmapCalendar) return
-    const mod = await import("@/components/roadmap/roadmap-calendar")
-    setRoadmapCalendar(() => mod.RoadmapCalendar)
-  }, [RoadmapCalendar])
-
-  useEffect(() => {
-    if (!tutorialCalendarButtonCallout || WorkspaceTutorialCallout) return
-    let cancelled = false
-
-    void import("@/components/workspace/workspace-tutorial-callout").then(
-      (mod) => {
-        if (!cancelled) {
-          setWorkspaceTutorialCallout(() => mod.WorkspaceTutorialCallout)
-        }
-      }
-    )
-
-    return () => {
-      cancelled = true
-    }
-  }, [WorkspaceTutorialCallout, tutorialCalendarButtonCallout])
 
   const handleCalendarOpenChange = useCallback((open: boolean) => {
     setCalendarOpen(open)
     if (open) {
       setCalendarHasOpened(true)
-      void loadRoadmapCalendar()
     }
-  }, [loadRoadmapCalendar])
+  }, [])
 
   const handleCalendarTriggerClick = (event: MouseEvent<HTMLButtonElement>) => {
     if (!tutorialCalendarButtonActive) {
@@ -123,7 +103,7 @@ export function AppShellCalendarAction() {
   )
 
   const tutorialCallout =
-    tutorialCalendarButtonCallout && WorkspaceTutorialCallout ? (
+    tutorialCalendarButtonCallout ? (
       <WorkspaceTutorialCallout
         reactGrabOwnerId="workspace-canvas-viewport-controls:calendar-callout"
         mode="indicator"
@@ -138,7 +118,7 @@ export function AppShellCalendarAction() {
         indicatorSideOffset={6}
       />
     ) : null
-  const calendarBody = calendarHasOpened && RoadmapCalendar ? (
+  const calendarBody = calendarHasOpened ? (
     <RoadmapCalendar hideHeaderCopy />
   ) : null
 

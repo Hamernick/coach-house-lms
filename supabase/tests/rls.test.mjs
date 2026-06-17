@@ -48,6 +48,7 @@ const adminClient = createClient(url, serviceRole, {
 const suffix = randomUUID().slice(0, 8)
 const memberEmail = `member-${suffix}@example.com`
 const adminEmail = `admin-${suffix}@example.com`
+const ownerEmail = `owner-${suffix}@example.com`
 const staffEmail = `staff-${suffix}@example.com`
 const boardEmail = `board-${suffix}@example.com`
 const orgAdminEmail = `org-admin-${suffix}@example.com`
@@ -87,6 +88,16 @@ async function createUsers() {
   if (adminError) throw adminError
 
   const {
+    data: { user: owner },
+    error: ownerError,
+  } = await adminClient.auth.admin.createUser({
+    email: ownerEmail,
+    password,
+    email_confirm: true,
+  })
+  if (ownerError) throw ownerError
+
+  const {
     data: { user: staff },
     error: staffError,
   } = await adminClient.auth.admin.createUser({
@@ -118,11 +129,12 @@ async function createUsers() {
 
   await ensureProfile(member.id, "member", "Test Member")
   await ensureProfile(admin.id, "admin", "Test Admin")
+  await ensureProfile(owner.id, "member", "Test Owner")
   await ensureProfile(staff.id, "member", "Test Staff")
   await ensureProfile(board.id, "member", "Test Board")
   await ensureProfile(orgAdmin.id, "member", "Test Org Admin")
 
-  return { member, admin, staff, board, orgAdmin }
+  return { member, admin, owner, staff, board, orgAdmin }
 }
 
 async function createDemoContent(memberId) {
@@ -181,13 +193,16 @@ async function createDemoContent(memberId) {
 }
 
 async function run() {
-  const { member, admin, staff, board, orgAdmin } = await createUsers()
+  const { member, admin, owner, staff, board, orgAdmin } = await createUsers()
   const assets = await createDemoContent(member.id)
 
   const memberClient = createClient(url, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
   const adminSessionClient = createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+  const ownerClient = createClient(url, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
   const staffClient = createClient(url, anonKey, {
@@ -205,9 +220,13 @@ async function run() {
     email: adminEmail,
     password,
   })
+  await ownerClient.auth.signInWithPassword({ email: ownerEmail, password })
   await staffClient.auth.signInWithPassword({ email: staffEmail, password })
   await boardClient.auth.signInWithPassword({ email: boardEmail, password })
-  await orgAdminClient.auth.signInWithPassword({ email: orgAdminEmail, password })
+  await orgAdminClient.auth.signInWithPassword({
+    email: orgAdminEmail,
+    password,
+  })
 
   const results = []
 
@@ -269,7 +288,9 @@ async function run() {
       !!otherAvatarUploadError &&
       (otherAvatarUploadError.statusCode === "403" ||
         otherAvatarUploadError.statusCode === "401" ||
-        /row-level security|permission denied|not allowed/i.test(otherAvatarUploadError.message ?? ""))
+        /row-level security|permission denied|not allowed/i.test(
+          otherAvatarUploadError.message ?? ""
+        ))
     results.push({
       name: "member cannot upload avatar to another user's folder",
       passed: avatarFolderDenied,
@@ -429,6 +450,12 @@ async function run() {
       .insert([
         {
           org_id: member.id,
+          member_id: owner.id,
+          role: "owner",
+          member_email: ownerEmail,
+        },
+        {
+          org_id: member.id,
           member_id: staff.id,
           role: "staff",
           member_email: staffEmail,
@@ -540,8 +567,11 @@ async function run() {
 
   let memberWorkspaceProjectsTableAvailable = false
   let memberWorkspaceProjectNotesTableAvailable = false
+  let memberWorkspaceProjectOverviewDocumentsTableAvailable = false
   let memberWorkspaceProjectQuickLinksTableAvailable = false
   let memberWorkspaceProjectAssetsTableAvailable = false
+  let fiscalSponsorshipApplicationsTableAvailable = false
+  let fiscalSponsorshipRequiredDocumentsTableAvailable = false
   let memberWorkspaceStarterStateTableAvailable = false
   let memberWorkspaceTasksTableAvailable = false
   let memberWorkspaceTaskAssigneesTableAvailable = false
@@ -550,13 +580,15 @@ async function run() {
 
   if (orgAccessReady) {
     memberWorkspaceSubscriptionId = randomUUID()
-    const { error: paidAccessError } = await adminClient.from("subscriptions").insert({
-      id: memberWorkspaceSubscriptionId,
-      user_id: member.id,
-      stripe_subscription_id: `sub_member_workspace_${suffix}`,
-      status: "active",
-      metadata: { planName: "Organization" },
-    })
+    const { error: paidAccessError } = await adminClient
+      .from("subscriptions")
+      .insert({
+        id: memberWorkspaceSubscriptionId,
+        user_id: member.id,
+        stripe_subscription_id: `sub_member_workspace_${suffix}`,
+        status: "active",
+        metadata: { planName: "Organization" },
+      })
     results.push({
       name: "member workspace paid access fixture created",
       passed: !paidAccessError,
@@ -701,11 +733,23 @@ async function run() {
       passed: memberWorkspaceProjectNotesTableAvailable,
     })
 
+    const { error: projectOverviewDocumentsProbeError } = await memberClient
+      .from("organization_project_overview_documents")
+      .select("id")
+      .limit(1)
+    memberWorkspaceProjectOverviewDocumentsTableAvailable =
+      !projectOverviewDocumentsProbeError
+    results.push({
+      name: "member workspace project overview document table available",
+      passed: memberWorkspaceProjectOverviewDocumentsTableAvailable,
+    })
+
     const { error: projectQuickLinksProbeError } = await memberClient
       .from("organization_project_quick_links")
       .select("id")
       .limit(1)
-    memberWorkspaceProjectQuickLinksTableAvailable = !projectQuickLinksProbeError
+    memberWorkspaceProjectQuickLinksTableAvailable =
+      !projectQuickLinksProbeError
     results.push({
       name: "member workspace project quick link tables available",
       passed: memberWorkspaceProjectQuickLinksTableAvailable,
@@ -719,6 +763,29 @@ async function run() {
     results.push({
       name: "member workspace project asset tables available",
       passed: memberWorkspaceProjectAssetsTableAvailable,
+    })
+
+    const { error: fiscalApplicationsProbeError } = await memberClient
+      .from("fiscal_sponsorship_applications")
+      .select("id")
+      .limit(1)
+    fiscalSponsorshipApplicationsTableAvailable = !fiscalApplicationsProbeError
+    results.push({
+      name: "fiscal sponsorship application table available",
+      passed: fiscalSponsorshipApplicationsTableAvailable,
+    })
+
+    const { error: fiscalRequiredDocumentsProbeError } = await memberClient
+      .from("fiscal_sponsorship_documents")
+      .select(
+        "id, document_key, review_status, uploaded_by, uploaded_at, reviewed_by, reviewed_at"
+      )
+      .limit(1)
+    fiscalSponsorshipRequiredDocumentsTableAvailable =
+      !fiscalRequiredDocumentsProbeError
+    results.push({
+      name: "fiscal sponsorship required document metadata available",
+      passed: fiscalSponsorshipRequiredDocumentsTableAvailable,
     })
   }
 
@@ -776,26 +843,28 @@ async function run() {
       passed: !!staffTask && !staffTaskError,
     })
 
-    const { data: staffAssignment, error: staffAssignmentError } = await staffClient
-      .from("organization_task_assignees")
-      .insert({
-        org_id: member.id,
-        task_id: taskId,
-        user_id: board.id,
-        created_by: staff.id,
-      })
-      .select("id")
-      .maybeSingle()
+    const { data: staffAssignment, error: staffAssignmentError } =
+      await staffClient
+        .from("organization_task_assignees")
+        .insert({
+          org_id: member.id,
+          task_id: taskId,
+          user_id: board.id,
+          created_by: staff.id,
+        })
+        .select("id")
+        .maybeSingle()
     results.push({
       name: "staff can insert organization task assignees",
       passed: !!staffAssignment && !staffAssignmentError,
     })
 
-    const { data: boardReadsTask, error: boardReadsTaskError } = await boardClient
-      .from("organization_tasks")
-      .select("id")
-      .eq("id", taskId)
-      .maybeSingle()
+    const { data: boardReadsTask, error: boardReadsTaskError } =
+      await boardClient
+        .from("organization_tasks")
+        .select("id")
+        .eq("id", taskId)
+        .maybeSingle()
     results.push({
       name: "board can read organization tasks",
       passed: !!boardReadsTask && !boardReadsTaskError,
@@ -833,7 +902,8 @@ async function run() {
       name: "board cannot insert organization tasks",
       passed:
         !!deniedBoardTaskInsertError ||
-        (Array.isArray(deniedBoardTaskInsert) && deniedBoardTaskInsert.length === 0),
+        (Array.isArray(deniedBoardTaskInsert) &&
+          deniedBoardTaskInsert.length === 0),
     })
 
     const { data: deniedBoardTaskUpdate, error: deniedBoardTaskUpdateError } =
@@ -846,7 +916,8 @@ async function run() {
       name: "board cannot update organization tasks directly",
       passed:
         !!deniedBoardTaskUpdateError ||
-        (Array.isArray(deniedBoardTaskUpdate) && deniedBoardTaskUpdate.length === 0),
+        (Array.isArray(deniedBoardTaskUpdate) &&
+          deniedBoardTaskUpdate.length === 0),
     })
 
     const { data: adminReadsTask, error: adminReadsTaskError } =
@@ -889,11 +960,12 @@ async function run() {
       passed: !!staffNote && !staffNoteError,
     })
 
-    const { data: boardReadsNote, error: boardReadsNoteError } = await boardClient
-      .from("organization_project_notes")
-      .select("id")
-      .eq("id", noteId)
-      .maybeSingle()
+    const { data: boardReadsNote, error: boardReadsNoteError } =
+      await boardClient
+        .from("organization_project_notes")
+        .select("id")
+        .eq("id", noteId)
+        .maybeSingle()
     results.push({
       name: "board can read organization project notes",
       passed: !!boardReadsNote && !boardReadsNoteError,
@@ -917,7 +989,8 @@ async function run() {
       name: "board cannot insert organization project notes",
       passed:
         !!deniedBoardNoteInsertError ||
-        (Array.isArray(deniedBoardNoteInsert) && deniedBoardNoteInsert.length === 0),
+        (Array.isArray(deniedBoardNoteInsert) &&
+          deniedBoardNoteInsert.length === 0),
     })
 
     const { data: adminReadsNote, error: adminReadsNoteError } =
@@ -929,6 +1002,111 @@ async function run() {
     results.push({
       name: "platform admin can read organization project notes",
       passed: !!adminReadsNote && !adminReadsNoteError,
+    })
+  }
+
+  if (
+    orgAccessReady &&
+    memberWorkspaceProjectsTableAvailable &&
+    memberWorkspaceProjectOverviewDocumentsTableAvailable &&
+    memberWorkspaceProjectId
+  ) {
+    const overviewDocumentId = randomUUID()
+
+    const { data: staffOverviewDocument, error: staffOverviewDocumentError } =
+      await staffClient
+        .from("organization_project_overview_documents")
+        .insert({
+          id: overviewDocumentId,
+          org_id: member.id,
+          project_id: memberWorkspaceProjectId,
+          document_html: "<h2>Staff overview</h2><p>Rich overview content.</p>",
+          document_text: "Staff overview\n\nRich overview content.",
+          created_by: staff.id,
+          updated_by: staff.id,
+        })
+        .select("id")
+        .maybeSingle()
+    results.push({
+      name: "staff can insert organization project overview documents",
+      passed: !!staffOverviewDocument && !staffOverviewDocumentError,
+    })
+
+    const { data: boardReadsOverviewDocument, error: boardReadsOverviewError } =
+      await boardClient
+        .from("organization_project_overview_documents")
+        .select("id")
+        .eq("id", overviewDocumentId)
+        .maybeSingle()
+    results.push({
+      name: "board can read organization project overview documents",
+      passed: !!boardReadsOverviewDocument && !boardReadsOverviewError,
+    })
+
+    const { data: orgAdminUpdatesOverview, error: orgAdminOverviewError } =
+      await orgAdminClient
+        .from("organization_project_overview_documents")
+        .update({
+          document_text: "Updated by org admin.",
+          updated_by: orgAdmin.id,
+        })
+        .eq("id", overviewDocumentId)
+        .select("id")
+    results.push({
+      name: "org admin can update organization project overview documents",
+      passed:
+        !orgAdminOverviewError &&
+        Array.isArray(orgAdminUpdatesOverview) &&
+        orgAdminUpdatesOverview.length === 1,
+    })
+
+    const deniedOverviewProjectId = randomUUID()
+    await adminClient.from("organization_projects").insert({
+      id: deniedOverviewProjectId,
+      org_id: member.id,
+      name: "Board denied overview project",
+      status: "planned",
+      priority: "medium",
+      progress: 0,
+      start_date: "2026-02-01",
+      end_date: "2026-02-15",
+      task_count: 1,
+      created_source: "user",
+      created_by: staff.id,
+      updated_by: staff.id,
+    })
+
+    const {
+      data: deniedBoardOverviewInsert,
+      error: deniedBoardOverviewInsertError,
+    } = await boardClient
+      .from("organization_project_overview_documents")
+      .insert({
+        org_id: member.id,
+        project_id: deniedOverviewProjectId,
+        document_html: "<p>Board denied overview</p>",
+        document_text: "Board denied overview",
+        created_by: board.id,
+        updated_by: board.id,
+      })
+      .select("id")
+    results.push({
+      name: "board cannot insert organization project overview documents",
+      passed:
+        !!deniedBoardOverviewInsertError ||
+        (Array.isArray(deniedBoardOverviewInsert) &&
+          deniedBoardOverviewInsert.length === 0),
+    })
+
+    const { data: adminReadsOverview, error: adminReadsOverviewError } =
+      await adminSessionClient
+        .from("organization_project_overview_documents")
+        .select("id")
+        .eq("id", overviewDocumentId)
+        .maybeSingle()
+    results.push({
+      name: "platform admin can read organization project overview documents",
+      passed: !!adminReadsOverview && !adminReadsOverviewError,
     })
   }
 
@@ -960,11 +1138,12 @@ async function run() {
       passed: !!staffLink && !staffLinkError,
     })
 
-    const { data: boardReadsLink, error: boardReadsLinkError } = await boardClient
-      .from("organization_project_quick_links")
-      .select("id")
-      .eq("id", linkId)
-      .maybeSingle()
+    const { data: boardReadsLink, error: boardReadsLinkError } =
+      await boardClient
+        .from("organization_project_quick_links")
+        .select("id")
+        .eq("id", linkId)
+        .maybeSingle()
     results.push({
       name: "board can read organization project quick links",
       passed: !!boardReadsLink && !boardReadsLinkError,
@@ -988,7 +1167,8 @@ async function run() {
       name: "board cannot insert organization project quick links",
       passed:
         !!deniedBoardLinkInsertError ||
-        (Array.isArray(deniedBoardLinkInsert) && deniedBoardLinkInsert.length === 0),
+        (Array.isArray(deniedBoardLinkInsert) &&
+          deniedBoardLinkInsert.length === 0),
     })
 
     const { data: adminReadsLink, error: adminReadsLinkError } =
@@ -1031,11 +1211,12 @@ async function run() {
       passed: !!staffAsset && !staffAssetError,
     })
 
-    const { data: boardReadsAsset, error: boardReadsAssetError } = await boardClient
-      .from("organization_project_assets")
-      .select("id")
-      .eq("id", assetId)
-      .maybeSingle()
+    const { data: boardReadsAsset, error: boardReadsAssetError } =
+      await boardClient
+        .from("organization_project_assets")
+        .select("id")
+        .eq("id", assetId)
+        .maybeSingle()
     results.push({
       name: "board can read organization project assets",
       passed: !!boardReadsAsset && !boardReadsAssetError,
@@ -1059,7 +1240,8 @@ async function run() {
       name: "board cannot insert organization project assets",
       passed:
         !!deniedBoardAssetInsertError ||
-        (Array.isArray(deniedBoardAssetInsert) && deniedBoardAssetInsert.length === 0),
+        (Array.isArray(deniedBoardAssetInsert) &&
+          deniedBoardAssetInsert.length === 0),
     })
 
     const { data: adminReadsAsset, error: adminReadsAssetError } =
@@ -1072,6 +1254,125 @@ async function run() {
       name: "platform admin can read organization project assets",
       passed: !!adminReadsAsset && !adminReadsAssetError,
     })
+
+    if (
+      fiscalSponsorshipApplicationsTableAvailable &&
+      fiscalSponsorshipRequiredDocumentsTableAvailable &&
+      staffAsset?.id
+    ) {
+      const fiscalApplicationId = randomUUID()
+      const { error: fiscalApplicationSeedError } = await adminClient
+        .from("fiscal_sponsorship_applications")
+        .insert({
+          id: fiscalApplicationId,
+          org_id: member.id,
+          project_id: memberWorkspaceProjectId,
+          status: "submitted",
+          applicant_full_name: "RLS Applicant",
+          project_name: "RLS Fiscal Project",
+          primary_email: memberEmail,
+          created_by: member.id,
+          updated_by: member.id,
+        })
+      results.push({
+        name: "fiscal sponsorship application fixture created",
+        passed: !fiscalApplicationSeedError,
+      })
+
+      const connectedAt = new Date().toISOString()
+      const buildRequiredFiscalDocument = ({
+        actorId,
+        documentKey,
+        version,
+      }) => ({
+        application_id: fiscalApplicationId,
+        asset_id: assetId,
+        document_key: documentKey,
+        kind: "application",
+        metadata: { source: "rls-test" },
+        org_id: member.id,
+        project_id: memberWorkspaceProjectId,
+        review_status: "pending",
+        source_snapshot: { source: "rls-test" },
+        status: "draft",
+        title: `RLS ${documentKey}`,
+        uploaded_at: connectedAt,
+        uploaded_by: actorId,
+        version,
+      })
+
+      const { data: ownerFiscalDocument, error: ownerFiscalDocumentError } =
+        await ownerClient
+          .from("fiscal_sponsorship_documents")
+          .insert(
+            buildRequiredFiscalDocument({
+              actorId: owner.id,
+              documentKey: "tax_id_confirmation",
+              version: 1,
+            })
+          )
+          .select("id")
+          .maybeSingle()
+      results.push({
+        name: "owner can insert fiscal sponsorship required documents",
+        passed: !!ownerFiscalDocument && !ownerFiscalDocumentError,
+      })
+
+      const { data: staffFiscalDocument, error: staffFiscalDocumentError } =
+        await staffClient
+          .from("fiscal_sponsorship_documents")
+          .insert(
+            buildRequiredFiscalDocument({
+              actorId: staff.id,
+              documentKey: "governing_documents",
+              version: 2,
+            })
+          )
+          .select("id")
+          .maybeSingle()
+      results.push({
+        name: "staff can insert fiscal sponsorship required documents",
+        passed: !!staffFiscalDocument && !staffFiscalDocumentError,
+      })
+
+      const {
+        data: deniedBoardFiscalDocument,
+        error: deniedBoardFiscalDocumentError,
+      } = await boardClient
+        .from("fiscal_sponsorship_documents")
+        .insert(
+          buildRequiredFiscalDocument({
+            actorId: board.id,
+            documentKey: "budget_support",
+            version: 3,
+          })
+        )
+        .select("id")
+      results.push({
+        name: "board cannot insert fiscal sponsorship required documents",
+        passed:
+          !!deniedBoardFiscalDocumentError ||
+          (Array.isArray(deniedBoardFiscalDocument) &&
+            deniedBoardFiscalDocument.length === 0),
+      })
+
+      const { data: adminFiscalDocument, error: adminFiscalDocumentError } =
+        await adminSessionClient
+          .from("fiscal_sponsorship_documents")
+          .insert(
+            buildRequiredFiscalDocument({
+              actorId: admin.id,
+              documentKey: "fundraising_materials",
+              version: 4,
+            })
+          )
+          .select("id")
+          .maybeSingle()
+      results.push({
+        name: "platform admin can insert fiscal sponsorship required documents",
+        passed: !!adminFiscalDocument && !adminFiscalDocumentError,
+      })
+    }
   }
 
   if (orgAccessReady && memberWorkspaceStarterStateTableAvailable) {
@@ -1106,12 +1407,14 @@ async function run() {
       passed: !!boardReadsStarterState && !boardReadsStarterStateError,
     })
 
-    const { data: deniedStarterStateUpdate, error: deniedStarterStateUpdateError } =
-      await boardClient
-        .from("organization_workspace_starter_state")
-        .update({ seed_version: 2 })
-        .eq("org_id", member.id)
-        .select("org_id")
+    const {
+      data: deniedStarterStateUpdate,
+      error: deniedStarterStateUpdateError,
+    } = await boardClient
+      .from("organization_workspace_starter_state")
+      .update({ seed_version: 2 })
+      .eq("org_id", member.id)
+      .select("org_id")
     results.push({
       name: "board cannot update organization starter state",
       passed:
@@ -1242,11 +1545,12 @@ async function run() {
       passed: !!deniedRequestError,
     })
 
-    const { data: boardOwnRequest, error: boardOwnRequestError } = await boardClient
-      .from("organization_access_requests")
-      .select("id")
-      .eq("id", requestId)
-      .maybeSingle()
+    const { data: boardOwnRequest, error: boardOwnRequestError } =
+      await boardClient
+        .from("organization_access_requests")
+        .select("id")
+        .eq("id", requestId)
+        .maybeSingle()
     results.push({
       name: "invitee can read own access request",
       passed: !!boardOwnRequest && !boardOwnRequestError,
@@ -1321,7 +1625,8 @@ async function run() {
           .from("organization_workspace_communication_deliveries")
           .select("org_id")
           .limit(1)
-        workspaceCommunicationDeliveriesTableAvailable = !workspaceDeliveryProbeError
+        workspaceCommunicationDeliveriesTableAvailable =
+          !workspaceDeliveryProbeError
       }
     }
   }
@@ -1454,13 +1759,15 @@ async function run() {
         passed: !!staffCommunication && !staffCommunicationError,
       })
 
-      const { data: boardReadsCommunication, error: boardReadsCommunicationError } =
-        await boardClient
-          .from("organization_workspace_communications")
-          .select("id")
-          .eq("id", communicationId)
-          .eq("org_id", member.id)
-          .maybeSingle()
+      const {
+        data: boardReadsCommunication,
+        error: boardReadsCommunicationError,
+      } = await boardClient
+        .from("organization_workspace_communications")
+        .select("id")
+        .eq("id", communicationId)
+        .eq("org_id", member.id)
+        .maybeSingle()
       results.push({
         name: "board can read workspace communication post",
         passed: !!boardReadsCommunication && !boardReadsCommunicationError,
@@ -1483,23 +1790,25 @@ async function run() {
       })
 
       if (workspaceCommunicationChannelsTableAvailable) {
-        const { data: staffConnectedChannel, error: staffConnectedChannelError } =
-          await staffClient
-            .from("organization_workspace_communication_channels")
-            .upsert(
-              {
-                org_id: member.id,
-                channel: "social",
-                is_connected: true,
-                provider: "mock-social",
-                connected_by: staff.id,
-                connected_at: new Date().toISOString(),
-                metadata: { source: "rls-test" },
-              },
-              { onConflict: "org_id,channel" }
-            )
-            .select("channel")
-            .maybeSingle()
+        const {
+          data: staffConnectedChannel,
+          error: staffConnectedChannelError,
+        } = await staffClient
+          .from("organization_workspace_communication_channels")
+          .upsert(
+            {
+              org_id: member.id,
+              channel: "social",
+              is_connected: true,
+              provider: "mock-social",
+              connected_by: staff.id,
+              connected_at: new Date().toISOString(),
+              metadata: { source: "rls-test" },
+            },
+            { onConflict: "org_id,channel" }
+          )
+          .select("channel")
+          .maybeSingle()
         results.push({
           name: "staff can upsert workspace communication channel",
           passed: !!staffConnectedChannel && !staffConnectedChannelError,
@@ -1827,7 +2136,10 @@ async function run() {
     .from("organization_workspace_starter_state")
     .delete()
     .eq("org_id", member.id)
-  await adminClient.from("organization_projects").delete().eq("org_id", member.id)
+  await adminClient
+    .from("organization_projects")
+    .delete()
+    .eq("org_id", member.id)
   await adminClient.from("organizations").delete().eq("user_id", member.id)
   await adminClient.from("enrollments").delete().eq("user_id", member.id)
   await adminClient
@@ -1843,9 +2155,12 @@ async function run() {
     .from("notifications")
     .delete()
     .in("user_id", [member.id, admin.id])
-  await adminClient.storage.from("avatars").remove([`${member.id}/rls-avatar-${suffix}.png`])
+  await adminClient.storage
+    .from("avatars")
+    .remove([`${member.id}/rls-avatar-${suffix}.png`])
   await adminClient.auth.admin.deleteUser(member.id)
   await adminClient.auth.admin.deleteUser(admin.id)
+  await adminClient.auth.admin.deleteUser(owner.id)
   await adminClient.auth.admin.deleteUser(staff.id)
   await adminClient.auth.admin.deleteUser(board.id)
   await adminClient.auth.admin.deleteUser(orgAdmin.id)

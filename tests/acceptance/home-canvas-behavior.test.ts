@@ -10,19 +10,19 @@ describe("home-canvas section behavior", () => {
       touchAction: "pan-y",
     })
 
+    expect(resolveCanvasSectionBehavior("hero")).toEqual({
+      lockNavigationGestures: false,
+      scrollable: false,
+      touchAction: "pan-x",
+    })
+
     expect(resolveCanvasSectionBehavior("signup")).toEqual({
       lockNavigationGestures: false,
-      scrollable: true,
-      touchAction: "pan-y",
+      scrollable: false,
+      touchAction: "pan-x",
     })
 
     expect(resolveCanvasSectionBehavior("login")).toEqual({
-      lockNavigationGestures: false,
-      scrollable: true,
-      touchAction: "pan-y",
-    })
-
-    expect(resolveCanvasSectionBehavior("hero")).toEqual({
       lockNavigationGestures: false,
       scrollable: false,
       touchAction: "pan-x",

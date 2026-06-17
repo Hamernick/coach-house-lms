@@ -80,5 +80,11 @@ export function resolveWorkspaceCanvasV2InitialPositionLookup(
           y: byId.get("atlas")!.y,
         }
       : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS.atlas,
+    "fiscal-sponsorship": byId.has("fiscal-sponsorship")
+      ? {
+          x: byId.get("fiscal-sponsorship")!.x,
+          y: byId.get("fiscal-sponsorship")!.y,
+        }
+      : WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS["fiscal-sponsorship"],
   } satisfies Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
 }

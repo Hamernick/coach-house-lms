@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+
 import { describe, expect, it } from "vitest"
 
 import {
@@ -16,6 +19,8 @@ import {
   resolveWorkspaceTutorialPresentationShellSpec,
   resolveWorkspaceTutorialStageShellSpec,
   shouldWorkspaceTutorialTrackEmbeddedAcceleratorRuntime,
+  WORKSPACE_TUTORIAL_CALENDAR_POPOVER_HEIGHT,
+  WORKSPACE_TUTORIAL_CALENDAR_POPOVER_WIDTH,
   WORKSPACE_TUTORIAL_PRESENTATION_FRAME_INSET,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation-state"
 import { resolveWorkspaceTutorialNormalizedAcceleratorModuleViewerOpen } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-scene-spec"
@@ -23,6 +28,12 @@ import {
   resolveWorkspaceCanvasTutorialStep,
   resolveWorkspaceCanvasTutorialStepCount,
 } from "@/features/workspace-canvas-tutorial"
+
+const ROOT = process.cwd()
+
+function readSource(relativePath: string) {
+  return readFileSync(join(ROOT, relativePath), "utf8")
+}
 
 function findTutorialStepIndex(
   stepId: ReturnType<typeof resolveWorkspaceCanvasTutorialStep>["id"],
@@ -319,6 +330,83 @@ describe("workspace tutorial presentation", () => {
         cardSize: "md",
       }),
     ).toBe("md")
+  })
+
+  it("uses the app-shell calendar popover surface for the calendar guide presentation", () => {
+    const presentationSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-presentation.tsx",
+    )
+    const calendarPresentationSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-tutorial-calendar-presentation.tsx",
+    )
+    const surfaceSpec = resolveWorkspaceTutorialPresentationSurfaceSpec({
+      cardId: "calendar",
+      cardSize: "md",
+    })
+
+    expect(surfaceSpec).toEqual({
+      cardWidth: WORKSPACE_TUTORIAL_CALENDAR_POPOVER_WIDTH,
+      cardHeight: WORKSPACE_TUTORIAL_CALENDAR_POPOVER_HEIGHT,
+      frameWidth:
+        WORKSPACE_TUTORIAL_CALENDAR_POPOVER_WIDTH +
+        WORKSPACE_TUTORIAL_PRESENTATION_FRAME_INSET * 2,
+      frameHeight:
+        WORKSPACE_TUTORIAL_CALENDAR_POPOVER_HEIGHT +
+        WORKSPACE_TUTORIAL_PRESENTATION_FRAME_INSET * 2,
+    })
+    expect(presentationSource).toContain("WorkspaceTutorialCalendarPresentation")
+    expect(presentationSource).toContain(
+      '"./workspace-canvas-surface-v2-tutorial-calendar-presentation"',
+    )
+    expect(presentationSource).toContain("<WorkspaceTutorialCalendarPresentation")
+    expect(presentationSource).not.toContain("Board packet deadline")
+    expect(calendarPresentationSource).toContain(
+      "WORKSPACE_TUTORIAL_CALENDAR_EVENT_SEEDS",
+    )
+    expect(calendarPresentationSource).toContain(
+      'import { RoadmapCalendarMonthAgendaPanel } from "@/components/roadmap/roadmap-calendar/components"',
+    )
+    expect(calendarPresentationSource).toContain(
+      "buildWorkspaceTutorialCalendarEvents",
+    )
+    expect(calendarPresentationSource).toContain("Board packet deadline")
+    expect(calendarPresentationSource).toContain("Campaign launch review")
+    expect(calendarPresentationSource).toContain("Staff prep huddle")
+    expect(calendarPresentationSource).toContain("Board meeting")
+    expect(calendarPresentationSource).toContain("Impact report due")
+    expect(calendarPresentationSource).toContain(
+      'className="mx-auto flex w-full justify-center"',
+    )
+    expect(calendarPresentationSource).toContain(
+      'className="bg-background/95 w-[22rem] overflow-hidden rounded-[24px] border-0 p-0 shadow-none backdrop-blur-xl"',
+    )
+    expect(calendarPresentationSource).toContain(
+      "<RoadmapCalendarMonthAgendaPanel",
+    )
+    expect(calendarPresentationSource).toContain(
+      'className="rounded-[24px]"',
+    )
+    expect(calendarPresentationSource).not.toContain("h-[30rem]")
+    expect(calendarPresentationSource).toContain("isLoading={false}")
+    expect(calendarPresentationSource).toContain("canManageCalendar={false}")
+    expect(calendarPresentationSource).not.toContain(
+      'import CalendarDaysIcon from "lucide-react/dist/esm/icons/calendar-days"',
+    )
+    expect(calendarPresentationSource).not.toContain(
+      'aria-label="Show calendar"',
+    )
+    expect(calendarPresentationSource).not.toContain(
+      'slot: "presentation-calendar-trigger"',
+    )
+    expect(calendarPresentationSource).toContain(
+      'slot: "presentation-calendar-popover"',
+    )
+    expect(calendarPresentationSource).not.toContain(
+      "<RoadmapCalendar hideHeaderCopy />",
+    )
+    expect(presentationSource).not.toContain(
+      'cardId === "calendar" && !shouldTrackEmbeddedAcceleratorRuntime',
+    )
   })
 
   it("keeps tool-family shells tighter around the featured card presentation", () => {

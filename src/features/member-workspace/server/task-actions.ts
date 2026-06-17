@@ -90,10 +90,15 @@ async function resolveTaskTargetProject({
   }
 
   if (!actor.isAdmin && project.org_id !== actor.activeOrg.orgId) {
-    return { error: "You do not have access to manage tasks for that project." } as const
+    return {
+      error: "You do not have access to manage tasks for that project.",
+    } as const
   }
 
-  if (project.project_kind !== "standard" || project.created_source === "system") {
+  if (
+    project.project_kind !== "standard" ||
+    project.created_source === "system"
+  ) {
     return { error: "Choose a valid project." } as const
   }
 
@@ -115,13 +120,14 @@ async function resolveAssignableUserId({
   }
 
   try {
-    const assignablePeople = await loadMemberWorkspacePersonOptionsForOrganizations({
-      orgIds: [orgId],
-      supabase: actor.supabase,
-      includePlatformAdmins: actor.isAdmin,
-    })
+    const assignablePeople =
+      await loadMemberWorkspacePersonOptionsForOrganizations({
+        orgIds: [orgId],
+        supabase: actor.supabase,
+        includePlatformAdmins: actor.isAdmin,
+      })
     const assignableUserIds = new Set(
-      assignablePeople.map((person) => person.id.trim()).filter(Boolean),
+      assignablePeople.map((person) => person.id.trim()).filter(Boolean)
     )
 
     if (!assignableUserIds.has(candidateUserId)) {
@@ -208,7 +214,7 @@ async function adjustProjectTaskCount({
 }
 
 export async function createMemberWorkspaceTaskAction(
-  input: MemberWorkspaceCreateTaskInput,
+  input: MemberWorkspaceCreateTaskInput
 ): Promise<MemberWorkspaceCreateTaskResult> {
   const actor = await resolveMemberWorkspaceActorContext()
   if (actor.isAdmin) {
@@ -284,7 +290,9 @@ export async function createMemberWorkspaceTaskAction(
       end_date: input.endDate,
       priority,
       tag_label: input.tagLabel?.trim() ? input.tagLabel.trim() : null,
-      workstream_name: input.workstreamName?.trim() ? input.workstreamName.trim() : null,
+      workstream_name: input.workstreamName?.trim()
+        ? input.workstreamName.trim()
+        : null,
       sort_order: sortOrder,
       created_source: "user",
       created_by: actor.userId,
@@ -323,15 +331,15 @@ export async function createMemberWorkspaceTaskAction(
     .eq("org_id", project.org_id)
 
   revalidatePath("/tasks")
-  revalidatePath("/projects")
-  revalidatePath(`/projects/${project.id}`)
+  revalidatePath("/organizations")
+  revalidatePath(`/organizations/${project.id}`)
 
   return { ok: true, taskId: task.id }
 }
 
 export async function updateMemberWorkspaceTaskAction(
   taskId: string,
-  input: MemberWorkspaceCreateTaskInput,
+  input: MemberWorkspaceCreateTaskInput
 ): Promise<MemberWorkspaceUpdateTaskResult> {
   const actor = await resolveMemberWorkspaceActorContext()
   if (actor.isAdmin) {
@@ -381,7 +389,11 @@ export async function updateMemberWorkspaceTaskAction(
     .eq("id", normalizedTaskId)
 
   const { data: existingTask, error: existingTaskError } = await (actor.isAdmin
-    ? taskQuery.maybeSingle<{ id: string; org_id: string; project_id: string }>()
+    ? taskQuery.maybeSingle<{
+        id: string
+        org_id: string
+        project_id: string
+      }>()
     : taskQuery
         .eq("org_id", actor.activeOrg.orgId)
         .maybeSingle<{ id: string; org_id: string; project_id: string }>())
@@ -422,7 +434,9 @@ export async function updateMemberWorkspaceTaskAction(
       end_date: input.endDate,
       priority,
       tag_label: input.tagLabel?.trim() ? input.tagLabel.trim() : null,
-      workstream_name: input.workstreamName?.trim() ? input.workstreamName.trim() : null,
+      workstream_name: input.workstreamName?.trim()
+        ? input.workstreamName.trim()
+        : null,
       updated_by: actor.userId,
     })
     .eq("id", normalizedTaskId)
@@ -461,10 +475,10 @@ export async function updateMemberWorkspaceTaskAction(
   }
 
   revalidatePath("/tasks")
-  revalidatePath("/projects")
-  revalidatePath(`/projects/${existingTask.project_id}`)
+  revalidatePath("/organizations")
+  revalidatePath(`/organizations/${existingTask.project_id}`)
   if (existingTask.project_id !== project.id) {
-    revalidatePath(`/projects/${project.id}`)
+    revalidatePath(`/organizations/${project.id}`)
   }
 
   return { ok: true, taskId: normalizedTaskId }
@@ -472,7 +486,7 @@ export async function updateMemberWorkspaceTaskAction(
 
 export async function updateMemberWorkspaceTaskStatusAction(
   taskId: string,
-  nextStatus: MemberWorkspaceTaskStatus,
+  nextStatus: MemberWorkspaceTaskStatus
 ): Promise<MemberWorkspaceUpdateTaskStatusResult> {
   const normalizedTaskId = taskId.trim()
 
@@ -550,15 +564,15 @@ export async function updateMemberWorkspaceTaskStatusAction(
   }
 
   revalidatePath("/tasks")
-  revalidatePath("/projects")
-  revalidatePath(`/projects/${task.project_id}`)
+  revalidatePath("/organizations")
+  revalidatePath(`/organizations/${task.project_id}`)
 
   return { ok: true, taskId: normalizedTaskId, status: nextStatus }
 }
 
 export async function updateMemberWorkspaceTaskOrderAction(
   projectId: string,
-  orderedTaskIds: string[],
+  orderedTaskIds: string[]
 ): Promise<MemberWorkspaceUpdateTaskOrderResult> {
   const actor = await resolveMemberWorkspaceActorContext()
 
@@ -578,7 +592,7 @@ export async function updateMemberWorkspaceTaskOrderAction(
   }
 
   const normalizedTaskIds = Array.from(
-    new Set(orderedTaskIds.map((taskId) => taskId.trim()).filter(Boolean)),
+    new Set(orderedTaskIds.map((taskId) => taskId.trim()).filter(Boolean))
   )
 
   if (normalizedTaskIds.length === 0) {
@@ -626,7 +640,7 @@ export async function updateMemberWorkspaceTaskOrderAction(
       })
       .eq("id", taskId)
       .eq("org_id", project.org_id)
-      .eq("project_id", project.id),
+      .eq("project_id", project.id)
   )
 
   const results = await Promise.all(updates)
@@ -635,13 +649,13 @@ export async function updateMemberWorkspaceTaskOrderAction(
   }
 
   revalidatePath("/tasks")
-  revalidatePath(`/projects/${project.id}`)
+  revalidatePath(`/organizations/${project.id}`)
 
   return { ok: true, projectId: project.id }
 }
 
 export async function deleteMemberWorkspaceTaskAction(
-  taskId: string,
+  taskId: string
 ): Promise<MemberWorkspaceDeleteTaskResult> {
   const actor = await resolveMemberWorkspaceActorContext()
 
@@ -702,8 +716,8 @@ export async function deleteMemberWorkspaceTaskAction(
   })
 
   revalidatePath("/tasks")
-  revalidatePath("/projects")
-  revalidatePath(`/projects/${task.project_id}`)
+  revalidatePath("/organizations")
+  revalidatePath(`/organizations/${task.project_id}`)
 
   return { ok: true, taskId: normalizedTaskId, projectId: task.project_id }
 }

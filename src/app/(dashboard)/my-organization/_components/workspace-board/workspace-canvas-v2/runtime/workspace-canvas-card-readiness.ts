@@ -14,7 +14,9 @@ export type WorkspaceCardReadiness = {
   isReady: boolean
 }
 
-function buildReadiness(status: WorkspaceCardReadinessStatus): WorkspaceCardReadiness {
+function buildReadiness(
+  status: WorkspaceCardReadinessStatus
+): WorkspaceCardReadiness {
   return {
     status,
     isReady: status === "ready",
@@ -31,8 +33,8 @@ function resolveOrganizationReadiness(seed: WorkspaceSeedData) {
 
   const hasIdentitySignal = Boolean(
     seed.initialProfile.name?.trim() ||
-      seed.initialProfile.tagline?.trim() ||
-      seed.initialProfile.boilerplate?.trim(),
+    seed.initialProfile.tagline?.trim() ||
+    seed.initialProfile.boilerplate?.trim()
   )
 
   return buildReadiness(hasIdentitySignal ? "partial" : "empty")
@@ -41,13 +43,13 @@ function resolveOrganizationReadiness(seed: WorkspaceSeedData) {
 function resolveRoadmapReadiness(seed: WorkspaceSeedData) {
   const roadmapSections = seed.roadmapSections
   const roadmapSectionStatuses = roadmapSections.map((section) =>
-    resolveRoadmapSectionDerivedStatus(section),
+    resolveRoadmapSectionDerivedStatus(section)
   )
   const completedCount = roadmapSectionStatuses.filter(
-    (status) => status === "complete",
+    (status) => status === "complete"
   ).length
   const startedCount = roadmapSectionStatuses.filter(
-    (status) => status !== "not_started",
+    (status) => status !== "not_started"
   ).length
 
   if (roadmapSections.length > 0 && completedCount === roadmapSections.length) {
@@ -79,7 +81,7 @@ function resolveAcceleratorReadiness({
 }) {
   const completedCount = Math.max(
     seed.journeyReadiness.acceleratorCompletedStepCount,
-    boardState.accelerator.completedStepIds.length,
+    boardState.accelerator.completedStepIds.length
   )
   const started =
     seed.journeyReadiness.acceleratorStarted ||
@@ -110,20 +112,16 @@ function resolveCalendarReadiness(seed: WorkspaceSeedData) {
 function resolveMapReadiness(seed: WorkspaceSeedData) {
   const profile = seed.initialProfile
   const hasStorySignal = Boolean(
-    profile.vision?.trim() &&
-      profile.mission?.trim() &&
-      profile.values?.trim(),
+    profile.vision?.trim() && profile.mission?.trim() && profile.values?.trim()
   )
   const hasIdentitySignal = Boolean(
     profile.name?.trim() &&
-      profile.tagline?.trim() &&
-      (
-        profile.address?.trim() ||
-        profile.addressStreet?.trim() ||
-        profile.addressCity?.trim() ||
-        profile.addressState?.trim() ||
-        profile.addressPostal?.trim()
-      ),
+    profile.tagline?.trim() &&
+    (profile.address?.trim() ||
+      profile.addressStreet?.trim() ||
+      profile.addressCity?.trim() ||
+      profile.addressState?.trim() ||
+      profile.addressPostal?.trim())
   )
   const hasLogoSignal = Boolean(profile.logoUrl?.trim())
 
@@ -147,10 +145,10 @@ function resolveCommunicationsReadiness({
 }) {
   const brandReadiness = resolveBrandKitReadiness(seed.initialProfile)
   const connectedChannelCount = Object.values(
-    boardState.communications.channelConnections,
+    boardState.communications.channelConnections
   ).filter((entry) => entry.connected).length
   const communicationsActivityCount = seed.activityFeed.filter(
-    (entry) => entry.source === "communications",
+    (entry) => entry.source === "communications"
   ).length
 
   if (
@@ -166,6 +164,18 @@ function resolveCommunicationsReadiness({
     Boolean(boardState.communications.copy.trim())
 
   return buildReadiness(hasBrandOrCopySignal ? "partial" : "empty")
+}
+
+function resolveFiscalSponsorshipReadiness(seed: WorkspaceSeedData) {
+  const profile = seed.initialProfile
+  const hasOrganizationSignal = Boolean(
+    profile.name?.trim() ||
+    profile.tagline?.trim() ||
+    profile.boilerplate?.trim() ||
+    seed.organizationTitle.trim()
+  )
+
+  return buildReadiness(hasOrganizationSignal ? "partial" : "empty")
 }
 
 export function resolveWorkspaceCanvasCardReadinessMap({
@@ -191,8 +201,9 @@ export function resolveWorkspaceCanvasCardReadinessMap({
         ? "ready"
         : brandKitReadiness.completedCount > 0
           ? "partial"
-          : "empty",
+          : "empty"
     ),
     atlas: resolveMapReadiness(seed),
+    "fiscal-sponsorship": resolveFiscalSponsorshipReadiness(seed),
   }
 }

@@ -55,6 +55,8 @@ type WorkspaceCanvasTutorialPanelProps = {
 }
 
 const WORKSPACE_TUTORIAL_BLOCKED_CONTINUE_HINT_TIMEOUT_MS = 1800
+const WORKSPACE_TUTORIAL_PANEL_CONTROL_BUTTON_CLASSNAME = "nodrag nopan size-9 h-9 w-9 rounded-xl"
+
 type WorkspaceTutorialPresentationFrameProps = {
   stepId: WorkspaceCanvasTutorialStepId
   presentationSurface: WorkspaceCanvasTutorialPresentationSurface
@@ -151,9 +153,10 @@ function WorkspaceTutorialBlockedContinueButton({
       <TooltipTrigger asChild>
         <Button
           type="button"
+          variant="ghost"
           size="icon"
           aria-disabled="true"
-          className="nodrag nopan rounded-xl cursor-help opacity-50"
+          className={cn(WORKSPACE_TUTORIAL_PANEL_CONTROL_BUTTON_CLASSNAME, "cursor-help opacity-50")}
           onPointerDown={onPointerDown}
           onPointerEnter={openBlockedContinueHint}
           onPointerLeave={closeBlockedContinueHint}
@@ -438,36 +441,35 @@ export function WorkspaceCanvasTutorialPanel({
               {!isFirstStep ? (
                 <Button
                   type="button"
-                  variant="outline"
-                  size="sm"
-                  className="nodrag nopan h-10 gap-1.5 rounded-xl px-3"
+                  variant="ghost"
+                  size="icon"
+                  className={WORKSPACE_TUTORIAL_PANEL_CONTROL_BUTTON_CLASSNAME}
                   onPointerDown={stopGuideInteractionPropagation}
                   onClick={onPrevious}
                   aria-label="Previous tutorial step"
+                  title="Back"
                 >
-                  <ChevronLeftIcon className="size-4" aria-hidden />
-                  <span>Back</span>
+                  <ChevronLeftIcon className="h-4 w-4" aria-hidden />
                 </Button>
               ) : null}
 
               {continueBlocked ? (
                 <WorkspaceTutorialBlockedContinueButton
-                  helperText={
-                    continueHelperText ?? "Complete this step to continue"
-                  }
+                  helperText={continueHelperText ?? "Complete this step to continue"}
                   onPointerDown={stopGuideInteractionPropagation}
                 />
               ) : (
                 <Button
                   type="button"
-                  size="sm"
-                  className="nodrag nopan h-10 gap-1.5 rounded-xl px-3"
+                  variant="ghost"
+                  size="icon"
+                  className={WORKSPACE_TUTORIAL_PANEL_CONTROL_BUTTON_CLASSNAME}
                   onPointerDown={stopGuideInteractionPropagation}
                   onClick={onNext}
                   aria-label={isFinalStep ? "Enter workspace" : "Next tutorial step"}
+                  title={isFinalStep ? "Enter workspace" : "Continue"}
                 >
-                  <span>{isFinalStep ? "Enter workspace" : "Continue"}</span>
-                  <ChevronRightIcon className="size-4" aria-hidden />
+                  <ChevronRightIcon className="h-4 w-4" aria-hidden />
                 </Button>
               )}
             </div>
@@ -605,10 +607,7 @@ export function WorkspaceCanvasTutorialPanel({
                   />
                 )}
                 <WorkspaceTutorialBottomFade
-                  active={
-                    presentationChrome?.showBottomFade === true &&
-                    isContentRevealReady
-                  }
+                  active={presentationChrome?.showBottomFade === true && isContentRevealReady}
                   width={presentationSurface.frameWidth}
                   motionPreset={presentationMotionPreset}
                   prefersReducedMotion={!!prefersReducedMotion}

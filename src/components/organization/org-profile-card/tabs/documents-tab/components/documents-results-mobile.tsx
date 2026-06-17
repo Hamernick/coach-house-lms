@@ -1,7 +1,5 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
-
 import { SOURCE_LABEL } from "../constants"
 import { formatUpdatedAt } from "../helpers"
 import type {
@@ -9,7 +7,11 @@ import type {
   DocumentIndexRow,
   DocumentsPolicyEntry,
 } from "../types"
-import { CategoryBadges, StatusBadge } from "./document-row-meta"
+import {
+  CategoryBadges,
+  DocumentMetaPill,
+  StatusBadge,
+} from "./document-row-meta"
 import { DocumentRowActions } from "./document-row-actions"
 
 type DocumentsResultsMobileProps = {
@@ -35,7 +37,8 @@ type DocumentsResultsMobileProps = {
 }
 
 function tourIdForRow(row: DocumentIndexRow) {
-  return row.source === "upload" && row.definition.kind === "verification-letter"
+  return row.source === "upload" &&
+    row.definition.kind === "verification-letter"
     ? "document-verification-letter"
     : undefined
 }
@@ -70,12 +73,14 @@ export function DocumentsResultsMobile({
           <div
             key={row.id}
             data-tour={tourId}
-            className="space-y-3 rounded-xl border border-border/60 bg-background/60 p-3"
+            className="border-border/60 bg-background/60 space-y-3 rounded-xl border p-3"
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 space-y-1">
-                <p className="truncate text-sm font-semibold text-foreground">{row.name}</p>
-                <p className="line-clamp-3 whitespace-pre-line text-xs text-muted-foreground">
+                <p className="text-foreground truncate text-sm font-semibold">
+                  {row.name}
+                </p>
+                <p className="text-muted-foreground line-clamp-3 text-xs whitespace-pre-line">
                   {row.description || "-"}
                 </p>
               </div>
@@ -84,18 +89,19 @@ export function DocumentsResultsMobile({
 
             <div className="flex flex-wrap items-center gap-1.5">
               <CategoryBadges categories={row.categories} />
-              <Badge variant="outline">{SOURCE_LABEL[row.source]}</Badge>
-              <Badge variant="outline" className="capitalize">
+              <DocumentMetaPill>{SOURCE_LABEL[row.source]}</DocumentMetaPill>
+              <DocumentMetaPill className="capitalize">
                 {row.visibility}
-              </Badge>
+              </DocumentMetaPill>
             </div>
 
-            <p className="text-xs text-muted-foreground">
+            <p className="text-muted-foreground text-xs">
               Updated {formatUpdatedAt(row.updatedAt)}
             </p>
 
             <DocumentRowActions
               row={row}
+              presentation="mobile"
               canEdit={canEdit}
               editMode={editMode}
               publicSlug={publicSlug}

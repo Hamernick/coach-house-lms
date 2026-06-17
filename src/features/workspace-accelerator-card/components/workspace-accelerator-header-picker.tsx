@@ -12,6 +12,7 @@ import {
   getReactGrabLinkedSurfaceProps,
   getReactGrabOwnerProps,
 } from "@/components/dev/react-grab-surface"
+import { Badge } from "@/components/ui/badge"
 import {
   Select,
   SelectContent,
@@ -56,6 +57,8 @@ const WORKSPACE_ACCELERATOR_EXPANDED_PICKER_TRIGGER_CLASSNAME =
   "w-[248px] max-w-[36vw]"
 const WORKSPACE_ACCELERATOR_RAIL_PICKER_TRIGGER_CLASSNAME =
   "w-full max-w-none px-1.5"
+const WORKSPACE_ACCELERATOR_BADGE_PICKER_TRIGGER_CLASSNAME =
+  "h-7 min-h-7 w-fit max-w-[15rem] rounded-full border-transparent bg-primary/10 px-2.5 py-1 text-primary shadow-none hover:bg-primary/15 data-[size=sm]:h-7 [&>svg]:size-3"
 
 function WorkspaceAcceleratorHeaderPickerLabel({
   label,
@@ -128,7 +131,7 @@ export function WorkspaceAcceleratorHeaderPicker({
   tutorialCallout: WorkspaceAcceleratorTutorialCallout | null
   tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
   viewerOpen?: boolean
-  layout?: "inline" | "rail"
+  layout?: "inline" | "rail" | "badge"
   onLessonGroupChange: (nextLessonGroupKey: string) => void
 }) {
   const selectedLessonGroup =
@@ -172,7 +175,7 @@ export function WorkspaceAcceleratorHeaderPicker({
     primitiveImport: "@/components/ui/select",
   })
 
-  const trigger = (
+  const triggerElement = (
     <WorkspaceAcceleratorTutorialGuardTooltip
       open={classSelectionGuard.open}
       message={classSelectionGuard.message}
@@ -191,7 +194,9 @@ export function WorkspaceAcceleratorHeaderPicker({
         {...reactGrabOwnerProps}
         className={cn(
           "relative h-8 min-h-8 gap-1.5 overflow-visible border-border/65 bg-background/80 px-2 text-left text-sm",
-          layout === "rail"
+          layout === "badge"
+            ? WORKSPACE_ACCELERATOR_BADGE_PICKER_TRIGGER_CLASSNAME
+            : layout === "rail"
             ? WORKSPACE_ACCELERATOR_RAIL_PICKER_TRIGGER_CLASSNAME
             : viewerOpen
               ? WORKSPACE_ACCELERATOR_EXPANDED_PICKER_TRIGGER_CLASSNAME
@@ -204,6 +209,8 @@ export function WorkspaceAcceleratorHeaderPicker({
         data-tutorial-interaction-locked={
           classDropdownLocked ? "true" : undefined
         }
+        data-slot={layout === "badge" ? "badge" : undefined}
+        size={layout === "badge" ? "sm" : "default"}
       >
         {pickerHighlighted ? (
           <WorkspaceTutorialCallout
@@ -230,12 +237,26 @@ export function WorkspaceAcceleratorHeaderPicker({
       </SelectTrigger>
     </WorkspaceAcceleratorTutorialGuardTooltip>
   )
+  const trigger =
+    layout === "badge" ? (
+      <Badge
+        asChild
+        variant="outline"
+        className={WORKSPACE_ACCELERATOR_BADGE_PICKER_TRIGGER_CLASSNAME}
+      >
+        {triggerElement}
+      </Badge>
+    ) : (
+      triggerElement
+    )
 
   return (
     <div
       {...reactGrabWrapperProps}
       className={cn(
-        layout === "rail"
+        layout === "badge"
+          ? "inline-flex items-center"
+          : layout === "rail"
           ? "flex w-full items-start"
           : "inline-flex items-start pb-1",
       )}

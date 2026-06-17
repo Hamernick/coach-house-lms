@@ -1,13 +1,30 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition, type DragEvent } from "react"
+import {
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type DragEvent,
+} from "react"
 import { useRouter } from "next/navigation"
-import { DotsThreeVertical, Plus, StackSimple, Spinner, CircleNotch, CheckCircle } from "@phosphor-icons/react/dist/ssr"
+import {
+  DotsThreeVertical,
+  Plus,
+  StackSimple,
+  Spinner,
+  CircleNotch,
+  CheckCircle,
+} from "@phosphor-icons/react/dist/ssr"
 import { toast } from "sonner"
 
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import { Button } from "@/components/ui/button"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { MemberWorkspaceProjectCard } from "./member-workspace-project-card"
 
 const OPEN_COLUMN_ORDER: Array<PlatformAdminDashboardLabProject["status"]> = [
@@ -21,28 +38,34 @@ const CLOSED_COLUMN_ORDER: Array<PlatformAdminDashboardLabProject["status"]> = [
   "cancelled",
 ]
 
-export function getMemberWorkspaceProjectBoardColumnOrder(showClosedProjects: boolean) {
+export function getMemberWorkspaceProjectBoardColumnOrder(
+  showClosedProjects: boolean
+) {
   return showClosedProjects
     ? [...OPEN_COLUMN_ORDER, ...CLOSED_COLUMN_ORDER]
     : OPEN_COLUMN_ORDER
 }
 
-function getColumnStatusIcon(status: PlatformAdminDashboardLabProject["status"]) {
+function getColumnStatusIcon(
+  status: PlatformAdminDashboardLabProject["status"]
+) {
   switch (status) {
     case "backlog":
-      return <StackSimple className="h-4 w-4 text-muted-foreground" />
+      return <StackSimple className="text-muted-foreground h-4 w-4" />
     case "planned":
-      return <Spinner className="h-4 w-4 text-muted-foreground" />
+      return <Spinner className="text-muted-foreground h-4 w-4" />
     case "active":
-      return <CircleNotch className="h-4 w-4 text-muted-foreground" />
+      return <CircleNotch className="text-muted-foreground h-4 w-4" />
     case "completed":
-      return <CheckCircle className="h-4 w-4 text-muted-foreground" />
+      return <CheckCircle className="text-muted-foreground h-4 w-4" />
     default:
-      return <StackSimple className="h-4 w-4 text-muted-foreground" />
+      return <StackSimple className="text-muted-foreground h-4 w-4" />
   }
 }
 
-function getColumnStatusLabel(status: PlatformAdminDashboardLabProject["status"]) {
+function getColumnStatusLabel(
+  status: PlatformAdminDashboardLabProject["status"]
+) {
   switch (status) {
     case "backlog":
       return "Backlog"
@@ -72,20 +95,21 @@ export function MemberWorkspaceProjectBoardView({
   onEditProject?: (project: PlatformAdminDashboardLabProject) => void
   updateProjectStatusAction?: (
     projectId: string,
-    status: PlatformAdminDashboardLabProject["status"],
+    status: PlatformAdminDashboardLabProject["status"]
   ) => Promise<{ ok: true; id: string } | { error: string }>
   showClosedProjects: boolean
   visibleProperties?: Array<"title" | "status" | "assignee" | "dueDate">
 }) {
   const router = useRouter()
-  const [items, setItems] = useState<PlatformAdminDashboardLabProject[]>(projects)
+  const [items, setItems] =
+    useState<PlatformAdminDashboardLabProject[]>(projects)
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [pendingProjectIds, setPendingProjectIds] = useState<string[]>([])
   const [isPending, startTransition] = useTransition()
   const canManageBoard = Boolean(updateProjectStatusAction)
   const columnOrder = useMemo(
     () => getMemberWorkspaceProjectBoardColumnOrder(showClosedProjects),
-    [showClosedProjects],
+    [showClosedProjects]
   )
 
   useEffect(() => {
@@ -93,7 +117,10 @@ export function MemberWorkspaceProjectBoardView({
   }, [projects])
 
   const groups = useMemo(() => {
-    const grouped = new Map<PlatformAdminDashboardLabProject["status"], PlatformAdminDashboardLabProject[]>()
+    const grouped = new Map<
+      PlatformAdminDashboardLabProject["status"],
+      PlatformAdminDashboardLabProject[]
+    >()
     for (const status of columnOrder) {
       grouped.set(status, [])
     }
@@ -113,7 +140,7 @@ export function MemberWorkspaceProjectBoardView({
 
   const commitProjectStatus = (
     projectId: string,
-    status: PlatformAdminDashboardLabProject["status"],
+    status: PlatformAdminDashboardLabProject["status"]
   ) => {
     if (!updateProjectStatusAction) {
       return
@@ -122,15 +149,19 @@ export function MemberWorkspaceProjectBoardView({
     const previousItems = items
     setItems((current) =>
       current.map((project) =>
-        project.id === projectId ? { ...project, status } : project,
-      ),
+        project.id === projectId ? { ...project, status } : project
+      )
     )
-    setPendingProjectIds((current) => Array.from(new Set([...current, projectId])))
+    setPendingProjectIds((current) =>
+      Array.from(new Set([...current, projectId]))
+    )
 
     startTransition(async () => {
       const result = await updateProjectStatusAction(projectId, status)
 
-      setPendingProjectIds((current) => current.filter((value) => value !== projectId))
+      setPendingProjectIds((current) =>
+        current.filter((value) => value !== projectId)
+      )
 
       if ("error" in result) {
         setItems(previousItems)
@@ -162,7 +193,7 @@ export function MemberWorkspaceProjectBoardView({
         {columnOrder.map((status) => (
           <div
             key={status}
-            className="rounded-xl bg-muted"
+            className="bg-muted rounded-xl"
             onDragOver={canManageBoard ? handleDragOver : undefined}
             onDrop={canManageBoard ? handleDropTo(status) : undefined}
           >
@@ -172,7 +203,9 @@ export function MemberWorkspaceProjectBoardView({
                 <span className="inline-flex items-center gap-1 text-sm font-medium">
                   {getColumnStatusLabel(status)}
                 </span>
-                <span className="text-xs text-muted-foreground">{groups.get(status)?.length ?? 0}</span>
+                <span className="text-muted-foreground text-xs">
+                  {groups.get(status)?.length ?? 0}
+                </span>
               </div>
               <div className="flex items-center gap-1">
                 {onAddProject ? (
@@ -198,67 +231,95 @@ export function MemberWorkspaceProjectBoardView({
               </div>
             </div>
             <div className="min-h-[120px] space-y-3 px-3 pb-3">
-              {(groups.get(status) ?? []).map((project) => (
-                <div
-                  key={project.id}
-                  draggable={canManageBoard}
-                  aria-disabled={pendingProjectIds.includes(project.id)}
-                  className={
-                    draggingId === project.id
-                      ? "cursor-grabbing opacity-70"
-                      : canManageBoard
-                        ? "cursor-grab"
-                        : ""
-                  }
-                  onDragStart={(event) => {
-                    if (!canManageBoard || pendingProjectIds.includes(project.id)) {
-                      event.preventDefault()
-                      return
+              {(groups.get(status) ?? []).map((project) => {
+                const canManageProjectCard =
+                  canManageBoard && project.projectKind !== "organization_admin"
+
+                return (
+                  <div
+                    key={project.id}
+                    draggable={canManageProjectCard}
+                    aria-disabled={pendingProjectIds.includes(project.id)}
+                    className={
+                      draggingId === project.id
+                        ? "cursor-grabbing opacity-70"
+                        : canManageProjectCard
+                          ? "cursor-grab"
+                          : ""
                     }
-                    event.dataTransfer.setData("text/id", project.id)
-                    setDraggingId(project.id)
-                  }}
-                  onDragEnd={() => setDraggingId(null)}
-                >
-                  <MemberWorkspaceProjectCard
-                    project={project}
-                    variant="board"
-                    onEditProject={onEditProject}
-                    visibleProperties={visibleProperties}
-                    actions={canManageBoard ? (
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 rounded-lg"
-                            disabled={pendingProjectIds.includes(project.id)}
-                            type="button"
-                          >
-                            <DotsThreeVertical className="h-4 w-4" />
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-40 p-2" align="end">
-                          <div className="space-y-1">
-                            {getMemberWorkspaceProjectBoardColumnOrder(true).map((nextStatus) => (
-                              <button
-                                key={nextStatus}
+                    onDragStart={(event) => {
+                      if (
+                        !canManageProjectCard ||
+                        pendingProjectIds.includes(project.id)
+                      ) {
+                        event.preventDefault()
+                        return
+                      }
+                      event.dataTransfer.setData("text/id", project.id)
+                      setDraggingId(project.id)
+                    }}
+                    onDragEnd={() => setDraggingId(null)}
+                  >
+                    <MemberWorkspaceProjectCard
+                      project={project}
+                      variant="board"
+                      onEditProject={
+                        project.projectKind === "organization_admin"
+                          ? undefined
+                          : onEditProject
+                      }
+                      visibleProperties={visibleProperties}
+                      actions={
+                        canManageProjectCard ? (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-lg"
+                                disabled={pendingProjectIds.includes(
+                                  project.id
+                                )}
                                 type="button"
-                                className="w-full rounded-md px-2 py-1 text-left text-sm hover:bg-accent"
-                                onClick={() => commitProjectStatus(project.id, nextStatus)}
                               >
-                                Move to {getColumnStatusLabel(nextStatus)}
-                              </button>
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    ) : undefined}
-                  />
-                </div>
-              ))}
+                                <DotsThreeVertical className="h-4 w-4" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-40 p-2" align="end">
+                              <div className="space-y-1">
+                                {getMemberWorkspaceProjectBoardColumnOrder(
+                                  true
+                                ).map((nextStatus) => (
+                                  <button
+                                    key={nextStatus}
+                                    type="button"
+                                    className="hover:bg-accent w-full rounded-md px-2 py-1 text-left text-sm"
+                                    onClick={() =>
+                                      commitProjectStatus(
+                                        project.id,
+                                        nextStatus
+                                      )
+                                    }
+                                  >
+                                    Move to {getColumnStatusLabel(nextStatus)}
+                                  </button>
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        ) : undefined
+                      }
+                    />
+                  </div>
+                )
+              })}
               {onAddProject ? (
-                <Button variant="ghost" size="sm" type="button" onClick={onAddProject}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  type="button"
+                  onClick={onAddProject}
+                >
                   <Plus className="mr-1 h-4 w-4" />
                   Add project
                 </Button>

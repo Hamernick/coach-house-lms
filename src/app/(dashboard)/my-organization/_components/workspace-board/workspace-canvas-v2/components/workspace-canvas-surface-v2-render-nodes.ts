@@ -1,25 +1,20 @@
 "use client"
 
-import type {
-  WorkspaceCanvasTutorialNodeData,
-} from "@/features/workspace-canvas-tutorial"
+import type { WorkspaceCanvasTutorialNodeData } from "@/features/workspace-canvas-tutorial"
 
 import { resolveWorkspaceCardNodeStyle } from "../../workspace-board-layout"
-import type {
-  WorkspaceBoardNodeData,
-} from "../../workspace-board-node"
+import type { WorkspaceBoardNodeData } from "../../workspace-board-node"
 import { workspaceNodeClassName } from "../../workspace-board-node-class-name"
 import type {
   WorkspaceBoardState,
   WorkspaceCardId,
 } from "../../workspace-board-types"
-import type {
-  WorkspaceCanvasNode,
-} from "./workspace-canvas-surface-v2-helpers"
+import type { WorkspaceCanvasNode } from "./workspace-canvas-surface-v2-helpers"
+import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
+import type { WorkspaceCanvasPersonPlacement } from "./workspace-canvas-person-node-model"
 import { reconcileWorkspaceCanvasV2Nodes } from "./workspace-canvas-surface-v2-reconcile"
-import type {
-  WorkspaceCanvasV2CardId,
-} from "../contracts/workspace-card-contract"
+import { resolveWorkspaceCanvasV2CardNodeZIndex } from "./workspace-canvas-surface-v2-node-z-index"
+import type { WorkspaceCanvasV2CardId } from "../contracts/workspace-card-contract"
 
 export function buildWorkspaceCanvasV2CardNode({
   cardId,
@@ -34,14 +29,17 @@ export function buildWorkspaceCanvasV2CardNode({
   allowEditing: boolean
   tutorialDraggable?: boolean
 }): WorkspaceCanvasNode {
-  const zIndex = tutorialDraggable ? 30 : 0
+  const zIndex = resolveWorkspaceCanvasV2CardNodeZIndex({
+    cardId,
+    tutorialDraggable,
+  })
   return {
     id: cardId,
     type: "workspace",
     position,
     zIndex,
     draggable: allowEditing || tutorialDraggable,
-    selectable: false,
+    selectable: allowEditing || tutorialDraggable,
     dragHandle: ".workspace-card-drag-handle",
     className: workspaceNodeClassName(data.size, cardId),
     style: resolveWorkspaceCardNodeStyle(data.size, cardId),
@@ -56,8 +54,12 @@ export function resolveWorkspaceCanvasRenderNodes({
   cardDataLookup,
   orgNodePositionFromBoard,
   allowEditing,
+  allowPeopleCanvasInteraction,
   acceleratorStepNodeData,
   tutorialNodeData,
+  workspacePersonPlacements,
+  workspacePersonById,
+  onRemoveWorkspacePerson,
   tutorialCardPositionOverrides,
   tutorialDraggableCardIds,
 }: {
@@ -67,8 +69,12 @@ export function resolveWorkspaceCanvasRenderNodes({
   cardDataLookup: Record<WorkspaceCardId, WorkspaceBoardNodeData>
   orgNodePositionFromBoard: { x: number; y: number }
   allowEditing: boolean
+  allowPeopleCanvasInteraction: boolean
   acceleratorStepNodeData: WorkspaceCanvasNode | null
   tutorialNodeData: WorkspaceCanvasNode | null
+  workspacePersonPlacements: WorkspaceCanvasPersonPlacement[]
+  workspacePersonById: ReadonlyMap<string, OrgPersonWithImage>
+  onRemoveWorkspacePerson: (personId: string) => void
   tutorialCardPositionOverrides: Partial<
     Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
   > | null
@@ -81,8 +87,12 @@ export function resolveWorkspaceCanvasRenderNodes({
     cardDataLookup,
     orgNodePositionFromBoard,
     allowEditing,
+    allowPeopleCanvasInteraction,
     acceleratorStepNodeData,
     tutorialNodeData,
+    workspacePersonPlacements,
+    workspacePersonById,
+    onRemoveWorkspacePerson,
     tutorialDraggableCardIds,
     tutorialCardPositionOverrides,
   })
@@ -91,7 +101,7 @@ export function resolveWorkspaceCanvasRenderNodes({
       ? (tutorialNodeData.data as WorkspaceCanvasTutorialNodeData)
       : null
   const suppressedNodeIdSet = new Set(
-    tutorialNodeState?.suppressedNodeIds ?? [],
+    tutorialNodeState?.suppressedNodeIds ?? []
   )
 
   return suppressedNodeIdSet.size === 0
@@ -99,6 +109,6 @@ export function resolveWorkspaceCanvasRenderNodes({
     : nextNodes.filter(
         (node) =>
           node.id === "workspace-canvas-tutorial" ||
-          !suppressedNodeIdSet.has(node.id),
+          !suppressedNodeIdSet.has(node.id)
       )
 }

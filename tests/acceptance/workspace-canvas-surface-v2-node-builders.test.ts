@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest"
 import { buildInitialWorkspaceCanvasNodes } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-node-builders"
 
 describe("workspace canvas v2 node builders", () => {
-  it("keeps revealed workspace cards draggable when editing is allowed", () => {
+  it("keeps revealed workspace cards draggable and selectable when editing is allowed", () => {
     const args = {
       visibleCardIds: ["organization-overview"],
       boardNodeLookup: new Map([
@@ -35,6 +35,7 @@ describe("workspace canvas v2 node builders", () => {
     expect(nodes).toHaveLength(1)
     expect(nodes[0]?.id).toBe("organization-overview")
     expect(nodes[0]?.draggable).toBe(true)
+    expect(nodes[0]?.selectable).toBe(true)
   })
 
   it("still includes the tutorial node when the welcome step hides every managed card", () => {
@@ -67,7 +68,9 @@ describe("workspace canvas v2 node builders", () => {
       boardNodeLookup: new Map(),
       initialPositionLookupRef: {
         current: {},
-      } as unknown as MutableRefObject<Record<string, { x: number; y: number }>>,
+      } as unknown as MutableRefObject<
+        Record<string, { x: number; y: number }>
+      >,
       cardDataLookup: {},
       allowEditing: true,
       acceleratorStepNodeData: null,

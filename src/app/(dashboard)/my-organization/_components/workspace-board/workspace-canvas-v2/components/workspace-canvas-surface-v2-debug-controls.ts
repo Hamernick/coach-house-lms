@@ -1,8 +1,6 @@
 export function shouldShowWorkspaceCanvasInternalTutorialRestart({
-  allowEditing,
   isPlatformAdmin,
   presentationMode,
-  environment,
 }: {
   allowEditing: boolean
   isPlatformAdmin?: boolean
@@ -10,6 +8,5 @@ export function shouldShowWorkspaceCanvasInternalTutorialRestart({
   environment: string | undefined
 }) {
   if (presentationMode) return false
-  if (isPlatformAdmin === true) return true
-  return allowEditing && environment === "development"
+  return isPlatformAdmin === true
 }

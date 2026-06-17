@@ -26,19 +26,36 @@ export function isMissingOrganizationProjectNotesTableError(error: unknown) {
 }
 
 export function isMissingOrganizationProjectAssetsTableError(error: unknown) {
-  return isMissingMemberWorkspaceTableError(error, "organization_project_assets")
+  return isMissingMemberWorkspaceTableError(
+    error,
+    "organization_project_assets"
+  )
 }
 
-export function isMissingOrganizationProjectQuickLinksTableError(error: unknown) {
-  return isMissingMemberWorkspaceTableError(error, "organization_project_quick_links")
-}
-
-export function isMissingOrganizationWorkspaceStarterStateTableError(
-  error: unknown,
+export function isMissingOrganizationProjectQuickLinksTableError(
+  error: unknown
 ) {
   return isMissingMemberWorkspaceTableError(
     error,
-    "organization_workspace_starter_state",
+    "organization_project_quick_links"
+  )
+}
+
+export function isMissingOrganizationProjectOverviewDocumentsTableError(
+  error: unknown
+) {
+  return isMissingMemberWorkspaceTableError(
+    error,
+    "organization_project_overview_documents"
+  )
+}
+
+export function isMissingOrganizationWorkspaceStarterStateTableError(
+  error: unknown
+) {
+  return isMissingMemberWorkspaceTableError(
+    error,
+    "organization_workspace_starter_state"
   )
 }
 
@@ -47,12 +64,15 @@ export function isMissingOrganizationTasksTableError(error: unknown) {
 }
 
 export function isMissingOrganizationTaskAssigneesTableError(error: unknown) {
-  return isMissingMemberWorkspaceTableError(error, "organization_task_assignees")
+  return isMissingMemberWorkspaceTableError(
+    error,
+    "organization_task_assignees"
+  )
 }
 
 export function toMemberWorkspaceDataError(
   error: unknown,
-  fallbackMessage: string,
+  fallbackMessage: string
 ) {
   return supabaseErrorToError(error, fallbackMessage)
 }

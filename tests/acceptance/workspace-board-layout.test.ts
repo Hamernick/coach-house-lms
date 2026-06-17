@@ -46,7 +46,8 @@ describe("workspace board layout", () => {
         "economic-engine",
         "communications",
         "atlas",
-      ]),
+        "fiscal-sponsorship",
+      ])
     )
   })
 
@@ -62,7 +63,9 @@ describe("workspace board layout", () => {
       ],
     })
 
-    const communications = normalized.nodes.find((node) => node.id === "communications")
+    const communications = normalized.nodes.find(
+      (node) => node.id === "communications"
+    )
     expect(communications?.size).toBe("md")
   })
 
@@ -72,6 +75,101 @@ describe("workspace board layout", () => {
     })
 
     expect(normalized.autoLayoutMode).toBe("dagre-tree")
+  })
+
+  it("migrates persisted roadmap accelerator edges to the organization-owned accelerator edge", () => {
+    const normalized = normalizeWorkspaceBoardState({
+      connections: [
+        {
+          id: "edge-organization-to-programs",
+          source: "organization-overview",
+          target: "programs",
+        },
+        {
+          id: "edge-roadmap-to-accelerator",
+          source: "roadmap",
+          target: "accelerator",
+        },
+      ],
+    })
+
+    expect(normalized.connections).toEqual(
+      expect.arrayContaining([
+        {
+          id: "edge-organization-to-programs",
+          source: "organization-overview",
+          target: "programs",
+        },
+        {
+          id: "edge-organization-to-accelerator",
+          source: "organization-overview",
+          target: "accelerator",
+        },
+      ])
+    )
+    expect(normalized.connections).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: "roadmap",
+          target: "accelerator",
+        }),
+      ])
+    )
+  })
+
+  it("does not duplicate the organization accelerator edge when migrating legacy board state", () => {
+    const normalized = normalizeWorkspaceBoardState({
+      connections: [
+        {
+          id: "edge-roadmap-to-accelerator",
+          source: "roadmap",
+          target: "accelerator",
+        },
+        {
+          id: "edge-organization-to-accelerator",
+          source: "organization-overview",
+          target: "accelerator",
+        },
+      ],
+    })
+
+    expect(
+      normalized.connections.filter(
+        (connection) =>
+          connection.source === "organization-overview" &&
+          connection.target === "accelerator"
+      )
+    ).toHaveLength(1)
+  })
+
+  it("migrates persisted organization fiscal edges to Activity-owned fiscal edges", () => {
+    const normalized = normalizeWorkspaceBoardState({
+      connections: [
+        {
+          id: "edge-organization-to-fiscal-sponsorship",
+          source: "organization-overview",
+          target: "fiscal-sponsorship",
+        },
+      ],
+    })
+
+    expect(normalized.connections).toEqual(
+      expect.arrayContaining([
+        {
+          id: "edge-activity-to-fiscal-sponsorship",
+          source: "programs",
+          target: "fiscal-sponsorship",
+        },
+      ])
+    )
+    expect(normalized.connections).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: "organization-overview",
+          target: "fiscal-sponsorship",
+        }),
+      ])
+    )
   })
 
   it("keeps the communications card wider at medium and large sizes", () => {
@@ -96,55 +194,214 @@ describe("workspace board layout", () => {
     })
   })
 
+  it("keeps the compact accelerator node wide enough for disclosure rows", () => {
+    expect(resolveCardDimensions("sm", "accelerator")).toEqual({
+      width: 520,
+      height: 252,
+    })
+    expect(resolveCardDimensions("md", "accelerator")).toEqual({
+      width: 640,
+      height: 520,
+    })
+  })
+
   it("derives card shell height mode from the shared layout contract", () => {
-    expect(resolveWorkspaceCardHeightModeClassName("organization-overview")).toBe(
-      "h-auto",
-    )
+    expect(
+      resolveWorkspaceCardHeightModeClassName("organization-overview")
+    ).toBe("h-auto")
     expect(resolveWorkspaceCardHeightModeClassName("programs")).toBe("h-auto")
-    expect(resolveWorkspaceCardHeightModeClassName("accelerator")).toBe("h-auto")
+    expect(resolveWorkspaceCardHeightModeClassName("accelerator")).toBe(
+      "h-auto"
+    )
     expect(resolveWorkspaceCardHeightModeClassName("roadmap")).toBe("h-auto")
     expect(resolveWorkspaceCardHeightModeClassName("deck")).toBe("h-auto")
+    expect(resolveWorkspaceCardHeightModeClassName("fiscal-sponsorship")).toBe(
+      "h-auto"
+    )
   })
 
   it("keeps auto-height card shells intrinsic while fixed cards retain canvas heights", () => {
+    expect(resolveCardDimensions("sm", "fiscal-sponsorship")).toMatchObject({
+      width: 440,
+      height: 456,
+    })
+    expect(resolveCardDimensions("md", "fiscal-sponsorship")).toMatchObject({
+      width: 440,
+      height: 456,
+    })
+
     expect(
       resolveWorkspaceCardCanvasShellStyle({
         size: "sm",
         cardId: "accelerator",
-      }),
+      })
     ).toBeUndefined()
 
     expect(
       resolveWorkspaceCardCanvasShellStyle({
         size: "sm",
         cardId: "roadmap",
-      }),
+      })
     ).toBeUndefined()
 
     expect(
       resolveWorkspaceCardCanvasShellClassName({
         size: "sm",
         cardId: "accelerator",
-      }),
+      })
     ).toContain("h-auto")
     expect(
       resolveWorkspaceCardCanvasShellClassName({
         size: "sm",
         cardId: "roadmap",
-      }),
+      })
     ).toContain("h-auto")
     expect(
       resolveWorkspaceCardCanvasShellStyle({
         size: "md",
         cardId: "deck",
-      }),
+      })
     ).toBeUndefined()
     expect(
       resolveWorkspaceCardCanvasShellClassName({
         size: "md",
         cardId: "deck",
-      }),
+      })
     ).toContain("h-auto")
+    expect(
+      resolveWorkspaceCardCanvasShellStyle({
+        size: "sm",
+        cardId: "fiscal-sponsorship",
+      })
+    ).toBeUndefined()
+    expect(
+      resolveWorkspaceCardCanvasShellClassName({
+        size: "sm",
+        cardId: "fiscal-sponsorship",
+      })
+    ).toContain("h-auto")
+    expect(
+      resolveWorkspaceCardCanvasShellClassName({
+        size: "sm",
+        cardId: "fiscal-sponsorship",
+      })
+    ).not.toContain("shadow-none")
+    expect(
+      resolveWorkspaceCardCanvasShellClassName({
+        size: "sm",
+        cardId: "fiscal-sponsorship",
+      })
+    ).not.toContain("border-border/70 border")
+    expect(
+      resolveWorkspaceCardCanvasShellClassName({
+        size: "sm",
+        cardId: "fiscal-sponsorship",
+      })
+    ).not.toContain("rounded-[20px]")
+    expect(
+      resolveWorkspaceCardCanvasShellClassName({
+        size: "sm",
+        cardId: "fiscal-sponsorship",
+      })
+    ).not.toContain("max-w-[42rem]")
+    expect(
+      resolveWorkspaceCardCanvasShellClassName({
+        size: "sm",
+        cardId: "fiscal-sponsorship",
+      })
+    ).not.toContain("rounded-[2rem] p-3 shadow-sm")
+    expect(
+      resolveWorkspaceCardCanvasShellClassName({
+        size: "sm",
+        cardId: "programs",
+        isCanvasFullscreen: true,
+      })
+    ).toContain("h-full w-full max-w-none")
+  })
+
+  it("keeps the fiscal sponsorship tile hidden by default but revealable", () => {
+    const initial = buildDefaultBoardState("balanced")
+    expect(initial.hiddenCardIds).toContain("fiscal-sponsorship")
+
+    const visible = toggleWorkspaceBoardCardVisibility(
+      initial,
+      "fiscal-sponsorship"
+    )
+    expect(visible.hiddenCardIds).not.toContain("fiscal-sponsorship")
+    expect(visible.hiddenCardIds).not.toContain("organization-overview")
+  })
+
+  it("preserves fiscal sponsorship positions when the tile is already visible", () => {
+    const initial = buildDefaultBoardState("balanced")
+    const visibleHiddenCardIds = initial.hiddenCardIds.filter(
+      (cardId) => cardId !== "fiscal-sponsorship"
+    )
+    const normalized = normalizeWorkspaceBoardState({
+      ...initial,
+      hiddenCardIds: visibleHiddenCardIds,
+      nodes: initial.nodes.map((node) =>
+        node.id === "fiscal-sponsorship" ? { ...node, x: 728, y: 760 } : node
+      ),
+    })
+    const fiscalSponsorship = findNode(normalized.nodes, "fiscal-sponsorship")
+
+    expect(normalized.hiddenCardIds).not.toContain("fiscal-sponsorship")
+    expect(fiscalSponsorship).toMatchObject({
+      x: 728,
+      y: 760,
+    })
+
+    const priorDefaultPosition = normalizeWorkspaceBoardState({
+      ...initial,
+      hiddenCardIds: visibleHiddenCardIds,
+      nodes: initial.nodes.map((node) =>
+        node.id === "fiscal-sponsorship" ? { ...node, x: 64, y: 720 } : node
+      ),
+    })
+
+    expect(
+      findNode(priorDefaultPosition.nodes, "fiscal-sponsorship")
+    ).toMatchObject({
+      x: 64,
+      y: 720,
+    })
+
+    const manuallyPlaced = normalizeWorkspaceBoardState({
+      ...initial,
+      hiddenCardIds: visibleHiddenCardIds,
+      nodes: initial.nodes.map((node) =>
+        node.id === "fiscal-sponsorship" ? { ...node, x: 320, y: 904 } : node
+      ),
+    })
+
+    expect(findNode(manuallyPlaced.nodes, "fiscal-sponsorship")).toMatchObject({
+      x: 320,
+      y: 904,
+    })
+  })
+
+  it("hides fiscal sponsorship for legacy saved boards until users reveal it", () => {
+    const legacyNodeIds = WORKSPACE_CARD_IDS.filter(
+      (cardId) => cardId !== "fiscal-sponsorship"
+    )
+    const normalized = normalizeWorkspaceBoardState({
+      nodes: legacyNodeIds.map((id, index) => ({
+        id,
+        x: index * 16,
+        y: index * 8,
+        size: "md",
+      })),
+      hiddenCardIds: ["brand-kit", "deck", "atlas"],
+    })
+
+    expect(normalized.hiddenCardIds).toContain("fiscal-sponsorship")
+
+    const revealed = toggleWorkspaceBoardCardVisibility(
+      normalized,
+      "fiscal-sponsorship"
+    )
+    const renormalized = normalizeWorkspaceBoardState(revealed)
+    expect(renormalized.hiddenCardIds).not.toContain("fiscal-sponsorship")
   })
 
   it("keeps deck hidden when restoring legacy hidden-card defaults", () => {
@@ -270,7 +527,9 @@ describe("workspace board layout", () => {
 
   it("allows a root-only visible payload after normalization", () => {
     const normalized = normalizeWorkspaceBoardState({
-      hiddenCardIds: WORKSPACE_CARD_IDS.filter((cardId) => cardId !== "roadmap"),
+      hiddenCardIds: WORKSPACE_CARD_IDS.filter(
+        (cardId) => cardId !== "roadmap"
+      ),
     })
 
     expect(normalized.hiddenCardIds).not.toContain("organization-overview")
@@ -280,7 +539,12 @@ describe("workspace board layout", () => {
 
   it("removes organization from hidden payloads even when other core cards are hidden", () => {
     const normalized = normalizeWorkspaceBoardState({
-      hiddenCardIds: ["organization-overview", "accelerator", "calendar", "communications"],
+      hiddenCardIds: [
+        "organization-overview",
+        "accelerator",
+        "calendar",
+        "communications",
+      ],
     })
 
     expect(normalized.hiddenCardIds).not.toContain("organization-overview")
@@ -312,6 +576,7 @@ describe("workspace board layout", () => {
       "communications",
       "deck",
       "atlas",
+      "fiscal-sponsorship",
     ])
   })
 
@@ -330,24 +595,26 @@ describe("workspace board layout", () => {
       "communications",
       "deck",
       "atlas",
+      "fiscal-sponsorship",
     ])
   })
 
-  it("hiding roadmap hides the entire downstream branch", () => {
+  it("hiding roadmap leaves the organization-owned accelerator branch visible", () => {
     const initial = buildDefaultBoardState("balanced")
     const next = toggleWorkspaceBoardCardVisibility(initial, "roadmap")
 
     expect(next.hiddenCardIds).toEqual([
-      "accelerator",
       "roadmap",
       "brand-kit",
       "economic-engine",
-      "calendar",
       "communications",
       "deck",
       "atlas",
+      "fiscal-sponsorship",
     ])
     expect(next.hiddenCardIds).not.toContain("organization-overview")
+    expect(next.hiddenCardIds).not.toContain("accelerator")
+    expect(next.hiddenCardIds).not.toContain("calendar")
   })
 
   it("keeps accelerator toggles in the same two rooted-tree states", () => {
@@ -363,6 +630,7 @@ describe("workspace board layout", () => {
       "communications",
       "deck",
       "atlas",
+      "fiscal-sponsorship",
     ])
   })
 
@@ -376,7 +644,10 @@ describe("workspace board layout", () => {
       hiddenCardIds: twoVisibleHiddenCardIds,
     }
 
-    const after = toggleWorkspaceBoardCardVisibility(twoVisibleState, "accelerator")
+    const after = toggleWorkspaceBoardCardVisibility(
+      twoVisibleState,
+      "accelerator"
+    )
     expect(after.hiddenCardIds).toContain("accelerator")
     expect(after.hiddenCardIds).not.toContain("organization-overview")
   })
@@ -391,7 +662,10 @@ describe("workspace board layout", () => {
       hiddenCardIds: twoVisibleHiddenCardIds,
     }
 
-    const after = toggleWorkspaceBoardCardVisibility(twoVisibleState, "organization-overview")
+    const after = toggleWorkspaceBoardCardVisibility(
+      twoVisibleState,
+      "organization-overview"
+    )
     expect(after.hiddenCardIds).not.toContain("organization-overview")
     expect(after.hiddenCardIds).not.toContain("accelerator")
   })
@@ -400,14 +674,22 @@ describe("workspace board layout", () => {
     const baseline = buildDefaultBoardState("balanced")
     const onlyAcceleratorVisibleState = {
       ...baseline,
-      hiddenCardIds: WORKSPACE_CARD_IDS.filter((cardId) => cardId !== "accelerator"),
+      hiddenCardIds: WORKSPACE_CARD_IDS.filter(
+        (cardId) => cardId !== "accelerator"
+      ),
     }
 
-    const afterHide = toggleWorkspaceBoardCardVisibility(onlyAcceleratorVisibleState, "accelerator")
+    const afterHide = toggleWorkspaceBoardCardVisibility(
+      onlyAcceleratorVisibleState,
+      "accelerator"
+    )
     expect(afterHide.hiddenCardIds).toContain("accelerator")
     expect(afterHide.hiddenCardIds).not.toContain("organization-overview")
 
-    const afterReopen = toggleWorkspaceBoardCardVisibility(afterHide, "accelerator")
+    const afterReopen = toggleWorkspaceBoardCardVisibility(
+      afterHide,
+      "accelerator"
+    )
     expect(afterReopen.hiddenCardIds).not.toContain("accelerator")
     expect(afterReopen.hiddenCardIds).not.toContain("organization-overview")
   })
@@ -415,7 +697,8 @@ describe("workspace board layout", () => {
   it("hiding accelerator removes the accelerator branch from the visible set", () => {
     const initial = buildDefaultBoardState("balanced")
     const countVisible = (state: ReturnType<typeof buildDefaultBoardState>) =>
-      state.nodes.filter((node) => !state.hiddenCardIds.includes(node.id)).length
+      state.nodes.filter((node) => !state.hiddenCardIds.includes(node.id))
+        .length
 
     const before = countVisible(initial)
     const after = countVisible(
@@ -457,6 +740,7 @@ describe("workspace board layout", () => {
       "communications",
       "deck",
       "atlas",
+      "fiscal-sponsorship",
     ])
     expect(sanitized.visibility?.allCardsHiddenExplicitly).toBe(false)
   })
@@ -482,6 +766,7 @@ describe("workspace board layout", () => {
       "communications",
       "deck",
       "atlas",
+      "fiscal-sponsorship",
     ])
     expect(sanitized.visibility?.allCardsHiddenExplicitly).toBe(false)
   })
@@ -507,6 +792,7 @@ describe("workspace board layout", () => {
       "communications",
       "deck",
       "atlas",
+      "fiscal-sponsorship",
     ])
     expect(sanitized.visibility?.allCardsHiddenExplicitly).toBe(false)
   })
@@ -531,10 +817,16 @@ describe("workspace board layout", () => {
       hiddenCardIds: ["formation-status"],
     })
 
-    const acceleratorNode = normalized.nodes.find((node) => node.id === "accelerator")
+    const acceleratorNode = normalized.nodes.find(
+      (node) => node.id === "accelerator"
+    )
     expect(acceleratorNode?.x).toBe(128)
     expect(acceleratorNode?.y).toBe(256)
-    expect(normalized.connections.some((connection) => connection.target === "accelerator")).toBe(true)
+    expect(
+      normalized.connections.some(
+        (connection) => connection.target === "accelerator"
+      )
+    ).toBe(true)
     expect(normalized.hiddenCardIds).toContain("accelerator")
   })
 
@@ -630,7 +922,7 @@ describe("workspace board layout", () => {
     expect(economicEngine.x).toBeGreaterThan(accelerator.x)
     expect(calendar.x).toBeGreaterThan(accelerator.x)
     expect(
-      new Set([economicEngine.y, calendar.y, communications.y]).size,
+      new Set([economicEngine.y, calendar.y, communications.y]).size
     ).toBeGreaterThan(1)
   })
 
@@ -643,6 +935,7 @@ describe("workspace board layout", () => {
     const organization = findNode(laidOut, "organization-overview")
     const programs = findNode(laidOut, "programs")
     const deck = findNode(laidOut, "deck")
+    const fiscalSponsorship = findNode(laidOut, "fiscal-sponsorship")
     const communications = findNode(laidOut, "communications")
     const economicEngine = findNode(laidOut, "economic-engine")
     const calendar = findNode(laidOut, "calendar")
@@ -651,6 +944,9 @@ describe("workspace board layout", () => {
     expect(roadmap.x).toBeLessThan(organization.x)
     expect(organization.x).toBeLessThan(programs.x)
     expect(programs.x).toBeLessThan(deck.x)
+    expect(fiscalSponsorship.y).toBeGreaterThan(programs.y)
+    expect(fiscalSponsorship.x).toBeGreaterThan(roadmap.x)
+    expect(fiscalSponsorship.x).toBe(programs.x)
     expect(economicEngine.x).toBeGreaterThan(deck.x)
     expect(economicEngine.x).toBe(calendar.x)
     expect(calendar.x).toBe(communications.x)

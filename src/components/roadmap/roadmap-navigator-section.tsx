@@ -1,10 +1,16 @@
 "use client"
 
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
-import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type ComponentProps,
+} from "react"
 import { useRouter } from "next/navigation"
 
+import { getReactGrabLinkedSurfaceProps } from "@/components/dev/react-grab-surface"
 import { RoadmapEditorToc } from "@/components/roadmap/roadmap-editor/components/roadmap-editor-toc"
 import { ROADMAP_TOC_GROUP_PARENT_BY_CHILD } from "@/components/roadmap/roadmap-editor/constants"
 import {
@@ -28,6 +34,7 @@ export type RoadmapNavigatorSectionProps = {
   showHeader?: boolean
   collapsed?: boolean
   onCollapsedChange?: (next: boolean) => void
+  tocRailOffset?: string
 }
 
 const DEFAULT_OPEN_GROUPS = {
@@ -38,6 +45,37 @@ const DEFAULT_OPEN_GROUPS = {
 const ROADMAP_TOC_TITLE_CLASS_NAME =
   "text-[15px] leading-5 font-semibold tracking-tight text-foreground"
 
+export const ROADMAP_NAVIGATOR_HEADER_BUTTON_CLASS_NAME =
+  "hover:bg-muted/30 h-8 w-full justify-between rounded-lg px-2.5 py-0 text-left"
+
+const ROADMAP_NAVIGATOR_HEADER_BUTTON_REACT_GRAB_PROPS =
+  getReactGrabLinkedSurfaceProps({
+    ownerId: "roadmap-navigator-section:header-button",
+    component: "RoadmapNavigatorSection",
+    source: "src/components/roadmap/roadmap-navigator-section.tsx",
+    slot: "button",
+    surfaceKind: "trigger",
+    primitiveImport: "@/components/ui/button",
+  })
+
+function RoadmapNavigatorHeaderButton({
+  children,
+  ...props
+}: Omit<ComponentProps<typeof Button>, "variant" | "size" | "className">) {
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className={ROADMAP_NAVIGATOR_HEADER_BUTTON_CLASS_NAME}
+      {...ROADMAP_NAVIGATOR_HEADER_BUTTON_REACT_GRAB_PROPS}
+      {...props}
+    >
+      {children}
+    </Button>
+  )
+}
+
 export function RoadmapNavigatorSection({
   sections,
   basePath,
@@ -47,6 +85,7 @@ export function RoadmapNavigatorSection({
   showHeader = true,
   collapsed,
   onCollapsedChange,
+  tocRailOffset,
 }: RoadmapNavigatorSectionProps) {
   const router = useRouter()
   const [internalCollapsed, setInternalCollapsed] = useState(false)
@@ -112,11 +151,7 @@ export function RoadmapNavigatorSection({
     >
       {showHeader ? (
         <header className="flex min-h-8 items-center">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="hover:bg-muted/30 h-8 w-full justify-between rounded-lg px-2.5 py-0 text-left"
+          <RoadmapNavigatorHeaderButton
             aria-controls="roadmap-section-picker-trigger"
             aria-expanded={!resolvedCollapsed}
             onClick={handleCollapsedChange}
@@ -127,7 +162,6 @@ export function RoadmapNavigatorSection({
                 ROADMAP_TOC_TITLE_CLASS_NAME
               )}
             >
-              <WaypointsIcon className="size-4 shrink-0" aria-hidden />
               <span className="truncate">Strategic Roadmap</span>
             </span>
             <ChevronDownIcon
@@ -137,17 +171,18 @@ export function RoadmapNavigatorSection({
               )}
               aria-hidden
             />
-          </Button>
+          </RoadmapNavigatorHeaderButton>
         </header>
       ) : null}
       {resolvedCollapsed ? null : (
-        <div className={cn("min-h-0", showHeader ? "pb-1" : "pt-0.5 pb-1.5")}>
+        <div className={cn("min-h-0", showHeader ? "pb-1" : "pt-0 pb-2.5")}>
           <RoadmapEditorToc
             tocItems={tocItems}
             activeSectionId={activeSectionId ?? ""}
             drafts={resolvedDrafts}
             openGroups={openGroups}
             tocIndicator={tocIndicator}
+            tocRailOffset={tocRailOffset}
             sectionsListRef={sectionsListRef}
             onSectionSelect={handleSectionClick}
             onToggleGroup={handleToggleGroup}

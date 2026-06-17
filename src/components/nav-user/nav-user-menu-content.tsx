@@ -7,6 +7,7 @@ import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
 import LogOutIcon from "lucide-react/dist/esm/icons/log-out"
 import ShieldIcon from "lucide-react/dist/esm/icons/shield"
 
+import type { AppShellAccountMenuAction } from "@/components/app-shell/account-menu-actions-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 
@@ -23,6 +24,7 @@ type NavUserMenuContentProps = {
   isAdmin: boolean
   showOrgAdmin: boolean
   canAccessOrgAdmin: boolean
+  accountMenuActions?: AppShellAccountMenuAction[]
   signOutPending: boolean
   onCloseMenu: () => void
   onOpenSettings: () => void
@@ -40,6 +42,7 @@ export function NavUserMenuContent({
   isAdmin,
   showOrgAdmin,
   canAccessOrgAdmin,
+  accountMenuActions = [],
   signOutPending,
   onCloseMenu,
   onOpenSettings,
@@ -94,6 +97,27 @@ export function NavUserMenuContent({
           Admin
         </Link>
       ) : null}
+      {accountMenuActions.map((action) => {
+        const ActionIcon = action.icon
+
+        return (
+          <Button
+            key={action.id}
+            type="button"
+            variant="ghost"
+            className="h-auto w-full justify-start gap-2 rounded-md px-2 py-2 text-left"
+            onClick={() => {
+              onCloseMenu()
+              action.onSelect()
+            }}
+          >
+            {ActionIcon ? (
+              <ActionIcon className="size-4" aria-hidden />
+            ) : null}
+            {action.label}
+          </Button>
+        )
+      })}
       {!isAdmin ? (
         <Link
           href="/billing"

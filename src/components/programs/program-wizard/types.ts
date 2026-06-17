@@ -28,6 +28,7 @@ export type ProgramWizardProps = {
   program?: (Partial<ProgramRecord> & { id: string }) | null
   open?: boolean
   onOpenChange?: (open: boolean) => void
+  portalContainer?: HTMLElement | null
   triggerLabel?: ReactNode
 }
 
@@ -39,5 +40,5 @@ export type StepMeta = {
 export type ProgramWizardFieldErrors = Record<string, string>
 
 export type ProgramWizardUpdate = (
-  patch: Partial<ProgramWizardFormState>,
+  patch: Partial<ProgramWizardFormState>
 ) => void

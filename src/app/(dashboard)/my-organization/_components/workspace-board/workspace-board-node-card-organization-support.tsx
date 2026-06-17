@@ -24,11 +24,7 @@ export function resolveOrganizationHeaderAction({
   instruction: string | null
   onPress: () => void
 }) {
-  if (!WORKSPACE_MAP_FEATURE_ENABLED) {
-    return undefined
-  }
-
-  return (
+  const mapAction = WORKSPACE_MAP_FEATURE_ENABLED ? (
     <WorkspaceBoardOrganizationMapButton
       orgId={orgId}
       profile={profile}
@@ -36,7 +32,13 @@ export function resolveOrganizationHeaderAction({
       instruction={instruction}
       onPress={onPress}
     />
-  )
+  ) : null
+
+  if (!mapAction) {
+    return undefined
+  }
+
+  return <div className="flex items-center gap-1">{mapAction}</div>
 }
 
 export function renderOrganizationOverviewCard({
@@ -98,7 +100,6 @@ export function useOrganizationMapCardAction(data: WorkspaceBoardNodeData) {
       data.onOrganizationMapButtonTutorialComplete?.("complete-and-advance")
     }
   }, [data, organizationMapButtonCallout])
-
   return {
     organizationMapButtonCallout,
     handleOpenMapCard,

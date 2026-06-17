@@ -39,6 +39,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - Prompt templates for deterministic execution: `docs/agent/codex-execution-playbook.md`
 - External engineering references for guardrails: `docs/agent/engineering-sources.md`
 - Workspace presentation operations checklist: `docs/agent/workspace-presentation-runbook.md`
+- Workspace canvas node shell anatomy and React Flow boundary: `docs/agent/workspace-node-frame-contract.md`
 - React Grab pasted-component ownership workflow: `docs/agent/react-grab-execution-contract.md`
 
 ## Existing Supporting Docs

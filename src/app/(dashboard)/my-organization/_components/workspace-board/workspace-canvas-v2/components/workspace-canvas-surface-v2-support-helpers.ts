@@ -31,7 +31,9 @@ export function resolveWorkspaceCanvasTutorialCalendarButtonProps({
       title: tutorialCallout.label,
       instruction: tutorialCallout.instruction,
     },
-    onTutorialCalendarButtonComplete: onTutorialComplete,
+    onTutorialCalendarButtonComplete: tutorialCallout.requiresAction
+      ? onTutorialComplete
+      : undefined,
   }
 }
 
@@ -136,6 +138,7 @@ type WorkspaceCanvasSurfaceCardDataLookupArgs = Omit<
   | "acceleratorState"
   | "communications"
   | "tracker"
+  | "hiddenCardIds"
   | "nodes"
   | "tutorialStepId"
 > & {
@@ -155,6 +158,7 @@ export function useWorkspaceCanvasSurfaceCardDataLookup({
     acceleratorState: boardState.accelerator,
     communications: boardState.communications,
     tracker: boardState.tracker,
+    hiddenCardIds: boardState.hiddenCardIds,
     nodes: boardState.nodes,
     tutorialStepId: resolveWorkspaceCanvasTutorialStepId({
       tutorialActive,

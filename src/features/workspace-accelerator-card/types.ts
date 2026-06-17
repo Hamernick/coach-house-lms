@@ -120,6 +120,7 @@ export type WorkspaceAcceleratorCardRuntimeSnapshot = {
   readinessSummary?: AcceleratorReadinessSummary | null
   checklistModuleCount?: number
   filteredStepCount?: number
+  filteredProgressPercent?: number
 }
 
 export type WorkspaceAcceleratorTutorialFocus =

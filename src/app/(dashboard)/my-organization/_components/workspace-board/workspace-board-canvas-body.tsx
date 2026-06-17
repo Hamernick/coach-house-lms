@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 
 import { useAppShellRightRailControls } from "@/components/app-shell/right-rail-controls"
 import {
@@ -62,7 +62,6 @@ export function WorkspaceBoardCanvasBody({
   onOnboardingFlowChange,
   onPersistNodePosition,
   onToggleCardVisibility,
-  onResetToBaseLayout,
   onConnectCards,
   onDisconnectConnection,
   onDisconnectAllConnections,
@@ -105,27 +104,35 @@ export function WorkspaceBoardCanvasBody({
   onPersistNodePosition: (cardId: WorkspaceCardId, x: number, y: number) => void
   onToggleCardVisibility: (
     cardId: WorkspaceCardId,
-    context?: WorkspaceBoardToggleContext,
+    context?: WorkspaceBoardToggleContext
   ) => void
-  onResetToBaseLayout: () => void
   onConnectCards: (source: WorkspaceCardId, target: WorkspaceCardId) => void
   onDisconnectConnection: (connectionId: string) => void
   onDisconnectAllConnections: () => void
   onResetDefaultConnections: () => void
-  onCursorConnectionStateChange: (state: "connecting" | "live" | "degraded") => void
+  onCursorConnectionStateChange: (
+    state: "connecting" | "live" | "degraded"
+  ) => void
   onTutorialCompletionExitHandled: () => void
 }) {
   const rightRailControls = useAppShellRightRailControls()
   const tutorialActive = boardState.onboardingFlow.active
   const tutorialStepIndex = clampWorkspaceCanvasTutorialStepIndex(
-    boardState.onboardingFlow.tutorialStepIndex,
+    boardState.onboardingFlow.tutorialStepIndex
   )
   const tutorialCallout = tutorialActive
     ? resolveWorkspaceCanvasTutorialCallout(
         tutorialStepIndex,
-        boardState.onboardingFlow.openedTutorialStepIds,
+        boardState.onboardingFlow.openedTutorialStepIds
       )
     : null
+  const uiPreferencesScope = useMemo(
+    () => ({
+      orgId: seed.orgId,
+      viewerId: seed.viewerId,
+    }),
+    [seed.orgId, seed.viewerId]
+  )
 
   useEffect(() => {
     if (!shouldAutoOpenRightRailForWorkspaceTutorialCallout(tutorialCallout)) {
@@ -133,6 +140,9 @@ export function WorkspaceBoardCanvasBody({
     }
     rightRailControls?.setRightOpenAuto(true)
   }, [rightRailControls, tutorialCallout])
+
+  const workspaceDataDrawerCanEdit =
+    seed.canEdit || seed.isPlatformAdmin === true
 
   if (initialOnboardingActive) {
     return (
@@ -151,6 +161,8 @@ export function WorkspaceBoardCanvasBody({
         invites={invites}
         realtimeState={cursorConnectionState}
         currentUser={rightRailCurrentUser}
+        uiPreferencesScope={uiPreferencesScope}
+        roadmapSections={seed.roadmapSections}
         tutorialTeamAccessCallout={
           tutorialCallout?.kind === "team-access"
             ? {
@@ -168,6 +180,7 @@ export function WorkspaceBoardCanvasBody({
           organizationEditorData={organizationEditorData}
           boardState={boardState}
           allowEditing={allowEditing}
+          workspaceDataDrawerCanEdit={workspaceDataDrawerCanEdit}
           presentationMode={seed.presentationMode}
           workspaceRoomName={`org:${seed.orgId}:workspace`}
           layoutFitRequestKey={layoutFitRequestKey}
@@ -191,7 +204,6 @@ export function WorkspaceBoardCanvasBody({
           onOnboardingFlowChange={onOnboardingFlowChange}
           onPersistNodePosition={onPersistNodePosition}
           onToggleCardVisibility={onToggleCardVisibility}
-          onResetToBaseLayout={onResetToBaseLayout}
           onConnectCards={onConnectCards}
           onDisconnectConnection={onDisconnectConnection}
           onDisconnectAllConnections={onDisconnectAllConnections}

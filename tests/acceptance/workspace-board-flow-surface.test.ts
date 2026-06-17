@@ -2,10 +2,11 @@ import { createElement } from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { workspaceCanvasSurfaceV2Mock, workspaceRealtimeCursorsOverlayMock } = vi.hoisted(() => ({
-  workspaceCanvasSurfaceV2Mock: vi.fn(() => null),
-  workspaceRealtimeCursorsOverlayMock: vi.fn(() => null),
-}))
+const { workspaceCanvasSurfaceV2Mock, workspaceRealtimeCursorsOverlayMock } =
+  vi.hoisted(() => ({
+    workspaceCanvasSurfaceV2Mock: vi.fn((_props: unknown) => null),
+    workspaceRealtimeCursorsOverlayMock: vi.fn((_props: unknown) => null),
+  }))
 
 vi.mock(
   "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2",
@@ -14,7 +15,7 @@ vi.mock(
       workspaceCanvasSurfaceV2Mock(props)
       return null
     },
-  }),
+  })
 )
 
 vi.mock(
@@ -24,7 +25,7 @@ vi.mock(
       workspaceRealtimeCursorsOverlayMock(props)
       return null
     },
-  }),
+  })
 )
 
 import {
@@ -33,15 +34,17 @@ import {
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-flow-surface"
 
 function createProps(
-  overrides: Partial<WorkspaceBoardFlowSurfaceProps> = {},
+  overrides: Partial<WorkspaceBoardFlowSurfaceProps> = {}
 ): WorkspaceBoardFlowSurfaceProps {
   return {
     seed: {
       viewerName: "Caleb Hamernick",
     } as WorkspaceBoardFlowSurfaceProps["seed"],
-    organizationEditorData: {} as WorkspaceBoardFlowSurfaceProps["organizationEditorData"],
+    organizationEditorData:
+      {} as WorkspaceBoardFlowSurfaceProps["organizationEditorData"],
     boardState: {} as WorkspaceBoardFlowSurfaceProps["boardState"],
     allowEditing: true,
+    workspaceDataDrawerCanEdit: true,
     presentationMode: false,
     workspaceRoomName: "org:org-1:workspace",
     layoutFitRequestKey: 0,
@@ -51,7 +54,8 @@ function createProps(
     focusCardRequest: {} as WorkspaceBoardFlowSurfaceProps["focusCardRequest"],
     tutorialCompletionExitRequest:
       {} as WorkspaceBoardFlowSurfaceProps["tutorialCompletionExitRequest"],
-    journeyGuideState: {} as WorkspaceBoardFlowSurfaceProps["journeyGuideState"],
+    journeyGuideState:
+      {} as WorkspaceBoardFlowSurfaceProps["journeyGuideState"],
     onSizeChange: vi.fn(),
     onCommunicationsChange: vi.fn(),
     onTrackerChange: vi.fn(),
@@ -66,7 +70,6 @@ function createProps(
     onOnboardingFlowChange: vi.fn(),
     onPersistNodePosition: vi.fn(),
     onToggleCardVisibility: vi.fn(),
-    onResetToBaseLayout: vi.fn(),
     onConnectCards: vi.fn(),
     onDisconnectConnection: vi.fn(),
     onDisconnectAllConnections: vi.fn(),
@@ -91,12 +94,17 @@ describe("WorkspaceBoardFlowSurface", () => {
         ...createProps({
           onCursorConnectionStateChange,
         }),
-      }),
+      })
     )
 
     expect(workspaceCanvasSurfaceV2Mock).toHaveBeenCalledTimes(1)
+    expect(workspaceCanvasSurfaceV2Mock.mock.calls[0]?.[0]).toMatchObject({
+      workspaceDataDrawerCanEdit: true,
+    })
     expect(workspaceRealtimeCursorsOverlayMock).toHaveBeenCalledTimes(1)
-    expect(workspaceRealtimeCursorsOverlayMock.mock.calls[0]?.[0]).toMatchObject({
+    expect(
+      workspaceRealtimeCursorsOverlayMock.mock.calls[0]?.[0]
+    ).toMatchObject({
       roomName: "org:org-1:workspace",
       username: "Caleb Hamernick",
       suspendPublishing: false,
@@ -110,10 +118,12 @@ describe("WorkspaceBoardFlowSurface", () => {
         ...createProps({
           presentationMode: true,
         }),
-      }),
+      })
     )
 
-    expect(workspaceRealtimeCursorsOverlayMock.mock.calls[0]?.[0]).toMatchObject({
+    expect(
+      workspaceRealtimeCursorsOverlayMock.mock.calls[0]?.[0]
+    ).toMatchObject({
       roomName: "org:org-1:workspace",
       suspendPublishing: true,
     })

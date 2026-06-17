@@ -2,16 +2,21 @@
 
 import { memo } from "react"
 
+import { RoadmapNavigatorSection } from "@/components/roadmap/roadmap-navigator-section"
 import { RightRailSlot } from "@/components/app-shell/right-rail"
+import type { RoadmapSection } from "@/lib/roadmap"
+import { WORKSPACE_ROADMAP_PATH } from "@/lib/workspace/routes"
 
 import { WorkspaceBoardTeamAccessSection } from "./workspace-board-team-access-section"
 import type {
   WorkspaceCollaborationInvite,
   WorkspaceMemberOption,
 } from "./workspace-board-types"
+import type { WorkspaceBoardUiPreferenceScope } from "./workspace-board-ui-preferences"
 
 const RAIL_SECTION_CLASSNAME = "space-y-2 px-0.5"
-const WORKSPACE_RIGHT_RAIL_CONTENT_CLASSNAME = "-mt-2 space-y-4"
+const WORKSPACE_RIGHT_RAIL_CONTENT_CLASSNAME =
+  "space-y-4 pt-10 md:-mt-2 md:pt-0"
 
 export const WorkspaceBoardRightRail = memo(function WorkspaceBoardRightRail({
   canInvite,
@@ -19,6 +24,8 @@ export const WorkspaceBoardRightRail = memo(function WorkspaceBoardRightRail({
   invites,
   realtimeState,
   currentUser,
+  uiPreferencesScope,
+  roadmapSections,
   tutorialTeamAccessCallout,
   onInvitesChange,
 }: {
@@ -31,6 +38,8 @@ export const WorkspaceBoardRightRail = memo(function WorkspaceBoardRightRail({
     name: string
     avatarUrl: string | null
   }
+  uiPreferencesScope: WorkspaceBoardUiPreferenceScope
+  roadmapSections: RoadmapSection[]
   tutorialTeamAccessCallout?: {
     title: string
     instruction: string
@@ -45,6 +54,8 @@ export const WorkspaceBoardRightRail = memo(function WorkspaceBoardRightRail({
         invites={invites}
         realtimeState={realtimeState}
         currentUser={currentUser}
+        uiPreferencesScope={uiPreferencesScope}
+        roadmapSections={roadmapSections}
         tutorialTeamAccessCallout={tutorialTeamAccessCallout}
         onInvitesChange={onInvitesChange}
       />
@@ -60,6 +71,8 @@ export function WorkspaceBoardRightRailContent({
   invites,
   realtimeState,
   currentUser,
+  uiPreferencesScope,
+  roadmapSections,
   tutorialTeamAccessCallout,
   onInvitesChange,
 }: {
@@ -72,6 +85,8 @@ export function WorkspaceBoardRightRailContent({
     name: string
     avatarUrl: string | null
   }
+  uiPreferencesScope: WorkspaceBoardUiPreferenceScope
+  roadmapSections: RoadmapSection[]
   tutorialTeamAccessCallout?: {
     title: string
     instruction: string
@@ -87,8 +102,17 @@ export function WorkspaceBoardRightRailContent({
           invites={invites}
           realtimeState={realtimeState}
           currentUser={currentUser}
+          uiPreferencesScope={uiPreferencesScope}
           tutorialCallout={tutorialTeamAccessCallout}
           onInvitesChange={onInvitesChange}
+        />
+      </div>
+
+      <div className={RAIL_SECTION_CLASSNAME}>
+        <RoadmapNavigatorSection
+          sections={roadmapSections}
+          basePath={WORKSPACE_ROADMAP_PATH}
+          tocRailOffset="0.25rem"
         />
       </div>
     </div>

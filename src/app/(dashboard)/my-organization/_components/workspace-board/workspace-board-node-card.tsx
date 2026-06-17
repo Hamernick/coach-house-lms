@@ -90,11 +90,13 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
     })
   const hideHeaderSubtitle =
     cardId === "organization-overview" ||
+    cardId === "programs" ||
     cardId === "accelerator" ||
     cardId === "roadmap" ||
     cardId === "calendar" ||
     cardId === "communications" ||
-    cardId === "deck"
+    cardId === "deck" ||
+    cardId === "fiscal-sponsorship"
   const frameFullscreenToggle = onToggleCanvasFullscreen
     ? () => onToggleCanvasFullscreen(cardId)
     : undefined
@@ -179,7 +181,8 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
           JSON.stringify(previous?.lessonGroupOptions ?? []) ===
             JSON.stringify(snapshot.lessonGroupOptions ?? []) &&
           previous?.currentIndex === snapshot.currentIndex &&
-          previous?.totalSteps === snapshot.totalSteps
+          previous?.totalSteps === snapshot.totalSteps &&
+          previous?.filteredProgressPercent === snapshot.filteredProgressPercent
         ) {
           return previous
         }
@@ -299,6 +302,8 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
     ) : undefined
   const acceleratorHeaderDetails = resolveAcceleratorHeaderDetails({
     acceleratorRuntimeSnapshot,
+    acceleratorTutorialCallout,
+    acceleratorTutorialInteractionPolicy,
   })
   const { organizationMapButtonCallout, handleOpenMapCard } =
     useOrganizationMapCardAction(data)
@@ -313,7 +318,8 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
           cardId === "deck" ||
           cardId === "organization-overview" ||
           cardId === "programs" ||
-          cardId === "calendar"
+          cardId === "calendar" ||
+          cardId === "fiscal-sponsorship"
           ? "h-auto"
           : "h-full"
       )}
@@ -347,6 +353,7 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
               acceleratorCardInput,
               acceleratorHeaderDetails,
               acceleratorHeaderMeta,
+              acceleratorRuntimeActions,
               acceleratorRuntimeSnapshot,
               acceleratorTutorialCallout,
               acceleratorTutorialInteractionPolicy,

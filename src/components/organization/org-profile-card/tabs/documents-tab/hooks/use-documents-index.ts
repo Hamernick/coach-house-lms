@@ -14,6 +14,10 @@ import {
   filterAndSortDocumentRows,
 } from "./use-documents-index-filtering"
 import {
+  DEFAULT_DOCUMENTS_SORT_STATE,
+  resolveNextDocumentsSortState,
+} from "./documents-index-sort-state"
+import {
   buildPolicyRows,
   buildRoadmapRows,
   buildUploadRows,
@@ -36,18 +40,23 @@ export function useDocumentsIndex({
 }: UseDocumentsIndexArgs) {
   const [searchQuery, setSearchQuery] = useQueryState(
     "documents_q",
-    parseAsString.withDefault(""),
+    parseAsString.withDefault("")
   )
   const [activeFilters, setActiveFilters] = useState<string[]>([])
-  const [sortColumn, setSortColumn] = useState<SortColumn>("status")
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
+  const [{ sortColumn, sortDirection }, setSortState] = useState(
+    DEFAULT_DOCUMENTS_SORT_STATE
+  )
 
   const programLabelById = useMemo(() => {
-    return new Map(policyProgramOptions.map((option) => [option.id, option.label]))
+    return new Map(
+      policyProgramOptions.map((option) => [option.id, option.label])
+    )
   }, [policyProgramOptions])
 
   const peopleLabelById = useMemo(() => {
-    return new Map(policyPeopleOptions.map((option) => [option.id, option.label]))
+    return new Map(
+      policyPeopleOptions.map((option) => [option.id, option.label])
+    )
   }, [policyPeopleOptions])
 
   const uploadRows = useMemo(() => {
@@ -73,14 +82,14 @@ export function useDocumentsIndex({
   }, [policyRows, roadmapRows, uploadRows])
 
   const categoryOptions = useMemo(() => {
-    return Array.from(new Set(allRows.flatMap((row) => row.categories))).sort((a, b) =>
-      a.localeCompare(b),
+    return Array.from(new Set(allRows.flatMap((row) => row.categories))).sort(
+      (a, b) => a.localeCompare(b)
     )
   }, [allRows])
 
   const filterState = useMemo(
     () => buildDocumentsFilterState(activeFilters),
-    [activeFilters],
+    [activeFilters]
   )
   const { needsAttentionEnabled, updated30dEnabled } = filterState
 
@@ -109,24 +118,23 @@ export function useDocumentsIndex({
   }
 
   const toggleSortColumn = (column: SortColumn) => {
-    setSortColumn((currentColumn) => {
-      if (currentColumn === column) {
-        setSortDirection((currentDirection) =>
-          currentDirection === "asc" ? "desc" : "asc",
-        )
-        return currentColumn
-      }
-      setSortDirection(column === "updatedAt" ? "desc" : "asc")
-      return column
-    })
+    setSortState((currentState) =>
+      resolveNextDocumentsSortState(currentState, column)
+    )
   }
 
   const handleSortColumnChange = (column: SortColumn) => {
-    setSortColumn(column)
+    setSortState((currentState) => ({
+      ...currentState,
+      sortColumn: column,
+    }))
   }
 
   const handleSortDirectionChange = (direction: SortDirection) => {
-    setSortDirection(direction)
+    setSortState((currentState) => ({
+      ...currentState,
+      sortDirection: direction,
+    }))
   }
 
   return {

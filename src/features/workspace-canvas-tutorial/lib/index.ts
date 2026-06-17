@@ -121,6 +121,9 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     targetLabel: "Calendar",
     revealedCardIds: ["calendar"],
     continueMode: "next",
+    calloutTarget: "calendar-viewport-button",
+    calloutInstruction:
+      "The calendar lives in the header here, so it is always available from the workspace.",
   },
   {
     id: "programs",
@@ -308,8 +311,8 @@ export function resolveWorkspaceCanvasTutorialPromptTargetCardId(
   const callout = resolveWorkspaceCanvasTutorialCallout(stepIndex, openedStepIds)
   if (
     !callout ||
-    (callout.kind !== "shortcut-button" &&
-      callout.kind !== "calendar-viewport-button")
+    callout.kind !== "shortcut-button" &&
+    (callout.kind !== "calendar-viewport-button" || !callout.requiresAction)
   ) {
     return null
   }
@@ -367,8 +370,8 @@ export function resolveWorkspaceCanvasTutorialShortcutInstruction(
   const callout = resolveWorkspaceCanvasTutorialCallout(stepIndex, openedStepIds)
   if (
     !callout ||
-    (callout.kind !== "shortcut-button" &&
-      callout.kind !== "calendar-viewport-button")
+    callout.kind !== "shortcut-button" &&
+    (callout.kind !== "calendar-viewport-button" || !callout.requiresAction)
   ) {
     return null
   }
@@ -427,7 +430,6 @@ export function resolveWorkspaceCanvasTutorialCallout(
 
   if (
     step.calloutTarget === "calendar-viewport-button" &&
-    continueMode === "shortcut" &&
     step.targetCardId === "calendar"
   ) {
     return {
@@ -435,6 +437,7 @@ export function resolveWorkspaceCanvasTutorialCallout(
       cardId: "calendar",
       label,
       instruction,
+      requiresAction: continueMode === "shortcut",
     }
   }
 

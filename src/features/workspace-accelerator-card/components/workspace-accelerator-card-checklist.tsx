@@ -1,9 +1,17 @@
 "use client"
 
 import type { ReactNode } from "react"
+import BookOpenIcon from "lucide-react/dist/esm/icons/book-open"
 import CheckIcon from "lucide-react/dist/esm/icons/check"
+import CircleCheckIcon from "lucide-react/dist/esm/icons/circle-check"
+import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
+import FileTextIcon from "lucide-react/dist/esm/icons/file-text"
+import VideoIcon from "lucide-react/dist/esm/icons/video"
 
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Separator } from "@/components/ui/separator"
 import { WorkspaceTutorialCallout } from "@/components/workspace/workspace-tutorial-callout"
 import { WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME } from "@/components/workspace/workspace-tutorial-theme"
 import { cn } from "@/lib/utils"
@@ -17,16 +25,33 @@ import type {
   WorkspaceAcceleratorTutorialCallout,
   WorkspaceAcceleratorTutorialInteractionPolicy,
 } from "../types"
-import { canWorkspaceAcceleratorTutorialActivateStep } from "./workspace-accelerator-card-tutorial-guards"
+import {
+  canWorkspaceAcceleratorTutorialActivateStep,
+  canWorkspaceAcceleratorTutorialToggleModule,
+} from "./workspace-accelerator-card-tutorial-guards"
 
 const WORKSPACE_ACCELERATOR_CHECKLIST_SOURCE =
   "src/features/workspace-accelerator-card/components/workspace-accelerator-card-checklist.tsx"
-const WORKSPACE_ACCELERATOR_CHECKLIST_STEP_BUTTON_CLASSNAME =
-  "flex w-full items-center gap-3 rounded-lg border border-transparent bg-background px-2.5 py-2 text-left text-sm text-foreground transition-[color,background-color,opacity,transform] outline-hidden ring-ring/0 focus-visible:ring-2 focus-visible:ring-inset"
-const WORKSPACE_ACCELERATOR_CHECKLIST_STEP_ICON_CLASSNAME =
-  "peer size-4 shrink-0 rounded-full border border-border bg-background shadow-xs transition-shadow"
-const WORKSPACE_ACCELERATOR_CHECKLIST_STEP_ICON_GLYPH_CLASSNAME =
-  "size-3 text-primary-foreground"
+const WORKSPACE_ACCELERATOR_CHECKLIST_STEP_ROW_CLASSNAME =
+  "group -mx-1 rounded-xl border border-transparent transition-[background-color,box-shadow] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+const WORKSPACE_ACCELERATOR_CHECKLIST_STEP_TRIGGER_CLASSNAME =
+  "flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium text-foreground transition-[background-color,color] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none motion-reduce:transition-none hover:bg-muted/50 focus-visible:ring-ring/50 focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-60"
+const WORKSPACE_ACCELERATOR_CHECKLIST_STEP_BODY_CLASSNAME =
+  "grid transition-[grid-template-rows,opacity] duration-[240ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none"
+const WORKSPACE_ACCELERATOR_CHECKLIST_STATUS_BADGE_CLASSNAME =
+  "h-7 rounded-full border-transparent px-2.5 py-1 leading-none"
+const WORKSPACE_ACCELERATOR_CHECKLIST_ACTIVE_STATUS_BADGE_CLASSNAME =
+  "bg-primary/10 text-primary"
+
+function resolveWorkspaceAcceleratorChecklistStepIcon(
+  stepKind: WorkspaceAcceleratorCardStep["stepKind"]
+) {
+  if (stepKind === "video") return VideoIcon
+  if (stepKind === "resources") return FileTextIcon
+  if (stepKind === "assignment") return ClipboardListIcon
+  if (stepKind === "complete") return CircleCheckIcon
+  return BookOpenIcon
+}
 
 type WorkspaceAcceleratorCardChecklistProps = {
   modules: WorkspaceAcceleratorChecklistModule[]
@@ -78,21 +103,43 @@ function resolveChecklistModuleActionLabel({
   return "Start"
 }
 
-function resolveChecklistModuleSubtitle({
-  module,
+function resolveChecklistModuleStatusBadge({
   isCompletedChecklistModule,
   isCurrentChecklistModule,
+  module,
 }: {
-  module: WorkspaceAcceleratorChecklistModule
   isCompletedChecklistModule: boolean
   isCurrentChecklistModule: boolean
+  module: WorkspaceAcceleratorChecklistModule
 }) {
-  const actionLabel = resolveChecklistModuleActionLabel({
-    isCompletedChecklistModule,
-    isCurrentChecklistModule,
-  })
-  const stepLabel = module.totalSteps === 1 ? "step" : "steps"
-  return `${module.totalSteps} ${stepLabel} • ${actionLabel}`.toLowerCase()
+  if (isCompletedChecklistModule) {
+    return {
+      label: "Complete",
+      variant: "outline" as const,
+      className: WORKSPACE_ACCELERATOR_CHECKLIST_ACTIVE_STATUS_BADGE_CLASSNAME,
+      icon: CheckIcon,
+    }
+  }
+
+  if (
+    isCurrentChecklistModule ||
+    module.completedStepCount > 0 ||
+    module.steps.some((moduleStep) => moduleStep.status === "in_progress")
+  ) {
+    return {
+      label: "In progress",
+      variant: "outline" as const,
+      className: WORKSPACE_ACCELERATOR_CHECKLIST_ACTIVE_STATUS_BADGE_CLASSNAME,
+      icon: null,
+    }
+  }
+
+  return {
+    label: "Not started",
+    variant: "secondary" as const,
+    className: null,
+    icon: null,
+  }
 }
 
 export function resolveWorkspaceAcceleratorChecklistSelectableStep({
@@ -118,7 +165,9 @@ function ChecklistStepRow({
   completedStepIds,
   currentStepId,
   module,
+  onOpenModuleIdChange,
   onStepSelect,
+  openModuleId,
   step,
   tutorialCallout,
   tutorialInteractionPolicy,
@@ -127,25 +176,30 @@ function ChecklistStepRow({
   completedStepIds: string[]
   currentStepId: string
   module: WorkspaceAcceleratorChecklistModule
+  onOpenModuleIdChange: (next: string | null) => void
   onStepSelect: (step: WorkspaceAcceleratorCardStep) => void
+  openModuleId: string | null
   step: WorkspaceAcceleratorCardStep
   tutorialCallout: WorkspaceAcceleratorTutorialCallout | null
   tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
   tutorialTargetStepId: string | null
 }) {
   const primaryStep = module.steps[0] ?? step
+  const currentModuleStep =
+    module.steps.find((moduleStep) => moduleStep.id === currentStepId) ?? null
   const isCurrentChecklistStep = module.steps.some(
-    (moduleStep) => moduleStep.id === currentStepId,
+    (moduleStep) => moduleStep.id === currentStepId
   )
-  const isCompletedChecklistStep = isWorkspaceAcceleratorChecklistModuleComplete({
-    module,
-    completedStepIds,
-  })
+  const isCompletedChecklistStep =
+    isWorkspaceAcceleratorChecklistModuleComplete({
+      module,
+      completedStepIds,
+    })
   const isTutorialTarget =
     tutorialCallout !== null &&
     module.steps.some((moduleStep) => tutorialTargetStepId === moduleStep.id)
   const selectableStep = resolveWorkspaceAcceleratorChecklistSelectableStep({
-    fallbackStep: primaryStep,
+    fallbackStep: currentModuleStep ?? primaryStep,
     isTutorialTarget,
     module,
     tutorialTargetStepId,
@@ -155,14 +209,35 @@ function ChecklistStepRow({
     stepId: selectableStep.id,
     moduleId: selectableStep.moduleId,
   })
-  const subtitle = resolveChecklistModuleSubtitle({
-    module,
+  const canToggleModule = canWorkspaceAcceleratorTutorialToggleModule({
+    tutorialInteractionPolicy,
+    moduleId: module.id,
+  })
+  const expanded = openModuleId === module.id
+  const actionLabel = resolveChecklistModuleActionLabel({
     isCompletedChecklistModule: isCompletedChecklistStep,
     isCurrentChecklistModule: isCurrentChecklistStep,
   })
+  const statusBadge = resolveChecklistModuleStatusBadge({
+    isCompletedChecklistModule: isCompletedChecklistStep,
+    isCurrentChecklistModule: isCurrentChecklistStep,
+    module,
+  })
+  const StatusIcon = statusBadge.icon
   const reactGrabOwnerId = `workspace-accelerator-checklist:${primaryStep.id}`
-  const button = (
-    <button
+  const StepIcon = resolveWorkspaceAcceleratorChecklistStepIcon(
+    primaryStep.stepKind
+  )
+  const detailsId = `workspace-accelerator-checklist-details-${module.id}`
+  const rowClassName = cn(
+    WORKSPACE_ACCELERATOR_CHECKLIST_STEP_ROW_CLASSNAME,
+    expanded && "bg-muted/55",
+    isTutorialTarget &&
+      "border-sky-300/70 bg-sky-50/78 shadow-[0_12px_28px_-26px_rgba(14,165,233,0.65)] dark:border-sky-400/50 dark:bg-sky-500/10",
+    !canSelectStep && tutorialInteractionPolicy && "opacity-84"
+  )
+  const row = (
+    <div
       {...getReactGrabOwnerProps({
         ownerId: reactGrabOwnerId,
         component: "WorkspaceAcceleratorChecklistStepRow",
@@ -170,64 +245,87 @@ function ChecklistStepRow({
         slot: "lesson-row",
         variant: step.stepKind,
       })}
-      type="button"
-      onClick={() => {
-        if (!canSelectStep) {
-          return
-        }
-        onStepSelect(selectableStep)
-      }}
-      className={cn(
-        WORKSPACE_ACCELERATOR_CHECKLIST_STEP_BUTTON_CLASSNAME,
-        isCurrentChecklistStep
-          ? "border-border/70 bg-muted/70"
-          : "border-border/60 hover:bg-muted/60",
-        isTutorialTarget &&
-          "border-sky-300/70 bg-sky-50/78 shadow-[0_12px_28px_-26px_rgba(14,165,233,0.65)] dark:border-sky-400/50 dark:bg-sky-500/10",
-        !canSelectStep &&
-          tutorialInteractionPolicy &&
-          "opacity-84",
-      )}
+      data-state={expanded ? "open" : "closed"}
+      className={rowClassName}
     >
-      <span
-        className={cn(
-          WORKSPACE_ACCELERATOR_CHECKLIST_STEP_ICON_CLASSNAME,
-          isCompletedChecklistStep
-            ? "border-teal-600 bg-teal-600"
-            : "hover:cursor-pointer",
-        )}
-        aria-hidden
+      <button
+        type="button"
+        disabled={!canToggleModule}
+        aria-expanded={expanded}
+        aria-controls={detailsId}
+        onClick={() => onOpenModuleIdChange(expanded ? null : module.id)}
+        className={WORKSPACE_ACCELERATOR_CHECKLIST_STEP_TRIGGER_CLASSNAME}
       >
-        {isCompletedChecklistStep ? (
-          <span className="flex size-full items-center justify-center">
-            <CheckIcon
-              className={WORKSPACE_ACCELERATOR_CHECKLIST_STEP_ICON_GLYPH_CLASSNAME}
-              aria-hidden
-            />
+        <span
+          className={cn(
+            "text-muted-foreground inline-flex size-7 shrink-0 items-center justify-center rounded-full",
+            (isCurrentChecklistStep || isCompletedChecklistStep || expanded) &&
+              "bg-primary/10 text-primary"
+          )}
+          aria-hidden
+        >
+          <StepIcon className="size-4" />
+        </span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="flex min-w-0 items-center justify-between gap-3">
+            <span className="min-w-0 flex-1 truncate">{module.title}</span>
+            <Badge
+              variant={statusBadge.variant}
+              className={cn(
+                WORKSPACE_ACCELERATOR_CHECKLIST_STATUS_BADGE_CLASSNAME,
+                statusBadge.className
+              )}
+            >
+              {StatusIcon ? <StatusIcon aria-hidden /> : null}
+              {statusBadge.label}
+            </Badge>
           </span>
-        ) : null}
-      </span>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="min-w-0 flex-1 truncate text-left text-sm font-medium text-foreground">
-            {module.title}
-          </span>
-        </div>
-        <div className="mt-0.5 truncate text-xs text-muted-foreground">
-          {subtitle}
+        </span>
+      </button>
+      <div
+        id={detailsId}
+        aria-hidden={!expanded}
+        className={cn(
+          WORKSPACE_ACCELERATOR_CHECKLIST_STEP_BODY_CLASSNAME,
+          expanded
+            ? "grid-rows-[1fr] opacity-100"
+            : "pointer-events-none grid-rows-[0fr] opacity-0"
+        )}
+      >
+        <div className="min-h-0 overflow-hidden">
+          <div className="grid grid-cols-[1.75rem_minmax(0,1fr)] gap-x-3 px-3 pb-3">
+            <span aria-hidden />
+            <div
+              className={cn(
+                "flex min-w-0 flex-col gap-2 transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+                expanded ? "translate-y-0" : "-translate-y-1"
+              )}
+            >
+              <p className="text-muted-foreground text-sm leading-snug">
+                {selectableStep.stepDescription}
+              </p>
+              <div className="flex w-full flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="ml-auto rounded-full"
+                  disabled={!expanded || !canSelectStep}
+                  onClick={() => onStepSelect(selectableStep)}
+                >
+                  {actionLabel}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      {step.durationMinutes ? (
-        <span className="ml-2 hidden shrink-0 text-xs text-muted-foreground sm:inline">
-          {step.durationMinutes} min
-        </span>
-      ) : null}
-    </button>
+    </div>
   )
 
   if (tutorialCallout && isTutorialTarget) {
     return (
-      <div className="relative space-y-2">
+      <div className="relative flex flex-col gap-2">
         <WorkspaceTutorialCallout
           reactGrabOwnerId={`workspace-accelerator-checklist-callout:${step.id}`}
           mode="indicator"
@@ -236,12 +334,12 @@ function ChecklistStepRow({
           indicatorAnchorVerticalAlign="center"
           indicatorSide="right"
         />
-        {button}
+        {row}
       </div>
     )
   }
 
-  return button
+  return row
 }
 
 export function WorkspaceAcceleratorCardChecklist({
@@ -249,6 +347,8 @@ export function WorkspaceAcceleratorCardChecklist({
   selectedLessonGroupLabel,
   currentStepId,
   completedStepIds,
+  openModuleId,
+  onOpenModuleIdChange,
   onStepSelect,
   tutorialCallout = null,
   tutorialTargetStepId = null,
@@ -256,53 +356,45 @@ export function WorkspaceAcceleratorCardChecklist({
   headerControls = null,
 }: WorkspaceAcceleratorCardChecklistProps) {
   return (
-    <div className="space-y-2">
-      <div
-        className={cn(
-          "px-0 pb-1",
-          headerControls
-            ? "flex flex-col items-stretch gap-2.5"
-            : "flex items-center justify-between gap-2",
-        )}
-      >
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-2 px-0 pb-1">
         {headerControls ? (
-          <div className="w-full max-w-full">{headerControls}</div>
+          <div className="max-w-full min-w-0">{headerControls}</div>
         ) : (
-          <div className="min-w-0">
-            <p className="truncate text-xs font-medium text-foreground">
-              {selectedLessonGroupLabel ?? "Lesson checklist"}
-            </p>
-            <p className="text-[11px] text-muted-foreground">
-              {tutorialInteractionPolicy?.stepId === "accelerator"
-                ? "The guide will open Organization setup next. For now, stay on the Accelerator overview."
-                : tutorialInteractionPolicy?.stepId === "accelerator-picker"
-                  ? "Browse the class structure here. The guide will keep this path on Formation for now."
-                  : tutorialInteractionPolicy?.stepId === "accelerator-first-module"
-                    ? "Open the highlighted Organization setup lesson to see how a class launches inside Workspace."
-                    : tutorialInteractionPolicy?.stepId === "accelerator-close-module"
-                      ? "This preview stays centered on Organization setup until you continue to Calendar."
-                      : "Review each lesson and open the step you want to work on."}
-            </p>
-          </div>
+          <p className="text-foreground min-w-0 truncate text-xs font-medium">
+            {selectedLessonGroupLabel ?? "Lesson checklist"}
+          </p>
         )}
       </div>
 
-      <div className="space-y-1 px-0">
-        {modules.flatMap((module) => {
+      <div className="flex flex-col gap-1 px-1">
+        {modules.flatMap((module, index) => {
           const firstStep = module.steps[0]
           if (!firstStep) return []
 
-          return [
+          const row = (
             <ChecklistStepRow
               key={module.id}
               completedStepIds={completedStepIds}
               currentStepId={currentStepId}
               module={module}
+              onOpenModuleIdChange={onOpenModuleIdChange}
               onStepSelect={onStepSelect}
+              openModuleId={openModuleId}
               step={firstStep}
               tutorialCallout={tutorialCallout}
               tutorialInteractionPolicy={tutorialInteractionPolicy}
               tutorialTargetStepId={tutorialTargetStepId}
+            />
+          )
+
+          if (index >= modules.length - 1) return [row]
+
+          return [
+            row,
+            <Separator
+              key={`${module.id}:separator`}
+              className="border-border/70 border-t border-dashed bg-transparent"
             />,
           ]
         })}

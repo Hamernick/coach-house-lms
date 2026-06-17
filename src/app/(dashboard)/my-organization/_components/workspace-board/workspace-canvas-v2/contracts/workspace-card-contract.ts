@@ -13,9 +13,11 @@ export const WORKSPACE_CANVAS_V2_CARD_IDS = [
   "economic-engine",
   "calendar",
   "communications",
+  "fiscal-sponsorship",
 ] as const
 
-export type WorkspaceCanvasV2CardId = (typeof WORKSPACE_CANVAS_V2_CARD_IDS)[number]
+export type WorkspaceCanvasV2CardId =
+  (typeof WORKSPACE_CANVAS_V2_CARD_IDS)[number]
 
 export const WORKSPACE_CARD_PORT_TYPES = [
   "workspace-link",
@@ -105,7 +107,7 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
       timeline: "branch",
     },
     ports: {
-      inputs: ["organization-context", "workspace-link"],
+      inputs: ["program-plan", "workspace-link"],
       outputs: ["workspace-link"],
     },
     rail: {
@@ -193,7 +195,7 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
       outputs: ["program-plan", "workspace-link"],
     },
     rail: {
-      label: "Programs",
+      label: "Activity",
       order: 3,
       enabled: true,
       rootBehavior: "toggle",
@@ -222,7 +224,7 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
       order: 1,
       enabled: true,
       rootBehavior: "toggle",
-      parentId: "roadmap",
+      parentId: "organization-overview",
       role: "trunk",
     },
   },
@@ -326,6 +328,31 @@ export const WORKSPACE_CANVAS_V2_CARD_CONTRACT = Object.freeze({
       role: "leaf",
     },
   },
+  "fiscal-sponsorship": {
+    id: "fiscal-sponsorship",
+    laneIndex: 10,
+    defaultPosition: { x: 1728, y: 896 },
+    dockEnabled: false,
+    allowedSizes: ["sm", "md"],
+    defaultSize: "sm",
+    scrollPolicy: "none",
+    layoutRoles: {
+      hub: "ring",
+      timeline: "branch",
+    },
+    ports: {
+      inputs: ["program-plan", "workspace-link"],
+      outputs: ["workspace-link"],
+    },
+    rail: {
+      label: "Fiscal",
+      order: 9,
+      enabled: false,
+      rootBehavior: "toggle",
+      parentId: "programs",
+      role: "leaf",
+    },
+  },
 } satisfies Record<WorkspaceCanvasV2CardId, WorkspaceCanvasV2CardContract>)
 
 export const WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS = Object.freeze({
@@ -340,12 +367,15 @@ export const WORKSPACE_CANVAS_V2_DEFAULT_POSITIONS = Object.freeze({
   "economic-engine":
     WORKSPACE_CANVAS_V2_CARD_CONTRACT["economic-engine"].defaultPosition,
   calendar: WORKSPACE_CANVAS_V2_CARD_CONTRACT.calendar.defaultPosition,
-  communications: WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.defaultPosition,
+  communications:
+    WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.defaultPosition,
+  "fiscal-sponsorship":
+    WORKSPACE_CANVAS_V2_CARD_CONTRACT["fiscal-sponsorship"].defaultPosition,
 } satisfies Record<WorkspaceCanvasV2CardId, { x: number; y: number }>)
 
 export function resolveWorkspaceCanvasRailCardIds() {
   return [...WORKSPACE_CANVAS_V2_CARD_IDS].filter(
-    (cardId) => WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId].rail.enabled,
+    (cardId) => WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId].rail.enabled
   )
 }
 

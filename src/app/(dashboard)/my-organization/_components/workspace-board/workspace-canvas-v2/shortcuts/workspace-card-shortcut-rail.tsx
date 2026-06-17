@@ -1,11 +1,15 @@
 "use client"
 
+import type { ReactNode } from "react"
+
 import type { WorkspaceCardShortcutItemModel } from "./workspace-card-shortcut-model"
 import { WorkspaceCardShortcutButton } from "./workspace-card-shortcut-button"
 
 export function WorkspaceCardShortcutRail({
+  dataAction = null,
   items,
 }: {
+  dataAction?: ReactNode
   items: WorkspaceCardShortcutItemModel[]
 }) {
   return (
@@ -18,6 +22,7 @@ export function WorkspaceCardShortcutRail({
             tooltipSide="right"
           />
         ))}
+        {dataAction}
       </div>
     </div>
   )

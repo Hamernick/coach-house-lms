@@ -13,10 +13,12 @@ export const MEMBER_WORKSPACE_SECTIONS = [
   "people",
 ] as const satisfies readonly MemberWorkspaceSection[]
 
-export function getMemberWorkspaceSectionLabel(section: MemberWorkspaceSection) {
+export function getMemberWorkspaceSectionLabel(
+  section: MemberWorkspaceSection
+) {
   switch (section) {
     case "projects":
-      return "Projects"
+      return "Organizations"
     case "my-tasks":
       return "Tasks"
     case "people":
@@ -25,7 +27,7 @@ export function getMemberWorkspaceSectionLabel(section: MemberWorkspaceSection) 
 }
 
 export function isDonorAudience(
-  intentFocus: "build" | "find" | "fund" | "support" | null,
+  intentFocus: "build" | "find" | "fund" | "support" | null
 ) {
   return intentFocus === "fund"
 }

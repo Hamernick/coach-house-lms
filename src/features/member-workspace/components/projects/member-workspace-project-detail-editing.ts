@@ -3,6 +3,8 @@ import type {
   PlatformAdminDashboardLabStatus,
   ProjectDetails,
 } from "@/features/platform-admin-dashboard"
+import { htmlToMarkdown } from "@/lib/markdown/convert"
+import { sanitizeHtml } from "@/lib/markdown/sanitize"
 import type { MemberWorkspaceCreateProjectFormInput } from "../../types"
 
 export const MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS = [
@@ -37,13 +39,7 @@ export type MemberWorkspaceProjectDetailDraft = {
   durationLabel: string
   tags: string
   memberLabels: string
-  summary: string
-  scopeIn: string
-  scopeOut: string
-  outcomes: string
-  keyFeaturesP0: string
-  keyFeaturesP1: string
-  keyFeaturesP2: string
+  overviewDocument: string
 }
 
 function toDateValue(date?: Date) {
@@ -61,14 +57,128 @@ function normalizeCsvList(value: string) {
   )
 }
 
-function normalizeTextLines(value: string) {
-  return Array.from(
-    new Set(
-      value
-        .split("\n")
-        .map((entry) => entry.trim())
-        .filter(Boolean)
+const HTML_TAG_PATTERN = /<\/?[a-z][\s\S]*>/i
+const HTML_DOCUMENT_TAG_PATTERN =
+  /<(article|blockquote|br|div|figure|h[1-6]|hr|img|li|ol|p|pre|section|table|tbody|td|th|thead|tr|ul)\b/i
+const MARKDOWN_HEADING_PATTERN = /^#{1,6}\s+/
+const MARKDOWN_BULLET_PATTERN = /^\s*(?:[-*]|\d+[.)])\s+/
+const SUMMARY_MAX_LENGTH = 280
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;")
+}
+
+function formatPlainTextDocumentHtml(value: string) {
+  return value
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean)
+    .map(
+      (paragraph) => `<p>${escapeHtml(paragraph).replace(/\n/g, "<br />")}</p>`
     )
+    .join("")
+}
+
+function getProjectSourceStringField(
+  source: ProjectDetails["source"],
+  field: string
+) {
+  if (!source || typeof source !== "object" || !(field in source)) return ""
+
+  const value = (source as Record<string, unknown>)[field]
+  return typeof value === "string" ? value.trim() : ""
+}
+
+export function formatMemberWorkspaceProjectOverviewDocumentHtml(
+  value: string
+) {
+  const trimmed = value.trim()
+  if (!trimmed) return ""
+  return sanitizeHtml(
+    HTML_TAG_PATTERN.test(trimmed)
+      ? trimmed
+      : formatPlainTextDocumentHtml(trimmed)
+  ).trim()
+}
+
+export function formatMemberWorkspaceProjectOverviewDocumentMarkdown(
+  value: string
+) {
+  const trimmed = value.trim()
+  if (!trimmed) return ""
+
+  if (HTML_TAG_PATTERN.test(trimmed)) {
+    return htmlToMarkdown(sanitizeHtml(trimmed))
+  }
+
+  return trimmed
+}
+
+function stripMarkdownSummarySyntax(value: string) {
+  return value
+    .replace(MARKDOWN_HEADING_PATTERN, "")
+    .replace(MARKDOWN_BULLET_PATTERN, "")
+    .replace(/\*\*/g, "")
+    .replace(/\*/g, "")
+    .replace(/`/g, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .trim()
+}
+
+export function formatMemberWorkspaceProjectOverviewDocumentSummary(
+  value: string
+) {
+  const markdown =
+    formatMemberWorkspaceProjectOverviewDocumentMarkdown(value).trim()
+  if (!markdown) return ""
+
+  const lines = markdown
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const contentLines = lines.filter(
+    (line) => !MARKDOWN_HEADING_PATTERN.test(line)
+  )
+  const candidates = contentLines.length > 0 ? contentLines : lines
+  const summary = candidates
+    .map(stripMarkdownSummarySyntax)
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  if (summary.length <= SUMMARY_MAX_LENGTH) return summary
+  return `${summary.slice(0, SUMMARY_MAX_LENGTH - 1).trimEnd()}…`
+}
+
+export function isMemberWorkspaceProjectOverviewDocumentHtml(value: string) {
+  return HTML_DOCUMENT_TAG_PATTERN.test(value.trim())
+}
+
+export function resolveMemberWorkspaceProjectOverviewDocumentSource(
+  project: ProjectDetails
+) {
+  if (project.overviewDocument?.trim()) {
+    return project.overviewDocument.trim()
+  }
+
+  const sourceDescription = getProjectSourceStringField(
+    project.source,
+    "description"
+  )
+  if (sourceDescription) return sourceDescription
+
+  return project.description.trim()
+}
+
+function buildOverviewDocument(project: ProjectDetails) {
+  return formatMemberWorkspaceProjectOverviewDocumentHtml(
+    resolveMemberWorkspaceProjectOverviewDocumentSource(project)
   )
 }
 
@@ -128,80 +238,8 @@ export function buildMemberWorkspaceProjectDetailDraft(
     durationLabel: project.source?.durationLabel ?? "",
     tags: (project.source?.tags ?? []).join(", "),
     memberLabels: (project.source?.members ?? []).join(", "),
-    summary: project.description,
-    scopeIn: project.scope.inScope.join("\n"),
-    scopeOut: project.scope.outOfScope.join("\n"),
-    outcomes: project.outcomes.join("\n"),
-    keyFeaturesP0: project.keyFeatures.p0.join("\n"),
-    keyFeaturesP1: project.keyFeatures.p1.join("\n"),
-    keyFeaturesP2: project.keyFeatures.p2.join("\n"),
+    overviewDocument: buildOverviewDocument(project),
   }
-}
-
-function buildOverviewDescription(draft: MemberWorkspaceProjectDetailDraft) {
-  const summary = normalizeTextLines(draft.summary)
-  const scopeIn = normalizeTextLines(draft.scopeIn)
-  const scopeOut = normalizeTextLines(draft.scopeOut)
-  const outcomes = normalizeTextLines(draft.outcomes)
-  const p0 = normalizeTextLines(draft.keyFeaturesP0)
-  const p1 = normalizeTextLines(draft.keyFeaturesP1)
-  const p2 = normalizeTextLines(draft.keyFeaturesP2)
-  const lines: string[] = []
-
-  if (summary.length > 0) {
-    lines.push("Goal:")
-    for (const item of summary) {
-      lines.push(`- ${item}`)
-    }
-  }
-
-  if (scopeIn.length > 0) {
-    lines.push("In scope:")
-    for (const item of scopeIn) {
-      lines.push(`- ${item}`)
-    }
-  }
-
-  if (scopeOut.length > 0) {
-    lines.push("Out of scope:")
-    for (const item of scopeOut) {
-      lines.push(`- ${item}`)
-    }
-  }
-
-  if (outcomes.length > 0) {
-    lines.push("Expected outcomes:")
-    for (const item of outcomes) {
-      lines.push(`- ${item}`)
-    }
-  }
-
-  if (p0.length > 0 || p1.length > 0 || p2.length > 0) {
-    lines.push("Key features:")
-  }
-
-  if (p0.length > 0) {
-    lines.push("P0:")
-    for (const item of p0) {
-      lines.push(`- ${item}`)
-    }
-  }
-
-  if (p1.length > 0) {
-    lines.push("P1:")
-    for (const item of p1) {
-      lines.push(`- ${item}`)
-    }
-  }
-
-  if (p2.length > 0) {
-    lines.push("P2:")
-    for (const item of p2) {
-      lines.push(`- ${item}`)
-    }
-  }
-
-  return lines.join("\n").trim()
 }
 
 function normalizeDraftForComparison(draft: MemberWorkspaceProjectDetailDraft) {
@@ -216,13 +254,9 @@ function normalizeDraftForComparison(draft: MemberWorkspaceProjectDetailDraft) {
     durationLabel: draft.durationLabel.trim(),
     tags: normalizeCsvList(draft.tags).join(","),
     memberLabels: normalizeCsvList(draft.memberLabels).join(","),
-    summary: normalizeTextLines(draft.summary).join("\n"),
-    scopeIn: normalizeTextLines(draft.scopeIn).join("\n"),
-    scopeOut: normalizeTextLines(draft.scopeOut).join("\n"),
-    outcomes: normalizeTextLines(draft.outcomes).join("\n"),
-    keyFeaturesP0: normalizeTextLines(draft.keyFeaturesP0).join("\n"),
-    keyFeaturesP1: normalizeTextLines(draft.keyFeaturesP1).join("\n"),
-    keyFeaturesP2: normalizeTextLines(draft.keyFeaturesP2).join("\n"),
+    overviewDocument: formatMemberWorkspaceProjectOverviewDocumentHtml(
+      draft.overviewDocument
+    ),
   }
 }
 
@@ -243,11 +277,16 @@ export function buildMemberWorkspaceProjectUpdateInput({
   project: ProjectDetails
   draft: MemberWorkspaceProjectDetailDraft
 }): MemberWorkspaceCreateProjectFormInput {
-  const description = buildOverviewDescription(draft)
+  const overviewDocumentHtml = formatMemberWorkspaceProjectOverviewDocumentHtml(
+    draft.overviewDocument
+  )
+  const description =
+    formatMemberWorkspaceProjectOverviewDocumentSummary(overviewDocumentHtml)
 
   return {
     name: draft.name,
     description: description || undefined,
+    overviewDocumentHtml,
     status: draft.status,
     priority: draft.priority,
     startDate: draft.startDate,

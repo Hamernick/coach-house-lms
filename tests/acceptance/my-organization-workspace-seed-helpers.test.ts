@@ -60,6 +60,41 @@ describe("my organization workspace seed helpers", () => {
     )
   })
 
+  it("preserves post-guide user-customized fiscal sponsorship placement on reload", () => {
+    const boardState = buildDefaultBoardState()
+    boardState.onboardingFlow = {
+      ...boardState.onboardingFlow,
+      active: false,
+      tutorialStepIndex: resolveWorkspaceCanvasTutorialStepCount() - 1,
+    }
+    boardState.hiddenCardIds = buildWorkspaceCanvasTutorialCompletionHiddenCardIds().filter(
+      (cardId) => cardId !== "fiscal-sponsorship"
+    )
+    boardState.nodes = boardState.nodes.map((node) =>
+      node.id === "fiscal-sponsorship"
+        ? { ...node, x: 898, y: -510, size: "sm" as const }
+        : node
+    )
+
+    const next = applyWorkspaceTutorialActivationToSeed(
+      { boardState },
+      {
+        initialOnboardingRequired: false,
+        workspaceOnboardingActive: false,
+        workspaceOnboardingCompletedAt: "2026-06-05T15:43:37.000Z",
+      },
+    )
+
+    expect(next.boardState.hiddenCardIds).not.toContain("fiscal-sponsorship")
+    expect(
+      next.boardState.nodes.find((node) => node.id === "fiscal-sponsorship")
+    ).toMatchObject({
+      x: 898,
+      y: -510,
+      size: "sm",
+    })
+  })
+
   it("restarts a completed tutorial when onboarding is reactivated", () => {
     const boardState = buildDefaultBoardState()
     boardState.onboardingFlow = {

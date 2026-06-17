@@ -9,6 +9,7 @@ export const WORKSPACE_CARD_IDS = [
   "communications",
   "deck",
   "atlas",
+  "fiscal-sponsorship",
 ] as const
 
 export type WorkspaceCardId = (typeof WORKSPACE_CARD_IDS)[number]

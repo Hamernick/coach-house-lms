@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+
 import React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -24,6 +26,23 @@ vi.mock("@/hooks/use-mobile", () => ({
 describe("workspace accelerator step node card", () => {
   beforeEach(() => {
     useIsMobileMock.mockReturnValue(false)
+  })
+
+  it("renders the header step counter as plain text instead of badge chrome", () => {
+    const source = readFileSync(
+      "src/features/workspace-accelerator-card/components/workspace-accelerator-step-node-card.tsx",
+      "utf8"
+    )
+
+    expect(source).not.toContain(
+      'import { Badge } from "@/components/ui/badge"'
+    )
+    expect(source).not.toContain(
+      "rounded-full border-border/60 bg-background/70 px-2.5 py-1 text-[11px] font-medium tabular-nums"
+    )
+    expect(source).toContain(
+      '<span className="text-foreground shrink-0 text-[11px] font-medium tabular-nums">'
+    )
   })
 
   it("keeps the right rail visible during the tutorial module preview", () => {
@@ -76,11 +95,13 @@ describe("workspace accelerator step node card", () => {
           blockedMessage: "We'll go over this soon, I promise! :)",
           blockedMessageDurationMs: 3000,
         },
-      }),
+      })
     )
 
-    expect(markup).toContain("grid-cols-1 lg:grid-cols-[minmax(0,1fr)_240px]")
-    expect(markup).toContain("border-t bg-muted/10")
+    expect(markup).toContain("grid-cols-1")
+    expect(markup).toContain("lg:grid-cols-[minmax(0,1fr)_240px]")
+    expect(markup).toContain("border-t")
+    expect(markup).toContain("bg-muted/10")
     expect(markup).toContain("Notes")
     expect(markup).toContain("Close lesson")
   })
@@ -132,7 +153,7 @@ describe("workspace accelerator step node card", () => {
         onClose: () => undefined,
         onWorkspaceOnboardingSubmit: async () => undefined,
         variant: "embedded",
-      }),
+      })
     )
 
     expect(markup).toContain("Organization setup")
@@ -143,7 +164,9 @@ describe("workspace accelerator step node card", () => {
     expect(markup).toContain("absolute inset-0 z-10 cursor-default")
     expect(markup).toContain("min-h-[520px] border-0 shadow-none")
     expect(markup).not.toContain("max-h-[min(52dvh,360px)]")
-    expect(markup).not.toContain("bg-gradient-to-b from-transparent to-background/95")
+    expect(markup).not.toContain(
+      "bg-gradient-to-b from-transparent to-background/95"
+    )
     expect(markup).not.toContain("Choose your onboarding path")
     expect(markup).not.toContain("Unlock the builder workspace")
   })
@@ -196,13 +219,15 @@ describe("workspace accelerator step node card", () => {
         onWorkspaceOnboardingSubmit: async () => undefined,
         variant: "embedded",
         immersive: true,
-      }),
+      })
     )
 
     expect(markup).toContain("Create your organization")
     expect(markup).toContain("rounded-none")
     expect(markup).toContain("border-0")
-    expect(markup).toContain("flex h-full min-h-full flex-1 flex-col overflow-hidden")
+    expect(markup).toContain(
+      "flex h-full min-h-full flex-1 flex-col overflow-hidden"
+    )
     expect(markup).not.toContain("absolute inset-0 z-10 cursor-default")
     expect(markup).not.toContain("Previous accelerator step")
     expect(markup).not.toContain("Close accelerator module")
@@ -244,7 +269,7 @@ describe("workspace accelerator step node card", () => {
         onClose: () => undefined,
         variant: "embedded",
         immersive: true,
-      }),
+      })
     )
 
     expect(markup).toContain("border-0")
@@ -288,7 +313,7 @@ describe("workspace accelerator step node card", () => {
         onComplete: () => undefined,
         onClose: () => undefined,
         variant: "embedded",
-      }),
+      })
     )
 
     expect(markup).toContain("NFP registration")
@@ -352,10 +377,12 @@ describe("workspace accelerator step node card", () => {
         onComplete: () => undefined,
         onClose: () => undefined,
         variant: "embedded",
-      }),
+      })
     )
 
-    expect(markup).toContain("border-t px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 sm:px-4 sm:pb-2")
+    expect(markup).toContain(
+      "border-t px-3 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 sm:px-4 sm:pb-2"
+    )
     expect(markup.match(/Start questions/g)).toHaveLength(1)
     expect(markup).toContain("rounded-full")
     expect(markup).toContain("w-full")
@@ -414,7 +441,7 @@ describe("workspace accelerator step node card", () => {
         onComplete: () => undefined,
         onClose: () => undefined,
         variant: "embedded",
-      }),
+      })
     )
 
     expect(markup).toContain("Start with your why")
@@ -466,12 +493,10 @@ describe("workspace accelerator step node card", () => {
         onComplete: () => undefined,
         onClose: () => undefined,
         variant: "embedded",
-      }),
+      })
     )
 
     expect(markup).toContain("Details")
-    expect(markup).not.toContain(
-      "grid-cols-1 lg:grid-cols-[minmax(0,1fr)_240px]",
-    )
+    expect(markup).not.toContain("lg:grid-cols-[minmax(0,1fr)_240px]")
   })
 })

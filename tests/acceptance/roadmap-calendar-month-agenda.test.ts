@@ -120,35 +120,50 @@ describe("roadmap calendar month agenda", () => {
     const agendaPanel = readSource(
       "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
+    const agendaPanelParts = readSource(
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel-parts.tsx"
+    )
     const scrollFadeEffect = readSource("src/components/scroll-fade-effect.tsx")
     const popover = readSource("src/components/ui/popover.tsx")
     const drawer = readSource("src/components/ui/drawer.tsx")
-    const agendaScrollContainers = agendaPanel.match(/overflow-y-auto/g) ?? []
+    const agendaScrollContainers =
+      agendaPanelParts.match(/overflow-y-auto/g) ?? []
 
     expect(calendarAction).toContain("bg-background/95")
     expect(calendarAction).toContain("p-0 shadow-none backdrop-blur-xl")
     expect(calendarAction).not.toContain("bg-transparent")
     expect(calendarAction).not.toContain("backdrop-blur-0")
     expect(calendarAction).not.toContain("max-h-[min(43rem,calc(100svh-7rem))]")
-    expect(agendaPanel).toContain("h-[min(42rem,calc(100svh-5.5rem))]")
+    expect(agendaPanel).toContain("max-h-[min(42rem,calc(100svh-5.5rem))]")
+    expect(agendaPanel).not.toContain(
+      '"flex h-[min(42rem,calc(100svh-5.5rem))]'
+    )
+    expect(agendaPanel).toContain("className?: string")
+    expect(agendaPanel).toContain("className,")
     expect(agendaPanel).toContain("overflow-hidden rounded-[30px]")
-    expect(agendaPanel).toContain(
+    expect(agendaPanelParts).toContain(
       'import { ScrollFadeEffect } from "@/components/scroll-fade-effect"'
     )
-    expect(agendaPanel).toContain("const RoadmapCalendarAgendaScroll = memo")
-    expect(agendaPanel).toContain("<ScrollFadeEffect")
-    expect(agendaPanel).toContain("enabled={showScrollFade}")
-    expect(agendaPanel).toContain(
+    expect(agendaPanelParts).toContain(
+      "const RoadmapCalendarAgendaScroll = memo"
+    )
+    expect(agendaPanelParts).toContain("<ScrollFadeEffect")
+    expect(agendaPanelParts).toContain("enabled={showScrollFade}")
+    expect(agendaPanelParts).toContain("max-h-[clamp(6.5rem,30dvh,15rem)]")
+    expect(agendaPanelParts).toContain(
       "const showScrollFade = fadeEligible && hasScrollableOverflow"
     )
-    expect(agendaPanel).toContain("node.scrollHeight > node.clientHeight + 1")
+    expect(agendaPanelParts).toContain(
+      "node.scrollHeight > node.clientHeight + 1"
+    )
     expect(agendaPanel).toContain(
       "fadeEligible={dayEvents.length > 1 && !isLoading}"
     )
-    expect(agendaPanel).toContain(
+    expect(agendaPanelParts).toContain(
       "[--mask-height:1.5rem] [--scroll-buffer:1rem]"
     )
-    expect(agendaPanel).toContain("pb-4 pr-1 pt-1")
+    expect(agendaPanelParts).toContain("pt-1 pr-1 pb-4")
+    expect(agendaPanel).not.toContain("mt-3 flex min-h-0 flex-1")
     expect(scrollFadeEffect).toContain("forwardRef<HTMLDivElement")
     expect(scrollFadeEffect).toContain("ref={ref}")
     expect(popover).toContain("forceMount,")
@@ -190,21 +205,15 @@ describe("roadmap calendar month agenda", () => {
     expect(calendarAction).toContain(
       "const [calendarHasOpened, setCalendarHasOpened]"
     )
-    expect(calendarAction).toContain(
-      'import dynamic from "next/dynamic"'
-    )
-    expect(calendarAction).toContain(
-      "const RoadmapCalendar = dynamic"
-    )
+    expect(calendarAction).toContain('import dynamic from "next/dynamic"')
+    expect(calendarAction).toContain("const RoadmapCalendar = dynamic")
     expect(calendarAction).not.toContain("setRoadmapCalendar")
     expect(calendarAction).not.toContain("await import(")
-    expect(calendarAction).not.toContain('import { RoadmapCalendar }')
+    expect(calendarAction).not.toContain("import { RoadmapCalendar }")
     expect(calendarAction).not.toContain(
       'from "@/components/workspace/workspace-tutorial-callout"'
     )
-    expect(calendarAction).toContain(
-      "const WorkspaceTutorialCallout = dynamic"
-    )
+    expect(calendarAction).toContain("const WorkspaceTutorialCallout = dynamic")
     expect(calendarAction).toContain(
       "const handleCalendarOpenChange = useCallback"
     )
@@ -290,26 +299,42 @@ describe("roadmap calendar month agenda", () => {
     const agendaPanel = readSource(
       "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
+    const agendaPanelParts = readSource(
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel-parts.tsx"
+    )
     const menuUsages = agendaPanel.match(/<RoadmapCalendarAddEventMenu/g) ?? []
     const addMenuIndex = agendaPanel.indexOf("<RoadmapCalendarAddEventMenu")
-    const agendaScrollIndex = agendaPanel.indexOf("overflow-y-auto")
+    const agendaScrollIndex = agendaPanel.indexOf(
+      "<RoadmapCalendarAgendaScroll"
+    )
 
     expect(menuUsages).toHaveLength(1)
     expect(addMenuIndex).toBeGreaterThan(-1)
     expect(agendaScrollIndex).toBeGreaterThan(-1)
     expect(addMenuIndex).toBeGreaterThan(agendaScrollIndex)
     expect(agendaPanel).toContain(
-      "mt-3 shrink-0 border-t border-border/40 pt-3"
+      "border-border/40 mt-3 shrink-0 border-t pt-3"
     )
-    expect(agendaPanel).toContain("mt-3 flex min-h-0 flex-1")
+    expect(agendaPanelParts).toContain(
+      "mt-3 flex max-h-[clamp(6.5rem,30dvh,15rem)] min-h-0 flex-col"
+    )
+    expect(agendaPanel).toContain(
+      'className="bg-background flex min-h-0 flex-col rounded-[24px]'
+    )
+    expect(agendaPanel).not.toContain(
+      'className="flex min-h-0 flex-1 flex-col rounded-[24px]'
+    )
     expect(agendaPanel).not.toContain("min-h-[7.5rem]")
     expect(agendaPanel).toContain("disabled={!canManageCalendar}")
-    expect(agendaPanel).toContain('variant="outline"')
+    expect(agendaPanelParts).toContain('variant="outline"')
   })
 
   it("keeps coaching out of the month-grid header", () => {
     const agendaPanel = readSource(
       "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
+    )
+    const agendaPanelParts = readSource(
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel-parts.tsx"
     )
     const calendar = readSource("src/components/roadmap/roadmap-calendar.tsx")
 
@@ -317,7 +342,8 @@ describe("roadmap calendar month agenda", () => {
     expect(agendaPanel).not.toContain("CoachingAvatarGroup")
     expect(agendaPanel).not.toContain('slot: "coaching-action"')
     expect(agendaPanel).not.toContain("useCoachingBooking")
-    expect(agendaPanel).toContain("shrink-0 whitespace-nowrap text-lg")
+    expect(agendaPanel).toContain("shrink-0 text-lg")
+    expect(agendaPanel).toContain("whitespace-nowrap")
     expect(agendaPanel).not.toContain(
       '<span className="min-w-0 truncate whitespace-nowrap leading-snug">'
     )
@@ -341,6 +367,9 @@ describe("roadmap calendar month agenda", () => {
     const agendaPanel = readSource(
       "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
+    const agendaPanelParts = readSource(
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel-parts.tsx"
+    )
     const eventDrawer = readSource(
       "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-event-drawer.tsx"
     )
@@ -351,7 +380,7 @@ describe("roadmap calendar month agenda", () => {
     expect(agendaPanel).toContain(
       "export const RoadmapCalendarMonthAgendaPanel = memo"
     )
-    expect(agendaPanel).toContain("const RoadmapCalendarAgendaRow = memo")
+    expect(agendaPanelParts).toContain("const RoadmapCalendarAgendaRow = memo")
     expect(eventDrawer).toContain(
       "export const RoadmapCalendarEventDrawer = memo"
     )
@@ -361,11 +390,14 @@ describe("roadmap calendar month agenda", () => {
     const agendaPanel = readSource(
       "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
+    const agendaPanelParts = readSource(
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel-parts.tsx"
+    )
     const eventDrawer = readSource(
       "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-event-drawer.tsx"
     )
 
-    expect(agendaPanel).toContain("DropdownMenuGroup")
+    expect(agendaPanelParts).toContain("DropdownMenuGroup")
     expect(eventDrawer).toContain("SelectGroup")
     expect(eventDrawer).toContain("DrawerDescription")
     expect(eventDrawer).toContain("ROADMAP_CALENDAR_EVENT_TYPE_META")
@@ -378,22 +410,32 @@ describe("roadmap calendar month agenda", () => {
     const agendaPanel = readSource(
       "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
+    const agendaPanelParts = readSource(
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel-parts.tsx"
+    )
 
-    expect(agendaPanel).toContain("ROLE_LABEL_BY_ID")
-    expect(agendaPanel).toContain('roleLabels.join(", ")')
-    expect(agendaPanel).toContain("line-through decoration-muted-foreground/60")
-    expect(agendaPanel).toContain("Canceled")
+    expect(agendaPanelParts).toContain("ROLE_LABEL_BY_ID")
+    expect(agendaPanelParts).toContain('roleLabels.join(", ")')
+    expect(agendaPanelParts).toContain(
+      "decoration-muted-foreground/60 line-through"
+    )
+    expect(agendaPanelParts).toContain("Canceled")
   })
 
   it("keeps full agenda times visible below the event title", () => {
     const agendaPanel = readSource(
       "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel.tsx"
     )
+    const agendaPanelParts = readSource(
+      "src/components/roadmap/roadmap-calendar/components/roadmap-calendar-month-agenda-panel-parts.tsx"
+    )
 
-    expect(agendaPanel).toContain("grid-cols-[auto_minmax(0,1fr)]")
-    expect(agendaPanel).toContain("whitespace-normal")
-    expect(agendaPanel).not.toContain("grid-cols-[auto_3.75rem_minmax(0,1fr)]")
-    expect(agendaPanel).not.toContain(
+    expect(agendaPanelParts).toContain("grid-cols-[auto_minmax(0,1fr)]")
+    expect(agendaPanelParts).toContain("whitespace-normal")
+    expect(agendaPanelParts).not.toContain(
+      "grid-cols-[auto_3.75rem_minmax(0,1fr)]"
+    )
+    expect(agendaPanelParts).not.toContain(
       "truncate text-left text-xs text-muted-foreground/70 tabular-nums"
     )
   })

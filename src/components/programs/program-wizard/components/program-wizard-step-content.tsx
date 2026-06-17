@@ -1,6 +1,7 @@
 import type { ProgramWizardFormState } from "../schema"
 import type { ProgramWizardFieldErrors, ProgramWizardUpdate } from "../types"
 import { StepAudienceOutcomes } from "./step-audience-outcomes"
+import { StepActivityKind } from "./step-activity-kind"
 import { StepBasicInfo } from "./step-basic-info"
 import { StepBudgetFeasibility } from "./step-budget-feasibility"
 import { StepPilotStaffing } from "./step-pilot-staffing"
@@ -34,16 +35,29 @@ export function ProgramWizardStepContent({
 }: ProgramWizardStepContentProps) {
   switch (currentStep) {
     case 0:
-      return <StepBasicInfo mode={mode} form={form} errors={errors} update={update} />
+      return <StepActivityKind form={form} errors={errors} update={update} />
     case 1:
-      return <StepTypeFormat form={form} errors={errors} update={update} />
+      return (
+        <StepBasicInfo
+          mode={mode}
+          form={form}
+          errors={errors}
+          update={update}
+        />
+      )
     case 2:
-      return <StepAudienceOutcomes form={form} errors={errors} update={update} />
+      return <StepTypeFormat form={form} errors={errors} update={update} />
     case 3:
-      return <StepPilotStaffing form={form} errors={errors} update={update} />
+      return (
+        <StepAudienceOutcomes form={form} errors={errors} update={update} />
+      )
     case 4:
-      return <StepScheduleLocation form={form} errors={errors} update={update} />
+      return <StepPilotStaffing form={form} errors={errors} update={update} />
     case 5:
+      return (
+        <StepScheduleLocation form={form} errors={errors} update={update} />
+      )
+    case 6:
       return (
         <StepBudgetFeasibility
           form={form}
@@ -52,7 +66,7 @@ export function ProgramWizardStepContent({
           feasibility={feasibility}
         />
       )
-    case 6:
+    case 7:
       return <StepReviewGenerate form={form} onCopyBrief={onCopyBrief} />
     default:
       return null

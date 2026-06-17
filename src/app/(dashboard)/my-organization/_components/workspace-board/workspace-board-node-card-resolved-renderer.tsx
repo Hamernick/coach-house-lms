@@ -1,7 +1,6 @@
 "use client"
 
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
-import WaypointsIcon from "lucide-react/dist/esm/icons/waypoints"
 import type { ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -14,16 +13,17 @@ import type {
 } from "@/features/workspace-accelerator-card"
 import { cn } from "@/lib/utils"
 
+import { WorkspaceBoardAcceleratorCard } from "./workspace-board-accelerator-card"
 import { WorkspaceBoardCalendarCard } from "./workspace-board-calendar-card"
 import { WorkspaceBoardCardFrame } from "./workspace-board-card-frame"
 import { WorkspaceBoardCommunicationsCard } from "./workspace-board-communications-card"
-import { EconomicEngineCard } from "./workspace-board-node-static-cards"
+import {
+  EconomicEngineCard,
+  WorkspaceBoardFiscalSponsorshipCard,
+} from "./workspace-board-node-static-cards"
 import { WORKSPACE_CARD_META } from "./workspace-board-copy"
 import type { WorkspaceBoardNodeData } from "./workspace-board-node-types"
-import {
-  isWorkspaceProgramsPreviewOnlyStep,
-  WorkspaceBoardProgramsCard,
-} from "./workspace-board-programs-card"
+import { WorkspaceBoardProgramsNodeCard } from "./workspace-board-node-card-programs-renderer"
 import {
   WorkspaceBoardAtlasCard,
   WorkspaceBoardBrandKitCard,
@@ -35,7 +35,6 @@ import type {
   WorkspaceCardOverflowAction,
   WorkspaceCardSize,
 } from "./workspace-board-types"
-import { WorkspaceBoardLazyAcceleratorCardPanel } from "./workspace-board-accelerator-lazy"
 import {
   renderAcceleratorTitleIcon,
   resolveAcceleratorHeaderDetails,
@@ -48,8 +47,9 @@ export function renderWorkspaceBoardResolvedCard({
   comingSoonTitleBadge,
   acceleratorCardHref,
   acceleratorCardInput,
-  acceleratorHeaderDetails,
-  acceleratorHeaderMeta,
+  acceleratorHeaderDetails: _acceleratorHeaderDetails,
+  acceleratorHeaderMeta: _acceleratorHeaderMeta,
+  acceleratorRuntimeActions,
   acceleratorRuntimeSnapshot: _acceleratorRuntimeSnapshot,
   acceleratorTutorialCallout,
   acceleratorTutorialInteractionPolicy,
@@ -86,6 +86,7 @@ export function renderWorkspaceBoardResolvedCard({
   acceleratorCardInput: WorkspaceAcceleratorCardInput
   acceleratorHeaderDetails: ReturnType<typeof resolveAcceleratorHeaderDetails>
   acceleratorHeaderMeta: ReturnType<typeof resolveAcceleratorHeaderMeta>
+  acceleratorRuntimeActions: WorkspaceAcceleratorCardRuntimeActions | null
   acceleratorRuntimeSnapshot: WorkspaceAcceleratorCardRuntimeSnapshot | null
   acceleratorTutorialCallout: WorkspaceBoardNodeData["acceleratorTutorialCallout"]
   acceleratorTutorialInteractionPolicy: WorkspaceBoardNodeData["acceleratorTutorialInteractionPolicy"]
@@ -184,30 +185,76 @@ export function renderWorkspaceBoardResolvedCard({
     )
   }
 
-  const programsPreviewOnly = isWorkspaceProgramsPreviewOnlyStep(
-    data.tutorialStepId
-  )
+  if (cardId === "fiscal-sponsorship") {
+    return (
+      <WorkspaceBoardFiscalSponsorshipCard
+        applicationPrefill={
+          data.organizationEditorData?.fiscalSponsorshipApplicationPrefill ??
+          null
+        }
+        fiscalSponsorshipProjectId={
+          data.organizationEditorData?.fiscalSponsorshipProjectId ?? null
+        }
+        fiscalSponsorshipWorkflowSummary={
+          data.organizationEditorData?.fiscalSponsorshipWorkflowSummary ?? null
+        }
+        organizationName={
+          data.organizationEditorData?.initialProfile.name ??
+          seed.organizationTitle
+        }
+        programs={data.organizationEditorData?.programs}
+      />
+    )
+  }
+
+  if (cardId === "accelerator") {
+    return (
+      <WorkspaceBoardAcceleratorCard
+        input={acceleratorCardInput}
+        runtimeActions={acceleratorRuntimeActions}
+        runtimeSnapshot={_acceleratorRuntimeSnapshot}
+        canEdit={canEdit}
+        presentationMode={presentationMode}
+        isCanvasFullscreen={isCanvasFullscreen}
+        tutorialCallout={acceleratorTutorialCallout}
+        tutorialInteractionPolicy={acceleratorTutorialInteractionPolicy}
+        shouldTrackEmbeddedRuntime={shouldTrackEmbeddedAcceleratorRuntime}
+        onRuntimeActionsChange={onAcceleratorRuntimeActionsChange}
+        onRuntimeChange={onAcceleratorRuntimeChange}
+        onTutorialActionComplete={onAcceleratorTutorialActionComplete}
+        onRequestOpenStep={onRequestOpenAcceleratorStep}
+      />
+    )
+  }
+
+  if (cardId === "programs") {
+    return (
+      <WorkspaceBoardProgramsNodeCard
+        canEdit={canEdit}
+        cardMeta={cardMeta}
+        contentClassName={contentClassName}
+        data={data}
+        effectiveCardSize={effectiveCardSize}
+        frameFullscreenToggle={frameFullscreenToggle}
+        hideHeaderSubtitle={hideHeaderSubtitle}
+        isCanvasFullscreen={isCanvasFullscreen}
+        onProgramsCreateOpenChange={onProgramsCreateOpenChange}
+        presentationMode={presentationMode}
+        programsCreateOpen={programsCreateOpen}
+      />
+    )
+  }
 
   return (
     <WorkspaceBoardCardFrame
       cardId={cardId}
-      title={cardId === "roadmap" ? "Strategic Roadmap" : cardMeta.title}
+      title={cardMeta.title}
       subtitle={cardMeta.subtitle}
       titleBadge={comingSoonTitleBadge}
-      tone={cardId === "accelerator" ? "accelerator" : "default"}
-      titleIcon={
-        cardId === "accelerator" ? (
-          renderAcceleratorTitleIcon()
-        ) : cardId === "roadmap" ? (
-          <WaypointsIcon className="size-4" aria-hidden />
-        ) : null
-      }
-      hideTitle={cardId === "accelerator"}
+      tone="default"
       hideSubtitle={hideHeaderSubtitle}
-      headerDetails={
-        cardId === "accelerator" ? acceleratorHeaderDetails : undefined
-      }
-      headerMeta={cardId === "accelerator" ? acceleratorHeaderMeta : undefined}
+      headerDetails={undefined}
+      headerMeta={undefined}
       headerAction={
         cardId === "roadmap" ? (
           <Button
@@ -234,16 +281,6 @@ export function renderWorkspaceBoardResolvedCard({
               aria-hidden
             />
           </Button>
-        ) : cardId === "programs" && canEdit ? (
-          <Button
-            type="button"
-            size="sm"
-            className="h-7 rounded-lg px-2.5 text-[11px]"
-            disabled={programsPreviewOnly}
-            onClick={() => onProgramsCreateOpenChange(true)}
-          >
-            Add
-          </Button>
         ) : undefined
       }
       size={effectiveCardSize}
@@ -254,9 +291,7 @@ export function renderWorkspaceBoardResolvedCard({
           cardId === "communications" && nextSize === "sm" ? "md" : nextSize
         )
       }
-      fullHref={
-        cardId === "accelerator" ? acceleratorCardHref : cardMeta.fullHref
-      }
+      fullHref={cardMeta.fullHref}
       canEdit={canEdit}
       contentClassName={contentClassName}
       menuActions={
@@ -267,43 +302,6 @@ export function renderWorkspaceBoardResolvedCard({
       onToggleCanvasFullscreen={frameFullscreenToggle}
       fullscreenControlMode="overflow"
     >
-      {cardId === "accelerator" ? (
-        <WorkspaceBoardLazyAcceleratorCardPanel
-          input={acceleratorCardInput}
-          presentationMode="embedded"
-          onRuntimeChange={
-            shouldTrackEmbeddedAcceleratorRuntime
-              ? onAcceleratorRuntimeChange
-              : undefined
-          }
-          onRuntimeActionsChange={
-            shouldTrackEmbeddedAcceleratorRuntime
-              ? onAcceleratorRuntimeActionsChange
-              : undefined
-          }
-          tutorialCallout={acceleratorTutorialCallout}
-          tutorialInteractionPolicy={acceleratorTutorialInteractionPolicy}
-          tutorialMode={
-            data.tutorialStepId === "accelerator-close-module"
-              ? "module-preview"
-              : null
-          }
-          onTutorialActionComplete={onAcceleratorTutorialActionComplete}
-          onRequestOpenStep={onRequestOpenAcceleratorStep}
-        />
-      ) : null}
-      {cardId === "programs" ? (
-        <WorkspaceBoardProgramsCard
-          programs={data.organizationEditorData?.programs ?? []}
-          legacyProgramsValue={
-            data.organizationEditorData?.initialProfile.programs
-          }
-          canEdit={canEdit}
-          createOpen={programsCreateOpen}
-          onCreateOpenChange={onProgramsCreateOpenChange}
-          previewOnly={programsPreviewOnly}
-        />
-      ) : null}
       {cardId === "brand-kit" ? (
         <WorkspaceBoardBrandKitCard
           profile={seed.initialProfile}

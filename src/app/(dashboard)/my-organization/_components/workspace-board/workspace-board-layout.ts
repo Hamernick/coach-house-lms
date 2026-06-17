@@ -1,3 +1,5 @@
+import { WORKSPACE_OPTIONAL_DEFAULT_HIDDEN_CARD_IDS } from "@/lib/workspace-card-policy"
+
 import {
   WORKSPACE_CARD_IDS,
   type WorkspaceAutoLayoutMode,
@@ -61,13 +63,13 @@ function normalizeNumber(value: unknown, fallback: number) {
 }
 
 function isWorkspaceAutoLayoutMode(
-  value: unknown,
+  value: unknown
 ): value is WorkspaceAutoLayoutMode {
   return value === "dagre-tree" || value === "timeline"
 }
 
 function normalizeWorkspaceAutoLayoutMode(
-  value: unknown,
+  value: unknown
 ): WorkspaceAutoLayoutMode {
   if (value === "hub" || value === "dagre-tree") return "dagre-tree"
   if (value === "timeline") return "timeline"
@@ -80,6 +82,29 @@ export function buildDefaultWorkspaceConnections(): WorkspaceConnectionState[] {
     source: edge.source,
     target: edge.target,
   }))
+}
+
+const ORGANIZATION_ACCELERATOR_CONNECTION: WorkspaceConnectionState = {
+  id: "edge-organization-to-accelerator",
+  source: "organization-overview",
+  target: "accelerator",
+}
+
+const ACTIVITY_FISCAL_SPONSORSHIP_CONNECTION: WorkspaceConnectionState = {
+  id: "edge-activity-to-fiscal-sponsorship",
+  source: "programs",
+  target: "fiscal-sponsorship",
+}
+
+const LEGACY_ROADMAP_ACCELERATOR_CONNECTION_KEY = "roadmap->accelerator"
+const LEGACY_ORGANIZATION_FISCAL_SPONSORSHIP_CONNECTION_KEY =
+  "organization-overview->fiscal-sponsorship"
+
+function getWorkspaceConnectionKey({
+  source,
+  target,
+}: Pick<WorkspaceConnectionState, "source" | "target">) {
+  return `${source}->${target}`
 }
 
 export function buildDefaultBoardState(
@@ -164,11 +189,52 @@ function normalizeWorkspaceVisibilityState(
   }
 }
 
+function normalizeWorkspaceBoardHiddenCardIdsForPayload(
+  record: Partial<WorkspaceBoardState>
+): WorkspaceCardId[] {
+  const normalizedHiddenCardIds = normalizeWorkspaceHiddenCardIds(
+    record.hiddenCardIds
+  )
+  const optionalDefaultCardIds =
+    WORKSPACE_OPTIONAL_DEFAULT_HIDDEN_CARD_IDS as readonly WorkspaceCardId[]
+
+  if (!Array.isArray(record.nodes)) {
+    return WORKSPACE_CARD_IDS.filter(
+      (cardId) =>
+        normalizedHiddenCardIds.includes(cardId) ||
+        optionalDefaultCardIds.includes(cardId)
+    )
+  }
+
+  const payloadNodeIds = new Set<WorkspaceCardId>()
+  for (const rawNode of record.nodes) {
+    if (!rawNode || typeof rawNode !== "object") continue
+    const normalizedNodeId = normalizeWorkspaceCardId(
+      (rawNode as Partial<WorkspaceNodeState>).id
+    )
+    if (!normalizedNodeId) continue
+    payloadNodeIds.add(normalizedNodeId)
+  }
+
+  const missingOptionalDefaultCardIds = optionalDefaultCardIds.filter(
+    (cardId) => !payloadNodeIds.has(cardId)
+  )
+  if (missingOptionalDefaultCardIds.length === 0) {
+    return normalizedHiddenCardIds
+  }
+
+  return WORKSPACE_CARD_IDS.filter(
+    (cardId) =>
+      normalizedHiddenCardIds.includes(cardId) ||
+      missingOptionalDefaultCardIds.includes(cardId)
+  )
+}
+
 function normalizeNodeState(
   value: unknown,
   fallbackMode: WorkspaceAutoLayoutMode,
   hiddenCardIds?: WorkspaceCardId[],
-  connections?: WorkspaceConnectionState[],
+  connections?: WorkspaceConnectionState[]
 ): WorkspaceNodeState[] {
   const fallbackMap = new Map(
     buildAutoLayoutNodesForMode({
@@ -194,12 +260,18 @@ function normalizeNodeState(
     if (!normalizedNodeId || seenNodeIds.has(normalizedNodeId)) continue
     const fallback = fallbackMap.get(normalizedNodeId)
     if (!fallback) continue
+    const normalizedX = normalizeNumber(nodeRecord.x, fallback.x)
+    const normalizedY = normalizeNumber(nodeRecord.y, fallback.y)
     seenNodeIds.add(normalizedNodeId)
     next.push({
       id: normalizedNodeId,
-      x: normalizeNumber(nodeRecord.x, fallback.x),
-      y: normalizeNumber(nodeRecord.y, fallback.y),
-      size: normalizeNodeCardSize(normalizedNodeId, nodeRecord.size, fallback.size),
+      x: normalizedX,
+      y: normalizedY,
+      size: normalizeNodeCardSize(
+        normalizedNodeId,
+        nodeRecord.size,
+        fallback.size
+      ),
     })
   }
 
@@ -222,6 +294,8 @@ function normalizeConnectionState(value: unknown): WorkspaceConnectionState[] {
 
   const dedupe = new Set<string>()
   const next: WorkspaceConnectionState[] = []
+  let sawLegacyRoadmapAcceleratorConnection = false
+  let sawLegacyOrganizationFiscalSponsorshipConnection = false
 
   for (const rawConnection of value) {
     if (!rawConnection || typeof rawConnection !== "object") continue
@@ -231,7 +305,18 @@ function normalizeConnectionState(value: unknown): WorkspaceConnectionState[] {
     if (!normalizedSource || !normalizedTarget) continue
     if (normalizedSource === normalizedTarget) continue
 
-    const key = `${normalizedSource}->${normalizedTarget}`
+    const key = getWorkspaceConnectionKey({
+      source: normalizedSource,
+      target: normalizedTarget,
+    })
+    if (key === LEGACY_ROADMAP_ACCELERATOR_CONNECTION_KEY) {
+      sawLegacyRoadmapAcceleratorConnection = true
+      continue
+    }
+    if (key === LEGACY_ORGANIZATION_FISCAL_SPONSORSHIP_CONNECTION_KEY) {
+      sawLegacyOrganizationFiscalSponsorshipConnection = true
+      continue
+    }
     if (dedupe.has(key)) continue
     dedupe.add(key)
 
@@ -244,6 +329,23 @@ function normalizeConnectionState(value: unknown): WorkspaceConnectionState[] {
       source: normalizedSource,
       target: normalizedTarget,
     })
+  }
+
+  if (sawLegacyRoadmapAcceleratorConnection) {
+    const organizationAcceleratorKey = getWorkspaceConnectionKey(
+      ORGANIZATION_ACCELERATOR_CONNECTION
+    )
+    if (!dedupe.has(organizationAcceleratorKey)) {
+      next.push(ORGANIZATION_ACCELERATOR_CONNECTION)
+    }
+  }
+  if (sawLegacyOrganizationFiscalSponsorshipConnection) {
+    const activityFiscalSponsorshipKey = getWorkspaceConnectionKey(
+      ACTIVITY_FISCAL_SPONSORSHIP_CONNECTION
+    )
+    if (!dedupe.has(activityFiscalSponsorshipKey)) {
+      next.push(ACTIVITY_FISCAL_SPONSORSHIP_CONNECTION)
+    }
   }
 
   return next.length > 0 ? next : fallback
@@ -267,7 +369,8 @@ export function normalizeWorkspaceBoardState(
   const normalizedAccelerator = normalizeWorkspaceAcceleratorState(
     record.accelerator
   )
-  const normalizedHiddenCardIds = normalizeWorkspaceHiddenCardIds(record.hiddenCardIds)
+  const normalizedHiddenCardIds =
+    normalizeWorkspaceBoardHiddenCardIdsForPayload(record)
   const normalizedConnections = normalizeConnectionState(record.connections)
 
   return {
@@ -278,7 +381,7 @@ export function normalizeWorkspaceBoardState(
       record.nodes,
       autoLayoutMode,
       normalizedHiddenCardIds,
-      normalizedConnections,
+      normalizedConnections
     ),
     connections: normalizedConnections,
     communications: normalizeWorkspaceCommunicationsState(
@@ -288,9 +391,11 @@ export function normalizeWorkspaceBoardState(
     accelerator: normalizedAccelerator,
     acceleratorUi: normalizeWorkspaceBoardAcceleratorUiState(
       record.acceleratorUi,
-      normalizedAccelerator.activeStepId,
+      normalizedAccelerator.activeStepId
     ),
-    onboardingFlow: normalizeWorkspaceOnboardingFlowState(record.onboardingFlow),
+    onboardingFlow: normalizeWorkspaceOnboardingFlowState(
+      record.onboardingFlow
+    ),
     hiddenCardIds: normalizedHiddenCardIds,
     visibility: normalizeWorkspaceVisibilityState(record.visibility),
     updatedAt:
@@ -309,7 +414,7 @@ export function applyAutoLayout(
   }: {
     hiddenCardIds?: WorkspaceCardId[]
     connections?: WorkspaceConnectionState[]
-  } = {},
+  } = {}
 ): Promise<WorkspaceNodeState[]> {
   if (isWorkspaceAutoLayoutMode(modeOrPreset)) {
     return Promise.resolve(
@@ -318,7 +423,7 @@ export function applyAutoLayout(
         existingNodes: nodes,
         hiddenCardIds,
         connections,
-      }),
+      })
     )
   }
   return Promise.resolve(buildPresetNodes(modeOrPreset, nodes))

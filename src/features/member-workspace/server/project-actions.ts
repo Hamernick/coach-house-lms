@@ -6,9 +6,7 @@ import type { Database } from "@/lib/supabase"
 import type { MemberWorkspaceCreateProjectFormInput } from "../types"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import { loadOrganizationProjectStarterIdMap } from "./project-persistence"
-import {
-  buildStarterOrganizationProjects,
-} from "./project-starter-data"
+import { buildStarterOrganizationProjects } from "./project-starter-data"
 import {
   buildStarterOrganizationTaskAssignees,
   buildStarterOrganizationTasks,
@@ -17,9 +15,11 @@ import { MEMBER_WORKSPACE_STARTER_VERSION } from "./starter-data"
 import { normalizeMemberWorkspaceCreateProjectInput } from "./project-create-input"
 import { ensureMemberWorkspaceFeatureAccess } from "./access"
 import {
+  isMissingOrganizationProjectOverviewDocumentsTableError,
   isMissingOrganizationProjectsTableError,
   isMissingOrganizationWorkspaceStarterStateTableError,
 } from "./table-errors"
+import { upsertProjectOverviewDocument } from "./project-overview-documents"
 
 export type MemberWorkspaceResetStarterProjectsResult =
   | { ok: true }
@@ -33,6 +33,10 @@ export type MemberWorkspaceCreateProjectResult =
   | { ok: true; id: string }
   | { error: string }
 
+export type MemberWorkspaceDeleteProjectResult =
+  | { ok: true; id: string }
+  | { error: string }
+
 type OrganizationProjectInsert =
   Database["public"]["Tables"]["organization_projects"]["Insert"]
 
@@ -40,17 +44,24 @@ type OrganizationProjectUpdate =
   Database["public"]["Tables"]["organization_projects"]["Update"]
 
 const PLATFORM_ADMIN_PROJECT_MUTATION_ERROR =
-  "Platform admins can view organization projects here, but cannot edit them."
+  "That project action is not available for platform admins."
+const OVERVIEW_DOCUMENTS_MIGRATION_ERROR =
+  "Organization overview documents are not available until the latest workspace database migrations are applied."
 
 function ensureProjectMutationAllowed(
   actor: Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>,
+  options: { allowPlatformAdmin?: boolean; platformAdminError?: string } = {}
 ) {
-  if (actor.isAdmin) {
-    return { error: PLATFORM_ADMIN_PROJECT_MUTATION_ERROR } as const
-  }
-
   const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
   if (featureAccess) return featureAccess
+
+  if (actor.isAdmin) {
+    if (options.allowPlatformAdmin) return null
+    return {
+      error:
+        options.platformAdminError ?? PLATFORM_ADMIN_PROJECT_MUTATION_ERROR,
+    } as const
+  }
 
   if (!actor.canEdit) {
     return { error: "Only organization editors can manage projects." } as const
@@ -91,17 +102,21 @@ async function resolveProjectCreateOrgId({
 
   const requestedOrgId = input.orgId?.trim()
   if (requestedOrgId && requestedOrgId !== actor.activeOrg.orgId) {
-    return { error: "You can only create projects for the active organization." }
+    return {
+      error: "You can only create projects for the active organization.",
+    }
   }
 
   return { ok: true, orgId: actor.activeOrg.orgId }
 }
 
 export async function createMemberWorkspaceProjectAction(
-  input: MemberWorkspaceCreateProjectFormInput,
+  input: MemberWorkspaceCreateProjectFormInput
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  const mutationAccessResult = ensureProjectMutationAllowed(actor)
+  const mutationAccessResult = ensureProjectMutationAllowed(actor, {
+    allowPlatformAdmin: true,
+  })
   if (mutationAccessResult) {
     return mutationAccessResult
   }
@@ -144,22 +159,46 @@ export async function createMemberWorkspaceProjectAction(
     if (isMissingOrganizationProjectsTableError(error)) {
       return {
         error:
-          "Projects are not available until the latest workspace database migrations are applied.",
+          "Organizations are not available until the latest workspace database migrations are applied.",
       }
     }
     return { error: "Unable to create project." }
   }
 
-  revalidatePath("/projects")
+  if (normalized.value.hasOverviewDocumentHtml) {
+    const overviewDocumentError = await upsertProjectOverviewDocument({
+      actorId: actor.userId,
+      documentHtml: normalized.value.overviewDocumentHtml ?? "",
+      orgId: targetOrg.orgId,
+      projectId: data.id,
+      supabase: actor.supabase,
+    })
+
+    if (overviewDocumentError) {
+      if (
+        isMissingOrganizationProjectOverviewDocumentsTableError(
+          overviewDocumentError
+        )
+      ) {
+        return { error: OVERVIEW_DOCUMENTS_MIGRATION_ERROR }
+      }
+
+      return { error: "Unable to save the overview document." }
+    }
+  }
+
+  revalidatePath("/organizations")
   return { ok: true, id: data.id }
 }
 
 export async function updateMemberWorkspaceProjectAction(
   projectId: string,
-  input: MemberWorkspaceCreateProjectFormInput,
+  input: MemberWorkspaceCreateProjectFormInput
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  const mutationAccessResult = ensureProjectMutationAllowed(actor)
+  const mutationAccessResult = ensureProjectMutationAllowed(actor, {
+    allowPlatformAdmin: true,
+  })
   if (mutationAccessResult) {
     return mutationAccessResult
   }
@@ -169,24 +208,30 @@ export async function updateMemberWorkspaceProjectAction(
     return { error: normalized.error }
   }
 
-  const { data: existingProject, error: existingProjectError } = await actor.supabase
-    .from("organization_projects")
-    .select("id, org_id")
-    .eq("id", projectId)
-    .maybeSingle<{ id: string; org_id: string }>()
+  const { data: existingProject, error: existingProjectError } =
+    await actor.supabase
+      .from("organization_projects")
+      .select("id, org_id")
+      .eq("id", projectId)
+      .maybeSingle<{ id: string; org_id: string }>()
 
   if (existingProjectError || !existingProject) {
-    if (existingProjectError && isMissingOrganizationProjectsTableError(existingProjectError)) {
+    if (
+      existingProjectError &&
+      isMissingOrganizationProjectsTableError(existingProjectError)
+    ) {
       return {
         error:
-          "Projects are not available until the latest workspace database migrations are applied.",
+          "Organizations are not available until the latest workspace database migrations are applied.",
       }
     }
     return { error: "Unable to find that project." }
   }
 
-  if (existingProject.org_id !== actor.activeOrg.orgId) {
-    return { error: "You can only update projects for the active organization." }
+  if (!actor.isAdmin && existingProject.org_id !== actor.activeOrg.orgId) {
+    return {
+      error: "You can only update projects for the active organization.",
+    }
   }
 
   const payload: OrganizationProjectUpdate = {
@@ -213,45 +258,75 @@ export async function updateMemberWorkspaceProjectAction(
     if (isMissingOrganizationProjectsTableError(updateError)) {
       return {
         error:
-          "Projects are not available until the latest workspace database migrations are applied.",
+          "Organizations are not available until the latest workspace database migrations are applied.",
       }
     }
     return { error: "Unable to update project." }
   }
 
-  revalidatePath("/projects")
-  revalidatePath(`/projects/${projectId}`)
+  if (normalized.value.hasOverviewDocumentHtml) {
+    const overviewDocumentError = await upsertProjectOverviewDocument({
+      actorId: actor.userId,
+      documentHtml: normalized.value.overviewDocumentHtml ?? "",
+      orgId: existingProject.org_id,
+      projectId,
+      supabase: actor.supabase,
+    })
+
+    if (overviewDocumentError) {
+      if (
+        isMissingOrganizationProjectOverviewDocumentsTableError(
+          overviewDocumentError
+        )
+      ) {
+        return { error: OVERVIEW_DOCUMENTS_MIGRATION_ERROR }
+      }
+
+      return { error: "Unable to save the overview document." }
+    }
+  }
+
+  revalidatePath("/organizations")
+  revalidatePath(`/organizations/${projectId}`)
   return { ok: true, id: projectId }
 }
 
 export async function updateMemberWorkspaceProjectStatusAction(
   projectId: string,
-  status: Database["public"]["Tables"]["organization_projects"]["Update"]["status"],
+  status: Database["public"]["Tables"]["organization_projects"]["Update"]["status"]
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  const mutationAccessResult = ensureProjectMutationAllowed(actor)
+  const mutationAccessResult = ensureProjectMutationAllowed(actor, {
+    allowPlatformAdmin: true,
+  })
   if (mutationAccessResult) {
     return mutationAccessResult
   }
 
-  const { data: existingProject, error: existingProjectError } = await actor.supabase
-    .from("organization_projects")
-    .select("id, org_id")
-    .eq("id", projectId)
-    .maybeSingle<{ id: string; org_id: string }>()
+  const { data: existingProject, error: existingProjectError } =
+    await actor.supabase
+      .from("organization_projects")
+      .select("id, org_id")
+      .eq("id", projectId)
+      .maybeSingle<{ id: string; org_id: string }>()
 
   if (existingProjectError || !existingProject) {
-    if (existingProjectError && isMissingOrganizationProjectsTableError(existingProjectError)) {
+    if (
+      existingProjectError &&
+      isMissingOrganizationProjectsTableError(existingProjectError)
+    ) {
       return {
         error:
-          "Projects are not available until the latest workspace database migrations are applied.",
+          "Organizations are not available until the latest workspace database migrations are applied.",
       }
     }
     return { error: "Unable to find that project." }
   }
 
-  if (existingProject.org_id !== actor.activeOrg.orgId) {
-    return { error: "You can only update projects for the active organization." }
+  if (!actor.isAdmin && existingProject.org_id !== actor.activeOrg.orgId) {
+    return {
+      error: "You can only update projects for the active organization.",
+    }
   }
 
   const { error: updateError } = await actor.supabase
@@ -266,24 +341,26 @@ export async function updateMemberWorkspaceProjectStatusAction(
     if (isMissingOrganizationProjectsTableError(updateError)) {
       return {
         error:
-          "Projects are not available until the latest workspace database migrations are applied.",
+          "Organizations are not available until the latest workspace database migrations are applied.",
       }
     }
     return { error: "Unable to update project status." }
   }
 
-  revalidatePath("/projects")
-  revalidatePath(`/projects/${projectId}`)
+  revalidatePath("/organizations")
+  revalidatePath(`/organizations/${projectId}`)
   return { ok: true, id: projectId }
 }
 
 export async function updateMemberWorkspaceProjectScheduleAction(
   projectId: string,
   startDate: string,
-  endDate: string,
+  endDate: string
 ): Promise<MemberWorkspaceCreateProjectResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  const mutationAccessResult = ensureProjectMutationAllowed(actor)
+  const mutationAccessResult = ensureProjectMutationAllowed(actor, {
+    allowPlatformAdmin: true,
+  })
   if (mutationAccessResult) {
     return mutationAccessResult
   }
@@ -309,24 +386,30 @@ export async function updateMemberWorkspaceProjectScheduleAction(
     return { error: "End date must be on or after the start date." }
   }
 
-  const { data: existingProject, error: existingProjectError } = await actor.supabase
-    .from("organization_projects")
-    .select("id, org_id")
-    .eq("id", normalizedProjectId)
-    .maybeSingle<{ id: string; org_id: string }>()
+  const { data: existingProject, error: existingProjectError } =
+    await actor.supabase
+      .from("organization_projects")
+      .select("id, org_id")
+      .eq("id", normalizedProjectId)
+      .maybeSingle<{ id: string; org_id: string }>()
 
   if (existingProjectError || !existingProject) {
-    if (existingProjectError && isMissingOrganizationProjectsTableError(existingProjectError)) {
+    if (
+      existingProjectError &&
+      isMissingOrganizationProjectsTableError(existingProjectError)
+    ) {
       return {
         error:
-          "Projects are not available until the latest workspace database migrations are applied.",
+          "Organizations are not available until the latest workspace database migrations are applied.",
       }
     }
     return { error: "Unable to find that project." }
   }
 
-  if (existingProject.org_id !== actor.activeOrg.orgId) {
-    return { error: "You can only update projects for the active organization." }
+  if (!actor.isAdmin && existingProject.org_id !== actor.activeOrg.orgId) {
+    return {
+      error: "You can only update projects for the active organization.",
+    }
   }
 
   const { error: updateError } = await actor.supabase
@@ -342,14 +425,92 @@ export async function updateMemberWorkspaceProjectScheduleAction(
     if (isMissingOrganizationProjectsTableError(updateError)) {
       return {
         error:
-          "Projects are not available until the latest workspace database migrations are applied.",
+          "Organizations are not available until the latest workspace database migrations are applied.",
       }
     }
     return { error: "Unable to update project dates." }
   }
 
-  revalidatePath("/projects")
-  revalidatePath(`/projects/${normalizedProjectId}`)
+  revalidatePath("/organizations")
+  revalidatePath(`/organizations/${normalizedProjectId}`)
+  return { ok: true, id: normalizedProjectId }
+}
+
+export async function deleteMemberWorkspaceProjectAction(
+  projectId: string
+): Promise<MemberWorkspaceDeleteProjectResult> {
+  const actor = await resolveMemberWorkspaceActorContext()
+  const mutationAccessResult = ensureProjectMutationAllowed(actor, {
+    allowPlatformAdmin: true,
+  })
+  if (mutationAccessResult) {
+    return mutationAccessResult
+  }
+
+  const normalizedProjectId = projectId.trim()
+  if (!normalizedProjectId) {
+    return { error: "Choose an organization to delete." }
+  }
+
+  const { data: existingProject, error: existingProjectError } =
+    await actor.supabase
+      .from("organization_projects")
+      .select("id, org_id, project_kind, canonical_org_id")
+      .eq("id", normalizedProjectId)
+      .maybeSingle<{
+        id: string
+        org_id: string
+        project_kind: string
+        canonical_org_id: string | null
+      }>()
+
+  if (existingProjectError || !existingProject) {
+    if (
+      existingProjectError &&
+      isMissingOrganizationProjectsTableError(existingProjectError)
+    ) {
+      return {
+        error:
+          "Organizations are not available until the latest workspace database migrations are applied.",
+      }
+    }
+    return { error: "Unable to find that organization." }
+  }
+
+  if (!actor.isAdmin && existingProject.org_id !== actor.activeOrg.orgId) {
+    return {
+      error: "You can only delete organizations for the active organization.",
+    }
+  }
+
+  if (
+    existingProject.project_kind !== "standard" ||
+    existingProject.canonical_org_id
+  ) {
+    return {
+      error:
+        "Canonical organization records cannot be deleted from this screen.",
+    }
+  }
+
+  const { error: deleteError } = await actor.supabase
+    .from("organization_projects")
+    .delete()
+    .eq("id", normalizedProjectId)
+    .eq("project_kind", "standard")
+
+  if (deleteError) {
+    if (isMissingOrganizationProjectsTableError(deleteError)) {
+      return {
+        error:
+          "Organizations are not available until the latest workspace database migrations are applied.",
+      }
+    }
+    return { error: "Unable to delete organization." }
+  }
+
+  revalidatePath("/organizations")
+  revalidatePath(`/organizations/${normalizedProjectId}`)
   return { ok: true, id: normalizedProjectId }
 }
 
@@ -447,14 +608,14 @@ export async function resetMemberWorkspaceStarterProjectsAction(): Promise<Membe
         last_reset_at: new Date().toISOString(),
         updated_by: actor.userId,
       },
-      { onConflict: "org_id" },
+      { onConflict: "org_id" }
     )
 
   if (starterStateError) {
     return { error: "Unable to update starter state." }
   }
 
-  revalidatePath("/projects")
+  revalidatePath("/organizations")
   revalidatePath("/tasks")
   return { ok: true }
 }
@@ -479,7 +640,7 @@ export async function clearMemberWorkspaceStarterDataAction(): Promise<MemberWor
         last_reset_at: timestamp,
         updated_by: actor.userId,
       },
-      { onConflict: "org_id" },
+      { onConflict: "org_id" }
     )
 
   if (
@@ -507,10 +668,10 @@ export async function clearMemberWorkspaceStarterDataAction(): Promise<MemberWor
     .eq("created_source", "starter_seed")
 
   if (deleteProjectsError) {
-    return { error: "Unable to clear demo projects." }
+    return { error: "Unable to clear demo organizations." }
   }
 
-  revalidatePath("/projects")
+  revalidatePath("/organizations")
   revalidatePath("/tasks")
   return { ok: true }
 }

@@ -8,7 +8,10 @@ import { cn } from "@/lib/utils"
 import { LinkPreviewCard } from "@/components/rich-text-editor/components/link-preview-card"
 import { RichTextToolbar } from "@/components/rich-text-editor/components/rich-text-toolbar"
 import { buildRichTextExtensions } from "@/components/rich-text-editor/extensions"
-import { extractLinks, syncPlaceholderState } from "@/components/rich-text-editor/helpers"
+import {
+  extractLinks,
+  syncPlaceholderState,
+} from "@/components/rich-text-editor/helpers"
 import { useImageUploadHandler } from "@/components/rich-text-editor/hooks/use-image-upload-handler"
 import { useLinkPreviews } from "@/components/rich-text-editor/hooks/use-link-previews"
 import type { RichTextEditorProps } from "@/components/rich-text-editor/types"
@@ -16,6 +19,7 @@ import type { RichTextEditorProps } from "@/components/rich-text-editor/types"
 export function RichTextEditor({
   value,
   onChange,
+  ariaLabel,
   readOnly = false,
   placeholder = "Start typing...",
   className,
@@ -47,14 +51,22 @@ export function RichTextEditor({
   const [toolbarTarget, setToolbarTarget] = useState<HTMLElement | null>(null)
   const isReadOnly = Boolean(readOnly)
   const enableImages = typeof onImageUpload === "function" && !isReadOnly
-  const editorMinHeight = typeof minHeight === "number" && minHeight > 0 ? `${Math.round(minHeight)}px` : undefined
-  const editorMaxHeight = typeof maxHeight === "number" && maxHeight > 0 ? `${Math.round(maxHeight)}px` : undefined
+  const editorMinHeight =
+    typeof minHeight === "number" && minHeight > 0
+      ? `${Math.round(minHeight)}px`
+      : undefined
+  const editorMaxHeight =
+    typeof maxHeight === "number" && maxHeight > 0
+      ? `${Math.round(maxHeight)}px`
+      : undefined
   const editorStyle = [
     editorMinHeight ? `min-height: ${editorMinHeight};` : "",
     editorMaxHeight ? `max-height: ${editorMaxHeight};` : "",
     stableScrollbars ? "scrollbar-gutter: stable;" : "",
   ].join("")
-  const overflowClass = stableScrollbars ? "overflow-y-scroll overflow-x-auto" : "overflow-auto"
+  const overflowClass = stableScrollbars
+    ? "overflow-y-scroll overflow-x-auto"
+    : "overflow-auto"
   const resizeClass = disableResize ? "resize-none" : "resize-y"
 
   useEffect(() => {
@@ -91,12 +103,17 @@ export function RichTextEditor({
           "prose-blockquote:border-l-2 prose-blockquote:border-primary/50 prose-blockquote:pl-4 prose-blockquote:text-muted-foreground",
           "prose-code:bg-muted prose-code:px-1.5 prose-code:py-1 prose-code:rounded-md prose-code:text-sm",
           "prose-hr:border-border prose-hr:my-6 prose-img:my-4 prose-img:rounded-lg prose-img:border prose-img:border-border/60",
+          "[&_table]:my-4 [&_table]:w-full [&_table]:border-collapse [&_table]:overflow-hidden [&_table]:rounded-lg [&_td]:border [&_td]:border-border/70 [&_td]:px-3 [&_td]:py-2 [&_td]:align-top [&_th]:border [&_th]:border-border/70 [&_th]:bg-muted [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:font-semibold",
           editorClassName
         ),
         style: editorStyle,
+        ...(ariaLabel ? { "aria-label": ariaLabel } : {}),
       },
       handleKeyDown: (_view, event) => {
-        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "a") {
+        if (
+          (event.metaKey || event.ctrlKey) &&
+          event.key.toLowerCase() === "a"
+        ) {
           if (!editor) return false
           event.preventDefault()
           editor.chain().focus().selectAll().run()
@@ -204,7 +221,10 @@ export function RichTextEditor({
   const handleWrapperMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
     if (isReadOnly) return
     const target = event.target as HTMLElement
-    if (target.closest("button, a, input, textarea, [data-editor-focus-ignore]")) return
+    if (
+      target.closest("button, a, input, textarea, [data-editor-focus-ignore]")
+    )
+      return
     if (target.closest("[contenteditable='true'], .ProseMirror")) return
     editor.chain().focus().run()
   }
@@ -213,7 +233,7 @@ export function RichTextEditor({
     <>
       <div
         className={cn(
-          "w-full min-w-full max-w-full rounded-2xl border bg-card shadow-sm dark:border-border/60 overflow-hidden",
+          "bg-card dark:border-border/60 w-full max-w-full min-w-full overflow-hidden rounded-2xl border shadow-sm",
           className
         )}
       >
@@ -227,26 +247,36 @@ export function RichTextEditor({
             onChange={handleImagePick}
           />
         ) : null}
-        <div className="flex min-h-0 flex-1 flex-col" onMouseDown={handleWrapperMouseDown}>
+        <div
+          className="flex min-h-0 flex-1 flex-col"
+          onMouseDown={handleWrapperMouseDown}
+        >
           {header ? (
-            <div className={cn("px-3 pt-3 text-sm text-muted-foreground", headerClassName)}>{header}</div>
+            <div
+              className={cn(
+                "text-muted-foreground px-3 pt-3 text-sm",
+                headerClassName
+              )}
+            >
+              {header}
+            </div>
           ) : null}
           <div
             className={cn(
-              "flex items-center justify-end gap-2 bg-muted/30 px-3 py-2 text-xs text-muted-foreground",
-              countClassName,
+              "bg-muted/30 text-muted-foreground flex items-center justify-end gap-2 px-3 py-2 text-xs",
+              countClassName
             )}
           >
             <span className="whitespace-nowrap">
-              {counts.words} {counts.words === 1 ? "word" : "words"} • {counts.chars}{" "}
-              {counts.chars === 1 ? "character" : "characters"}
+              {counts.words} {counts.words === 1 ? "word" : "words"} •{" "}
+              {counts.chars} {counts.chars === 1 ? "character" : "characters"}
             </span>
           </div>
           <div className={cn("flex min-h-0 flex-1 flex-col", contentClassName)}>
             <EditorContent editor={editor} />
           </div>
           {links.length > 0 ? (
-            <div className="flex flex-wrap items-center gap-2 rounded-b-md border-t bg-muted/20 px-3 py-2">
+            <div className="bg-muted/20 flex flex-wrap items-center gap-2 rounded-b-md border-t px-3 py-2">
               {links.map((href) => (
                 <LinkPreviewCard key={href} href={href} meta={linkMeta[href]} />
               ))}
@@ -254,7 +284,9 @@ export function RichTextEditor({
           ) : null}
         </div>
       </div>
-      {toolbarPortalId && toolbarTarget && toolbar ? createPortal(toolbar, toolbarTarget) : null}
+      {toolbarPortalId && toolbarTarget && toolbar
+        ? createPortal(toolbar, toolbarTarget)
+        : null}
     </>
   )
 }

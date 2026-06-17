@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest"
 
+import { resolveWorkspaceCanvasTutorialCalendarButtonProps } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-support-helpers"
 import {
   buildWorkspaceCanvasTutorialCompletionHiddenCardIds,
   clampWorkspaceCanvasTutorialStepIndex,
@@ -118,8 +119,31 @@ describe("workspace canvas tutorial", () => {
     )
   })
 
-  it("does not require a separate calendar control action during the calendar step", () => {
-    expect(resolveWorkspaceCanvasTutorialCallout(7)).toBeNull()
+  it("highlights the header calendar button without requiring a separate calendar action", () => {
+    const callout = resolveWorkspaceCanvasTutorialCallout(7)
+    const calendarButtonProps = resolveWorkspaceCanvasTutorialCalendarButtonProps({
+      tutorialCallout: callout,
+      onTutorialComplete: () => {},
+    })
+
+    expect(callout).toEqual({
+      kind: "calendar-viewport-button",
+      cardId: "calendar",
+      label: "Calendar",
+      instruction:
+        "The calendar lives in the header here, so it is always available from the workspace.",
+      requiresAction: false,
+    })
+    expect(calendarButtonProps).toEqual({
+      tutorialCalendarButtonCallout: {
+        title: "Calendar",
+        instruction:
+          "The calendar lives in the header here, so it is always available from the workspace.",
+      },
+      onTutorialCalendarButtonComplete: undefined,
+    })
+    expect(resolveWorkspaceCanvasTutorialPromptTargetCardId(7)).toBeNull()
+    expect(resolveWorkspaceCanvasTutorialShortcutInstruction(7)).toBeNull()
   })
 
   it("keeps accelerator internal steps focused on the accelerator card only", () => {

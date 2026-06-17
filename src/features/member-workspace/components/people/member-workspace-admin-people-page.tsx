@@ -75,13 +75,19 @@ export function MemberWorkspaceAdminPeoplePage({
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Avg. setup progress</CardTitle>
-            <CardDescription>Organization completeness snapshot</CardDescription>
+            <CardTitle className="text-sm font-medium">
+              Avg. setup progress
+            </CardTitle>
+            <CardDescription>
+              Organization completeness snapshot
+            </CardDescription>
           </CardHeader>
           <CardContent className="pt-0 text-3xl font-semibold">
             {Math.round(
-              organizations.reduce((total, organization) => total + organization.setupProgress, 0) /
-                Math.max(organizations.length, 1),
+              organizations.reduce(
+                (total, organization) => total + organization.setupProgress,
+                0
+              ) / Math.max(organizations.length, 1)
             )}
             %
           </CardContent>
@@ -95,9 +101,15 @@ export function MemberWorkspaceAdminPeoplePage({
               <div className="space-y-2">
                 <div className="flex flex-wrap items-center gap-2">
                   <CardTitle>{organization.name}</CardTitle>
-                  <Badge variant="secondary">{organization.organizationStatus}</Badge>
-                  <Badge variant="outline">{organization.memberCount} members</Badge>
-                  <Badge variant="outline">{organization.setupProgress}% setup</Badge>
+                  <Badge variant="secondary">
+                    {organization.organizationStatus}
+                  </Badge>
+                  <Badge variant="outline">
+                    {organization.memberCount} members
+                  </Badge>
+                  <Badge variant="outline">
+                    {organization.setupProgress}% setup
+                  </Badge>
                 </div>
                 <CardDescription>
                   {organization.publicSlug
@@ -106,8 +118,10 @@ export function MemberWorkspaceAdminPeoplePage({
                 </CardDescription>
               </div>
               <Button asChild size="sm" variant="outline">
-                <Link href={`/projects/${organization.canonicalProjectId ?? organization.orgId}`}>
-                  Open project
+                <Link
+                  href={`/organizations/${organization.canonicalProjectId ?? organization.orgId}`}
+                >
+                  Open organization
                 </Link>
               </Button>
             </div>
@@ -129,26 +143,35 @@ export function MemberWorkspaceAdminPeoplePage({
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="size-9">
-                          <AvatarImage alt={member.name} src={member.avatarUrl ?? undefined} />
-                          <AvatarFallback>{initialsFor(member.name)}</AvatarFallback>
+                          <AvatarImage
+                            alt={member.name}
+                            src={member.avatarUrl ?? undefined}
+                          />
+                          <AvatarFallback>
+                            {initialsFor(member.name)}
+                          </AvatarFallback>
                         </Avatar>
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-foreground">{member.name}</p>
+                          <p className="text-foreground truncate font-medium">
+                            {member.name}
+                          </p>
                           {member.platformRole ? (
-                            <p className="truncate text-xs text-muted-foreground">
+                            <p className="text-muted-foreground truncate text-xs">
                               Platform role: {member.platformRole}
                             </p>
                           ) : null}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="capitalize">{member.organizationRole}</TableCell>
+                    <TableCell className="capitalize">
+                      {member.organizationRole}
+                    </TableCell>
                     <TableCell>{member.headline ?? "—"}</TableCell>
                     <TableCell>{member.email ?? "—"}</TableCell>
                     <TableCell className="text-right">
                       <Button asChild size="sm" variant="ghost">
                         <Link
-                          href={`/projects/${organization.canonicalProjectId ?? organization.orgId}`}
+                          href={`/organizations/${organization.canonicalProjectId ?? organization.orgId}`}
                         >
                           View
                         </Link>

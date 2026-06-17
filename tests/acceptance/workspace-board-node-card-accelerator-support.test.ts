@@ -19,7 +19,9 @@ describe("workspace board accelerator header support", () => {
     expect(
       resolveAcceleratorHeaderDetails({
         acceleratorRuntimeSnapshot: snapshot,
-      }),
+        acceleratorTutorialCallout: null,
+        acceleratorTutorialInteractionPolicy: null,
+      })
     ).toBeUndefined()
   })
 
@@ -39,7 +41,29 @@ describe("workspace board accelerator header support", () => {
         acceleratorRuntimeSnapshot: snapshot,
         acceleratorTutorialCallout: null,
         acceleratorTutorialInteractionPolicy: null,
-      }),
+      })
     ).toBeUndefined()
+  })
+
+  it("does not render accelerator progress in the card frame header", () => {
+    const snapshot = {
+      filteredProgressPercent: 42,
+      readinessSummary: null,
+    } as WorkspaceAcceleratorCardRuntimeSnapshot
+
+    const meta = resolveAcceleratorHeaderMeta({
+      acceleratorRuntimeActions: null,
+      acceleratorRuntimeSnapshot: snapshot,
+      acceleratorTutorialCallout: null,
+      acceleratorTutorialInteractionPolicy: null,
+    })
+    const details = resolveAcceleratorHeaderDetails({
+      acceleratorRuntimeSnapshot: snapshot,
+      acceleratorTutorialCallout: null,
+      acceleratorTutorialInteractionPolicy: null,
+    })
+
+    expect(meta).toBeUndefined()
+    expect(details).toBeUndefined()
   })
 })

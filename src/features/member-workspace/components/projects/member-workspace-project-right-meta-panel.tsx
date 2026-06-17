@@ -41,7 +41,9 @@ export function MemberWorkspaceProjectRightMetaPanel({
       <Separator />
       <BacklogCard backlog={project.backlog} />
       <Separator />
-      <MemberWorkspaceProjectOrganizationCard organization={organizationSummary} />
+      <MemberWorkspaceProjectOrganizationCard
+        organization={organizationSummary}
+      />
       <Separator />
       <MemberWorkspaceProjectQuickLinksCard
         links={project.quickLinks}

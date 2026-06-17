@@ -10,6 +10,7 @@ import {
   PaywallOverlay,
   TutorialManager,
 } from "@/components/app-shell/dynamic-components"
+import { AppShellAccountMenuActionsProvider } from "@/components/app-shell/account-menu-actions-context"
 import {
   AppShellHeader,
   AppShellMobileNav,
@@ -215,25 +216,26 @@ export function AppShellInner({
   useOnboardingRedirectTarget(onboardingRedirectTarget)
 
   return (
-    <AppShellRightRailControlsProvider value={rightRailControls}>
-      <SidebarProvider
-        defaultOpen={!isAcceleratorContext}
-        data-shell-root
-        className={cn(
-          "text-foreground h-svh min-h-0 overflow-hidden bg-[var(--shell-bg)]",
-          "[--shell-bg:var(--background)] [--shell-panel:var(--background)] [--shell-rail:var(--background)]",
-          "[--shell-border:var(--border)] [--shell-card:var(--background)]",
-          "[--shell-content-pad:1rem] [--shell-gutter:1.25rem] [--shell-rail-gap:1rem] [--shell-rail-item-padding:0.5rem] [--shell-rail-padding:0.75rem] [--shell-right-rail-pad:0.75rem] sm:[--shell-content-pad:1.25rem] lg:[--shell-content-pad:1.5rem]",
-          "[--shell-right-rail-width:var(--sidebar-width)]",
-          "[--sidebar-border:var(--border)] [--sidebar-foreground:var(--foreground)] [--sidebar:var(--background)]",
-          isAcceleratorContext &&
-            "[--shell-right-rail-pad:0rem] [--shell-right-rail-width:26rem]",
-          isModulePage &&
-            "[--shell-right-rail-pad:0rem] [--shell-right-rail-width:27rem]",
-          derivedContext === "public" &&
-            "[--shell-right-rail-width:min(22rem,calc(100vw-1rem))] md:[--shell-right-rail-width:min(22rem,36vw)]"
-        )}
-      >
+    <AppShellAccountMenuActionsProvider>
+      <AppShellRightRailControlsProvider value={rightRailControls}>
+        <SidebarProvider
+          defaultOpen={!isAcceleratorContext}
+          data-shell-root
+          className={cn(
+            "text-foreground h-svh min-h-0 overflow-hidden bg-[var(--shell-bg)]",
+            "[--shell-bg:var(--background)] [--shell-panel:var(--background)] [--shell-rail:var(--background)]",
+            "[--shell-border:var(--border)] [--shell-card:var(--background)]",
+            "[--shell-content-pad:1rem] [--shell-gutter:1.25rem] [--shell-rail-gap:1rem] [--shell-rail-item-padding:0.5rem] [--shell-rail-padding:0.75rem] [--shell-right-rail-pad:0.75rem] sm:[--shell-content-pad:1.25rem] lg:[--shell-content-pad:1.5rem]",
+            "[--shell-right-rail-width:var(--sidebar-width)]",
+            "[--sidebar-border:var(--border)] [--sidebar-foreground:var(--foreground)] [--sidebar:var(--background)]",
+            isAcceleratorContext &&
+              "[--shell-right-rail-pad:0rem] [--shell-right-rail-width:26rem]",
+            isModulePage &&
+              "[--shell-right-rail-pad:0rem] [--shell-right-rail-width:27rem]",
+            derivedContext === "public" &&
+              "[--shell-right-rail-width:min(22rem,calc(100vw-1rem))] md:[--shell-right-rail-width:min(22rem,36vw)]"
+          )}
+        >
         <SidebarAutoCollapse active={isAcceleratorContext} />
         {showAcceleratorRail ? (
           <RightRailSlot priority={1}>
@@ -408,5 +410,6 @@ export function AppShellInner({
         {!isAdminContext ? <TutorialManager /> : null}
       </SidebarProvider>
     </AppShellRightRailControlsProvider>
+    </AppShellAccountMenuActionsProvider>
   )
 }

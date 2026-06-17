@@ -81,7 +81,6 @@ export function useWorkspaceCanvasTutorialCompletionExitEffects({
         tutorialSceneFitRequest: null,
         tutorialCompletionExitRequest,
         focusCardRequest: null,
-        journeyGuideTargetCardId: null,
         visibleNodeIds,
       })
       if (!command) {
@@ -116,7 +115,7 @@ export function useWorkspaceCanvasTutorialCompletionExitEffects({
               : undefined,
           nodeCount: result.nodeCount,
           reason: "tutorial_completion_exit",
-        },
+        }
       )
     })
   }, [

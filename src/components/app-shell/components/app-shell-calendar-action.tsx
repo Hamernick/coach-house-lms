@@ -71,13 +71,13 @@ export function AppShellCalendarAction() {
   }, [])
 
   const handleCalendarTriggerClick = (event: MouseEvent<HTMLButtonElement>) => {
-    if (!tutorialCalendarButtonActive) {
+    if (!onTutorialCalendarButtonComplete) {
       return
     }
 
     event.preventDefault()
     event.stopPropagation()
-    onTutorialCalendarButtonComplete?.()
+    onTutorialCalendarButtonComplete()
   }
 
   const calendarTrigger = (

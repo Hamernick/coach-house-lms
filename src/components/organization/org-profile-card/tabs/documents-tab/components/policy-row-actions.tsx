@@ -5,8 +5,20 @@ import ExternalLink from "lucide-react/dist/esm/icons/external-link"
 import Trash2 from "lucide-react/dist/esm/icons/trash-2"
 
 import { Button } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import type { DocumentsPolicyEntry, PolicyRow } from "../types"
+import {
+  DOCUMENT_ROW_MOBILE_ACTION_BUTTON_CLASSNAME,
+  type DocumentRowActionPresentation,
+  getDocumentRowActionButtonClassName,
+  getDocumentRowActionButtonSize,
+  getDocumentRowActionsClassName,
+  shouldShowDocumentRowActionLabel,
+} from "./document-row-action-styles"
 
 type PolicyRowActionsProps = {
   row: PolicyRow
@@ -19,6 +31,7 @@ type PolicyRowActionsProps = {
   onDelete: (policy: DocumentsPolicyEntry) => Promise<void>
   onViewDocument: (policy: DocumentsPolicyEntry) => Promise<void>
   onDownloadDocument: (policy: DocumentsPolicyEntry) => Promise<void>
+  presentation?: DocumentRowActionPresentation
 }
 
 export function PolicyRowActions({
@@ -32,22 +45,32 @@ export function PolicyRowActions({
   onDelete,
   onViewDocument,
   onDownloadDocument,
+  presentation = "table",
 }: PolicyRowActionsProps) {
+  const showLabels = shouldShowDocumentRowActionLabel(presentation)
+  const framedButtonClassName =
+    getDocumentRowActionButtonClassName(presentation)
+  const framedButtonSize = getDocumentRowActionButtonSize(presentation)
+
   return (
-    <div className="flex min-w-[170px] items-center justify-end gap-1.5">
+    <div className={getDocumentRowActionsClassName(presentation)}>
       {row.policy.document?.path ? (
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
               type="button"
-              size="icon"
-              variant="secondary"
-              className="h-8 w-8"
+              size={framedButtonSize}
+              variant="ghost"
+              className={framedButtonClassName}
               disabled={viewingDocument}
               onClick={() => void onViewDocument(row.policy)}
               aria-label="View policy file"
             >
-              <ExternalLink className="h-4 w-4" aria-hidden />
+              <ExternalLink
+                data-icon={showLabels ? "inline-start" : undefined}
+                aria-hidden
+              />
+              {showLabels ? <span className="truncate">View</span> : null}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -60,14 +83,18 @@ export function PolicyRowActions({
           <TooltipTrigger asChild>
             <Button
               type="button"
-              size="icon"
-              variant="outline"
-              className="h-8 w-8"
+              size={framedButtonSize}
+              variant="ghost"
+              className={framedButtonClassName}
               disabled={downloadingDocument}
               onClick={() => void onDownloadDocument(row.policy)}
               aria-label="Download policy file"
             >
-              <Download className="h-4 w-4" aria-hidden />
+              <Download
+                data-icon={showLabels ? "inline-start" : undefined}
+                aria-hidden
+              />
+              {showLabels ? <span className="truncate">Download</span> : null}
             </Button>
           </TooltipTrigger>
           <TooltipContent side="top">
@@ -77,23 +104,40 @@ export function PolicyRowActions({
       ) : null}
       {canEdit && editMode ? (
         <>
-          <Button type="button" size="sm" variant="secondary" onClick={() => onEdit(row.policy)}>
+          <Button
+            type="button"
+            size="sm"
+            variant={presentation === "mobile" ? "ghost" : "secondary"}
+            className={
+              presentation === "mobile"
+                ? DOCUMENT_ROW_MOBILE_ACTION_BUTTON_CLASSNAME
+                : undefined
+            }
+            onClick={() => onEdit(row.policy)}
+          >
             Edit
           </Button>
           <Button
             type="button"
-            size="icon"
-            variant="outline"
-            className="h-8 w-8"
+            size={framedButtonSize}
+            variant="ghost"
+            className={getDocumentRowActionButtonClassName(
+              presentation,
+              "destructive"
+            )}
             disabled={deleting}
             aria-label={`Delete ${row.policy.title}`}
             onClick={() => void onDelete(row.policy)}
           >
-            <Trash2 className="h-4 w-4" aria-hidden />
+            <Trash2
+              data-icon={showLabels ? "inline-start" : undefined}
+              aria-hidden
+            />
+            {showLabels ? <span className="truncate">Delete</span> : null}
           </Button>
         </>
       ) : (
-        <span className="text-xs text-muted-foreground">View only</span>
+        <span className="text-muted-foreground text-xs">View only</span>
       )}
     </div>
   )

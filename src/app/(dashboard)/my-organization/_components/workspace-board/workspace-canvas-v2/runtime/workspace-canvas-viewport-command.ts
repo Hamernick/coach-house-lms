@@ -66,17 +66,14 @@ export type WorkspaceCanvasViewportExecutionResult = {
 
 function clampSceneZoom(
   value: number,
-  options: WorkspaceCanvasCameraFitOptions,
+  options: WorkspaceCanvasCameraFitOptions
 ) {
-  return Math.min(
-    Math.max(value, options.minZoom),
-    options.maxZoom,
-  )
+  return Math.min(Math.max(value, options.minZoom), options.maxZoom)
 }
 
 export function resolveFlowNodesForIds(
   flowInstance: ReactFlowInstance,
-  nodeIds: string[],
+  nodeIds: string[]
 ) {
   const nodeIdSet = new Set(nodeIds)
   return flowInstance.getNodes().filter((node) => nodeIdSet.has(node.id))
@@ -84,7 +81,7 @@ export function resolveFlowNodesForIds(
 
 export function resolveVisibleFlowNodes(
   flowInstance: ReactFlowInstance,
-  visibleNodeIds: string[],
+  visibleNodeIds: string[]
 ) {
   return resolveFlowNodesForIds(flowInstance, visibleNodeIds)
 }
@@ -93,13 +90,11 @@ export function resolveWorkspaceCanvasViewportCommand({
   tutorialSceneFitRequest,
   tutorialCompletionExitRequest,
   focusCardRequest,
-  journeyGuideTargetCardId,
   visibleNodeIds,
 }: {
   tutorialSceneFitRequest: WorkspaceCanvasSceneFitRequest
   tutorialCompletionExitRequest: WorkspaceCanvasTutorialCompletionExitRequest
   focusCardRequest: WorkspaceCanvasCardFocusRequest
-  journeyGuideTargetCardId: string | null
   visibleNodeIds: string[]
 }): WorkspaceCanvasViewportCommand | null {
   if (
@@ -136,7 +131,6 @@ export function resolveWorkspaceCanvasViewportCommand({
 
   const focusTargetId = resolveWorkspaceCanvasFallbackFocusTarget({
     focusCardId: focusCardRequest?.cardId ?? null,
-    journeyGuideTargetCardId,
     visibleNodeIds,
   })
   if (focusTargetId) {
@@ -193,7 +187,10 @@ export function executeWorkspaceCanvasViewportCommand({
       }
     }
 
-    const sceneNodes = resolveFlowNodesForIds(flowInstance, sceneFitRequest.nodeIds)
+    const sceneNodes = resolveFlowNodesForIds(
+      flowInstance,
+      sceneFitRequest.nodeIds
+    )
     if (sceneNodes.length !== sceneFitRequest.nodeIds.length) {
       return {
         executed: false,

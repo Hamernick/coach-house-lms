@@ -1,25 +1,24 @@
 "use client"
 
-import type { ReactNode } from "react"
 import {
   ArrowsClockwise,
+  Briefcase,
+  Flag,
   Globe,
   PencilSimpleLine,
   Star,
+  Tag,
   Timer,
   User,
 } from "@phosphor-icons/react/dist/ssr"
 
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+  Editable,
+  EditableArea,
+  EditableInput,
+  EditablePreview,
+} from "@/components/ui/editable"
 import {
   Badge,
   MetaChipsRow,
@@ -33,6 +32,15 @@ import {
   MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS,
   type MemberWorkspaceProjectDetailDraft,
 } from "./member-workspace-project-detail-editing"
+import {
+  DateChip,
+  HeaderMetaChip,
+  MembersAssignmentMenu,
+  SelectChip,
+  headerChipIconClassName,
+  parseHeaderChipList,
+} from "./member-workspace-project-detail-header-controls"
+import type { MemberWorkspacePersonOption } from "../../types"
 
 function statusBadgeClasses(status: string) {
   switch (status) {
@@ -73,6 +81,7 @@ type MemberWorkspaceProjectDetailHeaderProps = {
   canEditProject?: boolean
   isEditing?: boolean
   draft?: MemberWorkspaceProjectDetailDraft
+  assigneeOptions?: MemberWorkspacePersonOption[]
   onChangeDraftField?: (
     field: keyof MemberWorkspaceProjectDetailDraft,
     value: string
@@ -80,18 +89,58 @@ type MemberWorkspaceProjectDetailHeaderProps = {
   onEditProject?: () => void
 }
 
-function FieldShell({
+function InlineEditableText({
+  ariaLabel,
   className,
-  children,
+  id,
+  inputClassName,
+  placeholder,
+  previewClassName,
+  value,
+  onChange,
 }: {
+  ariaLabel: string
   className?: string
-  children: ReactNode
+  id: string
+  inputClassName?: string
+  placeholder?: string
+  previewClassName?: string
+  value: string
+  onChange: (value: string) => void
 }) {
-  return <div className={cn("space-y-2", className)}>{children}</div>
+  return (
+    <Editable
+      id={id}
+      value={value}
+      placeholder={placeholder}
+      triggerMode="click"
+      className={cn("min-w-0 gap-0", className)}
+      onValueChange={onChange}
+      onSubmit={(nextValue) => onChange(nextValue.trim())}
+    >
+      <EditableArea className="min-w-0">
+        <EditablePreview
+          aria-label={ariaLabel}
+          className={cn(
+            "border-border/0 min-w-0 px-0 py-0 focus-visible:ring-2",
+            previewClassName
+          )}
+        />
+        <EditableInput
+          aria-label={ariaLabel}
+          className={cn(
+            "border-border/60 bg-background/90 px-2 py-1",
+            inputClassName
+          )}
+        />
+      </EditableArea>
+    </Editable>
+  )
 }
 
 export function MemberWorkspaceProjectDetailHeader({
   project,
+  assigneeOptions = [],
   canEditProject = false,
   isEditing = false,
   draft,
@@ -131,25 +180,52 @@ export function MemberWorkspaceProjectDetailHeader({
       icon: <ArrowsClockwise className="h-4 w-4" />,
     },
   ].filter(
-    (item) => item.value !== undefined && item.value !== null && item.value !== ""
+    (item) =>
+      item.value !== undefined && item.value !== null && item.value !== ""
   )
 
   return (
-    <section className="mt-4 space-y-5">
+    <section className="mt-4 flex flex-col gap-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-3">
+        <div className="flex min-w-0 flex-1 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-foreground text-2xl leading-tight font-semibold">
-              {isEditing ? draft?.name || project.name : project.name}
-            </h1>
+            {isEditing && draft && onChangeDraftField ? (
+              <InlineEditableText
+                id="member-workspace-project-name"
+                ariaLabel="Project name"
+                value={draft.name}
+                placeholder="Untitled organization..."
+                onChange={(value) => onChangeDraftField("name", value)}
+                previewClassName="text-foreground max-w-[min(44rem,100%)] truncate text-2xl leading-tight font-semibold"
+                inputClassName="text-foreground h-auto min-w-[18rem] max-w-full text-2xl leading-tight font-semibold"
+              />
+            ) : (
+              <h1 className="text-foreground text-2xl leading-tight font-semibold">
+                {project.name}
+              </h1>
+            )}
             <div className="flex flex-wrap items-center gap-2">
-              <Badge
-                variant="secondary"
-                className={statusBadgeClasses(statusLabel)}
-              >
-                <Star className="h-3 w-3" />
-                {statusLabel}
-              </Badge>
+              {isEditing && draft && onChangeDraftField ? (
+                <SelectChip
+                  id="member-workspace-project-status"
+                  label="Project status"
+                  value={draft.status}
+                  leadingIcon={
+                    <Star className={headerChipIconClassName} aria-hidden />
+                  }
+                  options={MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS}
+                  triggerClassName={statusBadgeClasses(statusLabel)}
+                  onChange={(value) => onChangeDraftField("status", value)}
+                />
+              ) : (
+                <Badge
+                  variant="secondary"
+                  className={statusBadgeClasses(statusLabel)}
+                >
+                  <Star className="h-3 w-3" />
+                  {statusLabel}
+                </Badge>
+              )}
               {project.backlog.picUsers.length > 0 ? (
                 <Badge
                   variant="outline"
@@ -159,23 +235,99 @@ export function MemberWorkspaceProjectDetailHeader({
                   Assigned
                 </Badge>
               ) : null}
-              {isEditing ? (
-                <Badge
-                  variant="outline"
-                  className="border-border/70 bg-background/80"
-                >
-                  Edit mode
-                </Badge>
-              ) : null}
             </div>
           </div>
 
-          {isEditing ? (
-            <p className="text-muted-foreground max-w-3xl text-sm leading-6">
-              Update the project details inline. Fields collapse into a
-              single-column form on smaller screens so the page stays usable on
-              mobile.
-            </p>
+          {isEditing && draft && onChangeDraftField ? (
+            <div className="flex max-w-5xl flex-wrap items-center gap-2 text-xs">
+              <div className="flex items-center gap-3">
+                <div className="text-muted-foreground flex items-center gap-2">
+                  <span>ID:</span>
+                  <span className="text-foreground font-medium">
+                    #{project.id}
+                  </span>
+                </div>
+              </div>
+              <SelectChip
+                id="member-workspace-project-priority"
+                label="Project priority"
+                value={draft.priority}
+                options={MEMBER_WORKSPACE_PROJECT_PRIORITY_OPTIONS}
+                leadingIcon={
+                  <Flag className={headerChipIconClassName} aria-hidden />
+                }
+                onChange={(value) => onChangeDraftField("priority", value)}
+              />
+              {draft.clientName ? (
+                <HeaderMetaChip
+                  icon={
+                    <Briefcase
+                      className={headerChipIconClassName}
+                      aria-hidden
+                    />
+                  }
+                >
+                  {draft.clientName}
+                </HeaderMetaChip>
+              ) : null}
+              <DateChip
+                id="member-workspace-project-start-date"
+                label="Start"
+                value={draft.startDate}
+                onChange={(value) => onChangeDraftField("startDate", value)}
+              />
+              <DateChip
+                id="member-workspace-project-end-date"
+                label="End"
+                value={draft.endDate}
+                onChange={(value) => onChangeDraftField("endDate", value)}
+              />
+              {draft.typeLabel ? (
+                <HeaderMetaChip
+                  icon={
+                    <Timer className={headerChipIconClassName} aria-hidden />
+                  }
+                >
+                  {draft.typeLabel}
+                </HeaderMetaChip>
+              ) : null}
+              {draft.durationLabel ? (
+                <HeaderMetaChip>{draft.durationLabel}</HeaderMetaChip>
+              ) : null}
+              {parseHeaderChipList(draft.tags).map((tag) => (
+                <HeaderMetaChip
+                  key={tag}
+                  icon={<Tag className={headerChipIconClassName} aria-hidden />}
+                >
+                  {tag}
+                </HeaderMetaChip>
+              ))}
+              <MembersAssignmentMenu
+                id="member-workspace-project-members"
+                assigneeOptions={assigneeOptions}
+                value={draft.memberLabels}
+                onChange={(value) => onChangeDraftField("memberLabels", value)}
+              />
+              {project.meta.locationLabel ? (
+                <HeaderMetaChip
+                  icon={
+                    <Globe className={headerChipIconClassName} aria-hidden />
+                  }
+                >
+                  {project.meta.locationLabel}
+                </HeaderMetaChip>
+              ) : null}
+              <HeaderMetaChip
+                icon={
+                  <ArrowsClockwise
+                    className={headerChipIconClassName}
+                    aria-hidden
+                  />
+                }
+              >
+                {project.meta.lastSyncLabel}
+              </HeaderMetaChip>
+            </div>
           ) : null}
         </div>
 
@@ -193,201 +345,11 @@ export function MemberWorkspaceProjectDetailHeader({
         ) : null}
       </div>
 
-      {isEditing && draft && onChangeDraftField ? (
-        <div className="border-border/70 bg-card/80 rounded-2xl border p-4 shadow-sm sm:p-5">
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <FieldShell className="md:col-span-2 xl:col-span-3">
-              <Label htmlFor="member-workspace-project-name">
-                Project name
-              </Label>
-              <Input
-                id="member-workspace-project-name"
-                value={draft.name}
-                onChange={(event) =>
-                  onChangeDraftField("name", event.currentTarget.value)
-                }
-              />
-            </FieldShell>
-
-            <FieldShell>
-              <Label htmlFor="member-workspace-project-status">Status</Label>
-              <Select
-                value={draft.status}
-                onValueChange={(value) => onChangeDraftField("status", value)}
-              >
-                <SelectTrigger
-                  id="member-workspace-project-status"
-                  className="w-full"
-                >
-                  <SelectValue placeholder="Select a status" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MEMBER_WORKSPACE_PROJECT_STATUS_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FieldShell>
-
-            <FieldShell>
-              <Label htmlFor="member-workspace-project-priority">
-                Priority
-              </Label>
-              <Select
-                value={draft.priority}
-                onValueChange={(value) => onChangeDraftField("priority", value)}
-              >
-                <SelectTrigger
-                  id="member-workspace-project-priority"
-                  className="w-full"
-                >
-                  <SelectValue placeholder="Select priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  {MEMBER_WORKSPACE_PROJECT_PRIORITY_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </FieldShell>
-
-            <FieldShell>
-              <Label htmlFor="member-workspace-project-client">Client</Label>
-              <Input
-                id="member-workspace-project-client"
-                value={draft.clientName}
-                placeholder="Add client or workspace name"
-                onChange={(event) =>
-                  onChangeDraftField("clientName", event.currentTarget.value)
-                }
-              />
-            </FieldShell>
-
-            <FieldShell>
-              <Label htmlFor="member-workspace-project-start-date">
-                Start date
-              </Label>
-              <Input
-                id="member-workspace-project-start-date"
-                type="date"
-                value={draft.startDate}
-                onChange={(event) =>
-                  onChangeDraftField("startDate", event.currentTarget.value)
-                }
-              />
-            </FieldShell>
-
-            <FieldShell>
-              <Label htmlFor="member-workspace-project-end-date">
-                End date
-              </Label>
-              <Input
-                id="member-workspace-project-end-date"
-                type="date"
-                value={draft.endDate}
-                onChange={(event) =>
-                  onChangeDraftField("endDate", event.currentTarget.value)
-                }
-              />
-            </FieldShell>
-
-            <FieldShell>
-              <Label htmlFor="member-workspace-project-type">Sprint type</Label>
-              <Input
-                id="member-workspace-project-type"
-                value={draft.typeLabel}
-                placeholder="Design Sprint"
-                onChange={(event) =>
-                  onChangeDraftField("typeLabel", event.currentTarget.value)
-                }
-              />
-            </FieldShell>
-
-            <FieldShell>
-              <Label htmlFor="member-workspace-project-track">
-                Classification
-              </Label>
-              <Input
-                id="member-workspace-project-track"
-                value={draft.durationLabel}
-                placeholder="Frontend"
-                onChange={(event) =>
-                  onChangeDraftField("durationLabel", event.currentTarget.value)
-                }
-              />
-            </FieldShell>
-
-            <FieldShell className="xl:col-span-1">
-              <Label htmlFor="member-workspace-project-tags">Tags</Label>
-              <Input
-                id="member-workspace-project-tags"
-                value={draft.tags}
-                placeholder="design, launch, qa"
-                onChange={(event) =>
-                  onChangeDraftField("tags", event.currentTarget.value)
-                }
-              />
-              <p className="text-muted-foreground text-xs leading-5">
-                Comma-separated.
-              </p>
-            </FieldShell>
-
-            <FieldShell className="md:col-span-2 xl:col-span-2">
-              <Label htmlFor="member-workspace-project-members">
-                Assigned members
-              </Label>
-              <Input
-                id="member-workspace-project-members"
-                value={draft.memberLabels}
-                placeholder="Alex Rivera, Morgan Lee"
-                onChange={(event) =>
-                  onChangeDraftField("memberLabels", event.currentTarget.value)
-                }
-              />
-              <p className="text-muted-foreground text-xs leading-5">
-                Comma-separated names shown across the project view.
-              </p>
-            </FieldShell>
-          </div>
-
-          <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <div className="border-border/70 bg-background/80 rounded-xl border p-3">
-              <p className="text-muted-foreground text-xs font-medium tracking-[0.14em] uppercase">
-                Project ID
-              </p>
-              <p className="text-foreground mt-2 text-sm font-medium">
-                #{project.id}
-              </p>
-            </div>
-            <div className="border-border/70 bg-background/80 rounded-xl border p-3">
-              <p className="text-muted-foreground text-xs font-medium tracking-[0.14em] uppercase">
-                Last sync
-              </p>
-              <p className="text-foreground mt-2 text-sm font-medium">
-                {project.meta.lastSyncLabel}
-              </p>
-            </div>
-            {project.meta.locationLabel ? (
-              <div className="border-border/70 bg-background/80 rounded-xl border p-3 sm:col-span-2 xl:col-span-1">
-                <p className="text-muted-foreground text-xs font-medium tracking-[0.14em] uppercase">
-                  Location
-                </p>
-                <p className="text-muted-foreground mt-2 text-sm">
-                  {project.meta.locationLabel}
-                </p>
-              </div>
-            ) : null}
-          </div>
-        </div>
-      ) : (
+      {!isEditing ? (
         <div className="mt-3">
           <MetaChipsRow items={metaItems} />
         </div>
-      )}
+      ) : null}
     </section>
   )
 }

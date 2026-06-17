@@ -88,7 +88,9 @@ describe("buildMemberWorkspaceProjectDetails", () => {
 
     expect(details.id).toBe("project-1")
     expect(details.source?.name).toBe("Neighborhood Grants Rollout")
-    expect(details.description).toBe("Launch the grants process without extra spreadsheet work.")
+    expect(details.description).toBe(
+      "Launch the grants process without extra spreadsheet work."
+    )
     expect(details.scope).toEqual({
       inScope: ["Audit the intake flow", "Ship the new submission form"],
       outOfScope: ["Finance system changes"],
@@ -115,17 +117,17 @@ describe("buildMemberWorkspaceProjectDetails", () => {
     expect(details.workstreams[0]?.tasks[0]?.priority).toBeUndefined()
     expect(details.notes).toEqual([
       expect.objectContaining({
-          id: "note-1",
-          title: "Kickoff summary",
-          noteType: "general",
-          status: "completed",
-          addedBy: expect.objectContaining({
-            id: "user-1",
-            name: "Jason Duong",
-            avatarUrl: "https://example.com/jason.png",
-          }),
+        id: "note-1",
+        title: "Kickoff summary",
+        noteType: "general",
+        status: "completed",
+        addedBy: expect.objectContaining({
+          id: "user-1",
+          name: "Jason Duong",
+          avatarUrl: "https://example.com/jason.png",
         }),
-      ])
+      }),
+    ])
     expect(details.backlog.picUsers).toEqual([
       expect.objectContaining({
         id: "user-1",
@@ -227,6 +229,54 @@ describe("buildMemberWorkspaceProjectDetails", () => {
       }),
     ])
     expect(details.quickLinks).toEqual([])
+  })
+
+  it("uses the dedicated overview document as the rich detail source", () => {
+    const project: OrganizationProjectRecord = {
+      id: "project-overview-doc",
+      org_id: "org-1",
+      canonical_org_id: null,
+      project_kind: "standard",
+      name: "Overview Document Test",
+      status: "active",
+      priority: "medium",
+      progress: 10,
+      start_date: "2026-04-01",
+      end_date: "2026-04-30",
+      client_name: "Coach House",
+      type_label: "Product",
+      duration_label: "4 weeks",
+      tags: [],
+      member_labels: [],
+      task_count: 0,
+      description: "Compact list summary only.",
+      created_source: "user",
+      starter_seed_key: null,
+      starter_seed_version: null,
+      created_by: "user-1",
+      updated_by: "user-1",
+      created_at: "2026-04-01T00:00:00.000Z",
+      updated_at: "2026-04-02T00:00:00.000Z",
+    }
+
+    const overviewDocument =
+      "<p><strong>Goal:</strong></p><p>Preserve the full rich overview.</p><p><strong>Expected Outcomes:</strong></p><ul><li><p>Readable display mode</p></li></ul>"
+    const details = buildMemberWorkspaceProjectDetails({
+      project,
+      tasks: [],
+      overviewDocument: {
+        id: "overview-doc-1",
+        org_id: "org-1",
+        project_id: "project-overview-doc",
+        document_html: overviewDocument,
+        document_text: "Goal:\n\nPreserve the full rich overview.",
+        updated_at: "2026-04-03T00:00:00.000Z",
+      },
+    })
+
+    expect(details.description).toBe("Preserve the full rich overview.")
+    expect(details.overviewDocument).toBe(overviewDocument)
+    expect(details.outcomes).toEqual(["Readable display mode"])
   })
 
   it("preserves persisted task ordering inside a workstream and carries end dates", () => {

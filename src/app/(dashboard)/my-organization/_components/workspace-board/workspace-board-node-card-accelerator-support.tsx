@@ -28,10 +28,16 @@ export function resolveAcceleratorHeaderMeta({
 
 export function resolveAcceleratorHeaderDetails({
   acceleratorRuntimeSnapshot,
+  acceleratorTutorialCallout,
+  acceleratorTutorialInteractionPolicy,
 }: {
   acceleratorRuntimeSnapshot: WorkspaceAcceleratorCardRuntimeSnapshot | null
+  acceleratorTutorialCallout: WorkspaceBoardNodeData["acceleratorTutorialCallout"]
+  acceleratorTutorialInteractionPolicy: WorkspaceBoardNodeData["acceleratorTutorialInteractionPolicy"]
 }) {
   void acceleratorRuntimeSnapshot
+  void acceleratorTutorialCallout
+  void acceleratorTutorialInteractionPolicy
   return undefined
 }
 

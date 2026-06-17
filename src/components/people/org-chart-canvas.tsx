@@ -41,7 +41,6 @@ function OrgChartCanvasComponent({ people, extras = false, canEdit = true }: Pro
   const [reactFlow, setReactFlow] = useState<ReactFlowInstance | null>(null)
   const [pendingFit, setPendingFit] = useState(true)
   const [nodes, setNodes] = useState<FlowNode[]>([])
-  const [isSaving, setIsSaving] = useState(false)
 
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pendingUpdatesRef = useRef<Map<string, PositionPayload>>(new Map())
@@ -57,7 +56,6 @@ function OrgChartCanvasComponent({ people, extras = false, canEdit = true }: Pro
     if (pendingUpdatesRef.current.size === 0) return
     const payload = Array.from(pendingUpdatesRef.current.values())
     pendingUpdatesRef.current.clear()
-    setIsSaving(true)
     try {
       const response = await fetch("/api/people/position", {
         method: "POST",
@@ -70,8 +68,6 @@ function OrgChartCanvasComponent({ people, extras = false, canEdit = true }: Pro
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to save chart layout."
       toast.error(message)
-    } finally {
-      setIsSaving(false)
     }
   }, [])
 
@@ -153,12 +149,6 @@ function OrgChartCanvasComponent({ people, extras = false, canEdit = true }: Pro
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground">
-          {canEdit ? "Drag to reorganize your chart." : "Organization chart"}
-        </p>
-        {canEdit && isSaving ? <span className="text-xs text-muted-foreground">Saving…</span> : null}
-      </div>
       <div
         className="h-[min(64vh,720px)] w-full rounded-2xl border border-border/60 bg-card/60 shadow-sm"
         style={{ contain: "layout paint" }}

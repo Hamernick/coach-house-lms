@@ -29,6 +29,7 @@ export {
 export {
   clearMemberWorkspaceStarterDataAction,
   createMemberWorkspaceProjectAction,
+  deleteMemberWorkspaceProjectAction,
   resetMemberWorkspaceStarterProjectsAction,
   updateMemberWorkspaceProjectAction,
   updateMemberWorkspaceProjectScheduleAction,

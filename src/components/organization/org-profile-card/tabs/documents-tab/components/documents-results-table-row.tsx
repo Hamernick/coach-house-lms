@@ -1,12 +1,15 @@
 "use client"
 
-import { Badge } from "@/components/ui/badge"
 import { TableCell, TableRow } from "@/components/ui/table"
 
-import { SOURCE_LABEL } from "../constants"
 import { formatBytes, formatUpdatedAt } from "../helpers"
 import type { DocumentIndexRow } from "../types"
-import { CategoryBadges, StatusBadge } from "./document-row-meta"
+import type { DocumentsResultsTableColumnWidths } from "./documents-results-table-columns"
+import {
+  CategoryBadges,
+  DocumentMetaPill,
+  StatusBadge,
+} from "./document-row-meta"
 import { DocumentRowActions } from "./document-row-actions"
 import type { DocumentsResultsTableProps } from "./documents-results-table-types"
 
@@ -32,10 +35,12 @@ type DocumentsResultsTableRowProps = Pick<
   | "viewingPolicyDocumentId"
 > & {
   row: DocumentIndexRow
+  columnWidths: DocumentsResultsTableColumnWidths
 }
 
 function tourIdForRow(row: DocumentIndexRow) {
-  return row.source === "upload" && row.definition.kind === "verification-letter"
+  return row.source === "upload" &&
+    row.definition.kind === "verification-letter"
     ? "document-verification-letter"
     : undefined
 }
@@ -58,6 +63,7 @@ function rowDocumentDetails(row: DocumentIndexRow) {
 
 export function DocumentsResultsTableRow({
   row,
+  columnWidths,
   canEdit,
   editMode,
   publicSlug,
@@ -81,21 +87,50 @@ export function DocumentsResultsTableRow({
 
   return (
     <TableRow key={row.id} data-tour={tourIdForRow(row)}>
-      <TableCell>
-        <Badge variant="outline" className="capitalize">
-          {row.visibility}
-        </Badge>
+      <TableCell
+        className="overflow-hidden"
+        style={{ width: columnWidths.status }}
+      >
+        <StatusBadge status={row.status} />
       </TableCell>
-      <TableCell className="whitespace-normal">
+      <TableCell
+        className="overflow-hidden whitespace-normal"
+        style={{ width: columnWidths.name }}
+      >
         <div className="min-w-0 space-y-0.5">
-          <p className="truncate font-medium text-foreground">{row.name}</p>
-          <p className="line-clamp-2 whitespace-pre-line text-xs text-muted-foreground">
+          <p className="text-foreground truncate font-medium">{row.name}</p>
+          <p className="text-muted-foreground line-clamp-2 text-xs whitespace-pre-line">
             {row.description || "-"}
           </p>
-          {details ? <p className="text-xs text-muted-foreground">{details}</p> : null}
+          {details ? (
+            <p className="text-muted-foreground text-xs">{details}</p>
+          ) : null}
         </div>
       </TableCell>
-      <TableCell className="whitespace-normal text-right">
+      <TableCell
+        className="overflow-hidden"
+        style={{ width: columnWidths.category }}
+      >
+        <CategoryBadges categories={row.categories} />
+      </TableCell>
+      <TableCell
+        className="text-muted-foreground overflow-hidden"
+        style={{ width: columnWidths.updatedAt }}
+      >
+        {formatUpdatedAt(row.updatedAt)}
+      </TableCell>
+      <TableCell
+        className="overflow-hidden"
+        style={{ width: columnWidths.visibility }}
+      >
+        <DocumentMetaPill className="capitalize">
+          {row.visibility}
+        </DocumentMetaPill>
+      </TableCell>
+      <TableCell
+        className="whitespace-normal"
+        style={{ width: columnWidths.actions }}
+      >
         <DocumentRowActions
           row={row}
           canEdit={canEdit}
@@ -117,20 +152,6 @@ export function DocumentsResultsTableRow({
           onViewPolicyDocument={onViewPolicyDocument}
           onDownloadPolicyDocument={onDownloadPolicyDocument}
         />
-      </TableCell>
-      <TableCell>
-        <CategoryBadges categories={row.categories} />
-      </TableCell>
-      <TableCell>
-        <Badge variant="outline" className="capitalize">
-          {SOURCE_LABEL[row.source]}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <StatusBadge status={row.status} />
-      </TableCell>
-      <TableCell className="text-muted-foreground">
-        {formatUpdatedAt(row.updatedAt)}
       </TableCell>
     </TableRow>
   )

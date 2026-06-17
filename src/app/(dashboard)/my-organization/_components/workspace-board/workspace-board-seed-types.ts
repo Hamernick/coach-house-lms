@@ -2,8 +2,13 @@ import type {
   OrgProgram,
   OrgProfile,
 } from "@/components/organization/org-profile-card/types"
+import type { DocumentsTabData } from "@/components/organization/org-profile-card/tabs/documents-tab/data"
 import type { OnboardingFlowDefaults } from "@/components/onboarding/onboarding-dialog/types"
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
+import type {
+  FiscalSponsorshipApplicationPrefill,
+  FiscalSponsorshipProjectWorkflowSummary,
+} from "@/features/fiscal-sponsorship"
 import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import type { OrganizationMemberRole } from "@/lib/organization/active-org"
 import type { RoadmapSection } from "@/lib/roadmap"
@@ -13,7 +18,10 @@ import type {
   MyOrganizationCalendarView,
 } from "../../_lib/types"
 import type { WorkspaceActivityRecord } from "./workspace-board-communications-types"
-import type { WorkspaceCardId, WorkspaceJourneyStage } from "./workspace-board-constants"
+import type {
+  WorkspaceCardId,
+  WorkspaceJourneyStage,
+} from "./workspace-board-constants"
 import type { WorkspaceBoardState } from "./workspace-board-state-types"
 
 export type WorkspaceDurationUnit = "hours" | "days" | "months"
@@ -90,6 +98,10 @@ export type WorkspaceOrganizationEditorData = {
   roadmapSections: RoadmapSection[]
   people: OrgPersonWithImage[]
   programs: OrgProgram[]
+  fiscalSponsorshipProjectId: string | null
+  fiscalSponsorshipWorkflowSummary: FiscalSponsorshipProjectWorkflowSummary | null
+  fiscalSponsorshipApplicationPrefill: FiscalSponsorshipApplicationPrefill | null
+  documentsTab: DocumentsTabData
   canEdit: boolean
 }
 

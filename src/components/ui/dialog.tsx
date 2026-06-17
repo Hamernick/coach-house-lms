@@ -18,10 +18,16 @@ function Dialog({
     (open: boolean) => {
       scheduleInteractionLockGuardOnClose({ open, onOpenChange })
     },
-    [onOpenChange],
+    [onOpenChange]
   )
 
-  return <DialogPrimitive.Root data-slot="dialog" onOpenChange={handleOpenChange} {...props} />
+  return (
+    <DialogPrimitive.Root
+      data-slot="dialog"
+      onOpenChange={handleOpenChange}
+      {...props}
+    />
+  )
 }
 
 function DialogTrigger({
@@ -61,21 +67,27 @@ function DialogOverlay({
 function DialogContent({
   className,
   children,
+  overlayClassName,
+  portalContainer,
   showCloseButton = true,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
+  overlayClassName?: string
+  portalContainer?: React.ComponentProps<
+    typeof DialogPrimitive.Portal
+  >["container"]
   showCloseButton?: boolean
 }) {
   React.useEffect(
     () => () => {
       scheduleInteractionLockGuard()
     },
-    [],
+    []
   )
 
   return (
-    <DialogPortal data-slot="dialog-portal">
-      <DialogOverlay />
+    <DialogPortal data-slot="dialog-portal" container={portalContainer}>
+      <DialogOverlay className={overlayClassName} />
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(

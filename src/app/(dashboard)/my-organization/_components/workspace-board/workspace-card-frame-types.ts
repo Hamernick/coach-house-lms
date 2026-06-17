@@ -1,6 +1,9 @@
 import type { ReactNode } from "react"
 
-import type { WorkspaceCardId, WorkspaceCardSize } from "./workspace-board-constants"
+import type {
+  WorkspaceCardId,
+  WorkspaceCardSize,
+} from "./workspace-board-constants"
 
 export type WorkspaceCardFrameProps = {
   cardId: WorkspaceCardId
@@ -22,6 +25,7 @@ export type WorkspaceCardFrameProps = {
   editorHref?: string | null
   menuActions?: WorkspaceCardOverflowAction[]
   contentClassName?: string
+  footer?: ReactNode
   isCanvasFullscreen?: boolean
   onToggleCanvasFullscreen?: () => void
   fullscreenControlMode?: "overflow" | "inline"

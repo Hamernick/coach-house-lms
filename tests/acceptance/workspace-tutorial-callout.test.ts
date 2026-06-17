@@ -89,6 +89,8 @@ describe("workspace tutorial callout", () => {
     expect(source).toContain('indicatorIconPosition="after"')
     expect(source).toContain("!px-2 !py-1")
     expect(source).toContain("indicatorSideOffset={6}")
+    expect(source).toContain("if (!onTutorialCalendarButtonComplete)")
+    expect(source).toContain("onTutorialCalendarButtonComplete()")
     expect(viewportControls).toContain("useRegisterAppShellCalendarTutorial")
   })
 

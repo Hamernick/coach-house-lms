@@ -25,19 +25,21 @@ export function MemberWorkspaceProjectCardsView({
       <div className="p-4">
         <Empty
           icon={<FolderOpen className="h-6 w-6" aria-hidden />}
-          title={scope === "platform-admin" ? "No organizations yet" : "No projects yet"}
+          title="No organizations yet"
           description={
             scope === "platform-admin"
               ? "Organizations will appear here once accounts are created on the platform."
-              : "Projects will appear here once the active organization has work to track."
+              : "Organizations will appear here once the active organization has work to track."
           }
           variant="subtle"
-          actions={onCreateProject ? (
-            <Button type="button" variant="outline" onClick={onCreateProject}>
-              <Plus data-icon="inline-start" />
-              Create new project
-            </Button>
-          ) : null}
+          actions={
+            onCreateProject ? (
+              <Button type="button" variant="outline" onClick={onCreateProject}>
+                <Plus data-icon="inline-start" />
+                Create new organization
+              </Button>
+            ) : null
+          }
         />
       </div>
     )
@@ -45,25 +47,29 @@ export function MemberWorkspaceProjectCardsView({
 
   return (
     <div className="p-4">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {projects.map((project) => (
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {projects.map((project) => (
           <MemberWorkspaceProjectCard
             key={project.id}
             project={project}
-            onEditProject={onEditProject}
+            onEditProject={
+              project.projectKind === "organization_admin"
+                ? undefined
+                : onEditProject
+            }
             visibleProperties={visibleProperties}
           />
-          ))}
+        ))}
         {onCreateProject ? (
           <Button
             type="button"
             variant="ghost"
-            className="min-h-[180px] rounded-2xl border border-dashed border-border/60 bg-background p-6 text-sm text-muted-foreground hover:border-border/80 hover:bg-background hover:text-foreground"
+            className="border-border/60 bg-background text-muted-foreground hover:border-border/80 hover:bg-background hover:text-foreground min-h-[180px] rounded-2xl border border-dashed p-6 text-sm"
             onClick={onCreateProject}
           >
             <div className="flex flex-col items-center justify-center gap-2 text-center">
               <Plus className="h-5 w-5" />
-              <span>Create new project</span>
+              <span>Create new organization</span>
             </div>
           </Button>
         ) : null}

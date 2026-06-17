@@ -191,6 +191,7 @@ export function resolveWorkspaceJourneyGuideState({
     communications: "communications",
     deck: "deck",
     atlas: "atlas",
+    "fiscal-sponsorship": "fiscal sponsorship",
   }
 
   return {

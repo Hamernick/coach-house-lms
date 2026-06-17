@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME,
-  WORKSPACE_TUTORIAL_OUTLINE_BUTTON_SURFACE_CLASSNAME,
 } from "@/components/workspace/workspace-tutorial-theme"
 import { cn } from "@/lib/utils"
 
@@ -19,7 +18,7 @@ import { WorkspaceTutorialCallout } from "../../workspace-tutorial-callout"
 import type { WorkspaceCardShortcutItemModel } from "./workspace-card-shortcut-model"
 
 const WORKSPACE_SHORTCUT_VISIBLE_BUTTON_CLASSNAME =
-  "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+  "text-foreground"
 const WORKSPACE_SHORTCUT_SELECTED_BUTTON_CLASSNAME =
   "bg-accent text-accent-foreground shadow-sm hover:bg-accent"
 const WORKSPACE_SHORTCUT_TUTORIAL_TOOLS_BUTTON_CLASSNAME =
@@ -78,12 +77,12 @@ export function WorkspaceCardShortcutButton({
     event.stopPropagation()
     item.onPress()
   }
-  const buttonVariant = "outline"
+  const buttonVariant = "ghost"
 
   const iconNode = (
     <Icon
       className={cn(
-        "h-5 w-5 transition-opacity duration-150",
+        "h-4 w-4 transition-opacity duration-150",
         item.selected && "opacity-95",
         item.visible && !item.selected && "opacity-90",
         !item.visible && !item.selected && "opacity-80",
@@ -114,8 +113,7 @@ export function WorkspaceCardShortcutButton({
         primitiveImport: "@/components/ui/button",
       })}
       className={cn(
-        "nodrag nopan size-10 rounded-xl [&_svg]:size-5",
-        WORKSPACE_TUTORIAL_OUTLINE_BUTTON_SURFACE_CLASSNAME,
+        "nodrag nopan size-9 h-9 w-9 rounded-xl",
         item.visible && WORKSPACE_SHORTCUT_VISIBLE_BUTTON_CLASSNAME,
         isTutorialToolsStepHighlight &&
           WORKSPACE_SHORTCUT_TUTORIAL_TOOLS_BUTTON_CLASSNAME,

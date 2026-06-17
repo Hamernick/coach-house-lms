@@ -9,7 +9,9 @@ import {
   toMemberWorkspaceDataError,
 } from "./table-errors"
 
-type ServerSupabaseClient = Awaited<ReturnType<typeof createSupabaseServerClient>>
+type ServerSupabaseClient = Awaited<
+  ReturnType<typeof createSupabaseServerClient>
+>
 
 type OrganizationProjectInsert =
   Database["public"]["Tables"]["organization_projects"]["Insert"]
@@ -25,7 +27,7 @@ function stringArraysEqual(left: string[], right: string[]) {
 }
 
 function buildCanonicalAdminOrganizationProjectFields(
-  organization: MemberWorkspaceAdminOrganizationSummary,
+  organization: MemberWorkspaceAdminOrganizationSummary
 ) {
   const project = mapAdminOrganizationSummaryToProject(organization)
 
@@ -51,7 +53,7 @@ function buildCanonicalAdminOrganizationProjectFields(
 }
 
 export function buildCanonicalAdminOrganizationProject(
-  organization: MemberWorkspaceAdminOrganizationSummary,
+  organization: MemberWorkspaceAdminOrganizationSummary
 ): OrganizationProjectInsert {
   return {
     ...buildCanonicalAdminOrganizationProjectFields(organization),
@@ -61,10 +63,13 @@ export function buildCanonicalAdminOrganizationProject(
 }
 
 function buildCanonicalAdminOrganizationProjectUpdate(
-  organization: MemberWorkspaceAdminOrganizationSummary,
+  organization: MemberWorkspaceAdminOrganizationSummary
 ): OrganizationProjectUpdate {
+  const { description: _description, ...syncedFields } =
+    buildCanonicalAdminOrganizationProjectFields(organization)
+
   return {
-    ...buildCanonicalAdminOrganizationProjectFields(organization),
+    ...syncedFields,
     updated_by: organization.orgId,
   }
 }
@@ -80,10 +85,10 @@ function canonicalAdminProjectNeedsRefresh({
 
   return (
     existing.org_id !== desired.org_id ||
-    (existing.canonical_org_id ?? null) !== (desired.canonical_org_id ?? null) ||
+    (existing.canonical_org_id ?? null) !==
+      (desired.canonical_org_id ?? null) ||
     existing.project_kind !== desired.project_kind ||
     existing.name !== desired.name ||
-    (existing.description ?? null) !== (desired.description ?? null) ||
     existing.status !== desired.status ||
     existing.priority !== desired.priority ||
     existing.progress !== desired.progress ||
@@ -95,7 +100,10 @@ function canonicalAdminProjectNeedsRefresh({
     existing.task_count !== desired.task_count ||
     existing.created_source !== desired.created_source ||
     !stringArraysEqual(existing.tags ?? [], desired.tags ?? []) ||
-    !stringArraysEqual(existing.member_labels ?? [], desired.member_labels ?? [])
+    !stringArraysEqual(
+      existing.member_labels ?? [],
+      desired.member_labels ?? []
+    )
   )
 }
 
@@ -117,7 +125,10 @@ async function loadCanonicalAdminProjectsByOrgIds({
     if (isMissingOrganizationProjectsTableError(error)) {
       return null
     }
-    throw toMemberWorkspaceDataError(error, "Unable to load organization projects.")
+    throw toMemberWorkspaceDataError(
+      error,
+      "Unable to load organization projects."
+    )
   }
 
   return data ?? []
@@ -147,11 +158,13 @@ export async function ensureCanonicalAdminProjects({
   }
 
   const missingOrganizations = organizations.filter(
-    (organization) => !existingRowsByOrgId.has(organization.orgId),
+    (organization) => !existingRowsByOrgId.has(organization.orgId)
   )
 
   if (missingOrganizations.length > 0) {
-    const payload = missingOrganizations.map(buildCanonicalAdminOrganizationProject)
+    const payload = missingOrganizations.map(
+      buildCanonicalAdminOrganizationProject
+    )
     const { error: insertError } = await supabase
       .from("organization_projects")
       .insert(payload)
@@ -162,7 +175,7 @@ export async function ensureCanonicalAdminProjects({
       }
       throw toMemberWorkspaceDataError(
         insertError,
-        "Unable to synchronize organization projects.",
+        "Unable to synchronize organization projects."
       )
     }
 
@@ -172,7 +185,7 @@ export async function ensureCanonicalAdminProjects({
       .eq("project_kind", "organization_admin")
       .in(
         "canonical_org_id",
-        missingOrganizations.map((organization) => organization.orgId),
+        missingOrganizations.map((organization) => organization.orgId)
       )
       .returns<OrganizationProjectRecord[]>()
 
@@ -182,7 +195,7 @@ export async function ensureCanonicalAdminProjects({
       }
       throw toMemberWorkspaceDataError(
         insertedRowsError,
-        "Unable to load synchronized organization projects.",
+        "Unable to load synchronized organization projects."
       )
     }
 
@@ -194,7 +207,8 @@ export async function ensureCanonicalAdminProjects({
   const staleOrganizations = organizations.flatMap((organization) => {
     const existing = existingRowsByOrgId.get(organization.orgId)
     if (!existing) return []
-    if (!canonicalAdminProjectNeedsRefresh({ organization, existing })) return []
+    if (!canonicalAdminProjectNeedsRefresh({ organization, existing }))
+      return []
     return [{ organization, existing }] as const
   })
 
@@ -206,7 +220,7 @@ export async function ensureCanonicalAdminProjects({
           .update(buildCanonicalAdminOrganizationProjectUpdate(organization))
           .eq("id", existing.id)
         return error
-      }),
+      })
     )
 
     const updateError = updateResults.find(Boolean)
@@ -216,7 +230,7 @@ export async function ensureCanonicalAdminProjects({
       }
       throw toMemberWorkspaceDataError(
         updateError,
-        "Unable to synchronize organization projects.",
+        "Unable to synchronize organization projects."
       )
     }
 
@@ -232,7 +246,10 @@ export async function ensureCanonicalAdminProjects({
     }
 
     return organizations
-      .map((organization) => synchronizedRowsByOrgId.get(organization.orgId) ?? null)
+      .map(
+        (organization) =>
+          synchronizedRowsByOrgId.get(organization.orgId) ?? null
+      )
       .filter((row): row is OrganizationProjectRecord => Boolean(row))
   }
 

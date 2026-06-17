@@ -3,6 +3,9 @@
 import { z } from "zod"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import type { BudgetTableRow } from "@/lib/modules"
+import { ORGANIZATION_PRIMARY_OBJECT_KINDS } from "@/lib/organization/primary-objects"
+
+export { ORGANIZATION_PRIMARY_OBJECT_KINDS }
 
 export const PROGRAM_TYPES = [
   "Direct Services",
@@ -46,6 +49,7 @@ export const ProgramWizardSchema = z.object({
   subtitle: z.string().max(200).or(z.literal("")).default(""),
   bannerImageUrl: z.string().url().or(z.literal("")).default(""),
   imageUrl: z.string().url().or(z.literal("")).default(""),
+  objectKind: z.enum(ORGANIZATION_PRIMARY_OBJECT_KINDS).default("Program"),
   programType: z.enum(PROGRAM_TYPES),
   coreFormat: z.enum(DELIVERY_FORMATS),
   formatAddons: z.array(z.string().min(1)).default([]),
@@ -65,10 +69,10 @@ export const ProgramWizardSchema = z.object({
       z.object({
         role: z.string().trim().min(1).max(120),
         hoursPerWeek: z.coerce.number().min(0).max(168),
-      }),
+      })
     )
     .default([]),
-  startMonth: z.string().regex(monthRegex),
+  startMonth: z.string().regex(monthRegex, "Choose a start month."),
   durationLabel: z.string().trim().min(1).max(120),
   frequency: z.string().trim().min(1).max(120),
   locationMode: z.enum(LOCATION_MODES),
@@ -81,7 +85,11 @@ export const ProgramWizardSchema = z.object({
   costOtherUsd: z.coerce.number().nonnegative().default(0),
   fundingSource: z.string().max(220).or(z.literal("")).default(""),
   statusLabel: z.string().max(60).or(z.literal("Draft")).default("Draft"),
-  ctaLabel: z.string().max(40).or(z.literal("Learn more")).default("Learn more"),
+  ctaLabel: z
+    .string()
+    .max(40)
+    .or(z.literal("Learn more"))
+    .default("Learn more"),
   ctaUrl: z.string().url().or(z.literal("")).default(""),
   goalUsd: z.coerce.number().nonnegative().default(0),
   raisedUsd: z.coerce.number().nonnegative().default(0),
@@ -122,6 +130,7 @@ export const defaultProgramWizardForm: ProgramWizardFormState = {
   addressState: "",
   addressPostal: "",
   addressCountry: "",
+  objectKind: "Program",
   programType: "Direct Services",
   coreFormat: "Cohort",
   formatAddons: [],

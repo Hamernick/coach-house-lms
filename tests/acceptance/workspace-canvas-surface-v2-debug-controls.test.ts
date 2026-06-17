@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest"
 import { shouldShowWorkspaceCanvasInternalTutorialRestart } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-debug-controls"
 
 describe("workspace canvas v2 debug controls", () => {
-  it("shows the tutorial restart control only in local development editing mode", () => {
+  it("hides the tutorial restart control for local development non-admin editors", () => {
     expect(
       shouldShowWorkspaceCanvasInternalTutorialRestart({
         allowEditing: true,
@@ -11,7 +11,7 @@ describe("workspace canvas v2 debug controls", () => {
         presentationMode: false,
         environment: "development",
       }),
-    ).toBe(true)
+    ).toBe(false)
   })
 
   it("hides the tutorial restart control in production for non-admin editors", () => {

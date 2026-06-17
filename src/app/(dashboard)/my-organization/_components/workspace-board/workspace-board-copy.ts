@@ -1,4 +1,7 @@
-import type { WorkspaceCardId, WorkspaceConnectionState } from "./workspace-board-types"
+import type {
+  WorkspaceCardId,
+  WorkspaceConnectionState,
+} from "./workspace-board-types"
 import {
   WORKSPACE_ACCELERATOR_PATH,
   WORKSPACE_PATH,
@@ -19,8 +22,8 @@ export const WORKSPACE_CARD_META: Record<WorkspaceCardId, WorkspaceCardMeta> = {
     fullHref: WORKSPACE_PATH,
   },
   programs: {
-    title: "Programs",
-    subtitle: "Builder, previews, and active fundraising briefs",
+    title: "Activity",
+    subtitle: "Projects, programs, events, services, and grant requests",
     fullHref: "",
   },
   accelerator: {
@@ -63,6 +66,11 @@ export const WORKSPACE_CARD_META: Record<WorkspaceCardId, WorkspaceCardMeta> = {
     subtitle: "Public place, checklist, and launch readiness",
     fullHref: getWorkspaceEditorPath({ tab: "company" }),
   },
+  "fiscal-sponsorship": {
+    title: "Fiscal Sponsorship",
+    subtitle: "Model C eligibility, agreements, and grant requests",
+    fullHref: "",
+  },
 }
 
 export const WORKSPACE_EDGE_SPECS: WorkspaceConnectionState[] = [
@@ -87,8 +95,13 @@ export const WORKSPACE_EDGE_SPECS: WorkspaceConnectionState[] = [
     target: "atlas",
   },
   {
-    id: "edge-roadmap-to-accelerator",
-    source: "roadmap",
+    id: "edge-activity-to-fiscal-sponsorship",
+    source: "programs",
+    target: "fiscal-sponsorship",
+  },
+  {
+    id: "edge-organization-to-accelerator",
+    source: "organization-overview",
     target: "accelerator",
   },
   {

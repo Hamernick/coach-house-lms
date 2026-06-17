@@ -1,5 +1,6 @@
+import CheckIcon from "lucide-react/dist/esm/icons/check"
 import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
-import type { RefObject } from "react"
+import type { CSSProperties, RefObject } from "react"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -23,12 +24,51 @@ function RoadmapTocStatusDot({ status }: { status: RoadmapSectionStatus }) {
   )
 }
 
+function RoadmapTocCompletedRailSegment() {
+  return (
+    <span
+      aria-hidden
+      className="bg-foreground/90 pointer-events-none absolute top-0 left-[calc(var(--roadmap-toc-rail-offset)-var(--roadmap-toc-content-offset))] z-10 h-full w-[2px] rounded-full"
+    />
+  )
+}
+
+const ROADMAP_TOC_INLINE_ICON_CLASS_NAME =
+  "text-muted-foreground/70 ml-auto inline-flex h-4 w-4 shrink-0 items-center justify-center"
+
+function RoadmapTocCompletionCheck({
+  status,
+}: {
+  status: RoadmapSectionStatus
+}) {
+  if (status !== "complete") return null
+
+  return (
+    <span aria-hidden className={ROADMAP_TOC_INLINE_ICON_CLASS_NAME}>
+      <CheckIcon className="h-3.5 w-3.5" strokeWidth={2} />
+    </span>
+  )
+}
+
+function resolveRoadmapTocButtonStateClassName({
+  isActive,
+  status,
+}: {
+  isActive: boolean
+  status: RoadmapSectionStatus
+}) {
+  return isActive || status === "complete"
+    ? "text-foreground"
+    : "text-muted-foreground hover:text-foreground"
+}
+
 type RoadmapEditorTocProps = {
   tocItems: RoadmapTocItem[]
   activeSectionId: string
   drafts: Record<string, RoadmapDraft>
   openGroups: Record<string, boolean>
   tocIndicator: { top: number; height: number; visible: boolean }
+  tocRailOffset?: string
   sectionsListRef: RefObject<HTMLDivElement | null>
   onSectionSelect: (next: { id: string; slug: string }) => void
   onToggleGroup: (groupId: string) => void
@@ -45,6 +85,7 @@ export function RoadmapEditorToc({
   drafts,
   openGroups,
   tocIndicator,
+  tocRailOffset = "0.25rem",
   sectionsListRef,
   onSectionSelect,
   onToggleGroup,
@@ -56,15 +97,21 @@ export function RoadmapEditorToc({
       ref={sectionsListRef}
       id="roadmap-section-picker-trigger"
       className="relative w-full min-w-0 space-y-1.5 pr-2 pl-4 text-sm"
+      style={
+        {
+          "--roadmap-toc-rail-offset": tocRailOffset,
+          "--roadmap-toc-content-offset": "1rem",
+        } as CSSProperties
+      }
     >
       <span
         aria-hidden
-        className="bg-border/60 absolute top-0 left-1 h-full w-px rounded-full"
+        className="bg-border/60 absolute top-0 left-[var(--roadmap-toc-rail-offset)] h-full w-px rounded-full"
       />
       <span
         aria-hidden
         className={cn(
-          "bg-foreground/90 absolute left-1 w-[2px] rounded-full transition-[transform,height,opacity] duration-200 ease-out motion-reduce:transition-none",
+          "bg-foreground/90 absolute left-[var(--roadmap-toc-rail-offset)] z-10 w-[2px] rounded-full transition-[transform,height,opacity] duration-200 ease-out motion-reduce:transition-none",
           tocIndicator.visible ? "opacity-100" : "opacity-0"
         )}
         style={{
@@ -87,20 +134,25 @@ export function RoadmapEditorToc({
               key={item.section.id}
               className="snap-start snap-always space-y-1"
             >
-              <div className="group flex items-center gap-2">
+              <div className="group relative flex items-center gap-2">
+                {itemStatus === "complete" ? (
+                  <RoadmapTocCompletedRailSegment />
+                ) : null}
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
                   data-toc-item
                   data-active={isActive}
+                  data-status={itemStatus}
                   data-toc-id={item.section.id}
                   aria-current={isActive ? "page" : undefined}
                   className={cn(
                     "h-auto min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition-colors",
-                    isActive
-                      ? "text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
+                    resolveRoadmapTocButtonStateClassName({
+                      isActive,
+                      status: itemStatus,
+                    })
                   )}
                   onClick={() =>
                     onSectionSelect({
@@ -115,6 +167,7 @@ export function RoadmapEditorToc({
                       {displayTitle}
                     </span>
                   </span>
+                  <RoadmapTocCompletionCheck status={itemStatus} />
                 </Button>
                 <Button
                   type="button"
@@ -152,21 +205,26 @@ export function RoadmapEditorToc({
                     return (
                       <div
                         key={child.id}
-                        className="group flex snap-start snap-always items-center gap-2"
+                        className="group relative flex snap-start snap-always items-center gap-2"
                       >
+                        {childStatus === "complete" ? (
+                          <RoadmapTocCompletedRailSegment />
+                        ) : null}
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
                           data-toc-item
                           data-active={childIsActive}
+                          data-status={childStatus}
                           data-toc-id={child.id}
                           aria-current={childIsActive ? "page" : undefined}
                           className={cn(
                             "h-auto min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-2 py-1.5 pl-6 text-left transition-colors",
-                            childIsActive
-                              ? "text-foreground"
-                              : "text-muted-foreground hover:text-foreground"
+                            resolveRoadmapTocButtonStateClassName({
+                              isActive: childIsActive,
+                              status: childStatus,
+                            })
                           )}
                           onClick={() =>
                             onSectionSelect({ id: child.id, slug: child.slug })
@@ -178,6 +236,7 @@ export function RoadmapEditorToc({
                               {childDisplayTitle}
                             </span>
                           </span>
+                          <RoadmapTocCompletionCheck status={childStatus} />
                         </Button>
                       </div>
                     )
@@ -198,21 +257,26 @@ export function RoadmapEditorToc({
         return (
           <div
             key={item.section.id}
-            className="group flex snap-start snap-always items-center gap-2"
+            className="group relative flex snap-start snap-always items-center gap-2"
           >
+            {itemStatus === "complete" ? (
+              <RoadmapTocCompletedRailSegment />
+            ) : null}
             <Button
               type="button"
               variant="ghost"
               size="sm"
               data-toc-item
               data-active={isActive}
+              data-status={itemStatus}
               data-toc-id={item.section.id}
               aria-current={isActive ? "page" : undefined}
               className={cn(
                 "h-auto min-w-0 flex-1 items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left transition-colors",
-                isActive
-                  ? "text-foreground"
-                  : "text-muted-foreground hover:text-foreground"
+                resolveRoadmapTocButtonStateClassName({
+                  isActive,
+                  status: itemStatus,
+                })
               )}
               onClick={() =>
                 onSectionSelect({
@@ -227,6 +291,7 @@ export function RoadmapEditorToc({
                   {displayTitle}
                 </span>
               </span>
+              <RoadmapTocCompletionCheck status={itemStatus} />
             </Button>
           </div>
         )

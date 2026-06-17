@@ -14,6 +14,21 @@ import {
 } from "../lib"
 import type { InternalDbViewerLoadInput, InternalDbViewerSnapshot } from "../types"
 
+type InternalDbViewerQueryClient = {
+  from: (table: string) => {
+    select: (
+      columns: string,
+      options: { count: "exact" }
+    ) => {
+      limit: (limit: number) => Promise<{
+        data: unknown[] | null
+        error: unknown
+        count: number | null
+      }>
+    }
+  }
+}
+
 function normalizeSearchParam(value: string | string[] | null | undefined): string | undefined {
   if (typeof value === "string") return value
   if (Array.isArray(value)) return value[0]
@@ -68,7 +83,8 @@ export async function loadInternalDbViewerSnapshot(input: InternalDbViewerLoadIn
   const rowLimit = resolveInternalDbViewerRowLimit(normalizeSearchParam(input.limitParam))
 
   try {
-    const supabaseAdmin = createSupabaseAdminClient()
+    const supabaseAdmin =
+      createSupabaseAdminClient() as unknown as InternalDbViewerQueryClient
     const { data, error, count } = await supabaseAdmin
       .from(selectedTable)
       .select("*", { count: "exact" })

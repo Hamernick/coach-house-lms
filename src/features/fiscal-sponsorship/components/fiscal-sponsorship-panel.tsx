@@ -9,7 +9,13 @@ import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Sheet } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
@@ -17,6 +23,7 @@ import { cn } from "@/lib/utils"
 import { FISCAL_SPONSORSHIP_PROTOTYPE_STEPS } from "../lib/prototype-data"
 import type {
   FiscalSponsorshipInput,
+  FiscalSponsorshipProgramOption,
   FiscalSponsorshipPrototypeStep,
   FiscalSponsorshipPrototypeStepStatus,
 } from "../types"
@@ -35,11 +42,24 @@ function getInitialReviewedStepIds() {
   )
 }
 
-function StatusBadge({
-  status,
-}: {
-  status: FiscalSponsorshipPrototypeStepStatus
-}) {
+function getUserFacingStepStateLabel(step: FiscalSponsorshipPrototypeStep) {
+  if (step.id === "application") {
+    return step.status === "approved" || step.status === "complete"
+      ? "Submitted"
+      : "Not submitted"
+  }
+
+  if (step.id === "agreement") {
+    if (step.status === "complete") return "Signed"
+    if (step.status === "approved") return "Ready to sign"
+    return "Not sent"
+  }
+
+  return step.status === "complete" ? "Done" : step.badgeLabel
+}
+
+function StatusBadge({ step }: { step: FiscalSponsorshipPrototypeStep }) {
+  const { status } = step
   const Icon =
     status === "approved" || status === "complete"
       ? CircleCheckIcon
@@ -61,11 +81,10 @@ function StatusBadge({
         status === "running" && "bg-primary/10 text-primary",
         status === "skipped" && "text-muted-foreground"
       )}
+      aria-label={`${step.title}: ${getUserFacingStepStateLabel(step)}`}
     >
       <Icon aria-hidden />
-      {status === "complete"
-        ? "Done"
-        : status[0].toUpperCase() + status.slice(1)}
+      {getUserFacingStepStateLabel(step)}
     </Badge>
   )
 }
@@ -98,7 +117,6 @@ function StepRow({
   onApprove,
   onOpenDetails,
   onSelect,
-  onSkip,
   reviewed,
   step,
 }: {
@@ -106,12 +124,19 @@ function StepRow({
   onApprove: () => void
   onOpenDetails: () => void
   onSelect: () => void
-  onSkip: () => void
   reviewed: boolean
   step: FiscalSponsorshipPrototypeStep
 }) {
   const expanded = active && step.status !== "skipped"
   const canApprove = reviewed || step.status === "approved"
+  const isApprovedOrComplete =
+    step.status === "approved" || step.status === "complete"
+  const isApplicationStep = step.id === "application"
+  const isAgreementStep = step.id === "agreement"
+  const viewButtonLabel =
+    isApplicationStep || isAgreementStep
+      ? getUserFacingStepStateLabel(step)
+      : "View"
 
   return (
     <div
@@ -125,7 +150,7 @@ function StepRow({
         type="button"
         onClick={onSelect}
         className={cn(
-          "flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left outline-none transition-[background-color] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          "flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left transition-[background-color] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none motion-reduce:transition-none",
           "hover:bg-muted/50 focus-visible:ring-ring/50 focus-visible:ring-2"
         )}
         aria-expanded={expanded}
@@ -136,7 +161,7 @@ function StepRow({
             <span className="text-foreground min-w-0 flex-1 truncate text-base leading-7 font-semibold">
               {step.title}
             </span>
-            <StatusBadge status={step.status} />
+            <StatusBadge step={step} />
           </span>
         </span>
       </button>
@@ -165,36 +190,39 @@ function StepRow({
                 {step.toolLabel}
               </span>
               <div className="flex w-full flex-wrap items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="rounded-full"
-                  disabled={!expanded}
-                  onClick={onOpenDetails}
-                >
-                  Review
-                </Button>
-                <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+                {isApprovedOrComplete ||
+                isApplicationStep ||
+                isAgreementStep ? (
                   <Button
                     size="sm"
                     variant="ghost"
-                    className="rounded-full"
+                    className="ml-auto rounded-full"
                     disabled={!expanded}
-                    onClick={onSkip}
+                    onClick={onOpenDetails}
                   >
-                    Skip
+                    {viewButtonLabel}
                   </Button>
-                  <Button
-                    size="sm"
-                    className="rounded-full"
-                    disabled={
-                      !expanded || !canApprove || step.status === "approved"
-                    }
-                    onClick={onApprove}
-                  >
-                    {step.status === "approved" ? "Approved" : "Approve"}
-                  </Button>
-                </div>
+                ) : (
+                  <>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-full"
+                      disabled={!expanded}
+                      onClick={onOpenDetails}
+                    >
+                      Review
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="ml-auto rounded-full"
+                      disabled={!expanded || !canApprove}
+                      onClick={onApprove}
+                    >
+                      Approve
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -215,9 +243,14 @@ function nextRunnableIndex(
 
 export function FiscalSponsorshipPanel({
   input,
+  programs,
+  surface = "prototype",
 }: {
   input: FiscalSponsorshipInput
+  programs?: FiscalSponsorshipProgramOption[]
+  surface?: "prototype" | "workspace-card"
 }) {
+  const embeddedInWorkspaceCard = surface === "workspace-card"
   const [steps, setSteps] = React.useState(FISCAL_SPONSORSHIP_PROTOTYPE_STEPS)
   const [reviewedStepIds, setReviewedStepIds] = React.useState<Set<string>>(
     getInitialReviewedStepIds
@@ -245,9 +278,9 @@ export function FiscalSponsorshipPanel({
   )
   const planStatusLabel =
     mode === "running"
-      ? "Running plan"
+      ? "Workflow running"
       : mode === "complete"
-        ? "Plan complete"
+        ? "Workflow complete"
         : null
 
   const updateStepStatus = React.useCallback(
@@ -344,22 +377,34 @@ export function FiscalSponsorshipPanel({
     <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
       <section
         data-fiscal-sponsorship-prototype={input.id}
-        className="flex min-h-[68vh] w-full items-center justify-center p-4"
+        data-fiscal-sponsorship-surface={surface}
+        className={cn(
+          embeddedInWorkspaceCard
+            ? "w-full min-w-0"
+            : "flex min-h-[68vh] w-full items-center justify-center p-4"
+        )}
       >
-        <Card className="border-border/60 bg-muted/70 relative w-full max-w-[42rem] rounded-[2rem] p-3 shadow-sm">
-          <div
+        <Card
+          data-workspace-card={
+            embeddedInWorkspaceCard ? "fiscal-sponsorship" : undefined
+          }
+          className="border-border/60 bg-muted relative w-full max-w-[42rem] rounded-[2rem] p-3 shadow-sm"
+        >
+          <CardHeader
             className={cn(
-              "relative flex items-center gap-3 px-4 py-4",
-              planStatusLabel ? "pr-32" : "pr-4"
+              "relative flex items-center gap-3 px-4 pt-2 pb-4",
+              planStatusLabel ? "pr-32" : "pr-4",
+              embeddedInWorkspaceCard &&
+                "workspace-card-drag-handle cursor-grab touch-manipulation select-none active:cursor-grabbing"
             )}
           >
             <div className="flex min-w-0 items-center gap-3">
               <FiscalSponsorshipMark />
               <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-2">
-                  <h2 className="truncate text-xl font-semibold tracking-tight">
+                  <CardTitle className="truncate text-xl font-semibold tracking-tight">
                     Fiscal Sponsorship
-                  </h2>
+                  </CardTitle>
                   <Badge variant="secondary" className="rounded-full px-3 py-1">
                     {steps.length} steps
                   </Badge>
@@ -369,18 +414,21 @@ export function FiscalSponsorshipPanel({
             {planStatusLabel ? (
               <span
                 className={cn(
-                  "absolute top-4 right-4 inline-flex items-center gap-1.5 text-sm font-semibold",
+                  "absolute top-2 right-4 inline-flex items-center gap-1.5 text-sm font-semibold",
                   mode === "running" && "text-amber-600",
                   mode === "complete" && "text-primary"
                 )}
               >
                 {mode === "running" ? (
-                  <span className="size-2 rounded-full bg-current" aria-hidden />
+                  <span
+                    className="size-2 rounded-full bg-current"
+                    aria-hidden
+                  />
                 ) : null}
                 {planStatusLabel}
               </span>
             ) : null}
-          </div>
+          </CardHeader>
           <CardContent className="px-0 pb-0">
             {mode === "complete" ? (
               <FiscalSponsorshipCompletionPanel
@@ -412,10 +460,6 @@ export function FiscalSponsorshipPanel({
                           setSelectedStepId(step.id)
                           updateStepStatus(step.id, "approved")
                         }}
-                        onSkip={() => {
-                          setSelectedStepId(step.id)
-                          updateStepStatus(step.id, "skipped")
-                        }}
                         onOpenDetails={() => handleOpenStepDetails(step.id)}
                         reviewed={reviewedStepIds.has(step.id)}
                       />
@@ -439,7 +483,7 @@ export function FiscalSponsorshipPanel({
                     onClick={handleRunPlan}
                   >
                     <PlayIcon data-icon="inline-start" />
-                    Run action
+                    Start workflow
                   </Button>
                 </div>
               </>
@@ -449,12 +493,12 @@ export function FiscalSponsorshipPanel({
       </section>
       <FiscalSponsorshipStepDrawer
         selectedStep={selectedStep}
+        programs={programs}
         onApprove={(status) => {
           markStepReviewed(selectedStep.id)
           updateStepStatus(selectedStep.id, status)
         }}
         onClose={() => setSheetOpen(false)}
-        onSkip={(status) => updateStepStatus(selectedStep.id, status)}
       />
     </Sheet>
   )

@@ -34,6 +34,7 @@ export function useWorkspaceCanvasCameraController({
   sceneFitOptions,
   acceleratorFocusOptions,
   focusCardOptions,
+  suppressInitialFit,
   onTutorialCompletionExitHandled,
 }: {
   flowInstanceRef: MutableRefObject<ReactFlowInstance | null>
@@ -48,6 +49,7 @@ export function useWorkspaceCanvasCameraController({
   sceneFitOptions: WorkspaceCanvasCameraFitOptions
   acceleratorFocusOptions: WorkspaceCanvasCameraFitOptions
   focusCardOptions: WorkspaceCanvasCameraFitOptions
+  suppressInitialFit?: boolean
   onTutorialCompletionExitHandled: () => void
 }) {
   const didInitialFitRef = useRef(false)
@@ -81,6 +83,7 @@ export function useWorkspaceCanvasCameraController({
     sceneFitOptions,
     acceleratorFocusOptions,
     focusCardOptions,
+    suppressInitialFit,
   })
 
   useEffect(() => {
@@ -134,17 +137,20 @@ export function useWorkspaceCanvasCameraController({
         })
         if (!result.executed) return
         markSceneFitHandled()
-        logWorkspaceCanvasEvent(WORKSPACE_CANVAS_EVENTS.CAMERA_LAYOUT_FIT_REQUEST, {
-          requestKey: sceneFitRequest.requestKey,
-          nodeCount: result.nodeCount,
-          reason: "scene_fit",
-        })
+        logWorkspaceCanvasEvent(
+          WORKSPACE_CANVAS_EVENTS.CAMERA_LAYOUT_FIT_REQUEST,
+          {
+            requestKey: sceneFitRequest.requestKey,
+            nodeCount: result.nodeCount,
+            reason: "scene_fit",
+          }
+        )
       }
 
       if ((sceneFitRequest.delayMs ?? 0) > 0) {
         delayTimer = window.setTimeout(
           applySceneCenter,
-          sceneFitRequest.delayMs,
+          sceneFitRequest.delayMs
         )
       } else {
         applySceneCenter()
@@ -164,7 +170,7 @@ export function useWorkspaceCanvasCameraController({
 
     const visibleNodeIdSet = new Set(visibleNodeIds)
     const allNodesVisible = sceneFitRequest.nodeIds.every((nodeId) =>
-      visibleNodeIdSet.has(nodeId),
+      visibleNodeIdSet.has(nodeId)
     )
     if (!allNodesVisible) {
       pendingSceneFitRequestRef.current = null
@@ -178,7 +184,7 @@ export function useWorkspaceCanvasCameraController({
         if (cancelled) return
         const nodes = resolveFlowNodesForIds(
           flowInstance,
-          sceneFitRequest.nodeIds,
+          sceneFitRequest.nodeIds
         )
         if (nodes.length !== sceneFitRequest.nodeIds.length) {
           if (remainingAttempts > 0) {
@@ -210,11 +216,14 @@ export function useWorkspaceCanvasCameraController({
           acceleratorFocusOptions,
         })
         if (!result.executed) return
-        logWorkspaceCanvasEvent(WORKSPACE_CANVAS_EVENTS.CAMERA_LAYOUT_FIT_REQUEST, {
-          requestKey: sceneFitRequest.requestKey,
-          nodeCount: result.nodeCount,
-          reason: "scene_fit",
-        })
+        logWorkspaceCanvasEvent(
+          WORKSPACE_CANVAS_EVENTS.CAMERA_LAYOUT_FIT_REQUEST,
+          {
+            requestKey: sceneFitRequest.requestKey,
+            nodeCount: result.nodeCount,
+            reason: "scene_fit",
+          }
+        )
       })
     }
 

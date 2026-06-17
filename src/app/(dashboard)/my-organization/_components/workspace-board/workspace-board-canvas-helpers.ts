@@ -1,6 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } from "react"
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  type Dispatch,
+  type SetStateAction,
+} from "react"
 
 import {
   resolveWorkspaceCanvasTutorialStepCount,
@@ -17,15 +23,6 @@ import {
   type WorkspaceCanvasCardFocusRequest,
   type WorkspaceCanvasTutorialCompletionExitRequest,
 } from "./workspace-canvas-v2/runtime/workspace-canvas-viewport-command"
-import { buildAutoLayoutNodesForMode } from "./workspace-board-auto-layout-modes"
-import {
-  beginWorkspaceBoardInteraction,
-  clearWorkspaceBoardInteraction,
-  logWorkspaceBoardDebug,
-  logWorkspaceBoardPhase,
-  summarizeWorkspaceBoardVisibility,
-  type WorkspaceBoardToggleContext,
-} from "./workspace-board-debug"
 import type {
   WorkspaceAutoLayoutMode,
   WorkspaceBoardState,
@@ -33,8 +30,8 @@ import type {
   WorkspaceJourneyGuideState,
 } from "./workspace-board-types"
 import { isWorkspaceRestVisibleCardId } from "@/lib/workspace-card-policy"
-import { reduceWorkspaceBoardVisibility } from "./workspace-board-visibility-reducer"
 import { buildCompletedWorkspaceTutorialBoardState } from "./workspace-board-onboarding-flow"
+export { buildToggleCardVisibilityHandler } from "./workspace-board-canvas-visibility-toggle"
 
 export type WorkspaceCardFocusRequest = WorkspaceCanvasCardFocusRequest
 export type WorkspaceTutorialCompletionExitRequest =
@@ -42,7 +39,7 @@ export type WorkspaceTutorialCompletionExitRequest =
 
 export function isBoardStateContentEqual(
   left: WorkspaceBoardState,
-  right: WorkspaceBoardState,
+  right: WorkspaceBoardState
 ) {
   return (
     left.version === right.version &&
@@ -64,138 +61,35 @@ export function areOrderedStringListsEqual(left: string[], right: string[]) {
   return left.every((value, index) => value === right[index])
 }
 
-function ensureWorkspaceConnection({
-  connections,
-  source,
-  target,
+export function buildWorkspaceBoardStateWithNodePosition({
+  boardState,
+  cardId,
+  x,
+  y,
 }: {
-  connections: WorkspaceBoardState["connections"]
-  source: WorkspaceCardId
-  target: WorkspaceCardId
+  boardState: WorkspaceBoardState
+  cardId: WorkspaceCardId
+  x: number
+  y: number
 }) {
-  const hasConnection = connections.some(
-    (connection) => connection.source === source && connection.target === target,
-  )
-  if (hasConnection) return connections
-
-  return [
-    ...connections,
-    {
-      id: `edge-${source}-to-${target}`,
-      source,
-      target,
-    },
-  ]
-}
-
-function areOrderedCardListsEqual(
-  left: WorkspaceCardId[],
-  right: WorkspaceCardId[],
-) {
-  if (left.length !== right.length) return false
-  return left.every((cardId, index) => cardId === right[index])
-}
-
-export function buildToggleCardVisibilityHandler({
-  setBoardState,
-  setAcceleratorFocusRequestKey,
-}: {
-  setBoardState: Dispatch<SetStateAction<WorkspaceBoardState>>
-  setAcceleratorFocusRequestKey: Dispatch<SetStateAction<number>>
-}) {
-  return (cardId: WorkspaceCardId, context?: WorkspaceBoardToggleContext) => {
-    const interaction =
-      context?.interactionId
-        ? {
-            id: context.interactionId,
-            source: context.source,
-            cardId,
-          }
-        : beginWorkspaceBoardInteraction({
-            source: context?.source ?? "unknown",
-            cardId,
-          })
-    let acceleratorVisibleAfterToggle = false
-    let shouldRequestAcceleratorFocus = false
-    const actionType: "context_hide_card" | "dock_toggle_card" =
-      context?.source === "context-menu" ? "context_hide_card" : "dock_toggle_card"
-
-    setBoardState((previous) => {
-      const next = reduceWorkspaceBoardVisibility(previous, {
-        type: actionType,
-        cardId,
-      })
-      const nextNodes = buildAutoLayoutNodesForMode({
-        mode: next.autoLayoutMode,
-        existingNodes: previous.nodes,
-        hiddenCardIds: next.hiddenCardIds,
-        connections: previous.connections,
-      })
-      const before = summarizeWorkspaceBoardVisibility(previous)
-      const after = summarizeWorkspaceBoardVisibility({
-        ...next,
-        nodes: nextNodes,
-      })
-      const beforeHiddenWithoutTarget = before.hiddenCardIds.filter((id) => id !== cardId)
-      const afterHiddenWithoutTarget = after.hiddenCardIds.filter((id) => id !== cardId)
-      const nonTargetHiddenChanged = !areOrderedCardListsEqual(
-        beforeHiddenWithoutTarget,
-        afterHiddenWithoutTarget,
-      )
-      const visibleCountDelta = after.visibleCount - before.visibleCount
-
-      logWorkspaceBoardDebug("toggle_card_visibility", {
-        cardId,
-        interactionId: interaction.id,
-        interactionSource: interaction.source,
-        interactionCardId: interaction.cardId,
-        before,
-        after,
-        nonTargetHiddenChanged,
-        visibleCountDelta,
-      })
-      logWorkspaceBoardPhase("toggle_reduced", {
-        cardId,
-        interactionId: interaction.id,
-        interactionSource: interaction.source,
-        nonTargetHiddenChanged,
-        visibleCountDelta,
-      })
-
-      logWorkspaceBoardDebug("toggle_card_visibility_tree_reflow", {
-        cardId,
-        interactionId: interaction.id,
-        interactionSource: interaction.source,
-        beforeHiddenWithoutTarget,
-        afterHiddenWithoutTarget,
-      })
-      if (cardId === "accelerator") {
-        const acceleratorVisibleBeforeToggle = !before.hiddenCardIds.includes("accelerator")
-        acceleratorVisibleAfterToggle = !after.hiddenCardIds.includes("accelerator")
-        shouldRequestAcceleratorFocus =
-          actionType === "dock_toggle_card" &&
-          !acceleratorVisibleBeforeToggle &&
-          acceleratorVisibleAfterToggle
-      }
-
-      return {
-        ...next,
-        nodes: nextNodes,
-      }
-    })
-    if (cardId === "accelerator") {
-      logWorkspaceBoardDebug("layout_fit_requested_after_accelerator_toggle", {
-        cardId,
-        interactionId: interaction.id,
-        interactionSource: interaction.source,
-        acceleratorVisibleAfterToggle,
-      })
-      if (shouldRequestAcceleratorFocus) {
-        setAcceleratorFocusRequestKey((previous) => previous + 1)
-      }
+  let changed = false
+  const nextNodes = boardState.nodes.map((entry) => {
+    if (entry.id !== cardId) return entry
+    if (entry.x === x && entry.y === y) return entry
+    changed = true
+    return {
+      ...entry,
+      x,
+      y,
     }
-    clearWorkspaceBoardInteraction(interaction.id)
-  }
+  })
+
+  return changed
+    ? {
+        ...boardState,
+        nodes: nextNodes,
+      }
+    : boardState
 }
 
 export function useWorkspaceTutorialAutoFocus({
@@ -214,20 +108,19 @@ export function useWorkspaceTutorialAutoFocus({
     if (
       resolveWorkspaceCanvasTutorialContinueMode(
         tutorialStepIndex,
-        openedTutorialStepIds,
+        openedTutorialStepIds
       ) === "shortcut"
     ) {
       return
     }
-    const tutorialTargetCardId =
-      resolveWorkspaceCanvasTutorialSelectedCardId(
-        tutorialStepIndex,
-        openedTutorialStepIds,
-      )
+    const tutorialTargetCardId = resolveWorkspaceCanvasTutorialSelectedCardId(
+      tutorialStepIndex,
+      openedTutorialStepIds
+    )
     if (!tutorialTargetCardId) return
     const visibleCardIds = resolveWorkspaceCanvasTutorialVisibleCardIds(
       tutorialStepIndex,
-      openedTutorialStepIds,
+      openedTutorialStepIds
     )
     if (!visibleCardIds.includes(tutorialTargetCardId)) return
 
@@ -271,11 +164,12 @@ export function useWorkspaceTutorialCompletion({
     })
     void (async () => {
       if (allowEditing) {
-        const persistResult = await saveWorkspaceBoardStateAction(nextBoardState)
+        const persistResult =
+          await saveWorkspaceBoardStateAction(nextBoardState)
         if ("error" in persistResult) {
           console.error(
             "[workspace-board] Unable to persist completed tutorial state.",
-            persistResult.error,
+            persistResult.error
           )
         }
       }
@@ -284,7 +178,7 @@ export function useWorkspaceTutorialCompletion({
       if ("error" in completionResult) {
         console.error(
           "[workspace-board] Unable to mark workspace tutorial complete.",
-          completionResult.error,
+          completionResult.error
         )
       }
     })()
@@ -369,9 +263,16 @@ export function useWorkspaceJourneyAutoFocus({
   preserveFocusKeyWhenDisabled?: boolean
 }) {
   const lastJourneyFocusKeyRef = useRef<string | null>(null)
+  const didInitializeJourneyFocusRef = useRef(false)
   const nextFocusKey = `${autoLayoutMode}:${journeyGuideState.stage}:${journeyGuideState.targetCardId}`
 
   useEffect(() => {
+    if (!didInitializeJourneyFocusRef.current) {
+      didInitializeJourneyFocusRef.current = true
+      lastJourneyFocusKeyRef.current =
+        autoLayoutMode === "timeline" && !disabled ? nextFocusKey : null
+      return
+    }
     if (disabled) {
       if (preserveFocusKeyWhenDisabled && autoLayoutMode === "timeline") {
         lastJourneyFocusKeyRef.current = nextFocusKey
@@ -387,9 +288,9 @@ export function useWorkspaceJourneyAutoFocus({
     if (lastJourneyFocusKeyRef.current === nextFocusKey) return
     lastJourneyFocusKeyRef.current = nextFocusKey
     setFocusCardRequest((previous) => ({
-        cardId: journeyGuideState.targetCardId,
-        requestKey: (previous?.requestKey ?? 0) + 1,
-      }))
+      cardId: journeyGuideState.targetCardId,
+      requestKey: (previous?.requestKey ?? 0) + 1,
+    }))
   }, [
     autoLayoutMode,
     disabled,

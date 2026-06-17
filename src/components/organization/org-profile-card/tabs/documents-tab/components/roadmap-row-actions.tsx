@@ -6,25 +6,56 @@ import Route from "lucide-react/dist/esm/icons/route"
 
 import { Button } from "@/components/ui/button"
 import type { RoadmapRow } from "../types"
+import {
+  DOCUMENT_ROW_MOBILE_ACTION_BUTTON_CLASSNAME,
+  type DocumentRowActionPresentation,
+  getDocumentRowActionsClassName,
+} from "./document-row-action-styles"
 
 type RoadmapRowActionsProps = {
   row: RoadmapRow
   publicSlug?: string | null
+  presentation?: DocumentRowActionPresentation
 }
 
-export function RoadmapRowActions({ row, publicSlug }: RoadmapRowActionsProps) {
+export function RoadmapRowActions({
+  row,
+  publicSlug,
+  presentation = "table",
+}: RoadmapRowActionsProps) {
+  const mobileButtonClassName =
+    presentation === "mobile"
+      ? DOCUMENT_ROW_MOBILE_ACTION_BUTTON_CLASSNAME
+      : undefined
+
   return (
-    <div className="flex min-w-[180px] items-center justify-end gap-2">
-      <Button type="button" size="sm" variant="secondary" asChild>
+    <div className={getDocumentRowActionsClassName(presentation)}>
+      <Button
+        type="button"
+        size="sm"
+        variant={presentation === "mobile" ? "ghost" : "secondary"}
+        className={mobileButtonClassName}
+        asChild
+      >
         <Link href={`/roadmap/${row.section.slug}`}>
-          <Route className="h-4 w-4" aria-hidden />
+          <Route data-icon="inline-start" aria-hidden />
           Open
         </Link>
       </Button>
       {publicSlug && row.visibility === "public" ? (
-        <Button type="button" size="sm" variant="ghost" asChild>
-          <Link href={`/${publicSlug}/roadmap#${row.section.slug}`} target="_blank" rel="noreferrer">
-            <ExternalLink className="h-4 w-4" aria-hidden />
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className={mobileButtonClassName}
+          asChild
+        >
+          <Link
+            href={`/${publicSlug}/roadmap#${row.section.slug}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <ExternalLink data-icon="inline-start" aria-hidden />
             Public
           </Link>
         </Button>

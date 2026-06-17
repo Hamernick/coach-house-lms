@@ -10,14 +10,14 @@ describe("app sidebar nav data", () => {
         isAdmin: true,
         showOrgAdmin: true,
         canAccessOrgAdmin: true,
-      }).map((item) => item.title),
+      }).map((item) => item.title)
     ).toContain("Platform")
     expect(
       buildMainNav({
         isAdmin: true,
         showOrgAdmin: true,
         canAccessOrgAdmin: true,
-      }).map((item) => item.title),
+      }).map((item) => item.title)
     ).not.toContain("User Journeys")
 
     expect(
@@ -25,14 +25,14 @@ describe("app sidebar nav data", () => {
         isAdmin: false,
         showOrgAdmin: true,
         canAccessOrgAdmin: true,
-      }).map((item) => item.title),
+      }).map((item) => item.title)
     ).not.toContain("Platform")
     expect(
       buildMainNav({
         isAdmin: false,
         showOrgAdmin: true,
         canAccessOrgAdmin: true,
-      }).map((item) => item.title),
+      }).map((item) => item.title)
     ).not.toContain("User Journeys")
   })
 
@@ -43,7 +43,7 @@ describe("app sidebar nav data", () => {
         showOrgAdmin: true,
         canAccessOrgAdmin: true,
         showPlatformLab: true,
-      }).map((item) => item.title),
+      }).map((item) => item.title)
     ).toContain("Platform Lab")
 
     expect(
@@ -52,7 +52,7 @@ describe("app sidebar nav data", () => {
         showOrgAdmin: true,
         canAccessOrgAdmin: true,
         showPlatformLab: false,
-      }).map((item) => item.title),
+      }).map((item) => item.title)
     ).not.toContain("Platform Lab")
   })
 
@@ -73,8 +73,10 @@ describe("app sidebar nav data", () => {
     ])
     expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
     expect(nav.find((item) => item.title === "Find")?.icon).toBe(EarthIcon)
+    expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Email")).toBeUndefined()
   })
 
   it("keeps org admin out of the main sidebar nav even when available", () => {
@@ -102,21 +104,25 @@ describe("app sidebar nav data", () => {
     expect(nav.map((item) => item.title)).toEqual([
       "Workspace",
       "Find",
-      "Projects",
+      "Organizations",
       "Tasks",
+      "Email",
       "People",
       "Documents",
       "Platform",
       "Platform Lab",
       "Prototypes",
     ])
+    expect(nav.find((item) => item.title === "Organizations")?.href).toBe(
+      "/organizations"
+    )
     expect(nav.find((item) => item.title === "Prototypes")?.tree).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
           id: "user-journeys",
           label: "User Journeys",
         }),
-      ]),
+      ])
     )
   })
 
@@ -132,8 +138,10 @@ describe("app sidebar nav data", () => {
     expect(nav.map((item) => item.title)).toEqual(["Find"])
     expect(nav.find((item) => item.title === "Workspace")).toBeUndefined()
     expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
+    expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Email")).toBeUndefined()
     expect(nav.find((item) => item.title === "People")).toBeUndefined()
     expect(nav.find((item) => item.title === "Documents")).toBeUndefined()
   })
@@ -150,8 +158,10 @@ describe("app sidebar nav data", () => {
     expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
     expect(nav.find((item) => item.title === "Find")?.icon).toBe(EarthIcon)
     expect(nav.find((item) => item.title === "Find")?.locked).not.toBe(true)
+    expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Email")).toBeUndefined()
     expect(nav.map((item) => item.badge)).not.toContain("Upgrade")
   })
 
@@ -174,7 +184,9 @@ describe("app sidebar nav data", () => {
       "Knowledge base",
       "Community",
     ])
-    expect(RESOURCE_NAV.find((item) => item.name === "Find organizations")).toBeUndefined()
+    expect(
+      RESOURCE_NAV.find((item) => item.name === "Find organizations")
+    ).toBeUndefined()
     expect(RESOURCE_NAV.find((item) => item.url === "/find")).toBeUndefined()
   })
 })

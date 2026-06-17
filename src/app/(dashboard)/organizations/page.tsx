@@ -1,37 +1,53 @@
-import { redirect } from "next/navigation"
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { createSupabaseServerClient } from "@/lib/supabase"
-import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
-import { supabaseErrorToError } from "@/lib/supabase/errors"
-
-export const dynamic = "force-dynamic"
+import {
+  clearMemberWorkspaceStarterDataAction,
+  createMemberWorkspaceProjectAction,
+  loadMemberWorkspaceProjectsPage,
+  MemberWorkspaceProjectsPage,
+  updateMemberWorkspaceProjectAction,
+  updateMemberWorkspaceProjectScheduleAction,
+  updateMemberWorkspaceProjectStatusAction,
+} from "@/features/member-workspace"
+import { requireAdmin } from "@/lib/admin/auth"
 
 export default async function OrganizationsPage() {
-  const supabase = await createSupabaseServerClient()
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
+  await requireAdmin()
 
-  if (userError && !isSupabaseAuthSessionMissingError(userError)) {
-    throw supabaseErrorToError(userError, "Unable to load user.")
-  }
-  if (!user) redirect("/login?redirect=/organizations")
+  const {
+    projects,
+    storageMode,
+    canResetStarterData,
+    starterProjectCount,
+    canCreateProjects,
+    scope,
+    organizationOptions,
+    assigneeOptions,
+  } = await loadMemberWorkspaceProjectsPage()
 
   return (
-    <div className="flex flex-col gap-6">
-      <section>
-        <Card className="bg-card/60">
-          <CardHeader>
-            <CardTitle>Organizations</CardTitle>
-            <CardDescription>Organization profile rollups from your latest submissions.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">Coming soon.</p>
-          </CardContent>
-        </Card>
-      </section>
-    </div>
+    <MemberWorkspaceProjectsPage
+      projects={projects}
+      storageMode={storageMode}
+      canResetStarterData={canResetStarterData}
+      starterProjectCount={starterProjectCount}
+      clearStarterDataAction={clearMemberWorkspaceStarterDataAction}
+      createProjectAction={
+        canCreateProjects ? createMemberWorkspaceProjectAction : undefined
+      }
+      updateProjectAction={
+        canCreateProjects ? updateMemberWorkspaceProjectAction : undefined
+      }
+      updateProjectScheduleAction={
+        canCreateProjects
+          ? updateMemberWorkspaceProjectScheduleAction
+          : undefined
+      }
+      updateProjectStatusAction={
+        canCreateProjects ? updateMemberWorkspaceProjectStatusAction : undefined
+      }
+      canCreateProjects={canCreateProjects}
+      scope={scope}
+      organizationOptions={organizationOptions}
+      assigneeOptions={assigneeOptions}
+    />
   )
 }

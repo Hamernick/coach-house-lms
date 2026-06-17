@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
 
+import {
+  resolveAppShellAccountMenuActionsForUser,
+  useAppShellAccountMenuActions,
+} from "@/components/app-shell/account-menu-actions-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
@@ -48,6 +52,7 @@ export function NavUser({
   const router = useRouter()
   const [signOutPending, startSignOutTransition] = useTransition()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const registeredAccountMenuActions = useAppShellAccountMenuActions()
   const {
     menuOpen,
     setMenuOpen,
@@ -76,6 +81,10 @@ export function NavUser({
     (normalizedEmail && normalizedEmail.toLowerCase() !== displayName.toLowerCase() ? normalizedEmail : "")
   const displayAvatar = user.avatar ?? null
   const avatarFallback = displayName.charAt(0).toUpperCase() || "U"
+  const accountMenuActions = resolveAppShellAccountMenuActionsForUser({
+    actions: registeredAccountMenuActions,
+    isAdmin,
+  })
 
   return (
     <div className={showDivider ? "border-border/60 border-t pt-2" : ""}>
@@ -132,6 +141,7 @@ export function NavUser({
           isAdmin={isAdmin}
           showOrgAdmin={showOrgAdmin}
           canAccessOrgAdmin={canAccessOrgAdmin}
+          accountMenuActions={accountMenuActions}
           signOutPending={signOutPending}
           onCloseMenu={() => setMenuOpen(false)}
           onOpenSettings={() => {

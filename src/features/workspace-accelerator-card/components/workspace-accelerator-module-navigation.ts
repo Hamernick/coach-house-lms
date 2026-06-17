@@ -5,10 +5,14 @@ function normalizeModuleSlug(value: string | null | undefined) {
 }
 
 function getStepModuleSlug(step: WorkspaceAcceleratorCardStep) {
-  return normalizeModuleSlug(step.moduleSlug) || normalizeModuleSlug(step.moduleId)
+  return (
+    normalizeModuleSlug(step.moduleSlug) || normalizeModuleSlug(step.moduleId)
+  )
 }
 
-function isWorkspaceAcceleratorWelcomePreviewCandidate(step: WorkspaceAcceleratorCardStep) {
+function isWorkspaceAcceleratorWelcomePreviewCandidate(
+  step: WorkspaceAcceleratorCardStep
+) {
   return (
     step.moduleContext?.workspaceOnboarding?.view === "welcome" ||
     step.moduleId === "workspace-onboarding-welcome" ||
@@ -32,7 +36,7 @@ export function resolveWorkspaceAcceleratorPlaceholderVideoUrl({
       (step) =>
         step.id !== currentStepId &&
         hasWorkspaceAcceleratorStepVideo(step) &&
-        isWorkspaceAcceleratorWelcomePreviewCandidate(step),
+        isWorkspaceAcceleratorWelcomePreviewCandidate(step)
     )?.videoUrl ?? null
 
   if (welcomeVideoUrl) return welcomeVideoUrl
@@ -40,8 +44,7 @@ export function resolveWorkspaceAcceleratorPlaceholderVideoUrl({
   return (
     steps.find(
       (step) =>
-        step.id !== currentStepId &&
-        hasWorkspaceAcceleratorStepVideo(step),
+        step.id !== currentStepId && hasWorkspaceAcceleratorStepVideo(step)
     )?.videoUrl ?? null
   )
 }
@@ -56,8 +59,7 @@ function findVideoStepByModuleSlug({
   return (
     steps.find(
       (step) =>
-        getStepModuleSlug(step) === moduleSlug &&
-        step.stepKind === "video",
+        getStepModuleSlug(step) === moduleSlug && step.stepKind === "video"
     ) ?? null
   )
 }
@@ -80,19 +82,21 @@ function resolveInterModuleVideoNavigation({
   if (moduleSlug === "what-is-the-need") {
     return {
       previousStepId: null,
-      nextStepId: findVideoStepByModuleSlug({
-        steps,
-        moduleSlug: "ai-the-need",
-      })?.id ?? null,
+      nextStepId:
+        findVideoStepByModuleSlug({
+          steps,
+          moduleSlug: "ai-the-need",
+        })?.id ?? null,
     }
   }
 
   if (moduleSlug === "ai-the-need") {
     return {
-      previousStepId: findVideoStepByModuleSlug({
-        steps,
-        moduleSlug: "what-is-the-need",
-      })?.id ?? null,
+      previousStepId:
+        findVideoStepByModuleSlug({
+          steps,
+          moduleSlug: "what-is-the-need",
+        })?.id ?? null,
       nextStepId: null,
     }
   }
@@ -122,7 +126,7 @@ export function resolveWorkspaceAcceleratorModuleStepNavigation({
   }
 
   const currentModuleStepIndex = currentModuleSteps.findIndex(
-    (step) => step.id === currentStepId,
+    (step) => step.id === currentStepId
   )
   if (currentModuleStepIndex < 0) {
     return {
@@ -148,12 +152,12 @@ export function resolveWorkspaceAcceleratorModuleStepNavigation({
     steps,
   })
   const previousStepId =
-    interModuleVideoNavigation.previousStepId ??
     currentModuleSteps[currentModuleStepIndex - 1]?.id ??
+    interModuleVideoNavigation.previousStepId ??
     null
   const nextStepId =
-    interModuleVideoNavigation.nextStepId ??
     currentModuleSteps[currentModuleStepIndex + 1]?.id ??
+    interModuleVideoNavigation.nextStepId ??
     null
 
   return {

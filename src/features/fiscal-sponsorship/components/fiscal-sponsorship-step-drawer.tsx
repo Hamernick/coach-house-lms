@@ -6,20 +6,11 @@ import PanelRightOpenIcon from "lucide-react/dist/esm/icons/panel-right-open"
 import PenLineIcon from "lucide-react/dist/esm/icons/pen-line"
 import SparklesIcon from "lucide-react/dist/esm/icons/sparkles"
 import UploadIcon from "lucide-react/dist/esm/icons/upload"
-import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-  FieldLegend,
-  FieldSet,
-} from "@/components/ui/field"
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import {
@@ -31,115 +22,20 @@ import {
 } from "@/components/ui/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
 import {
   FISCAL_SPONSORSHIP_DOCUMENTS,
-  FISCAL_SPONSORSHIP_REVIEW_CHECKS,
   FISCAL_SPONSORSHIP_SIGNATURE_PACKET,
 } from "../lib/prototype-data"
 import type {
   FiscalSponsorshipPrototypeDocument,
+  FiscalSponsorshipProgramOption,
   FiscalSponsorshipPrototypeStep,
   FiscalSponsorshipPrototypeStepStatus,
 } from "../types"
+import { FiscalSponsorshipApplicationFields } from "./fiscal-sponsorship-application-fields"
+import { FiscalSponsorshipHandbookGuide } from "./fiscal-sponsorship-handbook-guide"
 import { FiscalSponsorshipMark } from "./fiscal-sponsorship-mark"
-
-function ApplicationFields() {
-  return (
-    <FieldGroup>
-      <Field>
-        <FieldLabel htmlFor="fs-project-name">Project name</FieldLabel>
-        <Input id="fs-project-name" defaultValue="South Side Civic Kitchen" />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="fs-project-lead">Project lead</FieldLabel>
-        <Input id="fs-project-lead" defaultValue="Maya Johnson" />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="fs-email">Email</FieldLabel>
-        <Input id="fs-email" type="email" defaultValue="maya@example.org" />
-      </Field>
-      <Field>
-        <FieldLabel>Legal structure</FieldLabel>
-        <ToggleGroup
-          type="single"
-          defaultValue="association"
-          className="bg-muted grid w-full grid-cols-2 rounded-xl p-1"
-          variant="outline"
-          size="sm"
-        >
-          <ToggleGroupItem value="individual" className="rounded-lg">
-            Individual
-          </ToggleGroupItem>
-          <ToggleGroupItem value="association" className="rounded-lg">
-            Association
-          </ToggleGroupItem>
-          <ToggleGroupItem value="llc" className="rounded-lg">
-            LLC
-          </ToggleGroupItem>
-          <ToggleGroupItem value="corporation" className="rounded-lg">
-            Corporation
-          </ToggleGroupItem>
-        </ToggleGroup>
-        <FieldDescription>
-          Legal entities will need formation documents and a recent
-          good-standing certificate.
-        </FieldDescription>
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="fs-overview">Project overview</FieldLabel>
-        <Textarea
-          id="fs-overview"
-          defaultValue="A community food access and mutual aid initiative that provides free prepared meals, nutrition education, and neighborhood volunteer coordination."
-          className="min-h-24 resize-none"
-        />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="fs-charitable-purpose">
-          Charitable purpose
-        </FieldLabel>
-        <Textarea
-          id="fs-charitable-purpose"
-          defaultValue="Advances community support, health, and food security for a broad neighborhood charitable class."
-          className="min-h-20 resize-none"
-        />
-      </Field>
-      <Field>
-        <FieldLabel htmlFor="fs-financial-goals">
-          12-month financial goals
-        </FieldLabel>
-        <Input
-          id="fs-financial-goals"
-          defaultValue="$85,000 contributed revenue / $62,000 expenses"
-        />
-        <FieldDescription>
-          Placeholder for contributed revenue, earned revenue, and projected
-          expenses from the application outline.
-        </FieldDescription>
-      </Field>
-    </FieldGroup>
-  )
-}
-
-function ReviewChecklist() {
-  return (
-    <FieldSet className="bg-muted/35 rounded-2xl border p-3">
-      <FieldLegend className="px-1">Review criteria</FieldLegend>
-      <div className="flex flex-col gap-2.5">
-        {FISCAL_SPONSORSHIP_REVIEW_CHECKS.map((check) => (
-          <label
-            key={check}
-            className="bg-background flex min-h-12 items-start gap-3 rounded-xl border px-3 py-2.5 text-sm"
-          >
-            <Checkbox defaultChecked />
-            <span className="leading-snug">{check}</span>
-          </label>
-        ))}
-      </div>
-    </FieldSet>
-  )
-}
 
 function DocumentStatusBadge({
   document,
@@ -186,11 +82,28 @@ function DocumentQueue({
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <DocumentStatusBadge document={document} />
-              <Button asChild variant="ghost" size="sm" className="rounded-full">
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
+                className="rounded-full"
+              >
                 <a href={document.href} target="_blank" rel="noreferrer">
-                  Open placeholder PDF
+                  Open viewer
                 </a>
               </Button>
+              {document.downloadHref ? (
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-full"
+                >
+                  <a href={document.downloadHref} download>
+                    Download markdown
+                  </a>
+                </Button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -207,19 +120,18 @@ function SignaturePanel({
   const signableDocuments = FISCAL_SPONSORSHIP_DOCUMENTS.filter(
     (document) => document.signatureRequired
   )
-  const currentDocument = signableDocuments.find(
-    (document) => document.stepId === selectedStep.id
-  ) ?? signableDocuments.find((document) => document.id === "model-c-agreement")
+  const currentDocument =
+    signableDocuments.find((document) => document.stepId === selectedStep.id) ??
+    signableDocuments.find((document) => document.id === "model-c-agreement")
 
   return (
     <div className="flex flex-col gap-4">
       <Alert>
         <PenLineIcon aria-hidden />
-        <AlertTitle>Signature routing placeholder</AlertTitle>
+        <AlertTitle>DocuSeal signing packet</AlertTitle>
         <AlertDescription>
-          Use dummy PDFs for now. The live version can generate these documents,
-          send them through DocuSeal, then store the executed PDF and signing
-          audit metadata in Documents.
+          Coach House sends signing documents through DocuSeal, then stores the
+          executed agreement and audit metadata with the project.
         </AlertDescription>
       </Alert>
       <div className="bg-background rounded-2xl border p-4">
@@ -230,15 +142,17 @@ function SignaturePanel({
             </p>
             <p className="text-muted-foreground mt-1 text-sm leading-snug">
               {currentDocument?.description ??
-                "Generated agreement prepared for signature."}
+                "Agreement prepared for signature."}
             </p>
           </div>
-          {currentDocument ? <DocumentStatusBadge document={currentDocument} /> : null}
+          {currentDocument ? (
+            <DocumentStatusBadge document={currentDocument} />
+          ) : null}
         </div>
         {currentDocument ? (
           <Button asChild size="sm" className="mt-4 rounded-full">
             <a href={currentDocument.href} target="_blank" rel="noreferrer">
-              Open signing PDF
+              Open signing document
             </a>
           </Button>
         ) : null}
@@ -271,7 +185,13 @@ function SignaturePanel({
   )
 }
 
-function StepWorkContent({ step }: { step: FiscalSponsorshipPrototypeStep }) {
+function StepWorkContent({
+  programs,
+  step,
+}: {
+  programs?: FiscalSponsorshipProgramOption[]
+  step: FiscalSponsorshipPrototypeStep
+}) {
   return (
     <div className="flex flex-col gap-4">
       <Alert>
@@ -279,47 +199,41 @@ function StepWorkContent({ step }: { step: FiscalSponsorshipPrototypeStep }) {
         <AlertTitle>{step.title}</AlertTitle>
         <AlertDescription>{step.detail}</AlertDescription>
       </Alert>
-      {step.id === "model" ? (
-        <div className="text-muted-foreground grid gap-3 text-sm">
-          <p>
-            Fiscal sponsorship is presented as a Model C grant relationship:
-            Coach House receives restricted charitable funds and makes re-grants
-            for approved project expenses.
-          </p>
-          <p>
-            The applicant keeps day-to-day control, while Coach House handles
-            oversight, compliance guardrails, and donor/funder credibility.
-          </p>
-        </div>
+      {step.id === "model" ? <FiscalSponsorshipHandbookGuide /> : null}
+      {step.id === "application" ? (
+        <FiscalSponsorshipApplicationFields programs={programs} />
       ) : null}
-      {step.id === "application" ? <ApplicationFields /> : null}
-      {step.id === "review" ? <ReviewChecklist /> : null}
       {step.id === "agreement" ? (
         <div className="flex flex-col gap-3">
           <Alert>
             <PenLineIcon aria-hidden />
-            <AlertTitle>DocuSeal candidate</AlertTitle>
+            <AlertTitle>Agreement from Coach House</AlertTitle>
             <AlertDescription>
-              This would generate a Model C agreement from approved answers,
-              create a signing submission, and store the executed PDF plus audit
-              metadata.
+              Once your application is accepted, Coach House will send the Model
+              C agreement here for review and signature.
             </AlertDescription>
           </Alert>
           <div className="bg-background rounded-2xl border p-4">
             <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-              Agreement preview
+              Agreement status
             </p>
             <p className="mt-3 text-sm leading-relaxed">
-              Coach House Solutions Group, NFP will act as fiscal sponsor for
-              South Side Civic Kitchen under a grantor-grantee relationship.
+              No agreement has been sent yet. When Coach House accepts the
+              application, the agreement will be available here to review and
+              sign.
             </p>
-            <Button asChild variant="outline" size="sm" className="mt-4 rounded-full">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="mt-4 rounded-full"
+            >
               <a
-                href="/fiscal-sponsorship/placeholders/model-c-agreement.pdf"
+                href="/fiscal-sponsorship/handbook#fs-agreement-template"
                 target="_blank"
                 rel="noreferrer"
               >
-                Open dummy agreement PDF
+                Open agreement template
               </a>
             </Button>
           </div>
@@ -335,7 +249,7 @@ function StepWorkContent({ step }: { step: FiscalSponsorshipPrototypeStep }) {
           </Field>
           <Field>
             <FieldLabel htmlFor="fs-regrant-purpose">
-              Purpose of re-grant
+              Purpose of grant request
             </FieldLabel>
             <Textarea
               id="fs-regrant-purpose"
@@ -353,15 +267,57 @@ function StepWorkContent({ step }: { step: FiscalSponsorshipPrototypeStep }) {
   )
 }
 
+function getStepDetailPrimaryActionLabel({
+  hasApplicationEditor,
+  step,
+}: {
+  hasApplicationEditor: boolean
+  step: FiscalSponsorshipPrototypeStep
+}) {
+  if (step.id === "application") {
+    return hasApplicationEditor ? "Open application" : "Submit application"
+  }
+
+  if (step.id === "agreement") {
+    if (step.status === "planned") return "Agreement not sent"
+    if (step.status === "complete") return "Signed"
+
+    return "Sign agreement"
+  }
+
+  if (step.id === "regrant") return "Submit grant request"
+
+  return "Done"
+}
+
 function StepDetail({
+  applicationActionDisabled = false,
+  programs,
   step,
   onApprove,
-  onSkip,
+  onOpenApplication,
 }: {
+  applicationActionDisabled?: boolean
+  programs?: FiscalSponsorshipProgramOption[]
   step: FiscalSponsorshipPrototypeStep
   onApprove: () => void
-  onSkip: () => void
+  onOpenApplication?: () => void
 }) {
+  const hasApplicationEditor = Boolean(onOpenApplication)
+  const primaryActionDisabled =
+    (step.id === "application" && applicationActionDisabled) ||
+    (step.id === "agreement" &&
+      (step.status === "planned" || step.status === "complete"))
+
+  function handlePrimaryAction() {
+    if (step.id === "application" && onOpenApplication) {
+      onOpenApplication()
+      return
+    }
+
+    onApprove()
+  }
+
   return (
     <Tabs defaultValue="work" className="min-h-0 flex-1">
       <TabsList className="bg-muted mx-4 mt-3 grid grid-cols-3 rounded-full p-1">
@@ -386,10 +342,10 @@ function StepDetail({
       </TabsList>
       <ScrollArea
         className="min-h-0 flex-1 px-4"
-        viewportClassName="max-h-[calc(100svh-15rem)]"
+        viewportClassName="max-h-[calc(100svh-15rem)] scroll-fade-effect-y [--mask-height:2rem] [--scroll-buffer:1.5rem]"
       >
         <TabsContent value="work" className="mt-4">
-          <StepWorkContent step={step} />
+          <StepWorkContent step={step} programs={programs} />
         </TabsContent>
         <TabsContent value="docs" className="mt-4">
           <DocumentQueue selectedStep={step} />
@@ -399,19 +355,15 @@ function StepDetail({
         </TabsContent>
       </ScrollArea>
       <SheetFooter className="border-t">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-end gap-2">
           <Button
-            variant="ghost"
             size="sm"
             className="rounded-full"
-            onClick={onSkip}
+            disabled={primaryActionDisabled}
+            onClick={handlePrimaryAction}
           >
-            <XIcon data-icon="inline-start" />
-            Skip
-          </Button>
-          <Button size="sm" className="rounded-full" onClick={onApprove}>
             <CheckIcon data-icon="inline-start" />
-            Approve
+            {getStepDetailPrimaryActionLabel({ hasApplicationEditor, step })}
           </Button>
         </div>
       </SheetFooter>
@@ -420,15 +372,19 @@ function StepDetail({
 }
 
 export function FiscalSponsorshipStepDrawer({
+  applicationActionDisabled = false,
+  programs,
   selectedStep,
   onApprove,
   onClose,
-  onSkip,
+  onOpenApplication,
 }: {
+  applicationActionDisabled?: boolean
+  programs?: FiscalSponsorshipProgramOption[]
   selectedStep: FiscalSponsorshipPrototypeStep
   onApprove: (status: FiscalSponsorshipPrototypeStepStatus) => void
   onClose: () => void
-  onSkip: (status: FiscalSponsorshipPrototypeStepStatus) => void
+  onOpenApplication?: () => void
 }) {
   return (
     <SheetContent className="w-[min(100vw,34rem)] gap-0 p-0 sm:max-w-[34rem]">
@@ -442,9 +398,13 @@ export function FiscalSponsorshipStepDrawer({
         </div>
       </SheetHeader>
       <StepDetail
+        applicationActionDisabled={applicationActionDisabled}
         step={selectedStep}
-        onApprove={() => onApprove("approved")}
-        onSkip={() => onSkip("skipped")}
+        programs={programs}
+        onOpenApplication={onOpenApplication}
+        onApprove={() =>
+          onApprove(selectedStep.id === "agreement" ? "complete" : "approved")
+        }
       />
       <div className="border-t p-4">
         <Button

@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+
 import { describe, expect, it } from "vitest"
 
 import {
@@ -16,6 +19,12 @@ import {
   shouldWorkspaceTutorialAnimateInitialPresentation,
 } from "@/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel-motion"
 import type { WorkspaceCanvasTutorialPresentationSurface } from "@/features/workspace-canvas-tutorial/types"
+
+const ROOT = process.cwd()
+
+function readSource(relativePath: string) {
+  return readFileSync(join(ROOT, relativePath), "utf8")
+}
 
 const ACCELERATOR_SURFACE: WorkspaceCanvasTutorialPresentationSurface = {
   kind: "dashed-frame",
@@ -79,6 +88,30 @@ const TOOL_SURFACE: WorkspaceCanvasTutorialPresentationSurface = {
 }
 
 describe("workspace canvas tutorial panel layout", () => {
+  it("styles guide navigation controls like the workspace shortcut buttons", () => {
+    const panelSource = readSource(
+      "src/features/workspace-canvas-tutorial/components/workspace-canvas-tutorial-panel.tsx",
+    )
+    const shortcutButtonSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx",
+    )
+
+    expect(panelSource).toContain(
+      'WORKSPACE_TUTORIAL_PANEL_CONTROL_BUTTON_CLASSNAME = "nodrag nopan size-9 h-9 w-9 rounded-xl"',
+    )
+    expect(shortcutButtonSource).toContain(
+      '"nodrag nopan size-9 h-9 w-9 rounded-xl"',
+    )
+    expect(panelSource).toContain('variant="ghost"')
+    expect(panelSource).toContain('size="icon"')
+    expect(panelSource).toContain('title="Back"')
+    expect(panelSource).toContain(
+      'title={isFinalStep ? "Enter workspace" : "Continue"}',
+    )
+    expect(panelSource).not.toContain('variant="outline"')
+    expect(panelSource).not.toContain("nodrag nopan h-10 gap-1.5 rounded-xl px-3")
+  })
+
   it("keeps the guide Continue button available for every step mode", () => {
     expect(shouldWorkspaceCanvasTutorialBlockPanelNext("action")).toBe(false)
     expect(shouldWorkspaceCanvasTutorialBlockPanelNext("next")).toBe(false)

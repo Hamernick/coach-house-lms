@@ -1,5 +1,7 @@
 import { vi } from "vitest"
 
+vi.mock("server-only", () => ({}))
+
 export class RedirectError extends Error {
   constructor(public destination: string) {
     super(`redirect:${destination}`)
@@ -11,7 +13,9 @@ export const redirectMock = vi.fn((destination: string) => {
 })
 
 export const revalidatePathMock = vi.fn()
-export const unstableCacheMock = vi.fn(<T extends (...args: never[]) => unknown>(fn: T) => fn)
+export const unstableCacheMock = vi.fn(
+  <T extends (...args: never[]) => unknown>(fn: T) => fn
+)
 
 export const headersMock = vi.fn(async () => ({
   get: (name: string): string | undefined => {
@@ -39,7 +43,8 @@ export const createSupabaseServerClientMock = vi.fn()
 export const createSupabaseServerClientServerMock = vi.fn()
 
 vi.mock("@/lib/supabase", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/supabase")>("@/lib/supabase")
+  const actual =
+    await vi.importActual<typeof import("@/lib/supabase")>("@/lib/supabase")
   return {
     ...actual,
     createSupabaseServerClient: createSupabaseServerClientMock,
@@ -47,7 +52,9 @@ vi.mock("@/lib/supabase", async () => {
 })
 
 vi.mock("@/lib/supabase/server", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/supabase/server")>("@/lib/supabase/server")
+  const actual = await vi.importActual<typeof import("@/lib/supabase/server")>(
+    "@/lib/supabase/server"
+  )
   return {
     ...actual,
     createSupabaseServerClient: createSupabaseServerClientServerMock,
@@ -57,7 +64,8 @@ vi.mock("@/lib/supabase/server", async () => {
 export const requireAdminMock = vi.fn()
 
 vi.mock("@/lib/admin/auth", async () => {
-  const actual = await vi.importActual<typeof import("@/lib/admin/auth")>("@/lib/admin/auth")
+  const actual =
+    await vi.importActual<typeof import("@/lib/admin/auth")>("@/lib/admin/auth")
   return {
     ...actual,
     requireAdmin: requireAdminMock,

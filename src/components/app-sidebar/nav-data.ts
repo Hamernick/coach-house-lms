@@ -9,6 +9,7 @@ import FolderKanbanIcon from "lucide-react/dist/esm/icons/folder-kanban"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
 import LayoutGridIcon from "lucide-react/dist/esm/icons/layout-grid"
 import LockIcon from "lucide-react/dist/esm/icons/lock"
+import MailIcon from "lucide-react/dist/esm/icons/mail"
 import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
 import PanelTopIcon from "lucide-react/dist/esm/icons/panel-top"
@@ -53,8 +54,13 @@ export function buildMainNav({
     : []
   const memberWorkspaceItems: MainNavItem[] = isAdmin
     ? [
-        { title: "Projects", href: "/projects", icon: FolderKanbanIcon },
+        {
+          title: "Organizations",
+          href: "/organizations",
+          icon: FolderKanbanIcon,
+        },
         { title: "Tasks", href: "/tasks", icon: ClipboardListIcon },
+        { title: "Email", href: "/email", icon: MailIcon },
       ]
     : []
   const items: MainNavItem[] = [
@@ -64,13 +70,21 @@ export function buildMainNav({
           { title: "Find", href: FIND_PATH, icon: EarthIcon },
           ...memberWorkspaceItems,
           { title: "People", href: "/people", icon: UsersIcon },
-          { title: "Documents", href: "/organization/documents", icon: LockIcon },
+          {
+            title: "Documents",
+            href: "/organization/documents",
+            icon: LockIcon,
+          },
         ]
       : [{ title: "Find", href: FIND_PATH, icon: EarthIcon }]),
   ]
 
   if (isAdmin) {
-    items.push({ title: "Platform", href: "/admin/platform", icon: DatabaseIcon })
+    items.push({
+      title: "Platform",
+      href: "/admin/platform",
+      icon: DatabaseIcon,
+    })
     if (showPlatformLab) {
       items.push({
         title: "Platform Lab",
@@ -110,7 +124,10 @@ export const SECONDARY_NAV = [
   },
 ]
 
-export function computeActiveOpenMap(pathname: string, classes?: SidebarClass[] | null): Record<string, boolean> {
+export function computeActiveOpenMap(
+  pathname: string,
+  classes?: SidebarClass[] | null
+): Record<string, boolean> {
   const map: Record<string, boolean> = {}
   if (!classes) return map
   const basePath = pathname.startsWith("/accelerator/") ? "/accelerator" : ""
@@ -119,7 +136,8 @@ export function computeActiveOpenMap(pathname: string, classes?: SidebarClass[] 
     const classHref = `${basePath}/class/${klass.slug}`
     const isClassActive = pathname === classHref
     const moduleActive = klass.modules.some(
-      (module) => pathname === `${basePath}/class/${klass.slug}/module/${module.index}`,
+      (module) =>
+        pathname === `${basePath}/class/${klass.slug}/module/${module.index}`
     )
     if (isClassActive || moduleActive) {
       map[klass.slug] = true

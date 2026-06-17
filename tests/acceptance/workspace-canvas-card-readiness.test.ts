@@ -6,6 +6,7 @@ import type {
   WorkspaceSeedData,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-types"
 import { buildInitialOrganizationProfile } from "@/app/(dashboard)/my-organization/_lib/helpers"
+import { WORKSPACE_CANVAS_V2_CARD_IDS } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/contracts/workspace-card-contract"
 import { resolveRoadmapSections } from "@/lib/roadmap"
 import { ROADMAP_SECTION_IDS } from "@/lib/roadmap/definitions"
 
@@ -73,7 +74,7 @@ function makeBoardState(): WorkspaceBoardState {
 }
 
 function makeSeed(
-  roadmapSections: Array<Record<string, unknown>>,
+  roadmapSections: Array<Record<string, unknown>>
 ): WorkspaceSeedData {
   const boardState = makeBoardState()
   const rawProfile = {
@@ -132,6 +133,22 @@ function makeSeed(
 }
 
 describe("workspace canvas card readiness", () => {
+  it("returns readiness for every canvas card id", () => {
+    const seed = makeSeed([])
+    const readinessMap = resolveWorkspaceCanvasCardReadinessMap({
+      seed,
+      boardState: seed.boardState,
+    })
+
+    expect(Object.keys(readinessMap).sort()).toEqual(
+      [...WORKSPACE_CANVAS_V2_CARD_IDS].sort()
+    )
+    expect(readinessMap["fiscal-sponsorship"]).toEqual({
+      status: "partial",
+      isReady: false,
+    })
+  })
+
   it("marks the roadmap card partial when stored status is stale but content exists", () => {
     const seed = makeSeed([
       {
@@ -145,7 +162,7 @@ describe("workspace canvas card readiness", () => {
       resolveWorkspaceCanvasCardReadinessMap({
         seed,
         boardState: seed.boardState,
-      }).roadmap,
+      }).roadmap
     ).toEqual({
       status: "partial",
       isReady: false,
@@ -158,14 +175,14 @@ describe("workspace canvas card readiness", () => {
         id,
         content: `${id} complete`,
         status: "complete",
-      })),
+      }))
     )
 
     expect(
       resolveWorkspaceCanvasCardReadinessMap({
         seed,
         boardState: seed.boardState,
-      }).roadmap,
+      }).roadmap
     ).toEqual({
       status: "ready",
       isReady: true,

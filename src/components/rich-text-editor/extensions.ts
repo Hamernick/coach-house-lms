@@ -10,6 +10,7 @@ import Link from "@tiptap/extension-link"
 import Placeholder from "@tiptap/extension-placeholder"
 import Subscript from "@tiptap/extension-subscript"
 import Superscript from "@tiptap/extension-superscript"
+import { Table, TableCell, TableHeader, TableRow } from "@tiptap/extension-table"
 import TextAlign from "@tiptap/extension-text-align"
 import { TextStyle } from "@tiptap/extension-text-style"
 import Typography from "@tiptap/extension-typography"
@@ -55,6 +56,12 @@ export function buildRichTextExtensions({
     TextAlign.configure({
       types: ["heading", "paragraph"],
     }),
+    Table.configure({
+      resizable: true,
+    }),
+    TableRow,
+    TableHeader,
+    TableCell,
     TextStyle,
     Subscript,
     Superscript,

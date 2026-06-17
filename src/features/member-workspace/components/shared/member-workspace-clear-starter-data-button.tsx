@@ -53,16 +53,23 @@ export function MemberWorkspaceClearStarterDataButton({
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Clear demo projects and tasks?</AlertDialogTitle>
+          <AlertDialogTitle>
+            Clear demo organizations and tasks?
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            This removes seeded demo projects and seeded demo tasks for this organization.
-            Real projects and tasks your team created will stay.
+            This removes seeded demo organizations and seeded demo tasks for
+            this organization. Real organizations and tasks your team created
+            will stay.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isPending}>Keep demo data</AlertDialogCancel>
+          <AlertDialogCancel disabled={isPending}>
+            Keep demo data
+          </AlertDialogCancel>
           <AlertDialogAction onClick={handleClear} disabled={isPending}>
-            {isPending ? <CircleNotch className="h-4 w-4 animate-spin" /> : null}
+            {isPending ? (
+              <CircleNotch className="h-4 w-4 animate-spin" />
+            ) : null}
             Clear demo data
           </AlertDialogAction>
         </AlertDialogFooter>

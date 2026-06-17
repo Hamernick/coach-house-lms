@@ -12,17 +12,22 @@ export function summaryText(form: ProgramWizardFormState) {
     .map((entry) => entry.trim())
     .filter(Boolean)
 
-  const outcomes = [form.successOutcome1, form.successOutcome2, form.successOutcome3]
+  const outcomes = [
+    form.successOutcome1,
+    form.successOutcome2,
+    form.successOutcome3,
+  ]
     .map((entry) => entry.trim())
     .filter(Boolean)
 
   const feasibility = computeFeasibility(form)
 
   return [
-    `Program Brief: ${form.title.trim() || "Untitled program"}`,
+    `Activity Brief: ${form.title.trim() || "Untitled activity"}`,
     ``,
     `Summary: ${form.oneSentence.trim() || "Not set"}`,
-    `Type: ${form.programType}`,
+    `Activity type: ${form.objectKind}`,
+    `Public benefit focus: ${form.programType}`,
     `Delivery: ${form.coreFormat}${form.formatAddons.length > 0 ? ` + ${form.formatAddons.join(", ")}` : ""}`,
     ``,
     `Who is served: ${form.servesWho.trim() || "Not set"}`,
@@ -36,7 +41,7 @@ export function summaryText(form: ProgramWizardFormState) {
     `Duration: ${form.durationLabel.trim() || "Not set"}`,
     `Frequency: ${form.frequency.trim() || "Not set"}`,
     `Location: ${form.locationMode}${form.locationDetails.trim() ? ` (${form.locationDetails.trim()})` : ""}`,
-    `Program budget: ${money(budget.totalBudget)}`,
+    `Budget: ${money(budget.totalBudget)}`,
     `Raised or committed: ${money(budget.raised)}`,
     `Fundraising need: ${money(budget.fundraisingTarget)}`,
     `Cost per participant: ${money(feasibility.costPerParticipant)}`,

@@ -11,6 +11,11 @@ import {
 import { useDocumentsTabController } from "./documents-tab/hooks"
 import type { DocumentsTabProps } from "./documents-tab/types"
 
+const DOCUMENTS_INDEX_CARD_CLASSNAME =
+  "text-card-foreground flex flex-col border border-border/60 bg-muted relative w-full rounded-[2rem] p-3 shadow-sm overflow-hidden"
+const DOCUMENTS_INDEX_BODY_CLASSNAME =
+  "bg-background border-border/60 overflow-hidden rounded-[1.45rem] border p-0 first:pt-0"
+
 export type {
   DocumentsOption,
   DocumentsPolicyEntry,
@@ -113,8 +118,8 @@ export function DocumentsTab({
         onOpenNewPolicy={openNewPolicyDialog}
       />
 
-      <Card id="documents-index" className="overflow-hidden">
-        <CardContent className="p-0 first:pt-0">
+      <Card id="documents-index" className={DOCUMENTS_INDEX_CARD_CLASSNAME}>
+        <CardContent className={DOCUMENTS_INDEX_BODY_CLASSNAME}>
           <DocumentsResults
             filteredRows={filteredRows}
             clearFilters={clearFilters}

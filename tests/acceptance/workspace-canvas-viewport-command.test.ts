@@ -48,9 +48,8 @@ describe("workspace canvas viewport command", () => {
           cardId: "calendar",
           requestKey: 5,
         },
-        journeyGuideTargetCardId: "accelerator",
         visibleNodeIds: ["organization-overview", "calendar", "accelerator"],
-      }),
+      })
     ).toEqual({
       kind: "scene-fit",
       sceneFitRequest: {
@@ -76,9 +75,8 @@ describe("workspace canvas viewport command", () => {
           cardId: "calendar",
           requestKey: 5,
         },
-        journeyGuideTargetCardId: "accelerator",
         visibleNodeIds: ["organization-overview", "calendar", "accelerator"],
-      }),
+      })
     ).toEqual({
       kind: "focus-card",
       cardId: "accelerator",
@@ -96,9 +94,8 @@ describe("workspace canvas viewport command", () => {
           cardId: "calendar",
           requestKey: 5,
         },
-        journeyGuideTargetCardId: "accelerator",
         visibleNodeIds: ["organization-overview", "calendar", "accelerator"],
-      }),
+      })
     ).toEqual({
       kind: "fit-visible",
       nodeIds: ["organization-overview", "calendar", "accelerator"],
@@ -112,9 +109,8 @@ describe("workspace canvas viewport command", () => {
           cardId: "calendar",
           requestKey: 5,
         },
-        journeyGuideTargetCardId: "accelerator",
         visibleNodeIds: ["organization-overview", "calendar", "accelerator"],
-      }),
+      })
     ).toEqual({
       kind: "focus-card",
       cardId: "calendar",
@@ -125,12 +121,25 @@ describe("workspace canvas viewport command", () => {
         tutorialSceneFitRequest: null,
         tutorialCompletionExitRequest: null,
         focusCardRequest: null,
-        journeyGuideTargetCardId: null,
         visibleNodeIds: ["organization-overview", "accelerator"],
-      }),
+      })
     ).toEqual({
       kind: "fit-visible",
       nodeIds: ["organization-overview", "accelerator"],
+    })
+  })
+
+  it("does not treat the journey target as an implicit recenter focus request", () => {
+    expect(
+      resolveWorkspaceCanvasViewportCommand({
+        tutorialSceneFitRequest: null,
+        tutorialCompletionExitRequest: null,
+        focusCardRequest: null,
+        visibleNodeIds: ["organization-overview", "programs", "accelerator"],
+      })
+    ).toEqual({
+      kind: "fit-visible",
+      nodeIds: ["organization-overview", "programs", "accelerator"],
     })
   })
 
@@ -206,7 +215,10 @@ describe("workspace canvas viewport command", () => {
       nodeCount: 2,
     })
     expect(fitView).toHaveBeenCalledWith({
-      nodes: [{ id: "accelerator" }, { id: "workspace-board-accelerator-step" }],
+      nodes: [
+        { id: "accelerator" },
+        { id: "workspace-board-accelerator-step" },
+      ],
       padding: 0.4,
       minZoom: 0.3,
       maxZoom: 1.05,

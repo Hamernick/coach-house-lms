@@ -11,6 +11,8 @@ import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 import {
   assetResponse,
   canAccessProjectOrg,
+  getProjectAssetFileError,
+  getProjectAssetLinkError,
   loadAsset,
   loadProject,
   toTrimmedString,
@@ -30,7 +32,10 @@ export async function GET(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   if (error || !user) {
-    return NextResponse.json({ error: error?.message ?? "Unauthorized" }, { status: 401 })
+    return NextResponse.json(
+      { error: error?.message ?? "Unauthorized" },
+      { status: 401 }
+    )
   }
 
   const { searchParams } = new URL(request.url)
@@ -39,7 +44,10 @@ export async function GET(request: NextRequest) {
   const downloadRequested = searchParams.get("download") === "1"
 
   if (!projectId || !assetId) {
-    return NextResponse.json({ error: "Project asset is required." }, { status: 400 })
+    return NextResponse.json(
+      { error: "Project asset is required." },
+      { status: 400 }
+    )
   }
 
   try {
@@ -68,7 +76,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (!asset.storage_path) {
-      return NextResponse.json({ error: "Asset file unavailable." }, { status: 404 })
+      return NextResponse.json(
+        { error: "Asset file unavailable." },
+        { status: 404 }
+      )
     }
 
     const { data: signed, error: signedError } = await supabase.storage
@@ -76,23 +87,26 @@ export async function GET(request: NextRequest) {
       .createSignedUrl(
         asset.storage_path,
         SIGNED_URL_TTL_SECONDS,
-        downloadRequested
-          ? { download: asset.name || true }
-          : undefined,
+        downloadRequested ? { download: asset.name || true } : undefined
       )
 
     if (signedError || !signed?.signedUrl) {
       return NextResponse.json(
         { error: signedError?.message ?? "Unable to open asset." },
-        { status: 500 },
+        { status: 500 }
       )
     }
 
     return NextResponse.redirect(signed.signedUrl)
   } catch (routeError: unknown) {
     return NextResponse.json(
-      { error: routeError instanceof Error ? routeError.message : "Unable to load asset." },
-      { status: 500 },
+      {
+        error:
+          routeError instanceof Error
+            ? routeError.message
+            : "Unable to load asset.",
+      },
+      { status: 500 }
     )
   }
 }
@@ -106,7 +120,10 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   if (error || !user) {
-    return NextResponse.json({ error: error?.message ?? "Unauthorized" }, { status: 401 })
+    return NextResponse.json(
+      { error: error?.message ?? "Unauthorized" },
+      { status: 401 }
+    )
   }
 
   const form = await request.formData()
@@ -114,14 +131,24 @@ export async function POST(request: NextRequest) {
   const title = toTrimmedString(form.get("title"))
   const description = toTrimmedString(form.get("description")) || null
   const link = toTrimmedString(form.get("link"))
-  const files = form.getAll("files").filter((entry): entry is File => entry instanceof File)
+  const files = form
+    .getAll("files")
+    .filter((entry): entry is File => entry instanceof File)
 
   if (!projectId) {
     return NextResponse.json({ error: "Project is required." }, { status: 400 })
   }
 
   if (!link && files.length === 0) {
-    return NextResponse.json({ error: "Add a link or choose at least one file." }, { status: 400 })
+    return NextResponse.json(
+      { error: "Add a link or choose at least one file." },
+      { status: 400 }
+    )
+  }
+
+  const linkError = link ? getProjectAssetLinkError(link) : null
+  if (linkError) {
+    return NextResponse.json({ error: linkError }, { status: 400 })
   }
 
   try {
@@ -162,12 +189,15 @@ export async function POST(request: NextRequest) {
           updated_by: user.id,
         })
         .select(
-          "id, org_id, project_id, name, description, asset_type, storage_path, external_url, mime, size_bytes",
+          "id, org_id, project_id, name, description, asset_type, storage_path, external_url, mime, size_bytes"
         )
         .returns<AssetRow[]>()
 
       if (insertError) {
-        return NextResponse.json({ error: insertError.message }, { status: 500 })
+        return NextResponse.json(
+          { error: insertError.message },
+          { status: 500 }
+        )
       }
 
       insertedAssets.push(...(data ?? []))
@@ -177,18 +207,28 @@ export async function POST(request: NextRequest) {
       if (file.size > MAX_BYTES) {
         return NextResponse.json(
           { error: `${file.name} is too large. Max size is 50 MB.` },
-          { status: 400 },
+          { status: 400 }
         )
+      }
+
+      const fileTypeError = getProjectAssetFileError(file)
+      if (fileTypeError) {
+        return NextResponse.json({ error: fileTypeError }, { status: 400 })
       }
 
       const objectName = `${project.org_id}/${project.id}/${Date.now()}-${sanitizeProjectAssetFilename(file.name)}`
       const buffer = Buffer.from(await file.arrayBuffer())
-      const { error: uploadError } = await supabase.storage.from(BUCKET).upload(objectName, buffer, {
-        contentType: file.type || undefined,
-      })
+      const { error: uploadError } = await supabase.storage
+        .from(BUCKET)
+        .upload(objectName, buffer, {
+          contentType: file.type || undefined,
+        })
 
       if (uploadError) {
-        return NextResponse.json({ error: uploadError.message }, { status: 500 })
+        return NextResponse.json(
+          { error: uploadError.message },
+          { status: 500 }
+        )
       }
 
       uploadedPaths.push(objectName)
@@ -209,13 +249,19 @@ export async function POST(request: NextRequest) {
           updated_by: user.id,
         })
         .select(
-          "id, org_id, project_id, name, description, asset_type, storage_path, external_url, mime, size_bytes",
+          "id, org_id, project_id, name, description, asset_type, storage_path, external_url, mime, size_bytes"
         )
         .returns<AssetRow[]>()
 
       if (insertError) {
-        await supabase.storage.from(BUCKET).remove([objectName]).catch(() => undefined)
-        return NextResponse.json({ error: insertError.message }, { status: 500 })
+        await supabase.storage
+          .from(BUCKET)
+          .remove([objectName])
+          .catch(() => undefined)
+        return NextResponse.json(
+          { error: insertError.message },
+          { status: 500 }
+        )
       }
 
       insertedAssets.push(...(data ?? []))
@@ -225,12 +271,17 @@ export async function POST(request: NextRequest) {
       {
         assets: insertedAssets.map(assetResponse),
       },
-      { status: 200 },
+      { status: 200 }
     )
   } catch (routeError: unknown) {
     return NextResponse.json(
-      { error: routeError instanceof Error ? routeError.message : "Unable to save assets." },
-      { status: 500 },
+      {
+        error:
+          routeError instanceof Error
+            ? routeError.message
+            : "Unable to save assets.",
+      },
+      { status: 500 }
     )
   }
 }
@@ -244,7 +295,10 @@ export async function PATCH(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   if (error || !user) {
-    return NextResponse.json({ error: error?.message ?? "Unauthorized" }, { status: 401 })
+    return NextResponse.json(
+      { error: error?.message ?? "Unauthorized" },
+      { status: 401 }
+    )
   }
 
   const payload = await request.json().catch(() => null)
@@ -255,7 +309,15 @@ export async function PATCH(request: NextRequest) {
   const externalUrl = toTrimmedString(payload?.link)
 
   if (!projectId || !assetId || !name) {
-    return NextResponse.json({ error: "Asset name is required." }, { status: 400 })
+    return NextResponse.json(
+      { error: "Asset name is required." },
+      { status: 400 }
+    )
+  }
+
+  const linkError = externalUrl ? getProjectAssetLinkError(externalUrl) : null
+  if (linkError) {
+    return NextResponse.json({ error: linkError }, { status: 400 })
   }
 
   try {
@@ -279,11 +341,12 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    const updatePayload: Database["public"]["Tables"]["organization_project_assets"]["Update"] = {
-      name,
-      description,
-      updated_by: user.id,
-    }
+    const updatePayload: Database["public"]["Tables"]["organization_project_assets"]["Update"] =
+      {
+        name,
+        description,
+        updated_by: user.id,
+      }
 
     if (asset.external_url) {
       const nextLink = externalUrl || asset.external_url
@@ -297,7 +360,7 @@ export async function PATCH(request: NextRequest) {
       .eq("id", asset.id)
       .eq("project_id", projectId)
       .select(
-        "id, org_id, project_id, name, description, asset_type, storage_path, external_url, mime, size_bytes",
+        "id, org_id, project_id, name, description, asset_type, storage_path, external_url, mime, size_bytes"
       )
       .returns<AssetRow[]>()
 
@@ -307,12 +370,17 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json(
       { asset: data?.[0] ? assetResponse(data[0]) : null },
-      { status: 200 },
+      { status: 200 }
     )
   } catch (routeError: unknown) {
     return NextResponse.json(
-      { error: routeError instanceof Error ? routeError.message : "Unable to update asset." },
-      { status: 500 },
+      {
+        error:
+          routeError instanceof Error
+            ? routeError.message
+            : "Unable to update asset.",
+      },
+      { status: 500 }
     )
   }
 }
@@ -326,7 +394,10 @@ export async function DELETE(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   if (error || !user) {
-    return NextResponse.json({ error: error?.message ?? "Unauthorized" }, { status: 401 })
+    return NextResponse.json(
+      { error: error?.message ?? "Unauthorized" },
+      { status: 401 }
+    )
   }
 
   const payload = await request.json().catch(() => null)
@@ -334,7 +405,10 @@ export async function DELETE(request: NextRequest) {
   const assetId = toTrimmedString(payload?.assetId)
 
   if (!projectId || !assetId) {
-    return NextResponse.json({ error: "Project asset is required." }, { status: 400 })
+    return NextResponse.json(
+      { error: "Project asset is required." },
+      { status: 400 }
+    )
   }
 
   try {
@@ -369,14 +443,22 @@ export async function DELETE(request: NextRequest) {
     }
 
     if (asset.storage_path) {
-      await supabase.storage.from(BUCKET).remove([asset.storage_path]).catch(() => undefined)
+      await supabase.storage
+        .from(BUCKET)
+        .remove([asset.storage_path])
+        .catch(() => undefined)
     }
 
     return NextResponse.json({ ok: true }, { status: 200 })
   } catch (routeError: unknown) {
     return NextResponse.json(
-      { error: routeError instanceof Error ? routeError.message : "Unable to delete asset." },
-      { status: 500 },
+      {
+        error:
+          routeError instanceof Error
+            ? routeError.message
+            : "Unable to delete asset.",
+      },
+      { status: 500 }
     )
   }
 }

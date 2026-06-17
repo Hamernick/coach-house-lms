@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactNode } from "react"
+import type { ReactNode } from "react"
 import Link from "next/link"
 
 import PanelRightCloseIcon from "lucide-react/dist/esm/icons/panel-right-close"
@@ -37,27 +37,14 @@ export function AppShellHeader({
   const hasBreadcrumbs = Boolean(breadcrumbs)
   const isCompactMobileHeader = isMobile && onboardingLocked
   const showHeaderToggles = !isMobile
-  const shellMaxWidth = "100%"
   const toggleButtonClass =
     "size-8 rounded-md border border-[color:var(--shell-border)] bg-transparent text-muted-foreground shadow-none transition-colors hover:bg-foreground/5 hover:text-foreground"
-  const headerRightPadding =
-    !isMobile && hasRightRail && rightOpen
-      ? "var(--shell-right-rail-width)"
-      : "0px"
 
   return (
-    <header
-      className="text-muted-foreground flex shrink-0 flex-col bg-[var(--shell-bg)] text-sm"
-      style={
-        {
-          "--shell-header-max": shellMaxWidth,
-          "--shell-right-rail": headerRightPadding,
-        } as CSSProperties
-      }
-    >
+    <header className="text-muted-foreground flex shrink-0 flex-col bg-[var(--shell-bg)] text-sm">
       <div
         className={cn(
-          "flex min-h-14 min-w-0 items-center py-2 pr-[calc(var(--shell-content-pad)+var(--shell-right-rail))] pl-[var(--shell-content-pad)] transition-[padding] duration-200 ease-out motion-reduce:transition-none md:py-0",
+          "flex min-h-14 min-w-0 items-center py-2 pr-[var(--shell-content-pad)] pl-[var(--shell-content-pad)] md:py-0",
           isCompactMobileHeader && "min-h-12 py-1.5"
         )}
       >

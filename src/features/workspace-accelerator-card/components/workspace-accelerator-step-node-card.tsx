@@ -11,7 +11,6 @@ import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import { ModuleRightRail } from "@/components/training/module-right-rail"
 import type { ModuleResource } from "@/components/training/types"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Drawer,
@@ -86,7 +85,9 @@ function clampStepTitle(title: string) {
   return trimmed
 }
 
-function normalizeRailResources(step: WorkspaceAcceleratorCardStep): ModuleResource[] {
+function normalizeRailResources(
+  step: WorkspaceAcceleratorCardStep
+): ModuleResource[] {
   if (step.moduleContext?.moduleResources?.length) {
     return step.moduleContext.moduleResources
   }
@@ -124,22 +125,25 @@ function AcceleratorStepCloseButton({
         !done && "h-7 w-7",
         !done &&
           moduleCompleted &&
-          "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300",
+          "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300"
       )}
       onClick={onClose}
       aria-label={
         done
           ? "Done reviewing this lesson"
           : moduleCompleted
-          ? "Lesson complete"
-          : variant === "embedded"
-            ? "Close accelerator lesson"
-            : "Close accelerator step node"
+            ? "Lesson complete"
+            : variant === "embedded"
+              ? "Close accelerator lesson"
+              : "Close accelerator step node"
       }
     >
       {done ? (
         <>
-          <CheckIcon className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" aria-hidden />
+          <CheckIcon
+            className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
+            aria-hidden
+          />
           <span>Done</span>
         </>
       ) : moduleCompleted ? (
@@ -192,6 +196,7 @@ function WorkspaceAcceleratorStepMobileDetailsDrawer({
   )
 }
 
+// eslint-disable-next-line max-lines-per-function
 export function WorkspaceAcceleratorStepNodeCard({
   step,
   placeholderVideoUrl = null,
@@ -233,7 +238,7 @@ export function WorkspaceAcceleratorStepNodeCard({
       : resolveWorkspaceAcceleratorDisplayStepTitle({
           moduleTitle: step.moduleTitle,
           stepTitle: step.stepTitle,
-        }),
+        })
   )
   const showModuleTitle =
     step.stepKind !== "assignment" &&
@@ -249,16 +254,21 @@ export function WorkspaceAcceleratorStepNodeCard({
   const immersiveOnboarding =
     fullscreenEmbedded && workspaceOnboardingView === "organization-setup"
   const handleBlockedPreviewAction = (
-    action: "preview-navigation" | "preview-close" | "preview-link" | "preview-submit",
-    controlId: string,
+    action:
+      | "preview-navigation"
+      | "preview-close"
+      | "preview-link"
+      | "preview-submit",
+    controlId: string
   ) => {
     setBlockedControlId(controlId)
     previewGuard.showBlockedFeedback(action)
   }
-  const canNavigatePreview = canWorkspaceAcceleratorTutorialPerformPreviewAction({
-    tutorialInteractionPolicy,
-    action: "preview-navigation",
-  })
+  const canNavigatePreview =
+    canWorkspaceAcceleratorTutorialPerformPreviewAction({
+      tutorialInteractionPolicy,
+      action: "preview-navigation",
+    })
   const canClosePreview = canWorkspaceAcceleratorTutorialPerformPreviewAction({
     tutorialInteractionPolicy,
     action: "preview-close",
@@ -312,7 +322,7 @@ export function WorkspaceAcceleratorStepNodeCard({
   const showMobileRailDrawer = Boolean(resolvedSidePanel) && isMobile
   const assignmentFooterNavigation = resolveAssignmentFooterNavigation(step)
   const isFinalAssignmentSection = Boolean(
-    assignmentFooterNavigation && !assignmentFooterNavigation.nextSection,
+    assignmentFooterNavigation && !assignmentFooterNavigation.nextSection
   )
   useEffect(() => {
     setMobileRailOpen(false)
@@ -338,22 +348,24 @@ export function WorkspaceAcceleratorStepNodeCard({
       className={cn(
         "flex w-full min-w-0 flex-col overflow-hidden",
         fullscreenEmbedded
-          ? "h-full min-h-0 border-0 rounded-none bg-transparent shadow-none"
+          ? "h-full min-h-0 rounded-none border-0 bg-transparent shadow-none"
           : "border-border/70 bg-card border",
         tutorialCallout?.focus === "close-module" && "overflow-visible",
         embedded
           ? fullscreenEmbedded
             ? "relative z-10 h-full min-h-0"
             : "relative z-10 h-full min-h-0 rounded-[24px] shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)]"
-          : "h-auto rounded-[24px] shadow-[0_16px_42px_-30px_rgba(15,23,42,0.24)]",
+          : "h-auto rounded-[24px] shadow-[0_16px_42px_-30px_rgba(15,23,42,0.24)]"
       )}
     >
       {!immersiveOnboarding ? (
         <header
           className={cn(
             "border-border/60 bg-muted/20 border-b px-3 py-3 sm:px-4",
-            tutorialCallout?.focus === "close-module" && "relative z-20 overflow-visible",
-            !embedded && "accelerator-step-node-drag-handle cursor-grab active:cursor-grabbing",
+            tutorialCallout?.focus === "close-module" &&
+              "relative z-20 overflow-visible",
+            !embedded &&
+              "accelerator-step-node-drag-handle cursor-grab active:cursor-grabbing"
           )}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -363,7 +375,9 @@ export function WorkspaceAcceleratorStepNodeCard({
                   {step.moduleTitle}
                 </p>
               ) : null}
-              <h3 className={cn("line-clamp-1", WORKSPACE_TEXT_STYLES.cardTitle)}>
+              <h3
+                className={cn("line-clamp-1", WORKSPACE_TEXT_STYLES.cardTitle)}
+              >
                 <span className="inline-flex items-center gap-1.5">
                   <span className="inline-flex h-5 w-5 items-center justify-center rounded-[6px]">
                     <WaypointsIcon
@@ -377,18 +391,15 @@ export function WorkspaceAcceleratorStepNodeCard({
             </div>
             <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
               <div className="flex items-center gap-1">
-                <Badge
-                  variant="outline"
-                  className="rounded-full border-border/60 bg-background/70 px-2.5 py-1 text-[11px] font-medium tabular-nums"
-                >
+                <span className="text-foreground shrink-0 text-[11px] font-medium tabular-nums">
                   {currentCount} of {stepCount}
-                </Badge>
+                </span>
                 {showMobileRailDrawer ? (
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-9 rounded-full px-3 text-xs touch-manipulation sm:hidden"
+                    className="h-9 touch-manipulation rounded-full px-3 text-xs sm:hidden"
                     onClick={() => setMobileRailOpen(true)}
                   >
                     Details
@@ -407,13 +418,19 @@ export function WorkspaceAcceleratorStepNodeCard({
                     size="icon"
                     variant="ghost"
                     {...getReactGrabOwnerProps(previousButtonOwnerDescriptor)}
-                    className={cn(headerButtonClassName(), "h-9 w-9 sm:h-7 sm:w-7")}
+                    className={cn(
+                      headerButtonClassName(),
+                      "h-9 w-9 sm:h-7 sm:w-7"
+                    )}
                     onClick={() => {
                       if (canNavigatePreview) {
                         onPrevious()
                         return
                       }
-                      handleBlockedPreviewAction("preview-navigation", "previous")
+                      handleBlockedPreviewAction(
+                        "preview-navigation",
+                        "previous"
+                      )
                     }}
                     disabled={!canGoPrevious}
                     aria-label="Previous accelerator step"
@@ -434,7 +451,10 @@ export function WorkspaceAcceleratorStepNodeCard({
                     size="icon"
                     variant="ghost"
                     {...getReactGrabOwnerProps(nextButtonOwnerDescriptor)}
-                    className={cn(headerButtonClassName(), "h-9 w-9 sm:h-7 sm:w-7")}
+                    className={cn(
+                      headerButtonClassName(),
+                      "h-9 w-9 sm:h-7 sm:w-7"
+                    )}
                     onClick={() => {
                       if (canNavigatePreview) {
                         onNext()
@@ -468,7 +488,7 @@ export function WorkspaceAcceleratorStepNodeCard({
                         handleBlockedPreviewAction("preview-close", "close")
                       }}
                       reactGrabOwnerProps={getReactGrabOwnerProps(
-                        closeButtonOwnerDescriptor,
+                        closeButtonOwnerDescriptor
                       )}
                       tutorialCallout={tutorialCallout}
                       variant={variant}
@@ -490,20 +510,22 @@ export function WorkspaceAcceleratorStepNodeCard({
           transition={contentSwapMotion.transition}
           className={cn(
             "w-full min-w-0",
-            embedded && "flex h-full min-h-0 flex-1 flex-col",
+            embedded && "flex h-full min-h-0 flex-1 flex-col"
           )}
         >
           {resolvedSidePanel && !showMobileRailDrawer ? (
-            <div className="grid h-full min-h-0 flex-1 items-stretch grid-cols-1 lg:grid-cols-[minmax(0,1fr)_240px] xl:grid-cols-[minmax(0,1fr)_260px]">
+            <div className="grid h-full min-h-0 flex-1 grid-cols-1 items-stretch lg:grid-cols-[minmax(0,1fr)_240px] xl:grid-cols-[minmax(0,1fr)_260px]">
               <div
                 className={cn(
                   "min-h-0",
-                  immersiveOnboarding || step.stepKind === "assignment" ? "flex h-full flex-col overflow-hidden" : "overflow-y-auto",
+                  immersiveOnboarding || step.stepKind === "assignment"
+                    ? "flex h-full flex-col overflow-hidden"
+                    : "overflow-y-auto"
                 )}
               >
                 {stepBody}
               </div>
-              <aside className="border-border/60 min-h-0 border-t bg-muted/10 p-3 sm:p-4 lg:border-t-0 lg:border-l">
+              <aside className="border-border/60 bg-muted/10 min-h-0 border-t p-3 sm:p-4 lg:border-t-0 lg:border-l">
                 {resolvedSidePanel}
               </aside>
             </div>
@@ -511,8 +533,12 @@ export function WorkspaceAcceleratorStepNodeCard({
             <div
               className={cn(
                 "min-h-0",
-                embedded && !immersiveOnboarding && (step.stepKind === "assignment" ? "flex h-full flex-1 flex-col overflow-hidden" : "overflow-y-auto"),
-                immersiveOnboarding && "flex h-full flex-col overflow-hidden",
+                embedded &&
+                  !immersiveOnboarding &&
+                  (step.stepKind === "assignment"
+                    ? "flex h-full flex-1 flex-col overflow-hidden"
+                    : "overflow-y-auto"),
+                immersiveOnboarding && "flex h-full flex-col overflow-hidden"
               )}
             >
               {stepBody}

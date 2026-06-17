@@ -1,15 +1,18 @@
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
   createDraft,
+  loadRoadmapDraftsFromStorage,
   resolveRoadmapSectionStatus,
 } from "@/components/roadmap/roadmap-editor/helpers"
 import { deriveRoadmapEditorSectionUi } from "@/components/roadmap/roadmap-editor/ui-state"
-import { resolveRoadmapSections, type RoadmapSection, type RoadmapSectionStatus } from "@/lib/roadmap"
+import {
+  resolveRoadmapSections,
+  type RoadmapSection,
+  type RoadmapSectionStatus,
+} from "@/lib/roadmap"
 
-function makeSection(
-  overrides: Partial<RoadmapSection> = {},
-): RoadmapSection {
+function makeSection(overrides: Partial<RoadmapSection> = {}): RoadmapSection {
   const status = overrides.status ?? "not_started"
   return {
     id: "mission",
@@ -38,6 +41,10 @@ function makeSection(
 }
 
 describe("roadmap editor status indicators", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   it("marks a not-started section in progress while it has unsaved draft content", () => {
     const section = makeSection()
     const draft = {
@@ -49,7 +56,10 @@ describe("roadmap editor status indicators", () => {
   })
 
   it("keeps complete sections complete while edits are pending", () => {
-    const section = makeSection({ status: "complete", content: "Published mission." })
+    const section = makeSection({
+      status: "complete",
+      content: "Published mission.",
+    })
     const draft = {
       ...createDraft(section),
       content: "Published mission with a pending edit.",
@@ -88,8 +98,72 @@ describe("roadmap editor status indicators", () => {
         ],
       },
     })
-    const section = sections.find((entry) => entry.id === "mission_vision_values")
+    const section = sections.find(
+      (entry) => entry.id === "mission_vision_values"
+    )
 
     expect(section?.status).toBe("complete")
+  })
+
+  it("does not let stale browser drafts mask newer saved roadmap content", () => {
+    const section = makeSection({
+      id: "fundraising_strategy",
+      title: "Strategy",
+      slug: "fundraising-strategy",
+      status: "complete",
+      content: "Saved fundraising strategy.",
+      lastUpdated: "2026-06-16T06:30:00.000Z",
+    })
+    vi.stubGlobal("window", {
+      localStorage: {
+        getItem: () =>
+          JSON.stringify({
+            version: 1,
+            updatedAt: "2026-06-16T06:00:00.000Z",
+            drafts: {
+              fundraising_strategy: {
+                content: "",
+              },
+            },
+          }),
+      },
+    })
+
+    const drafts = loadRoadmapDraftsFromStorage("roadmap-draft:test", [section])
+
+    expect(drafts.fundraising_strategy.content).toBe(
+      "Saved fundraising strategy."
+    )
+  })
+
+  it("does not let blank browser drafts mask saved complete sections", () => {
+    const section = makeSection({
+      id: "board_handbook",
+      title: "Handbook",
+      slug: "board-handbook",
+      status: "complete",
+      content: "Saved board handbook.",
+    })
+    vi.stubGlobal("window", {
+      localStorage: {
+        getItem: () =>
+          JSON.stringify({
+            version: 1,
+            updatedAt: "2026-06-16T07:00:00.000Z",
+            drafts: {
+              board_handbook: {
+                title: "",
+                subtitle: "",
+                content: "",
+                imageUrl: "",
+              },
+            },
+          }),
+      },
+    })
+
+    const drafts = loadRoadmapDraftsFromStorage("roadmap-draft:test", [section])
+
+    expect(drafts.board_handbook.content).toBe("Saved board handbook.")
   })
 })

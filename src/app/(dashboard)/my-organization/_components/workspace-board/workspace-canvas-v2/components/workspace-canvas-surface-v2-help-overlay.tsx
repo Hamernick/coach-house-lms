@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 
 import GripIcon from "lucide-react/dist/esm/icons/grip"
 import InfoIcon from "lucide-react/dist/esm/icons/info"
+import MousePointer2Icon from "lucide-react/dist/esm/icons/mouse-pointer-2"
 import MoveIcon from "lucide-react/dist/esm/icons/move"
 import PanelLeftOpenIcon from "lucide-react/dist/esm/icons/panel-left-open"
 import XIcon from "lucide-react/dist/esm/icons/x"
@@ -35,9 +36,16 @@ const WORKSPACE_CANVAS_HELP_ITEMS: WorkspaceCanvasHelpItem[] = [
     description: "Drag a card by its header to reposition it on the canvas.",
   },
   {
+    icon: MousePointer2Icon,
+    label: "Select a group",
+    description:
+      "Hold Shift and drag a box around cards or people. Use Meta or Control to add items, then drag one selected item.",
+  },
+  {
     icon: ZoomInIcon,
     label: "Zoom",
-    description: "Scroll or pinch to zoom in and out without leaving the workspace.",
+    description:
+      "Scroll or pinch to zoom in and out without leaving the workspace.",
   },
   {
     icon: PanelLeftOpenIcon,
@@ -55,7 +63,10 @@ export function resolveWorkspaceCanvasHelpTipInitialVisibility() {
     return true
   }
 
-  return window.localStorage.getItem(WORKSPACE_CANVAS_HELP_TIP_STORAGE_KEY) !== "true"
+  return (
+    window.localStorage.getItem(WORKSPACE_CANVAS_HELP_TIP_STORAGE_KEY) !==
+    "true"
+  )
 }
 
 export function WorkspaceCanvasSurfaceV2HelpOverlay({
@@ -86,7 +97,7 @@ export function WorkspaceCanvasSurfaceV2HelpOverlay({
       className={
         integrated
           ? "pointer-events-none relative"
-          : "pointer-events-none absolute right-3 top-3 z-20"
+          : "pointer-events-none absolute top-3 right-3 z-20"
       }
     >
       <div className="relative flex items-center justify-end">
@@ -94,8 +105,8 @@ export function WorkspaceCanvasSurfaceV2HelpOverlay({
           <div
             className={
               integrated
-                ? "pointer-events-auto absolute right-0 top-full mt-2"
-                : "pointer-events-auto absolute right-full top-1/2 mr-2 -translate-y-1/2"
+                ? "pointer-events-auto absolute top-full right-0 mt-2"
+                : "pointer-events-auto absolute top-1/2 right-full mr-2 -translate-y-1/2"
             }
           >
             <div className="bg-primary text-primary-foreground relative flex items-center gap-2 rounded-md px-3 py-1.5 text-xs leading-tight shadow-md">
@@ -107,7 +118,7 @@ export function WorkspaceCanvasSurfaceV2HelpOverlay({
                 variant="ghost"
                 size="icon"
                 aria-label="Close canvas help tooltip"
-                className="ml-auto size-4 shrink-0 rounded-sm p-0 opacity-80 shadow-none transition-opacity hover:bg-transparent hover:text-current hover:opacity-100 focus-visible:ring-2 focus-visible:ring-primary-foreground/70"
+                className="focus-visible:ring-primary-foreground/70 ml-auto size-4 shrink-0 rounded-sm p-0 opacity-80 shadow-none transition-opacity hover:bg-transparent hover:text-current hover:opacity-100 focus-visible:ring-2"
                 onClick={dismissTip}
               >
                 <XIcon className="size-3" aria-hidden />
@@ -117,7 +128,7 @@ export function WorkspaceCanvasSurfaceV2HelpOverlay({
                 className={
                   integrated
                     ? "bg-primary absolute -top-1 right-4 size-2 rotate-45 rounded-[2px]"
-                    : "bg-primary absolute -right-1 top-1/2 size-2 -translate-y-1/2 rotate-45 rounded-[2px]"
+                    : "bg-primary absolute top-1/2 -right-1 size-2 -translate-y-1/2 rotate-45 rounded-[2px]"
                 }
               />
             </div>
@@ -132,13 +143,13 @@ export function WorkspaceCanvasSurfaceV2HelpOverlay({
           <HoverCardTrigger asChild>
             <Button
               type="button"
-              variant="outline"
+              variant="ghost"
               size="icon"
               aria-label="Workspace canvas help"
-              className="pointer-events-auto rounded-full shadow-sm backdrop-blur-sm"
+              className="pointer-events-auto h-9 w-9 rounded-xl"
               onClick={dismissTip}
             >
-              <InfoIcon aria-hidden />
+              <InfoIcon className="h-4 w-4" aria-hidden />
             </Button>
           </HoverCardTrigger>
 
@@ -150,13 +161,13 @@ export function WorkspaceCanvasSurfaceV2HelpOverlay({
             className="pointer-events-auto w-80 rounded-2xl p-0"
           >
             <div className="flex flex-col">
-              <div className="flex flex-col gap-1 border-b border-border/60 px-4 py-3">
-                <p className="text-sm font-semibold text-foreground">
+              <div className="border-border/60 flex flex-col gap-1 border-b px-4 py-3">
+                <p className="text-foreground text-sm font-semibold">
                   Canvas help
                 </p>
-                <p className="text-xs leading-5 text-muted-foreground">
-                  Quick controls for moving around the workspace and opening
-                  tools.
+                <p className="text-muted-foreground text-xs leading-5">
+                  Quick controls for moving around, selecting groups, and
+                  opening tools.
                 </p>
               </div>
 
@@ -166,15 +177,15 @@ export function WorkspaceCanvasSurfaceV2HelpOverlay({
                     key={item.label}
                     className="flex items-start gap-3 rounded-xl px-2 py-2"
                   >
-                    <span className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-muted/40 text-muted-foreground">
+                    <span className="border-border/60 bg-muted/40 text-muted-foreground inline-flex size-8 shrink-0 items-center justify-center rounded-lg border">
                       <item.icon aria-hidden />
                     </span>
 
                     <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                      <p className="text-sm font-medium text-foreground">
+                      <p className="text-foreground text-sm font-medium">
                         {item.label}
                       </p>
-                      <p className="text-xs leading-5 text-muted-foreground">
+                      <p className="text-muted-foreground text-xs leading-5">
                         {item.description}
                       </p>
                     </div>

@@ -49,6 +49,8 @@ export function areWorkspaceAcceleratorRuntimeSnapshotsEqual(
     (left.readinessSummary?.score ?? null) === (right.readinessSummary?.score ?? null) &&
     (left.checklistModuleCount ?? 0) === (right.checklistModuleCount ?? 0) &&
     (left.filteredStepCount ?? 0) === (right.filteredStepCount ?? 0) &&
+    (left.filteredProgressPercent ?? null) ===
+      (right.filteredProgressPercent ?? null) &&
     buildWorkspaceAcceleratorRuntimeStepSignature(left.currentStep) ===
       buildWorkspaceAcceleratorRuntimeStepSignature(right.currentStep)
   )

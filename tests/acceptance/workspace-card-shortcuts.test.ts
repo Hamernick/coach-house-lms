@@ -4,9 +4,7 @@ import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
 
 import { buildWorkspaceCardShortcutItemModels } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-model"
-import {
-  WorkspaceCardShortcutButton,
-} from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button"
+import { WorkspaceCardShortcutButton } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button"
 
 describe("workspace card shortcuts", () => {
   it("does not expose the organization card as a shortcut button", () => {
@@ -17,11 +15,13 @@ describe("workspace card shortcuts", () => {
       onFocusCard: vi.fn(),
     })
 
-    expect(items.some((item) => item.id === "organization-overview")).toBe(false)
+    expect(items.some((item) => item.id === "organization-overview")).toBe(
+      false
+    )
     expect(items.some((item) => item.title === "Organization")).toBe(false)
   })
 
-  it("includes the standalone programs card in the workspace shortcut rail", () => {
+  it("includes the standalone activity card in the workspace shortcut rail", () => {
     const items = buildWorkspaceCardShortcutItemModels({
       hiddenCardIds: [],
       selectedCardId: null,
@@ -30,10 +30,10 @@ describe("workspace card shortcuts", () => {
     })
 
     expect(items.some((item) => item.id === "programs")).toBe(true)
-    expect(items.some((item) => item.title === "Programs")).toBe(true)
+    expect(items.some((item) => item.title === "Activity")).toBe(true)
   })
 
-  it("orders the workspace shortcut buttons to match the organization card rail", () => {
+  it("orders the workspace shortcut buttons while keeping roadmap in the right rail", () => {
     const items = buildWorkspaceCardShortcutItemModels({
       hiddenCardIds: [],
       selectedCardId: null,
@@ -41,11 +41,8 @@ describe("workspace card shortcuts", () => {
       onFocusCard: vi.fn(),
     })
 
-    expect(items.map((item) => item.id)).toEqual([
-      "accelerator",
-      "programs",
-      "roadmap",
-    ])
+    expect(items.map((item) => item.id)).toEqual(["accelerator", "programs"])
+    expect(items.some((item) => item.id === "roadmap")).toBe(false)
   })
 
   it("keeps calendar off the live shortcut rail outside the tutorial", () => {
@@ -70,14 +67,14 @@ describe("workspace card shortcuts", () => {
       onToggle,
       onFocusCard,
       tutorialTargetCardId: "programs",
-      tutorialInstruction: "Click the Programs button and continue.",
+      tutorialInstruction: "Click the Activity button and continue.",
       onTutorialAdvance,
     })
 
     const programsItem = items.find((item) => item.id === "programs")
 
     expect(programsItem?.tutorialCallout?.instruction).toContain(
-      "Programs button",
+      "Activity button"
     )
     programsItem?.onPress()
 
@@ -144,7 +141,26 @@ describe("workspace card shortcuts", () => {
     expect(onFocusCard).toHaveBeenCalledWith("accelerator")
   })
 
-  it("focuses the roadmap instead of toggling it closed from the shortcut rail", () => {
+  it("focuses visible programs instead of toggling them closed from the shortcut rail", () => {
+    const onToggle = vi.fn()
+    const onFocusCard = vi.fn()
+    const items = buildWorkspaceCardShortcutItemModels({
+      hiddenCardIds: [],
+      visibleCardIds: ["organization-overview", "programs", "accelerator"],
+      selectedCardId: "accelerator",
+      onToggle,
+      onFocusCard,
+    })
+
+    const programsItem = items.find((item) => item.id === "programs")
+
+    programsItem?.onPress()
+
+    expect(onToggle).not.toHaveBeenCalled()
+    expect(onFocusCard).toHaveBeenCalledWith("programs")
+  })
+
+  it("does not expose roadmap actions from the shortcut rail", () => {
     const onToggle = vi.fn()
     const onFocusCard = vi.fn()
     const items = buildWorkspaceCardShortcutItemModels({
@@ -155,31 +171,9 @@ describe("workspace card shortcuts", () => {
       onFocusCard,
     })
 
-    const roadmapItem = items.find((item) => item.id === "roadmap")
-
-    roadmapItem?.onPress()
-
+    expect(items.some((item) => item.id === "roadmap")).toBe(false)
     expect(onToggle).not.toHaveBeenCalled()
-    expect(onFocusCard).toHaveBeenCalledWith("roadmap")
-  })
-
-  it("opens the roadmap before focusing it when a legacy hidden state still exists", () => {
-    const onToggle = vi.fn()
-    const onFocusCard = vi.fn()
-    const items = buildWorkspaceCardShortcutItemModels({
-      hiddenCardIds: ["roadmap"],
-      visibleCardIds: ["organization-overview"],
-      selectedCardId: "organization-overview",
-      onToggle,
-      onFocusCard,
-    })
-
-    const roadmapItem = items.find((item) => item.id === "roadmap")
-
-    roadmapItem?.onPress()
-
-    expect(onToggle).toHaveBeenCalledWith("roadmap", { source: "dock" })
-    expect(onFocusCard).toHaveBeenCalledWith("roadmap")
+    expect(onFocusCard).not.toHaveBeenCalled()
   })
 
   it("opens the accelerator before focusing it when a legacy hidden state still exists", () => {
@@ -199,6 +193,25 @@ describe("workspace card shortcuts", () => {
 
     expect(onToggle).toHaveBeenCalledWith("accelerator", { source: "dock" })
     expect(onFocusCard).toHaveBeenCalledWith("accelerator")
+  })
+
+  it("opens hidden programs before focusing them from the shortcut rail", () => {
+    const onToggle = vi.fn()
+    const onFocusCard = vi.fn()
+    const items = buildWorkspaceCardShortcutItemModels({
+      hiddenCardIds: ["programs"],
+      visibleCardIds: ["organization-overview", "accelerator"],
+      selectedCardId: "accelerator",
+      onToggle,
+      onFocusCard,
+    })
+
+    const programsItem = items.find((item) => item.id === "programs")
+
+    programsItem?.onPress()
+
+    expect(onToggle).toHaveBeenCalledWith("programs", { source: "dock" })
+    expect(onFocusCard).toHaveBeenCalledWith("programs")
   })
 
   it("can highlight all shortcut buttons during the tutorial intro step", () => {
@@ -231,11 +244,36 @@ describe("workspace card shortcuts", () => {
           tutorialCallout: null,
           onPress: vi.fn(),
         },
-      }),
+      })
     )
 
     expect(markup).toContain("bg-sky-50/85")
     expect(markup).toContain("dark:bg-sky-500/14")
+  })
+
+  it("matches the viewport control button treatment for shortcut triggers", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(WorkspaceCardShortcutButton, {
+        item: {
+          id: "accelerator",
+          title: "Accelerator",
+          icon: Building2Icon,
+          visible: true,
+          selected: false,
+          comingSoon: false,
+          tutorialHighlighted: false,
+          tutorialCallout: null,
+          onPress: vi.fn(),
+        },
+      })
+    )
+
+    expect(markup).toContain("hover:bg-accent")
+    expect(markup).toContain("hover:text-accent-foreground")
+    expect(markup).toContain("size-9 h-9 w-9 rounded-xl")
+    expect(markup).toContain("h-4 w-4 transition-opacity")
+    expect(markup).not.toContain("bg-secondary")
+    expect(markup).not.toContain("size-10")
   })
 
   it("anchors the accelerator tutorial callout on the right edge of the shortcut button", () => {
@@ -254,10 +292,12 @@ describe("workspace card shortcuts", () => {
           },
           onPress: vi.fn(),
         },
-      }),
+      })
     )
 
-    expect(markup).toContain('style="right:0;top:50%;transform:translate(0px, calc(-50% + 0px))"')
+    expect(markup).toContain(
+      'style="right:0;top:50%;transform:translate(0px, calc(-50% + 0px))"'
+    )
   })
 
   it("tags the shortcut trigger with stable react-grab ownership metadata", () => {
@@ -274,14 +314,14 @@ describe("workspace card shortcuts", () => {
           tutorialCallout: null,
           onPress: vi.fn(),
         },
-      }),
+      })
     )
 
     expect(markup).toContain(
-      'data-react-grab-owner-component="WorkspaceCardShortcutButton"',
+      'data-react-grab-owner-component="WorkspaceCardShortcutButton"'
     )
     expect(markup).toContain(
-      'data-react-grab-owner-source="src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx"',
+      'data-react-grab-owner-source="src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/shortcuts/workspace-card-shortcut-button.tsx"'
     )
   })
 

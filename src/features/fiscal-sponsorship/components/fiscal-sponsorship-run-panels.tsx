@@ -19,31 +19,24 @@ import { cn } from "@/lib/utils"
 import type { FiscalSponsorshipPrototypeStep } from "../types"
 
 const RUN_FILES_USED = [
-  "How it works PDF",
-  "Sponsee application PDF",
-  "Compliance review checklist",
-  "Model C agreement PDF",
-  "Re-grant request PDF",
+  "Fiscal sponsorship handbook",
+  "Application intake",
+  "Model C agreement template",
+  "Grant request requirements",
 ]
 
 const RUN_OUTPUTS = [
-  "Application packet placeholder",
+  "Saved application intake",
   "DocuSeal signing packet",
-  "Executed agreement placeholder",
-  "Re-grant checklist",
-  "Documents folder handoff",
+  "Executed agreement",
+  "Grant request checklist",
+  "Project documents handoff",
 ]
 
-function DetailGroup({
-  items,
-  title,
-}: {
-  items: string[]
-  title: string
-}) {
+function DetailGroup({ items, title }: { items: string[]; title: string }) {
   return (
-    <div className="flex min-w-0 flex-col gap-2 rounded-2xl bg-muted/45 p-3">
-      <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+    <div className="bg-muted/45 flex min-w-0 flex-col gap-2 rounded-2xl p-3">
+      <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
         {title}
       </p>
       <div className="flex min-w-0 flex-col gap-1.5">
@@ -52,8 +45,8 @@ function DetailGroup({
             className="flex min-w-0 items-center justify-between gap-3 text-sm"
             key={item}
           >
-            <span className="min-w-0 truncate text-foreground">{item}</span>
-            <span className="size-1.5 shrink-0 rounded-full bg-primary/55" />
+            <span className="text-foreground min-w-0 truncate">{item}</span>
+            <span className="bg-primary/55 size-1.5 shrink-0 rounded-full" />
           </div>
         ))}
       </div>
@@ -67,14 +60,14 @@ function ActionDetailGroup({
   steps: FiscalSponsorshipPrototypeStep[]
 }) {
   return (
-    <div className="flex min-w-0 flex-col gap-2 rounded-2xl bg-muted/45 p-3">
-      <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+    <div className="bg-muted/45 flex min-w-0 flex-col gap-2 rounded-2xl p-3">
+      <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
         Actions
       </p>
       <div className="flex min-w-0 flex-col gap-1.5">
         {steps.map((step) => (
           <div className="flex min-w-0 items-center gap-2" key={step.id}>
-            <span className="min-w-0 flex-1 truncate text-sm text-foreground">
+            <span className="text-foreground min-w-0 flex-1 truncate text-sm">
               {step.title}
             </span>
             <Badge
@@ -87,7 +80,11 @@ function ActionDetailGroup({
                 step.status === "skipped" && "text-muted-foreground"
               )}
             >
-              {step.status === "complete" ? "Done" : step.status}
+              {step.status === "complete"
+                ? "Done"
+                : step.status === "running"
+                  ? "Running"
+                  : step.badgeLabel}
             </Badge>
           </div>
         ))}
@@ -96,11 +93,7 @@ function ActionDetailGroup({
   )
 }
 
-function RunDetails({
-  steps,
-}: {
-  steps: FiscalSponsorshipPrototypeStep[]
-}) {
+function RunDetails({ steps }: { steps: FiscalSponsorshipPrototypeStep[] }) {
   return (
     <div className="grid gap-3 md:grid-cols-3">
       <DetailGroup items={RUN_FILES_USED} title="Files used" />
@@ -120,7 +113,7 @@ function DetailsDisclosure({
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-medium text-foreground">Run details</p>
+        <p className="text-foreground text-sm font-medium">Run details</p>
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="rounded-full">
             {open ? "Hide details" : "View details"}
@@ -152,11 +145,16 @@ export function FiscalSponsorshipRunningPanel({
   runnableCount: number
   steps: FiscalSponsorshipPrototypeStep[]
 }) {
-  const completedCount = steps.filter((step) => step.status === "complete").length
+  const completedCount = steps.filter(
+    (step) => step.status === "complete"
+  ).length
   const currentStep = steps[activeRunIndex]
   const progressValue =
     runnableCount > 0
-      ? Math.min(100, Math.round(((completedCount + 0.35) / runnableCount) * 100))
+      ? Math.min(
+          100,
+          Math.round(((completedCount + 0.35) / runnableCount) * 100)
+        )
       : 0
 
   return (
@@ -173,7 +171,7 @@ export function FiscalSponsorshipRunningPanel({
           <h2 className="text-2xl font-semibold tracking-tight">
             Action running
           </h2>
-          <p className="max-w-xl text-base text-muted-foreground">
+          <p className="text-muted-foreground max-w-xl text-base">
             {currentStep
               ? `Running ${currentStep.title.toLowerCase()}.`
               : "Preparing the next approved action."}
@@ -191,7 +189,7 @@ export function FiscalSponsorshipRunningPanel({
           <p className="text-sm font-medium">
             Running step {Math.max(activeRunIndex + 1, 1)} of {runnableCount}
           </p>
-          <span className="text-sm text-muted-foreground">
+          <span className="text-muted-foreground text-sm">
             {completedCount} done
           </span>
         </div>
@@ -217,30 +215,36 @@ export function FiscalSponsorshipCompletionPanel({
   onReset: () => void
   steps: FiscalSponsorshipPrototypeStep[]
 }) {
-  const completedCount = steps.filter((step) => step.status === "complete").length
-  const skippedCount = steps.filter((step) => step.status === "skipped").length
+  const completedCount = steps.filter(
+    (step) => step.status === "complete"
+  ).length
 
   return (
     <div
       aria-live="polite"
       className="animate-in fade-in-0 zoom-in-95 bg-background border-border/60 mx-3 rounded-[1.6rem] border p-8 duration-200"
     >
-      <div className="flex size-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+      <div className="bg-primary/10 text-primary flex size-14 items-center justify-center rounded-2xl">
         <CheckIcon className="size-7" aria-hidden />
       </div>
       <div className="mt-7 flex flex-col gap-2">
-        <h2 className="text-2xl font-semibold tracking-tight">Plan executed</h2>
-        <p className="max-w-xl text-base text-muted-foreground">
-          {completedCount} steps ran. {skippedCount} skipped. Output saved to
-          Documents.
+        <h2 className="text-2xl font-semibold tracking-tight">
+          Workflow complete
+        </h2>
+        <p className="text-muted-foreground max-w-xl text-base">
+          {completedCount} steps completed. Output saved to project documents.
         </p>
       </div>
       <div className="mt-6">
         <DetailsDisclosure steps={steps} />
       </div>
-      <Button variant="secondary" className="mt-6 rounded-full" onClick={onReset}>
+      <Button
+        variant="secondary"
+        className="mt-6 rounded-full"
+        onClick={onReset}
+      >
         <RotateCcwIcon data-icon="inline-start" />
-        New plan
+        Reset workflow
       </Button>
     </div>
   )

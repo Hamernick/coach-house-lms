@@ -4,18 +4,14 @@ export {
   WorkspaceAcceleratorHeaderPicker,
   WorkspaceAcceleratorHeaderSummary,
 } from "./public-components"
-export {
-  WorkspaceAcceleratorCardPanel as WorkspaceAcceleratorCardPanelComponent,
-} from "./components/workspace-accelerator-card-panel"
-export {
-  WorkspaceAcceleratorStepNodeCard as WorkspaceAcceleratorStepNodeCardComponent,
-} from "./components/workspace-accelerator-step-node-card"
-export {
-  WorkspaceAcceleratorHeaderPicker as WorkspaceAcceleratorHeaderPickerComponent,
-} from "./components/workspace-accelerator-header-picker"
+export { WorkspaceAcceleratorCardPanel as WorkspaceAcceleratorCardPanelComponent } from "./components/workspace-accelerator-card-panel"
+export { WorkspaceAcceleratorCardProgressSummary } from "./components/workspace-accelerator-card-progress-strip"
+export { WorkspaceAcceleratorStepNodeCard as WorkspaceAcceleratorStepNodeCardComponent } from "./components/workspace-accelerator-step-node-card"
+export { WorkspaceAcceleratorHeaderPicker as WorkspaceAcceleratorHeaderPickerComponent } from "./components/workspace-accelerator-header-picker"
 export { resolveWorkspaceAcceleratorCollapsedCardSize } from "./components/workspace-accelerator-card-panel-support"
 export { useWorkspaceAcceleratorLessonGroupState } from "./components/workspace-accelerator-card-panel-lesson-groups"
 export { canWorkspaceAcceleratorTutorialActivateStep } from "./components/workspace-accelerator-card-tutorial-guards"
+export { resolveWorkspaceAcceleratorModuleStepNavigation } from "./components/workspace-accelerator-module-navigation"
 export { useWorkspaceAcceleratorCardController } from "./hooks/use-workspace-accelerator-card-controller"
 export {
   areWorkspaceAcceleratorRuntimeSnapshotsEqual,

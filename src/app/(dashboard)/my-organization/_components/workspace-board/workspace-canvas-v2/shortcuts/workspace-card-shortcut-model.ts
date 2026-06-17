@@ -15,10 +15,7 @@ import { WORKSPACE_CARD_META } from "../../workspace-board-copy"
 import type { WorkspaceBoardToggleContext } from "../../workspace-board-debug"
 import type { WorkspaceCardId } from "../../workspace-board-types"
 import { resolveWorkspaceCanvasRailCardOrder } from "../contracts/workspace-card-tree-contract"
-import {
-  WORKSPACE_CANVAS_V2_CARD_CONTRACT,
-  type WorkspaceCanvasV2CardId,
-} from "../contracts/workspace-card-contract"
+import type { WorkspaceCanvasV2CardId } from "../contracts/workspace-card-contract"
 
 type WorkspaceShortcutIconMap = Record<WorkspaceCanvasV2CardId, LucideIcon>
 
@@ -33,6 +30,7 @@ const WORKSPACE_SHORTCUT_ICON_BY_ID: WorkspaceShortcutIconMap = {
   calendar: CalendarDaysIcon,
   communications: MegaphoneIcon,
   atlas: MapIcon,
+  "fiscal-sponsorship": BadgeDollarSignIcon,
 }
 
 export type WorkspaceCardShortcutItemModel = {
@@ -43,11 +41,9 @@ export type WorkspaceCardShortcutItemModel = {
   selected: boolean
   comingSoon: boolean
   tutorialHighlighted: boolean
-  tutorialCallout:
-    | {
-        instruction: string
-      }
-    | null
+  tutorialCallout: {
+    instruction: string
+  } | null
   onPress: () => void
 }
 
@@ -55,22 +51,15 @@ const WORKSPACE_SHORTCUT_HIDDEN_CARD_IDS = new Set<WorkspaceCanvasV2CardId>([
   "organization-overview",
 ])
 
-const WORKSPACE_SHORTCUT_FOCUS_OPEN_CARD_IDS = new Set<WorkspaceCanvasV2CardId>([
-  "deck",
-  "accelerator",
-  "roadmap",
-])
-const WORKSPACE_SHORTCUT_COMING_SOON_CARD_IDS = new Set<WorkspaceCanvasV2CardId>([
-  "economic-engine",
-  "communications",
-])
+const WORKSPACE_SHORTCUT_COMING_SOON_CARD_IDS =
+  new Set<WorkspaceCanvasV2CardId>(["economic-engine", "communications"])
 
 function shouldRenderWorkspaceShortcutCard(cardId: WorkspaceCanvasV2CardId) {
   if (WORKSPACE_SHORTCUT_HIDDEN_CARD_IDS.has(cardId)) {
     return false
   }
 
-  if (cardId === "calendar" || cardId === "deck") {
+  if (cardId === "calendar" || cardId === "deck" || cardId === "roadmap") {
     return false
   }
 
@@ -91,7 +80,10 @@ export function buildWorkspaceCardShortcutItemModels({
   hiddenCardIds: WorkspaceCardId[]
   visibleCardIds?: WorkspaceCardId[] | null
   selectedCardId: WorkspaceCardId | null
-  onToggle: (cardId: WorkspaceCardId, context?: WorkspaceBoardToggleContext) => void
+  onToggle: (
+    cardId: WorkspaceCardId,
+    context?: WorkspaceBoardToggleContext
+  ) => void
   onFocusCard: (cardId: WorkspaceCardId) => void
   tutorialTargetCardId?: WorkspaceCardId | null
   tutorialInstruction?: string | null
@@ -101,7 +93,6 @@ export function buildWorkspaceCardShortcutItemModels({
   return resolveWorkspaceCanvasRailCardOrder()
     .filter((cardId) => shouldRenderWorkspaceShortcutCard(cardId))
     .map((cardId) => {
-      const contract = WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId]
       const boardVisible = !hiddenCardIds.includes(cardId)
       const visible = visibleCardIds
         ? visibleCardIds.includes(cardId)
@@ -130,29 +121,9 @@ export function buildWorkspaceCardShortcutItemModels({
             return
           }
 
-          if (contract.rail.rootBehavior === "fixed") {
-            if (!boardVisible) {
-              onToggle(cardId, { source: "dock" })
-            }
-            onFocusCard(cardId)
-            return
-          }
-
-          if (WORKSPACE_SHORTCUT_FOCUS_OPEN_CARD_IDS.has(cardId)) {
-            if (!boardVisible) {
-              onToggle(cardId, { source: "dock" })
-            }
-            onFocusCard(cardId)
-            return
-          }
-
-          if (boardVisible) {
+          if (!boardVisible) {
             onToggle(cardId, { source: "dock" })
-            onFocusCard(contract.rail.parentId ?? "organization-overview")
-            return
           }
-
-          onToggle(cardId, { source: "dock" })
           onFocusCard(cardId)
         },
       }

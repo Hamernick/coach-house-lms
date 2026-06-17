@@ -25,6 +25,7 @@ import {
 } from "./project-starter-data"
 import type { MemberWorkspacePersonOption } from "../types"
 import { buildMemberWorkspaceProjectOverviewContent } from "./project-overview-content"
+import type { MemberWorkspaceProjectOverviewDocumentRecord } from "./project-overview-documents"
 
 export type MemberWorkspaceProjectTaskRecord = Pick<
   Database["public"]["Tables"]["organization_tasks"]["Row"],
@@ -86,7 +87,9 @@ function parseDateOnly(input: string) {
 
 function startOfTodayUtc() {
   const now = new Date()
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
+  )
 }
 
 function toTitleCase(value: string) {
@@ -103,10 +106,12 @@ function normalizeName(value: string) {
 
 function buildUsers(
   memberLabels: string[],
-  assigneeOptions: MemberWorkspacePersonOption[],
+  assigneeOptions: MemberWorkspacePersonOption[]
 ): User[] {
   const assigneeOptionsByName = new Map(
-    assigneeOptions.map((option) => [normalizeName(option.name), option] as const),
+    assigneeOptions.map(
+      (option) => [normalizeName(option.name), option] as const
+    )
   )
 
   return memberLabels.map((name) => ({
@@ -114,7 +119,8 @@ function buildUsers(
       assigneeOptionsByName.get(normalizeName(name))?.id ??
       name.trim().toLowerCase().replace(/\s+/g, "-"),
     name,
-    avatarUrl: assigneeOptionsByName.get(normalizeName(name))?.avatarUrl ?? undefined,
+    avatarUrl:
+      assigneeOptionsByName.get(normalizeName(name))?.avatarUrl ?? undefined,
     role: "PIC",
   }))
 }
@@ -150,7 +156,7 @@ function mapQuickLinkType(value: string): QuickLink["type"] {
 }
 
 function mapProjectStatusToBacklogLabel(
-  status: OrganizationProjectRecord["status"],
+  status: OrganizationProjectRecord["status"]
 ): BacklogSummary["statusLabel"] {
   switch (status) {
     case "active":
@@ -167,7 +173,7 @@ function mapProjectStatusToBacklogLabel(
 }
 
 function mapTaskStatus(
-  status: MemberWorkspaceProjectTaskRecord["status"],
+  status: MemberWorkspaceProjectTaskRecord["status"]
 ): WorkstreamTask["status"] {
   switch (status) {
     case "done":
@@ -180,7 +186,9 @@ function mapTaskStatus(
 }
 
 function mapTimelineStatus(
-  status: MemberWorkspaceProjectTaskRecord["status"] | OrganizationProjectRecord["status"],
+  status:
+    | MemberWorkspaceProjectTaskRecord["status"]
+    | OrganizationProjectRecord["status"]
 ): TimelineTask["status"] {
   switch (status) {
     case "done":
@@ -204,7 +212,10 @@ function buildProjectMeta(project: OrganizationProjectRecord): ProjectMeta {
   }
 }
 
-function buildProjectScope(scopeIn: string[], scopeOut: string[]): ProjectScope {
+function buildProjectScope(
+  scopeIn: string[],
+  scopeOut: string[]
+): ProjectScope {
   return {
     inScope: scopeIn,
     outOfScope: scopeOut,
@@ -214,7 +225,7 @@ function buildProjectScope(scopeIn: string[], scopeOut: string[]): ProjectScope 
 function buildProjectKeyFeatures(
   p0: string[],
   p1: string[],
-  p2: string[],
+  p2: string[]
 ): KeyFeatures {
   return {
     p0,
@@ -223,9 +234,7 @@ function buildProjectKeyFeatures(
   }
 }
 
-function buildProjectTime(
-  project: OrganizationProjectRecord,
-): TimeSummary {
+function buildProjectTime(project: OrganizationProjectRecord): TimeSummary {
   const startDate = parseDateOnly(project.start_date)
   const endDate = parseDateOnly(project.end_date)
   const dayCount = Math.max(differenceInCalendarDays(endDate, startDate) + 1, 1)
@@ -246,7 +255,7 @@ function buildProjectTime(
 
 function buildProjectBacklog(
   project: OrganizationProjectRecord,
-  members: User[],
+  members: User[]
 ): BacklogSummary {
   return {
     statusLabel: mapProjectStatusToBacklogLabel(project.status),
@@ -261,7 +270,7 @@ function buildProjectBacklog(
 function buildProjectWorkstreams(
   project: OrganizationProjectRecord,
   tasks: MemberWorkspaceProjectTaskRecord[],
-  members: User[],
+  members: User[]
 ): WorkstreamGroup[] {
   const groups = new Map<string, WorkstreamTask[]>()
 
@@ -313,7 +322,7 @@ function buildProjectWorkstreams(
 
 function buildProjectTimeline(
   project: OrganizationProjectRecord,
-  tasks: MemberWorkspaceProjectTaskRecord[],
+  tasks: MemberWorkspaceProjectTaskRecord[]
 ): TimelineTask[] {
   if (tasks.length === 0) {
     return [
@@ -337,7 +346,7 @@ function buildProjectTimeline(
 }
 
 function buildProjectNotes(
-  notes: MemberWorkspaceProjectNoteRecord[],
+  notes: MemberWorkspaceProjectNoteRecord[]
 ): ProjectNote[] {
   return notes.map((note) => ({
     id: note.id,
@@ -355,7 +364,7 @@ function buildProjectNotes(
 }
 
 function buildProjectQuickLinks(
-  links: MemberWorkspaceProjectQuickLinkRecord[],
+  links: MemberWorkspaceProjectQuickLinkRecord[]
 ): QuickLink[] {
   return links.map((link) => ({
     id: link.id,
@@ -367,13 +376,15 @@ function buildProjectQuickLinks(
 }
 
 function buildProjectFiles(
-  assets: MemberWorkspaceProjectAssetRecord[],
+  assets: MemberWorkspaceProjectAssetRecord[]
 ): ProjectFile[] {
   return assets.map((asset) => ({
     id: asset.id,
     name: asset.name,
     type: mapQuickLinkType(asset.asset_type),
-    sizeMB: asset.size_bytes ? Number((asset.size_bytes / (1024 * 1024)).toFixed(1)) : 0,
+    sizeMB: asset.size_bytes
+      ? Number((asset.size_bytes / (1024 * 1024)).toFixed(1))
+      : 0,
     url:
       asset.external_url?.trim() ||
       buildProjectAssetOpenPath({
@@ -398,6 +409,7 @@ export function buildMemberWorkspaceProjectDetails({
   quickLinks,
   assets,
   assigneeOptions = [],
+  overviewDocument,
 }: {
   project: OrganizationProjectRecord
   tasks: MemberWorkspaceProjectTaskRecord[]
@@ -405,12 +417,18 @@ export function buildMemberWorkspaceProjectDetails({
   quickLinks?: MemberWorkspaceProjectQuickLinkRecord[]
   assets?: MemberWorkspaceProjectAssetRecord[]
   assigneeOptions?: MemberWorkspacePersonOption[]
+  overviewDocument?: MemberWorkspaceProjectOverviewDocumentRecord | null
 }): ProjectDetails {
   const members = buildUsers(project.member_labels ?? [], assigneeOptions)
   const files = buildProjectFiles(assets ?? [])
   const explicitQuickLinks = buildProjectQuickLinks(quickLinks ?? [])
+  const overviewDocumentHtml =
+    overviewDocument?.document_html?.trim() || project.description?.trim() || ""
   const overview = buildMemberWorkspaceProjectOverviewContent({
-    project,
+    project: {
+      ...project,
+      description: overviewDocumentHtml,
+    },
     tasks,
   })
 
@@ -418,13 +436,14 @@ export function buildMemberWorkspaceProjectDetails({
     id: project.id,
     name: project.name,
     description: overview.description,
+    overviewDocument: overviewDocumentHtml || undefined,
     meta: buildProjectMeta(project),
     scope: buildProjectScope(overview.scopeIn, overview.scopeOut),
     outcomes: overview.outcomes,
     keyFeatures: buildProjectKeyFeatures(
       overview.keyFeaturesP0,
       overview.keyFeaturesP1,
-      overview.keyFeaturesP2,
+      overview.keyFeaturesP2
     ),
     timelineTasks: buildProjectTimeline(project, tasks),
     workstreams: buildProjectWorkstreams(project, tasks, members),

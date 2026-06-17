@@ -29,6 +29,7 @@ export function useWorkspaceCanvasCardDataLookup({
   acceleratorState,
   communications,
   tracker,
+  hiddenCardIds,
   nodes,
   seed,
   organizationEditorData,
@@ -62,6 +63,7 @@ export function useWorkspaceCanvasCardDataLookup({
   acceleratorState: WorkspaceBoardAcceleratorState
   communications: WorkspaceCommunicationsState
   tracker: WorkspaceTrackerState
+  hiddenCardIds: WorkspaceBoardState["hiddenCardIds"]
   nodes: WorkspaceBoardState["nodes"]
   seed: WorkspaceSeedData
   organizationEditorData: WorkspaceOrganizationEditorData
@@ -104,6 +106,7 @@ export function useWorkspaceCanvasCardDataLookup({
         acceleratorState,
         communications,
         tracker,
+        hiddenCardIds,
         nodes,
         seed,
         organizationEditorData,
@@ -139,6 +142,7 @@ export function useWorkspaceCanvasCardDataLookup({
       acceleratorTutorialInteractionPolicy,
       allowEditing,
       communications,
+      hiddenCardIds,
       journeyGuideState,
       nodes,
       onAcceleratorRuntimeActionsChange,

@@ -11,6 +11,7 @@ export type LinkPreviewMetaMap = Record<string, LinkPreviewMeta>
 export type RichTextEditorProps = {
   value: string
   onChange: (value: string) => void
+  ariaLabel?: string
   readOnly?: boolean
   placeholder?: string
   className?: string
@@ -22,7 +23,10 @@ export type RichTextEditorProps = {
   toolbarTrailingActions?: ReactNode
   disableResize?: boolean
   onImageUpload?: (file: File) => Promise<string>
-  onImageUploaded?: (payload: { url: string; file: File }) => void | Promise<void>
+  onImageUploaded?: (payload: {
+    url: string
+    file: File
+  }) => void | Promise<void>
   insertUploadedImage?: boolean
   onImagePickerReady?: (open: (() => void) | null) => void
   toolbarPortalId?: string

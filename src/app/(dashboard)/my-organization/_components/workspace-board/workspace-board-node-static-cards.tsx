@@ -4,12 +4,16 @@ import Image from "next/image"
 import { useEffect, useState } from "react"
 import ImageIcon from "lucide-react/dist/esm/icons/image"
 
-import {
-  normalizeToList,
-} from "@/components/organization/org-profile-card/utils"
+import { normalizeToList } from "@/components/organization/org-profile-card/utils"
 import { GridBackground } from "@/components/ui/grid-background"
 import { WORKSPACE_TEXT_STYLES } from "@/components/workspace/workspace-typography"
 import { Progress } from "@/components/ui/progress"
+import {
+  FiscalSponsorshipWorkspaceCardSummary,
+  type FiscalSponsorshipApplicationPrefill,
+  type FiscalSponsorshipProgramOption,
+  type FiscalSponsorshipProjectWorkflowSummary,
+} from "@/features/fiscal-sponsorship"
 import { cn } from "@/lib/utils"
 
 import type {
@@ -32,6 +36,134 @@ function compactUsd(cents: number) {
 
 function safeText(value: string | null | undefined) {
   return typeof value === "string" ? value : ""
+}
+
+function safeSnapshotText(snapshot: unknown, key: string) {
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
+    return null
+  }
+
+  const value = (snapshot as Record<string, unknown>)[key]
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : null
+}
+
+function safeSnapshotNumber(snapshot: unknown, key: string) {
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
+    return null
+  }
+
+  const value = (snapshot as Record<string, unknown>)[key]
+  const numericValue =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value.replace(/[^\d.-]/g, ""))
+        : Number.NaN
+
+  return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null
+}
+
+function safeSnapshotTextList(snapshot: unknown, key: string) {
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
+    return []
+  }
+
+  const value = (snapshot as Record<string, unknown>)[key]
+  if (!Array.isArray(value)) return []
+
+  return value
+    .map((entry) =>
+      typeof entry === "string" && entry.trim().length > 0 ? entry.trim() : null
+    )
+    .filter((entry): entry is string => Boolean(entry))
+}
+
+function safeBudgetRowText(row: Record<string, unknown>, key: string) {
+  const value = row[key]
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : null
+}
+
+function formatSnapshotBudgetRows(snapshot: unknown) {
+  if (!snapshot || typeof snapshot !== "object" || Array.isArray(snapshot)) {
+    return null
+  }
+
+  const rows = (snapshot as Record<string, unknown>).budgetRows
+  if (!Array.isArray(rows)) return null
+
+  const summaryRows = rows
+    .map((row) => {
+      if (!row || typeof row !== "object" || Array.isArray(row)) return null
+
+      const record = row as Record<string, unknown>
+      const category = safeBudgetRowText(record, "category")
+      const description = safeBudgetRowText(record, "description")
+      const totalCost = safeBudgetRowText(record, "totalCost")
+
+      if (!category && !description && !totalCost) return null
+
+      return [category, description, totalCost ? `$${totalCost}` : null]
+        .filter((part): part is string => Boolean(part))
+        .join(" - ")
+    })
+    .filter((row): row is string => Boolean(row))
+
+  return summaryRows.length > 0 ? summaryRows.join("; ") : null
+}
+
+export function mapWorkspaceProgramsToFiscalSponsorshipPrograms(
+  programs: WorkspaceOrganizationEditorData["programs"] | undefined
+): FiscalSponsorshipProgramOption[] {
+  return (programs ?? []).map((program) => {
+    const budgetUsd = safeSnapshotNumber(program.wizard_snapshot, "budgetUsd")
+    const successOutcomes = safeSnapshotTextList(
+      program.wizard_snapshot,
+      "successOutcomes"
+    )
+
+    return {
+      id: program.id,
+      title: program.title,
+      subtitle: program.subtitle,
+      description:
+        safeSnapshotText(program.wizard_snapshot, "oneSentence") ??
+        program.description,
+      bannerImageUrl: safeSnapshotText(
+        program.wizard_snapshot,
+        "bannerImageUrl"
+      ),
+      imageUrl: program.image_url,
+      location: program.location,
+      locationType: program.location_type,
+      locationUrl: program.location_url,
+      goalCents: program.goal_cents,
+      raisedCents: program.raised_cents,
+      estimatedBudgetCents: budgetUsd
+        ? Math.round(budgetUsd * 100)
+        : program.goal_cents,
+      expenseSummary: formatSnapshotBudgetRows(program.wizard_snapshot),
+      prospectiveFundingSources: safeSnapshotText(
+        program.wizard_snapshot,
+        "fundingSource"
+      ),
+      publicBenefit:
+        successOutcomes.length > 0 ? successOutcomes.join("; ") : null,
+      startDate: program.start_date,
+      endDate: program.end_date,
+      addressCity: program.address_city,
+      addressState: program.address_state,
+      addressCountry: program.address_country,
+      objectKind: safeSnapshotText(program.wizard_snapshot, "objectKind"),
+      focusArea:
+        safeSnapshotText(program.wizard_snapshot, "programType") ??
+        program.features?.[0] ??
+        null,
+    }
+  })
 }
 
 function useImageLoaded(src: string) {
@@ -73,7 +205,8 @@ export function OrganizationOverviewCard({
   const headerImage = useImageLoaded(headerUrl)
   const logoImage = useImageLoaded(logoUrl)
   const displayProgramsCount = resolveOrganizationOverviewDisplayPrograms({
-    programsCount: organizationEditorData?.programs.length ?? seed.programsCount,
+    programsCount:
+      organizationEditorData?.programs.length ?? seed.programsCount,
     legacyProgramsValue: organizationEditorData?.initialProfile.programs,
   })
 
@@ -95,7 +228,7 @@ export function OrganizationOverviewCard({
               sizes="(max-width: 768px) 92vw, (max-width: 1280px) 520px, 760px"
               className={cn(
                 "object-cover object-center transition-opacity duration-300",
-                headerImage.loaded ? "opacity-100" : "opacity-0",
+                headerImage.loaded ? "opacity-100" : "opacity-0"
               )}
               onLoad={() => headerImage.setLoaded(true)}
             />
@@ -103,7 +236,7 @@ export function OrganizationOverviewCard({
               aria-hidden
               className={cn(
                 "from-muted/70 via-muted/40 absolute inset-0 bg-gradient-to-br to-transparent transition-opacity duration-300",
-                headerImage.loaded ? "opacity-0" : "opacity-100",
+                headerImage.loaded ? "opacity-0" : "opacity-100"
               )}
             />
           </>
@@ -124,15 +257,15 @@ export function OrganizationOverviewCard({
                 sizes="44px"
                 className={cn(
                   "object-cover transition-opacity duration-300",
-                  logoImage.loaded ? "opacity-100" : "opacity-0",
+                  logoImage.loaded ? "opacity-100" : "opacity-0"
                 )}
                 onLoad={() => logoImage.setLoaded(true)}
               />
               <div
                 aria-hidden
                 className={cn(
-                  "absolute inset-0 bg-muted/55 transition-opacity duration-300",
-                  logoImage.loaded ? "opacity-0" : "opacity-100",
+                  "bg-muted/55 absolute inset-0 transition-opacity duration-300",
+                  logoImage.loaded ? "opacity-0" : "opacity-100"
                 )}
               />
             </>
@@ -145,8 +278,8 @@ export function OrganizationOverviewCard({
         <div className="min-w-0 space-y-0.5">
           <h3
             className={cn(
-              "line-clamp-2 text-foreground",
-              WORKSPACE_TEXT_STYLES.surfaceTitle,
+              "text-foreground line-clamp-2",
+              WORKSPACE_TEXT_STYLES.surfaceTitle
             )}
           >
             {displayTitle}
@@ -154,7 +287,7 @@ export function OrganizationOverviewCard({
           <p
             className={cn(
               "line-clamp-1",
-              WORKSPACE_TEXT_STYLES.surfaceSubtitle,
+              WORKSPACE_TEXT_STYLES.surfaceSubtitle
             )}
           >
             {displaySubtitle}
@@ -164,7 +297,7 @@ export function OrganizationOverviewCard({
 
       <dl className="border-border/50 grid grid-cols-3 gap-3 border-t pt-3">
         <div className="min-w-0">
-          <dt className={WORKSPACE_TEXT_STYLES.statLabel}>Programs</dt>
+          <dt className={WORKSPACE_TEXT_STYLES.statLabel}>Objects</dt>
           <dd className={cn("mt-1 truncate", WORKSPACE_TEXT_STYLES.statValue)}>
             {displayProgramsCount}
           </dd>
@@ -271,5 +404,29 @@ export function EconomicEngineCard({
       </div>
       <Progress value={progressPercent} className="h-1.5" />
     </div>
+  )
+}
+
+export function WorkspaceBoardFiscalSponsorshipCard({
+  applicationPrefill,
+  fiscalSponsorshipProjectId,
+  fiscalSponsorshipWorkflowSummary,
+  organizationName,
+  programs,
+}: {
+  applicationPrefill?: FiscalSponsorshipApplicationPrefill | null
+  fiscalSponsorshipProjectId?: string | null
+  fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
+  organizationName?: string | null
+  programs?: WorkspaceOrganizationEditorData["programs"]
+}) {
+  return (
+    <FiscalSponsorshipWorkspaceCardSummary
+      applicationPrefill={applicationPrefill}
+      fiscalSponsorshipProjectId={fiscalSponsorshipProjectId}
+      fiscalSponsorshipWorkflowSummary={fiscalSponsorshipWorkflowSummary}
+      organizationName={organizationName}
+      programs={mapWorkspaceProgramsToFiscalSponsorshipPrograms(programs)}
+    />
   )
 }

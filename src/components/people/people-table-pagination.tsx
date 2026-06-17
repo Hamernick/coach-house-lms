@@ -4,23 +4,44 @@ import type { Table as ReactTable } from "@tanstack/react-table"
 
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import { cn } from "@/lib/utils"
 
-import type { PersonRow } from "@/components/people/people-table-types"
-
-type PeopleTablePaginationProps = {
-  table: ReactTable<PersonRow>
+type PeopleTablePaginationProps<TData> = {
+  table: ReactTable<TData>
   canEdit: boolean
   filteredCount: number
+  className?: string
+  showSelectionCount?: boolean
 }
 
-export function PeopleTablePagination({ table, canEdit, filteredCount }: PeopleTablePaginationProps) {
+export function PeopleTablePagination<TData>({
+  table,
+  canEdit,
+  filteredCount,
+  className,
+  showSelectionCount = canEdit,
+}: PeopleTablePaginationProps<TData>) {
+  const pageCount = Math.max(table.getPageCount(), 1)
+
   return (
-    <div className="flex items-center justify-between px-1 text-sm text-muted-foreground">
+    <div
+      className={cn(
+        "text-muted-foreground flex flex-col gap-2 px-1 text-sm sm:flex-row sm:items-center sm:justify-between",
+        className
+      )}
+    >
       <div>
-        {canEdit ? (
+        {showSelectionCount ? (
           <>
-            {table.getFilteredSelectedRowModel().rows.length} of {filteredCount} selected
+            {table.getFilteredSelectedRowModel().rows.length} of {filteredCount}{" "}
+            selected
           </>
         ) : (
           <>
@@ -32,7 +53,10 @@ export function PeopleTablePagination({ table, canEdit, filteredCount }: PeopleT
         <Label htmlFor="rows-per-page" className="text-xs">
           Rows per page
         </Label>
-        <Select value={`${table.getState().pagination.pageSize}`} onValueChange={(value) => table.setPageSize(Number(value))}>
+        <Select
+          value={`${table.getState().pagination.pageSize}`}
+          onValueChange={(value) => table.setPageSize(Number(value))}
+        >
           <SelectTrigger id="rows-per-page" size="sm" className="w-20">
             <SelectValue placeholder={table.getState().pagination.pageSize} />
           </SelectTrigger>
@@ -46,7 +70,7 @@ export function PeopleTablePagination({ table, canEdit, filteredCount }: PeopleT
         </Select>
         <div className="ml-4 inline-flex items-center gap-3">
           <span>
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            Page {table.getState().pagination.pageIndex + 1} of {pageCount}
           </span>
           <div className="inline-flex items-center gap-1">
             <Button
@@ -80,7 +104,7 @@ export function PeopleTablePagination({ table, canEdit, filteredCount }: PeopleT
               variant="outline"
               size="icon"
               className="size-7"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              onClick={() => table.setPageIndex(pageCount - 1)}
               disabled={!table.getCanNextPage()}
             >
               »

@@ -2,6 +2,7 @@ import {
   defaultProgramWizardForm,
   DELIVERY_FORMATS,
   LOCATION_MODES,
+  ORGANIZATION_PRIMARY_OBJECT_KINDS,
   ProgramWizardFormState,
   PROGRAM_TYPES,
 } from "../schema"
@@ -14,20 +15,21 @@ import {
   toStringArray,
   toStringValue,
 } from "./conversions"
-import {
-  computeBudgetBreakdown,
-  normalizeProgramBudgetRows,
-} from "./budget"
+import { computeBudgetBreakdown, normalizeProgramBudgetRows } from "./budget"
 
 export function hydrateFromProgram(
-  program: ProgramWizardProps["program"],
+  program: ProgramWizardProps["program"]
 ): ProgramWizardFormState {
   if (!program) return defaultProgramWizardForm
-  const snapshot = isRecord(program.wizard_snapshot) ? program.wizard_snapshot : {}
+  const snapshot = isRecord(program.wizard_snapshot)
+    ? program.wizard_snapshot
+    : {}
   const participants = isRecord(snapshot)
     ? toStringArray(snapshot.participantReceives)
     : []
-  const outcomes = isRecord(snapshot) ? toStringArray(snapshot.successOutcomes) : []
+  const outcomes = isRecord(snapshot)
+    ? toStringArray(snapshot.successOutcomes)
+    : []
   const staffRolesRaw =
     isRecord(snapshot) && Array.isArray(snapshot.staffRoles)
       ? snapshot.staffRoles
@@ -41,21 +43,28 @@ export function hydrateFromProgram(
     .filter((entry) => entry.role.length > 0)
 
   const features = Array.isArray(program.features) ? program.features : []
+  const snapshotObjectKind = toStringValue(snapshot.objectKind)
   const snapshotProgramType = toStringValue(snapshot.programType)
   const snapshotCoreFormat = toStringValue(snapshot.coreFormat)
 
+  const objectKind = (
+    ORGANIZATION_PRIMARY_OBJECT_KINDS as readonly string[]
+  ).includes(snapshotObjectKind)
+    ? (snapshotObjectKind as ProgramWizardFormState["objectKind"])
+    : "Program"
+
   const programType = (PROGRAM_TYPES as readonly string[]).includes(
-    snapshotProgramType,
+    snapshotProgramType
   )
     ? (snapshotProgramType as ProgramWizardFormState["programType"])
     : "Direct Services"
 
   const coreFormatCandidate = (DELIVERY_FORMATS as readonly string[]).includes(
-    snapshotCoreFormat,
+    snapshotCoreFormat
   )
     ? snapshotCoreFormat
     : features.find((feature) =>
-        (DELIVERY_FORMATS as readonly string[]).includes(feature),
+        (DELIVERY_FORMATS as readonly string[]).includes(feature)
       )
 
   const coreFormat =
@@ -65,12 +74,12 @@ export function hydrateFromProgram(
   const fallbackAddons = features.filter((feature) => feature !== coreFormat)
   const formatAddons = normalizeAddons(
     coreFormat,
-    addonCandidates.length > 0 ? addonCandidates : fallbackAddons,
+    addonCandidates.length > 0 ? addonCandidates : fallbackAddons
   )
 
   const locationModeRaw = toStringValue(snapshot.locationMode)
   const locationMode = (LOCATION_MODES as readonly string[]).includes(
-    locationModeRaw,
+    locationModeRaw
   )
     ? (locationModeRaw as ProgramWizardFormState["locationMode"])
     : program.location_type === "online"
@@ -79,7 +88,7 @@ export function hydrateFromProgram(
 
   const budgetUsd = toNumberValue(
     snapshot.budgetUsd,
-    Math.round((program.goal_cents ?? 0) / 100),
+    Math.round((program.goal_cents ?? 0) / 100)
   )
   const costStaffUsd = toNumberValue(snapshot.costStaffUsd, 0)
   const costSpaceUsd = toNumberValue(snapshot.costSpaceUsd, 0)
@@ -89,11 +98,11 @@ export function hydrateFromProgram(
   const costOtherUsd = toNumberValue(snapshot.costOtherUsd, fallbackOtherCost)
   const raisedUsd = toNumberValue(
     snapshot.raisedUsd,
-    Math.round((program.raised_cents ?? 0) / 100),
+    Math.round((program.raised_cents ?? 0) / 100)
   )
   const budgetRows = normalizeProgramBudgetRows(
     Array.isArray(snapshot.budgetRows) ? snapshot.budgetRows : [],
-    [],
+    []
   )
   const budget = computeBudgetBreakdown({
     budgetRows,
@@ -107,10 +116,17 @@ export function hydrateFromProgram(
   return {
     ...defaultProgramWizardForm,
     title: toStringValue(snapshot.title, toStringValue(program.title)),
-    oneSentence: toStringValue(snapshot.oneSentence, toStringValue(program.description)),
+    oneSentence: toStringValue(
+      snapshot.oneSentence,
+      toStringValue(program.description)
+    ),
     subtitle: toStringValue(snapshot.subtitle, toStringValue(program.subtitle)),
     bannerImageUrl: toStringValue(snapshot.bannerImageUrl),
-    imageUrl: toStringValue(snapshot.imageUrl, toStringValue(program.image_url)),
+    imageUrl: toStringValue(
+      snapshot.imageUrl,
+      toStringValue(program.image_url)
+    ),
+    objectKind,
     programType,
     coreFormat,
     formatAddons,
@@ -118,15 +134,15 @@ export function hydrateFromProgram(
     eligibilityRules: toStringValue(snapshot.eligibilityRules),
     participantReceive1: toStringValue(
       snapshot.participantReceive1,
-      participants[0] ?? "",
+      participants[0] ?? ""
     ),
     participantReceive2: toStringValue(
       snapshot.participantReceive2,
-      participants[1] ?? "",
+      participants[1] ?? ""
     ),
     participantReceive3: toStringValue(
       snapshot.participantReceive3,
-      participants[2] ?? "",
+      participants[2] ?? ""
     ),
     successOutcome1: toStringValue(snapshot.successOutcome1, outcomes[0] ?? ""),
     successOutcome2: toStringValue(snapshot.successOutcome2, outcomes[1] ?? ""),
@@ -135,11 +151,20 @@ export function hydrateFromProgram(
     staffCount: toNumberValue(snapshot.staffCount, 2),
     volunteerCount: toNumberValue(snapshot.volunteerCount, 0),
     staffRoles,
-    startMonth: toStringValue(snapshot.startMonth, toMonthInput(program.start_date)),
-    durationLabel: toStringValue(snapshot.durationLabel, toStringValue(program.duration_label)),
+    startMonth: toStringValue(
+      snapshot.startMonth,
+      toMonthInput(program.start_date)
+    ),
+    durationLabel: toStringValue(
+      snapshot.durationLabel,
+      toStringValue(program.duration_label)
+    ),
     frequency: toStringValue(snapshot.frequency, "Weekly"),
     locationMode,
-    locationDetails: toStringValue(snapshot.locationDetails, toStringValue(program.location)),
+    locationDetails: toStringValue(
+      snapshot.locationDetails,
+      toStringValue(program.location)
+    ),
     budgetRows: budget.rows,
     budgetUsd: budget.totalBudget,
     costStaffUsd: budget.costStaffUsd,
@@ -149,13 +174,16 @@ export function hydrateFromProgram(
     fundingSource: toStringValue(snapshot.fundingSource),
     statusLabel: toStringValue(
       snapshot.statusLabel,
-      toStringValue(program.status_label, "Draft"),
+      toStringValue(program.status_label, "Draft")
     ),
-    ctaLabel: toStringValue(snapshot.ctaLabel, toStringValue(program.cta_label, "Learn more")),
+    ctaLabel: toStringValue(
+      snapshot.ctaLabel,
+      toStringValue(program.cta_label, "Learn more")
+    ),
     ctaUrl: toStringValue(snapshot.ctaUrl, toStringValue(program.cta_url)),
     goalUsd: toNumberValue(
       snapshot.goalUsd,
-      budget.fundraisingTarget || Math.round((program.goal_cents ?? 0) / 100),
+      budget.fundraisingTarget || Math.round((program.goal_cents ?? 0) / 100)
     ),
     raisedUsd: budget.raised,
     features,

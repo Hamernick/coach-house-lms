@@ -1,8 +1,20 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+
 import { describe, expect, it } from "vitest"
 
-import { computeBudgetBreakdown, serializePayload } from "@/components/programs/program-wizard/helpers"
+import {
+  computeBudgetBreakdown,
+  serializePayload,
+} from "@/components/programs/program-wizard/helpers"
 import { defaultProgramWizardForm } from "@/components/programs/program-wizard/schema"
 import { parseErrors } from "@/components/programs/program-wizard/validation-helpers"
+
+const ROOT = process.cwd()
+
+function readSource(relativePath: string) {
+  return readFileSync(join(ROOT, relativePath), "utf8")
+}
 
 describe("program wizard budget flow", () => {
   it("derives total budget and fundraising need from budget-table rows", () => {
@@ -136,5 +148,55 @@ describe("program wizard budget flow", () => {
     expect(payload.wizardSnapshot?.budgetUsd).toBe(17000)
     expect(payload.wizardSnapshot?.goalUsd).toBe(14500)
     expect(payload.wizardSnapshot?.budgetRows).toHaveLength(4)
+  })
+
+  it("uses the stacked budget layout in the wizard instead of a horizontal table scroller", () => {
+    const budgetStepSource = readSource(
+      "src/components/programs/program-wizard/components/step-budget-feasibility.tsx"
+    )
+    const fieldSource = readSource(
+      "src/components/training/module-detail/assignment-form/assignment-budget-table-field.tsx"
+    )
+    const tableSource = readSource(
+      "src/components/training/module-detail/budget-table.tsx"
+    )
+    const stackedRowsSource = readSource(
+      "src/components/training/module-detail/budget-table-stacked-rows.tsx"
+    )
+
+    expect(budgetStepSource).toContain('layout="stacked"')
+    expect(budgetStepSource).toContain(
+      'className="flex w-full max-w-full min-w-0 flex-col gap-4 overflow-x-hidden"'
+    )
+    expect(budgetStepSource).toContain("sticky top-0 z-10")
+    expect(budgetStepSource.indexOf("Total program budget")).toBeLessThan(
+      budgetStepSource.indexOf("<AssignmentBudgetTableField")
+    )
+    expect(budgetStepSource.indexOf("Fundraising need")).toBeLessThan(
+      budgetStepSource.indexOf("<AssignmentBudgetTableField")
+    )
+    expect(budgetStepSource).not.toContain("lg:grid-cols-[1.2fr_0.8fr]")
+    expect(budgetStepSource).not.toContain("grid gap-3 sm:grid-cols-3")
+    expect(budgetStepSource).not.toContain("sm:grid-cols-3")
+    expect(budgetStepSource).not.toContain("sm:grid-cols-2")
+    expect(budgetStepSource).not.toContain('from "@/components/ui/separator"')
+    expect(budgetStepSource).not.toContain("<Separator")
+    expect(fieldSource).toContain('layout?: "grid" | "stacked"')
+    expect(fieldSource).toContain("layout={layout}")
+    expect(fieldSource).toContain('layout === "grid" && isStepper')
+    expect(fieldSource).toContain("overflow-x-hidden")
+    expect(fieldSource).not.toContain("sm:flex-row")
+    expect(fieldSource).not.toContain("sm:w-auto")
+    expect(tableSource).toContain('layout?: "grid" | "stacked"')
+    expect(tableSource).toContain('layout = "grid"')
+    expect(tableSource).toContain('layout === "stacked"')
+    expect(tableSource).toContain("<BudgetTableStackedRows")
+    expect(stackedRowsSource).toContain("BudgetTableStackedRows")
+    expect(stackedRowsSource).toContain(
+      "flex w-full max-w-full min-w-0 flex-col gap-3 overflow-x-hidden"
+    )
+    expect(stackedRowsSource).not.toContain("overflow-auto")
+    expect(stackedRowsSource).not.toContain("minWidth: BUDGET_TABLE_MIN_WIDTH")
+    expect(stackedRowsSource).not.toContain("md:grid-cols")
   })
 })

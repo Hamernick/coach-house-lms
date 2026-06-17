@@ -10,6 +10,7 @@ import {
   buildWorkspaceAcceleratorRuntimeActionsSignature,
   canWorkspaceAcceleratorTutorialActivateStep,
   normalizeWorkspaceAcceleratorCardInput,
+  resolveWorkspaceAcceleratorModuleStepNavigation,
   useWorkspaceAcceleratorCardController,
   useWorkspaceAcceleratorLessonGroupState,
   WorkspaceAcceleratorCardInput,
@@ -33,7 +34,7 @@ type WorkspaceBoardExecutionCardProps = {
   acceleratorInput: WorkspaceAcceleratorCardInput
   onRuntimeChange?: (snapshot: WorkspaceAcceleratorCardRuntimeSnapshot) => void
   onRuntimeActionsChange?: (
-    actions: WorkspaceAcceleratorCardRuntimeActions,
+    actions: WorkspaceAcceleratorCardRuntimeActions
   ) => void
   onRequestOpenStep?: (args: {
     step: WorkspaceAcceleratorCardStep
@@ -42,7 +43,7 @@ type WorkspaceBoardExecutionCardProps = {
   tutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
   tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
   onTutorialActionComplete?: (
-    mode?: "complete" | "complete-and-advance",
+    mode?: "complete" | "complete-and-advance"
   ) => void
 }
 
@@ -51,7 +52,7 @@ type WorkspaceBoardExecutionTab = "roadmap" | "accelerator"
 export type { WorkspaceBoardExecutionTab }
 
 function buildExecutionRuntimeSnapshotSignature(
-  runtimeSnapshot: WorkspaceAcceleratorCardRuntimeSnapshot,
+  runtimeSnapshot: WorkspaceAcceleratorCardRuntimeSnapshot
 ) {
   return JSON.stringify({
     currentStepId: runtimeSnapshot.currentStep?.id ?? null,
@@ -71,7 +72,8 @@ function buildExecutionRuntimeSnapshotSignature(
     selectedLessonGroupLabel: runtimeSnapshot.selectedLessonGroupLabel ?? null,
     lessonGroupOptions:
       runtimeSnapshot.lessonGroupOptions?.map((option) => option.key) ?? [],
-    firstVisibleChecklistStepId: runtimeSnapshot.firstVisibleChecklistStepId ?? null,
+    firstVisibleChecklistStepId:
+      runtimeSnapshot.firstVisibleChecklistStepId ?? null,
     isModuleViewerOpen: runtimeSnapshot.isModuleViewerOpen ?? false,
     openModuleId: runtimeSnapshot.openModuleId ?? null,
     checklistModuleCount: runtimeSnapshot.checklistModuleCount ?? 0,
@@ -92,10 +94,10 @@ export function WorkspaceBoardExecutionCard({
   const router = useRouter()
   const normalizedAcceleratorInput = useMemo(
     () => normalizeWorkspaceAcceleratorCardInput(acceleratorInput),
-    [acceleratorInput],
+    [acceleratorInput]
   )
   const controller = useWorkspaceAcceleratorCardController(
-    normalizedAcceleratorInput,
+    normalizedAcceleratorInput
   )
   const currentStep = controller.currentStep
   const [openModuleId, setOpenModuleId] = useState<string | null>(null)
@@ -107,7 +109,7 @@ export function WorkspaceBoardExecutionCard({
   useEffect(() => {
     const nextModuleId = currentStep?.moduleId ?? null
     setOpenModuleId((previous) =>
-      previous === nextModuleId ? previous : nextModuleId,
+      previous === nextModuleId ? previous : nextModuleId
     )
   }, [currentStep?.moduleId])
 
@@ -136,29 +138,46 @@ export function WorkspaceBoardExecutionCard({
             href: stepHrefOverride ?? currentStep.href,
           }
         : null,
-    [currentStep, stepHrefOverride],
+    [currentStep, stepHrefOverride]
   )
+  const moduleStepNavigation = useMemo(
+    () =>
+      resolveWorkspaceAcceleratorModuleStepNavigation({
+        steps: controller.steps,
+        currentModuleSteps: controller.currentModuleSteps,
+        currentStepId: currentStep?.id,
+      }),
+    [controller.currentModuleSteps, controller.steps, currentStep?.id]
+  )
+  const goPreviousWithinModule = useCallback(() => {
+    if (!moduleStepNavigation.previousStepId) return
+    controller.goToStep(moduleStepNavigation.previousStepId)
+  }, [controller, moduleStepNavigation.previousStepId])
+  const goNextWithinModule = useCallback(() => {
+    if (!moduleStepNavigation.nextStepId) return
+    controller.goToStep(moduleStepNavigation.nextStepId)
+  }, [controller, moduleStepNavigation.nextStepId])
   const runtimeActions = useMemo<WorkspaceAcceleratorCardRuntimeActions>(
     () => ({
-      goPrevious: controller.goPrevious,
-      goNext: controller.goNext,
+      goPrevious: goPreviousWithinModule,
+      goNext: goNextWithinModule,
       markCurrentStepComplete: controller.markCurrentStepComplete,
       selectLessonGroup: handleLessonGroupChange,
     }),
     [
-      controller.goNext,
-      controller.goPrevious,
       controller.markCurrentStepComplete,
+      goNextWithinModule,
+      goPreviousWithinModule,
       handleLessonGroupChange,
-    ],
+    ]
   )
   const runtimeSnapshot = useMemo<WorkspaceAcceleratorCardRuntimeSnapshot>(
     () => ({
       currentStep: runtimeStep,
       currentIndex: controller.currentIndex,
       totalSteps: controller.steps.length,
-      canGoPrevious: controller.canGoPrevious,
-      canGoNext: controller.canGoNext,
+      canGoPrevious: moduleStepNavigation.canGoPrevious,
+      canGoNext: moduleStepNavigation.canGoNext,
       currentModuleStepIndex: controller.currentModuleStepIndex,
       currentModuleStepTotal: Math.max(controller.currentModuleSteps.length, 1),
       currentModuleCompletedCount: controller.currentModuleCompletedCount,
@@ -175,29 +194,29 @@ export function WorkspaceBoardExecutionCard({
       filteredStepCount: filteredSteps.length,
     }),
     [
-      controller.canGoNext,
-      controller.canGoPrevious,
       controller.currentIndex,
       controller.currentModuleCompletedCount,
       controller.currentModuleStepIndex,
       controller.currentModuleSteps.length,
+      controller.steps.length,
       controller.isCurrentModuleCompleted,
       controller.isCurrentStepCompleted,
-      controller.steps.length,
       filteredSteps.length,
       firstVisibleChecklistStepId,
       lessonGroupSummaries,
       checklistModules.length,
+      moduleStepNavigation.canGoNext,
+      moduleStepNavigation.canGoPrevious,
       normalizedAcceleratorInput.readinessSummary,
       openModuleId,
       runtimeStep,
       selectedLessonGroup?.label,
       selectedLessonGroupKey,
-    ],
+    ]
   )
   const runtimeSnapshotSignature = useMemo(
     () => buildExecutionRuntimeSnapshotSignature(runtimeSnapshot),
-    [runtimeSnapshot],
+    [runtimeSnapshot]
   )
   const runtimeActionsSignature = useMemo(
     () =>
@@ -218,35 +237,38 @@ export function WorkspaceBoardExecutionCard({
       runtimeSnapshot.isCurrentStepCompleted,
       runtimeSnapshot.totalSteps,
       selectedLessonGroupKey,
-    ],
+    ]
   )
 
   useEffect(() => {
     if (
       areWorkspaceAcceleratorRuntimeSnapshotsEqual(
         lastRuntimeSnapshotRef.current,
-        runtimeSnapshot,
+        runtimeSnapshot
       )
     ) {
       return
     }
-    if (lastRuntimeSnapshotSignatureRef.current === runtimeSnapshotSignature) return
+    if (lastRuntimeSnapshotSignatureRef.current === runtimeSnapshotSignature)
+      return
     lastRuntimeSnapshotRef.current = runtimeSnapshot
     lastRuntimeSnapshotSignatureRef.current = runtimeSnapshotSignature
     onRuntimeChange?.(runtimeSnapshot)
   }, [onRuntimeChange, runtimeSnapshot, runtimeSnapshotSignature])
 
   useEffect(() => {
-    if (lastRuntimeActionsSignatureRef.current === runtimeActionsSignature) return
+    if (lastRuntimeActionsSignatureRef.current === runtimeActionsSignature)
+      return
     lastRuntimeActionsSignatureRef.current = runtimeActionsSignature
     onRuntimeActionsChange?.(runtimeActions)
   }, [onRuntimeActionsChange, runtimeActions, runtimeActionsSignature])
 
   const roadmapDoneCount = useMemo(
     () =>
-      roadmapSections.filter((section) => resolveRoadmapSectionRowTone(section) === "done")
-        .length,
-    [roadmapSections],
+      roadmapSections.filter(
+        (section) => resolveRoadmapSectionRowTone(section) === "done"
+      ).length,
+    [roadmapSections]
   )
   const roadmapProgressPercent =
     roadmapSections.length === 0
@@ -254,19 +276,20 @@ export function WorkspaceBoardExecutionCard({
       : Math.round((roadmapDoneCount / roadmapSections.length) * 100)
   const acceleratorCompletedStepIds = useMemo(
     () => new Set(controller.completedStepIds),
-    [controller.completedStepIds],
+    [controller.completedStepIds]
   )
   const acceleratorDoneCount = useMemo(
     () =>
-      filteredSteps.filter((step) => acceleratorCompletedStepIds.has(step.id)).length,
-    [acceleratorCompletedStepIds, filteredSteps],
+      filteredSteps.filter((step) => acceleratorCompletedStepIds.has(step.id))
+        .length,
+    [acceleratorCompletedStepIds, filteredSteps]
   )
 
   const handleOpenRoadmapSection = useCallback(
     (section: RoadmapSection) => {
       router.push(getWorkspaceRoadmapSectionPath(section.slug))
     },
-    [router],
+    [router]
   )
   const handleOpenAcceleratorStep = useCallback(
     (step: WorkspaceAcceleratorCardStep) => {
@@ -302,48 +325,47 @@ export function WorkspaceBoardExecutionCard({
       selectedLessonGroupKey,
       stepHrefOverride,
       tutorialInteractionPolicy,
-    ],
+    ]
   )
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      
-        <TabsContent
-          value="roadmap"
-          asChild
-          className="min-h-0 min-w-0 flex-1 data-[state=active]:flex data-[state=active]:flex-col"
-        >
-          <CardContent className="nodrag nopan flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-0 pt-0 pb-0 first:pt-4">
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-              <ExecutionRoadmapPane
-                sections={roadmapSections}
-                doneCount={roadmapDoneCount}
-                progressPercent={roadmapProgressPercent}
-                onOpenSection={handleOpenRoadmapSection}
-              />
-            </div>
-          </CardContent>
-        </TabsContent>
-        <TabsContent
-          value="accelerator"
-          asChild
-          className="min-h-0 min-w-0 flex-1 data-[state=active]:flex data-[state=active]:flex-col"
-        >
-          <CardContent className="nodrag nopan flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-0 pt-0 pb-0 first:pt-4">
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
-              <ExecutionAcceleratorPane
-                selectedLessonGroupLabel={selectedLessonGroup?.label ?? null}
-                doneCount={acceleratorDoneCount}
-                totalCount={filteredSteps.length}
-                progressPercent={filteredProgressPercent}
-                checklistModules={checklistModules}
-                currentStepId={currentStep?.id ?? null}
-                completedStepIds={acceleratorCompletedStepIds}
-                onOpenStep={handleOpenAcceleratorStep}
-              />
-            </div>
-          </CardContent>
-        </TabsContent>
+      <TabsContent
+        value="roadmap"
+        asChild
+        className="min-h-0 min-w-0 flex-1 data-[state=active]:flex data-[state=active]:flex-col"
+      >
+        <CardContent className="nodrag nopan flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-0 pt-0 pb-0 first:pt-4">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+            <ExecutionRoadmapPane
+              sections={roadmapSections}
+              doneCount={roadmapDoneCount}
+              progressPercent={roadmapProgressPercent}
+              onOpenSection={handleOpenRoadmapSection}
+            />
+          </div>
+        </CardContent>
+      </TabsContent>
+      <TabsContent
+        value="accelerator"
+        asChild
+        className="min-h-0 min-w-0 flex-1 data-[state=active]:flex data-[state=active]:flex-col"
+      >
+        <CardContent className="nodrag nopan flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-0 pt-0 pb-0 first:pt-4">
+          <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+            <ExecutionAcceleratorPane
+              selectedLessonGroupLabel={selectedLessonGroup?.label ?? null}
+              doneCount={acceleratorDoneCount}
+              totalCount={filteredSteps.length}
+              progressPercent={filteredProgressPercent}
+              checklistModules={checklistModules}
+              currentStepId={currentStep?.id ?? null}
+              completedStepIds={acceleratorCompletedStepIds}
+              onOpenStep={handleOpenAcceleratorStep}
+            />
+          </div>
+        </CardContent>
+      </TabsContent>
     </div>
   )
 }

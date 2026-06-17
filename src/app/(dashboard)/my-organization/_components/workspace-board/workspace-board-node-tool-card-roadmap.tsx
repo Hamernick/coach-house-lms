@@ -14,12 +14,13 @@ export function WorkspaceBoardRoadmapCard({
   collapsed = false,
 }: WorkspaceBoardRoadmapCardProps) {
   return (
-    <div className="px-1 pb-1.5">
+    <div className="px-1 pb-3">
       <RoadmapNavigatorSection
         sections={sections}
         basePath={WORKSPACE_ROADMAP_PATH}
         showHeader={false}
         collapsed={collapsed}
+        tocRailOffset="0.25rem"
       />
     </div>
   )

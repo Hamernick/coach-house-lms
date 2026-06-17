@@ -1,64 +1,78 @@
 "use client"
 
 import { AcceleratorProgressRail } from "@/components/accelerator/accelerator-progress-rail"
+import {
+  getReactGrabLinkedSurfaceProps,
+  getReactGrabOwnerProps,
+} from "@/components/dev/react-grab-surface"
 import { WorkspaceTutorialCallout } from "@/components/workspace/workspace-tutorial-callout"
 import {
   ACCELERATOR_FUNDABLE_THRESHOLD,
   ACCELERATOR_VERIFIED_THRESHOLD,
 } from "@/lib/accelerator/readiness"
-import type {
-  WorkspaceAcceleratorTutorialCallout,
-} from "../types"
+import type { WorkspaceAcceleratorTutorialCallout } from "../types"
 import type { AcceleratorReadinessSummary } from "@/lib/accelerator/readiness"
 import { cn } from "@/lib/utils"
+
+const WORKSPACE_ACCELERATOR_PROGRESS_STRIP_SOURCE =
+  "src/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip.tsx"
+const WORKSPACE_ACCELERATOR_PROGRESS_SUMMARY_OWNER_ID =
+  "workspace-accelerator-progress-summary"
 
 type WorkspaceAcceleratorCardProgressStripProps = {
   progressPercent: number
   readinessSummary?: AcceleratorReadinessSummary | null
   tutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
+  showMilestones?: boolean
   showMilestoneTooltips?: boolean
+  className?: string
 }
 
-export function WorkspaceAcceleratorCardProgressStrip({
+export function WorkspaceAcceleratorCardProgressPercent({
+  progressPercent,
+  tutorialCallout = null,
+}: Pick<
+  WorkspaceAcceleratorCardProgressStripProps,
+  "progressPercent" | "tutorialCallout"
+>) {
+  return (
+    <span
+      data-slot="workspace-accelerator-progress-percent"
+      className={cn(
+        "text-muted-foreground shrink-0 text-[11px] leading-5 font-semibold tabular-nums",
+        tutorialCallout?.focus === "progress" &&
+          "text-sky-600 dark:text-sky-300"
+      )}
+    >
+      {progressPercent}%
+    </span>
+  )
+}
+
+export function WorkspaceAcceleratorCardProgressRail({
   progressPercent,
   readinessSummary = null,
   tutorialCallout = null,
+  showMilestones = true,
   showMilestoneTooltips = true,
+  className,
 }: WorkspaceAcceleratorCardProgressStripProps) {
-  const content = (
-    <div className="rounded-lg border border-transparent bg-transparent px-0 pt-0 pb-3">
-      <div className="flex flex-col gap-2.5">
-        <div className="flex items-center justify-between gap-2">
-          <p className="truncate text-[15px] leading-5 font-semibold tracking-tight text-foreground">
-            Accelerator
-          </p>
-          <span
-            data-slot="workspace-accelerator-progress-percent"
-            className={cn(
-              "shrink-0 text-[11px] leading-5 font-semibold text-muted-foreground tabular-nums",
-              tutorialCallout?.focus === "progress" &&
-                "text-sky-600 dark:text-sky-300",
-            )}
-          >
-            {progressPercent}%
-          </span>
-        </div>
-        <div className="space-y-2">
-          <AcceleratorProgressRail
-            progressPercent={progressPercent}
-            fundableCheckpoint={ACCELERATOR_FUNDABLE_THRESHOLD}
-            verifiedCheckpoint={ACCELERATOR_VERIFIED_THRESHOLD}
-            fundableChecklist={readinessSummary?.fundableChecklist ?? []}
-            verifiedChecklist={readinessSummary?.verifiedChecklist ?? []}
-            showMilestoneTooltips={showMilestoneTooltips}
-          />
-        </div>
-      </div>
+  const rail = (
+    <div className={cn("space-y-2", className)}>
+      <AcceleratorProgressRail
+        progressPercent={progressPercent}
+        fundableCheckpoint={ACCELERATOR_FUNDABLE_THRESHOLD}
+        verifiedCheckpoint={ACCELERATOR_VERIFIED_THRESHOLD}
+        fundableChecklist={readinessSummary?.fundableChecklist ?? []}
+        verifiedChecklist={readinessSummary?.verifiedChecklist ?? []}
+        showMilestones={showMilestones}
+        showMilestoneTooltips={showMilestoneTooltips}
+      />
     </div>
   )
 
   if (tutorialCallout?.focus !== "progress") {
-    return content
+    return rail
   }
 
   return (
@@ -69,7 +83,100 @@ export function WorkspaceAcceleratorCardProgressStrip({
         indicatorAnchorAlign="start"
         indicatorOffsetX={24}
       />
-      {content}
+      {rail}
+    </div>
+  )
+}
+
+export function WorkspaceAcceleratorCardProgressSummary({
+  progressPercent,
+  readinessSummary = null,
+  tutorialCallout = null,
+  showMilestones = true,
+  showMilestoneTooltips = true,
+  className,
+}: WorkspaceAcceleratorCardProgressStripProps) {
+  return (
+    <div
+      {...getReactGrabOwnerProps({
+        ownerId: WORKSPACE_ACCELERATOR_PROGRESS_SUMMARY_OWNER_ID,
+        component: "WorkspaceAcceleratorCardProgressSummary",
+        source: WORKSPACE_ACCELERATOR_PROGRESS_STRIP_SOURCE,
+        slot: "progress-summary",
+        notes:
+          "Owns the accelerator percent, progress rail, and milestone checkpoint triggers as one progress cluster.",
+      })}
+      className={cn("flex min-w-0 flex-1 flex-col gap-2", className)}
+    >
+      <div
+        {...getReactGrabLinkedSurfaceProps({
+          ownerId: WORKSPACE_ACCELERATOR_PROGRESS_SUMMARY_OWNER_ID,
+          component: "WorkspaceAcceleratorCardProgressSummary",
+          source: WORKSPACE_ACCELERATOR_PROGRESS_STRIP_SOURCE,
+          slot: "progress-percent",
+          surfaceKind: "root",
+        })}
+        className="flex min-w-0 items-center justify-between gap-2"
+      >
+        <p
+          className={cn(
+            "text-sm font-medium tabular-nums",
+            tutorialCallout?.focus === "progress" &&
+              "text-sky-600 dark:text-sky-300"
+          )}
+        >
+          {progressPercent}% complete
+        </p>
+      </div>
+      <div
+        {...getReactGrabLinkedSurfaceProps({
+          ownerId: WORKSPACE_ACCELERATOR_PROGRESS_SUMMARY_OWNER_ID,
+          component: "WorkspaceAcceleratorCardProgressSummary",
+          source: WORKSPACE_ACCELERATOR_PROGRESS_STRIP_SOURCE,
+          slot: "progress-rail",
+          surfaceKind: "root",
+          primitiveImport: "@/components/accelerator/accelerator-progress-rail",
+        })}
+        className="w-full"
+      >
+        <WorkspaceAcceleratorCardProgressRail
+          progressPercent={progressPercent}
+          readinessSummary={readinessSummary}
+          tutorialCallout={tutorialCallout}
+          showMilestones={showMilestones}
+          showMilestoneTooltips={showMilestoneTooltips}
+        />
+      </div>
+    </div>
+  )
+}
+
+export function WorkspaceAcceleratorCardProgressStrip({
+  progressPercent,
+  readinessSummary = null,
+  tutorialCallout = null,
+  showMilestones = true,
+  showMilestoneTooltips = true,
+}: WorkspaceAcceleratorCardProgressStripProps) {
+  return (
+    <div className="rounded-lg border border-transparent bg-transparent px-0 pt-0 pb-3">
+      <div className="flex flex-col gap-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-foreground truncate text-[15px] leading-5 font-semibold tracking-tight">
+            Accelerator
+          </p>
+          <WorkspaceAcceleratorCardProgressPercent
+            progressPercent={progressPercent}
+            tutorialCallout={tutorialCallout}
+          />
+        </div>
+        <WorkspaceAcceleratorCardProgressRail
+          progressPercent={progressPercent}
+          readinessSummary={readinessSummary}
+          showMilestones={showMilestones}
+          showMilestoneTooltips={showMilestoneTooltips}
+        />
+      </div>
     </div>
   )
 }

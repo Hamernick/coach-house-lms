@@ -11,5 +11,8 @@ describe("org chart canvas controls", () => {
     expect(source).not.toContain("Redo")
     expect(source).not.toContain("Reset layout")
     expect(source).not.toContain('variant="outline" size="sm"')
+    expect(source).not.toContain("flex flex-wrap items-center justify-between gap-2")
+    expect(source).not.toContain("Drag to reorganize your chart.")
+    expect(source).not.toContain("Saving…")
   })
 })

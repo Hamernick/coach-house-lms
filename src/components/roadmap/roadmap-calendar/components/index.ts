@@ -1,5 +1,8 @@
 export { CalendarDayWithDot } from "./calendar-day-with-dot"
+export { RoadmapCalendarDayWithEventDots } from "./roadmap-calendar-day-with-event-dots"
 export { RoadmapCalendarDayEventsPanel } from "./roadmap-calendar-day-events-panel"
 export { RoadmapCalendarEventDrawer } from "./roadmap-calendar-event-drawer"
 export { RoadmapCalendarHeader } from "./roadmap-calendar-header"
+export { RoadmapCalendarLegacyThreePanelLayout } from "./roadmap-calendar-legacy-three-panel-layout"
+export { RoadmapCalendarMonthAgendaPanel } from "./roadmap-calendar-month-agenda-panel"
 export { RoadmapCalendarOverviewPanel } from "./roadmap-calendar-overview-panel"

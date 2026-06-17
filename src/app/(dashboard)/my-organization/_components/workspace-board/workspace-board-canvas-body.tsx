@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 
 import { useAppShellRightRailControls } from "@/components/app-shell/right-rail-controls"
 import {
@@ -18,7 +18,6 @@ import { WorkspaceBoardRightRail } from "./workspace-board-right-rail"
 import { resolveWorkspaceJourneyGuideState } from "./workspace-board-journey"
 import { shouldAutoOpenRightRailForWorkspaceTutorialCallout } from "./workspace-board-tutorial-right-rail"
 import type {
-  WorkspaceAutoLayoutMode,
   WorkspaceBoardAcceleratorState,
   WorkspaceBoardOnboardingFlowState,
   WorkspaceBoardState,
@@ -48,7 +47,6 @@ export function WorkspaceBoardCanvasBody({
   journeyGuideState,
   organizationEditorData,
   onInitialOnboardingSubmit,
-  onAutoLayoutModeChange,
   onInvitesChange,
   onSizeChange,
   onCommunicationsChange,
@@ -64,7 +62,6 @@ export function WorkspaceBoardCanvasBody({
   onOnboardingFlowChange,
   onPersistNodePosition,
   onToggleCardVisibility,
-  onResetToBaseLayout,
   onConnectCards,
   onDisconnectConnection,
   onDisconnectAllConnections,
@@ -91,7 +88,6 @@ export function WorkspaceBoardCanvasBody({
   journeyGuideState: ReturnType<typeof resolveWorkspaceJourneyGuideState>
   organizationEditorData: WorkspaceOrganizationEditorData
   onInitialOnboardingSubmit: (form: FormData) => Promise<void>
-  onAutoLayoutModeChange: (mode: WorkspaceAutoLayoutMode) => void
   onInvitesChange: (nextInvites: WorkspaceCollaborationInvite[]) => void
   onSizeChange: (cardId: WorkspaceCardId, size: WorkspaceCardSize) => void
   onCommunicationsChange: (next: WorkspaceCommunicationsState) => void
@@ -108,27 +104,35 @@ export function WorkspaceBoardCanvasBody({
   onPersistNodePosition: (cardId: WorkspaceCardId, x: number, y: number) => void
   onToggleCardVisibility: (
     cardId: WorkspaceCardId,
-    context?: WorkspaceBoardToggleContext,
+    context?: WorkspaceBoardToggleContext
   ) => void
-  onResetToBaseLayout: () => void
   onConnectCards: (source: WorkspaceCardId, target: WorkspaceCardId) => void
   onDisconnectConnection: (connectionId: string) => void
   onDisconnectAllConnections: () => void
   onResetDefaultConnections: () => void
-  onCursorConnectionStateChange: (state: "connecting" | "live" | "degraded") => void
+  onCursorConnectionStateChange: (
+    state: "connecting" | "live" | "degraded"
+  ) => void
   onTutorialCompletionExitHandled: () => void
 }) {
   const rightRailControls = useAppShellRightRailControls()
   const tutorialActive = boardState.onboardingFlow.active
   const tutorialStepIndex = clampWorkspaceCanvasTutorialStepIndex(
-    boardState.onboardingFlow.tutorialStepIndex,
+    boardState.onboardingFlow.tutorialStepIndex
   )
   const tutorialCallout = tutorialActive
     ? resolveWorkspaceCanvasTutorialCallout(
         tutorialStepIndex,
-        boardState.onboardingFlow.openedTutorialStepIds,
+        boardState.onboardingFlow.openedTutorialStepIds
       )
     : null
+  const uiPreferencesScope = useMemo(
+    () => ({
+      orgId: seed.orgId,
+      viewerId: seed.viewerId,
+    }),
+    [seed.orgId, seed.viewerId]
+  )
 
   useEffect(() => {
     if (!shouldAutoOpenRightRailForWorkspaceTutorialCallout(tutorialCallout)) {
@@ -136,6 +140,9 @@ export function WorkspaceBoardCanvasBody({
     }
     rightRailControls?.setRightOpenAuto(true)
   }, [rightRailControls, tutorialCallout])
+
+  const workspaceDataDrawerCanEdit =
+    seed.canEdit || seed.isPlatformAdmin === true
 
   if (initialOnboardingActive) {
     return (
@@ -149,13 +156,13 @@ export function WorkspaceBoardCanvasBody({
   return (
     <>
       <WorkspaceBoardRightRail
-        autoLayoutMode={boardState.autoLayoutMode}
-        canEdit={allowEditing}
         canInvite={seed.canInviteCollaborators}
         members={seed.members}
         invites={invites}
         realtimeState={cursorConnectionState}
         currentUser={rightRailCurrentUser}
+        uiPreferencesScope={uiPreferencesScope}
+        roadmapSections={seed.roadmapSections}
         tutorialTeamAccessCallout={
           tutorialCallout?.kind === "team-access"
             ? {
@@ -164,7 +171,6 @@ export function WorkspaceBoardCanvasBody({
               }
             : null
         }
-        onAutoLayoutModeChange={onAutoLayoutModeChange}
         onInvitesChange={onInvitesChange}
       />
 
@@ -174,6 +180,7 @@ export function WorkspaceBoardCanvasBody({
           organizationEditorData={organizationEditorData}
           boardState={boardState}
           allowEditing={allowEditing}
+          workspaceDataDrawerCanEdit={workspaceDataDrawerCanEdit}
           presentationMode={seed.presentationMode}
           workspaceRoomName={`org:${seed.orgId}:workspace`}
           layoutFitRequestKey={layoutFitRequestKey}
@@ -197,7 +204,6 @@ export function WorkspaceBoardCanvasBody({
           onOnboardingFlowChange={onOnboardingFlowChange}
           onPersistNodePosition={onPersistNodePosition}
           onToggleCardVisibility={onToggleCardVisibility}
-          onResetToBaseLayout={onResetToBaseLayout}
           onConnectCards={onConnectCards}
           onDisconnectConnection={onDisconnectConnection}
           onDisconnectAllConnections={onDisconnectAllConnections}

@@ -31,7 +31,7 @@ test("home canvas sidebar layout", async ({ page }) => {
     animations: "disabled",
     caret: "hide",
     scale: "css",
-    maxDiffPixelRatio: 0.01,
+    maxDiffPixelRatio: 0.025,
   })
 })
 

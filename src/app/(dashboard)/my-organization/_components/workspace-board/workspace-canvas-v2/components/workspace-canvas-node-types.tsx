@@ -6,6 +6,11 @@ import {
   WorkspaceBoardNode,
 } from "../../workspace-board-node"
 import { WorkspaceBoardOnboardingGuideNode } from "../../workspace-board-onboarding-guide-node"
+import { WorkspaceCanvasPersonNode } from "./workspace-canvas-person-node"
+import {
+  WORKSPACE_CANVAS_PERSON_RELATIONSHIP_EDGE_TYPE,
+  WorkspaceCanvasPersonRelationshipEdge,
+} from "./workspace-canvas-person-relationship-edges"
 
 const WorkspaceCanvasTutorialNode = dynamic<
   ComponentProps<
@@ -14,19 +19,22 @@ const WorkspaceCanvasTutorialNode = dynamic<
 >(
   () =>
     import("@/features/workspace-canvas-tutorial").then(
-      (mod) => mod.WorkspaceCanvasTutorialNode,
+      (mod) => mod.WorkspaceCanvasTutorialNode
     ),
   {
     loading: () => null,
-  },
+  }
 )
 
-export const WORKSPACE_CANVAS_V2_NODE_TYPES =
-  Object.freeze({
-    workspace: WorkspaceBoardNode,
-    "accelerator-step": WorkspaceBoardAcceleratorStepNode,
-    "onboarding-guide": WorkspaceBoardOnboardingGuideNode,
-    "workspace-tutorial": WorkspaceCanvasTutorialNode,
-  })
+export const WORKSPACE_CANVAS_V2_NODE_TYPES = Object.freeze({
+  workspace: WorkspaceBoardNode,
+  "accelerator-step": WorkspaceBoardAcceleratorStepNode,
+  "onboarding-guide": WorkspaceBoardOnboardingGuideNode,
+  "workspace-person": WorkspaceCanvasPersonNode,
+  "workspace-tutorial": WorkspaceCanvasTutorialNode,
+})
 
-export const WORKSPACE_CANVAS_V2_EDGE_TYPES = Object.freeze({})
+export const WORKSPACE_CANVAS_V2_EDGE_TYPES = Object.freeze({
+  [WORKSPACE_CANVAS_PERSON_RELATIONSHIP_EDGE_TYPE]:
+    WorkspaceCanvasPersonRelationshipEdge,
+})

@@ -5,8 +5,9 @@ import type { CSSProperties, RefObject } from "react"
 import CircleUserIcon from "lucide-react/dist/esm/icons/circle-user"
 import CreditCardIcon from "lucide-react/dist/esm/icons/credit-card"
 import LogOutIcon from "lucide-react/dist/esm/icons/log-out"
-import MessageSquareIcon from "lucide-react/dist/esm/icons/message-square"
+import ShieldIcon from "lucide-react/dist/esm/icons/shield"
 
+import type { AppShellAccountMenuAction } from "@/components/app-shell/account-menu-actions-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 
@@ -21,6 +22,9 @@ type NavUserMenuContentProps = {
   displayEmail: string
   avatarFallback: string
   isAdmin: boolean
+  showOrgAdmin: boolean
+  canAccessOrgAdmin: boolean
+  accountMenuActions?: AppShellAccountMenuAction[]
   signOutPending: boolean
   onCloseMenu: () => void
   onOpenSettings: () => void
@@ -36,6 +40,9 @@ export function NavUserMenuContent({
   displayEmail,
   avatarFallback,
   isAdmin,
+  showOrgAdmin,
+  canAccessOrgAdmin,
+  accountMenuActions = [],
   signOutPending,
   onCloseMenu,
   onOpenSettings,
@@ -80,14 +87,37 @@ export function NavUserMenuContent({
         <CircleUserIcon className="size-4" />
         Account settings
       </Button>
-      <a
-        href="mailto:joel@coachhousesolutions.org?subject=Coach%20House%20Feedback"
-        className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
-        onClick={onCloseMenu}
-      >
-        <MessageSquareIcon className="size-4" />
-        Submit feedback
-      </a>
+      {showOrgAdmin && canAccessOrgAdmin ? (
+        <Link
+          href="/admin"
+          className="hover:bg-muted flex w-full items-center gap-2 rounded-md px-2 py-2 text-left transition"
+          onClick={onCloseMenu}
+        >
+          <ShieldIcon className="size-4" />
+          Admin
+        </Link>
+      ) : null}
+      {accountMenuActions.map((action) => {
+        const ActionIcon = action.icon
+
+        return (
+          <Button
+            key={action.id}
+            type="button"
+            variant="ghost"
+            className="h-auto w-full justify-start gap-2 rounded-md px-2 py-2 text-left"
+            onClick={() => {
+              onCloseMenu()
+              action.onSelect()
+            }}
+          >
+            {ActionIcon ? (
+              <ActionIcon className="size-4" aria-hidden />
+            ) : null}
+            {action.label}
+          </Button>
+        )
+      })}
       {!isAdmin ? (
         <Link
           href="/billing"

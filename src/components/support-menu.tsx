@@ -3,6 +3,7 @@
 import CalendarCheck from "lucide-react/dist/esm/icons/calendar-check"
 import Mail from "lucide-react/dist/esm/icons/mail"
 
+import { SUPPORT_EMAIL } from "@/components/app-shell/constants"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -23,7 +24,7 @@ type SupportMenuProps = {
 }
 
 export function SupportMenu({
-  email = "joel@coachhousesolutions.org",
+  email = SUPPORT_EMAIL,
   label = "Support",
   buttonVariant = "ghost",
   buttonSize = "sm",
@@ -53,7 +54,7 @@ export function SupportMenu({
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => void schedule()} disabled={pending}>
           <CalendarCheck className="h-4 w-4" aria-hidden />
-          {pending ? "Opening..." : "Book a session"}
+          {pending ? "Opening..." : "Book a meeting"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

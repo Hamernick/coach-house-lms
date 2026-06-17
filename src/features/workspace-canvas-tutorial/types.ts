@@ -11,6 +11,7 @@ export type WorkspaceCanvasTutorialCardId =
   | "communications"
   | "deck"
   | "atlas"
+  | "fiscal-sponsorship"
 
 export type WorkspaceCanvasTutorialStepId =
   | "welcome"
@@ -53,6 +54,7 @@ export type WorkspaceCanvasTutorialCallout =
       cardId: "calendar"
       label: string
       instruction: string
+      requiresAction: boolean
     }
   | {
       kind: "organization-map-button"

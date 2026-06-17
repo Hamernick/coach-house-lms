@@ -40,11 +40,13 @@ const DEFAULT_PRO_INCLUDED_MEETING_URL = "https://calendar.app.google/EKs5A4iaXF
 type ScheduleStubOptions = {
   meetingRequests?: number
   coachingIncludedPurchases?: Array<{ id: string; coaching_included: boolean | null }>
+  subscriptions?: Array<{ status: string; metadata: Record<string, unknown> | null }>
 }
 
 function createScheduleSupabaseStub({
   meetingRequests = 0,
   coachingIncludedPurchases = [{ id: "purchase-1", coaching_included: true }],
+  subscriptions = [],
 }: ScheduleStubOptions = {}) {
   const organizationsMaybeSingle = vi.fn().mockResolvedValue({
     data: { profile: { meeting_requests: meetingRequests } },
@@ -76,7 +78,7 @@ function createScheduleSupabaseStub({
   }
 
   const subscriptionsReturns = vi.fn().mockResolvedValue({
-    data: [],
+    data: subscriptions,
     error: null,
   })
   const subscriptionsTable = {
@@ -116,12 +118,18 @@ function createScheduleSupabaseStub({
 describe("coaching schedule route", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    delete process.env.NEXT_PUBLIC_MEETING_JOEL_FREE_URL
+    delete process.env.NEXT_PUBLIC_MEETING_JOEL_DISCOUNTED_URL
+    delete process.env.NEXT_PUBLIC_MEETING_JOEL_FULL_URL
+    delete process.env.NEXT_PUBLIC_MEETING_PAULA_FREE_URL
+    delete process.env.NEXT_PUBLIC_MEETING_PAULA_DISCOUNTED_URL
+    delete process.env.NEXT_PUBLIC_MEETING_PAULA_FULL_URL
     canEditOrganizationMock.mockReturnValue(true)
     resolveActiveOrganizationMock.mockResolvedValue({ orgId: "org-1", role: "owner" })
     createNotificationMock.mockResolvedValue({ id: "notif-1" })
   })
 
-  it("uses the Pro included default URL for free tier and increments usage", async () => {
+  it("uses the Pro included default URL for free tier without consuming a credit", async () => {
     const { supabase, organizationsUpsert } = createScheduleSupabaseStub({
       meetingRequests: 0,
       coachingIncludedPurchases: [{ id: "purchase-1", coaching_included: true }],
@@ -135,28 +143,49 @@ describe("coaching schedule route", () => {
     expect(json).toMatchObject({
       tier: "free",
       url: DEFAULT_PRO_INCLUDED_MEETING_URL,
-      remaining: 3,
+      remaining: 4,
     })
-    expect(organizationsUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        user_id: "org-1",
-        profile: expect.objectContaining({
-          meeting_requests: 1,
-        }),
-      }),
-    )
+    expect(organizationsUpsert).not.toHaveBeenCalled()
     expect(createNotificationMock).toHaveBeenCalledWith(
       supabase,
       expect.objectContaining({
-        metadata: { tier: "free" },
+        metadata: { tier: "free", coach: "joel" },
       }),
     )
   })
 
-  it("routes to discounted tier after included sessions are exhausted", async () => {
+  it("routes non-Operations users to full rate after included sessions are exhausted", async () => {
     const { supabase, organizationsUpsert } = createScheduleSupabaseStub({
       meetingRequests: 4,
       coachingIncludedPurchases: [{ id: "purchase-1", coaching_included: true }],
+    })
+    createSupabaseServerClientMock.mockResolvedValue(supabase)
+
+    const response = await GET(new Request("http://localhost/api/meetings/schedule"))
+    const json = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(json).toMatchObject({
+      tier: "full",
+      url: "https://full.example/booking",
+      remaining: 0,
+    })
+    expect(organizationsUpsert).not.toHaveBeenCalled()
+  })
+
+  it("routes Operations Support users to discounted tier after included sessions are exhausted", async () => {
+    const { supabase, organizationsUpsert } = createScheduleSupabaseStub({
+      meetingRequests: 4,
+      coachingIncludedPurchases: [{ id: "purchase-1", coaching_included: true }],
+      subscriptions: [
+        {
+          status: "active",
+          metadata: {
+            planName: "Operations Support",
+            plan_tier: "operations_support",
+          },
+        },
+      ],
     })
     createSupabaseServerClientMock.mockResolvedValue(supabase)
 
@@ -169,14 +198,7 @@ describe("coaching schedule route", () => {
       url: "https://discounted.example/booking",
       remaining: 0,
     })
-    expect(organizationsUpsert).toHaveBeenCalledWith(
-      expect.objectContaining({
-        user_id: "org-1",
-        profile: expect.objectContaining({
-          meeting_requests: 4,
-        }),
-      }),
-    )
+    expect(organizationsUpsert).not.toHaveBeenCalled()
   })
 
   it("routes users without included coaching to the full-rate link", async () => {
@@ -193,6 +215,26 @@ describe("coaching schedule route", () => {
     expect(json).toMatchObject({
       tier: "full",
       url: "https://full.example/booking",
+      remaining: null,
+    })
+  })
+
+  it("uses coach-specific links when configured", async () => {
+    process.env.NEXT_PUBLIC_MEETING_PAULA_FULL_URL = "https://paula.example/full"
+    const { supabase } = createScheduleSupabaseStub({
+      meetingRequests: 0,
+      coachingIncludedPurchases: [],
+    })
+    createSupabaseServerClientMock.mockResolvedValue(supabase)
+
+    const response = await GET(new Request("http://localhost/api/meetings/schedule?coach=paula"))
+    const json = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(json).toMatchObject({
+      coach: "paula",
+      tier: "full",
+      url: "https://paula.example/full",
       remaining: null,
     })
   })

@@ -73,7 +73,7 @@ describe("workspace accelerator tutorial panel state", () => {
       resolveWorkspaceAcceleratorModuleStepNavigation({
         currentModuleSteps: [...moduleSteps],
         currentStepId: "need:video",
-      }),
+      })
     ).toMatchObject({
       canGoPrevious: false,
       canGoNext: true,
@@ -85,7 +85,7 @@ describe("workspace accelerator tutorial panel state", () => {
       resolveWorkspaceAcceleratorModuleStepNavigation({
         currentModuleSteps: [...moduleSteps],
         currentStepId: "need:assignment",
-      }),
+      })
     ).toMatchObject({
       canGoPrevious: true,
       canGoNext: false,
@@ -94,7 +94,7 @@ describe("workspace accelerator tutorial panel state", () => {
     })
   })
 
-  it("keeps the Need videos adjacent without routing through homework", () => {
+  it("keeps arrow navigation inside the current module before Need video shortcuts", () => {
     const needVideo = {
       id: "what-is-the-need:video",
       moduleId: "module-need",
@@ -156,19 +156,40 @@ describe("workspace accelerator tutorial panel state", () => {
       durationMinutes: null,
       stepSequenceIndex: 2,
     } as const
-    const steps = [
-      needVideo,
-      needAssignment,
-      aiNeedVideo,
-      aiNeedAssignment,
-    ]
+    const steps = [needVideo, needAssignment, aiNeedVideo, aiNeedAssignment]
 
     expect(
       resolveWorkspaceAcceleratorModuleStepNavigation({
         steps,
         currentModuleSteps: [needVideo, needAssignment],
         currentStepId: "what-is-the-need:video",
-      }),
+      })
+    ).toMatchObject({
+      canGoPrevious: false,
+      canGoNext: true,
+      previousStepId: null,
+      nextStepId: "what-is-the-need:assignment",
+    })
+
+    expect(
+      resolveWorkspaceAcceleratorModuleStepNavigation({
+        steps,
+        currentModuleSteps: [aiNeedVideo, aiNeedAssignment],
+        currentStepId: "ai-the-need:video",
+      })
+    ).toMatchObject({
+      canGoPrevious: true,
+      canGoNext: true,
+      previousStepId: "what-is-the-need:video",
+      nextStepId: "ai-the-need:assignment",
+    })
+
+    expect(
+      resolveWorkspaceAcceleratorModuleStepNavigation({
+        steps,
+        currentModuleSteps: [needVideo],
+        currentStepId: "what-is-the-need:video",
+      })
     ).toMatchObject({
       canGoPrevious: false,
       canGoNext: true,
@@ -179,14 +200,14 @@ describe("workspace accelerator tutorial panel state", () => {
     expect(
       resolveWorkspaceAcceleratorModuleStepNavigation({
         steps,
-        currentModuleSteps: [aiNeedVideo, aiNeedAssignment],
+        currentModuleSteps: [aiNeedVideo],
         currentStepId: "ai-the-need:video",
-      }),
+      })
     ).toMatchObject({
       canGoPrevious: true,
-      canGoNext: true,
+      canGoNext: false,
       previousStepId: "what-is-the-need:video",
-      nextStepId: "ai-the-need:assignment",
+      nextStepId: null,
     })
   })
 
@@ -196,9 +217,9 @@ describe("workspace accelerator tutorial panel state", () => {
         stepId: "workspace-onboarding-welcome:lesson",
         moduleId: "workspace-onboarding-welcome",
         lessonGroupKey: "formation",
-      }),
+      })
     ).toBe(
-      "/workspace/accelerator?step=workspace-onboarding-welcome%3Alesson&module=workspace-onboarding-welcome&group=formation",
+      "/workspace/accelerator?step=workspace-onboarding-welcome%3Alesson&module=workspace-onboarding-welcome&group=formation"
     )
 
     expect(
@@ -206,7 +227,7 @@ describe("workspace accelerator tutorial panel state", () => {
         stepId: null,
         moduleId: null,
         lessonGroupKey: null,
-      }),
+      })
     ).toBe("/workspace/accelerator")
   })
 
@@ -214,7 +235,7 @@ describe("workspace accelerator tutorial panel state", () => {
     expect(
       shouldWorkspaceAcceleratorTutorialKeepModuleViewerOpen({
         tutorialCallout: null,
-      }),
+      })
     ).toBe(false)
     expect(
       shouldWorkspaceAcceleratorTutorialKeepModuleViewerOpen({
@@ -223,7 +244,7 @@ describe("workspace accelerator tutorial panel state", () => {
           title: "First module",
           instruction: "Click the first module step here to continue.",
         },
-      }),
+      })
     ).toBe(false)
     expect(
       shouldWorkspaceAcceleratorTutorialKeepModuleViewerOpen({
@@ -232,7 +253,7 @@ describe("workspace accelerator tutorial panel state", () => {
           title: "Class picker",
           instruction: "Choose a class track here.",
         },
-      }),
+      })
     ).toBe(false)
     expect(
       shouldWorkspaceAcceleratorTutorialKeepModuleViewerOpen({
@@ -241,24 +262,24 @@ describe("workspace accelerator tutorial panel state", () => {
           title: "Close module",
           instruction: "Click here to close this module and return.",
         },
-      }),
+      })
     ).toBe(true)
     expect(
       shouldWorkspaceAcceleratorTutorialKeepModuleViewerOpen({
         tutorialCallout: null,
         tutorialMode: "module-preview",
-      }),
+      })
     ).toBe(true)
   })
 
   it("uses the embedded footer continue button as a tutorial next action only in module-preview mode", () => {
     expect(
-      shouldWorkspaceAcceleratorTutorialAdvanceFromFooterContinue(null),
+      shouldWorkspaceAcceleratorTutorialAdvanceFromFooterContinue(null)
     ).toBe(false)
     expect(
       shouldWorkspaceAcceleratorTutorialAdvanceFromFooterContinue(
-        "module-preview",
-      ),
+        "module-preview"
+      )
     ).toBe(true)
   })
 
@@ -266,7 +287,7 @@ describe("workspace accelerator tutorial panel state", () => {
     const firstModuleCallout = {
       focus: "first-module" as const,
       title: "First module",
-      instruction: "Click the Welcome module here to continue.",
+      instruction: "Click the Organization setup module here to continue.",
     }
 
     expect(
@@ -274,9 +295,9 @@ describe("workspace accelerator tutorial panel state", () => {
         tutorialCallout: firstModuleCallout,
         pendingAdvance: true,
         isModuleViewerOpen: false,
-        currentStepId: "welcome-step",
-        tutorialTargetStepId: "welcome-step",
-      }),
+        currentStepId: "organization-setup-step",
+        tutorialTargetStepId: "organization-setup-step",
+      })
     ).toBe(false)
 
     expect(
@@ -285,8 +306,8 @@ describe("workspace accelerator tutorial panel state", () => {
         pendingAdvance: true,
         isModuleViewerOpen: true,
         currentStepId: "other-step",
-        tutorialTargetStepId: "welcome-step",
-      }),
+        tutorialTargetStepId: "organization-setup-step",
+      })
     ).toBe(false)
 
     expect(
@@ -294,9 +315,9 @@ describe("workspace accelerator tutorial panel state", () => {
         tutorialCallout: firstModuleCallout,
         pendingAdvance: true,
         isModuleViewerOpen: true,
-        currentStepId: "welcome-step",
-        tutorialTargetStepId: "welcome-step",
-      }),
+        currentStepId: "organization-setup-step",
+        tutorialTargetStepId: "organization-setup-step",
+      })
     ).toBe(true)
   })
 
@@ -304,7 +325,7 @@ describe("workspace accelerator tutorial panel state", () => {
     expect(
       shouldWorkspaceAcceleratorSyncModuleViewerSize({
         tutorialCallout: null,
-      }),
+      })
     ).toBe(true)
     expect(
       shouldWorkspaceAcceleratorSyncModuleViewerSize({
@@ -313,13 +334,13 @@ describe("workspace accelerator tutorial panel state", () => {
           title: "Module preview",
           instruction: "Preview this module before continuing.",
         },
-      }),
+      })
     ).toBe(false)
     expect(
       shouldWorkspaceAcceleratorSyncModuleViewerSize({
         tutorialCallout: null,
         tutorialMode: "module-preview",
-      }),
+      })
     ).toBe(false)
   })
 
@@ -328,19 +349,19 @@ describe("workspace accelerator tutorial panel state", () => {
       resolveWorkspaceAcceleratorCollapsedCardSize({
         currentSize: "lg",
         previousCollapsedSize: null,
-      }),
+      })
     ).toBe("sm")
     expect(
       resolveWorkspaceAcceleratorCollapsedCardSize({
         currentSize: "lg",
         previousCollapsedSize: "md",
-      }),
+      })
     ).toBe("md")
     expect(
       resolveWorkspaceAcceleratorCollapsedCardSize({
         currentSize: "sm",
         previousCollapsedSize: null,
-      }),
+      })
     ).toBe("sm")
   })
 
@@ -402,8 +423,74 @@ describe("workspace accelerator tutorial panel state", () => {
             },
           },
         ],
-      }),
+      })
     ).toBe("https://cdn.example.com/welcome.mp4")
+  })
+
+  it("keeps embedded accelerator progress out of the body so the frame header owns it", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(
+        RightRailProvider,
+        null,
+        React.createElement(WorkspaceAcceleratorCardPanel, {
+          input: {
+            steps: [
+              {
+                id: "formation-intro:video",
+                moduleId: "formation-intro",
+                moduleTitle: "Formation intro",
+                stepKind: "video",
+                stepTitle: "Video",
+                stepDescription: null,
+                href: "/accelerator/class/formation/module/intro",
+                status: "in_progress",
+                stepSequenceIndex: 1,
+                stepSequenceTotal: 2,
+                moduleSequenceIndex: 1,
+                moduleSequenceTotal: 2,
+                groupTitle: "Formation",
+                videoUrl: "https://cdn.example.com/formation.mp4",
+                durationMinutes: 5,
+                resources: [],
+                hasAssignment: false,
+                hasDeck: false,
+              },
+              {
+                id: "budgeting:video",
+                moduleId: "budgeting",
+                moduleTitle: "Budgeting",
+                stepKind: "video",
+                stepTitle: "Video",
+                stepDescription: null,
+                href: "/accelerator/class/strategic-foundations/module/budgeting",
+                status: "in_progress",
+                stepSequenceIndex: 2,
+                stepSequenceTotal: 2,
+                moduleSequenceIndex: 2,
+                moduleSequenceTotal: 2,
+                groupTitle: "Strategic Foundations",
+                videoUrl: "https://cdn.example.com/budgeting.mp4",
+                durationMinutes: 7,
+                resources: [],
+                hasAssignment: false,
+                hasDeck: false,
+              },
+            ],
+            size: "sm",
+            readinessSummary: null,
+            allowAutoResize: false,
+            initialCurrentStepId: "budgeting:video",
+            initialCompletedStepIds: ["formation-intro:video"],
+          },
+        })
+      )
+    )
+
+    expect(markup).toContain("Strategic Foundations")
+    expect(markup).not.toContain(
+      'data-slot="workspace-accelerator-progress-percent"'
+    )
+    expect(markup).not.toContain(">Accelerator</p>")
   })
 
   it("keeps the fullscreen accelerator panel on a full-height flex column for immersive onboarding routes", () => {
@@ -451,17 +538,20 @@ describe("workspace accelerator tutorial panel state", () => {
             readinessSummary: null,
             allowAutoResize: false,
             storageKey: "org:viewer",
-            initialCurrentStepId: "workspace-onboarding-organization-setup:lesson",
+            initialCurrentStepId:
+              "workspace-onboarding-organization-setup:lesson",
             initialCompletedStepIds: [],
             onWorkspaceOnboardingSubmit: async () => undefined,
           },
           presentationMode: "fullscreen-route",
           initialModuleViewerOpen: true,
-        }),
-      ),
+        })
+      )
     )
 
-    expect(markup).toContain('class="relative flex h-full min-h-0 flex-1 flex-col"')
+    expect(markup).toContain(
+      'class="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden"'
+    )
     expect(markup).toContain('class="grid min-h-0 flex-1 gap-0 grid-cols-1"')
   })
 })

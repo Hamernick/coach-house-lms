@@ -33,14 +33,16 @@ function resolveNodeMeasuredDimension(value: unknown): number | null {
 }
 
 export function hasRenderableNodeBounds(
-  node: ReturnType<ReactFlowInstance["getNodes"]>[number],
+  node: ReturnType<ReactFlowInstance["getNodes"]>[number]
 ) {
-  const measured = (node as {
-    measured?: {
-      width?: number
-      height?: number
+  const measured = (
+    node as {
+      measured?: {
+        width?: number
+        height?: number
+      }
     }
-  }).measured
+  ).measured
   const width =
     resolveNodeMeasuredDimension(measured?.width) ??
     resolveNodeMeasuredDimension(node.width)
@@ -63,6 +65,7 @@ export function useWorkspaceCanvasFitEffects({
   sceneFitOptions,
   acceleratorFocusOptions,
   focusCardOptions,
+  suppressInitialFit,
 }: {
   flowInstanceRef: MutableRefObject<ReactFlowInstance | null>
   isFlowReady: boolean
@@ -76,8 +79,10 @@ export function useWorkspaceCanvasFitEffects({
   sceneFitOptions: WorkspaceCanvasCameraFitOptions
   acceleratorFocusOptions: WorkspaceCanvasCameraFitOptions
   focusCardOptions: WorkspaceCanvasCameraFitOptions
+  suppressInitialFit?: boolean
 }) {
   useEffect(() => {
+    if (suppressInitialFit) return
     if (tutorialSceneFitActive) return
     if (!isFlowReady) return
     if (didInitialFitRef.current) return
@@ -114,6 +119,7 @@ export function useWorkspaceCanvasFitEffects({
     isFlowReady,
     layoutFitOptions,
     sceneFitOptions,
+    suppressInitialFit,
     tutorialSceneFitActive,
     visibleNodeIds,
   ])
@@ -123,6 +129,7 @@ export function useWorkspaceCanvasFitEffects({
     const nextCount = visibleNodeIds.length
     previousVisibleNodeCountRef.current = nextCount
 
+    if (suppressInitialFit) return
     if (tutorialSceneFitActive) return
     if (!isFlowReady) return
     if (previousCount !== 0 || nextCount <= 0) return
@@ -158,6 +165,7 @@ export function useWorkspaceCanvasFitEffects({
     layoutFitOptions,
     previousVisibleNodeCountRef,
     sceneFitOptions,
+    suppressInitialFit,
     tutorialSceneFitActive,
     visibleNodeIds,
   ])
@@ -190,7 +198,7 @@ export function useWorkspaceCanvasFitEffects({
         {
           requestKey: layoutFitRequestKey,
           nodeCount: result.nodeCount,
-        },
+        }
       )
     })
   }, [
@@ -238,8 +246,7 @@ export function useWorkspaceCanvasFocusRequestEffects({
     if (tutorialSceneFitActive) return
     if (acceleratorFocusRequestKey <= 0) return
     if (
-      acceleratorFocusRequestKey <=
-      handledAcceleratorFocusRequestKeyRef.current
+      acceleratorFocusRequestKey <= handledAcceleratorFocusRequestKeyRef.current
     ) {
       return
     }
@@ -268,7 +275,7 @@ export function useWorkspaceCanvasFocusRequestEffects({
         {
           requestKey: acceleratorFocusRequestKey,
           nodeCount: result.nodeCount,
-        },
+        }
       )
     })
   }, [
@@ -317,7 +324,7 @@ export function useWorkspaceCanvasFocusRequestEffects({
           cardId: focusCardRequest.cardId,
           nodeCount: result.nodeCount,
           reason: "focus_card",
-        },
+        }
       )
     })
   }, [

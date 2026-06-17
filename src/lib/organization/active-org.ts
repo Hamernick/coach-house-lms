@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import { cache } from "react"
 
 import type { Database } from "@/lib/supabase"
+import { readActiveOrganizationCookie } from "./active-org-cookie"
 
 export type OrganizationMemberRole = "owner" | "admin" | "staff" | "board" | "member"
 
@@ -90,6 +91,9 @@ export async function resolveActiveOrganization(
     preferredOrgId?: string | null
   },
 ): Promise<ActiveOrganization> {
-  const preferredOrgId = options?.preferredOrgId?.trim() ?? null
+  const preferredOrgId =
+    options && "preferredOrgId" in options
+      ? options.preferredOrgId?.trim() || null
+      : await readActiveOrganizationCookie().catch(() => null)
   return resolveActiveOrganizationCached(supabase, userId, preferredOrgId)
 }

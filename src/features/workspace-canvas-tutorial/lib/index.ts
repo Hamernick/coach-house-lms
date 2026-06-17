@@ -35,13 +35,11 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     sceneId: "overview",
     title: "Map",
     message:
-      "Use the new Map button in the Organization header to open the public map card without leaving the workspace.",
-    targetCardId: null,
+      "The Organization card includes the Map entry point, so you can review public-map readiness without leaving the workspace.",
+    targetCardId: "organization-overview",
     targetLabel: "Map button",
     revealedCardIds: ["organization-overview"],
-    continueMode: "action",
-    calloutTarget: "organization-map-button",
-    calloutInstruction: "Click to open the Map and continue.",
+    continueMode: "next",
   },
   {
     id: "map-card",
@@ -68,53 +66,48 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
   },
   {
     id: "accelerator",
-    sceneId: "overview",
+    sceneId: "accelerator",
     title: "The Accelerator",
     message:
-      "The accelerator offers a sequence of nine strategic lessons, delivered through smaller video modules and corresponding homework assignments. This program is designed to guide you through building your strategic foundations, developing your programs, and then transitioning into essential organizational functions such as evaluation, budgeting, communications, and fundraising for both your specific program and your entire organization.",
+      "The Accelerator guides you through nine strategic lessons with short videos and homework, from foundations and programs into evaluation, budgeting, communications, and fundraising for each program and your organization.",
     targetCardId: "accelerator",
     targetLabel: "Accelerator",
-    revealedCardIds: ["organization-overview"],
-    continueMode: "shortcut",
-    calloutTarget: "shortcut-button",
-    calloutInstruction: "Click the Accelerator button and continue.",
+    revealedCardIds: ["accelerator"],
+    continueMode: "next",
   },
   {
     id: "accelerator-picker",
     sceneId: "accelerator",
     title: "Classes",
     message:
-      "Switch between class tracks here to see the right modules, progress, and next steps for each part of the Accelerator.",
+      "Switch between class tracks here to see the right lessons, progress, and next steps for each part of the Accelerator.",
     targetCardId: "accelerator",
-    targetLabel: "Class picker",
+    targetLabel: "Class tracks",
     revealedCardIds: ["accelerator"],
     continueMode: "next",
     calloutTarget: "accelerator-picker",
     calloutInstruction:
-      "Choose a class track here to update the module list and focus on a different part of the Accelerator.",
+      "Class tracks update the lesson list and focus on a different part of the Accelerator.",
   },
   {
     id: "accelerator-first-module",
     sceneId: "accelerator",
-    title: "Modules",
+    title: "Lessons",
     message:
-      "Click on the Organization Set up option below to open it from the list.",
+      "The lesson list shows the real class sequence, progress, and next recommended work so users can understand what to do next without leaving the guide.",
     targetCardId: "accelerator",
-    targetLabel: "First module",
+    targetLabel: "First lesson",
     revealedCardIds: ["accelerator"],
-    continueMode: "action",
-    calloutTarget: "accelerator-first-module",
-    calloutInstruction:
-      "Click the Organization Set up option here to continue.",
+    continueMode: "next",
   },
   {
     id: "accelerator-close-module",
     sceneId: "accelerator-module",
-    title: "Module preview",
+    title: "Lesson preview",
     message:
-      "This is what an accelerator module looks like inside the workspace. Use Continue below, or the guide Next button, when you're ready to move on.",
+      "This is what an accelerator lesson looks like inside the workspace. Select Continue when you're ready to move on.",
     targetCardId: "accelerator",
-    targetLabel: "Module preview",
+    targetLabel: "Lesson preview",
     revealedCardIds: ["accelerator"],
     continueMode: "next",
   },
@@ -126,10 +119,11 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
       "Add recurring board meetings, annual meetings, deadlines, and operating rhythm here. This is where reminders, accountability, and the shared tempo of the organization start to take shape.",
     targetCardId: "calendar",
     targetLabel: "Calendar",
-    revealedCardIds: ["organization-overview"],
-    continueMode: "shortcut",
+    revealedCardIds: ["calendar"],
+    continueMode: "next",
     calloutTarget: "calendar-viewport-button",
-    calloutInstruction: "Click the Calendar button and continue.",
+    calloutInstruction:
+      "The calendar lives in the header here, so it is always available from the workspace.",
   },
   {
     id: "programs",
@@ -139,10 +133,8 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
       "Build program briefs, budgets, and fundraising targets here. Program details feed the rest of the system so plans, asks, and updates stay aligned.",
     targetCardId: "programs",
     targetLabel: "Programs",
-    revealedCardIds: ["organization-overview"],
-    continueMode: "shortcut",
-    calloutTarget: "shortcut-button",
-    calloutInstruction: "Click the Programs button and continue.",
+    revealedCardIds: ["programs"],
+    continueMode: "next",
   },
   {
     id: "roadmap",
@@ -152,10 +144,8 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
       "Use the roadmap to keep fundraising, board strategy, and execution priorities sequenced in one operating view.",
     targetCardId: "roadmap",
     targetLabel: "Roadmap",
-    revealedCardIds: ["organization-overview"],
-    continueMode: "shortcut",
-    calloutTarget: "shortcut-button",
-    calloutInstruction: "Click the Roadmap button and continue.",
+    revealedCardIds: ["roadmap"],
+    continueMode: "next",
   },
   {
     id: "collaboration",
@@ -169,7 +159,7 @@ const WORKSPACE_CANVAS_TUTORIAL_ALL_STEPS: WorkspaceCanvasTutorialStep[] = [
     continueMode: "next",
     calloutTarget: "team-access",
     calloutInstruction:
-      "Use Team Access to invite members and manage who can work in this workspace.",
+      "Team Access is where members are invited and workspace permissions are managed.",
   },
 ]
 
@@ -236,6 +226,12 @@ function isTutorialShortcutStep(step: WorkspaceCanvasTutorialStep) {
   return step.continueMode === "shortcut" && step.targetCardId !== null
 }
 
+export function isWorkspaceCanvasTutorialGatedStep(
+  step: WorkspaceCanvasTutorialStep,
+) {
+  return step.continueMode === "shortcut" || step.continueMode === "action"
+}
+
 export function resolveWorkspaceCanvasTutorialTrimmedStepIds(
   stepIndex: number,
   stepIds: WorkspaceCanvasTutorialStepId[] = [],
@@ -270,12 +266,18 @@ export function resolveWorkspaceCanvasTutorialContinueMode(
   openedStepIds: WorkspaceCanvasTutorialStepId[] = [],
 ) {
   const step = resolveWorkspaceCanvasTutorialStep(stepIndex)
-  if (step.continueMode === "shortcut" || step.continueMode === "action") {
+  if (isWorkspaceCanvasTutorialGatedStep(step)) {
     return isWorkspaceCanvasTutorialStepOpened(stepIndex, openedStepIds)
       ? "next"
       : step.continueMode
   }
   return step.continueMode ?? "next"
+}
+
+export function shouldWorkspaceCanvasTutorialBlockPanelNext(
+  _continueMode: "next" | "shortcut" | "action" | undefined,
+) {
+  return false
 }
 
 export function resolveWorkspaceCanvasTutorialVisibleCardIds(
@@ -309,8 +311,8 @@ export function resolveWorkspaceCanvasTutorialPromptTargetCardId(
   const callout = resolveWorkspaceCanvasTutorialCallout(stepIndex, openedStepIds)
   if (
     !callout ||
-    (callout.kind !== "shortcut-button" &&
-      callout.kind !== "calendar-viewport-button")
+    callout.kind !== "shortcut-button" &&
+    (callout.kind !== "calendar-viewport-button" || !callout.requiresAction)
   ) {
     return null
   }
@@ -368,8 +370,8 @@ export function resolveWorkspaceCanvasTutorialShortcutInstruction(
   const callout = resolveWorkspaceCanvasTutorialCallout(stepIndex, openedStepIds)
   if (
     !callout ||
-    (callout.kind !== "shortcut-button" &&
-      callout.kind !== "calendar-viewport-button")
+    callout.kind !== "shortcut-button" &&
+    (callout.kind !== "calendar-viewport-button" || !callout.requiresAction)
   ) {
     return null
   }
@@ -428,7 +430,6 @@ export function resolveWorkspaceCanvasTutorialCallout(
 
   if (
     step.calloutTarget === "calendar-viewport-button" &&
-    continueMode === "shortcut" &&
     step.targetCardId === "calendar"
   ) {
     return {
@@ -436,6 +437,7 @@ export function resolveWorkspaceCanvasTutorialCallout(
       cardId: "calendar",
       label,
       instruction,
+      requiresAction: continueMode === "shortcut",
     }
   }
 

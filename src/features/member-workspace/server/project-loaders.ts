@@ -21,6 +21,42 @@ import {
   toMemberWorkspaceDataError,
 } from "./table-errors"
 
+async function loadAdminStandardOrganizationProjects({
+  orgIds,
+  supabase,
+}: {
+  orgIds: string[]
+  supabase: Awaited<
+    ReturnType<typeof resolveMemberWorkspaceActorContext>
+  >["supabase"]
+}) {
+  if (orgIds.length === 0) {
+    return [] as OrganizationProjectRecord[]
+  }
+
+  const { data, error } = await supabase
+    .from("organization_projects")
+    .select(organizationProjectSelectFields)
+    .in("org_id", orgIds)
+    .eq("project_kind", "standard")
+    .neq("created_source", "system")
+    .order("start_date", { ascending: true })
+    .order("created_at", { ascending: true })
+    .returns<OrganizationProjectRecord[]>()
+
+  if (error) {
+    if (isMissingOrganizationProjectsTableError(error)) {
+      return null
+    }
+    throw toMemberWorkspaceDataError(
+      error,
+      "Unable to load organization projects."
+    )
+  }
+
+  return data ?? []
+}
+
 export async function loadMemberWorkspaceProjectsPage() {
   const actor = await resolveMemberWorkspaceActorContext()
 
@@ -33,19 +69,24 @@ export async function loadMemberWorkspaceProjectsPage() {
       orgId: organization.orgId,
       name: organization.name,
     }))
-    const [assigneeOptions, canonicalProjects] = await Promise.all([
-      loadMemberWorkspacePersonOptionsForOrganizations({
-        orgIds,
-        supabase: actor.supabase,
-        includePlatformAdmins: true,
-      }),
-      ensureCanonicalAdminProjects({
-        organizations,
-        supabase: actor.supabase,
-      }),
-    ])
+    const [assigneeOptions, canonicalProjects, standardProjects] =
+      await Promise.all([
+        loadMemberWorkspacePersonOptionsForOrganizations({
+          orgIds,
+          supabase: actor.supabase,
+          includePlatformAdmins: true,
+        }),
+        ensureCanonicalAdminProjects({
+          organizations,
+          supabase: actor.supabase,
+        }),
+        loadAdminStandardOrganizationProjects({
+          orgIds,
+          supabase: actor.supabase,
+        }),
+      ])
 
-    if (!canonicalProjects) {
+    if (!canonicalProjects || !standardProjects) {
       return {
         projects: organizations.map(mapAdminOrganizationSummaryToProject),
         storageMode: "custom" as const,
@@ -59,18 +100,25 @@ export async function loadMemberWorkspaceProjectsPage() {
       }
     }
 
-    const organizationsWithProjectIds = attachCanonicalProjectIdsToOrganizations({
-      canonicalProjects,
-      organizations,
-    })
+    const organizationsWithProjectIds =
+      attachCanonicalProjectIdsToOrganizations({
+        canonicalProjects,
+        organizations,
+      })
 
     return {
-      projects: organizationsWithProjectIds.map(mapAdminOrganizationSummaryToProject),
+      projects: [
+        ...organizationsWithProjectIds.map(
+          mapAdminOrganizationSummaryToProject
+        ),
+        ...standardProjects.map(mapOrganizationProjectToViewModel),
+      ],
       storageMode: "custom" as const,
       starterProjectCount: 0,
-      hasUserProjects: organizationsWithProjectIds.length > 0,
+      hasUserProjects:
+        organizationsWithProjectIds.length > 0 || standardProjects.length > 0,
       canResetStarterData: false,
-      canCreateProjects: false,
+      canCreateProjects: true,
       scope: "platform-admin" as const,
       organizationOptions,
       assigneeOptions,
@@ -79,14 +127,19 @@ export async function loadMemberWorkspaceProjectsPage() {
 
   const accessibleOrganizations = await loadAccessibleOrganizations(
     actor.supabase,
-    actor.userId,
+    actor.userId
   )
   const activeOrganizationOption =
     accessibleOrganizations.find(
-      (organization) => organization.orgId === actor.activeOrg.orgId,
+      (organization) => organization.orgId === actor.activeOrg.orgId
     ) ?? null
   const organizationOptions = activeOrganizationOption
-    ? [{ orgId: activeOrganizationOption.orgId, name: activeOrganizationOption.name }]
+    ? [
+        {
+          orgId: activeOrganizationOption.orgId,
+          name: activeOrganizationOption.name,
+        },
+      ]
     : [{ orgId: actor.activeOrg.orgId, name: "Active organization" }]
   const [, assigneeOptions] = await Promise.all([
     ensureStarterProjectsForOrg({
@@ -125,20 +178,25 @@ export async function loadMemberWorkspaceProjectsPage() {
         assigneeOptions,
       }
     }
-    throw toMemberWorkspaceDataError(error, "Unable to load workspace projects.")
+    throw toMemberWorkspaceDataError(
+      error,
+      "Unable to load workspace projects."
+    )
   }
 
   const rows = projects ?? []
   const storageMode = resolveMemberWorkspaceStorageMode(rows)
   const starterProjectCount = rows.filter(
-    (project) => project.created_source === "starter_seed",
+    (project) => project.created_source === "starter_seed"
   ).length
 
   return {
     projects: rows.map(mapOrganizationProjectToViewModel),
     storageMode,
     starterProjectCount,
-    hasUserProjects: rows.some((project) => project.created_source !== "starter_seed"),
+    hasUserProjects: rows.some(
+      (project) => project.created_source !== "starter_seed"
+    ),
     canResetStarterData: actor.canEdit && starterProjectCount > 0,
     canCreateProjects: actor.canEdit,
     scope: "organization" as const,

@@ -1,12 +1,16 @@
 "use client"
 
+import type { ReactNode } from "react"
+
+import type {
+  FiscalSponsorshipProjectWorkbenchAdminActionProps,
+  FiscalSponsorshipProjectWorkbenchDocumentActionProps,
+  FiscalSponsorshipProjectWorkflowSummary,
+} from "@/features/fiscal-sponsorship"
 import {
   AssetsFilesTab,
-  KeyFeaturesColumns,
   NotesTab,
-  OutcomesList,
   ProjectTasksTab,
-  ScopeColumns,
   Tabs,
   TabsContent,
   TabsList,
@@ -19,14 +23,15 @@ import {
   type User,
 } from "@/features/platform-admin-dashboard"
 import type {
+  MemberWorkspaceAdminOrganizationSummary,
   MemberWorkspaceCreateProjectNoteInput,
   MemberWorkspaceCreateTaskInput,
   MemberWorkspacePersonOption,
   MemberWorkspaceUpdateProjectNoteInput,
 } from "../../types"
-import {
-  type MemberWorkspaceProjectDetailDraft,
-} from "./member-workspace-project-detail-editing"
+import type { MemberWorkspaceProjectDetailDraft } from "./member-workspace-project-detail-editing"
+import { MemberWorkspaceProjectFiscalWorkbench } from "./member-workspace-project-fiscal-workbench"
+import { MemberWorkspaceProjectOverviewDocument } from "./member-workspace-project-overview-document"
 import { MemberWorkspaceProjectOverviewEditor } from "./member-workspace-project-overview-editor"
 import { MemberWorkspaceProjectTasksEditor } from "./member-workspace-project-tasks-editor"
 
@@ -46,6 +51,8 @@ function ProjectDetailTabsList() {
 
 type ProjectDetailOverviewContentProps = {
   draft: MemberWorkspaceProjectDetailDraft
+  fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
+  fiscalSponsorshipWorkbench?: ReactNode
   isEditing: boolean
   project: ProjectDetails
   onChangeDraftField: (
@@ -56,6 +63,8 @@ type ProjectDetailOverviewContentProps = {
 
 function ProjectDetailOverviewContent({
   draft,
+  fiscalSponsorshipWorkflowSummary,
+  fiscalSponsorshipWorkbench,
   isEditing,
   project,
   onChangeDraftField,
@@ -79,19 +88,16 @@ function ProjectDetailOverviewContent({
           </div>
           <TimelineGantt tasks={project.timelineTasks} />
         </section>
+        {fiscalSponsorshipWorkbench}
       </div>
     )
   }
 
   return (
     <div className="space-y-10">
-      <p className="text-muted-foreground text-sm leading-6">
-        {project.description}
-      </p>
-      <ScopeColumns scope={project.scope} />
-      <OutcomesList outcomes={project.outcomes} />
-      <KeyFeaturesColumns features={project.keyFeatures} />
+      <MemberWorkspaceProjectOverviewDocument project={project} />
       <TimelineGantt tasks={project.timelineTasks} />
+      {fiscalSponsorshipWorkbench}
     </div>
   )
 }
@@ -106,20 +112,26 @@ type MemberWorkspaceProjectDetailTabsProps = {
     input: MemberWorkspaceCreateTaskInput
   ) => Promise<{ ok: true; taskId: string } | { error: string }>
   currentUser: User
+  canConnectFiscalDocuments?: boolean
   deleteNoteAction?: (input: {
     noteId: string
     projectId: string
   }) => Promise<{ ok: true } | { error: string }>
   deleteTaskAction?: (
     taskId: string
-  ) => Promise<{ ok: true; taskId: string; projectId: string } | { error: string }>
+  ) => Promise<
+    { ok: true; taskId: string; projectId: string } | { error: string }
+  >
   draft: MemberWorkspaceProjectDetailDraft
+  fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
+  fiscalSponsorshipWorkbench?: ReactNode
   isEditing: boolean
   onActiveTabChange: (value: string) => void
   onChangeDraftField: (
     field: keyof MemberWorkspaceProjectDetailDraft,
     value: string
   ) => void
+  organizationSummary: MemberWorkspaceAdminOrganizationSummary
   onCreateAsset?: (input: {
     title?: string
     description?: string
@@ -164,7 +176,8 @@ type MemberWorkspaceProjectDetailTabsProps = {
     | { ok: true; taskId: string; status: "todo" | "in-progress" | "done" }
     | { error: string }
   >
-}
+} & FiscalSponsorshipProjectWorkbenchAdminActionProps &
+  FiscalSponsorshipProjectWorkbenchDocumentActionProps
 
 export function MemberWorkspaceProjectDetailTabs({
   activeTab,
@@ -172,12 +185,18 @@ export function MemberWorkspaceProjectDetailTabs({
   createNoteAction,
   createTaskAction,
   currentUser,
+  canConnectFiscalDocuments = false,
+  connectFiscalSponsorshipDocumentAssetAction,
   deleteNoteAction,
   deleteTaskAction,
   draft,
+  fiscalSponsorshipWorkflowSummary,
+  fiscalSponsorshipWorkbench,
+  generateFiscalSponsorshipAgreementAction,
   isEditing,
   onActiveTabChange,
   onChangeDraftField,
+  organizationSummary,
   onCreateAsset,
   onCreateTask,
   onDeleteNoteAsset,
@@ -187,6 +206,9 @@ export function MemberWorkspaceProjectDetailTabs({
   onUpdateAsset,
   pendingInlineTaskContext,
   project,
+  reviewFiscalSponsorshipApplicationAction,
+  reviewFiscalSponsorshipDocumentAction,
+  sendFiscalSponsorshipAgreementForSignatureAction,
   updateNoteAction,
   updateTaskAction,
   updateTaskOrderAction,
@@ -199,6 +221,34 @@ export function MemberWorkspaceProjectDetailTabs({
       <TabsContent value="overview">
         <ProjectDetailOverviewContent
           draft={draft}
+          fiscalSponsorshipWorkbench={
+            fiscalSponsorshipWorkbench ?? (
+              <MemberWorkspaceProjectFiscalWorkbench
+                canConnectDocuments={canConnectFiscalDocuments}
+                connectFiscalSponsorshipDocumentAssetAction={
+                  connectFiscalSponsorshipDocumentAssetAction
+                }
+                generateFiscalSponsorshipAgreementAction={
+                  generateFiscalSponsorshipAgreementAction
+                }
+                fiscalSponsorshipWorkflowSummary={
+                  fiscalSponsorshipWorkflowSummary
+                }
+                onOpenAssets={() => onActiveTabChange("assets")}
+                organizationSummary={organizationSummary}
+                project={project}
+                reviewFiscalSponsorshipApplicationAction={
+                  reviewFiscalSponsorshipApplicationAction
+                }
+                reviewFiscalSponsorshipDocumentAction={
+                  reviewFiscalSponsorshipDocumentAction
+                }
+                sendFiscalSponsorshipAgreementForSignatureAction={
+                  sendFiscalSponsorshipAgreementForSignatureAction
+                }
+              />
+            )
+          }
           isEditing={isEditing}
           project={project}
           onChangeDraftField={onChangeDraftField}

@@ -143,6 +143,7 @@ export type ProjectDetails = {
   id: string
   name: string
   description: string
+  overviewDocument?: string
   meta: ProjectMeta
   scope: ProjectScope
   outcomes: string[]
@@ -167,7 +168,7 @@ export function getProjectTasks(details: ProjectDetails): ProjectTask[] {
       projectName: details.name,
       workstreamId: group.id,
       workstreamName: group.name,
-    })),
+    }))
   )
 }
 
@@ -181,7 +182,9 @@ function userFromName(name: string, role?: string): User {
 }
 
 function baseDetailsFromListItem(p: ProjectListItem): ProjectDetails {
-  const picUsers = p.members.length ? p.members.map((n) => userFromName(n, "PIC")) : [userFromName("Jason Duong", "PIC")]
+  const picUsers = p.members.length
+    ? p.members.map((n) => userFromName(n, "PIC"))
+    : [userFromName("Jason Duong", "PIC")]
   const today = new Date()
 
   return {
@@ -193,14 +196,26 @@ function baseDetailsFromListItem(p: ProjectListItem): ProjectDetails {
     meta: {
       priorityLabel: p.priority.charAt(0).toUpperCase() + p.priority.slice(1),
       locationLabel: "Australia",
-      sprintLabel: p.typeLabel && p.durationLabel ? `${p.typeLabel} ${p.durationLabel}` : p.durationLabel ?? "MVP 2 weeks",
+      sprintLabel:
+        p.typeLabel && p.durationLabel
+          ? `${p.typeLabel} ${p.durationLabel}`
+          : (p.durationLabel ?? "MVP 2 weeks"),
       lastSyncLabel: "Just now",
     },
     scope: {
-      inScope: ["Define scope", "Draft solution", "Validate with stakeholders", "Prepare handoff"],
+      inScope: [
+        "Define scope",
+        "Draft solution",
+        "Validate with stakeholders",
+        "Prepare handoff",
+      ],
       outOfScope: ["Backend logic changes", "Marketing landing pages"],
     },
-    outcomes: ["Reduce steps and improve usability", "Increase success rate", "Deliver production-ready UI"],
+    outcomes: [
+      "Reduce steps and improve usability",
+      "Increase success rate",
+      "Deliver production-ready UI",
+    ],
     keyFeatures: {
       p0: ["Core user flow"],
       p1: ["Filters and empty states"],
@@ -261,28 +276,28 @@ function baseDetailsFromListItem(p: ProjectListItem): ProjectDetails {
         id: `${p.id}-t1`,
         name: "Audit existing flows",
         startDate: new Date(2025, 11, 22), // Mon
-        endDate: new Date(2025, 11, 23),   // Tue
+        endDate: new Date(2025, 11, 23), // Tue
         status: "done",
       },
       {
         id: `${p.id}-t2`,
         name: "Redesign onboarding & payment",
         startDate: new Date(2025, 11, 23), // Tue
-        endDate: new Date(2025, 11, 25),   // Thu
+        endDate: new Date(2025, 11, 25), // Thu
         status: "in-progress",
       },
       {
         id: `${p.id}-t3`,
         name: "Usability testing",
         startDate: new Date(2025, 11, 25), // Thu
-        endDate: new Date(2025, 11, 27),   // Sat
+        endDate: new Date(2025, 11, 27), // Sat
         status: "planned",
       },
       {
         id: `${p.id}-t4`,
         name: "Iterate based on feedback",
         startDate: new Date(2025, 11, 27), // Sat
-        endDate: new Date(2025, 11, 28),   // Sun
+        endDate: new Date(2025, 11, 28), // Sun
         status: "planned",
       },
     ],
@@ -313,7 +328,8 @@ function baseDetailsFromListItem(p: ProjectListItem): ProjectDetails {
         audioData: {
           duration: "00:02:21",
           fileName: "project-review-meeting.mp3",
-          aiSummary: "The meeting involved a review of ongoing projects and the planning of next steps. The team discussed user testing for the week to gather feedback before deciding on new features and tasks for the next phase. Contract payments and design considerations for the landing page were also addressed.",
+          aiSummary:
+            "The meeting involved a review of ongoing projects and the planning of next steps. The team discussed user testing for the week to gather feedback before deciding on new features and tasks for the next phase. Contract payments and design considerations for the landing page were also addressed.",
           keyPoints: [
             "User testing scheduled for this week",
             "New features to be decided after feedback",
@@ -326,13 +342,48 @@ function baseDetailsFromListItem(p: ProjectListItem): ProjectDetails {
             "Design review needed before development",
           ],
           transcript: [
-            { id: "t1", speaker: "SPK_1", timestamp: "0:00", text: "Co-founder should be joining on in a sec, but I kind of caught him up to speed on what we talked about last time." },
-            { id: "t2", speaker: "SPK_2", timestamp: "0:15", text: "Kind of where Bino is, what type of help we ideally are looking for and then you know, if you are interested, a type of work trial moving forward, what that would look like." },
-            { id: "t3", speaker: "SPK_1", timestamp: "0:22", text: "So today, really hoping to kind of go through some of those details and also like, if you have any insights on Bino as well as some design and suggestions that you have, we'd love to kind of talk through those as well." },
-            { id: "t4", speaker: "SPK_2", timestamp: "0:38", text: "Okay, sure." },
-            { id: "t5", speaker: "SPK_3", timestamp: "0:43", text: "Sounds good." },
-            { id: "t6", speaker: "SPK_1", timestamp: "0:55", text: "So yeah, we can give him a sec." },
-            { id: "t7", speaker: "SPK_2", timestamp: "1:00", text: "I think he should be drawing, but he doesn't." },
+            {
+              id: "t1",
+              speaker: "SPK_1",
+              timestamp: "0:00",
+              text: "Co-founder should be joining on in a sec, but I kind of caught him up to speed on what we talked about last time.",
+            },
+            {
+              id: "t2",
+              speaker: "SPK_2",
+              timestamp: "0:15",
+              text: "Kind of where Bino is, what type of help we ideally are looking for and then you know, if you are interested, a type of work trial moving forward, what that would look like.",
+            },
+            {
+              id: "t3",
+              speaker: "SPK_1",
+              timestamp: "0:22",
+              text: "So today, really hoping to kind of go through some of those details and also like, if you have any insights on Bino as well as some design and suggestions that you have, we'd love to kind of talk through those as well.",
+            },
+            {
+              id: "t4",
+              speaker: "SPK_2",
+              timestamp: "0:38",
+              text: "Okay, sure.",
+            },
+            {
+              id: "t5",
+              speaker: "SPK_3",
+              timestamp: "0:43",
+              text: "Sounds good.",
+            },
+            {
+              id: "t6",
+              speaker: "SPK_1",
+              timestamp: "0:55",
+              text: "So yeah, we can give him a sec.",
+            },
+            {
+              id: "t7",
+              speaker: "SPK_2",
+              timestamp: "1:00",
+              text: "I think he should be drawing, but he doesn't.",
+            },
           ],
         },
       },
@@ -414,20 +465,19 @@ function baseDetailsFromListItem(p: ProjectListItem): ProjectDetails {
 export function getProjectDetailsById(id: string): ProjectDetails {
   const base = projects.find((p) => p.id === id)
 
-  const effectiveBase: ProjectListItem =
-    base ?? {
-      id,
-      name: `Untitled project ${id}`,
-      taskCount: 0,
-      progress: 0,
-      startDate: new Date(),
-      endDate: new Date(),
-      status: "planned",
-      priority: "medium",
-      tags: [],
-      members: [],
-      tasks: [],
-    }
+  const effectiveBase: ProjectListItem = base ?? {
+    id,
+    name: `Untitled project ${id}`,
+    taskCount: 0,
+    progress: 0,
+    startDate: new Date(),
+    endDate: new Date(),
+    status: "planned",
+    priority: "medium",
+    tags: [],
+    members: [],
+    tasks: [],
+  }
 
   const details = baseDetailsFromListItem(effectiveBase)
 
@@ -442,7 +492,11 @@ export function getProjectDetailsById(id: string): ProjectDetails {
         "Design system (starter components)",
         "Usability fixes for critical flows",
       ],
-      outOfScope: ["New feature ideation", "Backend logic changes", "Marketing landing pages"],
+      outOfScope: [
+        "New feature ideation",
+        "Backend logic changes",
+        "Marketing landing pages",
+      ],
     }
 
     details.outcomes = [

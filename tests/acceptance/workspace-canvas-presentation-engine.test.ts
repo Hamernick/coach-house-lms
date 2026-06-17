@@ -18,7 +18,7 @@ function resolveTutorialStepIndex(stepId: WorkspaceCanvasTutorialStepId) {
 }
 
 describe("workspace canvas presentation engine", () => {
-  it("keeps unresolved shortcut steps centered and skips autofocus", () => {
+  it("keeps Continue-owned tool steps centered and autofocuses the presented card", () => {
     const plan = resolveWorkspaceCanvasPresentationPlan({
       tutorialActive: true,
       previousStepIndex: resolveTutorialStepIndex("accelerator-close-module"),
@@ -26,13 +26,13 @@ describe("workspace canvas presentation engine", () => {
       openedTutorialStepIds: ["accelerator-close-module"],
       prefersReducedMotion: false,
       tutorialNodeAttached: false,
-      tutorialSelectedCardId: "organization-overview",
-      visibleCardIds: ["organization-overview"],
+      tutorialSelectedCardId: "calendar",
+      visibleCardIds: ["calendar"],
     })
 
     expect(plan.transitionKind).toBe("accelerator-preview-exit")
     expect(plan.shellMode).toBe("centered-prompt")
-    expect(plan.autofocusTarget).toBeNull()
+    expect(plan.autofocusTarget).toBe("calendar")
     expect(plan.layoutDurationMs).toBe(220)
     expect(plan.cameraDurationMs).toBe(240)
   })

@@ -10,10 +10,7 @@ import {
 } from "react"
 import Plus from "lucide-react/dist/esm/icons/plus"
 
-import {
-  createProgramAction,
-  updateProgramAction,
-} from "@/actions/programs"
+import { createProgramAction, updateProgramAction } from "@/actions/programs"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -21,7 +18,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { resolveOrganizationPrimaryObjectKind } from "@/lib/organization/primary-objects"
 import { toast } from "@/lib/toast"
+import { cn } from "@/lib/utils"
 
 import { DRAFT_STORAGE_KEY, STEPS } from "./program-wizard/constants"
 import {
@@ -55,16 +54,21 @@ export function ProgramWizard({
   program,
   open,
   onOpenChange,
+  portalContainer,
   triggerLabel,
 }: ProgramWizardProps = {}) {
   const [internalOpen, setInternalOpen] = useState(false)
   const isControlled = typeof open === "boolean"
   const isOpen = isControlled ? (open as boolean) : internalOpen
   const [currentStep, setCurrentStep] = useState(0)
-  const [form, setForm] = useState<ProgramWizardFormState>(defaultProgramWizardForm)
+  const [form, setForm] = useState<ProgramWizardFormState>(
+    defaultProgramWizardForm
+  )
   const [errors, setErrors] = useState<ProgramWizardFieldErrors>({})
   const [isPending, startTransition] = useTransition()
   const [isAutoSaving, setIsAutoSaving] = useState(false)
+  const isCanvasScoped = portalContainer !== undefined
+  const canRenderDialogContent = !isCanvasScoped || Boolean(portalContainer)
 
   const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const hydratedRef = useRef(false)
@@ -74,7 +78,7 @@ export function ProgramWizard({
       if (isControlled) onOpenChange?.(value)
       else setInternalOpen(value)
     },
-    [isControlled, onOpenChange],
+    [isControlled, onOpenChange]
   )
 
   const feasibility = useMemo(() => computeFeasibility(form), [form])
@@ -107,30 +111,28 @@ export function ProgramWizard({
         const next = {
           ...fallback,
           ...parsed,
+          objectKind: resolveOrganizationPrimaryObjectKind(parsed.objectKind),
           formatAddons: normalizeAddons(
             parsed.coreFormat ?? fallback.coreFormat,
             Array.isArray(parsed.formatAddons)
               ? parsed.formatAddons.map(String)
-              : fallback.formatAddons,
+              : fallback.formatAddons
           ),
           staffRoles: Array.isArray(parsed.staffRoles)
-            ? parsed.staffRoles
-                .map((entry) => ({
-                  role:
-                    entry && typeof entry.role === "string" ? entry.role : "",
-                  hoursPerWeek:
-                    entry &&
-                    typeof entry.hoursPerWeek === "number" &&
-                    Number.isFinite(entry.hoursPerWeek)
-                      ? entry.hoursPerWeek
-                      : entry &&
-                          typeof entry.hoursPerWeek === "string"
-                        ? (() => {
-                            const parsedHours = Number(entry.hoursPerWeek)
-                            return Number.isFinite(parsedHours) ? parsedHours : 0
-                          })()
-                        : 0,
-                }))
+            ? parsed.staffRoles.map((entry) => ({
+                role: entry && typeof entry.role === "string" ? entry.role : "",
+                hoursPerWeek:
+                  entry &&
+                  typeof entry.hoursPerWeek === "number" &&
+                  Number.isFinite(entry.hoursPerWeek)
+                    ? entry.hoursPerWeek
+                    : entry && typeof entry.hoursPerWeek === "string"
+                      ? (() => {
+                          const parsedHours = Number(entry.hoursPerWeek)
+                          return Number.isFinite(parsedHours) ? parsedHours : 0
+                        })()
+                      : 0,
+              }))
             : fallback.staffRoles,
         }
         setForm(next)
@@ -147,12 +149,16 @@ export function ProgramWizard({
   }, [form, isOpen, mode])
 
   useEffect(() => {
-    if (!isOpen || mode !== "edit" || !program?.id || !hydratedRef.current) return
+    if (!isOpen || mode !== "edit" || !program?.id || !hydratedRef.current)
+      return
     if (autosaveTimerRef.current) clearTimeout(autosaveTimerRef.current)
 
     autosaveTimerRef.current = setTimeout(async () => {
       setIsAutoSaving(true)
-      const response = await updateProgramAction(program.id, serializePayload(form))
+      const response = await updateProgramAction(
+        program.id,
+        serializePayload(form)
+      )
       if ("error" in response) {
         toast.error(response.error)
       }
@@ -232,7 +238,7 @@ export function ProgramWizard({
         window.localStorage.removeItem(DRAFT_STORAGE_KEY)
       }
 
-      toast.success(mode === "create" ? "Program created" : "Program updated")
+      toast.success(mode === "create" ? "Activity created" : "Activity updated")
       setOpen(false)
       setForm(defaultProgramWizardForm)
       setCurrentStep(0)
@@ -243,19 +249,18 @@ export function ProgramWizard({
   const copyBrief = async () => {
     try {
       await navigator.clipboard.writeText(summaryText(form))
-      toast.success("Program brief copied")
+      toast.success("Activity brief copied")
     } catch {
-      toast.error("Could not copy program brief")
+      toast.error("Could not copy activity brief")
     }
   }
 
-  const resolvedTrigger =
-    triggerLabel ?? (
-      <span className="inline-flex items-center gap-2">
-        <Plus className="h-4 w-4" aria-hidden />
-        New program
-      </span>
-    )
+  const resolvedTrigger = triggerLabel ?? (
+    <span className="inline-flex items-center gap-2">
+      <Plus className="h-4 w-4" aria-hidden />
+      New activity
+    </span>
+  )
 
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>
@@ -266,43 +271,54 @@ export function ProgramWizard({
           </Button>
         </DialogTrigger>
       ) : null}
-      <DialogContent
-        showCloseButton={false}
-        className="left-0 right-0 top-auto bottom-0 z-50 flex h-[94svh] w-full max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-t-3xl border border-border/60 bg-background p-0 shadow-2xl sm:left-1/2 sm:top-1/2 sm:right-auto sm:bottom-auto sm:h-[90svh] sm:w-[min(96vw,72rem)] sm:max-w-[72rem] sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-3xl"
-      >
-        <DialogTitle className="sr-only">Program Builder</DialogTitle>
+      {canRenderDialogContent ? (
+        <DialogContent
+          showCloseButton={false}
+          portalContainer={portalContainer ?? undefined}
+          overlayClassName={
+            isCanvasScoped
+              ? "absolute inset-0 bg-black/50 backdrop-blur-sm"
+              : undefined
+          }
+          className={cn(
+            "border-border/60 bg-background top-auto right-auto bottom-2 left-1/2 z-50 grid max-h-[calc(100svh-1rem)] min-h-0 w-[calc(100vw-1rem)] max-w-[56rem] -translate-x-1/2 translate-y-0 grid-rows-[auto_minmax(0,1fr)_auto] gap-0 overflow-hidden rounded-3xl border p-0 shadow-2xl sm:top-1/2 sm:bottom-auto sm:w-[min(calc(100vw-2rem),56rem)] sm:max-w-[56rem] sm:-translate-y-1/2",
+            isCanvasScoped &&
+              "bg-background/98 absolute max-h-[calc(100%-1rem)] w-[calc(100%-1rem)] shadow-[0_24px_70px_-42px_hsl(var(--foreground)/0.55)] backdrop-blur-xl sm:max-h-[calc(100%-2rem)] sm:w-[min(calc(100%-2rem),56rem)]"
+          )}
+        >
+          <DialogTitle className="sr-only">Activity builder</DialogTitle>
 
-        <ProgramWizardHeader
-          mode={mode}
-          currentStep={currentStep}
-          completion={completion}
-          isAutoSaving={isAutoSaving}
-          onStepSelect={setCurrentStep}
-        />
-
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
-          <ProgramWizardStepContent
+          <ProgramWizardHeader
             mode={mode}
             currentStep={currentStep}
-            form={form}
-            errors={errors}
-            update={update}
-            feasibility={feasibility}
-            onCopyBrief={copyBrief}
+            completion={completion}
+            isAutoSaving={isAutoSaving}
           />
-        </div>
 
-        <ProgramWizardFooter
-          currentStep={currentStep}
-          totalSteps={STEPS.length}
-          mode={mode}
-          isPending={isPending}
-          onCancel={() => setOpen(false)}
-          onBack={goPrevious}
-          onContinue={goNext}
-          onSubmit={submit}
-        />
-      </DialogContent>
+          <div className="bg-muted/35 min-h-0 overflow-y-auto overscroll-contain px-3 py-3 sm:px-5 sm:py-5 md:px-6 md:py-6">
+            <ProgramWizardStepContent
+              mode={mode}
+              currentStep={currentStep}
+              form={form}
+              errors={errors}
+              update={update}
+              feasibility={feasibility}
+              onCopyBrief={copyBrief}
+            />
+          </div>
+
+          <ProgramWizardFooter
+            currentStep={currentStep}
+            totalSteps={STEPS.length}
+            mode={mode}
+            isPending={isPending}
+            onCancel={() => setOpen(false)}
+            onBack={goPrevious}
+            onContinue={goNext}
+            onSubmit={submit}
+          />
+        </DialogContent>
+      ) : null}
     </Dialog>
   )
 }

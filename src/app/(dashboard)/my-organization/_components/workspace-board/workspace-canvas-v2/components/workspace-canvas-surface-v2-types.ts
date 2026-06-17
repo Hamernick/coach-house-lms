@@ -18,6 +18,7 @@ import type {
 export type WorkspaceCanvasSurfaceV2Props = {
   boardState: WorkspaceBoardState
   allowEditing: boolean
+  workspaceDataDrawerCanEdit: boolean
   presentationMode: boolean
   seed: WorkspaceSeedData
   organizationEditorData: WorkspaceOrganizationEditorData
@@ -45,8 +46,7 @@ export type WorkspaceCanvasSurfaceV2Props = {
   onDisconnectAllConnections: () => void
   onToggleCardVisibility: (
     cardId: WorkspaceCardId,
-    context?: WorkspaceBoardToggleContext,
+    context?: WorkspaceBoardToggleContext
   ) => void
-  onResetToBaseLayout: () => void
   onTutorialCompletionExitHandled: () => void
 }

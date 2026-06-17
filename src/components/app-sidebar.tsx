@@ -1,6 +1,8 @@
 "use client"
 
+import Link from "next/link"
 import { useMemo } from "react"
+import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
 
 import { CoachSchedulingCard } from "@/components/coaching/coach-scheduling-card"
 import { CoachSchedulingSidebarItem } from "@/components/coaching/coach-scheduling-sidebar-item"
@@ -11,7 +13,9 @@ import type { SidebarClass } from "@/lib/academy"
 
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import { RESOURCE_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
+import { Button } from "@/components/ui/button"
 import { SidebarContent, SidebarFooter } from "@/components/ui/sidebar"
+import { resolveMemberWorkspaceNavAccess } from "@/lib/workspace/member-workspace-nav-access"
 
 export type AppSidebarProps = {
   user?: {
@@ -28,6 +32,7 @@ export type AppSidebarProps = {
   acceleratorProgress?: number | null
   showAccelerator?: boolean
   hasActiveSubscription?: boolean
+  hasBillingCancellationRisk?: boolean
   hasAcceleratorAccess?: boolean
   hasElectiveAccess?: boolean
   ownedElectiveModuleSlugs?: string[]
@@ -36,6 +41,8 @@ export type AppSidebarProps = {
   onboardingIntentFocus?: "build" | "find" | "fund" | "support" | null
   organizationName?: string | null
   showCoachScheduling?: boolean
+  showWorkspaceHome?: boolean
+  showMemberWorkspace?: boolean
 }
 
 export function AppSidebar({
@@ -47,6 +54,7 @@ export function AppSidebar({
   classes,
   showAccelerator,
   hasActiveSubscription = false,
+  hasBillingCancellationRisk = false,
   hasAcceleratorAccess,
   hasElectiveAccess,
   ownedElectiveModuleSlugs,
@@ -55,6 +63,8 @@ export function AppSidebar({
   onboardingIntentFocus = null,
   organizationName = null,
   showCoachScheduling = false,
+  showWorkspaceHome = true,
+  showMemberWorkspace,
 }: AppSidebarProps) {
   const resolvedUser = useMemo(
     () => ({
@@ -75,6 +85,7 @@ export function AppSidebar({
         user={resolvedUser}
         showAccelerator={showAccelerator}
         hasActiveSubscription={hasActiveSubscription}
+        hasBillingCancellationRisk={hasBillingCancellationRisk}
         showOrgAdmin={showOrgAdmin}
         canAccessOrgAdmin={canAccessOrgAdmin}
         hasAcceleratorAccess={hasAcceleratorAccess}
@@ -85,6 +96,8 @@ export function AppSidebar({
         onboardingIntentFocus={onboardingIntentFocus}
         organizationName={organizationName}
         showCoachScheduling={showCoachScheduling}
+        showWorkspaceHome={showWorkspaceHome}
+        showMemberWorkspace={showMemberWorkspace}
       />
     </aside>
   )
@@ -102,6 +115,7 @@ type SidebarBodyProps = {
   }
   showAccelerator?: boolean
   hasActiveSubscription?: boolean
+  hasBillingCancellationRisk?: boolean
   showClasses?: boolean
   classesBasePath?: string
   showOrgAdmin?: boolean
@@ -114,6 +128,8 @@ type SidebarBodyProps = {
   onboardingIntentFocus?: "build" | "find" | "fund" | "support" | null
   organizationName?: string | null
   showCoachScheduling?: boolean
+  showWorkspaceHome?: boolean
+  showMemberWorkspace?: boolean
 }
 
 export function SidebarBody({
@@ -123,6 +139,7 @@ export function SidebarBody({
   user,
   showAccelerator,
   hasActiveSubscription = false,
+  hasBillingCancellationRisk = false,
   showClasses = false,
   classesBasePath,
   showOrgAdmin = false,
@@ -135,15 +152,29 @@ export function SidebarBody({
   onboardingIntentFocus = null,
   organizationName = null,
   showCoachScheduling = false,
+  showWorkspaceHome = true,
+  showMemberWorkspace,
 }: SidebarBodyProps) {
   const shouldShowAccelerator = !onboardingLocked && Boolean(isAdmin || showAccelerator)
   const hasUser = Boolean(user.email)
-  const showMemberWorkspace = !onboardingLocked && onboardingIntentFocus !== "fund"
+  const showMemberWorkspaceNav =
+    !onboardingLocked &&
+    onboardingIntentFocus !== "fund" &&
+    resolveMemberWorkspaceNavAccess({
+      isAdmin,
+      showMemberWorkspace,
+      hasActiveSubscription,
+    })
+  const hasMemberWorkspaceAccess = showMemberWorkspaceNav
+  const showAccountUpgradeCta =
+    hasUser && (isAdmin || (!hasActiveSubscription && !showMemberWorkspaceNav))
   const mainNavItems = buildMainNav({
     isAdmin,
     showOrgAdmin,
     canAccessOrgAdmin,
-    showMemberWorkspace,
+    showMemberWorkspace: showMemberWorkspaceNav,
+    hasMemberWorkspaceAccess,
+    showWorkspaceHome,
   })
 
   return (
@@ -167,7 +198,7 @@ export function SidebarBody({
 
       <SidebarFooter className="mt-auto pb-[var(--shell-rail-padding,0.75rem)]">
         {onboardingLocked ? null : (
-          <div className="space-y-4 pt-2">
+          <div className="flex flex-col gap-4 pt-2">
             {showCoachScheduling ? (
               <>
                 <div className="hidden group-data-[collapsible=icon]:hidden [@media(min-height:56rem)]:block">
@@ -178,6 +209,7 @@ export function SidebarBody({
                 </div>
               </>
             ) : null}
+            {showAccountUpgradeCta ? <FreeAccountUpgradeCta /> : null}
             <NavDocuments items={RESOURCE_NAV} label="Resources" />
           </div>
         )}
@@ -186,11 +218,29 @@ export function SidebarBody({
             user={user}
             isAdmin={isAdmin}
             isTester={isTester}
+            showOrgAdmin={showOrgAdmin}
+            canAccessOrgAdmin={canAccessOrgAdmin}
             showDivider={false}
-            hasActiveSubscription={hasActiveSubscription}
+            hasActiveSubscription={hasBillingCancellationRisk}
           />
         ) : null}
       </SidebarFooter>
     </>
+  )
+}
+
+function FreeAccountUpgradeCta() {
+  return (
+    <div className="group-data-[collapsible=icon]:hidden">
+      <Button asChild size="sm" className="w-full justify-between px-3">
+        <Link
+          href="/find?paywall=organization&plan=organization&source=sidebar_upgrade&redirect=%2Fworkspace&cancel=%2Ffind&paywall_preview=1"
+          prefetch={false}
+        >
+          <span className="truncate">Upgrade account</span>
+          <ArrowUpRightIcon data-icon="inline-end" aria-hidden />
+        </Link>
+      </Button>
+    </div>
   )
 }

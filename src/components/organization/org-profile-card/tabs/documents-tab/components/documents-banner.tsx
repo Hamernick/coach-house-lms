@@ -2,20 +2,15 @@
 
 import FolderOpen from "lucide-react/dist/esm/icons/folder-open"
 import Lock from "lucide-react/dist/esm/icons/lock"
-import XIcon from "lucide-react/dist/esm/icons/x"
-
-import { Button } from "@/components/ui/button"
 
 type DocumentsBannerProps = {
   hasRoadmapDocuments: boolean
   canEdit: boolean
-  onDismiss: () => void
 }
 
 export function DocumentsBanner({
   hasRoadmapDocuments,
   canEdit,
-  onDismiss,
 }: DocumentsBannerProps) {
   return (
     <section className="rounded-2xl border border-border/70 bg-zinc-100/80 px-4 py-4 dark:bg-zinc-900/30 sm:px-5">
@@ -38,7 +33,7 @@ export function DocumentsBanner({
                 ? "This filing system combines roadmap sections, policies, and organization files in one index so your team can find what matters and keep documentation current."
                 : "Keep your organization's policies and core files in one secure index so your team can quickly find, update, and manage required documents."}
             </p>
-            <p>Uploads support PDF files up to 15 MB.</p>
+            <p>Uploads support PDF files up to 50 MB.</p>
           </div>
           {!canEdit ? (
             <div className="mt-3 inline-flex w-fit items-center gap-2 rounded-md border border-border/70 bg-background/70 px-2.5 py-1.5 text-xs text-muted-foreground">
@@ -48,16 +43,6 @@ export function DocumentsBanner({
             </div>
           ) : null}
         </div>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0 rounded-lg border border-border/70 bg-background/80 hover:bg-background"
-          onClick={onDismiss}
-          aria-label="Dismiss documents banner"
-        >
-          <XIcon className="h-4 w-4" aria-hidden />
-        </Button>
       </div>
     </section>
   )

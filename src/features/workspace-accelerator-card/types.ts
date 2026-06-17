@@ -28,6 +28,7 @@ export type WorkspaceAcceleratorCardStep = {
   stepKind: WorkspaceAcceleratorStepKind
   stepTitle: string
   stepDescription: string | null
+  assignmentSectionId?: string | null
   href: string
   status: WorkspaceAcceleratorStepStatus
   stepSequenceIndex: number
@@ -119,6 +120,7 @@ export type WorkspaceAcceleratorCardRuntimeSnapshot = {
   readinessSummary?: AcceleratorReadinessSummary | null
   checklistModuleCount?: number
   filteredStepCount?: number
+  filteredProgressPercent?: number
 }
 
 export type WorkspaceAcceleratorTutorialFocus =

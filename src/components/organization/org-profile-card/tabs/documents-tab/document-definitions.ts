@@ -1,6 +1,7 @@
 import type { DocumentDefinition } from "./types"
 
-export const MAX_BYTES = 15 * 1024 * 1024
+export const MAX_UPLOAD_MB = 50
+export const MAX_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 
 export const DOCUMENTS: DocumentDefinition[] = [
   {
@@ -87,7 +88,8 @@ export const DOCUMENTS: DocumentDefinition[] = [
     kind: "gata-pre-qualification",
     key: "gataPreQualification",
     title: "GATA pre-qualification",
-    description: "Illinois GATA pre-qualification documentation (if applicable).",
+    description:
+      "Illinois GATA pre-qualification documentation (if applicable).",
     defaultName: "GATA pre-qualification (Illinois only)",
     category: "Compliance",
   },
@@ -122,8 +124,8 @@ export const ROADMAP_CATEGORY_BY_ID: Record<string, string> = {
   need: "Roadmap",
   mission_vision_values: "Roadmap",
   theory_of_change: "Roadmap",
-  program: "Programs",
-  evaluation: "Programs",
+  program: "Primary objects",
+  evaluation: "Primary objects",
   people: "Operations",
   budget: "Finance",
   fundraising: "Fundraising",

@@ -47,7 +47,7 @@ export function resolveWorkspaceCanvasTutorialAutofocusTarget({
 
   const continueMode = resolveWorkspaceCanvasTutorialContinueMode(
     tutorialStepIndex,
-    openedTutorialStepIds,
+    openedTutorialStepIds
   )
   if (continueMode === "shortcut") {
     return null
@@ -64,21 +64,15 @@ export function resolveWorkspaceCanvasTutorialAutofocusTarget({
 
 export function resolveWorkspaceCanvasFallbackFocusTarget({
   focusCardId,
-  journeyGuideTargetCardId,
   visibleNodeIds,
 }: {
   focusCardId?: string | null
-  journeyGuideTargetCardId?: string | null
   visibleNodeIds: string[]
 }): string | null {
   const visibleNodeIdSet = new Set(visibleNodeIds)
 
   if (focusCardId && visibleNodeIdSet.has(focusCardId)) {
     return focusCardId
-  }
-
-  if (journeyGuideTargetCardId && visibleNodeIdSet.has(journeyGuideTargetCardId)) {
-    return journeyGuideTargetCardId
   }
 
   return null

@@ -11,6 +11,7 @@ import { SidebarProvider } from "@/components/ui/sidebar"
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/tasks",
+  useRouter: () => ({ prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }))
 
@@ -113,5 +114,84 @@ describe("app sidebar react grab", () => {
     expect(markup).not.toContain(">Welcome<")
     expect(markup).not.toContain("/onboarding?source=onboarding")
     expect(markup).not.toContain("app-sidebar:onboarding:welcome")
+  })
+
+  it("renders an upgrade CTA above resources for signed-in free users", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(
+        SidebarProvider,
+        null,
+        React.createElement(SidebarBody, {
+          isAdmin: false,
+          isTester: false,
+          user: {
+            name: "Free User",
+            title: null,
+            email: "free@example.test",
+            avatar: null,
+          },
+          hasActiveSubscription: false,
+          showMemberWorkspace: false,
+        }),
+      ),
+    )
+
+    const upgradeIndex = markup.indexOf("Upgrade account")
+    const resourcesIndex = markup.indexOf(">Resources<")
+
+    expect(upgradeIndex).toBeGreaterThan(-1)
+    expect(resourcesIndex).toBeGreaterThan(-1)
+    expect(upgradeIndex).toBeLessThan(resourcesIndex)
+    expect(markup).toContain(
+      "/find?paywall=organization&amp;plan=organization&amp;source=sidebar_upgrade&amp;redirect=%2Fworkspace&amp;cancel=%2Ffind&amp;paywall_preview=1",
+    )
+  })
+
+  it("does not render the free upgrade CTA for paid workspace users", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(
+        SidebarProvider,
+        null,
+        React.createElement(SidebarBody, {
+          isAdmin: false,
+          isTester: false,
+          user: {
+            name: "Paid User",
+            title: null,
+            email: "paid@example.test",
+            avatar: null,
+          },
+          hasActiveSubscription: true,
+          showMemberWorkspace: true,
+        }),
+      ),
+    )
+
+    expect(markup).not.toContain("Upgrade account")
+    expect(markup).not.toContain("source=sidebar_upgrade")
+  })
+
+  it("renders the upgrade CTA for platform admins so they can test checkout placement", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(
+        SidebarProvider,
+        null,
+        React.createElement(SidebarBody, {
+          isAdmin: true,
+          isTester: false,
+          user: {
+            name: "Platform Admin",
+            title: null,
+            email: "admin@example.test",
+            avatar: null,
+          },
+          hasActiveSubscription: true,
+          showMemberWorkspace: true,
+        }),
+      ),
+    )
+
+    expect(markup).toContain("Upgrade account")
+    expect(markup).toContain("source=sidebar_upgrade")
   })
 })

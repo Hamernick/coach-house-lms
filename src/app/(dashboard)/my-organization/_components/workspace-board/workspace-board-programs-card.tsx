@@ -15,19 +15,21 @@ import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
 import { Button } from "@/components/ui/button"
 import {
   Carousel,
+  type CarouselApi,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from "@/components/ui/carousel"
 import { Empty } from "@/components/ui/empty"
+import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
 import {
   resolveProgramBannerImageUrl,
   resolveProgramCardChips,
   resolveProgramProfileImageUrl,
   resolveProgramSummary,
 } from "@/lib/programs/display"
-import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
+import { getWorkspaceEditorPath } from "@/lib/workspace/routes"
+
+import { useWorkspaceCanvasOverlayDrawerContainer } from "./workspace-canvas-v2/components/workspace-canvas-overlay-drawer-container"
 
 function sortProgramsByNewest(programs: OrgProgram[]) {
   return [...programs].sort((left, right) => {
@@ -39,10 +41,10 @@ function sortProgramsByNewest(programs: OrgProgram[]) {
 
 export function buildWorkspaceProgramEditorHref(programId?: string | null) {
   if (!programId || programId.trim().length === 0) {
-    return "/workspace?view=editor&tab=programs"
+    return getWorkspaceEditorPath({ tab: "programs" })
   }
 
-  return `/workspace?view=editor&tab=programs&programId=${encodeURIComponent(programId)}`
+  return getWorkspaceEditorPath({ tab: "programs", programId })
 }
 
 export function isWorkspaceProgramRecord(program: Pick<OrgProgram, "id">) {
@@ -50,7 +52,7 @@ export function isWorkspaceProgramRecord(program: Pick<OrgProgram, "id">) {
 }
 
 export function isWorkspaceProgramsPreviewOnlyStep(
-  tutorialStepId?: WorkspaceCanvasTutorialStepId | null,
+  tutorialStepId?: WorkspaceCanvasTutorialStepId | null
 ) {
   return tutorialStepId === "programs"
 }
@@ -76,6 +78,7 @@ export function WorkspaceBoardProgramsCard({
   legacyProgramsValue,
   canEdit,
   createOpen,
+  onCarouselApiChange,
   onCreateOpenChange,
   previewOnly = false,
 }: {
@@ -83,19 +86,23 @@ export function WorkspaceBoardProgramsCard({
   legacyProgramsValue?: string | null
   canEdit: boolean
   createOpen: boolean
+  onCarouselApiChange?: (api: CarouselApi) => void
   onCreateOpenChange: (open: boolean) => void
   previewOnly?: boolean
 }) {
   const router = useRouter()
+  const canvasPortalContainer = useWorkspaceCanvasOverlayDrawerContainer()
   const [editOpen, setEditOpen] = useState(false)
-  const [selectedProgram, setSelectedProgram] = useState<OrgProgram | null>(null)
+  const [selectedProgram, setSelectedProgram] = useState<OrgProgram | null>(
+    null
+  )
   const sortedPrograms = useMemo(
     () =>
       resolveWorkspaceProgramsDisplayPrograms({
         programs,
         legacyProgramsValue,
       }),
-    [legacyProgramsValue, programs],
+    [legacyProgramsValue, programs]
   )
 
   const handleEditOpenChange = (open: boolean) => {
@@ -107,7 +114,8 @@ export function WorkspaceBoardProgramsCard({
   }
 
   const renderProgramCard = (program: OrgProgram) => {
-    const useOverlay = canEdit && !previewOnly && isWorkspaceProgramRecord(program)
+    const useOverlay =
+      canEdit && !previewOnly && isWorkspaceProgramRecord(program)
     const ctaHref = previewOnly
       ? undefined
       : useOverlay
@@ -122,7 +130,7 @@ export function WorkspaceBoardProgramsCard({
 
     return (
       <ProgramCard
-        title={program.title?.trim() || "Untitled program"}
+        title={program.title?.trim() || "Untitled object"}
         location={locationSummary(program) ?? undefined}
         description={resolveProgramSummary(program) ?? undefined}
         bannerImageUrl={resolveProgramBannerImageUrl(program) ?? undefined}
@@ -137,68 +145,63 @@ export function WorkspaceBoardProgramsCard({
         ctaTarget="_self"
         onCtaClick={onCtaClick}
         variant="medium"
-        className="max-w-none border border-border/60 bg-background/35 shadow-none"
+        className="border-border/60 bg-background/35 h-full min-h-0 max-w-none border shadow-none"
       />
     )
   }
 
   return (
     <>
-      <div className="flex min-h-0 flex-col gap-3 pb-0.5">
+      <div className="flex min-h-0 flex-col gap-3 pb-0">
         {sortedPrograms.length > 0 ? (
           sortedPrograms.length === 1 ? (
-            <div key={sortedPrograms[0]?.id ?? sortedPrograms[0]?.title ?? "program-0"}>
+            <div
+              key={
+                sortedPrograms[0]?.id ?? sortedPrograms[0]?.title ?? "program-0"
+              }
+            >
               {renderProgramCard(sortedPrograms[0]!)}
             </div>
           ) : (
             <Carousel
               className="w-full"
-              opts={{ align: "start", loop: sortedPrograms.length > 1 }}
+              opts={{ align: "start", loop: false }}
+              setApi={onCarouselApiChange}
             >
-              <CarouselContent>
+              <CarouselContent className="ml-0 items-stretch">
                 {sortedPrograms.map((program, index) => (
-                  <CarouselItem key={program.id ?? program.title ?? `program-${index}`}>
+                  <CarouselItem
+                    key={program.id ?? program.title ?? `program-${index}`}
+                    className="flex pl-0"
+                  >
                     {renderProgramCard(program)}
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious className="left-auto right-[3.25rem] top-3 h-8 w-8 translate-y-0 rounded-full border-border/70 bg-background/85 backdrop-blur-sm" />
-              <CarouselNext className="left-auto right-3 top-3 h-8 w-8 translate-y-0 rounded-full border-border/70 bg-background/85 backdrop-blur-sm" />
             </Carousel>
           )
         ) : (
           <Empty
             icon={<FolderPlusIcon className="h-5 w-5" aria-hidden />}
-            title="No programs to display"
-            description="Programs you create will appear here."
+            title="No activity to display"
+            description="Projects, programs, events, services, and grant requests you create will appear here."
             actions={
-              canEdit ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-8 rounded-lg px-3 text-xs"
-                  disabled={previewOnly}
-                  onClick={() => onCreateOpenChange(true)}
-                >
-                  Create program
-                </Button>
-              ) : (
+              canEdit ? null : (
                 <Button
                   asChild
                   variant="outline"
                   size="sm"
-                  className="h-8 rounded-lg px-3 text-xs"
+                  className="h-8 rounded-lg px-3 text-xs shadow-none"
                 >
                   <Link href={buildWorkspaceProgramEditorHref()}>
-                    Open programs
+                    Open activity
                   </Link>
                 </Button>
               )
             }
             size="sm"
             variant="subtle"
-            className="min-h-[148px] rounded-xl px-4 py-6"
+            className="bg-background min-h-[148px] rounded-xl px-4 py-6 shadow-none"
           />
         )}
       </div>
@@ -208,6 +211,7 @@ export function WorkspaceBoardProgramsCard({
           mode="create"
           open={createOpen}
           onOpenChange={onCreateOpenChange}
+          portalContainer={canvasPortalContainer}
         />
       ) : null}
       {selectedProgram && !previewOnly ? (
@@ -216,6 +220,7 @@ export function WorkspaceBoardProgramsCard({
           program={selectedProgram}
           open={editOpen}
           onOpenChange={handleEditOpenChange}
+          portalContainer={canvasPortalContainer}
         />
       ) : null}
     </>

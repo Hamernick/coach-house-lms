@@ -86,7 +86,7 @@ export function useWorkspaceCanvasVisibleCardIds({
 
 export function resolveAcceleratorWorkspaceNodeId(
   acceleratorWorkspaceNode: WorkspaceBoardState["nodes"][number] | null,
-) {
+): WorkspaceCanvasV2CardId | null {
   return acceleratorWorkspaceNode &&
     isWorkspaceCanvasV2CardId(acceleratorWorkspaceNode.id)
     ? acceleratorWorkspaceNode.id

@@ -17,6 +17,13 @@ function normalizeAssignmentFieldType(
   return normalizeFormFieldTypeLegacy(type, variant)
 }
 
+function normalizeAssignmentText(value: string): string {
+  return value
+    .replace(/\\r\\n/g, "\n")
+    .replace(/\\n/g, "\n")
+    .trim()
+}
+
 function normalizeBudgetRow(raw: unknown): BudgetTableRow | null {
   if (typeof raw === "string") {
     const category = raw.trim()
@@ -108,14 +115,14 @@ export function parseAssignmentFields(schema: unknown): ModuleAssignmentField[] 
         ? (field as { placeholder: string }).placeholder
         : ""
     const placeholder =
-      placeholderRaw.trim().length > 0 ? placeholderRaw.trim() : undefined
+      placeholderRaw.trim().length > 0 ? normalizeAssignmentText(placeholderRaw) : undefined
 
     const descriptionRaw =
       typeof (field as { description?: unknown }).description === "string"
         ? (field as { description: string }).description
         : ""
     const description =
-      descriptionRaw.trim().length > 0 ? descriptionRaw.trim() : undefined
+      descriptionRaw.trim().length > 0 ? normalizeAssignmentText(descriptionRaw) : undefined
 
     const optionsRaw = Array.isArray((field as { options?: unknown }).options)
       ? ((field as { options: unknown[] }).options as unknown[])
@@ -173,6 +180,16 @@ export function parseAssignmentFields(schema: unknown): ModuleAssignmentField[] 
           : ""
     const assistContext = assistContextRaw.trim().length > 0 ? assistContextRaw.trim() : undefined
 
+    const screenRaw =
+      typeof (field as { screen?: unknown }).screen === "string"
+        ? (field as { screen: string }).screen
+        : typeof (field as { screen_kind?: unknown }).screen_kind === "string"
+          ? (field as { screen_kind: string }).screen_kind
+          : typeof (field as { screenKind?: unknown }).screenKind === "string"
+            ? (field as { screenKind: string }).screenKind
+            : ""
+    const screen = screenRaw === "intro" || screenRaw === "question" ? screenRaw : undefined
+
     const assignmentField: ModuleAssignmentField = {
       name,
       label,
@@ -212,6 +229,7 @@ export function parseAssignmentFields(schema: unknown): ModuleAssignmentField[] 
     if (orgKey) assignmentField.orgKey = orgKey
     if (roadmapSectionId) assignmentField.roadmapSectionId = roadmapSectionId
     if (assistContext) assignmentField.assistContext = assistContext
+    if (screen) assignmentField.screen = screen
 
     normalized.push(assignmentField)
   })

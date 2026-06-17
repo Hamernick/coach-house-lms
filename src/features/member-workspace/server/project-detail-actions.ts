@@ -9,6 +9,7 @@ import type {
   MemberWorkspaceUpdateProjectNoteInput,
   MemberWorkspaceUpdateProjectQuickLinkInput,
 } from "../types"
+import { ensureMemberWorkspaceFeatureAccess } from "./access"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import {
   isMissingOrganizationProjectNotesTableError,
@@ -20,9 +21,7 @@ type MemberWorkspaceProjectNoteMutationResult =
   | { ok: true; noteId: string }
   | { error: string }
 
-type MemberWorkspaceDeleteProjectNoteResult =
-  | { ok: true }
-  | { error: string }
+type MemberWorkspaceDeleteProjectNoteResult = { ok: true } | { error: string }
 
 type MemberWorkspaceProjectQuickLinkMutationResult =
   | { ok: true; linkId: string }
@@ -75,7 +74,16 @@ async function resolveProjectForDetailMutation({
 }: {
   actor: Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>
   projectId: string
-}): Promise<{ ok: true; project: ProjectNoteMutationProjectRow } | { error: string }> {
+}): Promise<
+  { ok: true; project: ProjectNoteMutationProjectRow } | { error: string }
+> {
+  if (actor.isAdmin) {
+    return { error: PLATFORM_ADMIN_PROJECT_DETAIL_MUTATION_ERROR }
+  }
+
+  const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
+  if (featureAccess) return featureAccess
+
   const { data: project, error } = await actor.supabase
     .from("organization_projects")
     .select("id, org_id")
@@ -86,7 +94,7 @@ async function resolveProjectForDetailMutation({
     if (isMissingOrganizationProjectsTableError(error)) {
       return {
         error:
-          "Projects are not available until the latest workspace database migrations are applied.",
+          "Organizations are not available until the latest workspace database migrations are applied.",
       }
     }
     return { error: "Unable to load that project." }
@@ -96,12 +104,10 @@ async function resolveProjectForDetailMutation({
     return { error: "Unable to find that project." }
   }
 
-  if (actor.isAdmin) {
-    return { error: PLATFORM_ADMIN_PROJECT_DETAIL_MUTATION_ERROR }
-  }
-
   if (project.org_id !== actor.activeOrg.orgId) {
-    return { error: "You can only manage project details for the active organization." }
+    return {
+      error: "You can only manage project details for the active organization.",
+    }
   }
 
   if (!actor.canEdit) {
@@ -112,12 +118,12 @@ async function resolveProjectForDetailMutation({
 }
 
 function revalidateProjectDetailRoutes(projectId: string) {
-  revalidatePath("/projects")
-  revalidatePath(`/projects/${projectId}`)
+  revalidatePath("/organizations")
+  revalidatePath(`/organizations/${projectId}`)
 }
 
 export async function createMemberWorkspaceProjectNoteAction(
-  input: MemberWorkspaceCreateProjectNoteInput,
+  input: MemberWorkspaceCreateProjectNoteInput
 ): Promise<MemberWorkspaceProjectNoteMutationResult> {
   const actor = await resolveMemberWorkspaceActorContext()
   const project = await resolveProjectForDetailMutation({
@@ -166,7 +172,7 @@ export async function createMemberWorkspaceProjectNoteAction(
 }
 
 export async function updateMemberWorkspaceProjectNoteAction(
-  input: MemberWorkspaceUpdateProjectNoteInput,
+  input: MemberWorkspaceUpdateProjectNoteInput
 ): Promise<MemberWorkspaceProjectNoteMutationResult> {
   const actor = await resolveMemberWorkspaceActorContext()
   const project = await resolveProjectForDetailMutation({
@@ -257,23 +263,21 @@ function normalizeProjectQuickLinkName(value: string) {
 }
 
 function normalizeProjectQuickLinkUrl(value: string) {
-  const response:
-    | { ok: true; url: string }
-    | { error: string } = (() => {
-  const trimmed = value.trim()
-  if (!trimmed) {
+  const response: { ok: true; url: string } | { error: string } = (() => {
+    const trimmed = value.trim()
+    if (!trimmed) {
       return { error: "Add a URL before saving the link." }
-  }
-
-  try {
-    const parsed = new URL(trimmed)
-    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
-        return { error: "Quick links must use an http or https URL." }
     }
+
+    try {
+      const parsed = new URL(trimmed)
+      if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+        return { error: "Quick links must use an http or https URL." }
+      }
       return { ok: true, url: parsed.toString() }
-  } catch {
+    } catch {
       return { error: "Enter a valid URL for the quick link." }
-  }
+    }
   })()
 
   return response
@@ -290,7 +294,11 @@ function inferQuickLinkType({
 
   if (haystack.includes("figma.com")) return "fig"
   if (haystack.includes(".zip")) return "zip"
-  if (haystack.includes(".doc") || haystack.includes(".docx") || haystack.includes(".gdoc")) {
+  if (
+    haystack.includes(".doc") ||
+    haystack.includes(".docx") ||
+    haystack.includes(".gdoc")
+  ) {
     return "doc"
   }
   if (haystack.includes(".pdf")) return "pdf"
@@ -298,7 +306,7 @@ function inferQuickLinkType({
 }
 
 export async function createMemberWorkspaceProjectQuickLinkAction(
-  input: MemberWorkspaceCreateProjectQuickLinkInput,
+  input: MemberWorkspaceCreateProjectQuickLinkInput
 ): Promise<MemberWorkspaceProjectQuickLinkMutationResult> {
   const actor = await resolveMemberWorkspaceActorContext()
   const project = await resolveProjectForDetailMutation({
@@ -355,7 +363,7 @@ export async function createMemberWorkspaceProjectQuickLinkAction(
 }
 
 export async function updateMemberWorkspaceProjectQuickLinkAction(
-  input: MemberWorkspaceUpdateProjectQuickLinkInput,
+  input: MemberWorkspaceUpdateProjectQuickLinkInput
 ): Promise<MemberWorkspaceProjectQuickLinkMutationResult> {
   const actor = await resolveMemberWorkspaceActorContext()
   const project = await resolveProjectForDetailMutation({

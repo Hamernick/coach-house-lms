@@ -1,8 +1,15 @@
 "use client"
 
-import { type MutableRefObject, useEffect, useMemo, useRef } from "react"
-import { useNodesState } from "reactflow"
+import {
+  type MutableRefObject,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react"
+import { applyNodeChanges, useNodesState, type NodeChange } from "reactflow"
 
+import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
 import type { WorkspaceBoardNodeData } from "../../workspace-board-node-types"
 import type {
   WorkspaceBoardState,
@@ -10,6 +17,7 @@ import type {
 } from "../../workspace-board-types"
 import { useWorkspaceTutorialSceneFitRequest } from "./workspace-canvas-surface-v2-controller-hooks"
 import { buildInitialWorkspaceCanvasNodes } from "./workspace-canvas-surface-v2-node-builders"
+import type { WorkspaceCanvasPersonPlacement } from "./workspace-canvas-person-node-model"
 import {
   type WorkspaceCanvasNode,
   type WorkspaceCanvasNodeData,
@@ -32,16 +40,16 @@ function resolveTutorialSceneLayoutKey({
 
   const sceneNodeIdSet = new Set(tutorialSceneNodeIds)
   const sceneNodes = nodes.filter((node) => sceneNodeIdSet.has(node.id))
-  const layoutNodes =
-    sceneNodes.filter((node) => node.id !== "workspace-canvas-tutorial")
+  const layoutNodes = sceneNodes.filter(
+    (node) => node.id !== "workspace-canvas-tutorial"
+  )
 
-  const nodesForLayoutKey =
-    layoutNodes.length > 0 ? layoutNodes : sceneNodes
+  const nodesForLayoutKey = layoutNodes.length > 0 ? layoutNodes : sceneNodes
 
   return nodesForLayoutKey
     .map(
       (node) =>
-        `${node.id}:${Math.round(node.position.x)}:${Math.round(node.position.y)}`,
+        `${node.id}:${Math.round(node.position.x)}:${Math.round(node.position.y)}`
     )
     .join("|")
 }
@@ -74,7 +82,7 @@ function useWorkspaceTutorialSceneFit({
         tutorialActive,
         tutorialSceneNodeIds,
       }),
-    [nodes, tutorialActive, tutorialSceneNodeIds],
+    [nodes, tutorialActive, tutorialSceneNodeIds]
   )
 
   return useWorkspaceTutorialSceneFitRequest({
@@ -94,8 +102,12 @@ function useResolvedWorkspaceCanvasNodes({
   cardDataLookup,
   orgNodePositionFromBoard,
   allowEditing,
+  allowPeopleCanvasInteraction,
   acceleratorStepNodeData,
   tutorialNodeData,
+  workspacePersonPlacements,
+  workspacePersonById,
+  onRemoveWorkspacePerson,
   tutorialSceneCardPositionOverrides,
   tutorialDraggableCardIds,
 }: {
@@ -105,8 +117,12 @@ function useResolvedWorkspaceCanvasNodes({
   cardDataLookup: Record<WorkspaceCardId, WorkspaceBoardNodeData>
   orgNodePositionFromBoard: { x: number; y: number }
   allowEditing: boolean
+  allowPeopleCanvasInteraction: boolean
   acceleratorStepNodeData: WorkspaceCanvasNode | null
   tutorialNodeData: WorkspaceCanvasNode | null
+  workspacePersonPlacements: WorkspaceCanvasPersonPlacement[]
+  workspacePersonById: ReadonlyMap<string, OrgPersonWithImage>
+  onRemoveWorkspacePerson: (personId: string) => void
   tutorialSceneCardPositionOverrides: Partial<
     Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
   > | null
@@ -121,27 +137,35 @@ function useResolvedWorkspaceCanvasNodes({
         cardDataLookup,
         orgNodePositionFromBoard,
         allowEditing,
+        allowPeopleCanvasInteraction,
         acceleratorStepNodeData,
         tutorialNodeData,
+        workspacePersonPlacements,
+        workspacePersonById,
+        onRemoveWorkspacePerson,
         tutorialCardPositionOverrides: tutorialSceneCardPositionOverrides,
         tutorialDraggableCardIds,
       }),
     [
       acceleratorStepNodeData,
       allowEditing,
+      allowPeopleCanvasInteraction,
       boardNodeLookup,
       cardDataLookup,
       nodes,
+      onRemoveWorkspacePerson,
       orgNodePositionFromBoard,
       tutorialNodeData,
       tutorialDraggableCardIds,
       tutorialSceneCardPositionOverrides,
       visibleCardIds,
-    ],
+      workspacePersonById,
+      workspacePersonPlacements,
+    ]
   )
   const visibleNodeIds = useMemo(
     () => renderNodes.map((node) => node.id),
-    [renderNodes],
+    [renderNodes]
   )
 
   return { renderNodes, visibleNodeIds }
@@ -153,9 +177,13 @@ export function useWorkspaceCanvasRenderState({
   initialPositionLookupRef,
   cardDataLookup,
   allowEditing,
+  allowPeopleCanvasInteraction,
   tutorialActive,
   acceleratorStepNodeData,
   tutorialNodeData,
+  workspacePersonPlacements,
+  workspacePersonById,
+  onRemoveWorkspacePerson,
   tutorialSceneCardPositionOverrides,
   tutorialDraggableCardIds,
   orgNodePositionFromBoard,
@@ -171,9 +199,13 @@ export function useWorkspaceCanvasRenderState({
   >
   cardDataLookup: Record<WorkspaceCardId, WorkspaceBoardNodeData>
   allowEditing: boolean
+  allowPeopleCanvasInteraction: boolean
   tutorialActive: boolean
   acceleratorStepNodeData: WorkspaceCanvasNode | null
   tutorialNodeData: WorkspaceCanvasNode | null
+  workspacePersonPlacements: WorkspaceCanvasPersonPlacement[]
+  workspacePersonById: ReadonlyMap<string, OrgPersonWithImage>
+  onRemoveWorkspacePerson: (personId: string) => void
   tutorialSceneCardPositionOverrides: Partial<
     Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
   > | null
@@ -198,25 +230,32 @@ export function useWorkspaceCanvasRenderState({
         initialPositionLookupRef,
         cardDataLookup,
         allowEditing,
+        allowPeopleCanvasInteraction,
         acceleratorStepNodeData,
         tutorialNodeData,
+        workspacePersonPlacements,
+        workspacePersonById,
+        onRemoveWorkspacePerson,
         tutorialDraggableCardIds,
         tutorialCardPositionOverrides: tutorialSceneCardPositionOverrides,
       }),
     [
       acceleratorStepNodeData,
       allowEditing,
+      allowPeopleCanvasInteraction,
       boardNodeLookup,
       cardDataLookup,
       initialPositionLookupRef,
+      onRemoveWorkspacePerson,
       tutorialNodeData,
       tutorialDraggableCardIds,
       tutorialSceneCardPositionOverrides,
       visibleCardIds,
-    ],
+      workspacePersonById,
+      workspacePersonPlacements,
+    ]
   )
-  const [nodes, setNodes, onNodesChange] =
-    useNodesState<WorkspaceCanvasNodeData>(initialNodes)
+  const [nodes, setNodes] = useNodesState<WorkspaceCanvasNodeData>(initialNodes)
   const latestInitialNodesRef = useRef(initialNodes)
   const previousTutorialSceneRequestSeedRef = useRef(tutorialSceneRequestSeed)
   const previousTutorialActiveRef = useRef(tutorialActive)
@@ -224,6 +263,50 @@ export function useWorkspaceCanvasRenderState({
   useEffect(() => {
     latestInitialNodesRef.current = initialNodes
   }, [initialNodes])
+
+  const handleNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      setNodes((currentNodes) => {
+        const reconciledNodes = resolveWorkspaceCanvasRenderNodes({
+          nodes: currentNodes,
+          visibleCardIds,
+          boardNodeLookup,
+          cardDataLookup,
+          orgNodePositionFromBoard,
+          allowEditing,
+          allowPeopleCanvasInteraction,
+          acceleratorStepNodeData,
+          tutorialNodeData,
+          workspacePersonPlacements,
+          workspacePersonById,
+          onRemoveWorkspacePerson,
+          tutorialCardPositionOverrides: tutorialSceneCardPositionOverrides,
+          tutorialDraggableCardIds,
+        })
+
+        return applyNodeChanges(
+          changes,
+          reconciledNodes
+        ) as WorkspaceCanvasNode[]
+      })
+    },
+    [
+      acceleratorStepNodeData,
+      allowEditing,
+      allowPeopleCanvasInteraction,
+      boardNodeLookup,
+      cardDataLookup,
+      onRemoveWorkspacePerson,
+      orgNodePositionFromBoard,
+      setNodes,
+      tutorialNodeData,
+      tutorialDraggableCardIds,
+      tutorialSceneCardPositionOverrides,
+      visibleCardIds,
+      workspacePersonById,
+      workspacePersonPlacements,
+    ]
+  )
 
   useEffect(() => {
     if (previousTutorialActiveRef.current === tutorialActive) {
@@ -235,7 +318,9 @@ export function useWorkspaceCanvasRenderState({
   }, [setNodes, tutorialActive])
 
   useEffect(() => {
-    if (previousTutorialSceneRequestSeedRef.current === tutorialSceneRequestSeed) {
+    if (
+      previousTutorialSceneRequestSeedRef.current === tutorialSceneRequestSeed
+    ) {
       return
     }
     previousTutorialSceneRequestSeedRef.current = tutorialSceneRequestSeed
@@ -252,8 +337,12 @@ export function useWorkspaceCanvasRenderState({
     cardDataLookup,
     orgNodePositionFromBoard,
     allowEditing,
+    allowPeopleCanvasInteraction,
     acceleratorStepNodeData,
     tutorialNodeData,
+    workspacePersonPlacements,
+    workspacePersonById,
+    onRemoveWorkspacePerson,
     tutorialSceneCardPositionOverrides,
     tutorialDraggableCardIds,
   })
@@ -267,7 +356,7 @@ export function useWorkspaceCanvasRenderState({
   })
 
   return {
-    onNodesChange,
+    onNodesChange: handleNodesChange,
     renderNodes,
     visibleNodeIds,
     tutorialSceneFitRequest,

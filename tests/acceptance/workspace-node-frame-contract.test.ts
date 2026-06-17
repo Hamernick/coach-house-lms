@@ -1,0 +1,64 @@
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
+import { describe, expect, it } from "vitest"
+
+const ROOT = process.cwd()
+
+function readSource(relativePath: string) {
+  return readFileSync(join(ROOT, relativePath), "utf8")
+}
+
+describe("workspace node frame contract", () => {
+  it("keeps the contract linked from AGENTS.md", () => {
+    const agents = readSource("AGENTS.md")
+    const contract = readSource("docs/agent/workspace-node-frame-contract.md")
+
+    expect(agents).toContain("docs/agent/workspace-node-frame-contract.md")
+    expect(contract).toContain("# Workspace Node Frame Contract")
+    expect(contract).toContain("## Current Transitional State")
+    expect(contract).toContain("## Target Pattern")
+    expect(contract).toContain("## React Flow Boundary")
+    expect(contract).toContain("## Anti-Patterns")
+    expect(contract).toContain("WorkspaceNodeFrame")
+    expect(contract).toContain("React Flow owns canvas behavior")
+    expect(contract).toContain("Do not add new one-off canvas node shells.")
+  })
+
+  it("keeps card-style workspace node shells out of React Flow state ownership", () => {
+    const nodeCardShell = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-shell.tsx"
+    )
+    const organizationShell = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-organization-card-shell.tsx"
+    )
+    const acceleratorShell = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-accelerator-card.tsx"
+    )
+    const fiscalShell = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-panel.tsx"
+    )
+
+    for (const source of [
+      nodeCardShell,
+      organizationShell,
+      acceleratorShell,
+      fiscalShell,
+    ]) {
+      expect(source).not.toContain('from "reactflow"')
+      expect(source).not.toContain("useNodesState")
+      expect(source).not.toContain("useEdgesState")
+      expect(source).not.toContain("useStore(")
+      expect(source).not.toContain("useReactFlow")
+      expect(source).not.toContain("useUpdateNodeInternals")
+    }
+  })
+
+  it("keeps no-footer card-style node spacing intentional", () => {
+    const nodeCardShell = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-shell.tsx"
+    )
+
+    expect(nodeCardShell).toContain('footer ? "pb-0" : "pb-3"')
+    expect(nodeCardShell).not.toContain('"px-0 pb-0"')
+  })
+})

@@ -6,7 +6,6 @@ import { AssignmentBudgetTableField } from "@/components/training/module-detail/
 import type { ModuleAssignmentField } from "@/lib/modules"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 
 import { computeBudgetBreakdown, money, ratio } from "../helpers"
 import type { ProgramWizardFormState } from "../schema"
@@ -44,18 +43,48 @@ export function StepBudgetFeasibility({
   const budget = computeBudgetBreakdown(form)
 
   return (
-    <section className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
-      <div className="space-y-4">
-        <div className="rounded-xl border border-border/60 bg-background/30 p-4">
+    <section className="flex w-full max-w-full min-w-0 flex-col gap-4 overflow-x-hidden">
+      <div className="flex w-full max-w-full min-w-0 flex-col gap-4 overflow-x-hidden">
+        <div className="bg-muted/35 sticky top-0 z-10 grid w-full max-w-full min-w-0 gap-3 pb-3">
+          <div className="border-border/60 bg-background/30 rounded-xl border p-4">
+            <div className="text-muted-foreground flex items-center gap-2 text-xs tracking-wide uppercase">
+              <ReceiptTextIcon className="h-3.5 w-3.5" aria-hidden />
+              Total program budget
+            </div>
+            <p className="mt-2 text-lg font-semibold tabular-nums">
+              {money(budget.totalBudget)}
+            </p>
+          </div>
+          <div className="border-border/60 bg-background/30 rounded-xl border p-4">
+            <div className="text-muted-foreground flex items-center gap-2 text-xs tracking-wide uppercase">
+              <WalletIcon className="h-3.5 w-3.5" aria-hidden />
+              Raised or committed
+            </div>
+            <p className="mt-2 text-lg font-semibold tabular-nums">
+              {money(budget.raised)}
+            </p>
+          </div>
+          <div className="border-border/60 bg-background/30 rounded-xl border p-4">
+            <div className="text-muted-foreground flex items-center gap-2 text-xs tracking-wide uppercase">
+              <TargetIcon className="h-3.5 w-3.5" aria-hidden />
+              Fundraising need
+            </div>
+            <p className="mt-2 text-lg font-semibold tabular-nums">
+              {money(budget.fundraisingTarget)}
+            </p>
+          </div>
+        </div>
+
+        <div className="border-border/60 bg-background/30 max-w-full min-w-0 overflow-x-hidden rounded-xl border p-4">
           <div className="flex items-start gap-3">
             <div className="bg-muted text-muted-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-lg">
               <ReceiptTextIcon className="h-4 w-4" aria-hidden />
             </div>
-            <div className="space-y-1">
+            <div className="flex flex-col gap-1">
               <h3 className="text-sm font-semibold">Budget breakdown</h3>
-              <p className="text-sm text-muted-foreground">
-                Add the cost buckets for this program. The wizard will calculate the total budget
-                and the fundraising amount from these numbers.
+              <p className="text-muted-foreground text-sm">
+                Add the cost buckets for this program. The wizard will calculate
+                the total budget and the fundraising amount from these numbers.
               </p>
             </div>
           </div>
@@ -66,17 +95,22 @@ export function StepBudgetFeasibility({
               isStepper={false}
               labelClassName="text-sm font-medium text-foreground"
               labelText="Budget breakdown"
+              layout="stacked"
               updateValue={(_name, value) =>
-                update({ budgetRows: value as ProgramWizardFormState["budgetRows"] })
+                update({
+                  budgetRows: value as ProgramWizardFormState["budgetRows"],
+                })
               }
             />
             {errors.budgetUsd ? (
-              <p className="mt-3 text-xs text-destructive">{errors.budgetUsd}</p>
+              <p className="text-destructive mt-3 text-xs">
+                {errors.budgetUsd}
+              </p>
             ) : null}
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid w-full max-w-full min-w-0 gap-4">
           <NumberField
             id="raisedUsd"
             label="Already raised or committed (USD)"
@@ -89,45 +123,17 @@ export function StepBudgetFeasibility({
             <Input
               id="fundingSource"
               value={form.fundingSource}
-              onChange={(event) => update({ fundingSource: event.currentTarget.value })}
+              onChange={(event) =>
+                update({ fundingSource: event.currentTarget.value })
+              }
               placeholder="Foundation grant + donor circle"
               className="text-base"
             />
           </div>
         </div>
-
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-xl border border-border/60 bg-background/30 p-4">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-              <ReceiptTextIcon className="h-3.5 w-3.5" aria-hidden />
-              Total program budget
-            </div>
-            <p className="mt-2 text-lg font-semibold tabular-nums">
-              {money(budget.totalBudget)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-border/60 bg-background/30 p-4">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-              <WalletIcon className="h-3.5 w-3.5" aria-hidden />
-              Raised or committed
-            </div>
-            <p className="mt-2 text-lg font-semibold tabular-nums">
-              {money(budget.raised)}
-            </p>
-          </div>
-          <div className="rounded-xl border border-border/60 bg-background/30 p-4">
-            <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-              <TargetIcon className="h-3.5 w-3.5" aria-hidden />
-              Fundraising need
-            </div>
-            <p className="mt-2 text-lg font-semibold tabular-nums">
-              {money(budget.fundraisingTarget)}
-            </p>
-          </div>
-        </div>
       </div>
 
-      <aside className="space-y-3 rounded-xl border bg-muted/25 p-4">
+      <aside className="bg-muted/25 flex min-w-0 flex-col gap-3 rounded-xl border p-4">
         <h3 className="text-sm font-semibold">Instant feasibility snapshot</h3>
         <MetricRow
           label="Cost per participant"
@@ -145,21 +151,20 @@ export function StepBudgetFeasibility({
               : "Not enough data"
           }
         />
-        <Separator />
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className="flex flex-col gap-1">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
             Flags
           </p>
           {feasibility.flags.length > 0 ? (
-            <ul className="space-y-1">
+            <ul className="flex flex-col gap-1">
               {feasibility.flags.map((flag) => (
-                <li key={flag} className="text-sm text-foreground">
+                <li key={flag} className="text-foreground text-sm">
                   - {flag}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               No feasibility flags right now.
             </p>
           )}

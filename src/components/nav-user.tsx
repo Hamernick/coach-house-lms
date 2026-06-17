@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation"
 import dynamic from "next/dynamic"
 import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
 
+import {
+  resolveAppShellAccountMenuActionsForUser,
+  useAppShellAccountMenuActions,
+} from "@/components/app-shell/account-menu-actions-context"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar"
@@ -31,6 +35,8 @@ type NavUserProps = {
   }
   isAdmin?: boolean
   isTester?: boolean
+  showOrgAdmin?: boolean
+  canAccessOrgAdmin?: boolean
   showDivider?: boolean
   hasActiveSubscription?: boolean
 }
@@ -38,12 +44,15 @@ type NavUserProps = {
 export function NavUser({
   user,
   isAdmin = false,
+  showOrgAdmin = false,
+  canAccessOrgAdmin = true,
   showDivider = true,
   hasActiveSubscription = false,
 }: NavUserProps) {
   const router = useRouter()
   const [signOutPending, startSignOutTransition] = useTransition()
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const registeredAccountMenuActions = useAppShellAccountMenuActions()
   const {
     menuOpen,
     setMenuOpen,
@@ -72,6 +81,10 @@ export function NavUser({
     (normalizedEmail && normalizedEmail.toLowerCase() !== displayName.toLowerCase() ? normalizedEmail : "")
   const displayAvatar = user.avatar ?? null
   const avatarFallback = displayName.charAt(0).toUpperCase() || "U"
+  const accountMenuActions = resolveAppShellAccountMenuActionsForUser({
+    actions: registeredAccountMenuActions,
+    isAdmin,
+  })
 
   return (
     <div className={showDivider ? "border-border/60 border-t pt-2" : ""}>
@@ -126,6 +139,9 @@ export function NavUser({
           displayEmail={displayEmail}
           avatarFallback={avatarFallback}
           isAdmin={isAdmin}
+          showOrgAdmin={showOrgAdmin}
+          canAccessOrgAdmin={canAccessOrgAdmin}
+          accountMenuActions={accountMenuActions}
           signOutPending={signOutPending}
           onCloseMenu={() => setMenuOpen(false)}
           onOpenSettings={() => {

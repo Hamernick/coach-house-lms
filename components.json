@@ -24,6 +24,9 @@
     "@aceternity": "https://ui.aceternity.com/registry/{name}.json",
     "@react-bits": "https://reactbits.dev/r/{name}.json",
     "@supabase": "https://supabase.com/ui/r/{name}.json",
-    "@shadcn-space": "https://shadcnspace.com/r/{name}.json"
+    "@shadcn-space": "https://shadcnspace.com/r/{name}.json",
+    "@ncdai": "https://chanhdai.com/r/{name}.json",
+    "@coss": "https://coss.com/ui/r/{name}.json",
+    "@diceui": "https://diceui.com/r/{name}.json"
   }
 }

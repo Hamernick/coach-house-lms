@@ -7,12 +7,16 @@ const {
   subscriptionsCreateMock,
   subscriptionsRetrieveMock,
   subscriptionsUpdateMock,
+  confirmCoachingBookingMock,
+  loadCoachingBookingForConfirmationMock,
 } = vi.hoisted(() => ({
   createSupabaseAdminClientMock: vi.fn(),
   constructEventMock: vi.fn(),
   subscriptionsCreateMock: vi.fn(),
   subscriptionsRetrieveMock: vi.fn(),
   subscriptionsUpdateMock: vi.fn(),
+  confirmCoachingBookingMock: vi.fn(),
+  loadCoachingBookingForConfirmationMock: vi.fn(),
 }))
 
 vi.mock("@/lib/supabase", async () => {
@@ -40,6 +44,11 @@ vi.mock("@/lib/env", () => ({
     NEXT_PUBLIC_MEETING_DISCOUNTED_URL: undefined,
     NEXT_PUBLIC_MEETING_FULL_URL: undefined,
   },
+}))
+
+vi.mock("@/features/coaching-booking/server/booking-finalizer", () => ({
+  confirmCoachingBooking: confirmCoachingBookingMock,
+  loadCoachingBookingForConfirmation: loadCoachingBookingForConfirmationMock,
 }))
 
 class StripeMock {
@@ -134,7 +143,17 @@ function createAdminSupabaseStub(options?: {
   })
 
   return {
-    admin: { from },
+    admin: {
+      auth: {
+        admin: {
+          getUserById: vi.fn().mockResolvedValue({
+            data: { user: { email: "member@example.com" } },
+            error: null,
+          }),
+        },
+      },
+      from,
+    },
     calls: {
       subscriptionsCreate: subscriptionsCreateMock,
       subscriptionsRetrieve: subscriptionsRetrieveMock,
@@ -159,14 +178,20 @@ async function runWebhook() {
 
 describe("stripe webhook route acceptance", () => {
   let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+  let consoleWarnSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
     vi.clearAllMocks()
+    subscriptionsRetrieveMock.mockReset()
+    loadCoachingBookingForConfirmationMock.mockReset()
+    confirmCoachingBookingMock.mockReset()
     consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
+    consoleWarnSpy = vi.spyOn(console, "warn").mockImplementation(() => {})
   })
 
   afterEach(() => {
     consoleErrorSpy.mockRestore()
+    consoleWarnSpy.mockRestore()
   })
 
   it("returns 400 when stripe signature header is missing", async () => {
@@ -270,6 +295,64 @@ describe("stripe webhook route acceptance", () => {
     )
   })
 
+  it("hands coaching checkout metadata to the booking finalizer", async () => {
+    const { admin, calls } = createAdminSupabaseStub()
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+    loadCoachingBookingForConfirmationMock.mockResolvedValue({
+      id: "booking-1",
+      org_id: "org-1",
+      user_id: "user-1",
+      coach_id: "joel",
+      status: "pending_payment",
+      price_tier: "discounted",
+      starts_at: "2026-06-01T15:00:00.000Z",
+      ends_at: "2026-06-01T16:00:00.000Z",
+      timezone: "America/New_York",
+      google_event_id: null,
+      google_meet_url: null,
+    })
+    confirmCoachingBookingMock.mockResolvedValue({ id: "booking-1" })
+
+    constructEventMock.mockReturnValue({
+      id: "evt_coaching_checkout",
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          id: "cs_coaching",
+          mode: "payment",
+          metadata: {
+            kind: "coaching_booking",
+            booking_id: "booking-1",
+            user_id: "user-1",
+            org_user_id: "org-1",
+            price_tier: "discounted",
+          },
+          payment_intent: "pi_coaching",
+          customer: "cus_coaching",
+        },
+      },
+    })
+
+    const response = await runWebhook()
+
+    expect(response.status).toBe(200)
+    expect(loadCoachingBookingForConfirmationMock).toHaveBeenCalledWith({
+      admin,
+      bookingId: "booking-1",
+    })
+    expect(confirmCoachingBookingMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        admin,
+        attendeeEmail: "member@example.com",
+        stripeCheckoutSessionId: "cs_coaching",
+        stripePaymentIntentId: "pi_coaching",
+        stripeCustomerId: "cus_coaching",
+      }),
+    )
+    expect(calls.subscriptionsRetrieve).not.toHaveBeenCalled()
+    expect(calls.subscriptionsUpsert).not.toHaveBeenCalled()
+  })
+
   it("rolls over on customer.subscription.updated when status transitions to canceled after completed installments", async () => {
     const { admin, calls } = createAdminSupabaseStub({ existingActiveSubscription: false })
     createSupabaseAdminClientMock.mockReturnValue(admin)
@@ -335,6 +418,9 @@ describe("stripe webhook route acceptance", () => {
           id: "sub_accel_active",
           status: "active",
           customer: "cus_active",
+          current_period_end: 1_900_000_000,
+          cancel_at: 1_900_000_000,
+          canceled_at: null,
           metadata: {
             user_id: "user_active",
             kind: "accelerator",
@@ -355,6 +441,9 @@ describe("stripe webhook route acceptance", () => {
         user_id: "user_active",
         stripe_subscription_id: "sub_accel_active",
         status: "active",
+        current_period_end: "2030-03-17T17:46:40.000Z",
+        cancel_at: "2030-03-17T17:46:40.000Z",
+        canceled_at: null,
       }),
       expect.objectContaining({ onConflict: "user_id,stripe_subscription_id" }),
     )
@@ -431,6 +520,20 @@ describe("stripe webhook route acceptance", () => {
   it("upserts subscription rows for checkout.session.completed in subscription mode", async () => {
     const { admin, calls } = createAdminSupabaseStub({ existingActiveSubscription: false })
     createSupabaseAdminClientMock.mockReturnValue(admin)
+    subscriptionsRetrieveMock.mockResolvedValue({
+      id: "sub_accelerator_monthly",
+      customer: "cus_sub_mode",
+      status: "active",
+      current_period_end: 1_900_000_000,
+      cancel_at: null,
+      canceled_at: null,
+      metadata: {
+        kind: "accelerator",
+        user_id: "user_sub_mode",
+        planName: "Accelerator Pro",
+        accelerator_billing: "monthly",
+      },
+    })
 
     constructEventMock.mockReturnValue({
       id: "evt_checkout_subscription_mode",
@@ -439,7 +542,7 @@ describe("stripe webhook route acceptance", () => {
         object: {
           id: "cs_subscription_mode",
           mode: "subscription",
-          status: "active",
+          status: "complete",
           client_reference_id: "user_sub_mode",
           subscription: "sub_accelerator_monthly",
           customer: "cus_sub_mode",
@@ -456,14 +559,21 @@ describe("stripe webhook route acceptance", () => {
     const response = await runWebhook()
 
     expect(response.status).toBe(200)
+    expect(calls.subscriptionsRetrieve).toHaveBeenCalledWith(
+      "sub_accelerator_monthly",
+    )
     expect(calls.subscriptionsUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
         user_id: "user_sub_mode",
         stripe_subscription_id: "sub_accelerator_monthly",
         stripe_customer_id: "cus_sub_mode",
         status: "active",
+        current_period_end: "2030-03-17T17:46:40.000Z",
+        cancel_at: null,
+        canceled_at: null,
         metadata: expect.objectContaining({
           kind: "accelerator",
+          planName: "Accelerator Pro",
           accelerator_billing: "monthly",
         }),
       }),
@@ -612,6 +722,20 @@ describe("stripe webhook route acceptance", () => {
       },
     })
     createSupabaseAdminClientMock.mockReturnValue(admin)
+    subscriptionsRetrieveMock.mockResolvedValue({
+      id: "sub_accelerator_failure",
+      customer: "cus_sub_mode_failure",
+      status: "active",
+      current_period_end: 1_900_000_000,
+      cancel_at: null,
+      canceled_at: null,
+      metadata: {
+        kind: "accelerator",
+        user_id: "user_sub_mode_failure",
+        planName: "Accelerator Pro",
+        accelerator_billing: "monthly",
+      },
+    })
 
     constructEventMock.mockReturnValue({
       id: "evt_checkout_subscription_upsert_failure",
@@ -620,7 +744,7 @@ describe("stripe webhook route acceptance", () => {
         object: {
           id: "cs_subscription_upsert_failure",
           mode: "subscription",
-          status: "active",
+          status: "complete",
           client_reference_id: "user_sub_mode_failure",
           subscription: "sub_accelerator_failure",
           customer: "cus_sub_mode_failure",
@@ -641,6 +765,52 @@ describe("stripe webhook route acceptance", () => {
     expect(payload).toMatchObject({ received: true, error: "processing_failed" })
     expect(calls.subscriptionsUpsert).toHaveBeenCalledTimes(1)
     expect(calls.stripeEventsUpdateEq).toHaveBeenCalled()
+  })
+
+  it("does not fail delivery when Stripe references a missing local profile", async () => {
+    const { admin, calls } = createAdminSupabaseStub({
+      subscriptionsUpsertError: {
+        code: "23503",
+        message:
+          'insert or update on table "subscriptions" violates foreign key constraint "subscriptions_user_id_fkey"',
+      },
+    })
+    createSupabaseAdminClientMock.mockReturnValue(admin)
+
+    constructEventMock.mockReturnValue({
+      id: "evt_orphan_subscription",
+      type: "customer.subscription.updated",
+      data: {
+        object: {
+          id: "sub_orphan",
+          status: "active",
+          customer: "cus_orphan",
+          current_period_end: 1_900_000_000,
+          cancel_at: null,
+          canceled_at: null,
+          metadata: {
+            user_id: "missing-profile",
+            planName: "Organization",
+            plan_tier: "organization",
+          },
+        },
+      },
+    })
+
+    const response = await runWebhook()
+    const payload = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(payload).toMatchObject({ received: true })
+    expect(calls.subscriptionsUpsert).toHaveBeenCalledTimes(1)
+    expect(consoleWarnSpy).toHaveBeenCalledWith(
+      "Skipping Stripe webhook record for missing profile",
+      expect.objectContaining({
+        table: "subscriptions",
+        userId: "missing-profile",
+        stripeId: "sub_orphan",
+      }),
+    )
   })
 
   it("increments monthly installment metadata and enables cancel-at-period-end on limit", async () => {

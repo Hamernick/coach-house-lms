@@ -16,6 +16,7 @@ import {
   createMemberWorkspaceProjectNoteAction,
   updateMemberWorkspaceProjectNoteAction,
 } from "@/features/member-workspace/server/project-detail-actions"
+import { MEMBER_WORKSPACE_UPGRADE_MESSAGE } from "@/features/member-workspace/server/access"
 
 function createProjectQuery(project: { id: string; org_id: string }) {
   return {
@@ -68,6 +69,31 @@ describe("member workspace project note actions", () => {
     })
   })
 
+  it("rejects free users before loading project detail mutations", async () => {
+    const supabase = {
+      from: vi.fn(),
+    }
+
+    resolveMemberWorkspaceActorContextMock.mockResolvedValue({
+      supabase,
+      userId: "free-user-1",
+      isAdmin: false,
+      activeOrg: { orgId: "org-1", role: "owner" },
+      canEdit: true,
+      hasMemberWorkspaceAccess: false,
+    })
+
+    await expect(
+      createMemberWorkspaceProjectNoteAction({
+        projectId: "project-1",
+        title: "Free notes",
+        content: "Should not write",
+      }),
+    ).resolves.toEqual({ error: MEMBER_WORKSPACE_UPGRADE_MESSAGE })
+
+    expect(supabase.from).not.toHaveBeenCalled()
+  })
+
   it("persists audio note type when creating uploaded audio notes", async () => {
     const projectQuery = createProjectQuery({
       id: "project-1",
@@ -102,6 +128,7 @@ describe("member workspace project note actions", () => {
       isAdmin: false,
       activeOrg: { orgId: "org-1", role: "owner" },
       canEdit: true,
+      hasMemberWorkspaceAccess: true,
     })
 
     await expect(
@@ -121,8 +148,8 @@ describe("member workspace project note actions", () => {
       org_id: "org-1",
       note_type: "audio",
     })
-    expect(revalidatePathMock).toHaveBeenCalledWith("/projects")
-    expect(revalidatePathMock).toHaveBeenCalledWith("/projects/project-1")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/organizations")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/organizations/project-1")
   })
 
   it("updates note type when an edited note changes to audio", async () => {
@@ -156,6 +183,7 @@ describe("member workspace project note actions", () => {
       isAdmin: false,
       activeOrg: { orgId: "org-1", role: "owner" },
       canEdit: true,
+      hasMemberWorkspaceAccess: true,
     })
 
     await expect(
@@ -175,7 +203,7 @@ describe("member workspace project note actions", () => {
       title: "Board recording",
       note_type: "audio",
     })
-    expect(revalidatePathMock).toHaveBeenCalledWith("/projects")
-    expect(revalidatePathMock).toHaveBeenCalledWith("/projects/project-1")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/organizations")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/organizations/project-1")
   })
 })

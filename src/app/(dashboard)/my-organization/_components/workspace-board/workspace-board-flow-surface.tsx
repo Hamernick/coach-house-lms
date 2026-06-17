@@ -27,6 +27,7 @@ export type WorkspaceBoardFlowSurfaceProps = {
   organizationEditorData: WorkspaceOrganizationEditorData
   boardState: WorkspaceBoardState
   allowEditing: boolean
+  workspaceDataDrawerCanEdit: boolean
   presentationMode: boolean
   workspaceRoomName: string
   layoutFitRequestKey: number
@@ -51,62 +52,65 @@ export type WorkspaceBoardFlowSurfaceProps = {
   onPersistNodePosition: (cardId: WorkspaceCardId, x: number, y: number) => void
   onToggleCardVisibility: (
     cardId: WorkspaceCardId,
-    context?: WorkspaceBoardToggleContext,
+    context?: WorkspaceBoardToggleContext
   ) => void
-  onResetToBaseLayout: () => void
   onConnectCards: (source: WorkspaceCardId, target: WorkspaceCardId) => void
   onDisconnectConnection: (connectionId: string) => void
   onDisconnectAllConnections: () => void
   onResetDefaultConnections: () => void
-  onCursorConnectionStateChange: (state: "connecting" | "live" | "degraded") => void
+  onCursorConnectionStateChange: (
+    state: "connecting" | "live" | "degraded"
+  ) => void
   onTutorialCompletionExitHandled: () => void
 }
 
-export const WorkspaceBoardFlowSurface = memo(function WorkspaceBoardFlowSurface(
-  props: WorkspaceBoardFlowSurfaceProps,
-) {
-  return (
-    <>
-      <WorkspaceCanvasSurfaceV2
-        boardState={props.boardState}
-        allowEditing={props.allowEditing}
-        presentationMode={props.presentationMode}
-        seed={props.seed}
-        organizationEditorData={props.organizationEditorData}
-        layoutFitRequestKey={props.layoutFitRequestKey}
-        acceleratorFocusRequestKey={props.acceleratorFocusRequestKey}
-        tutorialRestartRequestKey={props.tutorialRestartRequestKey}
-        onInitialOnboardingSubmit={props.onInitialOnboardingSubmit}
-        focusCardRequest={props.focusCardRequest}
-        tutorialCompletionExitRequest={props.tutorialCompletionExitRequest}
-        journeyGuideState={props.journeyGuideState}
-        onSizeChange={props.onSizeChange}
-        onCommunicationsChange={props.onCommunicationsChange}
-        onTrackerChange={props.onTrackerChange}
-        onAcceleratorStateChange={props.onAcceleratorStateChange}
-        onOpenAcceleratorStepNode={props.onOpenAcceleratorStepNode}
-        onCloseAcceleratorStepNode={props.onCloseAcceleratorStepNode}
-        onTutorialPrevious={props.onTutorialPrevious}
-        onTutorialNext={props.onTutorialNext}
-        onTutorialRestart={props.onTutorialRestart}
-        onTutorialShortcutOpened={props.onTutorialShortcutOpened}
-        onFocusCard={props.onFocusCard}
-        onPersistNodePosition={props.onPersistNodePosition}
-        onConnectCards={props.onConnectCards}
-        onDisconnectConnection={props.onDisconnectConnection}
-        onDisconnectAllConnections={props.onDisconnectAllConnections}
-        onToggleCardVisibility={props.onToggleCardVisibility}
-        onResetToBaseLayout={props.onResetToBaseLayout}
-        onTutorialCompletionExitHandled={props.onTutorialCompletionExitHandled}
-      />
-      <WorkspaceRealtimeCursorsOverlay
-        roomName={props.workspaceRoomName}
-        username={props.seed.viewerName}
-        suspendPublishing={props.presentationMode}
-        onConnectionStateChange={props.onCursorConnectionStateChange}
-      />
-    </>
-  )
-})
+export const WorkspaceBoardFlowSurface = memo(
+  function WorkspaceBoardFlowSurface(props: WorkspaceBoardFlowSurfaceProps) {
+    return (
+      <>
+        <WorkspaceCanvasSurfaceV2
+          boardState={props.boardState}
+          allowEditing={props.allowEditing}
+          workspaceDataDrawerCanEdit={props.workspaceDataDrawerCanEdit}
+          presentationMode={props.presentationMode}
+          seed={props.seed}
+          organizationEditorData={props.organizationEditorData}
+          layoutFitRequestKey={props.layoutFitRequestKey}
+          acceleratorFocusRequestKey={props.acceleratorFocusRequestKey}
+          tutorialRestartRequestKey={props.tutorialRestartRequestKey}
+          onInitialOnboardingSubmit={props.onInitialOnboardingSubmit}
+          focusCardRequest={props.focusCardRequest}
+          tutorialCompletionExitRequest={props.tutorialCompletionExitRequest}
+          journeyGuideState={props.journeyGuideState}
+          onSizeChange={props.onSizeChange}
+          onCommunicationsChange={props.onCommunicationsChange}
+          onTrackerChange={props.onTrackerChange}
+          onAcceleratorStateChange={props.onAcceleratorStateChange}
+          onOpenAcceleratorStepNode={props.onOpenAcceleratorStepNode}
+          onCloseAcceleratorStepNode={props.onCloseAcceleratorStepNode}
+          onTutorialPrevious={props.onTutorialPrevious}
+          onTutorialNext={props.onTutorialNext}
+          onTutorialRestart={props.onTutorialRestart}
+          onTutorialShortcutOpened={props.onTutorialShortcutOpened}
+          onFocusCard={props.onFocusCard}
+          onPersistNodePosition={props.onPersistNodePosition}
+          onConnectCards={props.onConnectCards}
+          onDisconnectConnection={props.onDisconnectConnection}
+          onDisconnectAllConnections={props.onDisconnectAllConnections}
+          onToggleCardVisibility={props.onToggleCardVisibility}
+          onTutorialCompletionExitHandled={
+            props.onTutorialCompletionExitHandled
+          }
+        />
+        <WorkspaceRealtimeCursorsOverlay
+          roomName={props.workspaceRoomName}
+          username={props.seed.viewerName}
+          suspendPublishing={props.presentationMode}
+          onConnectionStateChange={props.onCursorConnectionStateChange}
+        />
+      </>
+    )
+  }
+)
 
 WorkspaceBoardFlowSurface.displayName = "WorkspaceBoardFlowSurface"

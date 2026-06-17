@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { useSearchParams } from "next/navigation"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
@@ -73,41 +73,58 @@ export function usePublicMapActions({
   setAuthSheetOpen: (open: boolean) => void
   setFavorites: React.Dispatch<React.SetStateAction<string[]>>
 }) {
-  const handleSelectOrganization = ({
-    organizationId,
-    openDetails = false,
-    shouldFocusMap = true,
-  }: {
-    organizationId: string
-    openDetails?: boolean
-    shouldFocusMap?: boolean
-  }) => {
-    applyPublicMapOrganizationSelection({
-      organizationById,
+  const handleSelectOrganization = useCallback(
+    ({
       organizationId,
-      openDetails,
-      shouldFocusMap,
-      setSelectedOrgId,
-      setSidebarMode,
+      openDetails = false,
+      shouldFocusMap = true,
+    }: {
+      organizationId: string
+      openDetails?: boolean
+      shouldFocusMap?: boolean
+    }) => {
+      applyPublicMapOrganizationSelection({
+        organizationById,
+        organizationId,
+        openDetails,
+        shouldFocusMap,
+        setSelectedOrgId,
+        setSidebarMode,
+        setCameraTargetOrgId,
+        setRecentOrganizationIds,
+      })
+    },
+    [
+      organizationById,
       setCameraTargetOrgId,
       setRecentOrganizationIds,
-    })
-  }
+      setSelectedOrgId,
+      setSidebarMode,
+    ],
+  )
 
-  const toggleFavorite = (organizationId: string) => {
-    if (!isAuthenticated) {
-      setPendingAuthOrgId(organizationId)
-      setAuthSheetOpen(true)
-      return
-    }
-
-    setFavorites((current) => {
-      if (current.includes(organizationId)) {
-        return current.filter((entry) => entry !== organizationId)
+  const toggleFavorite = useCallback(
+    (organizationId: string) => {
+      if (!isAuthenticated) {
+        setPendingAuthOrgId(organizationId)
+        setAuthSheetOpen(true)
+        return
       }
-      return [organizationId, ...current].slice(0, 120)
-    })
-  }
+
+      setFavorites((current) => {
+        if (current.includes(organizationId)) {
+          return current.filter((entry) => entry !== organizationId)
+        }
+        return [organizationId, ...current].slice(0, 120)
+      })
+    },
+    [
+      isAuthenticated,
+      setAuthSheetOpen,
+      setFavorites,
+      setPendingAuthOrgId,
+    ],
+  )
 
   const authRedirectTo = useMemo(() => {
     const baseRedirectParams = new URLSearchParams(searchParams.toString())

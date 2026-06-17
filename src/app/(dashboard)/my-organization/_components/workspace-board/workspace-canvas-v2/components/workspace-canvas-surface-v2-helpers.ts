@@ -12,12 +12,10 @@ import type {
   WorkspaceCanvasTutorialStepId,
 } from "@/features/workspace-canvas-tutorial"
 
-import { resolveWorkspaceCardNodeStyle } from "../../workspace-board-layout"
 import type {
   WorkspaceBoardAcceleratorStepNodeData,
   WorkspaceBoardNodeData,
 } from "../../workspace-board-node"
-import { workspaceNodeClassName } from "../../workspace-board-node-class-name"
 import type {
   WorkspaceBoardAcceleratorState,
   WorkspaceBoardState,
@@ -37,13 +35,25 @@ import {
   WORKSPACE_CANVAS_V2_CARD_CONTRACT,
   type WorkspaceCanvasV2CardId,
 } from "../contracts/workspace-card-contract"
-import {
-  resolveOrgCardSize,
-} from "./workspace-canvas-surface-v2-positioning"
+import { resolveOrgCardSize } from "./workspace-canvas-surface-v2-positioning"
 import { resolveWorkspaceCanvasCollapsedAcceleratorCardSize } from "./workspace-canvas-surface-v2-accelerator-card-size"
-import { reconcileWorkspaceCanvasV2Nodes } from "./workspace-canvas-surface-v2-reconcile"
+import type { WorkspaceCanvasPersonNodeData } from "./workspace-canvas-person-node-model"
 
 export { reconcileWorkspaceCanvasV2Nodes } from "./workspace-canvas-surface-v2-reconcile"
+export {
+  buildWorkspaceCanvasV2CardNode,
+  resolveWorkspaceCanvasRenderNodes,
+} from "./workspace-canvas-surface-v2-render-nodes"
+export {
+  WORKSPACE_CANVAS_PERSON_NODE_SIZE,
+  buildWorkspaceCanvasPersonNode,
+  getWorkspaceCanvasPersonNodeId,
+  isWorkspaceCanvasPersonNodeData,
+  toWorkspaceCanvasPersonNodePerson,
+  type WorkspaceCanvasPersonNodeData,
+  type WorkspaceCanvasPersonNodePerson,
+  type WorkspaceCanvasPersonPlacement,
+} from "./workspace-canvas-person-node-model"
 
 export {
   WORKSPACE_CANVAS_V2_CARD_IDS,
@@ -56,12 +66,15 @@ const NOOP_ON_VAULT_VIEW_MODE_CHANGE = (_next: WorkspaceVaultViewMode) => {}
 export type WorkspaceCanvasNodeData =
   | WorkspaceBoardNodeData
   | WorkspaceBoardAcceleratorStepNodeData
+  | WorkspaceCanvasPersonNodeData
   | WorkspaceCanvasTutorialNodeData
 export type WorkspaceCanvasNode = Node<WorkspaceCanvasNodeData>
 
 export const WORKSPACE_CANVAS_V2_VAULT_MODE: WorkspaceVaultViewMode = "dropzone"
 
-export function isWorkspaceCanvasV2CardId(value: string): value is WorkspaceCanvasV2CardId {
+export function isWorkspaceCanvasV2CardId(
+  value: string
+): value is WorkspaceCanvasV2CardId {
   return WORKSPACE_CANVAS_V2_CARD_IDS.includes(value as WorkspaceCanvasV2CardId)
 }
 
@@ -109,6 +122,7 @@ export function buildWorkspaceCanvasV2CardDataLookup({
   acceleratorState,
   communications,
   tracker,
+  hiddenCardIds,
   nodes,
   seed,
   organizationEditorData,
@@ -142,6 +156,7 @@ export function buildWorkspaceCanvasV2CardDataLookup({
   acceleratorState: WorkspaceBoardAcceleratorState
   communications: WorkspaceCommunicationsState
   tracker: WorkspaceTrackerState
+  hiddenCardIds: WorkspaceBoardState["hiddenCardIds"]
   nodes: WorkspaceBoardState["nodes"]
   seed: WorkspaceSeedData
   organizationEditorData: WorkspaceOrganizationEditorData
@@ -156,7 +171,7 @@ export function buildWorkspaceCanvasV2CardDataLookup({
   onOpenAcceleratorStepNode: (stepId?: string | null) => void
   onHideAcceleratorStepNode: () => void
   onAcceleratorRuntimeChange: (
-    snapshot: WorkspaceAcceleratorCardRuntimeSnapshot,
+    snapshot: WorkspaceAcceleratorCardRuntimeSnapshot
   ) => void
   onAcceleratorRuntimeActionsChange: WorkspaceBoardNodeData["onAcceleratorRuntimeActionsChange"]
   acceleratorRuntimeSnapshot?: WorkspaceAcceleratorCardRuntimeSnapshot | null
@@ -169,7 +184,7 @@ export function buildWorkspaceCanvasV2CardDataLookup({
   onCardMeasuredHeightChange?: (
     cardId: WorkspaceCardId,
     size: WorkspaceCardSize,
-    height: number,
+    height: number
   ) => void
   organizationShortcutItems: WorkspaceCardShortcutItemModel[]
   organizationMapButtonCallout?: WorkspaceBoardNodeData["organizationMapButtonCallout"]
@@ -189,6 +204,8 @@ export function buildWorkspaceCanvasV2CardDataLookup({
     onAcceleratorStateChange,
     onFocusCard,
     onOpenCard,
+    fiscalSponsorshipCardVisible:
+      !hiddenCardIds.includes("fiscal-sponsorship"),
     isCanvasFullscreen: false,
     tutorialStepId: tutorialStepId ?? null,
   } as const
@@ -208,8 +225,10 @@ export function buildWorkspaceCanvasV2CardDataLookup({
       organizationShortcutItems,
       organizationMapButtonCallout: organizationMapButtonCallout ?? null,
       onOrganizationMapButtonTutorialComplete,
-      isJourneyTarget: journeyGuideState.targetCardId === "organization-overview",
-      onSizeChange: (_cardId, nextSize) => onSizeChange("organization-overview", nextSize),
+      isJourneyTarget:
+        journeyGuideState.targetCardId === "organization-overview",
+      onSizeChange: (_cardId, nextSize) =>
+        onSizeChange("organization-overview", nextSize),
       onVaultViewModeChange: NOOP_ON_VAULT_VIEW_MODE_CHANGE,
       onMeasuredHeightChange: onCardMeasuredHeightChange
         ? (size, height) =>
@@ -265,11 +284,12 @@ export function buildWorkspaceCanvasV2CardDataLookup({
         nodes,
         acceleratorRuntimeSnapshot,
       }),
-      vaultViewMode: WORKSPACE_CANVAS_V2_VAULT_MODE,
+      vaultViewMode,
       journeyGuideState,
       isJourneyTarget: journeyGuideState.targetCardId === "accelerator",
-      onSizeChange: (_cardId, nextSize) => onSizeChange("accelerator", nextSize),
-      onVaultViewModeChange: NOOP_ON_VAULT_VIEW_MODE_CHANGE,
+      onSizeChange: (_cardId, nextSize) =>
+        onSizeChange("accelerator", nextSize),
+      onVaultViewModeChange,
       acceleratorStepNodeVisible,
       onOpenAcceleratorStepNode,
       onHideAcceleratorStepNode,
@@ -280,7 +300,8 @@ export function buildWorkspaceCanvasV2CardDataLookup({
       onAcceleratorTutorialActionComplete,
       onWorkspaceOnboardingSubmit: onInitialOnboardingSubmit,
       onMeasuredHeightChange: onCardMeasuredHeightChange
-        ? (size, height) => onCardMeasuredHeightChange("accelerator", size, height)
+        ? (size, height) =>
+            onCardMeasuredHeightChange("accelerator", size, height)
         : undefined,
     },
     "brand-kit": {
@@ -295,7 +316,8 @@ export function buildWorkspaceCanvasV2CardDataLookup({
       onSizeChange: (_cardId, nextSize) => onSizeChange("brand-kit", nextSize),
       onVaultViewModeChange: NOOP_ON_VAULT_VIEW_MODE_CHANGE,
       onMeasuredHeightChange: onCardMeasuredHeightChange
-        ? (size, height) => onCardMeasuredHeightChange("brand-kit", size, height)
+        ? (size, height) =>
+            onCardMeasuredHeightChange("brand-kit", size, height)
         : undefined,
     },
     "economic-engine": {
@@ -307,7 +329,8 @@ export function buildWorkspaceCanvasV2CardDataLookup({
       }),
       vaultViewMode: WORKSPACE_CANVAS_V2_VAULT_MODE,
       isJourneyTarget: journeyGuideState.targetCardId === "economic-engine",
-      onSizeChange: (_cardId, nextSize) => onSizeChange("economic-engine", nextSize),
+      onSizeChange: (_cardId, nextSize) =>
+        onSizeChange("economic-engine", nextSize),
       onVaultViewModeChange: NOOP_ON_VAULT_VIEW_MODE_CHANGE,
       onMeasuredHeightChange: onCardMeasuredHeightChange
         ? (size, height) =>
@@ -338,7 +361,8 @@ export function buildWorkspaceCanvasV2CardDataLookup({
       }),
       vaultViewMode: WORKSPACE_CANVAS_V2_VAULT_MODE,
       isJourneyTarget: journeyGuideState.targetCardId === "communications",
-      onSizeChange: (_cardId, nextSize) => onSizeChange("communications", nextSize),
+      onSizeChange: (_cardId, nextSize) =>
+        onSizeChange("communications", nextSize),
       onVaultViewModeChange: NOOP_ON_VAULT_VIEW_MODE_CHANGE,
       onMeasuredHeightChange: onCardMeasuredHeightChange
         ? (size, height) =>
@@ -360,87 +384,22 @@ export function buildWorkspaceCanvasV2CardDataLookup({
         ? (size, height) => onCardMeasuredHeightChange("atlas", size, height)
         : undefined,
     },
+    "fiscal-sponsorship": {
+      ...baseData,
+      cardId: "fiscal-sponsorship",
+      size: resolveContractCardSize({
+        cardId: "fiscal-sponsorship",
+        nodes,
+      }),
+      vaultViewMode: WORKSPACE_CANVAS_V2_VAULT_MODE,
+      isJourneyTarget: journeyGuideState.targetCardId === "fiscal-sponsorship",
+      onSizeChange: (_cardId, nextSize) =>
+        onSizeChange("fiscal-sponsorship", nextSize),
+      onVaultViewModeChange: NOOP_ON_VAULT_VIEW_MODE_CHANGE,
+      onMeasuredHeightChange: onCardMeasuredHeightChange
+        ? (size, height) =>
+            onCardMeasuredHeightChange("fiscal-sponsorship", size, height)
+        : undefined,
+    },
   }
-}
-
-export function buildWorkspaceCanvasV2CardNode({
-  cardId,
-  position,
-  data,
-  allowEditing,
-  tutorialDraggable = false,
-}: {
-  cardId: WorkspaceCardId
-  position: { x: number; y: number }
-  data: WorkspaceBoardNodeData
-  allowEditing: boolean
-  tutorialDraggable?: boolean
-}): WorkspaceCanvasNode {
-  const zIndex = tutorialDraggable ? 30 : 0
-  return {
-    id: cardId,
-    type: "workspace",
-    position,
-    zIndex,
-    draggable: allowEditing || tutorialDraggable,
-    selectable: false,
-    dragHandle: ".workspace-card-drag-handle",
-    className: workspaceNodeClassName(data.size, cardId),
-    style: resolveWorkspaceCardNodeStyle(data.size, cardId),
-    data,
-  }
-}
-
-export function resolveWorkspaceCanvasRenderNodes({
-  nodes,
-  visibleCardIds,
-  boardNodeLookup,
-  cardDataLookup,
-  orgNodePositionFromBoard,
-  allowEditing,
-  acceleratorStepNodeData,
-  tutorialNodeData,
-  tutorialCardPositionOverrides,
-  tutorialDraggableCardIds,
-}: {
-  nodes: WorkspaceCanvasNode[]
-  visibleCardIds: WorkspaceCanvasV2CardId[]
-  boardNodeLookup: Map<WorkspaceCardId, WorkspaceBoardState["nodes"][number]>
-  cardDataLookup: Record<WorkspaceCardId, WorkspaceBoardNodeData>
-  orgNodePositionFromBoard: { x: number; y: number }
-  allowEditing: boolean
-  acceleratorStepNodeData: WorkspaceCanvasNode | null
-  tutorialNodeData: WorkspaceCanvasNode | null
-  tutorialCardPositionOverrides: Partial<
-    Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
-  > | null
-  tutorialDraggableCardIds: WorkspaceCanvasV2CardId[]
-}) {
-  const nextNodes = reconcileWorkspaceCanvasV2Nodes({
-    previous: nodes,
-    visibleCardIds,
-    boardNodeLookup,
-    cardDataLookup,
-    orgNodePositionFromBoard,
-    allowEditing,
-    acceleratorStepNodeData,
-    tutorialNodeData,
-    tutorialDraggableCardIds,
-    tutorialCardPositionOverrides,
-  })
-  const tutorialNodeState =
-    tutorialNodeData?.type === "workspace-tutorial"
-      ? (tutorialNodeData.data as WorkspaceCanvasTutorialNodeData)
-      : null
-  const suppressedNodeIdSet = new Set(
-    tutorialNodeState?.suppressedNodeIds ?? [],
-  )
-
-  return suppressedNodeIdSet.size === 0
-    ? nextNodes
-    : nextNodes.filter(
-        (node) =>
-          node.id === "workspace-canvas-tutorial" ||
-          !suppressedNodeIdSet.has(node.id),
-      )
 }

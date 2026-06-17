@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
-import { isSameDay, isWithinInterval } from "date-fns"
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
 
 import {
   createRoadmapCalendarEvent,
@@ -9,7 +8,6 @@ import {
   listRoadmapCalendarEvents,
   updateRoadmapCalendarEvent,
 } from "@/actions/roadmap-calendar"
-import Calendar01 from "@/components/calendar-01"
 import { toast } from "@/lib/toast"
 import {
   ROADMAP_CALENDAR_PRESETS,
@@ -18,6 +16,7 @@ import {
   type RoadmapCalendarEventInput,
   type RoadmapCalendarRecurrence,
   type RoadmapCalendarType,
+  type RoadmapCalendarEventType,
 } from "@/lib/roadmap/calendar"
 import { DEMO_SEED_KEY, DURATION_OPTIONS } from "@/components/roadmap/roadmap-calendar/constants"
 import {
@@ -25,16 +24,19 @@ import {
   buildDraft,
   eventDurationMinutes,
   fromDatetimeLocal,
+  getFirstRoadmapCalendarEventDate,
   getMonthRange,
+  getRoadmapCalendarEventDates,
+  isSameRoadmapCalendarMonth,
+  roadmapCalendarEventOccursOnDay,
+  sortRoadmapCalendarEventsByStart,
 } from "@/components/roadmap/roadmap-calendar/helpers"
 import type { EventDraft } from "@/components/roadmap/roadmap-calendar/types"
 import {
-  CalendarDayWithDot,
-  RoadmapCalendarDayEventsPanel,
   RoadmapCalendarEventDrawer,
-  RoadmapCalendarHeader,
-  RoadmapCalendarOverviewPanel,
+  RoadmapCalendarMonthAgendaPanel,
 } from "@/components/roadmap/roadmap-calendar/components"
+import { ROADMAP_CALENDAR_EVENT_TYPE_ORDER } from "@/components/roadmap/roadmap-calendar/components/roadmap-calendar-event-style"
 
 export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: boolean }) {
   const calendarType: RoadmapCalendarType = "internal"
@@ -49,18 +51,20 @@ export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: b
   const [draft, setDraft] = useState<EventDraft>(() => buildDraft({}))
   const [selectedDuration, setSelectedDuration] = useState<number>(45)
   const [timeZone, setTimeZone] = useState("")
-  const [timeZoneOptions, setTimeZoneOptions] = useState<string[]>([])
 
   const dayEvents = useMemo(() => {
     if (!selectedDate) return []
-    return events.filter((event) => {
-      const start = new Date(event.startsAt)
-      const end = event.endsAt ? new Date(event.endsAt) : start
-      if (Number.isNaN(start.getTime())) return false
-      if (Number.isNaN(end.getTime())) return isSameDay(start, selectedDate)
-      return isWithinInterval(selectedDate, { start, end }) || isSameDay(start, selectedDate)
-    })
+    return events
+      .filter((event) => roadmapCalendarEventOccursOnDay(event, selectedDate))
+      .sort(sortRoadmapCalendarEventsByStart)
   }, [events, selectedDate])
+  const monthEvents = useMemo(
+    () =>
+      events.filter((event) =>
+        getRoadmapCalendarEventDates(event).some((date) => isSameRoadmapCalendarMonth(date, month)),
+      ),
+    [events, month],
+  )
 
   const upcomingEvents = useMemo(() => {
     const now = new Date()
@@ -69,15 +73,28 @@ export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: b
       .slice(0, 4)
   }, [events])
 
-  const eventDays = useMemo(() => events.map((event) => new Date(event.startsAt)), [events])
+  const eventDatesByType = useMemo(() => {
+    const initial = ROADMAP_CALENDAR_EVENT_TYPE_ORDER.reduce(
+      (acc, eventType) => {
+        acc[eventType] = []
+        return acc
+      },
+      {} as Record<RoadmapCalendarEventType, Date[]>,
+    )
+
+    for (const event of events) {
+      initial[event.eventType].push(...getRoadmapCalendarEventDates(event))
+    }
+
+    return initial
+  }, [events])
   const nextEvent = upcomingEvents[0] ?? null
   const selectedEvent = dayEvents[0] ?? nextEvent
   const selectedEventDuration = selectedEvent ? eventDurationMinutes(selectedEvent) : null
-  const isTodaySelected = selectedDate ? isSameDay(selectedDate, new Date()) : false
 
-  const resetDraft = (event?: RoadmapCalendarEvent | null, baseDate?: Date) => {
+  const resetDraft = useCallback((event?: RoadmapCalendarEvent | null, baseDate?: Date) => {
     setDraft(buildDraft({ event, baseDate }))
-  }
+  }, [])
 
   useEffect(() => {
     if (!selectedEventDuration) return
@@ -102,13 +119,17 @@ export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: b
   }, [calendarType, month, startTransition])
 
   useEffect(() => {
+    if (isLoading || selectedDate || events.length === 0) return
+    const firstEventDate = getFirstRoadmapCalendarEventDate(events, month)
+    if (!firstEventDate) return
+    setSelectedDate(firstEventDate)
+  }, [events, isLoading, month, selectedDate])
+
+  useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = window.localStorage.getItem("roadmap-calendar-timezone")
       const resolved = Intl.DateTimeFormat().resolvedOptions().timeZone ?? "Local time"
       setTimeZone(stored || resolved)
-      const available =
-        typeof Intl.supportedValuesOf === "function" ? Intl.supportedValuesOf("timeZone") : [stored || resolved]
-      setTimeZoneOptions(available.length > 0 ? available : [stored || resolved])
     }
   }, [])
 
@@ -161,7 +182,7 @@ export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: b
     })
   }, [calendarType, canManageCalendar, events.length, isLoading, startTransition])
 
-  const handleOpenCreate = (preset?: { title?: string; eventType?: RoadmapCalendarEventInput["eventType"] }) => {
+  const handleOpenCreate = useCallback((preset?: { title?: string; eventType?: RoadmapCalendarEventInput["eventType"] }) => {
     const nextDraft = buildDraft({ baseDate: selectedDate })
     if (preset?.title) nextDraft.title = preset.title
     if (preset?.eventType) nextDraft.eventType = preset.eventType
@@ -171,15 +192,15 @@ export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: b
     setDraft(nextDraft)
     setEditingEvent(null)
     setDrawerOpen(true)
-  }
+  }, [selectedDate, selectedDuration])
 
-  const handleEditEvent = (event: RoadmapCalendarEvent) => {
+  const handleEditEvent = useCallback((event: RoadmapCalendarEvent) => {
     resetDraft(event)
     setEditingEvent(event)
     setDrawerOpen(true)
-  }
+  }, [resetDraft])
 
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     if (!draft.title.trim()) {
       toast.error("Title is required")
       return
@@ -234,9 +255,9 @@ export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: b
       }
       setDrawerOpen(false)
     })
-  }
+  }, [calendarType, draft, editingEvent, startTransition])
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     if (!editingEvent) return
     startTransition(async () => {
       const result = await deleteRoadmapCalendarEvent({ calendarType, eventId: editingEvent.id })
@@ -248,16 +269,23 @@ export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: b
       toast.success("Event removed")
       setDrawerOpen(false)
     })
-  }
+  }, [calendarType, editingEvent, startTransition])
 
-  const handleGoToToday = () => {
+  const handleGoToToday = useCallback(() => {
     const today = new Date()
     setMonth(today)
     setSelectedDate(today)
-  }
+  }, [])
+
+  const handleMonthChange = useCallback((date: Date) => {
+    setMonth(date)
+    setSelectedDate((current) =>
+      current && isSameRoadmapCalendarMonth(current, date) ? current : undefined,
+    )
+  }, [])
 
   const timeZoneOption = timeZone && timeZone !== "Local time" ? timeZone : undefined
-  const formatTime = (value: string) => {
+  const formatTime = useCallback((value: string) => {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return ""
     return new Intl.DateTimeFormat(undefined, {
@@ -266,8 +294,8 @@ export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: b
       hour12: true,
       timeZone: timeZoneOption,
     }).format(date)
-  }
-  const formatDate = (value: string, options?: Intl.DateTimeFormatOptions) => {
+  }, [timeZoneOption])
+  const formatDate = useCallback((value: string, options?: Intl.DateTimeFormatOptions) => {
     const date = new Date(value)
     if (Number.isNaN(date.getTime())) return ""
     return new Intl.DateTimeFormat(undefined, {
@@ -277,67 +305,41 @@ export function RoadmapCalendar({ hideHeaderCopy = false }: { hideHeaderCopy?: b
       timeZone: timeZoneOption,
       ...options,
     }).format(date)
-  }
-  const formatWeekday = (value: string, options?: Intl.DateTimeFormatOptions) => {
-    const date = new Date(value)
-    if (Number.isNaN(date.getTime())) return ""
-    return new Intl.DateTimeFormat(undefined, {
-      weekday: "short",
-      timeZone: timeZoneOption,
-      ...options,
-    }).format(date)
-  }
-  const formatTimeRange = (event: RoadmapCalendarEvent) => {
+  }, [timeZoneOption])
+  const formatTimeRange = useCallback((event: RoadmapCalendarEvent) => {
     if (event.allDay) return formatDate(event.startsAt, { month: "short", day: "numeric" })
     const startLabel = formatTime(event.startsAt)
     const endLabel = event.endsAt ? formatTime(event.endsAt) : null
     return endLabel ? `${startLabel}–${endLabel}` : startLabel
-  }
+  }, [formatDate, formatTime])
 
   return (
     <div className="flex h-full min-h-0 flex-1 flex-col">
-      <RoadmapCalendarHeader
-        canManageCalendar={canManageCalendar}
-        onOpenCreate={handleOpenCreate}
-        onGoToToday={handleGoToToday}
-        isTodaySelected={isTodaySelected}
-        hideCopy={hideHeaderCopy}
-      />
-
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 rounded-xl border border-border/60 bg-background/20 p-3 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)]">
-        <RoadmapCalendarOverviewPanel
-          nextEvent={nextEvent}
-          upcomingEvents={upcomingEvents}
-          timeZone={timeZone}
-          timeZoneOptions={timeZoneOptions}
-          onTimeZoneChange={setTimeZone}
-          formatWeekday={formatWeekday}
-          formatTimeRange={formatTimeRange}
-        />
-
-        <div className="min-w-0 rounded-lg border border-border/60 bg-background/30 p-3">
-          <Calendar01
-            mode="single"
-            selected={selectedDate}
-            month={month}
-            onMonthChange={setMonth}
-            onSelect={(date) => setSelectedDate(date ?? undefined)}
-            modifiers={{ hasEvent: eventDays }}
-            className="mx-auto w-full"
-            components={{ DayButton: CalendarDayWithDot }}
-          />
+      {hideHeaderCopy ? null : (
+        <div className="px-1 pb-3">
+          <p className="text-sm font-semibold text-foreground">Board calendar</p>
+          <p className="text-xs text-muted-foreground">
+            Track public and internal milestones in one place.
+          </p>
         </div>
+      )}
 
-        <RoadmapCalendarDayEventsPanel
-          selectedDate={selectedDate}
-          dayEvents={dayEvents}
-          isLoading={isLoading}
-          canManageCalendar={canManageCalendar}
-          formatDate={formatDate}
-          formatTimeRange={formatTimeRange}
-          onEditEvent={handleEditEvent}
-        />
-      </div>
+      <RoadmapCalendarMonthAgendaPanel
+        month={month}
+        selectedDate={selectedDate}
+        events={monthEvents}
+        dayEvents={dayEvents}
+        isLoading={isLoading}
+        canManageCalendar={canManageCalendar}
+        eventDatesByType={eventDatesByType}
+        onMonthChange={handleMonthChange}
+        onSelectDate={setSelectedDate}
+        onGoToToday={handleGoToToday}
+        onOpenCreate={handleOpenCreate}
+        onEditEvent={handleEditEvent}
+        formatDate={formatDate}
+        formatTimeRange={formatTimeRange}
+      />
 
       <RoadmapCalendarEventDrawer
         open={drawerOpen}

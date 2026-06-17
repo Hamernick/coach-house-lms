@@ -7,6 +7,10 @@ import {
   ACCELERATOR_STEP_NODE_ID,
 } from "../../workspace-board-flow-surface-accelerator-graph-composition"
 import { resolveWorkspaceAcceleratorStepEdgeHandles } from "../../workspace-board-accelerator-step-layout"
+import {
+  type WorkspaceCardEdgeGeometryLookup,
+  resolveWorkspaceCardConnectionHandleIds,
+} from "../../workspace-board-connection-handles"
 import type {
   WorkspaceAutoLayoutMode,
   WorkspaceBoardState,
@@ -73,12 +77,6 @@ function isWorkspaceCanvasV2CardId(value: string): value is WorkspaceCanvasV2Car
   return WORKSPACE_CANVAS_V2_CARD_ID_SET.has(value as WorkspaceCanvasV2CardId)
 }
 
-function isWorkspaceCanvasConnectableCardId(
-  value: string,
-): value is WorkspaceCanvasV2CardId {
-  return isWorkspaceCanvasV2CardId(value) && value !== "deck"
-}
-
 export function resolveWorkspaceCanvasConnectAttempt({
   connection,
   allowEditing,
@@ -97,8 +95,8 @@ export function resolveWorkspaceCanvasConnectAttempt({
   }
 
   if (
-    !isWorkspaceCanvasConnectableCardId(connection.source) ||
-    !isWorkspaceCanvasConnectableCardId(connection.target)
+    !isWorkspaceCanvasV2CardId(connection.source) ||
+    !isWorkspaceCanvasV2CardId(connection.target)
   ) {
     return { allowed: false, reason: "unknown-node-id" }
   }
@@ -148,6 +146,7 @@ export function buildWorkspaceCanvasV2Edges({
   autoLayoutMode = "dagre-tree",
   acceleratorWorkspaceNodeId,
   tutorialEdgeTargetId,
+  nodeGeometryLookup = {},
 }: {
   connections: WorkspaceBoardState["connections"]
   visibleCardIdSet: ReadonlySet<WorkspaceCanvasV2CardId>
@@ -157,6 +156,7 @@ export function buildWorkspaceCanvasV2Edges({
   autoLayoutMode?: WorkspaceAutoLayoutMode
   acceleratorWorkspaceNodeId: WorkspaceCanvasV2CardId | null
   tutorialEdgeTargetId: WorkspaceCardId | null
+  nodeGeometryLookup?: WorkspaceCardEdgeGeometryLookup
 }): {
   edges: Edge[]
   droppedConnectionIds: string[]
@@ -168,8 +168,8 @@ export function buildWorkspaceCanvasV2Edges({
 
   for (const connection of connections) {
     if (
-      !isWorkspaceCanvasConnectableCardId(connection.source) ||
-      !isWorkspaceCanvasConnectableCardId(connection.target)
+      !isWorkspaceCanvasV2CardId(connection.source) ||
+      !isWorkspaceCanvasV2CardId(connection.target)
     ) {
       droppedConnectionIds.push(connection.id)
       droppedConnections.push({
@@ -204,10 +204,17 @@ export function buildWorkspaceCanvasV2Edges({
       continue
     }
 
+    const handleIds = resolveWorkspaceCardConnectionHandleIds({
+      source: nodeGeometryLookup[connection.source],
+      target: nodeGeometryLookup[connection.target],
+    })
+
     edges.push({
       id: connection.id,
       source: connection.source,
       target: connection.target,
+      sourceHandle: handleIds?.sourceHandle,
+      targetHandle: handleIds?.targetHandle,
       type: "smoothstep",
       animated: false,
       style: resolveWorkspaceCanvasBranchStyle({

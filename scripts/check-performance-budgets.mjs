@@ -7,11 +7,22 @@ const buildDir = ".next"
 const results = []
 const failures = []
 
+const routeBundleStatsPath = path.join(process.cwd(), ".next/diagnostics/route-bundle-stats.json")
 const manifestPath = path.join(process.cwd(), ".next/app-build-manifest.json")
 const buildManifestPath = path.join(process.cwd(), ".next/build-manifest.json")
 const appPathsManifestPath = path.join(process.cwd(), ".next/server/app-paths-manifest.json")
 
+let getFirstLoadBytesForUrl
 let getFilesForRoute
+
+if (fs.existsSync(routeBundleStatsPath)) {
+  const routeStats = JSON.parse(fs.readFileSync(routeBundleStatsPath, "utf8"))
+  const routeStatsByUrl = new Map(
+    routeStats.map((record) => [record.route, record.firstLoadUncompressedJsBytes]),
+  )
+
+  getFirstLoadBytesForUrl = (urlLabel) => routeStatsByUrl.get(urlLabel)
+}
 
 if (fs.existsSync(manifestPath)) {
   const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"))
@@ -97,28 +108,34 @@ if (fs.existsSync(manifestPath)) {
 }
 
 for (const { routeKey, urlLabel, shell, maxFirstLoadKB } of performanceRouteBudgets) {
-  const { files, error } = getFilesForRoute(routeKey)
-  if (error) {
-    failures.push(error)
-    continue
-  }
-
   let totalBytes = 0
-  const missing = []
+  const routeStatsBytes = getFirstLoadBytesForUrl?.(urlLabel)
 
-  for (const file of files) {
-    const filePath = path.join(buildDir, file)
-    try {
-      const stats = fs.statSync(filePath)
-      totalBytes += stats.size
-    } catch {
-      missing.push(file)
+  if (typeof routeStatsBytes === "number") {
+    totalBytes = routeStatsBytes
+  } else {
+    const { files, error } = getFilesForRoute(routeKey)
+    if (error) {
+      failures.push(error)
+      continue
     }
-  }
 
-  if (missing.length > 0) {
-    failures.push(`Missing build assets for ${urlLabel} [${routeKey}]: ${missing.join(", ")}`)
-    continue
+    const missing = []
+
+    for (const file of files) {
+      const filePath = path.join(buildDir, file)
+      try {
+        const stats = fs.statSync(filePath)
+        totalBytes += stats.size
+      } catch {
+        missing.push(file)
+      }
+    }
+
+    if (missing.length > 0) {
+      failures.push(`Missing build assets for ${urlLabel} [${routeKey}]: ${missing.join(", ")}`)
+      continue
+    }
   }
 
   const totalKB = totalBytes / 1024

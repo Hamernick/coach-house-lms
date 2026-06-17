@@ -18,6 +18,10 @@ export const WORKSPACE_REST_VISIBLE_CARD_IDS = [
   "programs",
 ] as const
 
+export const WORKSPACE_OPTIONAL_DEFAULT_HIDDEN_CARD_IDS = [
+  "fiscal-sponsorship",
+] as const
+
 export function isWorkspaceTemporarilyUnavailableCardId(cardId: string) {
   return (
     WORKSPACE_TEMPORARILY_UNAVAILABLE_CARD_IDS as readonly string[]
@@ -40,5 +44,8 @@ export function resolveWorkspaceAlwaysHiddenCardIds() {
 }
 
 export function resolveWorkspaceDefaultHiddenCardIds() {
-  return [...resolveWorkspaceAlwaysHiddenCardIds()] as const
+  return [
+    ...resolveWorkspaceAlwaysHiddenCardIds(),
+    ...WORKSPACE_OPTIONAL_DEFAULT_HIDDEN_CARD_IDS,
+  ] as const
 }

@@ -1,4 +1,13 @@
-import type { WorkspaceCardId, WorkspaceConnectionState } from "./workspace-board-types"
+import type {
+  WorkspaceCardId,
+  WorkspaceConnectionState,
+} from "./workspace-board-types"
+import {
+  WORKSPACE_ACCELERATOR_PATH,
+  WORKSPACE_PATH,
+  WORKSPACE_ROADMAP_PATH,
+  getWorkspaceEditorPath,
+} from "@/lib/workspace/routes"
 
 export type WorkspaceCardMeta = {
   title: string
@@ -10,22 +19,22 @@ export const WORKSPACE_CARD_META: Record<WorkspaceCardId, WorkspaceCardMeta> = {
   "organization-overview": {
     title: "Organization",
     subtitle: "Identity and operating baseline",
-    fullHref: "/workspace",
+    fullHref: WORKSPACE_PATH,
   },
   programs: {
-    title: "Programs",
-    subtitle: "Builder, previews, and active fundraising briefs",
+    title: "Activity",
+    subtitle: "Projects, programs, events, services, and grant requests",
     fullHref: "",
   },
   accelerator: {
     title: "Accelerator",
-    subtitle: "Class tracks, modules, and resources",
-    fullHref: "/workspace/accelerator",
+    subtitle: "Class tracks, lessons, and resources",
+    fullHref: WORKSPACE_ACCELERATOR_PATH,
   },
   roadmap: {
     title: "Roadmap",
     subtitle: "Strategic priorities, sequencing, and operating focus",
-    fullHref: "/workspace/roadmap",
+    fullHref: WORKSPACE_ROADMAP_PATH,
   },
   "brand-kit": {
     title: "Brand Kit",
@@ -35,12 +44,12 @@ export const WORKSPACE_CARD_META: Record<WorkspaceCardId, WorkspaceCardMeta> = {
   "economic-engine": {
     title: "Fundraising",
     subtitle: "Funding architecture and pipeline health",
-    fullHref: "/workspace?view=editor&tab=programs",
+    fullHref: getWorkspaceEditorPath({ tab: "programs" }),
   },
   calendar: {
     title: "Calendar",
     subtitle: "Milestones, board cadence, and invites",
-    fullHref: "/workspace/roadmap",
+    fullHref: WORKSPACE_ROADMAP_PATH,
   },
   communications: {
     title: "Communications",
@@ -50,12 +59,17 @@ export const WORKSPACE_CARD_META: Record<WorkspaceCardId, WorkspaceCardMeta> = {
   deck: {
     title: "Tasks",
     subtitle: "Roadmap priorities and accelerator classes in one surface",
-    fullHref: "/workspace/accelerator",
+    fullHref: WORKSPACE_ACCELERATOR_PATH,
   },
   atlas: {
     title: "Map",
     subtitle: "Public place, checklist, and launch readiness",
-    fullHref: "/workspace?view=editor&tab=company",
+    fullHref: getWorkspaceEditorPath({ tab: "company" }),
+  },
+  "fiscal-sponsorship": {
+    title: "Fiscal Sponsorship",
+    subtitle: "Model C eligibility, agreements, and grant requests",
+    fullHref: "",
   },
 }
 
@@ -81,8 +95,13 @@ export const WORKSPACE_EDGE_SPECS: WorkspaceConnectionState[] = [
     target: "atlas",
   },
   {
-    id: "edge-roadmap-to-accelerator",
-    source: "roadmap",
+    id: "edge-activity-to-fiscal-sponsorship",
+    source: "programs",
+    target: "fiscal-sponsorship",
+  },
+  {
+    id: "edge-organization-to-accelerator",
+    source: "organization-overview",
     target: "accelerator",
   },
   {

@@ -1,7 +1,9 @@
 import { cache } from "react"
 
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
+import { resolvePaidTeamAccessForOrgSubscription } from "@/lib/billing/subscription-access"
 import { canEditOrganization } from "@/lib/organization/active-org"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 
 const resolveMemberWorkspaceActorContextCached = cache(async () => {
   const { supabase, user, profileAudience, activeOrg } =
@@ -18,6 +20,12 @@ const resolveMemberWorkspaceActorContextCached = cache(async () => {
         : typeof userMeta?.avatar === "string" && userMeta.avatar.trim().length > 0
           ? userMeta.avatar.trim()
           : null
+  const paidAccess = profileAudience.isAdmin
+    ? { hasPaidTeamAccess: true }
+    : await resolvePaidTeamAccessForOrgSubscription({
+        supabase: createSupabaseAdminClient(),
+        orgId: activeOrg.orgId,
+      })
 
   return {
     supabase,
@@ -25,6 +33,9 @@ const resolveMemberWorkspaceActorContextCached = cache(async () => {
     isAdmin: profileAudience.isAdmin,
     activeOrg,
     canEdit: canEditOrganization(activeOrg.role),
+    hasMemberWorkspaceAccess:
+      profileAudience.isAdmin ||
+      ("hasPaidTeamAccess" in paidAccess && paidAccess.hasPaidTeamAccess),
     currentUser: {
       id: user.id,
       name:

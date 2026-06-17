@@ -6,10 +6,30 @@ import {
   resolveWorkspaceCanvasConnectAttempt,
   shouldLogWorkspaceCanvasDroppedConnections,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-connections"
+import {
+  WORKSPACE_CARD_SOURCE_HANDLE_IDS,
+  WORKSPACE_CARD_TARGET_HANDLE_IDS,
+  resolveWorkspaceCardConnectionHandleIds,
+} from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-connection-handles"
 import type { WorkspaceCardReadiness } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-card-readiness"
+import type { WorkspaceCanvasV2CardId } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/contracts/workspace-card-contract"
+import { WORKSPACE_EDGE_SPECS } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-copy"
 
 const READY: WorkspaceCardReadiness = { status: "ready", isReady: true }
 const EMPTY: WorkspaceCardReadiness = { status: "empty", isReady: false }
+const READINESS_MAP = {
+  "organization-overview": READY,
+  programs: READY,
+  roadmap: READY,
+  accelerator: READY,
+  "brand-kit": EMPTY,
+  "economic-engine": EMPTY,
+  calendar: READY,
+  communications: EMPTY,
+  atlas: EMPTY,
+  deck: READY,
+  "fiscal-sponsorship": EMPTY,
+} satisfies Record<WorkspaceCanvasV2CardId, WorkspaceCardReadiness>
 
 describe("workspace canvas v2 runtime connections", () => {
   it("accepts valid visible connections in edit mode", () => {
@@ -19,10 +39,7 @@ describe("workspace canvas v2 runtime connections", () => {
         target: "programs",
       },
       allowEditing: true,
-      visibleCardIdSet: new Set([
-        "organization-overview",
-        "programs",
-      ]),
+      visibleCardIdSet: new Set(["organization-overview", "programs"]),
     })
 
     expect(result).toEqual({
@@ -41,11 +58,8 @@ describe("workspace canvas v2 runtime connections", () => {
           target: "programs",
         },
         allowEditing: false,
-        visibleCardIdSet: new Set([
-          "organization-overview",
-          "programs",
-        ]),
-      }),
+        visibleCardIdSet: new Set(["organization-overview", "programs"]),
+      })
     ).toEqual({ allowed: false, reason: "read-only" })
 
     expect(
@@ -56,7 +70,18 @@ describe("workspace canvas v2 runtime connections", () => {
         },
         allowEditing: true,
         visibleCardIdSet: new Set(["organization-overview"]),
-      }),
+      })
+    ).toEqual({ allowed: false, reason: "hidden-node-id" })
+
+    expect(
+      resolveWorkspaceCanvasConnectAttempt({
+        connection: {
+          source: "legacy-card",
+          target: "programs",
+        },
+        allowEditing: true,
+        visibleCardIdSet: new Set(["programs"]),
+      })
     ).toEqual({ allowed: false, reason: "unknown-node-id" })
 
     expect(
@@ -67,7 +92,7 @@ describe("workspace canvas v2 runtime connections", () => {
         },
         allowEditing: true,
         visibleCardIdSet: new Set(["organization-overview"]),
-      }),
+      })
     ).toEqual({ allowed: false, reason: "hidden-node-id" })
 
     expect(
@@ -78,56 +103,47 @@ describe("workspace canvas v2 runtime connections", () => {
         },
         allowEditing: true,
         visibleCardIdSet: new Set(["calendar"]),
-      }),
+      })
     ).toEqual({ allowed: false, reason: "same-node" })
   })
 
   it("builds only valid visible card edges and reports dropped ids", () => {
-    const { edges, droppedConnectionIds, droppedConnections } = buildWorkspaceCanvasV2Edges({
-      connections: [
-        {
-          id: "edge-valid",
-          source: "organization-overview",
-          target: "programs",
-        },
-        {
-          id: "edge-valid-calendar-to-brand",
-          source: "calendar",
-          target: "brand-kit",
-        },
-        {
-          id: "edge-unknown-node",
-          source: "deck",
-          target: "roadmap",
-        },
-        {
-          id: "edge-hidden-target",
-          source: "brand-kit",
-          target: "communications",
-        },
-      ],
-      visibleCardIdSet: new Set([
-        "organization-overview",
-        "programs",
-        "brand-kit",
-        "calendar",
-      ]),
-      presentationMode: false,
-      readinessMap: {
-        "organization-overview": READY,
-        programs: READY,
-        roadmap: READY,
-        accelerator: READY,
-        "brand-kit": EMPTY,
-        "economic-engine": EMPTY,
-        calendar: READY,
-        communications: EMPTY,
-        atlas: EMPTY,
-      },
-      includeAcceleratorStepEdge: true,
-      acceleratorWorkspaceNodeId: "accelerator",
-      tutorialEdgeTargetId: null,
-    })
+    const { edges, droppedConnectionIds, droppedConnections } =
+      buildWorkspaceCanvasV2Edges({
+        connections: [
+          {
+            id: "edge-valid",
+            source: "organization-overview",
+            target: "programs",
+          },
+          {
+            id: "edge-valid-calendar-to-brand",
+            source: "calendar",
+            target: "brand-kit",
+          },
+          {
+            id: "edge-unknown-node",
+            source: "legacy-card" as never,
+            target: "roadmap",
+          },
+          {
+            id: "edge-hidden-target",
+            source: "brand-kit",
+            target: "communications",
+          },
+        ],
+        visibleCardIdSet: new Set([
+          "organization-overview",
+          "programs",
+          "brand-kit",
+          "calendar",
+        ]),
+        presentationMode: false,
+        readinessMap: READINESS_MAP,
+        includeAcceleratorStepEdge: true,
+        acceleratorWorkspaceNodeId: "accelerator",
+        tutorialEdgeTargetId: null,
+      })
 
     expect(edges.map((edge) => edge.id)).toEqual([
       "edge-valid",
@@ -144,18 +160,148 @@ describe("workspace canvas v2 runtime connections", () => {
     ])
   })
 
+  it("keeps default hidden graph connections quiet when secondary cards are not rendered", () => {
+    const { edges, droppedConnectionIds, droppedConnections } =
+      buildWorkspaceCanvasV2Edges({
+        connections: WORKSPACE_EDGE_SPECS,
+        visibleCardIdSet: new Set([
+          "organization-overview",
+          "programs",
+          "accelerator",
+        ]),
+        presentationMode: false,
+        readinessMap: READINESS_MAP,
+        includeAcceleratorStepEdge: false,
+        acceleratorWorkspaceNodeId: null,
+        tutorialEdgeTargetId: null,
+      })
+
+    expect(edges.map((edge) => edge.id)).toEqual([
+      "edge-organization-to-programs",
+      "edge-organization-to-accelerator",
+    ])
+    expect(droppedConnectionIds).toEqual([
+      "edge-organization-to-roadmap",
+      "edge-roadmap-to-deck",
+      "edge-organization-to-atlas",
+      "edge-activity-to-fiscal-sponsorship",
+      "edge-deck-to-accelerator",
+      "edge-accelerator-to-economic",
+      "edge-accelerator-to-calendar",
+      "edge-accelerator-to-comms",
+    ])
+    expect(droppedConnections).toEqual(
+      droppedConnectionIds.map((id) => ({
+        id,
+        reason: "hidden-node-id",
+      }))
+    )
+    expect(shouldLogWorkspaceCanvasDroppedConnections(droppedConnections)).toBe(
+      false
+    )
+  })
+
+  it("builds the Activity-to-fiscal sponsorship edge with readiness data", () => {
+    const { edges, droppedConnections } = buildWorkspaceCanvasV2Edges({
+      connections: [
+        {
+          id: "edge-activity-to-fiscal-sponsorship",
+          source: "programs",
+          target: "fiscal-sponsorship",
+        },
+      ],
+      visibleCardIdSet: new Set(["programs", "fiscal-sponsorship"]),
+      presentationMode: false,
+      readinessMap: READINESS_MAP,
+      includeAcceleratorStepEdge: false,
+      acceleratorWorkspaceNodeId: null,
+      tutorialEdgeTargetId: null,
+    })
+
+    expect(droppedConnections).toEqual([])
+    expect(edges[0]).toMatchObject({
+      id: "edge-activity-to-fiscal-sponsorship",
+      source: "programs",
+      target: "fiscal-sponsorship",
+      data: {
+        role: "workspace-card-connection",
+        readiness: "empty",
+      },
+    })
+  })
+
+  it("resolves card connection handles from the closest aligned sides", () => {
+    expect(
+      resolveWorkspaceCardConnectionHandleIds({
+        source: { x: 100, y: 100, width: 200, height: 120 },
+        target: { x: 420, y: 112, width: 200, height: 120 },
+      })
+    ).toMatchObject({
+      sourceHandle: WORKSPACE_CARD_SOURCE_HANDLE_IDS.right,
+      targetHandle: WORKSPACE_CARD_TARGET_HANDLE_IDS.left,
+    })
+
+    expect(
+      resolveWorkspaceCardConnectionHandleIds({
+        source: { x: 420, y: 112, width: 200, height: 120 },
+        target: { x: 100, y: 100, width: 200, height: 120 },
+      })
+    ).toMatchObject({
+      sourceHandle: WORKSPACE_CARD_SOURCE_HANDLE_IDS.left,
+      targetHandle: WORKSPACE_CARD_TARGET_HANDLE_IDS.right,
+    })
+
+    expect(
+      resolveWorkspaceCardConnectionHandleIds({
+        source: { x: 100, y: 100, width: 200, height: 120 },
+        target: { x: 124, y: 380, width: 200, height: 120 },
+      })
+    ).toMatchObject({
+      sourceHandle: WORKSPACE_CARD_SOURCE_HANDLE_IDS.bottom,
+      targetHandle: WORKSPACE_CARD_TARGET_HANDLE_IDS.top,
+    })
+  })
+
+  it("attaches built graph edges to the side nearest the connected card", () => {
+    const { edges } = buildWorkspaceCanvasV2Edges({
+      connections: [
+        {
+          id: "edge-organization-to-accelerator",
+          source: "organization-overview",
+          target: "accelerator",
+        },
+      ],
+      visibleCardIdSet: new Set(["organization-overview", "accelerator"]),
+      presentationMode: false,
+      readinessMap: READINESS_MAP,
+      includeAcceleratorStepEdge: false,
+      acceleratorWorkspaceNodeId: null,
+      tutorialEdgeTargetId: null,
+      nodeGeometryLookup: {
+        "organization-overview": { x: 120, y: 144, width: 552, height: 420 },
+        accelerator: { x: 760, y: 144, width: 520, height: 252 },
+      },
+    })
+
+    expect(edges[0]).toMatchObject({
+      id: "edge-organization-to-accelerator",
+      sourceHandle: WORKSPACE_CARD_SOURCE_HANDLE_IDS.right,
+      targetHandle: WORKSPACE_CARD_TARGET_HANDLE_IDS.left,
+    })
+  })
+
   it("does not log dropped-connection warnings for hidden tutorial edges alone", () => {
     expect(
       shouldLogWorkspaceCanvasDroppedConnections([
         { id: "edge-hidden-target", reason: "hidden-node-id" },
-      ]),
+      ])
     ).toBe(false)
 
     expect(
       shouldLogWorkspaceCanvasDroppedConnections([
         { id: "edge-hidden-target", reason: "hidden-node-id" },
         { id: "edge-unknown-node", reason: "unknown-node-id" },
-      ]),
+      ])
     ).toBe(true)
   })
 
@@ -168,22 +314,9 @@ describe("workspace canvas v2 runtime connections", () => {
           target: "programs",
         },
       ],
-      visibleCardIdSet: new Set([
-        "organization-overview",
-        "programs",
-      ]),
+      visibleCardIdSet: new Set(["organization-overview", "programs"]),
       presentationMode: false,
-      readinessMap: {
-        "organization-overview": READY,
-        programs: READY,
-        roadmap: READY,
-        accelerator: READY,
-        "brand-kit": EMPTY,
-        "economic-engine": EMPTY,
-        calendar: READY,
-        communications: EMPTY,
-        atlas: EMPTY,
-      },
+      readinessMap: READINESS_MAP,
       includeAcceleratorStepEdge: false,
       acceleratorWorkspaceNodeId: null,
       tutorialEdgeTargetId: "programs",
@@ -193,8 +326,12 @@ describe("workspace canvas v2 runtime connections", () => {
       "edge-valid",
       "workspace-canvas-tutorial-edge",
     ])
-    expect(edges.find((edge) => edge.id === "edge-valid")?.zIndex).toBeUndefined()
-    expect(edges.find((edge) => edge.id === "workspace-canvas-tutorial-edge")?.zIndex).toBeUndefined()
+    expect(
+      edges.find((edge) => edge.id === "edge-valid")?.zIndex
+    ).toBeUndefined()
+    expect(
+      edges.find((edge) => edge.id === "workspace-canvas-tutorial-edge")?.zIndex
+    ).toBeUndefined()
   })
 
   it("builds disconnect action sets for right-click edge menu", () => {
@@ -226,24 +363,13 @@ describe("workspace canvas v2 runtime connections", () => {
       "edge-org-to-accel",
       "edge-org-to-brand",
     ])
-    expect(sets.targetConnectionIds).toEqual([
-      "edge-org-to-accel",
-    ])
+    expect(sets.targetConnectionIds).toEqual(["edge-org-to-accel"])
   })
 
   it("keeps readiness maps typed for the standalone programs card", () => {
-    const readinessMap = {
-      "organization-overview": READY,
-      programs: READY,
-      roadmap: READY,
-      accelerator: READY,
-      "brand-kit": EMPTY,
-      "economic-engine": EMPTY,
-      calendar: READY,
-      communications: EMPTY,
-      atlas: EMPTY,
-    }
+    const readinessMap = READINESS_MAP
 
     expect(readinessMap.programs).toEqual(READY)
+    expect(readinessMap["fiscal-sponsorship"]).toEqual(EMPTY)
   })
 })

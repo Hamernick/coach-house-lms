@@ -6,6 +6,9 @@ Do not action:
 
 - Remove Brand Kit from onboarding/profile surfaces. User said to ignore this.
 - Close `X` button in onboarding/account modal. User said this is already done.
+- Remove Mission, Vision, Values, or Origin story from Documents. User said not to remove these.
+- Move Build/Find/Fund timing after account creation. User said not to do this.
+- Resolve two different create-account descriptions. User said this already appears done; do not change unless reproduced.
 
 ## Batch 1 — Accelerator Flow And Content
 
@@ -18,7 +21,7 @@ Do not action:
 - [x] Add the missing strategic-roadmap-template questions into the Mission Statement assignment frame.
 - [x] Add missing formation questions to the Vision homework; currently only personal vision appears.
 - [x] Add “Introduction” to the accelerator section/dropdown and move the intro video out of Strategic Foundations.
-- Remove Financial Handbook, Due Diligence, Retention, and Security videos from the Formation tab/dropdown until an operations library exists.
+- [x] Remove Financial Handbook, Due Diligence, Retention, and Security videos from the Formation tab/dropdown until an operations library exists.
 
 Likely areas:
 
@@ -29,20 +32,20 @@ Likely areas:
 
 ## Batch 2 — Onboarding / Signup / Billing
 
-- Free/early-access signup path shows no free option and forces paid tiers.
-- Early access code + card entry fails with a disabled finish button.
-- Paid tier checkout produced a similar error.
-- Make subscription/account status clear after checkout so users know whether they are on free early access or paid.
-- Reword accelerator intro copy to:
+- [x] Free/early-access signup path shows no free option and forces paid tiers.
+- [x] Early access code + card entry fails with a disabled finish button.
+- [x] Paid tier checkout produced a similar error.
+- [x] Make subscription/account status clear after checkout so users know whether they are on free early access or paid.
+- [x] Reword accelerator intro copy to:
 
   > The accelerator offers a sequence of nine strategic lessons, delivered through smaller video modules and corresponding homework assignments. This program is designed to guide you through building your strategic foundations, developing your programs, and then transitioning into essential organizational functions such as evaluation, budgeting, communications, and fundraising for both your specific program and your entire organization.
 
-- Rename/explain “picker” if that term is visible to users.
-- Fix tutorial/onboarding instruction that references a missing Welcome module.
-- Fix workspace tutorial lockups where the black arrow stops working.
-- Logged-out accelerator/account intro screen needs clearer marketing/explanatory content.
-- Resolve two different create-account descriptions, one with Build/Find/Fund selection and one without.
-- Reconsider Build/Find/Fund question timing; likely move after account creation/login.
+- [x] Rename/explain “picker” if that term is visible to users.
+- [x] Fix tutorial/onboarding instruction that references a missing Welcome module.
+- [x] Fix workspace tutorial lockups where the black arrow stops working.
+- [x] Logged-out accelerator/account intro screen needs clearer marketing/explanatory content.
+- Resolve two different create-account descriptions, one with Build/Find/Fund selection and one without. Skipped per user; appears already done unless reproduced.
+- Reconsider Build/Find/Fund question timing; likely move after account creation/login. Skipped per user.
 
 Likely areas:
 
@@ -54,10 +57,10 @@ Likely areas:
 
 ## Batch 3 — Permissions, Admin, And Team Invites
 
-- Users should not see inappropriate admin/internal project data under Projects.
-- Admin -> Org Profile -> “Open organization” throws an application error.
-- Inviting a new user shows `RESEND_API_KEY is not configured`, still creates a pending invite, but no email is delivered.
-- Email confirmation went to spam; check sender/domain/email template deliverability separately from in-app code.
+- [x] Users should not see inappropriate admin/internal project data under Projects.
+- [x] Admin -> Org Profile -> “Open organization” throws an application error.
+- [x] Inviting a new user shows `RESEND_API_KEY is not configured`, still creates a pending invite, but no email is delivered.
+- [x] Email confirmation went to spam; checked sender/domain/email template deliverability separately from in-app code. External DNS/provider follow-up is documented in `docs/briefs/2026-04-28-email-deliverability-audit.md`.
 
 Likely areas:
 
@@ -83,8 +86,8 @@ Likely areas:
 
 ## Batch 5 — Account/Profile/Billing Copy
 
-- Clarify whether shutting off a public profile also cancels credit-card billing.
-- Add an info note to the cancel/shut-off profile button:
+- [x] Clarify whether shutting off a public profile also cancels credit-card billing.
+- [x] Add an info note to the cancel/shut-off profile button:
   - If profile shutoff cancels billing, say so.
   - If not, explain what cancellation step is required.
 
@@ -95,10 +98,10 @@ Likely areas:
 
 ## Batch 6 — My Organization / Documents
 
-- “Org setup” tab says “lesson” even though it is not a lesson.
-- Org setup did not save updated name and formation stage.
-- Increase org document upload limit above 32 MB or add instructions for compressing PDFs.
-- Remove these from the Documents section because they should remain in Strategic Roadmap:
+- [x] “Org setup” tab says “lesson” even though it is not a lesson.
+- [x] Org setup did not save updated name and formation stage.
+- [x] Increase org document upload limit above 32 MB or add instructions for compressing PDFs.
+- Do not remove these from the Documents section; user clarified they should stay:
   - Mission
   - Vision
   - Values
@@ -113,11 +116,11 @@ Likely areas:
 
 ## Batch 7 — Community And External Resource Tiles
 
-- Add tiles/links for community:
+- [x] Add tiles/links for community:
   - WhatsApp
   - Discord
   - Find
-- Add external resource links:
+- [x] Add external resource links:
   - `https://bizee.com` for EIN registration support.
   - IRS 1023 application.
   - IRS 1023-EZ application.

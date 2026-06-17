@@ -66,6 +66,7 @@ type AssignmentBudgetTableFieldProps = {
   isStepper: boolean
   labelClassName: string
   labelText: string
+  layout?: "grid" | "stacked"
   updateValue: (name: string, value: AssignmentValues[string]) => void
 }
 
@@ -75,20 +76,23 @@ export function AssignmentBudgetTableField({
   isStepper,
   labelClassName,
   labelText,
+  layout = "grid",
   updateValue,
 }: AssignmentBudgetTableFieldProps) {
   const rawRows = Array.isArray(values[field.name])
     ? (values[field.name] as BudgetTableRow[])
-    : field.rows ?? []
-  const ensureRows = (rawRows.length > 0 ? rawRows : [BLANK_BUDGET_ROW]).map((row) => ({
-    category: row.category ?? "",
-    description: row.description ?? "",
-    costType: row.costType ?? "",
-    unit: row.unit ?? "",
-    units: row.units ?? "",
-    costPerUnit: row.costPerUnit ?? "",
-    totalCost: row.totalCost ?? "",
-  }))
+    : (field.rows ?? [])
+  const ensureRows = (rawRows.length > 0 ? rawRows : [BLANK_BUDGET_ROW]).map(
+    (row) => ({
+      category: row.category ?? "",
+      description: row.description ?? "",
+      costType: row.costType ?? "",
+      unit: row.unit ?? "",
+      units: row.units ?? "",
+      costPerUnit: row.costPerUnit ?? "",
+      totalCost: row.totalCost ?? "",
+    })
+  )
   const unitListId = `${field.name}-unit-options`
   const totals = ensureRows.map((row) => computeBudgetRowTotal(row))
   const subtotal = totals.reduce((sum, value) => sum + value, 0)
@@ -100,25 +104,36 @@ export function AssignmentBudgetTableField({
     ? formattedLabel.replace(/\b\w/g, (char) => char.toUpperCase())
     : labelText
   const descriptionBlock = field.description ? (
-    <div className="rounded-xl border border-dashed border-border/60 bg-muted/30 p-4 text-xs text-muted-foreground space-y-3">
+    <div className="border-border/60 bg-muted/30 text-muted-foreground flex max-w-full min-w-0 flex-col gap-3 rounded-xl border border-dashed p-4 text-xs">
       <div className="flex items-start gap-3">
-        <span className="mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 bg-background/60 text-muted-foreground">
+        <span className="border-border/60 bg-background/60 text-muted-foreground mt-0.5 inline-flex h-7 w-7 items-center justify-center rounded-md border">
           <Info className="h-4 w-4" aria-hidden />
         </span>
-        <div className="space-y-1">
-          <p className="text-xs font-semibold text-foreground">Program Expense Exercise</p>
-          <p className="leading-relaxed">{field.description}</p>
+        <div className="flex min-w-0 flex-col gap-1">
+          <p className="text-foreground min-w-0 text-xs font-semibold break-words">
+            Program Expense Exercise
+          </p>
+          <p className="min-w-0 leading-relaxed break-words">
+            {field.description}
+          </p>
         </div>
       </div>
       <ol className="grid gap-2">
         {BUDGET_GUIDE_STEPS.map((step, index) => (
-          <li key={`${field.name}-guide-${step.title}`} className="flex gap-2">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/60 text-[11px] font-semibold text-muted-foreground">
+          <li
+            key={`${field.name}-guide-${step.title}`}
+            className="flex min-w-0 gap-2"
+          >
+            <span className="border-border/60 bg-background/60 text-muted-foreground flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold">
               {index + 1}
             </span>
-            <div className="space-y-0.5">
-              <p className="text-xs font-semibold text-foreground">{step.title}</p>
-              <p className="text-[11px] text-muted-foreground">{step.description}</p>
+            <div className="flex min-w-0 flex-col gap-0.5">
+              <p className="text-foreground min-w-0 text-xs font-semibold break-words">
+                {step.title}
+              </p>
+              <p className="text-muted-foreground min-w-0 text-[11px] break-words">
+                {step.description}
+              </p>
             </div>
           </li>
         ))}
@@ -141,38 +156,45 @@ export function AssignmentBudgetTableField({
   return (
     <div
       className={cn(
-        "min-w-0 space-y-4",
-        isStepper && "flex h-full min-h-0 flex-1 flex-col space-y-4",
+        "flex w-full max-w-full min-w-0 flex-col gap-4 overflow-x-hidden",
+        isStepper && "h-full min-h-0 flex-1"
       )}
     >
-      <div className="space-y-2">
-        <Label className={labelClassName}>{displayLabel}</Label>
+      <div className="flex max-w-full min-w-0 flex-col gap-2">
+        <Label className={cn(labelClassName, "max-w-full min-w-0 break-words")}>
+          {displayLabel}
+        </Label>
         {descriptionBlock}
       </div>
-      <div className="rounded-xl border border-border/60 bg-sidebar p-4 text-xs">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-3">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="border-border/60 bg-sidebar max-w-full min-w-0 overflow-x-hidden rounded-xl border p-4 text-xs">
+        <div className="flex max-w-full min-w-0 flex-col gap-3">
+          <div className="flex min-w-0 flex-col gap-3">
+            <span className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase">
               Subtotal
             </span>
-            <span className="text-base font-semibold tabular-nums text-foreground">
+            <span className="text-foreground max-w-full min-w-0 text-base font-semibold break-words tabular-nums">
               ${formatMoney(subtotal)}
             </span>
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-muted-foreground min-w-0 text-[11px] break-words">
               Totals update as you edit units and costs.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2 sm:justify-end">
+          <div className="grid max-w-full min-w-0 gap-2">
             <Button
               type="button"
               variant="secondary"
-              className="w-full sm:w-auto"
+              className="w-full min-w-0"
               onClick={() => addRow()}
             >
               <Plus className="mr-2 h-4 w-4" />
               Add Item
             </Button>
-            <Button asChild variant="outline" size="sm" className="w-full sm:w-auto gap-2">
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="w-full min-w-0 gap-2"
+            >
               <a href={BUDGET_TEMPLATE_HREF} download>
                 <Download className="h-4 w-4" aria-hidden />
                 Download
@@ -182,7 +204,12 @@ export function AssignmentBudgetTableField({
         </div>
       </div>
 
-      <div className={cn("min-h-0", isStepper && "flex min-h-0 flex-1")}>
+      <div
+        className={cn(
+          "min-h-0 max-w-full min-w-0 overflow-x-hidden",
+          isStepper && "flex min-h-0 flex-1"
+        )}
+      >
         <BudgetTable
           rows={ensureRows}
           blankRow={BLANK_BUDGET_ROW}
@@ -194,7 +221,12 @@ export function AssignmentBudgetTableField({
           formatMoney={formatMoney}
           onUpdateRow={updateRow}
           onRowsChange={(nextRows) => updateValue(field.name, nextRows)}
-          maxBodyHeightClassName={isStepper ? "max-h-[min(56vh,36rem)]" : undefined}
+          layout={layout}
+          maxBodyHeightClassName={
+            layout === "grid" && isStepper
+              ? "max-h-[min(56vh,36rem)]"
+              : undefined
+          }
         />
       </div>
     </div>

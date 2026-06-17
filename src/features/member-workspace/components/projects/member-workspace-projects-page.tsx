@@ -43,20 +43,20 @@ export function MemberWorkspaceProjectsPage(props: {
   starterProjectCount: number
   clearStarterDataAction?: () => Promise<{ ok: true } | { error: string }>
   createProjectAction?: (
-    input: MemberWorkspaceCreateProjectFormInput,
+    input: MemberWorkspaceCreateProjectFormInput
   ) => Promise<{ ok: true; id: string } | { error: string }>
   updateProjectAction?: (
     projectId: string,
-    input: MemberWorkspaceCreateProjectFormInput,
+    input: MemberWorkspaceCreateProjectFormInput
   ) => Promise<{ ok: true; id: string } | { error: string }>
   updateProjectScheduleAction?: (
     projectId: string,
     startDate: string,
-    endDate: string,
+    endDate: string
   ) => Promise<{ ok: true; id: string } | { error: string }>
   updateProjectStatusAction?: (
     projectId: string,
-    status: PlatformAdminDashboardLabProject["status"],
+    status: PlatformAdminDashboardLabProject["status"]
   ) => Promise<{ ok: true; id: string } | { error: string }>
   canCreateProjects: boolean
   organizationOptions: MemberWorkspaceProjectOrganizationOption[]
@@ -85,7 +85,8 @@ export function MemberWorkspaceProjectsPage(props: {
   const [filters, setFilters] = useState<FilterChip[]>([])
   const [viewOptions, setViewOptions] = useState(DEFAULT_VIEW_OPTIONS)
   const [isProjectWizardOpen, setIsProjectWizardOpen] = useState(false)
-  const [editingProject, setEditingProject] = useState<PlatformAdminDashboardLabProject | null>(null)
+  const [editingProject, setEditingProject] =
+    useState<PlatformAdminDashboardLabProject | null>(null)
 
   const prevParamsRef = useRef("")
 
@@ -131,7 +132,7 @@ export function MemberWorkspaceProjectsPage(props: {
         projects,
         viewOptions,
       }),
-    [filters, projects, viewOptions],
+    [filters, projects, viewOptions]
   )
 
   const counts = useMemo(
@@ -141,16 +142,20 @@ export function MemberWorkspaceProjectsPage(props: {
         projects,
         viewOptions,
       }),
-    [filters, projects, viewOptions],
+    [filters, projects, viewOptions]
   )
 
   return (
     <>
-      <div className={`${styles.surface} -mx-[var(--shell-content-pad)] -mb-[var(--shell-content-pad)] -mt-[var(--shell-content-pad)] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background`}>
-        <header className="flex flex-col border-b border-border/40">
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
+      <div
+        className={`${styles.surface} bg-background -mx-[var(--shell-content-pad)] -mt-[var(--shell-content-pad)] -mb-[var(--shell-content-pad)] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden`}
+      >
+        <header className="border-border/40 flex flex-col border-b">
+          <div className="border-border flex items-center justify-between border-b px-4 py-3">
             <div className="flex items-center gap-3">
-              <p className="text-base font-medium text-foreground">Projects</p>
+              <p className="text-foreground text-base font-medium">
+                Organizations
+              </p>
             </div>
             <div className="flex items-center gap-2">
               {canResetStarterData && clearStarterDataAction ? (
@@ -169,13 +174,13 @@ export function MemberWorkspaceProjectsPage(props: {
                   }}
                 >
                   <Plus data-icon="inline-start" weight="bold" />
-                  Add Project
+                  Add Organization
                 </Button>
               ) : null}
             </div>
           </div>
 
-          <div className="flex items-center justify-between px-4 pb-3 pt-3">
+          <div className="flex items-center justify-between px-4 pt-3 pb-3">
             <div className="flex items-center gap-2">
               <MemberWorkspaceProjectFilterPopover
                 projects={projects}
@@ -189,8 +194,8 @@ export function MemberWorkspaceProjectsPage(props: {
                 onRemove={(key, value) =>
                   handleFiltersChange(
                     filters.filter(
-                      (chip) => !(chip.key === key && chip.value === value),
-                    ),
+                      (chip) => !(chip.key === key && chip.value === value)
+                    )
                   )
                 }
                 maxVisible={6}
@@ -205,7 +210,7 @@ export function MemberWorkspaceProjectsPage(props: {
           </div>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
           {viewOptions.viewType === "timeline" ? (
             <MemberWorkspaceProjectTimelineView
               projects={filteredProjects}
@@ -216,14 +221,22 @@ export function MemberWorkspaceProjectsPage(props: {
             <MemberWorkspaceProjectCardsView
               projects={filteredProjects}
               visibleProperties={viewOptions.properties}
-              onCreateProject={canCreateProjects ? () => {
-                setEditingProject(null)
-                setIsProjectWizardOpen(true)
-              } : undefined}
-              onEditProject={canCreateProjects ? (project) => {
-                setEditingProject(project)
-                setIsProjectWizardOpen(true)
-              } : undefined}
+              onCreateProject={
+                canCreateProjects
+                  ? () => {
+                      setEditingProject(null)
+                      setIsProjectWizardOpen(true)
+                    }
+                  : undefined
+              }
+              onEditProject={
+                canCreateProjects
+                  ? (project) => {
+                      setEditingProject(project)
+                      setIsProjectWizardOpen(true)
+                    }
+                  : undefined
+              }
               scope={scope}
             />
           ) : null}
@@ -233,14 +246,22 @@ export function MemberWorkspaceProjectsPage(props: {
               showClosedProjects={viewOptions.showClosedProjects}
               visibleProperties={viewOptions.properties}
               updateProjectStatusAction={updateProjectStatusAction}
-              onAddProject={canCreateProjects ? () => {
-                setEditingProject(null)
-                setIsProjectWizardOpen(true)
-              } : undefined}
-              onEditProject={canCreateProjects ? (project) => {
-                setEditingProject(project)
-                setIsProjectWizardOpen(true)
-              } : undefined}
+              onAddProject={
+                canCreateProjects
+                  ? () => {
+                      setEditingProject(null)
+                      setIsProjectWizardOpen(true)
+                    }
+                  : undefined
+              }
+              onEditProject={
+                canCreateProjects
+                  ? (project) => {
+                      setEditingProject(project)
+                      setIsProjectWizardOpen(true)
+                    }
+                  : undefined
+              }
             />
           ) : null}
         </div>

@@ -8,7 +8,11 @@ import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
 import { ProgramCard } from "@/components/programs/program-card"
 import { Button } from "@/components/ui/button"
 import { Empty } from "@/components/ui/empty"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import {
   resolveProgramBannerImageUrl,
   resolveProgramCardChips,
@@ -28,11 +32,16 @@ type ProgramsTabProps = {
   onProgramEdit: (program: OrgProgram) => void
 }
 
-export function ProgramsTab({ programs, companyName, editMode, onProgramEdit }: ProgramsTabProps) {
+export function ProgramsTab({
+  programs,
+  companyName,
+  editMode,
+  onProgramEdit,
+}: ProgramsTabProps) {
   const hasPrograms = programs && programs.length > 0
   const publicCopy = publicSharingEnabled
-    ? "Programs appear in your overview and public page when published."
-    : "Programs stay private until public sharing is enabled."
+    ? "Primary objects appear in your overview and public page when published."
+    : "Primary objects stay private until public sharing is enabled."
 
   return (
     <div className="grid gap-6">
@@ -41,40 +50,52 @@ export function ProgramsTab({ programs, companyName, editMode, onProgramEdit }: 
           <div className="grid gap-2 md:grid-cols-3">
             <div className="px-6 md:px-0">
               <div className="flex items-center gap-2">
-                <h3 className="text-base font-medium leading-none">Programs</h3>
+                <h3 className="text-base leading-none font-medium">
+                  Primary objects
+                </h3>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-5 w-5 rounded-full border border-border/70 p-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
-                      aria-label="Programs visibility info"
+                      className="border-border/70 text-muted-foreground hover:text-foreground h-5 w-5 rounded-full border p-0 hover:bg-transparent"
+                      aria-label="Primary objects visibility info"
                     >
                       <InfoIcon className="h-3.5 w-3.5" aria-hidden />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">{publicCopy}</TooltipContent>
+                  <TooltipContent className="max-w-xs">
+                    {publicCopy}
+                  </TooltipContent>
                 </Tooltip>
               </div>
-              <p className="mt-1 text-sm text-muted-foreground">Create and manage programs.</p>
+              <p className="text-muted-foreground mt-1 text-sm">
+                Create and manage initiatives, projects, programs, events, and
+                services.
+              </p>
             </div>
-            <div className="md:col-span-2 flex items-center justify-end px-6 md:px-0">
+            <div className="flex items-center justify-end px-6 md:col-span-2 md:px-0">
               <ProgramWizardLazy />
             </div>
           </div>
 
           {hasPrograms ? (
-            <div className="grid items-start justify-start gap-6" style={{ gridTemplateColumns: "repeat(auto-fit, 380px)" }}>
+            <div
+              className="grid items-start justify-start gap-6"
+              style={{ gridTemplateColumns: "repeat(auto-fit, 380px)" }}
+            >
               {programs.map((program) => (
                 <ProgramCard
                   key={program.id}
                   variant="medium"
-                  title={program.title ?? "Untitled program"}
+                  title={program.title ?? "Untitled object"}
                   org={companyName || undefined}
                   location={locationSummary(program) || undefined}
                   description={resolveProgramSummary(program) || undefined}
-                  bannerImageUrl={resolveProgramBannerImageUrl(program) || undefined}
+                  bannerImageUrl={
+                    resolveProgramBannerImageUrl(program) || undefined
+                  }
                   imageUrl={resolveProgramProfileImageUrl(program) || undefined}
                   statusLabel={program.status_label || undefined}
                   chips={resolveProgramCardChips(program)}
@@ -89,8 +110,8 @@ export function ProgramsTab({ programs, companyName, editMode, onProgramEdit }: 
             <div className="px-6 md:px-0">
               <Empty
                 icon={<FolderPlus className="h-5 w-5" />}
-                title="No programs yet"
-                description="Create your first program to showcase it here."
+                title="No activity yet"
+                description="Create your first activity to showcase it here."
                 actions={<ProgramWizardLazy />}
               />
             </div>
@@ -98,20 +119,31 @@ export function ProgramsTab({ programs, companyName, editMode, onProgramEdit }: 
         </Fragment>
       ) : (
         <Fragment>
-          <FormRow title="Programs">
+          <FormRow title="Primary objects">
             {hasPrograms ? (
-              <div className="grid items-start justify-start gap-6" style={{ gridTemplateColumns: "repeat(auto-fit, 380px)" }}>
+              <div
+                className="grid items-start justify-start gap-6"
+                style={{ gridTemplateColumns: "repeat(auto-fit, 380px)" }}
+              >
                 {programs.map((program) => (
-                <ProgramCard
-                  key={program.id}
-                  variant="medium"
-                  title={program.title ?? "Untitled program"}
-                  org={companyName || undefined}
-                  location={locationSummary(program) || undefined}
-                  description={resolveProgramSummary(program) || undefined}
-                  bannerImageUrl={resolveProgramBannerImageUrl(program) || undefined}
-                  imageUrl={resolveProgramProfileImageUrl(program) || undefined}
-                  statusLabel={program.status_label || (program.is_public ? undefined : "Private") || undefined}
+                  <ProgramCard
+                    key={program.id}
+                    variant="medium"
+                    title={program.title ?? "Untitled object"}
+                    org={companyName || undefined}
+                    location={locationSummary(program) || undefined}
+                    description={resolveProgramSummary(program) || undefined}
+                    bannerImageUrl={
+                      resolveProgramBannerImageUrl(program) || undefined
+                    }
+                    imageUrl={
+                      resolveProgramProfileImageUrl(program) || undefined
+                    }
+                    statusLabel={
+                      program.status_label ||
+                      (program.is_public ? undefined : "Private") ||
+                      undefined
+                    }
                     chips={resolveProgramCardChips(program)}
                     goalCents={program.goal_cents || 0}
                     raisedCents={program.raised_cents || 0}
@@ -123,8 +155,8 @@ export function ProgramsTab({ programs, companyName, editMode, onProgramEdit }: 
             ) : (
               <Empty
                 icon={<FolderPlus className="h-5 w-5" />}
-                title="No programs to display"
-                description="Programs you create will appear here."
+                title="No activity to display"
+                description="Activity you create will appear here."
               />
             )}
           </FormRow>

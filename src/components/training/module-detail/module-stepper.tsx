@@ -1,6 +1,6 @@
 "use client"
 
-import { AnimatePresence, motion } from "framer-motion"
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
@@ -13,7 +13,10 @@ import type { CoachingTier } from "@/lib/meetings"
 import { cn } from "@/lib/utils"
 
 import { buildAssignmentSections } from "./assignment-sections"
-import { ModuleStepperActiveStepContent } from "./module-stepper-active-step-content"
+import {
+  ModuleStepperActiveStepContent,
+  preloadAssignmentForm,
+} from "./module-stepper-active-step-content"
 import {
   buildModuleStepperRailSteps,
   buildModuleStepperSteps,
@@ -22,6 +25,14 @@ import {
 import { useModuleStepperCompletionEffects } from "./module-stepper/hooks/use-module-stepper-completion-effects"
 import { useModuleStepperNavigationState } from "./module-stepper/hooks/use-module-stepper-navigation-state"
 import type { ModuleStepperProps } from "./module-stepper-types"
+
+type IdleWindow = Window & {
+  requestIdleCallback?: (
+    callback: IdleRequestCallback,
+    options?: IdleRequestOptions,
+  ) => number
+  cancelIdleCallback?: (handle: number) => void
+}
 
 export function ModuleStepper({
   moduleId,
@@ -56,6 +67,7 @@ export function ModuleStepper({
   showModuleHeading = true,
 }: ModuleStepperProps) {
   const router = useRouter()
+  const prefersReducedMotion = useReducedMotion()
   const { tabSections } = useMemo(() => buildAssignmentSections(assignmentFields), [assignmentFields])
   const contentCacheRef = useRef<Record<string, ReactNode>>({})
   const { schedule, pending: schedulePending } = useCoachingBooking()
@@ -118,6 +130,28 @@ export function ModuleStepper({
     contentCacheRef.current = {}
   }, [moduleId, steps.length])
 
+  useEffect(() => {
+    if (!steps.some((step) => step.type === "assignment")) return
+
+    const preload = () => {
+      void preloadAssignmentForm()
+    }
+    const idleWindow = window as IdleWindow
+
+    if (idleWindow.requestIdleCallback) {
+      const idleId = idleWindow.requestIdleCallback(preload, { timeout: 1000 })
+      return () => idleWindow.cancelIdleCallback?.(idleId)
+    }
+
+    const timeoutId = window.setTimeout(preload, 120)
+    return () => window.clearTimeout(timeoutId)
+  }, [steps])
+
+  useEffect(() => {
+    if (!nextHref?.startsWith("/")) return
+    router.prefetch(nextHref)
+  }, [nextHref, router])
+
   const markModuleComplete = useCallback(() => {
     return markModuleCompleteAction(moduleId)
   }, [moduleId])
@@ -135,6 +169,14 @@ export function ModuleStepper({
       // non-blocking best-effort completion sync
     })
   }, [markModuleComplete, nextHref, router])
+
+  const handlePreviousStep = useCallback(() => {
+    setActiveIndex((prev) => Math.max(prev - 1, 0))
+  }, [setActiveIndex])
+
+  const handleNextStep = useCallback(() => {
+    setActiveIndex((prev) => Math.min(prev + 1, Math.max(totalSteps - 1, 0)))
+  }, [setActiveIndex, totalSteps])
 
   const handleSchedule = useCallback(async () => {
     const payload = await schedule()
@@ -215,10 +257,13 @@ export function ModuleStepper({
           <AnimatePresence mode="wait">
             <motion.div
               key={activeStep?.id ?? "empty"}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
+              animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
+              exit={prefersReducedMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
+              transition={{
+                duration: prefersReducedMotion ? 0 : 0.18,
+                ease: [0.22, 1, 0.36, 1],
+              }}
               className={cn(
                 "w-full",
                 activeStep?.type === "video" && "mx-auto max-w-[min(1100px,100%)]",
@@ -256,9 +301,12 @@ export function ModuleStepper({
                 nextLocked={nextLocked}
                 completionCount={completionCount}
                 progressPercent={progressPercent}
+                totalSteps={totalSteps}
                 schedulePending={schedulePending}
                 coachingTier={coachingTier}
                 coachingRemaining={coachingRemaining}
+                onPreviousStep={handlePreviousStep}
+                onNextStep={handleNextStep}
                 onContinue={() => void handleContinue()}
                 onSchedule={() => void handleSchedule()}
               />

@@ -6,7 +6,7 @@ import { monthToIsoStart, normalizeAddons } from "./conversions"
 import { computeFeasibility } from "./feasibility"
 
 export function serializePayload(
-  form: ProgramWizardFormState,
+  form: ProgramWizardFormState
 ): CreateProgramPayload {
   const budget = computeBudgetBreakdown(form)
   const formatAddons = normalizeAddons(form.coreFormat, form.formatAddons)
@@ -44,6 +44,7 @@ export function serializePayload(
     subtitle: form.subtitle.trim(),
     bannerImageUrl: form.bannerImageUrl.trim(),
     imageUrl: form.imageUrl.trim(),
+    objectKind: form.objectKind,
     programType: form.programType,
     coreFormat: form.coreFormat,
     formatAddons,
@@ -87,7 +88,12 @@ export function serializePayload(
     updatedAt: new Date().toISOString(),
   }
 
-  const features = [form.programType, form.coreFormat, ...formatAddons]
+  const features = [
+    form.objectKind,
+    form.programType,
+    form.coreFormat,
+    ...formatAddons,
+  ]
 
   return {
     title: form.title.trim(),

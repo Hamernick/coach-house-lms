@@ -14,6 +14,7 @@ import {
 import { buildMemberWorkspaceProjectDetails } from "./project-detail-view-model"
 import { ensureStarterProjectsForOrg } from "./project-persistence"
 import { organizationProjectSelectFields } from "./project-select"
+import { loadProjectOverviewDocument } from "./project-overview-documents"
 import { type OrganizationProjectRecord } from "./project-starter-data"
 import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
 import { ensureStarterTasksForOrg } from "./task-persistence"
@@ -89,6 +90,10 @@ function toTrimmedString(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
 }
 
+function isNonEmptyString(value: string | null | undefined): value is string {
+  return typeof value === "string" && value.trim().length > 0
+}
+
 export type MemberWorkspaceProjectDetailLoadResult =
   | { state: "schema-unavailable" }
   | { state: "not-found" }
@@ -108,12 +113,14 @@ async function loadProjectTaskRows({
 }: {
   orgId: string
   projectId: string
-  supabase: Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>["supabase"]
+  supabase: Awaited<
+    ReturnType<typeof resolveMemberWorkspaceActorContext>
+  >["supabase"]
 }) {
   const { data: taskRows, error: taskError } = await supabase
     .from("organization_tasks")
     .select(
-      "id, project_id, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order",
+      "id, project_id, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order"
     )
     .eq("org_id", orgId)
     .eq("project_id", projectId)
@@ -152,11 +159,15 @@ async function loadProjectNoteRows({
 }: {
   orgId: string
   projectId: string
-  supabase: Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>["supabase"]
+  supabase: Awaited<
+    ReturnType<typeof resolveMemberWorkspaceActorContext>
+  >["supabase"]
 }): Promise<MemberWorkspaceProjectNoteRecord[]> {
   const { data: noteRows, error: noteError } = await supabase
     .from("organization_project_notes")
-    .select("id, org_id, project_id, title, content, note_type, status, created_at, created_by")
+    .select(
+      "id, org_id, project_id, title, content, note_type, status, created_at, created_by"
+    )
     .eq("org_id", orgId)
     .eq("project_id", projectId)
     .order("created_at", { ascending: false })
@@ -170,7 +181,9 @@ async function loadProjectNoteRows({
   }
 
   const authorIds = Array.from(
-    new Set((noteRows ?? []).map((note) => note.created_by).filter(Boolean)),
+    new Set(
+      (noteRows ?? []).map((note) => note.created_by).filter(isNonEmptyString)
+    )
   )
   const authorsById = new Map<string, ProfileLiteRow>()
 
@@ -182,7 +195,10 @@ async function loadProjectNoteRows({
       .returns<ProfileLiteRow[]>()
 
     if (authorError) {
-      throw toMemberWorkspaceDataError(authorError, "Unable to load note authors.")
+      throw toMemberWorkspaceDataError(
+        authorError,
+        "Unable to load note authors."
+      )
     }
 
     for (const author of authorRows ?? []) {
@@ -191,7 +207,9 @@ async function loadProjectNoteRows({
   }
 
   return (noteRows ?? []).map((note) => {
-    const author = authorsById.get(note.created_by) ?? null
+    const author = note.created_by
+      ? (authorsById.get(note.created_by) ?? null)
+      : null
     return {
       id: note.id,
       title: note.title,
@@ -199,9 +217,11 @@ async function loadProjectNoteRows({
       note_type: note.note_type,
       status: note.status,
       created_at: note.created_at,
-      created_by: note.created_by,
+      created_by: note.created_by ?? `deleted-author:${note.id}`,
       created_by_name:
-        toTrimmedString(author?.full_name) || toTrimmedString(author?.email) || "Unknown member",
+        toTrimmedString(author?.full_name) ||
+        toTrimmedString(author?.email) ||
+        "Unknown member",
       created_by_avatar_url: toTrimmedString(author?.avatar_url) || null,
     }
   })
@@ -214,7 +234,9 @@ async function loadProjectQuickLinkRows({
 }: {
   orgId: string
   projectId: string
-  supabase: Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>["supabase"]
+  supabase: Awaited<
+    ReturnType<typeof resolveMemberWorkspaceActorContext>
+  >["supabase"]
 }): Promise<MemberWorkspaceProjectQuickLinkRecord[]> {
   const { data: quickLinkRows, error: quickLinkError } = await supabase
     .from("organization_project_quick_links")
@@ -228,7 +250,10 @@ async function loadProjectQuickLinkRows({
     if (isMissingOrganizationProjectQuickLinksTableError(quickLinkError)) {
       return []
     }
-    throw toMemberWorkspaceDataError(quickLinkError, "Unable to load project quick links.")
+    throw toMemberWorkspaceDataError(
+      quickLinkError,
+      "Unable to load project quick links."
+    )
   }
 
   return (quickLinkRows ?? []).map((link) => ({
@@ -247,12 +272,14 @@ async function loadProjectAssetRows({
 }: {
   orgId: string
   projectId: string
-  supabase: Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>["supabase"]
+  supabase: Awaited<
+    ReturnType<typeof resolveMemberWorkspaceActorContext>
+  >["supabase"]
 }): Promise<MemberWorkspaceProjectAssetRecord[]> {
   const { data: assetRows, error: assetError } = await supabase
     .from("organization_project_assets")
     .select(
-      "id, org_id, project_id, name, description, asset_type, external_url, size_bytes, created_at, created_by",
+      "id, org_id, project_id, name, description, asset_type, external_url, size_bytes, created_at, created_by"
     )
     .eq("org_id", orgId)
     .eq("project_id", projectId)
@@ -263,11 +290,18 @@ async function loadProjectAssetRows({
     if (isMissingOrganizationProjectAssetsTableError(assetError)) {
       return []
     }
-    throw toMemberWorkspaceDataError(assetError, "Unable to load project assets.")
+    throw toMemberWorkspaceDataError(
+      assetError,
+      "Unable to load project assets."
+    )
   }
 
   const authorIds = Array.from(
-    new Set((assetRows ?? []).map((asset) => asset.created_by).filter(Boolean)),
+    new Set(
+      (assetRows ?? [])
+        .map((asset) => asset.created_by)
+        .filter(isNonEmptyString)
+    )
   )
   const authorsById = new Map<string, ProfileLiteRow>()
 
@@ -279,7 +313,10 @@ async function loadProjectAssetRows({
       .returns<ProfileLiteRow[]>()
 
     if (authorError) {
-      throw toMemberWorkspaceDataError(authorError, "Unable to load asset authors.")
+      throw toMemberWorkspaceDataError(
+        authorError,
+        "Unable to load asset authors."
+      )
     }
 
     for (const author of authorRows ?? []) {
@@ -288,7 +325,9 @@ async function loadProjectAssetRows({
   }
 
   return (assetRows ?? []).map((asset) => {
-    const author = authorsById.get(asset.created_by) ?? null
+    const author = asset.created_by
+      ? (authorsById.get(asset.created_by) ?? null)
+      : null
     return {
       id: asset.id,
       project_id: asset.project_id,
@@ -298,9 +337,11 @@ async function loadProjectAssetRows({
       external_url: asset.external_url,
       size_bytes: asset.size_bytes,
       created_at: asset.created_at,
-      created_by: asset.created_by,
+      created_by: asset.created_by ?? `deleted-author:${asset.id}`,
       created_by_name:
-        toTrimmedString(author?.full_name) || toTrimmedString(author?.email) || "Unknown member",
+        toTrimmedString(author?.full_name) ||
+        toTrimmedString(author?.email) ||
+        "Unknown member",
       created_by_avatar_url: toTrimmedString(author?.avatar_url) || null,
     }
   })
@@ -310,7 +351,9 @@ async function loadCurrentUser({
   supabase,
   userId,
 }: {
-  supabase: Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>["supabase"]
+  supabase: Awaited<
+    ReturnType<typeof resolveMemberWorkspaceActorContext>
+  >["supabase"]
   userId: string
 }): Promise<User> {
   const { data: profile, error: profileError } = await supabase
@@ -320,7 +363,10 @@ async function loadCurrentUser({
     .maybeSingle<ProfileLiteRow>()
 
   if (profileError) {
-    throw toMemberWorkspaceDataError(profileError, "Unable to load your profile.")
+    throw toMemberWorkspaceDataError(
+      profileError,
+      "Unable to load your profile."
+    )
   }
 
   return {
@@ -341,8 +387,18 @@ async function buildReadyProjectDetailResult({
   actor: Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>
   organizationSummary: MemberWorkspaceAdminOrganizationSummary
   project: OrganizationProjectRecord
-}): Promise<Extract<MemberWorkspaceProjectDetailLoadResult, { state: "ready" }>> {
-  const [assigneeOptions, currentUser, tasks, notes, quickLinks, assets] = await Promise.all([
+}): Promise<
+  Extract<MemberWorkspaceProjectDetailLoadResult, { state: "ready" }>
+> {
+  const [
+    assigneeOptions,
+    currentUser,
+    tasks,
+    notes,
+    quickLinks,
+    assets,
+    overviewDocument,
+  ] = await Promise.all([
     loadMemberWorkspacePersonOptionsForOrganizations({
       orgIds: [project.org_id],
       supabase: actor.supabase,
@@ -372,6 +428,11 @@ async function buildReadyProjectDetailResult({
       projectId: project.id,
       supabase: actor.supabase,
     }),
+    loadProjectOverviewDocument({
+      orgId: project.org_id,
+      projectId: project.id,
+      supabase: actor.supabase,
+    }),
   ])
 
   return {
@@ -387,12 +448,13 @@ async function buildReadyProjectDetailResult({
       quickLinks,
       assets,
       assigneeOptions,
+      overviewDocument,
     }),
   }
 }
 
 export async function loadMemberWorkspaceProjectDetailPage(
-  projectId: string,
+  projectId: string
 ): Promise<MemberWorkspaceProjectDetailLoadResult> {
   const actor = await resolveMemberWorkspaceActorContext()
 
@@ -420,7 +482,10 @@ export async function loadMemberWorkspaceProjectDetailPage(
           project: mapAdminOrganizationSummaryToProjectRecord(organization),
         })
       }
-      throw toMemberWorkspaceDataError(projectError, "Unable to load project details.")
+      throw toMemberWorkspaceDataError(
+        projectError,
+        "Unable to load project details."
+      )
     }
 
     if (projectRow) {
@@ -443,7 +508,9 @@ export async function loadMemberWorkspaceProjectDetailPage(
         return buildReadyProjectDetailResult({
           actor,
           organizationSummary,
-          project: canonicalProject ?? mapAdminOrganizationSummaryToProjectRecord(organizationSummary),
+          project:
+            canonicalProject ??
+            mapAdminOrganizationSummaryToProjectRecord(organizationSummary),
         })
       }
 
@@ -511,7 +578,10 @@ export async function loadMemberWorkspaceProjectDetailPage(
     if (isMissingOrganizationProjectsTableError(projectError)) {
       return { state: "schema-unavailable" }
     }
-    throw toMemberWorkspaceDataError(projectError, "Unable to load project details.")
+    throw toMemberWorkspaceDataError(
+      projectError,
+      "Unable to load project details."
+    )
   }
 
   if (!projectRow) {

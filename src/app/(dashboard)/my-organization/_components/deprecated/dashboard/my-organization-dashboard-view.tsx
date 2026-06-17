@@ -4,7 +4,6 @@ import {
   MY_ORGANIZATION_BENTO_GRID_CLASS,
   resolveMyOrganizationBentoCardClass,
 } from "@/components/organization/my-organization-bento-rules"
-import { PageTutorialButton } from "@/components/tutorial/page-tutorial-button"
 import { Button } from "@/components/ui/button"
 import type { OrgProfile, OrgProgram } from "@/components/organization/org-profile-card/types"
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
@@ -48,7 +47,6 @@ export function MyOrganizationDashboardView({
 }: MyOrganizationDashboardViewProps) {
   return (
     <div className="flex flex-col gap-5 md:gap-6">
-      <PageTutorialButton tutorial="my-organization" />
       <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-card/80 px-4 py-3 shadow-sm">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold tracking-tight">Organization dashboard</h2>

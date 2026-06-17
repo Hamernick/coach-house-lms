@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import { AppShell } from "@/components/app-shell"
 import { fetchSidebarTree } from "@/lib/academy"
 import { requireAdmin } from "@/lib/admin/auth"
+import { resolveAccountBillingCancellationRisk } from "@/lib/billing/subscription-access"
 
 export default async function InternalAdminLayout({
   children,
@@ -25,6 +26,14 @@ export default async function InternalAdminLayout({
   const displayName = profile?.full_name ?? (user?.user_metadata?.full_name as string | undefined) ?? null
   const email = user?.email ?? (typeof user?.user_metadata?.email === "string" ? user?.user_metadata?.email : null)
   const avatar = profile?.avatar_url ?? (user?.user_metadata?.avatar_url as string | undefined) ?? null
+  const accountBillingResult = await resolveAccountBillingCancellationRisk({
+    supabase,
+    userId,
+  })
+  const hasBillingCancellationRisk =
+    "error" in accountBillingResult
+      ? false
+      : accountBillingResult.hasBillingCancellationRisk
 
   const sidebarTree = await fetchSidebarTree({ includeDrafts: true, forceAdmin: true })
 
@@ -36,6 +45,7 @@ export default async function InternalAdminLayout({
       isAdmin
       showOrgAdmin
       showAccelerator
+      hasBillingCancellationRisk={hasBillingCancellationRisk}
       context="platform"
     >
       {children}

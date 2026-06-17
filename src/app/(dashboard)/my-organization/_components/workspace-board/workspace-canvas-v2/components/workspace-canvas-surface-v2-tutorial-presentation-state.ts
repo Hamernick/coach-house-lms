@@ -54,6 +54,9 @@ export type WorkspaceTutorialPresentationSurfaceSpec = {
   frameHeight: number
 }
 
+export const WORKSPACE_TUTORIAL_CALENDAR_POPOVER_WIDTH = 352
+export const WORKSPACE_TUTORIAL_CALENDAR_POPOVER_HEIGHT = 672
+
 export type WorkspaceTutorialPresentationLayoutSpec = {
   family: WorkspaceTutorialPresentationFamily
   shellWidth: number
@@ -74,6 +77,19 @@ export function resolveWorkspaceTutorialPresentationSurfaceSpec({
   cardSize: WorkspaceCardSize
   measuredHeight?: number | null
 }): WorkspaceTutorialPresentationSurfaceSpec {
+  if (cardId === "calendar") {
+    return {
+      cardWidth: WORKSPACE_TUTORIAL_CALENDAR_POPOVER_WIDTH,
+      cardHeight: WORKSPACE_TUTORIAL_CALENDAR_POPOVER_HEIGHT,
+      frameWidth:
+        WORKSPACE_TUTORIAL_CALENDAR_POPOVER_WIDTH +
+        WORKSPACE_TUTORIAL_PRESENTATION_FRAME_INSET * 2,
+      frameHeight:
+        WORKSPACE_TUTORIAL_CALENDAR_POPOVER_HEIGHT +
+        WORKSPACE_TUTORIAL_PRESENTATION_FRAME_INSET * 2,
+    }
+  }
+
   const dimensions = resolveCardDimensions(cardSize, cardId)
   const cardHeight = Math.max(
     0,

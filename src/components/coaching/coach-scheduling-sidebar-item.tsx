@@ -1,5 +1,7 @@
 "use client"
 
+import Link from "next/link"
+
 import { CoachingAvatarGroup } from "@/components/coaching/coaching-avatar-group"
 import {
   buildAppSidebarMenuButtonOwnerProps,
@@ -13,13 +15,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useCoachingBooking } from "@/hooks/use-coaching-booking"
 
 const COACH_SCHEDULING_SIDEBAR_ITEM_SOURCE =
   "src/components/coaching/coach-scheduling-sidebar-item.tsx"
 
 export function CoachSchedulingSidebarItem() {
-  const { schedule, pending } = useCoachingBooking()
   const ownerId = buildAppSidebarOwnerId("utility", "coaching")
   const notes = "Sidebar utility nav item: Coaching"
 
@@ -29,7 +29,7 @@ export function CoachSchedulingSidebarItem() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              type="button"
+              asChild
               tooltip={buildAppSidebarTooltipProps({
                 ownerId,
                 component: "AppSidebarUtilityNavItem",
@@ -39,11 +39,7 @@ export function CoachSchedulingSidebarItem() {
                 notes,
               })}
               className="justify-start gap-2"
-              onClick={() => {
-                void schedule()
-              }}
               aria-label="Open coaching scheduling"
-              disabled={pending}
               {...buildAppSidebarMenuButtonOwnerProps({
                 ownerId,
                 component: "AppSidebarUtilityNavItem",
@@ -52,14 +48,16 @@ export function CoachSchedulingSidebarItem() {
                 notes,
               })}
             >
-              <CoachingAvatarGroup
-                size="sm"
-                label="Coach House coaching team"
-                className="shrink-0"
-              />
-              <span className="min-w-0 flex-1 truncate whitespace-nowrap leading-snug group-data-[collapsible=icon]:hidden">
-                {pending ? "Opening…" : "Coaching"}
-              </span>
+              <Link href="/coaching">
+                <CoachingAvatarGroup
+                  size="sm"
+                  label="Coach House coaching team"
+                  className="shrink-0"
+                />
+                <span className="min-w-0 flex-1 truncate whitespace-nowrap leading-snug group-data-[collapsible=icon]:hidden">
+                  Coaching
+                </span>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

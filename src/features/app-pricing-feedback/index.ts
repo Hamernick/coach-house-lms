@@ -1,4 +1,4 @@
-export { AppPricingFeedbackPrompt } from "./components"
+export { AppPricingFeedbackPrompt } from "./public-components"
 export {
   APP_PRICING_FEEDBACK_PRICE_PER_MONTH_USD,
   APP_PRICING_FEEDBACK_REVEAL_DELAY_MS,

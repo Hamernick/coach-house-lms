@@ -1,14 +1,18 @@
 "use client"
 
-import { useEffect, useMemo, useState, useTransition } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
+import LoaderCircleIcon from "lucide-react/dist/esm/icons/loader-circle"
 
 import { useSupabaseClient } from "@/hooks/use-supabase-client"
-import { DEFAULT_POST_AUTH_REDIRECT, getSafeRedirectPath } from "@/lib/auth/redirects"
+import {
+  DEFAULT_POST_AUTH_REDIRECT,
+  getSafeRedirectPath,
+} from "@/lib/auth/redirects"
 import { Button } from "@/components/ui/button"
 import {
   Form,
@@ -32,6 +36,21 @@ type LoginFormProps = {
   redirectTo?: string
   initialError?: string | null
   signUpHref?: string
+}
+
+type ExistingAuthSession = { access_token?: string | null } | null | undefined
+
+const authFooterLinkClassName =
+  "rounded-sm hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+
+export function resolveExistingAuthSessionRedirect({
+  session,
+  redirectTo,
+}: {
+  session: ExistingAuthSession
+  redirectTo: string
+}) {
+  return session ? redirectTo : null
 }
 
 function mapAuthErrorMessage(raw: string | null | undefined) {
@@ -67,7 +86,11 @@ function mapAuthNoticeMessage(raw: string | null | undefined) {
   }
 }
 
-export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormProps) {
+export function LoginForm({
+  redirectTo,
+  initialError,
+  signUpHref,
+}: LoginFormProps) {
   const supabase = useSupabaseClient()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -75,11 +98,13 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
   const noticeMessage = mapAuthNoticeMessage(searchParams.get("notice"))
   const redirectFromSearch = getSafeRedirectPath(searchParams.get("redirect"))
   const resolvedRedirectTo =
-    redirectFromSearch ?? getSafeRedirectPath(redirectTo) ?? DEFAULT_POST_AUTH_REDIRECT
+    redirectFromSearch ??
+    getSafeRedirectPath(redirectTo) ??
+    DEFAULT_POST_AUTH_REDIRECT
   const [errorMessage, setErrorMessage] = useState<string | null>(
-    mapAuthErrorMessage(initialError) ?? searchError,
+    mapAuthErrorMessage(initialError) ?? searchError
   )
-  const [isPending, startTransition] = useTransition()
+  const [isSigningIn, setIsSigningIn] = useState(false)
   const resolvedSignUpHref = useMemo(() => {
     const base = signUpHref ?? "/sign-up"
     if (!resolvedRedirectTo || base.includes("redirect=")) return base
@@ -99,16 +124,45 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
       password: "",
     },
   })
-  const isConfirmationMessage = errorMessage === "Email confirmed. Sign in to continue."
+  const isConfirmationMessage =
+    errorMessage === "Email confirmed. Sign in to continue."
 
   useEffect(() => {
     setErrorMessage(mapAuthErrorMessage(initialError) ?? searchError)
   }, [initialError, searchError])
 
-  async function onSubmit(values: LoginFormValues) {
-    setErrorMessage(null)
+  useEffect(() => {
+    let cancelled = false
 
-    startTransition(async () => {
+    void supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (cancelled) return
+        const redirectPath = resolveExistingAuthSessionRedirect({
+          session: data.session,
+          redirectTo: resolvedRedirectTo,
+        })
+        if (!redirectPath) return
+
+        router.replace(redirectPath)
+        router.refresh()
+      })
+      .catch(() => {
+        // A failed session check should leave the sign-in form usable.
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [resolvedRedirectTo, router, supabase])
+
+  async function onSubmit(values: LoginFormValues) {
+    if (isSigningIn) return
+
+    setErrorMessage(null)
+    setIsSigningIn(true)
+
+    try {
       const { error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
@@ -116,13 +170,17 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
 
       if (error) {
         setErrorMessage(mapAuthErrorMessage(error.message))
+        setIsSigningIn(false)
         return
       }
 
       form.reset()
       router.replace(resolvedRedirectTo)
       router.refresh()
-    })
+    } catch {
+      setErrorMessage("Unable to sign in. Please try again.")
+      setIsSigningIn(false)
+    }
   }
 
   return (
@@ -136,7 +194,12 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
               <FormItem>
                 <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input {...field} type="email" autoComplete="email" placeholder="you@example.com" />
+                  <Input
+                    {...field}
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@example.com"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -160,7 +223,7 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
               className={
                 isConfirmationMessage
                   ? "text-sm text-emerald-600 dark:text-emerald-400"
-                  : "text-sm text-destructive"
+                  : "text-destructive text-sm"
               }
               role={isConfirmationMessage ? "status" : "alert"}
             >
@@ -171,16 +234,35 @@ export function LoginForm({ redirectTo, initialError, signUpHref }: LoginFormPro
               {noticeMessage}
             </p>
           ) : null}
-          <Button className="w-full" type="submit" disabled={isPending}>
-            {isPending ? "Signing in..." : "Sign in"}
+          <Button
+            className="w-full"
+            type="submit"
+            disabled={isSigningIn}
+            aria-busy={isSigningIn || undefined}
+          >
+            {isSigningIn ? (
+              <>
+                <LoaderCircleIcon
+                  className="animate-spin"
+                  data-icon="inline-start"
+                  aria-hidden
+                />
+                <span>Signing in…</span>
+              </>
+            ) : (
+              "Sign in"
+            )}
           </Button>
         </form>
       </Form>
-      <div className="flex justify-between text-sm text-muted-foreground">
-        <Link href={resolvedSignUpHref} className="hover:text-foreground">
+      <div className="text-muted-foreground flex flex-wrap justify-between gap-x-4 gap-y-2 text-sm">
+        <Link href={resolvedSignUpHref} className={authFooterLinkClassName}>
           Need an account? Sign up
         </Link>
-        <Link href={resolvedForgotPasswordHref} className="hover:text-foreground">
+        <Link
+          href={resolvedForgotPasswordHref}
+          className={authFooterLinkClassName}
+        >
           Forgot password?
         </Link>
       </div>

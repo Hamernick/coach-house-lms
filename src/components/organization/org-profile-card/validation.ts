@@ -42,6 +42,18 @@ const brandTypographySchema = z.object({
   }),
 })
 
+export const ORG_PROFILE_ROADMAP_TEXT_MAX_LENGTH = 20000
+
+const roadmapText = (label: string) =>
+  z
+    .string()
+    .max(
+      ORG_PROFILE_ROADMAP_TEXT_MAX_LENGTH,
+      `${label} must be ${ORG_PROFILE_ROADMAP_TEXT_MAX_LENGTH.toLocaleString()} characters or less.`,
+    )
+    .optional()
+    .or(z.literal(""))
+
 export const organizationProfileSchema = z.object({
   name: z.string().min(1, "Name is required").max(120),
   tagline: z.string().max(160).optional().or(z.literal("")),
@@ -75,12 +87,12 @@ export const organizationProfileSchema = z.object({
   tiktok: z.string().max(200).optional().or(z.literal("")),
   newsletter: z.string().max(200).optional().or(z.literal("")),
   github: z.string().max(200).optional().or(z.literal("")),
-  vision: z.string().max(5000).optional().or(z.literal("")),
-  mission: z.string().max(5000).optional().or(z.literal("")),
-  need: z.string().max(5000).optional().or(z.literal("")),
-  values: z.string().max(5000).optional().or(z.literal("")),
-  originStory: z.string().max(5000).optional().or(z.literal("")),
-  theoryOfChange: z.string().max(5000).optional().or(z.literal("")),
+  vision: roadmapText("Vision"),
+  mission: roadmapText("Mission"),
+  need: roadmapText("Need"),
+  values: roadmapText("Values"),
+  originStory: roadmapText("Origin story"),
+  theoryOfChange: roadmapText("Theory of change"),
   programs: z.string().max(5000).optional().or(z.literal("")),
   reports: z.string().max(5000).optional().or(z.literal("")),
   boilerplate: z.string().max(5000).optional().or(z.literal("")),

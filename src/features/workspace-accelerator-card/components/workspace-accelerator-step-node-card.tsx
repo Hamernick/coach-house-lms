@@ -11,7 +11,6 @@ import { useEffect, useMemo, useState, type ReactNode } from "react"
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import { ModuleRightRail } from "@/components/training/module-right-rail"
 import type { ModuleResource } from "@/components/training/types"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
   Drawer,
@@ -40,6 +39,10 @@ import {
   canWorkspaceAcceleratorTutorialPerformPreviewAction,
   isWorkspaceAcceleratorTutorialPreviewLocked,
 } from "./workspace-accelerator-card-tutorial-guards"
+import {
+  resolveAssignmentFooterNavigation,
+  WorkspaceAcceleratorStepFooter,
+} from "./workspace-accelerator-step-node-card-footer"
 import { WorkspaceAcceleratorTutorialGuardTooltip } from "./workspace-accelerator-tutorial-guard-tooltip"
 import { useWorkspaceAcceleratorTutorialGuard } from "./use-workspace-accelerator-tutorial-guard"
 
@@ -72,13 +75,19 @@ function headerButtonClassName() {
   return "h-9 w-9 touch-manipulation rounded-lg border border-border/65 bg-background/80 hover:bg-background/95 sm:h-8 sm:w-8"
 }
 
+function headerDoneButtonClassName() {
+  return "h-9 min-w-[76px] touch-manipulation gap-1.5 rounded-full border border-border/70 bg-background/90 px-3 text-xs font-medium text-foreground shadow-xs hover:border-border hover:bg-muted/70 hover:text-foreground sm:h-8 sm:min-w-[72px] sm:px-3 dark:bg-background/75 dark:hover:bg-muted/45"
+}
+
 function clampStepTitle(title: string) {
   const trimmed = title.trim()
   if (!trimmed) return "Accelerator step"
   return trimmed
 }
 
-function normalizeRailResources(step: WorkspaceAcceleratorCardStep): ModuleResource[] {
+function normalizeRailResources(
+  step: WorkspaceAcceleratorCardStep
+): ModuleResource[] {
   if (step.moduleContext?.moduleResources?.length) {
     return step.moduleContext.moduleResources
   }
@@ -91,12 +100,14 @@ function normalizeRailResources(step: WorkspaceAcceleratorCardStep): ModuleResou
 }
 
 function AcceleratorStepCloseButton({
+  done,
   moduleCompleted,
   onClose,
   reactGrabOwnerProps,
   tutorialCallout,
   variant,
 }: {
+  done?: boolean
   moduleCompleted: boolean
   onClose: () => void
   reactGrabOwnerProps?: Record<string, string>
@@ -106,25 +117,36 @@ function AcceleratorStepCloseButton({
   const button = (
     <Button
       type="button"
-      size="icon"
-      variant="ghost"
+      size={done ? "sm" : "icon"}
+      variant={done ? "outline" : "ghost"}
       {...reactGrabOwnerProps}
       className={cn(
-        headerButtonClassName(),
-        "h-7 w-7",
-        moduleCompleted &&
-          "border-sky-500/45 bg-sky-500/12 text-sky-600 hover:bg-sky-500/20 dark:text-sky-400",
+        done ? headerDoneButtonClassName() : headerButtonClassName(),
+        !done && "h-7 w-7",
+        !done &&
+          moduleCompleted &&
+          "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 dark:text-emerald-300"
       )}
       onClick={onClose}
       aria-label={
-        moduleCompleted
-          ? "Module complete"
-          : variant === "embedded"
-            ? "Close accelerator module"
-            : "Close accelerator step node"
+        done
+          ? "Done reviewing this lesson"
+          : moduleCompleted
+            ? "Lesson complete"
+            : variant === "embedded"
+              ? "Close accelerator lesson"
+              : "Close accelerator step node"
       }
     >
-      {moduleCompleted ? (
+      {done ? (
+        <>
+          <CheckIcon
+            className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400"
+            aria-hidden
+          />
+          <span>Done</span>
+        </>
+      ) : moduleCompleted ? (
         <CheckIcon className="h-4 w-4" aria-hidden />
       ) : (
         <XIcon className="h-4 w-4" aria-hidden />
@@ -174,44 +196,7 @@ function WorkspaceAcceleratorStepMobileDetailsDrawer({
   )
 }
 
-function WorkspaceAcceleratorStepFooterAction({
-  completed,
-  disabled,
-  label,
-  onComplete,
-}: {
-  completed: boolean
-  disabled: boolean
-  label: string
-  onComplete: () => void
-}) {
-  return (
-    <Button
-      type="button"
-      size="sm"
-      variant={completed ? "default" : "secondary"}
-      className="h-10 w-full rounded-lg px-3 text-sm touch-manipulation sm:h-7 sm:w-auto sm:px-2.5 sm:text-[11px]"
-      onClick={onComplete}
-      disabled={disabled}
-    >
-      {label}
-    </Button>
-  )
-}
-
-function resolveWorkspaceAcceleratorPrimaryActionLabel({
-  completed,
-  workspaceOnboardingView,
-}: {
-  completed: boolean
-  workspaceOnboardingView: string | null
-}) {
-  if (completed) return "Completed"
-  if (workspaceOnboardingView === "welcome") return "Continue"
-  if (workspaceOnboardingView === "organization-setup") return "Save to continue"
-  return "Complete"
-}
-
+// eslint-disable-next-line max-lines-per-function
 export function WorkspaceAcceleratorStepNodeCard({
   step,
   placeholderVideoUrl = null,
@@ -248,15 +233,19 @@ export function WorkspaceAcceleratorStepNodeCard({
   const [blockedControlId, setBlockedControlId] = useState<string | null>(null)
   const [mobileRailOpen, setMobileRailOpen] = useState(false)
   const stepTitle = clampStepTitle(
-    resolveWorkspaceAcceleratorDisplayStepTitle({
-      moduleTitle: step.moduleTitle,
-      stepTitle: step.stepTitle,
-    }),
+    step.stepKind === "assignment" && step.moduleTitle.trim()
+      ? step.moduleTitle
+      : resolveWorkspaceAcceleratorDisplayStepTitle({
+          moduleTitle: step.moduleTitle,
+          stepTitle: step.stepTitle,
+        })
   )
-  const showModuleTitle = shouldShowWorkspaceAcceleratorModuleTitle({
-    moduleTitle: step.moduleTitle,
-    stepTitle,
-  })
+  const showModuleTitle =
+    step.stepKind !== "assignment" &&
+    shouldShowWorkspaceAcceleratorModuleTitle({
+      moduleTitle: step.moduleTitle,
+      stepTitle,
+    })
   const stepCount = Math.max(stepTotal, 1)
   const currentCount = Math.min(stepIndex + 1, stepCount)
   const workspaceOnboardingView =
@@ -265,16 +254,21 @@ export function WorkspaceAcceleratorStepNodeCard({
   const immersiveOnboarding =
     fullscreenEmbedded && workspaceOnboardingView === "organization-setup"
   const handleBlockedPreviewAction = (
-    action: "preview-navigation" | "preview-close" | "preview-link" | "preview-submit",
-    controlId: string,
+    action:
+      | "preview-navigation"
+      | "preview-close"
+      | "preview-link"
+      | "preview-submit",
+    controlId: string
   ) => {
     setBlockedControlId(controlId)
     previewGuard.showBlockedFeedback(action)
   }
-  const canNavigatePreview = canWorkspaceAcceleratorTutorialPerformPreviewAction({
-    tutorialInteractionPolicy,
-    action: "preview-navigation",
-  })
+  const canNavigatePreview =
+    canWorkspaceAcceleratorTutorialPerformPreviewAction({
+      tutorialInteractionPolicy,
+      action: "preview-navigation",
+    })
   const canClosePreview = canWorkspaceAcceleratorTutorialPerformPreviewAction({
     tutorialInteractionPolicy,
     action: "preview-close",
@@ -309,7 +303,7 @@ export function WorkspaceAcceleratorStepNodeCard({
         hasDeck={step.hasDeck}
         breakAction={{
           kind: "button",
-          label: "Close module",
+          label: "Close lesson",
           onClick: () => {
             if (canClosePreview) {
               onClose()
@@ -326,7 +320,10 @@ export function WorkspaceAcceleratorStepNodeCard({
     prefersReducedMotion: !!prefersReducedMotion,
   })
   const showMobileRailDrawer = Boolean(resolvedSidePanel) && isMobile
-  const primaryActionLabel = resolveWorkspaceAcceleratorPrimaryActionLabel({ completed, workspaceOnboardingView })
+  const assignmentFooterNavigation = resolveAssignmentFooterNavigation(step)
+  const isFinalAssignmentSection = Boolean(
+    assignmentFooterNavigation && !assignmentFooterNavigation.nextSection
+  )
   useEffect(() => {
     setMobileRailOpen(false)
   }, [isMobile, step.id])
@@ -351,22 +348,24 @@ export function WorkspaceAcceleratorStepNodeCard({
       className={cn(
         "flex w-full min-w-0 flex-col overflow-hidden",
         fullscreenEmbedded
-          ? "h-full min-h-0 border-0 rounded-none bg-transparent shadow-none"
+          ? "h-full min-h-0 rounded-none border-0 bg-transparent shadow-none"
           : "border-border/70 bg-card border",
         tutorialCallout?.focus === "close-module" && "overflow-visible",
         embedded
           ? fullscreenEmbedded
             ? "relative z-10 h-full min-h-0"
             : "relative z-10 h-full min-h-0 rounded-[24px] shadow-[0_24px_60px_-36px_rgba(15,23,42,0.34)]"
-          : "h-auto rounded-[24px] shadow-[0_16px_42px_-30px_rgba(15,23,42,0.24)]",
+          : "h-auto rounded-[24px] shadow-[0_16px_42px_-30px_rgba(15,23,42,0.24)]"
       )}
     >
       {!immersiveOnboarding ? (
         <header
           className={cn(
             "border-border/60 bg-muted/20 border-b px-3 py-3 sm:px-4",
-            tutorialCallout?.focus === "close-module" && "relative z-20 overflow-visible",
-            !embedded && "accelerator-step-node-drag-handle cursor-grab active:cursor-grabbing",
+            tutorialCallout?.focus === "close-module" &&
+              "relative z-20 overflow-visible",
+            !embedded &&
+              "accelerator-step-node-drag-handle cursor-grab active:cursor-grabbing"
           )}
         >
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -376,7 +375,9 @@ export function WorkspaceAcceleratorStepNodeCard({
                   {step.moduleTitle}
                 </p>
               ) : null}
-              <h3 className={cn("line-clamp-1", WORKSPACE_TEXT_STYLES.cardTitle)}>
+              <h3
+                className={cn("line-clamp-1", WORKSPACE_TEXT_STYLES.cardTitle)}
+              >
                 <span className="inline-flex items-center gap-1.5">
                   <span className="inline-flex h-5 w-5 items-center justify-center rounded-[6px]">
                     <WaypointsIcon
@@ -390,18 +391,15 @@ export function WorkspaceAcceleratorStepNodeCard({
             </div>
             <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-end">
               <div className="flex items-center gap-1">
-                <Badge
-                  variant="outline"
-                  className="rounded-full border-border/60 bg-background/70 px-2.5 py-1 text-[11px] font-medium tabular-nums"
-                >
+                <span className="text-foreground shrink-0 text-[11px] font-medium tabular-nums">
                   {currentCount} of {stepCount}
-                </Badge>
+                </span>
                 {showMobileRailDrawer ? (
                   <Button
                     type="button"
                     size="sm"
                     variant="outline"
-                    className="h-9 rounded-full px-3 text-xs touch-manipulation sm:hidden"
+                    className="h-9 touch-manipulation rounded-full px-3 text-xs sm:hidden"
                     onClick={() => setMobileRailOpen(true)}
                   >
                     Details
@@ -420,13 +418,19 @@ export function WorkspaceAcceleratorStepNodeCard({
                     size="icon"
                     variant="ghost"
                     {...getReactGrabOwnerProps(previousButtonOwnerDescriptor)}
-                    className={cn(headerButtonClassName(), "h-9 w-9 sm:h-7 sm:w-7")}
+                    className={cn(
+                      headerButtonClassName(),
+                      "h-9 w-9 sm:h-7 sm:w-7"
+                    )}
                     onClick={() => {
                       if (canNavigatePreview) {
                         onPrevious()
                         return
                       }
-                      handleBlockedPreviewAction("preview-navigation", "previous")
+                      handleBlockedPreviewAction(
+                        "preview-navigation",
+                        "previous"
+                      )
                     }}
                     disabled={!canGoPrevious}
                     aria-label="Previous accelerator step"
@@ -447,7 +451,10 @@ export function WorkspaceAcceleratorStepNodeCard({
                     size="icon"
                     variant="ghost"
                     {...getReactGrabOwnerProps(nextButtonOwnerDescriptor)}
-                    className={cn(headerButtonClassName(), "h-9 w-9 sm:h-7 sm:w-7")}
+                    className={cn(
+                      headerButtonClassName(),
+                      "h-9 w-9 sm:h-7 sm:w-7"
+                    )}
                     onClick={() => {
                       if (canNavigatePreview) {
                         onNext()
@@ -471,6 +478,7 @@ export function WorkspaceAcceleratorStepNodeCard({
                 >
                   <div className="inline-flex">
                     <AcceleratorStepCloseButton
+                      done={isFinalAssignmentSection}
                       moduleCompleted={moduleCompleted}
                       onClose={() => {
                         if (canClosePreview) {
@@ -480,7 +488,7 @@ export function WorkspaceAcceleratorStepNodeCard({
                         handleBlockedPreviewAction("preview-close", "close")
                       }}
                       reactGrabOwnerProps={getReactGrabOwnerProps(
-                        closeButtonOwnerDescriptor,
+                        closeButtonOwnerDescriptor
                       )}
                       tutorialCallout={tutorialCallout}
                       variant={variant}
@@ -502,22 +510,22 @@ export function WorkspaceAcceleratorStepNodeCard({
           transition={contentSwapMotion.transition}
           className={cn(
             "w-full min-w-0",
-            embedded && "flex h-full min-h-0 flex-1 flex-col",
+            embedded && "flex h-full min-h-0 flex-1 flex-col"
           )}
         >
           {resolvedSidePanel && !showMobileRailDrawer ? (
-            <div className="grid h-full min-h-0 flex-1 items-stretch grid-cols-1 lg:grid-cols-[minmax(0,1fr)_240px] xl:grid-cols-[minmax(0,1fr)_260px]">
+            <div className="grid h-full min-h-0 flex-1 grid-cols-1 items-stretch lg:grid-cols-[minmax(0,1fr)_240px] xl:grid-cols-[minmax(0,1fr)_260px]">
               <div
                 className={cn(
                   "min-h-0",
-                  immersiveOnboarding
+                  immersiveOnboarding || step.stepKind === "assignment"
                     ? "flex h-full flex-col overflow-hidden"
-                    : "overflow-y-auto",
+                    : "overflow-y-auto"
                 )}
               >
                 {stepBody}
               </div>
-              <aside className="border-border/60 min-h-0 border-t bg-muted/10 p-3 sm:p-4 lg:border-t-0 lg:border-l">
+              <aside className="border-border/60 bg-muted/10 min-h-0 border-t p-3 sm:p-4 lg:border-t-0 lg:border-l">
                 {resolvedSidePanel}
               </aside>
             </div>
@@ -525,8 +533,12 @@ export function WorkspaceAcceleratorStepNodeCard({
             <div
               className={cn(
                 "min-h-0",
-                embedded && !immersiveOnboarding && "overflow-y-auto",
-                immersiveOnboarding && "flex h-full flex-col overflow-hidden",
+                embedded &&
+                  !immersiveOnboarding &&
+                  (step.stepKind === "assignment"
+                    ? "flex h-full flex-1 flex-col overflow-hidden"
+                    : "overflow-y-auto"),
+                immersiveOnboarding && "flex h-full flex-col overflow-hidden"
               )}
             >
               {stepBody}
@@ -535,19 +547,17 @@ export function WorkspaceAcceleratorStepNodeCard({
         </motion.div>
       </AnimatePresence>
 
-      {!immersiveOnboarding ? (
-        <footer className="border-border/60 bg-muted/15 flex items-center justify-stretch border-t px-3 py-3 sm:justify-end sm:px-4 sm:py-2.5">
-          <div className="flex w-full sm:w-auto sm:flex-row sm:items-center">
-            <WorkspaceAcceleratorStepFooterAction
-              completed={completed}
-              disabled={
-                workspaceOnboardingView === "organization-setup" && !completed
-              }
-              label={primaryActionLabel}
-              onComplete={onComplete}
-            />
-          </div>
-        </footer>
+      {!immersiveOnboarding && assignmentFooterNavigation ? (
+        <WorkspaceAcceleratorStepFooter
+          assignmentFooterNavigation={assignmentFooterNavigation}
+          canGoNext={canGoNext}
+          canGoPrevious={canGoPrevious}
+          completed={completed}
+          isFinalAssignmentSection={isFinalAssignmentSection}
+          onComplete={onComplete}
+          onNext={onNext}
+          onPrevious={onPrevious}
+        />
       ) : null}
 
       {showMobileRailDrawer ? (

@@ -1,6 +1,6 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { type ReactNode } from "react"
 
 import {
   resolveWorkspaceCanvasTutorialStep,
@@ -13,6 +13,7 @@ import { ACCELERATOR_STEP_NODE_ID } from "../../workspace-board-flow-surface-acc
 import { WorkspaceBoardCard } from "../../workspace-board-node-card"
 import type { WorkspaceBoardNodeData } from "../../workspace-board-node-types"
 import type { WorkspaceCardId, WorkspaceCardSize } from "../../workspace-board-types"
+import { WorkspaceTutorialCalendarPresentation } from "./workspace-canvas-surface-v2-tutorial-calendar-presentation"
 import type { WorkspaceTutorialDockMask } from "./workspace-canvas-surface-v2-tutorial-docking"
 import {
   WORKSPACE_TUTORIAL_PRESENTATION_FRAME_INSET,
@@ -140,11 +141,7 @@ function buildCardPresentation({
       presentationSurfaceKind === "dashed-frame"
         ? WORKSPACE_TUTORIAL_DASHED_FRAME_RADIUS
         : WORKSPACE_TUTORIAL_FRAMED_SURFACE_FRAME_RADIUS,
-    heightMode:
-      layoutSpec.family === "accelerator" ||
-      layoutSpec.family === "accelerator-module"
-        ? "fill"
-        : "content",
+    heightMode: layoutSpec.family === "accelerator-module" ? "fill" : "content",
     chrome: layoutSpec.chrome,
   }
   const acceleratorCardShellProps = getReactGrabLinkedSurfaceProps({
@@ -155,6 +152,24 @@ function buildCardPresentation({
     surfaceKind: "content",
     primitiveImport: "@/components/ui/card",
   })
+
+  if (cardId === "calendar") {
+    return {
+      family: layoutSpec.family,
+      key: "calendar",
+      cardSize: presentationCardSize,
+      shellWidth: layoutSpec.shellWidth,
+      shellHeight: layoutSpec.shellHeight,
+      layoutMode: layoutSpec.layoutMode,
+      surface: framedSurface,
+      suppressedNodeIds: [cardId],
+      content: (
+        <WorkspaceTutorialCalendarPresentation
+          tutorialStepId={tutorialStepId}
+        />
+      ),
+    }
+  }
 
   if (cardId === "accelerator") {
     return {

@@ -4,6 +4,11 @@ import { describe, expect, it } from "vitest"
 
 import { PublicMapOrganizationList } from "@/components/public/public-map-index/organization-list"
 import {
+  PublicMapDirectoryRail,
+  resolvePublicMapDirectoryRailMode,
+} from "@/components/public/public-map-index/directory-rail"
+import { PublicMapMemberRail } from "@/components/public/public-map-index/member-rail"
+import {
   PublicMapShellSidebarPanel,
   PublicMapSidebar,
 } from "@/components/public/public-map-index/sidebar"
@@ -14,7 +19,7 @@ import type {
 } from "@/lib/queries/public-map-index"
 
 function buildProgramPreview(
-  overrides: Partial<PublicMapProgramPreview> = {},
+  overrides: Partial<PublicMapProgramPreview> = {}
 ): PublicMapProgramPreview {
   return {
     id: "program-1",
@@ -27,12 +32,13 @@ function buildProgramPreview(
 }
 
 function buildOrganization(
-  overrides: Partial<PublicMapOrganization> = {},
+  overrides: Partial<PublicMapOrganization> = {}
 ): PublicMapOrganization {
   return {
     id: "org-1",
     name: "Atlas Collective",
-    tagline: "Neighborhood support and grassroots coordination across Chicago blocks.",
+    tagline:
+      "Neighborhood support and grassroots coordination across Chicago blocks.",
     description: "Atlas supports local families through civic programming.",
     boilerplate: null,
     vision: null,
@@ -92,9 +98,16 @@ function buildOrganization(
   }
 }
 
-function extractClassNameByAttribute(markup: string, attribute: string, value: string) {
+function extractClassNameByAttribute(
+  markup: string,
+  attribute: string,
+  value: string
+) {
   const escapedValue = value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
-  const tag = markup.match(new RegExp(`<[^>]*${attribute}="${escapedValue}"[^>]*>`))?.[0] ?? ""
+  const tag =
+    markup.match(
+      new RegExp(`<[^>]*${attribute}="${escapedValue}"[^>]*>`)
+    )?.[0] ?? ""
   return tag.match(/class="([^"]*)"/)?.[1] ?? ""
 }
 
@@ -117,33 +130,33 @@ describe("public map sidebar layout", () => {
         toggleFavorite: () => {},
         onOpenDetails: () => {},
         setSidebarMode: () => {},
-      }),
+      })
     )
 
     const headerClassName = extractClassNameByAttribute(
       markup,
       "data-public-map-sidebar-section",
-      "rail-search-header",
+      "rail-search-header"
     )
     const shellClassName = extractClassNameByAttribute(
       markup,
       "data-public-map-sidebar-section",
-      "rail-organizations-shell",
+      "rail-organizations-shell"
     )
     const scrollClassName = extractClassNameByAttribute(
       markup,
       "data-public-map-sidebar-section",
-      "rail-organizations-scroll",
+      "rail-organizations-scroll"
     )
     const viewportClassName = extractClassNameByAttribute(
       markup,
       "data-slot",
-      "scroll-area-viewport",
+      "scroll-area-viewport"
     )
     const stackClassName = extractClassNameByAttribute(
       markup,
       "data-public-map-sidebar-section",
-      "organization-stack",
+      "organization-stack"
     )
 
     expect(headerClassName).toContain("px-3")
@@ -154,7 +167,9 @@ describe("public map sidebar layout", () => {
     expect(viewportClassName).toContain("[&amp;&gt;div]:!w-full")
     expect(markup.match(/data-slot="scroll-area"/g)).toHaveLength(1)
     expect(markup).toContain('data-slot="scroll-area-content"')
-    expect(markup).toContain('class="box-border min-w-0 w-full max-w-full px-1 pb-4"')
+    expect(markup).toContain(
+      'class="box-border min-w-0 w-full max-w-full px-1 pb-4"'
+    )
     expect(stackClassName).toContain("w-full")
     expect(stackClassName).toContain("max-w-full")
     expect(stackClassName).not.toContain("px-")
@@ -167,19 +182,19 @@ describe("public map sidebar layout", () => {
     const markup = renderToStaticMarkup(
       React.createElement(PublicMapOrganizationList, {
         organizations: [organization],
-        selectedOrgId: organization.id,
+        selectedOrgId: null,
         favorites: [],
         query: "",
         constrainedLayout: true,
         onSelectOrg: () => {},
         onToggleFavorite: () => {},
         onOpenDetails: () => {},
-      }),
+      })
     )
 
     expect(markup).toContain("grid-cols-2")
     expect(markup).not.toContain("grid-cols-3")
-    expect(markup).toContain("w-full min-w-0 max-w-full")
+    expect(markup).toContain("w-full max-w-full min-w-0")
     expect(markup).toContain("overflow-hidden")
     expect(markup).toContain("cursor-pointer")
     expect(markup).not.toContain(organization.tagline)
@@ -187,9 +202,25 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("gap-x-1.5 gap-y-0.5")
     expect(markup).toContain("•")
     expect(markup).toContain(">View<")
-    expect(markup).toContain("rounded-2xl border shadow-sm")
+    expect(markup).toContain("border-transparent bg-transparent shadow-none")
+    expect(markup).toContain(
+      "hover:border-border/80 hover:bg-sidebar-accent/70 hover:shadow-sm"
+    )
+    expect(markup).toContain(
+      "focus-within:border-border/80 focus-within:bg-sidebar-accent/75 focus-within:shadow-sm"
+    )
     expect(markup).toContain("text-[#06c]")
-    expect(markup).not.toContain("rounded-full border border-transparent bg-transparent")
+    expect(
+      markup.indexOf('data-react-grab-surface-slot="view-button"')
+    ).toBeGreaterThan(markup.indexOf('data-react-grab-surface-slot="location"'))
+    expect(
+      markup.indexOf('data-react-grab-surface-slot="view-button"')
+    ).toBeLessThan(
+      markup.indexOf('data-react-grab-surface-slot="featured-program"')
+    )
+    expect(markup).not.toContain(
+      "rounded-full border border-transparent bg-transparent"
+    )
     expect(markup).not.toContain("dark:border-white/30")
   })
 
@@ -207,7 +238,7 @@ describe("public map sidebar layout", () => {
         onSelectOrg: () => {},
         onToggleFavorite: () => {},
         onOpenDetails: () => {},
-      }),
+      })
     )
 
     expect(markup).toContain(">Chicago, IL<")
@@ -230,7 +261,7 @@ describe("public map sidebar layout", () => {
         onSelectOrg: () => {},
         onToggleFavorite: () => {},
         onOpenDetails: () => {},
-      }),
+      })
     )
 
     expect(markup).toContain("bg-white")
@@ -253,12 +284,97 @@ describe("public map sidebar layout", () => {
         onSelectOrg: () => {},
         onToggleFavorite: () => {},
         onOpenDetails: () => {},
-      }),
+      })
     )
 
     expect(markup).toContain(">Chicago, IL<")
     expect(markup).not.toContain("CHICAGO")
     expect(markup).not.toContain("UNITED STATES")
+  })
+
+  it("moves the internal organization directory into the member right rail tabs", () => {
+    const organization = buildOrganization()
+    const directoryMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapDirectoryRail, {
+        sidebarMode: "search",
+        organizations: [organization],
+        selectedOrganization: null,
+        favorites: [],
+        query: "",
+        searchContext: null,
+        onQueryChange: () => {},
+        onToggleFavorite: () => {},
+        onOpenDetails: () => {},
+        setSidebarMode: () => {},
+      })
+    )
+    const memberRailMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapMemberRail, {
+        directoryRail: React.createElement(
+          "div",
+          { "data-public-map-right-rail-section": "directory-search" },
+          "Directory"
+        ),
+        directoryMode: "search",
+        savedOrganizations: [],
+        onSelectOrganization: () => {},
+        onToggleFavorite: () => {},
+      })
+    )
+
+    expect(directoryMarkup).toContain(
+      'data-public-map-right-rail-section="directory-search"'
+    )
+    expect(directoryMarkup).toContain("Resource map")
+    expect(directoryMarkup).toContain(organization.name)
+    expect(directoryMarkup).toContain("grid-cols-2")
+    expect(memberRailMarkup).toContain(">Find<")
+    expect(memberRailMarkup).toContain("grid-cols-2")
+    expect(memberRailMarkup).not.toContain(">Recent<")
+    expect(memberRailMarkup).not.toContain(">Joined<")
+    expect(memberRailMarkup).not.toContain(">Alerts<")
+    expect(memberRailMarkup).toContain(
+      "rounded-full border border-border/70 bg-background/70 p-1"
+    )
+    expect(memberRailMarkup).toContain("data-[state=active]:bg-muted/55")
+    expect(memberRailMarkup).toContain("Directory")
+  })
+
+  it("uses the right rail directory detail view when a map organization is selected", () => {
+    const organization = buildOrganization()
+    expect(
+      resolvePublicMapDirectoryRailMode({
+        sidebarMode: "details",
+        selectedOrganization: organization,
+      })
+    ).toBe("details")
+    expect(
+      resolvePublicMapDirectoryRailMode({
+        sidebarMode: "details",
+        selectedOrganization: null,
+      })
+    ).toBe("search")
+
+    const markup = renderToStaticMarkup(
+      React.createElement(PublicMapDirectoryRail, {
+        sidebarMode: "details",
+        organizations: [organization],
+        selectedOrganization: organization,
+        favorites: [],
+        query: "",
+        searchContext: null,
+        onQueryChange: () => {},
+        onToggleFavorite: () => {},
+        onOpenDetails: () => {},
+        setSidebarMode: () => {},
+      })
+    )
+
+    expect(markup).toContain(
+      'data-public-map-right-rail-section="directory-detail"'
+    )
+    expect(markup).toContain(organization.name)
+    expect(markup).toContain('aria-label="Back to search"')
   })
 
   it("can mount the find search panel into the shell sidebar without the map overlay rail", () => {
@@ -281,15 +397,19 @@ describe("public map sidebar layout", () => {
             onToggleFavorite: () => {},
             onOpenDetails: () => {},
             setSidebarMode: () => {},
-          }),
-        ),
-      ),
+          })
+        )
+      )
     )
 
     expect(markup).toContain("Resource map")
     expect(markup).toContain('aria-label="Search public organizations"')
-    expect(markup).toContain('data-public-map-sidebar-section="rail-organizations-scroll"')
-    expect(markup).not.toContain('data-public-map-sidebar-section="rail-detail-scroll"')
+    expect(markup).toContain(
+      'data-public-map-sidebar-section="rail-organizations-scroll"'
+    )
+    expect(markup).not.toContain(
+      'data-public-map-sidebar-section="rail-detail-scroll"'
+    )
     expect(markup).not.toContain("Hide search panel")
   })
 
@@ -313,13 +433,15 @@ describe("public map sidebar layout", () => {
             onToggleFavorite: () => {},
             onOpenDetails: () => {},
             setSidebarMode: () => {},
-          }),
-        ),
-      ),
+          })
+        )
+      )
     )
 
     expect(markup).toContain(organization.name)
-    expect(markup).toContain('data-public-map-sidebar-section="rail-detail-scroll"')
+    expect(markup).toContain(
+      'data-public-map-sidebar-section="rail-detail-scroll"'
+    )
     expect(markup).not.toContain('aria-label="Search public organizations"')
     expect(markup).not.toContain('aria-label="Hide organization panel"')
   })

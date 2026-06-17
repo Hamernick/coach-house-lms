@@ -82,7 +82,7 @@ export function ModuleStepperCompleteStep({
           </span>
         </ItemMedia>
         <ItemContent>
-          <ItemTitle>Book a session</ItemTitle>
+          <ItemTitle>Book a meeting</ItemTitle>
           <ItemDescription>
             Review this module, ask questions, or plan next steps.
           </ItemDescription>
@@ -91,17 +91,17 @@ export function ModuleStepperCompleteStep({
           </div>
           {coachingTier === "free" && typeof coachingRemaining === "number" && coachingRemaining > 0 ? (
             <p className="pt-2 text-xs text-muted-foreground">
-              {coachingRemaining} included session{coachingRemaining === 1 ? "" : "s"} remaining.
+              {coachingRemaining} included meeting{coachingRemaining === 1 ? "" : "s"} remaining.
             </p>
           ) : null}
           {coachingTier === "free" && coachingRemaining === 0 ? (
             <p className="pt-2 text-xs text-muted-foreground">
-              Included sessions complete. Your next bookings use the discounted calendar.
+              Included meetings complete. Future meetings continue through checkout.
             </p>
           ) : null}
           {coachingTier === "discounted" ? (
             <p className="pt-2 text-xs text-muted-foreground">
-              Included sessions complete. You are now booking at the discounted coaching rate.
+              Operations Support discount applied to this coaching meeting.
             </p>
           ) : null}
           {coachingTier === "full" ? (
@@ -117,7 +117,7 @@ export function ModuleStepperCompleteStep({
             onClick={() => onSchedule()}
             disabled={schedulePending}
           >
-            {schedulePending ? "Opening..." : "Book a session"}
+            {schedulePending ? "Opening..." : "Book a meeting"}
           </Button>
         </ItemActions>
       </Item>

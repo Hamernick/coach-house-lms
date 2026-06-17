@@ -5,10 +5,7 @@ import type {
   PlatformAdminDashboardLabStatus,
 } from "@/features/platform-admin-dashboard"
 
-export type MemberWorkspaceSection =
-  | "projects"
-  | "my-tasks"
-  | "people"
+export type MemberWorkspaceSection = "projects" | "my-tasks" | "people"
 
 export type MemberWorkspaceAccessibleOrganization = {
   orgId: string
@@ -103,6 +100,7 @@ export type MemberWorkspaceCreateProjectFormInput = {
   orgId?: string
   name: string
   description?: string
+  overviewDocumentHtml?: string
   status: PlatformAdminDashboardLabStatus
   priority: PlatformAdminDashboardLabPriority
   startDate: string

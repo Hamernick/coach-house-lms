@@ -18,6 +18,7 @@ export type WorkspaceCardNodeStyle = {
 
 const AUTO_HEIGHT_CARD_IDS = new Set<WorkspaceCardId>([
   "accelerator",
+  "fiscal-sponsorship",
   "organization-overview",
   "programs",
   "roadmap",
@@ -31,6 +32,11 @@ export const CARD_DIMENSIONS: Record<WorkspaceCardSize, CardDimensions> = {
   md: { width: 440, height: 400 },
   lg: { width: 560, height: 500 },
 }
+
+const FISCAL_SPONSORSHIP_ACTIVITY_CARD_DIMENSIONS = {
+  width: 440,
+  height: 456,
+} satisfies CardDimensions
 
 export const CARD_DIMENSION_OVERRIDES: Partial<
   Record<
@@ -46,8 +52,8 @@ export const CARD_DIMENSION_OVERRIDES: Partial<
     lg: { width: 560, height: 700 },
   },
   accelerator: {
-    sm: { width: 400, height: 252 },
-    md: { width: 480, height: 520 },
+    sm: { width: 520, height: 252 },
+    md: { width: 640, height: 520 },
     lg: { width: 1180, height: 720 },
   },
   roadmap: {
@@ -79,24 +85,28 @@ export const CARD_DIMENSION_OVERRIDES: Partial<
     sm: { width: 400, height: 372 },
     md: { width: 520, height: 428 },
   },
+  "fiscal-sponsorship": {
+    sm: FISCAL_SPONSORSHIP_ACTIVITY_CARD_DIMENSIONS,
+    md: FISCAL_SPONSORSHIP_ACTIVITY_CARD_DIMENSIONS,
+  },
 }
 
 export const DASHBOARD_GRID_ROWS: WorkspaceCardId[][] = [
-  ["organization-overview", "programs", "accelerator", "calendar"],
-  ["roadmap", "deck", "brand-kit", "economic-engine"],
-  ["communications", "atlas"],
+  ["organization-overview", "programs", "roadmap", "calendar"],
+  ["accelerator", "deck", "brand-kit", "economic-engine"],
+  ["communications", "atlas", "fiscal-sponsorship"],
 ]
 
 const CALENDAR_FOCUSED_GRID_ROWS: WorkspaceCardId[][] = [
   ["organization-overview", "programs", "calendar", "accelerator"],
   ["roadmap", "deck", "communications", "economic-engine"],
-  ["brand-kit", "atlas"],
+  ["brand-kit", "atlas", "fiscal-sponsorship"],
 ]
 
 const COMMUNICATIONS_FOCUSED_GRID_ROWS: WorkspaceCardId[][] = [
   ["organization-overview", "programs", "communications", "accelerator"],
   ["roadmap", "deck", "calendar", "economic-engine"],
-  ["brand-kit", "atlas"],
+  ["brand-kit", "atlas", "fiscal-sponsorship"],
 ]
 
 export const PRESET_GRID_ROWS: Record<
@@ -124,6 +134,7 @@ export const DEFAULT_CARD_SIZES: Record<WorkspaceCardId, WorkspaceCardSize> = {
   communications: "md",
   deck: "md",
   atlas: "md",
+  "fiscal-sponsorship": "sm",
 }
 
 export const DEFAULT_HIDDEN_CARD_IDS: WorkspaceCardId[] = [
@@ -150,7 +161,7 @@ export function resolveCardDimensions(
 
 export function resolveWorkspaceCardNodeStyle(
   size: WorkspaceCardSize,
-  cardId?: WorkspaceCardId,
+  cardId?: WorkspaceCardId
 ): WorkspaceCardNodeStyle {
   const dimensions = resolveCardDimensions(size, cardId)
 
@@ -171,7 +182,9 @@ export function isWorkspaceCardAutoHeight(cardId?: WorkspaceCardId) {
   return cardId ? AUTO_HEIGHT_CARD_IDS.has(cardId) : false
 }
 
-export function resolveWorkspaceCardHeightModeClassName(cardId?: WorkspaceCardId) {
+export function resolveWorkspaceCardHeightModeClassName(
+  cardId?: WorkspaceCardId
+) {
   return isWorkspaceCardAutoHeight(cardId) ? "h-auto" : "h-full"
 }
 
@@ -197,7 +210,6 @@ export function resolveWorkspaceCardCanvasShellStyle({
 }
 
 export function resolveWorkspaceCardCanvasShellClassName({
-  size,
   cardId,
   isCanvasFullscreen = false,
 }: {
@@ -206,15 +218,10 @@ export function resolveWorkspaceCardCanvasShellClassName({
   isCanvasFullscreen?: boolean
 }) {
   if (isCanvasFullscreen) {
-    return "h-full rounded-none border-0 shadow-none"
+    return "h-full w-full max-w-none rounded-none border-0 shadow-none"
   }
 
-  return [
-    resolveWorkspaceCardHeightModeClassName(cardId),
-    "shadow-none",
-    "border-border/70 border",
-    size === "sm" ? "rounded-[20px]" : "rounded-[24px]",
-  ].join(" ")
+  return resolveWorkspaceCardHeightModeClassName(cardId)
 }
 
 export function roundToSnap(value: number) {

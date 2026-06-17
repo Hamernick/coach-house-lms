@@ -10,9 +10,13 @@ import type {
   ProfileTab,
 } from "./types"
 
-export const ORG_PROFILE_TABS: Array<{ value: ProfileTab; label: string; icon: typeof BuildingIcon }> = [
+export const ORG_PROFILE_TABS: Array<{
+  value: ProfileTab
+  label: string
+  icon: typeof BuildingIcon
+}> = [
   { value: "company", label: "About", icon: BuildingIcon },
-  { value: "programs", label: "Programs", icon: ClipboardListIcon },
+  { value: "programs", label: "Primary objects", icon: ClipboardListIcon },
   { value: "people", label: "People", icon: UsersIcon },
 ]
 
@@ -45,15 +49,25 @@ function normalizeTypography(source: OrgProfile): BrandTypographyConfig | null {
     return null
   }
 
-  const headingsFamily = typeof headings.family === "string" ? headings.family : ""
-  const headingsWeight = typeof headings.weight === "string" ? headings.weight : ""
-  const headingsTracking = isTrackingValue(headings.tracking) ? headings.tracking : "normal"
+  const headingsFamily =
+    typeof headings.family === "string" ? headings.family : ""
+  const headingsWeight =
+    typeof headings.weight === "string" ? headings.weight : ""
+  const headingsTracking = isTrackingValue(headings.tracking)
+    ? headings.tracking
+    : "normal"
   const bodyFamily = typeof body.family === "string" ? body.family : ""
   const bodyWeight = typeof body.weight === "string" ? body.weight : ""
   const bodyTracking = isTrackingValue(body.tracking) ? body.tracking : "normal"
   const codeFamily = typeof code.family === "string" ? code.family : ""
 
-  if (!headingsFamily || !headingsWeight || !bodyFamily || !bodyWeight || !codeFamily) {
+  if (
+    !headingsFamily ||
+    !headingsWeight ||
+    !bodyFamily ||
+    !bodyWeight ||
+    !codeFamily
+  ) {
     return null
   }
 

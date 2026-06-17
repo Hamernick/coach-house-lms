@@ -1,9 +1,6 @@
 import type { OrgProgram } from "@/components/organization/org-profile-card/types"
 import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
-import {
-  buildWorkspaceCanvasTutorialCompletionHiddenCardIds,
-  resolveWorkspaceCanvasTutorialStepCount,
-} from "@/features/workspace-canvas-tutorial"
+import { resolveWorkspaceCanvasTutorialStepCount } from "@/features/workspace-canvas-tutorial"
 import type { WorkspaceBoardState } from "../_components/workspace-board/workspace-board-types"
 import {
   applyWorkspaceOnboardingStageOverride,
@@ -17,20 +14,12 @@ type WorkspaceSeedWithAcceleratorBoardState = {
   boardState: WorkspaceBoardState
 }
 
-function doCardIdSetsMatch(left: string[], right: string[]) {
-  if (left.length !== right.length) return false
-  const rightSet = new Set(right)
-  return left.every((value) => rightSet.has(value))
-}
-
 function hasCompletedWorkspaceTutorial(boardState: WorkspaceBoardState) {
-  const completionHiddenCardIds = buildWorkspaceCanvasTutorialCompletionHiddenCardIds()
   const finalStepIndex = resolveWorkspaceCanvasTutorialStepCount() - 1
 
   return (
     boardState.onboardingFlow.active === false &&
-    boardState.onboardingFlow.tutorialStepIndex >= finalStepIndex &&
-    doCardIdSetsMatch(boardState.hiddenCardIds, completionHiddenCardIds)
+    boardState.onboardingFlow.tutorialStepIndex >= finalStepIndex
   )
 }
 

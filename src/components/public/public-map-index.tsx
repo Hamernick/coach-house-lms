@@ -1,18 +1,16 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import { HomeCanvasSidebarSlot } from "@/components/public/home-canvas-sidebar-slot"
 import { organizationHasMapLocation, type PublicMapBounds } from "./public-map-index/helpers"
 import {
   useSyncPublicMapAuthFavorite,
   useSyncPublicMapLayout,
 } from "./public-map-index/layout-sync"
-import type { PublicMapMemberProfile } from "./public-map-index/member-profile-card"
 import {
   focusOrganizationOnMap,
   normalizeSlug,
@@ -29,11 +27,11 @@ import {
 import { PublicMapSurface } from "./public-map-index/map-surface"
 import type { PublicMapPanelPresentation } from "./public-map-index/map-view-helpers"
 import {
-  PublicMapBoardAlert,
-  PublicMapJoinedOrganization,
-} from "./public-map-index/member-rail"
-import { PublicMapRightRail } from "./public-map-index/right-rail"
-import { PublicMapShellSidebarPanel } from "./public-map-index/sidebar"
+  usePublicMapMemberOnboardingMapOverlay,
+  type PublicMapAdminOnboardingPreviewConfig,
+  type PublicMapMemberOnboardingConfig,
+} from "./public-map-index/member-onboarding-preview-controls"
+import { PublicMapIndexChrome } from "./public-map-index/public-map-index-chrome"
 import {
   buildLocationFeedback,
   type UserLocationStatus,
@@ -46,15 +44,20 @@ import {
   buildPublicMapSearchIndex,
   filterPublicMapOrganizationIds,
 } from "./public-map-index/search-index"
+import {
+  shouldRenderPublicMapDesktopSidebar,
+  shouldUsePublicMapHomeCanvasSidebarSlot,
+  type PublicMapIndexPresentationMode,
+} from "./public-map-index/presentation-mode"
 
 type PublicMapIndexProps = {
   organizations: PublicMapOrganization[]
   mapboxToken?: string
   initialPublicSlug?: string
   viewer?: { id: string; email: string | null } | null
-  joinedOrganizations?: PublicMapJoinedOrganization[]
-  boardAlerts?: PublicMapBoardAlert[]
-  memberProfile?: PublicMapMemberProfile | null
+  presentationMode?: PublicMapIndexPresentationMode
+  memberOnboarding?: PublicMapMemberOnboardingConfig
+  adminOnboardingPreview?: PublicMapAdminOnboardingPreviewConfig
 }
 
 type PublicMapCameraTarget = {
@@ -67,9 +70,9 @@ export function PublicMapIndex({
   mapboxToken,
   initialPublicSlug,
   viewer: initialViewer = null,
-  joinedOrganizations = [],
-  boardAlerts = [],
-  memberProfile = null,
+  presentationMode = "home-canvas",
+  memberOnboarding = undefined,
+  adminOnboardingPreview = undefined,
 }: PublicMapIndexProps) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -108,9 +111,9 @@ export function PublicMapIndex({
   const [mapLoadVersion, setMapLoadVersion] = useState(0)
   const [sameLocationSelection, setSameLocationSelection] =
     useState<PublicMapSameLocationSelection | null>(null)
+  const deferredQuery = useDeferredValue(query)
   const {
     favorites,
-    recentOrganizationIds,
     isSavingPreferences,
     preferencesSaveError,
     viewer,
@@ -133,9 +136,8 @@ export function PublicMapIndex({
   const filteredOrganizations = useMemo(
     () => {
       const filteredIds = filterPublicMapOrganizationIds({
-        organizations,
         searchIndex,
-        query,
+        query: deferredQuery,
         appliedBounds: null,
         favorites,
         activeGroup: "all",
@@ -144,7 +146,7 @@ export function PublicMapIndex({
         .map((organizationId) => organizationById.get(organizationId) ?? null)
         .filter((organization): organization is PublicMapOrganization => Boolean(organization))
     },
-    [favorites, organizationById, organizations, query, searchIndex],
+    [deferredQuery, favorites, organizationById, searchIndex],
   )
 
   const selectedOrganization = resolvePublicMapSelectedOrganization({
@@ -158,14 +160,6 @@ export function PublicMapIndex({
         .map((organizationId) => organizationById.get(organizationId) ?? null)
         .filter((organization): organization is PublicMapOrganization => Boolean(organization)),
     [favorites, organizationById],
-  )
-
-  const recentOrganizations = useMemo(
-    () =>
-      recentOrganizationIds
-        .map((organizationId) => organizationById.get(organizationId) ?? null)
-        .filter((organization): organization is PublicMapOrganization => Boolean(organization)),
-    [organizationById, recentOrganizationIds],
   )
 
   const authAction = searchParams.get("auth_action")
@@ -193,6 +187,12 @@ export function PublicMapIndex({
   }, [])
   const handleViewportChange = useCallback((map: mapboxgl.Map) => {
     appliedBoundsRef.current = resolveBounds(map)
+  }, [])
+  const handleSetCameraTargetOrgId = useCallback((organizationId: string) => {
+    setCameraTarget((current) => ({
+      organizationId,
+      requestId: (current?.requestId ?? 0) + 1,
+    }))
   }, [])
 
   useSyncPublicMapLayout({
@@ -222,17 +222,36 @@ export function PublicMapIndex({
       pendingAuthOrgId,
       setSelectedOrgId,
       setSidebarMode,
-      setCameraTargetOrgId: (organizationId) => {
-        setCameraTarget((current) => ({
-          organizationId,
-          requestId: (current?.requestId ?? 0) + 1,
-        }))
-      },
+      setCameraTargetOrgId: handleSetCameraTargetOrgId,
       setRecentOrganizationIds,
       setPendingAuthOrgId,
       setAuthSheetOpen,
       setFavorites,
     })
+  const handleQueryChange = useCallback((value: string) => {
+    setSameLocationSelection(null)
+    setQuery(value)
+  }, [])
+  const handleOpenDetails = useCallback(
+    (organizationId: string, options?: { preserveSearchContext?: boolean }) => {
+      if (!options?.preserveSearchContext) {
+        setSameLocationSelection(null)
+      }
+      handleSelectOrganization({
+        organizationId,
+        openDetails: true,
+      })
+    },
+    [handleSelectOrganization],
+  )
+  const handleRailSelectOrganization = useCallback(
+    (organizationId: string) =>
+      handleSelectOrganization({
+        organizationId,
+        openDetails: true,
+      }),
+    [handleSelectOrganization],
+  )
   useSyncSelectedOrganization({
     organizationById,
     selectedOrgId,
@@ -299,89 +318,62 @@ export function PublicMapIndex({
   }, [cameraTarget, organizationById])
 
   const listOrganizations = sameLocationSearchContext?.organizations ?? filteredOrganizations
+  const renderDesktopSidebar = shouldRenderPublicMapDesktopSidebar(presentationMode)
+  const useHomeCanvasSidebarSlot = shouldUsePublicMapHomeCanvasSidebarSlot(presentationMode)
+  const useAppShellRightRailDirectory = presentationMode === "app-shell"
+  const renderMapOverlaySidebar = renderDesktopSidebar && !useAppShellRightRailDirectory
+  const memberOnboardingMapOverlay = usePublicMapMemberOnboardingMapOverlay({
+    isAuthenticated,
+    memberOnboarding,
+    adminOnboardingPreview,
+  })
+  const mapSurface = (
+    <PublicMapSurface
+      containerRef={containerRef}
+      sidebarMode={sidebarMode}
+      filteredOrganizations={filteredOrganizations}
+      selectedOrganization={selectedOrganization}
+      favorites={favorites}
+      query={query}
+      searchContext={sameLocationSearchContext}
+      tokenAvailable={tokenAvailable}
+      mapError={mapError}
+      locationFeedback={locationFeedback}
+      preferencesSaveError={preferencesSaveError}
+      isSavingPreferences={isSavingPreferences}
+      authSheetOpen={authSheetOpen}
+      authRedirectTo={authRedirectTo}
+      onQueryChange={handleQueryChange}
+      onToggleFavorite={toggleFavorite}
+      onOpenOrgDetails={handleOpenDetails}
+      onSidebarModeChange={setSidebarMode}
+      onAuthSheetOpenChange={setAuthSheetOpen}
+      onSidebarInsetChange={setSidebarInsetLeft}
+      onPanelPresentationChange={setPanelPresentation}
+      renderDesktopSidebar={renderMapOverlaySidebar}
+      mapOverlay={memberOnboardingMapOverlay}
+    />
+  )
 
   return (
-    <>
-      {panelPresentation === "rail" ? (
-        <HomeCanvasSidebarSlot>
-          <PublicMapShellSidebarPanel
-            sidebarMode={sidebarMode}
-            organizations={listOrganizations}
-            selectedOrganization={selectedOrganization}
-            favorites={favorites}
-            query={query}
-            searchContext={sameLocationSearchContext}
-            onQueryChange={(value) => {
-              setSameLocationSelection(null)
-              setQuery(value)
-            }}
-            onToggleFavorite={toggleFavorite}
-            onOpenDetails={(organizationId, options) => {
-              if (!options?.preserveSearchContext) {
-                setSameLocationSelection(null)
-              }
-              handleSelectOrganization({
-                organizationId,
-                openDetails: true,
-              })
-            }}
-            setSidebarMode={setSidebarMode}
-          />
-        </HomeCanvasSidebarSlot>
-      ) : null}
-
-      <PublicMapRightRail
-        isAuthenticated={isAuthenticated}
-        memberProfile={memberProfile}
-        savedOrganizations={savedOrganizations}
-        favorites={favorites}
-        recentOrganizations={recentOrganizations}
-        joinedOrganizations={joinedOrganizations}
-        boardAlerts={boardAlerts}
-        onSelectOrganization={(organizationId) =>
-          handleSelectOrganization({
-            organizationId,
-            openDetails: true,
-          })
-        }
-        onToggleFavorite={toggleFavorite}
-      />
-
-      <PublicMapSurface
-        containerRef={containerRef}
-        sidebarMode={sidebarMode}
-        filteredOrganizations={filteredOrganizations}
-        selectedOrganization={selectedOrganization}
-        favorites={favorites}
-        query={query}
-        searchContext={sameLocationSearchContext}
-        tokenAvailable={tokenAvailable}
-        mapError={mapError}
-        locationFeedback={locationFeedback}
-        preferencesSaveError={preferencesSaveError}
-        isSavingPreferences={isSavingPreferences}
-        authSheetOpen={authSheetOpen}
-        authRedirectTo={authRedirectTo}
-        onQueryChange={(value) => {
-          setSameLocationSelection(null)
-          setQuery(value)
-        }}
-        onToggleFavorite={toggleFavorite}
-        onOpenOrgDetails={(organizationId, options) => {
-          if (!options?.preserveSearchContext) {
-            setSameLocationSelection(null)
-          }
-          handleSelectOrganization({
-            organizationId,
-            openDetails: true,
-          })
-        }}
-        onSidebarModeChange={setSidebarMode}
-        onAuthSheetOpenChange={setAuthSheetOpen}
-        onSidebarInsetChange={setSidebarInsetLeft}
-        onPanelPresentationChange={setPanelPresentation}
-        renderDesktopSidebar={false}
-      />
-    </>
+    <PublicMapIndexChrome
+      directoryOrganizations={listOrganizations}
+      favorites={favorites}
+      isAuthenticated={isAuthenticated}
+      mapSurface={mapSurface}
+      onOpenDetails={handleOpenDetails}
+      onQueryChange={handleQueryChange}
+      onSelectOrganization={handleRailSelectOrganization}
+      onToggleFavorite={toggleFavorite}
+      panelPresentation={panelPresentation}
+      query={query}
+      savedOrganizations={savedOrganizations}
+      searchContext={sameLocationSearchContext}
+      selectedOrganization={selectedOrganization}
+      setSidebarMode={setSidebarMode}
+      sidebarMode={sidebarMode}
+      useAppShellRightRailDirectory={useAppShellRightRailDirectory}
+      useHomeCanvasSidebarSlot={useHomeCanvasSidebarSlot}
+    />
   )
 }

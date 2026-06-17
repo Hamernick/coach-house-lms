@@ -27,6 +27,7 @@ import type { OrganizationAccessRequestsTable } from "./organization_access_requ
 import type { OrganizationAccessSettingsTable } from "./organization_access_settings"
 import type { OrganizationProjectAssetsTable } from "./organization_project_assets"
 import type { OrganizationProjectNotesTable } from "./organization_project_notes"
+import type { OrganizationProjectOverviewDocumentsTable } from "./organization_project_overview_documents"
 import type { OrganizationProjectsTable } from "./organization_projects"
 import type { OrganizationProjectQuickLinksTable } from "./organization_project_quick_links"
 import type { OrganizationTaskAssigneesTable } from "./organization_task_assignees"
@@ -44,6 +45,25 @@ import type { OrganizationWorkspaceObjectiveStepsTable } from "./organization_wo
 import type { OrganizationWorkspaceObjectivesTable } from "./organization_workspace_objectives"
 import type { OrganizationWorkspaceStarterStateTable } from "./organization_workspace_starter_state"
 import type { NotificationsTable } from "./notifications"
+import type { UserJourneyEventsTable } from "./user_journey_events"
+import type { UserActivationCheckpointsTable } from "./user_activation_checkpoints"
+import type { CoachingCoachesTable } from "./coaching_coaches"
+import type { CoachingBookingsTable } from "./coaching_bookings"
+import type { CoachingCreditLedgerTable } from "./coaching_credit_ledger"
+import type { FiscalSponsorshipApplicationsTable } from "./fiscal_sponsorship_applications"
+import type { FiscalSponsorshipDocumentsTable } from "./fiscal_sponsorship_documents"
+import type { FiscalSponsorshipEventsTable } from "./fiscal_sponsorship_events"
+import type { FiscalSponsorshipReviewsTable } from "./fiscal_sponsorship_reviews"
+import type { FiscalSponsorshipSignaturePacketsTable } from "./fiscal_sponsorship_signature_packets"
+import type { PlatformEmailCampaignsTable } from "./platform_email_campaigns"
+import type { PlatformEmailDeliveriesTable } from "./platform_email_deliveries"
+import type { PlatformEmailEventsTable } from "./platform_email_events"
+import type { PlatformEmailSuppressionsTable } from "./platform_email_suppressions"
+import type { PlatformEmailTopicsTable } from "./platform_email_topics"
+import type { PlatformEmailPreferencesTable } from "./platform_email_preferences"
+import type { PlatformEmailConsentEventsTable } from "./platform_email_consent_events"
+import type { PlatformEmailLinksTable } from "./platform_email_links"
+import type { PlatformEmailLinkClicksTable } from "./platform_email_link_clicks"
 
 export type { OrganizationsTable } from "./organizations"
 export type { AppPricingFeedbackResponsesTable } from "./app_pricing_feedback_responses"
@@ -74,6 +94,7 @@ export type { OrganizationAccessRequestsTable } from "./organization_access_requ
 export type { OrganizationAccessSettingsTable } from "./organization_access_settings"
 export type { OrganizationProjectAssetsTable } from "./organization_project_assets"
 export type { OrganizationProjectNotesTable } from "./organization_project_notes"
+export type { OrganizationProjectOverviewDocumentsTable } from "./organization_project_overview_documents"
 export type { OrganizationProjectsTable } from "./organization_projects"
 export type { OrganizationProjectQuickLinksTable } from "./organization_project_quick_links"
 export type { OrganizationTaskAssigneesTable } from "./organization_task_assignees"
@@ -91,6 +112,25 @@ export type { OrganizationWorkspaceObjectiveStepsTable } from "./organization_wo
 export type { OrganizationWorkspaceObjectivesTable } from "./organization_workspace_objectives"
 export type { OrganizationWorkspaceStarterStateTable } from "./organization_workspace_starter_state"
 export type { NotificationsTable } from "./notifications"
+export type { UserJourneyEventsTable } from "./user_journey_events"
+export type { UserActivationCheckpointsTable } from "./user_activation_checkpoints"
+export type { CoachingCoachesTable } from "./coaching_coaches"
+export type { CoachingBookingsTable } from "./coaching_bookings"
+export type { CoachingCreditLedgerTable } from "./coaching_credit_ledger"
+export type { FiscalSponsorshipApplicationsTable } from "./fiscal_sponsorship_applications"
+export type { FiscalSponsorshipDocumentsTable } from "./fiscal_sponsorship_documents"
+export type { FiscalSponsorshipEventsTable } from "./fiscal_sponsorship_events"
+export type { FiscalSponsorshipReviewsTable } from "./fiscal_sponsorship_reviews"
+export type { FiscalSponsorshipSignaturePacketsTable } from "./fiscal_sponsorship_signature_packets"
+export type { PlatformEmailCampaignsTable } from "./platform_email_campaigns"
+export type { PlatformEmailDeliveriesTable } from "./platform_email_deliveries"
+export type { PlatformEmailEventsTable } from "./platform_email_events"
+export type { PlatformEmailSuppressionsTable } from "./platform_email_suppressions"
+export type { PlatformEmailTopicsTable } from "./platform_email_topics"
+export type { PlatformEmailPreferencesTable } from "./platform_email_preferences"
+export type { PlatformEmailConsentEventsTable } from "./platform_email_consent_events"
+export type { PlatformEmailLinksTable } from "./platform_email_links"
+export type { PlatformEmailLinkClicksTable } from "./platform_email_link_clicks"
 
 export type PublicTables = {
   organizations: OrganizationsTable
@@ -122,6 +162,7 @@ export type PublicTables = {
   organization_access_settings: OrganizationAccessSettingsTable
   organization_project_assets: OrganizationProjectAssetsTable
   organization_project_notes: OrganizationProjectNotesTable
+  organization_project_overview_documents: OrganizationProjectOverviewDocumentsTable
   organization_projects: OrganizationProjectsTable
   organization_project_quick_links: OrganizationProjectQuickLinksTable
   organization_task_assignees: OrganizationTaskAssigneesTable
@@ -139,4 +180,23 @@ export type PublicTables = {
   organization_workspace_objectives: OrganizationWorkspaceObjectivesTable
   organization_workspace_starter_state: OrganizationWorkspaceStarterStateTable
   notifications: NotificationsTable
+  user_journey_events: UserJourneyEventsTable
+  user_activation_checkpoints: UserActivationCheckpointsTable
+  coaching_coaches: CoachingCoachesTable
+  coaching_bookings: CoachingBookingsTable
+  coaching_credit_ledger: CoachingCreditLedgerTable
+  fiscal_sponsorship_applications: FiscalSponsorshipApplicationsTable
+  fiscal_sponsorship_documents: FiscalSponsorshipDocumentsTable
+  fiscal_sponsorship_events: FiscalSponsorshipEventsTable
+  fiscal_sponsorship_reviews: FiscalSponsorshipReviewsTable
+  fiscal_sponsorship_signature_packets: FiscalSponsorshipSignaturePacketsTable
+  platform_email_campaigns: PlatformEmailCampaignsTable
+  platform_email_deliveries: PlatformEmailDeliveriesTable
+  platform_email_events: PlatformEmailEventsTable
+  platform_email_suppressions: PlatformEmailSuppressionsTable
+  platform_email_topics: PlatformEmailTopicsTable
+  platform_email_preferences: PlatformEmailPreferencesTable
+  platform_email_consent_events: PlatformEmailConsentEventsTable
+  platform_email_links: PlatformEmailLinksTable
+  platform_email_link_clicks: PlatformEmailLinkClicksTable
 }

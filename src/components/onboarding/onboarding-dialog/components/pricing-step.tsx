@@ -14,7 +14,13 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
 import { cn } from "@/lib/utils"
 
@@ -29,6 +35,8 @@ type PricingStepProps = {
 }
 
 const BUILDER_TIER_IDS = new Set(["formation", "organization", "operations"])
+const pricingStepButtonClassName =
+  "h-auto min-h-9 w-full whitespace-normal rounded-xl text-center"
 
 function splitTierEyebrow(eyebrow: string) {
   const match = eyebrow.match(/^(.*?)(\s*\(.*\))$/)
@@ -64,7 +72,10 @@ function buildCheckoutHref({
     redirect: checkoutReturnTo,
     cancel: checkoutReturnTo,
   })
-  params.set("plan", tierId === "operations" ? "operations_support" : "organization")
+  params.set(
+    "plan",
+    tierId === "operations" ? "operations_support" : "organization"
+  )
   return `/api/stripe/checkout?${params.toString()}`
 }
 
@@ -78,7 +89,9 @@ export function PricingStep({
   submitting,
 }: PricingStepProps) {
   const searchParams = useSearchParams()
-  const builderTiers = PLATFORM_TIERS.filter((tier) => BUILDER_TIER_IDS.has(tier.id))
+  const builderTiers = PLATFORM_TIERS.filter((tier) =>
+    BUILDER_TIER_IDS.has(tier.id)
+  )
   const checkoutErrorCode = searchParams.get("checkout_error")
   const checkoutErrorDetail = searchParams.get("checkout_detail")
   const checkoutErrorDebug = searchParams.get("checkout_debug")
@@ -86,12 +99,15 @@ export function PricingStep({
   const showPostSignupContinue = onboardingMode === "post_signup_access"
 
   return (
-    <div className="space-y-4 py-4 sm:space-y-5 sm:py-5" data-onboarding-step-id="pricing">
-      <div className="rounded-2xl border border-border/70 bg-muted/25 p-3.5 sm:p-4">
-        <p className="text-sm font-medium text-foreground">
+    <div
+      className="space-y-4 py-4 sm:space-y-5 sm:py-5"
+      data-onboarding-step-id="pricing"
+    >
+      <div className="border-border/70 bg-muted/25 rounded-2xl border p-3.5 sm:p-4">
+        <p className="text-foreground text-sm font-medium">
           Want to build your own organization?
         </p>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+        <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
           Start with Individual for free, or choose a paid plan when you want
           team access and the accelerator. You can go back and choose a free
           member journey if you only want the internal map experience.
@@ -121,29 +137,37 @@ export function PricingStep({
           const checkoutHref = isFreeTier
             ? null
             : buildCheckoutHref({
-                tierId: tier.id === "operations" ? "operations" : "organization",
+                tierId:
+                  tier.id === "operations" ? "operations" : "organization",
                 checkoutReturnTo,
               })
 
           return (
             <Card
               key={tier.id}
+              role="group"
+              aria-current={isCurrentTier ? "true" : undefined}
+              aria-label={`${tier.title} plan`}
               className={cn(
-                "rounded-[22px] border border-border/70 shadow-none sm:rounded-[26px]",
-                tier.featured && "border-primary/35 ring-1 ring-primary/10",
-                isCurrentTier && "border-emerald-500/45 bg-emerald-500/[0.06]",
+                "border-border/70 rounded-[22px] border shadow-none sm:rounded-[26px]",
+                tier.featured && "border-primary/35 ring-primary/10 ring-1",
+                isCurrentTier && "border-emerald-500/45 bg-emerald-500/[0.06]"
               )}
             >
               <CardHeader className="space-y-3 sm:space-y-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
                       <span className="block">{eyebrow.primary}</span>
                       {eyebrow.secondary ? (
-                        <span className="mt-0.5 block">{eyebrow.secondary}</span>
+                        <span className="mt-0.5 block">
+                          {eyebrow.secondary}
+                        </span>
                       ) : null}
                     </p>
-                    <CardTitle className="mt-2 text-xl sm:text-2xl">{tier.title}</CardTitle>
+                    <CardTitle className="mt-2 text-xl sm:text-2xl">
+                      {tier.title}
+                    </CardTitle>
                   </div>
                   {isCurrentTier ? (
                     <Badge className="rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
@@ -157,13 +181,17 @@ export function PricingStep({
                 </div>
 
                 <div className="flex items-end gap-2">
-                  <span className="text-3xl font-semibold tracking-tight sm:text-4xl">{tier.priceLine}</span>
+                  <span className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                    {tier.priceLine}
+                  </span>
                   {tier.priceNote ? (
-                    <span className="pb-1 text-sm text-muted-foreground">{tier.priceNote}</span>
+                    <span className="text-muted-foreground pb-1 text-sm">
+                      {tier.priceNote}
+                    </span>
                   ) : null}
                 </div>
 
-                <CardDescription className="text-sm leading-relaxed text-muted-foreground">
+                <CardDescription className="text-muted-foreground text-sm leading-relaxed">
                   {tier.subtitle}
                 </CardDescription>
 
@@ -171,24 +199,36 @@ export function PricingStep({
                   isFreeTier || showPostSignupContinue ? (
                     <Button
                       type="submit"
-                      className="w-full rounded-xl"
+                      className={pricingStepButtonClassName}
                       disabled={submitting}
                     >
-                      {isFreeTier ? "Continue with Individual" : "Continue to workspace"}
+                      {isFreeTier
+                        ? "Continue with Individual"
+                        : "Continue to workspace"}
                     </Button>
                   ) : (
-                    <Button type="button" className="w-full rounded-xl" disabled>
-                      {isFreeTier ? "Individual selected" : "Builder access active"}
+                    <Button
+                      type="button"
+                      className={pricingStepButtonClassName}
+                      disabled
+                    >
+                      {isFreeTier
+                        ? "Individual selected"
+                        : "Builder access active"}
                     </Button>
                   )
                 ) : isFreeTier ? (
-                  <Button type="button" className="w-full rounded-xl" disabled>
+                  <Button
+                    type="button"
+                    className={pricingStepButtonClassName}
+                    disabled
+                  >
                     Included with every account
                   </Button>
                 ) : (
                   <Button
                     type="button"
-                    className="w-full rounded-xl"
+                    className={pricingStepButtonClassName}
                     onClick={() => {
                       if (!checkoutHref) return
                       window.location.assign(checkoutHref)
@@ -200,10 +240,13 @@ export function PricingStep({
               </CardHeader>
 
               <CardContent className="space-y-3 sm:space-y-4">
-                <div className="h-px bg-border/70" aria-hidden />
+                <div className="bg-border/70 h-px" aria-hidden />
                 <Accordion type="single" collapsible className="w-full">
-                  <AccordionItem value={`${tier.id}-includes`} className="border-b-0">
-                    <AccordionTrigger className="py-2 text-sm font-semibold text-foreground hover:no-underline">
+                  <AccordionItem
+                    value={`${tier.id}-includes`}
+                    className="border-b-0"
+                  >
+                    <AccordionTrigger className="text-foreground py-2 text-sm font-semibold hover:no-underline">
                       <span>{tier.featureHeading}</span>
                     </AccordionTrigger>
                     <AccordionContent className="pb-0">
@@ -223,7 +266,9 @@ export function PricingStep({
       </div>
 
       {attemptedStep === step && errors.builderPlanTier ? (
-        <p className="text-xs text-destructive">{errors.builderPlanTier}</p>
+        <p className="text-destructive text-xs" role="alert">
+          {errors.builderPlanTier}
+        </p>
       ) : null}
     </div>
   )

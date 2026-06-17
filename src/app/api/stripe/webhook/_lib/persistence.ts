@@ -7,12 +7,37 @@ import { supabaseErrorToError } from "@/lib/supabase/errors"
 import type { Database } from "@/lib/supabase"
 import { toWebhookPayload } from "./metadata"
 
+function isMissingProfileForeignKeyError(error: { code?: string; message?: string }, foreignKeyName: string) {
+  return error.code === "23503" && typeof error.message === "string" && error.message.includes(foreignKeyName)
+}
+
+function logSkippedOrphanStripeRecord({
+  table,
+  userId,
+  stripeId,
+  error,
+}: {
+  table: string
+  userId: string
+  stripeId: string
+  error: { code?: string; message?: string }
+}) {
+  console.warn("Skipping Stripe webhook record for missing profile", {
+    table,
+    userId,
+    stripeId,
+    code: error.code ?? null,
+  })
+}
+
 export async function upsertSubscription({
   userId,
   customerId,
   subscriptionId,
   status,
   currentPeriodEnd,
+  cancelAt,
+  canceledAt,
   metadata,
 }: {
   userId: string
@@ -20,6 +45,8 @@ export async function upsertSubscription({
   subscriptionId: string
   status: Database["public"]["Enums"]["subscription_status"]
   currentPeriodEnd?: string | null
+  cancelAt?: string | null
+  canceledAt?: string | null
   metadata?: Database["public"]["Tables"]["subscriptions"]["Insert"]["metadata"]
 }) {
   const admin = createSupabaseAdminClient()
@@ -30,6 +57,8 @@ export async function upsertSubscription({
     stripe_subscription_id: subscriptionId,
     status,
     current_period_end: currentPeriodEnd ?? null,
+    cancel_at: cancelAt ?? null,
+    canceled_at: canceledAt ?? null,
     metadata: metadata ?? null,
   }
 
@@ -38,6 +67,15 @@ export async function upsertSubscription({
     .upsert(payload, { onConflict: "user_id,stripe_subscription_id" })
 
   if (error) {
+    if (isMissingProfileForeignKeyError(error, "subscriptions_user_id_fkey")) {
+      logSkippedOrphanStripeRecord({
+        table: "subscriptions",
+        userId,
+        stripeId: subscriptionId,
+        error,
+      })
+      return
+    }
     throw supabaseErrorToError(error, "Stripe webhook: unable to upsert subscription.")
   }
 }
@@ -73,6 +111,15 @@ export async function upsertAcceleratorPurchase({
     .upsert(payload, { onConflict: "stripe_checkout_session_id" })
 
   if (error) {
+    if (isMissingProfileForeignKeyError(error, "accelerator_purchases_user_id_fkey")) {
+      logSkippedOrphanStripeRecord({
+        table: "accelerator_purchases",
+        userId,
+        stripeId: checkoutSessionId,
+        error,
+      })
+      return
+    }
     throw supabaseErrorToError(
       error,
       "Stripe webhook: unable to upsert accelerator purchase.",
@@ -111,6 +158,15 @@ export async function upsertElectivePurchase({
     .upsert(payload, { onConflict: "user_id,module_slug" })
 
   if (error) {
+    if (isMissingProfileForeignKeyError(error, "elective_purchases_user_id_fkey")) {
+      logSkippedOrphanStripeRecord({
+        table: "elective_purchases",
+        userId,
+        stripeId: checkoutSessionId,
+        error,
+      })
+      return
+    }
     throw supabaseErrorToError(
       error,
       "Stripe webhook: unable to upsert elective purchase.",

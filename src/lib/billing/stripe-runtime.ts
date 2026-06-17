@@ -12,6 +12,8 @@ export type StripeRuntimeConfig = {
   webhookSecret: string | null
   organizationPriceId: string | null
   operationsSupportPriceId: string | null
+  coachingFullPriceId: string | null
+  coachingDiscountedPriceId: string | null
   mode: "test" | "live"
 }
 
@@ -61,6 +63,8 @@ function buildPrimaryConfig(): StripeRuntimeConfig | null {
     webhookSecret: normalizeString(env.STRIPE_WEBHOOK_SECRET),
     organizationPriceId: normalizeString(env.STRIPE_ORGANIZATION_PRICE_ID),
     operationsSupportPriceId: normalizeString(env.STRIPE_OPERATIONS_SUPPORT_PRICE_ID),
+    coachingFullPriceId: normalizeString(env.STRIPE_COACHING_FULL_PRICE_ID),
+    coachingDiscountedPriceId: normalizeString(env.STRIPE_COACHING_DISCOUNTED_PRICE_ID),
     mode: modeFromSecretKey(secretKey),
   }
 }
@@ -75,6 +79,8 @@ function buildTesterConfig(): StripeRuntimeConfig | null {
     webhookSecret: normalizeString(env.STRIPE_TEST_WEBHOOK_SECRET),
     organizationPriceId: normalizeString(env.STRIPE_TEST_ORGANIZATION_PRICE_ID),
     operationsSupportPriceId: normalizeString(env.STRIPE_TEST_OPERATIONS_SUPPORT_PRICE_ID),
+    coachingFullPriceId: normalizeString(env.STRIPE_TEST_COACHING_FULL_PRICE_ID),
+    coachingDiscountedPriceId: normalizeString(env.STRIPE_TEST_COACHING_DISCOUNTED_PRICE_ID),
     mode: modeFromSecretKey(testerSecret),
   }
 }
@@ -99,8 +105,55 @@ export function resolveStripeRuntimeConfigForAudience({
 }): StripeRuntimeConfig | null {
   const primary = buildPrimaryConfig()
   const tester = buildTesterConfig()
-  if (isTester && tester) return tester
+  if (process.env.NODE_ENV !== "production" && isTester && tester) return tester
   return primary
+}
+
+function hasConfiguredCoachingPrice({
+  config,
+  priceTier,
+}: {
+  config: StripeRuntimeConfig | null
+  priceTier: "discounted" | "full"
+}) {
+  if (!config) return false
+  return Boolean(resolveStripePriceIdForCoaching({ config, priceTier }))
+}
+
+function shouldPreferTesterForLocalCoaching({
+  tester,
+  priceTier,
+}: {
+  tester: StripeRuntimeConfig | null
+  priceTier: "discounted" | "full"
+}) {
+  return process.env.NODE_ENV !== "production" && hasConfiguredCoachingPrice({ config: tester, priceTier })
+}
+
+export function resolveStripeRuntimeConfigForCoaching({
+  useTesterRuntime,
+  priceTier,
+}: {
+  useTesterRuntime: boolean
+  priceTier: "discounted" | "full"
+}): StripeRuntimeConfig | null {
+  const primary = buildPrimaryConfig()
+  const tester = buildTesterConfig()
+  if ((useTesterRuntime || shouldPreferTesterForLocalCoaching({ tester, priceTier })) && tester) {
+    return tester
+  }
+  return primary
+}
+
+export function isStripeCoachingCheckoutConfigured({
+  useTesterRuntime,
+  priceTier,
+}: {
+  useTesterRuntime: boolean
+  priceTier: "discounted" | "full"
+}) {
+  const config = resolveStripeRuntimeConfigForCoaching({ useTesterRuntime, priceTier })
+  return hasConfiguredCoachingPrice({ config, priceTier })
 }
 
 export function resolveStripeRuntimeConfigsForFallback({
@@ -138,4 +191,14 @@ export function resolveStripePriceIdForPlan({
   planTier: StripeBillingPlanTier
 }) {
   return planTier === "operations_support" ? config.operationsSupportPriceId : config.organizationPriceId
+}
+
+export function resolveStripePriceIdForCoaching({
+  config,
+  priceTier,
+}: {
+  config: StripeRuntimeConfig
+  priceTier: "discounted" | "full"
+}) {
+  return priceTier === "discounted" ? config.coachingDiscountedPriceId : config.coachingFullPriceId
 }

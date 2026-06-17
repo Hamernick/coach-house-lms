@@ -45,6 +45,14 @@ export function AccountStep({
   initialNewsletterOptIn,
   onRemoveAvatar,
 }: AccountStepProps) {
+  const avatarHintId = "onboarding-avatar-hint"
+  const firstNameErrorId = "onboarding-first-name-error"
+  const lastNameErrorId = "onboarding-last-name-error"
+  const phoneHintId = "onboarding-phone-hint"
+  const publicEmailHintId = "onboarding-public-email-hint"
+  const showFirstNameError = attemptedStep === step && Boolean(errors.firstName)
+  const showLastNameError = attemptedStep === step && Boolean(errors.lastName)
+
   return (
     <div className="space-y-5 py-5" data-onboarding-step-id="account">
       <div className="border-border/70 bg-background/60 flex min-h-[10.5rem] flex-col items-center justify-center gap-3 rounded-2xl border px-4 py-6">
@@ -69,16 +77,17 @@ export function AccountStep({
             type="button"
             size="icon"
             variant="secondary"
-            className="absolute -right-1 -bottom-1 z-10 h-7 w-7 rounded-full"
             aria-label={
               avatarPreview ? "Change profile photo" : "Upload profile photo"
             }
+            aria-describedby={avatarHintId}
             onClick={() => avatarInputRef.current?.click()}
+            className="absolute -right-1 -bottom-1 z-10 h-7 w-7 rounded-full after:absolute after:-inset-2 after:content-['']"
           >
             <CameraIcon className="h-3.5 w-3.5" aria-hidden />
           </Button>
         </div>
-        <div className="text-muted-foreground text-xs">
+        <div id={avatarHintId} className="text-muted-foreground text-xs">
           Upload a profile picture (optional)
         </div>
         {avatarPreview ? (
@@ -105,9 +114,16 @@ export function AccountStep({
             data-onboarding-primary-focus="true"
             defaultValue={initialFirstName}
             aria-invalid={attemptedStep === step && Boolean(errors.firstName)}
+            aria-describedby={showFirstNameError ? firstNameErrorId : undefined}
           />
           {attemptedStep === step && errors.firstName ? (
-            <p className="text-destructive text-xs">{errors.firstName}</p>
+            <p
+              id={firstNameErrorId}
+              className="text-destructive text-xs"
+              role="alert"
+            >
+              {errors.firstName}
+            </p>
           ) : null}
         </div>
         <div className="grid gap-2">
@@ -117,9 +133,16 @@ export function AccountStep({
             name="lastName"
             defaultValue={initialLastName}
             aria-invalid={attemptedStep === step && Boolean(errors.lastName)}
+            aria-describedby={showLastNameError ? lastNameErrorId : undefined}
           />
           {attemptedStep === step && errors.lastName ? (
-            <p className="text-destructive text-xs">{errors.lastName}</p>
+            <p
+              id={lastNameErrorId}
+              className="text-destructive text-xs"
+              role="alert"
+            >
+              {errors.lastName}
+            </p>
           ) : null}
         </div>
       </div>
@@ -132,8 +155,12 @@ export function AccountStep({
           type="tel"
           placeholder="(555) 555-5555"
           defaultValue={initialPhone}
+          aria-describedby={phoneHintId}
         />
-        <p className="text-muted-foreground min-h-8 text-xs leading-4">
+        <p
+          id={phoneHintId}
+          className="text-muted-foreground min-h-8 text-xs leading-4"
+        >
           Optional.
         </p>
       </div>
@@ -150,8 +177,9 @@ export function AccountStep({
             type="email"
             placeholder="contact@yourorg.org"
             defaultValue={initialPublicEmail}
+            aria-describedby={publicEmailHintId}
           />
-          <p className="text-muted-foreground text-xs">
+          <p id={publicEmailHintId} className="text-muted-foreground text-xs">
             Shown on your workspace/profile for collaborators.
           </p>
         </div>

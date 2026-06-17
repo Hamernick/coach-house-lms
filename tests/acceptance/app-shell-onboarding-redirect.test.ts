@@ -46,4 +46,15 @@ describe("app shell onboarding redirect", () => {
       }),
     ).toBe("/find?member_onboarding=1&source=onboarding")
   })
+
+  it("does not redirect member onboarding users away from find", () => {
+    expect(
+      resolveAppShellOnboardingRedirectTarget({
+        onboardingLocked: true,
+        onboardingIntentFocus: "find",
+        isAdminContext: false,
+        pathname: "/find",
+      }),
+    ).toBeNull()
+  })
 })

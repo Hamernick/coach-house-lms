@@ -21,7 +21,7 @@ import { toast } from "@/lib/toast"
 
 type MemberWorkspaceProjectWizardProps = {
   createProjectAction?: (
-    input: MemberWorkspaceCreateProjectFormInput,
+    input: MemberWorkspaceCreateProjectFormInput
   ) => Promise<{ ok: true; id: string } | { error: string }>
   initialProject?: PlatformAdminDashboardLabProject | null
   onOpenChange: (open: boolean) => void
@@ -30,7 +30,7 @@ type MemberWorkspaceProjectWizardProps = {
   assigneeOptions?: MemberWorkspacePersonOption[]
   updateProjectAction?: (
     projectId: string,
-    input: MemberWorkspaceCreateProjectFormInput,
+    input: MemberWorkspaceCreateProjectFormInput
   ) => Promise<{ ok: true; id: string } | { error: string }>
 }
 
@@ -48,7 +48,9 @@ function toDateValue(date?: Date) {
   return date ? date.toISOString().slice(0, 10) : undefined
 }
 
-function mapProjectStatusToQuickStatus(status: PlatformAdminDashboardLabStatus) {
+function mapProjectStatusToQuickStatus(
+  status: PlatformAdminDashboardLabStatus
+) {
   switch (status) {
     case "planned":
       return "todo"
@@ -63,7 +65,9 @@ function mapProjectStatusToQuickStatus(status: PlatformAdminDashboardLabStatus) 
   }
 }
 
-function mapQuickStatusToProjectStatus(statusId?: string): PlatformAdminDashboardLabStatus {
+function mapQuickStatusToProjectStatus(
+  statusId?: string
+): PlatformAdminDashboardLabStatus {
   switch (statusId) {
     case "todo":
       return "planned"
@@ -109,10 +113,12 @@ function mapQuickCreateToInput({
   organizationOptions: MemberWorkspaceProjectOrganizationOption[]
 }): MemberWorkspaceCreateProjectFormInput {
   const startDate = toDateValue(value.startDate) ?? todayDateValue()
-  const endDate = toDateValue(value.targetDate) ?? defaultEndDateValue(startDate)
+  const endDate =
+    toDateValue(value.targetDate) ?? defaultEndDateValue(startDate)
   const selectedOrganization =
-    organizationOptions.find((organization) => organization.orgId === value.clientId) ??
-    organizationOptions[0]
+    organizationOptions.find(
+      (organization) => organization.orgId === value.clientId
+    ) ?? organizationOptions[0]
 
   return {
     orgId: selectedOrganization?.orgId,
@@ -170,14 +176,17 @@ function mapQuickCreateToMemberLabels({
   const selectedAssignee =
     assigneeOptions.find((option) => option.id === assigneeId) ??
     initialProject?.members.find(
-      (member) => member.trim().toLowerCase() === assigneeId?.trim().toLowerCase(),
+      (member) =>
+        member.trim().toLowerCase() === assigneeId?.trim().toLowerCase()
     )
 
   if (!selectedAssignee) {
     return ""
   }
 
-  return typeof selectedAssignee === "string" ? selectedAssignee : selectedAssignee.name
+  return typeof selectedAssignee === "string"
+    ? selectedAssignee
+    : selectedAssignee.name
 }
 
 function buildGuidedCreateInput({
@@ -199,14 +208,14 @@ function buildGuidedCreateInput({
         data.addStarterTasks ? "starter tasks" : null,
       ]
         .filter(Boolean)
-        .map((value) => String(value)),
-    ),
+        .map((value) => String(value))
+    )
   )
 
   const generatedName =
     data.description?.trim() ||
     `${selectedOrganization?.name ? `${selectedOrganization.name} ` : ""}${formatIntentLabel(
-      data.intent,
+      data.intent
     )} Project`
 
   return {
@@ -238,8 +247,9 @@ function buildQuickCreateInitialValue({
 
   const firstMember = initialProject.members[0]?.trim().toLowerCase()
   const matchingAssigneeId =
-    assigneeOptions.find((option) => option.name.trim().toLowerCase() === firstMember)?.id ??
-    initialProject.members[0]
+    assigneeOptions.find(
+      (option) => option.name.trim().toLowerCase() === firstMember
+    )?.id ?? initialProject.members[0]
 
   return {
     title: initialProject.name,
@@ -296,7 +306,7 @@ export function MemberWorkspaceProjectWizard({
         name: organization.name,
         status: "active",
       })),
-    [organizationOptions],
+    [organizationOptions]
   )
 
   const quickCreateUsers = useMemo(
@@ -306,7 +316,7 @@ export function MemberWorkspaceProjectWizard({
         name: person.name,
         avatar: person.avatarUrl ?? undefined,
       })),
-    [assigneeOptions],
+    [assigneeOptions]
   )
 
   const quickCreateInitialValue = useMemo(
@@ -316,7 +326,7 @@ export function MemberWorkspaceProjectWizard({
         assigneeOptions,
         organizationOptions,
       }),
-    [assigneeOptions, initialProject, organizationOptions],
+    [assigneeOptions, initialProject, organizationOptions]
   )
 
   const closeWizard = () => {
@@ -331,7 +341,7 @@ export function MemberWorkspaceProjectWizard({
         : await createProjectAction?.(input)
 
       if (!result) {
-        toast.error("Project actions are unavailable.")
+        toast.error("Organization actions are unavailable.")
         return
       }
 
@@ -340,12 +350,14 @@ export function MemberWorkspaceProjectWizard({
         return
       }
 
-      toast.success(initialProject ? "Project updated" : "Project created")
+      toast.success(
+        initialProject ? "Organization updated" : "Organization created"
+      )
       closeWizard()
       router.refresh()
 
       if (!initialProject) {
-        router.push(`/projects/${result.id}`)
+        router.push(`/organizations/${result.id}`)
       }
     })
   }
@@ -360,7 +372,9 @@ export function MemberWorkspaceProjectWizard({
       mode={initialProject ? "edit" : "create"}
       skipModeStep={Boolean(initialProject)}
       quickCreateInitialValue={quickCreateInitialValue}
-      quickCreateSubmitLabel={initialProject ? "Save Changes" : "Create Project"}
+      quickCreateSubmitLabel={
+        initialProject ? "Save Changes" : "Create Organization"
+      }
       quickCreateSubmitPending={isPending}
       quickCreateUsers={quickCreateUsers}
       quickCreateClients={clientOptions}
@@ -382,7 +396,7 @@ export function MemberWorkspaceProjectWizard({
           buildGuidedCreateInput({
             data,
             organizationOptions,
-          }),
+          })
         )
       }
       guidedCreateLabel="Create project"

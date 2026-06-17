@@ -5,7 +5,10 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import { resolveWorkspaceCanvasTutorialCallout } from "@/features/workspace-canvas-tutorial"
 
 import { buildAcceleratorStepNodeData } from "../../workspace-board-flow-surface-accelerator-graph-composition"
-import type { WorkspaceBoardState, WorkspaceCardId } from "../../workspace-board-types"
+import type {
+  WorkspaceBoardState,
+  WorkspaceCardId,
+} from "../../workspace-board-types"
 import { useWorkspaceCanvasAcceleratorRuntime } from "./workspace-canvas-surface-v2-accelerator-runtime"
 import { resolveWorkspaceAcceleratorTutorialInteractionPolicy } from "./workspace-canvas-surface-v2-accelerator-interaction-policy"
 import type { WorkspaceCanvasSurfaceV2Props } from "./workspace-canvas-surface-v2-types"
@@ -23,7 +26,9 @@ export function useWorkspaceTutorialCardPositionOverrides({
   tutorialSceneSignature: string | null
 }) {
   const [tutorialCardPositionOverrides, setTutorialCardPositionOverrides] =
-    useState<Partial<Record<WorkspaceCanvasV2CardId, { x: number; y: number }>>>({})
+    useState<
+      Partial<Record<WorkspaceCanvasV2CardId, { x: number; y: number }>>
+    >({})
 
   useEffect(() => {
     if (!tutorialActive) {
@@ -57,7 +62,10 @@ export function useWorkspaceTutorialDockingState({
     Record<WorkspaceCanvasV2CardId, { x: number; y: number }>
   > | null
   tutorialDockTargets: Partial<
-    Record<WorkspaceCanvasV2CardId, { x: number; y: number; snapRadius: number }>
+    Record<
+      WorkspaceCanvasV2CardId,
+      { x: number; y: number; snapRadius: number }
+    >
   >
 }) {
   const [tutorialUndockedCardIds, setTutorialUndockedCardIds] = useState<
@@ -139,7 +147,7 @@ export function useWorkspaceAcceleratorTutorialCallout({
         tutorialStepIndex,
         openedTutorialStepIds,
       }),
-    [openedTutorialStepIds, tutorialActive, tutorialStepIndex],
+    [openedTutorialStepIds, tutorialActive, tutorialStepIndex]
   )
 }
 
@@ -169,10 +177,10 @@ export function useWorkspaceTutorialActionHandlers({
       tutorialActive
         ? resolveWorkspaceCanvasTutorialCallout(
             tutorialStepIndex,
-            openedTutorialStepIds,
+            openedTutorialStepIds
           )
         : null,
-    [openedTutorialStepIds, tutorialActive, tutorialStepIndex],
+    [openedTutorialStepIds, tutorialActive, tutorialStepIndex]
   )
 
   const handleTutorialActionComplete = useCallback(
@@ -182,22 +190,33 @@ export function useWorkspaceTutorialActionHandlers({
         onTutorialNext()
       }
     },
-    [onTutorialNext, onTutorialShortcutOpened],
+    [onTutorialNext, onTutorialShortcutOpened]
   )
 
   const handleOpenCard = useCallback(
     (cardId: WorkspaceCardId) => {
-      if (cardId === "atlas") {
-        onConnectCards("organization-overview", "atlas")
+      const cardHidden = hiddenCardIds.includes(cardId)
+
+      if (cardId === "fiscal-sponsorship") {
+        onConnectCards("programs", cardId)
+        onToggleCardVisibility(cardId, { source: "dock" })
+        if (cardHidden) {
+          onFocusCard(cardId)
+        }
+        return
       }
 
-      if (hiddenCardIds.includes(cardId)) {
+      if (cardId === "atlas") {
+        onConnectCards("organization-overview", cardId)
+      }
+
+      if (cardHidden) {
         onToggleCardVisibility(cardId, { source: "dock" })
       }
 
       onFocusCard(cardId)
     },
-    [hiddenCardIds, onConnectCards, onFocusCard, onToggleCardVisibility],
+    [hiddenCardIds, onConnectCards, onFocusCard, onToggleCardVisibility]
   )
 
   return {
@@ -225,7 +244,7 @@ export function useWorkspaceAcceleratorTutorialInteractionPolicy({
         tutorialStepIndex,
         acceleratorRuntimeSnapshot,
       }),
-    [acceleratorRuntimeSnapshot, tutorialActive, tutorialStepIndex],
+    [acceleratorRuntimeSnapshot, tutorialActive, tutorialStepIndex]
   )
 }
 

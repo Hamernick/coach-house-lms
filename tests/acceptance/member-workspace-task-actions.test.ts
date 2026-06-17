@@ -25,6 +25,7 @@ import {
   deleteMemberWorkspaceTaskAction,
   updateMemberWorkspaceTaskAction,
 } from "@/features/member-workspace/server/task-actions"
+import { MEMBER_WORKSPACE_UPGRADE_MESSAGE } from "@/features/member-workspace/server/access"
 
 function createProjectQuery(project: {
   id: string
@@ -81,6 +82,34 @@ describe("member workspace task actions", () => {
     expect(createSupabaseAdminClientMock).not.toHaveBeenCalled()
   })
 
+  it("rejects free users before creating organization tasks", async () => {
+    const supabase = {
+      from: vi.fn(),
+    }
+
+    resolveMemberWorkspaceActorContextMock.mockResolvedValue({
+      supabase,
+      userId: "free-user-1",
+      isAdmin: false,
+      activeOrg: { orgId: "org-1", role: "owner" },
+      canEdit: true,
+      hasMemberWorkspaceAccess: false,
+    })
+
+    await expect(
+      createMemberWorkspaceTaskAction({
+        projectId: "project-standard",
+        title: "Free task",
+        status: "todo",
+        startDate: "2026-04-09",
+        endDate: "2026-04-10",
+      }),
+    ).resolves.toEqual({ error: MEMBER_WORKSPACE_UPGRADE_MESSAGE })
+
+    expect(supabase.from).not.toHaveBeenCalled()
+    expect(createSupabaseAdminClientMock).not.toHaveBeenCalled()
+  })
+
   it("rejects non-standard system projects when org members create tasks", async () => {
     const projectQuery = createProjectQuery({
       id: "project-admin",
@@ -103,6 +132,7 @@ describe("member workspace task actions", () => {
       isAdmin: false,
       activeOrg: { orgId: "org-1", role: "owner" },
       canEdit: true,
+      hasMemberWorkspaceAccess: true,
     })
 
     await expect(
@@ -161,6 +191,7 @@ describe("member workspace task actions", () => {
       isAdmin: false,
       activeOrg: { orgId: "org-1", role: "owner" },
       canEdit: true,
+      hasMemberWorkspaceAccess: true,
     })
 
     await expect(
@@ -265,6 +296,7 @@ describe("member workspace task actions", () => {
       isAdmin: false,
       activeOrg: { orgId: "org-1", role: "owner" },
       canEdit: true,
+      hasMemberWorkspaceAccess: true,
     })
 
     await expect(
@@ -488,6 +520,7 @@ describe("member workspace task actions", () => {
       isAdmin: false,
       activeOrg: { orgId: "org-1", role: "owner" },
       canEdit: true,
+      hasMemberWorkspaceAccess: true,
     })
 
     createSupabaseAdminClientMock.mockReturnValue({
@@ -520,7 +553,9 @@ describe("member workspace task actions", () => {
       updated_by: "user-1",
     })
     expect(revalidatePathMock).toHaveBeenCalledWith("/tasks")
-    expect(revalidatePathMock).toHaveBeenCalledWith("/projects")
-    expect(revalidatePathMock).toHaveBeenCalledWith("/projects/project-standard")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/organizations")
+    expect(revalidatePathMock).toHaveBeenCalledWith(
+      "/organizations/project-standard"
+    )
   })
 })

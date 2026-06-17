@@ -16,7 +16,7 @@ describe("workspace canvas v2 card node builder", () => {
     })
 
     expect(node.className).toContain("h-auto")
-    expect(node.style?.width).toBe(400)
+    expect(node.style?.width).toBe(520)
     expect(node.style?.minHeight).toBeUndefined()
     expect(node.style?.height).toBeUndefined()
   })
@@ -91,6 +91,21 @@ describe("workspace canvas v2 card node builder", () => {
     expect(node.style?.height).toBeUndefined()
   })
 
+  it("builds the fiscal sponsorship card node with intrinsic height on the canvas", () => {
+    const node = buildWorkspaceCanvasV2CardNode({
+      cardId: "fiscal-sponsorship",
+      position: { x: 0, y: 0 },
+      data: { size: "sm" } as WorkspaceBoardNodeData,
+      allowEditing: true,
+    })
+
+    expect(node.className).toContain("h-auto")
+    expect(node.style?.width).toBe(440)
+    expect(node.style?.minHeight).toBeUndefined()
+    expect(node.style?.height).toBeUndefined()
+    expect(node.zIndex).toBe(10)
+  })
+
   it("promotes the accelerator canvas card to lg while the module viewer is open", () => {
     expect(
       resolveWorkspaceCanvasAcceleratorCardSize({
@@ -98,7 +113,7 @@ describe("workspace canvas v2 card node builder", () => {
         acceleratorRuntimeSnapshot: {
           isModuleViewerOpen: true,
         } as never,
-      }),
+      })
     ).toBe("lg")
   })
 
@@ -107,7 +122,7 @@ describe("workspace canvas v2 card node builder", () => {
       resolveWorkspaceCanvasAcceleratorCardSize({
         nodes: [{ id: "accelerator", x: 0, y: 0, size: "lg" }],
         acceleratorRuntimeSnapshot: null,
-      }),
+      })
     ).toBe("sm")
   })
 })

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { toast } from "@/lib/toast"
+import type { AccountDeletionPreflight } from "@/lib/account-deletion/types"
 
 import { AccountSettingsAvatarCropDialog } from "./account-settings-avatar-crop-dialog"
 import { AccountSettingsDeleteAccountDialog } from "./account-settings-delete-account-dialog"
@@ -12,6 +13,7 @@ import { AccountSettingsDiscardChangesDialog } from "./account-settings-discard-
 import { type CropArea, getCroppedBlob } from "./account-settings-image-utils"
 import { AccountSettingsDialogShell } from "./account-settings-dialog-shell"
 import { useAccountSettingsDialogState } from "./account-settings-dialog-state"
+import { requestDeleteAccountPreflight } from "./account-settings-dialog-state-helpers"
 import type { AccountSettingsTabKey } from "./types"
 
 type TabKey = AccountSettingsTabKey
@@ -50,6 +52,10 @@ export function AccountSettingsDialog({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false)
   const [deleteEmailInput, setDeleteEmailInput] = useState("")
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [deletePreflight, setDeletePreflight] =
+    useState<AccountDeletionPreflight | null>(null)
+  const [isDeletePreflightLoading, setIsDeletePreflightLoading] = useState(false)
+  const [deletePreflightError, setDeletePreflightError] = useState<string | null>(null)
   const [billingCancellationAcknowledged, setBillingCancellationAcknowledged] =
     useState(false)
 
@@ -106,17 +112,38 @@ export function AccountSettingsDialog({
 
   const normalizedAccountEmail = email.trim().toLowerCase()
   const normalizedDeleteEmail = deleteEmailInput.trim().toLowerCase()
+  const hasDeletionBlockers = Boolean(deletePreflight?.blockingIssues.length)
+  const hasBillingCancellationRisk =
+    deletePreflight?.billing.hasCancellationRisk ?? hasActiveSubscription
   const canDeleteAccount =
     normalizedAccountEmail.length > 0 &&
     normalizedDeleteEmail.length > 0 &&
     normalizedDeleteEmail === normalizedAccountEmail &&
-    (!hasActiveSubscription || billingCancellationAcknowledged) &&
+    (!hasBillingCancellationRisk || billingCancellationAcknowledged) &&
+    !isDeletePreflightLoading &&
+    !hasDeletionBlockers &&
     !isDeletingAccount
+
+  async function loadDeletePreflight() {
+    setIsDeletePreflightLoading(true)
+    setDeletePreflightError(null)
+    const result = await requestDeleteAccountPreflight()
+    setIsDeletePreflightLoading(false)
+    if (result.ok) {
+      setDeletePreflight(result.preflight)
+      return
+    }
+    setDeletePreflight(null)
+    setDeletePreflightError(result.message)
+  }
 
   function openDeleteAccountConfirmation() {
     setDeleteEmailInput("")
     setBillingCancellationAcknowledged(false)
+    setDeletePreflight(null)
+    setDeletePreflightError(null)
     setConfirmDeleteOpen(true)
+    void loadDeletePreflight()
   }
 
   function resetAvatarCropState() {
@@ -284,7 +311,10 @@ export function AccountSettingsDialog({
         deleteEmailInput={deleteEmailInput}
         onDeleteEmailInputChange={setDeleteEmailInput}
         accountEmail={email}
-        hasActiveSubscription={hasActiveSubscription}
+        hasActiveSubscription={hasBillingCancellationRisk}
+        deletePreflight={deletePreflight}
+        isDeletePreflightLoading={isDeletePreflightLoading}
+        deletePreflightError={deletePreflightError}
         billingCancellationAcknowledged={billingCancellationAcknowledged}
         onBillingCancellationAcknowledgedChange={setBillingCancellationAcknowledged}
         canDeleteAccount={canDeleteAccount}

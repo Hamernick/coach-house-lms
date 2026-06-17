@@ -12,9 +12,18 @@ import {
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 import { MemberWorkspaceProjectPriorityGlyphIcon } from "./member-workspace-project-priority"
 import { MemberWorkspaceProjectTimelineDraggableBar } from "./member-workspace-project-timeline-draggable-bar"
@@ -59,10 +68,15 @@ export function TimelineToolbar({
   onViewModeChange: (viewMode: TimelineViewMode) => void
 }) {
   return (
-    <div className="flex items-center justify-between border-b border-border px-4 py-3">
+    <div className="border-border flex items-center justify-between border-b px-4 py-3">
       <div className="flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={onToggleSidebar}>
-          <CaretDown className={cn("h-4 w-4 transition-transform", !isSidebarOpen && "-rotate-90")} />
+          <CaretDown
+            className={cn(
+              "h-4 w-4 transition-transform",
+              !isSidebarOpen && "-rotate-90"
+            )}
+          />
           {isSidebarOpen ? "Collapse" : "Expand"}
         </Button>
         <Button variant="outline" size="icon" onClick={onPrevious}>
@@ -94,8 +108,8 @@ export function TimelineToolbar({
               <button
                 key={mode}
                 className={cn(
-                  "flex w-full items-center rounded-lg px-3 py-2 text-sm hover:bg-accent",
-                  viewMode === mode && "bg-accent",
+                  "hover:bg-accent flex w-full items-center rounded-lg px-3 py-2 text-sm",
+                  viewMode === mode && "bg-accent"
                 )}
                 onClick={() => onViewModeChange(mode)}
               >
@@ -129,24 +143,39 @@ export function TimelineSidebar({
   onEditTask: (projectId: string, taskId: string) => void
 }) {
   return (
-    <div ref={nameColRef} className="sticky left-0 z-10 shrink-0 border-r border-border bg-background">
-      <div className="flex h-12 items-center border-b border-border px-4 text-sm font-medium text-muted-foreground">
-        Projects
+    <div
+      ref={nameColRef}
+      className="border-border bg-background sticky left-0 z-10 shrink-0 border-r"
+    >
+      <div className="border-border text-muted-foreground flex h-12 items-center border-b px-4 text-sm font-medium">
+        Organizations
       </div>
       {projects.map((project) => (
         <div key={project.id}>
-          <div className="flex min-h-[54px] items-center gap-2 border-b border-border px-4">
-            <button className="rounded p-1 hover:bg-accent" onClick={() => onToggleProject(project.id)}>
+          <div className="border-border flex min-h-[54px] items-center gap-2 border-b px-4">
+            <button
+              className="hover:bg-accent rounded p-1"
+              onClick={() => onToggleProject(project.id)}
+            >
               <CaretDown
-                className={cn("h-4 w-4 transition-transform", !expandedProjects.includes(project.id) && "-rotate-90")}
+                className={cn(
+                  "h-4 w-4 transition-transform",
+                  !expandedProjects.includes(project.id) && "-rotate-90"
+                )}
               />
             </button>
             <button
               className="min-w-0 flex-1 text-left"
-              onDoubleClick={canEdit ? () => onEditProject(project.id) : undefined}
+              onDoubleClick={
+                canEdit ? () => onEditProject(project.id) : undefined
+              }
             >
-              <div className="truncate text-sm font-medium text-foreground">{project.name}</div>
-              <div className="text-xs text-muted-foreground">{project.client ?? "Project workspace"}</div>
+              <div className="text-foreground truncate text-sm font-medium">
+                {project.name}
+              </div>
+              <div className="text-muted-foreground text-xs">
+                {project.client ?? "Organization workspace"}
+              </div>
             </button>
             <MemberWorkspaceProjectPriorityGlyphIcon level={project.priority} />
           </div>
@@ -155,16 +184,22 @@ export function TimelineSidebar({
             ? project.tasks.map((task) => (
                 <div
                   key={task.id}
-                  className="flex min-h-[42px] items-center gap-2 border-b border-border px-6 text-sm text-muted-foreground"
+                  className="border-border text-muted-foreground flex min-h-[42px] items-center gap-2 border-b px-6 text-sm"
                 >
                   <Checkbox
                     checked={task.status === "done"}
                     disabled={!canEdit}
-                    onCheckedChange={() => onToggleTaskStatus(project.id, task.id)}
+                    onCheckedChange={() =>
+                      onToggleTaskStatus(project.id, task.id)
+                    }
                   />
                   <button
                     className="min-w-0 flex-1 truncate text-left"
-                    onDoubleClick={canEdit ? () => onEditTask(project.id, task.id) : undefined}
+                    onDoubleClick={
+                      canEdit
+                        ? () => onEditTask(project.id, task.id)
+                        : undefined
+                    }
                   >
                     {task.name}
                   </button>
@@ -202,21 +237,34 @@ export function TimelineCanvas({
   onEditProject: (projectId: string) => void
   onEditTask: (projectId: string, taskId: string) => void
   onUpdateProject: (projectId: string, newStart: Date) => void
-  onUpdateProjectDuration: (projectId: string, newStart: Date, newEnd: Date) => void
+  onUpdateProjectDuration: (
+    projectId: string,
+    newStart: Date,
+    newEnd: Date
+  ) => void
   onUpdateTask: (projectId: string, taskId: string, newStart: Date) => void
-  onUpdateTaskDuration: (projectId: string, taskId: string, newStart: Date, newEnd: Date) => void
+  onUpdateTaskDuration: (
+    projectId: string,
+    taskId: string,
+    newStart: Date,
+    newEnd: Date
+  ) => void
 }) {
   return (
     <div className="relative" style={{ width: `${timelineWidth}px` }}>
-      <div className="sticky top-0 z-10 flex border-b border-border bg-background/95 backdrop-blur">
+      <div className="border-border bg-background/95 sticky top-0 z-10 flex border-b backdrop-blur">
         {dates.map((date) => (
           <div
             key={date.toISOString()}
-            className="border-l border-border px-1 py-3 text-center text-[10px] text-muted-foreground"
+            className="border-border text-muted-foreground border-l px-1 py-3 text-center text-[10px]"
             style={{ width: `${cellWidth}px` }}
           >
             <div>{format(date, "EEE")}</div>
-            <div className={cn(isSameDay(date, FIXED_TODAY) && "font-semibold text-foreground")}>
+            <div
+              className={cn(
+                isSameDay(date, FIXED_TODAY) && "text-foreground font-semibold"
+              )}
+            >
               {format(date, "d")}
             </div>
           </div>
@@ -226,14 +274,14 @@ export function TimelineCanvas({
       <div className="relative">
         {todayOffsetDays != null ? (
           <div
-            className="pointer-events-none absolute top-0 z-0 h-full w-px bg-primary/30"
+            className="bg-primary/30 pointer-events-none absolute top-0 z-0 h-full w-px"
             style={{ left: `${todayOffsetDays * cellWidth}px` }}
           />
         ) : null}
 
         {projects.map((project) => (
           <div key={project.id}>
-            <div className="relative h-[54px] border-b border-border">
+            <div className="border-border relative h-[54px] border-b">
               <MemberWorkspaceProjectTimelineDraggableBar
                 item={{
                   id: project.id,
@@ -249,24 +297,35 @@ export function TimelineCanvas({
                 onUpdateDuration={(id, newStart, newEnd) =>
                   onUpdateProjectDuration(id, newStart, newEnd)
                 }
-                onDoubleClick={canEdit ? () => onEditProject(project.id) : undefined}
+                onDoubleClick={
+                  canEdit ? () => onEditProject(project.id) : undefined
+                }
                 disabled={!canEdit}
               />
             </div>
 
             {expandedProjects.includes(project.id)
               ? project.tasks.map((task) => (
-                  <div key={task.id} className="relative h-[42px] border-b border-border">
+                  <div
+                    key={task.id}
+                    className="border-border relative h-[42px] border-b"
+                  >
                     <MemberWorkspaceProjectTimelineDraggableBar
                       item={task}
                       variant="task"
                       viewStartDate={dates[0]}
                       cellWidth={cellWidth}
-                      onUpdateStart={(id, newStart) => onUpdateTask(project.id, id, newStart)}
+                      onUpdateStart={(id, newStart) =>
+                        onUpdateTask(project.id, id, newStart)
+                      }
                       onUpdateDuration={(id, newStart, newEnd) =>
                         onUpdateTaskDuration(project.id, id, newStart, newEnd)
                       }
-                      onDoubleClick={canEdit ? () => onEditTask(project.id, task.id) : undefined}
+                      onDoubleClick={
+                        canEdit
+                          ? () => onEditTask(project.id, task.id)
+                          : undefined
+                      }
                       disabled={!canEdit}
                     />
                   </div>
@@ -304,7 +363,10 @@ export function TimelineEditDialog({
         </DialogHeader>
         <div className="grid gap-4 py-2">
           <div className="grid gap-2">
-            <label className="text-sm font-medium text-foreground" htmlFor="timeline-start-date">
+            <label
+              className="text-foreground text-sm font-medium"
+              htmlFor="timeline-start-date"
+            >
               Start date
             </label>
             <Input
@@ -315,7 +377,10 @@ export function TimelineEditDialog({
             />
           </div>
           <div className="grid gap-2">
-            <label className="text-sm font-medium text-foreground" htmlFor="timeline-end-date">
+            <label
+              className="text-foreground text-sm font-medium"
+              htmlFor="timeline-end-date"
+            >
               End date
             </label>
             <Input
@@ -352,7 +417,7 @@ export function TimelineConfirmDialog({
         <DialogHeader>
           <DialogTitle>Confirm change</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">{confirmDialog.message}</p>
+        <p className="text-muted-foreground text-sm">{confirmDialog.message}</p>
         <div className="flex justify-end gap-2">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>
             Cancel

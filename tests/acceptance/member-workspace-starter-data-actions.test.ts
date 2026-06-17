@@ -74,6 +74,7 @@ describe("member workspace starter-data actions", () => {
       userId: "user-1",
       activeOrg: { orgId: "org-1", role: "owner" },
       canEdit: true,
+      hasMemberWorkspaceAccess: true,
     })
 
     await expect(clearMemberWorkspaceStarterDataAction()).resolves.toEqual({
@@ -93,13 +94,14 @@ describe("member workspace starter-data actions", () => {
     expect(projectDeleteEqOrg).toHaveBeenCalledWith("org_id", "org-1")
     expect(projectDeleteEqKind).toHaveBeenCalledWith("project_kind", "standard")
     expect(projectDeleteEqSource).toHaveBeenCalledWith("created_source", "starter_seed")
-    expect(revalidatePathMock).toHaveBeenCalledWith("/projects")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/organizations")
     expect(revalidatePathMock).toHaveBeenCalledWith("/tasks")
   })
 
   it("rejects non-editors", async () => {
     resolveMemberWorkspaceActorContextMock.mockResolvedValue({
       canEdit: false,
+      hasMemberWorkspaceAccess: true,
     })
 
     await expect(clearMemberWorkspaceStarterDataAction()).resolves.toEqual({

@@ -23,6 +23,7 @@ export function resolvePaidPlanTierFromMetadata(metadata: Json | null | undefine
   if (explicitTier === "organization") return "organization"
 
   const planName = typeof source.planName === "string" ? source.planName.trim().toLowerCase() : ""
+  if (planName.includes("free")) return null
   if (planName.includes("operations")) return "operations_support"
   if (planName.length > 0) return "organization"
 
@@ -37,6 +38,5 @@ export function resolvePricingPlanTier(subscription: SubscriptionLike | null | u
     status === "active" || status === "trialing" || status === "past_due" || status === "incomplete"
   if (!isPaidStatus) return "free"
 
-  return resolvePaidPlanTierFromMetadata(subscription.metadata ?? null) ?? "organization"
+  return resolvePaidPlanTierFromMetadata(subscription.metadata ?? null) ?? "free"
 }
-

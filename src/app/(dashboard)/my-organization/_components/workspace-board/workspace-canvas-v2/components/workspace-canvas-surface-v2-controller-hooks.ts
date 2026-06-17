@@ -17,16 +17,17 @@ import {
 import { WORKSPACE_CANVAS_EVENTS } from "../contracts/workspace-canvas-events"
 import { logWorkspaceCanvasEvent } from "../runtime/workspace-canvas-logger"
 import type { WorkspaceCanvasSceneFitRequest } from "../runtime/workspace-canvas-viewport-command"
-import {
-  useWorkspaceCardShortcutItems,
-} from "./workspace-canvas-surface-v2-hooks"
+import { useWorkspaceCardShortcutItems } from "./workspace-canvas-surface-v2-hooks"
 import type { WorkspaceCanvasSurfaceV2Props } from "./workspace-canvas-surface-v2-types"
 import {
   isWorkspaceCanvasV2CardId,
   type WorkspaceCanvasV2CardId,
 } from "./workspace-canvas-surface-v2-helpers"
 import { ACCELERATOR_STEP_NODE_ID } from "../../workspace-board-flow-surface-accelerator-graph-composition"
-import type { WorkspaceBoardState, WorkspaceCardId } from "../../workspace-board-types"
+import type {
+  WorkspaceBoardState,
+  WorkspaceCardId,
+} from "../../workspace-board-types"
 import type { WorkspaceBoardToggleContext } from "../../workspace-board-debug"
 import { shouldWorkspaceTutorialCardSnapToDock } from "./workspace-canvas-surface-v2-tutorial-docking"
 
@@ -51,11 +52,18 @@ export function useWorkspaceCanvasNodeDragStop({
     SetStateAction<{ x: number; y: number } | null>
   >
   setTutorialCardPositionOverrides: Dispatch<
-    SetStateAction<Partial<Record<WorkspaceCanvasV2CardId, { x: number; y: number }>>>
+    SetStateAction<
+      Partial<Record<WorkspaceCanvasV2CardId, { x: number; y: number }>>
+    >
   >
-  setTutorialUndockedCardIds: Dispatch<SetStateAction<WorkspaceCanvasV2CardId[]>>
+  setTutorialUndockedCardIds: Dispatch<
+    SetStateAction<WorkspaceCanvasV2CardId[]>
+  >
   tutorialDockTargets: Partial<
-    Record<WorkspaceCanvasV2CardId, { x: number; y: number; snapRadius: number }>
+    Record<
+      WorkspaceCanvasV2CardId,
+      { x: number; y: number; snapRadius: number }
+    >
   >
   onTutorialNodeDragStop: NodeDragHandler
 }) {
@@ -145,7 +153,7 @@ export function useWorkspaceCanvasNodeDragStop({
       setTutorialCardPositionOverrides,
       tutorialDockTargets,
       tutorialActive,
-    ],
+    ]
   )
 }
 
@@ -159,15 +167,13 @@ export function useWorkspaceTutorialSceneFitRequest({
 }: {
   tutorialActive: boolean
   sceneSignature: string | null
-  sceneViewport:
-    | {
-        x: number
-        y: number
-        zoom: number
-        duration: number
-        delayMs?: number
-      }
-    | null
+  sceneViewport: {
+    x: number
+    y: number
+    zoom: number
+    duration: number
+    delayMs?: number
+  } | null
   sceneNodeIds: string[]
   sceneLayoutKey: string | null
   sceneRequestSeed?: number
@@ -228,7 +234,6 @@ export function useWorkspaceTutorialAwareShortcutItems({
   tutorialActive,
   tutorialSelectedCardId,
   focusCardRequest,
-  journeyGuideState,
   onToggleCardVisibility,
   onFocusCard,
   onTutorialShortcutOpened,
@@ -238,27 +243,26 @@ export function useWorkspaceTutorialAwareShortcutItems({
   tutorialActive: boolean
   tutorialSelectedCardId: WorkspaceCardId | null
   focusCardRequest: WorkspaceCanvasSurfaceV2Props["focusCardRequest"]
-  journeyGuideState: WorkspaceCanvasSurfaceV2Props["journeyGuideState"]
   onToggleCardVisibility: WorkspaceCanvasSurfaceV2Props["onToggleCardVisibility"]
   onFocusCard: WorkspaceCanvasSurfaceV2Props["onFocusCard"]
   onTutorialShortcutOpened: WorkspaceCanvasSurfaceV2Props["onTutorialShortcutOpened"]
 }) {
   const tutorialContinueMode = resolveWorkspaceCanvasTutorialContinueMode(
     boardState.onboardingFlow.tutorialStepIndex,
-    boardState.onboardingFlow.openedTutorialStepIds,
+    boardState.onboardingFlow.openedTutorialStepIds
   )
   return useWorkspaceCardShortcutItems({
     hiddenCardIds: boardState.hiddenCardIds,
     visibleCardIds,
     selectedCardId: tutorialActive
       ? tutorialSelectedCardId
-      : focusCardRequest?.cardId ?? journeyGuideState.targetCardId,
+      : (focusCardRequest?.cardId ?? null),
     tutorialActive,
     tutorialStepIndex: boardState.onboardingFlow.tutorialStepIndex,
     openedTutorialStepIds: boardState.onboardingFlow.openedTutorialStepIds,
     onToggleCardVisibility: onToggleCardVisibility as (
       cardId: WorkspaceCardId,
-      context?: WorkspaceBoardToggleContext,
+      context?: WorkspaceBoardToggleContext
     ) => void,
     onFocusCard,
     onTutorialAdvance:

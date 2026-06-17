@@ -21,9 +21,9 @@ function modeFromKey(key) {
   return "unknown"
 }
 
-async function verifyPrice({ stripe, priceId, label }) {
+async function verifyPrice({ stripe, priceId, label, required = true }) {
   if (!priceId) {
-    return { ok: false, message: `${label}: missing` }
+    return { ok: !required, message: `${label}: missing${required ? "" : " (optional)"}` }
   }
 
   try {
@@ -47,6 +47,9 @@ async function verifyConfig({
   publishableKey,
   organizationPriceId,
   operationsSupportPriceId,
+  coachingFullPriceId,
+  coachingDiscountedPriceId,
+  requireCoachingPrices = false,
   promotionCode,
 }) {
   if (!secretKey) {
@@ -87,6 +90,24 @@ async function verifyConfig({
   lines.push(`  - ${operationsPriceCheck.message}`)
   ok = ok && operationsPriceCheck.ok
 
+  const coachingFullPriceCheck = await verifyPrice({
+    stripe,
+    priceId: coachingFullPriceId,
+    label: "coaching full price",
+    required: requireCoachingPrices,
+  })
+  lines.push(`  - ${coachingFullPriceCheck.message}`)
+  ok = ok && coachingFullPriceCheck.ok
+
+  const coachingDiscountedPriceCheck = await verifyPrice({
+    stripe,
+    priceId: coachingDiscountedPriceId,
+    label: "coaching discounted price",
+    required: requireCoachingPrices,
+  })
+  lines.push(`  - ${coachingDiscountedPriceCheck.message}`)
+  ok = ok && coachingDiscountedPriceCheck.ok
+
   try {
     const activePromotionCodes = await stripe.promotionCodes.list({ active: true, limit: 50 })
     lines.push(`  - active promotion codes: ${activePromotionCodes.data.length}`)
@@ -125,6 +146,9 @@ async function main() {
       publishableKey: normalize(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY),
       organizationPriceId: normalize(process.env.STRIPE_ORGANIZATION_PRICE_ID),
       operationsSupportPriceId: normalize(process.env.STRIPE_OPERATIONS_SUPPORT_PRICE_ID),
+      coachingFullPriceId: normalize(process.env.STRIPE_COACHING_FULL_PRICE_ID),
+      coachingDiscountedPriceId: normalize(process.env.STRIPE_COACHING_DISCOUNTED_PRICE_ID),
+      requireCoachingPrices: false,
       promotionCode,
     }),
   )
@@ -137,6 +161,9 @@ async function main() {
         publishableKey: normalize(process.env.NEXT_PUBLIC_STRIPE_TEST_PUBLISHABLE_KEY),
         organizationPriceId: normalize(process.env.STRIPE_TEST_ORGANIZATION_PRICE_ID),
         operationsSupportPriceId: normalize(process.env.STRIPE_TEST_OPERATIONS_SUPPORT_PRICE_ID),
+        coachingFullPriceId: normalize(process.env.STRIPE_TEST_COACHING_FULL_PRICE_ID),
+        coachingDiscountedPriceId: normalize(process.env.STRIPE_TEST_COACHING_DISCOUNTED_PRICE_ID),
+        requireCoachingPrices: true,
         promotionCode: null,
       }),
     )

@@ -31,7 +31,9 @@ export function resolveWorkspaceCanvasTutorialCalendarButtonProps({
       title: tutorialCallout.label,
       instruction: tutorialCallout.instruction,
     },
-    onTutorialCalendarButtonComplete: onTutorialComplete,
+    onTutorialCalendarButtonComplete: tutorialCallout.requiresAction
+      ? onTutorialComplete
+      : undefined,
   }
 }
 
@@ -59,11 +61,13 @@ export function resolveWorkspaceCanvasOrganizationMapTutorialProps({
 
 export function resolveWorkspaceCanvasTutorialSurfaceProps({
   allowEditing,
+  isPlatformAdmin,
   presentationMode,
   tutorialCallout,
   onTutorialComplete,
 }: {
   allowEditing: boolean
+  isPlatformAdmin?: boolean
   presentationMode: boolean
   tutorialCallout: WorkspaceCanvasTutorialCallout | null
   onTutorialComplete: () => void
@@ -71,6 +75,7 @@ export function resolveWorkspaceCanvasTutorialSurfaceProps({
   return {
     showTutorialRestart: shouldShowWorkspaceCanvasInternalTutorialRestart({
       allowEditing,
+      isPlatformAdmin,
       presentationMode,
       environment: process.env.NODE_ENV,
     }),
@@ -133,6 +138,7 @@ type WorkspaceCanvasSurfaceCardDataLookupArgs = Omit<
   | "acceleratorState"
   | "communications"
   | "tracker"
+  | "hiddenCardIds"
   | "nodes"
   | "tutorialStepId"
 > & {
@@ -152,6 +158,7 @@ export function useWorkspaceCanvasSurfaceCardDataLookup({
     acceleratorState: boardState.accelerator,
     communications: boardState.communications,
     tracker: boardState.tracker,
+    hiddenCardIds: boardState.hiddenCardIds,
     nodes: boardState.nodes,
     tutorialStepId: resolveWorkspaceCanvasTutorialStepId({
       tutorialActive,

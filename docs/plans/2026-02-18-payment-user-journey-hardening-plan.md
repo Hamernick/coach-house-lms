@@ -140,7 +140,7 @@ Plan:
    - `git rev-parse HEAD`
    - `git ls-remote --heads origin main`
    - `npx vercel deploy --prod --yes`
-   - `npx vercel inspect coach-house-platform.vercel.app`
+   - `npx vercel inspect coachhouse.app`
 2. Post deployment tuple every time:
    - commit SHA
    - deployment ID
@@ -183,4 +183,3 @@ The payment journey is “complete/strong/secure/good to go” when:
 3. Entitlements reflect subscription state transitions without manual correction.
 4. Failures are diagnosable from logs/events in one pass.
 5. Deployment provenance is explicit and verifiable every time.
-

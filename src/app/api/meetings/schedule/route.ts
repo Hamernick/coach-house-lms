@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server"
 
+import { resolvePaidPlanTierFromMetadata } from "@/lib/billing/plan-tier"
 import { env } from "@/lib/env"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-import type { Json } from "@/lib/supabase"
 import {
-  COACHING_INCLUDED_SESSION_LIMIT,
+  type CoachingCoachId,
   getCoachingRemainingSessions,
+  normalizeCoachingCoachId,
   resolveCoachingTier,
   type CoachingTier,
 } from "@/lib/meetings"
 import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
 import { createNotification } from "@/lib/notifications"
+import type { Json } from "@/lib/supabase"
+import { trackUserJourneyMilestone } from "@/lib/user-journey"
 
 const LEGACY_MEETING_URL =
   process.env.NEXT_PUBLIC_MEETING_JOEL_URL ?? process.env.NEXT_PUBLIC_MEETING_PAULA_URL ?? ""
@@ -23,7 +26,52 @@ const MEETING_LINKS: Record<CoachingTier, string> = {
   full: env.NEXT_PUBLIC_MEETING_FULL_URL ?? DEFAULT_FULL_RATE_MEETING_URL,
 }
 
-export async function GET(_request: Request) {
+function resolveCoachMeetingLink({
+  coach,
+  tier,
+}: {
+  coach: CoachingCoachId
+  tier: CoachingTier
+}) {
+  if (coach === "paula") {
+    if (tier === "free") return process.env.NEXT_PUBLIC_MEETING_PAULA_FREE_URL
+    if (tier === "discounted") {
+      return (
+        process.env.NEXT_PUBLIC_MEETING_PAULA_DISCOUNTED_URL ??
+        process.env.NEXT_PUBLIC_MEETING_PAULA_URL
+      )
+    }
+    return (
+      process.env.NEXT_PUBLIC_MEETING_PAULA_FULL_URL ??
+      process.env.NEXT_PUBLIC_MEETING_PAULA_URL
+    )
+  }
+
+  if (tier === "free") return process.env.NEXT_PUBLIC_MEETING_JOEL_FREE_URL
+  if (tier === "discounted") {
+    return (
+      process.env.NEXT_PUBLIC_MEETING_JOEL_DISCOUNTED_URL ??
+      process.env.NEXT_PUBLIC_MEETING_JOEL_URL
+    )
+  }
+  return (
+    process.env.NEXT_PUBLIC_MEETING_JOEL_FULL_URL ??
+    process.env.NEXT_PUBLIC_MEETING_JOEL_URL
+  )
+}
+
+function resolveMeetingLink({
+  coach,
+  tier,
+}: {
+  coach: CoachingCoachId
+  tier: CoachingTier
+}) {
+  return resolveCoachMeetingLink({ coach, tier }) ?? MEETING_LINKS[tier]
+}
+
+export async function GET(request: Request) {
+  const coach = normalizeCoachingCoachId(new URL(request.url).searchParams.get("coach"))
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -91,6 +139,7 @@ export async function GET(_request: Request) {
   }
 
   const subscriptionUserIds = Array.from(new Set([user.id, orgId]))
+  let hasDiscountAccess = false
   const subscriptionResult = await supabase
     .from("subscriptions")
     .select("status, metadata")
@@ -99,7 +148,13 @@ export async function GET(_request: Request) {
     .returns<Array<{ status: string; metadata: Record<string, unknown> | null }>>()
 
   if (!subscriptionResult.error) {
-    const acceleratorSubscriptions = (subscriptionResult.data ?? []).filter((subscription) => {
+    const subscriptions = subscriptionResult.data ?? []
+    hasDiscountAccess = subscriptions.some(
+      (subscription) =>
+        resolvePaidPlanTierFromMetadata((subscription.metadata ?? null) as Json | null) ===
+        "operations_support",
+    )
+    const acceleratorSubscriptions = subscriptions.filter((subscription) => {
       const metadata = subscription.metadata ?? {}
       return typeof metadata.kind === "string" && metadata.kind === "accelerator"
     })
@@ -118,26 +173,11 @@ export async function GET(_request: Request) {
     }
   }
 
-  const tier = resolveCoachingTier({ hasIncludedCoaching, freeSessionsUsed })
-  const scheduleUrl = MEETING_LINKS[tier]
+  const tier = resolveCoachingTier({ hasIncludedCoaching, freeSessionsUsed, hasDiscountAccess })
+  const scheduleUrl = resolveMeetingLink({ coach, tier })
 
   if (!scheduleUrl) {
     return NextResponse.json({ error: "Scheduling link unavailable." }, { status: 400 })
-  }
-
-  const nextProfile = {
-    ...profile,
-    meeting_requests:
-      tier === "free" ? Math.min(freeSessionsUsed + 1, COACHING_INCLUDED_SESSION_LIMIT) : freeSessionsUsed,
-    meeting_requests_last: new Date().toISOString(),
-  }
-
-  const { error: upsertError } = await supabase
-    .from("organizations")
-    .upsert({ user_id: orgId, profile: nextProfile as Json })
-
-  if (upsertError) {
-    return NextResponse.json({ error: upsertError.message }, { status: 500 })
   }
 
   const notifyResult = await createNotification(supabase, {
@@ -147,17 +187,36 @@ export async function GET(_request: Request) {
     tone: "info",
     type: "coaching_requested",
     actorId: user.id,
-    metadata: { tier },
+    metadata: { tier, coach },
   })
   if ("error" in notifyResult) {
     console.error("Failed to create coaching notification", notifyResult.error)
   }
 
-  const remaining = hasIncludedCoaching ? getCoachingRemainingSessions(nextProfile.meeting_requests) : null
+  const remaining = hasIncludedCoaching ? getCoachingRemainingSessions(freeSessionsUsed) : null
+  await trackUserJourneyMilestone({
+    userId: user.id,
+    orgId,
+    eventName: "coaching_schedule_opened",
+    journey: "coaching",
+    source: "meetings_schedule_route",
+    surface: "coaching_schedule",
+    checkpoint: "first_coaching_schedule_opened",
+    metadata: {
+      tier,
+      coach,
+      remaining,
+      hasIncludedCoaching,
+      previousFreeSessionsUsed: freeSessionsUsed,
+      nextFreeSessionsUsed: freeSessionsUsed,
+      legacyLinkOpenCounterDisabled: true,
+    },
+  })
 
   return NextResponse.json({
     url: scheduleUrl,
     tier,
+    coach,
     remaining,
   })
 }

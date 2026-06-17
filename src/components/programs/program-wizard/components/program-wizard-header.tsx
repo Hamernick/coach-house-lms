@@ -1,5 +1,4 @@
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 
 import { STEPS } from "../constants"
@@ -9,7 +8,6 @@ type ProgramWizardHeaderProps = {
   currentStep: number
   completion: number
   isAutoSaving: boolean
-  onStepSelect: (stepIndex: number) => void
 }
 
 export function ProgramWizardHeader({
@@ -17,19 +15,22 @@ export function ProgramWizardHeader({
   currentStep,
   completion,
   isAutoSaving,
-  onStepSelect,
 }: ProgramWizardHeaderProps) {
   return (
-    <header className="border-b border-border/60 px-4 py-3 sm:px-6 sm:py-4">
+    <header className="border-border/60 bg-background border-b px-3 py-3 sm:px-5 sm:py-4 md:px-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="space-y-1">
-          <p className="text-xs uppercase tracking-wide text-muted-foreground">
-            Program setup
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <p className="text-muted-foreground text-xs tracking-wide uppercase">
+            Activity setup
           </p>
-          <h2 className="text-lg font-semibold sm:text-xl">{STEPS[currentStep].title}</h2>
-          <p className="text-sm text-muted-foreground">{STEPS[currentStep].helper}</p>
+          <h2 className="text-lg font-semibold text-pretty sm:text-xl">
+            {STEPS[currentStep].title}
+          </h2>
+          <p className="text-muted-foreground text-sm text-pretty">
+            {STEPS[currentStep].helper}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           {mode === "edit" ? (
             <Badge variant="secondary" className="rounded-full text-[11px]">
               {isAutoSaving ? "Saving..." : "Autosave on"}
@@ -40,22 +41,8 @@ export function ProgramWizardHeader({
           </Badge>
         </div>
       </div>
-      <div className="mt-3 space-y-2">
-        <Progress value={completion} aria-label="Program builder progress" />
-        <div className="flex flex-wrap gap-1.5">
-          {STEPS.map((step, index) => (
-            <Button
-              key={step.title}
-              type="button"
-              size="sm"
-              variant={index === currentStep ? "secondary" : "outline"}
-              onClick={() => onStepSelect(index)}
-              className="h-auto rounded-full px-2.5 py-1 text-[11px]"
-            >
-              {index + 1}. {step.title}
-            </Button>
-          ))}
-        </div>
+      <div className="mt-3">
+        <Progress value={completion} aria-label="Activity builder progress" />
       </div>
     </header>
   )

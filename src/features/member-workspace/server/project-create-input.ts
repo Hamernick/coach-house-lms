@@ -7,6 +7,8 @@ import type {
 export type MemberWorkspaceNormalizedCreateProjectInput = {
   name: string
   description: string | null
+  overviewDocumentHtml: string | null
+  hasOverviewDocumentHtml: boolean
   status: PlatformAdminDashboardLabStatus
   priority: PlatformAdminDashboardLabPriority
   startDate: string
@@ -25,8 +27,8 @@ function parseList(value: string | undefined) {
       value
         .split(",")
         .map((entry) => entry.trim())
-        .filter(Boolean),
-    ),
+        .filter(Boolean)
+    )
   )
 }
 
@@ -39,7 +41,7 @@ function formatDurationLabel(startDate: string, endDate: string) {
   const end = toUtcDate(endDate)
   const diffInDays = Math.max(
     1,
-    Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1,
+    Math.round((end.getTime() - start.getTime()) / 86_400_000) + 1
   )
 
   if (diffInDays < 7) {
@@ -56,7 +58,7 @@ function formatDurationLabel(startDate: string, endDate: string) {
 }
 
 export function normalizeMemberWorkspaceCreateProjectInput(
-  input: MemberWorkspaceCreateProjectFormInput,
+  input: MemberWorkspaceCreateProjectFormInput
 ):
   | { ok: true; value: MemberWorkspaceNormalizedCreateProjectInput }
   | { ok: false; error: string } {
@@ -88,6 +90,11 @@ export function normalizeMemberWorkspaceCreateProjectInput(
     value: {
       name,
       description: input.description?.trim() ? input.description.trim() : null,
+      overviewDocumentHtml:
+        typeof input.overviewDocumentHtml === "string"
+          ? input.overviewDocumentHtml.trim()
+          : null,
+      hasOverviewDocumentHtml: typeof input.overviewDocumentHtml === "string",
       status: input.status,
       priority: input.priority,
       startDate: input.startDate,

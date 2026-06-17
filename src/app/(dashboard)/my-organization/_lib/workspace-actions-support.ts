@@ -6,6 +6,7 @@ import { createNotification } from "@/lib/notifications"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
+import { WORKSPACE_PATH } from "@/lib/workspace/routes"
 
 import {
   buildWorkspaceCollaborationInviteNotificationMetadata,
@@ -259,7 +260,7 @@ export async function notifyWorkspaceInvitee({
     userId,
     orgId,
     actorId,
-    href: "/workspace",
+    href: WORKSPACE_PATH,
     tone: "info",
     type: WORKSPACE_COLLABORATION_INVITE_NOTIFICATION_TYPE,
     title: `${organizationName} shared temporary workspace access`,

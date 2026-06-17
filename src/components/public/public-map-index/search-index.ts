@@ -1,12 +1,14 @@
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { PublicMapGroupKey } from "@/lib/public-map/groups"
 
-import { isPointWithinBounds, organizationHasMapLocation } from "./helpers"
+import { isPointWithinBounds } from "./helpers"
 
 type PublicMapSearchField = {
   text: string
   weight: number
 }
+
+const PUBLIC_MAP_NAME_COLLATOR = new Intl.Collator(undefined, { sensitivity: "base" })
 
 export type PublicMapSearchDocument = {
   id: string
@@ -75,7 +77,7 @@ export function buildPublicMapSearchIndex(
   }
 
   const orderedIds = [...organizations]
-    .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: "base" }))
+    .sort((left, right) => PUBLIC_MAP_NAME_COLLATOR.compare(left.name, right.name))
     .map((organization) => organization.id)
 
   return {
@@ -127,7 +129,6 @@ function matchesQuery({
 }
 
 export function filterPublicMapOrganizationIds({
-  organizations,
   searchIndex,
   query,
   appliedBounds,
@@ -135,7 +136,6 @@ export function filterPublicMapOrganizationIds({
   activeGroup,
   sortByFavorites = true,
 }: {
-  organizations: PublicMapOrganization[]
   searchIndex: PublicMapSearchIndex
   query: string
   appliedBounds: {
@@ -148,22 +148,25 @@ export function filterPublicMapOrganizationIds({
   activeGroup: PublicMapGroupKey | "all"
   sortByFavorites?: boolean
 }) {
-  const organizationById = new Map(organizations.map((organization) => [organization.id, organization] as const))
   const normalizedQuery = normalizeText(query)
+  const favoriteIds = sortByFavorites ? new Set(favorites) : null
 
-  const filteredIds = searchIndex.orderedIds.filter((organizationId) => {
+  const filteredIds: string[] = []
+  for (const organizationId of searchIndex.orderedIds) {
     const document = searchIndex.byId.get(organizationId)
-    const organization = organizationById.get(organizationId)
-    if (!document || !organization) return false
-    if (activeGroup !== "all" && !document.groups.includes(activeGroup)) return false
-    if (!matchesQuery({ document, normalizedQuery })) return false
-    if (appliedBounds === null) return true
-    if (document.isOnlineOnly) return true
-    return (
-      organizationHasMapLocation(organization) &&
-      isPointWithinBounds(organization.longitude, organization.latitude, appliedBounds)
-    )
-  })
+    if (!document) continue
+    if (activeGroup !== "all" && !document.groups.includes(activeGroup)) continue
+    if (!matchesQuery({ document, normalizedQuery })) continue
+    if (appliedBounds !== null && !document.isOnlineOnly) {
+      if (typeof document.longitude !== "number" || typeof document.latitude !== "number") {
+        continue
+      }
+      if (!isPointWithinBounds(document.longitude, document.latitude, appliedBounds)) {
+        continue
+      }
+    }
+    filteredIds.push(organizationId)
+  }
 
   return filteredIds.sort((leftId, rightId) => {
     const leftDocument = searchIndex.byId.get(leftId)
@@ -182,9 +185,9 @@ export function filterPublicMapOrganizationIds({
       if (leftRelevance !== rightRelevance) return leftRelevance - rightRelevance
     }
 
-    if (sortByFavorites) {
-      const leftFavorite = favorites.includes(leftId)
-      const rightFavorite = favorites.includes(rightId)
+    if (favoriteIds) {
+      const leftFavorite = favoriteIds.has(leftId)
+      const rightFavorite = favoriteIds.has(rightId)
       if (leftFavorite !== rightFavorite) return leftFavorite ? -1 : 1
     }
 
@@ -194,8 +197,6 @@ export function filterPublicMapOrganizationIds({
       if (leftNameStarts !== rightNameStarts) return leftNameStarts ? -1 : 1
     }
 
-    return leftDocument.sortName.localeCompare(rightDocument.sortName, undefined, {
-      sensitivity: "base",
-    })
+    return PUBLIC_MAP_NAME_COLLATOR.compare(leftDocument.sortName, rightDocument.sortName)
   })
 }

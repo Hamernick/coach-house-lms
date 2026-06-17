@@ -21,18 +21,14 @@ export function useWorkspaceCanvasViewportControls({
   tutorialSceneFitRequest,
   tutorialCompletionExitRequest,
   focusCardRequest,
-  journeyGuideState,
   visibleNodeIds,
-  onResetToBaseLayout,
 }: {
   flowInstanceRef: MutableRefObject<ReactFlowInstance | null>
   tutorialActive: boolean
   tutorialSceneFitRequest: WorkspaceCanvasSceneFitRequest
   tutorialCompletionExitRequest: WorkspaceCanvasSurfaceV2Props["tutorialCompletionExitRequest"]
   focusCardRequest: WorkspaceCanvasSurfaceV2Props["focusCardRequest"]
-  journeyGuideState: WorkspaceCanvasSurfaceV2Props["journeyGuideState"]
   visibleNodeIds: string[]
-  onResetToBaseLayout: WorkspaceCanvasSurfaceV2Props["onResetToBaseLayout"]
 }) {
   const handleZoomIn = useCallback(() => {
     void flowInstanceRef.current?.zoomIn({ duration: 180 })
@@ -49,7 +45,6 @@ export function useWorkspaceCanvasViewportControls({
       tutorialSceneFitRequest: tutorialActive ? tutorialSceneFitRequest : null,
       tutorialCompletionExitRequest,
       focusCardRequest,
-      journeyGuideTargetCardId: journeyGuideState.targetCardId,
       visibleNodeIds,
     })
     if (!command) return
@@ -64,39 +59,15 @@ export function useWorkspaceCanvasViewportControls({
   }, [
     flowInstanceRef,
     focusCardRequest,
-    journeyGuideState.targetCardId,
     tutorialActive,
     tutorialCompletionExitRequest,
     tutorialSceneFitRequest,
     visibleNodeIds,
   ])
 
-  const handleResetView = useCallback(() => {
-    onResetToBaseLayout()
-    const flowInstance = flowInstanceRef.current
-    if (!flowInstance) return
-    const command = resolveWorkspaceCanvasViewportCommand({
-      tutorialSceneFitRequest: null,
-      tutorialCompletionExitRequest: null,
-      focusCardRequest: null,
-      journeyGuideTargetCardId: null,
-      visibleNodeIds,
-    })
-    if (!command || command.kind !== "fit-visible") return
-
-    executeWorkspaceCanvasViewportCommand({
-      flowInstance,
-      command,
-      layoutFitOptions: WORKSPACE_CANVAS_V2_LAYOUT_FIT_OPTIONS,
-      sceneFitOptions: WORKSPACE_CANVAS_V2_TUTORIAL_SCENE_FIT_OPTIONS,
-      focusCardOptions: WORKSPACE_CANVAS_V2_CARD_FOCUS_OPTIONS,
-    })
-  }, [flowInstanceRef, onResetToBaseLayout, visibleNodeIds])
-
   return {
     handleZoomIn,
     handleZoomOut,
     handleRecenterView,
-    handleResetView,
   }
 }

@@ -63,6 +63,135 @@ describe("workspace-accelerator-card feature contract", () => {
     })
   })
 
+  it("expands multi-screen assignment schemas into workspace assignment steps", () => {
+    const steps = buildWorkspaceAcceleratorCardSteps([
+      {
+        id: "origin-module",
+        title: "Start with your why",
+        description: "Origin story",
+        href: "/accelerator/class/strategic-foundations/module/start-with-your-why",
+        status: "in_progress",
+        groupTitle: "Strategic Foundations",
+        videoUrl: "https://cdn.example.com/origin.mp4",
+        durationMinutes: 18,
+        resources: [],
+        hasAssignment: true,
+        hasDeck: false,
+        moduleContext: {
+          classTitle: "Strategic Foundations",
+          lessonNotesContent: null,
+          moduleResources: [],
+          assignmentSubmission: null,
+          completeOnSubmit: true,
+          assignmentFields: [
+            {
+              name: "origin_intro",
+              label: "Start with your why",
+              type: "subtitle",
+              required: false,
+              screen: "intro",
+            },
+            {
+              name: "origin_roots_place",
+              label: "Where did you grow up?",
+              type: "long_text",
+              required: false,
+              screen: "question",
+            },
+            {
+              name: "origin_roots_influences",
+              label: "What were the major influences in your early life?",
+              type: "long_text",
+              required: false,
+              screen: "question",
+            },
+          ],
+        },
+      },
+    ])
+
+    expect(steps.map((step) => step.id)).toEqual([
+      "origin-module:lesson",
+      "origin-module:video",
+      "origin-module:assignment:assignment-overview",
+      "origin-module:assignment:section-1",
+      "origin-module:assignment:section-2",
+      "origin-module:complete",
+    ])
+    expect(steps[2]).toMatchObject({
+      stepKind: "assignment",
+      stepTitle: "Overview",
+      assignmentSectionId: "assignment-overview",
+    })
+    expect(steps[3]).toMatchObject({
+      stepKind: "assignment",
+      stepTitle: "Where did you grow up?",
+      assignmentSectionId: "section-1",
+    })
+  })
+
+  it("folds resources into the overview step for multi-screen assignments", () => {
+    const steps = buildWorkspaceAcceleratorCardSteps([
+      {
+        id: "origin-module",
+        title: "Start with your why",
+        description: "Origin story",
+        href: "/accelerator/class/strategic-foundations/module/start-with-your-why",
+        status: "in_progress",
+        groupTitle: "Strategic Foundations",
+        videoUrl: null,
+        durationMinutes: 18,
+        resources: [
+          {
+            id: "resource-1",
+            title: "Origin story worksheet",
+            url: "https://example.com/worksheet",
+            kind: "generic",
+          },
+        ],
+        hasAssignment: true,
+        hasDeck: false,
+        moduleContext: {
+          classTitle: "Strategic Foundations",
+          lessonNotesContent: null,
+          moduleResources: [
+            {
+              label: "Origin story worksheet",
+              url: "https://example.com/worksheet",
+              provider: "generic",
+            },
+          ],
+          assignmentSubmission: null,
+          completeOnSubmit: true,
+          assignmentFields: [
+            {
+              name: "origin_intro",
+              label: "Start with your why",
+              type: "subtitle",
+              required: false,
+              screen: "intro",
+            },
+            {
+              name: "origin_roots_place",
+              label: "Where did you grow up?",
+              type: "long_text",
+              required: false,
+              screen: "question",
+            },
+          ],
+        },
+      },
+    ])
+
+    expect(steps.map((step) => step.stepKind)).toEqual([
+      "lesson",
+      "assignment",
+      "assignment",
+      "complete",
+    ])
+    expect(steps.some((step) => step.stepKind === "resources")).toBe(false)
+  })
+
   it("normalizes resources from unknown payload", () => {
     const resources = normalizeWorkspaceAcceleratorResources([
       { title: "Deck", url: "https://example.com/deck.pdf", type: "pdf" },
@@ -205,5 +334,38 @@ describe("workspace-accelerator-card feature contract", () => {
       "module-1:resources",
       "module-1:video",
     ])
+  })
+
+  it("maps legacy assignment step ids to the first expanded assignment screen", () => {
+    const normalized = normalizeWorkspaceAcceleratorCardInput({
+      size: "sm",
+      steps: [
+        {
+          id: "origin-module:assignment:assignment-overview",
+          moduleId: "origin-module",
+          moduleTitle: "Start with your why",
+          stepKind: "assignment",
+          stepTitle: "Overview",
+          stepDescription: null,
+          assignmentSectionId: "assignment-overview",
+          href: "/accelerator/class/strategic-foundations/module/start-with-your-why",
+          status: "in_progress",
+          stepSequenceIndex: 1,
+          stepSequenceTotal: 1,
+          moduleSequenceIndex: 1,
+          moduleSequenceTotal: 1,
+          groupTitle: "Strategic Foundations",
+          videoUrl: null,
+          durationMinutes: null,
+          resources: [],
+          hasAssignment: true,
+          hasDeck: false,
+        },
+      ],
+      initialCurrentStepId: "origin-module:assignment",
+      initialCompletedStepIds: [],
+    })
+
+    expect(normalized.initialCurrentStepId).toBe("origin-module:assignment:assignment-overview")
   })
 })

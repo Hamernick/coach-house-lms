@@ -116,7 +116,7 @@ export function buildPeopleTableColumns({
 
   cols.push({
     accessorKey: "category",
-    header: "Category",
+    header: "Relationship",
     cell: ({ row }) => {
       const category = row.original.category
       return (

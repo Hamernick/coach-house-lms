@@ -18,14 +18,16 @@ describe("workspace canvas card contract", () => {
 
   it("keeps lane index unique and strictly ordered by base card sequence", () => {
     const laneIndexes = WORKSPACE_CANVAS_V2_CARD_IDS.map(
-      (cardId) => WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId].laneIndex,
+      (cardId) => WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId].laneIndex
     )
-    const orderedLaneIndexes = [...laneIndexes].sort((left, right) => left - right)
+    const orderedLaneIndexes = [...laneIndexes].sort(
+      (left, right) => left - right
+    )
 
     expect(new Set(laneIndexes).size).toBe(laneIndexes.length)
     for (let index = 1; index < orderedLaneIndexes.length; index += 1) {
       expect(orderedLaneIndexes[index]).toBeGreaterThan(
-        orderedLaneIndexes[index - 1] ?? -1,
+        orderedLaneIndexes[index - 1] ?? -1
       )
     }
   })
@@ -40,32 +42,87 @@ describe("workspace canvas card contract", () => {
     }
   })
 
+  it("keeps accelerator in the former roadmap lane in the base canvas layout", () => {
+    expect(
+      WORKSPACE_CANVAS_V2_CARD_CONTRACT.accelerator.defaultPosition.x
+    ).toBeLessThan(WORKSPACE_CANVAS_V2_CARD_CONTRACT.roadmap.defaultPosition.x)
+    expect(
+      WORKSPACE_CANVAS_V2_CARD_CONTRACT.accelerator.laneIndex
+    ).toBeLessThan(WORKSPACE_CANVAS_V2_CARD_CONTRACT.roadmap.laneIndex)
+  })
+
   it("keeps each card default size inside its allowed size set", () => {
     for (const cardId of WORKSPACE_CANVAS_V2_CARD_IDS) {
       const contract = WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId]
       expect(
-        contract.allowedSizes.some((size) => size === contract.defaultSize),
+        contract.allowedSizes.some((size) => size === contract.defaultSize)
       ).toBe(true)
     }
   })
 
   it("keeps execution in the dock while communications and fundraising stay out and brand-kit stays deprecated", () => {
-    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.deck.allowedSizes).toEqual(["md", "lg"])
+    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.deck.allowedSizes).toEqual([
+      "md",
+      "lg",
+    ])
     expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.deck.defaultSize).toBe("md")
     expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.deck.dockEnabled).toBe(true)
     expect(WORKSPACE_CANVAS_V2_DOCK_CARD_IDS.includes("deck")).toBe(true)
-    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.allowedSizes).toEqual(["md", "lg"])
-    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.defaultSize).toBe("md")
-    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.dockEnabled).toBe(false)
-    expect(WORKSPACE_CANVAS_V2_DOCK_CARD_IDS.includes("communications")).toBe(false)
-    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT["economic-engine"].dockEnabled).toBe(false)
-    expect(WORKSPACE_CANVAS_V2_DOCK_CARD_IDS.includes("economic-engine")).toBe(false)
-    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT["brand-kit"].dockEnabled).toBe(false)
+    expect(
+      WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.allowedSizes
+    ).toEqual(["md", "lg"])
+    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.defaultSize).toBe(
+      "md"
+    )
+    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.communications.dockEnabled).toBe(
+      false
+    )
+    expect(WORKSPACE_CANVAS_V2_DOCK_CARD_IDS.includes("communications")).toBe(
+      false
+    )
+    expect(
+      WORKSPACE_CANVAS_V2_CARD_CONTRACT["economic-engine"].dockEnabled
+    ).toBe(false)
+    expect(WORKSPACE_CANVAS_V2_DOCK_CARD_IDS.includes("economic-engine")).toBe(
+      false
+    )
+    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT["brand-kit"].dockEnabled).toBe(
+      false
+    )
     expect(WORKSPACE_CANVAS_V2_DOCK_CARD_IDS.includes("brand-kit")).toBe(false)
+    expect(
+      WORKSPACE_CANVAS_V2_CARD_CONTRACT["fiscal-sponsorship"].dockEnabled
+    ).toBe(false)
+    expect(
+      WORKSPACE_CANVAS_V2_DOCK_CARD_IDS.includes("fiscal-sponsorship")
+    ).toBe(false)
+  })
+
+  it("keeps fiscal sponsorship attached to Activity without exposing a rail shortcut", () => {
+    const contract = WORKSPACE_CANVAS_V2_CARD_CONTRACT["fiscal-sponsorship"]
+
+    expect(contract.rail.enabled).toBe(false)
+    expect(contract.rail.parentId).toBe("programs")
+    expect(contract.ports.inputs).toContain("program-plan")
+    expect(contract.layoutRoles.timeline).toBe("branch")
+    expect(contract.allowedSizes).toEqual(["sm", "md"])
+    expect(contract.defaultSize).toBe("sm")
+    expect(contract.scrollPolicy).toBe("none")
   })
 
   it("keeps the accelerator canvas contract free of internal scroll-region assumptions", () => {
-    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.accelerator.scrollPolicy).toBe("none")
+    expect(WORKSPACE_CANVAS_V2_CARD_CONTRACT.accelerator.scrollPolicy).toBe(
+      "none"
+    )
+  })
+
+  it("keeps accelerator attached to organization now that roadmap lives in the right rail", () => {
+    const contract = WORKSPACE_CANVAS_V2_CARD_CONTRACT.accelerator
+
+    expect(contract.rail.parentId).toBe("organization-overview")
+    expect(contract.ports.inputs).toEqual(
+      expect.arrayContaining(["organization-context"])
+    )
   })
 
   it("keeps card ports aligned to the shared port type vocabulary", () => {
@@ -82,10 +139,13 @@ describe("workspace canvas card contract", () => {
 
   it("keeps exactly one hub center card and one timeline root card", () => {
     const hubCenters = WORKSPACE_CANVAS_V2_CARD_IDS.filter(
-      (cardId) => WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId].layoutRoles.hub === "center",
+      (cardId) =>
+        WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId].layoutRoles.hub === "center"
     )
     const timelineRoots = WORKSPACE_CANVAS_V2_CARD_IDS.filter(
-      (cardId) => WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId].layoutRoles.timeline === "root",
+      (cardId) =>
+        WORKSPACE_CANVAS_V2_CARD_CONTRACT[cardId].layoutRoles.timeline ===
+        "root"
     )
 
     expect(hubCenters).toEqual(["roadmap"])

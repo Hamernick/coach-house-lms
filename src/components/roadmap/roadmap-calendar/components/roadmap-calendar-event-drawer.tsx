@@ -1,13 +1,14 @@
-import type { Dispatch, SetStateAction } from "react"
+import { memo, type Dispatch, type SetStateAction } from "react"
 import RepeatIcon from "lucide-react/dist/esm/icons/repeat"
 import Trash2Icon from "lucide-react/dist/esm/icons/trash-2"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Drawer, DrawerContent, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
+import { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle } from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import {
@@ -20,6 +21,7 @@ import {
 
 import { ROLE_OPTIONS } from "../constants"
 import type { EventDraft } from "../types"
+import { ROADMAP_CALENDAR_EVENT_TYPE_META } from "./roadmap-calendar-event-style"
 
 type RoadmapCalendarEventDrawerProps = {
   open: boolean
@@ -32,7 +34,7 @@ type RoadmapCalendarEventDrawerProps = {
   onSave: () => void
 }
 
-export function RoadmapCalendarEventDrawer({
+export const RoadmapCalendarEventDrawer = memo(function RoadmapCalendarEventDrawer({
   open,
   onOpenChange,
   editingEvent,
@@ -42,13 +44,18 @@ export function RoadmapCalendarEventDrawer({
   onDelete,
   onSave,
 }: RoadmapCalendarEventDrawerProps) {
+  const eventTypeMeta = ROADMAP_CALENDAR_EVENT_TYPE_META[draft.eventType]
+
   return (
     <Drawer open={open} onOpenChange={onOpenChange} direction="right">
       <DrawerContent className="sm:max-w-lg">
         <DrawerHeader>
           <DrawerTitle>{editingEvent ? "Edit event" : "New event"}</DrawerTitle>
+          <DrawerDescription className="sr-only">
+            Create or update an internal roadmap calendar event.
+          </DrawerDescription>
         </DrawerHeader>
-        <div className="flex-1 space-y-4 overflow-y-auto px-4 pb-4">
+        <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4">
           <div className="grid gap-2">
             <Label htmlFor="calendar-title">Title</Label>
             <Input
@@ -84,13 +91,34 @@ export function RoadmapCalendarEventDrawer({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {ROADMAP_CALENDAR_EVENT_TYPES.map((eventType) => (
-                  <SelectItem key={eventType} value={eventType}>
-                    {getRoadmapCalendarEventTypeLabel(eventType)}
-                  </SelectItem>
-                ))}
+                <SelectGroup>
+                  {ROADMAP_CALENDAR_EVENT_TYPES.map((eventType) => (
+                    <SelectItem
+                      key={eventType}
+                      value={eventType}
+                      icon={
+                        <span
+                          className={cn(
+                            "size-2 rounded-full",
+                            ROADMAP_CALENDAR_EVENT_TYPE_META[eventType].dotClassName,
+                          )}
+                          aria-hidden
+                        />
+                      }
+                    >
+                      {getRoadmapCalendarEventTypeLabel(eventType)}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
               </SelectContent>
             </Select>
+            <Badge
+              variant="secondary"
+              className={cn("w-fit rounded-full border-0 px-2 py-0.5 text-xs", eventTypeMeta.badgeClassName)}
+            >
+              <span className={cn("size-2 rounded-full", eventTypeMeta.dotClassName)} aria-hidden />
+              {getRoadmapCalendarEventTypeLabel(draft.eventType)}
+            </Badge>
           </div>
 
           <div className="grid gap-2">
@@ -140,13 +168,15 @@ export function RoadmapCalendarEventDrawer({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="canceled">Canceled</SelectItem>
+                <SelectGroup>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="canceled">Canceled</SelectItem>
+                </SelectGroup>
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-2">
+          <div className="flex flex-col gap-2">
             <Label>Assign to</Label>
             <div className="flex flex-wrap gap-2">
               {ROLE_OPTIONS.map((role) => (
@@ -198,7 +228,7 @@ export function RoadmapCalendarEventDrawer({
                   }))
                 }
               >
-                <RepeatIcon className="h-4 w-4" aria-hidden />
+                <RepeatIcon data-icon="inline-start" aria-hidden />
                 Set
               </Button>
             </div>
@@ -221,10 +251,12 @@ export function RoadmapCalendarEventDrawer({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="weekly">Weekly</SelectItem>
-                    <SelectItem value="monthly">Monthly</SelectItem>
-                    <SelectItem value="quarterly">Quarterly</SelectItem>
-                    <SelectItem value="annual">Annual</SelectItem>
+                    <SelectGroup>
+                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly</SelectItem>
+                      <SelectItem value="annual">Annual</SelectItem>
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
 
@@ -267,7 +299,7 @@ export function RoadmapCalendarEventDrawer({
                 className="gap-2 text-destructive"
                 onClick={onDelete}
               >
-                <Trash2Icon className="h-4 w-4" aria-hidden />
+                <Trash2Icon data-icon="inline-start" aria-hidden />
                 Delete
               </Button>
             ) : (
@@ -286,4 +318,4 @@ export function RoadmapCalendarEventDrawer({
       </DrawerContent>
     </Drawer>
   )
-}
+})

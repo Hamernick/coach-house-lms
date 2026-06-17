@@ -1,18 +1,11 @@
 "use client"
 
 import Link from "next/link"
-import { motion, useReducedMotion } from "framer-motion"
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-} from "react"
+import { useEffect, useRef, type ReactNode } from "react"
 
 import { RightRailSlot } from "@/components/app-shell/right-rail"
 import { RoadmapNavigatorSection } from "@/components/roadmap/roadmap-navigator-section"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { RoadmapSection } from "@/lib/roadmap"
 import { cn } from "@/lib/utils"
 
@@ -33,12 +26,11 @@ import { WorkspaceAcceleratorHeaderPicker } from "./workspace-accelerator-header
 
 export { WorkspaceAcceleratorHeaderPicker } from "./workspace-accelerator-header-picker"
 export { resolveWorkspaceAcceleratorHeaderPickerScrollDistance } from "./workspace-accelerator-header-picker-overflow"
-type WorkspaceAcceleratorRailView = "roadmap" | "accelerator"
 
 type WorkspaceAcceleratorCardSidebarProps = {
-  selectedLessonGroup: ReturnType<
-    typeof buildWorkspaceAcceleratorLessonGroupOptions
-  >[number] | null
+  selectedLessonGroup:
+    | ReturnType<typeof buildWorkspaceAcceleratorLessonGroupOptions>[number]
+    | null
   tutorialCallout: WorkspaceAcceleratorTutorialCallout | null
   tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
   filteredProgressPercent: number
@@ -52,16 +44,54 @@ type WorkspaceAcceleratorCardSidebarProps = {
   onStepSelect: (step: WorkspaceAcceleratorCardStep) => void
   tutorialTargetStepId: string | null
   headerControls?: ReactNode
+  checklistHeaderControls?: ReactNode
+  showProgressSummary?: boolean
   showChecklist?: boolean
 }
 
-const WORKSPACE_ACCELERATOR_RAIL_PANEL_EASE = [0.25, 1, 0.5, 1] as const
-
-export function WorkspaceAcceleratorCardEmptyState({
-  href,
+export function WorkspaceAcceleratorCardInlinePicker({
+  lessonGroupOptions,
+  selectedLessonGroupKey,
+  tutorialCallout,
+  tutorialInteractionPolicy,
+  viewerOpen,
+  layout = "rail",
+  onLessonGroupChange,
 }: {
-  href: string
+  lessonGroupOptions: WorkspaceAcceleratorLessonGroupSummary[]
+  selectedLessonGroupKey: string
+  tutorialCallout: WorkspaceAcceleratorTutorialCallout | null
+  tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
+  viewerOpen: boolean
+  layout?: "rail" | "badge"
+  onLessonGroupChange: (nextLessonGroupKey: string) => void
 }) {
+  return (
+    <div
+      className={cn(
+        layout === "badge"
+          ? "inline-flex max-w-full items-start"
+          : "flex w-full items-start"
+      )}
+    >
+      <div className={cn("min-w-0", layout === "badge" ? "" : "flex-1")}>
+        <WorkspaceAcceleratorHeaderPicker
+          lessonGroupOptions={lessonGroupOptions}
+          selectedLessonGroupKey={selectedLessonGroupKey}
+          tutorialCallout={
+            tutorialCallout?.focus === "picker" ? tutorialCallout : null
+          }
+          tutorialInteractionPolicy={tutorialInteractionPolicy ?? null}
+          viewerOpen={viewerOpen}
+          layout={layout}
+          onLessonGroupChange={onLessonGroupChange}
+        />
+      </div>
+    </div>
+  )
+}
+
+export function WorkspaceAcceleratorCardEmptyState({ href }: { href: string }) {
   return (
     <div className="flex min-h-0 flex-col gap-3 pb-1">
       <div className="space-y-3">
@@ -158,11 +188,14 @@ export function shouldWorkspaceAcceleratorTutorialKeepModuleViewerOpen({
   tutorialCallout: WorkspaceAcceleratorTutorialCallout | null
   tutorialMode?: "module-preview" | null
 }) {
-  return tutorialCallout?.focus === "close-module" || tutorialMode === "module-preview"
+  return (
+    tutorialCallout?.focus === "close-module" ||
+    tutorialMode === "module-preview"
+  )
 }
 
 export function shouldWorkspaceAcceleratorTutorialAdvanceFromFooterContinue(
-  tutorialMode?: "module-preview" | null,
+  tutorialMode?: "module-preview" | null
 ) {
   return tutorialMode === "module-preview"
 }
@@ -211,7 +244,7 @@ export function completeWorkspaceAcceleratorTutorialPreview({
   setIsModuleViewerOpen: (open: boolean) => void
   previousTutorialManagedViewerOpenRef: { current: boolean }
   onTutorialActionComplete?: (
-    mode?: "complete" | "complete-and-advance",
+    mode?: "complete" | "complete-and-advance"
   ) => void
 }) {
   setIsModuleViewerOpen(false)
@@ -232,7 +265,7 @@ export function useWorkspaceAcceleratorTutorialViewerState({
   tutorialMode?: "module-preview" | null
   setIsModuleViewerOpen: (open: boolean) => void
   setOpenModuleId: (
-    update: string | null | ((previous: string | null) => string | null),
+    update: string | null | ((previous: string | null) => string | null)
   ) => void
   previousTutorialManagedViewerOpenRef: { current: boolean }
 }) {
@@ -246,7 +279,7 @@ export function useWorkspaceAcceleratorTutorialViewerState({
     if (shouldKeepTutorialViewerOpen) {
       setIsModuleViewerOpen(true)
       setOpenModuleId((previous) =>
-        previous === currentModuleId ? previous : currentModuleId,
+        previous === currentModuleId ? previous : currentModuleId
       )
       previousTutorialManagedViewerOpenRef.current = true
       return
@@ -281,20 +314,24 @@ export function WorkspaceAcceleratorCardSidebar({
   onStepSelect,
   tutorialTargetStepId,
   headerControls = null,
+  checklistHeaderControls = null,
+  showProgressSummary = true,
   showChecklist = true,
 }: WorkspaceAcceleratorCardSidebarProps) {
   return (
     <div className="flex min-h-full flex-col gap-2.5">
       {headerControls ? <div className="w-full">{headerControls}</div> : null}
 
-      <WorkspaceAcceleratorCardProgressStrip
-        progressPercent={filteredProgressPercent}
-        readinessSummary={readinessSummary}
-        showMilestoneTooltips={showMilestoneTooltips}
-        tutorialCallout={
-          tutorialCallout?.focus === "progress" ? tutorialCallout : null
-        }
-      />
+      {showProgressSummary ? (
+        <WorkspaceAcceleratorCardProgressStrip
+          progressPercent={filteredProgressPercent}
+          readinessSummary={readinessSummary}
+          showMilestoneTooltips={showMilestoneTooltips}
+          tutorialCallout={
+            tutorialCallout?.focus === "progress" ? tutorialCallout : null
+          }
+        />
+      ) : null}
 
       {showChecklist ? (
         <WorkspaceAcceleratorCardChecklist
@@ -310,6 +347,7 @@ export function WorkspaceAcceleratorCardSidebar({
           }
           tutorialTargetStepId={tutorialTargetStepId}
           tutorialInteractionPolicy={tutorialInteractionPolicy}
+          headerControls={checklistHeaderControls}
         />
       ) : null}
     </div>
@@ -354,7 +392,6 @@ export function WorkspaceAcceleratorCardFullscreenRailContent({
   viewerOpen = false,
   roadmapSections = [],
   roadmapBasePath = "/workspace/roadmap",
-  initialView = "accelerator",
   ...sidebarProps
 }: WorkspaceAcceleratorCardSidebarProps & {
   lessonGroupOptions: WorkspaceAcceleratorLessonGroupSummary[]
@@ -363,115 +400,39 @@ export function WorkspaceAcceleratorCardFullscreenRailContent({
   viewerOpen?: boolean
   roadmapSections?: RoadmapSection[]
   roadmapBasePath?: string
-  initialView?: WorkspaceAcceleratorRailView
 }) {
   const hasRoadmap = roadmapSections.length > 0
-  const prefersReducedMotion = useReducedMotion()
-  const [activeView, setActiveView] =
-    useState<WorkspaceAcceleratorRailView>(initialView)
 
-  useEffect(() => {
-    if (sidebarProps.tutorialInteractionPolicy && activeView !== "accelerator") {
-      setActiveView("accelerator")
-    }
-  }, [activeView, sidebarProps.tutorialInteractionPolicy])
-
-  const resolvedActiveView = hasRoadmap ? activeView : "accelerator"
-  const railPanelTransition = prefersReducedMotion
-    ? { duration: 0 }
-    : { duration: 0.2, ease: WORKSPACE_ACCELERATOR_RAIL_PANEL_EASE }
+  if (hasRoadmap) {
+    return (
+      <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+          <RoadmapNavigatorSection
+            sections={roadmapSections}
+            basePath={roadmapBasePath}
+          />
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <Tabs
-      value={resolvedActiveView}
-      onValueChange={(nextValue) =>
-        setActiveView(nextValue as WorkspaceAcceleratorRailView)
-      }
-      className="flex h-full min-h-0 flex-col gap-2.5"
-    >
-      {hasRoadmap ? (
-        <div className="px-1">
-          <TabsList className="w-full gap-1 rounded-full border border-border/70 bg-background/70 p-1">
-            <TabsTrigger
-              value="roadmap"
-              disabled={Boolean(sidebarProps.tutorialInteractionPolicy)}
-              className="min-w-0 flex-1 rounded-full border border-transparent px-2 py-1.5 text-[11px] data-[state=active]:border-border/70 data-[state=active]:bg-muted/55 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-            >
-              <span className="truncate">Roadmap</span>
-            </TabsTrigger>
-            <TabsTrigger
-              value="accelerator"
-              className="min-w-0 flex-1 rounded-full border border-transparent px-2 py-1.5 text-[11px] data-[state=active]:border-border/70 data-[state=active]:bg-muted/55 data-[state=active]:text-foreground data-[state=active]:shadow-sm"
-            >
-              <span className="truncate">Accelerator</span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
-      ) : null}
-
-      <TabsContent
-        forceMount
-        value="accelerator"
-        className="min-h-0 flex-1 data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col"
-      >
-        <motion.div
-          className="flex min-h-0 flex-1 flex-col"
-          initial={false}
-          animate={
-            resolvedActiveView === "accelerator"
-              ? { opacity: 1, y: 0 }
-              : { opacity: 0, y: 6 }
-          }
-          transition={railPanelTransition}
-        >
-          <WorkspaceAcceleratorCardSidebar
-            {...sidebarProps}
-            showChecklist={false}
-            headerControls={
-              <WorkspaceAcceleratorHeaderPicker
-                lessonGroupOptions={lessonGroupOptions}
-                selectedLessonGroupKey={selectedLessonGroupKey}
-                tutorialCallout={
-                  sidebarProps.tutorialCallout?.focus === "picker"
-                    ? sidebarProps.tutorialCallout
-                    : null
-                }
-                tutorialInteractionPolicy={sidebarProps.tutorialInteractionPolicy}
-                viewerOpen={viewerOpen}
-                layout="rail"
-                onLessonGroupChange={onLessonGroupChange}
-              />
-            }
+    <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
+      <WorkspaceAcceleratorCardSidebar
+        {...sidebarProps}
+        showChecklist={false}
+        headerControls={
+          <WorkspaceAcceleratorCardInlinePicker
+            lessonGroupOptions={lessonGroupOptions}
+            selectedLessonGroupKey={selectedLessonGroupKey}
+            tutorialCallout={sidebarProps.tutorialCallout}
+            tutorialInteractionPolicy={sidebarProps.tutorialInteractionPolicy}
+            viewerOpen={viewerOpen}
+            onLessonGroupChange={onLessonGroupChange}
           />
-        </motion.div>
-      </TabsContent>
-
-      {hasRoadmap ? (
-        <TabsContent
-          forceMount
-          value="roadmap"
-          className="min-h-0 flex-1 data-[state=inactive]:hidden data-[state=active]:flex data-[state=active]:flex-col"
-        >
-          <motion.div
-            className="flex min-h-0 flex-1 flex-col"
-            initial={false}
-            animate={
-              resolvedActiveView === "roadmap"
-                ? { opacity: 1, y: 0 }
-                : { opacity: 0, y: 6 }
-            }
-            transition={railPanelTransition}
-          >
-            <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-              <RoadmapNavigatorSection
-                sections={roadmapSections}
-                basePath={roadmapBasePath}
-              />
-            </div>
-          </motion.div>
-        </TabsContent>
-      ) : null}
-    </Tabs>
+        }
+      />
+    </div>
   )
 }
 
@@ -484,10 +445,10 @@ export function WorkspaceAcceleratorHeaderSummary({
 }) {
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-1.5">
-      <span className="inline-flex items-center rounded-md border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] font-medium leading-none text-muted-foreground tabular-nums">
-        {moduleCount} {moduleCount === 1 ? "module" : "modules"}
+      <span className="border-border/70 bg-background/70 text-muted-foreground inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] leading-none font-medium tabular-nums">
+        {moduleCount} {moduleCount === 1 ? "lesson" : "lessons"}
       </span>
-      <span className="inline-flex items-center rounded-md border border-border/70 bg-background/70 px-2 py-0.5 text-[10px] font-medium leading-none text-muted-foreground tabular-nums">
+      <span className="border-border/70 bg-background/70 text-muted-foreground inline-flex items-center rounded-md border px-2 py-0.5 text-[10px] leading-none font-medium tabular-nums">
         {stepCount} {stepCount === 1 ? "step" : "steps"}
       </span>
     </div>

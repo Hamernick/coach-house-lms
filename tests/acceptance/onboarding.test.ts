@@ -42,6 +42,23 @@ describe("onboarding gate", () => {
     expect(destination).toBe("/workspace")
   })
 
+  it("redirects completed member-intent users to find", async () => {
+    vi.doMock("@/app/(dashboard)/_lib/dashboard-layout-state", () => ({
+      resolveDashboardLayoutState: async () => ({
+        userPresent: true,
+        onboardingLocked: false,
+        onboardingIntentFocus: "find",
+      }),
+    }))
+    vi.doMock("@/components/onboarding/onboarding-workspace-card", () => ({
+      OnboardingWorkspaceCard: () => null,
+    }))
+
+    const { default: Page } = await import("@/app/(dashboard)/onboarding/page")
+    const destination = await captureRedirect(() => Page())
+    expect(destination).toBe("/find?member_onboarding=0&source=onboarding")
+  })
+
   it("renders onboarding workspace card while onboarding is still locked", async () => {
     vi.doMock("@/app/(dashboard)/_lib/dashboard-layout-state", () => ({
       resolveDashboardLayoutState: async () => ({
@@ -138,5 +155,44 @@ describe("onboarding gate", () => {
         mode: "post_signup_access",
       }),
     )
+  })
+
+  it("completes member map onboarding without overwriting profile fields", async () => {
+    const updateUser = vi.fn().mockResolvedValue({ error: null })
+    createSupabaseServerClientServerMock.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: {
+            user: {
+              id: "user_123",
+              email: "member@example.com",
+            },
+          },
+          error: null,
+        }),
+        updateUser,
+      },
+    })
+
+    const { completeMemberMapOnboardingAction } = await import(
+      "@/app/(dashboard)/onboarding/actions"
+    )
+    const form = new FormData()
+    form.set("intentFocus", "support")
+
+    const destination = await captureRedirect(() =>
+      completeMemberMapOnboardingAction(form),
+    )
+
+    expect(destination).toBe("/find?member_onboarding=0&source=member_onboarding")
+    expect(updateUser).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        onboarding_completed: true,
+        onboarding_intent_focus: "support",
+      }),
+    })
+    expect(updateUser.mock.calls[0]?.[0].data).not.toHaveProperty("first_name")
+    expect(updateUser.mock.calls[0]?.[0].data).not.toHaveProperty("last_name")
+    expect(updateUser.mock.calls[0]?.[0].data).not.toHaveProperty("full_name")
   })
 })

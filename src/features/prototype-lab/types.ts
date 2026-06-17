@@ -1,4 +1,4 @@
-export type PrototypeLabEntryKind = "email" | "flow"
+export type PrototypeLabEntryKind = "email" | "flow" | "ops"
 
 export type PrototypeLabEntry = {
   id: string

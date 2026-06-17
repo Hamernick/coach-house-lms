@@ -1,9 +1,8 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-import type { Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
-import { hasPaidTeamAccessFromSubscription } from "@/lib/billing/subscription-access"
+import { resolvePaidTeamAccessForOrgSubscription } from "@/lib/billing/subscription-access"
 
 export type OrganizationMemberRole =
   | "owner"
@@ -200,20 +199,7 @@ export async function resolvePaidTeamAccessForOrg(
   supabase: ServerSupabaseClient,
   orgId: string,
 ): Promise<{ hasPaidTeamAccess: boolean } | { error: string }> {
-  const { data: subscription, error } = await supabase
-    .from("subscriptions")
-    .select("status, metadata, created_at")
-    .eq("user_id", orgId)
-    .not("stripe_subscription_id", "ilike", "stub_%")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ status: string | null; metadata: Json | null }>()
-
-  if (error) return { error: "Unable to load subscription status." }
-
-  const hasPaidTeamAccess = hasPaidTeamAccessFromSubscription(subscription ?? null)
-
-  return { hasPaidTeamAccess }
+  return resolvePaidTeamAccessForOrgSubscription({ supabase, orgId })
 }
 
 export async function getAuthenticatedUser(

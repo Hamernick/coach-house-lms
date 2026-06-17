@@ -94,7 +94,7 @@ describe("member workspace starter-data actions", () => {
     expect(projectDeleteEqOrg).toHaveBeenCalledWith("org_id", "org-1")
     expect(projectDeleteEqKind).toHaveBeenCalledWith("project_kind", "standard")
     expect(projectDeleteEqSource).toHaveBeenCalledWith("created_source", "starter_seed")
-    expect(revalidatePathMock).toHaveBeenCalledWith("/projects")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/organizations")
     expect(revalidatePathMock).toHaveBeenCalledWith("/tasks")
   })
 

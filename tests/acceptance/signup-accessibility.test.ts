@@ -29,8 +29,10 @@ describe("signup accessibility affordances", () => {
     expect(passwordInputSource).toContain('className={cn("pr-11", className)}')
     expect(passwordInputSource).toContain("size-9")
     expect(passwordInputSource).toContain("aria-pressed={visible}")
-    expect(homeCanvasBehaviorSource).toContain('sectionId === "signup"')
-    expect(homeCanvasBehaviorSource).toContain('sectionId === "login"')
+    expect(homeCanvasBehaviorSource).toContain('sectionId === "pricing"')
+    expect(homeCanvasBehaviorSource).toContain('sectionId === "accelerator"')
+    expect(homeCanvasBehaviorSource).not.toContain('sectionId === "signup"')
+    expect(homeCanvasBehaviorSource).not.toContain('sectionId === "login"')
   })
 
   it("exposes onboarding visual states to assistive technology", () => {

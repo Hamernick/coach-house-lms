@@ -311,9 +311,29 @@ describe("member workspace loaders", () => {
         updated_at: "2026-01-01T00:00:00.000Z",
       },
     ])
+    const standardProjectsQuery = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      neq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      returns: vi.fn(() =>
+        Promise.resolve({
+          data: [],
+          error: null,
+        }),
+      ),
+    }
 
     resolveMemberWorkspaceActorContextMock.mockResolvedValue({
-      supabase: {},
+      supabase: {
+        from: vi.fn((table: string) => {
+          if (table === "organization_projects") {
+            return standardProjectsQuery
+          }
+          throw new Error(`Unexpected table query: ${table}`)
+        }),
+      },
       userId: "admin-1",
       isAdmin: true,
       activeOrg: { orgId: "org-1", role: "owner" },
@@ -325,7 +345,7 @@ describe("member workspace loaders", () => {
       starterProjectCount: 0,
       hasUserProjects: true,
       canResetStarterData: false,
-      canCreateProjects: false,
+      canCreateProjects: true,
       scope: "platform-admin",
       organizationOptions: [{ orgId: "org-1", name: "Community Builders" }],
       assigneeOptions: [],

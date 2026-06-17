@@ -19,7 +19,7 @@ describe("member workspace project starter data", () => {
     expect(projects).toHaveLength(1)
     expect(projects[0]).toMatchObject({
       org_id: "org-1",
-      name: "Projects preview",
+      name: "Organizations preview",
       client_name: "Organization",
       type_label: "Preview",
       created_by: "user-1",

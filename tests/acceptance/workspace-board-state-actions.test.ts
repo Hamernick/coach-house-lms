@@ -38,6 +38,9 @@ describe("workspace board state actions", () => {
     const canvasSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas.tsx"
     )
+    const positionPersistenceSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas-node-position-persistence.ts"
+    )
 
     expect(actionSource).toContain("saveWorkspaceNodePositionAction")
     expect(actionSource).toContain(
@@ -47,9 +50,12 @@ describe("workspace board state actions", () => {
     expect(actionSource).toContain(
       "normalizeWorkspaceBoardState(input.boardState)"
     )
-    expect(canvasSource).toContain("saveWorkspaceNodePositionAction")
-    expect(canvasSource).toContain("boardState: nextBoardState")
-    expect(canvasSource).toContain(
+    expect(canvasSource).toContain("useWorkspaceNodePositionPersistence")
+    expect(positionPersistenceSource).toContain(
+      "saveWorkspaceNodePositionAction"
+    )
+    expect(positionPersistenceSource).toContain("boardState: nextBoardState")
+    expect(positionPersistenceSource).toContain(
       "const response = await saveWorkspaceNodePositionAction"
     )
   })

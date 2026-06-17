@@ -122,9 +122,9 @@ describe("workspace board UI preferences", () => {
 
     expect(surfaceSource).toContain("useWorkspaceCanvasViewportPreferences")
     expect(surfaceSource).toContain("suppressInitialFit")
-    expect(surfaceSource).toContain("onMoveEnd={handleCanvasMoveEnd}")
+    expect(surfaceSource).toContain("onMoveEnd: handleCanvasMoveEnd")
     expect(surfaceSource).toContain("uiPreferencesScope,")
-    expect(surfaceSource).toContain("uiPreferencesScope={uiPreferencesScope}")
+    expect(viewSource).toContain("uiPreferencesScope={uiPreferencesScope}")
     expect(viewportPreferencesSource).toContain(
       "readWorkspaceBoardUiPreferences"
     )

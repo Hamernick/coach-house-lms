@@ -21,6 +21,8 @@ describe("normalizeMemberWorkspaceCreateProjectInput", () => {
       value: {
         name: "Volunteer onboarding revamp",
         description: null,
+        overviewDocumentHtml: null,
+        hasOverviewDocumentHtml: false,
         status: "planned",
         priority: "medium",
         startDate: "2026-04-07",

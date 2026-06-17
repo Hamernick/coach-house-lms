@@ -148,8 +148,8 @@ describe("member workspace project note actions", () => {
       org_id: "org-1",
       note_type: "audio",
     })
-    expect(revalidatePathMock).toHaveBeenCalledWith("/projects")
-    expect(revalidatePathMock).toHaveBeenCalledWith("/projects/project-1")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/organizations")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/organizations/project-1")
   })
 
   it("updates note type when an edited note changes to audio", async () => {
@@ -203,7 +203,7 @@ describe("member workspace project note actions", () => {
       title: "Board recording",
       note_type: "audio",
     })
-    expect(revalidatePathMock).toHaveBeenCalledWith("/projects")
-    expect(revalidatePathMock).toHaveBeenCalledWith("/projects/project-1")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/organizations")
+    expect(revalidatePathMock).toHaveBeenCalledWith("/organizations/project-1")
   })
 })

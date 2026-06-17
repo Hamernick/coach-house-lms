@@ -20,7 +20,7 @@ describe("member-workspace feature contract", () => {
         getMemberWorkspaceSectionLabel(section),
       ),
     ).toEqual([
-      "Projects",
+      "Organizations",
       "Tasks",
       "People",
     ])

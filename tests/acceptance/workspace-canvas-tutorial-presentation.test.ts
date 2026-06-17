@@ -182,13 +182,18 @@ describe("workspace tutorial presentation", () => {
     expect(shellSpec.shellHeight).toBe(492)
     expect(shellSpec.layoutMode).toBe("paired-right-rail")
     expect(surfaceSpec).toEqual({
-      cardWidth: 400,
+      cardWidth: 520,
       cardHeight: 252,
-      frameWidth: 420,
+      frameWidth: 540,
       frameHeight: 272,
     })
     expect(WORKSPACE_TUTORIAL_PRESENTATION_FRAME_INSET).toBe(10)
-    expect(shellSpec.shellWidth - surfaceSpec.frameWidth).toBe(48)
+    expect(
+      resolveWorkspaceTutorialPresentationShellWidth({
+        shellWidth: shellSpec.shellWidth,
+        surfaceFrameWidth: surfaceSpec.frameWidth,
+      })
+    ).toBe(588)
     expect(shellSpec.shellHeight).toBeGreaterThan(surfaceSpec.frameHeight)
   })
 

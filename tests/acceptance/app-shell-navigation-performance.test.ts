@@ -87,7 +87,9 @@ describe("app shell navigation performance", () => {
     expect(searchIndexSource).not.toContain("new Map(organizations.map")
     expect(searchIndexSource).toContain("const favoriteIds = sortByFavorites ? new Set(favorites) : null")
     expect(searchIndexSource).toContain("PUBLIC_MAP_NAME_COLLATOR")
-    expect(organizationListSource).toContain("memo(PublicMapOrganizationListComponent)")
+    expect(organizationListSource).toMatch(
+      /memo\(\s*PublicMapOrganizationListComponent\s*\)/
+    )
     expect(organizationListSource).toContain("const favoriteIds = useMemo(() => new Set(favorites), [favorites])")
     expect(actionsSource).toContain("useCallback")
   })

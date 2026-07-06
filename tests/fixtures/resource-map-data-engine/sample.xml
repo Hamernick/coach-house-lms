@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<resources>
+  <record>
+    <id>shelter-1</id>
+    <organizationName>Safe Night Shelter</organizationName>
+    <title>Emergency shelter</title>
+    <description>Overnight emergency shelter during severe weather.</description>
+    <category>emergency shelter</category>
+    <address>300 Shelter Rd</address>
+    <city>Chicago</city>
+    <state>IL</state>
+    <phone>312-555-0300</phone>
+    <website>https://shelter.example.org</website>
+  </record>
+</resources>

@@ -1,0 +1,19 @@
+{
+  "features": [
+    {
+      "attributes": {
+        "objectid": "arcgis-library-1",
+        "name": "North Branch Library",
+        "resource_name": "Internet access",
+        "description": "Public computers and wireless internet.",
+        "type": "internet access",
+        "phone": "312-555-0500",
+        "website": "https://library.example.gov/north"
+      },
+      "geometry": {
+        "x": -87.6298,
+        "y": 41.8781
+      }
+    }
+  ]
+}

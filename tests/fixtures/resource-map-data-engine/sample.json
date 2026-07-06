@@ -1,0 +1,20 @@
+{
+  "records": [
+    {
+      "id": "clinic-1",
+      "organizationName": "Community Health Center",
+      "title": "Walk-in primary care",
+      "description": "Primary care clinic with sliding scale fees.",
+      "category": "primary care",
+      "address": "200 Clinic Ave",
+      "city": "Chicago",
+      "state": "IL",
+      "postalCode": "60602",
+      "phone": "312-555-0200",
+      "website": "https://clinic.example.org/services?utm_source=test",
+      "eligibility": "Open to uninsured residents",
+      "cost": "Sliding scale",
+      "languages": ["English", "Polish"]
+    }
+  ]
+}

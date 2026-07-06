@@ -4,6 +4,7 @@ import { readFileSync, existsSync } from "node:fs"
 import { resolve } from "node:path"
 
 import { createClient } from "@supabase/supabase-js"
+import { runResourceMapRlsTests } from "./resource-map-rls.mjs"
 
 function loadEnvFile(filePath) {
   if (!existsSync(filePath)) return
@@ -44,6 +45,21 @@ if (!url || !anonKey || !serviceRole) {
 const adminClient = createClient(url, serviceRole, {
   auth: { autoRefreshToken: false, persistSession: false },
 })
+
+async function tableExists(tableName) {
+  const { error } = await adminClient.from(tableName).select("*").limit(1)
+
+  if (!error) return true
+
+  const missing =
+    error.code === "42P01" ||
+    error.code === "PGRST205" ||
+    /could not find|does not exist|not exist/i.test(error.message ?? "")
+
+  if (missing) return false
+
+  throw error
+}
 
 const suffix = randomUUID().slice(0, 8)
 const memberEmail = `member-${suffix}@example.com`
@@ -197,6 +213,9 @@ async function run() {
   const assets = await createDemoContent(member.id)
 
   const memberClient = createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
+  const anonClient = createClient(url, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
   const adminSessionClient = createClient(url, anonKey, {
@@ -2115,6 +2134,18 @@ async function run() {
       passed: denied,
     })
   }
+
+  await runResourceMapRlsTests({
+    admin,
+    adminClient,
+    adminSessionClient,
+    anonClient,
+    member,
+    memberClient,
+    results,
+    suffix,
+    tableExists,
+  })
 
   const failed = results.filter((result) => !result.passed)
   results.forEach((result) => {

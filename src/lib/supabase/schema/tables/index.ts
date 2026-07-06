@@ -19,6 +19,23 @@ import type { RoadmapCalendarInternalEventsTable } from "./roadmap_calendar_inte
 import type { RoadmapCalendarPublicFeedsTable } from "./roadmap_calendar_public_feeds"
 import type { RoadmapCalendarInternalFeedsTable } from "./roadmap_calendar_internal_feeds"
 import type { SearchEventsTable } from "./search_events"
+import type { ProgramsTable } from "./programs"
+import type { ResourceMapSourcesTable } from "./resource_map_sources"
+import type { ResourceMapImportBatchesTable } from "./resource_map_import_batches"
+import type { ResourceMapIngestionRunsTable } from "./resource_map_ingestion_runs"
+import type { ResourceMapRawIngestionRecordsTable } from "./resource_map_raw_ingestion_records"
+import type { ResourceMapImportRecordsTable } from "./resource_map_import_records"
+import type { ResourceMapCategoriesTable } from "./resource_map_categories"
+import type { ResourceMapOrganizationsTable } from "./resource_map_organizations"
+import type { ResourceMapServicesTable } from "./resource_map_services"
+import type { ResourceMapServiceCategoriesTable } from "./resource_map_service_categories"
+import type { ResourceMapLocationsTable } from "./resource_map_locations"
+import type { ResourceMapContactsTable } from "./resource_map_contacts"
+import type { ResourceMapLinksTable } from "./resource_map_links"
+import type { ResourceMapImportRecordMatchesTable } from "./resource_map_import_record_matches"
+import type { ResourceMapFieldEvidenceTable } from "./resource_map_field_evidence"
+import type { ResourceMapCurationEventsTable } from "./resource_map_curation_events"
+import type { PublicMapOrganizationCurationEventsTable } from "./public_map_organization_curation_events"
 import type { AcceleratorPurchasesTable } from "./accelerator_purchases"
 import type { ElectivePurchasesTable } from "./elective_purchases"
 import type { OrganizationMembershipsTable } from "./organization_memberships"
@@ -86,6 +103,23 @@ export type { RoadmapCalendarInternalEventsTable } from "./roadmap_calendar_inte
 export type { RoadmapCalendarPublicFeedsTable } from "./roadmap_calendar_public_feeds"
 export type { RoadmapCalendarInternalFeedsTable } from "./roadmap_calendar_internal_feeds"
 export type { SearchEventsTable } from "./search_events"
+export type { ProgramsTable } from "./programs"
+export type { ResourceMapSourcesTable } from "./resource_map_sources"
+export type { ResourceMapImportBatchesTable } from "./resource_map_import_batches"
+export type { ResourceMapIngestionRunsTable } from "./resource_map_ingestion_runs"
+export type { ResourceMapRawIngestionRecordsTable } from "./resource_map_raw_ingestion_records"
+export type { ResourceMapImportRecordsTable } from "./resource_map_import_records"
+export type { ResourceMapCategoriesTable } from "./resource_map_categories"
+export type { ResourceMapOrganizationsTable } from "./resource_map_organizations"
+export type { ResourceMapServicesTable } from "./resource_map_services"
+export type { ResourceMapServiceCategoriesTable } from "./resource_map_service_categories"
+export type { ResourceMapLocationsTable } from "./resource_map_locations"
+export type { ResourceMapContactsTable } from "./resource_map_contacts"
+export type { ResourceMapLinksTable } from "./resource_map_links"
+export type { ResourceMapImportRecordMatchesTable } from "./resource_map_import_record_matches"
+export type { ResourceMapFieldEvidenceTable } from "./resource_map_field_evidence"
+export type { ResourceMapCurationEventsTable } from "./resource_map_curation_events"
+export type { PublicMapOrganizationCurationEventsTable } from "./public_map_organization_curation_events"
 export type { AcceleratorPurchasesTable } from "./accelerator_purchases"
 export type { ElectivePurchasesTable } from "./elective_purchases"
 export type { OrganizationMembershipsTable } from "./organization_memberships"
@@ -154,6 +188,23 @@ export type PublicTables = {
   roadmap_calendar_public_feeds: RoadmapCalendarPublicFeedsTable
   roadmap_calendar_internal_feeds: RoadmapCalendarInternalFeedsTable
   search_events: SearchEventsTable
+  programs: ProgramsTable
+  resource_map_sources: ResourceMapSourcesTable
+  resource_map_import_batches: ResourceMapImportBatchesTable
+  resource_map_ingestion_runs: ResourceMapIngestionRunsTable
+  resource_map_raw_ingestion_records: ResourceMapRawIngestionRecordsTable
+  resource_map_import_records: ResourceMapImportRecordsTable
+  resource_map_categories: ResourceMapCategoriesTable
+  resource_map_organizations: ResourceMapOrganizationsTable
+  resource_map_services: ResourceMapServicesTable
+  resource_map_service_categories: ResourceMapServiceCategoriesTable
+  resource_map_locations: ResourceMapLocationsTable
+  resource_map_contacts: ResourceMapContactsTable
+  resource_map_links: ResourceMapLinksTable
+  resource_map_import_record_matches: ResourceMapImportRecordMatchesTable
+  resource_map_field_evidence: ResourceMapFieldEvidenceTable
+  resource_map_curation_events: ResourceMapCurationEventsTable
+  public_map_organization_curation_events: PublicMapOrganizationCurationEventsTable
   accelerator_purchases: AcceleratorPurchasesTable
   elective_purchases: ElectivePurchasesTable
   organization_memberships: OrganizationMembershipsTable

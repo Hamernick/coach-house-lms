@@ -1,0 +1,2 @@
+EIN|NAME|STREET|CITY|STATE|ZIP|NTEE_CD|SUBSECTION|CLASSIFICATION|ACTIVITY
+360000001|Community Health Nonprofit|700 Wellness Ave|Chicago|IL|60608|E32|03|1000|Community clinic and health services

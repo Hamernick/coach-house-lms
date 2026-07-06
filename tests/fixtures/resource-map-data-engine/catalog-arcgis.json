@@ -1,0 +1,13 @@
+{
+  "results": [
+    {
+      "id": "arcgis-service-1",
+      "title": "Cooling Centers",
+      "type": "Feature Service",
+      "description": "Public cooling center locations.",
+      "owner": "city-open-data",
+      "url": "https://services.example.org/arcgis/rest/services/CoolingCenters/FeatureServer/0",
+      "tags": ["cooling centers", "emergency"]
+    }
+  ]
+}

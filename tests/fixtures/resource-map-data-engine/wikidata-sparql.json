@@ -1,0 +1,75 @@
+{
+  "head": {
+    "vars": [
+      "item",
+      "itemLabel",
+      "description",
+      "categoryLabel",
+      "coordinate",
+      "website",
+      "address",
+      "cityLabel",
+      "stateLabel",
+      "postalCode",
+      "phone",
+      "email"
+    ]
+  },
+  "results": {
+    "bindings": [
+      {
+        "item": {
+          "type": "uri",
+          "value": "http://www.wikidata.org/entity/Q123"
+        },
+        "itemLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Example Community Library"
+        },
+        "description": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Public library with internet access."
+        },
+        "categoryLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "library"
+        },
+        "coordinate": {
+          "datatype": "http://www.opengis.net/ont/geosparql#wktLiteral",
+          "type": "literal",
+          "value": "Point(-87.631 41.881)"
+        },
+        "website": { "type": "uri", "value": "https://library.example.org" },
+        "address": {
+          "type": "literal",
+          "value": "1 Knowledge Way"
+        },
+        "cityLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Chicago"
+        },
+        "stateLabel": {
+          "xml:lang": "en",
+          "type": "literal",
+          "value": "Illinois"
+        },
+        "postalCode": {
+          "type": "literal",
+          "value": "60602"
+        },
+        "phone": {
+          "type": "literal",
+          "value": "312-555-0700"
+        },
+        "email": {
+          "type": "literal",
+          "value": "info@library.example.org"
+        }
+      }
+    ]
+  }
+}

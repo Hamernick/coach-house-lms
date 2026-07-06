@@ -1,4 +1,5 @@
 import type { Json } from "./json"
+import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
   is_admin: {
@@ -47,5 +48,16 @@ export type PublicFunctions = {
       group_name: string
       rank: number | null
     }[]
+  }
+  get_resource_map_public_items: {
+    Args: {
+      p_query?: string | null
+      p_category_keys?: string[] | null
+      p_limit?: number | null
+      p_latitude?: number | null
+      p_longitude?: number | null
+      p_radius_miles?: number | null
+    }
+    Returns: ResourceMapPublicItemsView["Row"][]
   }
 }

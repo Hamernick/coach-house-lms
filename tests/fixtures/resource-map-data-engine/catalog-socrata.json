@@ -1,0 +1,19 @@
+{
+  "results": [
+    {
+      "resource": {
+        "id": "abcd-1234",
+        "name": "Community Resource Directory",
+        "description": "City-maintained resource directory.",
+        "type": "dataset",
+        "domain": "data.city.example.org",
+        "updatedAt": "2026-06-10T12:00:00.000Z"
+      },
+      "classification": {
+        "categories": ["Health and Human Services"],
+        "tags": ["food", "housing"]
+      },
+      "permalink": "https://data.city.example.org/Health-Human-Services/Community-Resource-Directory/abcd-1234"
+    }
+  ]
+}

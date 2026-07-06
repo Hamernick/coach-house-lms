@@ -1,0 +1,4 @@
+# Keep local scrape/search outputs off git by default.
+*
+!.gitignore
+!README.md

@@ -1,0 +1,28 @@
+{
+  "success": true,
+  "result": {
+    "results": [
+      {
+        "id": "dataset-food-assistance",
+        "name": "food-assistance",
+        "title": "Food Assistance Locations",
+        "notes": "Public food pantry and meal site source.",
+        "license_title": "Creative Commons Attribution",
+        "license_url": "https://example.org/license",
+        "organization": {
+          "title": "Example Open Data"
+        },
+        "metadata_modified": "2026-06-01T10:00:00.000000",
+        "resources": [
+          {
+            "id": "food-csv",
+            "name": "Food pantry CSV",
+            "format": "CSV",
+            "url": "https://data.example.org/food-pantries.csv",
+            "description": "Food pantry rows with addresses and contacts."
+          }
+        ]
+      }
+    ]
+  }
+}

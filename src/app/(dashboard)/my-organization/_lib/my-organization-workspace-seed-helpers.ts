@@ -81,7 +81,7 @@ export async function fetchWorkspacePrograms({
     .order("created_at", { ascending: false })
 
   if (!primaryResult.error) {
-    return (primaryResult.data ?? []) as OrgProgram[]
+    return (primaryResult.data ?? []) as unknown as OrgProgram[]
   }
 
   const legacyResult = await supabase
@@ -99,7 +99,7 @@ export async function fetchWorkspacePrograms({
     return []
   }
 
-  return ((legacyResult.data ?? []) as OrgProgram[]).map((program) => ({
+  return ((legacyResult.data ?? []) as unknown as OrgProgram[]).map((program) => ({
     ...program,
     wizard_snapshot: null,
   }))

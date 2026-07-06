@@ -7,10 +7,12 @@ export const MemberWorkspaceOrgSwitcher = dynamic<
   ComponentProps<
     typeof import("./components/shell/member-workspace-org-switcher").MemberWorkspaceOrgSwitcher
   >
->(() =>
-  import("./components/shell/member-workspace-org-switcher").then(
-    (mod) => mod.MemberWorkspaceOrgSwitcher,
-  ),
+>(
+  () =>
+    import("./components/shell/member-workspace-org-switcher").then(
+      (mod) => mod.MemberWorkspaceOrgSwitcher
+    ),
+  { ssr: false }
 )
 
 export const MemberWorkspacePageLoading = dynamic<
@@ -19,8 +21,8 @@ export const MemberWorkspacePageLoading = dynamic<
   >
 >(() =>
   import("./components/shell/member-workspace-page-loading").then(
-    (mod) => mod.MemberWorkspacePageLoading,
-  ),
+    (mod) => mod.MemberWorkspacePageLoading
+  )
 )
 
 export const MemberWorkspaceProjectDetailLoading = dynamic<
@@ -29,8 +31,8 @@ export const MemberWorkspaceProjectDetailLoading = dynamic<
   >
 >(() =>
   import("./components/projects/member-workspace-project-detail-loading").then(
-    (mod) => mod.MemberWorkspaceProjectDetailLoading,
-  ),
+    (mod) => mod.MemberWorkspaceProjectDetailLoading
+  )
 )
 
 export const MemberWorkspaceProjectDetailPage = dynamic<
@@ -39,8 +41,8 @@ export const MemberWorkspaceProjectDetailPage = dynamic<
   >
 >(() =>
   import("./components/projects/member-workspace-project-detail-page").then(
-    (mod) => mod.MemberWorkspaceProjectDetailPage,
-  ),
+    (mod) => mod.MemberWorkspaceProjectDetailPage
+  )
 )
 
 export const MemberWorkspacePeoplePage = dynamic<
@@ -49,8 +51,8 @@ export const MemberWorkspacePeoplePage = dynamic<
   >
 >(() =>
   import("./components/people/member-workspace-people-page").then(
-    (mod) => mod.MemberWorkspacePeoplePage,
-  ),
+    (mod) => mod.MemberWorkspacePeoplePage
+  )
 )
 
 export const MemberWorkspaceProjectsPage = dynamic<
@@ -59,8 +61,8 @@ export const MemberWorkspaceProjectsPage = dynamic<
   >
 >(() =>
   import("./components/projects/member-workspace-projects-page").then(
-    (mod) => mod.MemberWorkspaceProjectsPage,
-  ),
+    (mod) => mod.MemberWorkspaceProjectsPage
+  )
 )
 
 export const MemberWorkspaceTasksPage = dynamic<
@@ -69,6 +71,6 @@ export const MemberWorkspaceTasksPage = dynamic<
   >
 >(() =>
   import("./components/tasks/member-workspace-tasks-page").then(
-    (mod) => mod.MemberWorkspaceTasksPage,
-  ),
+    (mod) => mod.MemberWorkspaceTasksPage
+  )
 )

@@ -10,6 +10,7 @@ export function serializePayload(
 ): CreateProgramPayload {
   const budget = computeBudgetBreakdown(form)
   const formatAddons = normalizeAddons(form.coreFormat, form.formatAddons)
+  const locationUrl = form.locationUrl.trim()
   const locationType = form.locationMode === "online" ? "online" : "in_person"
   const location =
     form.locationDetails.trim() ||
@@ -67,6 +68,7 @@ export function serializePayload(
     frequency: form.frequency.trim(),
     locationMode: form.locationMode,
     locationDetails: form.locationDetails.trim(),
+    locationUrl,
     budgetRows: budget.rows,
     budgetUsd: budget.totalBudget,
     costStaffUsd: budget.costStaffUsd,
@@ -101,7 +103,7 @@ export function serializePayload(
     description: form.oneSentence.trim(),
     location,
     locationType,
-    locationUrl: locationType === "online" ? null : null,
+    locationUrl: locationUrl || null,
     imageUrl: form.imageUrl.trim() || null,
     duration: form.durationLabel.trim() || null,
     startDate: monthToIsoStart(form.startMonth),

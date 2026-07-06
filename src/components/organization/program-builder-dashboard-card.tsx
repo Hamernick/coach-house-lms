@@ -24,8 +24,8 @@ import {
 } from "@/components/organization/org-profile-card/utils"
 import {
   isOrganizationPrimaryObjectKind,
-  ORGANIZATION_PRIMARY_OBJECT_DEFINITIONS,
-  ORGANIZATION_PRIMARY_OBJECT_SUMMARY,
+  ORGANIZATION_ACTIVITY_KIND_DEFINITIONS,
+  ORGANIZATION_ACTIVITY_KIND_SUMMARY,
   resolveOrganizationPrimaryObjectKind,
 } from "@/lib/organization/primary-objects"
 import { cn } from "@/lib/utils"
@@ -186,7 +186,7 @@ export function ProgramBuilderDashboardCard({
                 Activity
               </CardTitle>
               <CardDescription>
-                Track {ORGANIZATION_PRIMARY_OBJECT_SUMMARY}
+                Track {ORGANIZATION_ACTIVITY_KIND_SUMMARY}
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2">
@@ -199,15 +199,15 @@ export function ProgramBuilderDashboardCard({
                 }}
               >
                 <FolderPlusIcon className="h-4 w-4" aria-hidden />
-                New object
+                Add activity
               </Button>
             </div>
           </div>
           <div
             className="flex flex-wrap gap-1.5"
-            aria-label="Supported primary object types"
+            aria-label="Supported activity types"
           >
-            {ORGANIZATION_PRIMARY_OBJECT_DEFINITIONS.map(
+            {ORGANIZATION_ACTIVITY_KIND_DEFINITIONS.map(
               ({ kind, description }) => (
                 <span
                   key={kind}
@@ -241,7 +241,7 @@ export function ProgramBuilderDashboardCard({
                     setCreateOpen(true)
                   }}
                 >
-                  Start object builder
+                  Start activity builder
                 </Button>
               }
             />
@@ -250,7 +250,7 @@ export function ProgramBuilderDashboardCard({
               <div className={PROGRAM_CARD_PANEL_CLASS}>
                 {sortedPrograms.map((program, index) => {
                   const displayTitle =
-                    program.title?.trim() || "Untitled object"
+                    program.title?.trim() || "Untitled activity"
                   const displayObjectKind = parseObjectKind(program)
                   const displayType = parseProgramType(program)
                   const statusLabel = program.status_label?.trim() || "Draft"
@@ -297,7 +297,7 @@ export function ProgramBuilderDashboardCard({
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-foreground truncate text-base font-semibold">
-                        {activeProgram.title?.trim() || "Untitled object"}
+                        {activeProgram.title?.trim() || "Untitled activity"}
                       </p>
                       <p className="text-muted-foreground mt-1 truncate text-sm">
                         {locationSummary(activeProgram) || "Location pending"}

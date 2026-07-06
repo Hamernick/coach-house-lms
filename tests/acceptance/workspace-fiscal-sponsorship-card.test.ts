@@ -11,6 +11,7 @@ import {
   WORKSPACE_EDGE_SPECS,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-copy"
 import type { OrgProgram } from "@/components/organization/org-profile-card/types"
+import { analyzeFiscalSponsorshipActivityEligibility } from "@/features/fiscal-sponsorship"
 import { buildSelectedProgramPrefill } from "@/features/fiscal-sponsorship/components/fiscal-sponsorship-workspace-card-summary"
 
 const ROOT = process.cwd()
@@ -47,9 +48,16 @@ describe("workspace fiscal sponsorship card", () => {
     const organizationSupport = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-organization-support.tsx"
     )
+    const activityAction = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-activity-action.tsx"
+    )
 
     expect(featureIndex).toContain("FiscalSponsorshipWorkspaceCardSummary")
     expect(featureIndex).toContain("FiscalSponsorshipMark")
+    expect(featureIndex).toContain("FiscalSponsorshipActivityAction")
+    expect(featureIndex).toContain(
+      "analyzeFiscalSponsorshipActivityEligibility"
+    )
     expect(featureIndex).toContain("FiscalSponsorshipWorkflowDrawer")
     expect(featureIndex).toContain(
       "FiscalSponsorshipRequiredDocumentsUploadPanel"
@@ -86,6 +94,84 @@ describe("workspace fiscal sponsorship card", () => {
     expect(organizationSupport).not.toContain(
       "@/features/fiscal-sponsorship/components"
     )
+    expect(activityAction).toContain("FiscalSponsorshipMark")
+    expect(activityAction).toContain("CheckCircle2Icon")
+    expect(activityAction).toContain("Signals only. Coach House reviews.")
+    expect(activityAction).toContain(
+      '<div className="flex min-w-0 items-center gap-1.5">'
+    )
+    expect(activityAction).toContain(
+      'className="h-6 shrink-0 rounded-full px-2 text-[10px]"'
+    )
+    expect(activityAction).not.toContain(
+      'className="h-6 shrink-0 gap-1 rounded-full px-2 text-[10px]"'
+    )
+    const tooltipTitleGroupIndex = activityAction.indexOf(
+      '<div className="flex min-w-0 items-center gap-1.5">'
+    )
+    const tooltipTitleMarkIndex = activityAction.indexOf(
+      'className="size-4 rounded-[0.35rem] text-[7px]"',
+      tooltipTitleGroupIndex
+    )
+    const tooltipSubtitleIndex = activityAction.indexOf(
+      "Signals only. Coach House reviews."
+    )
+    const tooltipBadgeIndex = activityAction.indexOf(
+      "<Badge",
+      tooltipTitleGroupIndex
+    )
+
+    expect(tooltipTitleGroupIndex).toBeGreaterThan(-1)
+    expect(tooltipTitleMarkIndex).toBeGreaterThan(tooltipTitleGroupIndex)
+    expect(tooltipTitleMarkIndex).toBeLessThan(tooltipSubtitleIndex)
+    expect(tooltipSubtitleIndex).toBeLessThan(tooltipBadgeIndex)
+    expect(activityAction).toContain("Request review")
+    expect(activityAction).toContain("Update info")
+    expect(activityAction).toContain("onUpdateInfo()")
+    expect(activityAction).not.toContain("String(criterion.met)")
+  })
+
+  it("analyzes activity eligibility before lighting up the fiscal action", () => {
+    const ready = analyzeFiscalSponsorshipActivityEligibility({
+      activity: {
+        title: "Youth Stewardship Fellows",
+        description: "Youth leaders coordinate neighborhood food access.",
+        addressCity: "Chicago",
+        addressState: "IL",
+        addressCountry: "United States",
+        focusArea: "Training & Capacity Building",
+        goalCents: 1400000,
+        publicBenefit: "Residents get reliable resource-night support.",
+      },
+      organization: {
+        ein: "12-3456789",
+        mission: "Support neighborhood leaders.",
+        addressStreet: "100 Main St",
+        addressCity: "Chicago",
+        addressState: "IL",
+        addressPostal: "60601",
+        addressCountry: "United States",
+      },
+      prefill: null,
+    })
+    const missing = analyzeFiscalSponsorshipActivityEligibility({
+      activity: { title: "Untitled" },
+      organization: null,
+      prefill: null,
+    })
+
+    expect(ready.eligible).toBe(true)
+    expect(ready.state).toBe("lit")
+    expect(ready.completedCount).toBe(5)
+    expect(ready.criteria.map((criterion) => criterion.label)).toEqual([
+      "Impact narrative",
+      "U.S. operations",
+      "Funding use",
+      "Mission fit signal",
+      "Tax ID + mailing",
+    ])
+    expect(missing.eligible).toBe(false)
+    expect(missing.state).toBe("inactive")
   })
 
   it("opens the handbook-aligned user sidebar flow with saved application data when available", () => {
@@ -499,22 +585,31 @@ describe("workspace fiscal sponsorship card", () => {
     expect(programsRenderer).toContain("fiscalSponsorshipActionLabel")
     expect(programsRenderer).toContain("Close fiscal sponsorship tile")
     expect(programsRenderer).toContain("Open fiscal sponsorship tile")
+    expect(programsRenderer).toContain("Fiscal sponsorship review readiness")
+    expect(programsRenderer).toContain("FiscalSponsorshipActivityAction")
+    expect(programsRenderer).toContain(
+      "analyzeFiscalSponsorshipActivityEligibility"
+    )
+    expect(programsRenderer).toContain("selectedProgramIndex")
+    expect(programsRenderer).toContain("carouselApi.selectedScrollSnap()")
+    expect(programsRenderer).toContain("fiscalSponsorshipEligibility")
     expect(programsRenderer).toContain("!programsPreviewOnly")
+    expect(programsRenderer).toContain("active={fiscalSponsorshipCardVisible}")
+    expect(programsRenderer).toContain("eligibility={eligibility}")
     expect(programsRenderer).toContain(
-      "aria-label={fiscalSponsorshipActionLabel}"
+      "onUpdateInfo={onUpdateFiscalSponsorshipInfo}"
+    )
+    expect(programsRenderer).toContain("buildWorkspaceProgramEditorHref")
+    expect(programsRenderer).toContain(
+      "router.push(updateFiscalSponsorshipInfoHref)"
     )
     expect(programsRenderer).toContain(
-      "aria-pressed={fiscalSponsorshipCardVisible}"
-    )
-    expect(programsRenderer).toContain(
-      'className="h-8 w-8 rounded-lg p-0 hover:bg-transparent"'
-    )
-    expect(programsRenderer).toContain(
-      'FiscalSponsorshipMark className="size-8 rounded-lg text-xs"'
+      "eligibility: fiscalSponsorshipEligibility"
     )
     expect(programsRenderer).not.toContain(
       'FiscalSponsorshipMark className="size-5 rounded-lg text-[10px]"'
     )
+    expect(programsRenderer).not.toContain("FiscalSponsorshipMark")
     expect(programsRenderer).toContain(
       'data.onOpenCard?.("fiscal-sponsorship")'
     )

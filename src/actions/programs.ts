@@ -4,8 +4,18 @@
 import { revalidatePath } from "next/cache"
 import { requireServerSession } from "@/lib/auth"
 import { publicSharingEnabled } from "@/lib/feature-flags"
-import { PROGRAM_MEDIA_BUCKET, resolveProgramMediaCleanupPath } from "@/lib/storage/program-media"
-import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
+import {
+  resolveProfileAudience,
+  resolveTesterMetadata,
+} from "@/lib/devtools/audience"
+import {
+  PROGRAM_MEDIA_BUCKET,
+  resolveProgramMediaCleanupPath,
+} from "@/lib/storage/program-media"
+import {
+  canEditOrganization,
+  resolveActiveOrganization,
+} from "@/lib/organization/active-org"
 import { resolveProgramBannerImageUrl } from "@/lib/programs/display"
 
 export type CreateProgramPayload = {
@@ -38,8 +48,17 @@ export type CreateProgramPayload = {
 export async function createProgramAction(payload: CreateProgramPayload) {
   const { supabase, session } = await requireServerSession("/organization")
   const userId = session.user.id
-  const { orgId, role } = await resolveActiveOrganization(supabase, userId)
-  const canEdit = canEditOrganization(role)
+  const [{ orgId, role }, profileAudience] = await Promise.all([
+    resolveActiveOrganization(supabase, userId),
+    resolveProfileAudience({
+      supabase,
+      userId,
+      fallbackIsTester: resolveTesterMetadata(
+        session.user.user_metadata ?? null
+      ),
+    }),
+  ])
+  const canEdit = profileAudience.isAdmin || canEditOrganization(role)
   if (!canEdit) return { error: "Forbidden" }
   const allowPublicSharing = publicSharingEnabled
 
@@ -59,8 +78,12 @@ export async function createProgramAction(payload: CreateProgramPayload) {
     address_country: payload.addressCountry ?? null,
     image_url: payload.imageUrl ?? null,
     duration_label: payload.duration ?? null,
-    start_date: payload.startDate ? new Date(payload.startDate).toISOString() as unknown as any : null,
-    end_date: payload.endDate ? new Date(payload.endDate).toISOString() as unknown as any : null,
+    start_date: payload.startDate
+      ? (new Date(payload.startDate).toISOString() as unknown as any)
+      : null,
+    end_date: payload.endDate
+      ? (new Date(payload.endDate).toISOString() as unknown as any)
+      : null,
     features: payload.features ?? [],
     status_label: payload.statusLabel ?? null,
     goal_cents: payload.goalCents ?? 0,
@@ -71,11 +94,11 @@ export async function createProgramAction(payload: CreateProgramPayload) {
     wizard_snapshot: payload.wizardSnapshot ?? {},
   }
 
-  let { error } = await (supabase.from("programs") as any).insert(insert)
+  let { error } = await (supabase as any).from("programs").insert(insert)
   if (error && /wizard_snapshot/i.test(error.message)) {
     const legacyInsert = { ...insert }
     delete (legacyInsert as { wizard_snapshot?: unknown }).wizard_snapshot
-    const retry = await (supabase.from("programs") as any).insert(legacyInsert)
+    const retry = await (supabase as any).from("programs").insert(legacyInsert)
     error = retry.error
   }
   if (error) return { error: error.message }
@@ -85,24 +108,38 @@ export async function createProgramAction(payload: CreateProgramPayload) {
 
 export type UpdateProgramPayload = Partial<CreateProgramPayload>
 
-export async function updateProgramAction(id: string, payload: UpdateProgramPayload) {
+export async function updateProgramAction(
+  id: string,
+  payload: UpdateProgramPayload
+) {
   const { supabase, session } = await requireServerSession("/organization")
   const userId = session.user.id
-  const { orgId, role } = await resolveActiveOrganization(supabase, userId)
-  const canEdit = canEditOrganization(role)
+  const [{ orgId, role }, profileAudience] = await Promise.all([
+    resolveActiveOrganization(supabase, userId),
+    resolveProfileAudience({
+      supabase,
+      userId,
+      fallbackIsTester: resolveTesterMetadata(
+        session.user.user_metadata ?? null
+      ),
+    }),
+  ])
+  const canEdit = profileAudience.isAdmin || canEditOrganization(role)
   if (!canEdit) return { error: "Forbidden" }
   const allowPublicSharing = publicSharingEnabled
   const imageTouched = Object.prototype.hasOwnProperty.call(payload, "imageUrl")
   const hasKey = (key: keyof UpdateProgramPayload) =>
     Object.prototype.hasOwnProperty.call(payload, key)
-  const pick = <K extends keyof UpdateProgramPayload>(key: K): UpdateProgramPayload[K] | undefined =>
+  const pick = <K extends keyof UpdateProgramPayload>(
+    key: K
+  ): UpdateProgramPayload[K] | undefined =>
     hasKey(key) ? payload[key] : undefined
 
   let previousImageUrl: string | null = null
   let previousBannerImageUrl: string | null = null
   if (imageTouched || hasKey("wizardSnapshot")) {
-    const { data: existing, error: existingError } = await (supabase
-      .from("programs") as any)
+    const { data: existing, error: existingError } = await (supabase as any)
+      .from("programs")
       .select("image_url, wizard_snapshot")
       .eq("id", id)
       .eq("user_id", orgId)
@@ -136,24 +173,40 @@ export async function updateProgramAction(id: string, payload: UpdateProgramPayl
     address_state: pick("addressState"),
     address_postal: pick("addressPostal"),
     address_country: pick("addressCountry"),
-    image_url: payload.imageUrl === null ? null : payload.imageUrl ?? undefined,
+    image_url:
+      payload.imageUrl === null ? null : (payload.imageUrl ?? undefined),
     duration_label: pick("duration"),
     start_date:
-      startDate === undefined ? undefined : startDate ? (new Date(startDate).toISOString() as unknown as any) : null,
+      startDate === undefined
+        ? undefined
+        : startDate
+          ? (new Date(startDate).toISOString() as unknown as any)
+          : null,
     end_date:
-      endDate === undefined ? undefined : endDate ? (new Date(endDate).toISOString() as unknown as any) : null,
+      endDate === undefined
+        ? undefined
+        : endDate
+          ? (new Date(endDate).toISOString() as unknown as any)
+          : null,
     features: pick("features"),
     status_label: pick("statusLabel"),
     goal_cents: pick("goalCents"),
     raised_cents: pick("raisedCents"),
-    is_public: isPublic === undefined ? undefined : allowPublicSharing ? Boolean(isPublic) : false,
+    is_public:
+      isPublic === undefined
+        ? undefined
+        : allowPublicSharing
+          ? Boolean(isPublic)
+          : false,
     cta_label: pick("ctaLabel"),
     cta_url: pick("ctaUrl"),
-    wizard_snapshot: hasKey("wizardSnapshot") ? (payload.wizardSnapshot ?? {}) : undefined,
+    wizard_snapshot: hasKey("wizardSnapshot")
+      ? (payload.wizardSnapshot ?? {})
+      : undefined,
   }
 
-  let { error } = await (supabase
-    .from("programs") as any)
+  let { error } = await (supabase as any)
+    .from("programs")
     .update(update)
     .eq("id", id)
     .eq("user_id", orgId)
@@ -161,8 +214,8 @@ export async function updateProgramAction(id: string, payload: UpdateProgramPayl
   if (error && /wizard_snapshot/i.test(error.message)) {
     const legacyUpdate = { ...update }
     delete (legacyUpdate as { wizard_snapshot?: unknown }).wizard_snapshot
-    const retry = await (supabase
-      .from("programs") as any)
+    const retry = await (supabase as any)
+      .from("programs")
       .update(legacyUpdate)
       .eq("id", id)
       .eq("user_id", orgId)
@@ -197,7 +250,10 @@ export async function updateProgramAction(id: string, payload: UpdateProgramPayl
   return { ok: true }
 }
 
-async function revalidateOrganizationProgramViews(supabase: Awaited<ReturnType<typeof requireServerSession>>["supabase"], userId: string) {
+async function revalidateOrganizationProgramViews(
+  supabase: Awaited<ReturnType<typeof requireServerSession>>["supabase"],
+  userId: string
+) {
   revalidatePath("/organization")
   revalidatePath("/workspace")
   revalidatePath("/organization/workspace")
@@ -211,7 +267,10 @@ async function revalidateOrganizationProgramViews(supabase: Awaited<ReturnType<t
 
     if (error) return
 
-    const slug = typeof data?.public_slug === "string" && data.public_slug.length > 0 ? data.public_slug : null
+    const slug =
+      typeof data?.public_slug === "string" && data.public_slug.length > 0
+        ? data.public_slug
+        : null
     const isPublic = Boolean(data?.is_public)
 
     if (isPublic) revalidatePath("/community")
@@ -223,4 +282,3 @@ async function revalidateOrganizationProgramViews(supabase: Awaited<ReturnType<t
     // Swallow revalidation errors; they should not block program writes.
   }
 }
- 

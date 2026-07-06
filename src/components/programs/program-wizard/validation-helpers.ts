@@ -18,6 +18,10 @@ export function parseErrors(form: ProgramWizardFormState) {
     next.budgetUsd = "Add at least one budget line item."
   }
 
+  if (form.objectKind === "Web resource" && !form.locationUrl.trim()) {
+    next.locationUrl = "Add the resource URL."
+  }
+
   return next
 }
 
@@ -76,6 +80,7 @@ const FIELD_STEP_MAP: Record<string, number> = {
   frequency: 5,
   locationMode: 5,
   locationDetails: 5,
+  locationUrl: 5,
   budgetUsd: 6,
 }
 

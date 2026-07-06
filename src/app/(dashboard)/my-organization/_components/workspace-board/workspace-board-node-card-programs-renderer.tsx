@@ -3,14 +3,22 @@
 import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 
+import type { OrgProgram } from "@/components/organization/org-profile-card/types"
 import { Button } from "@/components/ui/button"
 import type { CarouselApi } from "@/components/ui/carousel"
-import { FiscalSponsorshipMark } from "@/features/fiscal-sponsorship"
+import {
+  analyzeFiscalSponsorshipActivityEligibility,
+  FiscalSponsorshipActivityAction,
+  type FiscalSponsorshipActivityEligibility,
+  type FiscalSponsorshipActivityEligibilityActivity,
+} from "@/features/fiscal-sponsorship"
 
 import { WORKSPACE_CARD_META } from "./workspace-board-copy"
 import type { WorkspaceBoardNodeData } from "./workspace-board-node-types"
 import {
+  buildWorkspaceProgramEditorHref,
   isWorkspaceProgramsPreviewOnlyStep,
   resolveWorkspaceProgramsDisplayPrograms,
   WorkspaceBoardProgramsCard,
@@ -18,106 +26,158 @@ import {
 import { WorkspaceBoardNodeCardShell } from "./workspace-board-node-card-shell"
 import type { WorkspaceCardSize } from "./workspace-board-types"
 
+type WorkspaceProgramsDisplayProgram = OrgProgram
+
+function getProgramField<K extends keyof WorkspaceProgramsDisplayProgram>(
+  program: WorkspaceProgramsDisplayProgram | null,
+  key: K
+) {
+  return program && key in program ? program[key] : null
+}
+
+function getProgramWizardSnapshot(
+  program: WorkspaceProgramsDisplayProgram | null
+) {
+  const value = getProgramField(program, "wizard_snapshot")
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null
+}
+
+function readSnapshotString(
+  snapshot: Record<string, unknown> | null,
+  key: string
+) {
+  const value = snapshot?.[key]
+  return typeof value === "string" && value.trim().length > 0
+    ? value.trim()
+    : null
+}
+
+function buildEligibilityActivity(
+  program: WorkspaceProgramsDisplayProgram | null
+): FiscalSponsorshipActivityEligibilityActivity | null {
+  if (!program) return null
+
+  const wizardSnapshot = getProgramWizardSnapshot(program)
+
+  return {
+    title: program.title,
+    subtitle: program.subtitle,
+    description: program.description,
+    location: getProgramField(program, "location"),
+    locationType: getProgramField(program, "location_type"),
+    addressCity: getProgramField(program, "address_city"),
+    addressState: getProgramField(program, "address_state"),
+    addressCountry: getProgramField(program, "address_country"),
+    focusArea:
+      readSnapshotString(wizardSnapshot, "programType") ??
+      program.features?.[0] ??
+      null,
+    objectKind: readSnapshotString(wizardSnapshot, "objectKind"),
+    estimatedBudgetCents: getProgramField(program, "goal_cents"),
+    goalCents: getProgramField(program, "goal_cents"),
+    wizardSnapshot,
+  }
+}
+
 function renderProgramsHeaderAction({
   canEdit,
-  canScrollNext,
-  canScrollPrevious,
+  eligibility,
   fiscalSponsorshipCardVisible,
-  hasCarouselControls,
   isCanvasFullscreen,
   onOpenFiscalSponsorship,
-  onScrollNext,
-  onScrollPrevious,
+  onProgramsCreateOpenChange,
+  onUpdateFiscalSponsorshipInfo,
   presentationMode,
   programsPreviewOnly,
 }: {
   canEdit: boolean
-  canScrollNext: boolean
-  canScrollPrevious: boolean
+  eligibility: FiscalSponsorshipActivityEligibility
   fiscalSponsorshipCardVisible: boolean
-  hasCarouselControls: boolean
   isCanvasFullscreen: boolean
   onOpenFiscalSponsorship: () => void
-  onScrollNext: () => void
-  onScrollPrevious: () => void
+  onProgramsCreateOpenChange: (open: boolean) => void
+  onUpdateFiscalSponsorshipInfo: () => void
   presentationMode: boolean
   programsPreviewOnly: boolean
 }) {
   const fiscalSponsorshipActionLabel = fiscalSponsorshipCardVisible
     ? "Close fiscal sponsorship tile"
-    : "Open fiscal sponsorship tile"
+    : eligibility.eligible
+      ? "Open fiscal sponsorship tile"
+      : "Fiscal sponsorship review readiness"
   const canOpenFiscalSponsorship =
     canEdit && !presentationMode && !isCanvasFullscreen && !programsPreviewOnly
-  if (!canOpenFiscalSponsorship && !hasCarouselControls) return null
+  if (!canOpenFiscalSponsorship && !canEdit) return null
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
       {canOpenFiscalSponsorship ? (
+        <FiscalSponsorshipActivityAction
+          active={fiscalSponsorshipCardVisible}
+          ariaLabel={fiscalSponsorshipActionLabel}
+          disabled={programsPreviewOnly}
+          eligibility={eligibility}
+          onOpen={onOpenFiscalSponsorship}
+          onUpdateInfo={onUpdateFiscalSponsorshipInfo}
+        />
+      ) : null}
+      {canEdit ? (
         <Button
           type="button"
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 rounded-lg p-0 hover:bg-transparent"
-          aria-label={fiscalSponsorshipActionLabel}
-          aria-pressed={fiscalSponsorshipCardVisible}
-          onClick={onOpenFiscalSponsorship}
+          size="sm"
+          className="h-8 rounded-md px-3"
+          disabled={programsPreviewOnly}
+          onClick={() => onProgramsCreateOpenChange(true)}
         >
-          <span aria-hidden>
-            <FiscalSponsorshipMark className="size-8 rounded-lg text-xs" />
-          </span>
+          Add
         </Button>
-      ) : null}
-      {hasCarouselControls ? (
-        <>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="border-border/70 bg-background/85 h-8 w-8 rounded-full backdrop-blur-sm"
-            disabled={!canScrollPrevious}
-            aria-label="Previous activity"
-            onClick={onScrollPrevious}
-          >
-            <ChevronLeftIcon aria-hidden />
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="border-border/70 bg-background/85 h-8 w-8 rounded-full backdrop-blur-sm"
-            disabled={!canScrollNext}
-            aria-label="Next activity"
-            onClick={onScrollNext}
-          >
-            <ChevronRightIcon aria-hidden />
-          </Button>
-        </>
       ) : null}
     </div>
   )
 }
 
 function renderProgramsFooterAction({
-  canEdit,
-  onProgramsCreateOpenChange,
-  programsPreviewOnly,
+  canScrollNext,
+  canScrollPrevious,
+  hasCarouselControls,
+  onScrollNext,
+  onScrollPrevious,
 }: {
-  canEdit: boolean
-  onProgramsCreateOpenChange: (open: boolean) => void
-  programsPreviewOnly: boolean
+  canScrollNext: boolean
+  canScrollPrevious: boolean
+  hasCarouselControls: boolean
+  onScrollNext: () => void
+  onScrollPrevious: () => void
 }) {
-  if (!canEdit) return null
+  if (!hasCarouselControls) return null
 
   return (
-    <Button
-      type="button"
-      size="sm"
-      className="ml-auto"
-      disabled={programsPreviewOnly}
-      onClick={() => onProgramsCreateOpenChange(true)}
-    >
-      Add
-    </Button>
+    <div className="flex w-full items-center justify-center gap-1">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="border-border/70 bg-background/85 h-8 w-8 rounded-full backdrop-blur-sm"
+        disabled={!canScrollPrevious}
+        aria-label="Previous activity"
+        onClick={onScrollPrevious}
+      >
+        <ChevronLeftIcon aria-hidden />
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="border-border/70 bg-background/85 h-8 w-8 rounded-full backdrop-blur-sm"
+        disabled={!canScrollNext}
+        aria-label="Next activity"
+        onClick={onScrollNext}
+      >
+        <ChevronRightIcon aria-hidden />
+      </Button>
+    </div>
   )
 }
 
@@ -146,6 +206,7 @@ export function WorkspaceBoardProgramsNodeCard({
   presentationMode: boolean
   programsCreateOpen: boolean
 }) {
+  const router = useRouter()
   const workspacePrograms = data.organizationEditorData?.programs
   const programs = useMemo(() => workspacePrograms ?? [], [workspacePrograms])
   const legacyProgramsValue =
@@ -153,17 +214,51 @@ export function WorkspaceBoardProgramsNodeCard({
   const [carouselApi, setCarouselApi] = useState<CarouselApi | null>(null)
   const [canScrollPrevious, setCanScrollPrevious] = useState(false)
   const [canScrollNext, setCanScrollNext] = useState(false)
+  const [selectedProgramIndex, setSelectedProgramIndex] = useState(0)
   const programsPreviewOnly = isWorkspaceProgramsPreviewOnlyStep(
     data.tutorialStepId
   )
-  const hasCarouselControls = useMemo(
+  const displayPrograms = useMemo(
     () =>
       resolveWorkspaceProgramsDisplayPrograms({
         programs,
         legacyProgramsValue,
-      }).length > 1,
+      }) as WorkspaceProgramsDisplayProgram[],
     [legacyProgramsValue, programs]
   )
+  const hasCarouselControls = displayPrograms.length > 1
+  const selectedProgram =
+    displayPrograms[
+      Math.min(Math.max(selectedProgramIndex, 0), displayPrograms.length - 1)
+    ] ??
+    displayPrograms[0] ??
+    null
+  const fiscalSponsorshipEligibility = useMemo(
+    () =>
+      analyzeFiscalSponsorshipActivityEligibility({
+        activity: buildEligibilityActivity(selectedProgram),
+        organization: data.organizationEditorData?.initialProfile ?? null,
+        prefill:
+          data.organizationEditorData?.fiscalSponsorshipApplicationPrefill ??
+          null,
+      }),
+    [
+      data.organizationEditorData?.fiscalSponsorshipApplicationPrefill,
+      data.organizationEditorData?.initialProfile,
+      selectedProgram,
+    ]
+  )
+  const updateFiscalSponsorshipInfoHref = buildWorkspaceProgramEditorHref(
+    selectedProgram?.id?.startsWith("legacy-program-")
+      ? undefined
+      : selectedProgram?.id
+  )
+
+  useEffect(() => {
+    if (displayPrograms.length <= 1) {
+      setSelectedProgramIndex(0)
+    }
+  }, [displayPrograms.length])
 
   useEffect(() => {
     if (!hasCarouselControls || !carouselApi) {
@@ -175,6 +270,7 @@ export function WorkspaceBoardProgramsNodeCard({
     const updateCarouselState = () => {
       setCanScrollPrevious(carouselApi.canScrollPrev())
       setCanScrollNext(carouselApi.canScrollNext())
+      setSelectedProgramIndex(carouselApi.selectedScrollSnap())
     }
 
     updateCarouselState()
@@ -195,15 +291,14 @@ export function WorkspaceBoardProgramsNodeCard({
       hideSubtitle={hideHeaderSubtitle}
       headerAction={renderProgramsHeaderAction({
         canEdit,
-        canScrollNext,
-        canScrollPrevious,
+        eligibility: fiscalSponsorshipEligibility,
         fiscalSponsorshipCardVisible:
           data.fiscalSponsorshipCardVisible === true,
-        hasCarouselControls,
         isCanvasFullscreen,
         onOpenFiscalSponsorship: () => data.onOpenCard?.("fiscal-sponsorship"),
-        onScrollNext: () => carouselApi?.scrollNext(),
-        onScrollPrevious: () => carouselApi?.scrollPrev(),
+        onProgramsCreateOpenChange,
+        onUpdateFiscalSponsorshipInfo: () =>
+          router.push(updateFiscalSponsorshipInfoHref),
         presentationMode,
         programsPreviewOnly,
       })}
@@ -211,16 +306,18 @@ export function WorkspaceBoardProgramsNodeCard({
       presentationMode={presentationMode}
       fullHref={cardMeta.fullHref}
       canEdit={canEdit}
-      shellInsetClassName="px-3 pt-3 pb-0"
+      shellInsetClassName="px-3 pt-3 pb-3"
       contentClassName={contentClassName}
       contentSurface="plain"
       editorHref={null}
       footer={renderProgramsFooterAction({
-        canEdit,
-        onProgramsCreateOpenChange,
-        programsPreviewOnly,
+        canScrollNext,
+        canScrollPrevious,
+        hasCarouselControls,
+        onScrollNext: () => carouselApi?.scrollNext(),
+        onScrollPrevious: () => carouselApi?.scrollPrev(),
       })}
-      footerClassName="px-3 pt-2 pb-3"
+      footerClassName="justify-center px-3 pt-2 pb-3"
       isCanvasFullscreen={isCanvasFullscreen}
       onToggleCanvasFullscreen={frameFullscreenToggle}
     >

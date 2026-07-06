@@ -181,7 +181,7 @@ describe("workspace board card frame", () => {
     expect(markup).toContain('data-slot="card-title"')
     expect(markup).toContain('data-slot="card-content"')
     expect(markup).not.toContain('data-slot="card-footer"')
-    expect(markup).toContain("px-3 pb-0")
+    expect(markup).toContain("px-3 pb-3")
     expect(markup).toContain("relative flex flex-col gap-2 px-3 pt-0 pb-3")
     expect(markup).toContain("flex w-full justify-between gap-2")
     expect(markup).toContain(
@@ -216,7 +216,7 @@ describe("workspace board card frame", () => {
       'contentSurface === "plain" ? "px-3" : "px-0"'
     )
     expect(shellSource).toContain(
-      'contentSurface === "plain" || footer ? "pb-0" : "pb-3"'
+      'contentSurface === "plain" || !footer ? "pb-3" : "pb-0"'
     )
     expect(shellSource).toContain('? "mx-0 p-0"')
     expect(shellSource).toContain("<CardContent")

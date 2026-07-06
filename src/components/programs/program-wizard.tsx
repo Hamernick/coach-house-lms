@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { resolveOrganizationPrimaryObjectKind } from "@/lib/organization/primary-objects"
+import { resolveOrganizationActivityKind } from "@/lib/organization/primary-objects"
 import { toast } from "@/lib/toast"
 import { cn } from "@/lib/utils"
 
@@ -111,7 +111,7 @@ export function ProgramWizard({
         const next = {
           ...fallback,
           ...parsed,
-          objectKind: resolveOrganizationPrimaryObjectKind(parsed.objectKind),
+          objectKind: resolveOrganizationActivityKind(parsed.objectKind),
           formatAddons: normalizeAddons(
             parsed.coreFormat ?? fallback.coreFormat,
             Array.isArray(parsed.formatAddons)
@@ -196,7 +196,12 @@ export function ProgramWizard({
   const validateCurrentStep = () => {
     const allErrors = parseErrors(form)
     const fields = requiredFieldsForStep(currentStep)
-    const stepErrors = fields.filter((field) => Boolean(allErrors[field]))
+    const stepErrors = Object.keys(allErrors).filter((field) => {
+      return (
+        fields.includes(field as keyof ProgramWizardFormState) ||
+        stepForField(field) === currentStep
+      )
+    })
     if (stepErrors.length === 0) return true
     setErrors((current) => ({ ...current, ...allErrors }))
     toast.error("Complete required fields before continuing")

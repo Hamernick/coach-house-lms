@@ -10,6 +10,7 @@ export {
 } from "./actions"
 export {
   FiscalSponsorshipApplicationDrawer,
+  FiscalSponsorshipActivityAction,
   FiscalSponsorshipMark,
   FiscalSponsorshipMarkdownDocument,
   FiscalSponsorshipPanel,
@@ -20,6 +21,14 @@ export {
   FiscalSponsorshipWorkflowDrawer,
   FiscalSponsorshipWorkspaceCardSummary,
 } from "./components"
+export {
+  analyzeFiscalSponsorshipActivityEligibility,
+  type FiscalSponsorshipActivityEligibility,
+  type FiscalSponsorshipActivityEligibilityActivity,
+  type FiscalSponsorshipActivityEligibilityOrganization,
+  type FiscalSponsorshipActivityEligibilityState,
+  type FiscalSponsorshipActivityEligibilityCriterion,
+} from "./lib/activity-eligibility"
 export {
   FISCAL_SPONSORSHIP_HANDBOOK_DOWNLOAD_HREF,
   FISCAL_SPONSORSHIP_HANDBOOK_HREF,

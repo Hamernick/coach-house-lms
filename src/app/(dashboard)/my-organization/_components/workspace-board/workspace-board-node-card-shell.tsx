@@ -101,7 +101,7 @@ export function WorkspaceBoardNodeCardShell({
       <CardContent
         className={cn(
           contentSurface === "plain" ? "px-3" : "px-0",
-          contentSurface === "plain" || footer ? "pb-0" : "pb-3"
+          contentSurface === "plain" || !footer ? "pb-3" : "pb-0"
         )}
       >
         <div

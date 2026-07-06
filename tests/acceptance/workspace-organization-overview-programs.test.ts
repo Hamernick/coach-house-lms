@@ -101,7 +101,7 @@ describe("workspace organization overview programs", () => {
     expect(isWorkspaceProgramsPreviewOnlyStep(null)).toBe(false)
   })
 
-  it("uses Activity copy for empty primary-object surfaces", () => {
+  it("uses Activity copy and keeps owner activity cards editable", () => {
     const workspaceProgramsCard = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-programs-card.tsx"
     )
@@ -117,17 +117,23 @@ describe("workspace organization overview programs", () => {
     const dashboardCard = readSource(
       "src/components/organization/program-builder-dashboard-card.tsx"
     )
-    const programsTab = readSource(
-      "src/components/organization/org-profile-card/tabs/programs-tab.tsx"
+    const myOrganizationPage = readSource(
+      "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx"
+    )
+    const programActions = readSource("src/actions/programs.ts")
+    const programMediaRoute = readSource(
+      "src/app/api/account/program-media/route.ts"
     )
 
     expect(workspaceProgramsCard).toContain('title="No activity to display"')
+    expect(workspaceProgramsCard).toContain('"Untitled activity"')
     expect(workspaceProgramsCard).toContain("Open activity")
     expect(workspaceProgramsCard).toContain(
       'className="bg-background min-h-[148px] rounded-xl px-4 py-6 shadow-none"'
     )
+    expect(workspaceProgramsCard).not.toContain('<div className="pb-3">')
     expect(workspaceProgramsCard).not.toContain(
-      'className="bg-background mb-3 min-h-[148px] rounded-xl px-4 py-6"'
+      "bg-background mb-3 min-h-[148px]"
     )
     expect(workspaceProgramsCard).toContain(
       'className="flex min-h-0 flex-col gap-3 pb-0"'
@@ -175,15 +181,27 @@ describe("workspace organization overview programs", () => {
       "onCarouselApiChange={setCarouselApi}"
     )
     expect(workspaceProgramsRenderer).toContain(
+      "headerAction={renderProgramsHeaderAction({"
+    )
+    expect(workspaceProgramsRenderer).toContain(
       "footer={renderProgramsFooterAction({"
     )
     expect(workspaceProgramsRenderer).toContain(
+      'shellInsetClassName="px-3 pt-3 pb-3"'
+    )
+    expect(workspaceProgramsRenderer).not.toContain(
       'shellInsetClassName="px-3 pt-3 pb-0"'
     )
     expect(workspaceProgramsRenderer).toContain(
-      'footerClassName="px-3 pt-2 pb-3"'
+      'footerClassName="justify-center px-3 pt-2 pb-3"'
     )
-    expect(workspaceProgramsRenderer).toContain('className="ml-auto"')
+    expect(workspaceProgramsRenderer).toContain(
+      'className="h-8 rounded-md px-3"'
+    )
+    expect(workspaceProgramsRenderer).not.toContain('className="ml-auto"')
+    expect(workspaceProgramsRenderer).toContain(
+      "onProgramsCreateOpenChange(true)"
+    )
     expect(shellSource).toContain("gap-3 px-3 py-3")
     expect(shellSource).not.toContain("gap-3 px-4 pt-4 pb-1")
     expect(workspaceProgramsCard).not.toContain("<CarouselPrevious")
@@ -207,14 +225,29 @@ describe("workspace organization overview programs", () => {
       'cardId === "organization-overview" ||\n    cardId === "programs" ||'
     )
     expect(dashboardCard).toContain('title="No activity to display"')
+    expect(dashboardCard).toContain("Add activity")
+    expect(dashboardCard).toContain("Start activity builder")
+    expect(dashboardCard).toContain("Supported activity types")
+    expect(dashboardCard).toContain("Untitled activity")
     expect(dashboardCard).toContain("Open full view")
     expect(dashboardCard).not.toContain("ArrowUpRightIcon")
-    expect(programsTab).toContain('title="No activity yet"')
-    expect(programsTab).toContain('title="No activity to display"')
+    expect(myOrganizationPage).toContain(
+      "const canEdit = isAdmin || canEditOrganization(role)"
+    )
+    expect(programActions).toContain("resolveProfileAudience")
+    expect(programActions).toContain(
+      "const canEdit = profileAudience.isAdmin || canEditOrganization(role)"
+    )
+    expect(programMediaRoute).toContain("resolveProfileAudience")
+    expect(programMediaRoute).toContain(
+      "if (!profileAudience.isAdmin && !canEditOrganization(role))"
+    )
     expect(workspaceProgramsCard).not.toContain(
       'title="No primary objects to display"'
     )
     expect(dashboardCard).not.toContain('title="No primary objects to display"')
-    expect(programsTab).not.toContain('title="No primary objects yet"')
+    expect(dashboardCard).not.toContain("New object")
+    expect(dashboardCard).not.toContain("Start object builder")
+    expect(dashboardCard).not.toContain("Supported primary object types")
   })
 })

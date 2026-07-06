@@ -1,4 +1,5 @@
 export { FiscalSponsorshipPanel } from "./fiscal-sponsorship-panel"
+export { FiscalSponsorshipActivityAction } from "./fiscal-sponsorship-activity-action"
 export { FiscalSponsorshipMark } from "./fiscal-sponsorship-mark"
 export { FiscalSponsorshipMarkdownDocument } from "./fiscal-sponsorship-markdown-document"
 export { FiscalSponsorshipApplicationDrawer } from "./fiscal-sponsorship-application-drawer"

@@ -2,19 +2,29 @@
 
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { SidebarContent, SidebarGroupLabel } from "@/components/ui/sidebar"
+import { SidebarContent } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
+import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 
+import type {
+  PublicMapGroupFilterCounts,
+  PublicMapGroupFilterKey,
+} from "./category-filter"
+import { PublicMapDirectoryStatusHeader } from "./directory-status-pill"
 import { PublicMapOrganizationDetail } from "./organization-detail"
 import { PublicMapOrganizationList } from "./organization-list"
+import { PublicMapResourceDetail } from "./resource-detail"
+import type { PublicMapOrganizationCurationAction } from "./organization-detail-admin-actions"
+import type { PublicMapResourceCurationAction } from "./resource-detail-admin-actions"
 import { PublicMapSearchCard } from "./search-card"
 import { PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME } from "./sidebar-theme"
+import type { PublicMapListItem } from "./map-items-state"
 
 export type PublicMapSidebarSearchContext = {
   title: string
   description?: string | null
-  organizations: PublicMapOrganization[]
+  items: PublicMapListItem[]
   onClear: () => void
 }
 
@@ -24,12 +34,20 @@ function PublicMapSearchContextCard({
   context: PublicMapSidebarSearchContext
 }) {
   return (
-    <div className={cn("w-full max-w-full px-3 py-3", PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME)}>
+    <div
+      data-public-map-sidebar-section="search-context-card"
+      className={cn(
+        "w-full max-w-full px-3 py-3",
+        PUBLIC_MAP_SIDEBAR_CARD_CLASSNAME
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <p className="text-sm font-semibold text-foreground">{context.title}</p>
+          <p className="text-foreground text-sm font-semibold">
+            {context.title}
+          </p>
           {context.description ? (
-            <p className="text-xs leading-relaxed text-muted-foreground">
+            <p className="text-muted-foreground text-xs leading-relaxed">
               {context.description}
             </p>
           ) : null}
@@ -49,44 +67,46 @@ function PublicMapSearchContextCard({
 }
 
 type PublicMapOrganizationsStackProps = {
-  organizations: PublicMapOrganization[]
-  selectedOrgId: string | null
   favorites: string[]
+  items: PublicMapListItem[]
+  organizations: PublicMapOrganization[]
+  selectedItemId: string | null
+  selectedOrgId?: string | null
   query: string
-  searchContext?: PublicMapSidebarSearchContext | null
   constrainedLayout?: boolean
   className?: string
-  onToggleFavorite: (orgId: string) => void
+  onSelectItem: (itemId: string) => void
   onOpenDetails: (orgId: string) => void
 }
 
 function PublicMapOrganizationsStack({
-  organizations,
-  selectedOrgId,
   favorites,
+  items,
+  organizations,
+  selectedItemId,
+  selectedOrgId = null,
   query,
-  searchContext = null,
   constrainedLayout = false,
   className,
-  onToggleFavorite,
+  onSelectItem,
   onOpenDetails,
 }: PublicMapOrganizationsStackProps) {
   return (
     <div
       data-public-map-sidebar-section="organization-stack"
-      className={cn("flex w-full min-w-0 max-w-full flex-col gap-3", className)}
+      className={cn("flex w-full max-w-full min-w-0 flex-col gap-3", className)}
     >
-      {searchContext ? (
-        <PublicMapSearchContextCard context={searchContext} />
-      ) : null}
       <PublicMapOrganizationList
-        organizations={organizations}
-        selectedOrgId={selectedOrgId}
         favorites={favorites}
+        items={items}
+        organizations={organizations}
+        selectedItemId={selectedItemId}
+        selectedOrgId={selectedOrgId}
         query={query}
         constrainedLayout={constrainedLayout}
+        incrementalLoading
+        onSelectItem={onSelectItem}
         onSelectOrg={() => undefined}
-        onToggleFavorite={onToggleFavorite}
         onOpenDetails={onOpenDetails}
       />
     </div>
@@ -96,26 +116,36 @@ function PublicMapOrganizationsStack({
 type PublicMapRailSearchPanelProps = {
   query: string
   searchContext?: PublicMapSidebarSearchContext | null
-  organizations: PublicMapOrganization[]
-  selectedOrgId: string | null
   favorites: string[]
+  items: PublicMapListItem[]
+  organizations: PublicMapOrganization[]
+  selectedItemId: string | null
+  selectedOrgId?: string | null
   constrainedLayout: boolean
+  activeGroup: PublicMapGroupFilterKey
+  groupCounts: PublicMapGroupFilterCounts
   onQueryChange: (value: string) => void
+  onActiveGroupChange: (group: PublicMapGroupFilterKey) => void
   onHidePanel: () => void
-  onToggleFavorite: (orgId: string) => void
+  onSelectItem: (itemId: string) => void
   onOpenDetails: (orgId: string) => void
 }
 
 export function PublicMapRailSearchPanel({
   query,
   searchContext = null,
-  organizations,
-  selectedOrgId,
   favorites,
+  items,
+  organizations,
+  selectedItemId,
+  selectedOrgId = null,
   constrainedLayout,
+  activeGroup,
+  groupCounts,
   onQueryChange,
+  onActiveGroupChange,
   onHidePanel,
-  onToggleFavorite,
+  onSelectItem,
   onOpenDetails,
 }: PublicMapRailSearchPanelProps) {
   return (
@@ -128,29 +158,41 @@ export function PublicMapRailSearchPanel({
           query={query}
           onQueryChange={onQueryChange}
           onHidePanel={onHidePanel}
+          activeGroup={activeGroup}
+          groupCounts={groupCounts}
+          onActiveGroupChange={onActiveGroupChange}
         />
       </div>
       <section
         data-public-map-sidebar-section="rail-organizations-shell"
-        className="flex min-h-0 flex-1 flex-col gap-0 px-3 py-1.5"
+        className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden px-3 py-1.5"
       >
-        <SidebarGroupLabel className="pb-1.5 text-[0.68rem]">
-          Organizations
-        </SidebarGroupLabel>
+        <div
+          data-public-map-sidebar-section="rail-status-header"
+          className="shrink-0 pb-1.5"
+        >
+          <PublicMapDirectoryStatusHeader count={items.length} />
+        </div>
+        {searchContext ? (
+          <div className="shrink-0 pb-2">
+            <PublicMapSearchContextCard context={searchContext} />
+          </div>
+        ) : null}
         <ScrollArea
           data-public-map-sidebar-section="rail-organizations-scroll"
-          className="min-h-0 flex-1 pr-2.5"
-          viewportClassName="[&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
-          contentClassName="px-1 pb-4"
+          className="h-full min-h-0 flex-1 overflow-hidden pr-2.5"
+          viewportClassName="scroll-fade-effect-y [--mask-height:1.5rem] [--scroll-buffer:1rem] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
+          contentClassName="px-1 pt-1 pb-4"
         >
           <PublicMapOrganizationsStack
-            organizations={organizations}
-            selectedOrgId={selectedOrgId}
             favorites={favorites}
+            items={items}
+            organizations={organizations}
+            selectedItemId={selectedItemId}
+            selectedOrgId={selectedOrgId}
             query={query}
-            searchContext={searchContext}
             constrainedLayout={constrainedLayout}
-            onToggleFavorite={onToggleFavorite}
+            onSelectItem={onSelectItem}
             onOpenDetails={onOpenDetails}
           />
         </ScrollArea>
@@ -160,25 +202,67 @@ export function PublicMapRailSearchPanel({
 }
 
 type PublicMapRailDetailPanelProps = {
+  canManageResourceMap?: boolean
+  organizationCurationAction?: PublicMapOrganizationCurationAction
   organization: PublicMapOrganization
+  favorites: string[]
   onBack: () => void
+  onToggleFavorite: (orgId: string) => void
 }
 
 export function PublicMapRailDetailPanel({
+  canManageResourceMap = false,
+  organizationCurationAction,
   organization,
+  favorites,
   onBack,
+  onToggleFavorite,
 }: PublicMapRailDetailPanelProps) {
   return (
     <SidebarContent className="h-full min-h-0 overflow-hidden bg-transparent pt-0 pb-0">
       <ScrollArea
         data-public-map-sidebar-section="rail-detail-scroll"
-        className="min-h-0 flex-1 px-1 pr-3.5"
-        viewportClassName="[&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
+        className="h-full min-h-0 flex-1 overflow-hidden px-1 pr-3.5"
+        viewportClassName="scroll-fade-effect-y [--mask-height:1.5rem] [--scroll-buffer:1rem] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
         contentClassName="pb-3 pr-1"
       >
         <PublicMapOrganizationDetail
+          canManageResourceMap={canManageResourceMap}
+          organizationCurationAction={organizationCurationAction}
           organization={organization}
+          favorites={favorites}
           onBack={onBack}
+          onToggleFavorite={onToggleFavorite}
+        />
+      </ScrollArea>
+    </SidebarContent>
+  )
+}
+
+export function PublicMapResourceRailDetailPanel({
+  canManageResourceMap = false,
+  item,
+  onBack,
+  resourceMapCurationAction,
+}: {
+  canManageResourceMap?: boolean
+  item: ExternalResourceMapItem
+  onBack: () => void
+  resourceMapCurationAction?: PublicMapResourceCurationAction
+}) {
+  return (
+    <SidebarContent className="h-full min-h-0 overflow-hidden bg-transparent pt-0 pb-0">
+      <ScrollArea
+        data-public-map-sidebar-section="rail-detail-scroll"
+        className="h-full min-h-0 flex-1 overflow-hidden px-1 pr-3.5"
+        viewportClassName="scroll-fade-effect-y [--mask-height:1.5rem] [--scroll-buffer:1rem] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
+        contentClassName="pb-3 pr-1"
+      >
+        <PublicMapResourceDetail
+          canManageResourceMap={canManageResourceMap}
+          item={item}
+          onBack={onBack}
+          resourceMapCurationAction={resourceMapCurationAction}
         />
       </ScrollArea>
     </SidebarContent>
@@ -188,24 +272,33 @@ export function PublicMapRailDetailPanel({
 type PublicMapDrawerSearchPanelProps = {
   query: string
   searchContext?: PublicMapSidebarSearchContext | null
-  organizations: PublicMapOrganization[]
-  selectedOrgId: string | null
   favorites: string[]
+  items: PublicMapListItem[]
+  organizations: PublicMapOrganization[]
+  selectedItemId: string | null
+  selectedOrgId?: string | null
   drawerBodyScrollable: boolean
+  activeGroup: PublicMapGroupFilterKey
+  groupCounts: PublicMapGroupFilterCounts
   onQueryChange: (value: string) => void
-  onToggleFavorite: (orgId: string) => void
+  onActiveGroupChange: (group: PublicMapGroupFilterKey) => void
+  onSelectItem: (itemId: string) => void
   onOpenDetails: (orgId: string) => void
 }
 
 export function PublicMapDrawerSearchPanel({
   query,
   searchContext = null,
-  organizations,
-  selectedOrgId,
   favorites,
-  drawerBodyScrollable,
+  items,
+  organizations,
+  selectedItemId,
+  selectedOrgId = null,
+  activeGroup,
+  groupCounts,
   onQueryChange,
-  onToggleFavorite,
+  onActiveGroupChange,
+  onSelectItem,
   onOpenDetails,
 }: PublicMapDrawerSearchPanelProps) {
   return (
@@ -214,59 +307,109 @@ export function PublicMapDrawerSearchPanel({
         <PublicMapSearchCard
           query={query}
           onQueryChange={onQueryChange}
+          activeGroup={activeGroup}
+          groupCounts={groupCounts}
+          onActiveGroupChange={onActiveGroupChange}
           compact
         />
       </div>
-      <div
-        className={cn(
-          "min-h-0 flex-1 px-2 pb-[max(env(safe-area-inset-bottom),0.75rem)]",
-          drawerBodyScrollable
-            ? "overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
-            : "overflow-hidden",
-        )}
-      >
-        <PublicMapOrganizationsStack
-          organizations={organizations}
-          selectedOrgId={selectedOrgId}
-          favorites={favorites}
-          query={query}
-          searchContext={searchContext}
-          className="pb-1 pt-2"
-          onToggleFavorite={onToggleFavorite}
-          onOpenDetails={onOpenDetails}
-        />
+      <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden px-2")}>
+        {searchContext ? (
+          <div className="shrink-0 pt-2 pb-2">
+            <PublicMapSearchContextCard context={searchContext} />
+          </div>
+        ) : null}
+        <div
+          data-public-map-sidebar-section="drawer-organizations-scroll"
+          className={cn(
+            "scroll-fade-effect-y min-h-0 flex-1 overflow-y-auto overscroll-contain pr-1 pb-[max(env(safe-area-inset-bottom),0.75rem)] [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch]"
+          )}
+        >
+          <PublicMapOrganizationsStack
+            favorites={favorites}
+            items={items}
+            organizations={organizations}
+            selectedItemId={selectedItemId}
+            selectedOrgId={selectedOrgId}
+            query={query}
+            className="pt-2 pb-1"
+            onSelectItem={onSelectItem}
+            onOpenDetails={onOpenDetails}
+          />
+        </div>
       </div>
     </div>
   )
 }
 
 type PublicMapDrawerDetailPanelProps = {
+  canManageResourceMap?: boolean
+  organizationCurationAction?: PublicMapOrganizationCurationAction
   organization: PublicMapOrganization
+  favorites: string[]
   drawerBodyScrollable: boolean
   onBack: () => void
+  onToggleFavorite: (orgId: string) => void
 }
 
 export function PublicMapDrawerDetailPanel({
+  canManageResourceMap = false,
+  organizationCurationAction,
   organization,
-  drawerBodyScrollable,
+  favorites,
   onBack,
+  onToggleFavorite,
 }: PublicMapDrawerDetailPanelProps) {
   return (
-    <div
-      className={cn(
-        "min-h-0 flex-1 px-1 pb-[max(env(safe-area-inset-bottom),0.75rem)]",
-        drawerBodyScrollable
-          ? "overflow-y-auto overscroll-contain [-webkit-overflow-scrolling:touch]"
-          : "overflow-hidden",
-      )}
+    <ScrollArea
+      data-public-map-sidebar-section="drawer-detail-scroll"
+      className="h-full min-h-0 flex-1 overflow-hidden px-1"
+      viewportClassName="scroll-fade-effect-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
+      contentClassName="pb-[max(env(safe-area-inset-bottom),0.75rem)]"
     >
       <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200">
         <PublicMapOrganizationDetail
+          canManageResourceMap={canManageResourceMap}
+          organizationCurationAction={organizationCurationAction}
           organization={organization}
+          favorites={favorites}
           onBack={onBack}
+          onToggleFavorite={onToggleFavorite}
           compact
         />
       </div>
-    </div>
+    </ScrollArea>
+  )
+}
+
+export function PublicMapResourceDrawerDetailPanel({
+  canManageResourceMap = false,
+  item,
+  onBack,
+  resourceMapCurationAction,
+}: {
+  canManageResourceMap?: boolean
+  item: ExternalResourceMapItem
+  drawerBodyScrollable: boolean
+  onBack: () => void
+  resourceMapCurationAction?: PublicMapResourceCurationAction
+}) {
+  return (
+    <ScrollArea
+      data-public-map-sidebar-section="drawer-detail-scroll"
+      className="h-full min-h-0 flex-1 overflow-hidden px-1"
+      viewportClassName="scroll-fade-effect-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
+      contentClassName="pb-[max(env(safe-area-inset-bottom),0.75rem)]"
+    >
+      <div className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-200">
+        <PublicMapResourceDetail
+          canManageResourceMap={canManageResourceMap}
+          item={item}
+          onBack={onBack}
+          resourceMapCurationAction={resourceMapCurationAction}
+          compact
+        />
+      </div>
+    </ScrollArea>
   )
 }

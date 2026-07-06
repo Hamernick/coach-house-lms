@@ -4,12 +4,9 @@ import { useEffect, useRef, type RefObject } from "react"
 import type mapboxgl from "mapbox-gl"
 
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
-import { MAP_STYLE } from "./constants"
+import { MAP_STYLE, applyPublicMapSpaceFog } from "./constants"
 import { organizationHasMapLocation, type PublicMapBounds } from "./helpers"
-import {
-  observePublicMapContainer,
-  resolveMapBounds,
-} from "./layout-sync"
+import { observePublicMapContainer, resolveMapBounds } from "./layout-sync"
 import {
   FALLBACK_CENTER,
   FALLBACK_ZOOM,
@@ -18,13 +15,21 @@ import {
   resolvePublicMapCameraPadding,
 } from "./map-view-helpers"
 import {
-  MAPBOX_LOAD_ERROR_MESSAGE,
   isRecoverablePublicMapTileError,
+  resolvePublicMapRuntimeErrorMessage,
 } from "./public-map-runtime-errors"
 import type { UserLocationStatus } from "./user-location"
 
-export type PublicMapMapboxApi = typeof import("mapbox-gl")["default"]
+export type PublicMapMapboxApi = (typeof import("mapbox-gl"))["default"]
 export { isRecoverablePublicMapTileError } from "./public-map-runtime-errors"
+
+function applyPublicMapGlobePresentation(map: mapboxgl.Map) {
+  map.setProjection("globe")
+  applyPublicMapSpaceFog(map)
+  if (typeof map.setRenderWorldCopies === "function") {
+    map.setRenderWorldCopies(false)
+  }
+}
 
 export function useSyncSelectedOrganization({
   organizationById,
@@ -44,11 +49,7 @@ export function useSyncSelectedOrganization({
     if (syncedSelectedOrgId !== selectedOrgId) {
       setSelectedOrgId(null)
     }
-  }, [
-    organizationById,
-    selectedOrgId,
-    setSelectedOrgId,
-  ])
+  }, [organizationById, selectedOrgId, setSelectedOrgId])
 }
 
 export function resolvePublicMapSelectedOrganization({
@@ -58,7 +59,7 @@ export function resolvePublicMapSelectedOrganization({
   organizationById: Map<string, PublicMapOrganization>
   selectedOrgId: string | null
 }) {
-  return selectedOrgId ? organizationById.get(selectedOrgId) ?? null : null
+  return selectedOrgId ? (organizationById.get(selectedOrgId) ?? null) : null
 }
 
 export function resolveSyncedPublicMapSelectedOrgId({
@@ -132,6 +133,7 @@ export function useResolveInitialPublicMapViewport({
   mapLoadedRef,
   hasResolvedInitialViewportRef,
   initialOrganization,
+  preferNationalFallback = false,
   setUserLocationStatus,
   setInitialViewportResolved,
 }: {
@@ -139,17 +141,40 @@ export function useResolveInitialPublicMapViewport({
   mapLoadedRef: RefObject<boolean>
   hasResolvedInitialViewportRef: RefObject<boolean>
   initialOrganization: PublicMapOrganization | null
+  preferNationalFallback?: boolean
   setUserLocationStatus: (status: UserLocationStatus) => void
   setInitialViewportResolved: (resolved: boolean) => void
 }) {
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !mapLoadedRef.current || hasResolvedInitialViewportRef.current) {
+    if (
+      !map ||
+      !mapLoadedRef.current ||
+      hasResolvedInitialViewportRef.current
+    ) {
       return
     }
 
-    if (initialOrganization && organizationHasMapLocation(initialOrganization)) {
+    if (
+      initialOrganization &&
+      organizationHasMapLocation(initialOrganization)
+    ) {
       focusOrganizationOnMap({ map, organization: initialOrganization })
+      markInitialViewportResolved({
+        status: "idle",
+        hasResolvedInitialViewportRef,
+        setUserLocationStatus,
+        setInitialViewportResolved,
+      })
+      return
+    }
+
+    if (preferNationalFallback) {
+      map.easeTo({
+        center: FALLBACK_CENTER,
+        zoom: FALLBACK_ZOOM,
+        duration: 0,
+      })
       markInitialViewportResolved({
         status: "idle",
         hasResolvedInitialViewportRef,
@@ -203,13 +228,14 @@ export function useResolveInitialPublicMapViewport({
         enableHighAccuracy: false,
         timeout: 7000,
         maximumAge: 60_000,
-      },
+      }
     )
   }, [
     hasResolvedInitialViewportRef,
     initialOrganization,
     mapLoadedRef,
     mapRef,
+    preferNationalFallback,
     setInitialViewportResolved,
     setUserLocationStatus,
   ])
@@ -253,7 +279,8 @@ export function useInitializePublicMap({
     async function initializeMap() {
       try {
         const mapboxModule = await import("mapbox-gl")
-        const mapboxgl = (mapboxModule.default ?? mapboxModule) as PublicMapMapboxApi
+        const mapboxgl = (mapboxModule.default ??
+          mapboxModule) as PublicMapMapboxApi
         if (!mapboxgl?.Map) {
           throw new Error("Mapbox failed to initialize.")
         }
@@ -301,21 +328,20 @@ export function useInitializePublicMap({
 
         map.on("error", (event) => {
           if (!event?.error) return
-          if (isRecoverablePublicMapTileError(event.error)) return
+          const errorMessage = resolvePublicMapRuntimeErrorMessage(event.error)
+          if (!errorMessage) return
 
           console.error("Public map error:", event.error)
-          setMapError(MAPBOX_LOAD_ERROR_MESSAGE)
+          setMapError(errorMessage)
         })
 
         map.on("style.load", () => {
-          map.setProjection("globe")
-          if (typeof map.setRenderWorldCopies === "function") {
-            map.setRenderWorldCopies(false)
-          }
+          applyPublicMapGlobePresentation(map)
           markMapReady()
         })
 
         map.on("load", () => {
+          applyPublicMapGlobePresentation(map)
           markMapReady()
         })
 
@@ -334,7 +360,9 @@ export function useInitializePublicMap({
         })
       } catch (error) {
         console.error("Public map init error:", error)
-        setMapError("Mapbox couldn't start. Check your token and domain restrictions.")
+        setMapError(
+          "Mapbox couldn't start. Check your token and domain restrictions."
+        )
       }
     }
 

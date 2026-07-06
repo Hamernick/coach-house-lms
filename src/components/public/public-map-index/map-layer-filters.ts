@@ -6,6 +6,48 @@ export function resolveVisiblePointFilter() {
   return ["!", ["has", "point_count"]] as mapboxgl.FilterSpecification
 }
 
+function resolveSelectedPointPredicate({
+  activeSameLocationGroupKey,
+  selectedOrganizationId,
+}: {
+  selectedOrganizationId: string | null
+  activeSameLocationGroupKey?: string | null
+}) {
+  const selectedId = selectedOrganizationId ?? PUBLIC_MAP_NO_SELECTION_FILTER_ID
+  const selectedGroupKey =
+    activeSameLocationGroupKey ?? PUBLIC_MAP_NO_SELECTION_FILTER_ID
+
+  return [
+    "any",
+    ["==", ["get", "organizationId"], selectedId],
+    ["==", ["get", "sameLocationKey"], selectedGroupKey],
+  ] as const
+}
+
+export function resolveUnselectedPointFilter({
+  activeSameLocationGroupKey,
+  selectedOrganizationId,
+}: {
+  selectedOrganizationId: string | null
+  activeSameLocationGroupKey?: string | null
+}) {
+  if (!selectedOrganizationId && !activeSameLocationGroupKey) {
+    return resolveVisiblePointFilter()
+  }
+
+  return [
+    "all",
+    ["!", ["has", "point_count"]],
+    [
+      "!",
+      resolveSelectedPointPredicate({
+        activeSameLocationGroupKey,
+        selectedOrganizationId,
+      }),
+    ],
+  ] as mapboxgl.FilterSpecification
+}
+
 export function resolveSameLocationBadgeFilter() {
   return [
     "all",
@@ -21,23 +63,18 @@ export function resolveSelectedPointFilter({
   selectedOrganizationId: string | null
   activeSameLocationGroupKey?: string | null
 }) {
-  const selectedId = selectedOrganizationId ?? PUBLIC_MAP_NO_SELECTION_FILTER_ID
-  const selectedGroupKey =
-    activeSameLocationGroupKey ?? PUBLIC_MAP_NO_SELECTION_FILTER_ID
-
   return [
     "all",
     ["!", ["has", "point_count"]],
-    [
-      "any",
-      ["==", ["get", "organizationId"], selectedId],
-      ["==", ["get", "sameLocationKey"], selectedGroupKey],
-    ],
+    resolveSelectedPointPredicate({
+      activeSameLocationGroupKey,
+      selectedOrganizationId,
+    }),
   ] as mapboxgl.FilterSpecification
 }
 
 export function resolveSelectedSameLocationBadgeFilter(
-  selectedFilter: mapboxgl.FilterSpecification,
+  selectedFilter: mapboxgl.FilterSpecification
 ) {
   return [
     "all",

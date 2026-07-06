@@ -1,11 +1,18 @@
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { env } from "@/lib/env"
 import { unstable_cache } from "next/cache"
-import {
-  isFormationStatus,
-} from "@/lib/organization/formation-status"
+import { isFormationStatus } from "@/lib/organization/formation-status"
 import type { FormationStatus } from "@/lib/organization/org-profile-brand-types"
 import type { BrandTypographyConfig } from "@/lib/organization/org-profile-brand-types"
+import {
+  resolveOrganizationActivityKind,
+  type OrganizationActivityKind,
+} from "@/lib/organization/primary-objects"
+import {
+  resolveProgramBannerImageUrl,
+  resolveProgramCardChips,
+  resolveProgramSummary,
+} from "@/lib/programs/display"
 import {
   inferPublicMapGroups,
   type PublicMapGroupKey,
@@ -15,9 +22,32 @@ export type PublicMapProgramPreview = {
   id: string
   title: string
   subtitle: string | null
+  description: string | null
+  activityKind: OrganizationActivityKind
+  chips: string[]
+  ctaLabel: string | null
+  ctaUrl: string | null
+  durationLabel: string | null
   imageUrl: string | null
+  locationUrl: string | null
   locationType: "in_person" | "online" | null
+  startDate: string | null
 }
+
+export type PublicMapActivityLinkSource = Pick<
+  PublicMapProgramPreview,
+  | "activityKind"
+  | "chips"
+  | "ctaLabel"
+  | "ctaUrl"
+  | "description"
+  | "durationLabel"
+  | "id"
+  | "locationType"
+  | "locationUrl"
+  | "subtitle"
+  | "title"
+>
 
 export type PublicMapOrganization = {
   id: string
@@ -60,6 +90,7 @@ export type PublicMapOrganization = {
   country: string | null
   locationUrl: string | null
   publicSlug: string | null
+  activityLinks: PublicMapActivityLinkSource[]
   programPreview: PublicMapProgramPreview | null
   programs: PublicMapProgramPreview[]
   programCount: number
@@ -68,7 +99,10 @@ export type PublicMapOrganization = {
   isOnlineOnly: boolean
 }
 
-function readProfileString(profile: Record<string, unknown>, ...keys: string[]) {
+function readProfileString(
+  profile: Record<string, unknown>,
+  ...keys: string[]
+) {
   for (const key of keys) {
     const value = profile[key]
     if (typeof value !== "string") continue
@@ -89,7 +123,68 @@ function readProfileFormationStatus(profile: Record<string, unknown>) {
   return isFormationStatus(value) ? value : null
 }
 
-async function fetchPublicMapOrganizationsUncached(): Promise<PublicMapOrganization[]> {
+type PublicMapProgramRow = {
+  id: string
+  user_id: string
+  title: string | null
+  subtitle: string | null
+  description: string | null
+  created_at: string | null
+  image_url: string | null
+  location_type: "in_person" | "online" | null
+  location_url: string | null
+  duration_label: string | null
+  features: string[] | null
+  cta_label: string | null
+  cta_url: string | null
+  start_date: string | null
+  wizard_snapshot: Record<string, unknown> | null
+}
+
+function buildPublicMapProgramPreview(row: PublicMapProgramRow) {
+  const chips = resolveProgramCardChips(row)
+  const activityKind = resolveOrganizationActivityKind(chips[0])
+  const imageUrl =
+    resolveProgramBannerImageUrl(row) ?? row.image_url?.trim() ?? null
+
+  return {
+    id: row.id,
+    title: row.title?.trim() ?? "",
+    subtitle: row.subtitle?.trim() || null,
+    description: resolveProgramSummary(row) ?? null,
+    activityKind,
+    chips,
+    ctaLabel: row.cta_label?.trim() || null,
+    ctaUrl: row.cta_url?.trim() || null,
+    durationLabel: row.duration_label?.trim() || null,
+    imageUrl,
+    locationUrl: row.location_url?.trim() || null,
+    locationType: row.location_type,
+    startDate: row.start_date,
+  } satisfies PublicMapProgramPreview
+}
+
+function buildPublicMapActivityLinkSource(
+  preview: PublicMapProgramPreview
+): PublicMapActivityLinkSource {
+  return {
+    activityKind: preview.activityKind,
+    chips: preview.chips,
+    ctaLabel: preview.ctaLabel,
+    ctaUrl: preview.ctaUrl,
+    description: preview.description,
+    durationLabel: preview.durationLabel,
+    id: preview.id,
+    locationType: preview.locationType,
+    locationUrl: preview.locationUrl,
+    subtitle: preview.subtitle,
+    title: preview.title,
+  }
+}
+
+async function fetchPublicMapOrganizationsUncached(): Promise<
+  PublicMapOrganization[]
+> {
   const supabase = createSupabaseAdminClient()
   const { data: orgRows, error: orgError } = await supabase
     .from("organizations")
@@ -112,27 +207,26 @@ async function fetchPublicMapOrganizationsUncached(): Promise<PublicMapOrganizat
   const orgIds = orgRows.map((row) => row.user_id)
   const { data: programRows } = await supabase
     .from("programs")
-    .select("id, user_id, title, subtitle, created_at, image_url, location_type")
+    .select(
+      "id, user_id, title, subtitle, description, created_at, image_url, location_type, location_url, duration_label, features, cta_label, cta_url, start_date, wizard_snapshot"
+    )
     .in("user_id", orgIds)
     .eq("is_public", true)
     .order("created_at", { ascending: false })
-    .returns<
-      Array<{
-        id: string
-        user_id: string
-        title: string | null
-        subtitle: string | null
-        created_at: string | null
-        image_url: string | null
-        location_type: "in_person" | "online" | null
-      }>
-    >()
+    .returns<PublicMapProgramRow[]>()
 
   const topProgramsByOrgId = new Map<string, PublicMapProgramPreview[]>()
+  const activityLinksByOrgId = new Map<string, PublicMapActivityLinkSource[]>()
   const programCountByOrgId = new Map<string, number>()
-  const locationModeByOrgId = new Map<string, { online: number; inPerson: number }>()
+  const locationModeByOrgId = new Map<
+    string,
+    { online: number; inPerson: number }
+  >()
   for (const row of programRows ?? []) {
-    const mode = locationModeByOrgId.get(row.user_id) ?? { online: 0, inPerson: 0 }
+    const mode = locationModeByOrgId.get(row.user_id) ?? {
+      online: 0,
+      inPerson: 0,
+    }
     if (row.location_type === "online") {
       mode.online += 1
     } else {
@@ -142,18 +236,20 @@ async function fetchPublicMapOrganizationsUncached(): Promise<PublicMapOrganizat
 
     if (!row.title || !row.title.trim()) continue
 
-    programCountByOrgId.set(row.user_id, (programCountByOrgId.get(row.user_id) ?? 0) + 1)
+    programCountByOrgId.set(
+      row.user_id,
+      (programCountByOrgId.get(row.user_id) ?? 0) + 1
+    )
 
-    const preview = {
-      id: row.id,
-      title: row.title.trim(),
-      subtitle: row.subtitle?.trim() || null,
-      imageUrl: row.image_url?.trim() || null,
-      locationType: row.location_type,
-    } satisfies PublicMapProgramPreview
+    const preview = buildPublicMapProgramPreview(row)
+    const existingActivityLinks = activityLinksByOrgId.get(row.user_id) ?? []
+    activityLinksByOrgId.set(row.user_id, [
+      ...existingActivityLinks,
+      buildPublicMapActivityLinkSource(preview),
+    ])
 
     const existing = topProgramsByOrgId.get(row.user_id) ?? []
-    if (existing.length < 3) {
+    if (existing.length < 6) {
       topProgramsByOrgId.set(row.user_id, [...existing, preview])
     }
   }
@@ -162,17 +258,21 @@ async function fetchPublicMapOrganizationsUncached(): Promise<PublicMapOrganizat
     .map((row) => {
       const profile = (row.profile ?? {}) as Record<string, unknown>
       const programs = topProgramsByOrgId.get(row.user_id) ?? []
+      const activityLinks = activityLinksByOrgId.get(row.user_id) ?? []
       const groups = inferPublicMapGroups({
         profile,
         name: String(profile["name"] ?? "").trim() || "Organization",
-        tagline: typeof profile["tagline"] === "string" ? profile["tagline"].trim() || null : null,
+        tagline:
+          typeof profile["tagline"] === "string"
+            ? profile["tagline"].trim() || null
+            : null,
         description:
           typeof profile["description"] === "string"
             ? profile["description"].trim() || null
             : typeof profile["mission"] === "string"
               ? profile["mission"].trim() || null
               : null,
-        programs,
+        programs: activityLinks,
       })
 
       const profileLocationType =
@@ -196,52 +296,99 @@ async function fetchPublicMapOrganizationsUncached(): Promise<PublicMapOrganizat
         vision: readProfileString(profile, "vision"),
         mission: readProfileString(profile, "mission"),
         values: readProfileString(profile, "values"),
-        needStatement:
-          readProfileString(profile, "need", "needStatement", "need_statement"),
-        originStory:
-          readProfileString(profile, "origin_story", "originStory"),
-        theoryOfChange:
-          readProfileString(profile, "theory_of_change", "theoryOfChange"),
+        needStatement: readProfileString(
+          profile,
+          "need",
+          "needStatement",
+          "need_statement"
+        ),
+        originStory: readProfileString(profile, "origin_story", "originStory"),
+        theoryOfChange: readProfileString(
+          profile,
+          "theory_of_change",
+          "theoryOfChange"
+        ),
         formationStatus: readProfileFormationStatus(profile),
-        contactName:
-          readProfileString(profile, "rep", "contactName", "contact_name"),
+        contactName: readProfileString(
+          profile,
+          "rep",
+          "contactName",
+          "contact_name"
+        ),
         logoUrl: readProfileString(profile, "logoUrl", "logo_url"),
-        brandMarkUrl: readProfileString(profile, "brandMarkUrl", "brand_mark_url"),
+        brandMarkUrl: readProfileString(
+          profile,
+          "brandMarkUrl",
+          "brand_mark_url"
+        ),
         headerUrl: readProfileString(profile, "headerUrl", "header_url"),
-        website: readProfileString(profile, "publicUrl", "public_url", "website"),
+        website: readProfileString(
+          profile,
+          "publicUrl",
+          "public_url",
+          "website"
+        ),
         email: readProfileString(profile, "email"),
         phone: readProfileString(profile, "phone"),
         twitter: readProfileString(profile, "twitter"),
         facebook: readProfileString(profile, "facebook"),
         linkedin: readProfileString(profile, "linkedin"),
         instagram: readProfileString(profile, "instagram"),
-        brandPrimary: readProfileString(profile, "brandPrimary", "brand_primary"),
+        brandPrimary: readProfileString(
+          profile,
+          "brandPrimary",
+          "brand_primary"
+        ),
         brandColors: Array.isArray(profile["brandColors"])
           ? profile["brandColors"]
               .filter((entry): entry is string => typeof entry === "string")
               .map((entry) => entry.trim())
               .filter((entry) => entry.length > 0)
           : [],
-        brandThemePresetId: readProfileString(profile, "brandThemePresetId", "brand_theme_preset_id"),
-        brandAccentPresetId: readProfileString(profile, "brandAccentPresetId", "brand_accent_preset_id"),
-        brandTypographyPresetId: readProfileString(profile, "brandTypographyPresetId", "brand_typography_preset_id"),
+        brandThemePresetId: readProfileString(
+          profile,
+          "brandThemePresetId",
+          "brand_theme_preset_id"
+        ),
+        brandAccentPresetId: readProfileString(
+          profile,
+          "brandAccentPresetId",
+          "brand_accent_preset_id"
+        ),
+        brandTypographyPresetId: readProfileString(
+          profile,
+          "brandTypographyPresetId",
+          "brand_typography_preset_id"
+        ),
         brandTypography: readProfileTypography(profile),
         brandKitAvailable: Boolean(
           readProfileString(profile, "logoUrl", "logo_url") ||
-            readProfileString(profile, "brandMarkUrl", "brand_mark_url"),
+          readProfileString(profile, "brandMarkUrl", "brand_mark_url")
         ),
         latitude: row.location_lat,
         longitude: row.location_lng,
         address: readProfileString(profile, "address"),
-        addressStreet:
-          readProfileString(profile, "address_street", "addressStreet"),
-        addressPostal:
-          readProfileString(profile, "address_postal", "addressPostal"),
+        addressStreet: readProfileString(
+          profile,
+          "address_street",
+          "addressStreet"
+        ),
+        addressPostal: readProfileString(
+          profile,
+          "address_postal",
+          "addressPostal"
+        ),
         city: readProfileString(profile, "address_city", "addressCity"),
         state: readProfileString(profile, "address_state", "addressState"),
-        country: readProfileString(profile, "address_country", "addressCountry"),
+        country: readProfileString(
+          profile,
+          "address_country",
+          "addressCountry"
+        ),
         locationUrl: readProfileString(profile, "location_url", "locationUrl"),
-        publicSlug: typeof row.public_slug === "string" ? row.public_slug : null,
+        publicSlug:
+          typeof row.public_slug === "string" ? row.public_slug : null,
+        activityLinks,
         programPreview,
         programs,
         programCount: programCountByOrgId.get(row.user_id) ?? 0,
@@ -250,16 +397,21 @@ async function fetchPublicMapOrganizationsUncached(): Promise<PublicMapOrganizat
         isOnlineOnly,
       } satisfies PublicMapOrganization
     })
-    .sort((left, right) => left.name.localeCompare(right.name, undefined, { sensitivity: "base" }))
+    .sort((left, right) =>
+      left.name.localeCompare(right.name, undefined, { sensitivity: "base" })
+    )
 }
 
 const fetchPublicMapOrganizationsCached = unstable_cache(
-  async (): Promise<PublicMapOrganization[]> => fetchPublicMapOrganizationsUncached(),
-  ["public-map-organizations-v1"],
-  { revalidate: 300, tags: ["public-map-organizations"] },
+  async (): Promise<PublicMapOrganization[]> =>
+    fetchPublicMapOrganizationsUncached(),
+  ["public-map-organizations-v4"],
+  { revalidate: 300, tags: ["public-map-organizations"] }
 )
 
-export async function fetchPublicMapOrganizations(): Promise<PublicMapOrganization[]> {
+export async function fetchPublicMapOrganizations(): Promise<
+  PublicMapOrganization[]
+> {
   if (env.SUPABASE_SERVICE_ROLE_KEY) {
     return fetchPublicMapOrganizationsCached()
   }

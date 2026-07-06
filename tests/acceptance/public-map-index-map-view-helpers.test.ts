@@ -44,7 +44,7 @@ describe("resolvePublicMapSidebarWidth", () => {
       resolvePublicMapSidebarWidth({
         surfaceWidth: 1200,
         sidebarMode: "hidden",
-      }),
+      })
     ).toBe(0)
   })
 
@@ -53,7 +53,7 @@ describe("resolvePublicMapSidebarWidth", () => {
       resolvePublicMapSidebarWidth({
         surfaceWidth: 1600,
         sidebarMode: "search",
-      }),
+      })
     ).toBe(PUBLIC_MAP_SIDEBAR_MAX_WIDTH)
   })
 
@@ -62,7 +62,7 @@ describe("resolvePublicMapSidebarWidth", () => {
       resolvePublicMapSidebarWidth({
         surfaceWidth: 280,
         sidebarMode: "details",
-      }),
+      })
     ).toBe(PUBLIC_MAP_SIDEBAR_MIN_WIDTH)
   })
 
@@ -71,7 +71,7 @@ describe("resolvePublicMapSidebarWidth", () => {
       resolvePublicMapSidebarWidth({
         surfaceWidth: 240,
         sidebarMode: "details",
-      }),
+      })
     ).toBe(240 - PUBLIC_MAP_SIDEBAR_MIN_VISIBLE_MAP_WIDTH)
   })
 })
@@ -90,7 +90,7 @@ describe("resolvePublicMapPanelPresentation", () => {
       resolvePublicMapSidebarWidth({
         surfaceWidth: 720,
         sidebarMode: "search",
-      }),
+      })
     ).toBe(374)
   })
 })
@@ -103,7 +103,7 @@ describe("resolvePublicMapSurfacePanelState", () => {
         surfaceHeight: 720,
         sidebarMode: "search",
         portalContainerReady: false,
-      }),
+      })
     ).toEqual({
       panelPresentation: "drawer",
       panelReady: false,
@@ -118,7 +118,7 @@ describe("resolvePublicMapSurfacePanelState", () => {
         surfaceHeight: 720,
         sidebarMode: "search",
         portalContainerReady: false,
-      }),
+      })
     ).toEqual({
       panelPresentation: "rail",
       panelReady: true,
@@ -153,14 +153,15 @@ describe("buildMapHref", () => {
       buildMapHref({
         slug: "alpha-org",
         searchParams: new URLSearchParams("auth_action=save"),
-      }),
+      })
     ).toBe("/find/alpha-org?auth_action=save")
   })
-
 })
 
 describe("buildPublicMapOrganizationFeatureCollection", () => {
-  function buildOrganization(overrides: Partial<PublicMapOrganization> = {}): PublicMapOrganization {
+  function buildOrganization(
+    overrides: Partial<PublicMapOrganization> = {}
+  ): PublicMapOrganization {
     return {
       id: "org-1",
       name: "Alpha Org",
@@ -171,6 +172,8 @@ describe("buildPublicMapOrganizationFeatureCollection", () => {
       mission: null,
       values: null,
       needStatement: null,
+      originStory: null,
+      theoryOfChange: null,
       formationStatus: null,
       contactName: null,
       logoUrl: null,
@@ -200,6 +203,7 @@ describe("buildPublicMapOrganizationFeatureCollection", () => {
       country: "United States",
       locationUrl: null,
       publicSlug: "alpha-org",
+      activityLinks: [],
       programPreview: null,
       programs: [],
       programCount: 0,
@@ -212,13 +216,26 @@ describe("buildPublicMapOrganizationFeatureCollection", () => {
 
   it("emits only organizations with map coordinates", () => {
     const featureCollection = buildPublicMapOrganizationFeatureCollection([
-      buildOrganization({ id: "mapped-org", longitude: -87.62, latitude: 41.88 }),
-      buildOrganization({ id: "profile-only-org", latitude: null, longitude: null }),
+      buildOrganization({
+        id: "mapped-org",
+        longitude: -87.62,
+        latitude: 41.88,
+      }),
+      buildOrganization({
+        id: "profile-only-org",
+        latitude: null,
+        longitude: null,
+      }),
     ])
 
     expect(featureCollection.type).toBe("FeatureCollection")
     expect(featureCollection.features).toHaveLength(1)
-    expect(featureCollection.features[0]?.properties.organizationId).toBe("mapped-org")
-    expect(featureCollection.features[0]?.geometry.coordinates).toEqual([-87.62, 41.88])
+    const feature = featureCollection.features[0]
+    expect(feature).toBeDefined()
+    if (!feature || !("organizationId" in feature.properties)) {
+      throw new Error("Expected a point feature")
+    }
+    expect(feature.properties.organizationId).toBe("mapped-org")
+    expect(feature.geometry.coordinates).toEqual([-87.62, 41.88])
   })
 })

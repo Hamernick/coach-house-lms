@@ -50,10 +50,12 @@ type AuthenticatedFindShellState = {
 export function AuthenticatedFindShell({
   children,
   state,
+  defaultSidebarOpen = false,
   organizationDetail = false,
 }: {
   children: ReactNode
   state: AuthenticatedFindShellState
+  defaultSidebarOpen?: boolean
   organizationDetail?: boolean
 }) {
   const segments = organizationDetail
@@ -68,8 +70,12 @@ export function AuthenticatedFindShell({
         sidebarHeaderContent={
           state.memberWorkspaceHeader ? (
             <MemberWorkspaceOrgSwitcher
-              activeOrganization={state.memberWorkspaceHeader.activeOrganization}
-              organizations={state.memberWorkspaceHeader.accessibleOrganizations}
+              activeOrganization={
+                state.memberWorkspaceHeader.activeOrganization
+              }
+              organizations={
+                state.memberWorkspaceHeader.accessibleOrganizations
+              }
               setActiveOrganizationAction={setActiveOrganizationAction}
             />
           ) : null
@@ -93,6 +99,7 @@ export function AuthenticatedFindShell({
         onboardingLocked={state.onboardingLocked}
         onboardingIntentFocus={state.onboardingIntentFocus}
         formationStatus={state.formationStatus}
+        defaultSidebarOpen={defaultSidebarOpen}
         context="public"
         contentPresentation="full-bleed"
         brandHref="/find"

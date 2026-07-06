@@ -8,7 +8,7 @@ import {
   type PublicMapFeatureCollection,
 } from "@/lib/public-map/public-map-layer-api"
 
-type MapboxApi = typeof import("mapbox-gl")["default"]
+type MapboxApi = (typeof import("mapbox-gl"))["default"]
 
 export const FALLBACK_CENTER: [number, number] = [-96.5, 38.4]
 export const FALLBACK_ZOOM = 3.15
@@ -25,12 +25,18 @@ export const PUBLIC_MAP_CLUSTER_SHADOW_LAYER_ID =
   "public-map-organizations-cluster-badge-shadow"
 export const PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID =
   "public-map-organizations-cluster-badge"
+export const PUBLIC_MAP_CLUSTER_LABEL_LAYER_ID =
+  "public-map-organizations-cluster-label"
 export const PUBLIC_MAP_CLUSTER_SOURCE_COUNT_LAYER_ID =
   "public-map-organizations-cluster-count"
 export const PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID =
   "public-map-organizations-point-shadow"
 export const PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID =
   "public-map-organizations-point-image"
+export const PUBLIC_MAP_POINT_LABEL_LAYER_ID =
+  "public-map-organizations-point-label"
+export const PUBLIC_MAP_SELECTED_POINT_LABEL_LAYER_ID =
+  "public-map-organizations-selected-label"
 export const PUBLIC_MAP_SAME_LOCATION_COUNT_LAYER_ID =
   "public-map-organizations-same-location-count"
 export const PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID =
@@ -52,6 +58,26 @@ export type PublicMapPanelPresentation = "rail" | "drawer"
 
 export function normalizeSlug(value: string | null | undefined) {
   return typeof value === "string" ? value.trim().toLowerCase() : ""
+}
+
+export function resolveInitialPublicMapOrganization({
+  organizations,
+  publicSlug,
+}: {
+  organizations: PublicMapOrganization[]
+  publicSlug: string | null | undefined
+}) {
+  const targetSlug = normalizeSlug(publicSlug)
+  if (!targetSlug) return null
+  return (
+    organizations.find(
+      (organization) => normalizeSlug(organization.publicSlug) === targetSlug
+    ) ?? null
+  )
+}
+
+export function resolvePublicMapboxToken(value: string | undefined) {
+  return (value ?? process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? "").trim()
 }
 
 export function buildMapHref({
@@ -77,14 +103,18 @@ export function removeAuthParams(searchParams: URLSearchParams) {
 
 export { buildPublicMapOrganizationFeatureCollection }
 
-export function resolveMarkerOrganizations(organizations: PublicMapOrganization[]) {
+export function resolveMarkerOrganizations(
+  organizations: PublicMapOrganization[]
+) {
   return organizations.filter(
     (
-      organization,
+      organization
     ): organization is PublicMapOrganization & {
       latitude: number
       longitude: number
-    } => typeof organization.latitude === "number" && typeof organization.longitude === "number",
+    } =>
+      typeof organization.latitude === "number" &&
+      typeof organization.longitude === "number"
   )
 }
 
@@ -164,7 +194,7 @@ export function resolvePublicMapSidebarWidth({
   const preferredWidth = Math.round(surfaceWidth * preferredWidthRatio)
   const maxWidthForViewport = Math.max(
     0,
-    surfaceWidth - PUBLIC_MAP_SIDEBAR_MIN_VISIBLE_MAP_WIDTH,
+    surfaceWidth - PUBLIC_MAP_SIDEBAR_MIN_VISIBLE_MAP_WIDTH
   )
 
   return Math.max(
@@ -172,12 +202,14 @@ export function resolvePublicMapSidebarWidth({
     Math.min(
       PUBLIC_MAP_SIDEBAR_MAX_WIDTH,
       Math.max(PUBLIC_MAP_SIDEBAR_MIN_WIDTH, preferredWidth),
-      maxWidthForViewport,
-    ),
+      maxWidthForViewport
+    )
   )
 }
 
-export function resolvePublicMapPanelPresentation(surfaceWidth: number): PublicMapPanelPresentation {
+export function resolvePublicMapPanelPresentation(
+  surfaceWidth: number
+): PublicMapPanelPresentation {
   if (!Number.isFinite(surfaceWidth) || surfaceWidth <= 0) {
     return "rail"
   }

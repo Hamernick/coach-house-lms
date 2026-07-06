@@ -2,12 +2,17 @@ import * as Comlink from "comlink"
 import Supercluster from "supercluster"
 
 import type {
+  PublicMapClusterAggregateProperties,
   PublicMapClusterProperties,
   PublicMapFeatureCollection,
   PublicMapPointFeature,
   PublicMapPointProperties,
 } from "./public-map-geojson"
 import type { PublicMapClusterBbox } from "./public-map-bounds"
+import {
+  mapPublicMapClusterProperties,
+  reducePublicMapClusterProperties,
+} from "./public-map-cluster-aggregation"
 
 const CLUSTER_OPTIONS = {
   radius: 36,
@@ -16,8 +21,10 @@ const CLUSTER_OPTIONS = {
   minPoints: 2,
 } as const
 
-let clusterIndex: Supercluster<PublicMapPointProperties, PublicMapClusterProperties> | null =
-  null
+let clusterIndex: Supercluster<
+  PublicMapPointProperties,
+  PublicMapClusterAggregateProperties
+> | null = null
 let clusterDataVersion: string | null = null
 
 export type PublicMapClusterQueryRequest = {
@@ -49,9 +56,14 @@ function build(features: PublicMapPointFeature[], dataVersion: string) {
     }
   }
 
-  clusterIndex = new Supercluster<PublicMapPointProperties, PublicMapClusterProperties>(
-    CLUSTER_OPTIONS,
-  )
+  clusterIndex = new Supercluster<
+    PublicMapPointProperties,
+    PublicMapClusterAggregateProperties
+  >({
+    ...CLUSTER_OPTIONS,
+    map: mapPublicMapClusterProperties,
+    reduce: reducePublicMapClusterProperties,
+  })
   clusterIndex.load(features)
   clusterDataVersion = dataVersion
   return {
@@ -94,7 +106,12 @@ function getExpansionZoom(clusterId: number, dataVersion: string) {
   }
 }
 
-function getLeaves(clusterId: number, limit: number, dataVersion: string, offset = 0) {
+function getLeaves(
+  clusterId: number,
+  limit: number,
+  dataVersion: string,
+  offset = 0
+) {
   if (!clusterIndex || clusterDataVersion !== dataVersion) return []
   try {
     return clusterIndex.getLeaves(clusterId, limit, offset)

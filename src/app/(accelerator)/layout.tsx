@@ -2,19 +2,33 @@ import type { ReactNode } from "react"
 import { redirect } from "next/navigation"
 
 import { createSupabaseServerClient } from "@/lib/supabase"
+import { readAppSidebarDefaultOpen } from "@/components/app-shell/sidebar-state-server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { fetchSidebarTree } from "@/lib/academy"
 import { AppShell } from "@/components/app-shell"
 import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
-import { resolveProfileAudience, resolveTesterMetadata } from "@/lib/devtools/audience"
+import {
+  resolveProfileAudience,
+  resolveTesterMetadata,
+} from "@/lib/devtools/audience"
 import { resolveAccountBillingCancellationRisk } from "@/lib/billing/subscription-access"
-import { resolvePricingPlanTier, type PricingPlanTier } from "@/lib/billing/plan-tier"
+import {
+  resolvePricingPlanTier,
+  type PricingPlanTier,
+} from "@/lib/billing/plan-tier"
 import type { Json } from "@/lib/supabase"
 
-export default async function AcceleratorLayout({ children }: { children: ReactNode }) {
-  const supabase = await createSupabaseServerClient()
+export default async function AcceleratorLayout({
+  children,
+}: {
+  children: ReactNode
+}) {
+  const [supabase, defaultSidebarOpen] = await Promise.all([
+    createSupabaseServerClient(),
+    readAppSidebarDefaultOpen(),
+  ])
   const {
     data: { user },
     error: userError,
@@ -42,10 +56,16 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
   let hasBillingCancellationRisk = false
 
   const fallbackIsTester = resolveTesterMetadata(user.user_metadata ?? null)
-  const userMeta = (user.user_metadata as Record<string, unknown> | null) ?? null
-  const metadataFirstName = typeof userMeta?.first_name === "string" ? userMeta.first_name.trim() : ""
-  const metadataLastName = typeof userMeta?.last_name === "string" ? userMeta.last_name.trim() : ""
-  const metadataFullName = [metadataFirstName, metadataLastName].filter(Boolean).join(" ").trim()
+  const userMeta =
+    (user.user_metadata as Record<string, unknown> | null) ?? null
+  const metadataFirstName =
+    typeof userMeta?.first_name === "string" ? userMeta.first_name.trim() : ""
+  const metadataLastName =
+    typeof userMeta?.last_name === "string" ? userMeta.last_name.trim() : ""
+  const metadataFullName = [metadataFirstName, metadataLastName]
+    .filter(Boolean)
+    .join(" ")
+    .trim()
   const [profileAudience, activeOrg] = await Promise.all([
     resolveProfileAudience({
       supabase,
@@ -57,7 +77,9 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
 
   displayName =
     profileAudience.fullName ??
-    (typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null) ??
+    (typeof user.user_metadata?.full_name === "string"
+      ? user.user_metadata.full_name
+      : null) ??
     (metadataFullName || null)
   displayTitle = profileAudience.headline
   isAdmin = profileAudience.isAdmin
@@ -97,10 +119,13 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
     "error" in accountBillingResult
       ? false
       : accountBillingResult.hasBillingCancellationRisk
-  canAccessOrgAdmin = showOrgAdmin && (isAdmin || entitlements.hasActiveSubscription)
+  canAccessOrgAdmin =
+    showOrgAdmin && (isAdmin || entitlements.hasActiveSubscription)
 
-  const orgProfile = (orgRowResult.data?.profile as Record<string, unknown> | null) ?? null
-  const orgName = typeof orgProfile?.name === "string" ? orgProfile.name.trim() : ""
+  const orgProfile =
+    (orgRowResult.data?.profile as Record<string, unknown> | null) ?? null
+  const orgName =
+    typeof orgProfile?.name === "string" ? orgProfile.name.trim() : ""
   organizationName = orgName.length > 0 ? orgName : null
 
   if (entitlements.hasActiveSubscription) {
@@ -122,18 +147,31 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
 
   const onboardingCompleted = Boolean(userMeta?.onboarding_completed)
   const tutorialsCompleted = Array.isArray(userMeta?.tutorials_completed)
-    ? (userMeta?.tutorials_completed as unknown[]).filter((t): t is string => typeof t === "string")
+    ? (userMeta?.tutorials_completed as unknown[]).filter(
+        (t): t is string => typeof t === "string"
+      )
     : []
   const tutorialsDismissed = Array.isArray(userMeta?.tutorials_dismissed)
-    ? (userMeta?.tutorials_dismissed as unknown[]).filter((t): t is string => typeof t === "string")
+    ? (userMeta?.tutorials_dismissed as unknown[]).filter(
+        (t): t is string => typeof t === "string"
+      )
     : []
-  tutorialWelcome = !isAdmin && onboardingCompleted && !tutorialsCompleted.includes("accelerator") && !tutorialsDismissed.includes("accelerator")
+  tutorialWelcome =
+    !isAdmin &&
+    onboardingCompleted &&
+    !tutorialsCompleted.includes("accelerator") &&
+    !tutorialsDismissed.includes("accelerator")
 
   if (!entitlements.hasAcceleratorAccess && !entitlements.hasElectiveAccess) {
-    redirect("/organization?paywall=organization&plan=organization&upgrade=accelerator-access&source=accelerator")
+    redirect(
+      "/organization?paywall=organization&plan=organization&upgrade=accelerator-access&source=accelerator"
+    )
   }
 
-  const sidebarTree = await fetchSidebarTree({ includeDrafts: isAdmin, forceAdmin: isAdmin })
+  const sidebarTree = await fetchSidebarTree({
+    includeDrafts: isAdmin,
+    forceAdmin: isAdmin,
+  })
 
   return (
     <AppShell
@@ -142,7 +180,12 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
       showOrgAdmin={showOrgAdmin}
       canAccessOrgAdmin={canAccessOrgAdmin}
       isTester={isTester}
-      user={{ name: displayName, title: displayTitle, email: email ?? null, avatar: avatar ?? null }}
+      user={{
+        name: displayName,
+        title: displayTitle,
+        email: email ?? null,
+        avatar: avatar ?? null,
+      }}
       showAccelerator={true}
       hasBillingCancellationRisk={hasBillingCancellationRisk}
       hasAcceleratorAccess={entitlements.hasAcceleratorAccess}
@@ -150,6 +193,7 @@ export default async function AcceleratorLayout({ children }: { children: ReactN
       ownedElectiveModuleSlugs={entitlements.ownedElectiveModuleSlugs}
       currentPlanTier={currentPlanTier}
       organizationName={organizationName}
+      defaultSidebarOpen={defaultSidebarOpen}
       context="accelerator"
     >
       {children}

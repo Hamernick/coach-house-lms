@@ -32,6 +32,7 @@ export type AppShellProps = {
   onboardingIntentFocus?: "build" | "find" | "fund" | "support" | null
   context?: "platform" | "accelerator" | "public" | "admin"
   contentPresentation?: "default" | "full-bleed"
+  defaultSidebarOpen?: boolean
   formationStatus?: string | null
   brandHref?: string
   showWorkspaceHome?: boolean

@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 import { redirect } from "next/navigation"
 
 import { AppShell } from "@/components/app-shell"
+import { readAppSidebarDefaultOpen } from "@/components/app-shell/sidebar-state-server"
 import { MemberWorkspaceSidebarHeader } from "@/features/member-workspace"
 import { resolveDashboardLayoutState } from "@/app/(dashboard)/_lib/dashboard-layout-state"
 
@@ -13,7 +14,10 @@ export default async function AdminLayout({
   children: ReactNode
   breadcrumbs: ReactNode
 }) {
-  const state = await resolveDashboardLayoutState()
+  const [state, defaultSidebarOpen] = await Promise.all([
+    resolveDashboardLayoutState(),
+    readAppSidebarDefaultOpen(),
+  ])
 
   if (!state.userPresent) {
     redirect("/team/login?redirect=/admin")
@@ -45,6 +49,7 @@ export default async function AdminLayout({
       onboardingLocked={state.onboardingLocked}
       onboardingIntentFocus={state.onboardingIntentFocus}
       formationStatus={state.formationStatus}
+      defaultSidebarOpen={defaultSidebarOpen}
       context="admin"
     >
       {children}

@@ -14,8 +14,8 @@ import { AppShellAccountMenuActionsProvider } from "@/components/app-shell/accou
 import {
   AppShellHeader,
   AppShellMobileNav,
+  ShellMainContent,
   ShellRightRail,
-  SidebarAutoCollapse,
   SidebarBrand,
 } from "@/components/app-shell/components"
 import {
@@ -23,13 +23,17 @@ import {
   useRightRailPresence,
 } from "@/components/app-shell/right-rail"
 import { AppShellRightRailControlsProvider } from "@/components/app-shell/right-rail-controls"
-import { ScrollFadeEffect } from "@/components/scroll-fade-effect"
 import {
   Sidebar,
   SidebarHeader,
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { releaseStaleInteractionLocks } from "@/lib/ui/interaction-lock-guard"
 import { cn } from "@/lib/utils"
@@ -94,6 +98,7 @@ export function AppShellInner({
   onboardingIntentFocus = null,
   context,
   contentPresentation = "default",
+  defaultSidebarOpen = false,
   formationStatus,
   brandHref: brandHrefOverride,
   showWorkspaceHome = true,
@@ -182,6 +187,14 @@ export function AppShellInner({
     (isOrganizationRoute && hasOrganizationEditorParams)
   const useFlushContentBody =
     useFullBleedContent || useMobileSingleGutterContent
+  const useDesktopResizableRightRail = !isMobile && hasRightRail && rightOpen
+  const rightRailDefaultSize = isAcceleratorContext
+    ? 28
+    : isModulePage
+      ? 30
+      : derivedContext === "public"
+        ? 24
+        : 20
   const contentPadding = isMobile
     ? "pb-[calc(4.5rem+env(safe-area-inset-bottom))]"
     : "pb-4"
@@ -215,11 +228,25 @@ export function AppShellInner({
   useReleaseInteractionLocksOnRouteChange(pathname, searchParamsKey)
   useOnboardingRedirectTarget(onboardingRedirectTarget)
 
+  const mainShellContent = (
+    <ShellMainContent
+      isAcceleratorContext={isAcceleratorContext}
+      isMobile={isMobile}
+      onboardingRedirectTarget={onboardingRedirectTarget}
+      routeTransitionRef={routeTransitionRef}
+      useFlushContentBody={useFlushContentBody}
+      useFullBleedContent={useFullBleedContent}
+      useMobileSingleGutterContent={useMobileSingleGutterContent}
+    >
+      {children}
+    </ShellMainContent>
+  )
+
   return (
     <AppShellAccountMenuActionsProvider>
       <AppShellRightRailControlsProvider value={rightRailControls}>
         <SidebarProvider
-          defaultOpen={!isAcceleratorContext}
+          defaultOpen={defaultSidebarOpen}
           data-shell-root
           className={cn(
             "text-foreground h-svh min-h-0 overflow-hidden bg-[var(--shell-bg)]",
@@ -236,180 +263,148 @@ export function AppShellInner({
               "[--shell-right-rail-width:min(22rem,calc(100vw-1rem))] md:[--shell-right-rail-width:min(22rem,36vw)]"
           )}
         >
-        <SidebarAutoCollapse active={isAcceleratorContext} />
-        {showAcceleratorRail ? (
-          <RightRailSlot priority={1}>
-            <ClassesSection
-              classes={sidebarTree}
+          {showAcceleratorRail ? (
+            <RightRailSlot priority={1}>
+              <ClassesSection
+                classes={sidebarTree}
+                isAdmin={isAdmin}
+                basePath={classesBasePath}
+                hasAcceleratorAccess={resolvedHasAcceleratorAccess}
+                hasElectiveAccess={resolvedHasElectiveAccess}
+                ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
+                formationStatus={formationStatus}
+              />
+            </RightRailSlot>
+          ) : null}
+          <div className="flex min-h-0 min-w-0 flex-1">
+            <Sidebar
+              collapsible="icon"
+              variant="sidebar"
+              className="border-0 bg-[var(--shell-rail)]"
+            >
+              <SidebarHeader>
+                {sidebarHeaderContent ?? <SidebarBrand href={brandHref} />}
+              </SidebarHeader>
+              <SidebarBody
+                isAdmin={isAdmin}
+                isTester={isTester}
+                showOrgAdmin={showOrgAdmin}
+                canAccessOrgAdmin={canAccessOrgAdmin}
+                classes={sidebarTree}
+                user={navUser}
+                showAccelerator={showAccelerator}
+                hasActiveSubscription={Boolean(hasActiveSubscription)}
+                hasBillingCancellationRisk={hasBillingCancellationRisk}
+                showClasses={showLeftClasses}
+                classesBasePath={classesBasePath}
+                hasAcceleratorAccess={resolvedHasAcceleratorAccess}
+                hasElectiveAccess={resolvedHasElectiveAccess}
+                ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
+                formationStatus={formationStatus}
+                onboardingLocked={onboardingLocked}
+                onboardingIntentFocus={onboardingIntentFocus}
+                organizationName={organizationName}
+                showCoachScheduling={!isAcceleratorContext}
+                showWorkspaceHome={showWorkspaceHome}
+                showMemberWorkspace={showMemberWorkspaceNav}
+              />
+            </Sidebar>
+
+            <SidebarInset
+              className={cn(
+                "text-foreground h-full min-h-0 min-w-0 overflow-hidden bg-[var(--shell-bg)]",
+                "[--shell-max-w:min(1400px,100%)] md:peer-data-[state=collapsed]:[--shell-max-w:min(1600px,100%)]",
+                "[--shell-outer-gutter:0px] md:peer-data-[state=collapsed]:[--shell-outer-gutter:0px]"
+              )}
+            >
+              <AppShellHeader
+                breadcrumbs={breadcrumbs}
+                hasUser={hasUser}
+                isAdmin={isAdmin}
+                onboardingLocked={onboardingLocked}
+                rightOpen={rightOpen}
+                onRightOpenChange={handleRightOpenChangeUser}
+              />
+              <div className="flex h-full min-h-0 min-w-0 flex-col">
+                <div
+                  className={cn(
+                    "flex min-h-0 min-w-0 flex-1 gap-0",
+                    contentPadding,
+                    contentHorizontalPadding,
+                    !isMobile &&
+                      (!hasRightRail || !rightOpen) &&
+                      "pr-[var(--shell-gutter)]"
+                  )}
+                >
+                  {useDesktopResizableRightRail ? (
+                    <ResizablePanelGroup
+                      id="app-shell-right-rail-layout"
+                      direction="horizontal"
+                      className="min-h-0 min-w-0 flex-1"
+                    >
+                      <ResizablePanel
+                        id="app-shell-main-content-panel"
+                        minSize={45}
+                        className="flex min-h-0 min-w-0 flex-col"
+                      >
+                        {mainShellContent}
+                      </ResizablePanel>
+                      <ResizableHandle
+                        aria-label="Resize right rail"
+                        withHandle
+                        className="before:bg-border z-40 -ml-px shrink-0 bg-transparent before:absolute before:inset-y-16 before:left-1/2 before:w-px before:-translate-x-1/2 before:rounded-full before:content-['']"
+                      />
+                      <ResizablePanel
+                        id="app-shell-right-rail-panel"
+                        defaultSize={rightRailDefaultSize}
+                        minSize={18}
+                        maxSize={42}
+                        className="flex min-h-0 min-w-0 flex-col"
+                      >
+                        <ShellRightRail
+                          open={rightOpen}
+                          onOpenChange={handleRightOpenChangeUser}
+                          onAutoClose={handleRightOpenChangeAuto}
+                          resizablePanel
+                        />
+                      </ResizablePanel>
+                    </ResizablePanelGroup>
+                  ) : (
+                    <>
+                      {mainShellContent}
+
+                      <ShellRightRail
+                        open={rightOpen}
+                        onOpenChange={handleRightOpenChangeUser}
+                        onAutoClose={handleRightOpenChangeAuto}
+                      />
+                    </>
+                  )}
+                </div>
+              </div>
+            </SidebarInset>
+          </div>
+
+          <AppShellMobileNav
+            rightOpen={rightOpen}
+            onRightOpenChange={handleRightOpenChangeUser}
+          />
+          {hasUser && !onboardingLocked && !isAdminContext ? (
+            <GlobalSearch
               isAdmin={isAdmin}
-              basePath={classesBasePath}
-              hasAcceleratorAccess={resolvedHasAcceleratorAccess}
-              hasElectiveAccess={resolvedHasElectiveAccess}
-              ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
-              formationStatus={formationStatus}
-            />
-          </RightRailSlot>
-        ) : null}
-        <div className="flex min-h-0 flex-1">
-          <Sidebar
-            collapsible="icon"
-            variant="sidebar"
-            className="border-0 bg-[var(--shell-rail)]"
-          >
-            <SidebarHeader>
-              {sidebarHeaderContent ?? <SidebarBrand href={brandHref} />}
-            </SidebarHeader>
-            <SidebarBody
-              isAdmin={isAdmin}
-              isTester={isTester}
               showOrgAdmin={showOrgAdmin}
-              canAccessOrgAdmin={canAccessOrgAdmin}
+              context={isAcceleratorContext ? "accelerator" : "platform"}
               classes={sidebarTree}
-              user={navUser}
               showAccelerator={showAccelerator}
-              hasActiveSubscription={Boolean(hasActiveSubscription)}
-              hasBillingCancellationRisk={hasBillingCancellationRisk}
-              showClasses={showLeftClasses}
-              classesBasePath={classesBasePath}
-              hasAcceleratorAccess={resolvedHasAcceleratorAccess}
-              hasElectiveAccess={resolvedHasElectiveAccess}
-              ownedElectiveModuleSlugs={ownedElectiveModuleSlugs}
-              formationStatus={formationStatus}
-              onboardingLocked={onboardingLocked}
-              onboardingIntentFocus={onboardingIntentFocus}
-              organizationName={organizationName}
-              showCoachScheduling={!isAcceleratorContext}
-              showWorkspaceHome={showWorkspaceHome}
               showMemberWorkspace={showMemberWorkspaceNav}
             />
-          </Sidebar>
-
-          <SidebarInset
-            className={cn(
-              "text-foreground h-full min-h-0 overflow-hidden bg-[var(--shell-bg)]",
-              "[--shell-max-w:min(1400px,100%)] md:peer-data-[state=collapsed]:[--shell-max-w:min(1600px,100%)]",
-              "[--shell-outer-gutter:0px] md:peer-data-[state=collapsed]:[--shell-outer-gutter:0px]"
-            )}
-          >
-            <AppShellHeader
-              breadcrumbs={breadcrumbs}
-              hasUser={hasUser}
-              isAdmin={isAdmin}
-              onboardingLocked={onboardingLocked}
-              rightOpen={rightOpen}
-              onRightOpenChange={handleRightOpenChangeUser}
-            />
-            <div className="flex h-full min-h-0 flex-col">
-              <div
-                className={cn(
-                  "flex min-h-0 flex-1 gap-0",
-                  contentPadding,
-                  contentHorizontalPadding,
-                  !isMobile &&
-                    (!hasRightRail || !rightOpen) &&
-                    "pr-[var(--shell-gutter)]"
-                )}
-              >
-                <div className="flex min-h-0 w-full flex-1 flex-col">
-                  <div
-                    className={cn(
-                      "flex min-h-0 flex-1 flex-col overflow-hidden bg-[var(--shell-bg)] shadow-none",
-                      isMobile
-                        ? "rounded-none border-0"
-                        : "rounded-[28px] border border-[color:var(--shell-border)]"
-                    )}
-                  >
-                    <ScrollFadeEffect
-                      data-shell-scroll
-                      data-tour-scroll
-                      data-accelerator-scroll={
-                        isAcceleratorContext ? "" : undefined
-                      }
-                      enabled={useMobileSingleGutterContent}
-                      orientation="vertical"
-                      role="main"
-                      className={cn(
-                        "flex h-full min-h-0 flex-1 flex-col overflow-x-hidden",
-                        useFullBleedContent
-                          ? "overflow-hidden"
-                          : "overflow-y-auto",
-                        useMobileSingleGutterContent &&
-                          "[--mask-height:2rem] [--scroll-buffer:1.5rem]"
-                      )}
-                      style={{ scrollbarGutter: "stable" }}
-                    >
-                      <div
-                        className={cn(
-                          "@container/shell flex w-full flex-col",
-                          useFullBleedContent ? "h-full min-h-0" : "min-h-full"
-                        )}
-                      >
-                        <div
-                          id="shell-content-header"
-                          className="border-b border-[color:var(--shell-border)] bg-[var(--shell-card)] px-[var(--shell-content-pad)] py-1 empty:hidden"
-                        />
-                        <div
-                          data-shell-content-body
-                          data-shell-mode={
-                            useFullBleedContent ? "full-bleed" : "default"
-                          }
-                          ref={routeTransitionRef}
-                          className={cn(
-                            "flex min-h-0 flex-1 flex-col",
-                            useFlushContentBody
-                              ? "gap-0 px-0 py-0"
-                              : "gap-6 px-[var(--shell-content-pad)] py-[var(--shell-content-pad)]"
-                          )}
-                        >
-                          {onboardingRedirectTarget ? (
-                            <div className="flex min-h-[40svh] flex-1 items-center justify-center px-6 py-16">
-                              <p className="text-muted-foreground text-sm">
-                                Redirecting to onboarding…
-                              </p>
-                            </div>
-                          ) : (
-                            children
-                          )}
-                        </div>
-                        <div
-                          id="shell-content-footer"
-                          className="border-t border-[color:var(--shell-border)] bg-[var(--shell-card)] px-[var(--shell-content-pad)] py-3 empty:hidden"
-                        />
-                      </div>
-                    </ScrollFadeEffect>
-                  </div>
-                </div>
-
-                <ShellRightRail
-                  open={rightOpen}
-                  onOpenChange={handleRightOpenChangeUser}
-                  onAutoClose={handleRightOpenChangeAuto}
-                />
-              </div>
-            </div>
-          </SidebarInset>
-        </div>
-
-        <AppShellMobileNav
-          rightOpen={rightOpen}
-          onRightOpenChange={handleRightOpenChangeUser}
-        />
-        {hasUser && !onboardingLocked && !isAdminContext ? (
-          <GlobalSearch
-            isAdmin={isAdmin}
-            showOrgAdmin={showOrgAdmin}
-            context={isAcceleratorContext ? "accelerator" : "platform"}
-            classes={sidebarTree}
-            showAccelerator={showAccelerator}
-            showMemberWorkspace={showMemberWorkspaceNav}
-          />
-        ) : null}
-        {!isAdminContext ? (
-          <PaywallOverlay currentPlanTier={currentPlanTier} />
-        ) : null}
-        {!isAdminContext ? <TutorialManager /> : null}
-      </SidebarProvider>
-    </AppShellRightRailControlsProvider>
+          ) : null}
+          {!isAdminContext ? (
+            <PaywallOverlay currentPlanTier={currentPlanTier} />
+          ) : null}
+          {!isAdminContext ? <TutorialManager /> : null}
+        </SidebarProvider>
+      </AppShellRightRailControlsProvider>
     </AppShellAccountMenuActionsProvider>
   )
 }

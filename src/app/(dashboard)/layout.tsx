@@ -1,9 +1,11 @@
 import type { ReactNode } from "react"
 
 import { AppShell } from "@/components/app-shell"
+import { readAppSidebarDefaultOpen } from "@/components/app-shell/sidebar-state-server"
 import { FrameEscape } from "@/components/navigation/frame-escape"
 import { AppPricingFeedbackPrompt } from "@/features/app-pricing-feedback"
 import { MemberWorkspaceSidebarHeader } from "@/features/member-workspace"
+import { measureServerStep } from "@/lib/performance/server-timing"
 
 import { resolveDashboardLayoutState } from "./_lib/dashboard-layout-state"
 
@@ -12,7 +14,14 @@ export default async function DashboardLayout({
 }: {
   children: ReactNode
 }) {
-  const state = await resolveDashboardLayoutState()
+  const [state, defaultSidebarOpen] = await Promise.all([
+    measureServerStep(
+      "dashboard.layout.resolve_state",
+      () => resolveDashboardLayoutState(),
+      { thresholdMs: 750 }
+    ),
+    readAppSidebarDefaultOpen(),
+  ])
 
   return (
     <>
@@ -41,6 +50,7 @@ export default async function DashboardLayout({
         onboardingLocked={state.onboardingLocked}
         onboardingIntentFocus={state.onboardingIntentFocus}
         formationStatus={state.formationStatus}
+        defaultSidebarOpen={defaultSidebarOpen}
         context="platform"
       >
         {children}

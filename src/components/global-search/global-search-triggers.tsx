@@ -28,14 +28,14 @@ export function GlobalSearchTriggers({
             onClick={onOpen}
             data-tour="global-search-button"
             className={cn(
-              "hidden min-w-[240px] w-full max-w-[520px] items-center justify-between gap-2 pl-3 pr-3 text-xs text-muted-foreground md:inline-flex lg:max-w-[600px]",
+              "text-muted-foreground hidden w-full max-w-[520px] min-w-0 items-center justify-between gap-2 pr-3 pl-3 text-xs md:inline-flex lg:max-w-[600px]"
             )}
           >
             <span className="flex min-w-0 items-center gap-2">
-              <SearchIcon className="h-4 w-4 text-muted-foreground" />
-              <span className="truncate text-foreground">Search</span>
+              <SearchIcon className="text-muted-foreground h-4 w-4" />
+              <span className="text-foreground truncate">Search</span>
             </span>
-            <span className="shrink-0 whitespace-nowrap rounded border border-border/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+            <span className="border-border/70 text-muted-foreground shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold whitespace-nowrap uppercase">
               CMD+K
             </span>
           </Button>

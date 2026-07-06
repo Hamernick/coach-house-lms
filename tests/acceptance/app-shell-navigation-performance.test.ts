@@ -30,12 +30,15 @@ describe("app shell navigation performance", () => {
 
   it("animates route swaps without remounting shell content", () => {
     const shellSource = readSource("src/components/app-shell/app-shell-inner.tsx")
+    const shellMainContentSource = readSource(
+      "src/components/app-shell/components/shell-main-content.tsx",
+    )
     const transitionHookSource = readSource(
       "src/components/app-shell/use-app-shell-route-transition.ts",
     )
 
     expect(shellSource).toContain("useAppShellRouteTransition")
-    expect(shellSource).toContain("ref={routeTransitionRef}")
+    expect(shellMainContentSource).toContain("ref={routeTransitionRef}")
     expect(transitionHookSource).toContain("element.animate")
     expect(transitionHookSource).toContain("prefers-reduced-motion: reduce")
     expect(transitionHookSource).toContain("translate3d(0, 3px, 0)")

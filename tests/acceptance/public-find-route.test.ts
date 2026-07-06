@@ -108,6 +108,9 @@ describe("public find routes", () => {
       "src/components/public/public-map-index/public-map-index-chrome.tsx",
     )
     const appShellSource = readRoute("src/components/app-shell/app-shell-inner.tsx")
+    const shellMainContentSource = readRoute(
+      "src/components/app-shell/components/shell-main-content.tsx",
+    )
 
     for (const routeFile of routeFiles) {
       const source = readRoute(routeFile)
@@ -124,8 +127,8 @@ describe("public find routes", () => {
     expect(publicMapSource).toContain("renderDesktopSidebar={renderMapOverlaySidebar}")
     expect(publicMapSource).not.toContain("w-[23rem]")
     expect(publicMapSource).not.toContain("manageShellSidebarOpen={false}")
-    expect(appShellSource).toContain("data-shell-mode={")
-    expect(appShellSource).toContain('useFullBleedContent ? "full-bleed" : "default"')
+    expect(shellMainContentSource).toContain("data-shell-mode={")
+    expect(shellMainContentSource).toContain('useFullBleedContent ? "full-bleed" : "default"')
     expect(appShellSource).toContain("md:[--shell-right-rail-width:min(22rem,36vw)]")
     expect(shellSource).toContain("showWorkspaceHome={state.showMemberWorkspace}")
     expect(shellSource).toContain("showMemberWorkspace={state.showMemberWorkspace}")
@@ -133,8 +136,8 @@ describe("public find routes", () => {
     expect(shellSource).toContain("MemberWorkspaceOrgSwitcher")
     expect(shellSource).toContain("state.memberWorkspaceHeader")
     expect(appShellSource).toContain("isMobile")
-    expect(appShellSource).toContain('? "rounded-none border-0"')
-    expect(appShellSource).toContain(': "rounded-[28px] border border-[color:var(--shell-border)]"')
+    expect(shellMainContentSource).toContain('? "rounded-none border-0"')
+    expect(shellMainContentSource).toContain(': "rounded-[28px] border border-[color:var(--shell-border)]"')
     expect(appShellSource).not.toContain("useFullBleedContent || isMobile")
   })
 

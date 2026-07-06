@@ -2,13 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-import { Plus } from "@phosphor-icons/react/dist/ssr"
 
 import {
   ChipOverflow,
   type PlatformAdminDashboardLabProject,
 } from "@/features/platform-admin-dashboard"
-import { Button } from "@/components/ui/button"
 import type {
   MemberWorkspaceCreateProjectFormInput,
   MemberWorkspacePersonOption,
@@ -162,20 +160,6 @@ export function MemberWorkspaceProjectsPage(props: {
                 <MemberWorkspaceClearStarterDataButton
                   clearStarterDataAction={clearStarterDataAction}
                 />
-              ) : null}
-              {canCreateProjects ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  type="button"
-                  onClick={() => {
-                    setEditingProject(null)
-                    setIsProjectWizardOpen(true)
-                  }}
-                >
-                  <Plus data-icon="inline-start" weight="bold" />
-                  Add Organization
-                </Button>
               ) : null}
             </div>
           </div>

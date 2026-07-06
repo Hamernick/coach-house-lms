@@ -3,9 +3,9 @@
 import { z } from "zod"
 import { publicSharingEnabled } from "@/lib/feature-flags"
 import type { BudgetTableRow } from "@/lib/modules"
-import { ORGANIZATION_PRIMARY_OBJECT_KINDS } from "@/lib/organization/primary-objects"
+import { ORGANIZATION_ACTIVITY_KINDS } from "@/lib/organization/primary-objects"
 
-export { ORGANIZATION_PRIMARY_OBJECT_KINDS }
+export { ORGANIZATION_ACTIVITY_KINDS }
 
 export const PROGRAM_TYPES = [
   "Direct Services",
@@ -49,7 +49,7 @@ export const ProgramWizardSchema = z.object({
   subtitle: z.string().max(200).or(z.literal("")).default(""),
   bannerImageUrl: z.string().url().or(z.literal("")).default(""),
   imageUrl: z.string().url().or(z.literal("")).default(""),
-  objectKind: z.enum(ORGANIZATION_PRIMARY_OBJECT_KINDS).default("Program"),
+  objectKind: z.enum(ORGANIZATION_ACTIVITY_KINDS).default("Program"),
   programType: z.enum(PROGRAM_TYPES),
   coreFormat: z.enum(DELIVERY_FORMATS),
   formatAddons: z.array(z.string().min(1)).default([]),
@@ -90,7 +90,7 @@ export const ProgramWizardSchema = z.object({
     .max(40)
     .or(z.literal("Learn more"))
     .default("Learn more"),
-  ctaUrl: z.string().url().or(z.literal("")).default(""),
+  ctaUrl: z.string().url("Enter a valid URL.").or(z.literal("")).default(""),
   goalUsd: z.coerce.number().nonnegative().default(0),
   raisedUsd: z.coerce.number().nonnegative().default(0),
   features: z.array(z.string().min(1)).default([]),
@@ -99,7 +99,11 @@ export const ProgramWizardSchema = z.object({
   description: z.string().max(2000).or(z.literal("")).default(""),
   location: z.string().max(160).or(z.literal("")).default(""),
   locationType: z.enum(["in_person", "online"]).default("in_person"),
-  locationUrl: z.string().url().or(z.literal("")).default(""),
+  locationUrl: z
+    .string()
+    .url("Enter a valid URL.")
+    .or(z.literal(""))
+    .default(""),
   teamIds: z.array(z.string().min(1)).default([]),
   startDate: z.string().or(z.literal("")).default(""),
   endDate: z.string().or(z.literal("")).default(""),

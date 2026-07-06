@@ -1,11 +1,23 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
-import { canEditOrganization, resolveActiveOrganization } from "@/lib/organization/active-org"
+import {
+  canEditOrganization,
+  resolveActiveOrganization,
+} from "@/lib/organization/active-org"
+import {
+  resolveProfileAudience,
+  resolveTesterMetadata,
+} from "@/lib/devtools/audience"
 import { extractPublicObjectPath } from "@/lib/storage/public-url"
 
 const BUCKET = "program-media"
 const MAX_BYTES = 20 * 1024 * 1024
-const ALLOWED = new Set(["image/png", "image/jpeg", "image/webp", "image/svg+xml"]) as Set<string>
+const ALLOWED = new Set([
+  "image/png",
+  "image/jpeg",
+  "image/webp",
+  "image/svg+xml",
+]) as Set<string>
 
 export async function POST(request: NextRequest) {
   const response = NextResponse.next()
@@ -15,11 +27,21 @@ export async function POST(request: NextRequest) {
     error,
   } = await supabase.auth.getUser()
   if (error || !user) {
-    return NextResponse.json({ error: error?.message ?? "Unauthorized" }, { status: 401 })
+    return NextResponse.json(
+      { error: error?.message ?? "Unauthorized" },
+      { status: 401 }
+    )
   }
 
-  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
-  if (!canEditOrganization(role)) {
+  const [{ orgId, role }, profileAudience] = await Promise.all([
+    resolveActiveOrganization(supabase, user.id),
+    resolveProfileAudience({
+      supabase,
+      userId: user.id,
+      fallbackIsTester: resolveTesterMetadata(user.user_metadata ?? null),
+    }),
+  ])
+  if (!profileAudience.isAdmin && !canEditOrganization(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
@@ -29,21 +51,31 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing file" }, { status: 400 })
   }
   if (!ALLOWED.has(file.type)) {
-    return NextResponse.json({ error: "Unsupported image type. Use PNG, JPEG, WebP, or SVG." }, { status: 400 })
+    return NextResponse.json(
+      { error: "Unsupported image type. Use PNG, JPEG, WebP, or SVG." },
+      { status: 400 }
+    )
   }
   if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "Image too large. Max size is 20 MB." }, { status: 400 })
+    return NextResponse.json(
+      { error: "Image too large. Max size is 20 MB." },
+      { status: 400 }
+    )
   }
 
   const ext = file.type.split("/").pop() || "png"
   const objectName = `${orgId}/cover/${Date.now()}.${ext}`
   const buf = Buffer.from(await file.arrayBuffer())
 
-  const { error: uploadErr } = await supabase.storage.from(BUCKET).upload(objectName, buf, { contentType: file.type })
+  const { error: uploadErr } = await supabase.storage
+    .from(BUCKET)
+    .upload(objectName, buf, { contentType: file.type })
   if (uploadErr) {
     return NextResponse.json({ error: uploadErr.message }, { status: 500 })
   }
-  const { data: publicUrl } = supabase.storage.from(BUCKET).getPublicUrl(objectName)
+  const { data: publicUrl } = supabase.storage
+    .from(BUCKET)
+    .getPublicUrl(objectName)
   return NextResponse.json({ url: publicUrl.publicUrl }, { status: 200 })
 }
 
@@ -55,15 +87,27 @@ export async function DELETE(request: NextRequest) {
     error,
   } = await supabase.auth.getUser()
   if (error || !user) {
-    return NextResponse.json({ error: error?.message ?? "Unauthorized" }, { status: 401 })
+    return NextResponse.json(
+      { error: error?.message ?? "Unauthorized" },
+      { status: 401 }
+    )
   }
 
-  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
-  if (!canEditOrganization(role)) {
+  const [{ orgId, role }, profileAudience] = await Promise.all([
+    resolveActiveOrganization(supabase, user.id),
+    resolveProfileAudience({
+      supabase,
+      userId: user.id,
+      fallbackIsTester: resolveTesterMetadata(user.user_metadata ?? null),
+    }),
+  ])
+  if (!profileAudience.isAdmin && !canEditOrganization(role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const body = await request.json().catch(() => null) as { url?: unknown } | null
+  const body = (await request.json().catch(() => null)) as {
+    url?: unknown
+  } | null
   const url = typeof body?.url === "string" ? body.url.trim() : ""
   if (!url) {
     return NextResponse.json({ error: "Missing url" }, { status: 400 })
@@ -74,7 +118,9 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ ok: true }, { status: 200 })
   }
 
-  const { error: removeError } = await supabase.storage.from(BUCKET).remove([objectPath])
+  const { error: removeError } = await supabase.storage
+    .from(BUCKET)
+    .remove([objectPath])
   if (removeError) {
     return NextResponse.json({ error: removeError.message }, { status: 500 })
   }

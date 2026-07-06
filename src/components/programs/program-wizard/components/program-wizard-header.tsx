@@ -36,9 +36,9 @@ export function ProgramWizardHeader({
               {isAutoSaving ? "Saving..." : "Autosave on"}
             </Badge>
           ) : null}
-          <Badge variant="outline" className="rounded-full text-[11px]">
+          <span className="text-muted-foreground text-[11px] font-medium tabular-nums">
             Step {currentStep + 1} of {STEPS.length}
-          </Badge>
+          </span>
         </div>
       </div>
       <div className="mt-3">

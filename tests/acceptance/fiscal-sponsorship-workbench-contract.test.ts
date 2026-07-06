@@ -203,6 +203,16 @@ describe("fiscal sponsorship workbench contract", () => {
     expect(memberProjectDetailTabs).toContain(
       "MemberWorkspaceProjectFiscalWorkbench"
     )
+    expect(memberProjectDetailTabs).not.toContain("showFiscalSponsorshipTab")
+    expect(memberProjectDetailTabs).not.toContain(
+      '<TabsTrigger value="activity-feed">Activity Feed</TabsTrigger>'
+    )
+    expect(memberProjectDetailTabs).not.toContain(
+      '<TabsContent value="activity-feed">'
+    )
+    expect(memberProjectDetailTabs).toContain(
+      "resolvedFiscalSponsorshipWorkbench"
+    )
     expect(memberProjectDetailTabs.indexOf("<TimelineGantt")).toBeLessThan(
       memberProjectDetailTabs.indexOf("{fiscalSponsorshipWorkbench}")
     )

@@ -220,6 +220,11 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     expect(overviewTypographySource).toContain("[&_li]:whitespace-pre-wrap")
     expect(overviewTypographySource).toContain("ProseMirror")
     expect(overviewTypographySource).toContain("min-h-[32rem]")
+    expect(overviewTypographySource).toContain("max-h-[32rem]")
+    expect(overviewTypographySource).toContain("overflow-y-auto")
+    expect(overviewTypographySource).not.toContain(
+      "min-h-[32rem] bg-transparent px-4 py-3"
+    )
     expect(overviewDocumentSource).toContain("ReactMarkdown")
     expect(overviewDocumentSource).toContain("remarkGfm")
     expect(overviewDocumentSource).toContain(
@@ -258,7 +263,9 @@ describe("MemberWorkspaceProjectDetailPage", () => {
       'data-slot="member-workspace-project-overview-document"'
     )
     expect(markup).toContain("ProseMirror")
-    expect(markup).toContain("min-h-[32rem]")
+    expect(markup).toContain("max-h-[32rem]")
+    expect(markup).toContain("overflow-y-auto")
+    expect(markup).not.toContain("min-h-[32rem]")
     expect(markup).toContain("whitespace-pre-wrap")
     expect(markup).toContain("<h2>Saved overview</h2>")
     expect(markup).toContain("<p>This should show in view mode.</p>")
@@ -660,7 +667,16 @@ describe("MemberWorkspaceProjectDetailPage", () => {
       "requireMemberWorkspacePageAccess"
     )
     expect(organizationDetailRouteSource).toContain('from "@/lib/admin/auth"')
-    expect(organizationDetailRouteSource).toContain("await requireAdmin()")
+    expect(organizationDetailRouteSource).toContain(
+      "const admin = await requireAdmin()"
+    )
+    expect(organizationDetailRouteSource).toContain(
+      "loadPlatformAdminOrganizationProjectDetailPage({"
+    )
+    expect(organizationDetailRouteSource).toContain("userId: admin.userId")
+    expect(organizationDetailRouteSource).not.toContain(
+      "loadMemberWorkspaceProjectDetailPage(id)"
+    )
     expect(organizationDetailRouteSource).not.toContain(
       "requireMemberWorkspacePageAccess"
     )

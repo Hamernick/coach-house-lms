@@ -214,6 +214,31 @@ export function MemberWorkspaceProjectDetailTabs({
   updateTaskOrderAction,
   updateTaskStatusAction,
 }: MemberWorkspaceProjectDetailTabsProps) {
+  const resolvedFiscalSponsorshipWorkbench = fiscalSponsorshipWorkbench ?? (
+    <MemberWorkspaceProjectFiscalWorkbench
+      canConnectDocuments={canConnectFiscalDocuments}
+      connectFiscalSponsorshipDocumentAssetAction={
+        connectFiscalSponsorshipDocumentAssetAction
+      }
+      generateFiscalSponsorshipAgreementAction={
+        generateFiscalSponsorshipAgreementAction
+      }
+      fiscalSponsorshipWorkflowSummary={fiscalSponsorshipWorkflowSummary}
+      onOpenAssets={() => onActiveTabChange("assets")}
+      organizationSummary={organizationSummary}
+      project={project}
+      reviewFiscalSponsorshipApplicationAction={
+        reviewFiscalSponsorshipApplicationAction
+      }
+      reviewFiscalSponsorshipDocumentAction={
+        reviewFiscalSponsorshipDocumentAction
+      }
+      sendFiscalSponsorshipAgreementForSignatureAction={
+        sendFiscalSponsorshipAgreementForSignatureAction
+      }
+    />
+  )
+
   return (
     <Tabs value={activeTab} onValueChange={onActiveTabChange}>
       <ProjectDetailTabsList />
@@ -221,34 +246,7 @@ export function MemberWorkspaceProjectDetailTabs({
       <TabsContent value="overview">
         <ProjectDetailOverviewContent
           draft={draft}
-          fiscalSponsorshipWorkbench={
-            fiscalSponsorshipWorkbench ?? (
-              <MemberWorkspaceProjectFiscalWorkbench
-                canConnectDocuments={canConnectFiscalDocuments}
-                connectFiscalSponsorshipDocumentAssetAction={
-                  connectFiscalSponsorshipDocumentAssetAction
-                }
-                generateFiscalSponsorshipAgreementAction={
-                  generateFiscalSponsorshipAgreementAction
-                }
-                fiscalSponsorshipWorkflowSummary={
-                  fiscalSponsorshipWorkflowSummary
-                }
-                onOpenAssets={() => onActiveTabChange("assets")}
-                organizationSummary={organizationSummary}
-                project={project}
-                reviewFiscalSponsorshipApplicationAction={
-                  reviewFiscalSponsorshipApplicationAction
-                }
-                reviewFiscalSponsorshipDocumentAction={
-                  reviewFiscalSponsorshipDocumentAction
-                }
-                sendFiscalSponsorshipAgreementForSignatureAction={
-                  sendFiscalSponsorshipAgreementForSignatureAction
-                }
-              />
-            )
-          }
+          fiscalSponsorshipWorkbench={resolvedFiscalSponsorshipWorkbench}
           isEditing={isEditing}
           project={project}
           onChangeDraftField={onChangeDraftField}

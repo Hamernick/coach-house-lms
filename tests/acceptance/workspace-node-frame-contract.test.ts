@@ -58,7 +58,9 @@ describe("workspace node frame contract", () => {
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card-shell.tsx"
     )
 
-    expect(nodeCardShell).toContain('footer ? "pb-0" : "pb-3"')
+    expect(nodeCardShell).toContain(
+      'contentSurface === "plain" || !footer ? "pb-3" : "pb-0"'
+    )
     expect(nodeCardShell).not.toContain('"px-0 pb-0"')
   })
 })

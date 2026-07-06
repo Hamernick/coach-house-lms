@@ -17,7 +17,7 @@ import {
   deleteMemberWorkspaceTaskAction,
   deleteMemberWorkspaceProjectNoteAction,
   deleteMemberWorkspaceProjectQuickLinkAction,
-  loadMemberWorkspaceProjectDetailPage,
+  loadPlatformAdminOrganizationProjectDetailPage,
   MemberWorkspaceProjectDetailPage,
   updateMemberWorkspaceProjectAction,
   updateMemberWorkspaceProjectNoteAction,
@@ -47,10 +47,13 @@ function getOrganizationAdminProjectKind(
 }
 
 export default async function OrganizationDetailPage({ params }: PageProps) {
-  await requireAdmin()
+  const admin = await requireAdmin()
 
   const { id } = await params
-  const result = await loadMemberWorkspaceProjectDetailPage(id)
+  const result = await loadPlatformAdminOrganizationProjectDetailPage({
+    projectId: id,
+    userId: admin.userId,
+  })
 
   if (result.state === "not-found") {
     notFound()

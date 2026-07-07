@@ -96,6 +96,12 @@ const PROTOTYPE_LAB_SIDEBAR_TREE: PrototypeLabSidebarTreeNode[] = [
             href: `${PROTOTYPE_LAB_BASE_PATH}?entry=activation-monitor`,
             kind: "entry",
           },
+          {
+            id: "page-health-monitor",
+            label: "Page health monitor",
+            href: `${PROTOTYPE_LAB_BASE_PATH}?entry=page-health-monitor`,
+            kind: "entry",
+          },
         ],
       },
     ],

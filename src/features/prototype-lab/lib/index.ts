@@ -54,6 +54,16 @@ const PROTOTYPE_LAB_ENTRIES: PrototypeLabEntry[] = [
     statusLabel: "Live",
   },
   {
+    id: "page-health-monitor",
+    projectId: "user-journeys",
+    folderLabel: "Operations",
+    title: "Page health monitor",
+    description:
+      "Live readout of route errors, unhandled rejections, slow loads, and affected accounts.",
+    kind: "ops",
+    statusLabel: "Live",
+  },
+  {
     id: "organization-external-invite",
     projectId: "email-gallery",
     folderLabel: "App emails",

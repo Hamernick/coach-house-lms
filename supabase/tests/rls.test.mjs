@@ -2135,6 +2135,77 @@ async function run() {
     })
   }
 
+  if (await tableExists("app_page_health_events")) {
+    const pageHealthEventId = randomUUID()
+    const { error: insertError } = await adminClient
+      .from("app_page_health_events")
+      .insert({
+        id: pageHealthEventId,
+        event_type: "route_error",
+        route_path: "/workspace",
+        severity: "critical",
+        source: "client",
+        user_id: member.id,
+      })
+    results.push({
+      name: "service role can insert page health events",
+      passed: !insertError,
+    })
+
+    if (!insertError) {
+      const { data: memberRows, error: memberReadError } = await memberClient
+        .from("app_page_health_events")
+        .select("id")
+        .eq("id", pageHealthEventId)
+      results.push({
+        name: "authenticated non-admin cannot read page health events",
+        passed:
+          !memberReadError &&
+          Array.isArray(memberRows) &&
+          memberRows.length === 0,
+      })
+
+      const { data: anonRows, error: anonReadError } = await anonClient
+        .from("app_page_health_events")
+        .select("id")
+        .eq("id", pageHealthEventId)
+      results.push({
+        name: "anon cannot read page health events",
+        passed:
+          !!anonReadError || (Array.isArray(anonRows) && anonRows.length === 0),
+      })
+
+      const { data: adminRows, error: adminReadError } =
+        await adminSessionClient
+          .from("app_page_health_events")
+          .select("id")
+          .eq("id", pageHealthEventId)
+      results.push({
+        name: "admin can read page health events",
+        passed:
+          !adminReadError && Array.isArray(adminRows) && adminRows.length === 1,
+      })
+    }
+
+    const { error: memberInsertError } = await memberClient
+      .from("app_page_health_events")
+      .insert({
+        event_type: "route_error",
+        route_path: "/workspace",
+        severity: "warning",
+        source: "client",
+      })
+    results.push({
+      name: "authenticated non-admin cannot write page health events",
+      passed: !!memberInsertError,
+    })
+
+    await adminClient
+      .from("app_page_health_events")
+      .delete()
+      .eq("id", pageHealthEventId)
+  }
+
   await runResourceMapRlsTests({
     admin,
     adminClient,

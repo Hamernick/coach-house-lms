@@ -62,6 +62,7 @@ import type { OrganizationWorkspaceObjectiveStepsTable } from "./organization_wo
 import type { OrganizationWorkspaceObjectivesTable } from "./organization_workspace_objectives"
 import type { OrganizationWorkspaceStarterStateTable } from "./organization_workspace_starter_state"
 import type { NotificationsTable } from "./notifications"
+import type { AppPageHealthEventsTable } from "./app_page_health_events"
 import type { UserJourneyEventsTable } from "./user_journey_events"
 import type { UserActivationCheckpointsTable } from "./user_activation_checkpoints"
 import type { CoachingCoachesTable } from "./coaching_coaches"
@@ -146,6 +147,7 @@ export type { OrganizationWorkspaceObjectiveStepsTable } from "./organization_wo
 export type { OrganizationWorkspaceObjectivesTable } from "./organization_workspace_objectives"
 export type { OrganizationWorkspaceStarterStateTable } from "./organization_workspace_starter_state"
 export type { NotificationsTable } from "./notifications"
+export type { AppPageHealthEventsTable } from "./app_page_health_events"
 export type { UserJourneyEventsTable } from "./user_journey_events"
 export type { UserActivationCheckpointsTable } from "./user_activation_checkpoints"
 export type { CoachingCoachesTable } from "./coaching_coaches"
@@ -231,6 +233,7 @@ export type PublicTables = {
   organization_workspace_objectives: OrganizationWorkspaceObjectivesTable
   organization_workspace_starter_state: OrganizationWorkspaceStarterStateTable
   notifications: NotificationsTable
+  app_page_health_events: AppPageHealthEventsTable
   user_journey_events: UserJourneyEventsTable
   user_activation_checkpoints: UserActivationCheckpointsTable
   coaching_coaches: CoachingCoachesTable

@@ -97,32 +97,31 @@ export function PublicMapIndexChrome({
     selectedOrganization,
     selectedResourceItem,
   })
-  const directoryRail =
-    useAppShellRightRailDirectory && panelPresentation === "rail" ? (
-      <PublicMapDirectoryRail
-        sidebarMode={sidebarMode}
-        items={directoryItems}
-        organizations={directoryOrganizations}
-        selectedItemId={selectedItemId}
-        selectedOrganization={selectedOrganization}
-        selectedResourceItem={selectedResourceItem}
-        canManageResourceMap={canManageResourceMap}
-        organizationCurationAction={organizationCurationAction}
-        resourceMapCurationAction={resourceMapCurationAction}
-        favorites={favorites}
-        query={query}
-        activeGroup={activeGroup}
-        groupCounts={groupCounts}
-        searchContext={searchContext}
-        onQueryChange={onQueryChange}
-        onActiveGroupChange={onActiveGroupChange}
-        onToggleFavorite={onToggleFavorite}
-        onSelectItem={onSelectItem}
-        onOpenDetails={onOpenDetails}
-        onBackToSearch={onBackToSearch}
-        setSidebarMode={setSidebarMode}
-      />
-    ) : null
+  const directoryRail = useAppShellRightRailDirectory ? (
+    <PublicMapDirectoryRail
+      sidebarMode={sidebarMode}
+      items={directoryItems}
+      organizations={directoryOrganizations}
+      selectedItemId={selectedItemId}
+      selectedOrganization={selectedOrganization}
+      selectedResourceItem={selectedResourceItem}
+      canManageResourceMap={canManageResourceMap}
+      organizationCurationAction={organizationCurationAction}
+      resourceMapCurationAction={resourceMapCurationAction}
+      favorites={favorites}
+      query={query}
+      activeGroup={activeGroup}
+      groupCounts={groupCounts}
+      searchContext={searchContext}
+      onQueryChange={onQueryChange}
+      onActiveGroupChange={onActiveGroupChange}
+      onToggleFavorite={onToggleFavorite}
+      onSelectItem={onSelectItem}
+      onOpenDetails={onOpenDetails}
+      onBackToSearch={onBackToSearch}
+      setSidebarMode={setSidebarMode}
+    />
+  ) : null
 
   return (
     <>

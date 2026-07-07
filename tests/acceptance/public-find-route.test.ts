@@ -112,8 +112,9 @@ describe("public find routes", () => {
 
     for (const routeFile of routeFiles) {
       const source = readRoute(routeFile)
-      expect(source).toContain("adminOnboardingPreview={{")
-      expect(source).toContain("canToggle: shellState.isAdmin")
+      expect(source).toContain("adminOnboardingPreview={")
+      expect(source).toContain("shellState.isAdmin")
+      expect(source).toContain("canToggle: true")
       expect(source).toContain("memberMapOnboarding.hasOrganizationSwitcher")
     }
 
@@ -264,6 +265,13 @@ describe("public find routes", () => {
     )
     expect(publicMapChromeSource).toContain("PublicMapDirectoryRail")
     expect(publicMapChromeSource).toContain("directoryRail={directoryRail}")
+    expect(publicMapChromeSource).toContain("useAppShellRightRailDirectory ?")
+    expect(publicMapChromeSource).not.toContain(
+      "useAppShellRightRailDirectory && panelPresentation"
+    )
+    expect(publicMapChromeSource).not.toContain(
+      'useAppShellRightRailDirectory && panelPresentation === "rail"'
+    )
     expect(publicMapSource).toContain(
       "renderDesktopSidebar={flags.renderMapOverlaySidebar}"
     )

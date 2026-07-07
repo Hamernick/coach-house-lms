@@ -155,6 +155,15 @@ describe("resource-map-admin feature contract", () => {
     const organizationChrome = readSource(
       "src/components/public/public-map-index/organization-detail-shell-sections.tsx"
     )
+    const sidebarPanels = readSource(
+      "src/components/public/public-map-index/sidebar-panels.tsx"
+    )
+    const sidebar = readSource(
+      "src/components/public/public-map-index/sidebar.tsx"
+    )
+    const sidebarShellPanel = readSource(
+      "src/components/public/public-map-index/sidebar-shell-panel.tsx"
+    )
     const organizationAdminActions = readSource(
       "src/components/public/public-map-index/organization-detail-admin-actions.tsx"
     )
@@ -175,6 +184,24 @@ describe("resource-map-admin feature contract", () => {
     expect(organizationChrome).toContain("PublicMapOrganizationAdminActions")
     expect(organizationChrome).toContain(
       "canManageResourceMap && organizationCurationAction"
+    )
+    expect(sidebarPanels).toContain("PublicMapRailDetailPanel")
+    expect(sidebarPanels).toContain("PublicMapDrawerDetailPanel")
+    expect(sidebarPanels).toContain("canManageResourceMap = false")
+    expect(sidebarPanels).toContain(
+      "organizationCurationAction={organizationCurationAction}"
+    )
+    expect(sidebar).toContain("canManageResourceMap = false")
+    expect(sidebar).toContain("canManageResourceMap={canManageResourceMap}")
+    expect(sidebar).toContain(
+      "organizationCurationAction={organizationCurationAction}"
+    )
+    expect(sidebarShellPanel).toContain("canManageResourceMap = false")
+    expect(sidebarShellPanel).toContain(
+      "canManageResourceMap={canManageResourceMap}"
+    )
+    expect(sidebarShellPanel).toContain(
+      "organizationCurationAction={organizationCurationAction}"
     )
 
     expect(resourceAdminActions).toContain('"use client"')

@@ -178,11 +178,15 @@ export default async function PublicFindOrganizationPage({
                 ? updateResourceMapCanonicalStateAction
                 : undefined
             }
-            adminOnboardingPreview={{
-              canToggle: shellState.isAdmin,
-              hasOrganizationSwitcher:
-                shellState.memberMapOnboarding.hasOrganizationSwitcher,
-            }}
+            adminOnboardingPreview={
+              shellState.isAdmin
+                ? {
+                    canToggle: true,
+                    hasOrganizationSwitcher:
+                      shellState.memberMapOnboarding.hasOrganizationSwitcher,
+                  }
+                : undefined
+            }
             memberOnboarding={
               memberOnboardingEnabled
                 ? {

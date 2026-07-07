@@ -9,12 +9,14 @@ function PrototypeCanvas({
   entryId,
   entryTitle,
   fiscalSponsorshipPrototype,
+  pageHealthMonitorPrototype,
   userJourneyAtlasPrototype,
 }: {
   activationMonitorPrototype?: React.ReactNode
   entryId: string
   entryTitle: string
   fiscalSponsorshipPrototype?: React.ReactNode
+  pageHealthMonitorPrototype?: React.ReactNode
   userJourneyAtlasPrototype?: React.ReactNode
 }) {
   if (entryId === "fiscal-sponsorship-flow" && fiscalSponsorshipPrototype) {
@@ -41,6 +43,14 @@ function PrototypeCanvas({
     )
   }
 
+  if (entryId === "page-health-monitor" && pageHealthMonitorPrototype) {
+    return (
+      <div className="h-full min-h-0 flex-1 overflow-hidden">
+        {pageHealthMonitorPrototype}
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-full flex-1 items-center justify-center px-6 py-10 md:px-8">
       <div
@@ -56,11 +66,13 @@ export function PrototypeLabPanel({
   activationMonitorPrototype,
   fiscalSponsorshipPrototype,
   input,
+  pageHealthMonitorPrototype,
   userJourneyAtlasPrototype,
 }: {
   activationMonitorPrototype?: React.ReactNode
   fiscalSponsorshipPrototype?: React.ReactNode
   input: PrototypeLabInput
+  pageHealthMonitorPrototype?: React.ReactNode
   userJourneyAtlasPrototype?: React.ReactNode
 }) {
   return (
@@ -70,6 +82,7 @@ export function PrototypeLabPanel({
         entryId={input.selectedEntry.id}
         entryTitle={input.selectedEntry.title}
         fiscalSponsorshipPrototype={fiscalSponsorshipPrototype}
+        pageHealthMonitorPrototype={pageHealthMonitorPrototype}
         userJourneyAtlasPrototype={userJourneyAtlasPrototype}
       />
     </div>

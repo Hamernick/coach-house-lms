@@ -187,7 +187,8 @@ export function AppShellInner({
     (isOrganizationRoute && hasOrganizationEditorParams)
   const useFlushContentBody =
     useFullBleedContent || useMobileSingleGutterContent
-  const useDesktopResizableRightRail = !isMobile && hasRightRail && rightOpen
+  const useDesktopResizableRightRail =
+    !isMobile && hasRightRail && rightOpen && derivedContext !== "public"
   const rightRailDefaultSize = isAcceleratorContext
     ? 28
     : isModulePage

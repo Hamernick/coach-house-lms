@@ -50,6 +50,7 @@ describe("app shell header layout", () => {
     expect(appShellSource).toContain("@/components/ui/resizable")
     expect(appShellSource).toContain("useDesktopResizableRightRail")
     expect(appShellSource).toContain("!isMobile && hasRightRail && rightOpen")
+    expect(appShellSource).toContain('derivedContext !== "public"')
     expect(appShellSource).toContain('id="app-shell-right-rail-layout"')
     expect(appShellSource).toContain('id="app-shell-main-content-panel"')
     expect(appShellSource).toContain('id="app-shell-right-rail-panel"')

@@ -16,7 +16,7 @@ export const ORG_PROFILE_TABS: Array<{
   icon: typeof BuildingIcon
 }> = [
   { value: "company", label: "About", icon: BuildingIcon },
-  { value: "programs", label: "Primary objects", icon: ClipboardListIcon },
+  { value: "programs", label: "Activity", icon: ClipboardListIcon },
   { value: "people", label: "People", icon: UsersIcon },
 ]
 

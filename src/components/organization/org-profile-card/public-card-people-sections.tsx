@@ -28,7 +28,12 @@ export function OrgProfilePublicPeopleSections({
     <>
       {staff.length > 0 ? (
         <>
-          <FormRow title="Team" description="Who leads the work" inset={false}>
+          <FormRow
+            title="Team"
+            description="Who leads the work"
+            inset={false}
+            layout="stacked"
+          >
             <PeopleShowcase
               people={staff}
               allPeople={people}
@@ -51,6 +56,7 @@ export function OrgProfilePublicPeopleSections({
             title="Governing board"
             description="Governance"
             inset={false}
+            layout="stacked"
           >
             <PeopleShowcase
               people={governingBoard}
@@ -73,6 +79,7 @@ export function OrgProfilePublicPeopleSections({
             title="Advisory board"
             description="Advisors and subject matter experts"
             inset={false}
+            layout="stacked"
           >
             <PeopleShowcase
               people={advisoryBoard}
@@ -91,6 +98,7 @@ export function OrgProfilePublicPeopleSections({
             title="Supporters"
             description="Foundations, corporate partners, and volunteers"
             inset={false}
+            layout="stacked"
           >
             <SupportersShowcase
               supporters={supporterRoster}

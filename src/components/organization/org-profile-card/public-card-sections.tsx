@@ -159,7 +159,7 @@ export function OrgProfilePublicProgramsSection({
     <section id="programs" className="scroll-mt-20 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold">Primary objects</h2>
+          <h2 className="text-lg font-semibold">Activity</h2>
           <p className="text-muted-foreground text-sm">
             {selectedProgramId
               ? "Focused view from map discovery"
@@ -180,7 +180,7 @@ export function OrgProfilePublicProgramsSection({
           >
             <ProgramCard
               variant="medium"
-              title={program.title ?? "Untitled object"}
+              title={program.title ?? "Untitled activity"}
               org={profileName || undefined}
               location={locationSummary(program) || undefined}
               description={resolveProgramSummary(program) || undefined}

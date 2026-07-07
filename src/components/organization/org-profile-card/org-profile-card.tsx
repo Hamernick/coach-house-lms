@@ -119,6 +119,7 @@ export function OrgProfileEditor({
             <ProgramsTab
               programs={programs as OrgProgram[]}
               companyName={company.name}
+              canEdit={canEdit}
               editMode={editMode}
               onProgramEdit={handleProgramEdit}
             />
@@ -158,7 +159,12 @@ export function OrgProfileEditor({
       />
 
       {canEdit && editProgram ? (
-        <ProgramWizardLazy mode="edit" program={editProgram} open={editOpen} onOpenChange={setEditOpen} />
+        <ProgramWizardLazy
+          mode="edit"
+          program={editProgram}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+        />
       ) : null}
     </div>
   )

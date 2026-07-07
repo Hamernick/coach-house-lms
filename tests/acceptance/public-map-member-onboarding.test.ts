@@ -16,13 +16,13 @@ describe("public map member onboarding", () => {
     expect(
       buildPublicMapMemberOnboardingSteps({
         hasOrganizationSwitcher: false,
-      }).map((step) => step.id),
+      }).map((step) => step.id)
     ).toEqual(["map", "search", "save", "notifications"])
 
     expect(
       buildPublicMapMemberOnboardingSteps({
         hasOrganizationSwitcher: true,
-      }).map((step) => step.id),
+      }).map((step) => step.id)
     ).toEqual(["map", "search", "save", "notifications", "organizations"])
   })
 
@@ -32,12 +32,12 @@ describe("public map member onboarding", () => {
         intentFocus: "support",
         hasOrganizationSwitcher: false,
         onSubmit: async () => {},
-      }),
+      })
     )
 
     expect(markup).toContain('role="dialog"')
-    expect(markup).toContain("Resource map")
-    expect(markup).toContain("Start here for public organizations")
+    expect(markup).toContain("Welcome to Find")
+    expect(markup).toContain("latest directory updates")
     expect(markup).toContain("Skip")
     expect(markup).toContain("Continue")
     expect(markup).toContain('name="intentFocus"')
@@ -52,11 +52,11 @@ describe("public map member onboarding", () => {
         intentFocus: "find",
         hasOrganizationSwitcher: true,
         onDismiss: () => {},
-      }),
+      })
     )
 
     expect(markup).toContain('role="dialog"')
-    expect(markup).toContain("Resource map")
+    expect(markup).toContain("Welcome to Find")
     expect(markup).toContain("Skip")
     expect(markup).toContain("Continue")
     expect(markup).not.toContain("<form")
@@ -68,13 +68,13 @@ describe("public map member onboarding", () => {
       isPublicMapMemberOnboardingPreviewActive({
         canPreview: true,
         memberOnboardingParam: "1",
-      }),
+      })
     ).toBe(true)
     expect(
       isPublicMapMemberOnboardingPreviewActive({
         canPreview: false,
         memberOnboardingParam: "1",
-      }),
+      })
     ).toBe(false)
 
     expect(
@@ -82,7 +82,7 @@ describe("public map member onboarding", () => {
         pathname: "/find",
         searchParams: "q=housing",
         enabled: true,
-      }),
+      })
     ).toBe("/find?q=housing&member_onboarding=1&source=admin_preview")
 
     expect(
@@ -90,7 +90,7 @@ describe("public map member onboarding", () => {
         pathname: "/find",
         searchParams: "q=housing&member_onboarding=1&source=admin_preview",
         enabled: false,
-      }),
+      })
     ).toBe("/find?q=housing")
   })
 })

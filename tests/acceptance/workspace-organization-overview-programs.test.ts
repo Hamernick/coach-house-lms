@@ -117,6 +117,36 @@ describe("workspace organization overview programs", () => {
     const dashboardCard = readSource(
       "src/components/organization/program-builder-dashboard-card.tsx"
     )
+    const programsTab = readSource(
+      "src/components/organization/org-profile-card/tabs/programs-tab.tsx"
+    )
+    const peopleTab = readSource(
+      "src/components/organization/org-profile-card/tabs/people-tab.tsx"
+    )
+    const supportersTab = readSource(
+      "src/components/organization/org-profile-card/tabs/supporters-tab.tsx"
+    )
+    const supportersShowcase = readSource(
+      "src/components/people/supporters-showcase.tsx"
+    )
+    const orgProfileShared = readSource(
+      "src/components/organization/org-profile-card/shared.tsx"
+    )
+    const orgProfileCard = readSource(
+      "src/components/organization/org-profile-card/org-profile-card.tsx"
+    )
+    const orgProfileNavigation = readSource(
+      "src/components/organization/org-profile-card/org-profile-tab-navigation.tsx"
+    )
+    const orgProfileConfig = readSource(
+      "src/components/organization/org-profile-card/config.ts"
+    )
+    const publicCardSections = readSource(
+      "src/components/organization/org-profile-card/public-card-sections.tsx"
+    )
+    const publicPeopleSections = readSource(
+      "src/components/organization/org-profile-card/public-card-people-sections.tsx"
+    )
     const myOrganizationPage = readSource(
       "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx"
     )
@@ -231,6 +261,47 @@ describe("workspace organization overview programs", () => {
     expect(dashboardCard).toContain("Untitled activity")
     expect(dashboardCard).toContain("Open full view")
     expect(dashboardCard).not.toContain("ArrowUpRightIcon")
+    expect(orgProfileCard).toContain("canEdit={canEdit}")
+    expect(orgProfileNavigation).toContain('variant="line"')
+    expect(orgProfileNavigation).toContain("after:bg-primary")
+    expect(orgProfileNavigation).toContain("data-[state=active]:shadow-none")
+    expect(orgProfileNavigation).not.toContain(
+      "data-[state=active]:border-b-[2px]"
+    )
+    expect(orgProfileNavigation).not.toContain(
+      "data-[state=active]:border-b-primary"
+    )
+    expect(orgProfileNavigation).not.toContain("shadow-sm")
+    expect(programsTab).toContain("canEdit: boolean")
+    expect(programsTab).toContain('<FormRow title="Activity">')
+    expect(orgProfileShared).toContain('layout = "split"')
+    expect(orgProfileShared).toContain('layout?: "split" | "stacked"')
+    expect(orgProfileShared).toContain(
+      'layout === "stacked"\n      ? "grid gap-4"'
+    )
+    expect(supportersShowcase).toContain(
+      "grid grid-cols-[repeat(auto-fit,minmax(min(100%,18rem),1fr))] gap-3"
+    )
+    expect(supportersShowcase).not.toContain(
+      "grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+    )
+    expect(publicPeopleSections).toContain('layout="stacked"')
+    expect(peopleTab).toContain('layout="stacked"')
+    expect(supportersTab).toContain('layout="stacked"')
+    expect(programsTab).toContain('aria-label="Activity visibility info"')
+    expect(programsTab).toContain("Activity appears in your overview")
+    expect(programsTab).toContain('ctaLabel={canEdit ? "Edit"')
+    expect(programsTab).toContain(
+      "canEdit ? () => onProgramEdit(program) : undefined"
+    )
+    expect(programsTab).toContain("Untitled activity")
+    expect(programsTab).toContain('title="No activity yet"')
+    expect(programsTab).toContain('title="No activity to display"')
+    expect(orgProfileConfig).toContain('{ value: "programs", label: "Activity"')
+    expect(publicCardSections).toContain(
+      '<h2 className="text-lg font-semibold">Activity</h2>'
+    )
+    expect(publicCardSections).toContain("Untitled activity")
     expect(myOrganizationPage).toContain(
       "const canEdit = isAdmin || canEditOrganization(role)"
     )
@@ -249,5 +320,9 @@ describe("workspace organization overview programs", () => {
     expect(dashboardCard).not.toContain("New object")
     expect(dashboardCard).not.toContain("Start object builder")
     expect(dashboardCard).not.toContain("Supported primary object types")
+    expect(programsTab).not.toContain('title="No primary objects yet"')
+    expect(programsTab).not.toContain("Primary objects")
+    expect(orgProfileConfig).not.toContain('label: "Primary objects"')
+    expect(publicCardSections).not.toContain("Primary objects")
   })
 })

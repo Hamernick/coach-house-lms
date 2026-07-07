@@ -2,6 +2,12 @@
 
 Use this as the canonical UI implementation/review checklist.
 
+## Design Source
+
+- MUST: For UI-visible work, read `docs/design.md` before editing and use it as the product-specific visual source of truth.
+- MUST: Prefer `docs/design.md` when it is more specific than generic UI inspiration, while still preserving accessibility, security, responsive behavior, and shadcn/ui conventions.
+- SHOULD: Mention the relevant `docs/design.md` guidance in `docs/RUNLOG.md` for meaningful UI changes.
+
 ## Interactions
 
 ### Keyboard

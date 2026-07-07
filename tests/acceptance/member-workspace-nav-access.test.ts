@@ -16,7 +16,7 @@ describe("member workspace nav access", () => {
         isAdmin: true,
         showMemberWorkspace: false,
         hasActiveSubscription: false,
-      }),
+      })
     ).toBe(true)
   })
 
@@ -26,7 +26,7 @@ describe("member workspace nav access", () => {
         isAdmin: false,
         showMemberWorkspace: false,
         hasActiveSubscription: false,
-      }),
+      })
     ).toBe(false)
   })
 
@@ -34,42 +34,79 @@ describe("member workspace nav access", () => {
     expect(
       shouldForceStripeEntitlementSyncForWorkspace({
         isAdmin: false,
-      }),
+      })
     ).toBe(true)
     expect(
       shouldForceStripeEntitlementSyncForWorkspace({
         isAdmin: true,
-      }),
+      })
     ).toBe(false)
   })
 
   it("does not hide member workspace nav from org admins inside admin routes", () => {
     const shellSource = readFileSync(
       join(ROOT, "src/components/app-shell/app-shell-inner.tsx"),
-      "utf8",
+      "utf8"
     )
 
     expect(shellSource).not.toContain("(!isAdminContext || isAdmin)")
-    expect(shellSource).not.toContain("!isAdminContext &&\n    !isAcceleratorContext")
+    expect(shellSource).not.toContain(
+      "!isAdminContext &&\n    !isAcceleratorContext"
+    )
     expect(shellSource).toContain("canShowMemberWorkspace")
   })
 
   it("syncs missing Stripe subscription rows before protected member workspace pages redirect", () => {
     const accessSource = readFileSync(
       join(ROOT, "src/lib/workspace/member-workspace-access.ts"),
-      "utf8",
+      "utf8"
     )
     const layoutStateSource = readFileSync(
       join(ROOT, "src/app/(dashboard)/_lib/dashboard-layout-state.ts"),
-      "utf8",
+      "utf8"
+    )
+    const workspaceContentSource = readFileSync(
+      join(
+        ROOT,
+        "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx"
+      ),
+      "utf8"
+    )
+    const workspaceEntitlementsSource = readFileSync(
+      join(
+        ROOT,
+        "src/app/(dashboard)/my-organization/_lib/workspace-learning-entitlements.ts"
+      ),
+      "utf8"
     )
 
     expect(accessSource).toContain("fetchLearningEntitlements")
     expect(accessSource).toContain("forceStripeSync: true")
     expect(accessSource).toContain("syncedEntitlements.hasActiveSubscription")
-    expect(layoutStateSource).toContain("shouldForceStripeEntitlementSyncForWorkspace")
-    expect(layoutStateSource).toContain("forceStripeSync: shouldForceStripeEntitlementSyncForWorkspace")
-    expect(layoutStateSource).toContain("Unable to load dashboard entitlement state.")
+    expect(layoutStateSource).toContain(
+      "shouldForceStripeEntitlementSyncForWorkspace"
+    )
+    expect(layoutStateSource).toContain(
+      "forceStripeSync: shouldForceStripeEntitlementSyncForWorkspace"
+    )
+    expect(layoutStateSource).toContain(
+      "Unable to load dashboard entitlement state."
+    )
     expect(layoutStateSource).toContain("return entitlementFallback")
+    expect(workspaceContentSource).toContain(
+      "loadWorkspaceLearningEntitlements"
+    )
+    expect(workspaceEntitlementsSource).toContain(
+      "shouldForceStripeEntitlementSyncForWorkspace"
+    )
+    expect(workspaceEntitlementsSource).toContain(
+      "forceStripeSync: shouldForceStripeEntitlementSyncForWorkspace"
+    )
+    expect(workspaceEntitlementsSource).toContain(
+      "Unable to load workspace entitlement state."
+    )
+    expect(workspaceEntitlementsSource).toContain(
+      "return WORKSPACE_ENTITLEMENT_FALLBACK"
+    )
   })
 })

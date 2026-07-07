@@ -6,7 +6,6 @@ import { canEditOrganization } from "@/lib/organization/active-org"
 import { measureServerStep } from "@/lib/performance/server-timing"
 import type { Json } from "@/lib/supabase"
 import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
-import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { sortAcceleratorModules } from "@/lib/accelerator/module-order"
 import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
 import { resolvePricingPlanTier } from "@/lib/billing/plan-tier"
@@ -50,6 +49,7 @@ import {
   redirectLegacyMyOrganizationTab,
   resolveMyOrganizationPageSearchState,
 } from "./my-organization-page-search"
+import { loadWorkspaceLearningEntitlements } from "./workspace-learning-entitlements"
 
 type MyOrganizationSupabase = NonNullable<
   Awaited<ReturnType<typeof resolveOptionalAuthenticatedAppContext>>
@@ -214,10 +214,10 @@ export default async function MyOrganizationPage({
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle<{ status: string | null; metadata: Json | null }>(),
-        fetchLearningEntitlements({
+        loadWorkspaceLearningEntitlements({
           supabase,
           userId: user.id,
-          orgUserId: orgId,
+          orgId,
           isAdmin,
         }),
       ]),

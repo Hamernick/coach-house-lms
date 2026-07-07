@@ -152,6 +152,24 @@ describe("resource-map-admin feature contract", () => {
     const resourceAdminActions = readSource(
       "src/components/public/public-map-index/resource-detail-admin-actions.tsx"
     )
+    const organizationChrome = readSource(
+      "src/components/public/public-map-index/organization-detail-shell-sections.tsx"
+    )
+    const sidebarPanels = readSource(
+      "src/components/public/public-map-index/sidebar-panels.tsx"
+    )
+    const sidebar = readSource(
+      "src/components/public/public-map-index/sidebar.tsx"
+    )
+    const sidebarShellPanel = readSource(
+      "src/components/public/public-map-index/sidebar-shell-panel.tsx"
+    )
+    const organizationAdminActions = readSource(
+      "src/components/public/public-map-index/organization-detail-admin-actions.tsx"
+    )
+    const organizationCurationAction = readSource(
+      "src/actions/public-map-organization-curation.ts"
+    )
 
     expect(findPage).toContain("canManageResourceMap={shellState.isAdmin}")
     expect(findSlugPage).toContain("canManageResourceMap={shellState.isAdmin}")
@@ -163,6 +181,28 @@ describe("resource-map-admin feature contract", () => {
     expect(resourceDetail).toContain("canManageResourceMap?: boolean")
     expect(resourceChrome).toContain("PublicMapResourceAdminActions")
     expect(resourceChrome).toContain("canManageResourceMap &&")
+    expect(organizationChrome).toContain("PublicMapOrganizationAdminActions")
+    expect(organizationChrome).toContain(
+      "canManageResourceMap && organizationCurationAction"
+    )
+    expect(sidebarPanels).toContain("PublicMapRailDetailPanel")
+    expect(sidebarPanels).toContain("PublicMapDrawerDetailPanel")
+    expect(sidebarPanels).toContain("canManageResourceMap = false")
+    expect(sidebarPanels).toContain(
+      "organizationCurationAction={organizationCurationAction}"
+    )
+    expect(sidebar).toContain("canManageResourceMap = false")
+    expect(sidebar).toContain("canManageResourceMap={canManageResourceMap}")
+    expect(sidebar).toContain(
+      "organizationCurationAction={organizationCurationAction}"
+    )
+    expect(sidebarShellPanel).toContain("canManageResourceMap = false")
+    expect(sidebarShellPanel).toContain(
+      "canManageResourceMap={canManageResourceMap}"
+    )
+    expect(sidebarShellPanel).toContain(
+      "organizationCurationAction={organizationCurationAction}"
+    )
 
     expect(resourceAdminActions).toContain('"use client"')
     expect(resourceAdminActions).toContain("curationAction")
@@ -175,6 +215,14 @@ describe("resource-map-admin feature contract", () => {
     expect(resourceAdminActions).toContain("router.refresh()")
     expect(resourceAdminActions).not.toContain("@/features/resource-map-admin")
     expect(resourceAdminActions).not.toContain("resource_map_import_records")
+    expect(organizationAdminActions).toContain('"use client"')
+    expect(organizationAdminActions).toContain('action="hide"')
+    expect(organizationAdminActions).toContain('action="delete"')
+    expect(organizationAdminActions).toContain(
+      "data-public-map-organization-admin-actions"
+    )
+    expect(organizationCurationAction).toContain('"use server"')
+    expect(organizationCurationAction).toContain("await requireAdmin()")
   })
 
   it("adds staged ingestion tooling instead of direct public writes", () => {

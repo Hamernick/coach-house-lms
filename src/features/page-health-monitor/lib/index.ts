@@ -59,6 +59,10 @@ const SENSITIVE_METADATA_KEYS = [
   "query",
 ]
 
+const SENSITIVE_TEXT_PATTERN =
+  /\b([a-z0-9_-]*(?:code|email|href|invite|password|phone|query|search|secret|token|url)[a-z0-9_-]*)=([^\s&#"'<>),.;]+)/gi
+const URL_TEXT_PATTERN = /https?:\/\/[^\s"'<>]+/gi
+
 function normalizeMetadataKey(key: string) {
   return key.replace(/[^a-zA-Z0-9]/g, "").toLowerCase()
 }
@@ -75,6 +79,32 @@ function cleanString(value: unknown, maxLength: number) {
   const trimmed = value.trim()
   if (!trimmed) return null
   return trimmed.slice(0, maxLength)
+}
+
+export function sanitizePageHealthPath(value: unknown) {
+  const trimmed = cleanString(value, 2048)
+  if (!trimmed) return null
+
+  try {
+    const url = new URL(trimmed, "https://coachhouse.local")
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null
+    return cleanString(url.pathname, 300)
+  } catch {
+    return cleanString(trimmed.split(/[?#]/)[0], 300)
+  }
+}
+
+function sanitizePageHealthText(value: unknown, maxLength: number) {
+  const trimmed = cleanString(value, maxLength)
+  if (!trimmed) return null
+
+  return trimmed
+    .replace(
+      URL_TEXT_PATTERN,
+      (match) => sanitizePageHealthPath(match) ?? "[url]"
+    )
+    .replace(SENSITIVE_TEXT_PATTERN, "$1=[redacted]")
+    .slice(0, maxLength)
 }
 
 function cleanNumber(value: unknown) {
@@ -100,7 +130,9 @@ function sanitizeMetadataValue(value: unknown, depth = 0): Json | undefined {
     typeof value === "number" ||
     typeof value === "boolean"
   ) {
-    return value
+    return typeof value === "string"
+      ? (sanitizePageHealthText(value, 1000) ?? "")
+      : value
   }
   if (value instanceof Date) return value.toISOString()
   if (Array.isArray(value)) {
@@ -143,12 +175,12 @@ export function normalizePageHealthEventInput(
     ),
     severity: cleanEnum(safeInput.severity, PAGE_HEALTH_SEVERITIES, "warning"),
     source: cleanEnum(safeInput.source, PAGE_HEALTH_SOURCES, "client"),
-    routePath: cleanString(safeInput.routePath, 300),
-    targetHref: cleanString(safeInput.targetHref, 300),
+    routePath: sanitizePageHealthPath(safeInput.routePath),
+    targetHref: sanitizePageHealthPath(safeInput.targetHref),
     durationMs: cleanNumber(safeInput.durationMs),
     thresholdMs: cleanNumber(safeInput.thresholdMs),
     errorName: cleanString(safeInput.errorName, 120),
-    errorMessage: cleanString(safeInput.errorMessage, 500),
+    errorMessage: sanitizePageHealthText(safeInput.errorMessage, 500),
     errorDigest: cleanString(safeInput.errorDigest, 160),
     stackHash: cleanString(safeInput.stackHash, 80),
     metadata: sanitizeMetadata(safeInput.metadata),

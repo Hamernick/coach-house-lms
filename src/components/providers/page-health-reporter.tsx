@@ -14,24 +14,23 @@ const SLOW_PAGE_LOAD_MS = 3500
 const STUCK_PAGE_LOAD_MS = 10000
 const reportedSignatures = new Set<string>()
 
-function currentPath() {
-  if (typeof window === "undefined") return null
-  return `${window.location.pathname}${window.location.hash || ""}`
-}
-
-function sanitizePath(value: string | null | undefined) {
-  if (!value) return null
-  try {
-    if (value.startsWith("http://") || value.startsWith("https://")) {
-      const url = new URL(value)
-      return `${url.pathname}${url.hash}`
-    }
-  } catch {
-    return null
-  }
+function sanitizePageHealthPath(value: unknown) {
+  if (typeof value !== "string") return null
   const trimmed = value.trim()
   if (!trimmed) return null
-  return trimmed.split("?")[0]?.slice(0, 300) ?? null
+
+  try {
+    const url = new URL(trimmed, "https://coachhouse.local")
+    if (url.protocol !== "http:" && url.protocol !== "https:") return null
+    return url.pathname.slice(0, 300)
+  } catch {
+    return trimmed.split(/[?#]/)[0]?.slice(0, 300) ?? null
+  }
+}
+
+function currentPath() {
+  if (typeof window === "undefined") return null
+  return sanitizePageHealthPath(window.location.href)
 }
 
 function hashString(value: string | null | undefined) {
@@ -73,8 +72,8 @@ function sendPageHealthPayload(input: PageHealthEventInput) {
 export function reportPageHealthEvent(input: PageHealthEventInput) {
   if (typeof window === "undefined") return
 
-  const routePath = sanitizePath(input.routePath) ?? currentPath()
-  const targetHref = sanitizePath(input.targetHref)
+  const routePath = sanitizePageHealthPath(input.routePath) ?? currentPath()
+  const targetHref = sanitizePageHealthPath(input.targetHref)
   const payload: PageHealthEventInput = {
     ...input,
     routePath,

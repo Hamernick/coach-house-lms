@@ -7,6 +7,7 @@ export {
   normalizePageHealthEventInput,
   PAGE_HEALTH_EVENT_TYPES,
   PAGE_HEALTH_MONITOR_WINDOW_DAYS,
+  sanitizePageHealthPath,
 } from "./lib"
 export type {
   NormalizedPageHealthEventInput,

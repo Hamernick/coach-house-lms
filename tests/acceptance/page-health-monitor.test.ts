@@ -8,6 +8,7 @@ import { PageHealthMonitorPanel } from "@/features/page-health-monitor"
 import {
   buildPageHealthMonitorInput,
   normalizePageHealthEventInput,
+  sanitizePageHealthPath,
 } from "@/features/page-health-monitor/lib"
 import type {
   PageHealthIdentity,
@@ -46,13 +47,16 @@ describe("page-health-monitor feature contract", () => {
   it("normalizes page-health payloads and redacts sensitive metadata", () => {
     const normalized = normalizePageHealthEventInput({
       durationMs: 4219.4,
-      errorMessage: "x".repeat(800),
+      errorMessage:
+        "Failed at https://coachhouse.app/workspace?invite=secret#token with token=abc.",
       eventType: "slow_page_load",
       metadata: {
         authToken: "secret",
         email: "user@example.com",
+        safeMessage: "Loaded https://coachhouse.app/find?token=abc#invite",
         nested: {
           inviteUrl: "https://example.com/invite?token=abc",
+          recoveryCode: "code=123",
           safeValue: "kept",
         },
         viewport: { width: 1280 },
@@ -60,18 +64,35 @@ describe("page-health-monitor feature contract", () => {
       routePath: "/workspace?token=abc",
       severity: "warning",
       source: "client",
+      targetHref: "https://coachhouse.app/find?invite=abc#secret",
     })
 
     expect(normalized.eventType).toBe("slow_page_load")
     expect(normalized.durationMs).toBe(4219)
-    expect(normalized.errorMessage).toHaveLength(500)
+    expect(normalized.routePath).toBe("/workspace")
+    expect(normalized.targetHref).toBe("/find")
+    expect(normalized.errorMessage).toBe(
+      "Failed at /workspace with token=[redacted]."
+    )
     expect(normalized.metadata).toMatchObject({
       nested: { safeValue: "kept" },
+      safeMessage: "Loaded /find",
       viewport: { width: 1280 },
     })
     expect(JSON.stringify(normalized.metadata)).not.toContain("user@example")
     expect(JSON.stringify(normalized.metadata)).not.toContain("secret")
     expect(JSON.stringify(normalized.metadata)).not.toContain("invite")
+    expect(JSON.stringify(normalized.metadata)).not.toContain("code=123")
+  })
+
+  it("strips query strings and hashes from page-health paths", () => {
+    expect(sanitizePageHealthPath("/workspace?token=abc#invite")).toBe(
+      "/workspace"
+    )
+    expect(
+      sanitizePageHealthPath("https://coachhouse.app/find?invite=abc#secret")
+    ).toBe("/find")
+    expect(sanitizePageHealthPath("javascript:alert(1)")).toBeNull()
   })
 
   it("builds summary and affected-account queues from raw events", () => {
@@ -198,6 +219,12 @@ describe("page-health-monitor feature contract", () => {
     expect(reporter).toContain("navigator.sendBeacon")
     expect(reporter).toContain("hashString")
     expect(reporter).not.toContain("window.location.search")
+    expect(reporter).not.toContain("window.location.hash")
+    expect(reporter).toContain("sanitizePageHealthPath(window.location.href)")
+    expect(apiRoute).toContain("MAX_PAGE_HEALTH_PAYLOAD_BYTES")
+    expect(apiRoute).toContain("isAllowedPageHealthOrigin")
+    expect(apiRoute).toContain('reason: "origin_not_allowed"')
+    expect(apiRoute).toContain('reason: "payload_too_large"')
     expect(dashboardError).toContain("reportPageHealthError")
     expect(appError).toContain('source: "error_boundary"')
     expect(globalError).toContain('eventType: "global_error"')

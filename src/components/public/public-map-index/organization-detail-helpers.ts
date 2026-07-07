@@ -15,6 +15,8 @@ import {
   normalizeOrganizationLocationFields,
 } from "@/lib/location/organization-location"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+import { buildPublicMapResourceLinks } from "@/lib/public-map/resource-links"
+import type { PublicMapOrganizationResourceLink } from "@/lib/public-map/resource-links"
 
 export type PublicMapSocialKey = keyof Pick<
   PublicMapOrganization,
@@ -68,13 +70,15 @@ const SOCIAL_FIELDS: Array<{
   { label: "Instagram", key: "instagram" },
 ]
 
-export const SOCIAL_ICON_MAP: Record<PublicMapSocialKey, OrganizationDetailIcon> =
-  {
-    twitter: TwitterIcon,
-    facebook: FacebookIcon,
-    linkedin: LinkedinIcon,
-    instagram: InstagramIcon,
-  }
+export const SOCIAL_ICON_MAP: Record<
+  PublicMapSocialKey,
+  OrganizationDetailIcon
+> = {
+  twitter: TwitterIcon,
+  facebook: FacebookIcon,
+  linkedin: LinkedinIcon,
+  instagram: InstagramIcon,
+}
 
 export function normalizeHref(value: string | null | undefined) {
   if (!value) return null
@@ -180,7 +184,9 @@ export function resolveAboutText(organization: PublicMapOrganization) {
   )
 }
 
-export function resolveBrandKitDownloadHref(organization: PublicMapOrganization) {
+export function resolveBrandKitDownloadHref(
+  organization: PublicMapOrganization
+) {
   if (!organization.brandKitAvailable || !organization.publicSlug) return null
   return `/api/public/organizations/${organization.publicSlug}/brand-kit`
 }
@@ -192,10 +198,8 @@ export function buildSocialLinks(
     key: field.key,
     label: field.label,
     href: normalizeHref(organization[field.key]),
-  })).filter(
-    (
-      entry
-    ): entry is OrganizationDetailSocialLink => Boolean(entry.href)
+  })).filter((entry): entry is OrganizationDetailSocialLink =>
+    Boolean(entry.href)
   )
 }
 
@@ -204,11 +208,17 @@ export function buildStoryFields(
 ): OrganizationDetailStoryField[] {
   return [
     { label: "Origin story", value: normalizeText(organization.originStory) },
-    { label: "Need statement", value: normalizeText(organization.needStatement) },
+    {
+      label: "Need statement",
+      value: normalizeText(organization.needStatement),
+    },
     { label: "Mission", value: normalizeText(organization.mission) },
     { label: "Vision", value: normalizeText(organization.vision) },
     { label: "Values", value: normalizeText(organization.values) },
-    { label: "Theory of change", value: normalizeText(organization.theoryOfChange) },
+    {
+      label: "Theory of change",
+      value: normalizeText(organization.theoryOfChange),
+    },
   ]
 }
 
@@ -220,6 +230,12 @@ export function buildContactRows(
     { label: "Email", value: normalizeText(organization.email) },
     { label: "Phone", value: normalizeText(organization.phone) },
   ].filter((entry) => entry.value.length > 0)
+}
+
+export function buildResourceLinks(
+  organization: PublicMapOrganization
+): PublicMapOrganizationResourceLink[] {
+  return buildPublicMapResourceLinks(organization)
 }
 
 export function buildActionLinks(
@@ -273,6 +289,6 @@ export function buildActionLinks(
   ]
 
   return actions.filter(
-    (action): action is OrganizationDetailActionLink => action !== null,
+    (action): action is OrganizationDetailActionLink => action !== null
   )
 }

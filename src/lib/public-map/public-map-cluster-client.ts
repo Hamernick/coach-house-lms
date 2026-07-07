@@ -2,11 +2,16 @@ import * as Comlink from "comlink"
 import Supercluster from "supercluster"
 
 import type {
+  PublicMapClusterAggregateProperties,
   PublicMapClusterProperties,
   PublicMapFeatureCollection,
   PublicMapPointFeature,
   PublicMapPointProperties,
 } from "./public-map-geojson"
+import {
+  mapPublicMapClusterProperties,
+  reducePublicMapClusterProperties,
+} from "./public-map-cluster-aggregation"
 import type {
   PublicMapClusterQueryRequest,
   PublicMapClusterQueryResult,
@@ -22,16 +27,19 @@ type PublicMapClusterBuildResult = {
 export type PublicMapClusterClient = {
   build: (
     features: PublicMapPointFeature[],
-    dataVersion: string,
+    dataVersion: string
   ) => Promise<PublicMapClusterBuildResult>
   getClusters: (
-    request: PublicMapClusterQueryRequest,
+    request: PublicMapClusterQueryRequest
   ) => Promise<PublicMapClusterQueryResult>
-  getExpansionZoom: (clusterId: number, dataVersion: string) => Promise<number | null>
+  getExpansionZoom: (
+    clusterId: number,
+    dataVersion: string
+  ) => Promise<number | null>
   getLeaves: (
     clusterId: number,
     limit: number,
-    dataVersion: string,
+    dataVersion: string
   ) => Promise<PublicMapPointFeature[]>
   destroy: () => void
 }
@@ -55,12 +63,17 @@ function buildEmptyFeatureCollection(): PublicMapFeatureCollection {
 }
 
 function createLocalPublicMapClusterIndex() {
-  let clusterIndex: Supercluster<PublicMapPointProperties, PublicMapClusterProperties> | null =
-    null
+  let clusterIndex: Supercluster<
+    PublicMapPointProperties,
+    PublicMapClusterAggregateProperties
+  > | null = null
   let clusterDataVersion: string | null = null
 
   return {
-    build(features: PublicMapPointFeature[], dataVersion: string): PublicMapClusterBuildResult {
+    build(
+      features: PublicMapPointFeature[],
+      dataVersion: string
+    ): PublicMapClusterBuildResult {
       if (clusterIndex && clusterDataVersion === dataVersion) {
         return {
           dataVersion,
@@ -69,9 +82,14 @@ function createLocalPublicMapClusterIndex() {
         }
       }
 
-      clusterIndex = new Supercluster<PublicMapPointProperties, PublicMapClusterProperties>(
-        CLUSTER_OPTIONS,
-      )
+      clusterIndex = new Supercluster<
+        PublicMapPointProperties,
+        PublicMapClusterAggregateProperties
+      >({
+        ...CLUSTER_OPTIONS,
+        map: mapPublicMapClusterProperties,
+        reduce: reducePublicMapClusterProperties,
+      })
       clusterIndex.load(features)
       clusterDataVersion = dataVersion
       return {
@@ -125,7 +143,10 @@ function createLocalPublicMapClusterIndex() {
 function buildEmptyClusterQueryResult({
   dataVersion,
   querySeq,
-}: Pick<PublicMapClusterQueryRequest, "dataVersion" | "querySeq">): PublicMapClusterQueryResult {
+}: Pick<
+  PublicMapClusterQueryRequest,
+  "dataVersion" | "querySeq"
+>): PublicMapClusterQueryResult {
   return {
     dataVersion,
     querySeq,
@@ -135,20 +156,25 @@ function buildEmptyClusterQueryResult({
 
 function shouldUsePublicMapClusterResult(
   result: Pick<PublicMapClusterQueryResult, "dataVersion" | "querySeq">,
-  expected: Pick<PublicMapClusterQueryRequest, "dataVersion" | "querySeq">,
+  expected: Pick<PublicMapClusterQueryRequest, "dataVersion" | "querySeq">
 ) {
-  return result.dataVersion === expected.dataVersion && result.querySeq === expected.querySeq
+  return (
+    result.dataVersion === expected.dataVersion &&
+    result.querySeq === expected.querySeq
+  )
 }
 
 export { shouldUsePublicMapClusterResult }
 
 export function createPublicMapClusterClient(
-  options: PublicMapClusterClientOptions = {},
+  options: PublicMapClusterClientOptions = {}
 ): PublicMapClusterClient {
   const local = createLocalPublicMapClusterIndex()
   let worker: Worker | null = null
-  let remote: PublicMapClusterWorkerApi | Comlink.Remote<PublicMapClusterWorkerApi> | null =
-    options.workerApi ?? null
+  let remote:
+    | PublicMapClusterWorkerApi
+    | Comlink.Remote<PublicMapClusterWorkerApi>
+    | null = options.workerApi ?? null
   let activeDataVersion: string | null = null
   let workerFailed = false
   let destroyed = false
@@ -158,9 +184,12 @@ export function createPublicMapClusterClient(
 
   if (!remote) {
     try {
-      worker = new Worker(new URL("./public-map-cluster.worker.ts", import.meta.url), {
-        type: "module",
-      })
+      worker = new Worker(
+        new URL("./public-map-cluster.worker.ts", import.meta.url),
+        {
+          type: "module",
+        }
+      )
       worker.addEventListener("error", () => {
         workerFailed = true
       })
@@ -170,7 +199,10 @@ export function createPublicMapClusterClient(
     }
   }
 
-  const ensureFallbackIndex = (features = latestFeatures, dataVersion = latestDataVersion) => {
+  const ensureFallbackIndex = (
+    features = latestFeatures,
+    dataVersion = latestDataVersion
+  ) => {
     const result = local.build(features, dataVersion)
     fallbackReady = true
     activeDataVersion = dataVersion
@@ -179,7 +211,7 @@ export function createPublicMapClusterClient(
 
   const buildWorkerIndex = async (
     features: PublicMapPointFeature[],
-    dataVersion: string,
+    dataVersion: string
   ) => {
     if (!remote || workerFailed) return null
     return await Promise.resolve(remote.build(features, dataVersion))
@@ -239,7 +271,9 @@ export function createPublicMapClusterClient(
       if (destroyed || dataVersion !== activeDataVersion) return null
       if (remote && !workerFailed && !fallbackReady) {
         try {
-          return await Promise.resolve(remote.getExpansionZoom(clusterId, dataVersion))
+          return await Promise.resolve(
+            remote.getExpansionZoom(clusterId, dataVersion)
+          )
         } catch {
           workerFailed = true
           ensureFallbackIndex()
@@ -254,7 +288,9 @@ export function createPublicMapClusterClient(
 
       if (remote && !workerFailed && !fallbackReady) {
         try {
-          return await Promise.resolve(remote.getLeaves(clusterId, boundedLimit, dataVersion))
+          return await Promise.resolve(
+            remote.getLeaves(clusterId, boundedLimit, dataVersion)
+          )
         } catch {
           workerFailed = true
           ensureFallbackIndex()

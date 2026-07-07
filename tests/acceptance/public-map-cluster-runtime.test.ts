@@ -18,22 +18,38 @@ import {
   syncSelectedOrganizationLayers,
 } from "@/components/public/public-map-index/map-layer-sync"
 import {
+  PUBLIC_MAP_CLUSTER_LABEL_LAYER_ID,
   PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
   PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
   PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
+  PUBLIC_MAP_POINT_LABEL_LAYER_ID,
   PUBLIC_MAP_SAME_LOCATION_COUNT_LAYER_ID,
   PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID,
   PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
   PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID,
+  PUBLIC_MAP_SELECTED_POINT_LABEL_LAYER_ID,
   PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID,
   PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID,
 } from "@/components/public/public-map-index/map-view-helpers"
+import {
+  buildPublicMapPointLabelExpression,
+  PUBLIC_MAP_MARKER_SELECTION_TRANSITION,
+  PUBLIC_MAP_POINT_SHADOW_KEY,
+  resolvePublicMapPointShadowOpacity,
+  resolvePublicMapPointShadowSize,
+  resolvePublicMapSelectedPointIconSize,
+  resolvePublicMapSelectedPointLabelOffset,
+  resolvePublicMapSelectedPointShadowOpacity,
+  resolvePublicMapSelectedPointShadowSize,
+} from "@/lib/public-map/public-map-layer-api"
 
 describe("queryVisibleUnclusteredOrganizationFeatures", () => {
   it("returns an empty list when source access throws during style teardown", () => {
     const map = {
       getSource: vi.fn(() => {
-        throw new TypeError("Cannot read properties of undefined (reading 'getOwnSource')")
+        throw new TypeError(
+          "Cannot read properties of undefined (reading 'getOwnSource')"
+        )
       }),
       querySourceFeatures: vi.fn(),
       queryRenderedFeatures: vi.fn(),
@@ -105,7 +121,13 @@ describe("queryVisibleUnclusteredOrganizationFeatures", () => {
       getSource: vi.fn().mockReturnValue({}),
       querySourceFeatures: vi
         .fn()
-        .mockReturnValue([inBoundsA, inBoundsB, duplicateTileCopy, outOfBounds, clusterFeature]),
+        .mockReturnValue([
+          inBoundsA,
+          inBoundsB,
+          duplicateTileCopy,
+          outOfBounds,
+          clusterFeature,
+        ]),
       getBounds: vi.fn().mockReturnValue({
         getWest: () => -90,
         getEast: () => -80,
@@ -117,10 +139,13 @@ describe("queryVisibleUnclusteredOrganizationFeatures", () => {
 
     const features = queryVisibleUnclusteredOrganizationFeatures({ map })
     const organizationIds = features.map(
-      (feature) => (feature.properties as { organizationId?: string }).organizationId,
+      (feature) =>
+        (feature.properties as { organizationId?: string }).organizationId
     )
 
-    expect(map.querySourceFeatures).toHaveBeenCalledWith(PUBLIC_MAP_ORGANIZATION_SOURCE_ID)
+    expect(map.querySourceFeatures).toHaveBeenCalledWith(
+      PUBLIC_MAP_ORGANIZATION_SOURCE_ID
+    )
     expect(organizationIds).toEqual(["org-a", "org-b"])
   })
 })
@@ -139,7 +164,7 @@ describe("shouldScheduleClusterRenderFromSourceData", () => {
           dataType: "source",
           isSourceLoaded: true,
         } as mapboxgl.MapSourceDataEvent,
-      }),
+      })
     ).toBe(false)
   })
 
@@ -156,7 +181,7 @@ describe("shouldScheduleClusterRenderFromSourceData", () => {
           dataType: "source",
           isSourceLoaded: true,
         } as mapboxgl.MapSourceDataEvent,
-      }),
+      })
     ).toBe(false)
   })
 
@@ -173,7 +198,7 @@ describe("shouldScheduleClusterRenderFromSourceData", () => {
           dataType: "source",
           isSourceLoaded: false,
         } as mapboxgl.MapSourceDataEvent,
-      }),
+      })
     ).toBe(false)
 
     expect(
@@ -184,7 +209,7 @@ describe("shouldScheduleClusterRenderFromSourceData", () => {
           dataType: "source",
           isSourceLoaded: true,
         } as mapboxgl.MapSourceDataEvent,
-      }),
+      })
     ).toBe(true)
   })
 })
@@ -238,7 +263,9 @@ describe("cluster click coordinate normalization", () => {
         x: coordinates[0] < 0 ? 640 : 1040,
         y: 320,
       })),
-      queryRenderedFeatures: vi.fn().mockReturnValue([wrappedCopy, visibleCopy]),
+      queryRenderedFeatures: vi
+        .fn()
+        .mockReturnValue([wrappedCopy, visibleCopy]),
     } as unknown as mapboxgl.Map
 
     expect(
@@ -246,7 +273,7 @@ describe("cluster click coordinate normalization", () => {
         map,
         clusterId: 11,
         fallbackCoordinates: [-87.6298, 41.8781],
-      }),
+      })
     ).toMatchObject({
       clusterId: 11,
     })
@@ -292,7 +319,7 @@ describe("public map interactions", () => {
         duration: 460,
         essential: true,
         zoom: 11.35,
-      }),
+      })
     )
     debugSpy.mockRestore()
   })
@@ -307,7 +334,7 @@ describe("public map interactions", () => {
         cluster: true,
         cluster_id: "42",
         clusterImageId: "public-map-cluster-sprite-stable",
-        clusterSignature: "tier:medium|count:5|images:a,b|overflow:3|zoom:3",
+        clusterSignature: "tier:medium|count:5",
         point_count: 5,
       },
     } as unknown as mapboxgl.MapboxGeoJSONFeature
@@ -323,7 +350,7 @@ describe("public map interactions", () => {
         map,
         clusterId: 42,
         fallbackCoordinates: [-87.6298, 41.8781],
-      }),
+      })
     ).toEqual({
       clusterId: 42,
       coordinates: [-87.6298, 41.8781],
@@ -339,7 +366,7 @@ describe("public map interactions", () => {
         organizationId: " org-42 ",
         organizationIds: "org-42",
         sameLocationCount: 1,
-      }),
+      })
     ).toEqual({
       type: "organization",
       organizationId: "org-42",
@@ -354,7 +381,7 @@ describe("public map interactions", () => {
         sameLocationCount: 2,
         sameLocationKey: "41.878100,-87.629800",
         sameLocationLabel: "Chicago, IL",
-      }),
+      })
     ).toEqual({
       type: "same-location",
       group: {
@@ -391,8 +418,16 @@ describe("public map interactions", () => {
 
     expect(map.addSource).not.toHaveBeenCalled()
     expect(map.addLayer).not.toHaveBeenCalled()
-    expect(map.off).toHaveBeenCalledWith("mouseenter", "layer-a", expect.any(Function))
-    expect(map.off).toHaveBeenCalledWith("mouseleave", "layer-a", expect.any(Function))
+    expect(map.off).toHaveBeenCalledWith(
+      "mouseenter",
+      "layer-a",
+      expect.any(Function)
+    )
+    expect(map.off).toHaveBeenCalledWith(
+      "mouseleave",
+      "layer-a",
+      expect.any(Function)
+    )
   })
 })
 
@@ -431,7 +466,9 @@ describe("syncClusterSourceAndLayers", () => {
       getStyle: vi.fn().mockReturnValue(loadedStyle),
       isStyleLoaded: vi.fn().mockReturnValue(true),
       getSource: vi.fn(() => {
-        throw new TypeError("Cannot read properties of undefined (reading 'getOwnSource')")
+        throw new TypeError(
+          "Cannot read properties of undefined (reading 'getOwnSource')"
+        )
       }),
       addSource: vi.fn(),
       getLayer: vi.fn(),
@@ -444,7 +481,7 @@ describe("syncClusterSourceAndLayers", () => {
     expect(() =>
       syncClusterSourceAndLayers({
         map,
-      }),
+      })
     ).not.toThrow()
     expect(map.addSource).not.toHaveBeenCalled()
     expect(map.addLayer).not.toHaveBeenCalled()
@@ -485,7 +522,9 @@ describe("syncClusterSourceAndLayers", () => {
       setLayoutProperty: vi.fn(),
     } as unknown as mapboxgl.Map
 
-    expect(ensurePublicMapClusterLayers(map, nonEmptyFeatureCollection)).toBe(true)
+    expect(ensurePublicMapClusterLayers(map, nonEmptyFeatureCollection)).toBe(
+      true
+    )
 
     expect(map.addSource).not.toHaveBeenCalled()
     expect(map.addLayer).not.toHaveBeenCalled()
@@ -507,20 +546,24 @@ describe("syncClusterSourceAndLayers", () => {
       setLayoutProperty: vi.fn(),
     } as unknown as mapboxgl.Map
 
-    expect(ensurePublicMapClusterLayers(map, nonEmptyFeatureCollection)).toBe(true)
+    expect(ensurePublicMapClusterLayers(map, nonEmptyFeatureCollection)).toBe(
+      true
+    )
 
     expect(map.addSource).toHaveBeenCalledWith(
       PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
       expect.objectContaining({
         type: "geojson",
         data: nonEmptyFeatureCollection,
-      }),
+      })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID }),
+      expect.objectContaining({
+        id: PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
+      })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID }),
+      expect.objectContaining({ id: PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID })
     )
   })
 
@@ -539,20 +582,24 @@ describe("syncClusterSourceAndLayers", () => {
       setLayoutProperty: vi.fn(),
     } as unknown as mapboxgl.Map
 
-    expect(ensurePublicMapClusterLayers(map, nonEmptyFeatureCollection)).toBe(true)
+    expect(ensurePublicMapClusterLayers(map, nonEmptyFeatureCollection)).toBe(
+      true
+    )
 
     expect(map.addSource).toHaveBeenCalledWith(
       PUBLIC_MAP_ORGANIZATION_SOURCE_ID,
       expect.objectContaining({
         data: nonEmptyFeatureCollection,
         type: "geojson",
-      }),
+      })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID }),
+      expect.objectContaining({
+        id: PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
+      })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID }),
+      expect.objectContaining({ id: PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID })
     )
   })
 
@@ -566,7 +613,9 @@ describe("syncClusterSourceAndLayers", () => {
       addLayer: vi.fn(),
     } as unknown as mapboxgl.Map
 
-    expect(ensurePublicMapClusterLayers(map, nonEmptyFeatureCollection)).toBe(false)
+    expect(ensurePublicMapClusterLayers(map, nonEmptyFeatureCollection)).toBe(
+      false
+    )
 
     expect(map.getSource).not.toHaveBeenCalled()
     expect(map.addSource).not.toHaveBeenCalled()
@@ -591,14 +640,16 @@ describe("syncClusterSourceAndLayers", () => {
       setLayoutProperty: vi.fn(),
     } as unknown as mapboxgl.Map
 
-    expect(ensurePublicMapClusterLayers(map, nonEmptyFeatureCollection)).toBe(true)
+    expect(ensurePublicMapClusterLayers(map, nonEmptyFeatureCollection)).toBe(
+      true
+    )
 
     expect(sources.has(PUBLIC_MAP_ORGANIZATION_SOURCE_ID)).toBe(true)
     expect(map.getSource(PUBLIC_MAP_ORGANIZATION_SOURCE_ID)).toEqual(
       expect.objectContaining({
         data: nonEmptyFeatureCollection,
         type: "geojson",
-      }),
+      })
     )
   })
 
@@ -617,10 +668,14 @@ describe("syncClusterSourceAndLayers", () => {
       setLayoutProperty: vi.fn(),
     } as unknown as mapboxgl.Map
 
-    expect(ensurePublicMapClusterLayers(map, nonEmptyFeatureCollection)).toBe(true)
+    expect(ensurePublicMapClusterLayers(map, nonEmptyFeatureCollection)).toBe(
+      true
+    )
 
     expect(layers.has(PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID)).toBe(true)
+    expect(layers.has(PUBLIC_MAP_CLUSTER_LABEL_LAYER_ID)).toBe(true)
     expect(layers.has(PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID)).toBe(true)
+    expect(layers.has(PUBLIC_MAP_POINT_LABEL_LAYER_ID)).toBe(true)
   })
 
   it("sets non-empty cluster data when isStyleLoaded is false but style object exists", () => {
@@ -637,7 +692,7 @@ describe("syncClusterSourceAndLayers", () => {
       setPublicMapClusterSourceData({
         map,
         sourceData: nonEmptyFeatureCollection,
-      }),
+      })
     ).toBe(true)
 
     expect(source.setData).toHaveBeenCalledWith(nonEmptyFeatureCollection)
@@ -670,31 +725,42 @@ describe("syncClusterSourceAndLayers", () => {
         data: expect.objectContaining({
           type: "FeatureCollection",
         }),
-      }),
+      })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID }),
+      expect.objectContaining({
+        id: PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
+      })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID }),
+      expect.objectContaining({ id: PUBLIC_MAP_CLUSTER_LABEL_LAYER_ID })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID }),
+      expect.objectContaining({ id: PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: PUBLIC_MAP_SAME_LOCATION_COUNT_LAYER_ID }),
+      expect.objectContaining({ id: PUBLIC_MAP_POINT_LABEL_LAYER_ID })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID }),
+      expect.objectContaining({ id: PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID }),
+      expect.objectContaining({ id: PUBLIC_MAP_SAME_LOCATION_COUNT_LAYER_ID })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID }),
+      expect.objectContaining({ id: PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
-      expect.objectContaining({ id: PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID }),
+      expect.objectContaining({ id: PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID })
+    )
+    expect(map.addLayer).toHaveBeenCalledWith(
+      expect.objectContaining({ id: PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID })
+    )
+    expect(map.addLayer).toHaveBeenCalledWith(
+      expect.objectContaining({ id: PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID })
+    )
+    expect(map.addLayer).toHaveBeenCalledWith(
+      expect.objectContaining({ id: PUBLIC_MAP_SELECTED_POINT_LABEL_LAYER_ID })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -705,66 +771,91 @@ describe("syncClusterSourceAndLayers", () => {
           "icon-size": 1,
           "icon-allow-overlap": true,
         }),
-      }),
+      })
+    )
+    expect(map.addLayer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: PUBLIC_MAP_CLUSTER_LABEL_LAYER_ID,
+        type: "symbol",
+        layout: expect.objectContaining({
+          "text-field": [
+            "concat",
+            ["to-string", ["get", "point_count_abbreviated"]],
+            " resources",
+          ],
+          "text-anchor": "top",
+          "text-offset": [0, 2.92],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+        }),
+        paint: expect.objectContaining({
+          "text-halo-blur": 0.16,
+          "text-halo-color": "rgba(255, 255, 255, 0.9)",
+          "text-halo-width": 0.85,
+        }),
+      })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
       expect.objectContaining({
         id: PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID,
         type: "symbol",
         layout: expect.objectContaining({
-          "icon-image": "public-map-point-shadow",
-          "icon-size": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            3,
-            0.9,
-            11,
-            1,
-            16,
-            1.06,
-          ],
+          "icon-image": PUBLIC_MAP_POINT_SHADOW_KEY,
+          "icon-size": resolvePublicMapPointShadowSize(),
           "icon-ignore-placement": true,
         }),
         paint: expect.objectContaining({
-          "icon-opacity": [
-            "interpolate",
-            ["linear"],
-            ["zoom"],
-            13.65,
-            0,
-            14.35,
-            0.92,
-          ],
+          "icon-opacity": resolvePublicMapPointShadowOpacity(),
+          "icon-opacity-transition": PUBLIC_MAP_MARKER_SELECTION_TRANSITION,
         }),
-      }),
+      })
     )
     expect(map.addLayer).toHaveBeenCalledWith(
       expect.objectContaining({
         id: PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
         type: "symbol",
         layout: expect.objectContaining({
-          "icon-allow-overlap": false,
-          "icon-ignore-placement": false,
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
           "icon-padding": 4,
         }),
-      }),
+      })
+    )
+    expect(map.addLayer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: PUBLIC_MAP_POINT_LABEL_LAYER_ID,
+        type: "symbol",
+        layout: expect.objectContaining({
+          "text-field": buildPublicMapPointLabelExpression(),
+          "text-anchor": "top",
+          "text-offset": [0, 1.55],
+          "text-allow-overlap": false,
+        }),
+        paint: expect.objectContaining({
+          "text-halo-blur": 0.16,
+          "text-halo-color": "rgba(255, 255, 255, 0.9)",
+          "text-halo-width": 0.9,
+        }),
+      })
     )
 
     const addedLayers = (
       map.addLayer as unknown as ReturnType<typeof vi.fn>
     ).mock.calls.map(([layer]) => layer)
     const selectedHaloLayer = addedLayers.find(
-      (layer) => layer.id === PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID,
+      (layer) => layer.id === PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID
     )
     const selectedCoreLayer = addedLayers.find(
-      (layer) => layer.id === PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
+      (layer) => layer.id === PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID
     )
     const selectedShadowLayer = addedLayers.find(
-      (layer) => layer.id === PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID,
+      (layer) => layer.id === PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID
     )
     const selectedBadgeLayer = addedLayers.find(
-      (layer) => layer.id === PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID,
+      (layer) => layer.id === PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID
+    )
+    const selectedLabelLayer = addedLayers.find(
+      (layer) => layer.id === PUBLIC_MAP_SELECTED_POINT_LABEL_LAYER_ID
     )
 
     expect(selectedHaloLayer).toMatchObject({
@@ -777,45 +868,107 @@ describe("syncClusterSourceAndLayers", () => {
     })
     expect(selectedShadowLayer).toMatchObject({
       layout: expect.objectContaining({
-        "icon-image": "public-map-point-shadow",
-        "icon-size": [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          3,
-          1.14,
-          11,
-          1.2,
-          16,
-          1.28,
-        ],
+        "icon-image": PUBLIC_MAP_POINT_SHADOW_KEY,
+        "icon-size": resolvePublicMapSelectedPointShadowSize(),
       }),
       paint: expect.objectContaining({
-        "icon-opacity": 0.78,
+        "icon-opacity": resolvePublicMapSelectedPointShadowOpacity(),
+        "icon-opacity-transition": PUBLIC_MAP_MARKER_SELECTION_TRANSITION,
       }),
     })
     expect(selectedCoreLayer).toMatchObject({
       layout: expect.objectContaining({
-        "icon-size": [
-          "interpolate",
-          ["linear"],
-          ["zoom"],
-          3,
-          1.14,
-          11,
-          1.2,
-          16,
-          1.28,
-        ],
+        "icon-size": resolvePublicMapSelectedPointIconSize(),
+      }),
+      paint: expect.objectContaining({
+        "icon-opacity": 1,
+        "icon-opacity-transition": PUBLIC_MAP_MARKER_SELECTION_TRANSITION,
       }),
     })
     expect(selectedBadgeLayer).toMatchObject({
       filter: expect.arrayContaining([[">", ["get", "sameLocationCount"], 1]]),
       paint: expect.objectContaining({
-        "text-halo-color": "rgba(28, 28, 30, 0.88)",
-        "text-halo-width": 4,
+        "text-halo-width": 0,
+        "text-opacity": 0,
       }),
     })
+    expect(selectedLabelLayer).toMatchObject({
+      filter: expect.arrayContaining([
+        [
+          "any",
+          ["==", ["get", "organizationId"], "__public-map-no-selection__"],
+          ["==", ["get", "sameLocationKey"], "__public-map-no-selection__"],
+        ],
+      ]),
+      layout: expect.objectContaining({
+        "text-field": buildPublicMapPointLabelExpression(),
+        "text-offset": resolvePublicMapSelectedPointLabelOffset(),
+        "text-allow-overlap": true,
+        "text-ignore-placement": true,
+      }),
+      paint: expect.objectContaining({
+        "text-halo-width": 0.9,
+        "text-opacity": 1,
+        "text-opacity-transition": PUBLIC_MAP_MARKER_SELECTION_TRANSITION,
+      }),
+    })
+    expect(resolvePublicMapSelectedPointLabelOffset()).toEqual([0, 2.62])
+  })
+
+  it("uses dark label paint when syncing dark map marker layers", () => {
+    const layers = new Set<string>()
+    const map = {
+      getStyle: vi.fn().mockReturnValue(loadedStyle),
+      isStyleLoaded: vi.fn().mockReturnValue(true),
+      getSource: vi.fn().mockReturnValue(undefined),
+      addSource: vi.fn(),
+      getLayer: vi.fn((id: string) => (layers.has(id) ? { id } : undefined)),
+      addLayer: vi.fn((layer: { id: string }) => {
+        layers.add(layer.id)
+      }),
+      setFilter: vi.fn(),
+      setPaintProperty: vi.fn(),
+      setLayoutProperty: vi.fn(),
+    } as unknown as mapboxgl.Map
+
+    syncClusterSourceAndLayers({
+      map,
+      markerTheme: "dark",
+    })
+
+    expect(map.addLayer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: PUBLIC_MAP_CLUSTER_LABEL_LAYER_ID,
+        paint: expect.objectContaining({
+          "text-color": "rgba(250, 250, 250, 0.9)",
+          "text-halo-blur": 0.25,
+          "text-halo-color": "rgba(9, 9, 11, 0.92)",
+          "text-halo-width": 1.45,
+        }),
+      })
+    )
+    expect(map.addLayer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: PUBLIC_MAP_POINT_LABEL_LAYER_ID,
+        paint: expect.objectContaining({
+          "text-color": "rgba(250, 250, 250, 0.92)",
+          "text-halo-blur": 0.25,
+          "text-halo-color": "rgba(9, 9, 11, 0.92)",
+          "text-halo-width": 1.5,
+        }),
+      })
+    )
+    expect(map.addLayer).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: PUBLIC_MAP_SELECTED_POINT_LABEL_LAYER_ID,
+        paint: expect.objectContaining({
+          "text-color": "rgba(250, 250, 250, 0.92)",
+          "text-halo-blur": 0.25,
+          "text-halo-color": "rgba(9, 9, 11, 0.92)",
+          "text-halo-width": 1.5,
+        }),
+      })
+    )
   })
 
   it("does not create the old demo circle cluster or point-shadow layers", () => {
@@ -838,36 +991,45 @@ describe("syncClusterSourceAndLayers", () => {
 
     const addedLayers = addLayer.mock.calls.map(([layer]) => layer)
     expect(
-      addedLayers.find((layer) => layer.id === PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID),
+      addedLayers.find(
+        (layer) => layer.id === PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID
+      )
     ).toMatchObject({ type: "symbol" })
     expect(
-      addedLayers.find((layer) => layer.id === PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID),
+      addedLayers.find(
+        (layer) => layer.id === PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID
+      )
     ).toMatchObject({ type: "symbol" })
     expect(
       addedLayers.some(
         (layer) =>
           layer.type === "circle" &&
           (layer.id === PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID ||
-            layer.id === PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID),
-      ),
+            layer.id === PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID)
+      )
     ).toBe(false)
   })
 
   it("refreshes cluster sprite image and size without text-count or feature-state interaction", () => {
     const existingLayers = new Set([
       PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
+      PUBLIC_MAP_CLUSTER_LABEL_LAYER_ID,
       PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
+      PUBLIC_MAP_POINT_LABEL_LAYER_ID,
       PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID,
       PUBLIC_MAP_SAME_LOCATION_COUNT_LAYER_ID,
       PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID,
       PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID,
       PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
       PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID,
+      PUBLIC_MAP_SELECTED_POINT_LABEL_LAYER_ID,
     ])
     const map = {
       getStyle: vi.fn().mockReturnValue(loadedStyle),
       getSource: vi.fn().mockReturnValue({}),
-      getLayer: vi.fn((id: string) => (existingLayers.has(id) ? { id } : undefined)),
+      getLayer: vi.fn((id: string) =>
+        existingLayers.has(id) ? { id } : undefined
+      ),
       setFilter: vi.fn(),
       setLayoutProperty: vi.fn(),
       setPaintProperty: vi.fn(),
@@ -880,17 +1042,41 @@ describe("syncClusterSourceAndLayers", () => {
     expect(map.setLayoutProperty).toHaveBeenCalledWith(
       PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
       "icon-image",
-      ["get", "clusterImageId"],
+      ["get", "clusterImageId"]
     )
     expect(map.setLayoutProperty).toHaveBeenCalledWith(
       PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
       "icon-size",
-      1,
+      1
     )
     expect(map.setLayoutProperty).not.toHaveBeenCalledWith(
       PUBLIC_MAP_CLUSTER_SOURCE_CLUSTER_LAYER_ID,
       "text-field",
-      expect.anything(),
+      expect.anything()
+    )
+    expect(map.setLayoutProperty).toHaveBeenCalledWith(
+      PUBLIC_MAP_CLUSTER_LABEL_LAYER_ID,
+      "text-field",
+      [
+        "concat",
+        ["to-string", ["get", "point_count_abbreviated"]],
+        " resources",
+      ]
+    )
+    expect(map.setLayoutProperty).toHaveBeenCalledWith(
+      PUBLIC_MAP_POINT_LABEL_LAYER_ID,
+      "text-field",
+      buildPublicMapPointLabelExpression()
+    )
+    expect(map.setLayoutProperty).toHaveBeenCalledWith(
+      PUBLIC_MAP_SELECTED_POINT_LABEL_LAYER_ID,
+      "text-field",
+      buildPublicMapPointLabelExpression()
+    )
+    expect(map.setLayoutProperty).toHaveBeenCalledWith(
+      PUBLIC_MAP_SELECTED_POINT_LABEL_LAYER_ID,
+      "text-offset",
+      resolvePublicMapSelectedPointLabelOffset()
     )
     expect(map.setFeatureState).not.toHaveBeenCalled()
     expect(map.removeFeatureState).not.toHaveBeenCalled()
@@ -907,9 +1093,30 @@ describe("syncClusterSourceAndLayers", () => {
       selectedOrganizationId: "org-42",
     })
 
+    const unselectedFilter = [
+      "all",
+      ["!", ["has", "point_count"]],
+      [
+        "!",
+        [
+          "any",
+          ["==", ["get", "organizationId"], "org-42"],
+          ["==", ["get", "sameLocationKey"], "__public-map-no-selection__"],
+        ],
+      ],
+    ]
+
     expect(map.setFilter).toHaveBeenCalledWith(
       PUBLIC_MAP_CLUSTER_SOURCE_POINT_LAYER_ID,
-      ["!", ["has", "point_count"]],
+      unselectedFilter
+    )
+    expect(map.setFilter).toHaveBeenCalledWith(
+      PUBLIC_MAP_UNCLUSTERED_SHADOW_LAYER_ID,
+      unselectedFilter
+    )
+    expect(map.setFilter).toHaveBeenCalledWith(
+      PUBLIC_MAP_POINT_LABEL_LAYER_ID,
+      unselectedFilter
     )
     expect(map.setFilter).toHaveBeenCalledWith(
       PUBLIC_MAP_SELECTED_POINT_HALO_LAYER_ID,
@@ -921,7 +1128,7 @@ describe("syncClusterSourceAndLayers", () => {
           ["==", ["get", "organizationId"], "org-42"],
           ["==", ["get", "sameLocationKey"], "__public-map-no-selection__"],
         ],
-      ],
+      ]
     )
     expect(map.setFilter).toHaveBeenCalledWith(
       PUBLIC_MAP_SELECTED_POINT_CORE_LAYER_ID,
@@ -933,7 +1140,7 @@ describe("syncClusterSourceAndLayers", () => {
           ["==", ["get", "organizationId"], "org-42"],
           ["==", ["get", "sameLocationKey"], "__public-map-no-selection__"],
         ],
-      ],
+      ]
     )
     expect(map.setFilter).toHaveBeenCalledWith(
       PUBLIC_MAP_SELECTED_POINT_SHADOW_LAYER_ID,
@@ -945,7 +1152,19 @@ describe("syncClusterSourceAndLayers", () => {
           ["==", ["get", "organizationId"], "org-42"],
           ["==", ["get", "sameLocationKey"], "__public-map-no-selection__"],
         ],
-      ],
+      ]
+    )
+    expect(map.setFilter).toHaveBeenCalledWith(
+      PUBLIC_MAP_SELECTED_POINT_LABEL_LAYER_ID,
+      [
+        "all",
+        ["!", ["has", "point_count"]],
+        [
+          "any",
+          ["==", ["get", "organizationId"], "org-42"],
+          ["==", ["get", "sameLocationKey"], "__public-map-no-selection__"],
+        ],
+      ]
     )
     expect(map.setFilter).toHaveBeenCalledWith(
       PUBLIC_MAP_SELECTED_POINT_BADGE_LAYER_ID,
@@ -958,14 +1177,16 @@ describe("syncClusterSourceAndLayers", () => {
           ["==", ["get", "sameLocationKey"], "__public-map-no-selection__"],
         ],
         [">", ["get", "sameLocationCount"], 1],
-      ],
+      ]
     )
   })
 
   it("returns cleanly when layer access throws during style teardown", () => {
     const map = {
       getLayer: vi.fn(() => {
-        throw new TypeError("Cannot read properties of undefined (reading 'getOwnLayer')")
+        throw new TypeError(
+          "Cannot read properties of undefined (reading 'getOwnLayer')"
+        )
       }),
       setFilter: vi.fn(),
     } as unknown as mapboxgl.Map
@@ -974,7 +1195,7 @@ describe("syncClusterSourceAndLayers", () => {
       syncSelectedOrganizationLayers({
         map,
         selectedOrganizationId: "org-42",
-      }),
+      })
     ).not.toThrow()
     expect(map.setFilter).not.toHaveBeenCalled()
   })

@@ -31,9 +31,9 @@ export const PUBLIC_MAP_GROUP_ACCENTS: Record<PublicMapGroupKey, string> = {
   education: "#4f8cff",
   community: "#2f9f8f",
   health: "#4ea7a0",
-  housing: "#c98f4d",
+  housing: "#f97316",
   funding: "#7b7be6",
-  workforce: "#e19149",
+  workforce: "#fb923c",
   climate: "#3da472",
   global: "#6774f0",
 }

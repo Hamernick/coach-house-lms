@@ -1,0 +1,897 @@
+import { describe, expect, it } from "vitest"
+
+import {
+  PUBLIC_MAP_RESOURCE_CATEGORY_COLORS,
+  PUBLIC_MAP_RESOURCE_CATEGORY_ORDER,
+  PUBLIC_MAP_RESOURCE_TOP_LEVEL_CATEGORY_DEFINITIONS,
+  getPublicMapResourceCategoryDefinition,
+} from "@/lib/public-map/resource-categories"
+import {
+  PUBLIC_MAP_RESOURCE_CATEGORY_ICON_PATHS,
+  PUBLIC_MAP_RESOURCE_CATEGORY_STROKE_ICON_PATHS,
+  resolvePublicMapResourceCategoryIconPaths,
+} from "@/lib/public-map/resource-category-icon-paths"
+import {
+  type ExternalResourceMapItem,
+  buildPlatformOrganizationMapItem,
+  buildPublicMapItems,
+  inferPublicMapResourceCategoriesForOrganization,
+  resolvePublicMapItemSelectableId,
+} from "@/lib/public-map/resource-map-items"
+import { buildExternalResourceMapItemFromLocalPreviewRecord } from "@/lib/public-map/resource-map-local-preview-adapter"
+import {
+  buildFilteredPublicMapItems,
+  buildPublicMapListItems,
+  buildPublicMapSelectableItemMap,
+  resolvePublicMapListItemsFromSelectableIds,
+} from "@/components/public/public-map-index/map-items-state"
+import { buildPublicMapResourceGuides } from "@/components/public/public-map-index/resource-guides"
+import {
+  PUBLIC_MAP_SUPERADMIN_RESOURCE_SEED_CITY_ANCHORS,
+  PUBLIC_MAP_SUPERADMIN_RESOURCE_SEED_ITEMS,
+} from "@/lib/public-map/resource-seed-items"
+import {
+  buildPublicMapItemPointFeatures,
+  parsePublicMapOrganizationIds,
+} from "@/lib/public-map/public-map-geojson"
+import {
+  PUBLIC_MAP_SPECIAL_PILL_MARKER_STYLE_KEY,
+  PUBLIC_MAP_STANDARD_MARKER_STYLE_KEY,
+} from "@/lib/public-map/public-map-marker-styles"
+import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
+
+function buildOrganization(
+  overrides: Partial<PublicMapOrganization> = {}
+): PublicMapOrganization {
+  return {
+    id: "org-health",
+    name: "Health Access Org",
+    tagline: "Medical and mental health care",
+    description: "Free clinic, therapy, and dental navigation.",
+    boilerplate: null,
+    vision: null,
+    mission: "Expand medical care access.",
+    values: null,
+    needStatement: null,
+    originStory: null,
+    theoryOfChange: null,
+    formationStatus: null,
+    contactName: null,
+    logoUrl: null,
+    brandMarkUrl: null,
+    headerUrl: null,
+    website: null,
+    email: null,
+    phone: null,
+    twitter: null,
+    facebook: null,
+    linkedin: null,
+    instagram: null,
+    brandPrimary: null,
+    brandColors: [],
+    brandThemePresetId: null,
+    brandAccentPresetId: null,
+    brandTypographyPresetId: null,
+    brandTypography: null,
+    brandKitAvailable: false,
+    latitude: 41.8781,
+    longitude: -87.6298,
+    address: "Chicago, IL",
+    addressStreet: null,
+    addressPostal: null,
+    city: "Chicago",
+    state: "IL",
+    country: "United States",
+    locationUrl: null,
+    publicSlug: "health-access-org",
+    activityLinks: [],
+    programPreview: null,
+    programs: [],
+    programCount: 0,
+    groups: ["health"],
+    primaryGroup: "health",
+    isOnlineOnly: false,
+    ...overrides,
+  }
+}
+
+function buildGuideResourceItem(
+  id: string,
+  overrides: Partial<ExternalResourceMapItem> = {}
+): ExternalResourceMapItem {
+  return {
+    id,
+    itemType: "external_resource",
+    title: "Cooling Center",
+    subtitle: "Official heat relief site",
+    description: "Official cooling center during high heat.",
+    latitude: 40.7128,
+    longitude: -74.006,
+    address: "1 Civic Plaza",
+    addressStreet: "1 Civic Plaza",
+    city: "Manhattan",
+    state: "NY",
+    country: "United States",
+    orgCategory: null,
+    resourceCategories: ["emergency_cooling_centers"],
+    primaryResourceCategory: "emergency_cooling_centers",
+    verificationStatus: "external_data",
+    sourceLabel: "NYC cooling center feed",
+    sourceUrl: "https://example.nyc.gov/cooling-centers",
+    lastVerifiedAt: null,
+    visibility: "superadmin_preview",
+    markerImageUrl: null,
+    ...overrides,
+  }
+}
+
+describe("public map resource map items", () => {
+  it("keeps resource/service categories separate from public org groups", () => {
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_ORDER).toEqual([
+      "health",
+      "food",
+      "housing",
+      "education",
+      "employment",
+      "finance",
+      "legal",
+      "family",
+      "community",
+      "emergency",
+      "environment",
+      "safety",
+      "organizations",
+      "international",
+      "animals",
+    ])
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.health).toBe("#059669")
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food).toBe("#e11d48")
+    expect(getPublicMapResourceCategoryDefinition("emergency").label).toBe(
+      "Crisis support"
+    )
+  })
+
+  it("keeps top-level marker colors intentional and non-gray", () => {
+    expect(
+      PUBLIC_MAP_RESOURCE_TOP_LEVEL_CATEGORY_DEFINITIONS.map(
+        ({ key, tailwindToken }) => [key, tailwindToken]
+      )
+    ).toEqual(
+      expect.arrayContaining([
+        ["education", "amber-500"],
+        ["employment", "orange-500"],
+        ["organizations", "sky-500"],
+      ])
+    )
+
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.education).toBe("#f59e0b")
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.employment).toBe("#f97316")
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.organizations).toBe("#0ea5e9")
+  })
+
+  it("uses a blue cooling-center marker identity instead of the red emergency siren", () => {
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.emergency).toBe("#dc2626")
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.emergency_cooling_centers).toBe(
+      "#0284c7"
+    )
+    expect(
+      getPublicMapResourceCategoryDefinition("emergency_cooling_centers")
+    ).toMatchObject({
+      iconName: "wind",
+      markerColor: "#0284c7",
+      parentKey: "environment",
+      tailwindToken: "sky-600",
+    })
+    expect(
+      getPublicMapResourceCategoryDefinition("emergency_cooling_centers")
+        .iconName
+    ).not.toBe(getPublicMapResourceCategoryDefinition("emergency").iconName)
+    expect(
+      resolvePublicMapResourceCategoryIconPaths("emergency_cooling_centers")
+    ).toBe(PUBLIC_MAP_RESOURCE_CATEGORY_STROKE_ICON_PATHS.wind)
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_STROKE_ICON_PATHS.wind).toEqual([
+      "M12.8 19.6A2 2 0 1 0 14 16H2",
+      "M17.5 8a2.5 2.5 0 1 1 2 4H2",
+      "M9.8 4.4A2 2 0 1 1 11 8H2",
+    ])
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_ICON_PATHS.wind).toBeUndefined()
+  })
+
+  it("uses the shared food marker identity for community fridges", () => {
+    expect(getPublicMapResourceCategoryDefinition("food")).toMatchObject({
+      iconName: "bread",
+      markerColor: "#e11d48",
+      tailwindToken: "rose-600",
+    })
+    expect(resolvePublicMapResourceCategoryIconPaths("food")).toBe(
+      PUBLIC_MAP_RESOURCE_CATEGORY_ICON_PATHS.bread
+    )
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_ICON_PATHS.bread).toEqual([
+      "M200,40H48a40,40,0,0,0-16,76.65V200a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V116.65A40,40,0,0,0,200,40Zm-56,64a8,8,0,0,0,0,16v80H48V120a8,8,0,0,0,0-16,24,24,0,0,1,0-48h96a24,24,0,0,1,0,48Z",
+    ])
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food).toBe("#e11d48")
+    expect(PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food_community_fridges).toBe(
+      "#0891b2"
+    )
+    expect(
+      getPublicMapResourceCategoryDefinition("food_community_fridges")
+    ).toMatchObject({
+      iconName: "bread",
+      markerColor: "#0891b2",
+      tailwindToken: "cyan-600",
+    })
+    expect(
+      resolvePublicMapResourceCategoryIconPaths("food_community_fridges")
+    ).toBe(PUBLIC_MAP_RESOURCE_CATEGORY_ICON_PATHS.bread)
+  })
+
+  it("uses special marker style keys separately from category semantics", () => {
+    const coolingFeature = buildPublicMapItemPointFeatures([
+      buildGuideResourceItem("cooling-special-style"),
+    ])[0]
+    const foodFeature = buildPublicMapItemPointFeatures([
+      buildGuideResourceItem("food-standard-style", {
+        primaryResourceCategory: "food",
+        resourceCategories: ["food"],
+        title: "Food Access",
+      }),
+    ])[0]
+
+    expect(coolingFeature?.properties).toMatchObject({
+      markerStyleKey: PUBLIC_MAP_SPECIAL_PILL_MARKER_STYLE_KEY,
+      primaryResourceCategory: "emergency_cooling_centers",
+    })
+    expect(foodFeature?.properties).toMatchObject({
+      markerStyleKey: PUBLIC_MAP_STANDARD_MARKER_STYLE_KEY,
+      primaryResourceCategory: "food",
+    })
+  })
+
+  it("infers resource/service categories without replacing the org category", () => {
+    const organization = buildOrganization()
+    const categories =
+      inferPublicMapResourceCategoriesForOrganization(organization)
+    const item = buildPlatformOrganizationMapItem(organization)
+
+    expect(item.orgCategory).toBe("health")
+    expect(categories).toEqual(
+      expect.arrayContaining([
+        "health",
+        "health_dental",
+        "health_mental_health",
+      ])
+    )
+    expect(item.verificationStatus).toBe("verified_platform")
+  })
+
+  it("derives resource display names for civic-owner cooling center rows", () => {
+    const townshipItem = buildExternalResourceMapItemFromLocalPreviewRecord(
+      {
+        sourceRecordId: "cook-township-1",
+        sourceName: "Cook County Data Catalog - Cooling Centers",
+        extractedFields: {
+          organizationName: "Calumet Township",
+          title: "Calumet Township",
+          sourceCategoryText: "Cooling Centers",
+          address: "12633 S. Ashland Ave",
+          city: "CALUMET PARK",
+          latitude: 41.665,
+          longitude: -87.663,
+          resourceCategories: ["emergency_cooling_centers", "emergency"],
+        },
+      },
+      0
+    )
+    const countyItem = buildExternalResourceMapItemFromLocalPreviewRecord(
+      {
+        sourceRecordId: "pge-county-1",
+        sourceName: "PG&E - California Cooling Centers 2026",
+        extractedFields: {
+          organizationName: "Merced County",
+          title: "Merced County",
+          sourceCategoryText: "Cooling Centers; Library",
+          address: "1600 Third St, Atwater, CA",
+          city: "Atwater",
+          latitude: 37.35,
+          longitude: -120.6,
+          resourceCategories: ["community", "community_libraries"],
+        },
+      },
+      1
+    )
+
+    expect(townshipItem).toMatchObject({
+      title: "Cooling center - CALUMET PARK",
+      subtitle: "12633 S. Ashland Ave",
+      primaryResourceCategory: "emergency_cooling_centers",
+    })
+    expect(countyItem).toMatchObject({
+      title: "Library cooling center - Atwater",
+      subtitle: "1600 Third St, Atwater, CA",
+      primaryResourceCategory: "emergency_cooling_centers",
+    })
+  })
+
+  it("uses cooling marker treatment for NYC Finder cooling rows", () => {
+    const item = buildExternalResourceMapItemFromLocalPreviewRecord(
+      {
+        sourceId: "nyc-arcgis-cooling-centers",
+        sourceRecordId: "CC1001",
+        sourceName: "NYC Emergency Management - Cooling Centers",
+        sourceUrl: "https://finder.nyc.gov/coolingcenters/locations?mView=map",
+        extractedFields: {
+          title: "Neighborhood Older Adult Center",
+          sourceCategoryText: "Cooling Centers; Senior Center",
+          latitude: 40.75,
+          longitude: -73.98,
+          resourceCategories: ["family_seniors", "family"],
+          primaryResourceCategory: "family_seniors",
+        },
+      },
+      2
+    )
+
+    expect(item).toMatchObject({
+      id: "local_resource_map:nyc-arcgis-cooling-centers:CC1001",
+      primaryResourceCategory: "emergency_cooling_centers",
+      resourceCategories: expect.arrayContaining([
+        "emergency_cooling_centers",
+        "family_seniors",
+      ]),
+    })
+    expect(item?.resourceCategories).not.toContain("emergency")
+  })
+
+  it("does not expose raw ArcGIS query endpoints as public resource links", () => {
+    const item = buildExternalResourceMapItemFromLocalPreviewRecord(
+      {
+        sourceId: "cook-county-arcgis-cooling-centers",
+        sourceRecordId: "cooling-raw-1",
+        sourceName: "Cook County Cooling Centers",
+        sourceUrl:
+          "https://services2.arcgis.com/w657bnjzrjguNyOy/arcgis/rest/services/Warming_and_Cooling_Centers/FeatureServer/0/query?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=json",
+        extractedFields: {
+          title: "Library Cooling Center",
+          sourceCategoryText: "Cooling Centers",
+          latitude: 41.75,
+          longitude: -87.6,
+          links: [
+            {
+              type: "source",
+              label: "Raw data endpoint",
+              url: "https://services2.arcgis.com/w657bnjzrjguNyOy/arcgis/rest/services/Warming_and_Cooling_Centers/FeatureServer/0/query?where=1%3D1&outFields=*&returnGeometry=true&outSR=4326&f=json",
+            },
+            {
+              type: "website",
+              label: "Public page",
+              url: "https://example.org/cooling-center",
+            },
+          ],
+        },
+      },
+      4
+    )
+
+    expect(item?.sourceUrl).toContain("FeatureServer/0/query")
+    expect(item?.links).toEqual([
+      expect.objectContaining({
+        label: "Public page",
+        url: "https://example.org/cooling-center",
+      }),
+    ])
+  })
+
+  it("does not expose Overpass query endpoints as public resource links", () => {
+    const overpassUrl =
+      "https://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%5Btimeout%3A45%5D%3B%28nwr%5B%22amenity%22%7E%22clinic%7Cdoctors%7Cdentist%7Chospital%22%5D%2841.6%2C-87.95%2C42.05%2C-87.5%29%3Bnwr%5B%22healthcare%22%7E%22clinic%7Cdoctor%7Cdentist%7Chospital%22%5D%2841.6%2C-87.95%2C42.05%2C-87.5%29%3B%29%3Bout+center+80%3B"
+    const item = buildExternalResourceMapItemFromLocalPreviewRecord(
+      {
+        sourceId: "chicago-osm-health-care",
+        sourceRecordId: "osm:node:463772325",
+        sourceName: "OpenStreetMap - Chicago health care",
+        sourceUrl: overpassUrl,
+        extractedFields: {
+          title: "AMITA Sage Medical Group",
+          category: "doctors",
+          latitude: 41.9257023,
+          longitude: -87.658009,
+        },
+      },
+      5
+    )
+
+    expect(item?.sourceUrl).toBe(overpassUrl)
+    expect(item?.links).toEqual([])
+  })
+
+  it("does not expose Socrata raw data endpoints as public resource links", () => {
+    const socrataUrl =
+      "https://data.cityofchicago.org/resource/msrk-w9ih.json?$limit=500"
+    const item = buildExternalResourceMapItemFromLocalPreviewRecord(
+      {
+        sourceId: "chicago-socrata-cooling-centers",
+        sourceRecordId: "cooling-center-1",
+        sourceName: "Chicago Data Portal - Cooling Centers",
+        sourceUrl: socrataUrl,
+        extractedFields: {
+          organizationName: "Daley College Cooling Center",
+          title: "Daley College Cooling Center",
+          category: "Cooling Centers",
+          latitude: 41.7556,
+          longitude: -87.7216,
+          resourceCategories: ["community"],
+        },
+      },
+      6
+    )
+
+    expect(item?.sourceUrl).toBe(socrataUrl)
+    expect(item?.subtitle).toBeNull()
+    expect(item?.title).toBe("Daley College Cooling Center")
+    expect(item?.primaryResourceCategory).toBe("emergency_cooling_centers")
+    expect(item?.resourceCategories).toEqual(
+      expect.arrayContaining(["emergency_cooling_centers", "community"])
+    )
+    expect(item?.resourceCategories).not.toContain("emergency")
+    expect(item?.links).toEqual([])
+  })
+
+  it("does not promote source URLs into website links", () => {
+    const sourceUrl =
+      "https://finder.nyc.gov/coolingcenters/locations?mView=map"
+    const websiteUrl =
+      "https://www.nycgovparks.org/facilities/recreationcenters"
+    const itemWithoutWebsite =
+      buildExternalResourceMapItemFromLocalPreviewRecord(
+        {
+          sourceId: "nyc-arcgis-cooling-centers",
+          sourceRecordId: "cooling-center-source-only",
+          sourceName: "NYC Finder - Cooling Centers",
+          sourceUrl,
+          extractedFields: {
+            title: "Hamilton Fish Recreation Center",
+            category: "Cooling Centers",
+            latitude: 40.719,
+            longitude: -73.981,
+          },
+        },
+        7
+      )
+    const itemWithWebsite = buildExternalResourceMapItemFromLocalPreviewRecord(
+      {
+        sourceId: "nyc-arcgis-cooling-centers",
+        sourceRecordId: "cooling-center-with-website",
+        sourceName: "NYC Finder - Cooling Centers",
+        sourceUrl,
+        extractedFields: {
+          title: "Hamilton Fish Recreation Center",
+          category: "Cooling Centers",
+          latitude: 40.719,
+          longitude: -73.981,
+          websiteUrl,
+          links: [
+            {
+              type: "source",
+              label: "NYC Finder source",
+              url: sourceUrl,
+            },
+          ],
+        },
+      },
+      8
+    )
+
+    expect(itemWithoutWebsite?.sourceUrl).toBe(sourceUrl)
+    expect(itemWithoutWebsite?.links).toEqual([])
+    expect(itemWithWebsite?.sourceUrl).toBe(sourceUrl)
+    expect(itemWithWebsite?.links).toEqual([
+      expect.objectContaining({
+        label: "Website",
+        type: "website",
+        url: websiteUrl,
+      }),
+    ])
+  })
+
+  it("turns machine-only category descriptions into plain public copy", () => {
+    const item = buildExternalResourceMapItemFromLocalPreviewRecord(
+      {
+        sourceId: "chicago-osm-community-libraries",
+        sourceRecordId: "osm:way:145257059",
+        sourceName: "OpenStreetMap - Chicago libraries and community centers",
+        sourceUrl: "https://overpass-api.de/api/interpreter?data=...",
+        extractedFields: {
+          organizationName: "Hyde Park Neighborhood Club",
+          title: "Hyde Park Neighborhood Club",
+          description: "community_centre",
+          sourceCategoryText: "community_centre",
+          category: "community",
+          latitude: 41.799,
+          longitude: -87.593,
+          address: "5480 South Kenwood Avenue",
+          city: "Chicago",
+          state: "IL",
+        },
+      },
+      9
+    )
+
+    expect(item?.description).toBe(
+      "Listed as a community center in Chicago, IL."
+    )
+    expect(item?.services?.[0]?.description).toBe(
+      "Listed as a community center in Chicago, IL."
+    )
+    expect(item?.description).not.toContain("community_centre")
+  })
+
+  it("adds cooling-center context to named cooling-source rows", () => {
+    const item = buildExternalResourceMapItemFromLocalPreviewRecord(
+      {
+        sourceId: "chicago-socrata-cooling-centers",
+        sourceRecordId: "amundsen-park",
+        sourceName: "Chicago Data Portal - Cooling Centers",
+        sourceUrl:
+          "https://data.cityofchicago.org/resource/msrk-w9ih.json?$limit=500",
+        extractedFields: {
+          organizationName: "Amundsen Park",
+          title: "Amundsen Park",
+          category: "Cooling Centers",
+          latitude: 41.913,
+          longitude: -87.781,
+          resourceCategories: ["community"],
+        },
+      },
+      7
+    )
+
+    expect(item).toMatchObject({
+      title: "Amundsen Park cooling center",
+      subtitle: null,
+      primaryResourceCategory: "emergency_cooling_centers",
+    })
+  })
+
+  it("maps community-fridge local preview records to the fridge category", () => {
+    const item = buildExternalResourceMapItemFromLocalPreviewRecord(
+      {
+        sourceId: "nyc-fridgefinder-community-fridges",
+        sourceRecordId: "livinggallery",
+        sourceName: "Fridge Finder - Community Fridges",
+        sourceUrl: "https://www.fridgefinder.app/fridge/livinggallery",
+        extractedFields: {
+          title: "Living Gallery",
+          sourceCategoryText: "Community Fridges",
+          latitude: 40.694207,
+          longitude: -73.930599,
+          resourceCategories: ["food_community_fridges", "food"],
+          primaryResourceCategory: "food_community_fridges",
+        },
+      },
+      3
+    )
+
+    expect(item).toMatchObject({
+      id: "local_resource_map:nyc-fridgefinder-community-fridges:livinggallery",
+      primaryResourceCategory: "food_community_fridges",
+      resourceCategories: ["food_community_fridges", "food"],
+    })
+  })
+
+  it("scopes local preview resource ids by source", () => {
+    const first = buildExternalResourceMapItemFromLocalPreviewRecord(
+      {
+        sourceId: "nyc-arcgis-cooling-centers",
+        sourceRecordId: "CC1046",
+        extractedFields: {
+          title: "Petco Rego Park",
+          latitude: 40.73,
+          longitude: -73.86,
+        },
+      },
+      3
+    )
+    const second = buildExternalResourceMapItemFromLocalPreviewRecord(
+      {
+        sourceId: "nyc-arcgis-cool-options",
+        sourceRecordId: "CC1046",
+        extractedFields: {
+          title: "Petco Rego Park",
+          latitude: 40.73,
+          longitude: -73.86,
+        },
+      },
+      4
+    )
+
+    expect(first?.id).toBe(
+      "local_resource_map:nyc-arcgis-cooling-centers:CC1046"
+    )
+    expect(second?.id).toBe("local_resource_map:nyc-arcgis-cool-options:CC1046")
+    expect(first?.id).not.toBe(second?.id)
+  })
+
+  it("adds a broad superadmin seed resource layer only when requested", () => {
+    const organization = buildOrganization()
+    const publishedOnly = buildPublicMapItems({
+      organizations: [organization],
+      includeSeedItems: false,
+    })
+    const withSeeds = buildPublicMapItems({
+      organizations: [organization],
+      includeSeedItems: true,
+    })
+
+    expect(publishedOnly).toHaveLength(1)
+    expect(withSeeds).toHaveLength(
+      1 +
+        PUBLIC_MAP_SUPERADMIN_RESOURCE_SEED_ITEMS.length +
+        PUBLIC_MAP_SUPERADMIN_RESOURCE_SEED_CITY_ANCHORS.length *
+          PUBLIC_MAP_RESOURCE_CATEGORY_ORDER.length +
+        PUBLIC_MAP_RESOURCE_CATEGORY_ORDER.length
+    )
+    expect(withSeeds.slice(1).every((item) => item.visibility)).toBe(true)
+    expect(withSeeds.slice(1).map((item) => item.visibility)).toEqual(
+      Array(withSeeds.length - 1).fill("superadmin_preview")
+    )
+    expect(withSeeds.map((item) => item.primaryResourceCategory)).toEqual(
+      expect.arrayContaining([...PUBLIC_MAP_RESOURCE_CATEGORY_ORDER])
+    )
+    expect(
+      withSeeds.some((item) =>
+        item.id.startsWith("seed-resource:preview:org-health:")
+      )
+    ).toBe(true)
+    expect(
+      withSeeds.some(
+        (item) => item.id === "seed-resource:national:seattle:food"
+      )
+    ).toBe(true)
+    expect(
+      withSeeds.some(
+        (item) => item.id === "seed-resource:national:miami:health"
+      )
+    ).toBe(true)
+    expect(
+      withSeeds.some(
+        (item) => item.id === "seed-resource:national:new-york:housing"
+      )
+    ).toBe(true)
+    const foodSeed = withSeeds.find(
+      (item) => item.id === "seed-resource:national:seattle:food"
+    )
+    expect(foodSeed?.links?.map((link) => link.type)).toEqual([
+      "resource",
+      "intake",
+    ])
+    expect(foodSeed?.contacts?.[0]?.type).toBe("phone")
+    expect(foodSeed?.services?.[0]?.title).toBe("Food access")
+    expect(foodSeed?.services?.[0]?.documentsNeeded).toEqual([
+      "Photo ID if available",
+    ])
+    expect(foodSeed?.deliveryModes).toEqual(["in_person"])
+    expect(
+      Math.max(...withSeeds.map((item) => item.longitude ?? 0)) -
+        Math.min(...withSeeds.map((item) => item.longitude ?? 0))
+    ).toBeGreaterThan(45)
+
+    const realResource: ExternalResourceMapItem = {
+      id: "local_resource_map:real-food-1",
+      itemType: "external_resource",
+      title: "Real Food Pantry",
+      subtitle: "Local source",
+      description: "A real local candidate record.",
+      latitude: 41.88,
+      longitude: -87.63,
+      address: "123 Real Ave, Chicago, IL",
+      addressStreet: "123 Real Ave",
+      city: "Chicago",
+      state: "IL",
+      country: "United States",
+      orgCategory: null,
+      resourceCategories: ["food"],
+      primaryResourceCategory: "food",
+      verificationStatus: "external_data",
+      sourceLabel: "Local engine",
+      sourceUrl: "https://example.org/real-food",
+      lastVerifiedAt: null,
+      visibility: "superadmin_preview",
+      markerImageUrl: null,
+    }
+    const withRealResource = buildPublicMapItems({
+      organizations: [organization],
+      includeSeedItems: true,
+      resourceItems: [realResource],
+    })
+    expect(withRealResource).toHaveLength(2)
+    expect(
+      withRealResource.some((item) => item.id.startsWith("seed-resource:"))
+    ).toBe(false)
+  })
+
+  it("filters superadmin seed resources through the active org category", () => {
+    const healthOrganization = buildOrganization({
+      id: "org-health",
+      groups: ["health"],
+      primaryGroup: "health",
+    })
+    const educationOrganization = buildOrganization({
+      id: "org-education",
+      groups: ["education"],
+      primaryGroup: "education",
+    })
+    const filteredOrganizations = [healthOrganization]
+
+    const items = buildFilteredPublicMapItems({
+      activeGroup: "health",
+      filteredOrganizations,
+      includeSeedResources: true,
+    })
+
+    expect(
+      items.some((item) => item.id === "platform_organization:org-health")
+    ).toBe(true)
+    expect(
+      items.some((item) => item.id === "platform_organization:org-education")
+    ).toBe(false)
+    expect(
+      items.some((item) => item.id === "seed-resource:national:seattle:food")
+    ).toBe(false)
+    expect(
+      items.some((item) => item.id === "seed-resource:national:miami:health")
+    ).toBe(true)
+    expect(
+      items.some((item) => item.id === "seed-resource:medical-dental-pilsen")
+    ).toBe(true)
+    expect(
+      items.some(
+        (item) => item.id === "seed-resource:national:dallas:employment"
+      )
+    ).toBe(false)
+    expect(
+      Math.max(...items.map((item) => item.longitude ?? 0)) -
+        Math.min(...items.map((item) => item.longitude ?? 0))
+    ).toBeGreaterThan(45)
+    expect(educationOrganization.id).toBe("org-education")
+  })
+
+  it("keeps community seed resources separate from health resources", () => {
+    const organization = buildOrganization({
+      groups: ["community"],
+      primaryGroup: "community",
+    })
+
+    const items = buildFilteredPublicMapItems({
+      activeGroup: "community",
+      filteredOrganizations: [organization],
+      includeSeedResources: true,
+    })
+
+    expect(
+      items.some(
+        (item) => item.id === "seed-resource:national:seattle:community"
+      )
+    ).toBe(true)
+    expect(
+      items.some(
+        (item) => item.id === "seed-resource:jobs-transport-bronzeville"
+      )
+    ).toBe(true)
+    expect(
+      items.some((item) => item.id === "seed-resource:national:miami:health")
+    ).toBe(false)
+  })
+
+  it("builds cooling-center guide groups from resource fields", () => {
+    const boroughs = [
+      "Manhattan",
+      "Manhattan",
+      "Manhattan",
+      "Brooklyn",
+      "Brooklyn",
+      "Queens",
+      "Queens",
+      "Bronx",
+      "Staten Island",
+      "Manhattan",
+    ]
+    const resources = boroughs.map((city, index) =>
+      buildGuideResourceItem(`local_resource_map:nyc-cooling-${index}`, {
+        city,
+        title:
+          index < 5
+            ? `Library Cooling Center ${index + 1}`
+            : index < 8
+              ? `Senior Center Cooling Center ${index + 1}`
+              : `Cooling Center ${index + 1}`,
+      })
+    )
+
+    const guideById = new Map(
+      buildPublicMapResourceGuides(resources).map((guide) => [guide.id, guide])
+    )
+
+    expect(guideById.get("nyc-cooling-centers")?.itemCount).toBe(10)
+    expect(guideById.get("manhattan-cooling-centers")?.itemCount).toBe(4)
+    expect(guideById.get("brooklyn-cooling-centers")?.itemCount).toBe(2)
+    expect(guideById.get("queens-cooling-centers")?.itemCount).toBe(2)
+    expect(guideById.get("bronx-cooling-centers")?.itemCount).toBe(1)
+    expect(guideById.get("staten-island-cooling-centers")?.itemCount).toBe(1)
+    expect(guideById.get("library-cooling-centers")?.itemCount).toBe(5)
+    expect(guideById.get("senior-cooling-centers")?.itemCount).toBe(3)
+  })
+
+  it("builds marker features with resource colors and legacy org selection ids", () => {
+    const organization = buildOrganization()
+    const items = buildPublicMapItems({
+      organizations: [organization],
+      includeSeedItems: true,
+    })
+    const features = buildPublicMapItemPointFeatures(items)
+    const orgFeature = features.find(
+      (feature) => feature.properties.itemType === "platform_organization"
+    )
+    const seedFeature = features.find(
+      (feature) =>
+        feature.properties.itemId === "seed-resource:food-water-west-loop"
+    )
+    const sameLocationSeedFeature = features.find(
+      (feature) =>
+        feature.properties.sameLocationCount === 2 &&
+        feature.properties.organizationIds.includes("seed-resource:shelter")
+    )
+
+    expect(orgFeature?.properties.organizationId).toBe("org-health")
+    expect(orgFeature?.properties.itemId).toBe(
+      "platform_organization:org-health"
+    )
+    expect(seedFeature?.properties.primaryResourceCategory).toBe("food")
+    expect(seedFeature?.properties.markerAccentColor).toBe(
+      PUBLIC_MAP_RESOURCE_CATEGORY_COLORS.food
+    )
+    expect(sameLocationSeedFeature?.properties.sameLocationCount).toBe(2)
+    expect(
+      parsePublicMapOrganizationIds(
+        sameLocationSeedFeature?.properties.organizationIds
+      )
+    ).toEqual([
+      "seed-resource:food-water-west-loop",
+      "seed-resource:shelter-west-loop",
+    ])
+  })
+
+  it("resolves selectable resources into shared list rows", () => {
+    const organization = buildOrganization()
+    const items = buildPublicMapItems({
+      organizations: [organization],
+      includeSeedItems: true,
+    })
+    const itemBySelectableId = buildPublicMapSelectableItemMap(items)
+    const platformItem = items.find(
+      (item) => item.itemType === "platform_organization"
+    )
+
+    expect(platformItem).toBeDefined()
+    expect(resolvePublicMapItemSelectableId(platformItem!)).toBe("org-health")
+    expect(itemBySelectableId.get("org-health")).toBe(platformItem)
+    expect(
+      buildPublicMapListItems({
+        items,
+        query: "dental",
+      }).some((item) => item.id === "seed-resource:medical-dental-pilsen")
+    ).toBe(true)
+    expect(
+      resolvePublicMapListItemsFromSelectableIds({
+        itemBySelectableId,
+        selectableIds: [
+          "org-health",
+          "seed-resource:shelter-west-loop",
+          "missing",
+        ],
+      }).map((item) => item.id)
+    ).toEqual([
+      "platform_organization:org-health",
+      "seed-resource:shelter-west-loop",
+    ])
+  })
+})

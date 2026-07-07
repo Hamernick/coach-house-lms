@@ -12,11 +12,17 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
-import { Sidebar, SidebarProvider, useSidebar } from "@/components/ui/sidebar"
+import { Sidebar, SidebarProvider } from "@/components/ui/sidebar"
+import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { cn } from "@/lib/utils"
 
+import type {
+  PublicMapGroupFilterCounts,
+  PublicMapGroupFilterKey,
+} from "./category-filter"
 import type { SidebarMode } from "./constants"
+import { PublicMapLiquidGlassShell } from "./liquid-glass-shell"
 import { buildPublicMapDrawerSnapPoints } from "./sidebar-snap-points"
 import type { PublicMapPanelPresentation } from "./map-view-helpers"
 import {
@@ -24,8 +30,13 @@ import {
   PublicMapDrawerSearchPanel,
   PublicMapRailDetailPanel,
   PublicMapRailSearchPanel,
+  PublicMapResourceDrawerDetailPanel,
+  PublicMapResourceRailDetailPanel,
   type PublicMapSidebarSearchContext,
 } from "./sidebar-panels"
+import type { PublicMapListItem } from "./map-items-state"
+import type { PublicMapOrganizationCurationAction } from "./organization-detail-admin-actions"
+import type { PublicMapResourceCurationAction } from "./resource-detail-admin-actions"
 import {
   PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME,
   PUBLIC_MAP_SIDEBAR_RAIL_CLASSNAME,
@@ -33,91 +44,35 @@ import {
 
 export type { PublicMapSidebarSearchContext } from "./sidebar-panels"
 
+type OpenDetailsOptions = { preserveSearchContext?: boolean }
+type OpenDetails = (orgId: string, options?: OpenDetailsOptions) => void
+
 type PublicMapSidebarProps = {
   sidebarMode: SidebarMode
   sidebarWidth: number
   surfaceHeight: number
   panelPresentation: PublicMapPanelPresentation
   portalContainer: HTMLElement | null
+  filteredItems: PublicMapListItem[]
   filteredOrganizations: PublicMapOrganization[]
+  selectedItemId: string | null
   selectedOrganization: PublicMapOrganization | null
+  selectedResourceItem?: ExternalResourceMapItem | null
+  canManageResourceMap?: boolean
+  organizationCurationAction?: PublicMapOrganizationCurationAction
+  resourceMapCurationAction?: PublicMapResourceCurationAction
   favorites: string[]
   query: string
+  activeGroup: PublicMapGroupFilterKey
+  groupCounts: PublicMapGroupFilterCounts
   searchContext?: PublicMapSidebarSearchContext | null
   setQuery: (value: string) => void
+  setActiveGroup: (group: PublicMapGroupFilterKey) => void
   toggleFavorite: (orgId: string) => void
-  onOpenDetails: (orgId: string, options?: { preserveSearchContext?: boolean }) => void
+  onSelectItem: (itemId: string) => void
+  onOpenDetails: OpenDetails
+  onBackToSearch: () => void
   setSidebarMode: (mode: SidebarMode) => void
-}
-
-type PublicMapShellSidebarPanelProps = {
-  sidebarMode: SidebarMode
-  organizations: PublicMapOrganization[]
-  selectedOrganization: PublicMapOrganization | null
-  favorites: string[]
-  query: string
-  searchContext?: PublicMapSidebarSearchContext | null
-  onQueryChange: (value: string) => void
-  onToggleFavorite: (orgId: string) => void
-  onOpenDetails: (orgId: string, options?: { preserveSearchContext?: boolean }) => void
-  setSidebarMode: (mode: SidebarMode) => void
-  manageShellSidebarOpen?: boolean
-  onHidePanel?: () => void
-}
-
-export function PublicMapShellSidebarPanel({
-  sidebarMode,
-  organizations,
-  selectedOrganization,
-  favorites,
-  query,
-  searchContext = null,
-  onQueryChange,
-  onToggleFavorite,
-  onOpenDetails,
-  setSidebarMode,
-  manageShellSidebarOpen = true,
-  onHidePanel,
-}: PublicMapShellSidebarPanelProps) {
-  const { setOpen } = useSidebar()
-  const effectiveSidebarMode =
-    sidebarMode === "details" && selectedOrganization ? "details" : "search"
-  const constrainedRailLayout = true
-  const handleHidePanel = onHidePanel ?? (() => setOpen(false))
-
-  useEffect(() => {
-    if (!manageShellSidebarOpen) return
-    if (sidebarMode === "hidden") return
-    setOpen(true)
-  }, [manageShellSidebarOpen, selectedOrganization?.id, setOpen, sidebarMode])
-
-  if (effectiveSidebarMode === "details" && selectedOrganization) {
-    return (
-      <PublicMapRailDetailPanel
-        organization={selectedOrganization}
-        onBack={() => setSidebarMode("search")}
-      />
-    )
-  }
-
-  return (
-    <PublicMapRailSearchPanel
-      query={query}
-      searchContext={searchContext}
-      organizations={organizations}
-      selectedOrgId={selectedOrganization?.id ?? null}
-      favorites={favorites}
-      constrainedLayout={constrainedRailLayout}
-      onQueryChange={onQueryChange}
-      onHidePanel={handleHidePanel}
-      onToggleFavorite={onToggleFavorite}
-      onOpenDetails={(organizationId) =>
-        onOpenDetails(organizationId, {
-          preserveSearchContext: Boolean(searchContext),
-        })
-      }
-    />
-  )
 }
 
 export function PublicMapSidebar({
@@ -126,27 +81,43 @@ export function PublicMapSidebar({
   surfaceHeight,
   panelPresentation,
   portalContainer,
+  filteredItems,
   filteredOrganizations,
+  selectedItemId,
   selectedOrganization,
+  selectedResourceItem = null,
+  canManageResourceMap = false,
+  organizationCurationAction,
+  resourceMapCurationAction,
   favorites,
   query,
+  activeGroup,
+  groupCounts,
   searchContext = null,
   setQuery,
+  setActiveGroup,
   toggleFavorite,
+  onSelectItem,
   onOpenDetails,
+  onBackToSearch,
   setSidebarMode,
 }: PublicMapSidebarProps) {
-  const mapSidebarProviderStyle = {
-    "--sidebar-width": "100%",
-  } as CSSProperties
+  const mapSidebarProviderStyle = { "--sidebar-width": "100%" } as CSSProperties
   const compact = panelPresentation === "drawer"
   const effectiveSidebarMode =
-    compact && sidebarMode === "hidden" ? "search" : sidebarMode
+    compact && sidebarMode === "hidden"
+      ? "search"
+      : sidebarMode === "details" &&
+          !selectedOrganization &&
+          !selectedResourceItem
+        ? "search"
+        : sidebarMode
   const panelOpen = compact ? true : effectiveSidebarMode !== "hidden"
-  const constrainedRailLayout = panelPresentation === "rail" && sidebarWidth < 376
+  const constrainedRailLayout =
+    panelPresentation === "rail" && sidebarWidth < 376
   const snapPoints = useMemo(
     () => buildPublicMapDrawerSnapPoints(surfaceHeight),
-    [surfaceHeight],
+    [surfaceHeight]
   )
   const [activeSnapIndex, setActiveSnapIndex] = useState<0 | 1 | 2>(0)
   const activeSnapPoint = snapPoints[activeSnapIndex]
@@ -172,7 +143,7 @@ export function PublicMapSidebar({
     setActiveSnapIndex(0)
     setSidebarMode("search")
   }
-  const listOrganizations = searchContext?.organizations ?? filteredOrganizations
+  const listItems = searchContext?.items ?? filteredItems
 
   const railPanel = (
     <SidebarProvider
@@ -180,34 +151,57 @@ export function PublicMapSidebar({
       className="h-full min-h-0 w-full bg-transparent"
       style={mapSidebarProviderStyle}
     >
-      <Sidebar
-        collapsible="none"
-        className={cn("pointer-events-auto h-full w-full overflow-hidden", PUBLIC_MAP_SIDEBAR_RAIL_CLASSNAME)}
+      <PublicMapLiquidGlassShell
+        className={cn(
+          "pointer-events-auto h-full w-full",
+          PUBLIC_MAP_SIDEBAR_RAIL_CLASSNAME
+        )}
       >
-        {effectiveSidebarMode === "search" ? (
-          <PublicMapRailSearchPanel
-            query={query}
-            searchContext={searchContext}
-            organizations={listOrganizations}
-            selectedOrgId={selectedOrganization?.id ?? null}
-            favorites={favorites}
-            constrainedLayout={constrainedRailLayout}
-            onQueryChange={setQuery}
-            onHidePanel={() => setSidebarMode("hidden")}
-            onToggleFavorite={toggleFavorite}
-            onOpenDetails={(organizationId) =>
-              onOpenDetails(organizationId, {
-                preserveSearchContext: Boolean(searchContext),
-              })
-            }
-          />
-        ) : selectedOrganization ? (
-          <PublicMapRailDetailPanel
-            organization={selectedOrganization}
-            onBack={() => setSidebarMode("search")}
-          />
-        ) : null}
-      </Sidebar>
+        <Sidebar
+          collapsible="none"
+          className="text-sidebar-foreground h-full w-full overflow-hidden bg-transparent"
+        >
+          {effectiveSidebarMode === "search" ? (
+            <PublicMapRailSearchPanel
+              query={query}
+              searchContext={searchContext}
+              favorites={favorites}
+              items={listItems}
+              organizations={filteredOrganizations}
+              selectedItemId={selectedItemId}
+              selectedOrgId={selectedOrganization?.id ?? null}
+              constrainedLayout={constrainedRailLayout}
+              activeGroup={activeGroup}
+              groupCounts={groupCounts}
+              onQueryChange={setQuery}
+              onActiveGroupChange={setActiveGroup}
+              onHidePanel={() => setSidebarMode("hidden")}
+              onSelectItem={onSelectItem}
+              onOpenDetails={(organizationId) =>
+                onOpenDetails(organizationId, {
+                  preserveSearchContext: Boolean(searchContext),
+                })
+              }
+            />
+          ) : selectedOrganization ? (
+            <PublicMapRailDetailPanel
+              canManageResourceMap={canManageResourceMap}
+              organizationCurationAction={organizationCurationAction}
+              organization={selectedOrganization}
+              favorites={favorites}
+              onBack={onBackToSearch}
+              onToggleFavorite={toggleFavorite}
+            />
+          ) : selectedResourceItem ? (
+            <PublicMapResourceRailDetailPanel
+              canManageResourceMap={canManageResourceMap}
+              item={selectedResourceItem}
+              onBack={onBackToSearch}
+              resourceMapCurationAction={resourceMapCurationAction}
+            />
+          ) : null}
+        </Sidebar>
+      </PublicMapLiquidGlassShell>
     </SidebarProvider>
   )
 
@@ -216,12 +210,17 @@ export function PublicMapSidebar({
       <PublicMapDrawerSearchPanel
         query={query}
         searchContext={searchContext}
-        organizations={listOrganizations}
-        selectedOrgId={selectedOrganization?.id ?? null}
         favorites={favorites}
+        items={listItems}
+        organizations={filteredOrganizations}
+        selectedItemId={selectedItemId}
+        selectedOrgId={selectedOrganization?.id ?? null}
         drawerBodyScrollable={drawerBodyScrollable}
+        activeGroup={activeGroup}
+        groupCounts={groupCounts}
         onQueryChange={setQuery}
-        onToggleFavorite={toggleFavorite}
+        onActiveGroupChange={setActiveGroup}
+        onSelectItem={onSelectItem}
         onOpenDetails={(organizationId) =>
           onOpenDetails(organizationId, {
             preserveSearchContext: Boolean(searchContext),
@@ -230,9 +229,21 @@ export function PublicMapSidebar({
       />
     ) : selectedOrganization ? (
       <PublicMapDrawerDetailPanel
+        canManageResourceMap={canManageResourceMap}
+        organizationCurationAction={organizationCurationAction}
         organization={selectedOrganization}
+        favorites={favorites}
         drawerBodyScrollable={drawerBodyScrollable}
-        onBack={() => setSidebarMode("search")}
+        onBack={onBackToSearch}
+        onToggleFavorite={toggleFavorite}
+      />
+    ) : selectedResourceItem ? (
+      <PublicMapResourceDrawerDetailPanel
+        canManageResourceMap={canManageResourceMap}
+        item={selectedResourceItem}
+        drawerBodyScrollable={drawerBodyScrollable}
+        onBack={onBackToSearch}
+        resourceMapCurationAction={resourceMapCurationAction}
       />
     ) : null
 
@@ -240,17 +251,20 @@ export function PublicMapSidebar({
     <>
       <div
         className={cn(
-          "absolute left-4 top-4 z-20 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+          "absolute top-4 left-4 z-20 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
           effectiveSidebarMode === "hidden"
             ? "pointer-events-auto opacity-100"
-            : "pointer-events-none -translate-x-1 opacity-0",
+            : "pointer-events-none -translate-x-1 opacity-0"
         )}
       >
         <Button
           type="button"
           variant="ghost"
           onClick={() => setSidebarMode("search")}
-          className={cn("h-10 rounded-full px-3 shadow-sm backdrop-blur-xl", PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME)}
+          className={cn(
+            "h-10 rounded-full px-3 shadow-sm backdrop-blur-xl",
+            PUBLIC_MAP_SIDEBAR_ACTION_SURFACE_CLASSNAME
+          )}
         >
           <SearchIcon className="h-4 w-4" aria-hidden />
           <span className="sr-only">Open resource map panel</span>
@@ -269,7 +283,9 @@ export function PublicMapSidebar({
           snapToSequentialPoint
           setActiveSnapPoint={(nextSnapPoint) => {
             if (nextSnapPoint == null) return
-            const nextIndex = snapPoints.findIndex((snapPoint) => snapPoint === nextSnapPoint)
+            const nextIndex = snapPoints.findIndex(
+              (snapPoint) => snapPoint === nextSnapPoint
+            )
             if (nextIndex < 0) return
             setActiveSnapIndex(nextIndex as 0 | 1 | 2)
           }}
@@ -290,38 +306,38 @@ export function PublicMapSidebar({
             overlayClassName="pointer-events-none bg-background/10 backdrop-blur-[1.5px]"
             showHandle={false}
             className={cn(
-              "pointer-events-auto h-full gap-0 overflow-hidden p-0 text-foreground shadow-[0_-32px_72px_-34px_hsl(var(--foreground)/0.46)]",
-              "rounded-t-[2.15rem] bg-background supports-[backdrop-filter]:bg-background/98 dark:bg-background dark:supports-[backdrop-filter]:bg-background/96",
+              "text-foreground pointer-events-auto h-full gap-0 overflow-hidden p-0 shadow-[0_-32px_72px_-34px_hsl(var(--foreground)/0.46)]",
+              "bg-background supports-[backdrop-filter]:bg-background/98 dark:bg-background dark:supports-[backdrop-filter]:bg-background/96 rounded-t-[2.15rem]",
               "data-[vaul-drawer-direction=bottom]:mt-0 data-[vaul-drawer-direction=bottom]:max-h-none data-[vaul-drawer-direction=bottom]:border-0",
-              "overscroll-contain touch-pan-y",
+              "touch-pan-y overscroll-contain"
             )}
             style={{
               height: `${Math.max(0, Math.round(surfaceHeight))}px`,
               maxHeight: `${Math.max(0, Math.round(surfaceHeight))}px`,
             }}
           >
-            <div className="flex justify-center px-4 pb-2 pt-3">
+            <div className="flex justify-center px-4 pt-3 pb-2">
               <DrawerHandle
-                className="mt-0 block h-1.5 w-12 rounded-full bg-foreground/18"
+                className="bg-foreground/18 mt-0 block h-1.5 w-12 rounded-full"
                 preventCycle={false}
               />
             </div>
             <DrawerHeader className="sr-only">
               <DrawerTitle>Resource map panel</DrawerTitle>
-              <DrawerDescription>Search organizations and view public organization details.</DrawerDescription>
+              <DrawerDescription>
+                Search organizations and view public organization details.
+              </DrawerDescription>
             </DrawerHeader>
-            <div className="flex min-h-0 flex-1 flex-col">
-              {drawerPanel}
-            </div>
+            <div className="flex min-h-0 flex-1 flex-col">{drawerPanel}</div>
           </DrawerContent>
         </Drawer>
       ) : (
         <aside
           className={cn(
-            "pointer-events-none absolute bottom-0 left-0 top-0 z-20 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
+            "pointer-events-none absolute top-0 bottom-0 left-0 z-20 transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]",
             effectiveSidebarMode === "hidden"
               ? "-translate-x-[calc(100%+1rem)] opacity-0"
-              : "translate-x-0 opacity-100",
+              : "translate-x-0 opacity-100"
           )}
           style={{ width: `${Math.max(0, Math.round(sidebarWidth))}px` }}
         >

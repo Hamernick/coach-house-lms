@@ -89,9 +89,9 @@ describe("public find routes", () => {
     expect(publicMapSource).toContain("mapOverlay={memberOnboardingMapOverlay}")
     expect(previewControlsSource).toContain("PublicMapMemberOnboardingOverlay")
     expect(overlaySource).not.toContain("OnboardingWorkspaceCard")
-    expect(overlaySource).toContain("Resource map")
-    expect(overlaySource).toContain("Search the right rail")
-    expect(overlaySource).toContain("Save resources")
+    expect(overlaySource).toContain("Welcome to Find")
+    expect(overlaySource).toContain("Search the directory")
+    expect(overlaySource).toContain("Save locations")
     expect(overlaySource).toContain("Notifications")
   })
 
@@ -123,8 +123,8 @@ describe("public find routes", () => {
     expect(previewControlsSource).toContain(
       "PublicMapMemberOnboardingPreviewToggle"
     )
-    expect(previewControlsSource).toContain("Preview intro")
-    expect(previewControlsSource).toContain("Hide intro")
+    expect(previewControlsSource).toContain("Welcome")
+    expect(previewControlsSource).toContain("Hide welcome")
     expect(previewControlsSource).toContain(
       "onDismiss={() => handleToggleAdminOnboardingPreview(false)}"
     )

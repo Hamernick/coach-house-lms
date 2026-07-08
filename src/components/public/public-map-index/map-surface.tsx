@@ -217,11 +217,11 @@ export function PublicMapSurface({
           <div className="absolute inset-0">
             <div
               ref={containerRef}
-              className="h-full w-full brightness-[1.02] contrast-[0.98] saturate-[0.92]"
+              className="h-full w-full"
               aria-label="Public organization map"
             />
           </div>
-          <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(248,250,252,0.22),rgba(248,250,252,0.1)_28%,rgba(241,245,249,0.08)_58%,rgba(248,250,252,0.18))] dark:bg-[linear-gradient(180deg,rgba(250,250,250,0.08),rgba(250,250,250,0.025)_28%,rgba(24,24,27,0.015)_58%,rgba(9,9,11,0.06))]" />
+          <div className="pointer-events-none absolute inset-0 hidden dark:block dark:bg-[linear-gradient(180deg,rgba(250,250,250,0.08),rgba(250,250,250,0.025)_28%,rgba(24,24,27,0.015)_58%,rgba(9,9,11,0.06))]" />
           {mapOverlay}
 
           <div className="pointer-events-none absolute top-4 right-4 z-20 flex max-w-[min(24rem,calc(100vw-2rem))] flex-col items-end gap-2">

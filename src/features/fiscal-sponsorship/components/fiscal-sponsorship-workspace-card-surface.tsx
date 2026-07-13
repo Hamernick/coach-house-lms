@@ -1,4 +1,5 @@
 import Image from "next/image"
+import Link from "next/link"
 import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
 import CircleDashedIcon from "lucide-react/dist/esm/icons/circle-dashed"
 import FileTextIcon from "lucide-react/dist/esm/icons/file-text"
@@ -149,6 +150,7 @@ type FiscalSponsorshipWorkspaceCardSurfaceProps = {
   className?: string
   draggable?: boolean
   onOpenFlow?: (phaseId?: string) => void
+  openFlowHref?: string
   onSelectProgram?: (programId: string) => void
   primaryActionLabel?: string
   programs?: FiscalSponsorshipProgramOption[]
@@ -161,6 +163,7 @@ export function FiscalSponsorshipWorkspaceCardSurface({
   className,
   draggable = false,
   onOpenFlow,
+  openFlowHref,
   onSelectProgram,
   primaryActionLabel = "Start application",
   programs = [],
@@ -338,7 +341,19 @@ export function FiscalSponsorshipWorkspaceCardSurface({
                 </>
               )
 
-              return onOpenFlow ? (
+              return openFlowHref ? (
+                <Link
+                  key={item.id}
+                  href={openFlowHref}
+                  className={cn(
+                    FISCAL_SPONSORSHIP_WORKFLOW_ITEM_ROW_CLASSNAME,
+                    FISCAL_SPONSORSHIP_WORKFLOW_ITEM_BUTTON_CLASSNAME,
+                    item.complete && "bg-muted/55"
+                  )}
+                >
+                  {content}
+                </Link>
+              ) : onOpenFlow ? (
                 <button
                   key={item.id}
                   type="button"
@@ -373,16 +388,25 @@ export function FiscalSponsorshipWorkspaceCardSurface({
             Handbook
           </a>
         </Button>
-        <Button
-          type="button"
-          size="sm"
-          className="rounded-full"
-          onClick={() => onOpenFlow?.()}
-          disabled={!onOpenFlow}
-        >
-          <PanelRightOpenIcon data-icon="inline-start" aria-hidden />
-          {primaryActionLabel}
-        </Button>
+        {openFlowHref ? (
+          <Button asChild size="sm" className="rounded-full">
+            <Link href={openFlowHref}>
+              <PanelRightOpenIcon data-icon="inline-start" aria-hidden />
+              {primaryActionLabel}
+            </Link>
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            size="sm"
+            className="rounded-full"
+            onClick={() => onOpenFlow?.()}
+            disabled={!onOpenFlow}
+          >
+            <PanelRightOpenIcon data-icon="inline-start" aria-hidden />
+            {primaryActionLabel}
+          </Button>
+        )}
       </CardFooter>
     </Card>
   )

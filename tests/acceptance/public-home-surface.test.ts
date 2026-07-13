@@ -116,12 +116,8 @@ describe("public home canvas", () => {
     expect(previewSource).toContain(
       'data-home-map-controls-position="top-left"'
     )
-    expect(previewSource).toContain(
-      "[&_.mapboxgl-ctrl-top-left]:!top-16"
-    )
-    expect(previewSource).toContain(
-      "[&_.mapboxgl-ctrl-top-left]:!left-3"
-    )
+    expect(previewSource).toContain("[&_.mapboxgl-ctrl-top-left]:!top-16")
+    expect(previewSource).toContain("[&_.mapboxgl-ctrl-top-left]:!left-3")
     expect(previewSource).toContain(
       "[&_.mapboxgl-ctrl-top-left_.mapboxgl-ctrl]:!m-0"
     )
@@ -134,13 +130,20 @@ describe("public home canvas", () => {
     expect(markerSource).not.toContain("resource-categories")
   })
 
-  it("keeps public fiscal sponsorship actions active", () => {
-    const source = readSource(
+  it("keeps public fiscal sponsorship actions as real signup links", () => {
+    const panelSource = readSource(
       "src/components/public/home-canvas-product-panels.tsx"
     )
+    const surfaceSource = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-workspace-card-surface.tsx"
+    )
 
-    expect(source).toContain("onOpenFlow={() =>")
-    expect(source).toContain('router.push("/?section=signup&intent=fund")')
+    expect(panelSource).toContain('openFlowHref="/?section=signup&intent=fund"')
+    expect(panelSource).not.toContain("useRouter")
+    expect(panelSource).not.toContain("router.push")
+    expect(surfaceSource).toContain("openFlowHref?: string")
+    expect(surfaceSource).toContain("href={openFlowHref}")
+    expect(surfaceSource).toContain("<Button asChild")
   })
 
   it("only serializes a public Mapbox token into the home preview", () => {

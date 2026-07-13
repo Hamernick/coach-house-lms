@@ -14,6 +14,8 @@ import { useTheme } from "next-themes"
 import type mapboxgl from "mapbox-gl"
 import "mapbox-gl/dist/mapbox-gl.css"
 
+import { useIsMobile } from "@/hooks/use-mobile"
+
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import {
@@ -40,7 +42,6 @@ import {
 } from "./public-map-index/public-map-index-runtime"
 import { normalizePublicMapTheme } from "@/lib/public-map/public-map-theme"
 import { PublicMapSurface } from "./public-map-index/map-surface"
-import type { PublicMapPanelPresentation } from "./public-map-index/map-view-helpers"
 import { usePublicMapMemberOnboardingMapOverlay } from "./public-map-index/member-onboarding-preview-controls"
 import { PublicMapIndexChrome } from "./public-map-index/public-map-index-chrome"
 import {
@@ -107,6 +108,7 @@ export function PublicMapIndex({
   adminOnboardingPreview = undefined,
 }: PublicMapIndexProps) {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const mapTheme = normalizePublicMapTheme(useTheme().resolvedTheme)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
@@ -136,8 +138,6 @@ export function PublicMapIndex({
   const [authSheetOpen, setAuthSheetOpen] = useState(false)
   const [pendingAuthOrgId, setPendingAuthOrgId] = useState<string | null>(null)
   const [sidebarInsetLeft, setSidebarInsetLeft] = useState(0)
-  const [panelPresentation, setPanelPresentation] =
-    useState<PublicMapPanelPresentation | null>(null)
   const [initialViewportResolved, setInitialViewportResolved] = useState(false)
   const [mapLoadVersion, setMapLoadVersion] = useState(0)
   const [sameLocationSelection, setSameLocationSelection] =
@@ -406,8 +406,8 @@ export function PublicMapIndex({
       onSidebarModeChange={setSidebarMode}
       onAuthSheetOpenChange={setAuthSheetOpen}
       onSidebarInsetChange={setSidebarInsetLeft}
-      onPanelPresentationChange={setPanelPresentation}
       renderDesktopSidebar={flags.renderMapOverlaySidebar}
+      renderMobileDrawer={!flags.useHomeCanvasSidebarSlot || isMobile}
       mapOverlay={memberOnboardingMapOverlay}
     />
   )
@@ -433,7 +433,6 @@ export function PublicMapIndex({
       onSelectOrganization={handleRailSelectOrganization}
       onToggleFavorite={toggleFavorite}
       onBackToSearch={handleBackToSearch}
-      panelPresentation={panelPresentation}
       query={query}
       savedOrganizations={savedOrganizations}
       searchContext={activeSearchContext}

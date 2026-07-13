@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import ArrowDownIcon from "lucide-react/dist/esm/icons/arrow-down"
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react"
 
 import { ShellRightRail } from "@/components/app-shell/components/shell-right-rail"
@@ -16,15 +15,14 @@ import {
   HomeCanvasPreviewHeader,
 } from "@/components/public/home-canvas-preview-shell"
 import { HomeCanvasPreviewSidebar } from "@/components/public/home-canvas-preview-sidebar"
+import { HomeCanvasProductNavigator } from "@/components/public/home-canvas-product-navigator"
 import { useHomeCanvasSectionLinkController } from "@/components/public/home-canvas-section-link-controller"
 import {
   HomeCanvasSidebarSlotProvider,
   useHomeCanvasSidebarContent,
   useHomeCanvasSidebarPresence,
 } from "@/components/public/home-canvas-sidebar-slot"
-import {
-  isHomeSectionId,
-} from "@/components/public/home-canvas-preview-config"
+import { isHomeSectionId } from "@/components/public/home-canvas-preview-config"
 import { isPrimaryPlainNavigationIntent } from "@/components/public/home-canvas-route-link-helpers"
 import { useHomeCanvasNavigation } from "@/components/public/home-canvas-preview-navigation"
 import {
@@ -32,10 +30,7 @@ import {
   HomeSectionPanel,
 } from "@/components/public/home-canvas-preview-panels"
 import { Button } from "@/components/ui/button"
-import {
-  SidebarInset,
-  SidebarProvider,
-} from "@/components/ui/sidebar"
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
 import { useIsMobile } from "@/hooks/use-mobile"
 import type {
   SignupBuilderPlanTier,
@@ -46,6 +41,7 @@ import { cn } from "@/lib/utils"
 type HomeCanvasPreviewProps = {
   initialSection?: string
   loginRedirectTo?: string
+  mapboxToken?: string
   pricingPanel?: ReactNode
   findPanel?: ReactNode
   signupIntentFocus?: SignupIntentFocus | null
@@ -55,6 +51,7 @@ type HomeCanvasPreviewProps = {
 export function HomeCanvasPreview({
   initialSection,
   loginRedirectTo,
+  mapboxToken,
   pricingPanel,
   findPanel,
   signupIntentFocus,
@@ -66,6 +63,7 @@ export function HomeCanvasPreview({
         <HomeCanvasPreviewContent
           initialSection={initialSection}
           loginRedirectTo={loginRedirectTo}
+          mapboxToken={mapboxToken}
           pricingPanel={pricingPanel}
           findPanel={findPanel}
           signupIntentFocus={signupIntentFocus}
@@ -80,23 +78,15 @@ function HomeCanvasPreviewContent(props: HomeCanvasPreviewProps) {
   const {
     initialSection,
     loginRedirectTo,
+    mapboxToken,
     pricingPanel,
     findPanel,
     signupIntentFocus,
     signupPlanTier,
   } = props
   const router = useRouter()
-  const {
-    activeSection,
-    direction,
-    activeSectionBehavior,
-    setActivePanelRef,
-    changeSection,
-    goToAdjacentSection,
-    handleWheel,
-    handleTouchStart,
-    handleTouchEnd,
-  } = useHomeCanvasNavigation({ initialSection })
+  const { activeSection, direction, activeSectionBehavior, changeSection } =
+    useHomeCanvasNavigation({ initialSection })
   const hasRightRail = useRightRailPresence()
   const hasSidebarSlot = useHomeCanvasSidebarPresence()
   const sidebarSlotContent = useHomeCanvasSidebarContent()
@@ -105,8 +95,7 @@ function HomeCanvasPreviewContent(props: HomeCanvasPreviewProps) {
   const { rightOpen, handleRightOpenChangeUser, handleRightOpenChangeAuto } =
     useAppShellRightRailState({ hasRightRail, isMobile })
   const showFindSidebarShell = activeSection === "find" && hasSidebarSlot
-  const hideShellSidebar = activeSection === "find" && !hasSidebarSlot
-  const showRightRailToggle = hasRightRail && !isMobile
+  const showRightRailToggle = hasRightRail
   const { authPanelProps, handleCanvasPanelClick } =
     useHomeCanvasSectionLinkController({
       changeSection,
@@ -115,7 +104,7 @@ function HomeCanvasPreviewContent(props: HomeCanvasPreviewProps) {
       signupPlanTier,
     })
   const railToggleClassName =
-    "size-8 rounded-md border border-[color:var(--shell-border)] text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+    "size-10 rounded-md border border-[color:var(--shell-border)] text-muted-foreground hover:bg-foreground/5 hover:text-foreground md:size-8"
   useEffect(() => {
     if (activeSection === "find") {
       setIsFindRoutePending(false)
@@ -166,36 +155,47 @@ function HomeCanvasPreviewContent(props: HomeCanvasPreviewProps) {
       )}
     >
       <div className="flex min-h-0 flex-1">
-        <HomeCanvasPreviewSidebar
-          activeSection={activeSection}
-          changeSection={changeSection}
-          handleFindRouteClick={handleFindRouteClick}
-          hideShellSidebar={hideShellSidebar}
-          isFindRoutePending={isFindRoutePending}
-          primeFindRoute={primeFindRoute}
-          showFindSidebarShell={showFindSidebarShell}
-          sidebarSlotContent={sidebarSlotContent}
-        />
+        {showFindSidebarShell ? (
+          <HomeCanvasPreviewSidebar
+            showFindSidebarShell={showFindSidebarShell}
+            sidebarSlotContent={sidebarSlotContent}
+          />
+        ) : null}
 
         <div className="flex min-h-0 flex-1">
           <SidebarInset className="h-full min-h-0 overflow-hidden bg-[var(--shell-bg)]">
             <HomeCanvasPreviewHeader
               activeSection={activeSection}
               changeSection={changeSection}
-              hideShellSidebar={hideShellSidebar}
               onRightOpenChange={handleRightOpenChangeUser}
               railToggleClassName={railToggleClassName}
               rightOpen={rightOpen}
+              showShellSidebar={showFindSidebarShell}
               showRightRailToggle={showRightRailToggle}
             />
 
-            <div className="flex min-h-0 flex-1 p-[var(--shell-content-pad)] md:pt-0 md:pr-[var(--shell-content-pad)] md:pb-[var(--shell-content-pad)] md:pl-0">
+            <div
+              className={cn(
+                "flex min-h-0 flex-1 p-[var(--shell-content-pad)] md:pt-0 md:pr-[var(--shell-content-pad)] md:pb-[var(--shell-content-pad)]",
+                showFindSidebarShell
+                  ? "md:pl-0"
+                  : "md:pl-[var(--shell-content-pad)]"
+              )}
+            >
               <div className="relative flex min-h-0 w-full flex-1 overflow-hidden rounded-[28px] border border-[color:var(--shell-border)] bg-[var(--shell-bg)]">
+                <HomeCanvasProductNavigator
+                  activeSection={activeSection}
+                  changeSection={changeSection}
+                  handleFindRouteClick={handleFindRouteClick}
+                  isFindRoutePending={isFindRoutePending}
+                  primeFindRoute={primeFindRoute}
+                />
                 {isFindRoutePending ? (
                   <HomeCanvasFindRoutePendingToast />
                 ) : null}
                 <div
                   key={activeSection}
+                  data-home-canvas-panel={activeSection}
                   className={cn(
                     "absolute inset-0 overscroll-contain motion-safe:animate-[home-canvas-panel-in_220ms_cubic-bezier(0.22,1,0.36,1)_both]",
                     activeSectionBehavior.scrollable
@@ -203,32 +203,11 @@ function HomeCanvasPreviewContent(props: HomeCanvasPreviewProps) {
                       : "overflow-hidden"
                   )}
                   onClickCapture={handleCanvasPanelClick}
-                  onWheel={handleWheel}
-                  onTouchStart={handleTouchStart}
-                  onTouchEnd={handleTouchEnd}
-                  onKeyDown={(event) => {
-                    if (activeSectionBehavior.lockNavigationGestures) {
-                      return
-                    }
-                    if (event.key === "ArrowDown" || event.key === "PageDown") {
-                      event.preventDefault()
-                      goToAdjacentSection(1)
-                    }
-                    if (event.key === "ArrowUp" || event.key === "PageUp") {
-                      event.preventDefault()
-                      goToAdjacentSection(-1)
-                    }
-                  }}
-                  tabIndex={0}
                   style={
                     {
                       "--home-canvas-panel-y": direction > 0 ? "44px" : "-44px",
-                      touchAction: activeSectionBehavior.touchAction,
                     } as CSSProperties
                   }
-                  ref={(node) => {
-                    setActivePanelRef(activeSection, node)
-                  }}
                 >
                   {activeSection === "login" ? (
                     <CanvasAuthPanel {...authPanelProps} mode="login" />
@@ -271,22 +250,19 @@ function HomeCanvasPreviewContent(props: HomeCanvasPreviewProps) {
                       </div>
                     ))
                   ) : isHomeSectionId(activeSection) ? (
-                    <HomeSectionPanel sectionId={activeSection} />
+                    <HomeSectionPanel
+                      sectionId={activeSection}
+                      mapboxToken={mapboxToken}
+                      pricingPanel={pricingPanel}
+                    />
                   ) : (
-                    <HomeSectionPanel sectionId="hero" />
+                    <HomeSectionPanel
+                      sectionId="hero"
+                      mapboxToken={mapboxToken}
+                      pricingPanel={pricingPanel}
+                    />
                   )}
                 </div>
-                {activeSectionBehavior.scrollable ? (
-                  <div
-                    className="pointer-events-none absolute right-4 bottom-4 z-20"
-                    aria-hidden
-                  >
-                    <div className="bg-background/95 text-foreground border-border/80 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium shadow-sm backdrop-blur">
-                      <ArrowDownIcon className="text-muted-foreground h-3.5 w-3.5 animate-bounce" />
-                      <span className="text-muted-foreground">Scroll down</span>
-                    </div>
-                  </div>
-                ) : null}
               </div>
             </div>
           </SidebarInset>

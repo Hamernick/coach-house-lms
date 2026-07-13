@@ -276,6 +276,9 @@ describe("public find routes", () => {
     expect(publicMapSource).toContain(
       "renderDesktopSidebar={flags.renderMapOverlaySidebar}"
     )
+    expect(publicMapSource).toContain(
+      "renderMobileDrawer={!flags.useHomeCanvasSidebarSlot || isMobile}"
+    )
     expect(publicMapSource).not.toContain("w-[23rem]")
     expect(publicMapSource).not.toContain("manageShellSidebarOpen={false}")
     expect(shellMainContentSource).toContain("data-shell-mode={")
@@ -300,6 +303,39 @@ describe("public find routes", () => {
       ': "rounded-[28px] border border-[color:var(--shell-border)]"'
     )
     expect(appShellSource).not.toContain("useFullBleedContent || isMobile")
+  })
+
+  it("uses the same Find, Guides, and Saved rail for public and authenticated find", () => {
+    const chromeSource = readRoute(
+      "src/components/public/public-map-index/public-map-index-chrome.tsx"
+    )
+    const memberRailSource = readRoute(
+      "src/components/public/public-map-index/member-rail.tsx"
+    )
+    const rightRailSource = readRoute(
+      "src/components/public/public-map-index/right-rail.tsx"
+    )
+
+    expect(chromeSource).toContain(
+      "useAppShellRightRailDirectory || useHomeCanvasSidebarSlot"
+    )
+    expect(chromeSource).toContain(
+      'data-public-map-tabbed-rail-placement="home-canvas"'
+    )
+    expect(chromeSource).toContain("<PublicMapMemberRail")
+    expect(chromeSource).toContain("directoryRail={directoryRail}")
+    expect(chromeSource).not.toContain("PublicMapShellSidebarPanel")
+    expect(chromeSource).toContain("{useHomeCanvasSidebarSlot ? (")
+    expect(chromeSource).toContain("{useAppShellRightRailDirectory ? (")
+    expect(rightRailSource).toContain("<PublicMapMemberRail")
+    expect(memberRailSource).toContain('data-public-map-tabbed-rail=""')
+    expect(memberRailSource).toContain('data-public-map-tab-list=""')
+    expect(memberRailSource).toContain(
+      "const hasGuides = Boolean(onGuideSelect)"
+    )
+    expect(memberRailSource).toContain(">Find</span>")
+    expect(memberRailSource).toContain(">Guides</span>")
+    expect(memberRailSource).toContain(">Saved</span>")
   })
 
   it("wires category filtering through the search rail and map markers", () => {

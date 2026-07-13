@@ -9,6 +9,7 @@ import {
 } from "react"
 
 import { Button } from "@/components/ui/button"
+import { Empty } from "@/components/ui/empty"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { PublicMapSameLocationSelection } from "@/lib/public-map/public-map-layer-api"
 import {
@@ -248,11 +249,19 @@ export function PublicMapGuidesRail({
         viewportClassName="scroll-fade-effect-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [&>div]:!block [&>div]:!min-w-0 [&>div]:!w-full [&>div]:!max-w-full"
         contentClassName="pb-2"
       >
-        <PublicMapResourceGuides
-          guides={guides}
-          onGuideSelect={onGuideSelect}
-          showHeader={false}
-        />
+        {guides.length > 0 ? (
+          <PublicMapResourceGuides
+            guides={guides}
+            onGuideSelect={onGuideSelect}
+            showHeader={false}
+          />
+        ) : (
+          <Empty
+            className="border-border/70 bg-background/70 min-h-[220px] rounded-xl border"
+            title="No guides available"
+            description="Published resource collections will appear here."
+          />
+        )}
       </ScrollArea>
     </div>
   )

@@ -90,7 +90,7 @@ export function PublicMapMemberRail({
   onToggleFavorite,
 }: PublicMapMemberRailProps) {
   const hasDirectoryRail = Boolean(directoryRail)
-  const hasGuides = guides.length > 0 && Boolean(onGuideSelect)
+  const hasGuides = Boolean(onGuideSelect)
   const defaultTab = hasDirectoryRail
     ? "directory"
     : hasGuides
@@ -160,13 +160,17 @@ export function PublicMapMemberRail({
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-3 overflow-hidden">
+    <div
+      data-public-map-tabbed-rail=""
+      className="flex h-full min-h-0 flex-col gap-3 overflow-hidden"
+    >
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
         className="flex h-full min-h-0 flex-col gap-3 overflow-hidden"
       >
         <TabsList
+          data-public-map-tab-list=""
           variant="line"
           className={cn("shrink-0", PUBLIC_MAP_MEMBER_TABS_LIST_CLASSNAME)}
         >

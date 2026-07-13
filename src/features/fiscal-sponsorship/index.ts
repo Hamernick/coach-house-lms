@@ -20,6 +20,7 @@ export {
   FiscalSponsorshipWorkflowTimeline,
   FiscalSponsorshipWorkflowDrawer,
   FiscalSponsorshipWorkspaceCardSummary,
+  FiscalSponsorshipWorkspaceCardSurface,
 } from "./components"
 export {
   analyzeFiscalSponsorshipActivityEligibility,

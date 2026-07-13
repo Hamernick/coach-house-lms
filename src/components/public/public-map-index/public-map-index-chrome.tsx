@@ -14,10 +14,9 @@ import {
   PublicMapDirectoryRail,
   resolvePublicMapDirectoryRailMode,
 } from "./directory-rail"
-import type { PublicMapPanelPresentation } from "./map-view-helpers"
+import { PublicMapMemberRail } from "./member-rail"
 import { PublicMapRightRail } from "./right-rail"
 import type { PublicMapSidebarSearchContext } from "./sidebar"
-import { PublicMapShellSidebarPanel } from "./sidebar-shell-panel"
 import type { PublicMapListItem } from "./map-items-state"
 import type { PublicMapResourceGuide } from "./resource-guides"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
@@ -44,7 +43,6 @@ type PublicMapIndexChromeProps = {
   onQueryChange: (value: string) => void
   onSelectOrganization: (organizationId: string) => void
   onToggleFavorite: (orgId: string) => void
-  panelPresentation: PublicMapPanelPresentation | null
   query: string
   savedOrganizations: PublicMapOrganization[]
   searchContext: PublicMapSidebarSearchContext | null
@@ -77,7 +75,6 @@ export function PublicMapIndexChrome({
   onQueryChange,
   onSelectOrganization,
   onToggleFavorite,
-  panelPresentation,
   query,
   savedOrganizations,
   searchContext,
@@ -97,73 +94,66 @@ export function PublicMapIndexChrome({
     selectedOrganization,
     selectedResourceItem,
   })
-  const directoryRail = useAppShellRightRailDirectory ? (
-    <PublicMapDirectoryRail
-      sidebarMode={sidebarMode}
-      items={directoryItems}
-      organizations={directoryOrganizations}
-      selectedItemId={selectedItemId}
-      selectedOrganization={selectedOrganization}
-      selectedResourceItem={selectedResourceItem}
-      canManageResourceMap={canManageResourceMap}
-      organizationCurationAction={organizationCurationAction}
-      resourceMapCurationAction={resourceMapCurationAction}
-      favorites={favorites}
-      query={query}
-      activeGroup={activeGroup}
-      groupCounts={groupCounts}
-      searchContext={searchContext}
-      onQueryChange={onQueryChange}
-      onActiveGroupChange={onActiveGroupChange}
-      onToggleFavorite={onToggleFavorite}
-      onSelectItem={onSelectItem}
-      onOpenDetails={onOpenDetails}
-      onBackToSearch={onBackToSearch}
-      setSidebarMode={setSidebarMode}
-    />
-  ) : null
-
+  const directoryRail =
+    useAppShellRightRailDirectory || useHomeCanvasSidebarSlot ? (
+      <PublicMapDirectoryRail
+        sidebarMode={sidebarMode}
+        items={directoryItems}
+        organizations={directoryOrganizations}
+        selectedItemId={selectedItemId}
+        selectedOrganization={selectedOrganization}
+        selectedResourceItem={selectedResourceItem}
+        canManageResourceMap={canManageResourceMap}
+        organizationCurationAction={organizationCurationAction}
+        resourceMapCurationAction={resourceMapCurationAction}
+        favorites={favorites}
+        query={query}
+        activeGroup={activeGroup}
+        groupCounts={groupCounts}
+        searchContext={searchContext}
+        onQueryChange={onQueryChange}
+        onActiveGroupChange={onActiveGroupChange}
+        onToggleFavorite={onToggleFavorite}
+        onSelectItem={onSelectItem}
+        onOpenDetails={onOpenDetails}
+        onBackToSearch={onBackToSearch}
+        setSidebarMode={setSidebarMode}
+      />
+    ) : null
   return (
     <>
-      {useHomeCanvasSidebarSlot && panelPresentation === "rail" ? (
+      {useHomeCanvasSidebarSlot ? (
         <HomeCanvasSidebarSlot>
-          <PublicMapShellSidebarPanel
-            sidebarMode={sidebarMode}
-            items={directoryItems}
-            organizations={directoryOrganizations}
-            selectedItemId={selectedItemId}
-            selectedOrganization={selectedOrganization}
-            selectedResourceItem={selectedResourceItem}
-            canManageResourceMap={canManageResourceMap}
-            organizationCurationAction={organizationCurationAction}
-            resourceMapCurationAction={resourceMapCurationAction}
-            favorites={favorites}
-            query={query}
-            activeGroup={activeGroup}
-            groupCounts={groupCounts}
-            searchContext={searchContext}
-            onQueryChange={onQueryChange}
-            onActiveGroupChange={onActiveGroupChange}
-            onToggleFavorite={onToggleFavorite}
-            onSelectItem={onSelectItem}
-            onOpenDetails={onOpenDetails}
-            onBackToSearch={onBackToSearch}
-            setSidebarMode={setSidebarMode}
-          />
+          <div
+            data-public-map-tabbed-rail-placement="home-canvas"
+            className="flex min-h-0 flex-1 flex-col overflow-hidden px-[var(--shell-rail-padding)] pt-3 pb-[calc(var(--shell-rail-padding)+env(safe-area-inset-bottom))]"
+          >
+            <PublicMapMemberRail
+              directoryRail={directoryRail}
+              directoryMode={directoryRailMode}
+              guides={guides}
+              savedOrganizations={savedOrganizations}
+              onGuideSelect={onGuideSelect}
+              onSelectOrganization={onSelectOrganization}
+              onToggleFavorite={onToggleFavorite}
+            />
+          </div>
         </HomeCanvasSidebarSlot>
       ) : null}
 
-      <PublicMapRightRail
-        isAuthenticated={isAuthenticated}
-        directoryRail={directoryRail}
-        directoryMode={directoryRail ? directoryRailMode : null}
-        guides={guides}
-        savedOrganizations={savedOrganizations}
-        favorites={favorites}
-        onGuideSelect={onGuideSelect}
-        onSelectOrganization={onSelectOrganization}
-        onToggleFavorite={onToggleFavorite}
-      />
+      {useAppShellRightRailDirectory ? (
+        <PublicMapRightRail
+          isAuthenticated={isAuthenticated}
+          directoryRail={directoryRail}
+          directoryMode={directoryRail ? directoryRailMode : null}
+          guides={guides}
+          savedOrganizations={savedOrganizations}
+          favorites={favorites}
+          onGuideSelect={onGuideSelect}
+          onSelectOrganization={onSelectOrganization}
+          onToggleFavorite={onToggleFavorite}
+        />
+      ) : null}
 
       {mapSurface}
     </>

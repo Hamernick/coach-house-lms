@@ -1030,6 +1030,7 @@ describe("public map sidebar layout", () => {
     expect(directoryMarkup).not.toContain("NYC Cooling Centers")
     expect(memberRailMarkup).toContain(">Find<")
     expect(memberRailMarkup).toContain(">Guides<")
+    expect(memberRailMarkup).toContain(">Saved<")
     expect(memberRailMarkup).not.toContain(">Recent<")
     expect(memberRailMarkup).not.toContain(">Joined<")
     expect(memberRailMarkup).not.toContain(">Alerts<")
@@ -1068,6 +1069,19 @@ describe("public map sidebar layout", () => {
     expect(memberRailMarkup).toContain("data-[state=active]:shadow-none")
     expect(memberRailMarkup).not.toContain("data-[state=active]:bg-muted/55")
     expect(memberRailMarkup).not.toContain("h-6 min-h-0 min-w-0 rounded-full")
+
+    const emptyGuidesMarkup = renderToStaticMarkup(
+      React.createElement(PublicMapMemberRail, {
+        directoryRail: React.createElement("div", null, "Directory"),
+        directoryMode: "search",
+        guides: [],
+        savedOrganizations: [],
+        onGuideSelect: () => {},
+        onSelectOrganization: () => {},
+        onToggleFavorite: () => {},
+      })
+    )
+    expect(emptyGuidesMarkup).toContain(">Guides<")
     expect(guidesRailMarkup).toContain(
       'data-public-map-member-rail-section="guides-panel"'
     )
@@ -1197,6 +1211,11 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain("overscroll-contain")
     expect(markup).toContain("[--mask-height:1.5rem]")
     expect(markup).toContain("[--scroll-buffer:1rem]")
+    expect(markup).toContain(
+      "h-auto w-0 max-w-full min-w-0 flex-1 justify-start overflow-hidden"
+    )
+    expect(markup).toContain("text-left font-normal whitespace-normal")
+    expect(markup).toContain("w-full min-w-0 overflow-hidden")
     expect(markup).not.toContain("max-h-[52vh]")
   })
 

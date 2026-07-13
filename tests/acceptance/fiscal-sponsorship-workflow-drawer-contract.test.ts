@@ -11,9 +11,13 @@ function readSource(relativePath: string) {
 
 describe("fiscal sponsorship workspace drawer contract", () => {
   it("keeps the workspace card on the drawer flow instead of a project workbench link", () => {
-    const workspaceCardSummary = readSource(
+    const workspaceCardSummaryController = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-workspace-card-summary.tsx"
     )
+    const workspaceCardSurface = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-workspace-card-surface.tsx"
+    )
+    const workspaceCardSummary = `${workspaceCardSummaryController}\n${workspaceCardSurface}`
     const data = readSource(
       "src/features/fiscal-sponsorship/lib/prototype-data.ts"
     )

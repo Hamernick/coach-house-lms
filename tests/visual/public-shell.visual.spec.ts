@@ -239,10 +239,13 @@ test("Fund reuses the fiscal sponsorship workspace card", async ({ page }) => {
   const fiscalCard = page.locator(
     '[data-fiscal-sponsorship-surface="workspace-card"]'
   )
-  const startApplication = fiscalCard.getByRole("button", {
+  const startApplication = fiscalCard.getByRole("link", {
     name: "Start application",
   })
-  await expect(startApplication).toBeEnabled()
+  await expect(startApplication).toHaveAttribute(
+    "href",
+    "/?section=signup&intent=fund"
+  )
   await startApplication.click()
   await expect(page).toHaveURL(/section=signup&intent=fund/)
 })

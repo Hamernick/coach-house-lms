@@ -266,6 +266,23 @@ describe("public map sidebar layout", () => {
     expect(markup).toContain('data-liquid-glass="material"')
   })
 
+  it("keeps the light-mode map canvas free of desaturation and haze overlays", () => {
+    const source = readFileSync(
+      join(
+        process.cwd(),
+        "src/components/public/public-map-index/map-surface.tsx"
+      ),
+      "utf8"
+    )
+
+    expect(source).toContain('className="h-full w-full"')
+    expect(source).not.toContain("brightness-[1.02]")
+    expect(source).not.toContain("contrast-[0.98]")
+    expect(source).not.toContain("saturate-[0.92]")
+    expect(source).not.toContain("rgba(248,250,252")
+    expect(source).toContain("hidden dark:block")
+  })
+
   it("gives the rail search layout one scroll owner and a shared horizontal inset", () => {
     const organization = buildOrganization()
     const groupCounts = buildPublicMapGroupFilterCounts([organization])

@@ -190,7 +190,7 @@ export function AppShellInner({
   const useFlushContentBody =
     useFullBleedContent || useMobileSingleGutterContent
   const useDesktopResizableRightRail =
-    !isMobile && hasRightRail && rightOpen && resizableRightRail
+    !isMobile && hasRightRail && resizableRightRail
   const rightRailDefaultSize = isAcceleratorContext
     ? "28%"
     : isModulePage
@@ -353,25 +353,29 @@ export function AppShellInner({
                       >
                         {mainShellContent}
                       </ResizablePanel>
-                      <ResizableHandle
-                        aria-label="Resize right rail"
-                        withHandle
-                        className="before:bg-border z-40 -ml-px shrink-0 bg-transparent before:absolute before:inset-y-16 before:left-1/2 before:w-px before:-translate-x-1/2 before:rounded-full before:content-['']"
-                      />
-                      <ResizablePanel
-                        id="app-shell-right-rail-panel"
-                        defaultSize={rightRailDefaultSize}
-                        minSize="18%"
-                        maxSize="42%"
-                        className="flex min-h-0 min-w-0 flex-col"
-                      >
-                        <ShellRightRail
-                          open={rightOpen}
-                          onOpenChange={handleRightOpenChangeUser}
-                          onAutoClose={handleRightOpenChangeAuto}
-                          resizablePanel
-                        />
-                      </ResizablePanel>
+                      {rightOpen ? (
+                        <>
+                          <ResizableHandle
+                            aria-label="Resize right rail"
+                            withHandle
+                            className="before:bg-border z-40 -ml-px shrink-0 bg-transparent before:absolute before:inset-y-16 before:left-1/2 before:w-px before:-translate-x-1/2 before:rounded-full before:content-['']"
+                          />
+                          <ResizablePanel
+                            id="app-shell-right-rail-panel"
+                            defaultSize={rightRailDefaultSize}
+                            minSize="18%"
+                            maxSize="42%"
+                            className="flex min-h-0 min-w-0 flex-col"
+                          >
+                            <ShellRightRail
+                              open={rightOpen}
+                              onOpenChange={handleRightOpenChangeUser}
+                              onAutoClose={handleRightOpenChangeAuto}
+                              resizablePanel
+                            />
+                          </ResizablePanel>
+                        </>
+                      ) : null}
                     </ResizablePanelGroup>
                   ) : (
                     <>

@@ -1,5 +1,7 @@
-import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { createClient } from "@supabase/supabase-js"
+
 import { env } from "@/lib/env"
+import type { Database } from "@/lib/supabase/types"
 import { unstable_cache } from "next/cache"
 import { isFormationStatus } from "@/lib/organization/formation-status"
 import type { FormationStatus } from "@/lib/organization/org-profile-brand-types"
@@ -182,10 +184,30 @@ function buildPublicMapActivityLinkSource(
   }
 }
 
+function hasConfiguredPublicSupabaseClient() {
+  return (
+    env.NEXT_PUBLIC_SUPABASE_URL !== "https://placeholder.supabase.co" &&
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== "public-anon-placeholder"
+  )
+}
+
+function createPublicMapReadClient() {
+  return createClient<Database>(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    }
+  )
+}
+
 async function fetchPublicMapOrganizationsUncached(): Promise<
   PublicMapOrganization[]
 > {
-  const supabase = createSupabaseAdminClient()
+  const supabase = createPublicMapReadClient()
   const { data: orgRows, error: orgError } = await supabase
     .from("organizations")
     .select("user_id, profile, location_lat, location_lng, public_slug")
@@ -200,7 +222,15 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
       }>
     >()
 
-  if (orgError || !orgRows || orgRows.length === 0) {
+  if (orgError) {
+    console.error("[public-map] organization query failed", {
+      code: orgError.code,
+      message: orgError.message,
+    })
+    throw new Error("Unable to load public map organizations.")
+  }
+
+  if (!orgRows || orgRows.length === 0) {
     return []
   }
 
@@ -405,14 +435,14 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
 const fetchPublicMapOrganizationsCached = unstable_cache(
   async (): Promise<PublicMapOrganization[]> =>
     fetchPublicMapOrganizationsUncached(),
-  ["public-map-organizations-v4"],
+  ["public-map-organizations-v5"],
   { revalidate: 300, tags: ["public-map-organizations"] }
 )
 
 export async function fetchPublicMapOrganizations(): Promise<
   PublicMapOrganization[]
 > {
-  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+  if (!hasConfiguredPublicSupabaseClient()) {
     return []
   }
 

@@ -412,9 +412,9 @@ const fetchPublicMapOrganizationsCached = unstable_cache(
 export async function fetchPublicMapOrganizations(): Promise<
   PublicMapOrganization[]
 > {
-  if (env.SUPABASE_SERVICE_ROLE_KEY) {
-    return fetchPublicMapOrganizationsCached()
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+    return []
   }
 
-  return fetchPublicMapOrganizationsUncached()
+  return fetchPublicMapOrganizationsCached()
 }

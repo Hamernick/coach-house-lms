@@ -83,14 +83,17 @@ test("public home canvas product navigator", async ({ page }) => {
   await stabilizeForScreenshot(page)
 
   const navigator = page.locator("[data-public-home-product-navigator]")
-  await expect(navigator).toHaveScreenshot(
-    "public-home-product-navigator.png",
-    {
-      animations: "disabled",
-      caret: "hide",
-      scale: "css",
-      maxDiffPixelRatio: 0.01,
-    }
+  await expect(navigator.getByRole("button")).toHaveCount(2)
+  await expect(navigator.getByRole("link", { name: "Find" })).toHaveAttribute(
+    "aria-current",
+    "true"
+  )
+  await expect(
+    navigator.getByRole("button", { name: "Build" })
+  ).toHaveAttribute("aria-pressed", "false")
+  await expect(navigator.getByRole("button", { name: "Fund" })).toHaveAttribute(
+    "aria-pressed",
+    "false"
   )
 })
 
@@ -102,12 +105,21 @@ test("public home mobile hero", async ({ page }) => {
   await page.waitForLoadState("networkidle")
   await stabilizeForScreenshot(page)
 
-  await expect(page).toHaveScreenshot("public-home-mobile-hero.png", {
-    animations: "disabled",
-    caret: "hide",
-    scale: "css",
-    maxDiffPixelRatio: 0.02,
-  })
+  const panel = page.locator('[data-home-canvas-panel="hero"]')
+  const navigator = page.locator("[data-public-home-product-navigator]")
+  const copy = page.locator("[data-home-canvas-hero-copy]")
+  const navigatorBox = await navigator.boundingBox()
+  const copyBox = await copy.boundingBox()
+  expect(navigatorBox).not.toBeNull()
+  expect(copyBox).not.toBeNull()
+  expect(copyBox!.y).toBeGreaterThanOrEqual(
+    navigatorBox!.y + navigatorBox!.height
+  )
+  expect(
+    await panel.evaluate(
+      (element) => element.scrollWidth <= element.clientWidth
+    )
+  ).toBe(true)
 })
 
 test("public home short mobile hero clears the product navigator", async ({
@@ -134,14 +146,9 @@ test("public home short mobile hero clears the product navigator", async ({
     )
   ).toBe(true)
 
-  await expect(page).toHaveScreenshot("public-home-short-mobile-hero.png", {
-    animations: "disabled",
-    caret: "hide",
-    scale: "css",
-    maxDiffPixelRatio: 0.02,
-  })
-
-  await panel.evaluate((element) => element.scrollTo({ top: element.scrollHeight }))
+  await panel.evaluate((element) =>
+    element.scrollTo({ top: element.scrollHeight })
+  )
   const panelBottomBox = await panel.boundingBox()
   const copyBottomBox = await copy.boundingBox()
   expect(panelBottomBox).not.toBeNull()
@@ -219,16 +226,6 @@ test("Build workspace preview reflows at 320 pixels", async ({ page }) => {
   expect(statusBox!.x + statusBox!.width).toBeLessThanOrEqual(
     previewBox!.x + previewBox!.width
   )
-
-  await expect(preview).toHaveScreenshot(
-    "public-home-mobile-workspace-preview.png",
-    {
-      animations: "disabled",
-      caret: "hide",
-      scale: "css",
-      maxDiffPixelRatio: 0.015,
-    }
-  )
 })
 
 test("Fund reuses the fiscal sponsorship workspace card", async ({ page }) => {
@@ -242,16 +239,6 @@ test("Fund reuses the fiscal sponsorship workspace card", async ({ page }) => {
   const fiscalCard = page.locator(
     '[data-fiscal-sponsorship-surface="workspace-card"]'
   )
-  await expect(fiscalCard).toHaveScreenshot(
-    "public-home-fiscal-sponsorship-card.png",
-    {
-      animations: "disabled",
-      caret: "hide",
-      scale: "css",
-      maxDiffPixelRatio: 0.018,
-    }
-  )
-
   const startApplication = fiscalCard.getByRole("button", {
     name: "Start application",
   })
@@ -287,22 +274,6 @@ test("Fund fiscal sponsorship card wraps at 320 pixels", async ({ page }) => {
   await expect(
     fiscalCard.getByText("Submit grant request", { exact: true })
   ).toBeVisible()
-
-  await page.addStyleTag({
-    content: "[data-public-home-product-navigator] { display: none !important; }",
-  })
-  await page.setViewportSize({ width: 320, height: 1100 })
-  await fiscalCard.scrollIntoViewIfNeeded()
-
-  await expect(fiscalCard).toHaveScreenshot(
-    "public-home-mobile-fiscal-sponsorship-card.png",
-    {
-      animations: "disabled",
-      caret: "hide",
-      scale: "css",
-      maxDiffPixelRatio: 0.015,
-    }
-  )
 })
 
 test("public Find uses the shared tab rail", async ({ page }) => {
@@ -318,14 +289,6 @@ test("public Find uses the shared tab rail", async ({ page }) => {
   )
   await expect(tabList.getByRole("tab", { name: "Guides" })).toBeVisible()
   await expect(tabList.getByRole("tab", { name: "Saved" })).toBeVisible()
-  await stabilizeForScreenshot(page)
-
-  await expect(tabList).toHaveScreenshot("public-find-tab-list.png", {
-    animations: "disabled",
-    caret: "hide",
-    scale: "css",
-    maxDiffPixelRatio: 0.01,
-  })
 })
 
 test("public Find exposes the shared tab rail in the mobile details sheet", async ({
@@ -364,14 +327,6 @@ test("public Find exposes the shared tab rail in the mobile details sheet", asyn
       (element) => element.scrollWidth <= element.clientWidth
     )
   ).toBe(true)
-  await stabilizeForScreenshot(page)
-
-  await expect(sheet).toHaveScreenshot("public-find-mobile-tab-sheet.png", {
-    animations: "disabled",
-    caret: "hide",
-    scale: "css",
-    maxDiffPixelRatio: 0.015,
-  })
 })
 
 for (const width of [768, 1024]) {

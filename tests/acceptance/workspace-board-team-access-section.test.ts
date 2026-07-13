@@ -128,6 +128,9 @@ describe("WorkspaceBoardTeamAccessSection", () => {
     const markup = renderSection()
 
     expect(markup).toContain("Checking team access…")
+    expect(markup).toContain(
+      "flex w-full min-w-0 items-center justify-between gap-2"
+    )
     expect(markup).not.toContain("No Team Members")
     expect(
       workspaceBoardTeamAccessHoverCardMock.mock.calls[0]?.[0]

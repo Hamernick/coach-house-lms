@@ -100,6 +100,7 @@ export function AuthenticatedFindShell({
         onboardingIntentFocus={state.onboardingIntentFocus}
         formationStatus={state.formationStatus}
         defaultSidebarOpen={defaultSidebarOpen}
+        resizableRightRail
         context="public"
         contentPresentation="full-bleed"
         brandHref="/find"

@@ -274,7 +274,7 @@ export function WorkspaceBoardTeamAccessSection({
                       className="border-border/65 bg-card hover:bg-muted/20 h-auto min-w-0 flex-1 rounded-full border px-2 py-1.5 text-left shadow-xs transition-colors"
                       aria-label="Team access details"
                     >
-                      <div className="flex items-center justify-between gap-2">
+                      <div className="flex w-full min-w-0 items-center justify-between gap-2">
                         <div className="flex min-w-0 items-center">
                           <div className="flex -space-x-2 pr-1">
                             {visiblePeople.map((person) => {

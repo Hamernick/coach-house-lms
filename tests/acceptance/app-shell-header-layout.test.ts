@@ -29,9 +29,13 @@ describe("app shell header layout", () => {
     expect(rightRailSource).toContain('"pointer-events-none w-0"')
   })
 
-  it("makes the desktop right rail resizable without changing the mobile sheet rail", () => {
+  it("keeps resizing scoped to the desktop find rail", () => {
     const appShellSource = readSource(
       "src/components/app-shell/app-shell-inner.tsx"
+    )
+    const appShellTypesSource = readSource("src/components/app-shell/types.ts")
+    const authenticatedFindShellSource = readSource(
+      "src/features/find-map/components/authenticated-find-shell.tsx"
     )
     const rightRailSource = readSource(
       "src/components/app-shell/components/shell-right-rail.tsx"
@@ -49,8 +53,13 @@ describe("app shell header layout", () => {
 
     expect(appShellSource).toContain("@/components/ui/resizable")
     expect(appShellSource).toContain("useDesktopResizableRightRail")
-    expect(appShellSource).toContain("!isMobile && hasRightRail && rightOpen")
-    expect(appShellSource).toContain('derivedContext !== "public"')
+    expect(appShellSource).toContain("resizableRightRail = false")
+    expect(appShellSource).toContain(
+      "!isMobile && hasRightRail && rightOpen && resizableRightRail"
+    )
+    expect(appShellSource).not.toContain('derivedContext !== "public"')
+    expect(appShellTypesSource).toContain("resizableRightRail?: boolean")
+    expect(authenticatedFindShellSource).toContain("resizableRightRail")
     expect(appShellSource).toContain('id="app-shell-right-rail-layout"')
     expect(appShellSource).toContain('id="app-shell-main-content-panel"')
     expect(appShellSource).toContain('id="app-shell-right-rail-panel"')
@@ -70,10 +79,13 @@ describe("app shell header layout", () => {
     expect(appShellSource).not.toContain("after:w-2 after:bg-transparent")
     expect(appShellSource).toContain("defaultSize={rightRailDefaultSize}")
     expect(appShellSource).toContain('derivedContext === "public"')
-    expect(appShellSource).toContain("? 24")
-    expect(appShellSource).toContain("minSize={45}")
-    expect(appShellSource).toContain("minSize={18}")
-    expect(appShellSource).toContain("maxSize={42}")
+    expect(appShellSource).toContain('? "24%"')
+    expect(appShellSource).toContain('minSize="45%"')
+    expect(appShellSource).toContain('minSize="18%"')
+    expect(appShellSource).toContain('maxSize="42%"')
+    expect(appShellSource).not.toContain("minSize={45}")
+    expect(appShellSource).not.toContain("minSize={18}")
+    expect(appShellSource).not.toContain("maxSize={42}")
     expect(rightRailSource).toContain("resizablePanel?: boolean")
     expect(rightRailSource).toContain("resizablePanel = false")
     expect(rightRailSource).toContain('"w-full"')
@@ -102,5 +114,18 @@ describe("app shell header layout", () => {
     expect(resizableSource).toContain("ResizablePanelGroup")
     expect(resizableSource).toContain("bg-border focus-visible:ring-ring")
     expect(resizableSource).toContain("bg-border z-10 flex h-4 w-3")
+  })
+
+  it("widens only the fixed workspace home rail", () => {
+    const appShellSource = readSource(
+      "src/components/app-shell/app-shell-inner.tsx"
+    )
+
+    expect(appShellSource).toContain(
+      'const isWorkspaceHomeRoute = pathname === "/workspace"'
+    )
+    expect(appShellSource).toContain(
+      'isWorkspaceHomeRoute && "[--shell-right-rail-width:17rem]"'
+    )
   })
 })

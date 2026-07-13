@@ -65,18 +65,15 @@ describe("app sidebar nav data", () => {
       hasMemberWorkspaceAccess: true,
     })
 
-    expect(nav.map((item) => item.title)).toEqual([
-      "Workspace",
-      "Find",
-      "People",
-      "Documents",
-    ])
+    expect(nav.map((item) => item.title)).toEqual(["Workspace", "Find"])
     expect(nav.find((item) => item.title === "Find")?.href).toBe("/find")
     expect(nav.find((item) => item.title === "Find")?.icon).toBe(EarthIcon)
     expect(nav.find((item) => item.title === "Organizations")).toBeUndefined()
     expect(nav.find((item) => item.title === "Projects")).toBeUndefined()
     expect(nav.find((item) => item.title === "Tasks")).toBeUndefined()
     expect(nav.find((item) => item.title === "Email")).toBeUndefined()
+    expect(nav.find((item) => item.title === "People")).toBeUndefined()
+    expect(nav.find((item) => item.title === "Documents")).toBeUndefined()
   })
 
   it("keeps org admin out of the main sidebar nav even when available", () => {
@@ -107,8 +104,6 @@ describe("app sidebar nav data", () => {
       "Organizations",
       "Tasks",
       "Email",
-      "People",
-      "Documents",
       "Platform",
       "Platform Lab",
       "Prototypes",

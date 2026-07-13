@@ -8,12 +8,10 @@ import FlaskConicalIcon from "lucide-react/dist/esm/icons/flask-conical"
 import FolderKanbanIcon from "lucide-react/dist/esm/icons/folder-kanban"
 import HelpCircleIcon from "lucide-react/dist/esm/icons/help-circle"
 import LayoutGridIcon from "lucide-react/dist/esm/icons/layout-grid"
-import LockIcon from "lucide-react/dist/esm/icons/lock"
 import MailIcon from "lucide-react/dist/esm/icons/mail"
 import MessageCircleIcon from "lucide-react/dist/esm/icons/message-circle"
 import NotebookIcon from "lucide-react/dist/esm/icons/notebook"
 import PanelTopIcon from "lucide-react/dist/esm/icons/panel-top"
-import UsersIcon from "lucide-react/dist/esm/icons/users"
 
 import {
   listPrototypeLabSidebarTree,
@@ -69,12 +67,6 @@ export function buildMainNav({
           ...workspaceHomeItem,
           { title: "Find", href: FIND_PATH, icon: EarthIcon },
           ...memberWorkspaceItems,
-          { title: "People", href: "/people", icon: UsersIcon },
-          {
-            title: "Documents",
-            href: "/organization/documents",
-            icon: LockIcon,
-          },
         ]
       : [{ title: "Find", href: FIND_PATH, icon: EarthIcon }]),
   ]

@@ -99,6 +99,7 @@ export function AppShellInner({
   context,
   contentPresentation = "default",
   defaultSidebarOpen = false,
+  resizableRightRail = false,
   formationStatus,
   brandHref: brandHrefOverride,
   showWorkspaceHome = true,
@@ -117,6 +118,7 @@ export function AppShellInner({
     pathname?.startsWith("/accelerator/roadmap")
   )
   const isModulePage = pathname?.includes("/module/")
+  const isWorkspaceHomeRoute = pathname === "/workspace"
   const showClasses = Boolean(pathname?.includes("/class/"))
   const showLeftClasses = showClasses && !isAcceleratorContext
   const showAcceleratorTrackRail = false
@@ -188,14 +190,14 @@ export function AppShellInner({
   const useFlushContentBody =
     useFullBleedContent || useMobileSingleGutterContent
   const useDesktopResizableRightRail =
-    !isMobile && hasRightRail && rightOpen && derivedContext !== "public"
+    !isMobile && hasRightRail && rightOpen && resizableRightRail
   const rightRailDefaultSize = isAcceleratorContext
-    ? 28
+    ? "28%"
     : isModulePage
-      ? 30
+      ? "30%"
       : derivedContext === "public"
-        ? 24
-        : 20
+        ? "24%"
+        : "20%"
   const contentPadding = isMobile
     ? "pb-[calc(4.5rem+env(safe-area-inset-bottom))]"
     : "pb-4"
@@ -256,6 +258,7 @@ export function AppShellInner({
             "[--shell-content-pad:1rem] [--shell-gutter:1.25rem] [--shell-rail-gap:1rem] [--shell-rail-item-padding:0.5rem] [--shell-rail-padding:0.75rem] [--shell-right-rail-pad:0.75rem] sm:[--shell-content-pad:1.25rem] lg:[--shell-content-pad:1.5rem]",
             "[--shell-right-rail-width:var(--sidebar-width)]",
             "[--sidebar-border:var(--border)] [--sidebar-foreground:var(--foreground)] [--sidebar:var(--background)]",
+            isWorkspaceHomeRoute && "[--shell-right-rail-width:17rem]",
             isAcceleratorContext &&
               "[--shell-right-rail-pad:0rem] [--shell-right-rail-width:26rem]",
             isModulePage &&
@@ -345,7 +348,7 @@ export function AppShellInner({
                     >
                       <ResizablePanel
                         id="app-shell-main-content-panel"
-                        minSize={45}
+                        minSize="45%"
                         className="flex min-h-0 min-w-0 flex-col"
                       >
                         {mainShellContent}
@@ -358,8 +361,8 @@ export function AppShellInner({
                       <ResizablePanel
                         id="app-shell-right-rail-panel"
                         defaultSize={rightRailDefaultSize}
-                        minSize={18}
-                        maxSize={42}
+                        minSize="18%"
+                        maxSize="42%"
                         className="flex min-h-0 min-w-0 flex-col"
                       >
                         <ShellRightRail

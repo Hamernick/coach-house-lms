@@ -200,7 +200,15 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
       }>
     >()
 
-  if (orgError || !orgRows || orgRows.length === 0) {
+  if (orgError) {
+    console.error("[public-map] organization query failed", {
+      code: orgError.code,
+      message: orgError.message,
+    })
+    throw new Error("Unable to load public map organizations.")
+  }
+
+  if (!orgRows || orgRows.length === 0) {
     return []
   }
 
@@ -405,7 +413,7 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
 const fetchPublicMapOrganizationsCached = unstable_cache(
   async (): Promise<PublicMapOrganization[]> =>
     fetchPublicMapOrganizationsUncached(),
-  ["public-map-organizations-v4"],
+  ["public-map-organizations-v5"],
   { revalidate: 300, tags: ["public-map-organizations"] }
 )
 

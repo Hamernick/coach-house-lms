@@ -5,13 +5,15 @@ import type { ReactNode } from "react"
 import { LoginPanel } from "@/components/auth/login-panel"
 import { SignUpForm } from "@/components/auth/sign-up-form"
 import {
-  LegacyHomeAcceleratorSection,
-  LegacyHomeHeroSection,
-  LegacyHomeOfferingsSection,
   LegacyHomeProcessSection,
   LegacyHomeTeamSection,
   type LegacyHomeSectionId,
 } from "@/components/public/legacy-home-sections"
+import {
+  HomeCanvasBuildPanel,
+  HomeCanvasFundPanel,
+  HomeCanvasMapHeroPanel,
+} from "@/components/public/home-canvas-product-panels"
 import { DEFAULT_POST_AUTH_REDIRECT } from "@/lib/auth/redirects"
 import { FIND_PATH } from "@/lib/find/routes"
 import {
@@ -20,7 +22,13 @@ import {
   type SignupIntentFocus,
 } from "@/lib/onboarding/signup-plan"
 
-function CanvasPanelShell({ children, centered = false }: { children: ReactNode; centered?: boolean }) {
+function CanvasPanelShell({
+  children,
+  centered = false,
+}: {
+  children: ReactNode
+  centered?: boolean
+}) {
   return (
     <div
       className={
@@ -76,7 +84,7 @@ export function CanvasAuthPanel({
 
   return (
     <CanvasPanelShell centered>
-      <div className="w-full max-w-md rounded-2xl border border-border/60 bg-card/60 p-5 sm:p-6">
+      <div className="border-border/60 bg-card/60 w-full max-w-md rounded-2xl border p-5 sm:p-6">
         {isLogin ? (
           <LoginPanel
             redirectTo={loginRedirectTo ?? DEFAULT_POST_AUTH_REDIRECT}
@@ -86,8 +94,10 @@ export function CanvasAuthPanel({
         ) : (
           <>
             <div className="mb-3 space-y-1">
-              <h2 className="text-2xl font-semibold tracking-tight text-foreground">{heading}</h2>
-              <p className="text-sm leading-relaxed text-muted-foreground">
+              <h2 className="text-foreground text-2xl font-semibold tracking-tight">
+                {heading}
+              </h2>
+              <p className="text-muted-foreground text-sm leading-relaxed">
                 {description}
               </p>
             </div>
@@ -105,33 +115,25 @@ export function CanvasAuthPanel({
   )
 }
 
-export function HomeSectionPanel({ sectionId }: { sectionId: LegacyHomeSectionId }) {
+export function HomeSectionPanel({
+  sectionId,
+  mapboxToken,
+  pricingPanel,
+}: {
+  sectionId: LegacyHomeSectionId
+  mapboxToken?: string
+  pricingPanel?: ReactNode
+}) {
   if (sectionId === "hero") {
-    return (
-      <CanvasPanelShell centered>
-        <LegacyHomeHeroSection />
-      </CanvasPanelShell>
-    )
+    return <HomeCanvasMapHeroPanel mapboxToken={mapboxToken} />
   }
 
   if (sectionId === "platform") {
-    return (
-      <CanvasPanelShell>
-        <div className="mx-auto flex w-full justify-center">
-          <LegacyHomeOfferingsSection layout="stacked" />
-        </div>
-      </CanvasPanelShell>
-    )
+    return <HomeCanvasBuildPanel pricingPanel={pricingPanel} />
   }
 
   if (sectionId === "accelerator") {
-    return (
-      <CanvasPanelShell>
-        <div className="mx-auto flex w-full justify-center">
-          <LegacyHomeAcceleratorSection />
-        </div>
-      </CanvasPanelShell>
-    )
+    return <HomeCanvasFundPanel />
   }
 
   if (sectionId === "process") {
@@ -154,9 +156,5 @@ export function HomeSectionPanel({ sectionId }: { sectionId: LegacyHomeSectionId
     )
   }
 
-  return (
-    <CanvasPanelShell centered>
-      <LegacyHomeHeroSection />
-    </CanvasPanelShell>
-  )
+  return <HomeCanvasMapHeroPanel mapboxToken={mapboxToken} />
 }

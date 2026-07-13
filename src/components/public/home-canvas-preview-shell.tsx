@@ -27,7 +27,11 @@ function HomeCanvasMobileSidebarTrigger() {
       variant="outline"
       size="icon"
       className="text-muted-foreground hover:bg-foreground/5 hover:text-foreground size-11 touch-manipulation rounded-md border-[color:var(--shell-border)] bg-transparent shadow-none md:hidden"
-      aria-label={openMobile ? "Close navigation menu" : "Open navigation menu"}
+      aria-label={
+        openMobile
+          ? "Close Find, Guides, and Saved"
+          : "Open Find, Guides, and Saved"
+      }
       aria-expanded={openMobile}
       onClick={toggleSidebar}
     >
@@ -68,16 +72,32 @@ function HomeCanvasLogoMark({ className }: { className?: string }) {
   )
 }
 
-function HomeCanvasBrandLink({ showText = true }: { showText?: boolean }) {
+function HomeCanvasBrandLink({
+  className,
+  showText = true,
+  textClassName,
+}: {
+  className?: string
+  showText?: boolean
+  textClassName?: string
+}) {
   return (
     <Link
       href="/"
-      className="text-foreground hover:bg-sidebar-accent flex min-w-0 items-center gap-2 rounded-lg px-2 py-2 transition-colors"
+      className={cn(
+        "text-foreground hover:bg-sidebar-accent flex min-w-0 items-center gap-2 rounded-lg px-2 py-2 transition-colors",
+        className
+      )}
       aria-label="Coach House home"
     >
       <HomeCanvasLogoMark />
       {showText ? (
-        <span className="flex min-w-0 flex-col leading-none group-data-[collapsible=icon]:hidden">
+        <span
+          className={cn(
+            "flex min-w-0 flex-col leading-none group-data-[collapsible=icon]:hidden",
+            textClassName
+          )}
+        >
           <span className="truncate text-base font-bold tracking-tight">
             Coach House
           </span>
@@ -105,51 +125,58 @@ export function HomeCanvasSidebarHeader() {
   )
 }
 
-function HomeCanvasMobileHeaderBrand() {
-  return (
-    <Link
-      href="/"
-      className="flex size-11 touch-manipulation items-center justify-center rounded-md md:hidden"
-      aria-label="Coach House home"
-    >
-      <HomeCanvasLogoMark />
-    </Link>
-  )
-}
-
 type HomeCanvasPreviewHeaderProps = {
   activeSection: CanvasSectionId
   changeSection: (section: CanvasSectionId) => void
-  hideShellSidebar: boolean
   onRightOpenChange: (open: boolean) => void
   railToggleClassName: string
   rightOpen: boolean
+  showShellSidebar: boolean
   showRightRailToggle: boolean
 }
 
 export function HomeCanvasPreviewHeader({
   activeSection,
   changeSection,
-  hideShellSidebar,
   onRightOpenChange,
   railToggleClassName,
   rightOpen,
+  showShellSidebar,
   showRightRailToggle,
 }: HomeCanvasPreviewHeaderProps) {
+  const rightRailLabel =
+    activeSection === "find" ? "Find, Guides, and Saved" : "details panel"
+
   return (
     <header className="text-muted-foreground flex min-h-14 shrink-0 items-center justify-between gap-2 px-[var(--shell-content-pad)] py-2 text-sm">
-      <HomeCanvasMobileHeaderBrand />
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      <HomeCanvasBrandLink
+        className={cn("shrink-0 py-1", showShellSidebar && "md:hidden")}
+        textClassName="hidden sm:flex"
+      />
+      <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
         <HomeCanvasLoginButton
           activeSection={activeSection}
           changeSection={changeSection}
         />
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          className="rounded-full"
+          aria-current={activeSection === "signup" ? "page" : undefined}
+          onClick={() => changeSection("signup")}
+        >
+          Sign up
+        </Button>
         <PublicThemeToggle
           variant="outline"
           size="icon"
-          className="hidden md:inline-flex"
+          className={cn(
+            "size-9 shrink-0 sm:size-10",
+            showShellSidebar && "hidden md:inline-flex"
+          )}
         />
-        {hideShellSidebar ? null : <HomeCanvasMobileSidebarTrigger />}
+        {showShellSidebar ? <HomeCanvasMobileSidebarTrigger /> : null}
         {showRightRailToggle ? (
           <Button
             variant="ghost"
@@ -157,6 +184,8 @@ export function HomeCanvasPreviewHeader({
             className={railToggleClassName}
             aria-controls={RIGHT_RAIL_ID}
             aria-expanded={rightOpen}
+            aria-label={`${rightOpen ? "Close" : "Open"} ${rightRailLabel}`}
+            title={rightRailLabel}
             onClick={() => onRightOpenChange(!rightOpen)}
           >
             {rightOpen ? (
@@ -164,7 +193,6 @@ export function HomeCanvasPreviewHeader({
             ) : (
               <PanelRightOpenIcon className="h-4 w-4" />
             )}
-            <span className="sr-only">Toggle details panel</span>
           </Button>
         ) : null}
       </div>

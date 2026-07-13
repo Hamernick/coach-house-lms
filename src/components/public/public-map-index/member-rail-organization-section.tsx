@@ -74,10 +74,10 @@ export function PublicMapOrganizationsRailSection({
                     <Button
                       type="button"
                       variant="ghost"
-                      className="text-foreground hover:text-foreground h-auto min-w-0 flex-1 justify-start px-0 py-0 text-left font-normal hover:bg-transparent"
+                      className="text-foreground hover:text-foreground h-auto w-0 max-w-full min-w-0 flex-1 justify-start overflow-hidden px-0 py-0 text-left font-normal whitespace-normal hover:bg-transparent"
                       onClick={() => onSelectOrganization(organization.id)}
                     >
-                      <div className="min-w-0">
+                      <div className="w-full min-w-0 overflow-hidden">
                         <p className="text-foreground truncate text-sm font-semibold">
                           {organization.name}
                         </p>

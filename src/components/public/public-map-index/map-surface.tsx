@@ -67,6 +67,7 @@ type PublicMapSurfaceProps = {
   searchContext?: PublicMapSidebarSearchContext | null
   mapOverlay?: ReactNode
   renderDesktopSidebar?: boolean
+  renderMobileDrawer?: boolean
   onPanelPresentationChange?: (
     presentation: PublicMapPanelPresentation | null
   ) => void
@@ -106,6 +107,7 @@ export function PublicMapSurface({
   searchContext = null,
   mapOverlay = null,
   renderDesktopSidebar = true,
+  renderMobileDrawer = true,
   onPanelPresentationChange,
 }: PublicMapSurfaceProps) {
   const surfaceRef = useRef<HTMLDivElement | null>(null)
@@ -173,7 +175,9 @@ export function PublicMapSurface({
       />
       {panelReady &&
       panelPresentation &&
-      (panelPresentation === "drawer" || renderDesktopSidebar) ? (
+      (panelPresentation === "drawer"
+        ? renderMobileDrawer
+        : renderDesktopSidebar) ? (
         <PublicMapSidebar
           sidebarMode={sidebarMode}
           sidebarWidth={sidebarWidth}

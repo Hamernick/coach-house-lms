@@ -53,6 +53,7 @@ describe("workspace fiscal sponsorship card", () => {
     )
 
     expect(featureIndex).toContain("FiscalSponsorshipWorkspaceCardSummary")
+    expect(featureIndex).toContain("FiscalSponsorshipWorkspaceCardSurface")
     expect(featureIndex).toContain("FiscalSponsorshipMark")
     expect(featureIndex).toContain("FiscalSponsorshipActivityAction")
     expect(featureIndex).toContain(
@@ -175,9 +176,13 @@ describe("workspace fiscal sponsorship card", () => {
   })
 
   it("opens the handbook-aligned user sidebar flow with saved application data when available", () => {
-    const cardSummary = readSource(
+    const cardSummaryController = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-workspace-card-summary.tsx"
     )
+    const cardSurface = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-workspace-card-surface.tsx"
+    )
+    const cardSummary = `${cardSummaryController}\n${cardSurface}`
     const workflowDrawer = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-workflow-drawer.tsx"
     )
@@ -213,9 +218,9 @@ describe("workspace fiscal sponsorship card", () => {
     expect(cardSummary).toContain("Start application")
     expect(cardSummary).toContain("Open workflow")
     expect(cardSummary).toContain(
-      "flex min-w-0 flex-1 items-center justify-between gap-3"
+      "flex min-w-0 flex-1 flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
     )
-    expect(cardSummary).toContain("ml-auto rounded-full px-3 py-1")
+    expect(cardSummary).toContain("rounded-full px-3 py-1 sm:ml-auto")
     expect(cardSummary).not.toContain(
       "text-muted-foreground mt-1 line-clamp-2 text-sm leading-snug"
     )
@@ -268,6 +273,9 @@ describe("workspace fiscal sponsorship card", () => {
     expect(cardSummary).toContain('return "Edit"')
     expect(cardSummary).toContain("mt-3 flex flex-col gap-1.5")
     expect(cardSummary).toContain(
+      "text-foreground text-xs leading-snug font-medium break-words"
+    )
+    expect(cardSummary).not.toContain(
       "text-foreground truncate text-xs font-medium"
     )
     expect(cardSummary).toContain("size-4 shrink-0")

@@ -1,12 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { createSupabaseAdminClientMock } = vi.hoisted(() => ({
+const { createSupabaseAdminClientMock, envMock } = vi.hoisted(() => ({
   createSupabaseAdminClientMock: vi.fn(),
+  envMock: {
+    SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key" as string | undefined,
+  },
 }))
 
 vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: createSupabaseAdminClientMock,
 }))
+vi.mock("@/lib/env", () => ({ env: envMock }))
 
 import { fetchPublicMapOrganizations } from "@/lib/queries/public-map-index"
 
@@ -80,6 +84,14 @@ function buildSupabaseAdminStub({
 describe("fetchPublicMapOrganizations", () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    envMock.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key"
+  })
+
+  it("returns an empty directory when the admin client is not configured", async () => {
+    envMock.SUPABASE_SERVICE_ROLE_KEY = undefined
+
+    await expect(fetchPublicMapOrganizations()).resolves.toEqual([])
+    expect(createSupabaseAdminClientMock).not.toHaveBeenCalled()
   })
 
   it("returns published orgs even when coordinates are missing", async () => {

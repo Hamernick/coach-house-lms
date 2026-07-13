@@ -272,7 +272,14 @@ describe("public find routes", () => {
     expect(publicMapChromeSource).not.toContain(
       'useAppShellRightRailDirectory && panelPresentation === "rail"'
     )
-    expect(appShellSource).toContain('derivedContext !== "public"')
+    expect(shellSource).toContain("resizableRightRail")
+    expect(appShellSource).toContain(
+      "!isMobile && hasRightRail && resizableRightRail"
+    )
+    expect(appShellSource).not.toContain(
+      "!isMobile && hasRightRail && rightOpen && resizableRightRail"
+    )
+    expect(appShellSource).not.toContain('derivedContext !== "public"')
     expect(publicMapSource).toContain(
       "renderDesktopSidebar={flags.renderMapOverlaySidebar}"
     )

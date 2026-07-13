@@ -33,6 +33,7 @@ export type AppShellProps = {
   context?: "platform" | "accelerator" | "public" | "admin"
   contentPresentation?: "default" | "full-bleed"
   defaultSidebarOpen?: boolean
+  resizableRightRail?: boolean
   formationStatus?: string | null
   brandHref?: string
   showWorkspaceHome?: boolean

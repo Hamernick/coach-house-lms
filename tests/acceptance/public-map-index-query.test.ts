@@ -1,21 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-const { createClientMock, envMock } = vi.hoisted(() => ({
-  createClientMock: vi.fn(),
+const { createSupabaseAdminClientMock, envMock } = vi.hoisted(() => ({
+  createSupabaseAdminClientMock: vi.fn(),
   envMock: {
-    NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co",
-    NEXT_PUBLIC_SUPABASE_ANON_KEY: "test-anon-key",
+    SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key" as string | undefined,
   },
 }))
 
-vi.mock("@supabase/supabase-js", () => ({
-  createClient: createClientMock,
+vi.mock("@/lib/supabase/admin", () => ({
+  createSupabaseAdminClient: createSupabaseAdminClientMock,
 }))
 vi.mock("@/lib/env", () => ({ env: envMock }))
 
 import { fetchPublicMapOrganizations } from "@/lib/queries/public-map-index"
 
-function buildSupabaseStub({
+function buildSupabaseAdminStub({
   organizations,
   organizationError = null,
   programs,
@@ -88,20 +87,18 @@ function buildSupabaseStub({
 describe("fetchPublicMapOrganizations", () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    envMock.NEXT_PUBLIC_SUPABASE_URL = "https://test.supabase.co"
-    envMock.NEXT_PUBLIC_SUPABASE_ANON_KEY = "test-anon-key"
+    envMock.SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key"
   })
 
-  it("returns an empty directory when the public client is not configured", async () => {
-    envMock.NEXT_PUBLIC_SUPABASE_URL = "https://placeholder.supabase.co"
-    envMock.NEXT_PUBLIC_SUPABASE_ANON_KEY = "public-anon-placeholder"
+  it("returns an empty directory when the admin client is not configured", async () => {
+    envMock.SUPABASE_SERVICE_ROLE_KEY = undefined
 
     await expect(fetchPublicMapOrganizations()).resolves.toEqual([])
-    expect(createClientMock).not.toHaveBeenCalled()
+    expect(createSupabaseAdminClientMock).not.toHaveBeenCalled()
   })
 
   it("rejects transient organization query failures instead of returning an empty directory", async () => {
-    const { supabase } = buildSupabaseStub({
+    const { supabase } = buildSupabaseAdminStub({
       organizations: [],
       organizationError: {
         code: "08006",
@@ -111,7 +108,7 @@ describe("fetchPublicMapOrganizations", () => {
     })
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {})
 
-    createClientMock.mockReturnValue(supabase)
+    createSupabaseAdminClientMock.mockReturnValue(supabase)
 
     await expect(fetchPublicMapOrganizations()).rejects.toThrow(
       "Unable to load public map organizations."
@@ -127,7 +124,7 @@ describe("fetchPublicMapOrganizations", () => {
   })
 
   it("returns published orgs even when coordinates are missing", async () => {
-    const { supabase, calls } = buildSupabaseStub({
+    const { supabase, calls } = buildSupabaseAdminStub({
       organizations: [
         {
           user_id: "org-with-marker",
@@ -211,20 +208,10 @@ describe("fetchPublicMapOrganizations", () => {
       ],
     })
 
-    createClientMock.mockReturnValue(supabase)
+    createSupabaseAdminClientMock.mockReturnValue(supabase)
 
     const organizations = await fetchPublicMapOrganizations()
 
-    expect(createClientMock).toHaveBeenCalledWith(
-      "https://test.supabase.co",
-      "test-anon-key",
-      {
-        auth: {
-          autoRefreshToken: false,
-          persistSession: false,
-        },
-      }
-    )
     expect(calls.from).toHaveBeenCalledWith("organizations")
     expect(calls.from).toHaveBeenCalledWith("programs")
     expect(calls.from).not.toHaveBeenCalledWith(
@@ -316,7 +303,7 @@ describe("fetchPublicMapOrganizations", () => {
         },
       }
     })
-    const { supabase } = buildSupabaseStub({
+    const { supabase } = buildSupabaseAdminStub({
       organizations: [
         {
           user_id: "org-with-many-activities",
@@ -332,7 +319,7 @@ describe("fetchPublicMapOrganizations", () => {
       programs,
     })
 
-    createClientMock.mockReturnValue(supabase)
+    createSupabaseAdminClientMock.mockReturnValue(supabase)
 
     const [organization] = await fetchPublicMapOrganizations()
 

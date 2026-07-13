@@ -1,7 +1,5 @@
-import { createClient } from "@supabase/supabase-js"
-
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { env } from "@/lib/env"
-import type { Database } from "@/lib/supabase/types"
 import { unstable_cache } from "next/cache"
 import { isFormationStatus } from "@/lib/organization/formation-status"
 import type { FormationStatus } from "@/lib/organization/org-profile-brand-types"
@@ -184,30 +182,10 @@ function buildPublicMapActivityLinkSource(
   }
 }
 
-function hasConfiguredPublicSupabaseClient() {
-  return (
-    env.NEXT_PUBLIC_SUPABASE_URL !== "https://placeholder.supabase.co" &&
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY !== "public-anon-placeholder"
-  )
-}
-
-function createPublicMapReadClient() {
-  return createClient<Database>(
-    env.NEXT_PUBLIC_SUPABASE_URL,
-    env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  )
-}
-
 async function fetchPublicMapOrganizationsUncached(): Promise<
   PublicMapOrganization[]
 > {
-  const supabase = createPublicMapReadClient()
+  const supabase = createSupabaseAdminClient()
   const { data: orgRows, error: orgError } = await supabase
     .from("organizations")
     .select("user_id, profile, location_lat, location_lng, public_slug")
@@ -442,7 +420,7 @@ const fetchPublicMapOrganizationsCached = unstable_cache(
 export async function fetchPublicMapOrganizations(): Promise<
   PublicMapOrganization[]
 > {
-  if (!hasConfiguredPublicSupabaseClient()) {
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
     return []
   }
 

@@ -201,6 +201,30 @@ describe("resource map public item adapter", () => {
     expect(item?.subtitle).toBeNull()
   })
 
+  it("keeps canonical website and donation links when public link rows are empty", () => {
+    const item = buildExternalResourceMapItemFromPublicRow(
+      buildPublicResourceRow({
+        public_links: [],
+        website_url: "resource.example.org",
+        donate_url: "resource.example.org/donate",
+      })
+    )
+
+    expect(item?.links).toEqual([
+      expect.objectContaining({
+        label: "Website",
+        type: "website",
+        url: "https://resource.example.org",
+        isPrimary: true,
+      }),
+      expect.objectContaining({
+        label: "Donate",
+        type: "donate",
+        url: "https://resource.example.org/donate",
+      }),
+    ])
+  })
+
   it("normalizes stale cooling-center rows away from broad emergency labels", () => {
     const item = buildExternalResourceMapItemFromPublicRow(
       buildPublicResourceRow({

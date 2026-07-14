@@ -642,6 +642,164 @@ describe("resource map import records", () => {
     })
   })
 
+  it("reconciles dropped promotion evidence responses before retrying", () => {
+    const helper = join(
+      ROOT,
+      "scripts/resource-map/lib/promotion-evidence-writes.mjs"
+    )
+    const output = execFileSync(
+      process.execPath,
+      [
+        "--input-type=module",
+        "--eval",
+        `
+          import { insertPromotedFieldEvidenceRows } from ${JSON.stringify(pathToFileURL(helper).href)}
+
+          function buildAdmin({ committedCount, commitAfterCount = false }) {
+            let insertAttempts = 0
+            let firstRows = []
+            const insertedIds = new Set()
+            const unrelatedIds = new Set()
+            let requestedIds = []
+            const query = {
+              select() { return this },
+              in(column, ids) {
+                if (column !== "id") throw new Error("Expected evidence ID lookup")
+                requestedIds = ids
+                return this
+              },
+              then(resolve, reject) {
+                const count = requestedIds.filter((id) => insertedIds.has(id)).length
+                if (commitAfterCount) {
+                  firstRows.forEach((row) => insertedIds.add(row.id))
+                }
+                return Promise.resolve({ count, error: null }).then(resolve, reject)
+              }
+            }
+            return {
+              addUnrelated(count) {
+                for (let index = 0; index < count; index += 1) {
+                  unrelatedIds.add("unrelated-" + index)
+                }
+              },
+              getState: () => ({
+                insertAttempts,
+                insertedCount: insertedIds.size,
+                unrelatedCount: unrelatedIds.size
+              }),
+              from() {
+                return {
+                  upsert(rows, options) {
+                    if (options.onConflict !== "id" || !options.ignoreDuplicates) {
+                      throw new Error("Expected conflict-safe evidence upsert")
+                    }
+                    insertAttempts += 1
+                    if (insertAttempts === 1) {
+                      firstRows = rows
+                      rows.slice(0, committedCount).forEach((row) => {
+                        insertedIds.add(row.id)
+                      })
+                      return Promise.resolve({
+                        error: {
+                          message: "TypeError: fetch failed",
+                          details: "SocketError: other side closed (UND_ERR_SOCKET)",
+                          hint: "",
+                          code: ""
+                        }
+                      })
+                    }
+                    rows.forEach((row) => insertedIds.add(row.id))
+                    return Promise.resolve({ error: null })
+                  },
+                  select() { return query.select() }
+                }
+              }
+            }
+          }
+
+          const rows = [{ field_path: "name" }, { field_path: "address" }]
+          const committed = buildAdmin({ committedCount: rows.length })
+          const notCommitted = buildAdmin({ committedCount: 0 })
+          const delayedCommit = buildAdmin({
+            committedCount: 0,
+            commitAfterCount: true
+          })
+          const partial = buildAdmin({ committedCount: 1 })
+          const unrelated = buildAdmin({ committedCount: 0 })
+          unrelated.addUnrelated(rows.length)
+          await insertPromotedFieldEvidenceRows({
+            admin: committed,
+            rows,
+            retryDelayMs: 0
+          })
+          await insertPromotedFieldEvidenceRows({
+            admin: notCommitted,
+            rows,
+            retryDelayMs: 0
+          })
+          await insertPromotedFieldEvidenceRows({
+            admin: delayedCommit,
+            rows,
+            retryDelayMs: 0
+          })
+          await insertPromotedFieldEvidenceRows({
+            admin: unrelated,
+            rows,
+            retryDelayMs: 0
+          })
+          let partialError = null
+          try {
+            await insertPromotedFieldEvidenceRows({
+              admin: partial,
+              rows,
+              retryDelayMs: 0
+            })
+          } catch (error) {
+            partialError = error.message
+          }
+          process.stdout.write(JSON.stringify({
+            committed: committed.getState(),
+            notCommitted: notCommitted.getState(),
+            delayedCommit: delayedCommit.getState(),
+            unrelated: unrelated.getState(),
+            partial: partial.getState(),
+            partialError
+          }))
+        `,
+      ],
+      { cwd: ROOT, encoding: "utf8" }
+    )
+
+    expect(JSON.parse(output)).toEqual({
+      committed: {
+        insertAttempts: 1,
+        insertedCount: 2,
+        unrelatedCount: 0,
+      },
+      notCommitted: {
+        insertAttempts: 2,
+        insertedCount: 2,
+        unrelatedCount: 0,
+      },
+      delayedCommit: {
+        insertAttempts: 2,
+        insertedCount: 2,
+        unrelatedCount: 0,
+      },
+      unrelated: {
+        insertAttempts: 2,
+        insertedCount: 2,
+        unrelatedCount: 2,
+      },
+      partial: {
+        insertAttempts: 1,
+        insertedCount: 1,
+        unrelatedCount: 0,
+      },
+      partialError: "Promotion evidence insert left 1 of 2 rows.",
+    })
+  })
+
   it("validates local preview files before import without touching Supabase", () => {
     withTempFile(
       "scraped-resources.jsonl",

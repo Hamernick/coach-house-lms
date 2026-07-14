@@ -478,6 +478,7 @@ describe("resource-map-admin feature contract", () => {
     expect(promoteScript).toContain("accepted duplicate matches")
     expect(promoteScript).toContain("merge_duplicate")
     expect(promoteScript).toContain("insertPromotionChildren")
+    expect(promoteScript).toContain("insertPromotedFieldEvidenceRows")
     expect(promoteScript).toContain("--publish")
     expect(promotionPayloads).toContain("resource_map_locations")
     expect(promotionPayloads).toContain("resource_map_contacts")

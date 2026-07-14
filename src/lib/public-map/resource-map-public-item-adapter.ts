@@ -15,6 +15,10 @@ import type {
   PublicMapResourceLinkType,
   PublicMapVerificationStatus,
 } from "./resource-map-items"
+import {
+  formatPublicMapResourceLinkDomain,
+  normalizePublicMapResourceLinkHref,
+} from "./resource-links"
 import { shouldShowPublicMapResourceLink } from "./resource-link-visibility"
 
 type ResourceMapPublicItemRow = ResourceMapPublicItemsView["Row"]
@@ -218,6 +222,68 @@ function normalizePublicResourceLinks(value: unknown): PublicMapResourceLink[] {
     .filter(shouldShowPublicMapResourceLink)
 }
 
+function buildPublicResourceLinkFallback({
+  id,
+  isPrimary = false,
+  label,
+  type,
+  value,
+}: {
+  id: string
+  isPrimary?: boolean
+  label: string
+  type: PublicMapResourceLinkType
+  value: unknown
+}): PublicMapResourceLink | null {
+  const url = normalizePublicMapResourceLinkHref(readStringOrNull(value))
+  if (!url) return null
+
+  try {
+    const parsed = new URL(url)
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null
+    const link = {
+      id,
+      label,
+      url,
+      type,
+      domain: formatPublicMapResourceLinkDomain(url),
+      isPrimary,
+    }
+    return shouldShowPublicMapResourceLink(link) ? link : null
+  } catch {
+    return null
+  }
+}
+
+function buildPublicResourceLinks(
+  row: ResourceMapPublicItemRow
+): PublicMapResourceLink[] {
+  const explicitLinks = normalizePublicResourceLinks(row.public_links)
+  const fallbackLinks = [
+    buildPublicResourceLinkFallback({
+      id: `${row.organization_id}:website`,
+      isPrimary: true,
+      label: "Website",
+      type: "website",
+      value: row.website_url,
+    }),
+    buildPublicResourceLinkFallback({
+      id: `${row.organization_id}:donate`,
+      label: "Donate",
+      type: "donate",
+      value: row.donate_url,
+    }),
+  ].filter((link): link is PublicMapResourceLink => link !== null)
+
+  return [
+    ...fallbackLinks.filter(
+      (fallback) =>
+        !explicitLinks.some((explicit) => explicit.url === fallback.url)
+    ),
+    ...explicitLinks,
+  ]
+}
+
 function normalizePublicResourceContacts(
   value: unknown
 ): PublicMapResourceContact[] {
@@ -257,7 +323,7 @@ export function buildExternalResourceMapItemFromPublicRow(
   const primaryResourceCategory = resourceCategories[0] ?? "community"
   const { address, addressStreet } = buildResourceAddress(row)
   const deliveryModes = normalizeDeliveryModes(row.delivery_modes)
-  const links = normalizePublicResourceLinks(row.public_links)
+  const links = buildPublicResourceLinks(row)
   const contacts = normalizePublicResourceContacts(row.public_contacts)
   const serviceArea = readStringArray(row.coverage_area)
   const languages = readStringArray(row.languages)

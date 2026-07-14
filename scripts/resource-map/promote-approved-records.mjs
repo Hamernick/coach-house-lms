@@ -5,6 +5,7 @@ import {
   buildPromotedFieldEvidenceRows,
   insertPromotionChildren,
 } from "./lib/promotion-payloads.mjs"
+import { insertPromotedFieldEvidenceRows } from "./lib/promotion-evidence-writes.mjs"
 
 function parseArgs(argv) {
   const args = new Map()
@@ -113,10 +114,10 @@ async function insertPromotedFieldEvidence(admin, record, canonical) {
     return { inserted: 0, available: stagedEvidence.length }
   }
 
-  const { error } = await admin
-    .from("resource_map_field_evidence")
-    .insert(evidencePayload)
-  if (error) throw error
+  await insertPromotedFieldEvidenceRows({
+    admin,
+    rows: evidencePayload,
+  })
 
   return { inserted: evidencePayload.length, available: stagedEvidence.length }
 }

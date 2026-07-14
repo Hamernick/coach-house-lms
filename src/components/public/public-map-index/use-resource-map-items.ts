@@ -5,38 +5,40 @@ import { useEffect, useState } from "react"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 
 export const EMPTY_PUBLIC_MAP_RESOURCE_ITEMS: ExternalResourceMapItem[] = []
+export const PUBLIC_MAP_RESOURCE_ITEMS_REFRESH_INTERVAL_MS = 5 * 60 * 1000
 
 const resourceItemsLoadByEndpoint = new Map<
   string,
   Promise<ExternalResourceMapItem[]>
 >()
 
-function loadPublicMapResourceItems(endpoint: string) {
+export function loadPublicMapResourceItems(endpoint: string) {
   const cached = resourceItemsLoadByEndpoint.get(endpoint)
   if (cached) return cached
 
   const load = fetch(endpoint, {
-    cache: "force-cache",
+    cache: "no-store",
     headers: { Accept: "application/json" },
-  })
-    .then(async (response) => {
-      if (!response.ok) {
-        throw new Error(`Resource map items failed: ${response.status}`)
-      }
+  }).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(`Resource map items failed: ${response.status}`)
+    }
 
-      const payload = (await response.json()) as {
-        resourceItems?: unknown
-      }
-      return Array.isArray(payload.resourceItems)
-        ? (payload.resourceItems as ExternalResourceMapItem[])
-        : EMPTY_PUBLIC_MAP_RESOURCE_ITEMS
-    })
-    .catch((error) => {
-      resourceItemsLoadByEndpoint.delete(endpoint)
-      throw error
-    })
+    const payload = (await response.json()) as {
+      resourceItems?: unknown
+    }
+    return Array.isArray(payload.resourceItems)
+      ? (payload.resourceItems as ExternalResourceMapItem[])
+      : EMPTY_PUBLIC_MAP_RESOURCE_ITEMS
+  })
 
   resourceItemsLoadByEndpoint.set(endpoint, load)
+  const clearSettledLoad = () => {
+    if (resourceItemsLoadByEndpoint.get(endpoint) === load) {
+      resourceItemsLoadByEndpoint.delete(endpoint)
+    }
+  }
+  void load.then(clearSettledLoad, clearSettledLoad)
   return load
 }
 
@@ -74,9 +76,25 @@ export function usePublicMapResourceItems({
     }
 
     void loadResourceItems()
+    const refreshVisibleResourceItems = () => {
+      if (document.visibilityState === "hidden") return
+      void loadResourceItems()
+    }
+    const refreshInterval = window.setInterval(
+      refreshVisibleResourceItems,
+      PUBLIC_MAP_RESOURCE_ITEMS_REFRESH_INTERVAL_MS
+    )
+    window.addEventListener("focus", refreshVisibleResourceItems)
+    document.addEventListener("visibilitychange", refreshVisibleResourceItems)
 
     return () => {
       cancelled = true
+      window.clearInterval(refreshInterval)
+      window.removeEventListener("focus", refreshVisibleResourceItems)
+      document.removeEventListener(
+        "visibilitychange",
+        refreshVisibleResourceItems
+      )
     }
   }, [resourceItemsEndpoint])
 

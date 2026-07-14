@@ -15,6 +15,10 @@ import type {
   PublicMapResourceLinkType,
   PublicMapVerificationStatus,
 } from "./resource-map-items"
+import {
+  formatPublicMapResourceLinkDomain,
+  normalizePublicMapResourceLinkHref,
+} from "./resource-links"
 import { shouldShowPublicMapResourceLink } from "./resource-link-visibility"
 
 type ResourceMapPublicItemRow = ResourceMapPublicItemsView["Row"]
@@ -231,7 +235,7 @@ function buildPublicResourceLinkFallback({
   type: PublicMapResourceLinkType
   value: unknown
 }): PublicMapResourceLink | null {
-  const url = readString(value)
+  const url = normalizePublicMapResourceLinkHref(readStringOrNull(value))
   if (!url) return null
 
   try {
@@ -242,7 +246,7 @@ function buildPublicResourceLinkFallback({
       label,
       url,
       type,
-      domain: parsed.hostname.replace(/^www\./, ""),
+      domain: formatPublicMapResourceLinkDomain(url),
       isPrimary,
     }
     return shouldShowPublicMapResourceLink(link) ? link : null

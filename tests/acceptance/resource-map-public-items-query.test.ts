@@ -205,8 +205,8 @@ describe("resource map public item adapter", () => {
     const item = buildExternalResourceMapItemFromPublicRow(
       buildPublicResourceRow({
         public_links: [],
-        website_url: "https://resource.example.org",
-        donate_url: "https://resource.example.org/donate",
+        website_url: "resource.example.org",
+        donate_url: "resource.example.org/donate",
       })
     )
 

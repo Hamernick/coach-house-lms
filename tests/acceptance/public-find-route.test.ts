@@ -143,6 +143,17 @@ describe("public find routes", () => {
     expect(source).not.toContain("/workspace/find")
   })
 
+  it("never mixes synthetic resource seeds into live find routes", () => {
+    const routeFiles = [
+      "src/app/(public)/find/page.tsx",
+      "src/app/(public)/find/[slug]/page.tsx",
+    ]
+
+    for (const routeFile of routeFiles) {
+      expect(readRoute(routeFile)).not.toContain("includeSeedResources")
+    }
+  })
+
   it("preserves selected organization detail wiring on slug routes", () => {
     const source = readRoute("src/app/(public)/find/[slug]/page.tsx")
     const authenticatedBranchIndex = source.indexOf("<AuthenticatedFindShell")

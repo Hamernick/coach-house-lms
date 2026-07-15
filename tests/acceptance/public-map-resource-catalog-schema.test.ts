@@ -12,6 +12,8 @@ const AVAILABILITY_PATCH_MIGRATION =
   "supabase/migrations/20260628131000_resource_map_availability_contract.sql"
 const TAXONOMY_PATCH_MIGRATION =
   "supabase/migrations/20260628150000_resource_map_taxonomy_categories.sql"
+const REPRODUCTIVE_HEALTH_LABEL_MIGRATION =
+  "supabase/migrations/20260715120000_resource_map_rename_reproductive_health.sql"
 
 function readSource(relativePath: string) {
   return readFileSync(join(ROOT, relativePath), "utf8")
@@ -176,6 +178,33 @@ describe("public map resource catalog schema", () => {
     expect(schemaIndex).toContain("resource_map_field_evidence:")
     expect(schemaIndex).toContain("ResourceMapCurationEventsTable")
     expect(schemaIndex).toContain("resource_map_curation_events:")
+  })
+
+  it("uses the concise reproductive health label", () => {
+    const categoryDefinitions = readSource(
+      "src/lib/public-map/resource-categories.ts"
+    )
+    const promotionNormalizers = readSource(
+      "scripts/resource-map/lib/promotion-normalizers.mjs"
+    )
+    const taxonomyClassifier = readSource(
+      "scripts/resource-map/lib/data-engine/taxonomy-classifier.mjs"
+    )
+    const migration = readSource(REPRODUCTIVE_HEALTH_LABEL_MIGRATION)
+
+    expect(categoryDefinitions).toContain(
+      '["health_sexual_reproductive_health", "Reproductive Health"]'
+    )
+    expect(promotionNormalizers).toContain(
+      '["health_sexual_reproductive_health", "Reproductive Health"]'
+    )
+    expect(taxonomyClassifier).toContain(
+      '["health_sexual_reproductive_health", "Reproductive Health"]'
+    )
+    expect(migration).toContain("label = 'Reproductive Health'")
+    expect(migration).toContain(
+      "where key = 'health_sexual_reproductive_health'"
+    )
   })
 
   it("defines a sanitized public read contract instead of exposing raw tables", () => {

@@ -166,7 +166,6 @@ export default async function PublicFindOrganizationPage({
             mapboxToken={publicToken}
             initialPublicSlug={matched.publicSlug}
             viewer={viewerState.viewer}
-            includeSeedResources={shellState.isAdmin}
             canManageResourceMap={shellState.isAdmin}
             organizationCurationAction={
               shellState.isAdmin

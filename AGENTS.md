@@ -12,6 +12,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - Build for Next.js App Router, RSC-first, mobile-first, shadcn/ui, dark/light/system.
 - Enforce security defaults: RLS on all tables, server-side authz, webhook signature verification, Stripe idempotency via `event_id`, HTML sanitization.
 - Store timestamps in UTC (`TIMESTAMPTZ`) and render locale-aware date/time/currency.
+- Never mix synthetic seed resources into live `/find`, including admin sessions; seeds require an explicit test or local-preview path.
 - Append each ad-hoc/Codex session summary to `docs/RUNLOG.md`.
 
 ## Default Codex Mode (UI/Feature/Product)

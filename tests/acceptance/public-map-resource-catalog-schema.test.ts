@@ -12,6 +12,8 @@ const AVAILABILITY_PATCH_MIGRATION =
   "supabase/migrations/20260628131000_resource_map_availability_contract.sql"
 const TAXONOMY_PATCH_MIGRATION =
   "supabase/migrations/20260628150000_resource_map_taxonomy_categories.sql"
+const PAGINATION_MIGRATION =
+  "supabase/migrations/20260714194500_resource_map_public_items_pagination.sql"
 const REPRODUCTIVE_HEALTH_LABEL_MIGRATION =
   "supabase/migrations/20260715120000_resource_map_rename_reproductive_health.sql"
 
@@ -205,6 +207,22 @@ describe("public map resource catalog schema", () => {
     expect(migration).toContain(
       "where key = 'health_sexual_reproductive_health'"
     )
+  })
+
+  it("reads the complete public catalog in bounded pages", () => {
+    const query = readSource("src/lib/queries/resource-map-public-items.ts")
+    const functions = readSource("src/lib/supabase/schema/functions.ts")
+    const migration = readSource(PAGINATION_MIGRATION)
+
+    expect(query).toContain("DEFAULT_RESOURCE_MAP_PUBLIC_DB_LIMIT = 5000")
+    expect(query).toContain("RESOURCE_MAP_PUBLIC_DB_PAGE_SIZE = 500")
+    expect(query).toContain('"get_resource_map_public_items_page"')
+    expect(query).toContain("p_offset: offset")
+    expect(functions).toContain("get_resource_map_public_items_page")
+    expect(migration).toContain(
+      "create or replace function public.get_resource_map_public_items_page"
+    )
+    expect(migration).toContain("p_offset integer default 0")
   })
 
   it("defines a sanitized public read contract instead of exposing raw tables", () => {

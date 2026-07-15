@@ -411,7 +411,7 @@ describe("fetchPublicResourceMapItems", () => {
     expect(createClientMock).not.toHaveBeenCalled()
   })
 
-  it("uses only the sanitized public RPC when enabled", async () => {
+  it("uses only the sanitized paginated public RPC when enabled", async () => {
     const rpc = vi.fn().mockResolvedValue({
       data: [buildPublicResourceRow()],
       error: null,
@@ -428,11 +428,12 @@ describe("fetchPublicResourceMapItems", () => {
     expect(items.map((item) => item.id)).toEqual([
       "resource_map:service-food-1",
     ])
-    expect(rpc).toHaveBeenCalledWith("get_resource_map_public_items", {
+    expect(rpc).toHaveBeenCalledWith("get_resource_map_public_items_page", {
       p_category_keys: null,
       p_latitude: null,
       p_limit: 25,
       p_longitude: null,
+      p_offset: 0,
       p_query: null,
       p_radius_miles: null,
     })
@@ -441,6 +442,38 @@ describe("fetchPublicResourceMapItems", () => {
       expect.stringContaining("resource_map_import_records"),
       expect.anything()
     )
+  })
+
+  it("loads more than 1,000 approved resources without truncation", async () => {
+    const rows = Array.from({ length: 1205 }, (_, index) =>
+      buildPublicResourceRow({
+        item_id: `service-${index + 1}`,
+        service_id: `service-${index + 1}`,
+        title: `Resource ${index + 1}`,
+      })
+    )
+    const rpc = vi
+      .fn()
+      .mockImplementation(
+        (_name: string, args: { p_limit: number; p_offset: number }) =>
+          Promise.resolve({
+            data: rows.slice(args.p_offset, args.p_offset + args.p_limit),
+            error: null,
+          })
+      )
+    createClientMock.mockReturnValue({ rpc })
+
+    const items = await fetchPublicResourceMapItems({
+      enabled: true,
+      localEnginePreviewFile: null,
+      limit: 1205,
+    })
+
+    expect(items).toHaveLength(1205)
+    expect(rpc).toHaveBeenCalledTimes(3)
+    expect(rpc.mock.calls.map((call) => call[1].p_offset)).toEqual([
+      0, 500, 1000,
+    ])
   })
 
   it("can render scraped JSONL locally before anything is uploaded to Supabase", async () => {

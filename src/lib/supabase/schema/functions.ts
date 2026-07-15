@@ -60,4 +60,16 @@ export type PublicFunctions = {
     }
     Returns: ResourceMapPublicItemsView["Row"][]
   }
+  get_resource_map_public_items_page: {
+    Args: {
+      p_query?: string | null
+      p_category_keys?: string[] | null
+      p_limit?: number | null
+      p_offset?: number | null
+      p_latitude?: number | null
+      p_longitude?: number | null
+      p_radius_miles?: number | null
+    }
+    Returns: ResourceMapPublicItemsView["Row"][]
+  }
 }

@@ -9,6 +9,7 @@ import { shouldShowPublicMapResourceItem } from "@/lib/public-map/resource-item-
 import { buildExternalResourceMapItemFromLocalPreviewRecord } from "@/lib/public-map/resource-map-local-preview-adapter"
 import { buildExternalResourceMapItemFromPublicRow } from "@/lib/public-map/resource-map-public-item-adapter"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
+import type { ResourceMapPublicItemsView } from "@/lib/supabase/schema/views"
 import type { Database } from "@/lib/supabase/types"
 
 export type FetchPublicResourceMapItemsOptions = {
@@ -21,7 +22,8 @@ export type FetchPublicResourceMapItemsOptions = {
 export const DEFAULT_RESOURCE_MAP_LOCAL_ENGINE_PREVIEW_FILE =
   "data/resource-map/.engine/candidate-records.jsonl"
 export const DEFAULT_RESOURCE_MAP_LOCAL_PREVIEW_LIMIT = 5000
-export const DEFAULT_RESOURCE_MAP_PUBLIC_DB_LIMIT = 500
+export const DEFAULT_RESOURCE_MAP_PUBLIC_DB_LIMIT = 5000
+export const RESOURCE_MAP_PUBLIC_DB_PAGE_SIZE = 500
 
 export function isResourceMapPublicDbEnabled(
   value = env.RESOURCE_MAP_PUBLIC_DB_ENABLED
@@ -128,24 +130,75 @@ async function fetchPublicResourceMapItemsUncached({
     }
   )
 
-  const { data, error } = await supabase.rpc("get_resource_map_public_items", {
-    p_category_keys: null,
-    p_latitude: null,
-    p_limit: limit,
-    p_longitude: null,
-    p_query: null,
-    p_radius_miles: null,
-  })
+  const normalizedLimit = Number.isFinite(limit)
+    ? Math.min(Math.max(Math.trunc(limit), 1), 5000)
+    : DEFAULT_RESOURCE_MAP_PUBLIC_DB_LIMIT
+  const rows: ResourceMapPublicItemsView["Row"][] = []
+  for (
+    let offset = 0;
+    offset < normalizedLimit;
+    offset += RESOURCE_MAP_PUBLIC_DB_PAGE_SIZE
+  ) {
+    const pageLimit = Math.min(
+      RESOURCE_MAP_PUBLIC_DB_PAGE_SIZE,
+      normalizedLimit - offset
+    )
+    const { data, error } = await supabase.rpc(
+      "get_resource_map_public_items_page",
+      {
+        p_category_keys: null,
+        p_latitude: null,
+        p_limit: pageLimit,
+        p_longitude: null,
+        p_offset: offset,
+        p_query: null,
+        p_radius_miles: null,
+      }
+    )
 
-  if (error || !data) {
-    console.warn("[resource-map] public RPC unavailable; using seed fallback", {
-      code: error?.code,
-      message: error?.message,
-    })
+    if (error?.code === "42883" && offset === 0) {
+      const fallback = await supabase.rpc("get_resource_map_public_items", {
+        p_category_keys: null,
+        p_latitude: null,
+        p_limit: Math.min(normalizedLimit, 1000),
+        p_longitude: null,
+        p_query: null,
+        p_radius_miles: null,
+      })
+      if (fallback.error || !fallback.data) {
+        console.warn(
+          "[resource-map] public RPC unavailable; using seed fallback",
+          {
+            code: fallback.error?.code,
+            message: fallback.error?.message,
+          }
+        )
+        return []
+      }
+      rows.push(...fallback.data)
+      break
+    }
+
+    if (error || !data) {
+      console.warn(
+        "[resource-map] public RPC unavailable; using seed fallback",
+        {
+          code: error?.code,
+          message: error?.message,
+        }
+      )
+      return []
+    }
+
+    rows.push(...data)
+    if (data.length < pageLimit) break
+  }
+
+  if (rows.length === 0) {
     return []
   }
 
-  return data
+  return rows
     .map(buildExternalResourceMapItemFromPublicRow)
     .filter((item): item is ExternalResourceMapItem => item !== null)
     .filter(shouldShowPublicMapResourceItem)

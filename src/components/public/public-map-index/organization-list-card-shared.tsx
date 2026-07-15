@@ -3,7 +3,6 @@
 import { Button } from "@/components/ui/button"
 import { formatCompactOrganizationLocation } from "@/lib/location/organization-location"
 import { PUBLIC_MAP_GROUP_LABELS } from "@/lib/public-map/groups"
-import { PUBLIC_MAP_RESOURCE_CATEGORY_LABELS } from "@/lib/public-map/resource-categories"
 import type { ExternalResourceMapItem } from "@/lib/public-map/resource-map-items"
 import type { PublicMapOrganization } from "@/lib/queries/public-map-index"
 import { cn } from "@/lib/utils"
@@ -60,14 +59,11 @@ export function buildResourceMetadataItems({
     state: item.state,
     country: item.country,
   })
-  const categories = item.resourceCategories
-    .map((category) => PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[category])
-    .join(", ")
   const availabilityStatus =
     item.availability && item.availability.status !== "unknown"
       ? item.availability.statusLabel
       : null
-  const items = [location, categories, availabilityStatus].filter(
+  const items = [item.title, location, availabilityStatus].filter(
     (entry): entry is string => Boolean(entry && entry.trim().length > 0)
   )
 

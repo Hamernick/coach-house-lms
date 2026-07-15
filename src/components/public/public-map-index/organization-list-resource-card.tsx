@@ -4,7 +4,10 @@ import {
   resolvePublicMapItemSelectableId,
   type ExternalResourceMapItem,
 } from "@/lib/public-map/resource-map-items"
-import { resolvePublicMapResourceCategoryColor } from "@/lib/public-map/resource-categories"
+import {
+  PUBLIC_MAP_RESOURCE_CATEGORY_LABELS,
+  resolvePublicMapResourceCategoryColor,
+} from "@/lib/public-map/resource-categories"
 import { cn } from "@/lib/utils"
 import {
   buildPublicMapOrganizationListCardOwnerId,
@@ -49,6 +52,8 @@ export function PublicMapResourceListCard({
   const markerColor = resolvePublicMapResourceCategoryColor(
     item.primaryResourceCategory
   )
+  const cardTitle =
+    PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[item.primaryResourceCategory]
   const subtitle = resolveResourceListCardSubtitle(item)
   const openResourceDetails = () => onSelectItem?.(selectableItemId)
 
@@ -132,10 +137,10 @@ export function PublicMapResourceListCard({
               {...buildPublicMapOrganizationListCardSurfaceProps({
                 ownerId,
                 slot: "title",
-                notes: "Resource name text block.",
+                notes: "Primary resource category text block.",
               })}
             >
-              {item.title}
+              {cardTitle}
             </p>
             <PublicMapListMetadataStrip
               itemKeyPrefix="resource"

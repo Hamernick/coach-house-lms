@@ -606,7 +606,9 @@ describe("public map sidebar layout", () => {
 
     expect(markup).toContain("Seed Food Access")
     expect(markup).toContain("Food pantry and meal support")
-    expect(markup).toContain(">Food, Water<")
+    expect(markup).toContain(">Food<")
+    expect(markup).toContain(">Chicago, IL<")
+    expect(markup).not.toContain(">Food, Water<")
     expect(markup).not.toContain(">Pending review<")
     expect(markup).not.toContain(">Seed preview<")
     expect(markup).not.toContain(">External data<")

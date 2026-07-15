@@ -154,6 +154,23 @@ describe("public find routes", () => {
     }
   })
 
+  it("uses category-first resource cards with place and location metadata", () => {
+    const cardSource = readRoute(
+      "src/components/public/public-map-index/organization-list-resource-card.tsx"
+    )
+    const sharedSource = readRoute(
+      "src/components/public/public-map-index/organization-list-card-shared.tsx"
+    )
+
+    expect(cardSource).toContain(
+      "PUBLIC_MAP_RESOURCE_CATEGORY_LABELS[item.primaryResourceCategory]"
+    )
+    expect(cardSource).toContain("{cardTitle}")
+    expect(sharedSource).toContain(
+      "const items = [item.title, location, availabilityStatus]"
+    )
+  })
+
   it("preserves selected organization detail wiring on slug routes", () => {
     const source = readRoute("src/app/(public)/find/[slug]/page.tsx")
     const authenticatedBranchIndex = source.indexOf("<AuthenticatedFindShell")

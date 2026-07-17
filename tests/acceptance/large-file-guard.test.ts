@@ -19,4 +19,16 @@ describe("large-file guard", () => {
     expect(scriptSource).toContain("duplicate public assets")
     expect(scriptSource).toContain('execFileSync("git", ["ls-files", "-z"]')
   })
+
+  it("keeps the RUNLOG index and monthly shards bounded", () => {
+    const scriptSource = readFileSync("scripts/check-large-files.mjs", "utf8")
+
+    expect(scriptSource).toContain('label: "run log index"')
+    expect(scriptSource).toContain('label: "monthly run log"')
+    expect(scriptSource).toContain('file === "docs/RUNLOG.md"')
+    expect(scriptSource).toContain("/^docs\\/runlog\\/\\d{4}-\\d{2}\\.md$/")
+    expect(scriptSource).toContain(
+      'file === "docs/runlog/archive/legacy-through-2026-07-14.md"'
+    )
+  })
 })

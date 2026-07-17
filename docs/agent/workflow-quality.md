@@ -12,7 +12,7 @@
 2. Implement: write code/migrations/docs in the correct directories.
 3. Validate: run required checks and core smoke tests.
 4. Deliver: include screenshots (light/dark/mobile) and state-coverage notes in PRs when UI changes.
-5. Log: append a concise entry to `docs/RUNLOG.md` for every ad-hoc/Codex session:
+5. Log: append a concise entry to the current monthly log linked from `docs/RUNLOG.md` for every ad-hoc/Codex session:
    what changed, what worked, what did not, and where to continue.
 
 ## Required Validation Gates

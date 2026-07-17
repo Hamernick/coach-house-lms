@@ -21,9 +21,6 @@ export const VALID_TASK_PRIORITIES = new Set<
   NonNullable<MemberWorkspaceCreateTaskInput["priority"]>
 >(["no-priority", "low", "medium", "high", "urgent"])
 
-export const PLATFORM_ADMIN_TASK_MUTATION_ERROR =
-  "Platform admins can view organization tasks here, but cannot edit them."
-
 export function toDateOnly(input: string) {
   return new Date(`${input}T00:00:00.000Z`)
 }
@@ -75,10 +72,12 @@ export async function resolveTaskTargetProject({
     } as const
   }
 
-  if (
-    project.project_kind !== "standard" ||
-    project.created_source === "system"
-  ) {
+  const isStandardUserProject =
+    project.project_kind === "standard" && project.created_source !== "system"
+  const isCanonicalAdminProject =
+    actor.isAdmin && project.project_kind === "organization_admin"
+
+  if (!isStandardUserProject && !isCanonicalAdminProject) {
     return { error: "Choose a valid project." } as const
   }
 

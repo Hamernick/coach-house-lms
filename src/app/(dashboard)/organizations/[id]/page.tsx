@@ -71,13 +71,16 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     )
   }
 
-  const canManageProject = result.scope === "organization"
+  const canManageProject =
+    result.scope === "organization" || result.scope === "platform-admin"
   const canManageProjectAssets =
     result.scope === "organization" || result.scope === "platform-admin"
   const canEditProjectDetails =
     result.scope === "organization" || result.scope === "platform-admin"
   const canManageFiscalSponsorship = result.scope === "platform-admin"
   const projectKind = getOrganizationAdminProjectKind(result.project.source)
+  const canManageProjectTasks =
+    result.scope === "organization" || result.scope === "platform-admin"
   const canDeleteProject =
     canEditProjectDetails && projectKind !== "organization_admin"
   const fiscalSponsorshipWorkflowSummary =
@@ -103,13 +106,13 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
           : undefined
       }
       createTaskAction={
-        canManageProject ? createMemberWorkspaceTaskAction : undefined
+        canManageProjectTasks ? createMemberWorkspaceTaskAction : undefined
       }
       updateTaskAction={
-        canManageProject ? updateMemberWorkspaceTaskAction : undefined
+        canManageProjectTasks ? updateMemberWorkspaceTaskAction : undefined
       }
       deleteTaskAction={
-        canManageProject ? deleteMemberWorkspaceTaskAction : undefined
+        canManageProjectTasks ? deleteMemberWorkspaceTaskAction : undefined
       }
       updateProjectAction={
         canEditProjectDetails ? updateMemberWorkspaceProjectAction : undefined
@@ -118,10 +121,12 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
         canDeleteProject ? deleteMemberWorkspaceProjectAction : undefined
       }
       updateTaskStatusAction={
-        canManageProject ? updateMemberWorkspaceTaskStatusAction : undefined
+        canManageProjectTasks
+          ? updateMemberWorkspaceTaskStatusAction
+          : undefined
       }
       updateTaskOrderAction={
-        canManageProject ? updateMemberWorkspaceTaskOrderAction : undefined
+        canManageProjectTasks ? updateMemberWorkspaceTaskOrderAction : undefined
       }
       createNoteAction={
         canManageProject ? createMemberWorkspaceProjectNoteAction : undefined

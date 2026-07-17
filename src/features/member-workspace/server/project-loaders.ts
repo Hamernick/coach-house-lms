@@ -20,6 +20,7 @@ import {
   isMissingOrganizationProjectsTableError,
   toMemberWorkspaceDataError,
 } from "./table-errors"
+import { loadPlatformAdminWorkstreamConfiguration } from "./admin-workstreams"
 
 async function loadAdminStandardOrganizationProjects({
   orgIds,
@@ -97,6 +98,7 @@ export async function loadMemberWorkspaceProjectsPage() {
         scope: "platform-admin" as const,
         organizationOptions,
         assigneeOptions,
+        workstreamCategories: [],
       }
     }
 
@@ -105,14 +107,52 @@ export async function loadMemberWorkspaceProjectsPage() {
         canonicalProjects,
         organizations,
       })
+    const organizationByProjectId = new Map(
+      organizationsWithProjectIds.map((organization) => [
+        organization.canonicalProjectId,
+        organization,
+      ])
+    )
+
+    const projects = [
+      ...canonicalProjects.map((project) => {
+        const viewModel = mapOrganizationProjectToViewModel(project)
+        const organization = organizationByProjectId.get(project.id)
+        if (!organization) return viewModel
+
+        return {
+          ...viewModel,
+          progress: organization.setupProgress,
+          primaryPersonName: organization.ownerName,
+          primaryPersonAvatarUrl: organization.ownerAvatarUrl,
+          taskSummaryLabel: "Tasks",
+        }
+      }),
+      ...standardProjects.map(mapOrganizationProjectToViewModel),
+    ]
+    const workstreamConfiguration =
+      await loadPlatformAdminWorkstreamConfiguration({
+        actor,
+        projectIds: projects.map((project) => project.id),
+      })
+    const workstreamCategories = workstreamConfiguration?.categories ?? []
+    const fallbackCategory = workstreamCategories[0] ?? null
+    const projectsWithWorkstreams = projects.map((project) => {
+      const storedCategoryId =
+        workstreamConfiguration?.categoryIdByProjectId.get(project.id)
+      const statusCategory = workstreamCategories.find(
+        (category) => category.defaultKey === project.status
+      )
+
+      return {
+        ...project,
+        workstreamCategoryId:
+          storedCategoryId ?? statusCategory?.id ?? fallbackCategory?.id,
+      }
+    })
 
     return {
-      projects: [
-        ...organizationsWithProjectIds.map(
-          mapAdminOrganizationSummaryToProject
-        ),
-        ...standardProjects.map(mapOrganizationProjectToViewModel),
-      ],
+      projects: projectsWithWorkstreams,
       storageMode: "custom" as const,
       starterProjectCount: 0,
       hasUserProjects:
@@ -122,6 +162,7 @@ export async function loadMemberWorkspaceProjectsPage() {
       scope: "platform-admin" as const,
       organizationOptions,
       assigneeOptions,
+      workstreamCategories,
     }
   }
 
@@ -176,6 +217,7 @@ export async function loadMemberWorkspaceProjectsPage() {
         scope: "organization" as const,
         organizationOptions,
         assigneeOptions,
+        workstreamCategories: [],
       }
     }
     throw toMemberWorkspaceDataError(
@@ -202,5 +244,6 @@ export async function loadMemberWorkspaceProjectsPage() {
     scope: "organization" as const,
     organizationOptions,
     assigneeOptions,
+    workstreamCategories: [],
   }
 }

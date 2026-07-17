@@ -4,7 +4,7 @@ import { ensureCanonicalAdminProjects } from "@/features/member-workspace/server
 import type { MemberWorkspaceAdminOrganizationSummary } from "@/features/member-workspace/types"
 
 describe("ensureCanonicalAdminProjects", () => {
-  it("refreshes stale canonical organization-admin rows with current organization metadata", async () => {
+  it("refreshes organization metadata without overwriting coach-managed project state", async () => {
     const organization: MemberWorkspaceAdminOrganizationSummary = {
       orgId: "org-1",
       canonicalProjectId: "project-1",
@@ -37,7 +37,11 @@ describe("ensureCanonicalAdminProjects", () => {
       ],
       setupItems: [
         { id: "mission", label: "Add mission statement", complete: true },
-        { id: "roadmap-program", label: "Complete roadmap: Program", complete: false },
+        {
+          id: "roadmap-program",
+          label: "Complete roadmap: Program",
+          complete: false,
+        },
       ],
       profile: {},
     }
@@ -55,7 +59,7 @@ describe("ensureCanonicalAdminProjects", () => {
               canonical_org_id: "org-1",
               project_kind: "organization_admin",
               name: "Acme Corp",
-              description: null,
+              description: "Coach-authored operating notes",
               status: "planned",
               priority: "low",
               progress: 12,
@@ -77,7 +81,7 @@ describe("ensureCanonicalAdminProjects", () => {
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -99,18 +103,18 @@ describe("ensureCanonicalAdminProjects", () => {
               canonical_org_id: "org-1",
               project_kind: "organization_admin",
               name: "Community Builders",
-              description: null,
-              status: "active",
-              priority: "medium",
-              progress: 42,
+              description: "Coach-authored operating notes",
+              status: "planned",
+              priority: "low",
+              progress: 68,
               start_date: "2026-01-01",
-              end_date: "2026-04-28",
+              end_date: "2026-01-14",
               client_name: "/community-builders",
               type_label: "Approved nonprofit",
-              duration_label: "3 members",
+              duration_label: "1 member",
               tags: ["organization", "approved"],
-              member_labels: ["Paula Founder"],
-              task_count: 10,
+              member_labels: ["Jason D"],
+              task_count: 1,
               created_source: "system",
               starter_seed_key: null,
               starter_seed_version: null,
@@ -121,7 +125,7 @@ describe("ensureCanonicalAdminProjects", () => {
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -136,7 +140,9 @@ describe("ensureCanonicalAdminProjects", () => {
         if (organizationProjectsCalls === 1) return initialSelectQuery
         if (organizationProjectsCalls === 2) return updateQuery
         if (organizationProjectsCalls === 3) return refreshedSelectQuery
-        throw new Error(`Unexpected organization_projects call #${organizationProjectsCalls}`)
+        throw new Error(
+          `Unexpected organization_projects call #${organizationProjectsCalls}`
+        )
       }),
     }
 
@@ -148,14 +154,21 @@ describe("ensureCanonicalAdminProjects", () => {
     expect(updateQuery.update).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "Community Builders",
+        progress: 68,
         client_name: "/community-builders",
         type_label: "Approved nonprofit",
-        duration_label: "3 members",
-        task_count: 10,
-        member_labels: ["Paula Founder"],
         tags: ["organization", "approved"],
-      }),
+      })
     )
+    const updatePayload = updateQuery.update.mock.calls[0]?.[0]
+    expect(updatePayload).not.toHaveProperty("description")
+    expect(updatePayload).not.toHaveProperty("status")
+    expect(updatePayload).not.toHaveProperty("priority")
+    expect(updatePayload).not.toHaveProperty("start_date")
+    expect(updatePayload).not.toHaveProperty("end_date")
+    expect(updatePayload).not.toHaveProperty("duration_label")
+    expect(updatePayload).not.toHaveProperty("member_labels")
+    expect(updatePayload).not.toHaveProperty("task_count")
     expect(updateQuery.eq).toHaveBeenCalledWith("id", "project-1")
     expect(result).toEqual([
       expect.objectContaining({

@@ -21,29 +21,33 @@ import {
 type OrganizationTaskAssignmentRow =
   Database["public"]["Tables"]["organization_task_assignees"]["Row"]
 
-type TaskAssignmentQueryRow = Pick<OrganizationTaskAssignmentRow, "task_id" | "user_id"> & {
+type TaskAssignmentQueryRow = Pick<
+  OrganizationTaskAssignmentRow,
+  "task_id" | "user_id"
+> & {
   organization_tasks:
     | (OrganizationTaskRecord & {
-        organization_projects:
-          | {
-              id: string
-              name: string
-              client_name: string | null
-              status: string
-              priority: string
-              tags: string[] | null
-              member_labels: string[] | null
-              type_label: string | null
-              duration_label: string | null
-              start_date: string
-              end_date: string
-            }
-          | null
+        organization_projects: {
+          id: string
+          name: string
+          client_name: string | null
+          status: string
+          priority: string
+          tags: string[] | null
+          member_labels: string[] | null
+          type_label: string | null
+          duration_label: string | null
+          start_date: string
+          end_date: string
+        } | null
       })
     | null
 }
 
-function compareTaskItems(left: MemberWorkspaceTaskItem, right: MemberWorkspaceTaskItem) {
+function compareTaskItems(
+  left: MemberWorkspaceTaskItem,
+  right: MemberWorkspaceTaskItem
+) {
   const dateDiff = left.startDate.localeCompare(right.startDate)
   if (dateDiff !== 0) return dateDiff
   return left.title.localeCompare(right.title)
@@ -52,7 +56,7 @@ function compareTaskItems(left: MemberWorkspaceTaskItem, right: MemberWorkspaceT
 function mapTaskAssignmentRowsToItems(
   rows: TaskAssignmentQueryRow[],
   assigneeByTaskId: Map<string, TaskAssigneeProfile>,
-  canUpdate: boolean,
+  canUpdate: boolean
 ): MemberWorkspaceTaskItem[] {
   return rows
     .flatMap((row) => {
@@ -66,9 +70,12 @@ function mapTaskAssignmentRowsToItems(
           projectId: task.project_id,
           projectName: project?.name ?? "Unassigned Project",
           projectClient: project?.client_name ?? null,
-          projectStatus: (project?.status as MemberWorkspaceTaskItem["projectStatus"]) ?? "planned",
+          projectStatus:
+            (project?.status as MemberWorkspaceTaskItem["projectStatus"]) ??
+            "planned",
           projectPriority:
-            (project?.priority as MemberWorkspaceTaskItem["projectPriority"]) ?? "medium",
+            (project?.priority as MemberWorkspaceTaskItem["projectPriority"]) ??
+            "medium",
           projectTags: project?.tags ?? [],
           projectMembers: project?.member_labels ?? [],
           projectTypeLabel: project?.type_label ?? null,
@@ -82,7 +89,8 @@ function mapTaskAssignmentRowsToItems(
           startDate: task.start_date,
           endDate: task.end_date,
           priority:
-            (task.priority as MemberWorkspaceTaskItem["priority"]) ?? "no-priority",
+            (task.priority as MemberWorkspaceTaskItem["priority"]) ??
+            "no-priority",
           tagLabel: task.tag_label ?? null,
           workstreamName: task.workstream_name ?? null,
           assignee: assigneeByTaskId.get(task.id) ?? null,
@@ -110,27 +118,25 @@ type AdminTaskQueryRow = Pick<
   | "sort_order"
   | "created_source"
 > & {
-  organization_projects:
-    | {
-        id: string
-        name: string
-        client_name: string | null
-        status: string
-        priority: string
-        tags: string[] | null
-        member_labels: string[] | null
-        type_label: string | null
-        duration_label: string | null
-        start_date: string
-        end_date: string
-      }
-    | null
+  organization_projects: {
+    id: string
+    name: string
+    client_name: string | null
+    status: string
+    priority: string
+    tags: string[] | null
+    member_labels: string[] | null
+    type_label: string | null
+    duration_label: string | null
+    start_date: string
+    end_date: string
+  } | null
 }
 
 function mapAdminTaskRowsToItems(
   rows: AdminTaskQueryRow[],
   assigneeByTaskId: Map<string, TaskAssigneeProfile>,
-  canUpdate: boolean,
+  canUpdate: boolean
 ): MemberWorkspaceTaskItem[] {
   return rows
     .map((task) => {
@@ -140,9 +146,12 @@ function mapAdminTaskRowsToItems(
         projectId: task.project_id,
         projectName: project?.name ?? "Organization project",
         projectClient: project?.client_name ?? null,
-        projectStatus: (project?.status as MemberWorkspaceTaskItem["projectStatus"]) ?? "planned",
+        projectStatus:
+          (project?.status as MemberWorkspaceTaskItem["projectStatus"]) ??
+          "planned",
         projectPriority:
-          (project?.priority as MemberWorkspaceTaskItem["projectPriority"]) ?? "medium",
+          (project?.priority as MemberWorkspaceTaskItem["projectPriority"]) ??
+          "medium",
         projectTags: project?.tags ?? [],
         projectMembers: project?.member_labels ?? [],
         projectTypeLabel: project?.type_label ?? null,
@@ -156,7 +165,8 @@ function mapAdminTaskRowsToItems(
         startDate: task.start_date,
         endDate: task.end_date,
         priority:
-          (task.priority as MemberWorkspaceTaskItem["priority"]) ?? "no-priority",
+          (task.priority as MemberWorkspaceTaskItem["priority"]) ??
+          "no-priority",
         tagLabel: task.tag_label ?? null,
         workstreamName: task.workstream_name ?? null,
         assignee: assigneeByTaskId.get(task.id) ?? null,
@@ -170,24 +180,37 @@ export async function loadMemberWorkspaceTasksPage() {
   const actor = await resolveMemberWorkspaceActorContext()
 
   if (actor.isAdmin) {
-    const [{ data: orgRows, error: orgRowsError }, { data: detailRows, error: detailError }] =
-      await Promise.all([
-        actor.supabase
-          .from("organization_projects")
-          .select("org_id")
-          .returns<Array<Pick<OrganizationTaskRecord, "org_id">>>(),
-        actor.supabase
-          .from("organization_tasks")
-          .select(
-            "id, org_id, project_id, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order, created_source, organization_projects(id, name, client_name, status, priority, tags, member_labels, type_label, duration_label, start_date, end_date)",
-          )
-          .order("start_date", { ascending: true })
-          .order("sort_order", { ascending: true })
-          .returns<AdminTaskQueryRow[]>(),
-      ])
+    const [
+      { data: orgRows, error: orgRowsError },
+      { data: detailRows, error: detailError },
+      taskProjectScope,
+    ] = await Promise.all([
+      actor.supabase
+        .from("organization_projects")
+        .select("org_id")
+        .returns<Array<Pick<OrganizationTaskRecord, "org_id">>>(),
+      actor.supabase
+        .from("organization_tasks")
+        .select(
+          "id, org_id, project_id, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order, created_source, organization_projects(id, name, client_name, status, priority, tags, member_labels, type_label, duration_label, start_date, end_date)"
+        )
+        .order("start_date", { ascending: true })
+        .order("sort_order", { ascending: true })
+        .returns<AdminTaskQueryRow[]>(),
+      loadTaskProjectScope({
+        includeOrganizationAdmin: true,
+        supabase: actor.supabase,
+      }),
+    ])
 
-    if (orgRowsError && !isMissingOrganizationProjectsTableError(orgRowsError)) {
-      throw toMemberWorkspaceDataError(orgRowsError, "Unable to load task assignees.")
+    if (
+      orgRowsError &&
+      !isMissingOrganizationProjectsTableError(orgRowsError)
+    ) {
+      throw toMemberWorkspaceDataError(
+        orgRowsError,
+        "Unable to load task assignees."
+      )
     }
 
     if (detailError) {
@@ -201,25 +224,29 @@ export async function loadMemberWorkspaceTasksPage() {
           starterTaskCount: 0,
           hasAnyOrgTasks: false,
           canResetStarterData: false,
-          canManageTasks: false,
+          canManageTasks: true,
           scope: "platform-admin" as const,
           assigneeOptions: [],
           projectOptions: [],
         }
       }
-      throw toMemberWorkspaceDataError(detailError, "Unable to load workspace tasks.")
+      throw toMemberWorkspaceDataError(
+        detailError,
+        "Unable to load workspace tasks."
+      )
     }
 
-    const rows = detailRows ?? []
-    const adminOrgIds = Array.from(new Set((orgRows ?? []).map((row) => row.org_id)))
-    const [assigneeOptions, projectOptions, assigneeByTaskId] = await Promise.all([
+    const rows = (detailRows ?? []).filter((task) =>
+      taskProjectScope.projectIds.has(task.project_id)
+    )
+    const adminOrgIds = Array.from(
+      new Set((orgRows ?? []).map((row) => row.org_id))
+    )
+    const [assigneeOptions, assigneeByTaskId] = await Promise.all([
       loadMemberWorkspacePersonOptionsForOrganizations({
         orgIds: adminOrgIds,
         supabase: actor.supabase,
         includePlatformAdmins: true,
-      }),
-      loadTaskProjectScope({
-        supabase: actor.supabase,
       }),
       loadTaskAssigneeMap({
         supabase: actor.supabase,
@@ -229,16 +256,18 @@ export async function loadMemberWorkspaceTasksPage() {
 
     return {
       taskGroups: mapTaskRowsToGroups(
-        mapAdminTaskRowsToItems(rows, assigneeByTaskId, false),
+        mapAdminTaskRowsToItems(rows, assigneeByTaskId, true)
       ),
       storageMode: resolveMemberWorkspaceStorageMode(rows),
-      starterTaskCount: rows.filter((task) => task.created_source === "starter_seed").length,
+      starterTaskCount: rows.filter(
+        (task) => task.created_source === "starter_seed"
+      ).length,
       hasAnyOrgTasks: rows.length > 0,
       canResetStarterData: false,
-      canManageTasks: false,
+      canManageTasks: true,
       scope: "platform-admin" as const,
       assigneeOptions,
-      projectOptions: projectOptions.projectOptions,
+      projectOptions: taskProjectScope.projectOptions,
     }
   }
 
@@ -275,41 +304,47 @@ export async function loadMemberWorkspaceTasksPage() {
     }
   }
 
-  const [{ data: organizationTaskRows, error: organizationTasksError }, { data: assignedRows, error: assignedRowsError }] =
-    await Promise.all([
-      actor.supabase
-        .from("organization_tasks")
-        .select("id, project_id, created_source")
-        .eq("org_id", actor.activeOrg.orgId)
-        .neq("created_source", "system")
-        .returns<Array<Pick<OrganizationTaskRecord, "id" | "project_id" | "created_source">>>(),
-      actor.supabase
-        .from("organization_task_assignees")
-        .select(
-          "task_id, user_id, organization_tasks!inner(id, org_id, project_id, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order, created_source, starter_seed_key, starter_seed_version, created_by, updated_by, created_at, updated_at, organization_projects(id, name, client_name, status, priority, tags, member_labels, type_label, duration_label, start_date, end_date))",
-        )
-        .eq("org_id", actor.activeOrg.orgId)
-        .eq("user_id", actor.userId)
-        .returns<TaskAssignmentQueryRow[]>(),
-    ])
+  const [
+    { data: organizationTaskRows, error: organizationTasksError },
+    { data: assignedRows, error: assignedRowsError },
+  ] = await Promise.all([
+    actor.supabase
+      .from("organization_tasks")
+      .select("id, project_id, created_source")
+      .eq("org_id", actor.activeOrg.orgId)
+      .neq("created_source", "system")
+      .returns<
+        Array<
+          Pick<OrganizationTaskRecord, "id" | "project_id" | "created_source">
+        >
+      >(),
+    actor.supabase
+      .from("organization_task_assignees")
+      .select(
+        "task_id, user_id, organization_tasks!inner(id, org_id, project_id, title, description, task_type, status, start_date, end_date, priority, tag_label, workstream_name, sort_order, created_source, starter_seed_key, starter_seed_version, created_by, updated_by, created_at, updated_at, organization_projects(id, name, client_name, status, priority, tags, member_labels, type_label, duration_label, start_date, end_date))"
+      )
+      .eq("org_id", actor.activeOrg.orgId)
+      .eq("user_id", actor.userId)
+      .returns<TaskAssignmentQueryRow[]>(),
+  ])
 
   if (organizationTasksError) {
     if (isMissingOrganizationTasksTableError(organizationTasksError)) {
-        return {
-          taskGroups: [],
-          storageMode: "empty" as const,
-          starterTaskCount: 0,
-          hasAnyOrgTasks: false,
-          canResetStarterData: false,
-          canManageTasks: actor.canEdit,
-          scope: "organization" as const,
-          assigneeOptions,
-          projectOptions,
-        }
+      return {
+        taskGroups: [],
+        storageMode: "empty" as const,
+        starterTaskCount: 0,
+        hasAnyOrgTasks: false,
+        canResetStarterData: false,
+        canManageTasks: actor.canEdit,
+        scope: "organization" as const,
+        assigneeOptions,
+        projectOptions,
       }
-      throw toMemberWorkspaceDataError(
+    }
+    throw toMemberWorkspaceDataError(
       organizationTasksError,
-      "Unable to load workspace tasks.",
+      "Unable to load workspace tasks."
     )
   }
 
@@ -333,29 +368,29 @@ export async function loadMemberWorkspaceTasksPage() {
     }
     throw toMemberWorkspaceDataError(
       assignedRowsError,
-      "Unable to load assigned workspace tasks.",
+      "Unable to load assigned workspace tasks."
     )
   }
 
   const taskRows = (organizationTaskRows ?? []).filter((task) =>
-    projectIds.has(task.project_id),
+    projectIds.has(task.project_id)
   )
   const scopedAssignedRows = (assignedRows ?? []).filter((row) =>
-    projectIds.has(row.organization_tasks?.project_id ?? ""),
+    projectIds.has(row.organization_tasks?.project_id ?? "")
   )
   const assigneeByTaskId = new Map(
     scopedAssignedRows
       .map((row) => row.organization_tasks?.id)
       .filter((id): id is string => Boolean(id))
-      .map((taskId) => [taskId, actor.currentUser] as const),
+      .map((taskId) => [taskId, actor.currentUser] as const)
   )
   const taskItems = mapTaskAssignmentRowsToItems(
     scopedAssignedRows,
     assigneeByTaskId,
-    actor.canEdit,
+    actor.canEdit
   )
   const starterTaskCount = taskRows.filter(
-    (task) => task.created_source === "starter_seed",
+    (task) => task.created_source === "starter_seed"
   ).length
 
   return {

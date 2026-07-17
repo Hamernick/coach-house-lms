@@ -16,68 +16,76 @@ const { loadAccessibleOrganizationsMock } = vi.hoisted(() => ({
   loadAccessibleOrganizationsMock: vi.fn(),
 }))
 
-const { loadMemberWorkspacePersonOptionsForOrganizationsMock } = vi.hoisted(() => ({
-  loadMemberWorkspacePersonOptionsForOrganizationsMock: vi.fn(),
-}))
+const { loadMemberWorkspacePersonOptionsForOrganizationsMock } = vi.hoisted(
+  () => ({
+    loadMemberWorkspacePersonOptionsForOrganizationsMock: vi.fn(),
+  })
+)
 
 const { ensureStarterTasksForOrgMock } = vi.hoisted(() => ({
   ensureStarterTasksForOrgMock: vi.fn(),
 }))
 
-vi.mock("@/features/member-workspace/server/member-workspace-actor-context", () => ({
-  resolveMemberWorkspaceActorContext: resolveMemberWorkspaceActorContextMock,
-}))
+vi.mock(
+  "@/features/member-workspace/server/member-workspace-actor-context",
+  () => ({
+    resolveMemberWorkspaceActorContext: resolveMemberWorkspaceActorContextMock,
+  })
+)
 
-vi.mock("@/features/member-workspace/server/admin-organization-overview", () => ({
-  loadAdminOrganizationSummaries: loadAdminOrganizationSummariesMock,
-  mapAdminOrganizationSummaryToProject: (organization: {
-    orgId: string
-    canonicalProjectId: string | null
-    name: string
-    acceleratorProgress: number
-    setupProgress: number
-    setupCompletedCount: number
-    setupTotalCount: number
-    missingSetupCount: number
-    tags: string[]
-    members: Array<{ name: string }>
-    ownerName: string
-    ownerAvatarUrl: string | null
-    setupItems: Array<{ id: string; label: string; complete: boolean }>
-    publicSlug: string | null
-    isPublic: boolean
-    organizationStatus: string
-    createdAt: string
-  }) => ({
-    id: organization.canonicalProjectId ?? organization.orgId,
-    organizationId: organization.orgId,
-    projectKind: "organization_admin",
-    name: organization.name,
-    taskCount: organization.setupTotalCount,
-    progress: organization.acceleratorProgress,
-    startDate: new Date(organization.createdAt),
-    endDate: new Date(organization.createdAt),
-    status: "active",
-    priority: "medium",
-    tags: organization.tags,
-    members: organization.members.map((member) => member.name),
-    primaryPersonName: organization.ownerName,
-    primaryPersonAvatarUrl: organization.ownerAvatarUrl,
-    client: organization.publicSlug,
-    typeLabel: organization.organizationStatus,
-    durationLabel: null,
-    taskSummaryLabel: "Setup items",
-    tasks: organization.setupItems.map((item) => ({
-      id: item.id,
-      name: item.label,
-      type: "task",
-      assignee: organization.ownerName,
-      status: item.complete ? "done" : "todo",
+vi.mock(
+  "@/features/member-workspace/server/admin-organization-overview",
+  () => ({
+    loadAdminOrganizationSummaries: loadAdminOrganizationSummariesMock,
+    mapAdminOrganizationSummaryToProject: (organization: {
+      orgId: string
+      canonicalProjectId: string | null
+      name: string
+      acceleratorProgress: number
+      setupProgress: number
+      setupCompletedCount: number
+      setupTotalCount: number
+      missingSetupCount: number
+      tags: string[]
+      members: Array<{ name: string }>
+      ownerName: string
+      ownerAvatarUrl: string | null
+      setupItems: Array<{ id: string; label: string; complete: boolean }>
+      publicSlug: string | null
+      isPublic: boolean
+      organizationStatus: string
+      createdAt: string
+    }) => ({
+      id: organization.canonicalProjectId ?? organization.orgId,
+      organizationId: organization.orgId,
+      projectKind: "organization_admin",
+      name: organization.name,
+      taskCount: organization.setupTotalCount,
+      progress: organization.acceleratorProgress,
       startDate: new Date(organization.createdAt),
       endDate: new Date(organization.createdAt),
-    })),
-  }),
-}))
+      status: "active",
+      priority: "medium",
+      tags: organization.tags,
+      members: organization.members.map((member) => member.name),
+      primaryPersonName: organization.ownerName,
+      primaryPersonAvatarUrl: organization.ownerAvatarUrl,
+      client: organization.publicSlug,
+      typeLabel: organization.organizationStatus,
+      durationLabel: null,
+      taskSummaryLabel: "Setup items",
+      tasks: organization.setupItems.map((item) => ({
+        id: item.id,
+        name: item.label,
+        type: "task",
+        assignee: organization.ownerName,
+        status: item.complete ? "done" : "todo",
+        startDate: new Date(organization.createdAt),
+        endDate: new Date(organization.createdAt),
+      })),
+    }),
+  })
+)
 
 vi.mock("@/features/member-workspace/server/admin-projects", () => ({
   ensureCanonicalAdminProjects: ensureCanonicalAdminProjectsMock,
@@ -85,23 +93,34 @@ vi.mock("@/features/member-workspace/server/admin-projects", () => ({
     canonicalProjects,
     organizations,
   }: {
-    canonicalProjects: Array<{ id: string; canonical_org_id?: string | null; org_id: string }>
+    canonicalProjects: Array<{
+      id: string
+      canonical_org_id?: string | null
+      org_id: string
+    }>
     organizations: Array<Record<string, unknown>>
   }) => {
     const projectIdByOrgId = new Map(
-      canonicalProjects.map((project) => [project.canonical_org_id ?? project.org_id, project.id]),
+      canonicalProjects.map((project) => [
+        project.canonical_org_id ?? project.org_id,
+        project.id,
+      ])
     )
 
     return organizations.map((organization) => ({
       ...organization,
-      canonicalProjectId: projectIdByOrgId.get(String(organization.orgId)) ?? null,
+      canonicalProjectId:
+        projectIdByOrgId.get(String(organization.orgId)) ?? null,
     }))
   },
 }))
 
-vi.mock("@/features/member-workspace/server/load-accessible-organizations", () => ({
-  loadAccessibleOrganizations: loadAccessibleOrganizationsMock,
-}))
+vi.mock(
+  "@/features/member-workspace/server/load-accessible-organizations",
+  () => ({
+    loadAccessibleOrganizations: loadAccessibleOrganizationsMock,
+  })
+)
 
 vi.mock("@/features/member-workspace/server/person-options", () => ({
   loadMemberWorkspacePersonOptionsForOrganizations:
@@ -136,7 +155,7 @@ function createProjectsMissingTableSupabase() {
       Promise.resolve({
         count: null,
         error: missingProjectsTableError,
-      }),
+      })
     ),
   }
 
@@ -149,7 +168,7 @@ function createProjectsMissingTableSupabase() {
       Promise.resolve({
         data: null,
         error: missingProjectsTableError,
-      }),
+      })
     ),
   }
 
@@ -174,7 +193,7 @@ function createTasksMissingTableSupabase() {
       Promise.resolve({
         data: null,
         error: missingTasksTableError,
-      }),
+      })
     ),
   }
 
@@ -188,7 +207,7 @@ function createTasksMissingTableSupabase() {
           code: "42P01",
           message: 'relation "organization_task_assignees" does not exist',
         },
-      }),
+      })
     ),
   }
 
@@ -201,7 +220,7 @@ function createTasksMissingTableSupabase() {
       Promise.resolve({
         data: [],
         error: null,
-      }),
+      })
     ),
   }
 
@@ -256,6 +275,7 @@ describe("member workspace loaders", () => {
       scope: "organization",
       organizationOptions: [{ orgId: "org-1", name: "Org One" }],
       assigneeOptions: [],
+      workstreamCategories: [],
     })
   })
 
@@ -276,7 +296,11 @@ describe("member workspace loaders", () => {
         members: [{ name: "Paula" }],
         setupItems: [
           { id: "mission", label: "Add mission statement", complete: true },
-          { id: "roadmap-program", label: "Complete roadmap: Program", complete: false },
+          {
+            id: "roadmap-program",
+            label: "Complete roadmap: Program",
+            complete: false,
+          },
         ],
         publicSlug: "community-builders",
         isPublic: true,
@@ -321,7 +345,18 @@ describe("member workspace loaders", () => {
         Promise.resolve({
           data: [],
           error: null,
-        }),
+        })
+      ),
+    }
+    const missingWorkstreamCategoriesQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      returns: vi.fn(() =>
+        Promise.resolve({
+          data: null,
+          error: { code: "42P01" },
+        })
       ),
     }
 
@@ -330,6 +365,9 @@ describe("member workspace loaders", () => {
         from: vi.fn((table: string) => {
           if (table === "organization_projects") {
             return standardProjectsQuery
+          }
+          if (table === "platform_admin_workstream_categories") {
+            return missingWorkstreamCategoriesQuery
           }
           throw new Error(`Unexpected table query: ${table}`)
         }),
@@ -353,15 +391,15 @@ describe("member workspace loaders", () => {
         expect.objectContaining({
           id: "project-1",
           name: "Community Builders",
-          progress: 42,
-          taskCount: 10,
+          progress: 68,
+          taskCount: 2,
           projectKind: "organization_admin",
         }),
       ],
     })
   })
 
-  it("returns platform-admin task views in read-only mode", async () => {
+  it("returns manageable platform-admin task views for real projects", async () => {
     let organizationProjectsCalls = 0
     const orgRowsQuery = {
       select: vi.fn().mockReturnThis(),
@@ -369,19 +407,27 @@ describe("member workspace loaders", () => {
         Promise.resolve({
           data: [{ org_id: "org-1" }],
           error: null,
-        }),
+        })
       ),
     }
     const adminProjectOptionsQuery = {
       select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       neq: vi.fn().mockReturnThis(),
       order: vi.fn().mockReturnThis(),
       returns: vi.fn(() =>
         Promise.resolve({
-          data: [{ id: "project-standard", name: "Client Migration" }],
+          data: [
+            {
+              id: "project-standard",
+              name: "Client Migration",
+              project_kind: "standard",
+              created_source: "user",
+            },
+          ],
           error: null,
-        }),
+        })
       ),
     }
     const adminTaskRowsQuery = {
@@ -389,10 +435,62 @@ describe("member workspace loaders", () => {
       order: vi.fn().mockReturnThis(),
       returns: vi.fn(() =>
         Promise.resolve({
-          data: [],
+          data: [
+            {
+              id: "task-standard",
+              org_id: "org-1",
+              project_id: "project-standard",
+              title: "Prepare launch",
+              description: null,
+              task_type: "task",
+              status: "todo",
+              start_date: "2026-04-01",
+              end_date: "2026-04-02",
+              priority: "medium",
+              tag_label: null,
+              workstream_name: null,
+              sort_order: 0,
+              created_source: "user",
+              organization_projects: {
+                id: "project-standard",
+                name: "Client Migration",
+                client_name: null,
+                status: "planned",
+                priority: "medium",
+                tags: [],
+                member_labels: [],
+                type_label: null,
+                duration_label: null,
+                start_date: "2026-04-01",
+                end_date: "2026-04-30",
+              },
+            },
+            {
+              id: "task-system",
+              org_id: "org-1",
+              project_id: "project-system",
+              title: "Internal system task",
+              description: null,
+              task_type: "task",
+              status: "todo",
+              start_date: "2026-04-01",
+              end_date: "2026-04-02",
+              priority: "medium",
+              tag_label: null,
+              workstream_name: null,
+              sort_order: 0,
+              created_source: "system",
+              organization_projects: null,
+            },
+          ],
           error: null,
-        }),
+        })
       ),
+    }
+    const taskAssigneesQuery = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      returns: vi.fn(() => Promise.resolve({ data: [], error: null })),
     }
 
     resolveMemberWorkspaceActorContextMock.mockResolvedValue({
@@ -400,10 +498,15 @@ describe("member workspace loaders", () => {
         from: vi.fn((table: string) => {
           if (table === "organization_projects") {
             organizationProjectsCalls += 1
-            return organizationProjectsCalls === 1 ? orgRowsQuery : adminProjectOptionsQuery
+            return organizationProjectsCalls === 1
+              ? orgRowsQuery
+              : adminProjectOptionsQuery
           }
           if (table === "organization_tasks") {
             return adminTaskRowsQuery
+          }
+          if (table === "organization_task_assignees") {
+            return taskAssigneesQuery
           }
           throw new Error(`Unexpected table query: ${table}`)
         }),
@@ -416,13 +519,25 @@ describe("member workspace loaders", () => {
 
     await expect(loadMemberWorkspaceTasksPage()).resolves.toMatchObject({
       scope: "platform-admin",
-      canManageTasks: false,
+      canManageTasks: true,
       projectOptions: [{ id: "project-standard", label: "Client Migration" }],
-      taskGroups: [],
+      taskGroups: [
+        expect.objectContaining({
+          projectId: "project-standard",
+          tasks: [
+            expect.objectContaining({
+              id: "task-standard",
+              canUpdate: true,
+            }),
+          ],
+        }),
+      ],
     })
 
-    expect(adminProjectOptionsQuery.eq).toHaveBeenCalledWith("project_kind", "standard")
-    expect(adminProjectOptionsQuery.neq).toHaveBeenCalledWith("created_source", "system")
+    expect(adminProjectOptionsQuery.in).toHaveBeenCalledWith("project_kind", [
+      "standard",
+      "organization_admin",
+    ])
   })
 
   it("returns an empty tasks state when member workspace task tables are missing", async () => {
@@ -455,10 +570,15 @@ describe("member workspace loaders", () => {
       returns: vi.fn(() =>
         Promise.resolve({
           data: [
-            { id: "project-standard", name: "Client Migration" },
+            {
+              id: "project-standard",
+              name: "Client Migration",
+              project_kind: "standard",
+              created_source: "user",
+            },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -470,7 +590,7 @@ describe("member workspace loaders", () => {
         Promise.resolve({
           data: [],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -481,7 +601,7 @@ describe("member workspace loaders", () => {
         Promise.resolve({
           data: [],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -501,7 +621,13 @@ describe("member workspace loaders", () => {
         }),
       },
       userId: "user-1",
-      currentUser: { id: "user-1", name: "Owner", email: null, avatarUrl: null, displayImage: null },
+      currentUser: {
+        id: "user-1",
+        name: "Owner",
+        email: null,
+        avatarUrl: null,
+        displayImage: null,
+      },
       activeOrg: { orgId: "org-1", role: "owner" },
       isAdmin: false,
       canEdit: true,
@@ -512,9 +638,16 @@ describe("member workspace loaders", () => {
       projectOptions: [{ id: "project-standard", label: "Client Migration" }],
     })
 
-    expect(projectOptionsQuery.eq).toHaveBeenNthCalledWith(1, "project_kind", "standard")
+    expect(projectOptionsQuery.eq).toHaveBeenNthCalledWith(
+      1,
+      "project_kind",
+      "standard"
+    )
     expect(projectOptionsQuery.eq).toHaveBeenNthCalledWith(2, "org_id", "org-1")
-    expect(projectOptionsQuery.neq).toHaveBeenCalledWith("created_source", "system")
+    expect(projectOptionsQuery.neq).toHaveBeenCalledWith(
+      "created_source",
+      "system"
+    )
   })
 
   it("ignores org tasks that belong to admin/system projects outside the member-workspace scope", async () => {
@@ -525,9 +658,16 @@ describe("member workspace loaders", () => {
       neq: vi.fn().mockReturnThis(),
       returns: vi.fn(() =>
         Promise.resolve({
-          data: [{ id: "project-standard", name: "Client Migration" }],
+          data: [
+            {
+              id: "project-standard",
+              name: "Client Migration",
+              project_kind: "standard",
+              created_source: "user",
+            },
+          ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -550,7 +690,7 @@ describe("member workspace loaders", () => {
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -640,7 +780,7 @@ describe("member workspace loaders", () => {
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -680,7 +820,12 @@ describe("member workspace loaders", () => {
       taskGroups: [
         expect.objectContaining({
           projectId: "project-standard",
-          tasks: [expect.objectContaining({ id: "task-allowed", title: "Starter task" })],
+          tasks: [
+            expect.objectContaining({
+              id: "task-allowed",
+              title: "Starter task",
+            }),
+          ],
         }),
       ],
     })

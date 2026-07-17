@@ -10,7 +10,6 @@ import type {
 import { ensureMemberWorkspaceFeatureAccess } from "./access"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import {
-  PLATFORM_ADMIN_TASK_MUTATION_ERROR,
   VALID_TASK_PRIORITIES,
   VALID_TASK_STATUSES,
   adjustProjectTaskCount,
@@ -45,13 +44,10 @@ export async function createMemberWorkspaceTaskAction(
   input: MemberWorkspaceCreateTaskInput
 ): Promise<MemberWorkspaceCreateTaskResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (actor.isAdmin) {
-    return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
-  }
   const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
   if (featureAccess) return featureAccess
 
-  if (!actor.canEdit) {
+  if (!actor.isAdmin && !actor.canEdit) {
     return { error: "You do not have access to create tasks." }
   }
 
@@ -170,13 +166,10 @@ export async function updateMemberWorkspaceTaskAction(
   input: MemberWorkspaceCreateTaskInput
 ): Promise<MemberWorkspaceUpdateTaskResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (actor.isAdmin) {
-    return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
-  }
   const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
   if (featureAccess) return featureAccess
 
-  if (!actor.canEdit) {
+  if (!actor.isAdmin && !actor.canEdit) {
     return { error: "You do not have access to edit tasks." }
   }
 
@@ -238,6 +231,16 @@ export async function updateMemberWorkspaceTaskAction(
     return projectResult
   }
   const { project } = projectResult
+
+  if (existingTask.project_id !== project.id) {
+    const existingProjectResult = await resolveTaskTargetProject({
+      actor,
+      projectId: existingTask.project_id,
+    })
+    if ("error" in existingProjectResult) {
+      return existingProjectResult
+    }
+  }
 
   const assigneeResult = await resolveAssignableUserId({
     actor,
@@ -327,13 +330,10 @@ export async function updateMemberWorkspaceTaskStatusAction(
   }
 
   const actor = await resolveMemberWorkspaceActorContext()
-  if (actor.isAdmin) {
-    return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
-  }
   const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
   if (featureAccess) return featureAccess
 
-  let canUpdateTask = actor.canEdit
+  let canUpdateTask = actor.isAdmin || actor.canEdit
 
   if (!canUpdateTask) {
     const { data: assignment, error: assignmentError } = await actor.supabase
@@ -360,17 +360,30 @@ export async function updateMemberWorkspaceTaskStatusAction(
     .select("id, org_id, project_id, status")
     .eq("id", normalizedTaskId)
 
-  const { data: task, error: taskError } = await taskQuery
-    .eq("org_id", actor.activeOrg.orgId)
-    .maybeSingle<{
-      id: string
-      org_id: string
-      project_id: string
-      status: string
-    }>()
+  const { data: task, error: taskError } = await (actor.isAdmin
+    ? taskQuery.maybeSingle<{
+        id: string
+        org_id: string
+        project_id: string
+        status: string
+      }>()
+    : taskQuery.eq("org_id", actor.activeOrg.orgId).maybeSingle<{
+        id: string
+        org_id: string
+        project_id: string
+        status: string
+      }>())
 
   if (taskError || !task) {
     return { error: "Task not found." }
+  }
+
+  const projectResult = await resolveTaskTargetProject({
+    actor,
+    projectId: task.project_id,
+  })
+  if ("error" in projectResult) {
+    return projectResult
   }
 
   if (task.status === nextStatus) {
@@ -403,14 +416,10 @@ export async function updateMemberWorkspaceTaskOrderAction(
   orderedTaskIds: string[]
 ): Promise<MemberWorkspaceUpdateTaskOrderResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-
-  if (actor.isAdmin) {
-    return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
-  }
   const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
   if (featureAccess) return featureAccess
 
-  if (!actor.canEdit) {
+  if (!actor.isAdmin && !actor.canEdit) {
     return { error: "You do not have access to reorder tasks." }
   }
 
@@ -486,14 +495,10 @@ export async function deleteMemberWorkspaceTaskAction(
   taskId: string
 ): Promise<MemberWorkspaceDeleteTaskResult> {
   const actor = await resolveMemberWorkspaceActorContext()
-
-  if (actor.isAdmin) {
-    return { error: PLATFORM_ADMIN_TASK_MUTATION_ERROR }
-  }
   const featureAccess = ensureMemberWorkspaceFeatureAccess(actor)
   if (featureAccess) return featureAccess
 
-  if (!actor.canEdit) {
+  if (!actor.isAdmin && !actor.canEdit) {
     return { error: "You do not have access to delete tasks." }
   }
 
@@ -507,12 +512,26 @@ export async function deleteMemberWorkspaceTaskAction(
     .select("id, org_id, project_id")
     .eq("id", normalizedTaskId)
 
-  const { data: task, error: taskError } = await taskQuery
-    .eq("org_id", actor.activeOrg.orgId)
-    .maybeSingle<{ id: string; org_id: string; project_id: string }>()
+  const { data: task, error: taskError } = await (actor.isAdmin
+    ? taskQuery.maybeSingle<{
+        id: string
+        org_id: string
+        project_id: string
+      }>()
+    : taskQuery
+        .eq("org_id", actor.activeOrg.orgId)
+        .maybeSingle<{ id: string; org_id: string; project_id: string }>())
 
   if (taskError || !task) {
     return { error: "Task not found." }
+  }
+
+  const projectResult = await resolveTaskTargetProject({
+    actor,
+    projectId: task.project_id,
+  })
+  if ("error" in projectResult) {
+    return projectResult
   }
 
   const admin = createSupabaseAdminClient()

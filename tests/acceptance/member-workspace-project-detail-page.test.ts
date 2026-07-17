@@ -681,6 +681,12 @@ describe("MemberWorkspaceProjectDetailPage", () => {
       "requireMemberWorkspacePageAccess"
     )
     expect(organizationDetailRouteSource).toContain(
+      'const canManageProjectTasks =\n    result.scope === "organization" || result.scope === "platform-admin"'
+    )
+    expect(organizationDetailRouteSource).toContain(
+      "canManageProjectTasks ? deleteMemberWorkspaceTaskAction : undefined"
+    )
+    expect(organizationDetailRouteSource).toContain(
       "connectFiscalSponsorshipDocumentAsset"
     )
     expect(organizationDetailRouteSource).toContain(

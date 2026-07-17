@@ -47,7 +47,7 @@ function buildCanonicalAdminOrganizationProjectFields(
     duration_label: project.durationLabel ?? null,
     tags: project.tags,
     member_labels: project.members,
-    task_count: project.taskCount,
+    task_count: 0,
     created_source: "system",
   } as const
 }
@@ -65,11 +65,18 @@ export function buildCanonicalAdminOrganizationProject(
 function buildCanonicalAdminOrganizationProjectUpdate(
   organization: MemberWorkspaceAdminOrganizationSummary
 ): OrganizationProjectUpdate {
-  const { description: _description, ...syncedFields } =
-    buildCanonicalAdminOrganizationProjectFields(organization)
+  const desired = buildCanonicalAdminOrganizationProjectFields(organization)
 
   return {
-    ...syncedFields,
+    org_id: desired.org_id,
+    canonical_org_id: desired.canonical_org_id,
+    project_kind: desired.project_kind,
+    name: desired.name,
+    progress: desired.progress,
+    client_name: desired.client_name,
+    type_label: desired.type_label,
+    tags: desired.tags,
+    created_source: desired.created_source,
     updated_by: organization.orgId,
   }
 }
@@ -89,21 +96,11 @@ function canonicalAdminProjectNeedsRefresh({
       (desired.canonical_org_id ?? null) ||
     existing.project_kind !== desired.project_kind ||
     existing.name !== desired.name ||
-    existing.status !== desired.status ||
-    existing.priority !== desired.priority ||
     existing.progress !== desired.progress ||
-    existing.start_date !== desired.start_date ||
-    existing.end_date !== desired.end_date ||
     (existing.client_name ?? null) !== (desired.client_name ?? null) ||
     (existing.type_label ?? null) !== (desired.type_label ?? null) ||
-    (existing.duration_label ?? null) !== (desired.duration_label ?? null) ||
-    existing.task_count !== desired.task_count ||
     existing.created_source !== desired.created_source ||
-    !stringArraysEqual(existing.tags ?? [], desired.tags ?? []) ||
-    !stringArraysEqual(
-      existing.member_labels ?? [],
-      desired.member_labels ?? []
-    )
+    !stringArraysEqual(existing.tags ?? [], desired.tags ?? [])
   )
 }
 

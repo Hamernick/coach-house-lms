@@ -594,6 +594,8 @@ async function run() {
   let memberWorkspaceStarterStateTableAvailable = false
   let memberWorkspaceTasksTableAvailable = false
   let memberWorkspaceTaskAssigneesTableAvailable = false
+  let platformAdminWorkstreamTablesAvailable = false
+  let organizationProjectActivityTableAvailable = false
   let memberWorkspaceProjectId = null
   let memberWorkspaceSubscriptionId = null
 
@@ -633,6 +635,22 @@ async function run() {
       results.push({
         name: "member workspace starter state table available",
         passed: memberWorkspaceStarterStateTableAvailable,
+      })
+
+      platformAdminWorkstreamTablesAvailable =
+        (await tableExists("platform_admin_workstream_categories")) &&
+        (await tableExists("platform_admin_project_workstream_states"))
+      results.push({
+        name: "platform admin workstream tables available",
+        passed: platformAdminWorkstreamTablesAvailable,
+      })
+
+      organizationProjectActivityTableAvailable = await tableExists(
+        "organization_project_activity_events"
+      )
+      results.push({
+        name: "organization project activity table available",
+        passed: organizationProjectActivityTableAvailable,
       })
     }
   }
@@ -738,6 +756,89 @@ async function run() {
     results.push({
       name: "platform admin can read organization projects",
       passed: !!adminReadsProject && !adminReadsProjectError,
+    })
+  }
+
+  if (
+    orgAccessReady &&
+    platformAdminWorkstreamTablesAvailable &&
+    memberWorkspaceProjectId
+  ) {
+    const categoryId = randomUUID()
+    const { data: adminCategory, error: adminCategoryError } =
+      await adminSessionClient
+        .from("platform_admin_workstream_categories")
+        .insert({
+          id: categoryId,
+          owner_id: admin.id,
+          name: `Needs review ${suffix}`,
+          color: "violet",
+          position: 7,
+        })
+        .select("id")
+        .maybeSingle()
+    results.push({
+      name: "platform admin can create a personal workstream category",
+      passed: !!adminCategory && !adminCategoryError,
+    })
+
+    const {
+      data: deniedAnonCategory,
+      error: deniedAnonCategoryError,
+    } = await anonClient
+      .from("platform_admin_workstream_categories")
+      .select("id")
+      .eq("id", categoryId)
+    results.push({
+      name: "anonymous users have no workstream category table privileges",
+      passed:
+        deniedAnonCategoryError?.code === "42501" ||
+        /permission denied/i.test(deniedAnonCategoryError?.message ?? "") ||
+        (Array.isArray(deniedAnonCategory) && deniedAnonCategory.length === 0),
+    })
+
+    const { data: deniedMemberCategory, error: deniedMemberCategoryError } =
+      await memberClient
+        .from("platform_admin_workstream_categories")
+        .insert({
+          owner_id: member.id,
+          name: `Member category ${suffix}`,
+          color: "slate",
+          position: 0,
+        })
+        .select("id")
+    results.push({
+      name: "non-admin cannot create workstream categories",
+      passed:
+        !!deniedMemberCategoryError ||
+        (Array.isArray(deniedMemberCategory) &&
+          deniedMemberCategory.length === 0),
+    })
+
+    const { data: memberReadsAdminCategory, error: memberCategoryReadError } =
+      await memberClient
+        .from("platform_admin_workstream_categories")
+        .select("id")
+        .eq("id", categoryId)
+        .maybeSingle()
+    results.push({
+      name: "coach workstream categories stay private to their owner",
+      passed: !memberReadsAdminCategory && !memberCategoryReadError,
+    })
+
+    const { data: adminWorkstreamState, error: adminWorkstreamStateError } =
+      await adminSessionClient
+        .from("platform_admin_project_workstream_states")
+        .insert({
+          owner_id: admin.id,
+          project_id: memberWorkspaceProjectId,
+          category_id: categoryId,
+        })
+        .select("project_id")
+        .maybeSingle()
+    results.push({
+      name: "platform admin can place an organization in a personal workstream",
+      passed: !!adminWorkstreamState && !adminWorkstreamStateError,
     })
   }
 
@@ -949,6 +1050,94 @@ async function run() {
       name: "platform admin can read organization tasks",
       passed: !!adminReadsTask && !adminReadsTaskError,
     })
+
+    const adminTaskId = randomUUID()
+    const { data: adminTask, error: adminTaskError } = await adminSessionClient
+      .from("organization_tasks")
+      .insert({
+        id: adminTaskId,
+        org_id: member.id,
+        project_id: memberWorkspaceProjectId,
+        title: "Coach follow-up",
+        task_type: "task",
+        status: "todo",
+        start_date: "2026-01-14",
+        end_date: "2026-01-16",
+        created_source: "user",
+        created_by: admin.id,
+        updated_by: admin.id,
+      })
+      .select("id")
+      .maybeSingle()
+    results.push({
+      name: "platform admin can create organization tasks",
+      passed: !!adminTask && !adminTaskError,
+    })
+
+    const { data: adminUpdatedTask, error: adminUpdatedTaskError } =
+      await adminSessionClient
+        .from("organization_tasks")
+        .update({ status: "done", updated_by: admin.id })
+        .eq("id", adminTaskId)
+        .select("id")
+    results.push({
+      name: "platform admin can complete organization tasks",
+      passed:
+        !adminUpdatedTaskError &&
+        Array.isArray(adminUpdatedTask) &&
+        adminUpdatedTask.length === 1,
+    })
+
+    if (organizationProjectActivityTableAvailable) {
+      const { data: taskActivity, error: taskActivityError } =
+        await adminSessionClient
+          .from("organization_project_activity_events")
+          .select("id")
+          .eq("entity_type", "task")
+          .eq("entity_id", adminTaskId)
+          .eq("event_type", "completed")
+          .maybeSingle()
+      results.push({
+        name: "task completion appears in the organization activity timeline",
+        passed: !!taskActivity && !taskActivityError,
+      })
+
+      const { data: deniedActivityInsert, error: deniedActivityInsertError } =
+        await adminSessionClient
+          .from("organization_project_activity_events")
+          .insert({
+            org_id: member.id,
+            project_id: memberWorkspaceProjectId,
+            entity_type: "task",
+            entity_id: adminTaskId,
+            event_type: "updated",
+            title: "Forged activity",
+            actor_id: admin.id,
+          })
+          .select("id")
+      results.push({
+        name: "platform admins cannot forge organization activity events",
+        passed:
+          deniedActivityInsertError?.code === "42501" ||
+          /permission denied/i.test(deniedActivityInsertError?.message ?? "") ||
+          (Array.isArray(deniedActivityInsert) &&
+            deniedActivityInsert.length === 0),
+      })
+
+      const { data: deniedAnonActivity, error: deniedAnonActivityReadError } =
+        await anonClient
+          .from("organization_project_activity_events")
+          .select("id")
+          .limit(1)
+      results.push({
+        name: "anonymous users have no organization activity table privileges",
+        passed:
+          deniedAnonActivityReadError?.code === "42501" ||
+          /permission denied/i.test(deniedAnonActivityReadError?.message ?? "") ||
+          (Array.isArray(deniedAnonActivity) &&
+            deniedAnonActivity.length === 0),
+      })
+    }
   }
 
   if (
@@ -1021,6 +1210,25 @@ async function run() {
     results.push({
       name: "platform admin can read organization project notes",
       passed: !!adminReadsNote && !adminReadsNoteError,
+    })
+
+    const { data: adminNote, error: adminNoteError } = await adminSessionClient
+      .from("organization_project_notes")
+      .insert({
+        org_id: member.id,
+        project_id: memberWorkspaceProjectId,
+        title: "Coach note",
+        content: "Follow up with the organization next week.",
+        note_type: "general",
+        status: "completed",
+        created_by: admin.id,
+        updated_by: admin.id,
+      })
+      .select("id")
+      .maybeSingle()
+    results.push({
+      name: "platform admin can create organization project notes",
+      passed: !!adminNote && !adminNoteError,
     })
   }
 
@@ -1272,6 +1480,26 @@ async function run() {
     results.push({
       name: "platform admin can read organization project assets",
       passed: !!adminReadsAsset && !adminReadsAssetError,
+    })
+
+    const { data: adminAsset, error: adminAssetError } =
+      await adminSessionClient
+        .from("organization_project_assets")
+        .insert({
+          org_id: member.id,
+          project_id: memberWorkspaceProjectId,
+          name: "Coach review notes.pdf",
+          description: "Uploaded by a platform admin",
+          asset_type: "pdf",
+          external_url: "https://example.com/coach-review-notes.pdf",
+          created_by: admin.id,
+          updated_by: admin.id,
+        })
+        .select("id")
+        .maybeSingle()
+    results.push({
+      name: "platform admin can add organization project assets",
+      passed: !!adminAsset && !adminAssetError,
     })
 
     if (

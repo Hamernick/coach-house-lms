@@ -1,8 +1,13 @@
 import {
   clearMemberWorkspaceStarterDataAction,
+  createPlatformAdminWorkstreamCategoryAction,
   createMemberWorkspaceProjectAction,
+  deletePlatformAdminWorkstreamCategoryAction,
   loadMemberWorkspaceProjectsPage,
   MemberWorkspaceProjectsPage,
+  restorePlatformAdminWorkstreamDefaultsAction,
+  updatePlatformAdminProjectWorkstreamAction,
+  updatePlatformAdminWorkstreamCategoryAction,
   updateMemberWorkspaceProjectAction,
   updateMemberWorkspaceProjectScheduleAction,
   updateMemberWorkspaceProjectStatusAction,
@@ -21,6 +26,7 @@ export default async function OrganizationsPage() {
     scope,
     organizationOptions,
     assigneeOptions,
+    workstreamCategories,
   } = await loadMemberWorkspaceProjectsPage()
 
   return (
@@ -48,6 +54,20 @@ export default async function OrganizationsPage() {
       scope={scope}
       organizationOptions={organizationOptions}
       assigneeOptions={assigneeOptions}
+      workstreamCategories={workstreamCategories}
+      createWorkstreamCategoryAction={
+        createPlatformAdminWorkstreamCategoryAction
+      }
+      updateWorkstreamCategoryAction={
+        updatePlatformAdminWorkstreamCategoryAction
+      }
+      deleteWorkstreamCategoryAction={
+        deletePlatformAdminWorkstreamCategoryAction
+      }
+      restoreWorkstreamDefaultsAction={
+        restorePlatformAdminWorkstreamDefaultsAction
+      }
+      updateProjectWorkstreamAction={updatePlatformAdminProjectWorkstreamAction}
     />
   )
 }

@@ -7,6 +7,7 @@ import { cn } from "@/features/platform-admin-dashboard/upstream/lib/utils"
 
 export type TaskRowBaseProps = {
   checked: boolean
+  disabled?: boolean
   title: string
   onCheckedChange?: () => void
   titleAriaLabel?: string
@@ -18,6 +19,7 @@ export type TaskRowBaseProps = {
 
 export function TaskRowBase({
   checked,
+  disabled = false,
   title,
   onCheckedChange,
   titleAriaLabel,
@@ -29,24 +31,25 @@ export function TaskRowBase({
   return (
     <div
       className={cn(
-        "flex items-center gap-3 rounded-lg px-3 py-2 text-sm hover:bg-muted/60",
-        className,
+        "hover:bg-muted/60 flex items-center gap-3 rounded-lg px-3 py-2 text-sm",
+        className
       )}
     >
       <Checkbox
         checked={checked}
+        disabled={disabled}
         onCheckedChange={onCheckedChange}
         onClick={(event) => event.stopPropagation()}
         onKeyDown={(event) => event.stopPropagation()}
         aria-label={titleAriaLabel ?? title}
-        className="rounded-full border-border bg-background data-[state=checked]:border-teal-600 data-[state=checked]:bg-teal-600 hover:cursor-pointer"
+        className="border-border bg-background rounded-full enabled:hover:cursor-pointer data-[state=checked]:border-teal-600 data-[state=checked]:bg-teal-600"
       />
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span
             className={cn(
-              "flex-1 truncate text-left max-w-[60vw] sm:max-w-none",
-              checked && "line-through text-muted-foreground",
+              "max-w-[60vw] flex-1 truncate text-left sm:max-w-none",
+              checked && "text-muted-foreground line-through"
             )}
           >
             {title}
@@ -56,15 +59,15 @@ export function TaskRowBase({
         {subtitle && (
           <div
             className={cn(
-              "mt-0.5 text-xs text-muted-foreground truncate",
-              checked && "line-through opacity-70",
+              "text-muted-foreground mt-0.5 truncate text-xs",
+              checked && "line-through opacity-70"
             )}
           >
             {subtitle}
           </div>
         )}
       </div>
-      <div className="flex items-center gap-3 text-xs shrink-0 ml-2">
+      <div className="ml-2 flex shrink-0 items-center gap-3 text-xs">
         {meta}
       </div>
     </div>

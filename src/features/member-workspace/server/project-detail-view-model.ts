@@ -6,6 +6,7 @@ import type {
   NoteStatus,
   NoteType,
   ProjectDetails,
+  ProjectActivityItem,
   ProjectFile,
   ProjectMeta,
   ProjectNote,
@@ -410,6 +411,7 @@ export function buildMemberWorkspaceProjectDetails({
   assets,
   assigneeOptions = [],
   overviewDocument,
+  activity,
 }: {
   project: OrganizationProjectRecord
   tasks: MemberWorkspaceProjectTaskRecord[]
@@ -418,6 +420,7 @@ export function buildMemberWorkspaceProjectDetails({
   assets?: MemberWorkspaceProjectAssetRecord[]
   assigneeOptions?: MemberWorkspacePersonOption[]
   overviewDocument?: MemberWorkspaceProjectOverviewDocumentRecord | null
+  activity?: ProjectActivityItem[]
 }): ProjectDetails {
   const members = buildUsers(project.member_labels ?? [], assigneeOptions)
   const files = buildProjectFiles(assets ?? [])
@@ -452,6 +455,7 @@ export function buildMemberWorkspaceProjectDetails({
     quickLinks: explicitQuickLinks,
     files,
     notes: buildProjectNotes(notes ?? []),
+    activity: activity ?? [],
     source: mapOrganizationProjectToViewModel(project),
   }
 }

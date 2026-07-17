@@ -45,6 +45,14 @@ export type MemberWorkspaceStorageMode =
   | "mixed"
   | "custom"
 
+export type MemberWorkspaceWorkstreamCategory = {
+  id: string
+  name: string
+  color: string
+  position: number
+  defaultKey: string | null
+}
+
 export type MemberWorkspaceTaskStatus = "todo" | "in-progress" | "done"
 
 export type MemberWorkspaceTaskType = "bug" | "improvement" | "task"
@@ -166,6 +174,19 @@ export type MemberWorkspaceAdminOrganizationMember = {
   organizationRole: string
   platformRole: string | null
   isOwner: boolean
+  profileCompletenessPercent?: number
+  profileCompletedCount?: number
+  profileTotalCount?: number
+  profileMissingFields?: string[]
+}
+
+export type MemberWorkspaceAdminOrganizationProgram = {
+  id: string
+  title: string
+  statusLabel: string
+  startAt: string | null
+  endAt: string | null
+  isPublic: boolean
 }
 
 export type MemberWorkspaceAdminOrganizationSetupItem = {
@@ -194,6 +215,7 @@ export type MemberWorkspaceAdminOrganizationSummary = {
   tags: string[]
   members: MemberWorkspaceAdminOrganizationMember[]
   setupItems: MemberWorkspaceAdminOrganizationSetupItem[]
+  programs?: MemberWorkspaceAdminOrganizationProgram[]
   profile: Record<string, unknown>
 }
 

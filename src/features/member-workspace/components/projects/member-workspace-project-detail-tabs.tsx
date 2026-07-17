@@ -31,15 +31,21 @@ import type {
 } from "../../types"
 import type { MemberWorkspaceProjectDetailDraft } from "./member-workspace-project-detail-editing"
 import { MemberWorkspaceProjectFiscalWorkbench } from "./member-workspace-project-fiscal-workbench"
+import {
+  getMemberWorkspaceProjectFiscalDocumentAssetIds,
+  MemberWorkspaceProjectFiscalDocuments,
+} from "./member-workspace-project-fiscal-documents"
 import { MemberWorkspaceProjectOverviewDocument } from "./member-workspace-project-overview-document"
 import { MemberWorkspaceProjectOverviewEditor } from "./member-workspace-project-overview-editor"
 import { MemberWorkspaceProjectTasksEditor } from "./member-workspace-project-tasks-editor"
+import { MemberWorkspaceProjectActivityTimeline } from "./member-workspace-project-activity-timeline"
 
 function ProjectDetailTabsList() {
   return (
     <div className="-mx-1 overflow-x-auto pb-2">
       <TabsList className="inline-flex w-max min-w-full gap-2 px-1 sm:w-full sm:gap-6">
         <TabsTrigger value="overview">Overview</TabsTrigger>
+        <TabsTrigger value="activity">Activity</TabsTrigger>
         <TabsTrigger value="workstream">Workstream</TabsTrigger>
         <TabsTrigger value="tasks">Tasks</TabsTrigger>
         <TabsTrigger value="notes">Notes</TabsTrigger>
@@ -238,6 +244,13 @@ export function MemberWorkspaceProjectDetailTabs({
       }
     />
   )
+  const fiscalDocumentAssetIds =
+    getMemberWorkspaceProjectFiscalDocumentAssetIds(
+      fiscalSponsorshipWorkflowSummary
+    )
+  const generalProjectFiles = project.files.filter(
+    (file) => !fiscalDocumentAssetIds.has(file.id)
+  )
 
   return (
     <Tabs value={activeTab} onValueChange={onActiveTabChange}>
@@ -253,12 +266,20 @@ export function MemberWorkspaceProjectDetailTabs({
         />
       </TabsContent>
 
+      <TabsContent value="activity">
+        <MemberWorkspaceProjectActivityTimeline
+          organizationSummary={organizationSummary}
+          project={project}
+        />
+      </TabsContent>
+
       <TabsContent value="workstream">
         <WorkstreamTab
           workstreams={project.workstreams}
           canReorder={false}
           canToggleTasks={Boolean(updateTaskStatusAction)}
           onCreateTask={onCreateTask}
+          onUpdateTaskStatus={updateTaskStatusAction}
         />
       </TabsContent>
 
@@ -299,12 +320,17 @@ export function MemberWorkspaceProjectDetailTabs({
       </TabsContent>
 
       <TabsContent value="assets">
-        <AssetsFilesTab
-          files={project.files}
-          onCreateAsset={onCreateAsset}
-          onUpdateAsset={onUpdateAsset}
-          onDeleteAsset={onDeleteAsset}
-        />
+        <div className="space-y-8">
+          <MemberWorkspaceProjectFiscalDocuments
+            workflowSummary={fiscalSponsorshipWorkflowSummary}
+          />
+          <AssetsFilesTab
+            files={generalProjectFiles}
+            onCreateAsset={onCreateAsset}
+            onUpdateAsset={onUpdateAsset}
+            onDeleteAsset={onDeleteAsset}
+          />
+        </div>
       </TabsContent>
     </Tabs>
   )

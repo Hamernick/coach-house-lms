@@ -112,6 +112,7 @@ type FiscalDocumentSummaryRow = {
   reviewed_at: string | null
   status: string
   storage_path: string | null
+  storage_bucket: string
   title: string
   uploaded_at: string | null
   version: number
@@ -120,6 +121,7 @@ type FiscalDocumentSummaryRow = {
 type SignaturePacketSummaryRow = {
   id: string
   applicant_signer_email: string | null
+  applicant_signer_id: string | null
   coach_signer_email: string | null
   completed_at: string | null
   provider: string
@@ -209,6 +211,19 @@ function buildProjectAssetHref({
   return `/api/account/project-assets?${search.toString()}`
 }
 
+function buildFiscalDocumentHref({
+  documentId,
+  download = false,
+  storageBucket,
+}: {
+  documentId: string
+  download?: boolean
+  storageBucket: string
+}) {
+  if (storageBucket === "project-assets") return null
+  return `/api/fiscal-sponsorship/documents/${documentId}${download ? "?download=1" : ""}`
+}
+
 function mapFiscalDocumentSummary(
   document: FiscalDocumentSummaryRow | null | undefined
 ) {
@@ -216,11 +231,17 @@ function mapFiscalDocumentSummary(
 
   return {
     assetId: document.asset_id,
-    downloadHref: buildProjectAssetHref({
-      assetId: document.asset_id,
-      download: true,
-      projectId: document.project_id,
-    }),
+    downloadHref:
+      buildProjectAssetHref({
+        assetId: document.asset_id,
+        download: true,
+        projectId: document.project_id,
+      }) ??
+      buildFiscalDocumentHref({
+        documentId: document.id,
+        download: true,
+        storageBucket: document.storage_bucket,
+      }),
     generatedAt: document.generated_at,
     id: document.id,
     kind: normalizeDocumentKind(document.kind),
@@ -233,10 +254,15 @@ function mapFiscalDocumentSummary(
     title: document.title,
     uploadedAt: document.uploaded_at,
     version: document.version,
-    viewHref: buildProjectAssetHref({
-      assetId: document.asset_id,
-      projectId: document.project_id,
-    }),
+    viewHref:
+      buildProjectAssetHref({
+        assetId: document.asset_id,
+        projectId: document.project_id,
+      }) ??
+      buildFiscalDocumentHref({
+        documentId: document.id,
+        storageBucket: document.storage_bucket,
+      }),
   }
 }
 
@@ -252,7 +278,7 @@ async function loadLatestFiscalDocument({
   return supabase
     .from("fiscal_sponsorship_documents")
     .select(
-      "id, asset_id, document_key, generated_at, kind, project_id, review_notes, review_status, reviewed_at, status, storage_path, title, uploaded_at, version"
+      "id, asset_id, document_key, generated_at, kind, project_id, review_notes, review_status, reviewed_at, status, storage_bucket, storage_path, title, uploaded_at, version"
     )
     .eq("application_id", applicationId)
     .eq("kind", kind)
@@ -271,7 +297,7 @@ async function loadRequiredFiscalDocuments({
   return supabase
     .from("fiscal_sponsorship_documents")
     .select(
-      "id, asset_id, document_key, generated_at, kind, project_id, review_notes, review_status, reviewed_at, status, storage_path, title, uploaded_at, version"
+      "id, asset_id, document_key, generated_at, kind, project_id, review_notes, review_status, reviewed_at, status, storage_bucket, storage_path, title, uploaded_at, version"
     )
     .eq("application_id", applicationId)
     .not("document_key", "is", null)
@@ -389,6 +415,7 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
         [
           "id",
           "applicant_signer_email",
+          "applicant_signer_id",
           "coach_signer_email",
           "completed_at",
           "provider",
@@ -442,18 +469,25 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
       .filter((document) => document !== null),
     latestSignaturePacket: signaturePacket
       ? {
-          applicantSigningHref: resolveDocuSealSubmitterSigningHref({
-            email: signaturePacket.applicant_signer_email,
-            payload: signaturePacket.provider_payload,
-            role: "Applicant",
-          }),
+          applicantSigningHref:
+            signaturePacket.provider === "native"
+              ? signaturePacket.applicant_signer_id === context.user.id
+                ? `/fiscal-sponsorship/sign/${signaturePacket.id}`
+                : null
+              : resolveDocuSealSubmitterSigningHref({
+                  email: signaturePacket.applicant_signer_email,
+                  payload: signaturePacket.provider_payload,
+                  role: "Applicant",
+                }),
           applicantSignerEmail: signaturePacket.applicant_signer_email,
           coachSigningHref: canViewCoachSigningLink
-            ? resolveDocuSealSubmitterSigningHref({
-                email: signaturePacket.coach_signer_email,
-                payload: signaturePacket.provider_payload,
-                role: "Coach House",
-              })
+            ? signaturePacket.provider === "native"
+              ? `/fiscal-sponsorship/sign/${signaturePacket.id}`
+              : resolveDocuSealSubmitterSigningHref({
+                  email: signaturePacket.coach_signer_email,
+                  payload: signaturePacket.provider_payload,
+                  role: "Coach House",
+                })
             : null,
           coachSignerEmail: signaturePacket.coach_signer_email,
           completedAt: signaturePacket.completed_at,

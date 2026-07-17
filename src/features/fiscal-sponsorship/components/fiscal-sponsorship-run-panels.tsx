@@ -21,13 +21,13 @@ import type { FiscalSponsorshipPrototypeStep } from "../types"
 const RUN_FILES_USED = [
   "Fiscal sponsorship handbook",
   "Application intake",
-  "Model C agreement template",
+  "Form B agreement template",
   "Grant request requirements",
 ]
 
 const RUN_OUTPUTS = [
   "Saved application intake",
-  "DocuSeal signing packet",
+  "Native signing packet",
   "Executed agreement",
   "Grant request checklist",
   "Project documents handoff",

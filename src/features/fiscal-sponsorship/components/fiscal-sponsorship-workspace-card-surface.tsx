@@ -54,7 +54,7 @@ export const FALLBACK_WORKFLOW_ITEMS: readonly FiscalSponsorshipWorkspaceWorkflo
       id: "agreement",
       label: "Agreement",
       description:
-        "Coach House review, Model C agreement, and DocuSeal packet.",
+        "Coach House review, Form B agreement, and native signing packet.",
       complete: false,
     },
     {

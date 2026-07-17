@@ -1,5 +1,7 @@
 import type * as React from "react"
 
+import type { FiscalSponsorshipFormBFields } from "./lib/form-b-field-manifest"
+
 export type FiscalSponsorshipApplicationStatus =
   | "draft"
   | "submitted"
@@ -221,7 +223,7 @@ export type GenerateFiscalSponsorshipAgreementResult =
   | {
       ok: true
       applicationId: string
-      assetId: string
+      assetId: string | null
       documentId: string
     }
   | { error: string }
@@ -249,6 +251,67 @@ export type SendFiscalSponsorshipAgreementInput = {
   documentId?: string | null
   projectId: string
 }
+
+export type FiscalSponsorshipSignerRole = "applicant" | "coach_house"
+export type FiscalSponsorshipSignatureMethod = "typed" | "drawn"
+
+export type FiscalSponsorshipSigningSession = {
+  packetId: string
+  projectId: string
+  projectName: string
+  organizationId: string
+  organizationName: string
+  role: FiscalSponsorshipSignerRole
+  packetStatus: FiscalSponsorshipSignaturePacketStatus
+  canSign: boolean
+  fieldsEditable: boolean
+  fields: FiscalSponsorshipFormBFields
+  signerName: string
+  signerEmail: string
+  signatureMethod: FiscalSponsorshipSignatureMethod
+  signatureValue: string
+  signerTitle: string
+  confirmed: boolean
+  draftRevision: number
+  draftUpdatedAt: string | null
+  previewHref: string
+  executedDocumentHref: string | null
+  auditDocumentHref: string | null
+  applicantSignedAt: string | null
+  coachSignedAt: string | null
+}
+
+export type LoadFiscalSponsorshipSigningSessionResult =
+  | { ok: true; session: FiscalSponsorshipSigningSession }
+  | { error: string }
+
+export type SaveFiscalSponsorshipSigningDraftInput = {
+  packetId: string
+  fields: FiscalSponsorshipFormBFields
+  signatureMethod: FiscalSponsorshipSignatureMethod
+  signatureValue: string
+  signerTitle: string
+  confirmed: boolean
+  expectedRevision: number
+}
+
+export type SaveFiscalSponsorshipSigningDraftResult =
+  | { ok: true; revision: number; updatedAt: string }
+  | { error: string; stale?: boolean }
+
+export type CompleteFiscalSponsorshipSignatureInput =
+  SaveFiscalSponsorshipSigningDraftInput & {
+    consented: boolean
+    authorized: boolean
+  }
+
+export type CompleteFiscalSponsorshipSignatureResult =
+  | {
+      ok: true
+      packetId: string
+      status: FiscalSponsorshipSignaturePacketStatus
+    }
+  | { error: string; field?: string }
 
 export type ConnectFiscalSponsorshipDocumentAssetInput = {
   assetId: string

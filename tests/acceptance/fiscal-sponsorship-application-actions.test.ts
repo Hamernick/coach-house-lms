@@ -229,8 +229,10 @@ describe("fiscal sponsorship application persistence", () => {
       org_id: "org-1",
     })
     const applicationTable = {
-      upsert: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       single: vi.fn().mockResolvedValue({
         data: { id: "application-1" },
         error: null,
@@ -267,7 +269,7 @@ describe("fiscal sponsorship application persistence", () => {
       applicationId: "application-1",
     })
 
-    expect(applicationTable.upsert).toHaveBeenCalledWith(
+    expect(applicationTable.insert).toHaveBeenCalledWith(
       expect.objectContaining({
         org_id: "org-1",
         project_id: "project-1",
@@ -279,8 +281,8 @@ describe("fiscal sponsorship application persistence", () => {
         source_snapshot: { project: "source" },
         created_by: "user-1",
         updated_by: "user-1",
-      }),
-      { onConflict: "org_id,project_id" }
+        status: "draft",
+      })
     )
     expect(revalidatePathMock).toHaveBeenCalledWith("/organizations")
     expect(revalidatePathMock).toHaveBeenCalledWith("/organizations/project-1")
@@ -326,8 +328,10 @@ describe("fiscal sponsorship application persistence", () => {
       org_id: "org-2",
     })
     const applicationTable = {
-      upsert: vi.fn().mockReturnThis(),
+      insert: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       single: vi.fn().mockResolvedValue({
         data: { id: "application-2" },
         error: null,
@@ -358,13 +362,13 @@ describe("fiscal sponsorship application persistence", () => {
       applicationId: "application-2",
     })
 
-    expect(applicationTable.upsert).toHaveBeenCalledWith(
+    expect(applicationTable.insert).toHaveBeenCalledWith(
       expect.objectContaining({
         org_id: "org-2",
         project_id: "project-2",
         project_name: "Community kitchen",
-      }),
-      { onConflict: "org_id,project_id" }
+        status: "draft",
+      })
     )
   })
 

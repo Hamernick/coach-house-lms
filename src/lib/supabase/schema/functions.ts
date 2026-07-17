@@ -2,6 +2,20 @@ import type { Json } from "./json"
 import type { ResourceMapPublicItemsView } from "./views"
 
 export type PublicFunctions = {
+  finalize_fiscal_sponsorship_applicant_signature: {
+    Args: {
+      p_packet_id: string
+      p_payload: Json
+    }
+    Returns: Json
+  }
+  finalize_fiscal_sponsorship_coach_signature: {
+    Args: {
+      p_packet_id: string
+      p_payload: Json
+    }
+    Returns: Json
+  }
   is_admin: {
     Args: Record<string, never>
     Returns: boolean

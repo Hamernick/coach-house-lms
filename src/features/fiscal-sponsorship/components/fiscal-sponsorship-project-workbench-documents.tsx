@@ -150,7 +150,8 @@ export function FiscalSponsorshipProjectWorkbenchDocuments({
       <div>
         <p className="text-sm font-semibold">Documents and signing</p>
         <p className="text-muted-foreground mt-1 text-xs leading-snug">
-          Sign through DocuSeal, then view or download the stored final files.
+          Sign securely in Coach House, then view or download the stored final
+          files.
         </p>
       </div>
       <div className="divide-border/70 mt-2 divide-y divide-dashed">

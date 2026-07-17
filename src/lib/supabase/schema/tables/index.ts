@@ -73,6 +73,8 @@ import type { FiscalSponsorshipDocumentsTable } from "./fiscal_sponsorship_docum
 import type { FiscalSponsorshipEventsTable } from "./fiscal_sponsorship_events"
 import type { FiscalSponsorshipReviewsTable } from "./fiscal_sponsorship_reviews"
 import type { FiscalSponsorshipSignaturePacketsTable } from "./fiscal_sponsorship_signature_packets"
+import type { FiscalSponsorshipSigningDraftsTable } from "./fiscal_sponsorship_signing_drafts"
+import type { FiscalSponsorshipSignaturesTable } from "./fiscal_sponsorship_signatures"
 import type { PlatformEmailCampaignsTable } from "./platform_email_campaigns"
 import type { PlatformEmailDeliveriesTable } from "./platform_email_deliveries"
 import type { PlatformEmailEventsTable } from "./platform_email_events"
@@ -158,6 +160,8 @@ export type { FiscalSponsorshipDocumentsTable } from "./fiscal_sponsorship_docum
 export type { FiscalSponsorshipEventsTable } from "./fiscal_sponsorship_events"
 export type { FiscalSponsorshipReviewsTable } from "./fiscal_sponsorship_reviews"
 export type { FiscalSponsorshipSignaturePacketsTable } from "./fiscal_sponsorship_signature_packets"
+export type { FiscalSponsorshipSigningDraftsTable } from "./fiscal_sponsorship_signing_drafts"
+export type { FiscalSponsorshipSignaturesTable } from "./fiscal_sponsorship_signatures"
 export type { PlatformEmailCampaignsTable } from "./platform_email_campaigns"
 export type { PlatformEmailDeliveriesTable } from "./platform_email_deliveries"
 export type { PlatformEmailEventsTable } from "./platform_email_events"
@@ -244,6 +248,8 @@ export type PublicTables = {
   fiscal_sponsorship_events: FiscalSponsorshipEventsTable
   fiscal_sponsorship_reviews: FiscalSponsorshipReviewsTable
   fiscal_sponsorship_signature_packets: FiscalSponsorshipSignaturePacketsTable
+  fiscal_sponsorship_signing_drafts: FiscalSponsorshipSigningDraftsTable
+  fiscal_sponsorship_signatures: FiscalSponsorshipSignaturesTable
   platform_email_campaigns: PlatformEmailCampaignsTable
   platform_email_deliveries: PlatformEmailDeliveriesTable
   platform_email_events: PlatformEmailEventsTable

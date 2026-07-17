@@ -434,3 +434,44 @@ export async function notifyFiscalDocuSealCompleted({
     notifyPlatformAdmins(payload),
   ])
 }
+
+export async function notifyFiscalNativeAgreementCompleted({
+  actorId,
+  applicationId,
+  auditDocumentId,
+  executedDocumentId,
+  orgId,
+  packetId,
+  projectId,
+  projectName,
+}: {
+  actorId: string
+  applicationId: string
+  auditDocumentId: string
+  executedDocumentId: string
+  orgId: string
+  packetId: string
+  projectId: string
+  projectName: string
+}) {
+  const payload: FiscalNotificationPayload = {
+    actorId,
+    application: {
+      id: applicationId,
+      org_id: orgId,
+      project_id: projectId,
+      project_name: projectName,
+    } as FiscalApplicationRow,
+    description: `Signing is complete for ${projectName}. Final files are ready.`,
+    href: "/my-organization",
+    metadata: { auditDocumentId, executedDocumentId, packetId },
+    title: "Fiscal agreement fully signed",
+    tone: "success",
+    type: "fiscal_sponsorship_agreement_completed",
+  }
+
+  await Promise.all([
+    notifyOrganizationEditors(payload),
+    notifyPlatformAdmins(payload),
+  ])
+}

@@ -295,11 +295,28 @@ export async function saveFiscalSponsorshipApplicationDraft(
     projectId: projectResult.project.id,
     userId: user.id,
   })
-  const { data, error } = await supabase
+  const { data: existingApplication, error: existingError } = await supabase
     .from("fiscal_sponsorship_applications")
-    .upsert(payload, { onConflict: "org_id,project_id" })
     .select("id")
-    .single<{ id: string }>()
+    .eq("org_id", projectResult.project.org_id)
+    .eq("project_id", projectResult.project.id)
+    .maybeSingle<{ id: string }>()
+
+  if (existingError) {
+    return { error: "Unable to verify the fiscal sponsorship application." }
+  }
+
+  const { created_by: _createdBy, status: _status, ...draftUpdate } = payload
+  const mutation = existingApplication
+    ? supabase
+        .from("fiscal_sponsorship_applications")
+        .update(draftUpdate)
+        .eq("id", existingApplication.id)
+    : supabase.from("fiscal_sponsorship_applications").insert({
+        ...payload,
+        status: "draft",
+      })
+  const { data, error } = await mutation.select("id").single<{ id: string }>()
 
   if (error) {
     if (isMissingFiscalApplicationTableError(error)) {

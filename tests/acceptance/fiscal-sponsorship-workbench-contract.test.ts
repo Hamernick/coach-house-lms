@@ -52,7 +52,8 @@ describe("fiscal sponsorship workbench contract", () => {
       "data-fiscal-sponsorship-project-workbench-documents"
     )
     expect(projectWorkbenchDocuments).toContain("Documents and signing")
-    expect(projectWorkbenchDocuments).toContain("DocuSeal")
+    expect(projectWorkbenchDocuments).toContain("Sign securely in Coach House")
+    expect(projectWorkbenchDocuments).not.toContain("DocuSeal")
     expect(projectWorkbenchDocuments).toContain("View")
     expect(projectWorkbenchDocuments).toContain("Download")
     expect(projectWorkbenchDocuments).toContain("Sign")
@@ -120,8 +121,10 @@ describe("fiscal sponsorship workbench contract", () => {
     )
     expect(projectWorkbenchData).toContain("applicantCanSign")
     expect(projectWorkbenchData).toContain("coachCanSign")
-    expect(projectWorkbenchData).toContain('["sent", "coach_signed"]')
-    expect(projectWorkbenchData).toContain('["sent", "applicant_signed"]')
+    expect(projectWorkbenchData).toContain('signaturePacketStatus === "sent"')
+    expect(projectWorkbenchData).toContain(
+      'signaturePacketStatus === "applicant_signed"'
+    )
     expect(projectWorkbenchData).not.toContain(
       "requiredDocuments.length > 0 || hasFiles"
     )

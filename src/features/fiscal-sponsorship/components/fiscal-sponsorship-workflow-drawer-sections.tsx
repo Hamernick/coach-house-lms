@@ -373,7 +373,7 @@ export function DocumentsAndSigning({
           <AlertTitle>No prepared documents yet</AlertTitle>
           <AlertDescription>
             Agreement and executed document links appear here after Coach House
-            review, confirmation, and DocuSeal activity.
+            review, confirmation, and signature activity.
           </AlertDescription>
         </Alert>
       )}

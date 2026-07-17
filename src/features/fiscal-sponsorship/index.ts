@@ -1,8 +1,12 @@
 export {
   connectFiscalSponsorshipDocumentAsset,
+  buildFiscalSponsorshipSigningPreview,
   generateFiscalSponsorshipAgreement,
   handleFiscalSponsorshipDocuSealWebhook,
   loadFiscalSponsorshipProjectWorkflowSummary,
+  loadFiscalSponsorshipSigningSession,
+  saveFiscalSponsorshipSigningDraft,
+  completeFiscalSponsorshipSignature,
   reviewFiscalSponsorshipDocument,
   reviewFiscalSponsorshipApplication,
   sendFiscalSponsorshipAgreementForSignature,
@@ -21,6 +25,7 @@ export {
   FiscalSponsorshipWorkflowDrawer,
   FiscalSponsorshipWorkspaceCardSummary,
   FiscalSponsorshipWorkspaceCardSurface,
+  FiscalSponsorshipSigningPage,
 } from "./components"
 export {
   analyzeFiscalSponsorshipActivityEligibility,
@@ -92,4 +97,12 @@ export type {
   ConnectFiscalSponsorshipDocumentAssetResult,
   ReviewFiscalSponsorshipDocumentInput,
   ReviewFiscalSponsorshipDocumentResult,
+  FiscalSponsorshipSignerRole,
+  FiscalSponsorshipSignatureMethod,
+  FiscalSponsorshipSigningSession,
+  LoadFiscalSponsorshipSigningSessionResult,
+  SaveFiscalSponsorshipSigningDraftInput,
+  SaveFiscalSponsorshipSigningDraftResult,
+  CompleteFiscalSponsorshipSignatureInput,
+  CompleteFiscalSponsorshipSignatureResult,
 } from "./types"

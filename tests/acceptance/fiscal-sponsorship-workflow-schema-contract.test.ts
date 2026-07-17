@@ -54,6 +54,9 @@ describe("fiscal sponsorship workflow schema contract", () => {
     const documentMetadataMigration = readSource(
       "supabase/migrations/20260615130000_add_fiscal_sponsorship_required_document_metadata.sql"
     )
+    const nativeSigningMigration = readSource(
+      "supabase/migrations/20260716150000_add_native_fiscal_sponsorship_signing.sql"
+    )
     const schemaIndex = readSource("src/lib/supabase/schema/tables/index.ts")
     const documentSchema = readSource(
       "src/lib/supabase/schema/tables/fiscal_sponsorship_documents.ts"
@@ -147,7 +150,9 @@ describe("fiscal sponsorship workflow schema contract", () => {
     expect(agreementActions).toContain(
       "sendFiscalSponsorshipAgreementForSignature"
     )
-    expect(agreementActions).toContain(
+    expect(agreementActions).toContain("buildFiscalSponsorshipFormBPdf")
+    expect(agreementActions).toContain('provider: "native"')
+    expect(agreementActions).not.toContain(
       "createFiscalSponsorshipDocuSealSubmission"
     )
     expect(agreementActions).toContain("notifyFiscalAgreementGenerated")
@@ -158,6 +163,19 @@ describe("fiscal sponsorship workflow schema contract", () => {
     expect(actionFacade).toContain("./server/workflow-agreement-actions")
     expect(actionFacade).toContain("connectFiscalSponsorshipDocumentAsset")
     expect(actionFacade).toContain("reviewFiscalSponsorshipDocument")
+    expect(actionFacade).toContain("completeFiscalSponsorshipSignature")
+
+    expect(nativeSigningMigration).toContain("fiscal-signing")
+    expect(nativeSigningMigration).toContain(
+      "create table if not exists public.fiscal_sponsorship_signing_drafts"
+    )
+    expect(nativeSigningMigration).toContain(
+      "create table if not exists public.fiscal_sponsorship_signatures"
+    )
+    expect(nativeSigningMigration).toContain("force row level security")
+    expect(nativeSigningMigration).toContain(
+      "reject_fiscal_signing_evidence_mutation"
+    )
 
     expect(docusealWebhook).toContain("DOCUSEAL_WEBHOOK_SECRET")
     expect(docusealWebhook).toContain("createHmac")

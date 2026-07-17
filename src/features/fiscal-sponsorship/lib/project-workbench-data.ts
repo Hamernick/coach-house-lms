@@ -199,17 +199,17 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
         ? `${agreementDocument.title} v${agreementDocument.version} is ${formatDocumentStatus(
             agreementDocumentStatus
           ).toLowerCase()}`
-        : "Generate a Model C agreement after approval",
+        : "Generate a Form B agreement after approval",
       complete: hasGeneratedAgreement,
     },
     {
       id: "signature-packet",
       label: "Signature packet",
       description: signaturePacket
-        ? `DocuSeal packet is ${formatPacketStatus(
+        ? `Signature packet is ${formatPacketStatus(
             signaturePacketStatus
           ).toLowerCase()}`
-        : "Send the generated agreement for coach and applicant signatures",
+        : "Send the generated agreement for applicant and Coach House signatures",
       complete: hasCompletedSignaturePacket,
     },
   ]
@@ -238,12 +238,12 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
   const applicantCanSign = Boolean(
     signaturePacket?.applicantSigningHref &&
     signaturePacketStatus &&
-    ["sent", "coach_signed"].includes(signaturePacketStatus)
+    signaturePacketStatus === "sent"
   )
   const coachCanSign = Boolean(
     signaturePacket?.coachSigningHref &&
     signaturePacketStatus &&
-    ["sent", "applicant_signed"].includes(signaturePacketStatus)
+    signaturePacketStatus === "applicant_signed"
   )
   const signingActions: FiscalSponsorshipProjectWorkbenchSigningAction[] =
     signaturePacket
@@ -253,7 +253,7 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
             title: "Applicant signature",
             description:
               signaturePacket.applicantSignerEmail ??
-              "Applicant receives the DocuSeal signer link",
+              "Applicant signs securely in Coach House",
             href: applicantCanSign
               ? signaturePacket.applicantSigningHref
               : null,
@@ -266,7 +266,7 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
                   title: "Coach House countersignature",
                   description:
                     signaturePacket.coachSignerEmail ??
-                    "Coach House signer receives the DocuSeal signer link",
+                    "Available after the applicant signs",
                   href: coachCanSign ? signaturePacket.coachSigningHref : null,
                   statusLabel: resolveCoachSigningStatus(signaturePacketStatus),
                 },
@@ -372,15 +372,15 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
         title: "Prepared agreement",
       }),
       buildDocumentAction({
-        description: "Stored after DocuSeal reports every signer complete.",
+        description:
+          "Stored after the applicant and Coach House finish signing.",
         document: executedAgreementDocument,
         fallbackStatus: "Awaiting signatures",
         id: "executed-agreement",
         title: "Executed agreement",
       }),
       buildDocumentAction({
-        description:
-          "DocuSeal signing audit trail saved with the final packet.",
+        description: "Native signing evidence saved with the final packet.",
         document: auditCertificateDocument,
         fallbackStatus: "Awaiting completion",
         id: "audit-certificate",

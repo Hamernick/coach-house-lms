@@ -12,3 +12,4 @@ export { FiscalSponsorshipWorkflowTimeline } from "./fiscal-sponsorship-workflow
 export { FiscalSponsorshipWorkflowDrawer } from "./fiscal-sponsorship-workflow-drawer"
 export { FiscalSponsorshipWorkspaceCardSummary } from "./fiscal-sponsorship-workspace-card-summary"
 export { FiscalSponsorshipWorkspaceCardSurface } from "./fiscal-sponsorship-workspace-card-surface"
+export { FiscalSponsorshipSigningPage } from "./signing/fiscal-sponsorship-signing-page"

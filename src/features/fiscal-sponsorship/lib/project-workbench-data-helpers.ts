@@ -304,13 +304,11 @@ export function buildWorkflowPhases({
   const hasApprovedApplication = isApplicationApprovedOrLater(applicationStatus)
   const hasCompletedSignaturePacket = signaturePacketStatus === "completed"
   const applicantSigningHref =
-    signaturePacketStatus &&
-    ["sent", "coach_signed"].includes(signaturePacketStatus)
+    signaturePacketStatus && signaturePacketStatus === "sent"
       ? (signaturePacket?.applicantSigningHref ?? null)
       : null
   const coachSigningHref =
-    signaturePacketStatus &&
-    ["sent", "applicant_signed"].includes(signaturePacketStatus)
+    signaturePacketStatus && signaturePacketStatus === "applicant_signed"
       ? (signaturePacket?.coachSigningHref ?? null)
       : null
   const signingHref: string | null =
@@ -360,7 +358,7 @@ export function buildWorkflowPhases({
       id: "agreement",
       label: "Agreement",
       description:
-        "Coach House prepares the Model C agreement from confirmed intake data and stores it with the project.",
+        "Coach House prepares the Form B agreement from confirmed intake data and stores it with the project.",
       statusLabel: formatDocumentStatus(agreementDocument?.status),
       complete: Boolean(agreementDocument),
       actionLabel: agreementDocument?.viewHref ? "View" : "Waiting",
@@ -371,7 +369,7 @@ export function buildWorkflowPhases({
       id: "signatures",
       label: "Signature packet",
       description:
-        "Applicant and Coach House sign in DocuSeal; executed files and audit records are saved back to the project.",
+        "The applicant signs first in Coach House, then a super admin countersigns. Executed files and audit records stay private.",
       statusLabel: formatPacketStatus(signaturePacketStatus),
       complete: hasCompletedSignaturePacket,
       actionLabel: signingHref ? "Sign" : "Waiting",
@@ -468,7 +466,7 @@ export function buildWorkflowPhases({
             id: "executed-agreement",
             label: "Executed agreement",
             description:
-              "Final signed agreement stored in project assets after DocuSeal completion.",
+              "Final signed agreement stored privately after both signatures are complete.",
             statusLabel: formatDocumentStatus(executedAgreementDocument.status),
             complete: true,
             actionLabel: "View",

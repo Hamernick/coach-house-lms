@@ -45,7 +45,7 @@ export const FISCAL_SPONSORSHIP_PROTOTYPE_STEPS: FiscalSponsorshipPrototypeStep[
       description:
         "After Coach House accepts the application, review and sign the agreement.",
       detail:
-        "Coach House prepares and sends the Model C agreement. When it is ready, review the terms, sign, and keep the executed copy in Documents.",
+        "Coach House prepares the Form B agreement. The applicant reviews and signs first, then a super admin countersigns. The executed copy stays in Documents.",
       badgeLabel: "Agreement",
       toolLabel: "Agreement packet",
       status: "planned",
@@ -100,7 +100,7 @@ export const FISCAL_SPONSORSHIP_DOCUMENTS: FiscalSponsorshipPrototypeDocument[] 
     },
     {
       id: "model-c-agreement",
-      title: "Model C agreement",
+      title: "Form B agreement",
       description:
         "Agreement prepared by Coach House after application acceptance, ready for applicant and sponsor signatures.",
       href: FISCAL_SPONSORSHIP_HANDBOOK_HREF,
@@ -128,7 +128,7 @@ export const FISCAL_SPONSORSHIP_SIGNATURE_PACKET: FiscalSponsorshipPrototypeSign
       name: "Maya Johnson",
       status: "Needs signature",
       description:
-        "Signs the application acknowledgements, Model C agreement, and grant request certifications.",
+        "Signs the application acknowledgements, Form B agreement, and grant request certifications.",
     },
     {
       id: "sponsor",
@@ -136,6 +136,6 @@ export const FISCAL_SPONSORSHIP_SIGNATURE_PACKET: FiscalSponsorshipPrototypeSign
       name: "Coach House Solutions Group, NFP",
       status: "Countersign",
       description:
-        "Countersigns the Model C agreement after internal approval and applicant signature.",
+        "Countersigns the Form B agreement after internal approval and applicant signature.",
     },
   ]

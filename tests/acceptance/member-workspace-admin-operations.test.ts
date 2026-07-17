@@ -6,6 +6,7 @@ import { describe, expect, it } from "vitest"
 
 import { MemberWorkspaceProjectActivityTimeline } from "@/features/member-workspace/components/projects/member-workspace-project-activity-timeline"
 import { MemberWorkspaceProjectOrganizationCard } from "@/features/member-workspace/components/projects/member-workspace-project-organization-card"
+import { buildAdminMemberCompleteness } from "@/features/member-workspace/server/admin-member-completeness"
 import { getProjectDetailsById } from "@/features/platform-admin-dashboard/upstream/lib/data/project-details"
 import type { MemberWorkspaceAdminOrganizationSummary } from "@/features/member-workspace/types"
 
@@ -74,6 +75,31 @@ const organizationSummary: MemberWorkspaceAdminOrganizationSummary = {
 }
 
 describe("member workspace admin operations", () => {
+  it("measures name completeness from the stored profile full name", () => {
+    expect(
+      buildAdminMemberCompleteness({
+        avatarUrl: null,
+        email: "member@example.com",
+        fullName: null,
+        headline: null,
+      })
+    ).toEqual({
+      profileCompletenessPercent: 25,
+      profileCompletedCount: 1,
+      profileTotalCount: 4,
+      profileMissingFields: ["name", "headline", "profile photo"],
+    })
+
+    expect(
+      buildAdminMemberCompleteness({
+        avatarUrl: null,
+        email: "member@example.com",
+        fullName: "Alex Rivera",
+        headline: null,
+      }).profileMissingFields
+    ).not.toContain("name")
+  })
+
   it("stores per-admin workstream categories and immutable system activity", () => {
     expect(migration).toContain(
       "create table if not exists public.platform_admin_workstream_categories"

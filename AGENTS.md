@@ -5,14 +5,14 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 ## Non-Negotiables
 
 - Source of truth: this file + linked `docs/agent/**` documents.
-- Continuation protocol: after this file, read the latest dated entries in `docs/RUNLOG.md` and inspect the current git worktree; `docs/agent/HANDOFF.md` is deprecated and not authoritative.
+- Continuation protocol: after this file, read `docs/RUNLOG.md`, then the latest dated entries in its linked current monthly log, and inspect the current git worktree; `docs/agent/HANDOFF.md` is deprecated and not authoritative.
 - Implement changes in `src/**`, `app/**`, `migrations/**`, or `docs/**`.
 - Keep PRs small and pass: `pnpm lint`, `pnpm test:snapshots`, `pnpm test:acceptance`, `pnpm test:rls`.
 - Keep PRs small and pass guardrails: `pnpm check:structure`, `pnpm check:routes`, `pnpm check:features`, `pnpm check:feature-scaffold`, `pnpm check:thresholds`, `pnpm check:boundaries`, `pnpm check:workspace-storage`, `pnpm check:interaction-locks`, `pnpm check:react-grab`, `pnpm check:workspace-surfaces`, `pnpm check:raw-buttons`.
 - Build for Next.js App Router, RSC-first, mobile-first, shadcn/ui, dark/light/system.
 - Enforce security defaults: RLS on all tables, server-side authz, webhook signature verification, Stripe idempotency via `event_id`, HTML sanitization.
 - Store timestamps in UTC (`TIMESTAMPTZ`) and render locale-aware date/time/currency.
-- Append each ad-hoc/Codex session summary to `docs/RUNLOG.md`.
+- Append each ad-hoc/Codex session summary to the current monthly log linked from `docs/RUNLOG.md`; never append to the index or an archive.
 
 ## Default Codex Mode (UI/Feature/Product)
 
@@ -20,7 +20,7 @@ Canonical agent contract for this repo. Keep this file short; details live in `/
 - For new feature work, start from `pnpm scaffold:feature <kebab-name>` and implement inside `src/features/**`; keep `src/app/**` route files composition-only.
 - For UI changes, use existing shadcn/ui primitives and shared patterns; avoid one-off controls where system primitives already exist.
 - Ship only when `pnpm check:quality` passes (includes structure, boundaries, visual regression, tests, build, perf).
-- If visuals intentionally changed, update visual baselines with `pnpm test:visual:update` and include the rationale in `docs/RUNLOG.md`.
+- If visuals intentionally changed, update visual baselines with `pnpm test:visual:update` and include the rationale in the current monthly log linked from `docs/RUNLOG.md`.
 
 ## Quick Commands
 

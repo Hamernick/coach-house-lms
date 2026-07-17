@@ -52,7 +52,7 @@ Operational checklist for live board sessions in Organization Workspace.
 - Revoke temporary invites not needed after session.
 - Return to `/workspace` only if edits are required.
 - Save layout after any post-session adjustments.
-- Record meaningful behavior or UX regressions in `docs/RUNLOG.md`.
+- Record meaningful behavior or UX regressions in the current monthly log linked from `docs/RUNLOG.md`.
 
 ## Workspace Ownership Map
 

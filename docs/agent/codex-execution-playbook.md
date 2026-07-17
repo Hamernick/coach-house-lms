@@ -12,7 +12,7 @@ Use these prompt templates for deterministic, non-breaking implementation passes
   4. Keep route files in `src/app/**` composition-only; place domain logic in feature/lib/server layers.
   5. Reuse shared UI primitives (shadcn/ui + local wrappers) instead of introducing one-off controls.
   6. Validate via `pnpm check:quality` before considering work complete.
-  7. Log exact changes and validation in `docs/RUNLOG.md`.
+  7. Log exact changes and validation in the current monthly log linked from `docs/RUNLOG.md`.
 - Only skip implementation behavior when the user explicitly requests planning, brainstorming, or analysis-only output.
 
 ## 1) Refactor Pass Template
@@ -44,7 +44,7 @@ Execution:
 2. Implement in small batches.
 3. Run: pnpm lint && pnpm check:structure && pnpm check:routes && pnpm check:features && pnpm check:feature-scaffold && pnpm check:thresholds && pnpm check:boundaries && pnpm check:workspace-storage && pnpm test:snapshots && pnpm test:acceptance && pnpm test:rls
 4. If UI/runtime changes, run pnpm build && pnpm test:visual && pnpm check:perf.
-5. Append a RUNLOG entry.
+5. Append an entry to the current monthly log linked from `docs/RUNLOG.md`.
 
 Output:
 
@@ -114,4 +114,4 @@ Execution:
   - a required gate fails,
   - a contract rule is violated, or
   - the user explicitly expands scope.
-- Do not raise structural/complexity thresholds unless the user explicitly requests it and the change is logged in `docs/RUNLOG.md`.
+- Do not raise structural/complexity thresholds unless the user explicitly requests it and the change is logged in the current monthly log linked from `docs/RUNLOG.md`.

@@ -373,7 +373,7 @@ feat(step {id}): {title}
 ## State files
 
 * `docs/CODEX_RUNBOOK.md` (this file; Codex updates checkboxes + changelogs)
-* `docs/RUNLOG.md` (timestamped log per step)
+* Current monthly log linked from `docs/RUNLOG.md` (timestamped log per step)
 
 ## Quality gates
 

@@ -55,7 +55,7 @@ Docs: Getting Started index, configuration overview nextjs.org
 
 Audit each route: prefer static with revalidation; mark truly dynamic routes explicitly.
 Marketing surfaces (e.g., `/pricing`) should lean on ISR, while authed app surfaces stay `cache: "no-store"` to respect Supabase session reads.
-Record per-route caching decisions in `/docs/RUNLOG.md` and include revalidate intervals for `/pricing`, `/community`, and any other static marketing pages so the perf budget stays enforceable.
+Record per-route caching decisions in the current monthly log linked from `/docs/RUNLOG.md` and include revalidate intervals for `/pricing`, `/community`, and any other static marketing pages so the perf budget stays enforceable.
 
 
 Adopt tag-based revalidation for CMS/data updates.
@@ -135,7 +135,7 @@ Learn: Optimizing images lesson (paired with fonts) nextjs.org
 Prefer Edge for read-heavy, compute-light routes; fall back to Node when incompatible dependencies exist.
 Docs: App Router (runtime capabilities overview) nextjs.org
 Evaluate `/src/app/(public)/community/page.tsx` and other marketing pages for Edge runtime eligibility; document any Node holds (e.g., Supabase admin mutations) directly in the route file comments.
-Record runtime decisions in `/docs/RUNLOG.md`: marketing/community stay on Edge with static data fetchers; Node-only for admin dashboards, Supabase-authenticated routes, and any handler relying on Node APIs (Stripe webhooks, file uploads).
+Record runtime decisions in the current monthly log linked from `/docs/RUNLOG.md`: marketing/community stay on Edge with static data fetchers; Node-only for admin dashboards, Supabase-authenticated routes, and any handler relying on Node APIs (Stripe webhooks, file uploads).
 
 
 
@@ -336,7 +336,7 @@ Mirror CI locally with `npm run lint`, `npm run test:snapshots`, `npm run test:a
 Use `npm run check:perf` after each `next build` to surface bundle regressions; update `scripts/check-performance-budgets.mjs` if route keys change.
 
 
-Log notable findings (bundle deltas, caching decisions, regressions) in `docs/RUNLOG.md` so future runs start from a known baseline.
+Log notable findings (bundle deltas, caching decisions, regressions) in the current monthly log linked from `docs/RUNLOG.md` so future runs start from a known baseline.
 
 25) Legacy Refactor Edge Cases (Keep This List Updated)
 
@@ -362,7 +362,7 @@ Editor interoperability | Tiptap 3 no longer accepts the boolean second arg in `
 Generated schema & shared types | Schema files must import via `../json` / `../enums` and expose table types through `tables/index.ts` so the top-level Supabase types compile.
 
 
-Record this checklist in `docs/RUNLOG.md` when you fix a new edge case so future refactors start with verified patterns.
+Record this checklist in the current monthly log linked from `docs/RUNLOG.md` when you fix a new edge case so future refactors start with verified patterns.
 
 
 26) Lightning-Speed Operational Checklist
@@ -371,7 +371,7 @@ Record this checklist in `docs/RUNLOG.md` when you fix a new edge case so future
 Measure & budget | Export `reportWebVitals` to log metrics, wire RUM (Vercel Analytics/Sentry), keep `scripts/check-performance-budgets.mjs` aligned with observed data, and snapshot builds with `next build --profile`.
 
 
-Static-first strategy | For marketing/SEO routes (`/`, `/pricing`, `/community`, `/[org]` when public) set `revalidate`/`generateStaticParams`, precompute metadata, and document caching choices in `docs/RUNLOG.md`.
+Static-first strategy | For marketing/SEO routes (`/`, `/pricing`, `/community`, `/[org]` when public) set `revalidate`/`generateStaticParams`, precompute metadata, and document caching choices in the current monthly log linked from `docs/RUNLOG.md`.
 
 
 Data fetching & caching | Tag every server fetch (`fetch` with `{ next: { revalidate, tags } }`), centralize Supabase reads in helpers, and prefer `revalidateTag` over broad `revalidatePath` in mutations.

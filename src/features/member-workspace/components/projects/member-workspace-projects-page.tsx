@@ -154,8 +154,9 @@ export function MemberWorkspaceProjectsPage(props: {
         filters,
         projects,
         viewOptions,
+        workstreamCategories,
       }),
-    [filters, projects, viewOptions]
+    [filters, projects, viewOptions, workstreamCategories]
   )
 
   const counts = useMemo(
@@ -164,8 +165,9 @@ export function MemberWorkspaceProjectsPage(props: {
         filters,
         projects,
         viewOptions,
+        workstreamCategories,
       }),
-    [filters, projects, viewOptions]
+    [filters, projects, viewOptions, workstreamCategories]
   )
 
   return (

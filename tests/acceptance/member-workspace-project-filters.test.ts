@@ -13,7 +13,7 @@ import {
 } from "@/features/member-workspace/components/projects/member-workspace-project-view-options"
 
 function createProject(
-  overrides: Partial<PlatformAdminDashboardLabProject>,
+  overrides: Partial<PlatformAdminDashboardLabProject>
 ): PlatformAdminDashboardLabProject {
   return {
     id: overrides.id ?? "project-1",
@@ -29,6 +29,7 @@ function createProject(
     client: overrides.client,
     typeLabel: overrides.typeLabel,
     durationLabel: overrides.durationLabel,
+    workstreamCategoryId: overrides.workstreamCategoryId,
     tasks: overrides.tasks ?? [],
   }
 }
@@ -54,7 +55,9 @@ describe("member workspace project filters", () => {
       viewOptions: DEFAULT_MEMBER_WORKSPACE_PROJECT_VIEW_OPTIONS,
     })
 
-    expect(filteredProjects.map((project) => project.id)).toEqual(["project-ann"])
+    expect(filteredProjects.map((project) => project.id)).toEqual([
+      "project-ann",
+    ])
   })
 
   it("keeps facet counts stable by excluding the active category filter from that facet", () => {
@@ -128,16 +131,71 @@ describe("member workspace project filters", () => {
       viewOptions,
     })
 
-    expect(filteredProjects.map((project) => project.id)).toEqual(["project-open"])
+    expect(filteredProjects.map((project) => project.id)).toEqual([
+      "project-open",
+    ])
     expect(counts.status).toMatchObject({
       active: 1,
     })
     expect(counts.status?.completed).toBeUndefined()
   })
 
+  it("uses coach-owned workstream placement when hiding closed projects", () => {
+    const workstreamCategories = [
+      {
+        id: "coach-action",
+        name: "Coach Action",
+        color: "amber",
+        position: 1,
+        defaultKey: "planned",
+      },
+      {
+        id: "complete",
+        name: "Complete",
+        color: "emerald",
+        position: 5,
+        defaultKey: "completed",
+      },
+    ]
+    const projects = [
+      createProject({
+        id: "completed-readiness-in-coach-action",
+        status: "completed",
+        workstreamCategoryId: "coach-action",
+      }),
+      createProject({
+        id: "active-readiness-in-complete",
+        status: "active",
+        workstreamCategoryId: "complete",
+      }),
+    ]
+    const viewOptions = {
+      ...DEFAULT_MEMBER_WORKSPACE_PROJECT_VIEW_OPTIONS,
+      showClosedProjects: false,
+    }
+
+    const filteredProjects = filterMemberWorkspaceProjects({
+      filters: [],
+      projects,
+      viewOptions,
+      workstreamCategories,
+    })
+    const counts = computeMemberWorkspaceProjectFilterCounts({
+      filters: [],
+      projects,
+      viewOptions,
+      workstreamCategories,
+    })
+
+    expect(filteredProjects.map((project) => project.id)).toEqual([
+      "completed-readiness-in-coach-action",
+    ])
+    expect(counts.status).toEqual({ completed: 1 })
+  })
+
   it("parses and serializes view options through URL params", () => {
     const params = new URLSearchParams(
-      "view=board&order=date&closed=hide&properties=title,assignee",
+      "view=board&order=date&closed=hide&properties=title,assignee"
     )
 
     const viewOptions = paramsToViewOptions(params)
@@ -150,10 +208,13 @@ describe("member workspace project filters", () => {
       properties: ["title", "assignee"],
     })
 
-    const nextParams = applyViewOptionsToParams(new URLSearchParams(), viewOptions)
+    const nextParams = applyViewOptionsToParams(
+      new URLSearchParams(),
+      viewOptions
+    )
 
     expect(nextParams.toString()).toBe(
-      "view=board&order=date&closed=hide&properties=title%2Cassignee",
+      "view=board&order=date&closed=hide&properties=title%2Cassignee"
     )
   })
 

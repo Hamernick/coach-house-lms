@@ -1,4 +1,5 @@
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
+import type { MemberWorkspaceWorkstreamCategory } from "../../types"
 import type {
   MemberWorkspaceProjectFilterChip,
   MemberWorkspaceProjectViewOptions,
@@ -21,7 +22,7 @@ type FilterBuckets = {
 type FilterCategory = keyof FilterBuckets
 
 function normalizeFilterBuckets(
-  filters: MemberWorkspaceProjectFilterChip[],
+  filters: MemberWorkspaceProjectFilterChip[]
 ): FilterBuckets {
   const buckets: FilterBuckets = {
     status: new Set<string>(),
@@ -60,20 +61,38 @@ function normalizeFilterBuckets(
 function applyVisibilityFilters(
   projects: PlatformAdminDashboardLabProject[],
   viewOptions: MemberWorkspaceProjectViewOptions,
+  workstreamCategories: MemberWorkspaceWorkstreamCategory[]
 ) {
   if (viewOptions.showClosedProjects) {
     return projects.slice()
   }
 
-  return projects.filter(
-    (project) =>
-      project.status !== "completed" && project.status !== "cancelled",
-  )
+  return projects.filter((project) => {
+    if (workstreamCategories.length === 0) {
+      return project.status !== "completed" && project.status !== "cancelled"
+    }
+
+    const placedCategory = workstreamCategories.find(
+      (category) => category.id === project.workstreamCategoryId
+    )
+    const statusCategory = workstreamCategories.find(
+      (category) => category.defaultKey === project.status
+    )
+    const category = placedCategory ?? statusCategory
+
+    if (!category) {
+      return project.status !== "completed" && project.status !== "cancelled"
+    }
+
+    return (
+      category.defaultKey !== "completed" && category.defaultKey !== "cancelled"
+    )
+  })
 }
 
 function matchesExactMember(
   project: PlatformAdminDashboardLabProject,
-  members: Set<string>,
+  members: Set<string>
 ) {
   const includesNoMember = members.has("no member")
   if (includesNoMember && project.members.length === 0) {
@@ -81,7 +100,7 @@ function matchesExactMember(
   }
 
   const projectMembers = new Set(
-    project.members.map((member) => member.trim().toLowerCase()),
+    project.members.map((member) => member.trim().toLowerCase())
   )
 
   for (const value of members) {
@@ -106,23 +125,27 @@ function applyCategoryFilters({
   let list = projects.slice()
 
   if (excludeCategory !== "status" && filters.status.size > 0) {
-    list = list.filter((project) => filters.status.has(project.status.toLowerCase()))
+    list = list.filter((project) =>
+      filters.status.has(project.status.toLowerCase())
+    )
   }
 
   if (excludeCategory !== "priority" && filters.priority.size > 0) {
     list = list.filter((project) =>
-      filters.priority.has(project.priority.toLowerCase()),
+      filters.priority.has(project.priority.toLowerCase())
     )
   }
 
   if (excludeCategory !== "tags" && filters.tags.size > 0) {
     list = list.filter((project) =>
-      project.tags.some((tag) => filters.tags.has(tag.toLowerCase())),
+      project.tags.some((tag) => filters.tags.has(tag.toLowerCase()))
     )
   }
 
   if (excludeCategory !== "members" && filters.members.size > 0) {
-    list = list.filter((project) => matchesExactMember(project, filters.members))
+    list = list.filter((project) =>
+      matchesExactMember(project, filters.members)
+    )
   }
 
   return list
@@ -130,7 +153,7 @@ function applyCategoryFilters({
 
 function sortProjects(
   projects: PlatformAdminDashboardLabProject[],
-  viewOptions: MemberWorkspaceProjectViewOptions,
+  viewOptions: MemberWorkspaceProjectViewOptions
 ) {
   const sorted = projects.slice()
 
@@ -140,7 +163,7 @@ function sortProjects(
 
   if (viewOptions.ordering === "date") {
     sorted.sort(
-      (left, right) => left.endDate.getTime() - right.endDate.getTime(),
+      (left, right) => left.endDate.getTime() - right.endDate.getTime()
     )
   }
 
@@ -148,7 +171,7 @@ function sortProjects(
 }
 
 function countProjectsByCategory(
-  projects: PlatformAdminDashboardLabProject[],
+  projects: PlatformAdminDashboardLabProject[]
 ): MemberWorkspaceProjectFilterCounts {
   const counts: MemberWorkspaceProjectFilterCounts = {
     status: {},
@@ -184,13 +207,19 @@ export function filterMemberWorkspaceProjects({
   filters,
   projects,
   viewOptions,
+  workstreamCategories = [],
 }: {
   filters: MemberWorkspaceProjectFilterChip[]
   projects: PlatformAdminDashboardLabProject[]
   viewOptions: MemberWorkspaceProjectViewOptions
+  workstreamCategories?: MemberWorkspaceWorkstreamCategory[]
 }) {
   const normalizedFilters = normalizeFilterBuckets(filters)
-  const visibleProjects = applyVisibilityFilters(projects, viewOptions)
+  const visibleProjects = applyVisibilityFilters(
+    projects,
+    viewOptions,
+    workstreamCategories
+  )
   const filteredProjects = applyCategoryFilters({
     filters: normalizedFilters,
     projects: visibleProjects,
@@ -203,13 +232,19 @@ export function computeMemberWorkspaceProjectFilterCounts({
   filters,
   projects,
   viewOptions,
+  workstreamCategories = [],
 }: {
   filters: MemberWorkspaceProjectFilterChip[]
   projects: PlatformAdminDashboardLabProject[]
   viewOptions: MemberWorkspaceProjectViewOptions
+  workstreamCategories?: MemberWorkspaceWorkstreamCategory[]
 }) {
   const normalizedFilters = normalizeFilterBuckets(filters)
-  const visibleProjects = applyVisibilityFilters(projects, viewOptions)
+  const visibleProjects = applyVisibilityFilters(
+    projects,
+    viewOptions,
+    workstreamCategories
+  )
 
   return {
     status: countProjectsByCategory(
@@ -217,28 +252,28 @@ export function computeMemberWorkspaceProjectFilterCounts({
         excludeCategory: "status",
         filters: normalizedFilters,
         projects: visibleProjects,
-      }),
+      })
     ).status,
     priority: countProjectsByCategory(
       applyCategoryFilters({
         excludeCategory: "priority",
         filters: normalizedFilters,
         projects: visibleProjects,
-      }),
+      })
     ).priority,
     tags: countProjectsByCategory(
       applyCategoryFilters({
         excludeCategory: "tags",
         filters: normalizedFilters,
         projects: visibleProjects,
-      }),
+      })
     ).tags,
     members: countProjectsByCategory(
       applyCategoryFilters({
         excludeCategory: "members",
         filters: normalizedFilters,
         projects: visibleProjects,
-      }),
+      })
     ).members,
   }
 }

@@ -124,19 +124,18 @@ async function ensureDefaultCategoryRows({
   )
 
   if (missingDefaults.length > 0) {
-    const { error } = await supabase
-      .from("platform_admin_workstream_categories")
-      .insert(
-        missingDefaults.map((category) => ({ owner_id: ownerId, ...category }))
+    const insertResults = await Promise.all(
+      missingDefaults.map((category) =>
+        supabase
+          .from("platform_admin_workstream_categories")
+          .insert({ owner_id: ownerId, ...category })
       )
+    )
 
-    if (error) {
+    for (const { error } of insertResults) {
+      if (!error || error.code === "23505") continue
       if (isMissingTableError(error)) return null
-      throw new Error(
-        error.code === "23505"
-          ? "A custom category conflicts with a default workstream category."
-          : "Unable to create default workstream categories."
-      )
+      throw new Error("Unable to create default workstream categories.")
     }
   }
 

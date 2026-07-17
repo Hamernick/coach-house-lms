@@ -26,7 +26,7 @@ export async function loadOrganizationProjectActivity({
     )
     .eq("org_id", orgId)
     .or(`project_id.eq.${projectId},entity_type.eq.program`)
-    .order("occurred_at", { ascending: true })
+    .order("occurred_at", { ascending: false })
     .limit(200)
     .returns<ActivityRow[]>()
 
@@ -43,7 +43,7 @@ export async function loadOrganizationProjectActivity({
   }
 
   const previousByEntity = new Map<string, ActivityRow>()
-  const items = (data ?? []).map((row) => {
+  const items = [...(data ?? [])].reverse().map((row) => {
     const entityKey = `${row.entity_type}:${row.entity_id}`
     const previous = previousByEntity.get(entityKey)
     previousByEntity.set(entityKey, row)

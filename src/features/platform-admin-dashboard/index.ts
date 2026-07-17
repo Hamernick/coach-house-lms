@@ -73,6 +73,7 @@ export type {
   KeyFeatures,
   NoteStatus,
   NoteType,
+  ProjectActivityItem,
   ProjectDetails,
   ProjectFile,
   ProjectMeta,

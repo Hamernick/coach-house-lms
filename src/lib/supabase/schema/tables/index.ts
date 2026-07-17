@@ -47,8 +47,11 @@ import type { OrganizationProjectNotesTable } from "./organization_project_notes
 import type { OrganizationProjectOverviewDocumentsTable } from "./organization_project_overview_documents"
 import type { OrganizationProjectsTable } from "./organization_projects"
 import type { OrganizationProjectQuickLinksTable } from "./organization_project_quick_links"
+import type { OrganizationProjectActivityEventsTable } from "./organization_project_activity_events"
 import type { OrganizationTaskAssigneesTable } from "./organization_task_assignees"
 import type { OrganizationTasksTable } from "./organization_tasks"
+import type { PlatformAdminProjectWorkstreamStatesTable } from "./platform_admin_project_workstream_states"
+import type { PlatformAdminWorkstreamCategoriesTable } from "./platform_admin_workstream_categories"
 import type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
 import type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
 import type { OrganizationWorkspaceCommunicationDeliveriesTable } from "./organization_workspace_communication_deliveries"
@@ -134,8 +137,11 @@ export type { OrganizationProjectNotesTable } from "./organization_project_notes
 export type { OrganizationProjectOverviewDocumentsTable } from "./organization_project_overview_documents"
 export type { OrganizationProjectsTable } from "./organization_projects"
 export type { OrganizationProjectQuickLinksTable } from "./organization_project_quick_links"
+export type { OrganizationProjectActivityEventsTable } from "./organization_project_activity_events"
 export type { OrganizationTaskAssigneesTable } from "./organization_task_assignees"
 export type { OrganizationTasksTable } from "./organization_tasks"
+export type { PlatformAdminProjectWorkstreamStatesTable } from "./platform_admin_project_workstream_states"
+export type { PlatformAdminWorkstreamCategoriesTable } from "./platform_admin_workstream_categories"
 export type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
 export type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
 export type { OrganizationWorkspaceCommunicationDeliveriesTable } from "./organization_workspace_communication_deliveries"
@@ -222,8 +228,11 @@ export type PublicTables = {
   organization_project_overview_documents: OrganizationProjectOverviewDocumentsTable
   organization_projects: OrganizationProjectsTable
   organization_project_quick_links: OrganizationProjectQuickLinksTable
+  organization_project_activity_events: OrganizationProjectActivityEventsTable
   organization_task_assignees: OrganizationTaskAssigneesTable
   organization_tasks: OrganizationTasksTable
+  platform_admin_project_workstream_states: PlatformAdminProjectWorkstreamStatesTable
+  platform_admin_workstream_categories: PlatformAdminWorkstreamCategoriesTable
   organization_workspace_boards: OrganizationWorkspaceBoardsTable
   organization_workspace_communication_channels: OrganizationWorkspaceCommunicationChannelsTable
   organization_workspace_communication_deliveries: OrganizationWorkspaceCommunicationDeliveriesTable

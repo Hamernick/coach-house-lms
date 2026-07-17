@@ -314,7 +314,7 @@ describe("member workspace project actions", () => {
     expect(loaderSource).toContain("canCreateProjects: true")
   })
 
-  it("preserves user-authored canonical organization overview documents during sync", () => {
+  it("preserves coach-managed canonical organization fields during profile sync", () => {
     const adminProjectsSource = readFileSync(
       join(
         process.cwd(),
@@ -324,14 +324,23 @@ describe("member workspace project actions", () => {
     )
 
     expect(adminProjectsSource).toContain(
-      "const { description: _description, ...syncedFields }"
+      "function buildCanonicalAdminOrganizationProjectUpdate("
+    )
+    expect(adminProjectsSource).toContain("name: desired.name")
+    expect(adminProjectsSource).not.toContain(
+      "description: desired.description"
+    )
+    expect(adminProjectsSource).not.toContain("status: desired.status")
+    expect(adminProjectsSource).not.toContain("priority: desired.priority")
+    expect(adminProjectsSource).not.toContain("start_date: desired.start_date")
+    expect(adminProjectsSource).not.toContain("end_date: desired.end_date")
+    expect(adminProjectsSource).not.toContain(
+      "duration_label: desired.duration_label"
     )
     expect(adminProjectsSource).not.toContain(
-      "(existing.description ?? null) !== (desired.description ?? null)"
+      "member_labels: desired.member_labels"
     )
-    expect(adminProjectsSource).not.toContain(
-      "...buildCanonicalAdminOrganizationProjectFields(organization),\n    updated_by"
-    )
+    expect(adminProjectsSource).not.toContain("task_count: desired.task_count")
   })
 
   it("keeps rich overview documents in a dedicated table instead of overloading project description", () => {

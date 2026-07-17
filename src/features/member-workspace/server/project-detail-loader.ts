@@ -16,6 +16,7 @@ import { buildMemberWorkspaceProjectDetails } from "./project-detail-view-model"
 import { ensureStarterProjectsForOrg } from "./project-persistence"
 import { organizationProjectSelectFields } from "./project-select"
 import { loadProjectOverviewDocument } from "./project-overview-documents"
+import { loadOrganizationProjectActivity } from "./project-activity"
 import { type OrganizationProjectRecord } from "./project-starter-data"
 import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
 import { ensureStarterTasksForOrg } from "./task-persistence"
@@ -404,6 +405,7 @@ async function buildReadyProjectDetailResult({
     quickLinks,
     assets,
     overviewDocument,
+    activity,
   ] = await Promise.all([
     loadMemberWorkspacePersonOptionsForOrganizations({
       orgIds: [project.org_id],
@@ -439,6 +441,11 @@ async function buildReadyProjectDetailResult({
       projectId: project.id,
       supabase: actor.supabase,
     }),
+    loadOrganizationProjectActivity({
+      orgId: project.org_id,
+      projectId: project.id,
+      supabase: actor.supabase,
+    }),
   ])
 
   return {
@@ -455,6 +462,7 @@ async function buildReadyProjectDetailResult({
       assets,
       assigneeOptions,
       overviewDocument,
+      activity,
     }),
   }
 }

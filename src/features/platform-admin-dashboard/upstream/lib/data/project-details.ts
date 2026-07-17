@@ -109,6 +109,17 @@ export type ProjectFile = QuickLink & {
   attachments?: QuickLink[]
 }
 
+export type ProjectActivityItem = {
+  id: string
+  entityType: "project" | "task" | "program" | "fiscal_application"
+  eventType: string
+  title: string
+  fromStatus: string | null
+  toStatus: string | null
+  occurredAt: Date
+  durationLabel: string | null
+}
+
 export type NoteType = "general" | "meeting" | "audio"
 export type NoteStatus = "completed" | "processing"
 
@@ -155,6 +166,7 @@ export type ProjectDetails = {
   quickLinks: QuickLink[]
   files: ProjectFile[]
   notes: ProjectNote[]
+  activity?: ProjectActivityItem[]
   source?: ProjectListItem
 }
 

@@ -12,9 +12,12 @@ const { createSupabaseAdminClientMock } = vi.hoisted(() => ({
   createSupabaseAdminClientMock: vi.fn(),
 }))
 
-vi.mock("@/features/member-workspace/server/member-workspace-actor-context", () => ({
-  resolveMemberWorkspaceActorContext: resolveMemberWorkspaceActorContextMock,
-}))
+vi.mock(
+  "@/features/member-workspace/server/member-workspace-actor-context",
+  () => ({
+    resolveMemberWorkspaceActorContext: resolveMemberWorkspaceActorContextMock,
+  })
+)
 
 vi.mock("@/lib/supabase/admin", () => ({
   createSupabaseAdminClient: createSupabaseAdminClientMock,
@@ -24,6 +27,8 @@ import {
   createMemberWorkspaceTaskAction,
   deleteMemberWorkspaceTaskAction,
   updateMemberWorkspaceTaskAction,
+  updateMemberWorkspaceTaskOrderAction,
+  updateMemberWorkspaceTaskStatusAction,
 } from "@/features/member-workspace/server/task-actions"
 import { MEMBER_WORKSPACE_UPGRADE_MESSAGE } from "@/features/member-workspace/server/access"
 
@@ -41,7 +46,7 @@ function createProjectQuery(project: {
       Promise.resolve({
         data: project,
         error: null,
-      }),
+      })
     ),
   }
 }
@@ -53,9 +58,19 @@ describe("member workspace task actions", () => {
     createSupabaseAdminClientMock.mockReset()
   })
 
-  it("rejects platform admins when they try to create organization tasks", async () => {
+  it("validates the target project before a platform-admin task mutation", async () => {
+    const projectQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn(() =>
+        Promise.resolve({
+          data: null,
+          error: null,
+        })
+      ),
+    }
     const supabase = {
-      from: vi.fn(),
+      from: vi.fn(() => projectQuery),
     }
 
     resolveMemberWorkspaceActorContextMock.mockResolvedValue({
@@ -63,7 +78,7 @@ describe("member workspace task actions", () => {
       userId: "platform-admin-1",
       isAdmin: true,
       activeOrg: { orgId: "org-1", role: "owner" },
-      canEdit: true,
+      canEdit: false,
     })
 
     await expect(
@@ -73,12 +88,10 @@ describe("member workspace task actions", () => {
         status: "todo",
         startDate: "2026-04-09",
         endDate: "2026-04-10",
-      }),
-    ).resolves.toEqual({
-      error: "Platform admins can view organization tasks here, but cannot edit them.",
-    })
+      })
+    ).resolves.toEqual({ error: "Choose a valid project." })
 
-    expect(supabase.from).not.toHaveBeenCalled()
+    expect(supabase.from).toHaveBeenCalledWith("organization_projects")
     expect(createSupabaseAdminClientMock).not.toHaveBeenCalled()
   })
 
@@ -103,7 +116,7 @@ describe("member workspace task actions", () => {
         status: "todo",
         startDate: "2026-04-09",
         endDate: "2026-04-10",
-      }),
+      })
     ).resolves.toEqual({ error: MEMBER_WORKSPACE_UPGRADE_MESSAGE })
 
     expect(supabase.from).not.toHaveBeenCalled()
@@ -142,7 +155,7 @@ describe("member workspace task actions", () => {
         status: "todo",
         startDate: "2026-04-09",
         endDate: "2026-04-10",
-      }),
+      })
     ).resolves.toEqual({
       error: "Choose a valid project.",
     })
@@ -163,7 +176,7 @@ describe("member workspace task actions", () => {
             project_id: "project-standard",
           },
           error: null,
-        }),
+        })
       ),
     }
 
@@ -201,7 +214,7 @@ describe("member workspace task actions", () => {
         status: "todo",
         startDate: "2026-04-09",
         endDate: "2026-04-10",
-      }),
+      })
     ).resolves.toEqual({
       error: "Choose a valid project.",
     })
@@ -226,7 +239,7 @@ describe("member workspace task actions", () => {
         Promise.resolve({
           data: [{ user_id: "org-1" }],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -244,7 +257,7 @@ describe("member workspace task actions", () => {
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -270,7 +283,7 @@ describe("member workspace task actions", () => {
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -307,7 +320,7 @@ describe("member workspace task actions", () => {
         startDate: "2026-04-09",
         endDate: "2026-04-10",
         assigneeUserId: "platform-admin-2",
-      }),
+      })
     ).resolves.toEqual({
       error: "Choose a valid assignee.",
     })
@@ -315,13 +328,13 @@ describe("member workspace task actions", () => {
     expect(createSupabaseAdminClientMock).not.toHaveBeenCalled()
   })
 
-  it("rejects platform admins even when they try to assign other platform admins", async () => {
+  it("allows platform admins to create tasks on canonical organization workstreams", async () => {
     const projectQuery = createProjectQuery({
-      id: "project-standard",
+      id: "project-organization",
       org_id: "org-1",
       task_count: 3,
-      project_kind: "standard",
-      created_source: "user",
+      project_kind: "organization_admin",
+      created_source: "system",
     })
 
     const organizationsQuery = {
@@ -331,7 +344,7 @@ describe("member workspace task actions", () => {
         Promise.resolve({
           data: [{ user_id: "org-1" }],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -349,7 +362,7 @@ describe("member workspace task actions", () => {
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -375,7 +388,7 @@ describe("member workspace task actions", () => {
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -415,7 +428,7 @@ describe("member workspace task actions", () => {
             },
           ],
           error: null,
-        }),
+        })
       ),
     }
 
@@ -442,23 +455,61 @@ describe("member workspace task actions", () => {
       userId: "platform-admin-1",
       isAdmin: true,
       activeOrg: { orgId: "org-1", role: "owner" },
-      canEdit: true,
+      canEdit: false,
+    })
+
+    const taskInsertQuery = {
+      insert: vi.fn().mockReturnThis(),
+      select: vi.fn().mockReturnThis(),
+      single: vi.fn(() =>
+        Promise.resolve({ data: { id: "task-admin-created" }, error: null })
+      ),
+    }
+    const assigneeMutationQuery = {
+      delete: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      insert: vi.fn(() => Promise.resolve({ error: null })),
+    }
+    const projectUpdateQuery = {
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+    }
+
+    createSupabaseAdminClientMock.mockReturnValue({
+      from: vi.fn((table: string) => {
+        if (table === "organization_tasks") return taskInsertQuery
+        if (table === "organization_task_assignees") {
+          return assigneeMutationQuery
+        }
+        if (table === "organization_projects") return projectUpdateQuery
+        throw new Error(`Unexpected admin table query: ${table}`)
+      }),
     })
 
     await expect(
       createMemberWorkspaceTaskAction({
-        projectId: "project-standard",
+        projectId: "project-organization",
         title: "Review grant timeline",
         status: "todo",
         startDate: "2026-04-09",
         endDate: "2026-04-10",
         assigneeUserId: "platform-admin-2",
-      }),
-    ).resolves.toEqual({
-      error: "Platform admins can view organization tasks here, but cannot edit them.",
-    })
+      })
+    ).resolves.toEqual({ ok: true, taskId: "task-admin-created" })
 
-    expect(createSupabaseAdminClientMock).not.toHaveBeenCalled()
+    expect(taskInsertQuery.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        org_id: "org-1",
+        project_id: "project-organization",
+        created_by: "platform-admin-1",
+      })
+    )
+    expect(assigneeMutationQuery.insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        task_id: "task-admin-created",
+        user_id: "platform-admin-2",
+      })
+    )
   })
 
   it("deletes a task and revalidates the project surfaces", async () => {
@@ -473,7 +524,7 @@ describe("member workspace task actions", () => {
             project_id: "project-standard",
           },
           error: null,
-        }),
+        })
       ),
     }
 
@@ -498,7 +549,7 @@ describe("member workspace task actions", () => {
             task_count: 2,
           },
           error: null,
-        }),
+        })
       ),
     }
 
@@ -507,19 +558,30 @@ describe("member workspace task actions", () => {
       eq: vi.fn().mockReturnThis(),
     }
 
+    const actorProjectQuery = createProjectQuery({
+      id: "project-standard",
+      org_id: "org-1",
+      task_count: 2,
+      project_kind: "standard",
+      created_source: "user",
+    })
+
     resolveMemberWorkspaceActorContextMock.mockResolvedValue({
       supabase: {
         from: vi.fn((table: string) => {
           if (table === "organization_tasks") {
             return taskQuery
           }
+          if (table === "organization_projects") {
+            return actorProjectQuery
+          }
           throw new Error(`Unexpected table query: ${table}`)
         }),
       },
-      userId: "user-1",
-      isAdmin: false,
+      userId: "platform-admin-1",
+      isAdmin: true,
       activeOrg: { orgId: "org-1", role: "owner" },
-      canEdit: true,
+      canEdit: false,
       hasMemberWorkspaceAccess: true,
     })
 
@@ -550,12 +612,259 @@ describe("member workspace task actions", () => {
     expect(taskDeleteQuery.delete).toHaveBeenCalledTimes(1)
     expect(projectUpdateQuery.update).toHaveBeenCalledWith({
       task_count: 1,
-      updated_by: "user-1",
+      updated_by: "platform-admin-1",
     })
     expect(revalidatePathMock).toHaveBeenCalledWith("/tasks")
     expect(revalidatePathMock).toHaveBeenCalledWith("/organizations")
     expect(revalidatePathMock).toHaveBeenCalledWith(
       "/organizations/project-standard"
     )
+  })
+
+  it("allows platform admins to change task status for a real project", async () => {
+    const taskQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn(() =>
+        Promise.resolve({
+          data: {
+            id: "task-1",
+            org_id: "org-2",
+            project_id: "project-2",
+            status: "todo",
+          },
+          error: null,
+        })
+      ),
+    }
+    const projectQuery = createProjectQuery({
+      id: "project-2",
+      org_id: "org-2",
+      task_count: 1,
+      project_kind: "standard",
+      created_source: "user",
+    })
+    resolveMemberWorkspaceActorContextMock.mockResolvedValue({
+      supabase: {
+        from: vi.fn((table: string) => {
+          if (table === "organization_tasks") return taskQuery
+          if (table === "organization_projects") return projectQuery
+          throw new Error(`Unexpected table query: ${table}`)
+        }),
+      },
+      userId: "platform-admin-1",
+      isAdmin: true,
+      activeOrg: { orgId: "admin-active-org", role: "member" },
+      canEdit: false,
+    })
+
+    const taskUpdateQuery = {
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+    }
+    createSupabaseAdminClientMock.mockReturnValue({
+      from: vi.fn(() => taskUpdateQuery),
+    })
+
+    await expect(
+      updateMemberWorkspaceTaskStatusAction("task-1", "done")
+    ).resolves.toEqual({ ok: true, taskId: "task-1", status: "done" })
+
+    expect(taskUpdateQuery.update).toHaveBeenCalledWith({
+      status: "done",
+      updated_by: "platform-admin-1",
+    })
+  })
+
+  it("allows platform admins to update task details for a real project", async () => {
+    const existingTaskQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      maybeSingle: vi.fn(() =>
+        Promise.resolve({
+          data: {
+            id: "task-1",
+            org_id: "org-2",
+            project_id: "project-2",
+          },
+          error: null,
+        })
+      ),
+    }
+    const projectQuery = createProjectQuery({
+      id: "project-2",
+      org_id: "org-2",
+      task_count: 1,
+      project_kind: "standard",
+      created_source: "user",
+    })
+    const organizationsQuery = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      returns: vi.fn(() =>
+        Promise.resolve({ data: [{ user_id: "org-2" }], error: null })
+      ),
+    }
+    const membershipsQuery = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      returns: vi.fn(() => Promise.resolve({ data: [], error: null })),
+    }
+    const platformAdminsQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      returns: vi.fn(() =>
+        Promise.resolve({
+          data: [
+            {
+              id: "platform-admin-1",
+              full_name: "Alex Admin",
+              avatar_url: null,
+              email: "alex.admin@example.com",
+              role: "admin",
+            },
+          ],
+          error: null,
+        })
+      ),
+    }
+    const profilesByIdQuery = {
+      select: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      returns: vi.fn(() =>
+        Promise.resolve({
+          data: [
+            {
+              id: "org-2",
+              full_name: "Owner Person",
+              avatar_url: null,
+              email: "owner@example.com",
+              role: "member",
+            },
+            {
+              id: "platform-admin-1",
+              full_name: "Alex Admin",
+              avatar_url: null,
+              email: "alex.admin@example.com",
+              role: "admin",
+            },
+          ],
+          error: null,
+        })
+      ),
+    }
+    let profilesCalls = 0
+    resolveMemberWorkspaceActorContextMock.mockResolvedValue({
+      supabase: {
+        from: vi.fn((table: string) => {
+          if (table === "organization_tasks") return existingTaskQuery
+          if (table === "organization_projects") return projectQuery
+          if (table === "organizations") return organizationsQuery
+          if (table === "organization_memberships") return membershipsQuery
+          if (table === "profiles") {
+            profilesCalls += 1
+            return profilesCalls === 1 ? platformAdminsQuery : profilesByIdQuery
+          }
+          throw new Error(`Unexpected table query: ${table}`)
+        }),
+      },
+      userId: "platform-admin-1",
+      isAdmin: true,
+      activeOrg: { orgId: "admin-active-org", role: "member" },
+      canEdit: false,
+    })
+
+    const taskUpdateQuery = {
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+    }
+    const assigneeMutationQuery = {
+      delete: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      insert: vi.fn(() => Promise.resolve({ error: null })),
+    }
+    createSupabaseAdminClientMock.mockReturnValue({
+      from: vi.fn((table: string) => {
+        if (table === "organization_tasks") return taskUpdateQuery
+        if (table === "organization_task_assignees") {
+          return assigneeMutationQuery
+        }
+        throw new Error(`Unexpected admin table query: ${table}`)
+      }),
+    })
+
+    await expect(
+      updateMemberWorkspaceTaskAction("task-1", {
+        projectId: "project-2",
+        title: "Updated by Coach House",
+        status: "in-progress",
+        startDate: "2026-04-09",
+        endDate: "2026-04-12",
+      })
+    ).resolves.toEqual({ ok: true, taskId: "task-1" })
+
+    expect(taskUpdateQuery.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Updated by Coach House",
+        org_id: "org-2",
+        project_id: "project-2",
+        updated_by: "platform-admin-1",
+      })
+    )
+  })
+
+  it("allows platform admins to reorder every task in a real project", async () => {
+    const projectQuery = createProjectQuery({
+      id: "project-2",
+      org_id: "org-2",
+      task_count: 2,
+      project_kind: "standard",
+      created_source: "user",
+    })
+    resolveMemberWorkspaceActorContextMock.mockResolvedValue({
+      supabase: {
+        from: vi.fn(() => projectQuery),
+      },
+      userId: "platform-admin-1",
+      isAdmin: true,
+      activeOrg: { orgId: "admin-active-org", role: "member" },
+      canEdit: false,
+    })
+
+    const taskRowsQuery = {
+      select: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      returns: vi.fn(() =>
+        Promise.resolve({
+          data: [{ id: "task-1" }, { id: "task-2" }],
+          error: null,
+        })
+      ),
+    }
+    const taskUpdateQuery = {
+      update: vi.fn().mockReturnThis(),
+      eq: vi.fn().mockReturnThis(),
+    }
+    let taskTableCalls = 0
+    createSupabaseAdminClientMock.mockReturnValue({
+      from: vi.fn(() => {
+        taskTableCalls += 1
+        return taskTableCalls === 1 ? taskRowsQuery : taskUpdateQuery
+      }),
+    })
+
+    await expect(
+      updateMemberWorkspaceTaskOrderAction("project-2", ["task-2", "task-1"])
+    ).resolves.toEqual({ ok: true, projectId: "project-2" })
+
+    expect(taskUpdateQuery.update).toHaveBeenNthCalledWith(1, {
+      sort_order: 0,
+      updated_by: "platform-admin-1",
+    })
+    expect(taskUpdateQuery.update).toHaveBeenNthCalledWith(2, {
+      sort_order: 1,
+      updated_by: "platform-admin-1",
+    })
   })
 })

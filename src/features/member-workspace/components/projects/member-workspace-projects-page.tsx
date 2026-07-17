@@ -12,6 +12,7 @@ import type {
   MemberWorkspacePersonOption,
   MemberWorkspaceProjectOrganizationOption,
   MemberWorkspaceStorageMode,
+  MemberWorkspaceWorkstreamCategory,
 } from "../../types"
 import { MemberWorkspaceProjectBoardView } from "./member-workspace-project-board-view"
 import { MemberWorkspaceProjectCardsView } from "./member-workspace-project-cards-view"
@@ -60,6 +61,24 @@ export function MemberWorkspaceProjectsPage(props: {
   organizationOptions: MemberWorkspaceProjectOrganizationOption[]
   assigneeOptions: MemberWorkspacePersonOption[]
   scope: "organization" | "platform-admin"
+  workstreamCategories?: MemberWorkspaceWorkstreamCategory[]
+  createWorkstreamCategoryAction?: (
+    name: string
+  ) => Promise<{ ok: true; id: string } | { error: string }>
+  updateWorkstreamCategoryAction?: (
+    categoryId: string,
+    name: string
+  ) => Promise<{ ok: true; id: string } | { error: string }>
+  deleteWorkstreamCategoryAction?: (
+    categoryId: string
+  ) => Promise<{ ok: true; id: string } | { error: string }>
+  restoreWorkstreamDefaultsAction?: () => Promise<
+    { ok: true } | { error: string }
+  >
+  updateProjectWorkstreamAction?: (
+    projectId: string,
+    categoryId: string
+  ) => Promise<{ ok: true; id: string } | { error: string }>
 }) {
   const {
     projects,
@@ -74,6 +93,12 @@ export function MemberWorkspaceProjectsPage(props: {
     canCreateProjects,
     organizationOptions,
     scope,
+    workstreamCategories = [],
+    createWorkstreamCategoryAction,
+    updateWorkstreamCategoryAction,
+    deleteWorkstreamCategoryAction,
+    restoreWorkstreamDefaultsAction,
+    updateProjectWorkstreamAction,
   } = props
   const assigneeOptions = props.assigneeOptions ?? []
   const router = useRouter()
@@ -230,6 +255,12 @@ export function MemberWorkspaceProjectsPage(props: {
               showClosedProjects={viewOptions.showClosedProjects}
               visibleProperties={viewOptions.properties}
               updateProjectStatusAction={updateProjectStatusAction}
+              workstreamCategories={workstreamCategories}
+              createWorkstreamCategoryAction={createWorkstreamCategoryAction}
+              updateWorkstreamCategoryAction={updateWorkstreamCategoryAction}
+              deleteWorkstreamCategoryAction={deleteWorkstreamCategoryAction}
+              restoreWorkstreamDefaultsAction={restoreWorkstreamDefaultsAction}
+              updateProjectWorkstreamAction={updateProjectWorkstreamAction}
               onAddProject={
                 canCreateProjects
                   ? () => {

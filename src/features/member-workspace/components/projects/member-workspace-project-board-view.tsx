@@ -26,6 +26,11 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { MemberWorkspaceProjectCard } from "./member-workspace-project-card"
+import type { MemberWorkspaceWorkstreamCategory } from "../../types"
+import {
+  MemberWorkspaceProjectBoardCategoryMenu,
+  MemberWorkspaceProjectBoardCategoryToolbar,
+} from "./member-workspace-project-board-category-controls"
 
 const OPEN_COLUMN_ORDER: Array<PlatformAdminDashboardLabProject["status"]> = [
   "backlog",
@@ -89,6 +94,12 @@ export function MemberWorkspaceProjectBoardView({
   updateProjectStatusAction,
   showClosedProjects,
   visibleProperties,
+  workstreamCategories = [],
+  createWorkstreamCategoryAction,
+  updateWorkstreamCategoryAction,
+  deleteWorkstreamCategoryAction,
+  restoreWorkstreamDefaultsAction,
+  updateProjectWorkstreamAction,
 }: {
   projects: PlatformAdminDashboardLabProject[]
   onAddProject?: () => void
@@ -99,6 +110,24 @@ export function MemberWorkspaceProjectBoardView({
   ) => Promise<{ ok: true; id: string } | { error: string }>
   showClosedProjects: boolean
   visibleProperties?: Array<"title" | "status" | "assignee" | "dueDate">
+  workstreamCategories?: MemberWorkspaceWorkstreamCategory[]
+  createWorkstreamCategoryAction?: (
+    name: string
+  ) => Promise<{ ok: true; id: string } | { error: string }>
+  updateWorkstreamCategoryAction?: (
+    categoryId: string,
+    name: string
+  ) => Promise<{ ok: true; id: string } | { error: string }>
+  deleteWorkstreamCategoryAction?: (
+    categoryId: string
+  ) => Promise<{ ok: true; id: string } | { error: string }>
+  restoreWorkstreamDefaultsAction?: () => Promise<
+    { ok: true } | { error: string }
+  >
+  updateProjectWorkstreamAction?: (
+    projectId: string,
+    categoryId: string
+  ) => Promise<{ ok: true; id: string } | { error: string }>
 }) {
   const router = useRouter()
   const [items, setItems] =
@@ -106,37 +135,54 @@ export function MemberWorkspaceProjectBoardView({
   const [draggingId, setDraggingId] = useState<string | null>(null)
   const [pendingProjectIds, setPendingProjectIds] = useState<string[]>([])
   const [isPending, startTransition] = useTransition()
-  const canManageBoard = Boolean(updateProjectStatusAction)
-  const columnOrder = useMemo(
-    () => getMemberWorkspaceProjectBoardColumnOrder(showClosedProjects),
-    [showClosedProjects]
-  )
+  const usesCustomWorkstreams = workstreamCategories.length > 0
+  const canManageBoard = usesCustomWorkstreams
+    ? Boolean(updateProjectWorkstreamAction)
+    : Boolean(updateProjectStatusAction)
+  const columns = useMemo(() => {
+    if (usesCustomWorkstreams) {
+      return workstreamCategories.map((category) => ({
+        id: category.id,
+        label: category.name,
+        color: category.color,
+        defaultKey: category.defaultKey,
+      }))
+    }
+
+    return getMemberWorkspaceProjectBoardColumnOrder(showClosedProjects).map(
+      (status) => ({
+        id: status,
+        label: getColumnStatusLabel(status),
+        color: "slate",
+        defaultKey: status,
+      })
+    )
+  }, [showClosedProjects, usesCustomWorkstreams, workstreamCategories])
 
   useEffect(() => {
     setItems(projects)
   }, [projects])
 
   const groups = useMemo(() => {
-    const grouped = new Map<
-      PlatformAdminDashboardLabProject["status"],
-      PlatformAdminDashboardLabProject[]
-    >()
-    for (const status of columnOrder) {
-      grouped.set(status, [])
+    const grouped = new Map<string, PlatformAdminDashboardLabProject[]>()
+    for (const column of columns) {
+      grouped.set(column.id, [])
     }
     for (const project of items) {
-      if (!grouped.has(project.status)) {
-        if (showClosedProjects) {
-          continue
-        }
-        if (project.status === "completed" || project.status === "cancelled") {
-          continue
-        }
+      const statusCategory = columns.find(
+        (column) => column.defaultKey === project.status
+      )
+      const columnId = usesCustomWorkstreams
+        ? (project.workstreamCategoryId ?? statusCategory?.id ?? columns[0]?.id)
+        : project.status
+
+      if (!columnId || !grouped.has(columnId)) {
+        continue
       }
-      grouped.get(project.status)?.push(project)
+      grouped.get(columnId)?.push(project)
     }
     return grouped
-  }, [columnOrder, items, showClosedProjects])
+  }, [columns, items, usesCustomWorkstreams])
 
   const commitProjectStatus = (
     projectId: string,
@@ -173,14 +219,55 @@ export function MemberWorkspaceProjectBoardView({
     })
   }
 
+  const commitProjectWorkstream = (projectId: string, categoryId: string) => {
+    if (!updateProjectWorkstreamAction) return
+
+    const previousItems = items
+    setItems((current) =>
+      current.map((project) =>
+        project.id === projectId
+          ? { ...project, workstreamCategoryId: categoryId }
+          : project
+      )
+    )
+    setPendingProjectIds((current) =>
+      Array.from(new Set([...current, projectId]))
+    )
+
+    startTransition(async () => {
+      const result = await updateProjectWorkstreamAction(projectId, categoryId)
+      setPendingProjectIds((current) =>
+        current.filter((value) => value !== projectId)
+      )
+
+      if ("error" in result) {
+        setItems(previousItems)
+        toast.error(result.error)
+        return
+      }
+
+      router.refresh()
+    })
+  }
+
+  const moveProject = (projectId: string, columnId: string) => {
+    if (usesCustomWorkstreams) {
+      commitProjectWorkstream(projectId, columnId)
+      return
+    }
+    commitProjectStatus(
+      projectId,
+      columnId as PlatformAdminDashboardLabProject["status"]
+    )
+  }
+
   const handleDropTo =
-    (status: PlatformAdminDashboardLabProject["status"]) =>
-    (event: DragEvent<HTMLDivElement>) => {
+    (columnId: string) => (event: DragEvent<HTMLDivElement>) => {
       event.preventDefault()
       const id = event.dataTransfer.getData("text/id")
       if (!id) return
       setDraggingId(null)
-      commitProjectStatus(id, status)
+      moveProject(id, columnId)
     }
 
   const handleDragOver = (event: DragEvent<HTMLDivElement>) => {
@@ -188,23 +275,36 @@ export function MemberWorkspaceProjectBoardView({
   }
 
   return (
-    <div className="p-4">
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5">
-        {columnOrder.map((status) => (
+    <div className="space-y-3 p-4">
+      {usesCustomWorkstreams ? (
+        <MemberWorkspaceProjectBoardCategoryToolbar
+          createCategoryAction={createWorkstreamCategoryAction}
+          restoreDefaultsAction={restoreWorkstreamDefaultsAction}
+        />
+      ) : null}
+
+      <div className="grid auto-cols-[minmax(17rem,1fr)] grid-flow-col gap-4 overflow-x-auto pb-2 lg:auto-cols-[minmax(18rem,1fr)]">
+        {columns.map((column) => (
           <div
-            key={status}
-            className="bg-muted rounded-xl"
+            key={column.id}
+            className="bg-muted min-w-0 rounded-xl"
             onDragOver={canManageBoard ? handleDragOver : undefined}
-            onDrop={canManageBoard ? handleDropTo(status) : undefined}
+            onDrop={canManageBoard ? handleDropTo(column.id) : undefined}
           >
             <div className="flex items-center justify-between px-3 py-3">
               <div className="flex items-center gap-2">
-                {getColumnStatusIcon(status)}
+                {column.defaultKey ? (
+                  getColumnStatusIcon(
+                    column.defaultKey as PlatformAdminDashboardLabProject["status"]
+                  )
+                ) : (
+                  <StackSimple className="text-muted-foreground h-4 w-4" />
+                )}
                 <span className="inline-flex items-center gap-1 text-sm font-medium">
-                  {getColumnStatusLabel(status)}
+                  {column.label}
                 </span>
                 <span className="text-muted-foreground text-xs">
-                  {groups.get(status)?.length ?? 0}
+                  {groups.get(column.id)?.length ?? 0}
                 </span>
               </div>
               <div className="flex items-center gap-1">
@@ -219,21 +319,27 @@ export function MemberWorkspaceProjectBoardView({
                     <Plus className="h-4 w-4" />
                   </Button>
                 ) : null}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 rounded-lg"
-                  type="button"
-                  disabled={isPending || !canManageBoard}
-                >
-                  <DotsThreeVertical className="h-4 w-4" />
-                </Button>
+                {usesCustomWorkstreams && updateWorkstreamCategoryAction ? (
+                  <MemberWorkspaceProjectBoardCategoryMenu
+                    category={{
+                      id: column.id,
+                      name: column.label,
+                      color: column.color,
+                      position: 0,
+                      defaultKey: column.defaultKey,
+                    }}
+                    deleteCategoryAction={deleteWorkstreamCategoryAction}
+                    updateCategoryAction={updateWorkstreamCategoryAction}
+                  />
+                ) : null}
               </div>
             </div>
             <div className="min-h-[120px] space-y-3 px-3 pb-3">
-              {(groups.get(status) ?? []).map((project) => {
+              {(groups.get(column.id) ?? []).map((project) => {
                 const canManageProjectCard =
-                  canManageBoard && project.projectKind !== "organization_admin"
+                  canManageBoard &&
+                  (usesCustomWorkstreams ||
+                    project.projectKind !== "organization_admin")
 
                 return (
                   <div
@@ -287,21 +393,16 @@ export function MemberWorkspaceProjectBoardView({
                             </PopoverTrigger>
                             <PopoverContent className="w-40 p-2" align="end">
                               <div className="space-y-1">
-                                {getMemberWorkspaceProjectBoardColumnOrder(
-                                  true
-                                ).map((nextStatus) => (
+                                {columns.map((nextColumn) => (
                                   <button
-                                    key={nextStatus}
+                                    key={nextColumn.id}
                                     type="button"
                                     className="hover:bg-accent w-full rounded-md px-2 py-1 text-left text-sm"
                                     onClick={() =>
-                                      commitProjectStatus(
-                                        project.id,
-                                        nextStatus
-                                      )
+                                      moveProject(project.id, nextColumn.id)
                                     }
                                   >
-                                    Move to {getColumnStatusLabel(nextStatus)}
+                                    Move to {nextColumn.label}
                                   </button>
                                 ))}
                               </div>

@@ -13,14 +13,29 @@ import {
   updateMemberWorkspaceProjectStatusAction,
 } from "@/features/member-workspace"
 import { requirePlatformCapability } from "@/lib/admin/auth"
+import {
+  loadOrganizationCoachAssignmentData,
+  updateOrganizationCoachAssignmentAction,
+} from "@/features/organization-coach-assignments"
 
 export default async function OrganizationsPage() {
-  await requirePlatformCapability("organizations", {
+  const staff = await requirePlatformCapability("organizations", {
     loginRedirect: "/organizations",
   })
 
+  const pageData = await loadMemberWorkspaceProjectsPage()
+  const coachAssignmentData = await loadOrganizationCoachAssignmentData({
+    organizationIds: pageData.organizationOptions.map(({ orgId }) => orgId),
+  })
+  const projects = pageData.projects.map((project) => ({
+    ...project,
+    organizationCoachAssignment: project.organizationId
+      ? (coachAssignmentData.assignmentsByOrganizationId.get(
+          project.organizationId
+        ) ?? null)
+      : null,
+  }))
   const {
-    projects,
     storageMode,
     canResetStarterData,
     starterProjectCount,
@@ -29,7 +44,7 @@ export default async function OrganizationsPage() {
     organizationOptions,
     assigneeOptions,
     workstreamCategories,
-  } = await loadMemberWorkspaceProjectsPage()
+  } = pageData
 
   return (
     <MemberWorkspaceProjectsPage
@@ -56,6 +71,15 @@ export default async function OrganizationsPage() {
       scope={scope}
       organizationOptions={organizationOptions}
       assigneeOptions={assigneeOptions}
+      coachOptions={coachAssignmentData.coachOptions}
+      canManageCoachAssignments={
+        coachAssignmentData.available && staff.accessLevel === "developer"
+      }
+      updateCoachAssignmentAction={
+        coachAssignmentData.available && staff.accessLevel === "developer"
+          ? updateOrganizationCoachAssignmentAction
+          : undefined
+      }
       workstreamCategories={workstreamCategories}
       createWorkstreamCategoryAction={
         createPlatformAdminWorkstreamCategoryAction

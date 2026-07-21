@@ -26,6 +26,10 @@ import { MemberWorkspaceProjectViewOptionsPopover } from "./member-workspace-pro
 import { MemberWorkspaceProjectWizard } from "./member-workspace-project-wizard"
 import { MemberWorkspaceClearStarterDataButton } from "../shared/member-workspace-clear-starter-data-button"
 import styles from "./member-workspace-projects-surface-theme.module.css"
+import type {
+  OrganizationCoachAssignmentAction,
+  OrganizationCoachOption,
+} from "@/features/organization-coach-assignments"
 import {
   applyViewOptionsToParams,
   DEFAULT_MEMBER_WORKSPACE_PROJECT_VIEW_OPTIONS as DEFAULT_VIEW_OPTIONS,
@@ -60,6 +64,9 @@ export function MemberWorkspaceProjectsPage(props: {
   canCreateProjects: boolean
   organizationOptions: MemberWorkspaceProjectOrganizationOption[]
   assigneeOptions: MemberWorkspacePersonOption[]
+  coachOptions?: OrganizationCoachOption[]
+  canManageCoachAssignments?: boolean
+  updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
   scope: "organization" | "platform-admin"
   workstreamCategories?: MemberWorkspaceWorkstreamCategory[]
   createWorkstreamCategoryAction?: (
@@ -93,6 +100,9 @@ export function MemberWorkspaceProjectsPage(props: {
     canCreateProjects,
     organizationOptions,
     scope,
+    coachOptions = [],
+    canManageCoachAssignments = false,
+    updateCoachAssignmentAction,
     workstreamCategories = [],
     createWorkstreamCategoryAction,
     updateWorkstreamCategoryAction,
@@ -249,6 +259,9 @@ export function MemberWorkspaceProjectsPage(props: {
                   : undefined
               }
               scope={scope}
+              coachOptions={coachOptions}
+              canManageCoachAssignments={canManageCoachAssignments}
+              updateCoachAssignmentAction={updateCoachAssignmentAction}
             />
           ) : null}
           {viewOptions.viewType === "board" ? (
@@ -263,6 +276,9 @@ export function MemberWorkspaceProjectsPage(props: {
               deleteWorkstreamCategoryAction={deleteWorkstreamCategoryAction}
               restoreWorkstreamDefaultsAction={restoreWorkstreamDefaultsAction}
               updateProjectWorkstreamAction={updateProjectWorkstreamAction}
+              coachOptions={coachOptions}
+              canManageCoachAssignments={canManageCoachAssignments}
+              updateCoachAssignmentAction={updateCoachAssignmentAction}
               onAddProject={
                 canCreateProjects
                   ? () => {

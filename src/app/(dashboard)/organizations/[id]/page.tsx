@@ -28,6 +28,10 @@ import {
 } from "@/features/member-workspace"
 import { requirePlatformCapability } from "@/lib/admin/auth"
 import type { ProjectDetails } from "@/features/platform-admin-dashboard"
+import {
+  loadOrganizationCoachAssignmentData,
+  updateOrganizationCoachAssignmentAction,
+} from "@/features/organization-coach-assignments"
 
 type PageProps = {
   params: Promise<{ id: string }>
@@ -85,8 +89,13 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     result.scope === "organization" || result.scope === "platform-admin"
   const canDeleteProject =
     canEditProjectDetails && projectKind !== "organization_admin"
-  const fiscalSponsorshipWorkflowSummary =
-    await loadFiscalSponsorshipProjectWorkflowSummary(result.project.id)
+  const [fiscalSponsorshipWorkflowSummary, coachAssignmentData] =
+    await Promise.all([
+      loadFiscalSponsorshipProjectWorkflowSummary(result.project.id),
+      loadOrganizationCoachAssignmentData({
+        organizationIds: [result.organizationSummary.orgId],
+      }),
+    ])
   const fiscalSponsorshipWorkflowData =
     "error" in fiscalSponsorshipWorkflowSummary
       ? null
@@ -98,6 +107,20 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
       assigneeOptions={result.assigneeOptions}
       currentUser={result.currentUser}
       organizationSummary={result.organizationSummary}
+      coachAssignment={
+        coachAssignmentData.assignmentsByOrganizationId.get(
+          result.organizationSummary.orgId
+        ) ?? null
+      }
+      coachOptions={coachAssignmentData.coachOptions}
+      canManageCoachAssignment={
+        coachAssignmentData.available && staff.accessLevel === "developer"
+      }
+      updateCoachAssignmentAction={
+        coachAssignmentData.available && staff.accessLevel === "developer"
+          ? updateOrganizationCoachAssignmentAction
+          : undefined
+      }
       fiscalSponsorshipWorkflowSummary={fiscalSponsorshipWorkflowData}
       canManageProject={canManageProject}
       canManageProjectAssets={canManageProjectAssets}

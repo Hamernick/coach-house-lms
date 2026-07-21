@@ -52,6 +52,17 @@ export type PlatformAdminDashboardLabProject = {
   members: string[]
   primaryPersonName?: string
   primaryPersonAvatarUrl?: string | null
+  organizationCoachAssignment?: {
+    organizationId: string
+    coach: {
+      id: string
+      name: string
+      email: string | null
+      avatarUrl: string | null
+    }
+    assignedBy: string | null
+    updatedAt: string
+  } | null
   client?: string
   typeLabel?: string
   durationLabel?: string

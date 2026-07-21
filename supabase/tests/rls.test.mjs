@@ -509,6 +509,66 @@ async function run() {
     })
   }
 
+  if (await tableExists("organization_coach_assignments")) {
+    const { data: developerAssignment, error: developerAssignmentError } =
+      await adminSessionClient
+        .from("organization_coach_assignments")
+        .insert({
+          organization_id: member.id,
+          coach_user_id: coach.id,
+          assigned_by: admin.id,
+        })
+        .select("organization_id, coach_user_id")
+        .maybeSingle()
+    results.push({
+      name: "developer can assign a coach to an organization",
+      passed:
+        !developerAssignmentError &&
+        developerAssignment?.coach_user_id === coach.id,
+    })
+
+    const { data: coachAssignment, error: coachAssignmentError } =
+      await coachClient
+        .from("organization_coach_assignments")
+        .select("organization_id, coach_user_id")
+        .eq("organization_id", member.id)
+        .maybeSingle()
+    results.push({
+      name: "coach can read organization coach assignments",
+      passed:
+        !coachAssignmentError && coachAssignment?.coach_user_id === coach.id,
+    })
+
+    const { data: memberAssignment, error: memberAssignmentError } =
+      await memberClient
+        .from("organization_coach_assignments")
+        .select("organization_id")
+        .eq("organization_id", member.id)
+        .maybeSingle()
+    results.push({
+      name: "regular member cannot read organization coach assignments",
+      passed: !memberAssignment && !memberAssignmentError,
+    })
+
+    const { error: coachWriteError } = await coachClient
+      .from("organization_coach_assignments")
+      .update({ assigned_by: coach.id })
+      .eq("organization_id", member.id)
+    results.push({
+      name: "coach cannot change organization coach assignments",
+      passed: !!coachWriteError,
+    })
+
+    const { error: assignedCoachLevelChangeError } = await adminSessionClient
+      .from("platform_staff_members")
+      .update({ access_level: "developer" })
+      .eq("user_id", coach.id)
+    results.push({
+      name: "assigned coach cannot be changed to developer before unassignment",
+      passed: !!assignedCoachLevelChangeError,
+    })
+  }
+
   let orgAccessReady = false
   let workspaceTablesAvailable = false
   let workspaceCommunicationsTableAvailable = false
@@ -835,13 +895,11 @@ async function run() {
       passed: !!adminCategory && !adminCategoryError,
     })
 
-    const {
-      data: deniedAnonCategory,
-      error: deniedAnonCategoryError,
-    } = await anonClient
-      .from("platform_admin_workstream_categories")
-      .select("id")
-      .eq("id", categoryId)
+    const { data: deniedAnonCategory, error: deniedAnonCategoryError } =
+      await anonClient
+        .from("platform_admin_workstream_categories")
+        .select("id")
+        .eq("id", categoryId)
     results.push({
       name: "anonymous users have no workstream category table privileges",
       passed:
@@ -1186,7 +1244,9 @@ async function run() {
         name: "anonymous users have no organization activity table privileges",
         passed:
           deniedAnonActivityReadError?.code === "42501" ||
-          /permission denied/i.test(deniedAnonActivityReadError?.message ?? "") ||
+          /permission denied/i.test(
+            deniedAnonActivityReadError?.message ?? ""
+          ) ||
           (Array.isArray(deniedAnonActivity) &&
             deniedAnonActivity.length === 0),
       })

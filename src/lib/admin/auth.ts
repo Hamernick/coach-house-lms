@@ -1,6 +1,13 @@
 import { redirect } from "next/navigation"
 import { cache } from "react"
 
+import {
+  hasPlatformCapability,
+  resolveLegacyPlatformAccessLevel,
+  type PlatformAccessLevel,
+  type PlatformCapability,
+} from "@/features/platform-access"
+import { loadPlatformAccessLevel } from "@/lib/admin/platform-access"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import type { SupabaseClient } from "@supabase/supabase-js"
@@ -9,6 +16,10 @@ import type { Database } from "@/lib/supabase"
 type RequireAdminResult = {
   supabase: SupabaseClient<Database>
   userId: string
+}
+
+export type RequirePlatformCapabilityResult = RequireAdminResult & {
+  accessLevel: PlatformAccessLevel
 }
 
 function formatSupabaseError(error: unknown) {
@@ -21,7 +32,7 @@ function formatSupabaseError(error: unknown) {
   return [code, message, details].filter(Boolean).join(" — ") || "Unknown error"
 }
 
-async function requireAdminInternal(): Promise<RequireAdminResult> {
+const resolveCurrentPlatformActor = cache(async () => {
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -30,11 +41,11 @@ async function requireAdminInternal(): Promise<RequireAdminResult> {
 
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     console.error("[admin-auth] Unable to load Supabase user.", userError)
-    redirect("/team/login?redirect=/internal")
+    throw new Error("Unable to verify platform access.")
   }
 
   if (!user) {
-    redirect("/team/login?redirect=/internal")
+    return null
   }
 
   const { data: profile, error } = await supabase
@@ -44,14 +55,56 @@ async function requireAdminInternal(): Promise<RequireAdminResult> {
     .maybeSingle<{ role: string | null }>()
 
   if (error) {
-    throw new Error(`Unable to verify admin access: ${formatSupabaseError(error)}`)
+    throw new Error(
+      `Unable to verify admin access: ${formatSupabaseError(error)}`
+    )
   }
 
-  if (!profile || profile.role !== "admin") {
-    redirect("/organization")
+  const storedAccessLevel = await loadPlatformAccessLevel({
+    supabase,
+    userId: user.id,
+  })
+  const accessLevel =
+    storedAccessLevel ?? resolveLegacyPlatformAccessLevel(profile?.role)
+
+  return { supabase, userId: user.id, accessLevel }
+})
+
+export async function requirePlatformCapability(
+  capability: PlatformCapability,
+  options: {
+    loginRedirect?: string
+    forbiddenRedirect?: string
+  } = {}
+): Promise<RequirePlatformCapabilityResult> {
+  const actor = await resolveCurrentPlatformActor()
+
+  if (!actor) {
+    const loginRedirect = options.loginRedirect ?? "/internal"
+    redirect(`/team/login?redirect=${encodeURIComponent(loginRedirect)}`)
   }
 
-  return { supabase, userId: user.id }
+  if (
+    !actor.accessLevel ||
+    !hasPlatformCapability(actor.accessLevel, capability)
+  ) {
+    redirect(options.forbiddenRedirect ?? "/workspace")
+  }
+
+  return {
+    supabase: actor.supabase,
+    userId: actor.userId,
+    accessLevel: actor.accessLevel,
+  }
+}
+
+async function requireAdminInternal(): Promise<RequireAdminResult> {
+  const actor = await requirePlatformCapability("platform", {
+    loginRedirect: "/internal",
+    forbiddenRedirect: "/organization",
+  })
+
+  return { supabase: actor.supabase, userId: actor.userId }
 }
 
 export const requireAdmin = cache(requireAdminInternal)

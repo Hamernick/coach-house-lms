@@ -26,7 +26,7 @@ import {
   updateMemberWorkspaceTaskOrderAction,
   updateMemberWorkspaceTaskStatusAction,
 } from "@/features/member-workspace"
-import { requireAdmin } from "@/lib/admin/auth"
+import { requirePlatformCapability } from "@/lib/admin/auth"
 import type { ProjectDetails } from "@/features/platform-admin-dashboard"
 
 type PageProps = {
@@ -47,12 +47,14 @@ function getOrganizationAdminProjectKind(
 }
 
 export default async function OrganizationDetailPage({ params }: PageProps) {
-  const admin = await requireAdmin()
+  const staff = await requirePlatformCapability("organizations", {
+    loginRedirect: "/organizations",
+  })
 
   const { id } = await params
   const result = await loadPlatformAdminOrganizationProjectDetailPage({
     projectId: id,
-    userId: admin.userId,
+    userId: staff.userId,
   })
 
   if (result.state === "not-found") {

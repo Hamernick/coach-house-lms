@@ -18,6 +18,10 @@ import {
   type PrototypeLabSidebarTreeNode,
 } from "@/features/prototype-lab"
 import type { SidebarClass } from "@/lib/academy"
+import {
+  hasPlatformCapability,
+  type PlatformAccessLevel,
+} from "@/features/platform-access"
 import { FIND_PATH } from "@/lib/find/routes"
 import { platformLabEnabled } from "@/lib/feature-flags"
 
@@ -34,12 +38,14 @@ type MainNavItem = {
 
 export function buildMainNav({
   isAdmin,
+  platformAccessLevel = null,
   showMemberWorkspace = false,
   hasMemberWorkspaceAccess = true,
   showWorkspaceHome = true,
   showPlatformLab = platformLabEnabled,
 }: {
   isAdmin: boolean
+  platformAccessLevel?: PlatformAccessLevel | null
   showOrgAdmin: boolean
   canAccessOrgAdmin: boolean
   showMemberWorkspace?: boolean
@@ -50,15 +56,25 @@ export function buildMainNav({
   const workspaceHomeItem = showWorkspaceHome
     ? [{ title: "Workspace", href: "/workspace", icon: LayoutGridIcon }]
     : []
-  const memberWorkspaceItems: MainNavItem[] = isAdmin
+  const resolvedPlatformAccessLevel =
+    platformAccessLevel ?? (isAdmin ? "developer" : null)
+  const canAccessOrganizations = hasPlatformCapability(
+    resolvedPlatformAccessLevel,
+    "organizations"
+  )
+  const memberWorkspaceItems: MainNavItem[] = canAccessOrganizations
     ? [
         {
           title: "Organizations",
           href: "/organizations",
           icon: FolderKanbanIcon,
         },
-        { title: "Tasks", href: "/tasks", icon: ClipboardListIcon },
-        { title: "Email", href: "/email", icon: MailIcon },
+        ...(isAdmin
+          ? [
+              { title: "Tasks", href: "/tasks", icon: ClipboardListIcon },
+              { title: "Email", href: "/email", icon: MailIcon },
+            ]
+          : []),
       ]
     : []
   const items: MainNavItem[] = [

@@ -33,6 +33,7 @@ export default async function DashboardLayout({
         sidebarTree={state.sidebarTree}
         user={state.user}
         isAdmin={state.isAdmin}
+        platformAccessLevel={state.platformAccessLevel}
         showOrgAdmin={state.showOrgAdmin}
         canAccessOrgAdmin={state.canAccessOrgAdmin}
         acceleratorProgress={state.acceleratorProgress}

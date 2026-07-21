@@ -12,10 +12,12 @@ import {
   updateMemberWorkspaceProjectScheduleAction,
   updateMemberWorkspaceProjectStatusAction,
 } from "@/features/member-workspace"
-import { requireAdmin } from "@/lib/admin/auth"
+import { requirePlatformCapability } from "@/lib/admin/auth"
 
 export default async function OrganizationsPage() {
-  await requireAdmin()
+  await requirePlatformCapability("organizations", {
+    loginRedirect: "/organizations",
+  })
 
   const {
     projects,

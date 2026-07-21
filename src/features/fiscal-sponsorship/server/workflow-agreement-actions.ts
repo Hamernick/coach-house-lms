@@ -42,7 +42,11 @@ export async function generateFiscalSponsorshipAgreement(
   const context = await resolveProjectAndContext(input.projectId)
   if ("error" in context) return context
 
-  if (!canCoachManageFiscalSponsorship(context.profileAudience.isAdmin)) {
+  if (
+    !canCoachManageFiscalSponsorship(
+      context.profileAudience.isPlatformStaff || context.profileAudience.isAdmin
+    )
+  ) {
     return { error: "Only Coach House admins can generate agreements." }
   }
 
@@ -185,7 +189,11 @@ export async function sendFiscalSponsorshipAgreementForSignature(
   const context = await resolveProjectAndContext(input.projectId)
   if ("error" in context) return context
 
-  if (!canCoachManageFiscalSponsorship(context.profileAudience.isAdmin)) {
+  if (
+    !canCoachManageFiscalSponsorship(
+      context.profileAudience.isPlatformStaff || context.profileAudience.isAdmin
+    )
+  ) {
     return { error: "Only Coach House admins can send agreements." }
   }
 

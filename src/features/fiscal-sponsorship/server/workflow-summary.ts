@@ -449,7 +449,7 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
   }
 
   const canViewCoachSigningLink = canCoachManageFiscalSponsorship(
-    context.profileAudience.isAdmin
+    context.profileAudience.isPlatformStaff || context.profileAudience.isAdmin
   )
 
   return {

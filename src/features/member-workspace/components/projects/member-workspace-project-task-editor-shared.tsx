@@ -109,7 +109,7 @@ function groupAssigneeOptions(options: MemberWorkspacePersonOption[]) {
     const key = option.groupKey ?? "organization-team"
     const label =
       option.groupLabel ??
-      (key === "platform-admins" ? "Coach House admins" : "Organization team")
+      (key === "platform-admins" ? "Coach House staff" : "Organization team")
     const group = groups.get(key)
 
     if (group) {

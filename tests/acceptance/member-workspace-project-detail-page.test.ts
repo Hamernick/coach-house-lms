@@ -662,18 +662,20 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     )
 
     expect(organizationsPageSource).toContain('from "@/lib/admin/auth"')
-    expect(organizationsPageSource).toContain("await requireAdmin()")
+    expect(organizationsPageSource).toContain(
+      'await requirePlatformCapability("organizations"'
+    )
     expect(organizationsPageSource).not.toContain(
       "requireMemberWorkspacePageAccess"
     )
     expect(organizationDetailRouteSource).toContain('from "@/lib/admin/auth"')
     expect(organizationDetailRouteSource).toContain(
-      "const admin = await requireAdmin()"
+      'const staff = await requirePlatformCapability("organizations"'
     )
     expect(organizationDetailRouteSource).toContain(
       "loadPlatformAdminOrganizationProjectDetailPage({"
     )
-    expect(organizationDetailRouteSource).toContain("userId: admin.userId")
+    expect(organizationDetailRouteSource).toContain("userId: staff.userId")
     expect(organizationDetailRouteSource).not.toContain(
       "loadMemberWorkspaceProjectDetailPage(id)"
     )

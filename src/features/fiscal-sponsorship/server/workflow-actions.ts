@@ -71,7 +71,9 @@ export async function submitFiscalSponsorshipApplication(
     !canEditFiscalProject({
       activeOrgId: context.activeOrg.orgId,
       activeOrgRole: context.activeOrg.role,
-      isAdmin: context.profileAudience.isAdmin,
+      isAdmin:
+        context.profileAudience.isPlatformStaff ||
+        context.profileAudience.isAdmin,
       project: context.project,
     })
   ) {
@@ -122,7 +124,11 @@ export async function reviewFiscalSponsorshipApplication(
   const context = await resolveProjectAndContext(input.projectId)
   if ("error" in context) return context
 
-  if (!canCoachManageFiscalSponsorship(context.profileAudience.isAdmin)) {
+  if (
+    !canCoachManageFiscalSponsorship(
+      context.profileAudience.isPlatformStaff || context.profileAudience.isAdmin
+    )
+  ) {
     return { error: "Only Coach House admins can review fiscal applications." }
   }
 
@@ -207,7 +213,9 @@ export async function connectFiscalSponsorshipDocumentAsset(
     !canEditFiscalProject({
       activeOrgId: context.activeOrg.orgId,
       activeOrgRole: context.activeOrg.role,
-      isAdmin: context.profileAudience.isAdmin,
+      isAdmin:
+        context.profileAudience.isPlatformStaff ||
+        context.profileAudience.isAdmin,
       project: context.project,
     })
   ) {
@@ -321,7 +329,11 @@ export async function reviewFiscalSponsorshipDocument(
   const context = await resolveProjectAndContext(input.projectId)
   if ("error" in context) return context
 
-  if (!canCoachManageFiscalSponsorship(context.profileAudience.isAdmin)) {
+  if (
+    !canCoachManageFiscalSponsorship(
+      context.profileAudience.isPlatformStaff || context.profileAudience.isAdmin
+    )
+  ) {
     return { error: "Only Coach House admins can review fiscal documents." }
   }
 

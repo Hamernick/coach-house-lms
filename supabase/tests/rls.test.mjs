@@ -68,6 +68,7 @@ const ownerEmail = `owner-${suffix}@example.com`
 const staffEmail = `staff-${suffix}@example.com`
 const boardEmail = `board-${suffix}@example.com`
 const orgAdminEmail = `org-admin-${suffix}@example.com`
+const coachEmail = `coach-${suffix}@example.com`
 const password = `TempPass!${suffix}`
 
 async function ensureProfile(id, role, fullName) {
@@ -143,14 +144,38 @@ async function createUsers() {
   })
   if (orgAdminError) throw orgAdminError
 
+  const {
+    data: { user: coach },
+    error: coachError,
+  } = await adminClient.auth.admin.createUser({
+    email: coachEmail,
+    password,
+    email_confirm: true,
+  })
+  if (coachError) throw coachError
+
   await ensureProfile(member.id, "member", "Test Member")
   await ensureProfile(admin.id, "admin", "Test Admin")
   await ensureProfile(owner.id, "member", "Test Owner")
   await ensureProfile(staff.id, "member", "Test Staff")
   await ensureProfile(board.id, "member", "Test Board")
   await ensureProfile(orgAdmin.id, "member", "Test Org Admin")
+  await ensureProfile(coach.id, "member", "Test Coach")
 
-  return { member, admin, owner, staff, board, orgAdmin }
+  if (await tableExists("platform_staff_members")) {
+    const { error: platformStaffError } = await adminClient
+      .from("platform_staff_members")
+      .upsert(
+        [
+          { user_id: admin.id, access_level: "developer" },
+          { user_id: coach.id, access_level: "coach" },
+        ],
+        { onConflict: "user_id" }
+      )
+    if (platformStaffError) throw platformStaffError
+  }
+
+  return { member, admin, owner, staff, board, orgAdmin, coach }
 }
 
 async function createDemoContent(memberId) {
@@ -209,7 +234,8 @@ async function createDemoContent(memberId) {
 }
 
 async function run() {
-  const { member, admin, owner, staff, board, orgAdmin } = await createUsers()
+  const { member, admin, owner, staff, board, orgAdmin, coach } =
+    await createUsers()
   const assets = await createDemoContent(member.id)
 
   const memberClient = createClient(url, anonKey, {
@@ -233,6 +259,9 @@ async function run() {
   const orgAdminClient = createClient(url, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
+  const coachClient = createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
 
   await memberClient.auth.signInWithPassword({ email: memberEmail, password })
   await adminSessionClient.auth.signInWithPassword({
@@ -246,8 +275,32 @@ async function run() {
     email: orgAdminEmail,
     password,
   })
+  await coachClient.auth.signInWithPassword({ email: coachEmail, password })
 
   const results = []
+
+  if (await tableExists("platform_staff_members")) {
+    const [
+      { data: coachIsAdmin },
+      { data: coachIsStaff },
+      { data: ownStaffRow },
+    ] = await Promise.all([
+      coachClient.rpc("is_admin"),
+      coachClient.rpc("is_platform_staff"),
+      coachClient
+        .from("platform_staff_members")
+        .select("access_level")
+        .eq("user_id", coach.id)
+        .maybeSingle(),
+    ])
+    results.push({
+      name: "coach is platform staff without broad admin access",
+      passed:
+        coachIsAdmin === false &&
+        coachIsStaff === true &&
+        ownStaffRow?.access_level === "coach",
+    })
+  }
 
   // Profile visibility
   {
@@ -2494,6 +2547,7 @@ async function run() {
   await adminClient.auth.admin.deleteUser(staff.id)
   await adminClient.auth.admin.deleteUser(board.id)
   await adminClient.auth.admin.deleteUser(orgAdmin.id)
+  await adminClient.auth.admin.deleteUser(coach.id)
 
   if (failed.length > 0) {
     console.error(`RLS tests failed (${failed.length}).`)

@@ -10,6 +10,7 @@ import type {
   MemberWorkspaceUpdateProjectQuickLinkInput,
 } from "../types"
 import { ensureMemberWorkspaceFeatureAccess } from "./access"
+import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import {
   isMissingOrganizationProjectNotesTableError,
@@ -97,13 +98,16 @@ async function resolveProjectForDetailMutation({
     return { error: "Unable to find that project." }
   }
 
-  if (!actor.isAdmin && project.org_id !== actor.activeOrg.orgId) {
+  if (
+    !actorCanAccessOrganizations(actor) &&
+    project.org_id !== actor.activeOrg.orgId
+  ) {
     return {
       error: "You can only manage project details for the active organization.",
     }
   }
 
-  if (!actor.isAdmin && !actor.canEdit) {
+  if (!actorCanAccessOrganizations(actor) && !actor.canEdit) {
     return { error: "Only organization editors can manage project details." }
   }
 

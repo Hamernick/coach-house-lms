@@ -10,6 +10,7 @@ import {
 } from "@/features/member-workspace"
 import type { SidebarClass } from "@/lib/academy"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
+import type { PlatformAccessLevel } from "@/features/platform-access"
 
 type AuthenticatedFindShellState = {
   sidebarTree: SidebarClass[]
@@ -20,6 +21,7 @@ type AuthenticatedFindShellState = {
     avatar: string | null
   }
   isAdmin: boolean
+  platformAccessLevel: PlatformAccessLevel | null
   isTester: boolean
   showOrgAdmin: boolean
   canAccessOrgAdmin: boolean
@@ -83,6 +85,7 @@ export function AuthenticatedFindShell({
         sidebarTree={state.sidebarTree}
         user={state.user}
         isAdmin={state.isAdmin}
+        platformAccessLevel={state.platformAccessLevel}
         isTester={state.isTester}
         showOrgAdmin={state.showOrgAdmin}
         canAccessOrgAdmin={state.canAccessOrgAdmin}

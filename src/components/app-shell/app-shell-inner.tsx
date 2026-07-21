@@ -82,6 +82,7 @@ export function AppShellInner({
   sidebarTree,
   user,
   isAdmin,
+  platformAccessLevel = null,
   isTester = false,
   showOrgAdmin = false,
   canAccessOrgAdmin = true,
@@ -291,6 +292,7 @@ export function AppShellInner({
               </SidebarHeader>
               <SidebarBody
                 isAdmin={isAdmin}
+                platformAccessLevel={platformAccessLevel}
                 isTester={isTester}
                 showOrgAdmin={showOrgAdmin}
                 canAccessOrgAdmin={canAccessOrgAdmin}
@@ -397,7 +399,10 @@ export function AppShellInner({
             rightOpen={rightOpen}
             onRightOpenChange={handleRightOpenChangeUser}
           />
-          {hasUser && !onboardingLocked && !isAdminContext ? (
+          {hasUser &&
+          !onboardingLocked &&
+          !isAdminContext &&
+          platformAccessLevel !== "coach" ? (
             <GlobalSearch
               isAdmin={isAdmin}
               showOrgAdmin={showOrgAdmin}

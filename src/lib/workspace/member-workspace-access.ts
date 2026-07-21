@@ -4,6 +4,7 @@ import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { resolvePaidTeamAccessForOrgSubscription } from "@/lib/billing/subscription-access"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import { hasPlatformCapability } from "@/features/platform-access"
 
 import { getMemberWorkspacePaywallPath } from "./routes"
 
@@ -12,13 +13,19 @@ export const MEMBER_WORKSPACE_UPGRADE_MESSAGE =
 
 export function actorHasMemberWorkspaceAccess(actor: {
   isAdmin: boolean
+  isPlatformStaff?: boolean
   hasMemberWorkspaceAccess?: boolean
 }) {
-  return actor.isAdmin || actor.hasMemberWorkspaceAccess === true
+  return (
+    actor.isAdmin ||
+    actor.isPlatformStaff === true ||
+    actor.hasMemberWorkspaceAccess === true
+  )
 }
 
 export function ensureMemberWorkspaceFeatureAccess(actor: {
   isAdmin: boolean
+  isPlatformStaff?: boolean
   hasMemberWorkspaceAccess?: boolean
 }) {
   if (actorHasMemberWorkspaceAccess(actor)) return null
@@ -26,8 +33,17 @@ export function ensureMemberWorkspaceFeatureAccess(actor: {
 }
 
 export async function requireMemberWorkspacePageAccess(source: string) {
-  const { profileAudience, activeOrg, user } = await resolveAuthenticatedAppContext()
-  if (profileAudience.isAdmin) return
+  const { profileAudience, activeOrg, user } =
+    await resolveAuthenticatedAppContext()
+  if (profileAudience.isPlatformStaff) {
+    if (
+      source === "tasks" &&
+      !hasPlatformCapability(profileAudience.platformAccessLevel, "tasks")
+    ) {
+      redirect("/organizations")
+    }
+    return
+  }
 
   const admin = createSupabaseAdminClient()
   const paidAccess = await resolvePaidTeamAccessForOrgSubscription({

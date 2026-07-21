@@ -1,4 +1,5 @@
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import type { Database } from "@/lib/supabase"
 import {
   FISCAL_SPONSORSHIP_FORM_B_REQUIRED_FIELDS,
@@ -122,7 +123,13 @@ export async function resolveSigningContext(
   if (!normalizedPacketId) return { error: "Signature packet is required." }
 
   const appContext = await resolveAuthenticatedAppContext()
-  const { data: packet, error: packetError } = await appContext.supabase
+  const isPlatformStaff =
+    appContext.profileAudience.isPlatformStaff ||
+    appContext.profileAudience.isAdmin
+  const supabase = isPlatformStaff
+    ? createSupabaseAdminClient()
+    : appContext.supabase
+  const { data: packet, error: packetError } = await supabase
     .from("fiscal_sponsorship_signature_packets")
     .select("*")
     .eq("id", normalizedPacketId)
@@ -134,12 +141,11 @@ export async function resolveSigningContext(
 
   const isAssignedApplicant = packet.applicant_signer_id === appContext.user.id
   const role: FiscalSponsorshipSignerRole | null =
-    appContext.profileAudience.isAdmin &&
-    ["applicant_signed", "completed"].includes(packet.status)
+    isPlatformStaff && ["applicant_signed", "completed"].includes(packet.status)
       ? "coach_house"
       : isAssignedApplicant
         ? "applicant"
-        : appContext.profileAudience.isAdmin
+        : isPlatformStaff
           ? "coach_house"
           : null
   if (!role) return { error: "You are not assigned to this signature packet." }
@@ -152,33 +158,33 @@ export async function resolveSigningContext(
     draftResult,
     signaturesResult,
   ] = await Promise.all([
-    appContext.supabase
+    supabase
       .from("fiscal_sponsorship_documents")
       .select("*")
       .eq("id", packet.document_id)
       .maybeSingle<FiscalDocumentRow>(),
-    appContext.supabase
+    supabase
       .from("profiles")
       .select("full_name, email")
       .eq("id", appContext.user.id)
       .maybeSingle<{ full_name: string | null; email: string | null }>(),
-    appContext.supabase
+    supabase
       .from("organization_projects")
       .select("name")
       .eq("id", packet.project_id)
       .maybeSingle<{ name: string }>(),
-    appContext.supabase
+    supabase
       .from("organizations")
       .select("profile")
       .eq("user_id", packet.org_id)
       .maybeSingle<{ profile: unknown }>(),
-    appContext.supabase
+    supabase
       .from("fiscal_sponsorship_signing_drafts")
       .select("*")
       .eq("packet_id", packet.id)
       .eq("signer_role", role)
       .maybeSingle<FiscalDraftRow>(),
-    appContext.supabase
+    supabase
       .from("fiscal_sponsorship_signatures")
       .select("*")
       .eq("packet_id", packet.id)
@@ -204,7 +210,7 @@ export async function resolveSigningContext(
       : packet.coach_signer_email
 
   return {
-    appContext,
+    appContext: { ...appContext, supabase },
     document: documentResult.data,
     draft: draftResult.data,
     organizationName:

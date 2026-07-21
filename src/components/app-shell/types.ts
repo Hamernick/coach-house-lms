@@ -2,6 +2,7 @@ import type { ReactNode } from "react"
 
 import type { SidebarClass } from "@/lib/academy"
 import type { PricingPlanTier } from "@/lib/billing/plan-tier"
+import type { PlatformAccessLevel } from "@/features/platform-access"
 
 export type AppShellProps = {
   children: ReactNode
@@ -15,6 +16,7 @@ export type AppShellProps = {
     avatar?: string | null
   } | null
   isAdmin: boolean
+  platformAccessLevel?: PlatformAccessLevel | null
   isTester?: boolean
   showOrgAdmin?: boolean
   canAccessOrgAdmin?: boolean

@@ -60,6 +60,7 @@ export default async function InternalAdminLayout({
       sidebarTree={sidebarTree}
       user={{ name: displayName, email, avatar }}
       isAdmin
+      platformAccessLevel="developer"
       showOrgAdmin
       showAccelerator
       hasBillingCancellationRisk={hasBillingCancellationRisk}

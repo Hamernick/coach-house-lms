@@ -223,8 +223,12 @@ describe("fiscal sponsorship workbench contract", () => {
       "FiscalSponsorshipProjectWorkbench"
     )
 
-    expect(organizationDetailRoute).toContain("await requireAdmin()")
-    expect(organizationsPage).toContain("await requireAdmin()")
+    expect(organizationDetailRoute).toContain(
+      'await requirePlatformCapability("organizations"'
+    )
+    expect(organizationsPage).toContain(
+      'await requirePlatformCapability("organizations"'
+    )
     expect(organizationDetailRoute).toContain(
       "loadFiscalSponsorshipProjectWorkflowSummary"
     )

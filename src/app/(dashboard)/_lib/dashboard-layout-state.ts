@@ -34,6 +34,8 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
   let email: string | null = user.email ?? null
   let avatar: string | null = null
   let isAdmin = false
+  let isPlatformStaff = false
+  let platformAccessLevel: DashboardLayoutState["platformAccessLevel"] = null
   let isTester = false
   let needsOnboarding = false
   let acceleratorProgress: number | null = null
@@ -79,6 +81,10 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
     (typeof user.user_metadata?.full_name === "string" ? user.user_metadata.full_name : null) ??
     (metadataFullName || null)
   isAdmin = profileAudience.isAdmin
+  isPlatformStaff = profileAudience.isPlatformStaff || profileAudience.isAdmin
+  platformAccessLevel =
+    profileAudience.platformAccessLevel ??
+    (profileAudience.isAdmin ? "developer" : null)
   isTester = profileAudience.isTester
 
   if (!email && typeof user.user_metadata?.email === "string") {
@@ -89,7 +95,7 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
     profileAudience.avatarUrl ??
     metadataAvatarUrl
 
-  needsOnboarding = !isAdmin && !completed
+  needsOnboarding = !isPlatformStaff && !completed
 
   const { orgId, role } = activeOrg
   showOrgAdmin = role === "owner" || role === "admin"
@@ -115,6 +121,21 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
     hasElectiveAccess: false,
     ownedElectiveModuleSlugs: [],
   }
+  const entitlementsPromise =
+    platformAccessLevel === "coach"
+      ? Promise.resolve(entitlementFallback)
+      : fetchLearningEntitlements({
+          supabase,
+          userId: user.id,
+          orgUserId: orgId,
+          isAdmin,
+          forceStripeSync: shouldForceStripeEntitlementSyncForWorkspace({
+            isAdmin,
+          }),
+        }).catch((error: unknown) => {
+          console.warn("Unable to load dashboard entitlement state.", error)
+          return entitlementFallback
+        })
 
   const [
     accessibleOrganizations,
@@ -134,16 +155,7 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
         is_public: boolean | null
         is_public_roadmap: boolean | null
       }>(),
-    fetchLearningEntitlements({
-      supabase,
-      userId: user.id,
-      orgUserId: orgId,
-      isAdmin,
-      forceStripeSync: shouldForceStripeEntitlementSyncForWorkspace({ isAdmin }),
-    }).catch((error: unknown) => {
-      console.warn("Unable to load dashboard entitlement state.", error)
-      return entitlementFallback
-    }),
+    entitlementsPromise,
     appPricingFeedbackPromptPromise,
     resolveAccountBillingCancellationRisk({
       supabase,
@@ -191,7 +203,8 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
   hasElectiveAccess = entitlements.hasElectiveAccess
   ownedElectiveModuleSlugs = entitlements.ownedElectiveModuleSlugs
   showAccelerator = hasAcceleratorAccess || hasElectiveAccess
-  showMemberWorkspace = isAdmin || hasActiveSubscription || orgId !== user.id
+  showMemberWorkspace =
+    isPlatformStaff || hasActiveSubscription || orgId !== user.id
   canAccessOrgAdmin = showOrgAdmin && showMemberWorkspace
 
   if (metadataIntentFocus !== "fund" && showMemberWorkspace) {
@@ -236,7 +249,7 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
       )
     : []
 
-  const welcomeEligible = !needsOnboarding && !isAdmin && completed
+  const welcomeEligible = !needsOnboarding && !isPlatformStaff && completed
   tutorialWelcomePlatform =
     welcomeEligible &&
     !tutorialsCompleted.includes("platform") &&
@@ -262,6 +275,7 @@ const resolveDashboardLayoutStateCached = cache(async (): Promise<DashboardLayou
       avatar,
     },
     isAdmin,
+    platformAccessLevel,
     isTester,
     showOrgAdmin,
     canAccessOrgAdmin,

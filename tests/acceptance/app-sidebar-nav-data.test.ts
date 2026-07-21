@@ -121,6 +121,23 @@ describe("app sidebar nav data", () => {
     )
   })
 
+  it("shows coaches only Workspace, Find, and Organizations", () => {
+    const nav = buildMainNav({
+      isAdmin: false,
+      platformAccessLevel: "coach",
+      showOrgAdmin: false,
+      canAccessOrgAdmin: false,
+      showMemberWorkspace: true,
+      hasMemberWorkspaceAccess: true,
+    })
+
+    expect(nav.map((item) => item.title)).toEqual([
+      "Workspace",
+      "Find",
+      "Organizations",
+    ])
+  })
+
   it("shows Find only for free self-only member accounts", () => {
     const nav = buildMainNav({
       isAdmin: false,

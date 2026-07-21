@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache"
 
 import type { Database } from "@/lib/supabase"
 import type { MemberWorkspaceWorkstreamCategory } from "../types"
+import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 
 type CategoryRow =
@@ -72,7 +73,7 @@ async function requirePlatformAdminActor(): Promise<
   { ok: true; actor: PlatformAdminActor } | { ok: false; error: string }
 > {
   const actor = await resolveMemberWorkspaceActorContext()
-  if (!actor.isAdmin) {
+  if (!actorCanAccessOrganizations(actor)) {
     return {
       ok: false,
       error: "Only platform admins can manage workstream categories.",
@@ -155,7 +156,7 @@ export async function loadPlatformAdminWorkstreamConfiguration({
   actor: PlatformAdminActor
   projectIds: string[]
 }) {
-  if (!actor.isAdmin) return null
+  if (!actorCanAccessOrganizations(actor)) return null
   const categoryRows = await ensureDefaultCategoryRows({
     ownerId: actor.userId,
     supabase: actor.supabase,

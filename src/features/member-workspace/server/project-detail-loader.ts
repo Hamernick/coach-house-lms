@@ -6,6 +6,7 @@ import type {
   MemberWorkspacePersonOption,
 } from "../types"
 
+import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import { ensureCanonicalAdminProjects } from "./admin-projects"
 import {
@@ -587,7 +588,7 @@ export async function loadMemberWorkspaceProjectDetailPage(
 ): Promise<MemberWorkspaceProjectDetailLoadResult> {
   const actor = await resolveMemberWorkspaceActorContext()
 
-  if (actor.isAdmin) {
+  if (actorCanAccessOrganizations(actor)) {
     return loadPlatformAdminProjectDetailPage({
       projectId,
       userId: actor.userId,

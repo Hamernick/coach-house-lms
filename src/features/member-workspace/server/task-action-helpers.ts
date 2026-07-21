@@ -4,6 +4,7 @@ import type {
   MemberWorkspaceCreateTaskInput,
   MemberWorkspaceTaskStatus,
 } from "../types"
+import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
 
@@ -66,7 +67,10 @@ export async function resolveTaskTargetProject({
     return { error: "Choose a valid project." } as const
   }
 
-  if (!actor.isAdmin && project.org_id !== actor.activeOrg.orgId) {
+  if (
+    !actorCanAccessOrganizations(actor) &&
+    project.org_id !== actor.activeOrg.orgId
+  ) {
     return {
       error: "You do not have access to manage tasks for that project.",
     } as const
@@ -75,7 +79,8 @@ export async function resolveTaskTargetProject({
   const isStandardUserProject =
     project.project_kind === "standard" && project.created_source !== "system"
   const isCanonicalAdminProject =
-    actor.isAdmin && project.project_kind === "organization_admin"
+    actorCanAccessOrganizations(actor) &&
+    project.project_kind === "organization_admin"
 
   if (!isStandardUserProject && !isCanonicalAdminProject) {
     return { error: "Choose a valid project." } as const
@@ -103,7 +108,7 @@ export async function resolveAssignableUserId({
       await loadMemberWorkspacePersonOptionsForOrganizations({
         orgIds: [orgId],
         supabase: actor.supabase,
-        includePlatformAdmins: actor.isAdmin,
+        includePlatformAdmins: actorCanAccessOrganizations(actor),
       })
     const assignableUserIds = new Set(
       assignablePeople.map((person) => person.id.trim()).filter(Boolean)

@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { canEditOrganization } from "@/lib/organization/active-org"
 import type { Database } from "@/lib/supabase"
 import type {
@@ -332,14 +333,19 @@ export async function resolveProjectAndContext(
   if (!trimmedProjectId) return { error: "Choose a project before continuing." }
 
   const context = await resolveAuthenticatedAppContext()
+  const supabase =
+    context.profileAudience.isPlatformStaff || context.profileAudience.isAdmin
+      ? createSupabaseAdminClient()
+      : context.supabase
   const projectResult = await resolveFiscalProject({
     projectId: trimmedProjectId,
-    supabase: context.supabase,
+    supabase,
   })
   if (!projectResult.ok) return { error: projectResult.error }
 
   return {
     ...context,
+    supabase,
     project: projectResult.project,
   }
 }

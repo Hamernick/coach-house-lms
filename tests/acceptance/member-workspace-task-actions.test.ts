@@ -366,25 +366,18 @@ describe("member workspace task actions", () => {
       ),
     }
 
-    const platformAdminsQuery = {
+    const platformStaffQuery = {
       select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
       returns: vi.fn(() =>
         Promise.resolve({
           data: [
             {
-              id: "platform-admin-1",
-              full_name: "Alex Admin",
-              avatar_url: null,
-              email: "alex.admin@example.com",
-              role: "admin",
+              user_id: "platform-admin-1",
+              access_level: "developer",
             },
             {
-              id: "platform-admin-2",
-              full_name: "Paula Admin",
-              avatar_url: null,
-              email: "paula.admin@example.com",
-              role: "admin",
+              user_id: "platform-admin-2",
+              access_level: "coach",
             },
           ],
           error: null,
@@ -444,11 +437,8 @@ describe("member workspace task actions", () => {
           if (table === "organization_memberships") {
             return membershipsQuery
           }
-          if (table === "profiles") {
-            return platformAdminsQuery.select.mock.calls.length === 0
-              ? platformAdminsQuery
-              : profilesByIdQuery
-          }
+          if (table === "platform_staff_members") return platformStaffQuery
+          if (table === "profiles") return profilesByIdQuery
           throw new Error(`Unexpected table query: ${table}`)
         }),
       },
@@ -710,18 +700,14 @@ describe("member workspace task actions", () => {
       in: vi.fn().mockReturnThis(),
       returns: vi.fn(() => Promise.resolve({ data: [], error: null })),
     }
-    const platformAdminsQuery = {
+    const platformStaffQuery = {
       select: vi.fn().mockReturnThis(),
-      eq: vi.fn().mockReturnThis(),
       returns: vi.fn(() =>
         Promise.resolve({
           data: [
             {
-              id: "platform-admin-1",
-              full_name: "Alex Admin",
-              avatar_url: null,
-              email: "alex.admin@example.com",
-              role: "admin",
+              user_id: "platform-admin-1",
+              access_level: "developer",
             },
           ],
           error: null,
@@ -753,7 +739,6 @@ describe("member workspace task actions", () => {
         })
       ),
     }
-    let profilesCalls = 0
     resolveMemberWorkspaceActorContextMock.mockResolvedValue({
       supabase: {
         from: vi.fn((table: string) => {
@@ -761,10 +746,8 @@ describe("member workspace task actions", () => {
           if (table === "organization_projects") return projectQuery
           if (table === "organizations") return organizationsQuery
           if (table === "organization_memberships") return membershipsQuery
-          if (table === "profiles") {
-            profilesCalls += 1
-            return profilesCalls === 1 ? platformAdminsQuery : profilesByIdQuery
-          }
+          if (table === "platform_staff_members") return platformStaffQuery
+          if (table === "profiles") return profilesByIdQuery
           throw new Error(`Unexpected table query: ${table}`)
         }),
       },

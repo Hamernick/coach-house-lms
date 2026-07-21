@@ -10,6 +10,7 @@ import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavUser } from "@/components/nav-user"
 import type { SidebarClass } from "@/lib/academy"
+import type { PlatformAccessLevel } from "@/features/platform-access"
 
 import { ClassesSection } from "@/components/app-sidebar/classes-section"
 import { RESOURCE_NAV, buildMainNav } from "@/components/app-sidebar/nav-data"
@@ -25,6 +26,7 @@ export type AppSidebarProps = {
     avatar?: string | null
   }
   isAdmin?: boolean
+  platformAccessLevel?: PlatformAccessLevel | null
   isTester?: boolean
   showOrgAdmin?: boolean
   canAccessOrgAdmin?: boolean
@@ -48,6 +50,7 @@ export type AppSidebarProps = {
 export function AppSidebar({
   user,
   isAdmin = false,
+  platformAccessLevel = null,
   isTester = false,
   showOrgAdmin = false,
   canAccessOrgAdmin = true,
@@ -80,6 +83,7 @@ export function AppSidebar({
     <aside className="hidden h-full w-72 shrink-0 border-r border-border/70 bg-sidebar px-3 pb-0 pt-0 md:flex md:flex-col md:gap-6">
       <SidebarBody
         isAdmin={isAdmin}
+        platformAccessLevel={platformAccessLevel}
         isTester={isTester}
         classes={classes}
         user={resolvedUser}
@@ -105,6 +109,7 @@ export function AppSidebar({
 
 type SidebarBodyProps = {
   isAdmin: boolean
+  platformAccessLevel?: PlatformAccessLevel | null
   isTester: boolean
   classes?: SidebarClass[]
   user: {
@@ -134,6 +139,7 @@ type SidebarBodyProps = {
 
 export function SidebarBody({
   isAdmin,
+  platformAccessLevel = null,
   isTester,
   classes,
   user,
@@ -155,6 +161,7 @@ export function SidebarBody({
   showWorkspaceHome = true,
   showMemberWorkspace,
 }: SidebarBodyProps) {
+  const isCoach = platformAccessLevel === "coach"
   const shouldShowAccelerator = !onboardingLocked && Boolean(isAdmin || showAccelerator)
   const hasUser = Boolean(user.email)
   const showMemberWorkspaceNav =
@@ -167,9 +174,12 @@ export function SidebarBody({
     })
   const hasMemberWorkspaceAccess = showMemberWorkspaceNav
   const showAccountUpgradeCta =
-    hasUser && (isAdmin || (!hasActiveSubscription && !showMemberWorkspaceNav))
+    !platformAccessLevel &&
+    hasUser &&
+    (isAdmin || (!hasActiveSubscription && !showMemberWorkspaceNav))
   const mainNavItems = buildMainNav({
     isAdmin,
+    platformAccessLevel,
     showOrgAdmin,
     canAccessOrgAdmin,
     showMemberWorkspace: showMemberWorkspaceNav,
@@ -199,7 +209,7 @@ export function SidebarBody({
       <SidebarFooter className="mt-auto pb-[var(--shell-rail-padding,0.75rem)]">
         {onboardingLocked ? null : (
           <div className="flex flex-col gap-4 pt-2">
-            {showCoachScheduling ? (
+            {showCoachScheduling && !isCoach ? (
               <>
                 <div className="hidden group-data-[collapsible=icon]:hidden [@media(min-height:56rem)]:block">
                   <CoachSchedulingCard />
@@ -210,7 +220,9 @@ export function SidebarBody({
               </>
             ) : null}
             {showAccountUpgradeCta ? <FreeAccountUpgradeCta /> : null}
-            <NavDocuments items={RESOURCE_NAV} label="Resources" />
+            {isCoach ? null : (
+              <NavDocuments items={RESOURCE_NAV} label="Resources" />
+            )}
           </div>
         )}
         {hasUser ? (

@@ -20,6 +20,14 @@ export type PublicFunctions = {
     Args: Record<string, never>
     Returns: boolean
   }
+  is_platform_staff: {
+    Args: Record<string, never>
+    Returns: boolean
+  }
+  current_platform_access_level: {
+    Args: Record<string, never>
+    Returns: string | null
+  }
   handle_updated_at: {
     Args: Record<string, never>
     Returns: unknown

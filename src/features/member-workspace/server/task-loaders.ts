@@ -1,6 +1,7 @@
 import type { Database } from "@/lib/supabase"
 import type { MemberWorkspaceTaskItem } from "../types"
 
+import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
 import { loadTaskAssigneeMap, type TaskAssigneeProfile } from "./task-assignees"
@@ -179,7 +180,7 @@ function mapAdminTaskRowsToItems(
 export async function loadMemberWorkspaceTasksPage() {
   const actor = await resolveMemberWorkspaceActorContext()
 
-  if (actor.isAdmin) {
+  if (actorCanAccessOrganizations(actor)) {
     const [
       { data: orgRows, error: orgRowsError },
       { data: detailRows, error: detailError },

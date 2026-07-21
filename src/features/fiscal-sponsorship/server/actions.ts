@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache"
 import type { SupabaseClient } from "@supabase/supabase-js"
 
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { canEditOrganization } from "@/lib/organization/active-org"
 import type { Database } from "@/lib/supabase"
 import { normalizeFiscalSponsorshipInput } from "../lib"
@@ -216,8 +217,13 @@ function revalidateFiscalApplicationRoutes(projectId: string) {
 export async function loadFiscalSponsorshipApplicationDraft(
   projectId: string
 ): Promise<LoadFiscalSponsorshipApplicationResult> {
-  const { activeOrg, profileAudience, supabase } =
-    await resolveAuthenticatedAppContext()
+  const context = await resolveAuthenticatedAppContext()
+  const { activeOrg, profileAudience } = context
+  const isPlatformStaff =
+    profileAudience.isPlatformStaff || profileAudience.isAdmin
+  const supabase = profileAudience.isPlatformStaff
+    ? createSupabaseAdminClient()
+    : context.supabase
   const normalizedProjectId = projectId.trim()
   if (!normalizedProjectId) {
     return { error: "Choose a project before loading this application." }
@@ -232,7 +238,7 @@ export async function loadFiscalSponsorshipApplicationDraft(
   if (
     !canAccessFiscalProject({
       activeOrgId: activeOrg.orgId,
-      isAdmin: profileAudience.isAdmin,
+      isAdmin: isPlatformStaff,
       project: projectResult.project,
     })
   ) {
@@ -270,8 +276,13 @@ export async function saveFiscalSponsorshipApplicationDraft(
     return { error: normalized.error }
   }
 
-  const { activeOrg, profileAudience, supabase, user } =
-    await resolveAuthenticatedAppContext()
+  const context = await resolveAuthenticatedAppContext()
+  const { activeOrg, profileAudience, user } = context
+  const isPlatformStaff =
+    profileAudience.isPlatformStaff || profileAudience.isAdmin
+  const supabase = profileAudience.isPlatformStaff
+    ? createSupabaseAdminClient()
+    : context.supabase
   const projectResult = await resolveFiscalProject({
     projectId: normalized.value.projectId,
     supabase,
@@ -282,7 +293,7 @@ export async function saveFiscalSponsorshipApplicationDraft(
     !canEditFiscalProject({
       activeOrgId: activeOrg.orgId,
       activeOrgRole: activeOrg.role,
-      isAdmin: profileAudience.isAdmin,
+      isAdmin: isPlatformStaff,
       project: projectResult.project,
     })
   ) {

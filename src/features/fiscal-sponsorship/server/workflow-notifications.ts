@@ -71,12 +71,24 @@ async function loadPlatformAdminRecipientIds({
   supabase: Pick<FiscalNotificationClient, "from">
 }) {
   const { data, error } = await supabase
-    .from("profiles")
-    .select("id")
-    .eq("role", "admin")
-    .returns<Array<{ id: string }>>()
+    .from("platform_staff_members")
+    .select("user_id")
+    .returns<Array<{ user_id: string }>>()
 
   if (error) {
+    if (error.code === "42P01" || error.code === "PGRST205") {
+      const { data: legacyAdmins, error: legacyError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("role", "admin")
+        .returns<Array<{ id: string }>>()
+
+      if (!legacyError) {
+        return uniqueUserIds(
+          (legacyAdmins ?? []).map((profile) => profile.id)
+        ).filter((userId) => userId !== excludeUserId)
+      }
+    }
     console.error(
       "[fiscal-sponsorship] Unable to load admin notification recipients.",
       error
@@ -84,7 +96,7 @@ async function loadPlatformAdminRecipientIds({
     return []
   }
 
-  return uniqueUserIds((data ?? []).map((profile) => profile.id)).filter(
+  return uniqueUserIds((data ?? []).map((staff) => staff.user_id)).filter(
     (userId) => userId !== excludeUserId
   )
 }

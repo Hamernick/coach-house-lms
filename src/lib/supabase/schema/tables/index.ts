@@ -52,6 +52,7 @@ import type { OrganizationTaskAssigneesTable } from "./organization_task_assigne
 import type { OrganizationTasksTable } from "./organization_tasks"
 import type { PlatformAdminProjectWorkstreamStatesTable } from "./platform_admin_project_workstream_states"
 import type { PlatformAdminWorkstreamCategoriesTable } from "./platform_admin_workstream_categories"
+import type { PlatformStaffMembersTable } from "./platform_staff_members"
 import type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
 import type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
 import type { OrganizationWorkspaceCommunicationDeliveriesTable } from "./organization_workspace_communication_deliveries"
@@ -142,6 +143,7 @@ export type { OrganizationTaskAssigneesTable } from "./organization_task_assigne
 export type { OrganizationTasksTable } from "./organization_tasks"
 export type { PlatformAdminProjectWorkstreamStatesTable } from "./platform_admin_project_workstream_states"
 export type { PlatformAdminWorkstreamCategoriesTable } from "./platform_admin_workstream_categories"
+export type { PlatformStaffMembersTable } from "./platform_staff_members"
 export type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
 export type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
 export type { OrganizationWorkspaceCommunicationDeliveriesTable } from "./organization_workspace_communication_deliveries"
@@ -233,6 +235,7 @@ export type PublicTables = {
   organization_tasks: OrganizationTasksTable
   platform_admin_project_workstream_states: PlatformAdminProjectWorkstreamStatesTable
   platform_admin_workstream_categories: PlatformAdminWorkstreamCategoriesTable
+  platform_staff_members: PlatformStaffMembersTable
   organization_workspace_boards: OrganizationWorkspaceBoardsTable
   organization_workspace_communication_channels: OrganizationWorkspaceCommunicationChannelsTable
   organization_workspace_communication_deliveries: OrganizationWorkspaceCommunicationDeliveriesTable

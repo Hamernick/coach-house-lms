@@ -6,6 +6,11 @@ import { Button } from "@/components/ui/button"
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import { Empty } from "@/components/ui/empty"
 import { MemberWorkspaceProjectCard } from "./member-workspace-project-card"
+import {
+  OrganizationCoachAssignmentControl,
+  type OrganizationCoachAssignmentAction,
+  type OrganizationCoachOption,
+} from "@/features/organization-coach-assignments"
 
 export function MemberWorkspaceProjectCardsView({
   onEditProject,
@@ -13,12 +18,18 @@ export function MemberWorkspaceProjectCardsView({
   onCreateProject,
   scope,
   visibleProperties,
+  coachOptions = [],
+  canManageCoachAssignments = false,
+  updateCoachAssignmentAction,
 }: {
   onEditProject?: (project: PlatformAdminDashboardLabProject) => void
   projects: PlatformAdminDashboardLabProject[]
   onCreateProject?: () => void
   scope: "organization" | "platform-admin"
   visibleProperties?: Array<"title" | "status" | "assignee" | "dueDate">
+  coachOptions?: OrganizationCoachOption[]
+  canManageCoachAssignments?: boolean
+  updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
 }) {
   if (projects.length === 0) {
     return (
@@ -58,6 +69,19 @@ export function MemberWorkspaceProjectCardsView({
                 : onEditProject
             }
             visibleProperties={visibleProperties}
+            actions={
+              project.projectKind === "organization_admin" &&
+              project.organizationId ? (
+                <OrganizationCoachAssignmentControl
+                  assignment={project.organizationCoachAssignment ?? null}
+                  canManage={canManageCoachAssignments}
+                  coachOptions={coachOptions}
+                  organizationId={project.organizationId}
+                  organizationName={project.name}
+                  updateAssignmentAction={updateCoachAssignmentAction}
+                />
+              ) : undefined
+            }
           />
         ))}
         {onCreateProject ? (

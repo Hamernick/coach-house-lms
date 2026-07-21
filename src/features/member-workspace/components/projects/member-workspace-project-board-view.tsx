@@ -28,6 +28,11 @@ import {
 import { MemberWorkspaceProjectCard } from "./member-workspace-project-card"
 import type { MemberWorkspaceWorkstreamCategory } from "../../types"
 import {
+  OrganizationCoachAssignmentControl,
+  type OrganizationCoachAssignmentAction,
+  type OrganizationCoachOption,
+} from "@/features/organization-coach-assignments"
+import {
   MemberWorkspaceProjectBoardCategoryMenu,
   MemberWorkspaceProjectBoardCategoryToolbar,
 } from "./member-workspace-project-board-category-controls"
@@ -100,6 +105,9 @@ export function MemberWorkspaceProjectBoardView({
   deleteWorkstreamCategoryAction,
   restoreWorkstreamDefaultsAction,
   updateProjectWorkstreamAction,
+  coachOptions = [],
+  canManageCoachAssignments = false,
+  updateCoachAssignmentAction,
 }: {
   projects: PlatformAdminDashboardLabProject[]
   onAddProject?: () => void
@@ -128,6 +136,9 @@ export function MemberWorkspaceProjectBoardView({
     projectId: string,
     categoryId: string
   ) => Promise<{ ok: true; id: string } | { error: string }>
+  coachOptions?: OrganizationCoachOption[]
+  canManageCoachAssignments?: boolean
+  updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
 }) {
   const router = useRouter()
   const [items, setItems] =
@@ -376,39 +387,56 @@ export function MemberWorkspaceProjectBoardView({
                       }
                       visibleProperties={visibleProperties}
                       actions={
-                        canManageProjectCard ? (
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 rounded-lg"
-                                disabled={pendingProjectIds.includes(
-                                  project.id
-                                )}
-                                type="button"
-                              >
-                                <DotsThreeVertical className="h-4 w-4" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-40 p-2" align="end">
-                              <div className="space-y-1">
-                                {columns.map((nextColumn) => (
-                                  <button
-                                    key={nextColumn.id}
-                                    type="button"
-                                    className="hover:bg-accent w-full rounded-md px-2 py-1 text-left text-sm"
-                                    onClick={() =>
-                                      moveProject(project.id, nextColumn.id)
-                                    }
-                                  >
-                                    Move to {nextColumn.label}
-                                  </button>
-                                ))}
-                              </div>
-                            </PopoverContent>
-                          </Popover>
-                        ) : undefined
+                        <>
+                          {project.projectKind === "organization_admin" &&
+                          project.organizationId ? (
+                            <OrganizationCoachAssignmentControl
+                              assignment={
+                                project.organizationCoachAssignment ?? null
+                              }
+                              canManage={canManageCoachAssignments}
+                              coachOptions={coachOptions}
+                              organizationId={project.organizationId}
+                              organizationName={project.name}
+                              updateAssignmentAction={
+                                updateCoachAssignmentAction
+                              }
+                            />
+                          ) : null}
+                          {canManageProjectCard ? (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 rounded-lg"
+                                  disabled={pendingProjectIds.includes(
+                                    project.id
+                                  )}
+                                  type="button"
+                                >
+                                  <DotsThreeVertical className="h-4 w-4" />
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-40 p-2" align="end">
+                                <div className="space-y-1">
+                                  {columns.map((nextColumn) => (
+                                    <button
+                                      key={nextColumn.id}
+                                      type="button"
+                                      className="hover:bg-accent w-full rounded-md px-2 py-1 text-left text-sm"
+                                      onClick={() =>
+                                        moveProject(project.id, nextColumn.id)
+                                      }
+                                    >
+                                      Move to {nextColumn.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </PopoverContent>
+                            </Popover>
+                          ) : null}
+                        </>
                       }
                     />
                   </div>

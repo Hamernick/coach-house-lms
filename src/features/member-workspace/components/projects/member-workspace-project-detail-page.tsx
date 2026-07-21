@@ -41,6 +41,12 @@ import { MemberWorkspaceProjectDetailTabs } from "./member-workspace-project-det
 import { ProjectDetailTopBarActions } from "./member-workspace-project-detail-top-bar-actions"
 import { useProjectAssetActions } from "./member-workspace-project-asset-actions"
 import { useMemberWorkspaceProjectTaskCreate } from "./member-workspace-project-task-create"
+import {
+  OrganizationCoachAssignmentControl,
+  type OrganizationCoachAssignment,
+  type OrganizationCoachAssignmentAction,
+  type OrganizationCoachOption,
+} from "@/features/organization-coach-assignments"
 
 type MemberWorkspaceProjectDetailPageProps = {
   project: ProjectDetails
@@ -48,6 +54,10 @@ type MemberWorkspaceProjectDetailPageProps = {
   currentUser: User
   fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
   organizationSummary: MemberWorkspaceAdminOrganizationSummary
+  coachAssignment?: OrganizationCoachAssignment | null
+  coachOptions?: OrganizationCoachOption[]
+  canManageCoachAssignment?: boolean
+  updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
   canManageProject?: boolean
   canManageProjectAssets?: boolean
   canEditProjectDetails?: boolean
@@ -163,6 +173,10 @@ export function MemberWorkspaceProjectDetailPage({
   currentUser,
   fiscalSponsorshipWorkflowSummary,
   organizationSummary,
+  coachAssignment = null,
+  coachOptions = [],
+  canManageCoachAssignment = false,
+  updateCoachAssignmentAction,
   canManageProject: canManageProjectProp,
   canManageProjectAssets: canManageProjectAssetsProp,
   canEditProjectDetails: canEditProjectDetailsProp,
@@ -405,6 +419,16 @@ export function MemberWorkspaceProjectDetailPage({
                     draft={projectDraft}
                     onChangeDraftField={handleChangeProjectDraftField}
                     onEditProject={handleStartProjectEditing}
+                    actions={
+                      <OrganizationCoachAssignmentControl
+                        assignment={coachAssignment}
+                        canManage={canManageCoachAssignment}
+                        coachOptions={coachOptions}
+                        organizationId={organizationSummary.orgId}
+                        organizationName={organizationSummary.name}
+                        updateAssignmentAction={updateCoachAssignmentAction}
+                      />
+                    }
                   />
 
                   <MemberWorkspaceProjectDetailTabs

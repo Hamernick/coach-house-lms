@@ -1,5 +1,7 @@
 "use client"
 
+import type { ReactNode } from "react"
+
 import {
   ArrowsClockwise,
   Briefcase,
@@ -87,6 +89,7 @@ type MemberWorkspaceProjectDetailHeaderProps = {
     value: string
   ) => void
   onEditProject?: () => void
+  actions?: ReactNode
 }
 
 function InlineEditableText({
@@ -146,6 +149,7 @@ export function MemberWorkspaceProjectDetailHeader({
   draft,
   onChangeDraftField,
   onEditProject,
+  actions,
 }: MemberWorkspaceProjectDetailHeaderProps) {
   const statusLabel =
     isEditing && draft
@@ -331,18 +335,21 @@ export function MemberWorkspaceProjectDetailHeader({
           ) : null}
         </div>
 
-        {canEditProject && !isEditing ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            aria-label="Edit project"
-            className="text-muted-foreground hover:text-foreground size-9 rounded-lg"
-            onClick={onEditProject}
-          >
-            <PencilSimpleLine className="h-4 w-4" />
-          </Button>
-        ) : null}
+        <div className="flex items-center gap-2">
+          {actions}
+          {canEditProject && !isEditing ? (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Edit project"
+              className="text-muted-foreground hover:text-foreground size-9 rounded-lg"
+              onClick={onEditProject}
+            >
+              <PencilSimpleLine className="h-4 w-4" />
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {!isEditing ? (

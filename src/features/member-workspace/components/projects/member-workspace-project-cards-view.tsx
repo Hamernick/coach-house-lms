@@ -7,10 +7,11 @@ import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin
 import { Empty } from "@/components/ui/empty"
 import { MemberWorkspaceProjectCard } from "./member-workspace-project-card"
 import {
-  OrganizationCoachAssignmentControl,
   type OrganizationCoachAssignmentAction,
   type OrganizationCoachOption,
 } from "@/features/organization-coach-assignments"
+import type { OrganizationKanbanVisibilityMode } from "@/features/organization-kanban-visibility"
+import { MemberWorkspaceOrganizationStaffActions } from "./member-workspace-organization-staff-actions"
 
 export function MemberWorkspaceProjectCardsView({
   onEditProject,
@@ -22,6 +23,9 @@ export function MemberWorkspaceProjectCardsView({
   canManageCoachAssignments = false,
   updateCoachAssignmentAction,
   canUnassignCoachAssignments = true,
+  kanbanVisibilityMode = "visible",
+  pendingVisibilityOrganizationIds = [],
+  onOrganizationVisibilityChange,
 }: {
   onEditProject?: (project: PlatformAdminDashboardLabProject) => void
   projects: PlatformAdminDashboardLabProject[]
@@ -32,6 +36,12 @@ export function MemberWorkspaceProjectCardsView({
   canManageCoachAssignments?: boolean
   updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
   canUnassignCoachAssignments?: boolean
+  kanbanVisibilityMode?: OrganizationKanbanVisibilityMode
+  pendingVisibilityOrganizationIds?: string[]
+  onOrganizationVisibilityChange?: (
+    organizationId: string,
+    hidden: boolean
+  ) => void
 }) {
   if (projects.length === 0) {
     return (
@@ -74,14 +84,19 @@ export function MemberWorkspaceProjectCardsView({
             actions={
               project.projectKind === "organization_admin" &&
               project.organizationId ? (
-                <OrganizationCoachAssignmentControl
-                  assignment={project.organizationCoachAssignment ?? null}
-                  canManage={canManageCoachAssignments}
+                <MemberWorkspaceOrganizationStaffActions
+                  canManageCoachAssignments={canManageCoachAssignments}
+                  canUnassignCoachAssignments={canUnassignCoachAssignments}
                   coachOptions={coachOptions}
-                  organizationId={project.organizationId}
-                  organizationName={project.name}
-                  updateAssignmentAction={updateCoachAssignmentAction}
-                  canUnassign={canUnassignCoachAssignments}
+                  kanbanVisibilityMode={kanbanVisibilityMode}
+                  onOrganizationVisibilityChange={
+                    onOrganizationVisibilityChange
+                  }
+                  pendingVisibilityOrganizationIds={
+                    pendingVisibilityOrganizationIds
+                  }
+                  project={project}
+                  updateCoachAssignmentAction={updateCoachAssignmentAction}
                 />
               ) : undefined
             }

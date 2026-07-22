@@ -263,6 +263,13 @@ describe("organization-coach-assignments feature contract", () => {
       ),
       "utf8"
     )
+    const projectsEmptyStates = readFileSync(
+      resolve(
+        process.cwd(),
+        "src/features/member-workspace/components/projects/member-workspace-projects-empty-states.tsx"
+      ),
+      "utf8"
+    )
     const assetAuthorization = projectAssetSupport.slice(
       projectAssetSupport.indexOf("export async function canAccessProjectOrg")
     )
@@ -279,6 +286,7 @@ describe("organization-coach-assignments feature contract", () => {
     expect(
       assetAuthorization.indexOf('.from("platform_staff_members")')
     ).toBeLessThan(assetAuthorization.indexOf("await isPlatformAdmin"))
-    expect(projectsPage).toContain('title="No assigned organizations"')
+    expect(projectsPage).toContain("MemberWorkspaceProjectsEmptyStates")
+    expect(projectsEmptyStates).toContain('title="No assigned organizations"')
   })
 })

@@ -651,6 +651,69 @@ async function run() {
     })
   }
 
+  if (await tableExists("organization_staff_kanban_preferences")) {
+    const { error: coachPreferenceError } = await coachClient
+      .from("organization_staff_kanban_preferences")
+      .insert({
+        staff_user_id: coach.id,
+        organization_id: member.id,
+      })
+    results.push({
+      name: "coach can hide an organization from their own Kanban",
+      passed: !coachPreferenceError,
+    })
+
+    const { error: developerPreferenceError } = await adminSessionClient
+      .from("organization_staff_kanban_preferences")
+      .insert({
+        staff_user_id: admin.id,
+        organization_id: member.id,
+      })
+    results.push({
+      name: "developer can hide an organization from their own Kanban",
+      passed: !developerPreferenceError,
+    })
+
+    const { data: coachPreferences, error: coachPreferenceReadError } =
+      await coachClient
+        .from("organization_staff_kanban_preferences")
+        .select("staff_user_id, organization_id")
+    results.push({
+      name: "platform staff can read only their own Kanban preferences",
+      passed:
+        !coachPreferenceReadError &&
+        coachPreferences?.length === 1 &&
+        coachPreferences[0]?.staff_user_id === coach.id,
+    })
+
+    const { error: memberPreferenceError } = await memberClient
+      .from("organization_staff_kanban_preferences")
+      .insert({
+        staff_user_id: member.id,
+        organization_id: member.id,
+      })
+    results.push({
+      name: "regular member cannot create Kanban preferences",
+      passed: !!memberPreferenceError,
+    })
+
+    const { error: crossStaffDeleteError } = await adminSessionClient
+      .from("organization_staff_kanban_preferences")
+      .delete()
+      .eq("staff_user_id", coach.id)
+      .eq("organization_id", member.id)
+    const { data: coachPreferenceAfterDelete } = await adminClient
+      .from("organization_staff_kanban_preferences")
+      .select("staff_user_id")
+      .eq("staff_user_id", coach.id)
+      .eq("organization_id", member.id)
+      .maybeSingle()
+    results.push({
+      name: "developer cannot change another staff member's Kanban preferences",
+      passed: !!crossStaffDeleteError || !!coachPreferenceAfterDelete,
+    })
+  }
+
   let orgAccessReady = false
   let workspaceTablesAvailable = false
   let workspaceCommunicationsTableAvailable = false

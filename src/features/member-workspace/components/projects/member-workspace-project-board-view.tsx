@@ -9,7 +9,6 @@ import {
 } from "react"
 import { useRouter } from "next/navigation"
 import {
-  DotsThreeVertical,
   Plus,
   StackSimple,
   Spinner,
@@ -20,22 +19,19 @@ import { toast } from "sonner"
 
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import { Button } from "@/components/ui/button"
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
 import { MemberWorkspaceProjectCard } from "./member-workspace-project-card"
 import type { MemberWorkspaceWorkstreamCategory } from "../../types"
 import {
-  OrganizationCoachAssignmentControl,
   type OrganizationCoachAssignmentAction,
   type OrganizationCoachOption,
 } from "@/features/organization-coach-assignments"
+import type { OrganizationKanbanVisibilityMode } from "@/features/organization-kanban-visibility"
 import {
   MemberWorkspaceProjectBoardCategoryMenu,
   MemberWorkspaceProjectBoardCategoryToolbar,
 } from "./member-workspace-project-board-category-controls"
+import { MemberWorkspaceOrganizationStaffActions } from "./member-workspace-organization-staff-actions"
+import { MemberWorkspaceProjectBoardMoveMenu } from "./member-workspace-project-board-move-menu"
 
 const OPEN_COLUMN_ORDER: Array<PlatformAdminDashboardLabProject["status"]> = [
   "backlog",
@@ -109,6 +105,9 @@ export function MemberWorkspaceProjectBoardView({
   canManageCoachAssignments = false,
   updateCoachAssignmentAction,
   canUnassignCoachAssignments = true,
+  kanbanVisibilityMode = "visible",
+  pendingVisibilityOrganizationIds = [],
+  onOrganizationVisibilityChange,
 }: {
   projects: PlatformAdminDashboardLabProject[]
   onAddProject?: () => void
@@ -141,6 +140,12 @@ export function MemberWorkspaceProjectBoardView({
   canManageCoachAssignments?: boolean
   updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
   canUnassignCoachAssignments?: boolean
+  kanbanVisibilityMode?: OrganizationKanbanVisibilityMode
+  pendingVisibilityOrganizationIds?: string[]
+  onOrganizationVisibilityChange?: (
+    organizationId: string,
+    hidden: boolean
+  ) => void
 }) {
   const router = useRouter()
   const [items, setItems] =
@@ -392,52 +397,34 @@ export function MemberWorkspaceProjectBoardView({
                         <>
                           {project.projectKind === "organization_admin" &&
                           project.organizationId ? (
-                            <OrganizationCoachAssignmentControl
-                              assignment={
-                                project.organizationCoachAssignment ?? null
+                            <MemberWorkspaceOrganizationStaffActions
+                              canManageCoachAssignments={
+                                canManageCoachAssignments
                               }
-                              canManage={canManageCoachAssignments}
+                              canUnassignCoachAssignments={
+                                canUnassignCoachAssignments
+                              }
                               coachOptions={coachOptions}
-                              organizationId={project.organizationId}
-                              organizationName={project.name}
-                              updateAssignmentAction={
+                              kanbanVisibilityMode={kanbanVisibilityMode}
+                              onOrganizationVisibilityChange={
+                                onOrganizationVisibilityChange
+                              }
+                              pendingVisibilityOrganizationIds={
+                                pendingVisibilityOrganizationIds
+                              }
+                              project={project}
+                              updateCoachAssignmentAction={
                                 updateCoachAssignmentAction
                               }
-                              canUnassign={canUnassignCoachAssignments}
                             />
                           ) : null}
                           {canManageProjectCard ? (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-7 w-7 rounded-lg"
-                                  disabled={pendingProjectIds.includes(
-                                    project.id
-                                  )}
-                                  type="button"
-                                >
-                                  <DotsThreeVertical className="h-4 w-4" />
-                                </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-40 p-2" align="end">
-                                <div className="space-y-1">
-                                  {columns.map((nextColumn) => (
-                                    <button
-                                      key={nextColumn.id}
-                                      type="button"
-                                      className="hover:bg-accent w-full rounded-md px-2 py-1 text-left text-sm"
-                                      onClick={() =>
-                                        moveProject(project.id, nextColumn.id)
-                                      }
-                                    >
-                                      Move to {nextColumn.label}
-                                    </button>
-                                  ))}
-                                </div>
-                              </PopoverContent>
-                            </Popover>
+                            <MemberWorkspaceProjectBoardMoveMenu
+                              columns={columns}
+                              moveProject={moveProject}
+                              pending={pendingProjectIds.includes(project.id)}
+                              projectId={project.id}
+                            />
                           ) : null}
                         </>
                       }

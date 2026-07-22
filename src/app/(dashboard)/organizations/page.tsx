@@ -18,13 +18,23 @@ import {
   setOrganizationCoachScopeEnabledAction,
   updateOrganizationCoachAssignmentAction,
 } from "@/features/organization-coach-assignments"
+import {
+  loadOrganizationKanbanVisibility,
+  updateOrganizationKanbanVisibilityAction,
+} from "@/features/organization-kanban-visibility"
 
 export default async function OrganizationsPage() {
   const staff = await requirePlatformCapability("organizations", {
     loginRedirect: "/organizations",
   })
 
-  const pageData = await loadMemberWorkspaceProjectsPage()
+  const [pageData, kanbanVisibilityData] = await Promise.all([
+    loadMemberWorkspaceProjectsPage(),
+    loadOrganizationKanbanVisibility({
+      supabase: staff.supabase,
+      userId: staff.userId,
+    }),
+  ])
   const coachAssignmentData = await loadOrganizationCoachAssignmentData({
     organizationIds: pageData.organizationOptions.map(({ orgId }) => orgId),
   })
@@ -91,6 +101,13 @@ export default async function OrganizationsPage() {
         staff.accessLevel === "coach" &&
         coachAssignmentData.scopeStatus.assignedOnlyEnabled &&
         organizationOptions.length === 0
+      }
+      kanbanVisibilityAvailable={kanbanVisibilityData.available}
+      hiddenOrganizationIds={kanbanVisibilityData.hiddenOrganizationIds}
+      updateOrganizationKanbanVisibilityAction={
+        kanbanVisibilityData.available
+          ? updateOrganizationKanbanVisibilityAction
+          : undefined
       }
       workstreamCategories={workstreamCategories}
       createWorkstreamCategoryAction={

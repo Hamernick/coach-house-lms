@@ -554,9 +554,16 @@ async function run() {
       .from("organization_coach_assignments")
       .update({ assigned_by: coach.id })
       .eq("organization_id", member.id)
+    const { data: assignmentAfterCoachWrite } = await adminClient
+      .from("organization_coach_assignments")
+      .select("assigned_by")
+      .eq("organization_id", member.id)
+      .maybeSingle()
     results.push({
       name: "coach cannot change organization coach assignments",
-      passed: !!coachWriteError,
+      passed:
+        !!coachWriteError ||
+        assignmentAfterCoachWrite?.assigned_by === admin.id,
     })
 
     const { error: assignedCoachLevelChangeError } = await adminSessionClient

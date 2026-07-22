@@ -682,27 +682,34 @@ async function run() {
             initialCoachScopeEnabled),
     })
 
-    const { data: disabledScopeResult, error: disableScopeError } =
-      await adminSessionClient.rpc("set_organization_coach_scope_enabled", {
-        p_enabled: false,
+    if (initialCoachScopeEnabled) {
+      results.push({
+        name: "active production coach visibility stays unchanged during RLS verification",
+        passed: scopeAfterDirectWrite?.assigned_only_enabled === true,
       })
-    const { data: scopeEvent, error: scopeEventError } =
-      await adminSessionClient
-        .from("organization_coach_scope_events")
-        .select("assigned_only_enabled, changed_by")
-        .eq("changed_by", admin.id)
-        .order("created_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
-    results.push({
-      name: "developer rollback is audited",
-      passed:
-        !disableScopeError &&
-        disabledScopeResult?.assignedOnlyEnabled === false &&
-        !scopeEventError &&
-        scopeEvent?.assigned_only_enabled === false &&
-        scopeEvent?.changed_by === admin.id,
-    })
+    } else {
+      const { data: disabledScopeResult, error: disableScopeError } =
+        await adminSessionClient.rpc("set_organization_coach_scope_enabled", {
+          p_enabled: false,
+        })
+      const { data: scopeEvent, error: scopeEventError } =
+        await adminSessionClient
+          .from("organization_coach_scope_events")
+          .select("assigned_only_enabled, changed_by")
+          .eq("changed_by", admin.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+      results.push({
+        name: "developer rollback is audited",
+        passed:
+          !disableScopeError &&
+          disabledScopeResult?.assignedOnlyEnabled === false &&
+          !scopeEventError &&
+          scopeEvent?.assigned_only_enabled === false &&
+          scopeEvent?.changed_by === admin.id,
+      })
+    }
   }
 
   if (await tableExists("organization_staff_kanban_preferences")) {
@@ -2797,13 +2804,6 @@ async function run() {
     .from("notifications")
     .delete()
     .in("user_id", [member.id, admin.id])
-  if (initialCoachScopeEnabled) {
-    const { error: restoreCoachScopeError } = await adminSessionClient.rpc(
-      "set_organization_coach_scope_enabled",
-      { p_enabled: true }
-    )
-    if (restoreCoachScopeError) throw restoreCoachScopeError
-  }
   if (await tableExists("organization_coach_scope_events")) {
     await adminClient
       .from("organization_coach_scope_events")
@@ -2813,14 +2813,21 @@ async function run() {
   await adminClient.storage
     .from("avatars")
     .remove([`${member.id}/rls-avatar-${suffix}.png`])
-  await adminClient.auth.admin.deleteUser(member.id)
-  await adminClient.auth.admin.deleteUser(admin.id)
-  await adminClient.auth.admin.deleteUser(owner.id)
-  await adminClient.auth.admin.deleteUser(staff.id)
-  await adminClient.auth.admin.deleteUser(board.id)
-  await adminClient.auth.admin.deleteUser(orgAdmin.id)
-  await adminClient.auth.admin.deleteUser(coach.id)
-  await adminClient.auth.admin.deleteUser(secondCoach.id)
+  for (const user of [
+    member,
+    admin,
+    owner,
+    staff,
+    board,
+    orgAdmin,
+    coach,
+    secondCoach,
+  ]) {
+    const { error: deleteUserError } = await adminClient.auth.admin.deleteUser(
+      user.id
+    )
+    if (deleteUserError) throw deleteUserError
+  }
 
   if (failed.length > 0) {
     console.error(`RLS tests failed (${failed.length}).`)

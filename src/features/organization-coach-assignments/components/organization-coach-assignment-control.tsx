@@ -48,6 +48,7 @@ export function OrganizationCoachAssignmentControl({
   organizationId,
   organizationName,
   updateAssignmentAction,
+  canUnassign = true,
 }: {
   assignment: OrganizationCoachAssignment | null
   canManage: boolean
@@ -55,6 +56,7 @@ export function OrganizationCoachAssignmentControl({
   organizationId: string
   organizationName: string
   updateAssignmentAction?: AssignmentAction
+  canUnassign?: boolean
 }) {
   const controller = useOrganizationCoachAssignmentController({
     assignment,
@@ -100,18 +102,25 @@ export function OrganizationCoachAssignmentControl({
         <p className="text-muted-foreground px-2 py-1 text-xs font-medium">
           Organization coach
         </p>
-        <button
-          type="button"
-          className={cn(
-            "hover:bg-accent flex min-h-11 w-full items-center gap-2 rounded-md px-2 text-left text-sm",
-            !coach && "bg-accent"
-          )}
-          onClick={() => controller.assign(null)}
-        >
-          <CoachAvatar coach={null} />
-          <span>Unassigned</span>
-          {!coach ? <Check className="ml-auto" /> : null}
-        </button>
+        {canUnassign ? (
+          <button
+            type="button"
+            className={cn(
+              "hover:bg-accent flex min-h-11 w-full items-center gap-2 rounded-md px-2 text-left text-sm",
+              !coach && "bg-accent"
+            )}
+            onClick={() => controller.assign(null)}
+          >
+            <CoachAvatar coach={null} />
+            <span>Unassigned</span>
+            {!coach ? <Check className="ml-auto" /> : null}
+          </button>
+        ) : (
+          <p className="text-muted-foreground px-2 py-2 text-xs">
+            Assigned-only visibility is active. Choose another coach to reassign
+            this organization.
+          </p>
+        )}
         {coachOptions.map((option) => (
           <button
             key={option.id}

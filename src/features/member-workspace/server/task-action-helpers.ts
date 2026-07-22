@@ -4,7 +4,10 @@ import type {
   MemberWorkspaceCreateTaskInput,
   MemberWorkspaceTaskStatus,
 } from "../types"
-import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
+import {
+  actorCanAccessOrganization,
+  actorCanAccessOrganizations,
+} from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
 
@@ -67,10 +70,7 @@ export async function resolveTaskTargetProject({
     return { error: "Choose a valid project." } as const
   }
 
-  if (
-    !actorCanAccessOrganizations(actor) &&
-    project.org_id !== actor.activeOrg.orgId
-  ) {
+  if (!actorCanAccessOrganization(actor, project.org_id)) {
     return {
       error: "You do not have access to manage tasks for that project.",
     } as const

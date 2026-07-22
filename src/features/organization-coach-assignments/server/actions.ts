@@ -6,9 +6,11 @@ import { z } from "zod"
 import { resolveAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import type {
+  SetOrganizationCoachScopeResult,
   UpdateOrganizationCoachAssignmentInput,
   UpdateOrganizationCoachAssignmentResult,
 } from "../types"
+import { loadOrganizationCoachScopeStatus } from "./loaders"
 
 const inputSchema = z.object({
   organizationId: z.string().uuid(),
@@ -59,6 +61,15 @@ export async function updateOrganizationCoachAssignmentAction(
     )
     error = result.error
   } else {
+    const scopeStatus = await loadOrganizationCoachScopeStatus({
+      supabase: admin,
+    })
+    if (scopeStatus.assignedOnlyEnabled) {
+      return {
+        error:
+          "Reassign this organization or disable assigned-only coach visibility before unassigning it.",
+      }
+    }
     const result = await admin
       .from("organization_coach_assignments")
       .delete()
@@ -80,4 +91,58 @@ export async function updateOrganizationCoachAssignmentAction(
     organizationId: parsed.data.organizationId,
     coachUserId: parsed.data.coachUserId,
   }
+}
+
+const scopeInputSchema = z.boolean()
+
+function toScopeResult(data: unknown): SetOrganizationCoachScopeResult | null {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return null
+  const value = data as Record<string, unknown>
+  if (
+    typeof value.assignedOnlyEnabled !== "boolean" ||
+    typeof value.organizationCount !== "number" ||
+    typeof value.assignmentCount !== "number" ||
+    typeof value.unassignedCount !== "number"
+  ) {
+    return null
+  }
+
+  return {
+    ok: true,
+    assignedOnlyEnabled: value.assignedOnlyEnabled,
+    organizationCount: value.organizationCount,
+    assignmentCount: value.assignmentCount,
+    unassignedCount: value.unassignedCount,
+  }
+}
+
+export async function setOrganizationCoachScopeEnabledAction(
+  enabled: boolean
+): Promise<SetOrganizationCoachScopeResult> {
+  const parsed = scopeInputSchema.safeParse(enabled)
+  if (!parsed.success) return { error: "Choose a valid coach visibility." }
+
+  const { supabase, profileAudience } = await resolveAuthenticatedAppContext()
+  if (profileAudience.platformAccessLevel !== "developer") {
+    return { error: "Only developers can change coach visibility." }
+  }
+
+  const { data, error } = await supabase.rpc(
+    "set_organization_coach_scope_enabled",
+    { p_enabled: parsed.data }
+  )
+
+  if (error) {
+    if (error.code === "23514" || error.code === "42501") {
+      return { error: error.message }
+    }
+    console.error("Unable to update coach visibility.", error)
+    return { error: "Unable to update coach visibility." }
+  }
+
+  const result = toScopeResult(data)
+  if (!result) return { error: "Coach visibility returned an invalid result." }
+
+  revalidatePath("/organizations", "layout")
+  return result
 }

@@ -2,11 +2,20 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 
 import type { Database } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
+import {
+  loadOrganizationCoachActorScope,
+  loadOrganizationCoachScopeStatus,
+} from "@/lib/admin/organization-coach-scope"
 import type {
   OrganizationCoachAssignment,
   OrganizationCoachAssignmentData,
   OrganizationCoachOption,
 } from "../types"
+
+export {
+  loadOrganizationCoachActorScope,
+  loadOrganizationCoachScopeStatus,
+} from "@/lib/admin/organization-coach-scope"
 
 type AdminClient = SupabaseClient<Database>
 type AssignmentRow =
@@ -102,9 +111,10 @@ export async function loadOrganizationCoachAssignmentData({
   organizationIds: string[]
   supabase?: AdminClient
 }): Promise<OrganizationCoachAssignmentData> {
-  const [coachOptions, assignmentResult] = await Promise.all([
+  const [coachOptions, assignmentResult, scopeStatus] = await Promise.all([
     loadCoachProfiles(supabase),
     loadAssignmentRows(supabase, organizationIds),
+    loadOrganizationCoachScopeStatus({ supabase }),
   ])
   const coachById = new Map(coachOptions.map((coach) => [coach.id, coach]))
 
@@ -115,5 +125,6 @@ export async function loadOrganizationCoachAssignmentData({
       coachById
     ),
     coachOptions,
+    scopeStatus,
   }
 }

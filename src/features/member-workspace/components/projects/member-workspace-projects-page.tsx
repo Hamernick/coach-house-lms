@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { Empty } from "@/components/ui/empty"
 import {
   ChipOverflow,
   type PlatformAdminDashboardLabProject,
@@ -36,6 +37,8 @@ import {
   type OrganizationCoachFilterValue,
   type OrganizationCoachAssignmentAction,
   type OrganizationCoachOption,
+  type OrganizationCoachScopeStatus,
+  type SetOrganizationCoachScopeAction,
 } from "@/features/organization-coach-assignments"
 import {
   applyViewOptionsToParams,
@@ -46,7 +49,7 @@ import {
   type MemberWorkspaceProjectFilterChip as FilterChip,
 } from "./member-workspace-project-view-options"
 
-export function MemberWorkspaceProjectsPage(props: {
+type MemberWorkspaceProjectsPageProps = {
   projects: PlatformAdminDashboardLabProject[]
   storageMode: MemberWorkspaceStorageMode
   canResetStarterData: boolean
@@ -74,6 +77,9 @@ export function MemberWorkspaceProjectsPage(props: {
   coachOptions?: OrganizationCoachOption[]
   canManageCoachAssignments?: boolean
   updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
+  coachScopeStatus?: OrganizationCoachScopeStatus
+  setCoachScopeAction?: SetOrganizationCoachScopeAction
+  showAssignedOrganizationsEmpty?: boolean
   scope: "organization" | "platform-admin"
   workstreamCategories?: MemberWorkspaceWorkstreamCategory[]
   createWorkstreamCategoryAction?: (
@@ -93,7 +99,11 @@ export function MemberWorkspaceProjectsPage(props: {
     projectId: string,
     categoryId: string
   ) => Promise<{ ok: true; id: string } | { error: string }>
-}) {
+}
+
+export function MemberWorkspaceProjectsPage(
+  props: MemberWorkspaceProjectsPageProps
+) {
   const {
     projects,
     storageMode: _storageMode,
@@ -110,6 +120,13 @@ export function MemberWorkspaceProjectsPage(props: {
     coachOptions = [],
     canManageCoachAssignments = false,
     updateCoachAssignmentAction,
+    coachScopeStatus = {
+      available: false,
+      assignedOnlyEnabled: false,
+      activatedAt: null,
+    },
+    setCoachScopeAction,
+    showAssignedOrganizationsEmpty = false,
     workstreamCategories = [],
     createWorkstreamCategoryAction,
     updateWorkstreamCategoryAction,
@@ -255,60 +272,77 @@ export function MemberWorkspaceProjectsPage(props: {
             </div>
           </div>
 
-          {canManageCoachAssignments ? (
+          {canManageCoachAssignments && setCoachScopeAction ? (
             <div className="border-border border-b px-4 py-3">
               <OrganizationCoachAssignmentOperationsBar
                 coachOptions={coachOptions}
                 coverage={coachAssignmentCoverage}
                 value={coachFilter}
                 onValueChange={handleCoachFilterChange}
+                scopeStatus={coachScopeStatus}
+                setScopeAction={setCoachScopeAction}
               />
             </div>
           ) : null}
 
-          <div className="flex items-center justify-between px-4 pt-3 pb-3">
-            <div className="flex items-center gap-2">
-              <MemberWorkspaceProjectFilterPopover
-                projects={coachFilteredProjects}
-                initialChips={filters}
-                onApply={handleFiltersChange}
-                onClear={() => handleFiltersChange([])}
-                counts={counts}
-              />
-              <ChipOverflow
-                chips={filters}
-                onRemove={(key, value) =>
-                  handleFiltersChange(
-                    filters.filter(
-                      (chip) => !(chip.key === key && chip.value === value)
+          {!showAssignedOrganizationsEmpty ? (
+            <div className="flex items-center justify-between px-4 pt-3 pb-3">
+              <div className="flex items-center gap-2">
+                <MemberWorkspaceProjectFilterPopover
+                  projects={coachFilteredProjects}
+                  initialChips={filters}
+                  onApply={handleFiltersChange}
+                  onClear={() => handleFiltersChange([])}
+                  counts={counts}
+                />
+                <ChipOverflow
+                  chips={filters}
+                  onRemove={(key, value) =>
+                    handleFiltersChange(
+                      filters.filter(
+                        (chip) => !(chip.key === key && chip.value === value)
+                      )
                     )
-                  )
-                }
-                maxVisible={6}
-              />
+                  }
+                  maxVisible={6}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <MemberWorkspaceProjectViewOptionsPopover
+                  options={viewOptions}
+                  onChange={handleViewOptionsChange}
+                />
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <MemberWorkspaceProjectViewOptionsPopover
-                options={viewOptions}
-                onChange={handleViewOptionsChange}
-              />
-            </div>
-          </div>
+          ) : null}
         </header>
 
         <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
-          {showFilteredEmpty ? (
+          {showAssignedOrganizationsEmpty ? (
+            <div className="h-full p-6">
+              <Empty
+                title="No assigned organizations"
+                description="Ask a developer to assign an organization to your coach account."
+                variant="subtle"
+              />
+            </div>
+          ) : null}
+          {!showAssignedOrganizationsEmpty && showFilteredEmpty ? (
             <MemberWorkspaceProjectsFilteredEmpty
               onClear={handleClearAllFilters}
             />
           ) : null}
-          {!showFilteredEmpty && viewOptions.viewType === "timeline" ? (
+          {!showAssignedOrganizationsEmpty &&
+          !showFilteredEmpty &&
+          viewOptions.viewType === "timeline" ? (
             <MemberWorkspaceProjectTimelineView
               projects={filteredProjects}
               updateProjectScheduleAction={updateProjectScheduleAction}
             />
           ) : null}
-          {!showFilteredEmpty && viewOptions.viewType === "list" ? (
+          {!showAssignedOrganizationsEmpty &&
+          !showFilteredEmpty &&
+          viewOptions.viewType === "list" ? (
             <MemberWorkspaceProjectCardsView
               projects={filteredProjects}
               visibleProperties={viewOptions.properties}
@@ -332,9 +366,14 @@ export function MemberWorkspaceProjectsPage(props: {
               coachOptions={coachOptions}
               canManageCoachAssignments={canManageCoachAssignments}
               updateCoachAssignmentAction={updateCoachAssignmentAction}
+              canUnassignCoachAssignments={
+                !coachScopeStatus.assignedOnlyEnabled
+              }
             />
           ) : null}
-          {!showFilteredEmpty && viewOptions.viewType === "board" ? (
+          {!showAssignedOrganizationsEmpty &&
+          !showFilteredEmpty &&
+          viewOptions.viewType === "board" ? (
             <MemberWorkspaceProjectBoardView
               projects={filteredProjects}
               showClosedProjects={viewOptions.showClosedProjects}
@@ -349,6 +388,9 @@ export function MemberWorkspaceProjectsPage(props: {
               coachOptions={coachOptions}
               canManageCoachAssignments={canManageCoachAssignments}
               updateCoachAssignmentAction={updateCoachAssignmentAction}
+              canUnassignCoachAssignments={
+                !coachScopeStatus.assignedOnlyEnabled
+              }
               onAddProject={
                 canCreateProjects
                   ? () => {

@@ -673,11 +673,10 @@ describe("MemberWorkspaceProjectDetailPage", () => {
       'const staff = await requirePlatformCapability("organizations"'
     )
     expect(organizationDetailRouteSource).toContain(
-      "loadPlatformAdminOrganizationProjectDetailPage({"
-    )
-    expect(organizationDetailRouteSource).toContain("userId: staff.userId")
-    expect(organizationDetailRouteSource).not.toContain(
       "loadMemberWorkspaceProjectDetailPage(id)"
+    )
+    expect(organizationDetailRouteSource).not.toContain(
+      "loadPlatformAdminOrganizationProjectDetailPage"
     )
     expect(organizationDetailRouteSource).not.toContain(
       "requireMemberWorkspacePageAccess"

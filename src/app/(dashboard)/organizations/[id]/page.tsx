@@ -17,7 +17,7 @@ import {
   deleteMemberWorkspaceTaskAction,
   deleteMemberWorkspaceProjectNoteAction,
   deleteMemberWorkspaceProjectQuickLinkAction,
-  loadPlatformAdminOrganizationProjectDetailPage,
+  loadMemberWorkspaceProjectDetailPage,
   MemberWorkspaceProjectDetailPage,
   updateMemberWorkspaceProjectAction,
   updateMemberWorkspaceProjectNoteAction,
@@ -56,10 +56,7 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
   })
 
   const { id } = await params
-  const result = await loadPlatformAdminOrganizationProjectDetailPage({
-    projectId: id,
-    userId: staff.userId,
-  })
+  const result = await loadMemberWorkspaceProjectDetailPage(id)
 
   if (result.state === "not-found") {
     notFound()
@@ -120,6 +117,9 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
         coachAssignmentData.available && staff.accessLevel === "developer"
           ? updateOrganizationCoachAssignmentAction
           : undefined
+      }
+      canUnassignCoachAssignment={
+        !coachAssignmentData.scopeStatus.assignedOnlyEnabled
       }
       fiscalSponsorshipWorkflowSummary={fiscalSponsorshipWorkflowData}
       canManageProject={canManageProject}

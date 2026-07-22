@@ -1,9 +1,14 @@
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
 
+import React from "react"
+import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it } from "vitest"
 
-import { resolveAcceleratorProgressRailState } from "@/components/accelerator/accelerator-progress-rail"
+import {
+  AcceleratorProgressRail,
+  resolveAcceleratorProgressRailState,
+} from "@/components/accelerator/accelerator-progress-rail"
 import {
   ACCELERATOR_FUNDABLE_THRESHOLD,
   ACCELERATOR_VERIFIED_THRESHOLD,
@@ -46,7 +51,7 @@ describe("accelerator progress rail", () => {
         width: 20,
         fillPercent: 0,
         active: false,
-        trackClassName: "bg-emerald-500/18 dark:bg-emerald-400/18",
+        trackClassName: "bg-emerald-500/25 dark:bg-emerald-400/25",
         fillClassName: "bg-emerald-500",
       },
       {
@@ -56,7 +61,7 @@ describe("accelerator progress rail", () => {
         width: 10,
         fillPercent: 0,
         active: false,
-        trackClassName: "bg-sky-500/18 dark:bg-sky-400/18",
+        trackClassName: "bg-sky-500/25 dark:bg-sky-400/25",
         fillClassName: "bg-sky-500",
       },
     ])
@@ -80,6 +85,20 @@ describe("accelerator progress rail", () => {
     ])
   })
 
+  it("keeps the colored rail segments free of embedded icons", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(AcceleratorProgressRail, {
+        progressPercent: 80,
+      })
+    )
+
+    expect(markup).not.toContain('data-slot="accelerator-progress-milestone"')
+    expect(markup).toContain("bg-emerald-500")
+    expect(markup).toContain("bg-sky-500")
+    expect(markup).toContain("Fundable segment, 70-90%")
+    expect(markup).toContain("Verified segment, 90-100%")
+  })
+
   it("uses concise shadcn tooltips instead of separate milestone trigger buttons", () => {
     const source = readSource(
       "src/components/accelerator/accelerator-progress-rail.tsx"
@@ -100,9 +119,11 @@ describe("accelerator progress rail", () => {
     expect(source).toContain("formatSegmentStatusLabel")
     expect(source).toContain("segmentStatusLabels")
     expect(source).toContain('className="px-2.5 py-1.5"')
-    expect(source).toContain(
-      'className={cn("size-2 rounded-full", segment.fillClassName)}'
-    )
+    expect(source).not.toContain('data-slot="accelerator-progress-milestone"')
+    expect(source).toContain('className="bg-border/40 flex h-3')
+    expect(source).toContain('from "lucide-react/dist/esm/icons/dollar-sign"')
+    expect(source).toContain('from "lucide-react/dist/esm/icons/badge-check"')
+    expect(source).toContain("MILESTONE_VISUALS")
     expect(source).toContain("`${completeCount}/${items.length} ready`")
     expect(source).toContain('from "@/components/ui/button"')
     expect(source).toContain('variant="ghost"')
@@ -116,8 +137,8 @@ describe("accelerator progress rail", () => {
     expect(source).not.toContain('size="icon"')
     expect(source).not.toContain('aria-label="Fundable checkpoint"')
     expect(source).not.toContain('aria-label="Verified checkpoint"')
-    expect(source).not.toContain("DollarSignIcon")
-    expect(source).not.toContain("BadgeCheckIcon")
+    expect(source).toContain("DollarSignIcon")
+    expect(source).toContain("BadgeCheckIcon")
   })
 
   it("uses distinct segment colors instead of a monochrome usage bar", () => {
@@ -127,8 +148,8 @@ describe("accelerator progress rail", () => {
 
     expect(source).toContain("bg-border/40")
     expect(source).toContain("bg-amber-500/20 dark:bg-amber-400/18")
-    expect(source).toContain("bg-emerald-500/18 dark:bg-emerald-400/18")
-    expect(source).toContain("bg-sky-500/18 dark:bg-sky-400/18")
+    expect(source).toContain("bg-emerald-500/25 dark:bg-emerald-400/25")
+    expect(source).toContain("bg-sky-500/25 dark:bg-sky-400/25")
     expect(source).toContain('fillClassName: "bg-amber-500"')
     expect(source).toContain('fillClassName: "bg-emerald-500"')
     expect(source).toContain('fillClassName: "bg-sky-500"')
@@ -139,7 +160,7 @@ describe("accelerator progress rail", () => {
     )
     expect(source).not.toContain("border-zinc-300")
     expect(source).not.toContain("dark:border-zinc-600")
-    expect(source).not.toContain("text-emerald-")
-    expect(source).not.toContain("text-sky-")
+    expect(source).toContain("text-emerald-700 dark:text-emerald-300")
+    expect(source).toContain("text-sky-700 dark:text-sky-300")
   })
 })

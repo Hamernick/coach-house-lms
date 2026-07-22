@@ -1,5 +1,10 @@
-import type { OrganizationCoachOption } from "../types"
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
+export {
+  ALL_ORGANIZATION_COACH_SCOPE,
+  canAccessOrganizationInCoachScope,
+  filterByOrganizationCoachScope,
+} from "@/lib/organization-coach-scope"
+import type { OrganizationCoachOption } from "../types"
 import type {
   OrganizationCoachAssignmentCoverage,
   OrganizationCoachFilterValue,

@@ -16,6 +16,7 @@ export type OrganizationCoachAssignmentData = {
   available: boolean
   assignmentsByOrganizationId: Map<string, OrganizationCoachAssignment>
   coachOptions: OrganizationCoachOption[]
+  scopeStatus: OrganizationCoachScopeStatus
 }
 
 export type UpdateOrganizationCoachAssignmentInput = {
@@ -31,6 +32,20 @@ export type OrganizationCoachAssignmentAction = (
   input: UpdateOrganizationCoachAssignmentInput
 ) => Promise<UpdateOrganizationCoachAssignmentResult>
 
+export type SetOrganizationCoachScopeResult =
+  | {
+      ok: true
+      assignedOnlyEnabled: boolean
+      organizationCount: number
+      assignmentCount: number
+      unassignedCount: number
+    }
+  | { error: string }
+
+export type SetOrganizationCoachScopeAction = (
+  enabled: boolean
+) => Promise<SetOrganizationCoachScopeResult>
+
 export type OrganizationCoachFilterValue = "all" | "unassigned" | string
 
 export type OrganizationCoachAssignmentCoverage = {
@@ -39,3 +54,12 @@ export type OrganizationCoachAssignmentCoverage = {
   unassigned: number
   countByCoachId: Record<string, number>
 }
+import type {
+  OrganizationCoachActorScope,
+  OrganizationCoachScopeStatus,
+} from "@/lib/organization-coach-scope"
+
+export type {
+  OrganizationCoachActorScope,
+  OrganizationCoachScopeStatus,
+} from "@/lib/organization-coach-scope"

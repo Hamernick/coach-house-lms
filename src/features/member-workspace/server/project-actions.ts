@@ -4,7 +4,10 @@ import { revalidatePath } from "next/cache"
 
 import type { Database } from "@/lib/supabase"
 import type { MemberWorkspaceCreateProjectFormInput } from "../types"
-import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
+import {
+  actorCanAccessOrganization,
+  actorCanAccessOrganizations,
+} from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import { loadOrganizationProjectStarterIdMap } from "./project-persistence"
 import { buildStarterOrganizationProjects } from "./project-starter-data"
@@ -82,6 +85,9 @@ async function resolveProjectCreateOrgId({
     const orgId = input.orgId?.trim()
     if (!orgId) {
       return { error: "Choose an organization for the project." }
+    }
+    if (!actorCanAccessOrganization(actor, orgId)) {
+      return { error: "You do not have access to that organization." }
     }
 
     const { data, error } = await actor.supabase
@@ -229,12 +235,9 @@ export async function updateMemberWorkspaceProjectAction(
     return { error: "Unable to find that project." }
   }
 
-  if (
-    !actorCanAccessOrganizations(actor) &&
-    existingProject.org_id !== actor.activeOrg.orgId
-  ) {
+  if (!actorCanAccessOrganization(actor, existingProject.org_id)) {
     return {
-      error: "You can only update projects for the active organization.",
+      error: "You do not have access to that organization's projects.",
     }
   }
 
@@ -327,12 +330,9 @@ export async function updateMemberWorkspaceProjectStatusAction(
     return { error: "Unable to find that project." }
   }
 
-  if (
-    !actorCanAccessOrganizations(actor) &&
-    existingProject.org_id !== actor.activeOrg.orgId
-  ) {
+  if (!actorCanAccessOrganization(actor, existingProject.org_id)) {
     return {
-      error: "You can only update projects for the active organization.",
+      error: "You do not have access to that organization's projects.",
     }
   }
 
@@ -413,12 +413,9 @@ export async function updateMemberWorkspaceProjectScheduleAction(
     return { error: "Unable to find that project." }
   }
 
-  if (
-    !actorCanAccessOrganizations(actor) &&
-    existingProject.org_id !== actor.activeOrg.orgId
-  ) {
+  if (!actorCanAccessOrganization(actor, existingProject.org_id)) {
     return {
-      error: "You can only update projects for the active organization.",
+      error: "You do not have access to that organization's projects.",
     }
   }
 
@@ -487,12 +484,9 @@ export async function deleteMemberWorkspaceProjectAction(
     return { error: "Unable to find that organization." }
   }
 
-  if (
-    !actorCanAccessOrganizations(actor) &&
-    existingProject.org_id !== actor.activeOrg.orgId
-  ) {
+  if (!actorCanAccessOrganization(actor, existingProject.org_id)) {
     return {
-      error: "You can only delete organizations for the active organization.",
+      error: "You do not have access to that organization's projects.",
     }
   }
 

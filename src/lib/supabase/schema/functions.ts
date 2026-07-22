@@ -28,6 +28,12 @@ export type PublicFunctions = {
     Args: Record<string, never>
     Returns: string | null
   }
+  set_organization_coach_scope_enabled: {
+    Args: {
+      p_enabled: boolean
+    }
+    Returns: Json
+  }
   handle_updated_at: {
     Args: Record<string, never>
     Returns: unknown

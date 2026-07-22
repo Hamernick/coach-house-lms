@@ -4,8 +4,10 @@ import { describe, expect, it } from "vitest"
 
 import {
   applyOrganizationCoachFilterToParams,
+  canAccessOrganizationInCoachScope,
   computeOrganizationCoachAssignmentCoverage,
   filterProjectsByOrganizationCoach,
+  filterByOrganizationCoachScope,
   getOrganizationCoachInitials,
   normalizeOrganizationCoachFilter,
 } from "@/features/organization-coach-assignments"
@@ -179,5 +181,104 @@ describe("organization-coach-assignments feature contract", () => {
     expect(params.toString()).toBe("status=active&coach=unassigned")
     applyOrganizationCoachFilterToParams(params, "all")
     expect(params.toString()).toBe("status=active")
+  })
+
+  it("restricts active coach scope without reducing developer access", () => {
+    const assignedScope = {
+      mode: "assigned" as const,
+      organizationIds: new Set(["org-1"]),
+    }
+
+    expect(canAccessOrganizationInCoachScope({ mode: "all" }, "org-2")).toBe(
+      true
+    )
+    expect(canAccessOrganizationInCoachScope(assignedScope, "org-1")).toBe(true)
+    expect(canAccessOrganizationInCoachScope(assignedScope, "org-2")).toBe(
+      false
+    )
+    expect(
+      filterByOrganizationCoachScope(
+        [{ orgId: "org-1" }, { orgId: "org-2" }],
+        assignedScope
+      )
+    ).toEqual([{ orgId: "org-1" }])
+  })
+
+  it("keeps assigned-only visibility behind an audited readiness gate", () => {
+    const migration = readFileSync(
+      resolve(
+        process.cwd(),
+        "supabase/migrations/20260722141000_add_organization_coach_scoping.sql"
+      ),
+      "utf8"
+    )
+
+    expect(migration).toContain(
+      "assigned_only_enabled boolean not null default false"
+    )
+    expect(migration).toContain("set_organization_coach_scope_enabled")
+    expect(migration).toContain("Only developers can change coach visibility")
+    expect(migration).toContain("v_assignment_count <> v_organization_count")
+    expect(migration).toContain("organization_coach_scope_events")
+    expect(migration).toContain("force row level security")
+    expect(migration).toContain(
+      "organization_coach_assignments_developer_delete"
+    )
+    expect(migration).toContain("protect_active_organization_coach_assignment")
+  })
+
+  it("enforces coach scope in list, detail, mutation, and asset paths", () => {
+    const projectLoader = readFileSync(
+      resolve(
+        process.cwd(),
+        "src/features/member-workspace/server/project-loaders.ts"
+      ),
+      "utf8"
+    )
+    const detailLoader = readFileSync(
+      resolve(
+        process.cwd(),
+        "src/features/member-workspace/server/project-detail-loader.ts"
+      ),
+      "utf8"
+    )
+    const projectActions = readFileSync(
+      resolve(
+        process.cwd(),
+        "src/features/member-workspace/server/project-actions.ts"
+      ),
+      "utf8"
+    )
+    const projectAssetSupport = readFileSync(
+      resolve(
+        process.cwd(),
+        "src/app/api/account/project-assets/route-support.ts"
+      ),
+      "utf8"
+    )
+    const projectsPage = readFileSync(
+      resolve(
+        process.cwd(),
+        "src/features/member-workspace/components/projects/member-workspace-projects-page.tsx"
+      ),
+      "utf8"
+    )
+    const assetAuthorization = projectAssetSupport.slice(
+      projectAssetSupport.indexOf("export async function canAccessProjectOrg")
+    )
+
+    expect(projectLoader).toContain("filterOrganizationsForActor(")
+    expect(detailLoader).toContain("actorCanAccessOrganization(actor")
+    expect(projectActions).toContain(
+      "actorCanAccessOrganization(actor, existingProject.org_id)"
+    )
+    expect(projectAssetSupport).toContain(
+      '.from("organization_coach_scope_settings")'
+    )
+    expect(projectAssetSupport).toContain('.eq("coach_user_id", userId)')
+    expect(
+      assetAuthorization.indexOf('.from("platform_staff_members")')
+    ).toBeLessThan(assetAuthorization.indexOf("await isPlatformAdmin"))
+    expect(projectsPage).toContain('title="No assigned organizations"')
   })
 })

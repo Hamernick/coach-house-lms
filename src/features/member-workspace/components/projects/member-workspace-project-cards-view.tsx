@@ -21,6 +21,7 @@ export function MemberWorkspaceProjectCardsView({
   coachOptions = [],
   canManageCoachAssignments = false,
   updateCoachAssignmentAction,
+  canUnassignCoachAssignments = true,
 }: {
   onEditProject?: (project: PlatformAdminDashboardLabProject) => void
   projects: PlatformAdminDashboardLabProject[]
@@ -30,6 +31,7 @@ export function MemberWorkspaceProjectCardsView({
   coachOptions?: OrganizationCoachOption[]
   canManageCoachAssignments?: boolean
   updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
+  canUnassignCoachAssignments?: boolean
 }) {
   if (projects.length === 0) {
     return (
@@ -79,6 +81,7 @@ export function MemberWorkspaceProjectCardsView({
                   organizationId={project.organizationId}
                   organizationName={project.name}
                   updateAssignmentAction={updateCoachAssignmentAction}
+                  canUnassign={canUnassignCoachAssignments}
                 />
               ) : undefined
             }

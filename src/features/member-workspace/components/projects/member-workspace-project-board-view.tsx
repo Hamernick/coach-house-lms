@@ -108,6 +108,7 @@ export function MemberWorkspaceProjectBoardView({
   coachOptions = [],
   canManageCoachAssignments = false,
   updateCoachAssignmentAction,
+  canUnassignCoachAssignments = true,
 }: {
   projects: PlatformAdminDashboardLabProject[]
   onAddProject?: () => void
@@ -139,6 +140,7 @@ export function MemberWorkspaceProjectBoardView({
   coachOptions?: OrganizationCoachOption[]
   canManageCoachAssignments?: boolean
   updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
+  canUnassignCoachAssignments?: boolean
 }) {
   const router = useRouter()
   const [items, setItems] =
@@ -401,6 +403,7 @@ export function MemberWorkspaceProjectBoardView({
                               updateAssignmentAction={
                                 updateCoachAssignmentAction
                               }
+                              canUnassign={canUnassignCoachAssignments}
                             />
                           ) : null}
                           {canManageProjectCard ? (

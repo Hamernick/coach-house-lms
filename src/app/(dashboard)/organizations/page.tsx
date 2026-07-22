@@ -15,6 +15,7 @@ import {
 import { requirePlatformCapability } from "@/lib/admin/auth"
 import {
   loadOrganizationCoachAssignmentData,
+  setOrganizationCoachScopeEnabledAction,
   updateOrganizationCoachAssignmentAction,
 } from "@/features/organization-coach-assignments"
 
@@ -79,6 +80,17 @@ export default async function OrganizationsPage() {
         coachAssignmentData.available && staff.accessLevel === "developer"
           ? updateOrganizationCoachAssignmentAction
           : undefined
+      }
+      coachScopeStatus={coachAssignmentData.scopeStatus}
+      setCoachScopeAction={
+        staff.accessLevel === "developer"
+          ? setOrganizationCoachScopeEnabledAction
+          : undefined
+      }
+      showAssignedOrganizationsEmpty={
+        staff.accessLevel === "coach" &&
+        coachAssignmentData.scopeStatus.assignedOnlyEnabled &&
+        organizationOptions.length === 0
       }
       workstreamCategories={workstreamCategories}
       createWorkstreamCategoryAction={

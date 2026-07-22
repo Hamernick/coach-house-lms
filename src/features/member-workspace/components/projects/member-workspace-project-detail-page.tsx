@@ -58,6 +58,7 @@ type MemberWorkspaceProjectDetailPageProps = {
   coachOptions?: OrganizationCoachOption[]
   canManageCoachAssignment?: boolean
   updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
+  canUnassignCoachAssignment?: boolean
   canManageProject?: boolean
   canManageProjectAssets?: boolean
   canEditProjectDetails?: boolean
@@ -125,6 +126,13 @@ function getProjectSourceProjectKind(source: ProjectDetails["source"]) {
     : undefined
 }
 
+function buildProjectBreadcrumbs(projectName: string) {
+  return [
+    { label: "Organizations", href: "/organizations" },
+    { label: projectName },
+  ]
+}
+
 function useMemberWorkspaceProjectDelete({
   deleteProjectAction,
   projectId,
@@ -177,6 +185,7 @@ export function MemberWorkspaceProjectDetailPage({
   coachOptions = [],
   canManageCoachAssignment = false,
   updateCoachAssignmentAction,
+  canUnassignCoachAssignment = true,
   canManageProject: canManageProjectProp,
   canManageProjectAssets: canManageProjectAssetsProp,
   canEditProjectDetails: canEditProjectDetailsProp,
@@ -223,10 +232,7 @@ export function MemberWorkspaceProjectDetailPage({
     useState<MemberWorkspaceProjectDetailDraft>(initialProjectDraft)
 
   const breadcrumbs = useMemo(
-    () => [
-      { label: "Organizations", href: "/organizations" },
-      { label: project.name },
-    ],
+    () => buildProjectBreadcrumbs(project.name),
     [project.name]
   )
 
@@ -427,6 +433,7 @@ export function MemberWorkspaceProjectDetailPage({
                         organizationId={organizationSummary.orgId}
                         organizationName={organizationSummary.name}
                         updateAssignmentAction={updateCoachAssignmentAction}
+                        canUnassign={canUnassignCoachAssignment}
                       />
                     }
                   />

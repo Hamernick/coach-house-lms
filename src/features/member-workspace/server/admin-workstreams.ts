@@ -2,7 +2,10 @@ import { revalidatePath } from "next/cache"
 
 import type { Database } from "@/lib/supabase"
 import type { MemberWorkspaceWorkstreamCategory } from "../types"
-import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
+import {
+  actorCanAccessOrganization,
+  actorCanAccessOrganizations,
+} from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 
 type CategoryRow =
@@ -422,9 +425,9 @@ export async function updatePlatformAdminProjectWorkstreamAction(
   const [{ data: project }, { data: category }] = await Promise.all([
     actor.supabase
       .from("organization_projects")
-      .select("id")
+      .select("id, org_id")
       .eq("id", normalizedProjectId)
-      .maybeSingle<{ id: string }>(),
+      .maybeSingle<{ id: string; org_id: string }>(),
     actor.supabase
       .from("platform_admin_workstream_categories")
       .select("id")
@@ -433,7 +436,11 @@ export async function updatePlatformAdminProjectWorkstreamAction(
       .maybeSingle<{ id: string }>(),
   ])
 
-  if (!project || !category) {
+  if (
+    !project ||
+    !category ||
+    !actorCanAccessOrganization(actor, project.org_id)
+  ) {
     return {
       error: "That project or category is no longer available.",
     } as const

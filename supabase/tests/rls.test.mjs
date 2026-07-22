@@ -576,6 +576,72 @@ async function run() {
     })
   }
 
+  if (await tableExists("organization_coach_scope_settings")) {
+    const { data: coachScopeSetting, error: coachScopeReadError } =
+      await coachClient
+        .from("organization_coach_scope_settings")
+        .select("assigned_only_enabled")
+        .eq("id", true)
+        .maybeSingle()
+    results.push({
+      name: "coach can read assigned-only visibility state",
+      passed:
+        !coachScopeReadError &&
+        coachScopeSetting?.assigned_only_enabled === false,
+    })
+
+    const { data: memberScopeSetting, error: memberScopeReadError } =
+      await memberClient
+        .from("organization_coach_scope_settings")
+        .select("assigned_only_enabled")
+        .eq("id", true)
+        .maybeSingle()
+    results.push({
+      name: "regular member cannot read coach visibility state",
+      passed: !memberScopeSetting && !memberScopeReadError,
+    })
+
+    const { error: coachScopeWriteError } = await coachClient.rpc(
+      "set_organization_coach_scope_enabled",
+      { p_enabled: false }
+    )
+    results.push({
+      name: "coach cannot change assigned-only visibility",
+      passed: !!coachScopeWriteError,
+    })
+
+    const { error: directScopeWriteError } = await adminSessionClient
+      .from("organization_coach_scope_settings")
+      .update({ assigned_only_enabled: true })
+      .eq("id", true)
+    results.push({
+      name: "developer cannot bypass the coach visibility RPC",
+      passed: !!directScopeWriteError,
+    })
+
+    const { data: disabledScopeResult, error: disableScopeError } =
+      await adminSessionClient.rpc("set_organization_coach_scope_enabled", {
+        p_enabled: false,
+      })
+    const { data: scopeEvent, error: scopeEventError } =
+      await adminSessionClient
+        .from("organization_coach_scope_events")
+        .select("assigned_only_enabled, changed_by")
+        .eq("changed_by", admin.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
+    results.push({
+      name: "developer rollback is audited",
+      passed:
+        !disableScopeError &&
+        disabledScopeResult?.assignedOnlyEnabled === false &&
+        !scopeEventError &&
+        scopeEvent?.assigned_only_enabled === false &&
+        scopeEvent?.changed_by === admin.id,
+    })
+  }
+
   let orgAccessReady = false
   let workspaceTablesAvailable = false
   let workspaceCommunicationsTableAvailable = false
@@ -2605,6 +2671,12 @@ async function run() {
     .from("notifications")
     .delete()
     .in("user_id", [member.id, admin.id])
+  if (await tableExists("organization_coach_scope_events")) {
+    await adminClient
+      .from("organization_coach_scope_events")
+      .delete()
+      .eq("changed_by", admin.id)
+  }
   await adminClient.storage
     .from("avatars")
     .remove([`${member.id}/rls-avatar-${suffix}.png`])

@@ -12,7 +12,10 @@ import {
   type OrganizationProjectRecord,
 } from "./project-starter-data"
 import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
-import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
+import {
+  actorCanAccessOrganizations,
+  filterOrganizationsForActor,
+} from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import { ensureStarterProjectsForOrg } from "./project-persistence"
 import { organizationProjectSelectFields } from "./project-select"
@@ -63,9 +66,12 @@ export async function loadMemberWorkspaceProjectsPage() {
   const actor = await resolveMemberWorkspaceActorContext()
 
   if (actorCanAccessOrganizations(actor)) {
-    const organizations = await loadAdminOrganizationSummaries({
-      supabase: actor.supabase,
-    })
+    const organizations = filterOrganizationsForActor(
+      actor,
+      await loadAdminOrganizationSummaries({
+        supabase: actor.supabase,
+      })
+    )
     const orgIds = organizations.map((organization) => organization.orgId)
     const organizationOptions = organizations.map((organization) => ({
       orgId: organization.orgId,

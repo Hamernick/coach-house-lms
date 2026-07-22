@@ -1,1 +1,5 @@
-export { loadOrganizationCoachAssignmentData } from "./server/loaders"
+export {
+  loadOrganizationCoachActorScope,
+  loadOrganizationCoachAssignmentData,
+  loadOrganizationCoachScopeStatus,
+} from "./server/loaders"

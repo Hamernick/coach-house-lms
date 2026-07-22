@@ -54,6 +54,8 @@ import type { PlatformAdminProjectWorkstreamStatesTable } from "./platform_admin
 import type { PlatformAdminWorkstreamCategoriesTable } from "./platform_admin_workstream_categories"
 import type { PlatformStaffMembersTable } from "./platform_staff_members"
 import type { OrganizationCoachAssignmentsTable } from "./organization_coach_assignments"
+import type { OrganizationCoachScopeEventsTable } from "./organization_coach_scope_events"
+import type { OrganizationCoachScopeSettingsTable } from "./organization_coach_scope_settings"
 import type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
 import type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
 import type { OrganizationWorkspaceCommunicationDeliveriesTable } from "./organization_workspace_communication_deliveries"
@@ -146,6 +148,8 @@ export type { PlatformAdminProjectWorkstreamStatesTable } from "./platform_admin
 export type { PlatformAdminWorkstreamCategoriesTable } from "./platform_admin_workstream_categories"
 export type { PlatformStaffMembersTable } from "./platform_staff_members"
 export type { OrganizationCoachAssignmentsTable } from "./organization_coach_assignments"
+export type { OrganizationCoachScopeEventsTable } from "./organization_coach_scope_events"
+export type { OrganizationCoachScopeSettingsTable } from "./organization_coach_scope_settings"
 export type { OrganizationWorkspaceBoardsTable } from "./organization_workspace_boards"
 export type { OrganizationWorkspaceCommunicationChannelsTable } from "./organization_workspace_communication_channels"
 export type { OrganizationWorkspaceCommunicationDeliveriesTable } from "./organization_workspace_communication_deliveries"
@@ -239,6 +243,8 @@ export type PublicTables = {
   platform_admin_workstream_categories: PlatformAdminWorkstreamCategoriesTable
   platform_staff_members: PlatformStaffMembersTable
   organization_coach_assignments: OrganizationCoachAssignmentsTable
+  organization_coach_scope_events: OrganizationCoachScopeEventsTable
+  organization_coach_scope_settings: OrganizationCoachScopeSettingsTable
   organization_workspace_boards: OrganizationWorkspaceBoardsTable
   organization_workspace_communication_channels: OrganizationWorkspaceCommunicationChannelsTable
   organization_workspace_communication_deliveries: OrganizationWorkspaceCommunicationDeliveriesTable

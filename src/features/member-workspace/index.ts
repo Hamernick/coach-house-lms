@@ -23,7 +23,6 @@ export {
   loadAccessibleOrganizations,
   loadMemberWorkspacePeoplePage,
   loadMemberWorkspaceProjectDetailPage,
-  loadPlatformAdminOrganizationProjectDetailPage,
   loadMemberWorkspaceProjectsPage,
   loadMemberWorkspaceTasksPage,
 } from "./loaders"

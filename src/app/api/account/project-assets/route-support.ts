@@ -1,10 +1,12 @@
 import { buildProjectAssetOpenPath } from "@/features/member-workspace"
 import type { Database } from "@/lib/supabase"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
+import type { SupabaseClient } from "@supabase/supabase-js"
 
 export type ProjectAssetsRouteClient = ReturnType<
   typeof createSupabaseRouteHandlerClient
 >
+export type ProjectAssetsDataClient = SupabaseClient<Database>
 
 export type ProjectRow = Pick<
   Database["public"]["Tables"]["organization_projects"]["Row"],
@@ -152,6 +154,42 @@ export async function canAccessProjectOrg({
   supabase: ProjectAssetsRouteClient
   userId: string
 }) {
+  const { data: staff, error: staffError } = await supabase
+    .from("platform_staff_members")
+    .select("access_level")
+    .eq("user_id", userId)
+    .maybeSingle<{ access_level: string }>()
+
+  const staffTableMissing =
+    staffError?.code === "42P01" || staffError?.code === "PGRST205"
+  if (staffError && !staffTableMissing) return false
+
+  if (staff?.access_level === "coach") {
+    const { data: scope, error: scopeError } = await supabase
+      .from("organization_coach_scope_settings")
+      .select("assigned_only_enabled")
+      .eq("id", true)
+      .maybeSingle<{ assigned_only_enabled: boolean }>()
+
+    if (scopeError?.code === "42P01" || scopeError?.code === "PGRST205")
+      return true
+    if (scopeError) return false
+    if (!scope?.assigned_only_enabled) return true
+
+    const { data: assignment, error: assignmentError } = await supabase
+      .from("organization_coach_assignments")
+      .select("organization_id")
+      .eq("organization_id", orgId)
+      .eq("coach_user_id", userId)
+      .maybeSingle<{ organization_id: string }>()
+
+    return !assignmentError && !!assignment
+  }
+
+  if (staff?.access_level === "developer") {
+    return true
+  }
+
   if (await isPlatformAdmin({ supabase, userId })) {
     return true
   }
@@ -183,7 +221,7 @@ export async function loadProject({
   supabase,
 }: {
   projectId: string
-  supabase: ProjectAssetsRouteClient
+  supabase: ProjectAssetsDataClient
 }) {
   const { data, error } = await supabase
     .from("organization_projects")
@@ -205,7 +243,7 @@ export async function loadAsset({
 }: {
   assetId: string
   projectId: string
-  supabase: ProjectAssetsRouteClient
+  supabase: ProjectAssetsDataClient
 }) {
   const { data, error } = await supabase
     .from("organization_project_assets")

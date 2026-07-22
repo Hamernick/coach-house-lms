@@ -1,1 +1,4 @@
-export { updateOrganizationCoachAssignmentAction } from "./server/actions"
+export {
+  setOrganizationCoachScopeEnabledAction,
+  updateOrganizationCoachAssignmentAction,
+} from "./server/actions"

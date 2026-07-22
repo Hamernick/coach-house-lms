@@ -2,7 +2,39 @@ import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { describe, expect, it } from "vitest"
 
-import { getOrganizationCoachInitials } from "@/features/organization-coach-assignments"
+import {
+  applyOrganizationCoachFilterToParams,
+  computeOrganizationCoachAssignmentCoverage,
+  filterProjectsByOrganizationCoach,
+  getOrganizationCoachInitials,
+  normalizeOrganizationCoachFilter,
+} from "@/features/organization-coach-assignments"
+import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
+
+const paula = {
+  id: "00000000-0000-4000-8000-000000000001",
+  name: "Paula Coach",
+  email: "paula@example.com",
+  avatarUrl: null,
+}
+
+function project(
+  overrides: Partial<PlatformAdminDashboardLabProject> &
+    Pick<PlatformAdminDashboardLabProject, "id" | "name">
+): PlatformAdminDashboardLabProject {
+  return {
+    taskCount: 0,
+    progress: 0,
+    startDate: new Date("2026-07-21T00:00:00.000Z"),
+    endDate: new Date("2026-07-21T00:00:00.000Z"),
+    status: "active",
+    priority: "medium",
+    tags: [],
+    members: [],
+    tasks: [],
+    ...overrides,
+  }
+}
 
 describe("organization-coach-assignments feature contract", () => {
   it("builds compact coach initials", () => {
@@ -43,5 +75,109 @@ describe("organization-coach-assignments feature contract", () => {
 
     expect(action).toContain('platformAccessLevel !== "developer"')
     expect(action).toContain('.eq("access_level", "coach")')
+  })
+
+  it("counts canonical organization assignment coverage once", () => {
+    const assignment = {
+      organizationId: "org-1",
+      coach: paula,
+      assignedBy: null,
+      updatedAt: "2026-07-21T00:00:00.000Z",
+    }
+    const coverage = computeOrganizationCoachAssignmentCoverage([
+      project({
+        id: "canonical-1",
+        name: "Organization One",
+        organizationId: "org-1",
+        projectKind: "organization_admin",
+        organizationCoachAssignment: assignment,
+      }),
+      project({
+        id: "standard-1",
+        name: "Organization One project",
+        organizationId: "org-1",
+        projectKind: "standard",
+        organizationCoachAssignment: assignment,
+      }),
+      project({
+        id: "canonical-2",
+        name: "Organization Two",
+        organizationId: "org-2",
+        projectKind: "organization_admin",
+        organizationCoachAssignment: null,
+      }),
+    ])
+
+    expect(coverage).toEqual({
+      total: 2,
+      assigned: 1,
+      unassigned: 1,
+      countByCoachId: { [paula.id]: 1 },
+    })
+  })
+
+  it("filters related organization projects by coach or unassigned state", () => {
+    const assignment = {
+      organizationId: "org-1",
+      coach: paula,
+      assignedBy: null,
+      updatedAt: "2026-07-21T00:00:00.000Z",
+    }
+    const projects = [
+      project({
+        id: "canonical-1",
+        name: "Organization One",
+        organizationId: "org-1",
+        projectKind: "organization_admin",
+        organizationCoachAssignment: assignment,
+      }),
+      project({
+        id: "standard-1",
+        name: "Organization One project",
+        organizationId: "org-1",
+        projectKind: "standard",
+        organizationCoachAssignment: assignment,
+      }),
+      project({
+        id: "canonical-2",
+        name: "Organization Two",
+        organizationId: "org-2",
+        projectKind: "organization_admin",
+        organizationCoachAssignment: null,
+      }),
+    ]
+
+    expect(
+      filterProjectsByOrganizationCoach({ projects, value: paula.id }).map(
+        ({ id }) => id
+      )
+    ).toEqual(["canonical-1", "standard-1"])
+    expect(
+      filterProjectsByOrganizationCoach({
+        projects,
+        value: "unassigned",
+      }).map(({ id }) => id)
+    ).toEqual(["canonical-2"])
+  })
+
+  it("normalizes and serializes stable coach filters", () => {
+    expect(
+      normalizeOrganizationCoachFilter({
+        coachOptions: [paula],
+        value: "removed-coach",
+      })
+    ).toBe("all")
+    expect(
+      normalizeOrganizationCoachFilter({
+        coachOptions: [paula],
+        value: paula.id,
+      })
+    ).toBe(paula.id)
+
+    const params = new URLSearchParams("status=active")
+    applyOrganizationCoachFilterToParams(params, "unassigned")
+    expect(params.toString()).toBe("status=active&coach=unassigned")
+    applyOrganizationCoachFilterToParams(params, "all")
+    expect(params.toString()).toBe("status=active")
   })
 })

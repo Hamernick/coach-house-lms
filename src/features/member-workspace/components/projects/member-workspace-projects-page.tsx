@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useRef, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
-
 import {
   ChipOverflow,
   type PlatformAdminDashboardLabProject,
@@ -24,11 +23,19 @@ import { MemberWorkspaceProjectFilterPopover } from "./member-workspace-project-
 import { MemberWorkspaceProjectTimelineView } from "./member-workspace-project-timeline-view"
 import { MemberWorkspaceProjectViewOptionsPopover } from "./member-workspace-project-view-options-popover"
 import { MemberWorkspaceProjectWizard } from "./member-workspace-project-wizard"
+import { MemberWorkspaceProjectsFilteredEmpty } from "./member-workspace-projects-filtered-empty"
 import { MemberWorkspaceClearStarterDataButton } from "../shared/member-workspace-clear-starter-data-button"
 import styles from "./member-workspace-projects-surface-theme.module.css"
-import type {
-  OrganizationCoachAssignmentAction,
-  OrganizationCoachOption,
+import {
+  applyOrganizationCoachFilterToParams,
+  computeOrganizationCoachAssignmentCoverage,
+  filterProjectsByOrganizationCoach,
+  normalizeOrganizationCoachFilter,
+  ORGANIZATION_COACH_FILTER_ALL,
+  OrganizationCoachAssignmentOperationsBar,
+  type OrganizationCoachFilterValue,
+  type OrganizationCoachAssignmentAction,
+  type OrganizationCoachOption,
 } from "@/features/organization-coach-assignments"
 import {
   applyViewOptionsToParams,
@@ -116,6 +123,9 @@ export function MemberWorkspaceProjectsPage(props: {
   const searchParams = useSearchParams()
 
   const [filters, setFilters] = useState<FilterChip[]>([])
+  const [coachFilter, setCoachFilter] = useState<OrganizationCoachFilterValue>(
+    ORGANIZATION_COACH_FILTER_ALL
+  )
   const [viewOptions, setViewOptions] = useState(DEFAULT_VIEW_OPTIONS)
   const [isProjectWizardOpen, setIsProjectWizardOpen] = useState(false)
   const [editingProject, setEditingProject] =
@@ -125,22 +135,34 @@ export function MemberWorkspaceProjectsPage(props: {
 
   useEffect(() => {
     const currentParams = searchParams.toString()
-    if (prevParamsRef.current === currentParams) return
+    const currentStateKey = `${currentParams}|${coachOptions
+      .map((coach) => coach.id)
+      .join(",")}`
+    if (prevParamsRef.current === currentStateKey) return
 
-    prevParamsRef.current = currentParams
+    prevParamsRef.current = currentStateKey
     const params = new URLSearchParams(currentParams)
     setFilters(paramsToChips(params))
+    setCoachFilter(
+      normalizeOrganizationCoachFilter({
+        coachOptions,
+        value: params.get("coach"),
+      })
+    )
     setViewOptions(paramsToViewOptions(params))
-  }, [searchParams])
+  }, [coachOptions, searchParams])
 
   const replaceSearchState = ({
     nextFilters = filters,
+    nextCoachFilter = coachFilter,
     nextViewOptions = viewOptions,
   }: {
     nextFilters?: FilterChip[]
+    nextCoachFilter?: OrganizationCoachFilterValue
     nextViewOptions?: typeof viewOptions
   }) => {
     const params = chipsToParams(nextFilters)
+    applyOrganizationCoachFilterToParams(params, nextCoachFilter)
     applyViewOptionsToParams(params, nextViewOptions)
     const nextQuery = params.toString()
     router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
@@ -158,27 +180,59 @@ export function MemberWorkspaceProjectsPage(props: {
     replaceSearchState({ nextViewOptions })
   }
 
+  const handleCoachFilterChange = (
+    nextCoachFilter: OrganizationCoachFilterValue
+  ) => {
+    setCoachFilter(nextCoachFilter)
+    replaceSearchState({ nextCoachFilter })
+  }
+
+  const handleClearAllFilters = () => {
+    setFilters([])
+    setCoachFilter(ORGANIZATION_COACH_FILTER_ALL)
+    replaceSearchState({
+      nextFilters: [],
+      nextCoachFilter: ORGANIZATION_COACH_FILTER_ALL,
+    })
+  }
+
+  const coachAssignmentCoverage = useMemo(
+    () => computeOrganizationCoachAssignmentCoverage(projects),
+    [projects]
+  )
+  const coachFilteredProjects = useMemo(
+    () =>
+      filterProjectsByOrganizationCoach({
+        projects,
+        value: coachFilter,
+      }),
+    [coachFilter, projects]
+  )
+
   const filteredProjects = useMemo(
     () =>
       filterMemberWorkspaceProjects({
         filters,
-        projects,
+        projects: coachFilteredProjects,
         viewOptions,
         workstreamCategories,
       }),
-    [filters, projects, viewOptions, workstreamCategories]
+    [coachFilteredProjects, filters, viewOptions, workstreamCategories]
   )
 
   const counts = useMemo(
     () =>
       computeMemberWorkspaceProjectFilterCounts({
         filters,
-        projects,
+        projects: coachFilteredProjects,
         viewOptions,
         workstreamCategories,
       }),
-    [filters, projects, viewOptions, workstreamCategories]
+    [coachFilteredProjects, filters, viewOptions, workstreamCategories]
   )
+  const hasActiveFilters =
+    filters.length > 0 || coachFilter !== ORGANIZATION_COACH_FILTER_ALL
+  const showFilteredEmpty = hasActiveFilters && filteredProjects.length === 0
 
   return (
     <>
@@ -201,10 +255,21 @@ export function MemberWorkspaceProjectsPage(props: {
             </div>
           </div>
 
+          {canManageCoachAssignments ? (
+            <div className="border-border border-b px-4 py-3">
+              <OrganizationCoachAssignmentOperationsBar
+                coachOptions={coachOptions}
+                coverage={coachAssignmentCoverage}
+                value={coachFilter}
+                onValueChange={handleCoachFilterChange}
+              />
+            </div>
+          ) : null}
+
           <div className="flex items-center justify-between px-4 pt-3 pb-3">
             <div className="flex items-center gap-2">
               <MemberWorkspaceProjectFilterPopover
-                projects={projects}
+                projects={coachFilteredProjects}
                 initialChips={filters}
                 onApply={handleFiltersChange}
                 onClear={() => handleFiltersChange([])}
@@ -232,13 +297,18 @@ export function MemberWorkspaceProjectsPage(props: {
         </header>
 
         <div className="min-h-0 flex-1 overflow-x-hidden overflow-y-auto">
-          {viewOptions.viewType === "timeline" ? (
+          {showFilteredEmpty ? (
+            <MemberWorkspaceProjectsFilteredEmpty
+              onClear={handleClearAllFilters}
+            />
+          ) : null}
+          {!showFilteredEmpty && viewOptions.viewType === "timeline" ? (
             <MemberWorkspaceProjectTimelineView
               projects={filteredProjects}
               updateProjectScheduleAction={updateProjectScheduleAction}
             />
           ) : null}
-          {viewOptions.viewType === "list" ? (
+          {!showFilteredEmpty && viewOptions.viewType === "list" ? (
             <MemberWorkspaceProjectCardsView
               projects={filteredProjects}
               visibleProperties={viewOptions.properties}
@@ -264,7 +334,7 @@ export function MemberWorkspaceProjectsPage(props: {
               updateCoachAssignmentAction={updateCoachAssignmentAction}
             />
           ) : null}
-          {viewOptions.viewType === "board" ? (
+          {!showFilteredEmpty && viewOptions.viewType === "board" ? (
             <MemberWorkspaceProjectBoardView
               projects={filteredProjects}
               showClosedProjects={viewOptions.showClosedProjects}

@@ -69,6 +69,7 @@ const staffEmail = `staff-${suffix}@example.com`
 const boardEmail = `board-${suffix}@example.com`
 const orgAdminEmail = `org-admin-${suffix}@example.com`
 const coachEmail = `coach-${suffix}@example.com`
+const secondCoachEmail = `coach-2-${suffix}@example.com`
 const password = `TempPass!${suffix}`
 
 async function ensureProfile(id, role, fullName) {
@@ -154,6 +155,16 @@ async function createUsers() {
   })
   if (coachError) throw coachError
 
+  const {
+    data: { user: secondCoach },
+    error: secondCoachError,
+  } = await adminClient.auth.admin.createUser({
+    email: secondCoachEmail,
+    password,
+    email_confirm: true,
+  })
+  if (secondCoachError) throw secondCoachError
+
   await ensureProfile(member.id, "member", "Test Member")
   await ensureProfile(admin.id, "admin", "Test Admin")
   await ensureProfile(owner.id, "member", "Test Owner")
@@ -161,6 +172,7 @@ async function createUsers() {
   await ensureProfile(board.id, "member", "Test Board")
   await ensureProfile(orgAdmin.id, "member", "Test Org Admin")
   await ensureProfile(coach.id, "member", "Test Coach")
+  await ensureProfile(secondCoach.id, "member", "Test Coach Two")
 
   if (await tableExists("platform_staff_members")) {
     const { error: platformStaffError } = await adminClient
@@ -169,13 +181,14 @@ async function createUsers() {
         [
           { user_id: admin.id, access_level: "developer" },
           { user_id: coach.id, access_level: "coach" },
+          { user_id: secondCoach.id, access_level: "coach" },
         ],
         { onConflict: "user_id" }
       )
     if (platformStaffError) throw platformStaffError
   }
 
-  return { member, admin, owner, staff, board, orgAdmin, coach }
+  return { member, admin, owner, staff, board, orgAdmin, coach, secondCoach }
 }
 
 async function createDemoContent(memberId) {
@@ -234,7 +247,7 @@ async function createDemoContent(memberId) {
 }
 
 async function run() {
-  const { member, admin, owner, staff, board, orgAdmin, coach } =
+  const { member, admin, owner, staff, board, orgAdmin, coach, secondCoach } =
     await createUsers()
   const assets = await createDemoContent(member.id)
 
@@ -262,6 +275,9 @@ async function run() {
   const coachClient = createClient(url, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
+  const secondCoachClient = createClient(url, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  })
 
   await memberClient.auth.signInWithPassword({ email: memberEmail, password })
   await adminSessionClient.auth.signInWithPassword({
@@ -276,6 +292,10 @@ async function run() {
     password,
   })
   await coachClient.auth.signInWithPassword({ email: coachEmail, password })
+  await secondCoachClient.auth.signInWithPassword({
+    email: secondCoachEmail,
+    password,
+  })
 
   const results = []
 
@@ -509,34 +529,65 @@ async function run() {
     })
   }
 
+  let initialCoachScopeEnabled = false
+  if (await tableExists("organization_coach_scope_settings")) {
+    const { data: initialCoachScope } = await adminClient
+      .from("organization_coach_scope_settings")
+      .select("assigned_only_enabled")
+      .eq("id", true)
+      .maybeSingle()
+    initialCoachScopeEnabled = initialCoachScope?.assigned_only_enabled === true
+  }
+
   if (await tableExists("organization_coach_assignments")) {
-    const { data: developerAssignment, error: developerAssignmentError } =
-      await adminSessionClient
-        .from("organization_coach_assignments")
-        .insert({
-          organization_id: member.id,
-          coach_user_id: coach.id,
-          assigned_by: admin.id,
-        })
-        .select("organization_id, coach_user_id")
-        .maybeSingle()
+    const { error: developerAssignmentError } = await adminSessionClient.rpc(
+      "set_organization_coach_assignments",
+      {
+        p_organization_id: member.id,
+        p_coach_user_ids: [coach.id, secondCoach.id],
+      }
+    )
+    const { data: developerAssignments } = await adminClient
+      .from("organization_coach_assignments")
+      .select("organization_id, coach_user_id")
+      .eq("organization_id", member.id)
     results.push({
-      name: "developer can assign a coach to an organization",
+      name: "developer can assign multiple coaches to an organization",
       passed:
         !developerAssignmentError &&
-        developerAssignment?.coach_user_id === coach.id,
+        developerAssignments?.length === 2 &&
+        developerAssignments.some((row) => row.coach_user_id === coach.id) &&
+        developerAssignments.some(
+          (row) => row.coach_user_id === secondCoach.id
+        ),
     })
 
-    const { data: coachAssignment, error: coachAssignmentError } =
+    const { data: coachAssignments, error: coachAssignmentError } =
       await coachClient
         .from("organization_coach_assignments")
         .select("organization_id, coach_user_id")
         .eq("organization_id", member.id)
-        .maybeSingle()
     results.push({
       name: "coach can read organization coach assignments",
       passed:
-        !coachAssignmentError && coachAssignment?.coach_user_id === coach.id,
+        !coachAssignmentError &&
+        coachAssignments?.length === 2 &&
+        coachAssignments.some((row) => row.coach_user_id === coach.id),
+    })
+
+    const { data: secondCoachAssignments, error: secondCoachReadError } =
+      await secondCoachClient
+        .from("organization_coach_assignments")
+        .select("organization_id, coach_user_id")
+        .eq("organization_id", member.id)
+    results.push({
+      name: "each assigned coach can read the shared assignment set",
+      passed:
+        !secondCoachReadError &&
+        secondCoachAssignments?.length === 2 &&
+        secondCoachAssignments.some(
+          (row) => row.coach_user_id === secondCoach.id
+        ),
     })
 
     const { data: memberAssignment, error: memberAssignmentError } =
@@ -554,10 +605,12 @@ async function run() {
       .from("organization_coach_assignments")
       .update({ assigned_by: coach.id })
       .eq("organization_id", member.id)
+      .eq("coach_user_id", coach.id)
     const { data: assignmentAfterCoachWrite } = await adminClient
       .from("organization_coach_assignments")
       .select("assigned_by")
       .eq("organization_id", member.id)
+      .eq("coach_user_id", coach.id)
       .maybeSingle()
     results.push({
       name: "coach cannot change organization coach assignments",
@@ -587,7 +640,7 @@ async function run() {
       name: "coach can read assigned-only visibility state",
       passed:
         !coachScopeReadError &&
-        coachScopeSetting?.assigned_only_enabled === false,
+        coachScopeSetting?.assigned_only_enabled === initialCoachScopeEnabled,
     })
 
     const { data: memberScopeSetting, error: memberScopeReadError } =
@@ -612,7 +665,7 @@ async function run() {
 
     const { error: directScopeWriteError } = await adminSessionClient
       .from("organization_coach_scope_settings")
-      .update({ assigned_only_enabled: true })
+      .update({ assigned_only_enabled: !initialCoachScopeEnabled })
       .eq("id", true)
     const { data: scopeAfterDirectWrite, error: scopeAfterDirectWriteError } =
       await adminClient
@@ -625,7 +678,8 @@ async function run() {
       passed:
         !!directScopeWriteError ||
         (!scopeAfterDirectWriteError &&
-          scopeAfterDirectWrite?.assigned_only_enabled === false),
+          scopeAfterDirectWrite?.assigned_only_enabled ===
+            initialCoachScopeEnabled),
     })
 
     const { data: disabledScopeResult, error: disableScopeError } =
@@ -2743,6 +2797,13 @@ async function run() {
     .from("notifications")
     .delete()
     .in("user_id", [member.id, admin.id])
+  if (initialCoachScopeEnabled) {
+    const { error: restoreCoachScopeError } = await adminSessionClient.rpc(
+      "set_organization_coach_scope_enabled",
+      { p_enabled: true }
+    )
+    if (restoreCoachScopeError) throw restoreCoachScopeError
+  }
   if (await tableExists("organization_coach_scope_events")) {
     await adminClient
       .from("organization_coach_scope_events")
@@ -2759,6 +2820,7 @@ async function run() {
   await adminClient.auth.admin.deleteUser(board.id)
   await adminClient.auth.admin.deleteUser(orgAdmin.id)
   await adminClient.auth.admin.deleteUser(coach.id)
+  await adminClient.auth.admin.deleteUser(secondCoach.id)
 
   if (failed.length > 0) {
     console.error(`RLS tests failed (${failed.length}).`)

@@ -6,6 +6,7 @@ import {
 } from "@/features/platform-admin-dashboard"
 import {
   OrganizationCoachAssignmentOperationsBar,
+  type AssignAllOrganizationCoachesAction,
   type OrganizationCoachAssignmentCoverage,
   type OrganizationCoachFilterValue,
   type OrganizationCoachOption,
@@ -26,6 +27,7 @@ import type {
 import { MemberWorkspaceClearStarterDataButton } from "../shared/member-workspace-clear-starter-data-button"
 
 export function MemberWorkspaceProjectsHeader({
+  assignAllCoachesAction,
   canManageCoachAssignments,
   canResetStarterData,
   clearStarterDataAction,
@@ -45,6 +47,7 @@ export function MemberWorkspaceProjectsHeader({
   showAssignedOrganizationsEmpty,
   viewOptions,
 }: {
+  assignAllCoachesAction?: AssignAllOrganizationCoachesAction
   canManageCoachAssignments: boolean
   canResetStarterData: boolean
   clearStarterDataAction?: () => Promise<{ ok: true } | { error: string }>
@@ -80,9 +83,12 @@ export function MemberWorkspaceProjectsHeader({
         ) : null}
       </div>
 
-      {canManageCoachAssignments && setCoachScopeAction ? (
+      {canManageCoachAssignments &&
+      assignAllCoachesAction &&
+      setCoachScopeAction ? (
         <div className="border-border border-b px-4 py-3">
           <OrganizationCoachAssignmentOperationsBar
+            assignAllAction={assignAllCoachesAction}
             coachOptions={coachOptions}
             coverage={coachAssignmentCoverage}
             value={coachFilter}

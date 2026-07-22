@@ -62,17 +62,17 @@ export function filterProjectsByOrganizationCoach({
 
   return projects.filter((project) => {
     if (!project.organizationId) return false
-    const coachId = project.organizationCoachAssignment?.coach.id ?? null
+    const assignments = project.organizationCoachAssignments ?? []
     return value === ORGANIZATION_COACH_FILTER_UNASSIGNED
-      ? coachId === null
-      : coachId === value
+      ? assignments.length === 0
+      : assignments.some((assignment) => assignment.coach.id === value)
   })
 }
 
 export function computeOrganizationCoachAssignmentCoverage(
   projects: PlatformAdminDashboardLabProject[]
 ): OrganizationCoachAssignmentCoverage {
-  const organizations = new Map<string, string | null>()
+  const organizations = new Map<string, ReadonlySet<string>>()
   for (const project of projects) {
     if (
       project.projectKind !== "organization_admin" ||
@@ -82,22 +82,30 @@ export function computeOrganizationCoachAssignmentCoverage(
     }
     organizations.set(
       project.organizationId,
-      project.organizationCoachAssignment?.coach.id ?? null
+      new Set(
+        (project.organizationCoachAssignments ?? []).map(
+          (assignment) => assignment.coach.id
+        )
+      )
     )
   }
 
   const countByCoachId: Record<string, number> = {}
-  let assigned = 0
-  for (const coachId of organizations.values()) {
-    if (!coachId) continue
-    assigned += 1
-    countByCoachId[coachId] = (countByCoachId[coachId] ?? 0) + 1
+  let coveredOrganizations = 0
+  let assignmentCount = 0
+  for (const coachIds of organizations.values()) {
+    if (coachIds.size > 0) coveredOrganizations += 1
+    assignmentCount += coachIds.size
+    for (const coachId of coachIds) {
+      countByCoachId[coachId] = (countByCoachId[coachId] ?? 0) + 1
+    }
   }
 
   return {
-    total: organizations.size,
-    assigned,
-    unassigned: organizations.size - assigned,
+    totalOrganizations: organizations.size,
+    coveredOrganizations,
+    unassignedOrganizations: organizations.size - coveredOrganizations,
+    assignmentCount,
     countByCoachId,
   }
 }

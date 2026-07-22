@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useTransition } from "react"
+import { useEffect, useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -16,50 +16,63 @@ type AssignmentAction = (
 ) => Promise<UpdateOrganizationCoachAssignmentResult>
 
 export function useOrganizationCoachAssignmentController({
-  assignment: initialAssignment,
+  assignments: initialAssignments,
   organizationId,
+  preventEmpty,
   updateAssignmentAction,
 }: {
-  assignment: OrganizationCoachAssignment | null
+  assignments: OrganizationCoachAssignment[]
   organizationId: string
+  preventEmpty: boolean
   updateAssignmentAction?: AssignmentAction
 }) {
   const router = useRouter()
-  const [assignment, setAssignment] = useState(initialAssignment)
+  const [assignments, setAssignments] = useState(initialAssignments)
   const [open, setOpen] = useState(false)
   const [pending, startTransition] = useTransition()
 
-  useEffect(() => setAssignment(initialAssignment), [initialAssignment])
+  useEffect(() => setAssignments(initialAssignments), [initialAssignments])
 
-  const assign = (coach: OrganizationCoachOption | null) => {
+  const assignedCoachIds = useMemo(
+    () => new Set(assignments.map((assignment) => assignment.coach.id)),
+    [assignments]
+  )
+
+  const toggle = (coach: OrganizationCoachOption) => {
     if (!updateAssignmentAction || pending) return
-    const previous = assignment
-    setAssignment(
-      coach
-        ? {
+    const removing = assignedCoachIds.has(coach.id)
+    if (removing && preventEmpty && assignments.length === 1) return
+
+    const previous = assignments
+    const next = removing
+      ? assignments.filter((assignment) => assignment.coach.id !== coach.id)
+      : [
+          ...assignments,
+          {
             organizationId,
             coach,
             assignedBy: null,
             updatedAt: new Date().toISOString(),
-          }
-        : null
-    )
-    setOpen(false)
+          },
+        ].sort((left, right) => left.coach.name.localeCompare(right.coach.name))
+    setAssignments(next)
 
     startTransition(async () => {
       const result = await updateAssignmentAction({
         organizationId,
-        coachUserId: coach?.id ?? null,
+        coachUserIds: next.map((assignment) => assignment.coach.id),
       })
       if ("error" in result) {
-        setAssignment(previous)
+        setAssignments(previous)
         toast.error(result.error)
         return
       }
-      toast.success(coach ? `Assigned ${coach.name}` : "Coach unassigned")
+      toast.success(
+        removing ? `Removed ${coach.name}` : `Assigned ${coach.name}`
+      )
       router.refresh()
     })
   }
 
-  return { assignment, assign, open, pending, setOpen }
+  return { assignedCoachIds, assignments, open, pending, setOpen, toggle }
 }

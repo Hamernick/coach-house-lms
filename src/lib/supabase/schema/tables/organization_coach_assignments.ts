@@ -24,7 +24,7 @@ export type OrganizationCoachAssignmentsTable = {
     {
       foreignKeyName: "organization_coach_assignments_organization_id_fkey"
       columns: ["organization_id"]
-      isOneToOne: true
+      isOneToOne: false
       referencedRelation: "organizations"
       referencedColumns: ["user_id"]
     },

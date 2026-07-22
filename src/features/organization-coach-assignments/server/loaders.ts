@@ -77,6 +77,8 @@ async function loadAssignmentRows(
       "organization_id, coach_user_id, assigned_by, created_at, updated_at"
     )
     .in("organization_id", organizationIds)
+    .order("organization_id")
+    .order("coach_user_id")
     .returns<AssignmentRow[]>()
 
   if (error && isMissingAssignmentsTable(error)) {
@@ -90,16 +92,23 @@ function mapAssignments(
   rows: AssignmentRow[],
   coachById: Map<string, OrganizationCoachOption>
 ) {
-  const assignments = new Map<string, OrganizationCoachAssignment>()
+  const assignments = new Map<string, OrganizationCoachAssignment[]>()
   for (const row of rows) {
     const coach = coachById.get(row.coach_user_id)
     if (!coach) continue
-    assignments.set(row.organization_id, {
+    const organizationAssignments = assignments.get(row.organization_id) ?? []
+    organizationAssignments.push({
       organizationId: row.organization_id,
       coach,
       assignedBy: row.assigned_by,
       updatedAt: row.updated_at,
     })
+    assignments.set(row.organization_id, organizationAssignments)
+  }
+  for (const organizationAssignments of assignments.values()) {
+    organizationAssignments.sort((left, right) =>
+      left.coach.name.localeCompare(right.coach.name)
+    )
   }
   return assignments
 }

@@ -41,13 +41,13 @@ export function MemberWorkspaceOrganizationStaffActions({
   return (
     <>
       <OrganizationCoachAssignmentControl
-        assignment={project.organizationCoachAssignment ?? null}
+        assignments={project.organizationCoachAssignments ?? []}
         canManage={canManageCoachAssignments}
         coachOptions={coachOptions}
         organizationId={organizationId}
         organizationName={project.name}
         updateAssignmentAction={updateCoachAssignmentAction}
-        canUnassign={canUnassignCoachAssignments}
+        preventEmpty={!canUnassignCoachAssignments}
         compact
       />
       {onOrganizationVisibilityChange ? (

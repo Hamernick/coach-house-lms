@@ -54,7 +54,7 @@ type MemberWorkspaceProjectDetailPageProps = {
   currentUser: User
   fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
   organizationSummary: MemberWorkspaceAdminOrganizationSummary
-  coachAssignment?: OrganizationCoachAssignment | null
+  coachAssignments?: OrganizationCoachAssignment[]
   coachOptions?: OrganizationCoachOption[]
   canManageCoachAssignment?: boolean
   updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
@@ -181,7 +181,7 @@ export function MemberWorkspaceProjectDetailPage({
   currentUser,
   fiscalSponsorshipWorkflowSummary,
   organizationSummary,
-  coachAssignment = null,
+  coachAssignments = [],
   coachOptions = [],
   canManageCoachAssignment = false,
   updateCoachAssignmentAction,
@@ -427,13 +427,13 @@ export function MemberWorkspaceProjectDetailPage({
                     onEditProject={handleStartProjectEditing}
                     actions={
                       <OrganizationCoachAssignmentControl
-                        assignment={coachAssignment}
+                        assignments={coachAssignments}
                         canManage={canManageCoachAssignment}
                         coachOptions={coachOptions}
                         organizationId={organizationSummary.orgId}
                         organizationName={organizationSummary.name}
                         updateAssignmentAction={updateCoachAssignmentAction}
-                        canUnassign={canUnassignCoachAssignment}
+                        preventEmpty={!canUnassignCoachAssignment}
                       />
                     }
                   />

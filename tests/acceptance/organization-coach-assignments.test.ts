@@ -20,6 +20,20 @@ const paula = {
   avatarUrl: null,
 }
 
+const joel = {
+  id: "00000000-0000-4000-8000-000000000002",
+  name: "Joel Coach",
+  email: "joel@example.com",
+  avatarUrl: null,
+}
+
+const assignment = (coach: typeof paula) => ({
+  organizationId: "org-1",
+  coach,
+  assignedBy: null,
+  updatedAt: "2026-07-21T00:00:00.000Z",
+})
+
 function project(
   overrides: Partial<PlatformAdminDashboardLabProject> &
     Pick<PlatformAdminDashboardLabProject, "id" | "name">
@@ -76,81 +90,78 @@ describe("organization-coach-assignments feature contract", () => {
     )
 
     expect(action).toContain('platformAccessLevel !== "developer"')
-    expect(action).toContain('.eq("access_level", "coach")')
+    expect(action).toContain('rpc("set_organization_coach_assignments"')
+    expect(action).toContain('"assign_all_coaches_to_all_organizations"')
   })
 
-  it("counts canonical organization assignment coverage once", () => {
-    const assignment = {
-      organizationId: "org-1",
-      coach: paula,
-      assignedBy: null,
-      updatedAt: "2026-07-21T00:00:00.000Z",
-    }
+  it("counts many-to-many coverage and assignments separately", () => {
+    const assignments = [assignment(paula), assignment(joel)]
     const coverage = computeOrganizationCoachAssignmentCoverage([
       project({
         id: "canonical-1",
         name: "Organization One",
         organizationId: "org-1",
         projectKind: "organization_admin",
-        organizationCoachAssignment: assignment,
+        organizationCoachAssignments: assignments,
       }),
       project({
         id: "standard-1",
         name: "Organization One project",
         organizationId: "org-1",
         projectKind: "standard",
-        organizationCoachAssignment: assignment,
+        organizationCoachAssignments: assignments,
       }),
       project({
         id: "canonical-2",
         name: "Organization Two",
         organizationId: "org-2",
         projectKind: "organization_admin",
-        organizationCoachAssignment: null,
+        organizationCoachAssignments: [],
       }),
     ])
 
     expect(coverage).toEqual({
-      total: 2,
-      assigned: 1,
-      unassigned: 1,
-      countByCoachId: { [paula.id]: 1 },
+      totalOrganizations: 2,
+      coveredOrganizations: 1,
+      unassignedOrganizations: 1,
+      assignmentCount: 2,
+      countByCoachId: { [paula.id]: 1, [joel.id]: 1 },
     })
   })
 
   it("filters related organization projects by coach or unassigned state", () => {
-    const assignment = {
-      organizationId: "org-1",
-      coach: paula,
-      assignedBy: null,
-      updatedAt: "2026-07-21T00:00:00.000Z",
-    }
+    const assignments = [assignment(paula), assignment(joel)]
     const projects = [
       project({
         id: "canonical-1",
         name: "Organization One",
         organizationId: "org-1",
         projectKind: "organization_admin",
-        organizationCoachAssignment: assignment,
+        organizationCoachAssignments: assignments,
       }),
       project({
         id: "standard-1",
         name: "Organization One project",
         organizationId: "org-1",
         projectKind: "standard",
-        organizationCoachAssignment: assignment,
+        organizationCoachAssignments: assignments,
       }),
       project({
         id: "canonical-2",
         name: "Organization Two",
         organizationId: "org-2",
         projectKind: "organization_admin",
-        organizationCoachAssignment: null,
+        organizationCoachAssignments: [],
       }),
     ]
 
     expect(
       filterProjectsByOrganizationCoach({ projects, value: paula.id }).map(
+        ({ id }) => id
+      )
+    ).toEqual(["canonical-1", "standard-1"])
+    expect(
+      filterProjectsByOrganizationCoach({ projects, value: joel.id }).map(
         ({ id }) => id
       )
     ).toEqual(["canonical-1", "standard-1"])
@@ -218,13 +229,32 @@ describe("organization-coach-assignments feature contract", () => {
     )
     expect(migration).toContain("set_organization_coach_scope_enabled")
     expect(migration).toContain("Only developers can change coach visibility")
-    expect(migration).toContain("v_assignment_count <> v_organization_count")
     expect(migration).toContain("organization_coach_scope_events")
     expect(migration).toContain("force row level security")
     expect(migration).toContain(
       "organization_coach_assignments_developer_delete"
     )
     expect(migration).toContain("protect_active_organization_coach_assignment")
+
+    const manyToManyMigration = readFileSync(
+      resolve(
+        process.cwd(),
+        "supabase/migrations/20260722165900_many_to_many_organization_coach_assignments.sql"
+      ),
+      "utf8"
+    )
+    expect(manyToManyMigration).toContain(
+      "primary key (organization_id, coach_user_id)"
+    )
+    expect(manyToManyMigration).toContain(
+      "count(distinct organization_id)::integer"
+    )
+    expect(manyToManyMigration).toContain(
+      "assign_all_coaches_to_all_organizations"
+    )
+    expect(manyToManyMigration).toContain(
+      "Keep at least one coach assigned while assigned-only visibility is active."
+    )
   })
 
   it("enforces coach scope in list, detail, mutation, and asset paths", () => {

@@ -104,10 +104,10 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
       assigneeOptions={result.assigneeOptions}
       currentUser={result.currentUser}
       organizationSummary={result.organizationSummary}
-      coachAssignment={
+      coachAssignments={
         coachAssignmentData.assignmentsByOrganizationId.get(
           result.organizationSummary.orgId
-        ) ?? null
+        ) ?? []
       }
       coachOptions={coachAssignmentData.coachOptions}
       canManageCoachAssignment={

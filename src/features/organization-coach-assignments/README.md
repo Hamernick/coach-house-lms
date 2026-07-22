@@ -1,13 +1,15 @@
 # Organization coach assignments
 
-Internal tooling for assigning one coach-level platform staff member to an
-organization. Developers manage assignments; coaches can read them. This
-feature does not yet restrict organization visibility to assigned coaches.
+Internal tooling for assigning any number of coach-level platform staff members
+to an organization. Developers manage assignments; coaches can read them.
+Assigned-only access can restrict coaches to organizations in their assignment
+set, while developers always retain access to every organization.
 
-The Organizations assignment operations bar reports canonical coverage and
-filters all related organization projects by coach or unassigned state. Its
-`coach` query parameter remains compatible with the existing project filters
-and view options.
+The Organizations assignment operations bar reports covered organizations and
+total coach assignments separately. It supports an atomic assign-every-coach
+operation and filters all related organization projects by coach or unassigned
+state. Its `coach` query parameter remains compatible with the existing project
+filters and view options.
 
 ## Ownership
 

@@ -28,6 +28,7 @@ import {
   normalizeOrganizationCoachFilter,
   ORGANIZATION_COACH_FILTER_ALL,
   type OrganizationCoachFilterValue,
+  type AssignAllOrganizationCoachesAction,
   type OrganizationCoachAssignmentAction,
   type OrganizationCoachOption,
   type OrganizationCoachScopeStatus,
@@ -81,6 +82,7 @@ type MemberWorkspaceProjectsPageProps = {
   coachOptions?: OrganizationCoachOption[]
   canManageCoachAssignments?: boolean
   updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
+  assignAllCoachesAction?: AssignAllOrganizationCoachesAction
   coachScopeStatus?: OrganizationCoachScopeStatus
   setCoachScopeAction?: SetOrganizationCoachScopeAction
   showAssignedOrganizationsEmpty?: boolean
@@ -108,6 +110,15 @@ type MemberWorkspaceProjectsPageProps = {
   ) => Promise<{ ok: true; id: string } | { error: string }>
 }
 
+function getView(
+  visibility: OrganizationKanbanVisibilityMode,
+  viewType: "list" | "board" | "timeline"
+) {
+  return visibility === ORGANIZATION_KANBAN_VISIBILITY_HIDDEN
+    ? "list"
+    : viewType
+}
+
 export function MemberWorkspaceProjectsPage(
   props: MemberWorkspaceProjectsPageProps
 ) {
@@ -126,6 +137,7 @@ export function MemberWorkspaceProjectsPage(
     coachOptions = [],
     canManageCoachAssignments = false,
     updateCoachAssignmentAction,
+    assignAllCoachesAction,
     coachScopeStatus = {
       available: false,
       assignedOnlyEnabled: false,
@@ -146,7 +158,6 @@ export function MemberWorkspaceProjectsPage(
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
-
   const [filters, setFilters] = useState<FilterChip[]>([])
   const [coachFilter, setCoachFilter] = useState<OrganizationCoachFilterValue>(
     ORGANIZATION_COACH_FILTER_ALL
@@ -317,10 +328,7 @@ export function MemberWorkspaceProjectsPage(
     showHiddenOrganizationsEmpty ||
     showAllOrganizationsHidden ||
     showFilteredEmpty
-  const effectiveViewType =
-    kanbanVisibilityMode === ORGANIZATION_KANBAN_VISIBILITY_HIDDEN
-      ? "list"
-      : viewOptions.viewType
+  const effectiveViewType = getView(kanbanVisibilityMode, viewOptions.viewType)
 
   return (
     <>
@@ -328,6 +336,7 @@ export function MemberWorkspaceProjectsPage(
         className={`${styles.surface} bg-background -mx-[var(--shell-content-pad)] -mt-[var(--shell-content-pad)] -mb-[var(--shell-content-pad)] flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden`}
       >
         <MemberWorkspaceProjectsHeader
+          assignAllCoachesAction={assignAllCoachesAction}
           canManageCoachAssignments={canManageCoachAssignments}
           canResetStarterData={canResetStarterData}
           clearStarterDataAction={clearStarterDataAction}

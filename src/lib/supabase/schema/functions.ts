@@ -34,6 +34,17 @@ export type PublicFunctions = {
     }
     Returns: Json
   }
+  set_organization_coach_assignments: {
+    Args: {
+      p_organization_id: string
+      p_coach_user_ids: string[]
+    }
+    Returns: Json
+  }
+  assign_all_coaches_to_all_organizations: {
+    Args: Record<string, never>
+    Returns: Json
+  }
   handle_updated_at: {
     Args: Record<string, never>
     Returns: unknown

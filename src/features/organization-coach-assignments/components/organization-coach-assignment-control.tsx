@@ -49,6 +49,7 @@ export function OrganizationCoachAssignmentControl({
   organizationName,
   updateAssignmentAction,
   canUnassign = true,
+  compact = false,
 }: {
   assignment: OrganizationCoachAssignment | null
   canManage: boolean
@@ -57,6 +58,7 @@ export function OrganizationCoachAssignmentControl({
   organizationName: string
   updateAssignmentAction?: AssignmentAction
   canUnassign?: boolean
+  compact?: boolean
 }) {
   const controller = useOrganizationCoachAssignmentController({
     assignment,
@@ -68,11 +70,16 @@ export function OrganizationCoachAssignmentControl({
   if (!canManage || !updateAssignmentAction) {
     return (
       <div
-        className="text-muted-foreground flex min-h-9 items-center gap-2 text-xs"
+        className={cn(
+          "text-muted-foreground flex min-h-9 items-center gap-2 text-xs",
+          compact && "max-w-28 min-w-0"
+        )}
         aria-label={`${organizationName} coach: ${coach?.name ?? "Unassigned"}`}
       >
         <CoachAvatar coach={coach} />
-        <span>{coach?.name ?? "Unassigned"}</span>
+        <span className={cn(compact && "truncate")}>
+          {coach?.name ?? "Unassigned"}
+        </span>
       </div>
     )
   }
@@ -84,7 +91,10 @@ export function OrganizationCoachAssignmentControl({
           type="button"
           variant="outline"
           size="sm"
-          className="h-11 max-w-48 justify-start gap-2 rounded-lg px-2 md:h-9"
+          className={cn(
+            "h-11 justify-start gap-2 rounded-lg px-2 md:h-9",
+            compact ? "max-w-32" : "max-w-48"
+          )}
           disabled={controller.pending}
           aria-busy={controller.pending}
           aria-label={`Assign a coach to ${organizationName}`}

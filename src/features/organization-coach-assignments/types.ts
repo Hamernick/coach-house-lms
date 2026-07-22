@@ -14,23 +14,36 @@ export type OrganizationCoachAssignment = {
 
 export type OrganizationCoachAssignmentData = {
   available: boolean
-  assignmentsByOrganizationId: Map<string, OrganizationCoachAssignment>
+  assignmentsByOrganizationId: Map<string, OrganizationCoachAssignment[]>
   coachOptions: OrganizationCoachOption[]
   scopeStatus: OrganizationCoachScopeStatus
 }
 
 export type UpdateOrganizationCoachAssignmentInput = {
   organizationId: string
-  coachUserId: string | null
+  coachUserIds: string[]
 }
 
 export type UpdateOrganizationCoachAssignmentResult =
-  | { ok: true; organizationId: string; coachUserId: string | null }
+  | { ok: true; organizationId: string; coachUserIds: string[] }
   | { error: string }
 
 export type OrganizationCoachAssignmentAction = (
   input: UpdateOrganizationCoachAssignmentInput
 ) => Promise<UpdateOrganizationCoachAssignmentResult>
+
+export type AssignAllOrganizationCoachesResult =
+  | {
+      ok: true
+      organizationCount: number
+      coachCount: number
+      assignmentCount: number
+      addedCount: number
+    }
+  | { error: string }
+
+export type AssignAllOrganizationCoachesAction =
+  () => Promise<AssignAllOrganizationCoachesResult>
 
 export type SetOrganizationCoachScopeResult =
   | {
@@ -49,9 +62,10 @@ export type SetOrganizationCoachScopeAction = (
 export type OrganizationCoachFilterValue = "all" | "unassigned" | string
 
 export type OrganizationCoachAssignmentCoverage = {
-  total: number
-  assigned: number
-  unassigned: number
+  totalOrganizations: number
+  coveredOrganizations: number
+  unassignedOrganizations: number
+  assignmentCount: number
   countByCoachId: Record<string, number>
 }
 import type {

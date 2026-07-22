@@ -1,4 +1,5 @@
 export {
+  AssignAllOrganizationCoachesControl,
   OrganizationCoachAssignmentControl,
   OrganizationCoachAssignmentOperationsBar,
 } from "./components"
@@ -15,6 +16,7 @@ export {
   ALL_ORGANIZATION_COACH_SCOPE,
 } from "./lib"
 export {
+  assignAllOrganizationCoachesAction,
   setOrganizationCoachScopeEnabledAction,
   updateOrganizationCoachAssignmentAction,
 } from "./actions"
@@ -24,6 +26,8 @@ export {
   loadOrganizationCoachScopeStatus,
 } from "./loaders"
 export type {
+  AssignAllOrganizationCoachesAction,
+  AssignAllOrganizationCoachesResult,
   OrganizationCoachActorScope,
   OrganizationCoachAssignmentAction,
   OrganizationCoachAssignment,

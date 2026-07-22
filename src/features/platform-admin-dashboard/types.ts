@@ -52,7 +52,7 @@ export type PlatformAdminDashboardLabProject = {
   members: string[]
   primaryPersonName?: string
   primaryPersonAvatarUrl?: string | null
-  organizationCoachAssignment?: {
+  organizationCoachAssignments?: Array<{
     organizationId: string
     coach: {
       id: string
@@ -62,7 +62,7 @@ export type PlatformAdminDashboardLabProject = {
     }
     assignedBy: string | null
     updatedAt: string
-  } | null
+  }>
   client?: string
   typeLabel?: string
   durationLabel?: string

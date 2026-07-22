@@ -36,7 +36,8 @@ export function OrganizationCoachScopeControl({
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const enabled = scopeStatus.assignedOnlyEnabled
-  const canEnable = coverage.total > 0 && coverage.unassigned === 0
+  const canEnable =
+    coverage.totalOrganizations > 0 && coverage.unassignedOrganizations === 0
   const nextEnabled = !enabled
 
   const handleChange = () => {
@@ -57,8 +58,10 @@ export function OrganizationCoachScopeControl({
     })
   }
 
-  const blockedLabel = `${coverage.unassigned} ${
-    coverage.unassigned === 1 ? "organization remains" : "organizations remain"
+  const blockedLabel = `${coverage.unassignedOrganizations} ${
+    coverage.unassignedOrganizations === 1
+      ? "organization remains"
+      : "organizations remain"
   } unassigned`
 
   return (
@@ -69,7 +72,7 @@ export function OrganizationCoachScopeControl({
         </div>
         <div className="min-w-0">
           <p className="text-foreground text-sm font-medium">
-            Coach visibility: {enabled ? "Assigned only" : "All organizations"}
+            Assigned-only access: {enabled ? "On" : "Off"}
           </p>
           <p className="text-muted-foreground text-xs">
             {enabled

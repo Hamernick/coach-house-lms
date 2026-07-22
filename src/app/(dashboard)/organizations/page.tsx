@@ -14,6 +14,7 @@ import {
 } from "@/features/member-workspace"
 import { requirePlatformCapability } from "@/lib/admin/auth"
 import {
+  assignAllOrganizationCoachesAction,
   loadOrganizationCoachAssignmentData,
   setOrganizationCoachScopeEnabledAction,
   updateOrganizationCoachAssignmentAction,
@@ -40,11 +41,11 @@ export default async function OrganizationsPage() {
   })
   const projects = pageData.projects.map((project) => ({
     ...project,
-    organizationCoachAssignment: project.organizationId
+    organizationCoachAssignments: project.organizationId
       ? (coachAssignmentData.assignmentsByOrganizationId.get(
           project.organizationId
-        ) ?? null)
-      : null,
+        ) ?? [])
+      : [],
   }))
   const {
     storageMode,
@@ -89,6 +90,11 @@ export default async function OrganizationsPage() {
       updateCoachAssignmentAction={
         coachAssignmentData.available && staff.accessLevel === "developer"
           ? updateOrganizationCoachAssignmentAction
+          : undefined
+      }
+      assignAllCoachesAction={
+        coachAssignmentData.available && staff.accessLevel === "developer"
+          ? assignAllOrganizationCoachesAction
           : undefined
       }
       coachScopeStatus={coachAssignmentData.scopeStatus}

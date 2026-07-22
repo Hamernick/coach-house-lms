@@ -4,7 +4,7 @@ import {
   Check,
   CircleNotch,
   User,
-  UserSwitch,
+  UsersThree,
 } from "@phosphor-icons/react/dist/ssr"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -28,58 +28,91 @@ type AssignmentAction = (
   input: UpdateOrganizationCoachAssignmentInput
 ) => Promise<UpdateOrganizationCoachAssignmentResult>
 
-function CoachAvatar({ coach }: { coach: OrganizationCoachOption | null }) {
+function CoachAvatar({ coach }: { coach: OrganizationCoachOption }) {
   return (
-    <Avatar className="border-border size-6 border">
-      {coach?.avatarUrl ? (
-        <AvatarImage src={coach.avatarUrl} alt={coach.name} />
-      ) : null}
+    <Avatar className="border-background size-6 border">
+      {coach.avatarUrl ? <AvatarImage src={coach.avatarUrl} alt="" /> : null}
       <AvatarFallback className="text-[10px]">
-        {coach ? getOrganizationCoachInitials(coach) : <User />}
+        {getOrganizationCoachInitials(coach)}
       </AvatarFallback>
     </Avatar>
   )
 }
 
+function CoachAvatarStack({
+  assignments,
+}: {
+  assignments: OrganizationCoachAssignment[]
+}) {
+  if (assignments.length === 0) {
+    return (
+      <span className="bg-muted flex size-6 items-center justify-center rounded-full">
+        <User className="size-3.5" aria-hidden />
+      </span>
+    )
+  }
+
+  return (
+    <span className="flex shrink-0 -space-x-2" aria-hidden>
+      {assignments.slice(0, 3).map((assignment) => (
+        <CoachAvatar key={assignment.coach.id} coach={assignment.coach} />
+      ))}
+      {assignments.length > 3 ? (
+        <span className="bg-muted border-background flex size-6 items-center justify-center rounded-full border text-[9px] font-medium">
+          +{assignments.length - 3}
+        </span>
+      ) : null}
+    </span>
+  )
+}
+
+function getAssignmentSummary(count: number) {
+  if (count === 0) return "No coaches"
+  if (count === 1) return "1 coach"
+  return `${count} coaches`
+}
+
 export function OrganizationCoachAssignmentControl({
-  assignment,
+  assignments,
   canManage,
   coachOptions,
   organizationId,
   organizationName,
   updateAssignmentAction,
-  canUnassign = true,
+  preventEmpty = false,
   compact = false,
 }: {
-  assignment: OrganizationCoachAssignment | null
+  assignments: OrganizationCoachAssignment[]
   canManage: boolean
   coachOptions: OrganizationCoachOption[]
   organizationId: string
   organizationName: string
   updateAssignmentAction?: AssignmentAction
-  canUnassign?: boolean
+  preventEmpty?: boolean
   compact?: boolean
 }) {
   const controller = useOrganizationCoachAssignmentController({
-    assignment,
+    assignments,
     organizationId,
+    preventEmpty,
     updateAssignmentAction,
   })
-  const coach = controller.assignment?.coach ?? null
+  const summary = getAssignmentSummary(controller.assignments.length)
+  const accessibleSummary = controller.assignments.length
+    ? controller.assignments.map(({ coach }) => coach.name).join(", ")
+    : "No coaches assigned"
 
   if (!canManage || !updateAssignmentAction) {
     return (
       <div
         className={cn(
-          "text-muted-foreground flex min-h-9 items-center gap-2 text-xs",
-          compact && "max-w-28 min-w-0"
+          "text-muted-foreground flex min-h-9 min-w-0 items-center gap-2 text-xs",
+          compact && "max-w-32"
         )}
-        aria-label={`${organizationName} coach: ${coach?.name ?? "Unassigned"}`}
+        aria-label={`${organizationName} coaches: ${accessibleSummary}`}
       >
-        <CoachAvatar coach={coach} />
-        <span className={cn(compact && "truncate")}>
-          {coach?.name ?? "Unassigned"}
-        </span>
+        <CoachAvatarStack assignments={controller.assignments} />
+        <span className="truncate">{summary}</span>
       </div>
     )
   }
@@ -92,67 +125,68 @@ export function OrganizationCoachAssignmentControl({
           variant="outline"
           size="sm"
           className={cn(
-            "h-11 justify-start gap-2 rounded-lg px-2 md:h-9",
-            compact ? "max-w-32" : "max-w-48"
+            "h-11 min-w-0 justify-start gap-2 rounded-lg px-2 md:h-9",
+            compact ? "max-w-36" : "max-w-52"
           )}
           disabled={controller.pending}
           aria-busy={controller.pending}
-          aria-label={`Assign a coach to ${organizationName}`}
+          aria-label={`Manage coaches for ${organizationName}; ${accessibleSummary}`}
         >
-          <CoachAvatar coach={coach} />
-          <span className="truncate">{coach?.name ?? "Assign coach"}</span>
+          <CoachAvatarStack assignments={controller.assignments} />
+          <span className="truncate">{summary}</span>
           {controller.pending ? (
             <CircleNotch className="text-muted-foreground ml-auto animate-spin" />
           ) : (
-            <UserSwitch className="text-muted-foreground ml-auto" />
+            <UsersThree className="text-muted-foreground ml-auto" />
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-72 p-2">
-        <p className="text-muted-foreground px-2 py-1 text-xs font-medium">
-          Organization coach
-        </p>
-        {canUnassign ? (
-          <button
-            type="button"
-            className={cn(
-              "hover:bg-accent flex min-h-11 w-full items-center gap-2 rounded-md px-2 text-left text-sm",
-              !coach && "bg-accent"
-            )}
-            onClick={() => controller.assign(null)}
-          >
-            <CoachAvatar coach={null} />
-            <span>Unassigned</span>
-            {!coach ? <Check className="ml-auto" /> : null}
-          </button>
-        ) : (
-          <p className="text-muted-foreground px-2 py-2 text-xs">
-            Assigned-only visibility is active. Choose another coach to reassign
-            this organization.
+      <PopoverContent align="end" className="w-80 p-2">
+        <div className="px-2 py-1">
+          <p className="text-foreground text-xs font-medium">
+            Assigned coaches
           </p>
-        )}
-        {coachOptions.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            className={cn(
-              "hover:bg-accent flex min-h-11 w-full items-center gap-2 rounded-md px-2 text-left text-sm",
-              option.id === coach?.id && "bg-accent"
-            )}
-            onClick={() => controller.assign(option)}
-          >
-            <CoachAvatar coach={option} />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate">{option.name}</span>
-              {option.email ? (
-                <span className="text-muted-foreground block truncate text-xs">
-                  {option.email}
+          <p className="text-muted-foreground text-xs">
+            Select everyone who should cover this organization.
+          </p>
+        </div>
+        {preventEmpty ? (
+          <p className="text-muted-foreground px-2 py-2 text-xs">
+            Assigned-only access is active. Keep at least one coach assigned.
+          </p>
+        ) : null}
+        <div className="mt-1 space-y-1">
+          {coachOptions.map((coach) => {
+            const selected = controller.assignedCoachIds.has(coach.id)
+            const removingLast =
+              selected && preventEmpty && controller.assignments.length === 1
+            return (
+              <Button
+                key={coach.id}
+                type="button"
+                variant="ghost"
+                className={cn(
+                  "h-auto min-h-11 w-full justify-start gap-2 rounded-md px-2 py-2 text-left",
+                  selected && "bg-accent"
+                )}
+                disabled={controller.pending || removingLast}
+                aria-pressed={selected}
+                onClick={() => controller.toggle(coach)}
+              >
+                <CoachAvatar coach={coach} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm">{coach.name}</span>
+                  {coach.email ? (
+                    <span className="text-muted-foreground block truncate text-xs">
+                      {coach.email}
+                    </span>
+                  ) : null}
                 </span>
-              ) : null}
-            </span>
-            {option.id === coach?.id ? <Check /> : null}
-          </button>
-        ))}
+                {selected ? <Check className="ml-auto" aria-hidden /> : null}
+              </Button>
+            )
+          })}
+        </div>
         {coachOptions.length === 0 ? (
           <p className="text-muted-foreground px-2 py-3 text-sm">
             No coach-level staff are available.

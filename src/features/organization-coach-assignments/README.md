@@ -4,6 +4,11 @@ Internal tooling for assigning one coach-level platform staff member to an
 organization. Developers manage assignments; coaches can read them. This
 feature does not yet restrict organization visibility to assigned coaches.
 
+The Organizations assignment operations bar reports canonical coverage and
+filters all related organization projects by coach or unassigned state. Its
+`coach` query parameter remains compatible with the existing project filters
+and view options.
+
 ## Ownership
 
 - Domain logic: `src/features/organization-coach-assignments/lib/**`

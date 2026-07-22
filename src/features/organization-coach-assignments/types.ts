@@ -30,3 +30,12 @@ export type UpdateOrganizationCoachAssignmentResult =
 export type OrganizationCoachAssignmentAction = (
   input: UpdateOrganizationCoachAssignmentInput
 ) => Promise<UpdateOrganizationCoachAssignmentResult>
+
+export type OrganizationCoachFilterValue = "all" | "unassigned" | string
+
+export type OrganizationCoachAssignmentCoverage = {
+  total: number
+  assigned: number
+  unassigned: number
+  countByCoachId: Record<string, number>
+}

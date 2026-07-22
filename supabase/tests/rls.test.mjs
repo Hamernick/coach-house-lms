@@ -614,9 +614,18 @@ async function run() {
       .from("organization_coach_scope_settings")
       .update({ assigned_only_enabled: true })
       .eq("id", true)
+    const { data: scopeAfterDirectWrite, error: scopeAfterDirectWriteError } =
+      await adminClient
+        .from("organization_coach_scope_settings")
+        .select("assigned_only_enabled")
+        .eq("id", true)
+        .maybeSingle()
     results.push({
       name: "developer cannot bypass the coach visibility RPC",
-      passed: !!directScopeWriteError,
+      passed:
+        !!directScopeWriteError ||
+        (!scopeAfterDirectWriteError &&
+          scopeAfterDirectWrite?.assigned_only_enabled === false),
     })
 
     const { data: disabledScopeResult, error: disableScopeError } =

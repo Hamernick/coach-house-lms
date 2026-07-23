@@ -497,6 +497,11 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     expect(markup).toContain("Fiscal Sponsorship")
     expect(markup).toContain("Fiscal sponsorship workbench")
     expect(markup).toContain("Fiscal sponsorship progress")
+    expect(markup).toContain('data-slot="radio-group"')
+    expect(markup).toContain('data-state="checked"')
+    expect(markup).toContain(
+      'data-fiscal-sponsorship-phase-status="incomplete"'
+    )
     expect(markup).toContain("Required data")
     expect(markup).toContain("Applicant: Alex Rivera")
     expect(markup).toContain("No application")
@@ -673,10 +678,11 @@ describe("MemberWorkspaceProjectDetailPage", () => {
       'const staff = await requirePlatformCapability("organizations"'
     )
     expect(organizationDetailRouteSource).toContain(
-      "loadMemberWorkspaceProjectDetailPage(id)"
+      "loadPlatformAdminOrganizationProjectDetailPage({"
     )
+    expect(organizationDetailRouteSource).toContain("userId: staff.userId")
     expect(organizationDetailRouteSource).not.toContain(
-      "loadPlatformAdminOrganizationProjectDetailPage"
+      "loadMemberWorkspaceProjectDetailPage(id)"
     )
     expect(organizationDetailRouteSource).not.toContain(
       "requireMemberWorkspacePageAccess"

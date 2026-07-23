@@ -94,8 +94,12 @@ describe("fiscal sponsorship workspace drawer contract", () => {
     const uploadPanel = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-required-documents-upload-panel.tsx"
     )
+    const projectAssetUpload = readSource(
+      "src/features/fiscal-sponsorship/lib/project-asset-upload.ts"
+    )
 
-    expect(uploadPanel).toContain('fetch("/api/account/project-assets"')
+    expect(uploadPanel).toContain("uploadFiscalSponsorshipProjectAsset")
+    expect(projectAssetUpload).toContain('fetch("/api/account/project-assets"')
     expect(uploadPanel).toContain("connectFiscalSponsorshipDocumentAsset")
     expect(uploadPanel).toContain(
       "Grant requests and reports come after signing"

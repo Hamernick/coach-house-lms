@@ -2,10 +2,7 @@ import { revalidatePath } from "next/cache"
 
 import type { Database } from "@/lib/supabase"
 import type { MemberWorkspaceWorkstreamCategory } from "../types"
-import {
-  actorCanAccessOrganization,
-  actorCanAccessOrganizations,
-} from "./member-workspace-actor-permissions"
+import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 
 type CategoryRow =
@@ -128,18 +125,19 @@ async function ensureDefaultCategoryRows({
   )
 
   if (missingDefaults.length > 0) {
-    const insertResults = await Promise.all(
-      missingDefaults.map((category) =>
-        supabase
-          .from("platform_admin_workstream_categories")
-          .insert({ owner_id: ownerId, ...category })
+    const { error } = await supabase
+      .from("platform_admin_workstream_categories")
+      .insert(
+        missingDefaults.map((category) => ({ owner_id: ownerId, ...category }))
       )
-    )
 
-    for (const { error } of insertResults) {
-      if (!error || error.code === "23505") continue
+    if (error) {
       if (isMissingTableError(error)) return null
-      throw new Error("Unable to create default workstream categories.")
+      throw new Error(
+        error.code === "23505"
+          ? "A custom category conflicts with a default workstream category."
+          : "Unable to create default workstream categories."
+      )
     }
   }
 
@@ -425,9 +423,9 @@ export async function updatePlatformAdminProjectWorkstreamAction(
   const [{ data: project }, { data: category }] = await Promise.all([
     actor.supabase
       .from("organization_projects")
-      .select("id, org_id")
+      .select("id")
       .eq("id", normalizedProjectId)
-      .maybeSingle<{ id: string; org_id: string }>(),
+      .maybeSingle<{ id: string }>(),
     actor.supabase
       .from("platform_admin_workstream_categories")
       .select("id")
@@ -436,11 +434,7 @@ export async function updatePlatformAdminProjectWorkstreamAction(
       .maybeSingle<{ id: string }>(),
   ])
 
-  if (
-    !project ||
-    !category ||
-    !actorCanAccessOrganization(actor, project.org_id)
-  ) {
+  if (!project || !category) {
     return {
       error: "That project or category is no longer available.",
     } as const

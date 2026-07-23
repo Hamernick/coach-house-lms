@@ -1,11 +1,11 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { useRouter } from "next/navigation"
 
 import type { ProjectDetails } from "@/features/platform-admin-dashboard"
 import {
-  FiscalSponsorshipApplicationDrawer,
+  FiscalSponsorshipApplicationEditor,
   FiscalSponsorshipProjectWorkbench,
   type FiscalSponsorshipProjectWorkbenchAdminActionProps,
   type FiscalSponsorshipProjectWorkbenchDocumentActionProps,
@@ -35,7 +35,6 @@ export function MemberWorkspaceProjectFiscalWorkbench({
     project: ProjectDetails
   }) {
   const router = useRouter()
-  const [applicationOpen, setApplicationOpen] = useState(false)
   const projectAssets: FiscalSponsorshipProjectAssetOption[] = useMemo(
     () =>
       project.files.map((file) => ({
@@ -58,36 +57,36 @@ export function MemberWorkspaceProjectFiscalWorkbench({
   )
 
   return (
-    <>
-      <FiscalSponsorshipProjectWorkbench
-        data={data}
-        className="max-w-none"
-        canConnectDocuments={canConnectDocuments}
-        connectFiscalSponsorshipDocumentAssetAction={
-          connectFiscalSponsorshipDocumentAssetAction
-        }
-        generateFiscalSponsorshipAgreementAction={
-          generateFiscalSponsorshipAgreementAction
-        }
-        onEditApplication={() => setApplicationOpen(true)}
-        onOpenAssets={onOpenAssets}
-        projectAssets={projectAssets}
-        reviewFiscalSponsorshipApplicationAction={
-          reviewFiscalSponsorshipApplicationAction
-        }
-        reviewFiscalSponsorshipDocumentAction={
-          reviewFiscalSponsorshipDocumentAction
-        }
-        sendFiscalSponsorshipAgreementForSignatureAction={
-          sendFiscalSponsorshipAgreementForSignatureAction
-        }
-      />
-      <FiscalSponsorshipApplicationDrawer
-        data={data}
-        open={applicationOpen}
-        onOpenChange={setApplicationOpen}
-        onSaved={() => router.refresh()}
-      />
-    </>
+    <FiscalSponsorshipProjectWorkbench
+      data={data}
+      className="max-w-none"
+      canConnectDocuments={canConnectDocuments}
+      connectFiscalSponsorshipDocumentAssetAction={
+        connectFiscalSponsorshipDocumentAssetAction
+      }
+      generateFiscalSponsorshipAgreementAction={
+        generateFiscalSponsorshipAgreementAction
+      }
+      onOpenAssets={onOpenAssets}
+      projectAssets={projectAssets}
+      renderApplicationEditor={({ open, onOpenChange }) => (
+        <FiscalSponsorshipApplicationEditor
+          data={data}
+          open={open}
+          onOpenChange={onOpenChange}
+          onSaved={() => router.refresh()}
+          surface="inline"
+        />
+      )}
+      reviewFiscalSponsorshipApplicationAction={
+        reviewFiscalSponsorshipApplicationAction
+      }
+      reviewFiscalSponsorshipDocumentAction={
+        reviewFiscalSponsorshipDocumentAction
+      }
+      sendFiscalSponsorshipAgreementForSignatureAction={
+        sendFiscalSponsorshipAgreementForSignatureAction
+      }
+    />
   )
 }

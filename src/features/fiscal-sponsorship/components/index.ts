@@ -2,7 +2,10 @@ export { FiscalSponsorshipPanel } from "./fiscal-sponsorship-panel"
 export { FiscalSponsorshipActivityAction } from "./fiscal-sponsorship-activity-action"
 export { FiscalSponsorshipMark } from "./fiscal-sponsorship-mark"
 export { FiscalSponsorshipMarkdownDocument } from "./fiscal-sponsorship-markdown-document"
-export { FiscalSponsorshipApplicationDrawer } from "./fiscal-sponsorship-application-drawer"
+export {
+  FiscalSponsorshipApplicationDrawer,
+  FiscalSponsorshipApplicationEditor,
+} from "./fiscal-sponsorship-application-drawer"
 export { FiscalSponsorshipProjectWorkbenchAdminActions } from "./fiscal-sponsorship-project-workbench-admin-actions"
 export { FiscalSponsorshipProjectWorkbenchDocuments } from "./fiscal-sponsorship-project-workbench-documents"
 export { FiscalSponsorshipProjectWorkbenchRequiredDocuments } from "./fiscal-sponsorship-project-workbench-required-documents"

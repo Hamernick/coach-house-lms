@@ -41,12 +41,6 @@ import { MemberWorkspaceProjectDetailTabs } from "./member-workspace-project-det
 import { ProjectDetailTopBarActions } from "./member-workspace-project-detail-top-bar-actions"
 import { useProjectAssetActions } from "./member-workspace-project-asset-actions"
 import { useMemberWorkspaceProjectTaskCreate } from "./member-workspace-project-task-create"
-import {
-  OrganizationCoachAssignmentControl,
-  type OrganizationCoachAssignment,
-  type OrganizationCoachAssignmentAction,
-  type OrganizationCoachOption,
-} from "@/features/organization-coach-assignments"
 
 type MemberWorkspaceProjectDetailPageProps = {
   project: ProjectDetails
@@ -54,11 +48,6 @@ type MemberWorkspaceProjectDetailPageProps = {
   currentUser: User
   fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
   organizationSummary: MemberWorkspaceAdminOrganizationSummary
-  coachAssignments?: OrganizationCoachAssignment[]
-  coachOptions?: OrganizationCoachOption[]
-  canManageCoachAssignment?: boolean
-  updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
-  canUnassignCoachAssignment?: boolean
   canManageProject?: boolean
   canManageProjectAssets?: boolean
   canEditProjectDetails?: boolean
@@ -126,13 +115,6 @@ function getProjectSourceProjectKind(source: ProjectDetails["source"]) {
     : undefined
 }
 
-function buildProjectBreadcrumbs(projectName: string) {
-  return [
-    { label: "Organizations", href: "/organizations" },
-    { label: projectName },
-  ]
-}
-
 function useMemberWorkspaceProjectDelete({
   deleteProjectAction,
   projectId,
@@ -181,11 +163,6 @@ export function MemberWorkspaceProjectDetailPage({
   currentUser,
   fiscalSponsorshipWorkflowSummary,
   organizationSummary,
-  coachAssignments = [],
-  coachOptions = [],
-  canManageCoachAssignment = false,
-  updateCoachAssignmentAction,
-  canUnassignCoachAssignment = true,
   canManageProject: canManageProjectProp,
   canManageProjectAssets: canManageProjectAssetsProp,
   canEditProjectDetails: canEditProjectDetailsProp,
@@ -232,7 +209,10 @@ export function MemberWorkspaceProjectDetailPage({
     useState<MemberWorkspaceProjectDetailDraft>(initialProjectDraft)
 
   const breadcrumbs = useMemo(
-    () => buildProjectBreadcrumbs(project.name),
+    () => [
+      { label: "Organizations", href: "/organizations" },
+      { label: project.name },
+    ],
     [project.name]
   )
 
@@ -425,17 +405,6 @@ export function MemberWorkspaceProjectDetailPage({
                     draft={projectDraft}
                     onChangeDraftField={handleChangeProjectDraftField}
                     onEditProject={handleStartProjectEditing}
-                    actions={
-                      <OrganizationCoachAssignmentControl
-                        assignments={coachAssignments}
-                        canManage={canManageCoachAssignment}
-                        coachOptions={coachOptions}
-                        organizationId={organizationSummary.orgId}
-                        organizationName={organizationSummary.name}
-                        updateAssignmentAction={updateCoachAssignmentAction}
-                        preventEmpty={!canUnassignCoachAssignment}
-                      />
-                    }
                   />
 
                   <MemberWorkspaceProjectDetailTabs

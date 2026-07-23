@@ -12,10 +12,7 @@ import {
   type OrganizationProjectRecord,
 } from "./project-starter-data"
 import { loadMemberWorkspacePersonOptionsForOrganizations } from "./person-options"
-import {
-  actorCanAccessOrganizations,
-  filterOrganizationsForActor,
-} from "./member-workspace-actor-permissions"
+import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import { ensureStarterProjectsForOrg } from "./project-persistence"
 import { organizationProjectSelectFields } from "./project-select"
@@ -25,6 +22,7 @@ import {
   toMemberWorkspaceDataError,
 } from "./table-errors"
 import { loadPlatformAdminWorkstreamConfiguration } from "./admin-workstreams"
+import { loadFiscalSponsorshipProjectListStatuses } from "./fiscal-sponsorship-project-list-status"
 
 async function loadAdminStandardOrganizationProjects({
   orgIds,
@@ -45,6 +43,7 @@ async function loadAdminStandardOrganizationProjects({
     .in("org_id", orgIds)
     .eq("project_kind", "standard")
     .neq("created_source", "system")
+    .neq("created_source", "starter_seed")
     .order("start_date", { ascending: true })
     .order("created_at", { ascending: true })
     .returns<OrganizationProjectRecord[]>()
@@ -66,12 +65,9 @@ export async function loadMemberWorkspaceProjectsPage() {
   const actor = await resolveMemberWorkspaceActorContext()
 
   if (actorCanAccessOrganizations(actor)) {
-    const organizations = filterOrganizationsForActor(
-      actor,
-      await loadAdminOrganizationSummaries({
-        supabase: actor.supabase,
-      })
-    )
+    const organizations = await loadAdminOrganizationSummaries({
+      supabase: actor.supabase,
+    })
     const orgIds = organizations.map((organization) => organization.orgId)
     const organizationOptions = organizations.map((organization) => ({
       orgId: organization.orgId,
@@ -137,11 +133,17 @@ export async function loadMemberWorkspaceProjectsPage() {
       }),
       ...standardProjects.map(mapOrganizationProjectToViewModel),
     ]
-    const workstreamConfiguration =
-      await loadPlatformAdminWorkstreamConfiguration({
-        actor,
-        projectIds: projects.map((project) => project.id),
-      })
+    const [workstreamConfiguration, fiscalSponsorshipStatusByProjectId] =
+      await Promise.all([
+        loadPlatformAdminWorkstreamConfiguration({
+          actor,
+          projectIds: projects.map((project) => project.id),
+        }),
+        loadFiscalSponsorshipProjectListStatuses({
+          projects,
+          supabase: actor.supabase,
+        }),
+      ])
     const workstreamCategories = workstreamConfiguration?.categories ?? []
     const fallbackCategory = workstreamCategories[0] ?? null
     const projectsWithWorkstreams = projects.map((project) => {
@@ -153,6 +155,9 @@ export async function loadMemberWorkspaceProjectsPage() {
 
       return {
         ...project,
+        fiscalSponsorshipStatus: fiscalSponsorshipStatusByProjectId.get(
+          project.id
+        ),
         workstreamCategoryId:
           storedCategoryId ?? statusCategory?.id ?? fallbackCategory?.id,
       }
@@ -234,13 +239,24 @@ export async function loadMemberWorkspaceProjectsPage() {
   }
 
   const rows = projects ?? []
+  const projectViewModels = rows.map(mapOrganizationProjectToViewModel)
+  const fiscalSponsorshipStatusByProjectId =
+    await loadFiscalSponsorshipProjectListStatuses({
+      projects: projectViewModels,
+      supabase: actor.supabase,
+    })
   const storageMode = resolveMemberWorkspaceStorageMode(rows)
   const starterProjectCount = rows.filter(
     (project) => project.created_source === "starter_seed"
   ).length
 
   return {
-    projects: rows.map(mapOrganizationProjectToViewModel),
+    projects: projectViewModels.map((project) => ({
+      ...project,
+      fiscalSponsorshipStatus: fiscalSponsorshipStatusByProjectId.get(
+        project.id
+      ),
+    })),
     storageMode,
     starterProjectCount,
     hasUserProjects: rows.some(

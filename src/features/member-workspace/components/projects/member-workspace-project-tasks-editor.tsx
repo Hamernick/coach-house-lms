@@ -41,7 +41,7 @@ function getProjectTasks(details: ProjectDetails): ProjectTask[] {
       projectName: details.name,
       workstreamId: group.id,
       workstreamName: group.name,
-    }))
+    })),
   )
 }
 
@@ -52,9 +52,7 @@ type MemberWorkspaceProjectTasksEditorProps = {
   ) => Promise<{ ok: true; taskId: string } | { error: string }>
   deleteTaskAction?: (
     taskId: string
-  ) => Promise<
-    { ok: true; taskId: string; projectId: string } | { error: string }
-  >
+  ) => Promise<{ ok: true; taskId: string; projectId: string } | { error: string }>
   onPendingCreateContextHandled?: () => void
   pendingCreateContext?: CreateTaskContext
   project: ProjectDetails
@@ -79,15 +77,11 @@ export function MemberWorkspaceProjectTasksEditor({
   onPendingCreateContextHandled,
 }: MemberWorkspaceProjectTasksEditorProps) {
   const router = useRouter()
-  const [tasks, setTasks] = useState<ProjectTask[]>(() =>
-    getProjectTasks(project)
-  )
+  const [tasks, setTasks] = useState<ProjectTask[]>(() => getProjectTasks(project))
   const [draftTargetId, setDraftTargetId] = useState<string | null>(null)
   const [taskDraft, setTaskDraft] = useState<TaskDraft | null>(null)
   const [savingTaskId, setSavingTaskId] = useState<string | null>(null)
-  const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(
-    null
-  )
+  const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(null)
   const [movingTaskId, setMovingTaskId] = useState<string | null>(null)
 
   useEffect(() => {
@@ -104,7 +98,7 @@ export function MemberWorkspaceProjectTasksEditor({
       buildTaskDraft({
         project,
         context: pendingCreateContext,
-      })
+      }),
     )
     onPendingCreateContextHandled?.()
   }, [onPendingCreateContextHandled, pendingCreateContext, project])
@@ -116,10 +110,10 @@ export function MemberWorkspaceProjectTasksEditor({
           [
             ...project.workstreams.map((workstream) => workstream.name.trim()),
             ...tasks.map((task) => task.workstreamName?.trim() ?? ""),
-          ].filter(Boolean)
-        )
+          ].filter(Boolean),
+        ),
       ),
-    [project.workstreams, tasks]
+    [project.workstreams, tasks],
   )
 
   const handleChangeDraftField = useCallback(
@@ -130,10 +124,10 @@ export function MemberWorkspaceProjectTasksEditor({
               ...currentDraft,
               [field]: value,
             }
-          : currentDraft
+          : currentDraft,
       )
     },
-    []
+    [],
   )
 
   const handleStartCreateTask = useCallback(
@@ -143,10 +137,10 @@ export function MemberWorkspaceProjectTasksEditor({
         buildTaskDraft({
           project,
           context,
-        })
+        }),
       )
     },
-    [project]
+    [project],
   )
 
   const handleStartEditTask = useCallback(
@@ -156,10 +150,10 @@ export function MemberWorkspaceProjectTasksEditor({
         buildTaskDraft({
           project,
           task,
-        })
+        }),
       )
     },
-    [project]
+    [project],
   )
 
   const handleCancelDraft = useCallback(() => {
@@ -195,9 +189,7 @@ export function MemberWorkspaceProjectTasksEditor({
         return
       }
 
-      toast.success(
-        draftTargetId === NEW_TASK_ID ? "Task created" : "Task updated"
-      )
+      toast.success(draftTargetId === NEW_TASK_ID ? "Task created" : "Task updated")
       handleCancelDraft()
       router.refresh()
     } finally {
@@ -234,7 +226,7 @@ export function MemberWorkspaceProjectTasksEditor({
       try {
         const result = await updateTaskOrderAction(
           project.id,
-          nextTasks.map((task) => task.id)
+          nextTasks.map((task) => task.id),
         )
 
         if ("error" in result) {
@@ -248,18 +240,17 @@ export function MemberWorkspaceProjectTasksEditor({
         setMovingTaskId(null)
       }
     },
-    [project.id, router, tasks, updateTaskOrderAction]
+    [project.id, router, tasks, updateTaskOrderAction],
   )
 
   return (
-    <section className="border-border bg-card rounded-2xl border p-4 shadow-sm sm:p-5">
+    <section className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="space-y-1">
-          <h2 className="text-foreground text-base font-semibold">Tasks</h2>
-          <p className="text-muted-foreground text-sm leading-6">
-            Task rows edit inline while the page stays in edit mode. Reordering
-            uses explicit up and down controls so the layout remains
-            touch-friendly on mobile.
+          <h2 className="text-base font-semibold text-foreground">Tasks</h2>
+          <p className="text-sm leading-6 text-muted-foreground">
+            Task rows edit inline while the page stays in edit mode. Reordering uses
+            explicit up and down controls so the layout remains touch-friendly on mobile.
           </p>
         </div>
         <Button type="button" size="sm" onClick={() => handleStartCreateTask()}>
@@ -286,7 +277,7 @@ export function MemberWorkspaceProjectTasksEditor({
 
       <div className="mt-5 space-y-3">
         {tasks.length === 0 ? (
-          <div className="border-border/70 bg-muted/20 text-muted-foreground rounded-2xl border border-dashed px-4 py-8 text-sm">
+          <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-8 text-sm text-muted-foreground">
             No tasks yet. Add the first task inline without leaving the page.
           </div>
         ) : null}
@@ -298,12 +289,12 @@ export function MemberWorkspaceProjectTasksEditor({
           return (
             <article
               key={task.id}
-              className="border-border/70 bg-background/80 rounded-2xl border p-4"
+              className="rounded-2xl border border-border/70 bg-background/80 p-4"
             >
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-foreground min-w-0 flex-1 text-sm font-semibold">
+                    <h3 className="min-w-0 flex-1 text-sm font-semibold text-foreground">
                       {task.name}
                     </h3>
                     <TaskToneBadge
@@ -316,38 +307,28 @@ export function MemberWorkspaceProjectTasksEditor({
                       }
                     />
                     {task.workstreamName ? (
-                      <TaskToneBadge
-                        label={task.workstreamName}
-                        tone="outline"
-                      />
+                      <TaskToneBadge label={task.workstreamName} tone="outline" />
                     ) : null}
-                    {task.tag ? (
-                      <TaskToneBadge label={task.tag} tone="outline" />
-                    ) : null}
+                    {task.tag ? <TaskToneBadge label={task.tag} tone="outline" /> : null}
                   </div>
 
                   {task.description ? (
-                    <p className="text-muted-foreground mt-2 text-sm leading-6">
+                    <p className="mt-2 text-sm leading-6 text-muted-foreground">
                       {task.description}
                     </p>
                   ) : null}
 
-                  <div className="text-muted-foreground mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs">
+                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-xs text-muted-foreground">
                     <span>Start {formatTaskDateLabel(task.startDate)}</span>
+                    <span>Due {formatTaskDateLabel(task.endDate ?? task.startDate)}</span>
                     <span>
-                      Due {formatTaskDateLabel(task.endDate ?? task.startDate)}
-                    </span>
-                    <span>
-                      {task.assignee
-                        ? `Assignee ${task.assignee.name}`
-                        : "Unassigned"}
+                      {task.assignee ? `Assignee ${task.assignee.name}` : "Unassigned"}
                     </span>
                     <span>
                       Priority{" "}
                       {!task.priority || task.priority === "no-priority"
                         ? "None"
-                        : task.priority.charAt(0).toUpperCase() +
-                          task.priority.slice(1)}
+                        : task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                     </span>
                   </div>
                 </div>
@@ -424,9 +405,7 @@ export function MemberWorkspaceProjectTasksEditor({
           if (!open) setPendingDeleteTaskId(null)
         }}
         onDeleted={(taskId) => {
-          setTasks((currentTasks) =>
-            currentTasks.filter((task) => task.id !== taskId)
-          )
+          setTasks((currentTasks) => currentTasks.filter((task) => task.id !== taskId))
           if (draftTargetId === taskId) handleCancelDraft()
           setPendingDeleteTaskId(null)
           router.refresh()

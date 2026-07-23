@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 type TaskDeleteAction = (
-  taskId: string
+  taskId: string,
 ) => Promise<
   { ok: true; taskId: string; projectId: string } | { error: string }
 >

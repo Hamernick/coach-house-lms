@@ -34,6 +34,12 @@ type MemberWorkspaceProjectWizardProps = {
   ) => Promise<{ ok: true; id: string } | { error: string }>
 }
 
+const ORGANIZATION_STATUS_OPTIONS = [
+  { id: "todo", label: "Onboarding", dotClass: "bg-orange-600" },
+  { id: "in-progress", label: "Active", dotClass: "bg-teal-600" },
+  { id: "canceled", label: "Archived", dotClass: "bg-zinc-500" },
+]
+
 function todayDateValue() {
   return new Date().toISOString().slice(0, 10)
 }
@@ -52,16 +58,13 @@ function mapProjectStatusToQuickStatus(
   status: PlatformAdminDashboardLabStatus
 ) {
   switch (status) {
-    case "planned":
-      return "todo"
     case "active":
       return "in-progress"
     case "completed":
-      return "done"
     case "cancelled":
       return "canceled"
     default:
-      return "backlog"
+      return "todo"
   }
 }
 
@@ -73,12 +76,10 @@ function mapQuickStatusToProjectStatus(
       return "planned"
     case "in-progress":
       return "active"
-    case "done":
-      return "completed"
     case "canceled":
       return "cancelled"
     default:
-      return "backlog"
+      return "planned"
   }
 }
 
@@ -377,6 +378,7 @@ export function MemberWorkspaceProjectWizard({
       }
       quickCreateSubmitPending={isPending}
       quickCreateUsers={quickCreateUsers}
+      quickCreateStatuses={ORGANIZATION_STATUS_OPTIONS}
       quickCreateClients={clientOptions}
       onQuickCreate={(value) =>
         submitProjectInput({

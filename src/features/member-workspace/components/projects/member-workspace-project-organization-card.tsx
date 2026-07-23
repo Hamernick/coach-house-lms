@@ -1,9 +1,36 @@
 "use client"
 
 import Link from "next/link"
+import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
+import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
+import CircleDashedIcon from "lucide-react/dist/esm/icons/circle-dashed"
 
+import {
+  getReactGrabLinkedSurfaceProps,
+  getReactGrabOwnerProps,
+} from "@/components/dev/react-grab-surface"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
 import { Badge } from "@/features/platform-admin-dashboard"
-import type { MemberWorkspaceAdminOrganizationSummary } from "../../types"
+import type {
+  MemberWorkspaceAdminOrganizationSetupItem,
+  MemberWorkspaceAdminOrganizationSummary,
+} from "../../types"
+
+const ORGANIZATION_CARD_SOURCE =
+  "src/features/member-workspace/components/projects/member-workspace-project-organization-card.tsx"
+const ORGANIZATION_SETUP_OWNER_REASON =
+  "The organization card owns its setup progress trigger and the linked checklist preview; shared HoverCard primitives own only reusable overlay chrome."
+const USER_COMPLETENESS_OWNER_REASON =
+  "The organization card owns the user-completeness disclosure and each member's linked hover preview; shared HoverCard and Collapsible primitives own only reusable interaction behavior."
 
 function toTrimmedString(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
@@ -42,6 +69,161 @@ export function resolveMemberWorkspaceOrganizationHref(
   return publicSlug ? `/find/${encodeURIComponent(publicSlug)}` : null
 }
 
+export function partitionMemberWorkspaceOrganizationSetupItems(
+  items: MemberWorkspaceAdminOrganizationSetupItem[]
+) {
+  return {
+    completedItems: items.filter((item) => item.complete),
+    incompleteItems: items.filter((item) => !item.complete),
+  }
+}
+
+function OrganizationSetupItemList({
+  complete,
+  items,
+  title,
+}: {
+  complete: boolean
+  items: MemberWorkspaceAdminOrganizationSetupItem[]
+  title: string
+}) {
+  const Icon = complete ? CheckCircle2Icon : CircleDashedIcon
+
+  if (items.length === 0) return null
+
+  return (
+    <section className="flex flex-col gap-2">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-foreground text-xs font-medium">{title}</p>
+        <Badge variant="secondary" className="tabular-nums">
+          {items.length}
+        </Badge>
+      </div>
+      <ul className="flex flex-col gap-1.5">
+        {items.map((item) => (
+          <li key={item.id} className="flex min-w-0 items-start gap-2">
+            <Icon
+              className="text-muted-foreground mt-0.5 size-3.5 shrink-0"
+              aria-hidden
+            />
+            <span className="text-muted-foreground min-w-0 text-xs leading-4 break-words">
+              {item.label}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+function UserCompletenessMemberRows({
+  members,
+  ownerId,
+}: {
+  members: MemberWorkspaceAdminOrganizationSummary["members"]
+  ownerId: string
+}) {
+  return members.map((member) => {
+    const memberOwnerId = `${ownerId}:member:${member.userId}`
+    const missingFields = member.profileMissingFields ?? []
+
+    return (
+      <HoverCard key={member.userId} openDelay={300} closeDelay={150}>
+        <HoverCardTrigger asChild>
+          <button
+            type="button"
+            aria-label={`Preview completeness for ${member.name}`}
+            {...getReactGrabOwnerProps({
+              ownerId: memberOwnerId,
+              component: "MemberWorkspaceProjectOrganizationCard",
+              source: ORGANIZATION_CARD_SOURCE,
+              slot: "user-completeness-member",
+              canonicalOwnerSource: ORGANIZATION_CARD_SOURCE,
+              canonicalOwnerReason: USER_COMPLETENESS_OWNER_REASON,
+              primitiveImport: "@/components/ui/hover-card",
+            })}
+            className="bg-muted/35 hover:bg-muted/60 focus-visible:ring-ring/50 flex min-h-11 w-full cursor-pointer flex-col gap-1 rounded-md px-3 py-2.5 text-left transition-colors outline-none focus-visible:ring-2 motion-reduce:transition-none"
+          >
+            <span className="flex w-full items-center justify-between gap-3 text-xs">
+              <span className="text-foreground min-w-0 truncate">
+                {member.name}
+              </span>
+              <span className="text-foreground shrink-0 font-medium tabular-nums">
+                {member.profileCompletenessPercent}%
+              </span>
+            </span>
+            {missingFields.length ? (
+              <span className="text-muted-foreground text-[11px] leading-4 break-words">
+                Missing {missingFields.join(", ")}
+              </span>
+            ) : (
+              <span className="text-muted-foreground text-[11px]">
+                Profile complete
+              </span>
+            )}
+          </button>
+        </HoverCardTrigger>
+        <HoverCardContent
+          align="start"
+          side="left"
+          className="w-72 max-w-[calc(100vw-2rem)] p-3"
+          {...getReactGrabLinkedSurfaceProps({
+            ownerId: memberOwnerId,
+            component: "MemberWorkspaceProjectOrganizationCard",
+            source: ORGANIZATION_CARD_SOURCE,
+            slot: "user-completeness-member-preview",
+            surfaceKind: "content",
+            canonicalOwnerSource: ORGANIZATION_CARD_SOURCE,
+            canonicalOwnerReason: USER_COMPLETENESS_OWNER_REASON,
+            tokenSource: "src/app/globals.css",
+            primitiveImport: "@/components/ui/hover-card",
+          })}
+        >
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-foreground min-w-0 truncate text-sm font-semibold">
+              {member.name}
+            </p>
+            <Badge variant="outline" className="shrink-0 tabular-nums">
+              {member.profileCompletenessPercent}%
+            </Badge>
+          </div>
+          {missingFields.length ? (
+            <div className="mt-3 flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <CircleDashedIcon
+                  className="text-muted-foreground size-3.5 shrink-0"
+                  aria-hidden
+                />
+                <p className="text-foreground text-xs font-medium">
+                  Needs attention
+                </p>
+              </div>
+              <ul className="flex flex-col gap-1 pl-5">
+                {missingFields.map((field) => (
+                  <li
+                    key={field}
+                    className="text-muted-foreground text-xs leading-4 break-words"
+                  >
+                    {field}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <div className="mt-3 flex items-center gap-2">
+              <CheckCircle2Icon
+                className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                aria-hidden
+              />
+              <p className="text-muted-foreground text-xs">Profile complete</p>
+            </div>
+          )}
+        </HoverCardContent>
+      </HoverCard>
+    )
+  })
+}
+
 export function MemberWorkspaceProjectOrganizationCard({
   organization,
 }: {
@@ -55,6 +237,21 @@ export function MemberWorkspaceProjectOrganizationCard({
   const membersWithCompleteness = organization.members.filter(
     (member) => typeof member.profileCompletenessPercent === "number"
   )
+  const { completedItems, incompleteItems } =
+    partitionMemberWorkspaceOrganizationSetupItems(organization.setupItems)
+  const setupOwnerId = `member-workspace-project-organization-card:setup:${organization.orgId}`
+  const setupDescriptionId = `organization-setup-description-${organization.orgId}`
+  const userCompletenessOwnerId = `member-workspace-project-organization-card:user-completeness:${organization.orgId}`
+  const setupDescription = organization.setupItems.length
+    ? [
+        incompleteItems.length
+          ? `Incomplete: ${incompleteItems.map((item) => item.label).join(", ")}.`
+          : "No incomplete setup items.",
+        completedItems.length
+          ? `Complete: ${completedItems.map((item) => item.label).join(", ")}.`
+          : "No completed setup items.",
+      ].join(" ")
+    : "Setup item details are unavailable."
 
   return (
     <div className="border-border bg-card/80 space-y-3 rounded-lg border p-4">
@@ -92,61 +289,164 @@ export function MemberWorkspaceProjectOrganizationCard({
         ) : null}
       </div>
 
-      <div className="border-border/70 space-y-2 border-t pt-3">
-        <div className="flex items-center justify-between gap-3 text-xs">
-          <span className="text-muted-foreground">Organization setup</span>
-          <span className="text-foreground font-medium">
-            {organization.setupProgress}%
-          </span>
-        </div>
-        <div
-          className="bg-muted h-1.5 overflow-hidden rounded-full"
-          role="progressbar"
-          aria-label="Organization setup completeness"
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-valuenow={organization.setupProgress}
-        >
-          <div
-            className="bg-primary h-full rounded-full"
-            style={{ width: `${organization.setupProgress}%` }}
-          />
-        </div>
-        <p className="text-muted-foreground text-[11px]">
-          {organization.setupCompletedCount} of {organization.setupTotalCount}{" "}
-          setup items complete
-        </p>
+      <div className="border-border/70 border-t pt-3">
+        <HoverCard openDelay={300} closeDelay={150}>
+          <HoverCardTrigger asChild>
+            <button
+              type="button"
+              aria-describedby={setupDescriptionId}
+              {...getReactGrabOwnerProps({
+                ownerId: setupOwnerId,
+                component: "MemberWorkspaceProjectOrganizationCard",
+                source: ORGANIZATION_CARD_SOURCE,
+                slot: "setup-progress",
+                canonicalOwnerSource: ORGANIZATION_CARD_SOURCE,
+                canonicalOwnerReason: ORGANIZATION_SETUP_OWNER_REASON,
+                primitiveImport: "@/components/ui/hover-card",
+              })}
+              className="focus-visible:ring-ring flex w-full cursor-pointer flex-col gap-2 rounded-md text-left outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+            >
+              <span className="flex items-center justify-between gap-3 text-xs">
+                <span className="text-muted-foreground">
+                  Organization setup
+                </span>
+                <span className="text-foreground font-medium tabular-nums">
+                  {organization.setupProgress}%
+                </span>
+              </span>
+              <span
+                className="bg-muted h-1.5 overflow-hidden rounded-full"
+                role="progressbar"
+                aria-label="Organization setup completeness"
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={organization.setupProgress}
+              >
+                <span
+                  className="bg-primary block h-full rounded-full"
+                  style={{ width: `${organization.setupProgress}%` }}
+                />
+              </span>
+              <span className="text-muted-foreground text-[11px]">
+                {organization.setupCompletedCount} of{" "}
+                {organization.setupTotalCount} setup items complete
+              </span>
+            </button>
+          </HoverCardTrigger>
+          <HoverCardContent
+            align="start"
+            side="left"
+            className="w-80 max-w-[calc(100vw-2rem)] p-0"
+            {...getReactGrabLinkedSurfaceProps({
+              ownerId: setupOwnerId,
+              component: "MemberWorkspaceProjectOrganizationCard",
+              source: ORGANIZATION_CARD_SOURCE,
+              slot: "setup-checklist",
+              surfaceKind: "content",
+              canonicalOwnerSource: ORGANIZATION_CARD_SOURCE,
+              canonicalOwnerReason: ORGANIZATION_SETUP_OWNER_REASON,
+              tokenSource: "src/app/globals.css",
+              primitiveImport: "@/components/ui/hover-card",
+            })}
+          >
+            <div className="border-border flex flex-col gap-1 border-b p-3">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-foreground text-sm font-semibold">
+                  Organization setup
+                </p>
+                <Badge variant="outline" className="tabular-nums">
+                  {organization.setupProgress}%
+                </Badge>
+              </div>
+              <p className="text-muted-foreground text-xs">
+                {organization.setupCompletedCount} of{" "}
+                {organization.setupTotalCount} items complete
+              </p>
+            </div>
+            {organization.setupItems.length ? (
+              <div className="flex max-h-72 flex-col gap-4 overflow-y-auto overscroll-contain p-3">
+                <OrganizationSetupItemList
+                  complete={false}
+                  items={incompleteItems}
+                  title="Needs attention"
+                />
+                {incompleteItems.length === 0 ? (
+                  <p className="text-muted-foreground text-xs">
+                    All setup items are complete.
+                  </p>
+                ) : null}
+                <OrganizationSetupItemList
+                  complete
+                  items={completedItems}
+                  title="Complete"
+                />
+              </div>
+            ) : (
+              <p className="text-muted-foreground p-3 text-xs">
+                Setup item details are unavailable.
+              </p>
+            )}
+          </HoverCardContent>
+        </HoverCard>
+        <span id={setupDescriptionId} className="sr-only">
+          {setupDescription}
+        </span>
       </div>
 
       {membersWithCompleteness.length > 0 ? (
-        <div className="border-border/70 space-y-2 border-t pt-3">
-          <p className="text-muted-foreground text-xs font-medium">
-            User completeness
-          </p>
-          <div className="space-y-2">
-            {membersWithCompleteness.map((member) => (
-              <div key={member.userId} className="space-y-1">
-                <div className="flex items-center justify-between gap-3 text-xs">
-                  <span className="text-foreground min-w-0 truncate">
-                    {member.name}
-                  </span>
-                  <span className="text-foreground shrink-0 font-medium">
-                    {member.profileCompletenessPercent}%
-                  </span>
-                </div>
-                {member.profileMissingFields?.length ? (
-                  <p className="text-muted-foreground text-[11px] leading-4">
-                    Missing {member.profileMissingFields.join(", ")}
-                  </p>
-                ) : (
-                  <p className="text-muted-foreground text-[11px]">
-                    Profile complete
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
+        <Collapsible className="border-border/70 border-t pt-3">
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              {...getReactGrabOwnerProps({
+                ownerId: userCompletenessOwnerId,
+                component: "MemberWorkspaceProjectOrganizationCard",
+                source: ORGANIZATION_CARD_SOURCE,
+                slot: "user-completeness-trigger",
+                canonicalOwnerSource: ORGANIZATION_CARD_SOURCE,
+                canonicalOwnerReason: USER_COMPLETENESS_OWNER_REASON,
+                primitiveImport: "@/components/ui/collapsible",
+              })}
+              className="group hover:bg-muted/50 focus-visible:ring-ring/50 flex min-h-11 w-full cursor-pointer items-center justify-between gap-3 rounded-md px-2 text-left transition-[background-color,color] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none focus-visible:ring-2 motion-reduce:transition-none"
+            >
+              <span className="text-muted-foreground text-xs font-medium">
+                User completeness
+              </span>
+              <span className="flex shrink-0 items-center gap-2">
+                <Badge variant="outline" className="tabular-nums">
+                  {membersWithCompleteness.length}{" "}
+                  {membersWithCompleteness.length === 1 ? "user" : "users"}
+                </Badge>
+                <ChevronDownIcon
+                  className="text-muted-foreground size-4 transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-data-[state=open]:rotate-180 motion-reduce:transition-none"
+                  aria-hidden
+                />
+              </span>
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent
+            forceMount
+            className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 overflow-hidden data-[state=closed]:hidden data-[state=open]:duration-200 motion-reduce:data-[state=open]:animate-none"
+            {...getReactGrabLinkedSurfaceProps({
+              ownerId: userCompletenessOwnerId,
+              component: "MemberWorkspaceProjectOrganizationCard",
+              source: ORGANIZATION_CARD_SOURCE,
+              slot: "user-completeness-details",
+              surfaceKind: "content",
+              canonicalOwnerSource: ORGANIZATION_CARD_SOURCE,
+              canonicalOwnerReason: USER_COMPLETENESS_OWNER_REASON,
+              tokenSource: "src/app/globals.css",
+              primitiveImport: "@/components/ui/collapsible",
+            })}
+          >
+            <div className="flex flex-col gap-2 px-2 pt-1 pb-1">
+              <UserCompletenessMemberRows
+                members={membersWithCompleteness}
+                ownerId={userCompletenessOwnerId}
+              />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       ) : null}
     </div>
   )

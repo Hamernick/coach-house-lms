@@ -1,14 +1,12 @@
 import type { User } from "@/features/platform-admin-dashboard"
+import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import type { Database } from "@/lib/supabase"
 import type {
   MemberWorkspaceAdminOrganizationSummary,
   MemberWorkspacePersonOption,
 } from "../types"
 
-import {
-  actorCanAccessOrganization,
-  actorCanAccessOrganizations,
-} from "./member-workspace-actor-permissions"
+import { actorCanAccessOrganizations } from "./member-workspace-actor-permissions"
 import { resolveMemberWorkspaceActorContext } from "./member-workspace-actor-context"
 import { ensureCanonicalAdminProjects } from "./admin-projects"
 import {
@@ -113,12 +111,7 @@ export type MemberWorkspaceProjectDetailLoadResult =
 
 type MemberWorkspaceProjectDetailActor = Pick<
   Awaited<ReturnType<typeof resolveMemberWorkspaceActorContext>>,
-  | "activeOrg"
-  | "canAccessOrganizations"
-  | "isAdmin"
-  | "organizationCoachScope"
-  | "supabase"
-  | "userId"
+  "isAdmin" | "supabase" | "userId"
 >
 
 async function loadProjectTaskRows({
@@ -476,13 +469,19 @@ async function buildReadyProjectDetailResult({
 }
 
 async function loadPlatformAdminProjectDetailPage({
-  actor,
   projectId,
+  userId,
 }: {
-  actor: MemberWorkspaceProjectDetailActor
   projectId: string
+  userId: string
 }): Promise<MemberWorkspaceProjectDetailLoadResult> {
-  const { data: projectRow, error: projectError } = await actor.supabase
+  const adminActor: MemberWorkspaceProjectDetailActor = {
+    isAdmin: true,
+    supabase: createSupabaseAdminClient(),
+    userId,
+  }
+
+  const { data: projectRow, error: projectError } = await adminActor.supabase
     .from("organization_projects")
     .select(organizationProjectSelectFields)
     .eq("id", projectId)
@@ -491,19 +490,16 @@ async function loadPlatformAdminProjectDetailPage({
   if (projectError) {
     if (isMissingOrganizationProjectsTableError(projectError)) {
       const organization = await loadAdminOrganizationSummaryById({
-        supabase: actor.supabase,
+        supabase: adminActor.supabase,
         orgId: projectId,
       })
 
       if (!organization) {
         return { state: "schema-unavailable" }
       }
-      if (!actorCanAccessOrganization(actor, organization.orgId)) {
-        return { state: "not-found" }
-      }
 
       return buildReadyProjectDetailResult({
-        actor,
+        actor: adminActor,
         organizationSummary: organization,
         project: mapAdminOrganizationSummaryToProjectRecord(organization),
       })
@@ -515,11 +511,8 @@ async function loadPlatformAdminProjectDetailPage({
   }
 
   if (projectRow) {
-    if (!actorCanAccessOrganization(actor, projectRow.org_id)) {
-      return { state: "not-found" }
-    }
     const organizationSummary = await loadAdminOrganizationSummaryById({
-      supabase: actor.supabase,
+      supabase: adminActor.supabase,
       orgId: projectRow.org_id,
     })
 
@@ -530,12 +523,12 @@ async function loadPlatformAdminProjectDetailPage({
     if (projectRow.project_kind === "organization_admin") {
       const canonicalProjects = await ensureCanonicalAdminProjects({
         organizations: [organizationSummary],
-        supabase: actor.supabase,
+        supabase: adminActor.supabase,
       })
       const canonicalProject = canonicalProjects?.[0] ?? null
 
       return buildReadyProjectDetailResult({
-        actor,
+        actor: adminActor,
         organizationSummary,
         project:
           canonicalProject ??
@@ -544,40 +537,50 @@ async function loadPlatformAdminProjectDetailPage({
     }
 
     return buildReadyProjectDetailResult({
-      actor,
+      actor: adminActor,
       organizationSummary,
       project: projectRow,
     })
   }
 
   const organization = await loadAdminOrganizationSummaryById({
-    supabase: actor.supabase,
+    supabase: adminActor.supabase,
     orgId: projectId,
   })
 
-  if (!organization || !actorCanAccessOrganization(actor, organization.orgId)) {
+  if (!organization) {
     return { state: "not-found" }
   }
 
   const canonicalProjects = await ensureCanonicalAdminProjects({
     organizations: [organization],
-    supabase: actor.supabase,
+    supabase: adminActor.supabase,
   })
   const canonicalProject = canonicalProjects?.[0] ?? null
 
   if (canonicalProject) {
     return buildReadyProjectDetailResult({
-      actor,
+      actor: adminActor,
       organizationSummary: organization,
       project: canonicalProject,
     })
   }
 
   return buildReadyProjectDetailResult({
-    actor,
+    actor: adminActor,
     organizationSummary: organization,
     project: mapAdminOrganizationSummaryToProjectRecord(organization),
   })
+}
+
+export async function loadPlatformAdminOrganizationProjectDetailPage({
+  projectId,
+  userId,
+}: {
+  projectId: string
+  userId: string
+}): Promise<MemberWorkspaceProjectDetailLoadResult> {
+  return loadPlatformAdminProjectDetailPage({ projectId, userId })
 }
 
 export async function loadMemberWorkspaceProjectDetailPage(
@@ -587,8 +590,8 @@ export async function loadMemberWorkspaceProjectDetailPage(
 
   if (actorCanAccessOrganizations(actor)) {
     return loadPlatformAdminProjectDetailPage({
-      actor,
       projectId,
+      userId: actor.userId,
     })
   }
 

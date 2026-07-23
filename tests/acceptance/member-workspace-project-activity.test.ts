@@ -38,16 +38,16 @@ describe("organization project activity", () => {
       returns: vi.fn().mockResolvedValue({
         data: [
           createActivityRow({
-            id: "event-newest",
-            occurredAt: "2026-07-17T15:00:00.000Z",
+            id: "event-oldest",
+            occurredAt: "2026-07-15T15:00:00.000Z",
           }),
           createActivityRow({
             id: "event-middle",
             occurredAt: "2026-07-16T15:00:00.000Z",
           }),
           createActivityRow({
-            id: "event-oldest",
-            occurredAt: "2026-07-15T15:00:00.000Z",
+            id: "event-newest",
+            occurredAt: "2026-07-17T15:00:00.000Z",
           }),
         ],
         error: null,
@@ -64,7 +64,7 @@ describe("organization project activity", () => {
     })
 
     expect(query.order).toHaveBeenCalledWith("occurred_at", {
-      ascending: false,
+      ascending: true,
     })
     expect(query.limit).toHaveBeenCalledWith(200)
     expect(activity.map((item) => item.id)).toEqual([

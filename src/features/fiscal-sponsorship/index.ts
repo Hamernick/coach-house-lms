@@ -14,6 +14,7 @@ export {
 } from "./actions"
 export {
   FiscalSponsorshipApplicationDrawer,
+  FiscalSponsorshipApplicationEditor,
   FiscalSponsorshipActivityAction,
   FiscalSponsorshipMark,
   FiscalSponsorshipMarkdownDocument,

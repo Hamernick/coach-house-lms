@@ -192,6 +192,9 @@ describe("workspace fiscal sponsorship card", () => {
     const uploadPanel = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-required-documents-upload-panel.tsx"
     )
+    const projectAssetUpload = readSource(
+      "src/features/fiscal-sponsorship/lib/project-asset-upload.ts"
+    )
     const staticCards = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-static-cards.tsx"
     )
@@ -355,7 +358,8 @@ describe("workspace fiscal sponsorship card", () => {
       "bg-background min-w-0 rounded-xl border p-3"
     )
     expect(workflowDrawer).not.toContain("FISCAL_SPONSORSHIP_PROTOTYPE_STEPS")
-    expect(uploadPanel).toContain('fetch("/api/account/project-assets"')
+    expect(uploadPanel).toContain("uploadFiscalSponsorshipProjectAsset")
+    expect(projectAssetUpload).toContain('fetch("/api/account/project-assets"')
     expect(uploadPanel).toContain("connectFiscalSponsorshipDocumentAsset")
     expect(uploadPanel).toContain("showGrantRequestSupport")
     expect(uploadPanel).toContain("filterFiscalSponsorshipRequiredDocuments")

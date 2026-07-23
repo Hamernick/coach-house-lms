@@ -1,11 +1,12 @@
 "use client"
 
+import * as React from "react"
 import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
+import ChevronDownIcon from "lucide-react/dist/esm/icons/chevron-down"
 import CircleDashedIcon from "lucide-react/dist/esm/icons/circle-dashed"
 import ExternalLinkIcon from "lucide-react/dist/esm/icons/external-link"
 import FileTextIcon from "lucide-react/dist/esm/icons/file-text"
 import FolderOpenIcon from "lucide-react/dist/esm/icons/folder-open"
-import HourglassIcon from "lucide-react/dist/esm/icons/hourglass"
 
 import {
   Card,
@@ -17,6 +18,12 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Separator } from "@/components/ui/separator"
 import { cn } from "@/lib/utils"
 
@@ -84,16 +91,21 @@ function WorkbenchSection({
 }
 
 function WorkbenchPhaseRow({
+  applicationEditor,
+  expanded,
   item,
+  onExpandedChange,
   onOpenApplication,
   onOpenAssets,
 }: {
+  applicationEditor?: React.ReactNode
+  expanded: boolean
   item: FiscalSponsorshipProjectWorkbenchPhase
+  onExpandedChange: (expanded: boolean) => void
   onOpenApplication?: () => void
   onOpenAssets?: () => void
 }) {
   const complete = item.complete
-  const Icon = complete ? CheckCircle2Icon : HourglassIcon
   const canOpenApplication =
     item.actionType === "application" && Boolean(onOpenApplication)
   const canOpenAssets = item.actionType === "assets" && Boolean(onOpenAssets)
@@ -115,78 +127,136 @@ function WorkbenchPhaseRow({
   )
 
   return (
-    <div
-      data-fiscal-sponsorship-workbench-phase={item.id}
-      className="flex min-w-0 flex-col gap-2 py-2.5 sm:flex-row sm:items-start sm:gap-3"
+    <Collapsible
+      open={expanded}
+      onOpenChange={onExpandedChange}
+      className="py-1.5"
     >
-      <div className="flex min-w-0 flex-1 items-start gap-2.5">
-        <Icon
-          className={cn(
-            "mt-1 size-4 shrink-0",
-            complete ? "text-emerald-600" : "text-amber-600"
-          )}
-          aria-hidden
-        />
-        <div className="min-w-0 flex-1">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
-            <p className="text-foreground truncate text-xs font-medium">
-              {item.label}
-            </p>
-            <Badge className="bg-secondary text-secondary-foreground h-6 rounded-full border-transparent px-2 py-0.5 text-[11px] leading-none">
-              {item.statusLabel}
-            </Badge>
-          </div>
-          <p className="text-muted-foreground mt-0.5 line-clamp-2 text-[11px] leading-snug">
-            {item.description}
-          </p>
-        </div>
-      </div>
-      <div className="flex shrink-0 sm:justify-end">
-        {canOpenHref ? (
-          <Button
-            asChild
-            variant="ghost"
-            size="sm"
-            className="h-8 rounded-full px-3"
-            data-fiscal-sponsorship-phase-action={item.actionType}
-          >
-            <a href={item.href ?? "#"} target="_blank" rel="noreferrer">
-              {buttonContent}
-            </a>
-          </Button>
-        ) : (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-8 rounded-full px-3"
-            disabled={disabled}
-            onClick={
-              canOpenApplication
-                ? onOpenApplication
-                : canOpenAssets
-                  ? onOpenAssets
-                  : undefined
-            }
-            data-fiscal-sponsorship-phase-action={item.actionType}
-          >
-            {buttonContent}
-          </Button>
+      <div
+        data-fiscal-sponsorship-workbench-phase={item.id}
+        data-state={expanded ? "open" : "closed"}
+        className={cn(
+          "hover:bg-muted/60 min-w-0 rounded-xl py-1 transition-[background-color] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none",
+          expanded && "bg-muted/55"
         )}
+      >
+        <div className="flex min-w-0 items-start gap-2.5 px-2">
+          {complete ? (
+            <CheckCircle2Icon
+              data-fiscal-sponsorship-phase-status="complete"
+              className="mt-3.5 size-4 shrink-0 text-emerald-600"
+              aria-hidden
+            />
+          ) : (
+            <CollapsibleTrigger asChild>
+              <RadioGroupItem
+                value={item.id}
+                aria-label={`Show ${item.label} details`}
+                data-fiscal-sponsorship-phase-status="incomplete"
+                className="relative mt-3.5 cursor-pointer touch-manipulation opacity-100 after:absolute after:-inset-3.5 after:content-['']"
+              />
+            </CollapsibleTrigger>
+          )}
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="group focus-visible:ring-ring/50 flex min-h-11 min-w-0 flex-1 cursor-pointer items-center rounded-lg px-1 text-left outline-none focus-visible:ring-2"
+            >
+              <span className="flex min-w-0 flex-1 items-center justify-between gap-3">
+                <span className="text-foreground min-w-0 flex-1 truncate text-xs font-medium">
+                  {item.label}
+                </span>
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    "h-7 rounded-full border-transparent px-2.5 py-1 text-[11px] leading-none transition-[color,box-shadow,background-color]",
+                    expanded && "bg-primary/10 text-primary"
+                  )}
+                >
+                  {item.statusLabel}
+                  <ChevronDownIcon
+                    className="transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-data-[state=open]:rotate-180 motion-reduce:transition-none"
+                    aria-hidden
+                  />
+                </Badge>
+              </span>
+            </button>
+          </CollapsibleTrigger>
+        </div>
+        <CollapsibleContent
+          forceMount={applicationEditor ? true : undefined}
+          className="data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:slide-in-from-top-1 overflow-hidden data-[state=closed]:hidden data-[state=open]:duration-200 motion-reduce:data-[state=open]:animate-none"
+        >
+          <div className="grid grid-cols-[1rem_minmax(0,1fr)] gap-x-2.5 px-2 pb-2">
+            <span aria-hidden />
+            <div className="flex min-w-0 flex-col items-start gap-2 px-1">
+              <p className="text-muted-foreground text-xs leading-snug break-words">
+                {item.description}
+              </p>
+              {applicationEditor ?? (
+                <div className="flex">
+                  {canOpenHref ? (
+                    <Button
+                      asChild
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 rounded-full px-3"
+                      data-fiscal-sponsorship-phase-action={item.actionType}
+                    >
+                      <a
+                        href={item.href ?? "#"}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {buttonContent}
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 rounded-full px-3"
+                      disabled={disabled}
+                      onClick={
+                        canOpenApplication
+                          ? onOpenApplication
+                          : canOpenAssets
+                            ? onOpenAssets
+                            : undefined
+                      }
+                      data-fiscal-sponsorship-phase-action={item.actionType}
+                    >
+                      {buttonContent}
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </CollapsibleContent>
       </div>
-    </div>
+    </Collapsible>
   )
 }
 
 function WorkbenchPhaseTimeline({
+  applicationEditor,
+  expandedPhaseId,
   items,
+  onExpandedPhaseChange,
   onOpenApplication,
   onOpenAssets,
 }: {
+  applicationEditor?: React.ReactNode
+  expandedPhaseId: string | null
   items: FiscalSponsorshipProjectWorkbenchPhase[]
+  onExpandedPhaseChange: (phaseId: string | null) => void
   onOpenApplication?: () => void
   onOpenAssets?: () => void
 }) {
+  const currentPhaseId = items.find((item) => !item.complete)?.id
+
   return (
     <section className="min-w-0">
       <div>
@@ -196,16 +266,28 @@ function WorkbenchPhaseTimeline({
           agreement, signatures, then grant requests.
         </p>
       </div>
-      <div className="divide-border/70 mt-2 divide-y divide-dashed">
+      <RadioGroup
+        value={expandedPhaseId ?? currentPhaseId}
+        onValueChange={onExpandedPhaseChange}
+        aria-label="Fiscal sponsorship phase details"
+        className="divide-border/70 mt-2 block divide-y divide-dashed"
+      >
         {items.map((item) => (
           <WorkbenchPhaseRow
             key={item.id}
+            applicationEditor={
+              item.actionType === "application" ? applicationEditor : undefined
+            }
+            expanded={expandedPhaseId === item.id}
             item={item}
+            onExpandedChange={(nextExpanded) =>
+              onExpandedPhaseChange(nextExpanded ? item.id : null)
+            }
             onOpenApplication={onOpenApplication}
             onOpenAssets={onOpenAssets}
           />
         ))}
-      </div>
+      </RadioGroup>
     </section>
   )
 }
@@ -220,6 +302,7 @@ export function FiscalSponsorshipProjectWorkbench({
   onEditApplication,
   onOpenAssets,
   projectAssets = [],
+  renderApplicationEditor,
   reviewFiscalSponsorshipApplicationAction,
   reviewFiscalSponsorshipDocumentAction,
   sendFiscalSponsorshipAgreementForSignatureAction,
@@ -232,7 +315,31 @@ export function FiscalSponsorshipProjectWorkbench({
     onEditApplication?: () => void
     onOpenAssets?: () => void
     projectAssets?: FiscalSponsorshipProjectAssetOption[]
+    renderApplicationEditor?: (props: {
+      open: boolean
+      onOpenChange: (open: boolean) => void
+    }) => React.ReactNode
   }) {
+  const [expandedPhaseId, setExpandedPhaseId] = React.useState<string | null>(
+    null
+  )
+  const applicationOpen = expandedPhaseId === "application-intake"
+  const handleApplicationOpenChange = React.useCallback((open: boolean) => {
+    setExpandedPhaseId(open ? "application-intake" : null)
+  }, [])
+  const handleOpenApplication = React.useCallback(() => {
+    if (editApplicationDisabled) return
+    setExpandedPhaseId("application-intake")
+    onEditApplication?.()
+  }, [editApplicationDisabled, onEditApplication])
+  const applicationEditor =
+    !editApplicationDisabled && renderApplicationEditor
+      ? renderApplicationEditor({
+          open: applicationOpen,
+          onOpenChange: handleApplicationOpenChange,
+        })
+      : undefined
+
   return (
     <Card
       data-fiscal-sponsorship-project-workbench={data.projectId}
@@ -295,8 +402,15 @@ export function FiscalSponsorshipProjectWorkbench({
         <Separator className="my-3 border-t border-dashed bg-transparent" />
 
         <WorkbenchPhaseTimeline
+          applicationEditor={applicationEditor}
+          expandedPhaseId={expandedPhaseId}
           items={data.phases}
-          onOpenApplication={onEditApplication}
+          onExpandedPhaseChange={setExpandedPhaseId}
+          onOpenApplication={
+            onEditApplication || renderApplicationEditor
+              ? handleOpenApplication
+              : undefined
+          }
           onOpenAssets={onOpenAssets}
         />
 
@@ -314,7 +428,6 @@ export function FiscalSponsorshipProjectWorkbench({
           }
           documents={data.workflowSummary?.requiredDocuments ?? []}
           legalEntityType={data.workflowSummary?.legalEntityType ?? null}
-          onOpenAssets={onOpenAssets}
           projectId={data.projectId}
           reviewFiscalSponsorshipDocumentAction={
             reviewFiscalSponsorshipDocumentAction
@@ -348,8 +461,11 @@ export function FiscalSponsorshipProjectWorkbench({
             variant="ghost"
             size="sm"
             className="h-8 rounded-full px-3"
-            disabled={!onEditApplication || editApplicationDisabled}
-            onClick={onEditApplication}
+            disabled={
+              (!onEditApplication && !renderApplicationEditor) ||
+              editApplicationDisabled
+            }
+            onClick={handleOpenApplication}
           >
             <FileTextIcon data-icon="inline-start" aria-hidden />
             Edit

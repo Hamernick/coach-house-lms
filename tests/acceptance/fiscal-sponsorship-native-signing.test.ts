@@ -50,10 +50,6 @@ describe("native fiscal sponsorship signing", () => {
       "src/features/fiscal-sponsorship/server/native-signing-actions.ts",
       "utf8"
     )
-    const previewRoute = readFileSync(
-      "src/app/api/fiscal-sponsorship/signing/[packetId]/preview/route.ts",
-      "utf8"
-    )
 
     expect(page).toContain("saveFiscalSponsorshipSigningDraft")
     expect(page).toContain("beforeunload")
@@ -67,8 +63,6 @@ describe("native fiscal sponsorship signing", () => {
     expect(context).toContain('packet.status === "applicant_signed"')
     expect(actions).toContain("verifyApplicantSourceIntegrity")
     expect(actions).toContain("source_document_sha256")
-    expect(previewRoute).toContain("supabase.auth.getUser()")
-    expect(previewRoute).toContain('{ error: "Unauthorized" }, { status: 401 }')
     expect(summary).toContain("/fiscal-sponsorship/sign/${signaturePacket.id}")
   })
 

@@ -138,12 +138,17 @@ export function buildSelectedProgramPrefill({
 }
 
 export function FiscalSponsorshipWorkspaceCardSummary({
+  actionRequest = null,
   applicationPrefill = null,
   fiscalSponsorshipProjectId = null,
   fiscalSponsorshipWorkflowSummary = null,
   organizationName = null,
   programs = [],
 }: {
+  actionRequest?: {
+    id: number
+    phaseId: "application-intake" | "required-documents"
+  } | null
   applicationPrefill?: FiscalSponsorshipApplicationPrefill | null
   fiscalSponsorshipProjectId?: string | null
   fiscalSponsorshipWorkflowSummary?: FiscalSponsorshipProjectWorkflowSummary | null
@@ -158,6 +163,7 @@ export function FiscalSponsorshipWorkspaceCardSummary({
   >(() => programs[0]?.id ?? null)
   const [selectedPhaseId, setSelectedPhaseId] =
     React.useState("application-intake")
+  const handledActionRequestIdRef = React.useRef<number | null>(null)
 
   React.useEffect(() => {
     if (programs.length === 0) {
@@ -257,6 +263,17 @@ export function FiscalSponsorshipWorkspaceCardSummary({
     setSheetOpen(false)
     setApplicationOpen(true)
   }, [applicationData])
+
+  React.useEffect(() => {
+    if (!actionRequest || !applicationData) return
+    if (handledActionRequestIdRef.current === actionRequest.id) return
+    handledActionRequestIdRef.current = actionRequest.id
+    if (actionRequest.phaseId === "application-intake") {
+      openApplication()
+      return
+    }
+    openFlow(actionRequest.phaseId)
+  }, [actionRequest, applicationData, openApplication, openFlow])
 
   return (
     <>

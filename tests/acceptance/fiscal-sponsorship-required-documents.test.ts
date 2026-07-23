@@ -17,6 +17,9 @@ describe("fiscal sponsorship required documents", () => {
     const requiredDocumentWorkbench = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-project-workbench-required-documents.tsx"
     )
+    const requiredDocumentConnectPanel = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-required-document-connect-panel.tsx"
+    )
     const projectWorkbench = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-project-workbench.tsx"
     )
@@ -68,8 +71,8 @@ describe("fiscal sponsorship required documents", () => {
     expect(requiredDocumentWorkbench).toContain(
       "connectFiscalSponsorshipDocumentAssetAction"
     )
-    expect(requiredDocumentWorkbench).toContain(
-      "await connectFiscalSponsorshipDocumentAssetAction({"
+    expect(requiredDocumentConnectPanel).toContain(
+      "await connectDocumentAssetAction({"
     )
     expect(requiredDocumentWorkbench).not.toContain(
       'import { connectFiscalSponsorshipDocumentAsset } from "../actions"'

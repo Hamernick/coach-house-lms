@@ -10,12 +10,17 @@ function readSource(relativePath: string) {
 }
 
 describe("fiscal sponsorship application UI", () => {
-  it("keeps the drawer persistent, scroll-safe, and submission-owned", () => {
+  it("keeps one application editor for inline and drawer surfaces", () => {
     const applicationDrawer = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-application-drawer.tsx"
     )
 
     expect(applicationDrawer).toContain("FiscalSponsorshipApplicationDrawer")
+    expect(applicationDrawer).toContain("FiscalSponsorshipApplicationEditor")
+    expect(applicationDrawer).toContain('surface: "drawer" | "inline"')
+    expect(applicationDrawer).toContain(
+      'data-fiscal-sponsorship-application-editor="inline"'
+    )
     expect(applicationDrawer).toContain("SheetContent")
     expect(applicationDrawer).toContain("loadFiscalSponsorshipApplicationDraft")
     expect(applicationDrawer).toContain("saveFiscalSponsorshipApplicationDraft")

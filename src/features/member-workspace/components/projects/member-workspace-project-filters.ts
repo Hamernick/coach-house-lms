@@ -1,12 +1,16 @@
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
-import type { MemberWorkspaceWorkstreamCategory } from "../../types"
 import type {
   MemberWorkspaceProjectFilterChip,
   MemberWorkspaceProjectViewOptions,
 } from "./member-workspace-project-view-options"
+import {
+  normalizeMemberWorkspaceOrganizationStatusFilterValue,
+  resolveMemberWorkspaceOrganizationStatus,
+} from "./member-workspace-project-status"
 
 export type MemberWorkspaceProjectFilterCounts = {
   status?: Record<string, number>
+  fiscalSponsorship?: Record<string, number>
   priority?: Record<string, number>
   tags?: Record<string, number>
   members?: Record<string, number>
@@ -14,6 +18,7 @@ export type MemberWorkspaceProjectFilterCounts = {
 
 type FilterBuckets = {
   status: Set<string>
+  fiscalSponsorship: Set<string>
   priority: Set<string>
   tags: Set<string>
   members: Set<string>
@@ -26,6 +31,7 @@ function normalizeFilterBuckets(
 ): FilterBuckets {
   const buckets: FilterBuckets = {
     status: new Set<string>(),
+    fiscalSponsorship: new Set<string>(),
     priority: new Set<string>(),
     tags: new Set<string>(),
     members: new Set<string>(),
@@ -35,8 +41,15 @@ function normalizeFilterBuckets(
     const normalizedKey = key.trim().toLowerCase()
     const normalizedValue = value.trim().toLowerCase()
 
+    if (normalizedKey.startsWith("fiscal sponsorship")) {
+      buckets.fiscalSponsorship.add(normalizedValue.replaceAll(" ", "_"))
+      continue
+    }
+
     if (normalizedKey.startsWith("status")) {
-      buckets.status.add(normalizedValue)
+      const status =
+        normalizeMemberWorkspaceOrganizationStatusFilterValue(normalizedValue)
+      if (status) buckets.status.add(status)
       continue
     }
 
@@ -60,34 +73,16 @@ function normalizeFilterBuckets(
 
 function applyVisibilityFilters(
   projects: PlatformAdminDashboardLabProject[],
-  viewOptions: MemberWorkspaceProjectViewOptions,
-  workstreamCategories: MemberWorkspaceWorkstreamCategory[]
+  viewOptions: MemberWorkspaceProjectViewOptions
 ) {
   if (viewOptions.showClosedProjects) {
     return projects.slice()
   }
 
-  return projects.filter((project) => {
-    if (workstreamCategories.length === 0) {
-      return project.status !== "completed" && project.status !== "cancelled"
-    }
-
-    const placedCategory = workstreamCategories.find(
-      (category) => category.id === project.workstreamCategoryId
-    )
-    const statusCategory = workstreamCategories.find(
-      (category) => category.defaultKey === project.status
-    )
-    const category = placedCategory ?? statusCategory
-
-    if (!category) {
-      return project.status !== "completed" && project.status !== "cancelled"
-    }
-
-    return (
-      category.defaultKey !== "completed" && category.defaultKey !== "cancelled"
-    )
-  })
+  return projects.filter(
+    (project) =>
+      project.status !== "completed" && project.status !== "cancelled"
+  )
 }
 
 function matchesExactMember(
@@ -126,7 +121,20 @@ function applyCategoryFilters({
 
   if (excludeCategory !== "status" && filters.status.size > 0) {
     list = list.filter((project) =>
-      filters.status.has(project.status.toLowerCase())
+      filters.status.has(
+        resolveMemberWorkspaceOrganizationStatus(project.status)
+      )
+    )
+  }
+
+  if (
+    excludeCategory !== "fiscalSponsorship" &&
+    filters.fiscalSponsorship.size > 0
+  ) {
+    list = list.filter(
+      (project) =>
+        Boolean(project.fiscalSponsorshipStatus) &&
+        filters.fiscalSponsorship.has(project.fiscalSponsorshipStatus ?? "")
     )
   }
 
@@ -175,13 +183,22 @@ function countProjectsByCategory(
 ): MemberWorkspaceProjectFilterCounts {
   const counts: MemberWorkspaceProjectFilterCounts = {
     status: {},
+    fiscalSponsorship: {},
     priority: {},
     tags: {},
     members: {},
   }
 
   for (const project of projects) {
-    counts.status![project.status] = (counts.status![project.status] ?? 0) + 1
+    const organizationStatus = resolveMemberWorkspaceOrganizationStatus(
+      project.status
+    )
+    counts.status![organizationStatus] =
+      (counts.status![organizationStatus] ?? 0) + 1
+    if (project.fiscalSponsorshipStatus) {
+      counts.fiscalSponsorship![project.fiscalSponsorshipStatus] =
+        (counts.fiscalSponsorship![project.fiscalSponsorshipStatus] ?? 0) + 1
+    }
     counts.priority![project.priority] =
       (counts.priority![project.priority] ?? 0) + 1
 
@@ -207,19 +224,13 @@ export function filterMemberWorkspaceProjects({
   filters,
   projects,
   viewOptions,
-  workstreamCategories = [],
 }: {
   filters: MemberWorkspaceProjectFilterChip[]
   projects: PlatformAdminDashboardLabProject[]
   viewOptions: MemberWorkspaceProjectViewOptions
-  workstreamCategories?: MemberWorkspaceWorkstreamCategory[]
 }) {
   const normalizedFilters = normalizeFilterBuckets(filters)
-  const visibleProjects = applyVisibilityFilters(
-    projects,
-    viewOptions,
-    workstreamCategories
-  )
+  const visibleProjects = applyVisibilityFilters(projects, viewOptions)
   const filteredProjects = applyCategoryFilters({
     filters: normalizedFilters,
     projects: visibleProjects,
@@ -232,19 +243,13 @@ export function computeMemberWorkspaceProjectFilterCounts({
   filters,
   projects,
   viewOptions,
-  workstreamCategories = [],
 }: {
   filters: MemberWorkspaceProjectFilterChip[]
   projects: PlatformAdminDashboardLabProject[]
   viewOptions: MemberWorkspaceProjectViewOptions
-  workstreamCategories?: MemberWorkspaceWorkstreamCategory[]
 }) {
   const normalizedFilters = normalizeFilterBuckets(filters)
-  const visibleProjects = applyVisibilityFilters(
-    projects,
-    viewOptions,
-    workstreamCategories
-  )
+  const visibleProjects = applyVisibilityFilters(projects, viewOptions)
 
   return {
     status: countProjectsByCategory(
@@ -254,6 +259,13 @@ export function computeMemberWorkspaceProjectFilterCounts({
         projects: visibleProjects,
       })
     ).status,
+    fiscalSponsorship: countProjectsByCategory(
+      applyCategoryFilters({
+        excludeCategory: "fiscalSponsorship",
+        filters: normalizedFilters,
+        projects: visibleProjects,
+      })
+    ).fiscalSponsorship,
     priority: countProjectsByCategory(
       applyCategoryFilters({
         excludeCategory: "priority",

@@ -9,6 +9,7 @@ import {
 } from "react"
 import { useRouter } from "next/navigation"
 import {
+  DotsThreeVertical,
   Plus,
   StackSimple,
   Spinner,
@@ -19,19 +20,17 @@ import { toast } from "sonner"
 
 import type { PlatformAdminDashboardLabProject } from "@/features/platform-admin-dashboard"
 import { Button } from "@/components/ui/button"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 import { MemberWorkspaceProjectCard } from "./member-workspace-project-card"
 import type { MemberWorkspaceWorkstreamCategory } from "../../types"
-import {
-  type OrganizationCoachAssignmentAction,
-  type OrganizationCoachOption,
-} from "@/features/organization-coach-assignments"
-import type { OrganizationKanbanVisibilityMode } from "@/features/organization-kanban-visibility"
 import {
   MemberWorkspaceProjectBoardCategoryMenu,
   MemberWorkspaceProjectBoardCategoryToolbar,
 } from "./member-workspace-project-board-category-controls"
-import { MemberWorkspaceOrganizationStaffActions } from "./member-workspace-organization-staff-actions"
-import { MemberWorkspaceProjectBoardMoveMenu } from "./member-workspace-project-board-move-menu"
 
 const OPEN_COLUMN_ORDER: Array<PlatformAdminDashboardLabProject["status"]> = [
   "backlog",
@@ -88,12 +87,73 @@ function getColumnStatusLabel(
   }
 }
 
+function useMemberWorkspaceProjectBoardColumns({
+  hiddenWorkstreamCategoryKeys,
+  showClosedProjects,
+  usesCustomWorkstreams,
+  workstreamCategories,
+}: {
+  hiddenWorkstreamCategoryKeys: string[]
+  showClosedProjects: boolean
+  usesCustomWorkstreams: boolean
+  workstreamCategories: MemberWorkspaceWorkstreamCategory[]
+}) {
+  const allColumns = useMemo(() => {
+    if (usesCustomWorkstreams) {
+      return workstreamCategories.map((category) => ({
+        id: category.id,
+        label: category.name,
+        color: category.color,
+        defaultKey: category.defaultKey,
+      }))
+    }
+
+    return getMemberWorkspaceProjectBoardColumnOrder(showClosedProjects).map(
+      (status) => ({
+        id: status,
+        label: getColumnStatusLabel(status),
+        color: "slate",
+        defaultKey: status,
+      })
+    )
+  }, [showClosedProjects, usesCustomWorkstreams, workstreamCategories])
+  const hiddenCategoryKeySet = useMemo(
+    () => new Set(hiddenWorkstreamCategoryKeys),
+    [hiddenWorkstreamCategoryKeys]
+  )
+  const columns = useMemo(
+    () =>
+      usesCustomWorkstreams
+        ? allColumns.filter(
+            (column) =>
+              !column.defaultKey || !hiddenCategoryKeySet.has(column.defaultKey)
+          )
+        : allColumns,
+    [allColumns, hiddenCategoryKeySet, usesCustomWorkstreams]
+  )
+  const hiddenCategories = useMemo(
+    () =>
+      usesCustomWorkstreams
+        ? allColumns.flatMap((column) =>
+            column.defaultKey && hiddenCategoryKeySet.has(column.defaultKey)
+              ? [{ key: column.defaultKey, name: column.label }]
+              : []
+          )
+        : [],
+    [allColumns, hiddenCategoryKeySet, usesCustomWorkstreams]
+  )
+
+  return { allColumns, columns, hiddenCategories }
+}
+
 export function MemberWorkspaceProjectBoardView({
   projects,
   onAddProject,
   onEditProject,
   updateProjectStatusAction,
   showClosedProjects,
+  hiddenWorkstreamCategoryKeys = [],
+  onHiddenWorkstreamCategoryKeysChange,
   visibleProperties,
   workstreamCategories = [],
   createWorkstreamCategoryAction,
@@ -101,13 +161,6 @@ export function MemberWorkspaceProjectBoardView({
   deleteWorkstreamCategoryAction,
   restoreWorkstreamDefaultsAction,
   updateProjectWorkstreamAction,
-  coachOptions = [],
-  canManageCoachAssignments = false,
-  updateCoachAssignmentAction,
-  canUnassignCoachAssignments = true,
-  kanbanVisibilityMode = "visible",
-  pendingVisibilityOrganizationIds = [],
-  onOrganizationVisibilityChange,
 }: {
   projects: PlatformAdminDashboardLabProject[]
   onAddProject?: () => void
@@ -117,6 +170,8 @@ export function MemberWorkspaceProjectBoardView({
     status: PlatformAdminDashboardLabProject["status"]
   ) => Promise<{ ok: true; id: string } | { error: string }>
   showClosedProjects: boolean
+  hiddenWorkstreamCategoryKeys?: string[]
+  onHiddenWorkstreamCategoryKeysChange?: (categoryKeys: string[]) => void
   visibleProperties?: Array<"title" | "status" | "assignee" | "dueDate">
   workstreamCategories?: MemberWorkspaceWorkstreamCategory[]
   createWorkstreamCategoryAction?: (
@@ -136,16 +191,6 @@ export function MemberWorkspaceProjectBoardView({
     projectId: string,
     categoryId: string
   ) => Promise<{ ok: true; id: string } | { error: string }>
-  coachOptions?: OrganizationCoachOption[]
-  canManageCoachAssignments?: boolean
-  updateCoachAssignmentAction?: OrganizationCoachAssignmentAction
-  canUnassignCoachAssignments?: boolean
-  kanbanVisibilityMode?: OrganizationKanbanVisibilityMode
-  pendingVisibilityOrganizationIds?: string[]
-  onOrganizationVisibilityChange?: (
-    organizationId: string,
-    hidden: boolean
-  ) => void
 }) {
   const router = useRouter()
   const [items, setItems] =
@@ -157,25 +202,13 @@ export function MemberWorkspaceProjectBoardView({
   const canManageBoard = usesCustomWorkstreams
     ? Boolean(updateProjectWorkstreamAction)
     : Boolean(updateProjectStatusAction)
-  const columns = useMemo(() => {
-    if (usesCustomWorkstreams) {
-      return workstreamCategories.map((category) => ({
-        id: category.id,
-        label: category.name,
-        color: category.color,
-        defaultKey: category.defaultKey,
-      }))
-    }
-
-    return getMemberWorkspaceProjectBoardColumnOrder(showClosedProjects).map(
-      (status) => ({
-        id: status,
-        label: getColumnStatusLabel(status),
-        color: "slate",
-        defaultKey: status,
-      })
-    )
-  }, [showClosedProjects, usesCustomWorkstreams, workstreamCategories])
+  const { allColumns, columns, hiddenCategories } =
+    useMemberWorkspaceProjectBoardColumns({
+      hiddenWorkstreamCategoryKeys,
+      showClosedProjects,
+      usesCustomWorkstreams,
+      workstreamCategories,
+    })
 
   useEffect(() => {
     setItems(projects)
@@ -183,15 +216,17 @@ export function MemberWorkspaceProjectBoardView({
 
   const groups = useMemo(() => {
     const grouped = new Map<string, PlatformAdminDashboardLabProject[]>()
-    for (const column of columns) {
+    for (const column of allColumns) {
       grouped.set(column.id, [])
     }
     for (const project of items) {
-      const statusCategory = columns.find(
+      const statusCategory = allColumns.find(
         (column) => column.defaultKey === project.status
       )
       const columnId = usesCustomWorkstreams
-        ? (project.workstreamCategoryId ?? statusCategory?.id ?? columns[0]?.id)
+        ? (project.workstreamCategoryId ??
+          statusCategory?.id ??
+          allColumns[0]?.id)
         : project.status
 
       if (!columnId || !grouped.has(columnId)) {
@@ -200,7 +235,19 @@ export function MemberWorkspaceProjectBoardView({
       grouped.get(columnId)?.push(project)
     }
     return grouped
-  }, [columns, items, usesCustomWorkstreams])
+  }, [allColumns, items, usesCustomWorkstreams])
+
+  const hideCategory = (categoryKey: string) => {
+    onHiddenWorkstreamCategoryKeysChange?.(
+      Array.from(new Set([...hiddenWorkstreamCategoryKeys, categoryKey]))
+    )
+  }
+
+  const showCategory = (categoryKey: string) => {
+    onHiddenWorkstreamCategoryKeysChange?.(
+      hiddenWorkstreamCategoryKeys.filter((key) => key !== categoryKey)
+    )
+  }
 
   const commitProjectStatus = (
     projectId: string,
@@ -297,6 +344,9 @@ export function MemberWorkspaceProjectBoardView({
       {usesCustomWorkstreams ? (
         <MemberWorkspaceProjectBoardCategoryToolbar
           createCategoryAction={createWorkstreamCategoryAction}
+          hiddenCategories={hiddenCategories}
+          onShowAllCategories={() => onHiddenWorkstreamCategoryKeysChange?.([])}
+          onShowCategory={showCategory}
           restoreDefaultsAction={restoreWorkstreamDefaultsAction}
         />
       ) : null}
@@ -347,6 +397,11 @@ export function MemberWorkspaceProjectBoardView({
                       defaultKey: column.defaultKey,
                     }}
                     deleteCategoryAction={deleteWorkstreamCategoryAction}
+                    onHideCategory={
+                      column.defaultKey
+                        ? () => hideCategory(column.defaultKey as string)
+                        : undefined
+                    }
                     updateCategoryAction={updateWorkstreamCategoryAction}
                   />
                 ) : null}
@@ -394,39 +449,39 @@ export function MemberWorkspaceProjectBoardView({
                       }
                       visibleProperties={visibleProperties}
                       actions={
-                        <>
-                          {project.projectKind === "organization_admin" &&
-                          project.organizationId ? (
-                            <MemberWorkspaceOrganizationStaffActions
-                              canManageCoachAssignments={
-                                canManageCoachAssignments
-                              }
-                              canUnassignCoachAssignments={
-                                canUnassignCoachAssignments
-                              }
-                              coachOptions={coachOptions}
-                              kanbanVisibilityMode={kanbanVisibilityMode}
-                              onOrganizationVisibilityChange={
-                                onOrganizationVisibilityChange
-                              }
-                              pendingVisibilityOrganizationIds={
-                                pendingVisibilityOrganizationIds
-                              }
-                              project={project}
-                              updateCoachAssignmentAction={
-                                updateCoachAssignmentAction
-                              }
-                            />
-                          ) : null}
-                          {canManageProjectCard ? (
-                            <MemberWorkspaceProjectBoardMoveMenu
-                              columns={columns}
-                              moveProject={moveProject}
-                              pending={pendingProjectIds.includes(project.id)}
-                              projectId={project.id}
-                            />
-                          ) : null}
-                        </>
+                        canManageProjectCard ? (
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-lg"
+                                disabled={pendingProjectIds.includes(
+                                  project.id
+                                )}
+                                type="button"
+                              >
+                                <DotsThreeVertical className="h-4 w-4" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-40 p-2" align="end">
+                              <div className="space-y-1">
+                                {columns.map((nextColumn) => (
+                                  <button
+                                    key={nextColumn.id}
+                                    type="button"
+                                    className="hover:bg-accent w-full rounded-md px-2 py-1 text-left text-sm"
+                                    onClick={() =>
+                                      moveProject(project.id, nextColumn.id)
+                                    }
+                                  >
+                                    Move to {nextColumn.label}
+                                  </button>
+                                ))}
+                              </div>
+                            </PopoverContent>
+                          </Popover>
+                        ) : undefined
                       }
                     />
                   </div>

@@ -25,6 +25,7 @@ const organizationProject: PlatformAdminDashboardLabProject = {
   startDate: new Date("2026-04-01T00:00:00.000Z"),
   endDate: new Date("2026-04-30T12:00:00.000Z"),
   status: "active",
+  fiscalSponsorshipStatus: "eligible",
   priority: "medium",
   tags: ["organization", "onboarding"],
   members: ["Paula Founder", "Chris Ops"],
@@ -70,23 +71,43 @@ describe("MemberWorkspaceProjectCard", () => {
     const markup = renderToStaticMarkup(
       React.createElement(MemberWorkspaceProjectCard, {
         project: organizationProject,
-      }),
+      })
     )
 
     expect(markup).toContain("Community Builders")
     expect(markup).toContain("Created by Paula Founder")
     expect(markup).toContain("Approved nonprofit")
+    expect(markup).toContain("Fiscal sponsorship")
+    expect(markup).toContain("Eligible")
     expect(markup).toContain("/community-builders")
     expect(markup).toContain("62%")
     expect(markup).toContain("2 / 3 Setup items")
     expect(markup).toContain(">PF<")
   })
 
+  it("uses the three-stage organization lifecycle", () => {
+    const onboardingMarkup = renderToStaticMarkup(
+      React.createElement(MemberWorkspaceProjectCard, {
+        project: { ...organizationProject, status: "planned" },
+      })
+    )
+    const archivedMarkup = renderToStaticMarkup(
+      React.createElement(MemberWorkspaceProjectCard, {
+        project: { ...organizationProject, status: "cancelled" },
+      })
+    )
+
+    expect(onboardingMarkup).toContain("Onboarding")
+    expect(onboardingMarkup).not.toContain(">Planned<")
+    expect(archivedMarkup).toContain("Archived")
+    expect(archivedMarkup).not.toContain(">Cancelled<")
+  })
+
   it("keeps the progress summary and separator in the card footer", () => {
     const markup = renderToStaticMarkup(
       React.createElement(MemberWorkspaceProjectCard, {
         project: organizationProject,
-      }),
+      })
     )
     const footerIndex = markup.indexOf('class="mt-auto pt-4"')
     const dueDateIndex = markup.indexOf("Apr 30, 2026")
@@ -95,7 +116,9 @@ describe("MemberWorkspaceProjectCard", () => {
     expect(markup).toContain("flex h-full cursor-pointer flex-col")
     expect(markup).toContain("flex flex-1 flex-col p-4")
     expect(markup).toContain('class="mt-auto pt-4"')
-    expect(markup).toContain('class="text-muted-foreground mb-4 flex items-center justify-between text-sm"')
+    expect(markup).toContain(
+      'class="text-muted-foreground mb-4 flex items-center justify-between text-sm"'
+    )
     expect(markup).toContain('class="border-border/60 border-t"')
     expect(dueDateIndex).toBeGreaterThan(footerIndex)
     expect(dueDateIndex).toBeLessThan(separatorIndex)
@@ -105,26 +128,33 @@ describe("MemberWorkspaceProjectCard", () => {
     const listMarkup = renderToStaticMarkup(
       React.createElement(MemberWorkspaceProjectCard, {
         project: organizationProject,
-      }),
+      })
     )
     const boardMarkup = renderToStaticMarkup(
       React.createElement(MemberWorkspaceProjectCard, {
         project: organizationProject,
         variant: "board",
-      }),
+      })
     )
 
-    expect(listMarkup).toContain('data-react-grab-anchor="MemberWorkspaceProjectCard"')
     expect(listMarkup).toContain(
-      'data-react-grab-owner-id="member-workspace-project-card:list:project-1"',
+      'data-react-grab-anchor="MemberWorkspaceProjectCard"'
     )
-    expect(listMarkup).toContain(`data-react-grab-owner-source="${projectCardSource}"`)
-    expect(listMarkup).toContain(`data-react-grab-canonical-owner-source="${projectCardSource}"`)
+    expect(listMarkup).toContain(
+      'data-react-grab-owner-id="member-workspace-project-card:list:project-1"'
+    )
+    expect(listMarkup).toContain(
+      `data-react-grab-owner-source="${projectCardSource}"`
+    )
+    expect(listMarkup).toContain(
+      `data-react-grab-canonical-owner-source="${projectCardSource}"`
+    )
     expect(listMarkup).toContain('data-react-grab-owner-slot="card"')
     expect(listMarkup).toContain('data-react-grab-owner-variant="list"')
 
     for (const slot of [
       "status-pill",
+      "fiscal-sponsorship-status",
       "title",
       "metadata",
       "footer",
@@ -139,10 +169,14 @@ describe("MemberWorkspaceProjectCard", () => {
     }
 
     expect(boardMarkup).toContain(
-      'data-react-grab-owner-id="member-workspace-project-card:board:project-1"',
+      'data-react-grab-owner-id="member-workspace-project-card:board:project-1"'
     )
     expect(boardMarkup).toContain('data-react-grab-owner-variant="board"')
-    expect(boardMarkup).toContain('data-react-grab-surface-slot="board-due-date"')
-    expect(boardMarkup).toContain('data-react-grab-surface-slot="header-priority"')
+    expect(boardMarkup).toContain(
+      'data-react-grab-surface-slot="board-due-date"'
+    )
+    expect(boardMarkup).toContain(
+      'data-react-grab-surface-slot="header-priority"'
+    )
   })
 })

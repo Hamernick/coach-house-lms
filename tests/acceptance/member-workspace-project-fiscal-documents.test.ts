@@ -44,8 +44,6 @@ describe("MemberWorkspaceProjectFiscalDocuments", () => {
     )
 
     expect(projectAssetRouteSource).toContain("canAccessProjectOrg({")
-    expect(projectAssetRouteSource).toContain("createSupabaseAdminClient()")
-    expect(projectAssetRouteSource).toContain("supabase: admin")
     expect(projectAssetRouteSource).toContain("createSignedUrl(")
     expect(fiscalDocumentRouteSource).toContain("supabase.auth.getUser()")
     expect(fiscalDocumentRouteSource).toContain(

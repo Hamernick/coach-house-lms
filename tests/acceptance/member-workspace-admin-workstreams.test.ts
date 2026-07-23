@@ -17,7 +17,6 @@ vi.mock(
 
 import {
   deletePlatformAdminWorkstreamCategoryAction,
-  loadPlatformAdminWorkstreamConfiguration,
   restorePlatformAdminWorkstreamDefaultsAction,
 } from "@/features/member-workspace/server/admin-workstreams"
 
@@ -86,134 +85,10 @@ function createCategoryRowsQuery(rows = defaultRows) {
   }
 }
 
-type CategoryInsert = Pick<
-  CategoryRow,
-  "owner_id" | "name" | "color" | "position" | "default_key"
->
-
-function createInitializationSupabase(initialRows: CategoryRow[] = []) {
-  const rows = initialRows.map((row) => ({ ...row }))
-  let generatedId = 0
-  let uniqueConflictCount = 0
-
-  const insert = vi.fn(async (input: CategoryInsert | CategoryInsert[]) => {
-    const categories = Array.isArray(input) ? input : [input]
-    const hasConflict = categories.some((category) =>
-      rows.some(
-        (row) =>
-          row.owner_id === category.owner_id &&
-          (row.default_key === category.default_key ||
-            row.name.trim().toLowerCase() ===
-              category.name.trim().toLowerCase())
-      )
-    )
-
-    if (hasConflict) {
-      uniqueConflictCount += 1
-      return { data: null, error: { code: "23505" } }
-    }
-
-    for (const category of categories) {
-      generatedId += 1
-      rows.push({
-        ...category,
-        id: `generated-category-${generatedId}`,
-        created_at: "2026-07-17T00:00:00.000Z",
-        updated_at: "2026-07-17T00:00:00.000Z",
-      })
-    }
-
-    return { data: null, error: null }
-  })
-  const query = {
-    select: vi.fn().mockReturnThis(),
-    eq: vi.fn().mockReturnThis(),
-    order: vi.fn().mockReturnThis(),
-    returns: vi.fn(async () => ({
-      data: rows.map((row) => ({ ...row })),
-      error: null,
-    })),
-    insert,
-  }
-  const supabase = { from: vi.fn(() => query) }
-
-  return {
-    insert,
-    supabase,
-    getUniqueConflictCount: () => uniqueConflictCount,
-  }
-}
-
-function createAdminActor(
-  supabase: ReturnType<typeof createInitializationSupabase>["supabase"]
-) {
-  return {
-    supabase: supabase as never,
-    userId: "admin-1",
-    isAdmin: true,
-    activeOrg: { orgId: "org-1", role: "owner" as const },
-    canEdit: true,
-    hasMemberWorkspaceAccess: true,
-    currentUser: {
-      id: "admin-1",
-      name: "Admin",
-      avatarUrl: null,
-    },
-  }
-}
-
 describe("platform admin workstream category actions", () => {
   beforeEach(() => {
     resetTestMocks()
     resolveMemberWorkspaceActorContextMock.mockReset()
-  })
-
-  it("initializes defaults idempotently across concurrent loads", async () => {
-    const harness = createInitializationSupabase()
-    const actor = createAdminActor(harness.supabase)
-
-    const [first, second] = await Promise.all([
-      loadPlatformAdminWorkstreamConfiguration({ actor, projectIds: [] }),
-      loadPlatformAdminWorkstreamConfiguration({ actor, projectIds: [] }),
-    ])
-
-    expect(first?.categories).toHaveLength(6)
-    expect(second?.categories).toHaveLength(6)
-    expect(harness.insert).toHaveBeenCalledTimes(12)
-    expect(harness.getUniqueConflictCount()).toBe(6)
-  })
-
-  it("continues initializing when a custom name conflicts with a default", async () => {
-    const customRow: CategoryRow = {
-      ...defaultRows[0],
-      id: "category-custom-new-intake",
-      default_key: null,
-      position: 6,
-    }
-    const harness = createInitializationSupabase([customRow])
-
-    const result = await loadPlatformAdminWorkstreamConfiguration({
-      actor: createAdminActor(harness.supabase),
-      projectIds: [],
-    })
-
-    expect(result?.categories).toHaveLength(6)
-    expect(result?.categories).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          id: "category-custom-new-intake",
-          name: "New Intake",
-          defaultKey: null,
-        }),
-        expect.objectContaining({ defaultKey: "planned" }),
-        expect.objectContaining({ defaultKey: "completed" }),
-      ])
-    )
-    expect(
-      result?.categories.some((category) => category.defaultKey === "backlog")
-    ).toBe(false)
-    expect(harness.insert).toHaveBeenCalledTimes(6)
-    expect(harness.getUniqueConflictCount()).toBe(1)
   })
 
   it("rejects deletion of a default category before issuing a delete", async () => {

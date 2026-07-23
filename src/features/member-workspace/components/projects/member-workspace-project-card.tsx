@@ -7,6 +7,7 @@ import {
   CalendarBlank,
   Flag,
   Folder,
+  HandHeart,
   PencilSimpleLine,
   User,
 } from "@phosphor-icons/react/dist/ssr"
@@ -18,6 +19,11 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import { MemberWorkspaceProjectPriorityBadge } from "./member-workspace-project-priority"
 import { MemberWorkspaceProjectProgress } from "./member-workspace-project-progress"
+import {
+  getMemberWorkspaceFiscalSponsorshipStatusLabel,
+  getMemberWorkspaceOrganizationStatusLabel,
+  resolveMemberWorkspaceOrganizationStatus,
+} from "./member-workspace-project-status"
 import {
   buildMemberWorkspaceProjectCardReactGrabOwnerId,
   getMemberWorkspaceProjectCardReactGrabOwnerProps,
@@ -34,42 +40,65 @@ type MemberWorkspaceProjectCardProps = {
 }
 
 function getStatusConfig(status: PlatformAdminDashboardLabProject["status"]) {
-  switch (status) {
+  switch (resolveMemberWorkspaceOrganizationStatus(status)) {
     case "active":
       return {
-        label: "Active",
+        label: getMemberWorkspaceOrganizationStatusLabel(status),
         dot: "bg-teal-600 dark:bg-teal-400",
         pill: "text-teal-700 border-teal-200 bg-teal-50 dark:text-teal-100 dark:border-teal-500/40 dark:bg-teal-500/10",
       }
-    case "planned":
+    case "onboarding":
       return {
-        label: "Planned",
-        dot: "bg-zinc-900 dark:bg-zinc-200",
-        pill: "text-zinc-900 border-zinc-200 bg-zinc-50 dark:text-zinc-50 dark:border-zinc-600/60 dark:bg-zinc-600/20",
-      }
-    case "backlog":
-      return {
-        label: "Backlog",
+        label: getMemberWorkspaceOrganizationStatusLabel(status),
         dot: "bg-orange-600 dark:bg-orange-400",
         pill: "text-orange-700 border-orange-200 bg-orange-50 dark:text-orange-100 dark:border-orange-500/40 dark:bg-orange-500/10",
       }
-    case "completed":
+    case "archived":
       return {
-        label: "Completed",
-        dot: "bg-blue-600 dark:bg-blue-400",
-        pill: "text-blue-700 border-blue-200 bg-blue-50 dark:text-blue-100 dark:border-blue-500/40 dark:bg-blue-500/10",
-      }
-    case "cancelled":
-      return {
-        label: "Cancelled",
-        dot: "bg-rose-600 dark:bg-rose-400",
-        pill: "text-rose-700 border-rose-200 bg-rose-50 dark:text-rose-100 dark:border-rose-500/40 dark:bg-rose-500/10",
+        label: getMemberWorkspaceOrganizationStatusLabel(status),
+        dot: "bg-zinc-500 dark:bg-zinc-300",
+        pill: "text-zinc-700 border-zinc-200 bg-zinc-50 dark:text-zinc-100 dark:border-zinc-600/60 dark:bg-zinc-600/20",
       }
     default:
       return {
         label: status,
         dot: "bg-zinc-400 dark:bg-zinc-300",
         pill: "text-zinc-700 border-zinc-200 bg-zinc-50 dark:text-zinc-100 dark:border-zinc-600/60 dark:bg-zinc-600/20",
+      }
+  }
+}
+
+function getFiscalSponsorshipStatusConfig(
+  status: NonNullable<
+    PlatformAdminDashboardLabProject["fiscalSponsorshipStatus"]
+  >
+) {
+  const label = getMemberWorkspaceFiscalSponsorshipStatusLabel(status)
+
+  switch (status) {
+    case "active":
+      return {
+        label,
+        dot: "bg-emerald-600 dark:bg-emerald-400",
+        pill: "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-100",
+      }
+    case "in_progress":
+      return {
+        label,
+        dot: "bg-amber-600 dark:bg-amber-400",
+        pill: "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-100",
+      }
+    case "eligible":
+      return {
+        label,
+        dot: "bg-blue-600 dark:bg-blue-400",
+        pill: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/40 dark:bg-blue-500/10 dark:text-blue-100",
+      }
+    default:
+      return {
+        label,
+        dot: "bg-zinc-400 dark:bg-zinc-300",
+        pill: "border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-600/60 dark:bg-zinc-600/20 dark:text-zinc-100",
       }
   }
 }
@@ -83,6 +112,9 @@ export function MemberWorkspaceProjectCard({
 }: MemberWorkspaceProjectCardProps) {
   const router = useRouter()
   const status = getStatusConfig(project.status)
+  const fiscalSponsorshipStatus = project.fiscalSponsorshipStatus
+    ? getFiscalSponsorshipStatusConfig(project.fiscalSponsorshipStatus)
+    : null
   const primaryPersonName =
     project.primaryPersonName ?? project.members[0] ?? null
   const primaryPersonAvatarUrl = project.primaryPersonAvatarUrl ?? null
@@ -274,6 +306,32 @@ export function MemberWorkspaceProjectCard({
             >
               {secondaryLine}
             </p>
+          ) : null}
+          {fiscalSponsorshipStatus ? (
+            <div
+              {...reactGrabSurface("fiscal-sponsorship-status", "indicator")}
+              className="mt-3 flex min-w-0 items-center justify-between gap-3"
+            >
+              <span className="text-muted-foreground flex min-w-0 items-center gap-1.5 text-xs">
+                <HandHeart className="size-4 shrink-0" aria-hidden />
+                <span className="truncate">Fiscal sponsorship</span>
+              </span>
+              <span
+                className={cn(
+                  "flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium",
+                  fiscalSponsorshipStatus.pill
+                )}
+              >
+                <span
+                  className={cn(
+                    "inline-block size-1.5 rounded-full",
+                    fiscalSponsorshipStatus.dot
+                  )}
+                  aria-hidden
+                />
+                {fiscalSponsorshipStatus.label}
+              </span>
+            </div>
           ) : null}
         </div>
 

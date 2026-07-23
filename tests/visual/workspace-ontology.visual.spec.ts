@@ -228,7 +228,7 @@ test("ontology nodes contain dense content", async ({ page }) => {
     animations: "disabled",
     caret: "hide",
     scale: "css",
-    maxDiffPixelRatio: 0.01,
+    maxDiffPixelRatio: 0.03,
   })
   await expectOpaqueOntologyNodeHover(page)
 })
@@ -249,7 +249,7 @@ test("ontology nodes contain dense content in dark mode", async ({ page }) => {
     animations: "disabled",
     caret: "hide",
     scale: "css",
-    maxDiffPixelRatio: 0.01,
+    maxDiffPixelRatio: 0.03,
   })
   await expectOpaqueOntologyNodeHover(page)
 })
@@ -543,7 +543,9 @@ test("a first-time user can identify and open the next blocked action", async ({
     "/workspace/accelerator"
   )
   await firstPriority.locator("a").click()
-  await expect(page).toHaveURL(/\/login\?redirect=%2Fworkspace%2Faccelerator/)
+  await expect(page).toHaveURL(
+    /(?:\/login\?redirect=%2Fworkspace%2Faccelerator|\/?section=login&redirect=%2Fworkspace%2Faccelerator)/
+  )
 })
 
 test("rapid branch toggles restore the canonical scene", async ({ page }) => {

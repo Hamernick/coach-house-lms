@@ -14,7 +14,6 @@ import {
   resolveWorkspaceCanvasTutorialSelectedCardId,
   resolveWorkspaceCanvasTutorialVisibleCardIds,
 } from "@/features/workspace-canvas-tutorial"
-
 import {
   completeWorkspaceCanvasTutorialAction,
   saveWorkspaceBoardStateAction,
@@ -75,12 +74,15 @@ export function buildWorkspaceBoardStateWithNodePosition({
   let changed = false
   const nextNodes = boardState.nodes.map((entry) => {
     if (entry.id !== cardId) return entry
-    if (entry.x === x && entry.y === y) return entry
+    if (entry.x === x && entry.y === y && entry.positionMode === "manual") {
+      return entry
+    }
     changed = true
     return {
       ...entry,
       x,
       y,
+      positionMode: "manual" as const,
     }
   })
 

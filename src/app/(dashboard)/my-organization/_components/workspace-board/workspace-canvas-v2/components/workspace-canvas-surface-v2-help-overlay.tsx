@@ -118,7 +118,7 @@ export function WorkspaceCanvasSurfaceV2HelpOverlay({
                 variant="ghost"
                 size="icon"
                 aria-label="Close canvas help tooltip"
-                className="focus-visible:ring-primary-foreground/70 ml-auto size-4 shrink-0 rounded-sm p-0 opacity-80 shadow-none transition-opacity hover:bg-transparent hover:text-current hover:opacity-100 focus-visible:ring-2"
+                className="focus-visible:ring-primary-foreground/70 relative ml-auto size-6 shrink-0 rounded-sm p-0 opacity-80 shadow-none after:absolute after:-inset-2.5 hover:bg-transparent hover:text-current hover:opacity-100 focus-visible:ring-2"
                 onClick={dismissTip}
               >
                 <XIcon className="size-3" aria-hidden />
@@ -146,7 +146,7 @@ export function WorkspaceCanvasSurfaceV2HelpOverlay({
               variant="ghost"
               size="icon"
               aria-label="Workspace canvas help"
-              className="pointer-events-auto h-9 w-9 rounded-xl"
+              className="pointer-events-auto size-11 touch-manipulation rounded-xl md:size-9"
               onClick={dismissTip}
             >
               <InfoIcon className="h-4 w-4" aria-hidden />

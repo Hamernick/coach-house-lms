@@ -20,7 +20,13 @@ describe("workspace board state persistence", () => {
       updatedAt: "2026-06-04T18:01:00.000Z",
       nodes: incoming.nodes.map((node) =>
         node.id === "fiscal-sponsorship"
-          ? { ...node, x: 420, y: 920, size: "lg" as const }
+          ? {
+              ...node,
+              x: 420,
+              y: 920,
+              size: "lg" as const,
+              positionMode: "manual" as const,
+            }
           : node
       ),
     }
@@ -88,7 +94,13 @@ describe("workspace board state persistence", () => {
       updatedAt: "2026-06-04T18:01:00.000Z",
       nodes: incoming.nodes.map((node) =>
         node.id === "fiscal-sponsorship"
-          ? { ...node, x: 420, y: 920, size: "lg" as const }
+          ? {
+              ...node,
+              x: 420,
+              y: 920,
+              size: "lg" as const,
+              positionMode: "manual" as const,
+            }
           : node
       ),
     }
@@ -114,7 +126,13 @@ describe("workspace board state persistence", () => {
       updatedAt: "2026-06-04T18:02:00.000Z",
       nodes: defaultBoardState.nodes.map((node) =>
         node.id === "fiscal-sponsorship"
-          ? { ...node, x: 512, y: 968, size: "md" as const }
+          ? {
+              ...node,
+              x: 512,
+              y: 968,
+              size: "md" as const,
+              positionMode: "manual" as const,
+            }
           : node
       ),
     }
@@ -123,7 +141,13 @@ describe("workspace board state persistence", () => {
       updatedAt: "2026-06-04T18:01:00.000Z",
       nodes: incoming.nodes.map((node) =>
         node.id === "fiscal-sponsorship"
-          ? { ...node, x: 420, y: 920, size: "lg" as const }
+          ? {
+              ...node,
+              x: 420,
+              y: 920,
+              size: "lg" as const,
+              positionMode: "manual" as const,
+            }
           : node
       ),
     }
@@ -139,7 +163,109 @@ describe("workspace board state persistence", () => {
       x: 512,
       y: 968,
       size: "md",
+      positionMode: "manual",
     })
+  })
+
+  it("preserves manual coordinates over newer managed ontology layout coordinates", () => {
+    const defaults = buildDefaultBoardState()
+    const incoming = {
+      ...defaults,
+      updatedAt: "2026-06-04T18:02:00.000Z",
+      nodes: defaults.nodes.map((node) =>
+        node.id === "programs"
+          ? {
+              ...node,
+              x: 900,
+              y: 700,
+              positionMode: "managed" as const,
+            }
+          : node
+      ),
+    }
+    const persisted = {
+      ...incoming,
+      updatedAt: "2026-06-04T18:01:00.000Z",
+      nodes: incoming.nodes.map((node) =>
+        node.id === "programs"
+          ? {
+              ...node,
+              x: 420,
+              y: 520,
+              positionMode: "manual" as const,
+            }
+          : node
+      ),
+    }
+
+    const merged = mergeNewerPersistedWorkspaceNodeState({
+      incoming,
+      persisted,
+    })
+
+    expect(merged.nodes.find((node) => node.id === "programs")).toMatchObject({
+      x: 420,
+      y: 520,
+      positionMode: "manual",
+    })
+  })
+
+  it("infers manual ownership for legacy saved coordinates without a mode", () => {
+    const defaults = buildDefaultBoardState()
+    const persisted = {
+      ...defaults,
+      updatedAt: "2026-06-04T18:01:00.000Z",
+      nodes: defaults.nodes.map((node) => {
+        if (node.id !== "programs") return node
+        const { positionMode: _positionMode, ...legacyNode } = node
+        return { ...legacyNode, x: 420, y: 520 }
+      }),
+    }
+
+    const merged = mergeNewerPersistedWorkspaceNodeState({
+      incoming: {
+        ...defaults,
+        updatedAt: "2026-06-04T18:02:00.000Z",
+      },
+      persisted,
+    })
+
+    expect(merged.nodes.find((node) => node.id === "programs")).toMatchObject({
+      x: 420,
+      y: 520,
+      positionMode: "manual",
+    })
+  })
+
+  it("preserves the newest shared ontology revision during whole-board saves", () => {
+    const defaults = buildDefaultBoardState()
+    const incoming = {
+      ...defaults,
+      ontology: {
+        ...defaults.ontology!,
+        updatedAt: "2026-07-19T14:00:00.000Z",
+        expandedRootIds: ["organization-overview" as const],
+      },
+    }
+    const persisted = {
+      ...defaults,
+      ontology: {
+        ...defaults.ontology!,
+        updatedAt: "2026-07-19T14:01:00.000Z",
+        expandedRootIds: ["accelerator" as const],
+        pinnedNodeIds: ["ontology:accelerator:module:one"],
+        nodePositions: {
+          "ontology:accelerator:module:one": { x: 720, y: 440 },
+        },
+      },
+    }
+
+    const merged = mergeNewerPersistedWorkspaceNodeState({
+      incoming,
+      persisted,
+    })
+
+    expect(merged.ontology).toEqual(persisted.ontology)
   })
 
   it("updates only the targeted node position for dedicated node saves", () => {
@@ -161,6 +287,7 @@ describe("workspace board state persistence", () => {
     ).toMatchObject({
       x: 384,
       y: 944,
+      positionMode: "manual",
     })
     expect(next.nodes.find((node) => node.id === "organization-overview")).toBe(
       organizationBefore

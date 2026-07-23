@@ -1,6 +1,10 @@
 import { WORKSPACE_OPTIONAL_DEFAULT_HIDDEN_CARD_IDS } from "@/lib/workspace-card-policy"
 
 import {
+  buildDefaultWorkspaceOntologyState,
+  normalizeWorkspaceOntologyState,
+} from "@/features/workspace-ontology"
+import {
   WORKSPACE_CARD_IDS,
   type WorkspaceAutoLayoutMode,
   type WorkspaceBoardState,
@@ -133,6 +137,7 @@ export function buildDefaultBoardState(
     onboardingFlow: buildDefaultWorkspaceOnboardingFlowState(),
     hiddenCardIds,
     visibility: buildDefaultWorkspaceVisibilityState(),
+    ontology: buildDefaultWorkspaceOntologyState(),
     updatedAt: new Date().toISOString(),
   }
 }
@@ -272,6 +277,13 @@ function normalizeNodeState(
         nodeRecord.size,
         fallback.size
       ),
+      positionMode:
+        nodeRecord.positionMode === "managed" ||
+        nodeRecord.positionMode === "manual"
+          ? nodeRecord.positionMode
+          : normalizedX === fallback.x && normalizedY === fallback.y
+            ? "managed"
+            : "manual",
     })
   }
 
@@ -398,6 +410,9 @@ export function normalizeWorkspaceBoardState(
     ),
     hiddenCardIds: normalizedHiddenCardIds,
     visibility: normalizeWorkspaceVisibilityState(record.visibility),
+    ontology: record.ontology
+      ? normalizeWorkspaceOntologyState(record.ontology)
+      : undefined,
     updatedAt:
       typeof record.updatedAt === "string" && record.updatedAt.trim().length > 0
         ? record.updatedAt

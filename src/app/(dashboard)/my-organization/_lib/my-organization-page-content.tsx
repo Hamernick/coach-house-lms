@@ -6,8 +6,7 @@ import { canEditOrganization } from "@/lib/organization/active-org"
 import { measureServerStep } from "@/lib/performance/server-timing"
 import type { Json } from "@/lib/supabase"
 import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
-import { sortAcceleratorModules } from "@/lib/accelerator/module-order"
-import { isElectiveAddOnModule } from "@/lib/accelerator/elective-modules"
+import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { resolvePricingPlanTier } from "@/lib/billing/plan-tier"
 import { getWorkspaceAcceleratorPaywallPath } from "@/lib/workspace/routes"
 import { normalizePersonCategory } from "@/lib/people/categories"
@@ -38,6 +37,7 @@ import {
   applyWorkspaceOnboardingStageToSeed,
   applyWorkspaceTutorialActivationToSeed,
   hydrateWorkspaceSeedAcceleratorState,
+  partitionRoadmapModules,
 } from "./my-organization-page-content-helpers"
 import { isMissingWorkspaceBoardsTableError } from "./workspace-view-helpers"
 import { readWorkspaceBoardStateValue } from "./workspace-state"
@@ -49,7 +49,6 @@ import {
   redirectLegacyMyOrganizationTab,
   resolveMyOrganizationPageSearchState,
 } from "./my-organization-page-search"
-import { loadWorkspaceLearningEntitlements } from "./workspace-learning-entitlements"
 
 type MyOrganizationSupabase = NonNullable<
   Awaited<ReturnType<typeof resolveOptionalAuthenticatedAppContext>>
@@ -214,10 +213,10 @@ export default async function MyOrganizationPage({
           .order("created_at", { ascending: false })
           .limit(1)
           .maybeSingle<{ status: string | null; metadata: Json | null }>(),
-        loadWorkspaceLearningEntitlements({
+        fetchLearningEntitlements({
           supabase,
           userId: user.id,
-          orgId,
+          orgUserId: orgId,
           isAdmin,
         }),
       ]),
@@ -241,14 +240,12 @@ export default async function MyOrganizationPage({
     searchParams: resolvedSearchParams,
     upcomingEvents,
   })
-  const sortedRoadmapModules = sortAcceleratorModules(
+  const {
+    sortedRoadmapModules,
+    foundationRoadmapModules,
+    acceleratorRoadmapModules,
+  } = partitionRoadmapModules(
     acceleratorProgressSummary.groups.flatMap((group) => group.modules)
-  )
-  const foundationRoadmapModules = sortedRoadmapModules.filter(
-    (module) => !isElectiveAddOnModule(module)
-  )
-  const acceleratorRoadmapModules = sortedRoadmapModules.filter((module) =>
-    isElectiveAddOnModule(module)
   )
   const peopleRaw = (
     Array.isArray(profile.org_people) ? profile.org_people : []

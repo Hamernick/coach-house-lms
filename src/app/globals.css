@@ -48,8 +48,12 @@
 }
 
 :root {
-  --font-geist-sans: "Inter", "system-ui", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-geist-mono: "JetBrains Mono", "Menlo", "Monaco", "Consolas", "Liberation Mono", "Courier New", monospace;
+  --font-geist-sans:
+    "Inter", "system-ui", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  --font-geist-mono:
+    "JetBrains Mono", "Menlo", "Monaco", "Consolas", "Liberation Mono",
+    "Courier New", monospace;
   --radius: 0.65rem;
   --app-surface: var(--background);
   --surface: oklch(0.97 0 0);
@@ -226,7 +230,8 @@
     pointer-events: none;
   }
 
-  .tiptap[data-editor-empty="true"][data-placeholder-hidden="true"] p.is-editor-empty::before {
+  .tiptap[data-editor-empty="true"][data-placeholder-hidden="true"]
+    p.is-editor-empty::before {
     content: "";
     display: none;
   }
@@ -251,8 +256,8 @@
   }
 
   [data-radix-popper-content-wrapper]:has(
-      > [data-slot="tooltip-content"].workspace-tutorial-callout
-    ) {
+    > [data-slot="tooltip-content"].workspace-tutorial-callout
+  ) {
     pointer-events: none;
   }
 
@@ -454,14 +459,12 @@
 }
 
 /* React Flow theming for /people org chart */
-.org-flow .react-flow__attribution { display: none !important; }
+.org-flow .react-flow__attribution {
+  display: none !important;
+}
 .org-flow {
   width: 100%;
   height: 100%;
-}
-
-.workspace-flow .react-flow__viewport {
-  will-change: transform;
 }
 
 .workspace-flow .react-flow__pane {
@@ -473,26 +476,132 @@
   overflow: visible;
 }
 
+.workspace-layout-surface[data-layout-animating="true"]
+  .workspace-flow
+  .react-flow__node.workspace-ontology-layout-node:not(.dragging),
+.workspace-layout-surface[data-layout-animating="true"]
+  .workspace-flow
+  .react-flow__node.workspace-ontology-arranged-root:not(.dragging) {
+  transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.workspace-flow .react-flow__node.dragging {
+  will-change: transform;
+}
+
+@keyframes workspace-ontology-node-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(-12px, 0, 0) scale(0.975);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes workspace-ontology-node-exit {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(-8px, 0, 0) scale(0.985);
+  }
+}
+
+@keyframes workspace-ontology-toggle-label-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 2px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes workspace-ontology-edge-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes workspace-ontology-edge-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.workspace-ontology-node-presence[data-transition-phase="entering"],
+.workspace-ontology-node-presence[data-transition-phase="exiting"] {
+  transform-origin: left center;
+  will-change: opacity, transform;
+}
+
+.workspace-ontology-node-presence[data-transition-phase="entering"] {
+  animation: workspace-ontology-node-enter 240ms cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+  animation-delay: var(--workspace-ontology-wave-delay, 0ms);
+}
+
+.workspace-ontology-node-presence[data-transition-phase="exiting"] {
+  animation: workspace-ontology-node-exit 170ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation-delay: var(--workspace-ontology-wave-delay, 0ms);
+}
+
+.workspace-ontology-edge-presence[data-transition-phase="entering"] {
+  animation: workspace-ontology-edge-enter 180ms cubic-bezier(0.22, 1, 0.36, 1)
+    both;
+  animation-delay: var(--workspace-ontology-wave-delay, 0ms);
+}
+
+.workspace-ontology-edge-presence[data-transition-phase="exiting"] {
+  animation: workspace-ontology-edge-exit 130ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation-delay: var(--workspace-ontology-wave-delay, 0ms);
+}
+
+.workspace-ontology-layout-edge {
+  transition: opacity 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.workspace-ontology-edge-presence[data-transition-phase="stable"] {
+  transition: opacity 160ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.workspace-layout-surface[data-layout-animating="true"]
+  .workspace-ontology-layout-edge
+  .workspace-ontology-edge-presence[data-transition-phase="stable"] {
+  opacity: 0;
+}
+
 .workspace-flow .react-flow__node.selected [data-workspace-card],
 .workspace-flow
   .react-flow__node.selected
-  [data-workspace-canvas-person-node="true"] {
+  [data-workspace-canvas-person-node="true"],
+.workspace-flow .react-flow__node.selected [data-workspace-ontology-node],
+.workspace-flow
+  .react-flow__node-workspace-ontology:focus-visible
+  [data-workspace-ontology-node] {
   outline: 2px solid color-mix(in srgb, var(--ring) 82%, transparent);
   outline-offset: 3px;
+}
+
+.workspace-flow .react-flow__node-workspace-ontology:focus-visible {
+  outline: none;
 }
 
 .workspace-flow .react-flow__selection {
   background-color: color-mix(in srgb, var(--primary) 10%, transparent);
   border: 1px solid color-mix(in srgb, var(--primary) 54%, transparent);
   border-radius: 0.75rem;
-}
-
-.workspace-layout-surface[data-layout-animating="true"] .workspace-flow .react-flow__node {
-  transition: transform 210ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.workspace-layout-surface[data-layout-animating="true"] .workspace-flow .react-flow__node.dragging {
-  transition: none;
 }
 
 .org-flow .react-flow__controls {
@@ -520,7 +629,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .org-flow .react-flow__controls-button svg {
@@ -528,7 +640,11 @@
 }
 
 .org-flow .react-flow__controls-button:hover {
-  background-color: color-mix(in srgb, var(--accent) 18%, var(--background) 82%);
+  background-color: color-mix(
+    in srgb,
+    var(--accent) 18%,
+    var(--background) 82%
+  );
 }
 
 .org-flow .react-flow__controls-button:focus-visible {
@@ -537,7 +653,11 @@
 }
 
 .org-flow .react-flow__controls-button:active {
-  background-color: color-mix(in srgb, var(--accent) 25%, var(--background) 75%);
+  background-color: color-mix(
+    in srgb,
+    var(--accent) 25%,
+    var(--background) 75%
+  );
 }
 
 .org-flow .react-flow__minimap {
@@ -553,12 +673,22 @@
 
 .org-flow .react-flow__minimap-node {
   fill: color-mix(in srgb, var(--muted-foreground) 80%, transparent) !important;
-  stroke: color-mix(in srgb, var(--muted-foreground) 95%, transparent) !important;
+  stroke: color-mix(
+    in srgb,
+    var(--muted-foreground) 95%,
+    transparent
+  ) !important;
   stroke-width: 1.1 !important;
 }
 
 .workspace-flow .react-flow__node.dragging [data-workspace-card] {
   box-shadow: none !important;
+}
+
+.workspace-flow .react-flow__node.dragging .workspace-ontology-branch-toggle {
+  background-color: var(--background) !important;
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
 }
 
 @keyframes workspace-collapsible-down {
@@ -595,11 +725,19 @@
 }
 
 .dark .org-flow .react-flow__controls-button:hover {
-  background-color: color-mix(in srgb, var(--accent) 28%, var(--background) 72%);
+  background-color: color-mix(
+    in srgb,
+    var(--accent) 28%,
+    var(--background) 72%
+  );
 }
 
 .dark .org-flow .react-flow__controls-button:active {
-  background-color: color-mix(in srgb, var(--accent) 34%, var(--background) 66%);
+  background-color: color-mix(
+    in srgb,
+    var(--accent) 34%,
+    var(--background) 66%
+  );
 }
 
 .dark .org-flow .react-flow__controls-button:focus-visible {
@@ -619,7 +757,11 @@
 
 .dark .org-flow .react-flow__minimap-node {
   fill: color-mix(in srgb, var(--muted-foreground) 85%, transparent) !important;
-  stroke: color-mix(in srgb, var(--muted-foreground) 95%, transparent) !important;
+  stroke: color-mix(
+    in srgb,
+    var(--muted-foreground) 95%,
+    transparent
+  ) !important;
 }
 
 .react-flow__node-workspace-tutorial.workspace-tutorial-node {
@@ -668,6 +810,20 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .workspace-layout-surface[data-layout-animating="true"]
+    .workspace-flow
+    .react-flow__node.workspace-ontology-layout-node,
+  .workspace-layout-surface[data-layout-animating="true"]
+    .workspace-flow
+    .react-flow__node.workspace-ontology-arranged-root {
+    transition-duration: 0ms;
+  }
+
+  .workspace-ontology-node-presence,
+  .workspace-ontology-edge-presence {
+    animation: none !important;
+  }
+
   .react-flow__node-workspace-tutorial.workspace-tutorial-node {
     transition-duration: 0ms;
   }
@@ -683,11 +839,11 @@
 
   /* Lesson notes / markdown typography */
   .prose.prose-sm h2 {
-    @apply text-lg font-semibold mt-2 mb-2;
+    @apply mt-2 mb-2 text-lg font-semibold;
   }
 
   .prose.prose-sm h3 {
-    @apply text-base font-semibold mt-2 mb-1;
+    @apply mt-2 mb-1 text-base font-semibold;
   }
 
   .prose.prose-sm p {
@@ -695,7 +851,7 @@
   }
 
   .prose.prose-sm ul {
-    @apply list-disc pl-5 mt-1 mb-1;
+    @apply mt-1 mb-1 list-disc pl-5;
   }
 }
 
@@ -728,15 +884,25 @@
   --mask-offset-top: 0px;
   --mask-offset-bottom: 0px;
   --scroll-buffer: 2rem;
-  mask-image: linear-gradient(to top, transparent, black 90%),
-    linear-gradient(to bottom, transparent 0%, black 100%), linear-gradient(black, black);
-  mask-size: 100% var(--top-mask-height), 100% var(--bottom-mask-height), 100% 100%;
+  mask-image:
+    linear-gradient(to top, transparent, black 90%),
+    linear-gradient(to bottom, transparent 0%, black 100%),
+    linear-gradient(black, black);
+  mask-size:
+    100% var(--top-mask-height),
+    100% var(--bottom-mask-height),
+    100% 100%;
   mask-repeat: no-repeat, no-repeat, no-repeat;
-  mask-position: 0 var(--mask-offset-top), 0 calc(100% - var(--mask-offset-bottom)), 0 0;
+  mask-position:
+    0 var(--mask-offset-top),
+    0 calc(100% - var(--mask-offset-bottom)),
+    0 0;
   mask-composite: exclude;
   animation-name: show-top-mask, hide-bottom-mask;
   animation-timeline: scroll(self), scroll(self);
-  animation-range: 0 var(--scroll-buffer), calc(100% - var(--scroll-buffer)) 100%;
+  animation-range:
+    0 var(--scroll-buffer),
+    calc(100% - var(--scroll-buffer)) 100%;
   animation-fill-mode: both;
 }
 
@@ -745,14 +911,24 @@
   --mask-offset-left: 0px;
   --mask-offset-right: 0px;
   --scroll-buffer: 2rem;
-  mask-image: linear-gradient(to left, transparent, black 90%),
-    linear-gradient(to right, transparent 0%, black 100%), linear-gradient(black, black);
-  mask-size: var(--left-mask-width) 100%, var(--right-mask-width) 100%, 100% 100%;
+  mask-image:
+    linear-gradient(to left, transparent, black 90%),
+    linear-gradient(to right, transparent 0%, black 100%),
+    linear-gradient(black, black);
+  mask-size:
+    var(--left-mask-width) 100%,
+    var(--right-mask-width) 100%,
+    100% 100%;
   mask-repeat: no-repeat, no-repeat, no-repeat;
-  mask-position: var(--mask-offset-left) 0, calc(100% - var(--mask-offset-right)) 0, 0 0;
+  mask-position:
+    var(--mask-offset-left) 0,
+    calc(100% - var(--mask-offset-right)) 0,
+    0 0;
   mask-composite: exclude;
   animation-name: show-left-mask, hide-right-mask;
   animation-timeline: scroll(self inline), scroll(self inline);
-  animation-range: 0 var(--scroll-buffer), calc(100% - var(--scroll-buffer)) 100%;
+  animation-range:
+    0 var(--scroll-buffer),
+    calc(100% - var(--scroll-buffer)) 100%;
   animation-fill-mode: both;
 }

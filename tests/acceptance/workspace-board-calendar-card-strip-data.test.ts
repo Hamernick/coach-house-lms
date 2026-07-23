@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
 
-import { buildCalendarStripEventPreview } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-calendar-card-strip-data"
+import {
+  buildCalendarStripEventPreview,
+  resolveVisibleCalendarEvents,
+} from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-calendar-card-strip-data"
 import type { UpcomingEvent } from "@/app/(dashboard)/my-organization/_lib/types"
 
 function buildEvent(overrides: Partial<UpcomingEvent> = {}): UpcomingEvent {
@@ -51,6 +54,28 @@ describe("workspace board calendar strip data", () => {
       event: null,
       isPreview: true,
     })
-    expect(preview.eventItems[0]?.detailDescription).toContain("recurring board check-in")
+    expect(preview.eventItems[0]?.detailDescription).toContain(
+      "recurring board check-in"
+    )
+  })
+
+  it("keeps an exact requested event visible beyond the day preview limit", () => {
+    const events = Array.from({ length: 5 }, (_, index) =>
+      buildEvent({ id: `event-${index + 1}`, title: `Event ${index + 1}` })
+    )
+
+    const visibleEvents = resolveVisibleCalendarEvents({
+      upcomingEvents: events,
+      selectedDayEvents: events,
+      requestedEventId: "event-5",
+      limit: 3,
+    })
+
+    expect(visibleEvents).toHaveLength(3)
+    expect(visibleEvents.map((event) => event.id)).toEqual([
+      "event-5",
+      "event-1",
+      "event-2",
+    ])
   })
 })

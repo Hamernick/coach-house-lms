@@ -1017,7 +1017,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(viewSource).toContain("documentsTab={workspaceDataDrawerDocuments}")
     expect(surfaceTypesSource).toContain("workspaceDataDrawerCanEdit: boolean")
     expect(canvasBodySource).toContain(
-      "const workspaceDataDrawerCanEdit =\n    seed.canEdit || seed.isPlatformAdmin === true"
+      "const workspaceDataDrawerCanEdit =\n    !seed.presentationMode && (seed.canEdit || seed.isPlatformAdmin === true)"
     )
     expect(canvasBodySource).toContain(
       "workspaceDataDrawerCanEdit={workspaceDataDrawerCanEdit}"
@@ -1036,9 +1036,7 @@ describe("workspace canvas overlay drawer", () => {
       "allowEditing || workspaceDataDrawerCanEdit"
     )
     expect(surfaceSource).toContain("allowPeopleCanvasInteraction,")
-    expect(surfaceSource).toContain(
-      "allowPeopleCanvasInteraction,\n    tutorialActive"
-    )
+    expect(surfaceSource).toContain("tutorialActive,")
     expect(surfaceSource).toContain(
       "peopleCanvasInteractionEnabled: allowPeopleCanvasInteraction"
     )
@@ -1152,7 +1150,8 @@ describe("workspace canvas overlay drawer", () => {
     expect(viewSource).toContain("workspaceDataDrawerViewerId: string")
     expect(viewSource).toContain("workspaceDataDrawerCanEdit: boolean")
     expect(viewSource).toContain("peopleCanvasInteractionEnabled: boolean")
-    expect(viewSource).toContain("const nodesSelectable =")
+    expect(viewSource).toContain("const nodesSelectable = !tutorialActive")
+    expect(viewSource).toContain("const selectNodesOnDrag =")
     expect(viewSource).toContain(
       "!tutorialActive && (allowEditing || peopleCanvasInteractionEnabled)"
     )
@@ -1161,7 +1160,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(viewSource).toContain('multiSelectionKeyCode={["Meta", "Control"]}')
     expect(viewSource).toContain("selectionMode={SelectionMode.Partial}")
     expect(viewSource).toContain("selectionOnDrag={false}")
-    expect(viewSource).toContain("selectNodesOnDrag={nodesSelectable}")
+    expect(viewSource).toContain("selectNodesOnDrag={selectNodesOnDrag}")
     expect(viewSource).toContain("onSelectionDragStop={onSelectionDragStop}")
     expect(viewSource).toContain("if (!peopleCanvasInteractionEnabled) return")
     expect(viewSource).not.toContain("if (!allowEditing) return")
@@ -1201,7 +1200,8 @@ describe("workspace canvas overlay drawer", () => {
     expect(shortcutRailSource).toContain(
       "pointer-events-none absolute left-4 top-1/2 z-30"
     )
-    expect(controlsSource).toContain("absolute top-4 right-4 z-30")
+    expect(controlsSource).toContain("absolute right-4 bottom-4 z-30")
+    expect(controlsSource).toContain("md:top-4 md:bottom-auto")
     expect(rendererSource).not.toContain("<WorkspaceCanvasOverlayDrawer")
     expect(rendererSource).not.toContain("headerPickerAction")
     expect(rendererSource).not.toContain("container={container}")

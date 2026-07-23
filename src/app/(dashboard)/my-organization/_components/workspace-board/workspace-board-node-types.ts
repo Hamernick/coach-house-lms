@@ -5,10 +5,12 @@ import type {
   WorkspaceAcceleratorTutorialInteractionPolicy,
 } from "@/features/workspace-accelerator-card"
 import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
-import type { WorkspaceCardShortcutItemModel } from "./workspace-canvas-v2/shortcuts/workspace-card-shortcut-model"
 import type {
-  WorkspaceAcceleratorStepPlacement,
-} from "./workspace-board-accelerator-step-layout"
+  WorkspaceOntologyActionRequest,
+  WorkspaceOntologyRootControl,
+} from "@/features/workspace-ontology"
+import type { WorkspaceCardShortcutItemModel } from "./workspace-canvas-v2/shortcuts/workspace-card-shortcut-model"
+import type { WorkspaceAcceleratorStepPlacement } from "./workspace-board-accelerator-step-layout"
 import type {
   WorkspaceBoardAcceleratorState,
   WorkspaceCardId,
@@ -49,7 +51,7 @@ export type WorkspaceBoardNodeData = {
   acceleratorTutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
   acceleratorTutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
   onAcceleratorTutorialActionComplete?: (
-    mode?: "complete" | "complete-and-advance",
+    mode?: "complete" | "complete-and-advance"
   ) => void
   onWorkspaceOnboardingSubmit?: (form: FormData) => Promise<void>
   journeyGuideState?: WorkspaceJourneyGuideState | null
@@ -65,9 +67,11 @@ export type WorkspaceBoardNodeData = {
     instruction: string
   } | null
   onOrganizationMapButtonTutorialComplete?: (
-    mode?: "complete" | "complete-and-advance",
+    mode?: "complete" | "complete-and-advance"
   ) => void
   tutorialStepId?: WorkspaceCanvasTutorialStepId | null
+  ontologyRootControl?: WorkspaceOntologyRootControl
+  ontologyActionRequest?: WorkspaceOntologyActionRequest | null
 }
 
 export type WorkspaceBoardAcceleratorStepNodeData = {

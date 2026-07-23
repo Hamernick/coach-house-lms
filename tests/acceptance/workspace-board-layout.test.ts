@@ -69,6 +69,26 @@ describe("workspace board layout", () => {
     expect(communications?.size).toBe("md")
   })
 
+  it("infers managed and manual ownership for legacy node positions", () => {
+    const defaults = buildDefaultBoardState()
+    const legacyNodes = defaults.nodes.map((node) => {
+      const { positionMode: _positionMode, ...legacyNode } = node
+      return node.id === "programs"
+        ? { ...legacyNode, x: legacyNode.x + 120 }
+        : legacyNode
+    })
+
+    const normalized = normalizeWorkspaceBoardState({ nodes: legacyNodes })
+
+    expect(
+      normalized.nodes.find((node) => node.id === "organization-overview")
+        ?.positionMode
+    ).toBe("managed")
+    expect(
+      normalized.nodes.find((node) => node.id === "programs")?.positionMode
+    ).toBe("manual")
+  })
+
   it("migrates legacy hub layout mode to dagre tree", () => {
     const normalized = normalizeWorkspaceBoardState({
       autoLayoutMode: "hub",

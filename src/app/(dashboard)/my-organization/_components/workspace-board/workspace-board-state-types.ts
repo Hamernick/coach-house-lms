@@ -1,4 +1,5 @@
 import type { WorkspaceCanvasTutorialStepId } from "@/features/workspace-canvas-tutorial"
+import type { WorkspaceOntologyState } from "@/features/workspace-ontology"
 
 import type { WorkspaceCommunicationsState } from "./workspace-board-communications-types"
 import type {
@@ -14,7 +15,10 @@ export type WorkspaceNodeState = {
   x: number
   y: number
   size: WorkspaceCardSize
+  positionMode?: WorkspaceNodePositionMode
 }
+
+export type WorkspaceNodePositionMode = "managed" | "manual"
 
 export type WorkspaceConnectionState = {
   id: string
@@ -29,7 +33,8 @@ export type WorkspaceBoardAcceleratorState = {
 
 export const WORKSPACE_ONBOARDING_STAGES = [2, 3, 4] as const
 
-export type WorkspaceOnboardingStage = (typeof WORKSPACE_ONBOARDING_STAGES)[number]
+export type WorkspaceOnboardingStage =
+  (typeof WORKSPACE_ONBOARDING_STAGES)[number]
 
 export type WorkspaceBoardOnboardingFlowState = {
   active: boolean
@@ -63,5 +68,6 @@ export type WorkspaceBoardState = {
   onboardingFlow: WorkspaceBoardOnboardingFlowState
   hiddenCardIds: WorkspaceCardId[]
   visibility?: WorkspaceBoardVisibilityState
+  ontology?: WorkspaceOntologyState
   updatedAt: string
 }

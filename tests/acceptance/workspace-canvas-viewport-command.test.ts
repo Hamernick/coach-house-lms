@@ -1,7 +1,8 @@
-import { describe, expect, it, vi } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
   executeWorkspaceCanvasViewportCommand,
+  resolveWorkspaceCanvasCameraDuration,
   resolveWorkspaceCanvasViewportCommand,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-viewport-command"
 
@@ -26,7 +27,19 @@ const FOCUS_OPTIONS = {
   duration: 240,
 } as const
 
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
 describe("workspace canvas viewport command", () => {
+  it("removes camera motion when reduced motion is requested", () => {
+    vi.stubGlobal("window", {
+      matchMedia: vi.fn(() => ({ matches: true })),
+    })
+
+    expect(resolveWorkspaceCanvasCameraDuration(520)).toBe(0)
+  })
+
   it("uses the shared precedence of scene-fit, then tutorial completion exit, then focus-card, then fit-visible", () => {
     expect(
       resolveWorkspaceCanvasViewportCommand({

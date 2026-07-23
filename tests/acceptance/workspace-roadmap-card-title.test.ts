@@ -172,6 +172,10 @@ describe("workspace roadmap card title", () => {
     expect(cardHeader).toContain('"pb-1.5"')
     expect(cardHeader).toContain('"min-w-0 truncate"')
     expect(cardHeader).toContain("WORKSPACE_TEXT_STYLES.cardTitle")
+    expect(cardHeader).toContain("PencilIcon")
+    expect(cardHeader).toContain('aria-label="Edit card"')
+    expect(cardHeader).toContain('variant="default"')
+    expect(cardHeader).toContain('className="nodrag nopan"')
     expect(cardHeader).not.toContain(
       '<span className="truncate">{title}</span>'
     )

@@ -36,6 +36,12 @@ describe("workspace canvas v2 viewport controls", () => {
     expect(panelSource).toContain('aria-label="Zoom out"')
     expect(panelSource).toContain('aria-label="Zoom in"')
     expect(panelSource).toContain('aria-label="Recenter view"')
+    expect(
+      panelSource.match(/size-11 touch-manipulation rounded-xl md:size-9/g)
+    ).toHaveLength(3)
+    expect(panelSource).toContain(
+      "ownerId: `workspace-canvas:viewport-${control}`"
+    )
     expect(panelSource).not.toContain("RotateCcwIcon")
     expect(panelSource).not.toContain("MyOrganizationCalendarView")
     expect(panelSource).not.toContain('aria-label="Reset view"')

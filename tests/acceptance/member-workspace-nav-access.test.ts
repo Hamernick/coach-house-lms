@@ -72,13 +72,6 @@ describe("member workspace nav access", () => {
       ),
       "utf8"
     )
-    const workspaceEntitlementsSource = readFileSync(
-      join(
-        ROOT,
-        "src/app/(dashboard)/my-organization/_lib/workspace-learning-entitlements.ts"
-      ),
-      "utf8"
-    )
 
     expect(accessSource).toContain("fetchLearningEntitlements")
     expect(accessSource).toContain("forceStripeSync: true")
@@ -93,20 +86,10 @@ describe("member workspace nav access", () => {
       "Unable to load dashboard entitlement state."
     )
     expect(layoutStateSource).toContain("return entitlementFallback")
-    expect(workspaceContentSource).toContain(
+    expect(workspaceContentSource).toContain("fetchLearningEntitlements")
+    expect(workspaceContentSource).toContain("orgUserId: orgId")
+    expect(workspaceContentSource).not.toContain(
       "loadWorkspaceLearningEntitlements"
-    )
-    expect(workspaceEntitlementsSource).toContain(
-      "shouldForceStripeEntitlementSyncForWorkspace"
-    )
-    expect(workspaceEntitlementsSource).toContain(
-      "forceStripeSync: shouldForceStripeEntitlementSyncForWorkspace"
-    )
-    expect(workspaceEntitlementsSource).toContain(
-      "Unable to load workspace entitlement state."
-    )
-    expect(workspaceEntitlementsSource).toContain(
-      "return WORKSPACE_ENTITLEMENT_FALLBACK"
     )
   })
 })

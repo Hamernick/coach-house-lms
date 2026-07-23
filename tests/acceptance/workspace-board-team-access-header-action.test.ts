@@ -6,11 +6,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const {
   useWorkspaceBoardOrganizationAccessStateMock,
-  workspaceBoardInviteSheetMock,
   workspaceBoardTeamAccessHoverCardMock,
 } = vi.hoisted(() => ({
   useWorkspaceBoardOrganizationAccessStateMock: vi.fn(),
-  workspaceBoardInviteSheetMock: vi.fn((_props: unknown) => null),
   workspaceBoardTeamAccessHoverCardMock: vi.fn((_props: unknown) => null),
 }))
 
@@ -19,16 +17,6 @@ vi.mock(
   () => ({
     useWorkspaceBoardOrganizationAccessState:
       useWorkspaceBoardOrganizationAccessStateMock,
-  })
-)
-
-vi.mock(
-  "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-invite-sheet",
-  () => ({
-    WorkspaceBoardInviteSheet: (props: unknown) => {
-      workspaceBoardInviteSheetMock(props)
-      return null
-    },
   })
 )
 
@@ -42,7 +30,7 @@ vi.mock(
   })
 )
 
-import { WorkspaceBoardTeamAccessSection } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-team-access-section"
+import { WorkspaceBoardTeamAccessHeaderActionContent } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-team-access-header-action"
 
 const ROOT = process.cwd()
 
@@ -66,9 +54,9 @@ function createOrganizationAccessState(
   }
 }
 
-function renderSection() {
+function renderAction() {
   return renderToStaticMarkup(
-    createElement(WorkspaceBoardTeamAccessSection, {
+    createElement(WorkspaceBoardTeamAccessHeaderActionContent, {
       canInvite: false,
       members: [],
       invites: [],
@@ -78,81 +66,62 @@ function renderSection() {
         name: "Bright Futures Collective",
         avatarUrl: null,
       },
-      uiPreferencesScope: {
-        orgId: "org-1",
-        viewerId: "user-1",
-      },
       onInvitesChange: vi.fn(),
     })
   )
 }
 
-describe("WorkspaceBoardTeamAccessSection", () => {
+describe("WorkspaceBoardTeamAccessHeaderAction", () => {
   beforeEach(() => {
     useWorkspaceBoardOrganizationAccessStateMock.mockReset()
-    workspaceBoardInviteSheetMock.mockClear()
     workspaceBoardTeamAccessHoverCardMock.mockClear()
   })
 
-  it("renders Team Access as a collapsible right-rail section header", () => {
+  it("renders the team-access pill for the shell header", () => {
     useWorkspaceBoardOrganizationAccessStateMock.mockReturnValue(
       createOrganizationAccessState()
     )
 
-    const markup = renderSection()
+    const markup = renderAction()
     const source = readSource(
-      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-team-access-section.tsx"
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-team-access-header-action.tsx"
     )
 
-    expect(markup).toContain("Team Access")
-    expect(markup).toContain('aria-controls="workspace-team-access-content"')
-    expect(markup).toContain('aria-expanded="true"')
-    expect(markup).toContain(
-      "hover:bg-muted/30 h-8 w-full justify-between rounded-lg px-2.5 py-0 text-left"
+    expect(markup).toContain('data-slot="hover-card-trigger"')
+    expect(markup).toContain("Bright Futures Collective")
+    expect(markup).toContain("Connecting…")
+    expect(markup).toContain("h-9")
+    expect(markup).toContain("max-w-[13rem]")
+    expect(markup).toContain("min-w-0")
+    expect(markup).toContain("rounded-full")
+    expect(source).toContain('<HeaderActionsPortal slot="right">')
+    expect(source).toContain(
+      'ownerId: "workspace-board:team-access-header-action"'
     )
-    expect(source).toContain("setTeamAccessCollapsed")
-    expect(source).toContain("readWorkspaceBoardUiPreferences")
-    expect(source).toContain("patchWorkspaceBoardUiPreferences")
-    expect(source).toContain("teamAccessCollapsed: nextCollapsed")
-    expect(source).toContain("teamAccessCollapsed ? null")
-    expect(source).toContain("ChevronDownIcon")
+    expect(source).not.toContain("teamAccessCollapsed")
+    expect(source).not.toContain("ChevronDownIcon")
   })
 
-  it("does not show the solo empty state while team access is still loading", () => {
+  it("keeps loading and error state in the accessible trigger summary", () => {
     useWorkspaceBoardOrganizationAccessStateMock.mockReturnValue(
-      createOrganizationAccessState({
-        loading: true,
-      })
+      createOrganizationAccessState({ loading: true })
     )
-
-    const markup = renderSection()
-
-    expect(markup).toContain("Checking team access…")
-    expect(markup).toContain(
-      "flex w-full min-w-0 items-center justify-between gap-2"
-    )
-    expect(markup).not.toContain("No Team Members")
+    expect(renderAction()).toContain("Checking team access…")
     expect(
       workspaceBoardTeamAccessHoverCardMock.mock.calls[0]?.[0]
     ).toMatchObject({
       organizationAccessLoading: true,
       organizationAccessLoadError: null,
     })
-  })
 
-  it("does not show the solo empty state when team access failed to refresh", () => {
     useWorkspaceBoardOrganizationAccessStateMock.mockReturnValue(
       createOrganizationAccessState({
         loadError: "Unable to load team access.",
       })
     )
-
-    const markup = renderSection()
-
-    expect(markup).toContain("Team access unavailable right now.")
-    expect(markup).not.toContain("No Team Members")
+    expect(renderAction()).toContain("Team access unavailable right now.")
     expect(
-      workspaceBoardTeamAccessHoverCardMock.mock.calls[0]?.[0]
+      workspaceBoardTeamAccessHoverCardMock.mock.calls.at(-1)?.[0]
     ).toMatchObject({
       organizationAccessLoading: false,
       organizationAccessLoadError: "Unable to load team access.",

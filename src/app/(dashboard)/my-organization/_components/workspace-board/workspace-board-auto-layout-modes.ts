@@ -335,6 +335,7 @@ export function buildAutoLayoutNodesForMode({
       x: position.x,
       y: position.y,
       size: resolveNodeSize(id, sizeLookup),
+      positionMode: "managed",
     }
   })
 }

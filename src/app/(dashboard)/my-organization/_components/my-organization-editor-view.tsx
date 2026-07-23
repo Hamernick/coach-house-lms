@@ -3,7 +3,11 @@
 import { useRouter } from "next/navigation"
 
 import { OrgProfileCard } from "@/components/organization/org-profile-card"
-import type { OrgProgram, OrgProfile, ProfileTab } from "@/components/organization/org-profile-card/types"
+import type {
+  OrgProgram,
+  OrgProfile,
+  ProfileTab,
+} from "@/components/organization/org-profile-card/types"
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
 import { cn } from "@/lib/utils"
 import { WORKSPACE_PATH } from "@/lib/workspace/routes"
@@ -33,7 +37,12 @@ export function MyOrganizationEditorView({
   const handleClose = onClose ?? (() => router.push(WORKSPACE_PATH))
 
   return (
-    <div className={cn("flex h-full min-h-0 flex-col", embedded ? "gap-4" : "gap-5 md:gap-6")}>
+    <div
+      className={cn(
+        "flex h-full min-h-0 flex-col",
+        embedded ? "gap-4" : "gap-5 md:gap-6"
+      )}
+    >
       <section className="flex min-h-0 flex-1 flex-col gap-3">
         <div
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain"

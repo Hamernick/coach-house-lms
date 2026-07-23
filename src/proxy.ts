@@ -6,6 +6,7 @@ import { env } from "@/lib/env"
 import { DEFAULT_POST_AUTH_REDIRECT } from "@/lib/auth/redirects"
 import { isCoachRestrictedPath } from "@/features/platform-access"
 import type { Database } from "@/lib/supabase/types"
+import { canAccessVisualRegressionRoute } from "@/lib/visual-regression-access"
 
 const PROTECTED_PREFIXES = [
   "/class",
@@ -25,8 +26,17 @@ const PROTECTED_PREFIXES = [
   "/onboarding",
 ]
 const AUTH_ROUTES = new Set(["/login", "/sign-up", "/forgot-password"])
+const VISUAL_REGRESSION_PREFIX = "/visual-regression"
 
 export async function proxy(request: NextRequest) {
+  const pathname = request.nextUrl.pathname
+  if (
+    pathname.startsWith(VISUAL_REGRESSION_PREFIX) &&
+    !canAccessVisualRegressionRoute(request.headers)
+  ) {
+    return new NextResponse("Not Found", { status: 404 })
+  }
+
   const response = NextResponse.next()
 
   const supabase = createServerClient<Database>(
@@ -50,8 +60,9 @@ export async function proxy(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  const pathname = request.nextUrl.pathname
-  const isProtected = PROTECTED_PREFIXES.some((prefix) => pathname.startsWith(prefix))
+  const isProtected = PROTECTED_PREFIXES.some((prefix) =>
+    pathname.startsWith(prefix)
+  )
   const isAuthRoute = AUTH_ROUTES.has(pathname)
 
   if (!user && isProtected) {
@@ -63,7 +74,9 @@ export async function proxy(request: NextRequest) {
   }
 
   if (user && isAuthRoute) {
-    const redirectResponse = NextResponse.redirect(new URL(DEFAULT_POST_AUTH_REDIRECT, request.url))
+    const redirectResponse = NextResponse.redirect(
+      new URL(DEFAULT_POST_AUTH_REDIRECT, request.url)
+    )
     copyCookies(response, redirectResponse)
     return redirectResponse
   }

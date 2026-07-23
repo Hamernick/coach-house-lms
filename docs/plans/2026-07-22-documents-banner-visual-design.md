@@ -21,8 +21,11 @@ change and would make the baseline slower and less deterministic.
 The fixture composes the production component without duplicating its markup.
 The test waits for network idle, verifies the owning React Grab surface and
 heading, and records focused light and dark screenshots. Reduced motion is
-enabled during capture. The banner itself keeps the centered responsive layout,
-view-only state, semantic heading, and decorative icon treatment; the previous
-automatic entrance animation is removed because repository motion must be
-input-driven. Focused acceptance continues to verify source-independent server
-markup, while the visual baselines cover actual styling and theming.
+enabled during capture. A focused 4% pixel tolerance absorbs the measured
+macOS-to-Linux text rasterization difference while retaining the component's
+geometry, surface, and theme as the baseline. The banner itself keeps the
+centered responsive layout, view-only state, semantic heading, and decorative
+icon treatment; the previous automatic entrance animation is removed because
+repository motion must be input-driven. Focused acceptance continues to verify
+source-independent server markup, while the visual baselines cover actual
+styling and theming.

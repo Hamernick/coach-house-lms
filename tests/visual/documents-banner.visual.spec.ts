@@ -29,7 +29,7 @@ for (const colorScheme of ["light", "dark"] as const) {
         animations: "disabled",
         caret: "hide",
         scale: "css",
-        maxDiffPixelRatio: 0.01,
+        maxDiffPixelRatio: 0.04,
       }
     )
   })

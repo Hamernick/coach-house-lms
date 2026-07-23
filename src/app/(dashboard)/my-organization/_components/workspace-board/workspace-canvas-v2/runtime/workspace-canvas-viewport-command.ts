@@ -71,6 +71,20 @@ function clampSceneZoom(
   return Math.min(Math.max(value, options.minZoom), options.maxZoom)
 }
 
+export function resolveWorkspaceCanvasCameraDuration(duration: number) {
+  if (typeof window === "undefined") return duration
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    ? 0
+    : duration
+}
+
+function resolveCameraFitOptions(options: WorkspaceCanvasCameraFitOptions) {
+  return {
+    ...options,
+    duration: resolveWorkspaceCanvasCameraDuration(options.duration),
+  }
+}
+
 export function resolveFlowNodesForIds(
   flowInstance: ReactFlowInstance,
   nodeIds: string[]
@@ -178,7 +192,9 @@ export function executeWorkspaceCanvasViewportCommand({
     if (hasAuthoredViewport) {
       void flowInstance.setCenter(sceneFitRequest.x!, sceneFitRequest.y!, {
         zoom: clampSceneZoom(sceneFitRequest.zoom!, sceneFitOptions),
-        duration: sceneFitRequest.duration ?? sceneFitOptions.duration,
+        duration: resolveWorkspaceCanvasCameraDuration(
+          sceneFitRequest.duration ?? sceneFitOptions.duration
+        ),
       })
       return {
         executed: true,
@@ -201,7 +217,7 @@ export function executeWorkspaceCanvasViewportCommand({
 
     void flowInstance.fitView({
       nodes: sceneNodes,
-      ...sceneFitOptions,
+      ...resolveCameraFitOptions(sceneFitOptions),
     })
     return {
       executed: true,
@@ -222,7 +238,7 @@ export function executeWorkspaceCanvasViewportCommand({
 
     void flowInstance.fitView({
       nodes: focusedNodes,
-      ...focusCardOptions,
+      ...resolveCameraFitOptions(focusCardOptions),
     })
     return {
       executed: true,
@@ -254,7 +270,7 @@ export function executeWorkspaceCanvasViewportCommand({
 
   void flowInstance.fitView({
     nodes: fitNodes,
-    ...fitViewOptions,
+    ...resolveCameraFitOptions(fitViewOptions),
   })
   return {
     executed: true,

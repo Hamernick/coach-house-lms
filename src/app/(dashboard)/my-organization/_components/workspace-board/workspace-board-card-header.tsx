@@ -7,6 +7,7 @@ import ExpandIcon from "lucide-react/dist/esm/icons/expand"
 import Maximize2Icon from "lucide-react/dist/esm/icons/maximize-2"
 import Minimize2Icon from "lucide-react/dist/esm/icons/minimize-2"
 import MoreVerticalIcon from "lucide-react/dist/esm/icons/more-vertical"
+import PencilIcon from "lucide-react/dist/esm/icons/pencil"
 import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { Button } from "@/components/ui/button"
@@ -189,15 +190,13 @@ export function WorkspaceBoardCardHeader({
           {showDirectEditorLink ? (
             <Button
               asChild
-              variant="ghost"
-              size="icon"
-              className="nodrag nopan h-7 w-7"
+              variant="default"
+              size="sm"
+              className="nodrag nopan"
             >
-              <Link href={editorHref as string} aria-label="Open card editor">
-                <Maximize2Icon
-                  className="text-muted-foreground h-3.5 w-3.5"
-                  aria-hidden
-                />
+              <Link href={editorHref as string} aria-label="Edit card">
+                <PencilIcon className="h-4 w-4" aria-hidden />
+                Edit
               </Link>
             </Button>
           ) : null}
@@ -329,7 +328,7 @@ export function WorkspaceBoardCardHeader({
                       className="nodrag nopan h-8 justify-start"
                     >
                       <Link href={editorHref as string}>
-                        <ExpandIcon className="h-3.5 w-3.5" aria-hidden />
+                        <PencilIcon className="h-3.5 w-3.5" aria-hidden />
                         Edit
                       </Link>
                     </Button>

@@ -28,6 +28,10 @@ export async function resolveMyOrganizationPageSearchState(
       typeof resolvedSearchParams?.programId === "string"
         ? resolvedSearchParams.programId
         : "",
+    focusParam:
+      typeof resolvedSearchParams?.focus === "string"
+        ? resolvedSearchParams.focus
+        : "",
     acceleratorGroupParam:
       typeof resolvedSearchParams?.group === "string"
         ? resolvedSearchParams.group

@@ -92,6 +92,7 @@ export function useWorkspaceCanvasViewportPreferences({
 
   return {
     handleCanvasMoveEnd,
+    restoredViewportZoom: canvasViewportPreferenceState.viewport?.zoom ?? null,
     suppressInitialFit:
       !canvasViewportPreferenceState.loaded ||
       (!tutorialActive && canvasViewportPreferenceState.viewport !== null),

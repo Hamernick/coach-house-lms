@@ -9,6 +9,13 @@ import type { OrgProgram } from "@/components/organization/org-profile-card/type
 import { Button } from "@/components/ui/button"
 import type { CarouselApi } from "@/components/ui/carousel"
 import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet"
+import {
   analyzeFiscalSponsorshipActivityEligibility,
   FiscalSponsorshipActivityAction,
   type FiscalSponsorshipActivityEligibility,
@@ -16,6 +23,7 @@ import {
 } from "@/features/fiscal-sponsorship"
 
 import { WORKSPACE_CARD_META } from "./workspace-board-copy"
+import { WorkspaceBoardFormationTrackerCard } from "./workspace-board-formation-tracker-card"
 import type { WorkspaceBoardNodeData } from "./workspace-board-node-types"
 import {
   buildWorkspaceProgramEditorHref,
@@ -215,6 +223,11 @@ export function WorkspaceBoardProgramsNodeCard({
   const [canScrollPrevious, setCanScrollPrevious] = useState(false)
   const [canScrollNext, setCanScrollNext] = useState(false)
   const [selectedProgramIndex, setSelectedProgramIndex] = useState(0)
+  const [objectivesOpen, setObjectivesOpen] = useState(false)
+  const [objectivesFocusRequest, setObjectivesFocusRequest] = useState<{
+    id: number
+    ticketId: string | null
+  } | null>(null)
   const programsPreviewOnly = isWorkspaceProgramsPreviewOnlyStep(
     data.tutorialStepId
   )
@@ -283,53 +296,91 @@ export function WorkspaceBoardProgramsNodeCard({
     }
   }, [carouselApi, hasCarouselControls])
 
+  useEffect(() => {
+    const request = data.ontologyActionRequest
+    if (request?.rootId !== "programs" || request.target.kind !== "task") {
+      return
+    }
+    setObjectivesFocusRequest({
+      id: request.id,
+      ticketId: request.target.ticketId,
+    })
+    setObjectivesOpen(true)
+  }, [data.ontologyActionRequest])
+
   return (
-    <WorkspaceBoardNodeCardShell
-      cardId="programs"
-      title={cardMeta.title}
-      subtitle={cardMeta.subtitle}
-      hideSubtitle={hideHeaderSubtitle}
-      headerAction={renderProgramsHeaderAction({
-        canEdit,
-        eligibility: fiscalSponsorshipEligibility,
-        fiscalSponsorshipCardVisible:
-          data.fiscalSponsorshipCardVisible === true,
-        isCanvasFullscreen,
-        onOpenFiscalSponsorship: () => data.onOpenCard?.("fiscal-sponsorship"),
-        onProgramsCreateOpenChange,
-        onUpdateFiscalSponsorshipInfo: () =>
-          router.push(updateFiscalSponsorshipInfoHref),
-        presentationMode,
-        programsPreviewOnly,
-      })}
-      size={effectiveCardSize}
-      presentationMode={presentationMode}
-      fullHref={cardMeta.fullHref}
-      canEdit={canEdit}
-      shellInsetClassName="px-3 pt-3 pb-3"
-      contentClassName={contentClassName}
-      contentSurface="plain"
-      editorHref={null}
-      footer={renderProgramsFooterAction({
-        canScrollNext,
-        canScrollPrevious,
-        hasCarouselControls,
-        onScrollNext: () => carouselApi?.scrollNext(),
-        onScrollPrevious: () => carouselApi?.scrollPrev(),
-      })}
-      footerClassName="justify-center px-3 pt-2 pb-3"
-      isCanvasFullscreen={isCanvasFullscreen}
-      onToggleCanvasFullscreen={frameFullscreenToggle}
-    >
-      <WorkspaceBoardProgramsCard
-        programs={programs}
-        legacyProgramsValue={legacyProgramsValue}
+    <>
+      <WorkspaceBoardNodeCardShell
+        cardId="programs"
+        title={cardMeta.title}
+        subtitle={cardMeta.subtitle}
+        hideSubtitle={hideHeaderSubtitle}
+        headerAction={renderProgramsHeaderAction({
+          canEdit,
+          eligibility: fiscalSponsorshipEligibility,
+          fiscalSponsorshipCardVisible:
+            data.fiscalSponsorshipCardVisible === true,
+          isCanvasFullscreen,
+          onOpenFiscalSponsorship: () =>
+            data.onOpenCard?.("fiscal-sponsorship"),
+          onProgramsCreateOpenChange,
+          onUpdateFiscalSponsorshipInfo: () =>
+            router.push(updateFiscalSponsorshipInfoHref),
+          presentationMode,
+          programsPreviewOnly,
+        })}
+        size={effectiveCardSize}
+        presentationMode={presentationMode}
+        fullHref={cardMeta.fullHref}
         canEdit={canEdit}
-        createOpen={programsCreateOpen}
-        onCreateOpenChange={onProgramsCreateOpenChange}
-        onCarouselApiChange={setCarouselApi}
-        previewOnly={programsPreviewOnly}
-      />
-    </WorkspaceBoardNodeCardShell>
+        shellInsetClassName="px-3 pt-3 pb-3"
+        contentClassName={contentClassName}
+        contentSurface="plain"
+        editorHref={null}
+        footer={renderProgramsFooterAction({
+          canScrollNext,
+          canScrollPrevious,
+          hasCarouselControls,
+          onScrollNext: () => carouselApi?.scrollNext(),
+          onScrollPrevious: () => carouselApi?.scrollPrev(),
+        })}
+        footerClassName="justify-center px-3 pt-2 pb-3"
+        isCanvasFullscreen={isCanvasFullscreen}
+        onToggleCanvasFullscreen={frameFullscreenToggle}
+      >
+        <WorkspaceBoardProgramsCard
+          programs={programs}
+          legacyProgramsValue={legacyProgramsValue}
+          canEdit={canEdit}
+          createOpen={programsCreateOpen}
+          onCreateOpenChange={onProgramsCreateOpenChange}
+          onCarouselApiChange={setCarouselApi}
+          previewOnly={programsPreviewOnly}
+        />
+      </WorkspaceBoardNodeCardShell>
+      <Sheet open={objectivesOpen} onOpenChange={setObjectivesOpen}>
+        <SheetContent
+          side="right"
+          className="w-full gap-0 sm:max-w-xl max-sm:[&_[data-slot=select-trigger]]:h-11 max-sm:[&_[data-slot=select-trigger]]:text-base max-sm:[&_button]:min-h-11 max-sm:[&_button]:min-w-11 max-sm:[&_input]:h-11 max-sm:[&_input]:text-base"
+        >
+          <SheetHeader className="border-b px-5 py-4">
+            <SheetTitle>Objectives and tasks</SheetTitle>
+            <SheetDescription>
+              Plan ownership, priorities, due dates, and operating follow-up.
+            </SheetDescription>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+            <WorkspaceBoardFormationTrackerCard
+              size="lg"
+              seed={data.seed}
+              presentationMode={presentationMode}
+              tracker={data.tracker}
+              onTrackerChange={data.onTrackerChange}
+              focusRequest={objectivesFocusRequest}
+            />
+          </div>
+        </SheetContent>
+      </Sheet>
+    </>
   )
 }

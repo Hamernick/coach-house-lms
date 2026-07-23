@@ -100,7 +100,7 @@ describe("workspace board UI preferences", () => {
     })
   })
 
-  it("wires viewport, drawer, and team access state through the shared preference contract", () => {
+  it("wires viewport and drawer state through the shared preference contract", () => {
     const surfaceSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx"
     )
@@ -116,13 +116,11 @@ describe("workspace board UI preferences", () => {
     const drawerSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer.tsx"
     )
-    const teamAccessSource = readSource(
-      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-team-access-section.tsx"
-    )
 
     expect(surfaceSource).toContain("useWorkspaceCanvasViewportPreferences")
     expect(surfaceSource).toContain("suppressInitialFit")
-    expect(surfaceSource).toContain("onMoveEnd: handleCanvasMoveEnd")
+    expect(surfaceSource).toContain("onMoveEnd: handleWorkspaceMoveEnd")
+    expect(surfaceSource).toContain("handleCanvasMoveEnd(event, viewport)")
     expect(surfaceSource).toContain("uiPreferencesScope,")
     expect(viewSource).toContain("uiPreferencesScope={uiPreferencesScope}")
     expect(viewportPreferencesSource).toContain(
@@ -138,6 +136,5 @@ describe("workspace board UI preferences", () => {
     expect(viewSource).toContain("onMoveEnd={onMoveEnd}")
     expect(cameraEffectsSource).toContain("if (suppressInitialFit) return")
     expect(drawerSource).toContain("dataDrawerSnapPoint: storedSnapPoint")
-    expect(teamAccessSource).toContain("teamAccessCollapsed: nextCollapsed")
   })
 })

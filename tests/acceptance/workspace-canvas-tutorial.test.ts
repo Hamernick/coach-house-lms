@@ -58,16 +58,20 @@ describe("workspace canvas tutorial", () => {
   it("keeps every tool step on guide-owned Continue progression", () => {
     expect(resolveWorkspaceCanvasTutorialContinueMode(2)).toBe("next")
     expect(resolveWorkspaceCanvasTutorialStep(2).highlightShortcutButtons).toBe(
-      true,
+      true
     )
     expect(resolveWorkspaceCanvasTutorialContinueMode(3)).toBe("next")
     expect(resolveWorkspaceCanvasTutorialShortcutInstruction(3)).toBeNull()
     expect(resolveWorkspaceCanvasTutorialSelectedCardId(3)).toBe("accelerator")
-    expect(resolveWorkspaceCanvasTutorialContinueMode(4, ["accelerator"])).toBe("next")
-    expect(resolveWorkspaceCanvasTutorialContinueMode(5, ["accelerator"])).toBe(
-      "next",
+    expect(resolveWorkspaceCanvasTutorialContinueMode(4, ["accelerator"])).toBe(
+      "next"
     )
-    expect(resolveWorkspaceCanvasTutorialContinueMode(6, ["accelerator"])).toBe("next")
+    expect(resolveWorkspaceCanvasTutorialContinueMode(5, ["accelerator"])).toBe(
+      "next"
+    )
+    expect(resolveWorkspaceCanvasTutorialContinueMode(6, ["accelerator"])).toBe(
+      "next"
+    )
     expect(resolveWorkspaceCanvasTutorialContinueMode(7)).toBe("next")
     expect(resolveWorkspaceCanvasTutorialShortcutInstruction(7)).toBeNull()
     expect(resolveWorkspaceCanvasTutorialPromptTargetCardId(7)).toBeNull()
@@ -85,46 +89,53 @@ describe("workspace canvas tutorial", () => {
   it("keeps legacy opened-step ids from changing the current Continue step", () => {
     const openedStepIds = ["accelerator"] as const
 
-    expect(isWorkspaceCanvasTutorialStepOpened(3, [...openedStepIds])).toBe(true)
-    expect(resolveWorkspaceCanvasTutorialContinueMode(3, [...openedStepIds])).toBe(
-      "next",
+    expect(isWorkspaceCanvasTutorialStepOpened(3, [...openedStepIds])).toBe(
+      true
     )
-    expect(resolveWorkspaceCanvasTutorialPromptTargetCardId(3, [...openedStepIds])).toBeNull()
-    expect(resolveWorkspaceCanvasTutorialSelectedCardId(3, [...openedStepIds])).toBe(
-      "accelerator",
-    )
-    expect(resolveWorkspaceCanvasTutorialSceneFocusCardIds(3, [...openedStepIds])).toEqual([
-      "accelerator",
-    ])
-    expect(resolveWorkspaceCanvasTutorialVisibleCardIds(3, [...openedStepIds])).toEqual([
-      "accelerator",
-    ])
+    expect(
+      resolveWorkspaceCanvasTutorialContinueMode(3, [...openedStepIds])
+    ).toBe("next")
+    expect(
+      resolveWorkspaceCanvasTutorialPromptTargetCardId(3, [...openedStepIds])
+    ).toBeNull()
+    expect(
+      resolveWorkspaceCanvasTutorialSelectedCardId(3, [...openedStepIds])
+    ).toBe("accelerator")
+    expect(
+      resolveWorkspaceCanvasTutorialSceneFocusCardIds(3, [...openedStepIds])
+    ).toEqual(["accelerator"])
+    expect(
+      resolveWorkspaceCanvasTutorialVisibleCardIds(3, [...openedStepIds])
+    ).toEqual(["accelerator"])
   })
 
   it("shows the current component even when prior legacy steps were opened", () => {
     const openedStepIds = ["accelerator"] as const
 
-    expect(resolveWorkspaceCanvasTutorialContinueMode(7, [...openedStepIds])).toBe(
-      "next",
-    )
-    expect(resolveWorkspaceCanvasTutorialPromptTargetCardId(7, [...openedStepIds])).toBeNull()
-    expect(resolveWorkspaceCanvasTutorialSceneFocusCardIds(7, [...openedStepIds])).toEqual([
-      "calendar",
-    ])
-    expect(resolveWorkspaceCanvasTutorialVisibleCardIds(7, [...openedStepIds])).toEqual([
-      "calendar",
-    ])
-    expect(resolveWorkspaceCanvasTutorialSelectedCardId(7, [...openedStepIds])).toBe(
-      "calendar",
-    )
+    expect(
+      resolveWorkspaceCanvasTutorialContinueMode(7, [...openedStepIds])
+    ).toBe("next")
+    expect(
+      resolveWorkspaceCanvasTutorialPromptTargetCardId(7, [...openedStepIds])
+    ).toBeNull()
+    expect(
+      resolveWorkspaceCanvasTutorialSceneFocusCardIds(7, [...openedStepIds])
+    ).toEqual(["calendar"])
+    expect(
+      resolveWorkspaceCanvasTutorialVisibleCardIds(7, [...openedStepIds])
+    ).toEqual(["calendar"])
+    expect(
+      resolveWorkspaceCanvasTutorialSelectedCardId(7, [...openedStepIds])
+    ).toBe("calendar")
   })
 
   it("highlights the header calendar button without requiring a separate calendar action", () => {
     const callout = resolveWorkspaceCanvasTutorialCallout(7)
-    const calendarButtonProps = resolveWorkspaceCanvasTutorialCalendarButtonProps({
-      tutorialCallout: callout,
-      onTutorialComplete: () => {},
-    })
+    const calendarButtonProps =
+      resolveWorkspaceCanvasTutorialCalendarButtonProps({
+        tutorialCallout: callout,
+        onTutorialComplete: () => {},
+      })
 
     expect(callout).toEqual({
       kind: "calendar-viewport-button",
@@ -148,34 +159,34 @@ describe("workspace canvas tutorial", () => {
 
   it("keeps accelerator internal steps focused on the accelerator card only", () => {
     expect(
-      resolveWorkspaceCanvasTutorialVisibleCardIds(4, ["accelerator"]),
+      resolveWorkspaceCanvasTutorialVisibleCardIds(4, ["accelerator"])
     ).toEqual(["accelerator"])
     expect(
-      resolveWorkspaceCanvasTutorialVisibleCardIds(5, ["accelerator"]),
+      resolveWorkspaceCanvasTutorialVisibleCardIds(5, ["accelerator"])
     ).toEqual(["accelerator"])
     expect(
       resolveWorkspaceCanvasTutorialVisibleCardIds(6, [
         "accelerator",
         "accelerator-first-module",
-      ]),
+      ])
     ).toEqual(["accelerator"])
   })
 
   it("shows only the current tool once a later shortcut step is opened", () => {
     const openedStepIds = ["accelerator", "calendar"] as const
 
-    expect(resolveWorkspaceCanvasTutorialContinueMode(7, [...openedStepIds])).toBe(
-      "next",
-    )
-    expect(resolveWorkspaceCanvasTutorialVisibleCardIds(7, [...openedStepIds])).toEqual([
-      "calendar",
-    ])
-    expect(resolveWorkspaceCanvasTutorialSceneFocusCardIds(7, [...openedStepIds])).toEqual([
-      "calendar",
-    ])
-    expect(resolveWorkspaceCanvasTutorialSelectedCardId(7, [...openedStepIds])).toBe(
-      "calendar",
-    )
+    expect(
+      resolveWorkspaceCanvasTutorialContinueMode(7, [...openedStepIds])
+    ).toBe("next")
+    expect(
+      resolveWorkspaceCanvasTutorialVisibleCardIds(7, [...openedStepIds])
+    ).toEqual(["calendar"])
+    expect(
+      resolveWorkspaceCanvasTutorialSceneFocusCardIds(7, [...openedStepIds])
+    ).toEqual(["calendar"])
+    expect(
+      resolveWorkspaceCanvasTutorialSelectedCardId(7, [...openedStepIds])
+    ).toBe("calendar")
   })
 
   it("opens each later shortcut step into its own selected card phase", () => {
@@ -184,7 +195,7 @@ describe("workspace canvas tutorial", () => {
         "accelerator",
         "calendar",
         "programs",
-      ]),
+      ])
     ).toBe("programs")
     expect(
       resolveWorkspaceCanvasTutorialSelectedCardId(9, [
@@ -192,32 +203,36 @@ describe("workspace canvas tutorial", () => {
         "calendar",
         "programs",
         "roadmap",
-      ]),
+      ])
     ).toBe("roadmap")
-    expect(resolveWorkspaceCanvasTutorialSelectedCardId(10, [
-      "accelerator",
-      "calendar",
-      "programs",
-      "roadmap",
-    ])).toBeNull()
+    expect(
+      resolveWorkspaceCanvasTutorialSelectedCardId(10, [
+        "accelerator",
+        "calendar",
+        "programs",
+        "roadmap",
+      ])
+    ).toBeNull()
   })
 
   it("trims later opened steps back to the destination step snapshot", () => {
     const openedStepIds = ["accelerator", "calendar"] as const
 
-    expect(resolveWorkspaceCanvasTutorialTrimmedStepIds(3, [...openedStepIds])).toEqual([
-      "accelerator",
-    ])
-    expect(resolveWorkspaceCanvasTutorialVisibleCardIds(3, [...openedStepIds])).toEqual([
-      "accelerator",
-    ])
-    expect(resolveWorkspaceCanvasTutorialSelectedCardId(3, [...openedStepIds])).toBe(
-      "accelerator",
-    )
+    expect(
+      resolveWorkspaceCanvasTutorialTrimmedStepIds(3, [...openedStepIds])
+    ).toEqual(["accelerator"])
+    expect(
+      resolveWorkspaceCanvasTutorialVisibleCardIds(3, [...openedStepIds])
+    ).toEqual(["accelerator"])
+    expect(
+      resolveWorkspaceCanvasTutorialSelectedCardId(3, [...openedStepIds])
+    ).toBe("accelerator")
   })
 
   it("tracks acknowledged steps separately from shortcut-opened steps", () => {
-    expect(isWorkspaceCanvasTutorialStepAcknowledged(3, ["accelerator"])).toBe(true)
+    expect(isWorkspaceCanvasTutorialStepAcknowledged(3, ["accelerator"])).toBe(
+      true
+    )
     expect(resolveWorkspaceCanvasTutorialContinueMode(3, [])).toBe("next")
   })
 
@@ -237,7 +252,7 @@ describe("workspace canvas tutorial", () => {
     })
   })
 
-  it("anchors the collaboration step to the team access rail section", () => {
+  it("anchors the collaboration step to the team access header action", () => {
     expect(resolveWorkspaceCanvasTutorialStep(10).id).toBe("collaboration")
     expect(resolveWorkspaceCanvasTutorialCallout(10)).toEqual({
       kind: "team-access",
@@ -245,18 +260,22 @@ describe("workspace canvas tutorial", () => {
       instruction:
         "Team Access is where members are invited and workspace permissions are managed.",
     })
-    expect(resolveWorkspaceCanvasTutorialSelectedCardId(10, [
-      "accelerator",
-      "calendar",
-      "programs",
-      "roadmap",
-    ])).toBeNull()
-    expect(resolveWorkspaceCanvasTutorialSceneFocusCardIds(10, [
-      "accelerator",
-      "calendar",
-      "programs",
-      "roadmap",
-    ])).toEqual(["organization-overview"])
+    expect(
+      resolveWorkspaceCanvasTutorialSelectedCardId(10, [
+        "accelerator",
+        "calendar",
+        "programs",
+        "roadmap",
+      ])
+    ).toBeNull()
+    expect(
+      resolveWorkspaceCanvasTutorialSceneFocusCardIds(10, [
+        "accelerator",
+        "calendar",
+        "programs",
+        "roadmap",
+      ])
+    ).toEqual(["organization-overview"])
   })
 
   it("clamps out-of-range step indices safely", () => {
@@ -271,16 +290,22 @@ describe("workspace canvas tutorial", () => {
     const stepCount = resolveWorkspaceCanvasTutorialStepCount()
 
     expect(resolveWorkspaceCanvasTutorialProgressPercent(0, stepCount)).toBe(
-      Math.round(100 / stepCount),
+      Math.round(100 / stepCount)
     )
     expect(resolveWorkspaceCanvasTutorialProgressPercent(1, stepCount)).toBe(
-      Math.round(200 / stepCount),
+      Math.round(200 / stepCount)
     )
-    expect(resolveWorkspaceCanvasTutorialProgressPercent(stepCount - 1, stepCount)).toBe(100)
+    expect(
+      resolveWorkspaceCanvasTutorialProgressPercent(stepCount - 1, stepCount)
+    ).toBe(100)
   })
 
   it("returns the connected workspace resting state when the tutorial completes", () => {
-    expect(isWorkspaceCanvasTutorialFinalStep(resolveWorkspaceCanvasTutorialStepCount() - 1)).toBe(true)
+    expect(
+      isWorkspaceCanvasTutorialFinalStep(
+        resolveWorkspaceCanvasTutorialStepCount() - 1
+      )
+    ).toBe(true)
     expect(buildWorkspaceCanvasTutorialCompletionHiddenCardIds()).toEqual([
       "brand-kit",
       "economic-engine",

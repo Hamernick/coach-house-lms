@@ -25,6 +25,25 @@ function isPersistedWorkspaceBoardStateNewer({
   return persistedUpdatedAt > incomingUpdatedAt
 }
 
+function isPersistedWorkspaceOntologyNewer({
+  incoming,
+  persisted,
+}: {
+  incoming: WorkspaceBoardState
+  persisted: WorkspaceBoardState
+}) {
+  if (!persisted.ontology) return false
+  const incomingUpdatedAt = incoming.ontology?.updatedAt
+    ? parseWorkspaceBoardTimestamp(incoming.ontology.updatedAt)
+    : null
+  const persistedUpdatedAt = persisted.ontology.updatedAt
+    ? parseWorkspaceBoardTimestamp(persisted.ontology.updatedAt)
+    : null
+  if (persistedUpdatedAt === null) return false
+  if (incomingUpdatedAt === null) return true
+  return persistedUpdatedAt > incomingUpdatedAt
+}
+
 function buildWorkspaceAutoLayoutNodeLookup(boardState: WorkspaceBoardState) {
   return new Map(
     buildAutoLayoutNodesForMode({
@@ -42,14 +61,17 @@ function isNodeAtPosition(
   return position ? node.x === position.x && node.y === position.y : false
 }
 
-function isPersistedManualNodePosition({
-  persistedNode,
+function resolveWorkspaceNodePositionMode({
+  node,
   autoLayoutNode,
 }: {
-  persistedNode: WorkspaceBoardState["nodes"][number]
+  node: WorkspaceBoardState["nodes"][number]
   autoLayoutNode: WorkspaceBoardState["nodes"][number] | undefined
 }) {
-  return !isNodeAtPosition(persistedNode, autoLayoutNode)
+  if (node.positionMode === "managed" || node.positionMode === "manual") {
+    return node.positionMode
+  }
+  return isNodeAtPosition(node, autoLayoutNode) ? "managed" : "manual"
 }
 
 export function mergeNewerPersistedWorkspaceNodeState({
@@ -68,26 +90,32 @@ export function mergeNewerPersistedWorkspaceNodeState({
     incoming,
     persisted,
   })
-  const incomingAutoLayoutNodesById = buildWorkspaceAutoLayoutNodeLookup(incoming)
+  const incomingAutoLayoutNodesById =
+    buildWorkspaceAutoLayoutNodeLookup(incoming)
   const persistedAutoLayoutNodesById =
     buildWorkspaceAutoLayoutNodeLookup(persisted)
   let changed = false
   const nodes = incoming.nodes.map((node) => {
     const persistedNode = persistedNodesById.get(node.id)
     if (!persistedNode) return node
+    const incomingPositionMode = resolveWorkspaceNodePositionMode({
+      node,
+      autoLayoutNode: incomingAutoLayoutNodesById.get(node.id),
+    })
+    const persistedPositionMode = resolveWorkspaceNodePositionMode({
+      node: persistedNode,
+      autoLayoutNode: persistedAutoLayoutNodesById.get(node.id),
+    })
     const shouldPreservePersistedNode =
       persistedIsNewer ||
-      (isNodeAtPosition(node, incomingAutoLayoutNodesById.get(node.id)) &&
-        isPersistedManualNodePosition({
-          persistedNode,
-          autoLayoutNode: persistedAutoLayoutNodesById.get(node.id),
-        }))
+      (incomingPositionMode === "managed" && persistedPositionMode === "manual")
     if (!shouldPreservePersistedNode) return node
 
     if (
       persistedNode.x === node.x &&
       persistedNode.y === node.y &&
-      persistedNode.size === node.size
+      persistedNode.size === node.size &&
+      persistedPositionMode === node.positionMode
     ) {
       return node
     }
@@ -98,13 +126,20 @@ export function mergeNewerPersistedWorkspaceNodeState({
       x: persistedNode.x,
       y: persistedNode.y,
       size: persistedNode.size,
+      positionMode: persistedPositionMode,
     }
   })
+
+  const ontology = isPersistedWorkspaceOntologyNewer({ incoming, persisted })
+    ? persisted.ontology
+    : incoming.ontology
+  if (ontology !== incoming.ontology) changed = true
 
   return changed
     ? {
         ...incoming,
         nodes,
+        ontology,
       }
     : incoming
 }
@@ -123,13 +158,16 @@ export function buildWorkspaceBoardStateWithPersistedNodePosition({
   let changed = false
   const nodes = boardState.nodes.map((node) => {
     if (node.id !== cardId) return node
-    if (node.x === x && node.y === y) return node
+    if (node.x === x && node.y === y && node.positionMode === "manual") {
+      return node
+    }
 
     changed = true
     return {
       ...node,
       x,
       y,
+      positionMode: "manual" as const,
     }
   })
 

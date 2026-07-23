@@ -1,5 +1,6 @@
 import {
   type OrganizationMemberRole,
+  canEditOrganization,
   resolveActiveOrganization,
 } from "@/lib/organization/active-org"
 import { createNotification } from "@/lib/notifications"
@@ -30,6 +31,26 @@ export type ActorContext = {
   }
 }
 
+export async function canEditWorkspaceLayout({
+  activeOrgRole,
+  supabase,
+  userId,
+}: {
+  activeOrgRole: Parameters<typeof canEditOrganization>[0]
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>
+  userId: string
+}) {
+  if (canEditOrganization(activeOrgRole)) return true
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle<{ role: string | null }>()
+
+  return profile?.role === "admin"
+}
+
 type ActorContextResult = ActorContext | { error: string }
 
 export async function resolveActor(): Promise<ActorContextResult> {
@@ -56,12 +77,12 @@ export async function resolveActor(): Promise<ActorContextResult> {
 
 export async function loadWorkspaceInvites(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-  orgId: string,
+  orgId: string
 ) {
   const { data, error } = await supabase
     .from("organization_workspace_invites")
     .select(
-      "id, user_id, user_name, user_email, created_by, created_at, expires_at, revoked_at, duration_value, duration_unit",
+      "id, user_id, user_name, user_email, created_by, created_at, expires_at, revoked_at, duration_value, duration_unit"
     )
     .eq("org_id", orgId)
     .order("created_at", { ascending: false })
@@ -136,18 +157,23 @@ async function resolveShortcutInviteeProfile({
     >()
 
   const exactNameMatch =
-    data?.find((profile) => profile.full_name?.trim() === shortcut.fullName) ?? null
+    data?.find((profile) => profile.full_name?.trim() === shortcut.fullName) ??
+    null
   if (exactNameMatch) return exactNameMatch
 
   const exactEmailMatch =
     shortcut.email && data
-      ? data.find((profile) => profile.email?.trim().toLowerCase() === shortcut.email?.toLowerCase()) ?? null
+      ? (data.find(
+          (profile) =>
+            profile.email?.trim().toLowerCase() ===
+            shortcut.email?.toLowerCase()
+        ) ?? null)
       : null
   if (exactEmailMatch) return exactEmailMatch
 
   const looseNameMatch =
     data?.find((profile) =>
-      profile.full_name?.toLowerCase().includes(shortcut.name.toLowerCase()),
+      profile.full_name?.toLowerCase().includes(shortcut.name.toLowerCase())
     ) ?? null
   if (looseNameMatch) return looseNameMatch
 

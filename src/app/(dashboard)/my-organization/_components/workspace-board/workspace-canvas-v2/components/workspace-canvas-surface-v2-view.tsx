@@ -3,10 +3,9 @@
 import {
   useCallback,
   useMemo,
-  useRef,
   useState,
   type DragEvent,
-  type ReactNode,
+  type KeyboardEventHandler,
 } from "react"
 import RotateCcwIcon from "lucide-react/dist/esm/icons/rotate-ccw"
 import {
@@ -16,11 +15,11 @@ import {
   ReactFlowProvider,
   SelectionMode,
   type NodeDragHandler,
+  type NodeMouseHandler,
   type OnMoveEnd,
   type OnNodesChange,
   type ReactFlowInstance,
   type SelectionDragHandler,
-  useStoreApi,
 } from "reactflow"
 
 import {
@@ -29,7 +28,10 @@ import {
 } from "@/components/app-shell/account-menu-actions-context"
 import type { DocumentsTabData } from "@/components/organization/org-profile-card/tabs/documents-tab/data"
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
-
+import {
+  WorkspaceReactFlowErrorBootstrap,
+  type WorkspaceReactFlowErrorHandler,
+} from "@/components/workspace/workspace-reactflow-error-bootstrap"
 import { WorkspaceCardShortcutRail } from "../shortcuts/workspace-card-shortcut-rail"
 import { WorkspaceCardShortcutsMobile } from "../shortcuts/workspace-card-shortcuts-mobile"
 import type { WorkspaceCardShortcutItemModel } from "../shortcuts/workspace-card-shortcut-model"
@@ -57,35 +59,6 @@ import {
 import type { WorkspaceBoardUiPreferenceScope } from "../../workspace-board-ui-preferences"
 
 const WORKSPACE_CANVAS_V2_PRO_OPTIONS = Object.freeze({ hideAttribution: true })
-const REACT_FLOW_TYPES_WARNING_CODE = "002"
-
-type ReactFlowErrorHandler = (errorCode: string, message: string) => void
-
-function WorkspaceCanvasReactFlowErrorBootstrap({
-  onError,
-  children,
-}: {
-  onError: ReactFlowErrorHandler
-  children: (onError: ReactFlowErrorHandler) => ReactNode
-}) {
-  const store = useStoreApi()
-  const onErrorRef = useRef(onError)
-  onErrorRef.current = onError
-  const handleReactFlowError = useMemo<ReactFlowErrorHandler>(
-    () => (errorCode, message) => {
-      if (errorCode === REACT_FLOW_TYPES_WARNING_CODE) return
-      onErrorRef.current(errorCode, message)
-    },
-    []
-  )
-
-  // React Flow v11 parses nodeTypes before StoreUpdater applies the onError prop.
-  if (store.getState().onError !== handleReactFlowError) {
-    store.setState({ onError: handleReactFlowError })
-  }
-
-  return <>{children(handleReactFlowError)}</>
-}
 
 function WorkspaceCanvasSurfaceV2MobileShortcutOverlay({
   items,
@@ -143,6 +116,8 @@ export function WorkspaceCanvasSurfaceV2View({
   emptyStateMessage,
   showTutorialRestart,
   onNodesChange,
+  onNodeClick,
+  onKeyDownCapture,
   onNodeDragStop,
   onSelectionDragStop,
   onMoveEnd,
@@ -187,6 +162,8 @@ export function WorkspaceCanvasSurfaceV2View({
   emptyStateMessage?: string | null
   showTutorialRestart: boolean
   onNodesChange: OnNodesChange
+  onNodeClick: NodeMouseHandler
+  onKeyDownCapture: KeyboardEventHandler<HTMLDivElement>
   onNodeDragStop: NodeDragHandler
   onSelectionDragStop: SelectionDragHandler
   onMoveEnd: OnMoveEnd
@@ -202,7 +179,7 @@ export function WorkspaceCanvasSurfaceV2View({
   onEdgeContextMenu: ReturnType<
     typeof useWorkspaceCanvasConnectionsController
   >["handleEdgeContextMenu"]
-  onError: (errorCode: string, message: string) => void
+  onError: WorkspaceReactFlowErrorHandler
   onInit: (instance: ReactFlowInstance) => void
   onTutorialRestart: () => void
   onTutorialCalendarButtonComplete?: (() => void) | undefined
@@ -237,7 +214,8 @@ export function WorkspaceCanvasSurfaceV2View({
     useState<HTMLDivElement | null>(null)
   const nodeTypes = useMemo(() => WORKSPACE_CANVAS_V2_NODE_TYPES, [])
   const edgeTypes = useMemo(() => WORKSPACE_CANVAS_V2_EDGE_TYPES, [])
-  const nodesSelectable =
+  const nodesSelectable = !tutorialActive
+  const selectNodesOnDrag =
     !tutorialActive && (allowEditing || peopleCanvasInteractionEnabled)
   const tutorialRestartAccountMenuAction =
     useWorkspaceTutorialRestartAccountMenuAction({
@@ -350,7 +328,7 @@ export function WorkspaceCanvasSurfaceV2View({
             className="absolute inset-0"
           >
             <ReactFlowProvider>
-              <WorkspaceCanvasReactFlowErrorBootstrap onError={onError}>
+              <WorkspaceReactFlowErrorBootstrap onError={onError}>
                 {(handleReactFlowError) => (
                   <ReactFlow
                     nodes={nodes}
@@ -359,13 +337,16 @@ export function WorkspaceCanvasSurfaceV2View({
                     edgeTypes={edgeTypes}
                     nodesDraggable={nodesDraggable}
                     nodesConnectable={allowEditing && !tutorialActive}
+                    nodeDragThreshold={4}
                     elementsSelectable={nodesSelectable}
                     selectionKeyCode="Shift"
                     multiSelectionKeyCode={["Meta", "Control"]}
                     selectionMode={SelectionMode.Partial}
                     selectionOnDrag={false}
-                    selectNodesOnDrag={nodesSelectable}
+                    selectNodesOnDrag={selectNodesOnDrag}
                     onNodesChange={onNodesChange}
+                    onNodeClick={onNodeClick}
+                    onKeyDownCapture={onKeyDownCapture}
                     onNodeDragStop={onNodeDragStop}
                     onSelectionDragStop={onSelectionDragStop}
                     onMoveEnd={onMoveEnd}
@@ -382,6 +363,7 @@ export function WorkspaceCanvasSurfaceV2View({
                     preventScrolling
                     minZoom={0.2}
                     maxZoom={1.25}
+                    onlyRenderVisibleElements
                     proOptions={WORKSPACE_CANVAS_V2_PRO_OPTIONS}
                     onError={handleReactFlowError}
                     onInit={onInit}
@@ -400,7 +382,7 @@ export function WorkspaceCanvasSurfaceV2View({
                     />
                   </ReactFlow>
                 )}
-              </WorkspaceCanvasReactFlowErrorBootstrap>
+              </WorkspaceReactFlowErrorBootstrap>
             </ReactFlowProvider>
           </div>
           {nodes.length === 0 && emptyStateMessage ? (

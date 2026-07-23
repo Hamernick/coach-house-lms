@@ -3,7 +3,6 @@
 import { randomUUID } from "node:crypto"
 import { revalidatePath } from "next/cache"
 
-import { canEditOrganization } from "@/lib/organization/active-org"
 import type { Json } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -33,6 +32,7 @@ import {
   resolveProfileDisplayName,
   resolveWorkspaceInviteTarget,
   resolveWorkspaceOrganizationName,
+  canEditWorkspaceLayout,
 } from "./workspace-actions-support"
 
 type WorkspaceBoardActionResult =
@@ -78,7 +78,12 @@ export async function saveWorkspaceBoardStateAction(
   if ("error" in actor) return { error: actor.error }
 
   const { supabase, activeOrg, user } = actor
-  if (!canEditOrganization(activeOrg.role)) {
+  const canEditLayout = await canEditWorkspaceLayout({
+    activeOrgRole: activeOrg.role,
+    supabase,
+    userId: user.id,
+  })
+  if (!canEditLayout) {
     return { error: "Only owner, admin, or staff can edit workspace layout." }
   }
 
@@ -162,7 +167,12 @@ export async function saveWorkspaceNodePositionAction(
   if ("error" in actor) return { error: actor.error }
 
   const { supabase, activeOrg, user } = actor
-  if (!canEditOrganization(activeOrg.role)) {
+  const canEditLayout = await canEditWorkspaceLayout({
+    activeOrgRole: activeOrg.role,
+    supabase,
+    userId: user.id,
+  })
+  if (!canEditLayout) {
     return { error: "Only owner, admin, or staff can edit workspace layout." }
   }
 

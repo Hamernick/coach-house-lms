@@ -63,4 +63,32 @@ describe("workspace node frame contract", () => {
     )
     expect(nodeCardShell).not.toContain('"px-0 pb-0"')
   })
+
+  it("contains visual content without clipping React Flow handles", () => {
+    const frameSource = readSource(
+      "src/components/workspace/workspace-node-frame.tsx"
+    )
+    const ontologyNodeSource = readSource(
+      "src/features/workspace-ontology/components/workspace-ontology-node.tsx"
+    )
+
+    expect(frameSource).toContain('data-workspace-node-part="surface"')
+    expect(frameSource).toContain(
+      "h-full min-h-0 w-full min-w-0 overflow-hidden rounded-[inherit]"
+    )
+    expect(frameSource).toContain('data-workspace-node-part="root"')
+    expect(frameSource).toContain("overflow-visible")
+    const frameRootStart = ontologyNodeSource.indexOf("<WorkspaceNodeFrameRoot")
+    const frameRootEnd = ontologyNodeSource.indexOf(
+      "</WorkspaceNodeFrameRoot>",
+      frameRootStart
+    )
+    const frameRootBody = ontologyNodeSource.slice(frameRootStart, frameRootEnd)
+    expect(frameRootBody.indexOf("<Handle")).toBeLessThan(
+      frameRootBody.indexOf("{content}")
+    )
+    expect(frameRootBody.lastIndexOf("<Handle")).toBeGreaterThan(
+      frameRootBody.indexOf("{content}")
+    )
+  })
 })

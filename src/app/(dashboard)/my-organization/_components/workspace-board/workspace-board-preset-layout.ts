@@ -131,6 +131,7 @@ export function buildPresetNodes(
       x: position.x,
       y: position.y,
       size: sizeLookup.get(id) ?? DEFAULT_CARD_SIZES[id],
+      positionMode: "managed",
     }
   })
 }

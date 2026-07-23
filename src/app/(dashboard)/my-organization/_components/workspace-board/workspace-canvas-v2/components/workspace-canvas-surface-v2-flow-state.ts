@@ -29,6 +29,7 @@ import type {
   WorkspaceCanvasNode,
   WorkspaceCanvasV2CardId,
 } from "./workspace-canvas-surface-v2-helpers"
+import { mergeUniqueWorkspaceCanvasEdges } from "./workspace-canvas-edge-deduplication"
 import { useWorkspaceCardReadinessMap } from "./workspace-canvas-surface-v2-hooks"
 import type { WorkspaceCanvasSurfaceV2Props } from "./workspace-canvas-surface-v2-types"
 import { useWorkspaceCanvasViewportControls } from "./workspace-canvas-surface-v2-viewport-controls"
@@ -45,6 +46,7 @@ export function useWorkspaceCanvasSurfaceFlowState({
   isFlowReady,
   layoutFitRequestKey,
   nodeRelationshipEdges,
+  ontologyEdges,
   onConnectCards,
   onDisconnectAllConnections,
   onDisconnectConnection,
@@ -72,6 +74,7 @@ export function useWorkspaceCanvasSurfaceFlowState({
   isFlowReady: boolean
   layoutFitRequestKey: number
   nodeRelationshipEdges: Edge[]
+  ontologyEdges: Edge[]
   onConnectCards: WorkspaceCanvasSurfaceV2Props["onConnectCards"]
   onDisconnectAllConnections: WorkspaceCanvasSurfaceV2Props["onDisconnectAllConnections"]
   onDisconnectConnection: WorkspaceCanvasSurfaceV2Props["onDisconnectConnection"]
@@ -154,8 +157,13 @@ export function useWorkspaceCanvasSurfaceFlowState({
     onDisconnectAllConnections,
   })
   const renderEdges = useMemo(
-    () => [...edges, ...nodeRelationshipEdges],
-    [edges, nodeRelationshipEdges]
+    () =>
+      mergeUniqueWorkspaceCanvasEdges(
+        edges,
+        nodeRelationshipEdges,
+        ontologyEdges
+      ),
+    [edges, nodeRelationshipEdges, ontologyEdges]
   )
   useWorkspaceCanvasLifecycleLogs(renderNodes.length)
 

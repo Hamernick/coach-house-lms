@@ -16,6 +16,7 @@ import type {
   WorkspaceCardId,
 } from "../../workspace-board-types"
 import { useWorkspaceTutorialSceneFitRequest } from "./workspace-canvas-surface-v2-controller-hooks"
+import { shouldReconcileWorkspaceCanvasNodes } from "./workspace-canvas-node-change-policy"
 import { buildInitialWorkspaceCanvasNodes } from "./workspace-canvas-surface-v2-node-builders"
 import type { WorkspaceCanvasPersonPlacement } from "./workspace-canvas-person-node-model"
 import {
@@ -267,27 +268,26 @@ export function useWorkspaceCanvasRenderState({
   const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
       setNodes((currentNodes) => {
-        const reconciledNodes = resolveWorkspaceCanvasRenderNodes({
-          nodes: currentNodes,
-          visibleCardIds,
-          boardNodeLookup,
-          cardDataLookup,
-          orgNodePositionFromBoard,
-          allowEditing,
-          allowPeopleCanvasInteraction,
-          acceleratorStepNodeData,
-          tutorialNodeData,
-          workspacePersonPlacements,
-          workspacePersonById,
-          onRemoveWorkspacePerson,
-          tutorialCardPositionOverrides: tutorialSceneCardPositionOverrides,
-          tutorialDraggableCardIds,
-        })
+        const baseNodes = shouldReconcileWorkspaceCanvasNodes(changes)
+          ? resolveWorkspaceCanvasRenderNodes({
+              nodes: currentNodes,
+              visibleCardIds,
+              boardNodeLookup,
+              cardDataLookup,
+              orgNodePositionFromBoard,
+              allowEditing,
+              allowPeopleCanvasInteraction,
+              acceleratorStepNodeData,
+              tutorialNodeData,
+              workspacePersonPlacements,
+              workspacePersonById,
+              onRemoveWorkspacePerson,
+              tutorialCardPositionOverrides: tutorialSceneCardPositionOverrides,
+              tutorialDraggableCardIds,
+            })
+          : currentNodes
 
-        return applyNodeChanges(
-          changes,
-          reconciledNodes
-        ) as WorkspaceCanvasNode[]
+        return applyNodeChanges(changes, baseNodes) as WorkspaceCanvasNode[]
       })
     },
     [

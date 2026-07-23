@@ -24,10 +24,7 @@ type WorkspaceAccessPerson = {
 }
 
 function toInitials(value: string) {
-  const parts = value
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
+  const parts = value.trim().split(/\s+/).filter(Boolean)
   if (parts.length === 0) return "?"
   if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase()
   return `${parts[0]!.slice(0, 1)}${parts.at(-1)!.slice(0, 1)}`.toUpperCase()
@@ -72,16 +69,21 @@ export function WorkspaceBoardTeamAccessHoverCard({
   organizationAccessState: WorkspaceBoardOrganizationAccessSnapshot
 }) {
   return (
-    <HoverCardContent align="start" side="bottom" className="w-[22rem] rounded-xl p-0">
-      <div className="border-b border-border/60 px-3 py-2.5">
+    <HoverCardContent
+      align="end"
+      side="bottom"
+      className="w-[22rem] rounded-xl p-0"
+    >
+      <div className="border-border/60 border-b px-3 py-2.5">
         <p className="text-sm font-semibold">Team access</p>
-        <p className="text-xs text-muted-foreground">
-          People with access to this workspace, temporary collaboration invites, and pending team access.
+        <p className="text-muted-foreground text-xs">
+          People with access to this workspace, temporary collaboration invites,
+          and pending team access.
         </p>
       </div>
 
       {organizationAccessLoading ? (
-        <div className="border-b border-border/60 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+        <div className="border-border/60 bg-muted/30 text-muted-foreground border-b px-3 py-2 text-xs">
           Checking pending team access…
         </div>
       ) : null}
@@ -97,10 +99,12 @@ export function WorkspaceBoardTeamAccessHoverCard({
           return (
             <div
               key={person.id}
-              className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/40 px-2.5 py-2"
+              className="border-border/50 bg-background/40 flex items-center gap-3 rounded-lg border px-2.5 py-2"
             >
-              <Avatar className="h-8 w-8 border border-border/50">
-                {person.avatarUrl ? <AvatarImage src={person.avatarUrl} alt={person.name} /> : null}
+              <Avatar className="border-border/50 h-8 w-8 border">
+                {person.avatarUrl ? (
+                  <AvatarImage src={person.avatarUrl} alt={person.name} />
+                ) : null}
                 <AvatarFallback
                   className="text-[10px] font-semibold"
                   style={{
@@ -113,7 +117,9 @@ export function WorkspaceBoardTeamAccessHoverCard({
               </Avatar>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium">{person.name}</p>
-                <p className="truncate text-xs text-muted-foreground">{person.subtitle}</p>
+                <p className="text-muted-foreground truncate text-xs">
+                  {person.subtitle}
+                </p>
               </div>
             </div>
           )
@@ -122,19 +128,23 @@ export function WorkspaceBoardTeamAccessHoverCard({
         {activeInviteRows.length > 0 ? (
           <>
             <div className="px-1 pt-2">
-              <p className="text-xs font-medium text-muted-foreground">Active invites</p>
+              <p className="text-muted-foreground text-xs font-medium">
+                Active invites
+              </p>
             </div>
             {activeInviteRows.map((invite) => {
               const displayName =
-                invite.userName?.trim() || invite.userEmail || "Temporary collaborator"
+                invite.userName?.trim() ||
+                invite.userEmail ||
+                "Temporary collaborator"
               const hue = hueFromSeed(invite.userId)
 
               return (
                 <div
                   key={invite.id}
-                  className="flex items-center gap-3 rounded-lg border border-border/50 bg-background/40 px-2.5 py-2"
+                  className="border-border/50 bg-background/40 flex items-center gap-3 rounded-lg border px-2.5 py-2"
                 >
-                  <Avatar className="h-8 w-8 border border-border/50">
+                  <Avatar className="border-border/50 h-8 w-8 border">
                     <AvatarFallback
                       className="text-[10px] font-semibold"
                       style={{
@@ -146,8 +156,10 @@ export function WorkspaceBoardTeamAccessHoverCard({
                     </AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{displayName}</p>
-                    <p className="truncate text-xs text-muted-foreground">
+                    <p className="truncate text-sm font-medium">
+                      {displayName}
+                    </p>
+                    <p className="text-muted-foreground truncate text-xs">
                       Temporary access · {formatRemaining(invite.expiresAt)}
                     </p>
                   </div>
@@ -163,18 +175,18 @@ export function WorkspaceBoardTeamAccessHoverCard({
         {pendingTeamInvites.length > 0 || pendingAccessRequests.length > 0 ? (
           <>
             <div className="px-1 pt-2">
-              <p className="text-xs font-medium text-muted-foreground">
+              <p className="text-muted-foreground text-xs font-medium">
                 Pending team access
               </p>
             </div>
             {pendingTeamInvites.map((invite) => (
               <div
                 key={invite.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-background/40 px-2.5 py-2"
+                className="border-border/50 bg-background/40 flex items-center justify-between gap-3 rounded-lg border px-2.5 py-2"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{invite.email}</p>
-                  <p className="truncate text-xs text-muted-foreground">
+                  <p className="text-muted-foreground truncate text-xs">
                     Email invite · expires {formatRemaining(invite.expiresAt)}
                   </p>
                 </div>
@@ -186,14 +198,15 @@ export function WorkspaceBoardTeamAccessHoverCard({
             {pendingAccessRequests.map((request) => (
               <div
                 key={request.id}
-                className="flex items-center justify-between gap-3 rounded-lg border border-border/50 bg-background/40 px-2.5 py-2"
+                className="border-border/50 bg-background/40 flex items-center justify-between gap-3 rounded-lg border px-2.5 py-2"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">
                     {request.inviteeName?.trim() || request.inviteeEmail}
                   </p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    Existing account request · expires {formatRemaining(request.expiresAt)}
+                  <p className="text-muted-foreground truncate text-xs">
+                    Existing account request · expires{" "}
+                    {formatRemaining(request.expiresAt)}
                   </p>
                 </div>
                 <Badge variant="outline" className="rounded-full">
@@ -205,14 +218,17 @@ export function WorkspaceBoardTeamAccessHoverCard({
         ) : null}
       </div>
 
-      <div className="flex items-center justify-between gap-2 border-t border-border/60 px-3 py-2.5">
-        <div className="text-xs text-muted-foreground">
+      <div className="border-border/60 flex items-center justify-between gap-2 border-t px-3 py-2.5">
+        <div className="text-muted-foreground text-xs">
           <span className="tabular-nums">{activeInviteCount}</span> active{" "}
           {activeInviteCount === 1 ? "invite" : "invites"}
           {pendingTeamAccessCount > 0 ? (
             <>
-              {" "}· <span className="tabular-nums">{pendingTeamAccessCount}</span> pending team{" "}
-              {pendingTeamAccessCount === 1 ? "item" : "items"}
+              {" "}
+              · <span className="tabular-nums">
+                {pendingTeamAccessCount}
+              </span>{" "}
+              pending team {pendingTeamAccessCount === 1 ? "item" : "items"}
             </>
           ) : null}
         </div>
@@ -226,7 +242,12 @@ export function WorkspaceBoardTeamAccessHoverCard({
             triggerVariant="ghost"
             triggerClassName="h-8 rounded-md px-2.5"
           />
-          <Button asChild variant="ghost" size="sm" className="h-8 rounded-md px-2.5">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="h-8 rounded-md px-2.5"
+          >
             <Link href={getWorkspaceEditorPath({ tab: "people" })}>
               Manage members
             </Link>

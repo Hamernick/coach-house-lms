@@ -35,6 +35,9 @@ describe("workspace board state actions", () => {
     const actionSource = readSource(
       "src/app/(dashboard)/my-organization/_lib/workspace-actions.ts"
     )
+    const actionSupportSource = readSource(
+      "src/app/(dashboard)/my-organization/_lib/workspace-actions-support.ts"
+    )
     const canvasSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas.tsx"
     )
@@ -57,6 +60,32 @@ describe("workspace board state actions", () => {
     expect(positionPersistenceSource).toContain("boardState: nextBoardState")
     expect(positionPersistenceSource).toContain(
       "const response = await saveWorkspaceNodePositionAction"
+    )
+  })
+
+  it("aligns board layout persistence with platform-admin client edit access", () => {
+    const actionSource = readSource(
+      "src/app/(dashboard)/my-organization/_lib/workspace-actions.ts"
+    )
+    const actionSupportSource = readSource(
+      "src/app/(dashboard)/my-organization/_lib/workspace-actions-support.ts"
+    )
+    const pageSource = readSource(
+      "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx"
+    )
+
+    expect(pageSource).toContain(
+      "const canEdit = isAdmin || canEditOrganization(role)"
+    )
+    expect(actionSupportSource).toContain(
+      "export async function canEditWorkspaceLayout"
+    )
+    expect(actionSupportSource).toContain('profile?.role === "admin"')
+    expect(actionSource).toContain(
+      "const canEditLayout = await canEditWorkspaceLayout"
+    )
+    expect(actionSource).not.toContain(
+      "if (!canEditOrganization(activeOrg.role)) {"
     )
   })
 })

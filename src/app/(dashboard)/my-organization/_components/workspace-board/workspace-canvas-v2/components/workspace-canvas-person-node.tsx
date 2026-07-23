@@ -32,7 +32,7 @@ export const WorkspaceCanvasPersonNode = memo(
         data-workspace-canvas-person-node="true"
         data-person-id={person.id}
       >
-        <div className="workspace-person-node-drag-handle flex h-full min-w-0 flex-1 cursor-grab items-center gap-3 rounded-xl pr-7 pl-3 active:cursor-grabbing">
+        <div className="workspace-person-node-drag-handle flex h-full min-w-0 flex-1 cursor-grab items-center gap-3 rounded-xl pr-12 pl-3 active:cursor-grabbing">
           <Avatar
             className={cn(
               "border-border/70 bg-muted/70 size-10 border shadow-xs",
@@ -74,7 +74,7 @@ export const WorkspaceCanvasPersonNode = memo(
             type="button"
             variant="ghost"
             size="icon"
-            className="nodrag nopan text-muted-foreground hover:text-foreground absolute top-1.5 right-1.5 size-7 rounded-full"
+            className="nodrag nopan text-muted-foreground hover:text-foreground absolute top-1 right-1 size-11 touch-manipulation rounded-xl"
             onClick={() => onRemove(person.id)}
             aria-label={`Remove ${person.name} from canvas`}
           >

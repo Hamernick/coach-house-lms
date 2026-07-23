@@ -50,33 +50,15 @@ const COMPLETE_FUNDRAISING_STRATEGY_SECTION = {
 } satisfies RoadmapSection
 
 describe("workspace board right rail", () => {
-  it("renders team access followed by strategic roadmap while omitting deprecated layout controls", () => {
+  it("keeps only strategic roadmap after team access moves to the header", () => {
     const markup = renderToStaticMarkup(
       React.createElement(WorkspaceBoardRightRailContent, {
-        canInvite: true,
-        members: [],
-        invites: [],
-        realtimeState: "live",
-        currentUser: {
-          id: "user-1",
-          name: "Caleb Hamernick",
-          avatarUrl: null,
-        },
-        uiPreferencesScope: {
-          orgId: "org-1",
-          viewerId: "user-1",
-        },
         roadmapSections: [ROADMAP_SECTION],
-        tutorialTeamAccessCallout: null,
-        onInvitesChange: vi.fn(),
       })
     )
 
-    const teamIndex = markup.indexOf("Team Access")
-    const roadmapIndex = markup.indexOf("Strategic Roadmap")
-
-    expect(teamIndex).toBeGreaterThanOrEqual(0)
-    expect(roadmapIndex).toBeGreaterThan(teamIndex)
+    expect(markup).not.toContain("Team Access")
+    expect(markup).toContain("Strategic Roadmap")
     expect(markup).toContain("Origin Story")
     expect(markup).toContain("pt-10")
     expect(markup).toContain("md:-mt-2")
@@ -89,25 +71,10 @@ describe("workspace board right rail", () => {
   it("lights completed roadmap child sections in the main workspace rail", () => {
     const markup = renderToStaticMarkup(
       React.createElement(WorkspaceBoardRightRailContent, {
-        canInvite: true,
-        members: [],
-        invites: [],
-        realtimeState: "live",
-        currentUser: {
-          id: "user-1",
-          name: "Caleb Hamernick",
-          avatarUrl: null,
-        },
-        uiPreferencesScope: {
-          orgId: "org-1",
-          viewerId: "user-1",
-        },
         roadmapSections: [
           COMPLETE_FUNDRAISING_SECTION,
           COMPLETE_FUNDRAISING_STRATEGY_SECTION,
         ],
-        tutorialTeamAccessCallout: null,
-        onInvitesChange: vi.fn(),
       })
     )
 

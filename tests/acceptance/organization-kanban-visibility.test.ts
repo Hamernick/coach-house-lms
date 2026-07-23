@@ -139,7 +139,7 @@ describe("organization Kanban visibility", () => {
     expect(empty).toContain("Return to My Kanban")
     expect(allHiddenEmpty).toContain("Your access is unchanged")
     expect(allHiddenEmpty).toContain("Review hidden organizations")
-    expect(page).toContain("applyOrganizationKanbanVisibilityToParams")
+    expect(page).toContain("applyViewOptionsToParams")
     expect(header).toContain("OrganizationKanbanVisibilityFilter")
   })
 })

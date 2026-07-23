@@ -30,7 +30,7 @@ describe("public map organization curation", () => {
     expect(action).toContain("actor_id: userId")
     expect(action).toContain("before_state")
     expect(action).toContain("after_state")
-    expect(action).toContain('revalidateTag("public-map-organizations")')
+    expect(action).toContain('revalidateTag("public-map-organizations", "max")')
     expect(action).toContain('revalidatePath("/find")')
     expect(action).not.toContain(".delete(")
 

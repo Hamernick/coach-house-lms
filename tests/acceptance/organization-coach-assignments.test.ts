@@ -304,11 +304,9 @@ describe("organization-coach-assignments feature contract", () => {
       projectAssetSupport.indexOf("export async function canAccessProjectOrg")
     )
 
-    expect(projectLoader).toContain("filterOrganizationsForActor(")
-    expect(detailLoader).toContain("actorCanAccessOrganization(actor")
-    expect(projectActions).toContain(
-      "actorCanAccessOrganization(actor, existingProject.org_id)"
-    )
+    expect(projectLoader).toContain("loadAccessibleOrganizations")
+    expect(detailLoader).toContain("actorCanAccessOrganizations(actor)")
+    expect(projectActions).toContain("actorCanAccessOrganizations(actor)")
     expect(projectAssetSupport).toContain(
       '.from("organization_coach_scope_settings")'
     )
@@ -316,7 +314,7 @@ describe("organization-coach-assignments feature contract", () => {
     expect(
       assetAuthorization.indexOf('.from("platform_staff_members")')
     ).toBeLessThan(assetAuthorization.indexOf("await isPlatformAdmin"))
-    expect(projectsPage).toContain("MemberWorkspaceProjectsEmptyStates")
+    expect(projectsPage).toContain("MemberWorkspaceProjectCardsView")
     expect(projectsEmptyStates).toContain('title="No assigned organizations"')
   })
 })

@@ -33,11 +33,6 @@ async function stabilizeForScreenshot(page: Page) {
       [data-home-map-preview-map] {
         display: none !important;
       }
-
-      [data-home-map-preview-fallback] {
-        opacity: 1 !important;
-        visibility: visible !important;
-      }
     `,
   })
 
@@ -52,7 +47,7 @@ test("map-first public home", async ({ page }) => {
   const hero = page.locator("[data-public-home-hero]")
   await expect(page.locator("[data-home-map-preview]")).toHaveAttribute(
     "data-home-map-controls-position",
-    "top-left"
+    "bottom-right"
   )
   await expect(hero).toHaveScreenshot("public-home-map-hero.png", {
     animations: "disabled",

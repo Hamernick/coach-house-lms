@@ -65,79 +65,13 @@ const HOME_MAP_POINTS = [
   [-71.0589, 42.3601, "home-map-education"],
 ] as const
 
-const FALLBACK_MARKERS = [
-  [18, 35, "bg-sky-400", "4"],
-  [39, 30, "bg-indigo-400", "3"],
-  [65, 37, "bg-emerald-400", "5"],
-  [84, 29, "bg-sky-400", "2"],
-] as const
-
-type PreviewStatus = "fallback" | "loading" | "ready"
-
-function HomeMapFallback() {
-  return (
-    <div
-      data-home-map-preview-fallback=""
-      className="absolute inset-0 overflow-hidden bg-[#07111f] transition-opacity duration-500 motion-reduce:transition-none"
-      aria-hidden
-    >
-      <div className="absolute inset-0 [background-image:linear-gradient(rgba(255,255,255,0.12)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.12)_1px,transparent_1px)] [background-size:42px_42px] opacity-25" />
-      <div className="absolute top-[9%] left-[4%] h-[72%] w-[43%] rotate-[-8deg] bg-[#1c3028] opacity-90 [clip-path:polygon(10%_6%,68%_0,96%_19%,82%_43%,96%_68%,63%_88%,39%_79%,23%_100%,8%_76%,18%_54%,0_32%)]" />
-      <div className="absolute top-[16%] right-[2%] h-[64%] w-[50%] rotate-[5deg] bg-[#243328] opacity-90 [clip-path:polygon(6%_15%,36%_0,62%_11%,91%_4%,100%_31%,80%_48%,92%_73%,57%_89%,40%_100%,26%_78%,4%_68%,16%_45%,0_28%)]" />
-      {FALLBACK_MARKERS.map(([left, top, color, count], index) => (
-        <span
-          key={`${left}-${top}`}
-          className={`absolute flex size-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white/50 ${color} shadow-[0_0_0_5px_rgba(255,255,255,0.08),0_10px_24px_rgba(0,0,0,0.42)]`}
-          style={{ left: `${left}%`, top: `${top}%` }}
-        >
-          <span className="flex size-5 items-center justify-center rounded-full bg-black/65 text-[9px] font-semibold text-white">
-            {count || (index % 2 === 0 ? "CH" : "•")}
-          </span>
-        </span>
-      ))}
-    </div>
-  )
-}
-
-function HomeMapSelectedPreview() {
-  return (
-    <div
-      data-home-map-selected-preview=""
-      className="absolute top-[21%] right-5 hidden w-56 rounded-lg border border-white/20 bg-black/60 p-3 text-white shadow-lg backdrop-blur-xl sm:block lg:right-8"
-      aria-hidden
-    >
-      <div className="flex items-start gap-3">
-        <span className="flex size-9 shrink-0 items-center justify-center rounded-full border border-emerald-200/70 bg-emerald-500 text-[10px] font-semibold shadow-[0_0_0_4px_rgba(52,211,153,0.14)]">
-          CA
-        </span>
-        <div className="min-w-0">
-          <p className="truncate text-xs font-semibold">
-            Community Arts Initiative
-          </p>
-          <p className="mt-1 text-[10px] text-white/60">Public profile</p>
-        </div>
-      </div>
-      <div className="mt-3 grid grid-cols-3 gap-1.5 text-center text-[9px] text-white/65">
-        {[
-          ["3", "Programs"],
-          ["8", "People"],
-          ["12", "Files"],
-        ].map(([value, label]) => (
-          <div key={label} className="rounded-md border border-white/10 py-2">
-            <p className="font-semibold text-white">{value}</p>
-            <p className="mt-0.5">{label}</p>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+type PreviewStatus = "unavailable" | "loading" | "ready"
 
 export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
   const mapContainerRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<mapboxgl.Map | null>(null)
   const [status, setStatus] = useState<PreviewStatus>(
-    mapboxToken?.startsWith("pk.") ? "loading" : "fallback"
+    mapboxToken?.startsWith("pk.") ? "loading" : "unavailable"
   )
 
   useEffect(() => {
@@ -171,13 +105,13 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
           interactive: false,
           attributionControl: false,
           fadeDuration: 0,
-          logoPosition: "top-left",
+          logoPosition: "bottom-left",
           renderWorldCopies: false,
         })
         mapRef.current = map
         map.addControl(
-          new mapboxgl.AttributionControl({ compact: true }),
-          "top-left"
+          new mapboxgl.AttributionControl({ compact: false }),
+          "bottom-right"
         )
 
         const markReady = () => {
@@ -249,7 +183,7 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
         map.once("load", markReady)
         map.on("error", () => {
           if (!cancelled && mapRef.current === map && !mapReady) {
-            setStatus("fallback")
+            setStatus("unavailable")
           }
         })
 
@@ -257,11 +191,11 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
         resizeObserver.observe(mapContainerRef.current)
         loadTimer = window.setTimeout(() => {
           if (!cancelled && mapRef.current === map && !mapReady) {
-            setStatus("fallback")
+            setStatus("unavailable")
           }
         }, 12_000)
       } catch {
-        if (!cancelled) setStatus("fallback")
+        if (!cancelled) setStatus("unavailable")
       }
     }
 
@@ -290,26 +224,18 @@ export function HomeFindMapMini({ mapboxToken }: { mapboxToken?: string }) {
     <div
       data-home-map-preview=""
       data-home-map-status={status}
-      data-home-map-controls-position="top-left"
-      className="absolute inset-0 overflow-hidden bg-[#07111f] [&_.mapboxgl-ctrl-top-left]:!top-16 [&_.mapboxgl-ctrl-top-left]:!left-3 [&_.mapboxgl-ctrl-top-left]:flex [&_.mapboxgl-ctrl-top-left]:flex-col [&_.mapboxgl-ctrl-top-left]:items-start [&_.mapboxgl-ctrl-top-left_.mapboxgl-ctrl]:!m-0 [&_.mapboxgl-ctrl-top-left_.mapboxgl-ctrl]:!mb-1.5"
+      data-home-map-controls-position="bottom-right"
+      className="absolute inset-0 overflow-hidden bg-[#07111f] [&_.mapboxgl-ctrl-attrib]:!bg-black/55 [&_.mapboxgl-ctrl-attrib]:!px-1 [&_.mapboxgl-ctrl-attrib]:!text-[10px] [&_.mapboxgl-ctrl-attrib]:!leading-4 [&_.mapboxgl-ctrl-attrib_a]:!text-white/70 [&_.mapboxgl-ctrl-attrib_a:hover]:!text-white"
     >
       <span className="sr-only">
         Coach House public map preview showing organizations and community
         resources across the United States
       </span>
-      <HomeMapFallback />
       <div
         ref={mapContainerRef}
         data-home-map-preview-map=""
         className={`absolute inset-0 transition-opacity duration-500 motion-reduce:transition-none ${status === "ready" ? "opacity-100" : "opacity-0"}`}
       />
-      <div
-        className="absolute top-20 right-5 rounded-full border border-white/15 bg-black/45 px-3 py-1.5 text-[10px] font-medium text-white/75 shadow-sm backdrop-blur-lg sm:right-8"
-        aria-hidden
-      >
-        Public resource map
-      </div>
-      <HomeMapSelectedPreview />
     </div>
   )
 }

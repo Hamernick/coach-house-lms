@@ -111,19 +111,30 @@ describe("public home canvas", () => {
     expect(previewSource).not.toContain("public-map-marker-canvas")
     expect(previewSource).toContain("HOME_MAP_POINTS")
     expect(previewSource).toContain("interactive: false")
-    expect(previewSource).toContain('logoPosition: "top-left"')
-    expect(previewSource).toContain('"top-left"')
+    expect(previewSource).toContain('logoPosition: "bottom-left"')
     expect(previewSource).toContain(
-      'data-home-map-controls-position="top-left"'
+      "new mapboxgl.AttributionControl({ compact: false })"
     )
-    expect(previewSource).toContain("[&_.mapboxgl-ctrl-top-left]:!top-16")
-    expect(previewSource).toContain("[&_.mapboxgl-ctrl-top-left]:!left-3")
+    expect(previewSource).not.toContain(
+      "new mapboxgl.AttributionControl({ compact: true })"
+    )
     expect(previewSource).toContain(
-      "[&_.mapboxgl-ctrl-top-left_.mapboxgl-ctrl]:!m-0"
+      'data-home-map-controls-position="bottom-right"'
     )
+    expect(previewSource).toContain("className={`absolute inset-0")
+    expect(previewSource).not.toContain("mapboxgl-map absolute inset-0")
+    expect(previewSource).toContain("[&_.mapboxgl-ctrl-attrib]:!text-[10px]")
+    expect(previewSource).not.toContain("mapbox-improve-map]:hidden")
+    expect(previewSource).not.toContain("mapboxgl-ctrl-top-left")
     expect(previewSource).toContain("mapRef.current?.remove()")
     expect(previewSource).not.toContain("PublicMapIndex")
     expect(previewSource).not.toContain("/api/public/resource-map/items")
+    expect(previewSource).not.toContain("HomeMapFallback")
+    expect(previewSource).not.toContain("FALLBACK_MARKERS")
+    expect(previewSource).not.toContain("clip-path:polygon")
+    expect(previewSource).not.toContain("HomeMapSelectedPreview")
+    expect(previewSource).not.toContain("data-home-map-selected-preview")
+    expect(previewSource).not.toContain("Public resource map")
     expect(markerSource).toContain("PUBLIC_MAP_GROUP_ACCENTS")
     expect(markerSource).toContain("HOME_MAP_MARKER_BACKING_SCALE = 4")
     expect(markerSource).toContain("HOME_MAP_MARKER_IMAGE_PIXEL_RATIO = 8")

@@ -80,7 +80,6 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     result.scope === "organization" || result.scope === "platform-admin"
   const canEditProjectDetails =
     result.scope === "organization" || result.scope === "platform-admin"
-  const canManageFiscalSponsorship = result.scope === "platform-admin"
   const projectKind = getOrganizationAdminProjectKind(result.project.source)
   const canManageProjectTasks =
     result.scope === "organization" || result.scope === "platform-admin"
@@ -97,6 +96,16 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
     "error" in fiscalSponsorshipWorkflowSummary
       ? null
       : fiscalSponsorshipWorkflowSummary
+  const organizationCoachAssignments =
+    coachAssignmentData.assignmentsByOrganizationId.get(
+      result.organizationSummary.orgId
+    ) ?? []
+  const canManageFiscalSponsorship =
+    result.scope === "platform-admin" &&
+    (staff.accessLevel === "developer" ||
+      organizationCoachAssignments.some(
+        (assignment) => assignment.coach.id === staff.userId
+      ))
 
   return (
     <MemberWorkspaceProjectDetailPage
@@ -104,11 +113,7 @@ export default async function OrganizationDetailPage({ params }: PageProps) {
       assigneeOptions={result.assigneeOptions}
       currentUser={result.currentUser}
       organizationSummary={result.organizationSummary}
-      coachAssignments={
-        coachAssignmentData.assignmentsByOrganizationId.get(
-          result.organizationSummary.orgId
-        ) ?? []
-      }
+      coachAssignments={organizationCoachAssignments}
       coachOptions={coachAssignmentData.coachOptions}
       canManageCoachAssignment={
         coachAssignmentData.available && staff.accessLevel === "developer"

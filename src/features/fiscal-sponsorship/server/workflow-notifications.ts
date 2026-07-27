@@ -8,6 +8,7 @@ import { createNotification, type NotificationTone } from "@/lib/notifications"
 import type { Database } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { formatFiscalSponsorshipDocumentKey } from "../lib/required-documents"
+import { selectFiscalReviewerRecipientIds } from "../lib/reviewer-recipients"
 import type {
   FiscalSponsorshipDocumentKey,
   FiscalSponsorshipDocumentReviewStatus,
@@ -82,29 +83,52 @@ function resolveFiscalSiteUrl() {
   ).replace(/\/$/, "")
 }
 
-async function loadPlatformAdminRecipientIds({
+async function loadFiscalReviewerRecipientIds({
   excludeUserId,
+  orgId,
   supabase,
 }: {
   excludeUserId?: string | null
+  orgId: string
   supabase: Pick<FiscalNotificationClient, "from">
 }) {
-  const { data, error } = await supabase
-    .from("platform_staff_members")
-    .select("user_id")
-    .returns<Array<{ user_id: string }>>()
+  const [staffResult, assignmentsResult] = await Promise.all([
+    supabase
+      .from("platform_staff_members")
+      .select("user_id, access_level")
+      .returns<
+        Array<{
+          access_level: "developer" | "coach"
+          user_id: string
+        }>
+      >(),
+    supabase
+      .from("organization_coach_assignments")
+      .select("coach_user_id")
+      .eq("organization_id", orgId)
+      .returns<Array<{ coach_user_id: string }>>(),
+  ])
 
-  if (error) {
+  if (staffResult.error) {
     console.error(
-      "[fiscal-sponsorship] Unable to load admin notification recipients.",
-      error
+      "[fiscal-sponsorship] Unable to load fiscal reviewer recipients.",
+      staffResult.error
     )
     return []
   }
 
-  return uniqueUserIds((data ?? []).map((staff) => staff.user_id)).filter(
-    (userId) => userId !== excludeUserId
-  )
+  if (assignmentsResult.error) {
+    console.error(
+      "[fiscal-sponsorship] Unable to load assigned coach recipients.",
+      assignmentsResult.error
+    )
+  }
+
+  return selectFiscalReviewerRecipientIds({
+    assignments: assignmentsResult.error ? [] : (assignmentsResult.data ?? []),
+    excludeUserId,
+    staff: staffResult.data ?? [],
+  })
 }
 
 async function loadOrganizationEditorRecipientIds({
@@ -178,12 +202,13 @@ async function createFiscalNotifications({
   )
 }
 
-async function notifyPlatformAdmins(payload: FiscalNotificationPayload) {
+async function notifyFiscalReviewers(payload: FiscalNotificationPayload) {
   const supabase = getFiscalNotificationClient()
   if (!supabase) return
 
-  const recipientIds = await loadPlatformAdminRecipientIds({
+  const recipientIds = await loadFiscalReviewerRecipientIds({
     excludeUserId: payload.actorId,
+    orgId: payload.application.org_id,
     supabase,
   })
   if (recipientIds.length === 0) return
@@ -286,7 +311,7 @@ export async function notifyFiscalApplicationSubmitted({
   actorId: string
   application: FiscalApplicationRow
 }) {
-  await notifyPlatformAdmins({
+  await notifyFiscalReviewers({
     actorId,
     application,
     description: `${getFiscalProjectName(application)} is ready for Coach House review.`,
@@ -329,7 +354,7 @@ export async function notifyFiscalDocumentConnected({
   documentId: string
   documentKey: FiscalSponsorshipDocumentKey
 }) {
-  await notifyPlatformAdmins({
+  await notifyFiscalReviewers({
     actorId,
     application,
     description: `${formatFiscalSponsorshipDocumentKey(documentKey)} for ${getFiscalProjectName(
@@ -467,6 +492,38 @@ export async function notifyFiscalAgreementSent({
   ])
 }
 
+export async function notifyFiscalApplicantSigned({
+  actorId,
+  applicationId,
+  orgId,
+  packetId,
+  projectId,
+  projectName,
+}: {
+  actorId: string
+  applicationId: string
+  orgId: string
+  packetId: string
+  projectId: string
+  projectName: string
+}) {
+  await notifyFiscalReviewers({
+    actorId,
+    application: {
+      id: applicationId,
+      org_id: orgId,
+      project_id: projectId,
+      project_name: projectName,
+    } as FiscalApplicationRow,
+    description: `${projectName} was signed by the applicant and is ready for Coach House countersignature.`,
+    href: `/fiscal-sponsorship/sign/${packetId}`,
+    metadata: { packetId },
+    title: "Fiscal agreement ready to countersign",
+    tone: "info",
+    type: "fiscal_sponsorship_applicant_signed",
+  })
+}
+
 export async function notifyFiscalDocuSealCompleted({
   actorId = null,
   applicationId,
@@ -500,7 +557,10 @@ export async function notifyFiscalDocuSealCompleted({
 
   await Promise.all([
     notifyOrganizationEditors(payload),
-    notifyPlatformAdmins(payload),
+    notifyFiscalReviewers({
+      ...payload,
+      href: `/organizations/${projectId}`,
+    }),
   ])
 }
 
@@ -541,6 +601,9 @@ export async function notifyFiscalNativeAgreementCompleted({
 
   await Promise.all([
     notifyOrganizationEditors(payload),
-    notifyPlatformAdmins(payload),
+    notifyFiscalReviewers({
+      ...payload,
+      href: `/organizations/${projectId}`,
+    }),
   ])
 }

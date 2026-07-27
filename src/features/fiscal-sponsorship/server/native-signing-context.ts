@@ -12,6 +12,7 @@ import type {
   FiscalSponsorshipSignerRole,
   FiscalSponsorshipSigningSession,
 } from "../types"
+import { canManageFiscalSponsorshipForOrganization } from "./workflow-support"
 
 export const FISCAL_SPONSORSHIP_SIGNING_BUCKET = "fiscal-signing"
 export const FISCAL_SPONSORSHIP_CONSENT_VERSION = "2026-07-16"
@@ -139,13 +140,22 @@ export async function resolveSigningContext(
     return { error: "Native fiscal sponsorship signature packet not found." }
   }
 
+  const canManageAsReviewer =
+    isPlatformStaff &&
+    (await canManageFiscalSponsorshipForOrganization({
+      accessLevel: appContext.profileAudience.platformAccessLevel,
+      organizationId: packet.org_id,
+      supabase,
+      userId: appContext.user.id,
+    }))
   const isAssignedApplicant = packet.applicant_signer_id === appContext.user.id
   const role: FiscalSponsorshipSignerRole | null =
-    isPlatformStaff && ["applicant_signed", "completed"].includes(packet.status)
+    canManageAsReviewer &&
+    ["applicant_signed", "completed"].includes(packet.status)
       ? "coach_house"
       : isAssignedApplicant
         ? "applicant"
-        : isPlatformStaff
+        : canManageAsReviewer
           ? "coach_house"
           : null
   if (!role) return { error: "You are not assigned to this signature packet." }

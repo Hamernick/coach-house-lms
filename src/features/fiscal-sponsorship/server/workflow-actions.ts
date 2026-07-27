@@ -24,7 +24,7 @@ import {
 } from "./workflow-notifications"
 import {
   buildWorkflowTableError,
-  canCoachManageFiscalSponsorship,
+  canManageFiscalSponsorshipForOrganization,
   canEditFiscalProject,
   insertFiscalEvent,
   isMissingFiscalWorkflowTableError,
@@ -125,11 +125,17 @@ export async function reviewFiscalSponsorshipApplication(
   if ("error" in context) return context
 
   if (
-    !canCoachManageFiscalSponsorship(
-      context.profileAudience.isPlatformStaff || context.profileAudience.isAdmin
-    )
+    !(await canManageFiscalSponsorshipForOrganization({
+      accessLevel: context.profileAudience.platformAccessLevel,
+      organizationId: context.project.org_id,
+      supabase: context.supabase,
+      userId: context.user.id,
+    }))
   ) {
-    return { error: "Only Coach House admins can review fiscal applications." }
+    return {
+      error:
+        "Only the assigned Coach House reviewer can review this application.",
+    }
   }
 
   const loaded = await loadFiscalApplicationForProject(context)
@@ -330,11 +336,16 @@ export async function reviewFiscalSponsorshipDocument(
   if ("error" in context) return context
 
   if (
-    !canCoachManageFiscalSponsorship(
-      context.profileAudience.isPlatformStaff || context.profileAudience.isAdmin
-    )
+    !(await canManageFiscalSponsorshipForOrganization({
+      accessLevel: context.profileAudience.platformAccessLevel,
+      organizationId: context.project.org_id,
+      supabase: context.supabase,
+      userId: context.user.id,
+    }))
   ) {
-    return { error: "Only Coach House admins can review fiscal documents." }
+    return {
+      error: "Only the assigned Coach House reviewer can review this document.",
+    }
   }
 
   const loaded = await loadFiscalApplicationForProject(context)

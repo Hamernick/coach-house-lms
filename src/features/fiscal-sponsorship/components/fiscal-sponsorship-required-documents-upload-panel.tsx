@@ -22,20 +22,13 @@ import {
   filterFiscalSponsorshipRequiredDocuments,
   FISCAL_SPONSORSHIP_REQUIRED_DOCUMENTS,
 } from "../lib/required-documents"
+import { uploadFiscalSponsorshipProjectAsset } from "../lib/project-asset-upload"
 import type {
   FiscalSponsorshipDocumentKey,
   FiscalSponsorshipDocumentReviewStatus,
   FiscalSponsorshipLegalEntityType,
   FiscalSponsorshipProjectWorkflowSummaryDocument,
 } from "../types"
-
-type ProjectAssetUploadResponse = {
-  assets?: Array<{
-    id?: unknown
-    name?: unknown
-  }>
-  error?: unknown
-}
 
 type FiscalSponsorshipRequiredDocumentsUploadPanelProps = {
   applicationReady: boolean
@@ -115,52 +108,6 @@ function shouldShowUploadAction(
     document.reviewStatus === "needs_info" ||
     document.reviewStatus === "rejected"
   )
-}
-
-function parseUploadResponse(value: ProjectAssetUploadResponse) {
-  const asset = value.assets?.[0]
-  const assetId = typeof asset?.id === "string" ? asset.id : ""
-  const assetName = typeof asset?.name === "string" ? asset.name : ""
-  const error = typeof value.error === "string" ? value.error : null
-
-  return { assetId, assetName, error }
-}
-
-async function uploadProjectAsset({
-  description,
-  file,
-  projectId,
-  title,
-}: {
-  description: string
-  file: File
-  projectId: string
-  title: string
-}) {
-  const form = new FormData()
-  form.append("projectId", projectId)
-  form.append("title", title)
-  form.append("description", description)
-  form.append("files", file)
-
-  const response = await fetch("/api/account/project-assets", {
-    body: form,
-    method: "POST",
-  })
-  const payload = (await response
-    .json()
-    .catch(() => ({}))) as ProjectAssetUploadResponse
-  const parsed = parseUploadResponse(payload)
-
-  if (!response.ok) {
-    throw new Error(parsed.error ?? "Unable to upload that file.")
-  }
-
-  if (!parsed.assetId) {
-    throw new Error("Uploaded file did not return a project asset.")
-  }
-
-  return parsed
 }
 
 function RequirementDocumentLinks({
@@ -269,7 +216,7 @@ export function FiscalSponsorshipRequiredDocumentsUploadPanel({
       const toastId = toast.loading(`Uploading ${label.toLowerCase()}…`)
 
       try {
-        const asset = await uploadProjectAsset({
+        const asset = await uploadFiscalSponsorshipProjectAsset({
           description,
           file,
           projectId,

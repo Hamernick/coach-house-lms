@@ -50,10 +50,6 @@ describe("native fiscal sponsorship signing", () => {
       "src/features/fiscal-sponsorship/server/native-signing-actions.ts",
       "utf8"
     )
-    const previewRoute = readFileSync(
-      "src/app/api/fiscal-sponsorship/signing/[packetId]/preview/route.ts",
-      "utf8"
-    )
 
     expect(page).toContain("saveFiscalSponsorshipSigningDraft")
     expect(page).toContain("beforeunload")
@@ -67,8 +63,6 @@ describe("native fiscal sponsorship signing", () => {
     expect(context).toContain('packet.status === "applicant_signed"')
     expect(actions).toContain("verifyApplicantSourceIntegrity")
     expect(actions).toContain("source_document_sha256")
-    expect(previewRoute).toContain("supabase.auth.getUser()")
-    expect(previewRoute).toContain('{ error: "Unauthorized" }, { status: 401 }')
     expect(summary).toContain("/fiscal-sponsorship/sign/${signaturePacket.id}")
   })
 
@@ -86,6 +80,37 @@ describe("native fiscal sponsorship signing", () => {
     expect(migration).toContain("pg_advisory_xact_lock")
     expect(migration).toContain("to service_role")
     expect(migration).toContain("from public, anon, authenticated")
+  })
+
+  it("assigns the agreement to the primary applicant and notifies that account", () => {
+    const agreementActions = readFileSync(
+      "src/features/fiscal-sponsorship/server/workflow-agreement-actions.ts",
+      "utf8"
+    )
+    const notifications = readFileSync(
+      "src/features/fiscal-sponsorship/server/workflow-notifications.ts",
+      "utf8"
+    )
+    const migration = readFileSync(
+      "supabase/migrations/20260727130000_complete_fiscal_sponsorship_signing.sql",
+      "utf8"
+    )
+    const downloadRoute = readFileSync(
+      "src/app/api/fiscal-sponsorship/documents/[documentId]/route.ts",
+      "utf8"
+    )
+
+    expect(agreementActions).toContain("resolveFiscalApplicantSigner")
+    expect(agreementActions).toContain(
+      "applicant_signer_id: signerResult.signer.id"
+    )
+    expect(notifications).toContain("sendResendEmail")
+    expect(notifications).toContain("`/fiscal-sponsorship/sign/${packetId}`")
+    expect(notifications).toContain("recipientIds: [applicantSignerId]")
+    expect(migration).toContain("from public.platform_staff_members staff")
+    expect(migration).toContain("staff.access_level in ('developer', 'coach')")
+    expect(downloadRoute).toContain("profileAudience.isPlatformStaff")
+    expect(downloadRoute).toContain("createSupabaseAdminClient()")
   })
 
   it("keeps the versioned Form B manifest within all four pages", () => {

@@ -52,6 +52,7 @@ const DOCUMENT_KINDS = new Set<FiscalSponsorshipDocumentKind>([
   "agreement",
   "executed_agreement",
   "audit_certificate",
+  "tax_form",
   "regrant",
 ])
 
@@ -95,6 +96,7 @@ const PACKET_STATUSES = new Set<FiscalSponsorshipSignaturePacketStatus>([
 type ApplicationSummaryRow = {
   id: string
   legal_entity_type: string | null
+  primary_email: string | null
   status: string
   reviewed_at: string | null
   submitted_at: string | null
@@ -330,7 +332,9 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
 
   const { data: application, error: applicationError } = await context.supabase
     .from("fiscal_sponsorship_applications")
-    .select("id, legal_entity_type, status, reviewed_at, submitted_at")
+    .select(
+      "id, legal_entity_type, primary_email, status, reviewed_at, submitted_at"
+    )
     .eq("project_id", context.project.id)
     .eq("org_id", context.project.org_id)
     .maybeSingle<ApplicationSummaryRow>()
@@ -345,6 +349,7 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
     return {
       applicationId: null,
       applicationStatus: null,
+      canCompleteW9: false,
       events: [],
       legalEntityType: null,
       latestAuditCertificateDocument: null,
@@ -455,6 +460,10 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
   return {
     applicationId: application.id,
     applicationStatus: normalizeApplicationStatus(application.status),
+    canCompleteW9:
+      Boolean(application.primary_email) &&
+      application.primary_email?.trim().toLowerCase() ===
+        context.user.email?.trim().toLowerCase(),
     events: (events ?? []).map(mapFiscalWorkflowEventSummary),
     legalEntityType: normalizeLegalEntityType(application.legal_entity_type),
     latestAgreementDocument: mapFiscalDocumentSummary(agreementDocument),

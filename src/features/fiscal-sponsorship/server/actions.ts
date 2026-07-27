@@ -308,13 +308,24 @@ export async function saveFiscalSponsorshipApplicationDraft(
   })
   const { data: existingApplication, error: existingError } = await supabase
     .from("fiscal_sponsorship_applications")
-    .select("id")
+    .select("id, status")
     .eq("org_id", projectResult.project.org_id)
     .eq("project_id", projectResult.project.id)
-    .maybeSingle<{ id: string }>()
+    .maybeSingle<{ id: string; status: FiscalSponsorshipApplicationStatus }>()
 
   if (existingError) {
     return { error: "Unable to verify the fiscal sponsorship application." }
+  }
+  if (
+    existingApplication &&
+    !isPlatformStaff &&
+    existingApplication.status !== "draft" &&
+    existingApplication.status !== "needs_info"
+  ) {
+    return {
+      error:
+        "This application is locked while Coach House reviews or processes it.",
+    }
   }
 
   const { created_by: _createdBy, status: _status, ...draftUpdate } = payload

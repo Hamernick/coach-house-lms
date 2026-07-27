@@ -2,6 +2,8 @@ import "server-only"
 
 import type { SupabaseClient } from "@supabase/supabase-js"
 
+import { sendResendEmail } from "@/lib/email/resend"
+import { env } from "@/lib/env"
 import { createNotification, type NotificationTone } from "@/lib/notifications"
 import type { Database } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
@@ -63,6 +65,23 @@ function uniqueUserIds(userIds: Array<string | null | undefined>) {
   ]
 }
 
+function escapeEmailHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;")
+}
+
+function resolveFiscalSiteUrl() {
+  return (
+    env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    env.NEXT_PUBLIC_APP_URL?.trim() ||
+    "http://localhost:3000"
+  ).replace(/\/$/, "")
+}
+
 async function loadPlatformAdminRecipientIds({
   excludeUserId,
   supabase,
@@ -76,19 +95,6 @@ async function loadPlatformAdminRecipientIds({
     .returns<Array<{ user_id: string }>>()
 
   if (error) {
-    if (error.code === "42P01" || error.code === "PGRST205") {
-      const { data: legacyAdmins, error: legacyError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("role", "admin")
-        .returns<Array<{ id: string }>>()
-
-      if (!legacyError) {
-        return uniqueUserIds(
-          (legacyAdmins ?? []).map((profile) => profile.id)
-        ).filter((userId) => userId !== excludeUserId)
-      }
-    }
     console.error(
       "[fiscal-sponsorship] Unable to load admin notification recipients.",
       error
@@ -388,15 +394,19 @@ export async function notifyFiscalAgreementGenerated({
 export async function notifyFiscalAgreementSent({
   actorId,
   application,
+  applicantSignerEmail,
+  applicantSignerId,
   packetId,
   providerSubmissionId,
 }: {
   actorId: string
   application: FiscalApplicationRow
+  applicantSignerEmail: string
+  applicantSignerId: string
   packetId: string
   providerSubmissionId: string | null
 }) {
-  await notifyOrganizationEditors({
+  const payload: FiscalNotificationPayload = {
     actorId,
     application,
     description: `The fiscal sponsorship agreement for ${getFiscalProjectName(
@@ -407,7 +417,54 @@ export async function notifyFiscalAgreementSent({
     title: "Fiscal agreement sent for signature",
     tone: "info",
     type: "fiscal_sponsorship_agreement_sent",
-  })
+  }
+  const supabase = getFiscalNotificationClient()
+  const signingPath = `/fiscal-sponsorship/sign/${packetId}`
+  const signingUrl = `${resolveFiscalSiteUrl()}${signingPath}`
+  const projectName = getFiscalProjectName(application)
+
+  await Promise.all([
+    supabase
+      ? createFiscalNotifications({
+          payload: {
+            ...payload,
+            description: `${projectName} is ready for your signature.`,
+            href: signingPath,
+            title: "Fiscal agreement ready to sign",
+          },
+          recipientIds: [applicantSignerId],
+          supabase,
+        })
+      : Promise.resolve(),
+    sendResendEmail({
+      html: [
+        `<p>${escapeEmailHtml(projectName)} is ready for your signature in Coach House.</p>`,
+        `<p><a href="${escapeEmailHtml(signingUrl)}">Review and sign the agreement</a></p>`,
+        "<p>You must sign in with the Coach House account assigned to this application.</p>",
+      ].join(""),
+      idempotencyKey: `fiscal-agreement-signing-${packetId}`,
+      subject: `${projectName} is ready for signature`,
+      tags: [
+        { name: "category", value: "fiscal-signature" },
+        { name: "packet", value: packetId },
+      ],
+      text: [
+        `${projectName} is ready for your signature in Coach House.`,
+        "",
+        `Review and sign: ${signingUrl}`,
+        "",
+        "Sign in with the Coach House account assigned to this application.",
+      ].join("\n"),
+      to: applicantSignerEmail,
+    }).then((result) => {
+      if (!result.ok) {
+        console.error(
+          "[fiscal-sponsorship] Unable to send signing email.",
+          result.error
+        )
+      }
+    }),
+  ])
 }
 
 export async function notifyFiscalDocuSealCompleted({

@@ -1,6 +1,10 @@
 import type * as React from "react"
 
 import type { FiscalSponsorshipFormBFields } from "./lib/form-b-field-manifest"
+import type {
+  FiscalSponsorshipW9Fields,
+  FiscalSponsorshipW9RedactedFields,
+} from "./lib/w9-field-manifest"
 
 export type FiscalSponsorshipApplicationStatus =
   | "draft"
@@ -23,6 +27,7 @@ export type FiscalSponsorshipDocumentKind =
   | "agreement"
   | "executed_agreement"
   | "audit_certificate"
+  | "tax_form"
   | "regrant"
 
 export type FiscalSponsorshipDocumentKey =
@@ -313,6 +318,42 @@ export type CompleteFiscalSponsorshipSignatureResult =
     }
   | { error: string; field?: string }
 
+export type FiscalSponsorshipW9Session = {
+  applicationId: string
+  existingDocumentHref: string | null
+  existingDocumentId: string | null
+  fields: FiscalSponsorshipW9Fields
+  organizationId: string
+  organizationName: string
+  projectId: string
+  projectName: string
+  signerEmail: string
+  signerName: string
+}
+
+export type LoadFiscalSponsorshipW9SessionResult =
+  | { ok: true; session: FiscalSponsorshipW9Session }
+  | { error: string }
+
+export type CompleteFiscalSponsorshipW9Input = {
+  authorized: boolean
+  certified: boolean
+  consented: boolean
+  fields: FiscalSponsorshipW9Fields
+  projectId: string
+  signatureMethod: FiscalSponsorshipSignatureMethod
+  signatureValue: string
+}
+
+export type CompleteFiscalSponsorshipW9Result =
+  | {
+      ok: true
+      documentId: string
+      documentHref: string
+      redactedFields: FiscalSponsorshipW9RedactedFields
+    }
+  | { error: string; field?: string }
+
 export type ConnectFiscalSponsorshipDocumentAssetInput = {
   assetId: string
   documentKey: FiscalSponsorshipDocumentKey
@@ -485,6 +526,7 @@ export type FiscalSponsorshipProjectWorkflowEvent = {
 export type FiscalSponsorshipProjectWorkflowSummary = {
   applicationId: string | null
   applicationStatus: FiscalSponsorshipApplicationStatus | null
+  canCompleteW9?: boolean
   legalEntityType: FiscalSponsorshipLegalEntityType | null
   submittedAt: string | null
   reviewedAt: string | null

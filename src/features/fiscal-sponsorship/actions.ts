@@ -22,3 +22,7 @@ export {
   buildFiscalSponsorshipSigningPreview,
   loadFiscalSponsorshipSigningSession,
 } from "./server/native-signing-session-actions"
+export {
+  completeFiscalSponsorshipW9,
+  loadFiscalSponsorshipW9Session,
+} from "./server/w9-actions"

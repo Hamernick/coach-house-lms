@@ -17,6 +17,15 @@ describe("fiscal sponsorship workbench contract", () => {
     const projectWorkbenchDocuments = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-project-workbench-documents.tsx"
     )
+    const projectWorkbenchRequiredDocuments = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-project-workbench-required-documents.tsx"
+    )
+    const requiredDocumentConnectPanel = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-required-document-connect-panel.tsx"
+    )
+    const projectAssetUpload = readSource(
+      "src/features/fiscal-sponsorship/lib/project-asset-upload.ts"
+    )
     const workflowTimeline = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-workflow-timeline.tsx"
     )
@@ -30,6 +39,29 @@ describe("fiscal sponsorship workbench contract", () => {
     )
     expect(projectWorkbench).toContain("Fiscal sponsorship progress")
     expect(projectWorkbench).toContain("WorkbenchPhaseTimeline")
+    expect(projectWorkbench).toContain("RadioGroup")
+    expect(projectWorkbench).toContain("RadioGroupItem")
+    expect(projectWorkbench).toContain("Collapsible")
+    expect(projectWorkbench).toContain("CollapsibleTrigger")
+    expect(projectWorkbench).toContain("CollapsibleContent")
+    expect(projectWorkbench).toContain("renderApplicationEditor")
+    expect(projectWorkbench).toContain("data-[state=closed]:hidden")
+    expect(projectWorkbench).toContain("onValueChange={onExpandedPhaseChange}")
+    expect(projectWorkbench).toContain("Show ${item.label} details")
+    expect(projectWorkbench).toContain("bg-primary/10 text-primary")
+    expect(projectWorkbench).toContain('className="py-1.5"')
+    expect(projectWorkbench).toContain("hover:bg-muted/60 min-w-0 rounded-xl")
+    expect(projectWorkbench).toContain(
+      "flex min-w-0 flex-1 items-center justify-between gap-3"
+    )
+    expect(projectWorkbench).toContain(
+      "transition-[color,box-shadow,background-color]"
+    )
+    expect(projectWorkbench).toContain(
+      'data-fiscal-sponsorship-phase-status="complete"'
+    )
+    expect(projectWorkbench).toContain("text-emerald-600")
+    expect(projectWorkbench).not.toContain("HourglassIcon")
     expect(projectWorkbench).toContain("data-fiscal-sponsorship-phase-action")
     expect(projectWorkbench).toContain("FiscalSponsorshipWorkflowTimeline")
     expect(projectWorkbench).toContain("events={data.timelineEvents}")
@@ -60,6 +92,26 @@ describe("fiscal sponsorship workbench contract", () => {
     expect(projectWorkbenchDocuments).not.toContain(
       "reviewFiscalSponsorshipDocumentAction"
     )
+
+    expect(projectWorkbenchRequiredDocuments).toContain("CollapsibleTrigger")
+    expect(projectWorkbenchRequiredDocuments).toContain("CollapsibleContent")
+    expect(projectWorkbenchRequiredDocuments).toContain("expandedUploadKey")
+    expect(projectWorkbenchRequiredDocuments).toContain("ml-auto")
+    expect(projectWorkbenchRequiredDocuments).toContain(
+      "FiscalSponsorshipRequiredDocumentConnectPanel"
+    )
+    expect(projectWorkbenchRequiredDocuments).not.toContain(
+      "onClick={onOpenAssets}"
+    )
+    expect(requiredDocumentConnectPanel).toContain("<Dropzone")
+    expect(requiredDocumentConnectPanel).toContain("<DropzoneContent")
+    expect(requiredDocumentConnectPanel).toContain("<DropzoneEmptyState")
+    expect(requiredDocumentConnectPanel).toContain("Upload and connect")
+    expect(requiredDocumentConnectPanel).toContain("RadioGroupItem")
+    expect(requiredDocumentConnectPanel).toContain("max-h-40")
+    expect(requiredDocumentConnectPanel).toContain("asset.sizeLabel")
+    expect(requiredDocumentConnectPanel).toContain("router.refresh()")
+    expect(projectAssetUpload).toContain('fetch("/api/account/project-assets"')
 
     expect(workflowTimeline).toContain(
       "data-fiscal-sponsorship-workflow-timeline"
@@ -187,6 +239,10 @@ describe("fiscal sponsorship workbench contract", () => {
       "buildMemberWorkspaceProjectFiscalWorkbenchData"
     )
     expect(memberProjectFiscalWorkbench).toContain(
+      "FiscalSponsorshipApplicationEditor"
+    )
+    expect(memberProjectFiscalWorkbench).toContain('surface="inline"')
+    expect(memberProjectFiscalWorkbench).not.toContain(
       "FiscalSponsorshipApplicationDrawer"
     )
     expect(memberProjectFiscalWorkbench).toContain("onOpenAssets")

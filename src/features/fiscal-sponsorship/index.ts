@@ -5,7 +5,9 @@ export {
   handleFiscalSponsorshipDocuSealWebhook,
   loadFiscalSponsorshipProjectWorkflowSummary,
   loadFiscalSponsorshipSigningSession,
+  loadFiscalSponsorshipW9Session,
   saveFiscalSponsorshipSigningDraft,
+  completeFiscalSponsorshipW9,
   completeFiscalSponsorshipSignature,
   reviewFiscalSponsorshipDocument,
   reviewFiscalSponsorshipApplication,
@@ -14,6 +16,7 @@ export {
 } from "./actions"
 export {
   FiscalSponsorshipApplicationDrawer,
+  FiscalSponsorshipApplicationEditor,
   FiscalSponsorshipActivityAction,
   FiscalSponsorshipMark,
   FiscalSponsorshipMarkdownDocument,
@@ -26,6 +29,7 @@ export {
   FiscalSponsorshipWorkspaceCardSummary,
   FiscalSponsorshipWorkspaceCardSurface,
   FiscalSponsorshipSigningPage,
+  FiscalSponsorshipW9Page,
 } from "./components"
 export {
   analyzeFiscalSponsorshipActivityEligibility,
@@ -46,6 +50,7 @@ export {
   FISCAL_SPONSORSHIP_REQUIRED_DOCUMENTS,
   formatFiscalSponsorshipDocumentKey,
 } from "./lib/required-documents"
+export type { FiscalSponsorshipW9Fields } from "./lib/w9-field-manifest"
 export {
   buildFiscalSponsorshipAgreementDocument,
   normalizeFiscalSponsorshipInput,
@@ -105,4 +110,8 @@ export type {
   SaveFiscalSponsorshipSigningDraftResult,
   CompleteFiscalSponsorshipSignatureInput,
   CompleteFiscalSponsorshipSignatureResult,
+  CompleteFiscalSponsorshipW9Input,
+  CompleteFiscalSponsorshipW9Result,
+  FiscalSponsorshipW9Session,
+  LoadFiscalSponsorshipW9SessionResult,
 } from "./types"

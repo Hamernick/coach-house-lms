@@ -1,24 +1,14 @@
-import { NextResponse, type NextRequest } from "next/server"
+import type { NextRequest } from "next/server"
 
 import { buildFiscalSponsorshipSigningPreview } from "@/features/fiscal-sponsorship"
-import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 
 export const dynamic = "force-dynamic"
 
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ packetId: string }> }
 ) {
   try {
-    const response = NextResponse.next()
-    const supabase = createSupabaseRouteHandlerClient(request, response)
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
     const { packetId } = await params
     const result = await buildFiscalSponsorshipSigningPreview(packetId)
     if ("error" in result) {

@@ -2,6 +2,10 @@ import { createHash } from "node:crypto"
 
 import { NextResponse, type NextRequest } from "next/server"
 
+import {
+  resolveProfileAudience,
+  resolveTesterMetadata,
+} from "@/lib/devtools/audience"
 import type { Database } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
@@ -28,7 +32,16 @@ export async function GET(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const { documentId } = await params
-  const { data: document, error } = await supabase
+  const profileAudience = await resolveProfileAudience({
+    fallbackIsTester: resolveTesterMetadata(user.user_metadata ?? null),
+    supabase,
+    userId: user.id,
+  })
+  const documentClient =
+    profileAudience.isPlatformStaff || profileAudience.isAdmin
+      ? createSupabaseAdminClient()
+      : supabase
+  const { data: document, error } = await documentClient
     .from("fiscal_sponsorship_documents")
     .select("file_sha256, mime, storage_bucket, storage_path, title")
     .eq("id", documentId)

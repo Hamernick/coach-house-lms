@@ -31,6 +31,7 @@ import {
   loadLatestAgreementDocument,
   mapFiscalApplicationRow,
   revalidateFiscalApplicationRoutes,
+  resolveFiscalApplicantSigner,
   resolveProjectAndContext,
   sanitizeAgreementFilename,
   updateFiscalApplicationStatus,
@@ -55,6 +56,28 @@ export async function generateFiscalSponsorshipAgreement(
 
   if (!["approved", "agreement_ready"].includes(loaded.application.status)) {
     return { error: "Approve the application before generating an agreement." }
+  }
+  const { data: acceptedW9, error: acceptedW9Error } = await context.supabase
+    .from("fiscal_sponsorship_documents")
+    .select("id")
+    .eq("application_id", loaded.application.id)
+    .eq("document_key", "tax_id_confirmation")
+    .eq("kind", "tax_form")
+    .eq("status", "executed")
+    .eq("review_status", "accepted")
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle<{ id: string }>()
+  if (acceptedW9Error) {
+    return isMissingFiscalWorkflowTableError(acceptedW9Error)
+      ? buildWorkflowTableError()
+      : { error: "Unable to verify the signed W-9." }
+  }
+  if (!acceptedW9) {
+    return {
+      error:
+        "Accept the applicant’s completed W-9 before generating an agreement.",
+    }
   }
 
   const generatedAt = new Date().toISOString()
@@ -207,10 +230,9 @@ export async function sendFiscalSponsorshipAgreementForSignature(
   })
   if ("error" in documentResult) return documentResult
 
-  const applicantEmail = loaded.application.primary_email?.trim()
-  if (!applicantEmail) {
-    return { error: "Add a primary applicant email before sending." }
-  }
+  const signerResult = await resolveFiscalApplicantSigner(loaded.application)
+  if ("error" in signerResult) return signerResult
+  const applicantEmail = signerResult.signer.email
 
   const applicantName =
     loaded.application.applicant_full_name?.trim() ||
@@ -221,7 +243,7 @@ export async function sendFiscalSponsorshipAgreementForSignature(
       .filter(Boolean)
       .join(" ")
       .trim() ||
-    applicantEmail
+    signerResult.signer.name
   if (
     documentResult.document.storage_bucket !== "fiscal-signing" ||
     documentResult.document.template_key !==
@@ -243,7 +265,7 @@ export async function sendFiscalSponsorshipAgreementForSignature(
     .from("fiscal_sponsorship_signature_packets")
     .insert({
       applicant_signer_email: applicantEmail,
-      applicant_signer_id: loaded.application.org_id,
+      applicant_signer_id: signerResult.signer.id,
       applicant_signer_name: applicantName,
       application_id: loaded.application.id,
       coach_signer_email: null,
@@ -281,7 +303,7 @@ export async function sendFiscalSponsorshipAgreementForSignature(
       project_id: loaded.application.project_id,
       signature_method: "typed",
       signature_value: applicantName,
-      signer_id: loaded.application.org_id,
+      signer_id: signerResult.signer.id,
       signer_role: "applicant",
     })
   if (draftError) {
@@ -318,6 +340,8 @@ export async function sendFiscalSponsorshipAgreementForSignature(
   await notifyFiscalAgreementSent({
     actorId: context.user.id,
     application: loaded.application,
+    applicantSignerEmail: signerResult.signer.email,
+    applicantSignerId: signerResult.signer.id,
     packetId: packet.id,
     providerSubmissionId: null,
   })

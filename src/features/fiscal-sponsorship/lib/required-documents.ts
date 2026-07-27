@@ -14,9 +14,9 @@ export type FiscalSponsorshipRequiredDocumentRequirement = {
 export const FISCAL_SPONSORSHIP_REQUIRED_DOCUMENTS = [
   {
     key: "tax_id_confirmation",
-    label: "Tax ID confirmation",
+    label: "Signed IRS Form W-9",
     description:
-      "IRS/EIN support or equivalent U.S. tax identity confirmation for the sponsored project.",
+      "Complete and sign the official IRS Form W-9 in Coach House, or upload an existing signed PDF.",
     stage: "application",
   },
   {

@@ -38,6 +38,7 @@ type FiscalSponsorshipApplicationEditorFieldsProps = {
   formId: string
   onFieldChange: DraftFieldChange
   projectId: string
+  sourceActivityTitle?: string | null
 }
 
 function hasText(value: string) {
@@ -94,6 +95,7 @@ export function FiscalSponsorshipApplicationEditorFields({
   formId,
   onFieldChange,
   projectId,
+  sourceActivityTitle,
 }: FiscalSponsorshipApplicationEditorFieldsProps) {
   const sectionCompletion = React.useMemo(
     () => resolveApplicationSectionCompletion(draft),
@@ -141,6 +143,7 @@ export function FiscalSponsorshipApplicationEditorFields({
         draft={draft}
         formId={formId}
         projectId={projectId}
+        sourceActivityTitle={sourceActivityTitle}
         sectionChrome={getSectionChrome("budget")}
         onFieldChange={onFieldChange}
       />

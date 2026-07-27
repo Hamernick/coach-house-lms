@@ -1,5 +1,7 @@
 import type * as React from "react"
 
+import type { BudgetTableRow } from "@/lib/modules"
+
 import type { FiscalSponsorshipFormBFields } from "./lib/form-b-field-manifest"
 import type {
   FiscalSponsorshipW9Fields,
@@ -148,6 +150,7 @@ export type FiscalSponsorshipApplicationPrefill = {
   projectDescription?: string | null
   projectLocation?: string | null
   estimatedBudgetCents?: number | null
+  budgetRows?: BudgetTableRow[] | null
   expenseSummary?: string | null
   prospectiveFundingSources?: string | null
   publicBenefit?: string | null
@@ -395,6 +398,7 @@ export type FiscalSponsorshipProgramOption = {
   goalCents?: number | null
   raisedCents?: number | null
   estimatedBudgetCents?: number | null
+  budgetRows?: BudgetTableRow[] | null
   expenseSummary?: string | null
   prospectiveFundingSources?: string | null
   publicBenefit?: string | null

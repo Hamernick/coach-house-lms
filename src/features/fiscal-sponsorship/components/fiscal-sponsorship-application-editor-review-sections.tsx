@@ -18,6 +18,7 @@ export function BudgetBenefitSection({
   onFieldChange,
   projectId,
   sectionChrome,
+  sourceActivityTitle,
 }: {
   applicationReady: boolean
   draft: FiscalSponsorshipApplicationDraft
@@ -25,6 +26,7 @@ export function BudgetBenefitSection({
   onFieldChange: DraftFieldChange
   projectId: string
   sectionChrome: EditorSectionChromeProps
+  sourceActivityTitle?: string | null
 }) {
   return (
     <EditorSection
@@ -37,6 +39,7 @@ export function BudgetBenefitSection({
         draft={draft}
         formId={formId}
         projectId={projectId}
+        sourceActivityTitle={sourceActivityTitle}
         onFieldChange={onFieldChange}
       />
       <DraftTextareaField

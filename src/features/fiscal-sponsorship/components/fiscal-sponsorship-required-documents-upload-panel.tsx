@@ -351,7 +351,7 @@ export function FiscalSponsorshipRequiredDocumentsUploadPanel({
                       {formatReviewStatus(document?.reviewStatus)}
                     </Badge>
                   </div>
-                  <p className="text-muted-foreground mt-0.5 text-[11px] leading-snug">
+                  <p className="text-muted-foreground mt-0.5 min-w-0 text-[11px] leading-snug [overflow-wrap:anywhere] break-words">
                     {document?.title || requirement.description}
                   </p>
                 </div>
@@ -365,7 +365,7 @@ export function FiscalSponsorshipRequiredDocumentsUploadPanel({
 
               {uploadAllowed ? (
                 <div className="grid min-w-0 gap-2 pl-6">
-                  <Field>
+                  <Field className="min-w-0">
                     <FieldLabel htmlFor={inputId} className="text-xs">
                       {getUploadLabel({ document })}
                     </FieldLabel>
@@ -381,7 +381,7 @@ export function FiscalSponsorshipRequiredDocumentsUploadPanel({
                         })
                       }
                     />
-                    <FieldDescription className="text-[11px]">
+                    <FieldDescription className="min-w-0 text-[11px] [overflow-wrap:anywhere] break-words">
                       {selectedFile
                         ? `${selectedFile.name} selected`
                         : "PDFs, images, spreadsheets, and document files are supported."}

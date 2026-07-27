@@ -86,8 +86,9 @@ export function FiscalSponsorshipWorkflowDrawer({
         </TabsList>
 
         <ScrollArea
-          className="text-card-foreground border-border/60 bg-muted relative mx-3 mt-3 min-h-0 flex-1 rounded-[2rem] border p-3 shadow-sm"
-          viewportClassName="max-h-[calc(100svh-15rem)] rounded-none scroll-fade-effect-y [--mask-height:2rem] [--scroll-buffer:1.5rem]"
+          className="text-card-foreground border-border/60 bg-muted relative mx-3 mt-3 min-h-0 min-w-0 flex-1 overflow-hidden rounded-[2rem] border p-3 shadow-sm"
+          viewportClassName="max-h-[calc(100svh-15rem)] max-w-full overflow-x-hidden rounded-none scroll-fade-effect-y [--mask-height:2rem] [--scroll-buffer:1.5rem] [&>div]:!block [&>div]:!w-full [&>div]:!max-w-full [&>div]:!min-w-0"
+          contentClassName="min-w-0 max-w-full overflow-hidden [&>*]:min-w-0 [&>*]:max-w-full"
         >
           <TabsContent value="work" className="mt-0 flex flex-col gap-4">
             <WorkflowPhases

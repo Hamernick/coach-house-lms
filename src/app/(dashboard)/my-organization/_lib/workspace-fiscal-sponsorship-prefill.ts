@@ -2,9 +2,11 @@ import type {
   OrgProfile,
   OrgProgram,
 } from "@/components/organization/org-profile-card/types"
-import type {
-  FiscalSponsorshipApplicationPrefill,
-  FiscalSponsorshipProjectDurationType,
+import {
+  normalizeFiscalSponsorshipBudgetRows,
+  summarizeBudgetRows,
+  type FiscalSponsorshipApplicationPrefill,
+  type FiscalSponsorshipProjectDurationType,
 } from "@/features/fiscal-sponsorship"
 
 function cleanText(value: string | null | undefined) {
@@ -168,31 +170,15 @@ function resolveBudgetCents(program: OrgProgram | null) {
   return positiveCents(program.goal_cents)
 }
 
+function getProgramBudgetRows(program: OrgProgram | null) {
+  if (!program || !isRecord(program.wizard_snapshot)) return []
+  return normalizeFiscalSponsorshipBudgetRows(
+    program.wizard_snapshot.budgetRows
+  )
+}
+
 function formatBudgetRows(program: OrgProgram | null) {
-  if (!program || !isRecord(program.wizard_snapshot)) return null
-
-  const rows = program.wizard_snapshot.budgetRows
-  if (!Array.isArray(rows)) return null
-
-  const summaryRows = rows
-    .map((row) => {
-      if (!isRecord(row)) return null
-      const category =
-        typeof row.category === "string" ? cleanText(row.category) : null
-      const description =
-        typeof row.description === "string" ? cleanText(row.description) : null
-      const totalCost =
-        typeof row.totalCost === "string" ? cleanText(row.totalCost) : null
-
-      if (!category && !description && !totalCost) return null
-
-      return [category, description, totalCost ? `$${totalCost}` : null]
-        .filter((part): part is string => Boolean(part))
-        .join(" - ")
-    })
-    .filter((row): row is string => Boolean(row))
-
-  return formatListSummary(summaryRows)
+  return summarizeBudgetRows(getProgramBudgetRows(program)) || null
 }
 
 function choosePrimaryProgram(programs: OrgProgram[] | null | undefined) {
@@ -239,6 +225,7 @@ export function buildFiscalSponsorshipApplicationPrefill({
     initialProfile.mission,
     initialProfile.theoryOfChange
   )
+  const budgetRows = getProgramBudgetRows(primaryProgram)
 
   return {
     applicantFullName: contactName,
@@ -279,6 +266,7 @@ export function buildFiscalSponsorshipApplicationPrefill({
       resolveProfileLocation(initialProfile)
     ),
     estimatedBudgetCents: resolveBudgetCents(primaryProgram),
+    budgetRows,
     expenseSummary: formatBudgetRows(primaryProgram),
     prospectiveFundingSources: formatProgramFundingSummary(primaryProgram),
     publicBenefit,

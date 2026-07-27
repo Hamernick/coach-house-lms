@@ -235,7 +235,14 @@ describe("fiscal sponsorship application drafts", () => {
         temporaryEndDate: "2026-12-31",
         focusArea: "Food security",
         projectLocation: "Chicago, IL",
-        estimatedBudgetDollars: "25000",
+        budgetRows: [
+          expect.objectContaining({
+            category: "Food",
+            description: "ingredients",
+            totalCost: "12000.00",
+          }),
+        ],
+        estimatedBudgetDollars: "12000",
         prospectiveFundingSources:
           "Community donors; Public fundraising goal: $25,000",
         publicBenefit: "Neighbors receive free meals.",

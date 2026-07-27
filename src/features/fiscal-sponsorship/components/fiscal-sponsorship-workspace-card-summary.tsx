@@ -120,6 +120,10 @@ export function buildSelectedProgramPrefill({
       basePrefill?.temporaryEndDate
     ),
     estimatedBudgetCents,
+    budgetRows:
+      program.budgetRows && program.budgetRows.length > 0
+        ? program.budgetRows
+        : (basePrefill?.budgetRows ?? null),
     expenseSummary: firstText(
       program.expenseSummary,
       basePrefill?.expenseSummary

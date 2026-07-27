@@ -344,10 +344,13 @@ describe("workspace fiscal sponsorship card", () => {
       "pointer-events-none grid-rows-[0fr] opacity-0"
     )
     expect(workflowDrawer).toContain(
-      "text-card-foreground border-border/60 bg-muted relative mx-3 mt-3 min-h-0 flex-1 rounded-[2rem] border p-3 shadow-sm"
+      "text-card-foreground border-border/60 bg-muted relative mx-3 mt-3 min-h-0 min-w-0 flex-1 overflow-hidden rounded-[2rem] border p-3 shadow-sm"
     )
     expect(workflowDrawer).toContain(
-      'viewportClassName="max-h-[calc(100svh-15rem)] rounded-none scroll-fade-effect-y [--mask-height:2rem] [--scroll-buffer:1.5rem]"'
+      'viewportClassName="max-h-[calc(100svh-15rem)] max-w-full overflow-x-hidden rounded-none scroll-fade-effect-y [--mask-height:2rem] [--scroll-buffer:1.5rem] [&>div]:!block [&>div]:!w-full [&>div]:!max-w-full [&>div]:!min-w-0"'
+    )
+    expect(workflowDrawer).toContain(
+      'contentClassName="min-w-0 max-w-full overflow-hidden [&>*]:min-w-0 [&>*]:max-w-full"'
     )
     expect(workflowDrawerSections).toContain("px-1 pt-1")
     expect(workflowDrawer).not.toContain("space-y-4")
@@ -474,6 +477,17 @@ describe("workspace fiscal sponsorship card", () => {
         projectDescription: "Free meals and food access.",
         projectLocation: "Chicago, IL, US",
         estimatedBudgetCents: 2500000,
+        budgetRows: [
+          {
+            category: "Food",
+            costPerUnit: "12000.00",
+            costType: "Fixed",
+            description: "Ingredients",
+            totalCost: "12000.00",
+            unit: "Program",
+            units: "1",
+          },
+        ],
         expenseSummary: "Food - Ingredients - $12000.00",
         prospectiveFundingSources:
           "Community donors; Public fundraising goal: $5,000; Raised to date: $1,250",
@@ -550,6 +564,17 @@ describe("workspace fiscal sponsorship card", () => {
       expect.objectContaining({
         description: "Selected snapshot description.",
         estimatedBudgetCents: 3200000,
+        budgetRows: [
+          {
+            category: "Materials",
+            costPerUnit: "15000.00",
+            costType: "Fixed",
+            description: "Welding kits",
+            totalCost: "15000.00",
+            unit: "Program",
+            units: "1",
+          },
+        ],
         expenseSummary: "Materials - Welding kits - $15000.00",
         focusArea: "Training & Capacity Building",
         prospectiveFundingSources: "State grant",
@@ -566,6 +591,7 @@ describe("workspace fiscal sponsorship card", () => {
         projectDurationType: "ongoing_multi_year",
         temporaryStartDate: "2026-08-01",
         estimatedBudgetCents: 3200000,
+        budgetRows: selectedProgram?.budgetRows,
         expenseSummary: "Materials - Welding kits - $15000.00",
         prospectiveFundingSources:
           "State grant; Public fundraising goal: $9,000; Raised to date: $2,000",

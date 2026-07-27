@@ -1,6 +1,7 @@
 export {
   connectFiscalSponsorshipDocumentAsset,
   buildFiscalSponsorshipSigningPreview,
+  canManageFiscalSponsorshipForOrganization,
   generateFiscalSponsorshipAgreement,
   handleFiscalSponsorshipDocuSealWebhook,
   loadFiscalSponsorshipProjectWorkflowSummary,
@@ -44,6 +45,10 @@ export {
   FISCAL_SPONSORSHIP_HANDBOOK_HREF,
   FISCAL_SPONSORSHIP_HANDBOOK_NAV_ITEMS,
 } from "./lib/application-data"
+export {
+  normalizeFiscalSponsorshipBudgetRows,
+  summarizeBudgetRows,
+} from "./lib/budget-plan"
 export { FISCAL_SPONSORSHIP_PROTOTYPE_STEPS } from "./lib/prototype-data"
 export { buildFiscalSponsorshipProjectWorkbenchData } from "./lib/project-workbench-data"
 export {

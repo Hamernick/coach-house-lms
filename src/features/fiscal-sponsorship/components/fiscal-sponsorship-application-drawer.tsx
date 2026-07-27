@@ -91,7 +91,7 @@ export function FiscalSponsorshipApplicationEditor({
   surface,
 }: FiscalSponsorshipApplicationEditorProps) {
   const formId = React.useId()
-  const loadedProjectIdRef = React.useRef<string | null>(null)
+  const loadedApplicationKeyRef = React.useRef<string | null>(null)
   const [draft, setDraft] = React.useState<FiscalSponsorshipApplicationDraft>(
     () => buildFiscalSponsorshipApplicationDraft({ data })
   )
@@ -115,13 +115,16 @@ export function FiscalSponsorshipApplicationEditor({
     data.applicationPrefill?.sourceActivityKind ??
     data.applicationPrefill?.focusArea ??
     null
+  const applicationKey = `${data.projectId}:${
+    data.applicationPrefill?.sourceActivityId ?? ""
+  }`
   const draftDirty = React.useMemo(
     () => JSON.stringify(draft) !== JSON.stringify(baselineDraft),
     [baselineDraft, draft]
   )
 
   React.useEffect(() => {
-    if (!open || loadedProjectIdRef.current === data.projectId) return
+    if (!open || loadedApplicationKeyRef.current === applicationKey) return
 
     let cancelled = false
     setLoadingDraft(true)
@@ -145,7 +148,7 @@ export function FiscalSponsorshipApplicationEditor({
           application: result.application,
           data,
         })
-        loadedProjectIdRef.current = data.projectId
+        loadedApplicationKeyRef.current = applicationKey
         setDraft(loadedDraft)
         setBaselineDraft(loadedDraft)
         setLoadingDraft(false)
@@ -155,7 +158,7 @@ export function FiscalSponsorshipApplicationEditor({
     return () => {
       cancelled = true
     }
-  }, [data, open])
+  }, [applicationKey, data, open])
 
   React.useEffect(() => {
     if (!draftDirty) return
@@ -318,6 +321,7 @@ export function FiscalSponsorshipApplicationEditor({
         draft={draft}
         formId={formId}
         projectId={data.projectId}
+        sourceActivityTitle={sourceActivityTitle}
         onFieldChange={handleFieldChange}
       />
     </div>

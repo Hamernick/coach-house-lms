@@ -23,7 +23,7 @@ import {
 } from "./workflow-notifications"
 import {
   buildWorkflowTableError,
-  canCoachManageFiscalSponsorship,
+  canManageFiscalSponsorshipForOrganization,
   getApplicationOrganizationName,
   insertFiscalEvent,
   isMissingFiscalWorkflowTableError,
@@ -44,11 +44,17 @@ export async function generateFiscalSponsorshipAgreement(
   if ("error" in context) return context
 
   if (
-    !canCoachManageFiscalSponsorship(
-      context.profileAudience.isPlatformStaff || context.profileAudience.isAdmin
-    )
+    !(await canManageFiscalSponsorshipForOrganization({
+      accessLevel: context.profileAudience.platformAccessLevel,
+      organizationId: context.project.org_id,
+      supabase: context.supabase,
+      userId: context.user.id,
+    }))
   ) {
-    return { error: "Only Coach House admins can generate agreements." }
+    return {
+      error:
+        "Only the assigned Coach House reviewer can generate this agreement.",
+    }
   }
 
   const loaded = await loadFiscalApplicationForProject(context)
@@ -213,11 +219,16 @@ export async function sendFiscalSponsorshipAgreementForSignature(
   if ("error" in context) return context
 
   if (
-    !canCoachManageFiscalSponsorship(
-      context.profileAudience.isPlatformStaff || context.profileAudience.isAdmin
-    )
+    !(await canManageFiscalSponsorshipForOrganization({
+      accessLevel: context.profileAudience.platformAccessLevel,
+      organizationId: context.project.org_id,
+      supabase: context.supabase,
+      userId: context.user.id,
+    }))
   ) {
-    return { error: "Only Coach House admins can send agreements." }
+    return {
+      error: "Only the assigned Coach House reviewer can send this agreement.",
+    }
   }
 
   const loaded = await loadFiscalApplicationForProject(context)

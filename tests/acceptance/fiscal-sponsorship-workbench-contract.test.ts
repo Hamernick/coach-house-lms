@@ -212,7 +212,9 @@ describe("fiscal sponsorship workbench contract", () => {
     expect(workflowSummary).toContain("getLatestRequiredDocumentRows")
     expect(workflowSummary).toContain("resolveDocuSealSubmitterSigningHref")
     expect(workflowSummary).toContain("buildProjectAssetHref")
-    expect(workflowSummary).toContain("canCoachManageFiscalSponsorship")
+    expect(workflowSummary).toContain(
+      "canManageFiscalSponsorshipForOrganization"
+    )
   })
 
   it("keeps superadmin routing and member project placement explicit", () => {

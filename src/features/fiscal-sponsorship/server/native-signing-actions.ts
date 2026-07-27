@@ -38,7 +38,10 @@ import {
   validateSignatureValue,
   type SigningContext,
 } from "./native-signing-context"
-import { notifyFiscalNativeAgreementCompleted } from "./workflow-notifications"
+import {
+  notifyFiscalApplicantSigned,
+  notifyFiscalNativeAgreementCompleted,
+} from "./workflow-notifications"
 
 export async function saveFiscalSponsorshipSigningDraft(
   input: SaveFiscalSponsorshipSigningDraftInput
@@ -269,6 +272,14 @@ async function completeApplicantSignature({
     }
   )
   if (error) throw new Error("Unable to finalize the applicant signature.")
+  await notifyFiscalApplicantSigned({
+    actorId: context.appContext.user.id,
+    applicationId: context.packet.application_id,
+    orgId: context.packet.org_id,
+    packetId: context.packet.id,
+    projectId: context.packet.project_id,
+    projectName: context.projectName,
+  })
   return "applicant_signed" as const
 }
 

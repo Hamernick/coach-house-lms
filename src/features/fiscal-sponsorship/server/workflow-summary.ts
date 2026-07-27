@@ -20,7 +20,7 @@ import {
 } from "./workflow-event-summary"
 import {
   buildWorkflowTableError,
-  canCoachManageFiscalSponsorship,
+  canManageFiscalSponsorshipForOrganization,
   isMissingFiscalWorkflowTableError,
   resolveProjectAndContext,
 } from "./workflow-support"
@@ -453,9 +453,13 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
       : { error: "Unable to load fiscal sponsorship activity." }
   }
 
-  const canViewCoachSigningLink = canCoachManageFiscalSponsorship(
-    context.profileAudience.isPlatformStaff || context.profileAudience.isAdmin
-  )
+  const canViewCoachSigningLink =
+    await canManageFiscalSponsorshipForOrganization({
+      accessLevel: context.profileAudience.platformAccessLevel,
+      organizationId: context.project.org_id,
+      supabase: context.supabase,
+      userId: context.user.id,
+    })
 
   return {
     applicationId: application.id,

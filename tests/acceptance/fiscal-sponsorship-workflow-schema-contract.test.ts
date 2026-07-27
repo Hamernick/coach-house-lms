@@ -145,7 +145,7 @@ describe("fiscal sponsorship workflow schema contract", () => {
     expect(actions).toContain('subject: "application"')
     expect(actions).toContain('subject: "document"')
     expect(actions).toContain("review_notes: reviewNotes")
-    expect(actions).toContain("canCoachManageFiscalSponsorship")
+    expect(actions).toContain("canManageFiscalSponsorshipForOrganization")
     expect(agreementActions).toContain("generateFiscalSponsorshipAgreement")
     expect(agreementActions).toContain(
       "sendFiscalSponsorshipAgreementForSignature"
@@ -188,7 +188,7 @@ describe("fiscal sponsorship workflow schema contract", () => {
 
     expect(workflowNotifications).toContain("createNotification")
     expect(workflowNotifications).toContain("createSupabaseAdminClient")
-    expect(workflowNotifications).toContain("loadPlatformAdminRecipientIds")
+    expect(workflowNotifications).toContain("loadFiscalReviewerRecipientIds")
     expect(workflowNotifications).toContain(
       "loadOrganizationEditorRecipientIds"
     )

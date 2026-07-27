@@ -414,12 +414,12 @@ export async function loadLatestAgreementDocument({
   if (error) {
     return isMissingFiscalWorkflowTableError(error)
       ? buildWorkflowTableError()
-      : { error: "Unable to load the generated agreement." }
+      : { error: "Unable to load the prepared agreement." }
   }
 
   if (!data) {
     return {
-      error: "Generate the fiscal sponsorship agreement before sending.",
+      error: "Prepare the fiscal sponsorship agreement before sending it.",
     }
   }
 

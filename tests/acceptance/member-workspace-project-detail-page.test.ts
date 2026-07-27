@@ -508,7 +508,7 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     expect(markup).toContain("rounded-[1.45rem]")
     expect(markup).toContain("max-w-none")
     expect(markup).not.toContain("Application approved")
-    expect(markup).not.toContain("Agreement generated")
+    expect(markup).not.toContain("Agreement prepared")
   })
 
   it("renders real fiscal sponsorship workflow status when available", () => {
@@ -546,11 +546,11 @@ describe("MemberWorkspaceProjectDetailPage", () => {
     })
 
     expect(markup).toContain("Agreement ready")
-    expect(markup).toContain("Generated")
+    expect(markup).toContain("Prepared")
     expect(markup).toContain("Signatures")
     expect(markup).toContain("Not sent")
     expect(markup).toContain("Next: Send prepared agreement for signatures")
-    expect(markup).toContain("Model C agreement v1 is generated")
+    expect(markup).toContain("Model C agreement v1 is prepared")
   })
 
   it("renders coach fiscal sponsorship workflow actions when provided", () => {
@@ -607,8 +607,9 @@ describe("MemberWorkspaceProjectDetailPage", () => {
       "data-fiscal-sponsorship-project-workbench-admin-actions"
     )
     expect(markup).toContain("Approve")
-    expect(markup).toContain("Generate")
-    expect(markup).toContain("Send")
+    expect(markup).toContain("Prepare agreement")
+    expect(markup).toContain("Send for signature")
+    expect(markup).not.toContain(">Generate<")
   })
 
   it("keeps /organizations fiscal document actions platform-admin only", () => {

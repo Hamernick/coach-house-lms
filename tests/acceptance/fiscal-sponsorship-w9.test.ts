@@ -101,7 +101,7 @@ describe("fiscal sponsorship W-9 completion", () => {
     expect(actions).toContain("FISCAL_SPONSORSHIP_SIGNING_BUCKET")
     expect(actions).not.toContain("field_values: fields")
     expect(agreementActions).toContain(
-      "Accept the applicant’s completed W-9 before generating an agreement."
+      "Accept the applicant’s completed W-9 before preparing an agreement."
     )
     expect(migration).toContain("reject_executed_fiscal_tax_form_mutation")
     expect(migration).toContain("Executed fiscal tax forms are immutable")

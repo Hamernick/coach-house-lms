@@ -53,7 +53,7 @@ export async function generateFiscalSponsorshipAgreement(
   ) {
     return {
       error:
-        "Only the assigned Coach House reviewer can generate this agreement.",
+        "Only the assigned Coach House reviewer can prepare this agreement.",
     }
   }
 
@@ -61,7 +61,7 @@ export async function generateFiscalSponsorshipAgreement(
   if ("error" in loaded) return loaded
 
   if (!["approved", "agreement_ready"].includes(loaded.application.status)) {
-    return { error: "Approve the application before generating an agreement." }
+    return { error: "Approve the application before preparing an agreement." }
   }
   const { data: acceptedW9, error: acceptedW9Error } = await context.supabase
     .from("fiscal_sponsorship_documents")
@@ -82,7 +82,7 @@ export async function generateFiscalSponsorshipAgreement(
   if (!acceptedW9) {
     return {
       error:
-        "Accept the applicant’s completed W-9 before generating an agreement.",
+        "Accept the applicant’s completed W-9 before preparing an agreement.",
     }
   }
 
@@ -126,7 +126,9 @@ export async function generateFiscalSponsorshipAgreement(
     .from("fiscal-signing")
     .upload(storagePath, agreement.bytes, { contentType: mime })
   if (uploadError) {
-    return { error: "Unable to upload generated fiscal sponsorship agreement." }
+    return {
+      error: "Unable to upload the prepared fiscal sponsorship agreement.",
+    }
   }
 
   const { data: previousDocument } = await context.supabase
@@ -174,7 +176,7 @@ export async function generateFiscalSponsorshipAgreement(
     await admin.storage.from("fiscal-signing").remove([storagePath])
     return isMissingFiscalWorkflowTableError(documentError)
       ? buildWorkflowTableError()
-      : { error: "Unable to save the generated agreement document." }
+      : { error: "Unable to save the prepared agreement document." }
   }
 
   const updated = await updateFiscalApplicationStatus({
@@ -193,7 +195,7 @@ export async function generateFiscalSponsorshipAgreement(
     metadata: { documentId: document.id, fileSha256: agreement.sha256 },
     orgId: loaded.application.org_id,
     projectId: loaded.application.project_id,
-    summary: "Fiscal sponsorship agreement generated.",
+    summary: "Fiscal sponsorship agreement prepared.",
     supabase: context.supabase,
     userId: context.user.id,
   })
@@ -265,7 +267,7 @@ export async function sendFiscalSponsorshipAgreementForSignature(
       FISCAL_SPONSORSHIP_FORM_B_TEMPLATE.version ||
     !documentResult.document.file_sha256
   ) {
-    return { error: "Generate the native Form B agreement before sending." }
+    return { error: "Prepare the Form B agreement before sending it." }
   }
   const fields = normalizeFiscalSponsorshipFormBFields(
     (documentResult.document.field_values ?? {}) as Record<string, string>

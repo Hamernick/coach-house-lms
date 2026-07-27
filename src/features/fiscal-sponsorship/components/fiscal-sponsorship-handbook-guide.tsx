@@ -69,7 +69,7 @@ export function FiscalSponsorshipHandbookGuide() {
               </p>
               <p className="text-muted-foreground mt-1 text-sm leading-snug">
                 This guide is pulled from the 2026 Coach House handbook. Use it
-                as the source for generated applications, agreements,
+                as the source for preparing applications, agreements,
                 disclosures, grant requests, and review controls.
               </p>
             </div>

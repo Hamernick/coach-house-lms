@@ -1,7 +1,6 @@
 export {
   connectFiscalSponsorshipDocumentAsset,
   buildFiscalSponsorshipSigningPreview,
-  canManageFiscalSponsorshipForOrganization,
   generateFiscalSponsorshipAgreement,
   handleFiscalSponsorshipDocuSealWebhook,
   loadFiscalSponsorshipProjectWorkflowSummary,

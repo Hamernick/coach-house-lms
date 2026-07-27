@@ -28,7 +28,6 @@ import {
   sendFiscalSponsorshipAgreementForSignature as sendFiscalSponsorshipAgreementForSignatureImpl,
 } from "./server/workflow-agreement-actions"
 import { loadFiscalSponsorshipProjectWorkflowSummary as loadFiscalSponsorshipProjectWorkflowSummaryImpl } from "./server/workflow-summary"
-import { canManageFiscalSponsorshipForOrganization as canManageFiscalSponsorshipForOrganizationImpl } from "./server/workflow-support"
 
 export async function loadFiscalSponsorshipApplicationDraft(
   ...args: Parameters<typeof loadFiscalSponsorshipApplicationDraftImpl>
@@ -88,12 +87,6 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
   ...args: Parameters<typeof loadFiscalSponsorshipProjectWorkflowSummaryImpl>
 ) {
   return loadFiscalSponsorshipProjectWorkflowSummaryImpl(...args)
-}
-
-export async function canManageFiscalSponsorshipForOrganization(
-  ...args: Parameters<typeof canManageFiscalSponsorshipForOrganizationImpl>
-) {
-  return canManageFiscalSponsorshipForOrganizationImpl(...args)
 }
 
 export async function completeFiscalSponsorshipSignature(

@@ -105,7 +105,7 @@ export function buildFiscalSponsorshipAgreementDocument({
   <body>
     <p class="eyebrow">Coach House fiscal sponsorship</p>
     <h1>Model C Fiscal Sponsorship Agreement</h1>
-    <p>Generated ${escapeHtml(generatedDate)} from the approved fiscal sponsorship application.</p>
+    <p>Prepared ${escapeHtml(generatedDate)} from the approved fiscal sponsorship application.</p>
 
     <table>
       <tbody>

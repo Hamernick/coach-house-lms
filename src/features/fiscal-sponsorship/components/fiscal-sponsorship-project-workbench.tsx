@@ -374,7 +374,7 @@ export function FiscalSponsorshipProjectWorkbench({
               Fiscal sponsorship workbench
             </p>
             <p className="text-muted-foreground mt-1 text-xs leading-snug">
-              One place for intake, uploads, review, generated documents,
+              One place for intake, uploads, review, prepared documents,
               signatures, and grant-payment readiness.
             </p>
           </div>

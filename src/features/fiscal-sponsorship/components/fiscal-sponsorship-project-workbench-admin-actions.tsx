@@ -139,9 +139,9 @@ export function FiscalSponsorshipProjectWorkbenchAdminActions({
           !generateFiscalSponsorshipAgreementAction
         }
         onClick={() =>
-          runAction("generate", "Agreement generated", async () => {
+          runAction("generate", "Agreement prepared", async () => {
             if (!generateFiscalSponsorshipAgreementAction) {
-              return { error: "Agreement generation is unavailable." }
+              return { error: "Agreement preparation is unavailable." }
             }
 
             const result = await generateFiscalSponsorshipAgreementAction({
@@ -161,7 +161,7 @@ export function FiscalSponsorshipProjectWorkbenchAdminActions({
         ) : (
           <FileSignatureIcon data-icon="inline-start" aria-hidden />
         )}
-        Generate
+        Prepare agreement
       </Button>
       <Button
         type="button"
@@ -174,9 +174,9 @@ export function FiscalSponsorshipProjectWorkbenchAdminActions({
           !sendFiscalSponsorshipAgreementForSignatureAction
         }
         onClick={() =>
-          runAction("send", "Agreement sent", async () => {
+          runAction("send", "Signature request sent", async () => {
             if (!sendFiscalSponsorshipAgreementForSignatureAction) {
-              return { error: "Agreement sending is unavailable." }
+              return { error: "Sending for signature is unavailable." }
             }
 
             const result =
@@ -198,7 +198,7 @@ export function FiscalSponsorshipProjectWorkbenchAdminActions({
         ) : (
           <SendIcon data-icon="inline-start" aria-hidden />
         )}
-        Send
+        Send for signature
       </Button>
     </div>
   )

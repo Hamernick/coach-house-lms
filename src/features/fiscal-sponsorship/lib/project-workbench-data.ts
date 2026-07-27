@@ -199,7 +199,7 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
         ? `${agreementDocument.title} v${agreementDocument.version} is ${formatDocumentStatus(
             agreementDocumentStatus
           ).toLowerCase()}`
-        : "Generate a Form B agreement after approval",
+        : "Prepare the Form B agreement after approval",
       complete: hasGeneratedAgreement,
     },
     {
@@ -209,7 +209,7 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
         ? `Signature packet is ${formatPacketStatus(
             signaturePacketStatus
           ).toLowerCase()}`
-        : "Send the generated agreement for applicant and Coach House signatures",
+        : "Send the prepared agreement for applicant and Coach House signatures",
       complete: hasCompletedSignaturePacket,
     },
   ]
@@ -367,7 +367,7 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
             ).toLowerCase()}.`
           : "Prepared from confirmed application data.",
         document: agreementDocument,
-        fallbackStatus: "Not generated",
+        fallbackStatus: "Not prepared",
         id: "generated-agreement",
         title: "Prepared agreement",
       }),

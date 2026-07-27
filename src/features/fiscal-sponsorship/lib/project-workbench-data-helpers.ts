@@ -61,13 +61,13 @@ export function formatDocumentStatus(
     draft: "Draft",
     error: "Error",
     executed: "Executed",
-    generated: "Generated",
+    generated: "Prepared",
     partially_signed: "Partially signed",
     sent_for_signature: "Sent for signature",
     voided: "Voided",
   }
 
-  return status ? labels[status] : "Not generated"
+  return status ? labels[status] : "Not prepared"
 }
 
 export function formatPacketStatus(

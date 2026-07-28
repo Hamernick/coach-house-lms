@@ -12,11 +12,40 @@ import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 
 type FiscalDocumentRow = Pick<
   Database["public"]["Tables"]["fiscal_sponsorship_documents"]["Row"],
-  "file_sha256" | "mime" | "storage_bucket" | "storage_path" | "title"
+  | "file_sha256"
+  | "mime"
+  | "org_id"
+  | "storage_bucket"
+  | "storage_path"
+  | "title"
 >
 
 function sanitizeFilename(value: string) {
   return `${value.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-|-$/g, "") || "fiscal-sponsorship-document"}.pdf`
+}
+
+async function canPlatformStaffAccessFiscalDocument({
+  accessLevel,
+  admin,
+  organizationId,
+  userId,
+}: {
+  accessLevel: "coach" | "developer" | null
+  admin: ReturnType<typeof createSupabaseAdminClient>
+  organizationId: string
+  userId: string
+}) {
+  if (accessLevel === "developer") return true
+  if (accessLevel !== "coach") return false
+
+  const { data, error } = await admin
+    .from("organization_coach_assignments")
+    .select("coach_user_id")
+    .eq("organization_id", organizationId)
+    .eq("coach_user_id", userId)
+    .maybeSingle<{ coach_user_id: string }>()
+
+  return !error && Boolean(data)
 }
 
 export async function GET(
@@ -37,20 +66,31 @@ export async function GET(
     supabase,
     userId: user.id,
   })
-  const documentClient =
+  const admin = createSupabaseAdminClient()
+  const staffOrAdmin =
     profileAudience.isPlatformStaff || profileAudience.isAdmin
-      ? createSupabaseAdminClient()
-      : supabase
+  const documentClient = staffOrAdmin ? admin : supabase
   const { data: document, error } = await documentClient
     .from("fiscal_sponsorship_documents")
-    .select("file_sha256, mime, storage_bucket, storage_path, title")
+    .select("file_sha256, mime, org_id, storage_bucket, storage_path, title")
     .eq("id", documentId)
     .maybeSingle<FiscalDocumentRow>()
   if (error || !document?.storage_path || !document.file_sha256) {
     return NextResponse.json({ error: "Document not found." }, { status: 404 })
   }
+  if (
+    profileAudience.isPlatformStaff &&
+    !profileAudience.isAdmin &&
+    !(await canPlatformStaffAccessFiscalDocument({
+      accessLevel: profileAudience.platformAccessLevel,
+      admin,
+      organizationId: document.org_id,
+      userId: user.id,
+    }))
+  ) {
+    return NextResponse.json({ error: "Document not found." }, { status: 404 })
+  }
 
-  const admin = createSupabaseAdminClient()
   const { data, error: downloadError } = await admin.storage
     .from(document.storage_bucket)
     .download(document.storage_path)

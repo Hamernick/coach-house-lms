@@ -5,15 +5,24 @@ import { useRouter } from "next/navigation"
 import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
 import FileSignatureIcon from "lucide-react/dist/esm/icons/file-signature"
 import Loader2Icon from "lucide-react/dist/esm/icons/loader-2"
+import MessageSquareWarningIcon from "lucide-react/dist/esm/icons/message-square-warning"
 import SendIcon from "lucide-react/dist/esm/icons/send"
+import XCircleIcon from "lucide-react/dist/esm/icons/x-circle"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 import type { FiscalSponsorshipProjectWorkbenchAdminActionProps } from "../types"
+import { FiscalSponsorshipApplicationReviewDialog } from "./fiscal-sponsorship-application-review-dialog"
 
-type PendingFiscalWorkbenchAction = "approve" | "generate" | "send"
+type PendingFiscalWorkbenchAction =
+  | "approve"
+  | "decline"
+  | "generate"
+  | "needs_info"
+  | "send"
+type ReviewDialogDecision = "needs_info" | "declined"
 
 type FiscalSponsorshipProjectWorkbenchAdminActionsProps =
   FiscalSponsorshipProjectWorkbenchAdminActionProps & {
@@ -52,6 +61,8 @@ export function FiscalSponsorshipProjectWorkbenchAdminActions({
   const [isPending, startTransition] = useTransition()
   const [pendingAction, setPendingAction] =
     useState<PendingFiscalWorkbenchAction | null>(null)
+  const [reviewDialogDecision, setReviewDialogDecision] =
+    useState<ReviewDialogDecision | null>(null)
 
   if (
     !hasFiscalSponsorshipAdminActions({
@@ -66,7 +77,8 @@ export function FiscalSponsorshipProjectWorkbenchAdminActions({
   const runAction = (
     action: PendingFiscalWorkbenchAction,
     successMessage: string,
-    callback: () => Promise<{ ok: true } | { error: string }>
+    callback: () => Promise<{ ok: true } | { error: string }>,
+    onSuccess?: () => void
   ) => {
     setPendingAction(action)
     startTransition(async () => {
@@ -80,6 +92,7 @@ export function FiscalSponsorshipProjectWorkbenchAdminActions({
       }
 
       toast.success(successMessage)
+      onSuccess?.()
       router.refresh()
     })
   }
@@ -127,6 +140,36 @@ export function FiscalSponsorshipProjectWorkbenchAdminActions({
           <CheckCircle2Icon data-icon="inline-start" aria-hidden />
         )}
         Approve
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-8 rounded-full px-3"
+        disabled={
+          disabled ||
+          !canApproveApplication ||
+          !reviewFiscalSponsorshipApplicationAction
+        }
+        onClick={() => setReviewDialogDecision("needs_info")}
+      >
+        <MessageSquareWarningIcon data-icon="inline-start" aria-hidden />
+        Needs info
+      </Button>
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="text-destructive hover:text-destructive h-8 rounded-full px-3"
+        disabled={
+          disabled ||
+          !canApproveApplication ||
+          !reviewFiscalSponsorshipApplicationAction
+        }
+        onClick={() => setReviewDialogDecision("declined")}
+      >
+        <XCircleIcon data-icon="inline-start" aria-hidden />
+        Decline
       </Button>
       <Button
         type="button"
@@ -200,6 +243,39 @@ export function FiscalSponsorshipProjectWorkbenchAdminActions({
         )}
         Send for signature
       </Button>
+      {reviewDialogDecision ? (
+        <FiscalSponsorshipApplicationReviewDialog
+          decision={reviewDialogDecision}
+          open
+          pending={
+            pendingAction === "needs_info" || pendingAction === "decline"
+          }
+          onOpenChange={(open) => {
+            if (!open && !pendingAction) setReviewDialogDecision(null)
+          }}
+          onConfirm={(notes) => {
+            const decision = reviewDialogDecision
+            runAction(
+              decision === "needs_info" ? "needs_info" : "decline",
+              decision === "needs_info"
+                ? "Information request sent"
+                : "Application declined",
+              async () => {
+                if (!reviewFiscalSponsorshipApplicationAction) {
+                  return { error: "Application review is unavailable." }
+                }
+
+                return reviewFiscalSponsorshipApplicationAction({
+                  decision,
+                  notes,
+                  projectId,
+                })
+              },
+              () => setReviewDialogDecision(null)
+            )
+          }}
+        />
+      ) : null}
     </div>
   )
 }

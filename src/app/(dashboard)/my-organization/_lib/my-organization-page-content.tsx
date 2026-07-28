@@ -140,6 +140,7 @@ export default async function MyOrganizationPage({
     modeParam,
     tabParam,
     programIdParam,
+    initialWorkspaceFocusCardId,
     acceleratorGroupParam,
     acceleratorModuleParam,
     acceleratorStepParam,
@@ -477,6 +478,7 @@ export default async function MyOrganizationPage({
 
   return (
     <MyOrganizationWorkspaceView
+      initialFocusCardId={initialWorkspaceFocusCardId}
       seed={workspaceSeedWithTutorial}
       onInitialOnboardingSubmit={completeOnboardingAction}
       organizationEditorData={organizationEditorData}

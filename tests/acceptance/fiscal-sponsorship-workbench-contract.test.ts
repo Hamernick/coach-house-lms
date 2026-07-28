@@ -3,6 +3,9 @@ import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
+import { getFiscalWorkflowNextStep } from "@/features/fiscal-sponsorship/lib/project-workbench-data-helpers"
+import { resolveMyOrganizationPageSearchState } from "@/app/(dashboard)/my-organization/_lib/my-organization-page-search"
+
 const ROOT = process.cwd()
 
 function readSource(relativePath: string) {
@@ -10,6 +13,38 @@ function readSource(relativePath: string) {
 }
 
 describe("fiscal sponsorship workbench contract", () => {
+  it("gates agreement preparation on an accepted W-9", () => {
+    expect(
+      getFiscalWorkflowNextStep({
+        applicationStatus: "approved",
+        hasAcceptedW9: false,
+      })
+    ).toBe("Complete and accept the signed W-9")
+    expect(
+      getFiscalWorkflowNextStep({
+        applicationStatus: "approved",
+        hasAcceptedW9: true,
+      })
+    ).toBe("Prepare the sponsorship agreement")
+  })
+
+  it("resolves fiscal notification links to the fiscal workspace card", async () => {
+    await expect(
+      resolveMyOrganizationPageSearchState(
+        Promise.resolve({ focus: "fiscal-sponsorship" })
+      )
+    ).resolves.toEqual(
+      expect.objectContaining({
+        initialWorkspaceFocusCardId: "fiscal-sponsorship",
+      })
+    )
+    await expect(
+      resolveMyOrganizationPageSearchState(Promise.resolve({ focus: "other" }))
+    ).resolves.toEqual(
+      expect.objectContaining({ initialWorkspaceFocusCardId: null })
+    )
+  })
+
   it("keeps admin workbench actions injected and documents/signing separate", () => {
     const projectWorkbench = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-project-workbench.tsx"
@@ -31,6 +66,18 @@ describe("fiscal sponsorship workbench contract", () => {
     )
     const projectWorkbenchAdminActions = readSource(
       "src/features/fiscal-sponsorship/components/fiscal-sponsorship-project-workbench-admin-actions.tsx"
+    )
+    const applicationReviewDialog = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-application-review-dialog.tsx"
+    )
+    const applicationReviewNote = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-application-review-note.tsx"
+    )
+    const workflowDrawer = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-workflow-drawer.tsx"
+    )
+    const applicationDrawer = readSource(
+      "src/features/fiscal-sponsorship/components/fiscal-sponsorship-application-drawer.tsx"
     )
 
     expect(projectWorkbench).toContain("FiscalSponsorshipProjectWorkbench")
@@ -138,7 +185,32 @@ describe("fiscal sponsorship workbench contract", () => {
     )
     expect(projectWorkbenchAdminActions).toContain("agreementDocumentId")
     expect(projectWorkbenchAdminActions).toContain('decision: "approved"')
+    expect(projectWorkbenchAdminActions).toContain(
+      'setReviewDialogDecision("needs_info")'
+    )
+    expect(projectWorkbenchAdminActions).toContain(
+      'setReviewDialogDecision("declined")'
+    )
+    expect(projectWorkbenchAdminActions).toContain(
+      "FiscalSponsorshipApplicationReviewDialog"
+    )
     expect(projectWorkbenchAdminActions).not.toContain("<Card")
+    expect(applicationReviewDialog).toContain(
+      "Tell the applicant exactly what must be updated"
+    )
+    expect(applicationReviewDialog).toContain("Explain the decision")
+    expect(applicationReviewDialog).toContain(
+      "disabled={pending || !trimmedNotes}"
+    )
+    expect(applicationReviewNote).toContain(
+      "Coach House needs more information"
+    )
+    expect(workflowDrawer).toContain("FiscalSponsorshipApplicationReviewNote")
+    expect(applicationDrawer).toContain(
+      "FiscalSponsorshipApplicationReviewNote"
+    )
+    expect(applicationDrawer).toContain("Application is read-only")
+    expect(applicationDrawer).toContain("canEditApplication")
   })
 
   it("keeps project workbench data and server summary tied to real fiscal tables", () => {
@@ -168,6 +240,14 @@ describe("fiscal sponsorship workbench contract", () => {
     expect(projectWorkbenchData).toContain("phases")
     expect(projectWorkbenchData).toContain("latestExecutedAgreementDocument")
     expect(projectWorkbenchData).toContain("latestAuditCertificateDocument")
+    expect(projectWorkbenchData).toContain("hasAcceptedW9")
+    expect(projectWorkbenchData).toContain(
+      'document.documentKey === "tax_id_confirmation"'
+    )
+    expect(projectWorkbenchData).toContain('document.status === "executed"')
+    expect(projectWorkbenchData).toContain(
+      'document.reviewStatus === "accepted"'
+    )
     expect(projectWorkbenchData).toContain(
       'document.reviewStatus !== "rejected"'
     )
@@ -191,6 +271,9 @@ describe("fiscal sponsorship workbench contract", () => {
     expect(projectWorkbenchDataHelpers).toContain('id: "reporting"')
     expect(projectWorkbenchDataHelpers).toContain('id: "closeout"')
     expect(projectWorkbenchDataHelpers).toContain("Grant request support")
+    expect(projectWorkbenchDataHelpers).toContain(
+      "Complete and accept the signed W-9"
+    )
 
     expect(workflowSummary).toContain(
       "loadFiscalSponsorshipProjectWorkflowSummary"
@@ -207,6 +290,10 @@ describe("fiscal sponsorship workbench contract", () => {
       '.order("created_at", { ascending: false })'
     )
     expect(workflowSummary).toContain("latestAgreementDocument")
+    expect(workflowSummary).toContain("review_notes")
+    expect(workflowSummary).toContain("reviewNotes: application.review_notes")
+    expect(workflowSummary).toContain("canEditApplication")
+    expect(workflowSummary).toContain("canEditFiscalProject")
     expect(workflowSummary).toContain("latestExecutedAgreementDocument")
     expect(workflowSummary).toContain("latestAuditCertificateDocument")
     expect(workflowSummary).toContain("getLatestRequiredDocumentRows")
@@ -214,6 +301,9 @@ describe("fiscal sponsorship workbench contract", () => {
     expect(workflowSummary).toContain("buildProjectAssetHref")
     expect(workflowSummary).toContain(
       "canManageFiscalSponsorshipForOrganization"
+    )
+    expect(workflowSummary).toContain(
+      "Only the assigned Coach House reviewer can view"
     )
   })
 
@@ -235,6 +325,15 @@ describe("fiscal sponsorship workbench contract", () => {
     )
     const organizationsPage = readSource(
       "src/app/(dashboard)/organizations/page.tsx"
+    )
+    const pageSearch = readSource(
+      "src/app/(dashboard)/my-organization/_lib/my-organization-page-search.ts"
+    )
+    const workspaceView = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/my-organization-workspace-view.tsx"
+    )
+    const workspaceCanvas = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas.tsx"
     )
 
     expect(memberProjectFiscalWorkbench).toContain(
@@ -294,5 +393,11 @@ describe("fiscal sponsorship workbench contract", () => {
     expect(organizationDetailRoute).not.toContain(
       "requireMemberWorkspacePageAccess"
     )
+    expect(pageSearch).toContain(
+      'resolvedSearchParams?.focus === "fiscal-sponsorship"'
+    )
+    expect(workspaceView).toContain("initialFocusCardId")
+    expect(workspaceCanvas).toContain("initialFocusCardId")
+    expect(workspaceCanvas).toContain("cardId !== initialFocusCardId")
   })
 })

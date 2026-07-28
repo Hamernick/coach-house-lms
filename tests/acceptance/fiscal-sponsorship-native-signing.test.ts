@@ -113,6 +113,9 @@ describe("native fiscal sponsorship signing", () => {
     expect(migration).toContain("staff.access_level in ('developer', 'coach')")
     expect(downloadRoute).toContain("profileAudience.isPlatformStaff")
     expect(downloadRoute).toContain("createSupabaseAdminClient()")
+    expect(downloadRoute).toContain("organization_coach_assignments")
+    expect(downloadRoute).toContain("canPlatformStaffAccessFiscalDocument")
+    expect(downloadRoute).toContain("profileAudience.platformAccessLevel")
   })
 
   it("keeps the versioned Form B manifest within all four pages", () => {

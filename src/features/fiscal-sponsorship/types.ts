@@ -530,10 +530,12 @@ export type FiscalSponsorshipProjectWorkflowEvent = {
 export type FiscalSponsorshipProjectWorkflowSummary = {
   applicationId: string | null
   applicationStatus: FiscalSponsorshipApplicationStatus | null
+  canEditApplication?: boolean
   canCompleteW9?: boolean
   legalEntityType: FiscalSponsorshipLegalEntityType | null
   submittedAt: string | null
   reviewedAt: string | null
+  reviewNotes?: string | null
   events: FiscalSponsorshipProjectWorkflowEvent[]
   latestAgreementDocument: FiscalSponsorshipProjectWorkflowSummaryDocument | null
   latestExecutedAgreementDocument: FiscalSponsorshipProjectWorkflowSummaryDocument | null

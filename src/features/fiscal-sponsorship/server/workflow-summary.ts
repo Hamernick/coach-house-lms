@@ -20,6 +20,7 @@ import {
 } from "./workflow-event-summary"
 import {
   buildWorkflowTableError,
+  canEditFiscalProject,
   canManageFiscalSponsorshipForOrganization,
   isMissingFiscalWorkflowTableError,
   resolveProjectAndContext,
@@ -97,6 +98,7 @@ type ApplicationSummaryRow = {
   id: string
   legal_entity_type: string | null
   primary_email: string | null
+  review_notes: string | null
   status: string
   reviewed_at: string | null
   submitted_at: string | null
@@ -330,10 +332,29 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
   const context = await resolveProjectAndContext(projectId)
   if ("error" in context) return context
 
+  const isViewingActiveOrganization =
+    context.activeOrg.orgId === context.project.org_id
+  if (
+    context.profileAudience.isPlatformStaff &&
+    !context.profileAudience.isAdmin &&
+    !isViewingActiveOrganization &&
+    !(await canManageFiscalSponsorshipForOrganization({
+      accessLevel: context.profileAudience.platformAccessLevel,
+      organizationId: context.project.org_id,
+      supabase: context.supabase,
+      userId: context.user.id,
+    }))
+  ) {
+    return {
+      error:
+        "Only the assigned Coach House reviewer can view this fiscal sponsorship workflow.",
+    }
+  }
+
   const { data: application, error: applicationError } = await context.supabase
     .from("fiscal_sponsorship_applications")
     .select(
-      "id, legal_entity_type, primary_email, status, reviewed_at, submitted_at"
+      "id, legal_entity_type, primary_email, review_notes, status, reviewed_at, submitted_at"
     )
     .eq("project_id", context.project.id)
     .eq("org_id", context.project.org_id)
@@ -349,6 +370,14 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
     return {
       applicationId: null,
       applicationStatus: null,
+      canEditApplication: canEditFiscalProject({
+        activeOrgId: context.activeOrg.orgId,
+        activeOrgRole: context.activeOrg.role,
+        isAdmin:
+          context.profileAudience.isPlatformStaff ||
+          context.profileAudience.isAdmin,
+        project: context.project,
+      }),
       canCompleteW9: false,
       events: [],
       legalEntityType: null,
@@ -358,6 +387,7 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
       latestSignaturePacket: null,
       requiredDocuments: [],
       reviewedAt: null,
+      reviewNotes: null,
       submittedAt: null,
     }
   }
@@ -460,10 +490,24 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
       supabase: context.supabase,
       userId: context.user.id,
     })
+  const applicationStatus = normalizeApplicationStatus(application.status)
+  const canEditApplication =
+    canEditFiscalProject({
+      activeOrgId: context.activeOrg.orgId,
+      activeOrgRole: context.activeOrg.role,
+      isAdmin:
+        context.profileAudience.isPlatformStaff ||
+        context.profileAudience.isAdmin,
+      project: context.project,
+    }) &&
+    (context.profileAudience.isPlatformStaff ||
+      context.profileAudience.isAdmin ||
+      ["draft", "needs_info"].includes(applicationStatus))
 
   return {
     applicationId: application.id,
-    applicationStatus: normalizeApplicationStatus(application.status),
+    applicationStatus,
+    canEditApplication,
     canCompleteW9:
       Boolean(application.primary_email) &&
       application.primary_email?.trim().toLowerCase() ===
@@ -512,6 +556,7 @@ export async function loadFiscalSponsorshipProjectWorkflowSummary(
         }
       : null,
     reviewedAt: application.reviewed_at,
+    reviewNotes: application.review_notes,
     submittedAt: application.submitted_at,
   }
 }

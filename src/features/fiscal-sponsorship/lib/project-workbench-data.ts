@@ -85,6 +85,13 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
   const hasGeneratedAgreement = Boolean(agreementDocument)
   const hasSentSignaturePacket = Boolean(signaturePacket)
   const hasCompletedSignaturePacket = signaturePacketStatus === "completed"
+  const hasAcceptedW9 = requiredDocuments.some(
+    (document) =>
+      document.documentKey === "tax_id_confirmation" &&
+      document.kind === "tax_form" &&
+      document.status === "executed" &&
+      document.reviewStatus === "accepted"
+  )
   const hasProjectDescription = hasValue(project.description)
   const hasProjectLocation = hasValue(project.locationLabel)
   const hasOrganizationOwner = hasValue(organization.ownerName)
@@ -226,10 +233,9 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
       100
   )
   const canApproveApplication = Boolean(
-    applicationStatus &&
-    ["submitted", "in_review", "needs_info"].includes(applicationStatus)
+    applicationStatus && ["submitted", "in_review"].includes(applicationStatus)
   )
-  const canGenerateAgreement = hasApprovedApplication
+  const canGenerateAgreement = hasApprovedApplication && hasAcceptedW9
   const canSendAgreement = Boolean(
     agreementDocument?.id &&
     agreementDocumentStatus === "generated" &&
@@ -320,6 +326,7 @@ export function buildFiscalSponsorshipProjectWorkbenchData({
       hasCloseoutReport,
       hasGrantRequestSupport,
       hasReportSupport,
+      hasAcceptedW9,
       signaturePacketStatus,
     }),
     metrics: [

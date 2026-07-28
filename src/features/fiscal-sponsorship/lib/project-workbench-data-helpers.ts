@@ -161,6 +161,7 @@ export function getFiscalWorkflowNextStep({
   hasCloseoutReport,
   hasGrantRequestSupport,
   hasReportSupport,
+  hasAcceptedW9,
   signaturePacketStatus,
 }: {
   agreementDocumentStatus?: FiscalSponsorshipDocumentStatus | null
@@ -168,6 +169,7 @@ export function getFiscalWorkflowNextStep({
   hasCloseoutReport?: boolean
   hasGrantRequestSupport?: boolean
   hasReportSupport?: boolean
+  hasAcceptedW9?: boolean
   signaturePacketStatus?: FiscalSponsorshipSignaturePacketStatus | null
 }) {
   if (!applicationStatus || applicationStatus === "draft") {
@@ -187,6 +189,9 @@ export function getFiscalWorkflowNextStep({
   }
 
   if (!agreementDocumentStatus || agreementDocumentStatus === "draft") {
+    if (!hasAcceptedW9) {
+      return "Complete and accept the signed W-9"
+    }
     return "Prepare the sponsorship agreement"
   }
 

@@ -451,7 +451,7 @@ export async function completeFiscalSponsorshipSignature(
     revalidatePath(`/fiscal-sponsorship/sign/${context.packet.id}`)
     revalidatePath("/workspace")
     revalidatePath("/my-organization")
-    revalidatePath(`/organizations/${context.packet.org_id}`)
+    revalidatePath(`/organizations/${context.packet.project_id}`)
     return { ok: true, packetId: context.packet.id, status }
   } catch (error) {
     return {

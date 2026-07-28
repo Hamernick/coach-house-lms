@@ -15,6 +15,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 import type { FiscalSponsorshipProjectWorkbenchData } from "../types"
+import { FiscalSponsorshipApplicationReviewNote } from "./fiscal-sponsorship-application-review-note"
 import { FiscalSponsorshipMark } from "./fiscal-sponsorship-mark"
 import { FiscalSponsorshipRequiredDocumentsUploadPanel } from "./fiscal-sponsorship-required-documents-upload-panel"
 import {
@@ -91,6 +92,10 @@ export function FiscalSponsorshipWorkflowDrawer({
           contentClassName="min-w-0 max-w-full overflow-hidden [&>*]:min-w-0 [&>*]:max-w-full"
         >
           <TabsContent value="work" className="mt-0 flex flex-col gap-4">
+            <FiscalSponsorshipApplicationReviewNote
+              notes={data.workflowSummary?.reviewNotes}
+              status={data.workflowSummary?.applicationStatus}
+            />
             <WorkflowPhases
               data={data}
               selectedPhaseId={selectedPhaseId}

@@ -36,6 +36,7 @@ import type {
   FiscalSponsorshipProjectWorkbenchPhase,
 } from "../types"
 import { FiscalSponsorshipMark } from "./fiscal-sponsorship-mark"
+import { FiscalSponsorshipApplicationReviewNote } from "./fiscal-sponsorship-application-review-note"
 import { FiscalSponsorshipProjectWorkbenchAdminActions } from "./fiscal-sponsorship-project-workbench-admin-actions"
 import { FiscalSponsorshipProjectWorkbenchDocuments } from "./fiscal-sponsorship-project-workbench-documents"
 import { FiscalSponsorshipProjectWorkbenchRequiredDocuments } from "./fiscal-sponsorship-project-workbench-required-documents"
@@ -415,6 +416,16 @@ export function FiscalSponsorshipProjectWorkbench({
         />
 
         <Separator className="my-3 border-t border-dashed bg-transparent" />
+
+        {data.workflowSummary?.reviewNotes ? (
+          <>
+            <FiscalSponsorshipApplicationReviewNote
+              notes={data.workflowSummary.reviewNotes}
+              status={data.workflowSummary.applicationStatus}
+            />
+            <Separator className="my-3 border-t border-dashed bg-transparent" />
+          </>
+        ) : null}
 
         <FiscalSponsorshipWorkflowTimeline events={data.timelineEvents} />
 

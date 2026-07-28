@@ -242,7 +242,7 @@ export async function completeFiscalSponsorshipW9(
 
     revalidatePath("/workspace")
     revalidatePath("/my-organization")
-    revalidatePath(`/organizations/${loaded.application.org_id}`)
+    revalidatePath(`/organizations/${loaded.application.project_id}`)
     revalidatePath(`/fiscal-sponsorship/w9/${loaded.application.project_id}`)
     return {
       ok: true,

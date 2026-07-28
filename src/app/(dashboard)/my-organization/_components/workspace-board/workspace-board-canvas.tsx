@@ -43,10 +43,12 @@ import type {
 } from "./workspace-board-types"
 
 export function WorkspaceBoardCanvas({
+  initialFocusCardId = null,
   seed,
   onInitialOnboardingSubmit,
   organizationEditorData,
 }: {
+  initialFocusCardId?: WorkspaceCardId | null
   seed: WorkspaceSeedData
   onInitialOnboardingSubmit: (form: FormData) => Promise<void>
   organizationEditorData: WorkspaceOrganizationEditorData
@@ -56,13 +58,22 @@ export function WorkspaceBoardCanvas({
     const reducedBoardState = reduceWorkspaceBoardVisibility(seed.boardState, {
       type: "hydrate_legacy_visibility",
     })
-    return reducedBoardState.onboardingFlow.active
+    const resolvedBoardState = reducedBoardState.onboardingFlow.active
       ? applyWorkspaceTutorialSnapshot(
           reducedBoardState,
           reducedBoardState.onboardingFlow
         )
       : reducedBoardState
-  }, [seed.boardState])
+
+    return initialFocusCardId
+      ? {
+          ...resolvedBoardState,
+          hiddenCardIds: resolvedBoardState.hiddenCardIds.filter(
+            (cardId) => cardId !== initialFocusCardId
+          ),
+        }
+      : resolvedBoardState
+  }, [initialFocusCardId, seed.boardState])
   const [boardState, setBoardState] = useState<WorkspaceBoardState>(
     hydratedSeedBoardState
   )
@@ -81,7 +92,9 @@ export function WorkspaceBoardCanvas({
     useState(0)
   const [tutorialRestartRequestKey, setTutorialRestartRequestKey] = useState(0)
   const [focusCardRequest, setFocusCardRequest] =
-    useState<WorkspaceCardFocusRequest>(null)
+    useState<WorkspaceCardFocusRequest>(
+      initialFocusCardId ? { cardId: initialFocusCardId, requestKey: 1 } : null
+    )
   const [tutorialCompletionExitRequest, setTutorialCompletionExitRequest] =
     useState<WorkspaceTutorialCompletionExitRequest>(null)
   const lastPersistedBoardContentRef = useRef<WorkspaceBoardState>(
@@ -95,6 +108,20 @@ export function WorkspaceBoardCanvas({
     acceleratorState: boardState.accelerator,
     acceleratorStepNodeVisible,
   })
+  useEffect(() => {
+    if (!initialFocusCardId) return
+
+    setBoardState((previous) => ({
+      ...previous,
+      hiddenCardIds: previous.hiddenCardIds.filter(
+        (cardId) => cardId !== initialFocusCardId
+      ),
+    }))
+    setFocusCardRequest((previous) => ({
+      cardId: initialFocusCardId,
+      requestKey: (previous?.requestKey ?? 0) + 1,
+    }))
+  }, [initialFocusCardId])
   useEffect(() => {
     logWorkspaceBoardDebug("board_seed_loaded", {
       orgId: seed.orgId,

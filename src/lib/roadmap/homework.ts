@@ -39,13 +39,37 @@ const ROADMAP_HOMEWORK_TARGETS: Record<
   mission_vision_values: [
     {
       classSlug: "mission-vision-values",
+      moduleSlug: "mission",
+      label: "Mission statement",
+    },
+    {
+      classSlug: "mission-vision-values",
+      moduleIdx: 1,
+      label: "Mission statement",
+    },
+  ],
+  vision: [
+    {
+      classSlug: "mission-vision-values",
+      moduleSlug: "vision",
+      label: "Vision statement",
+    },
+    {
+      classSlug: "mission-vision-values",
+      moduleIdx: 2,
+      label: "Vision statement",
+    },
+  ],
+  values: [
+    {
+      classSlug: "mission-vision-values",
       moduleSlug: "values",
-      label: "Mission, vision, values summary",
+      label: "Core values",
     },
     {
       classSlug: "mission-vision-values",
       moduleIdx: 3,
-      label: "Mission, vision, values summary",
+      label: "Core values",
     },
   ],
   theory_of_change: [

@@ -37,6 +37,7 @@ export type RoadmapSection = RoadmapSectionDefinition & {
   templateSubtitle: string
   titleIsTemplate: boolean
   subtitleIsTemplate: boolean
+  storageExtras?: Record<string, unknown>
 }
 
 export type StoredSection = {
@@ -52,6 +53,7 @@ export type StoredSection = {
   status?: unknown
   ctaLabel?: unknown
   ctaUrl?: unknown
+  [key: string]: unknown
 }
 
 export type StoredRoadmap = {

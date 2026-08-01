@@ -176,33 +176,40 @@ export function useRoadmapEditorState({
 
       setSavingId(section.id)
       startTransition(async () => {
-        const result = await saveRoadmapSectionAction({
-          sectionId: section.id,
-          title: draft.title,
-          subtitle: draft.subtitle,
-          content: draft.content,
-          imageUrl: draft.imageUrl,
-          status: shouldMarkInProgress ? "in_progress" : undefined,
-        })
+        try {
+          const result = await saveRoadmapSectionAction({
+            sectionId: section.id,
+            expectedLastUpdated: section.lastUpdated,
+            title: draft.title,
+            subtitle: draft.subtitle,
+            content: draft.content,
+            imageUrl: draft.imageUrl,
+            status: shouldMarkInProgress ? "in_progress" : undefined,
+          })
 
-        if ("error" in result) {
-          if (showToast) toast.error(result.error)
+          if ("error" in result) {
+            toast.error(result.error)
+            return
+          }
+
+          const nextSection = result.section
+          setSections((prev) => {
+            const index = prev.findIndex((entry) => entry.id === nextSection.id)
+            if (index === -1) return [...prev, nextSection]
+            return prev.map((entry, idx) => (idx === index ? nextSection : entry))
+          })
+          setDrafts((prev) => ({
+            ...prev,
+            [nextSection.id]: createDraft(nextSection),
+          }))
+          if (showToast) toast.success("Section saved")
+        } catch {
+          toast.error(
+            "The roadmap could not save. Your draft is still available; retry or refresh."
+          )
+        } finally {
           setSavingId(null)
-          return
         }
-
-        const nextSection = result.section
-        setSections((prev) => {
-          const index = prev.findIndex((entry) => entry.id === nextSection.id)
-          if (index === -1) return [...prev, nextSection]
-          return prev.map((entry, idx) => (idx === index ? nextSection : entry))
-        })
-        setDrafts((prev) => ({
-          ...prev,
-          [nextSection.id]: createDraft(nextSection),
-        }))
-        setSavingId(null)
-        if (showToast) toast.success("Section saved")
       })
     },
     [canEdit, isPending, savingId],

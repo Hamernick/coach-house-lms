@@ -1,71 +1,118 @@
 import type { Database } from "@/lib/supabase"
-import { sanitizeOrgProfileText, shouldStripOrgProfileHtml } from "@/lib/organization/profile-cleanup"
+import {
+  sanitizeOrgProfileText,
+  shouldStripOrgProfileHtml,
+} from "@/lib/organization/profile-cleanup"
+import {
+  isOrganizationNarrativeKey,
+  type OrganizationNarratives,
+  updateOrganizationNarratives,
+} from "@/lib/roadmap"
 
 import type { SupabaseServerClient } from "./types"
 
 type SyncMappedAnswersToOrganizationProfileParams = {
   supabase: SupabaseServerClient
-  userId: string
+  organizationId: string
   sanitizedAnswers: Record<string, unknown>
   orgKeyMapping: Record<string, string>
 }
 
 export async function syncMappedAnswersToOrganizationProfile({
   supabase,
-  userId,
+  organizationId,
   sanitizedAnswers,
   orgKeyMapping,
-}: SyncMappedAnswersToOrganizationProfileParams): Promise<void> {
+}: SyncMappedAnswersToOrganizationProfileParams): Promise<
+  { ok: true } | { error: string }
+> {
   if (Object.keys(orgKeyMapping).length === 0) {
-    return
+    return { ok: true }
   }
 
   const { data: organizationRow, error: organizationError } = await supabase
     .from("organizations" satisfies keyof Database["public"]["Tables"])
-    .select("profile")
-    .eq("user_id", userId)
-    .maybeSingle<{ profile: Record<string, unknown> | null }>()
+    .select("profile, updated_at")
+    .eq("user_id", organizationId)
+    .maybeSingle<{
+      profile: Record<string, unknown> | null
+      updated_at: string
+    }>()
 
   if (organizationError) {
-    return
+    return { error: organizationError.message }
   }
 
-  const currentProfile = (organizationRow?.profile ?? {}) as Record<string, unknown>
-  const nextProfile: Record<string, unknown> = { ...currentProfile }
+  const currentProfile = (organizationRow?.profile ?? {}) as Record<
+    string,
+    unknown
+  >
+  let nextProfile: Record<string, unknown> = { ...currentProfile }
+  const narrativeUpdates: Partial<OrganizationNarratives> = {}
 
   for (const [fieldName, organizationKey] of Object.entries(orgKeyMapping)) {
     const value = sanitizedAnswers[fieldName]
+    let normalizedValue: string | string[] | number | null = null
     if (typeof value === "string") {
       const trimmed = value.trim()
       if (trimmed.length > 0) {
-        const cleaned = shouldStripOrgProfileHtml(organizationKey) ? sanitizeOrgProfileText(trimmed) : trimmed
-        if (cleaned) {
-          nextProfile[organizationKey] = cleaned
-        }
+        normalizedValue = trimmed
       }
     } else if (Array.isArray(value)) {
       const normalized = value
         .map((item) => (typeof item === "string" ? item.trim() : ""))
         .filter((item) => item.length > 0)
       if (normalized.length > 0) {
-        if (shouldStripOrgProfileHtml(organizationKey)) {
-          nextProfile[organizationKey] = normalized.join("\n")
-        } else {
-          nextProfile[organizationKey] = normalized
-        }
+        normalizedValue = normalized
       }
     } else if (typeof value === "number") {
-      nextProfile[organizationKey] = value
+      normalizedValue = value
+    }
+
+    if (normalizedValue === null) continue
+    if (isOrganizationNarrativeKey(organizationKey)) {
+      narrativeUpdates[organizationKey] = Array.isArray(normalizedValue)
+        ? normalizedValue.join("\n")
+        : String(normalizedValue)
+      continue
+    }
+
+    if (typeof normalizedValue === "string") {
+      const cleaned = shouldStripOrgProfileHtml(organizationKey)
+        ? sanitizeOrgProfileText(normalizedValue)
+        : normalizedValue
+      if (cleaned) nextProfile[organizationKey] = cleaned
+    } else if (Array.isArray(normalizedValue)) {
+      nextProfile[organizationKey] = shouldStripOrgProfileHtml(organizationKey)
+        ? normalizedValue.join("\n")
+        : normalizedValue
+    } else {
+      nextProfile[organizationKey] = normalizedValue
     }
   }
 
-  await supabase
+  nextProfile = updateOrganizationNarratives(
+    nextProfile,
+    narrativeUpdates
+  ).nextProfile
+
+  if (!organizationRow) {
+    return { error: "Organization not found." }
+  }
+
+  const { data: updatedRow, error: updateError } = await supabase
     .from("organizations" satisfies keyof Database["public"]["Tables"])
-    .upsert(
-      {
-        user_id: userId,
-        profile: nextProfile as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
-      } as Database["public"]["Tables"]["organizations"]["Insert"],
-      { onConflict: "user_id" },
-    )
+    .update({
+      profile:
+        nextProfile as Database["public"]["Tables"]["organizations"]["Insert"]["profile"],
+    } as Database["public"]["Tables"]["organizations"]["Update"])
+    .eq("user_id", organizationId)
+    .eq("updated_at", organizationRow.updated_at)
+    .select("user_id")
+    .maybeSingle<{ user_id: string }>()
+
+  if (updateError) return { error: updateError.message }
+  return updatedRow
+    ? { ok: true }
+    : { error: "Organization was updated elsewhere. Submit again." }
 }

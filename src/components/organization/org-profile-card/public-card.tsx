@@ -69,16 +69,14 @@ export function OrgProfilePublicCard({
     typeof profile.description === "string"
       ? stripHtml(profile.description)
       : ""
-  const mission =
-    typeof profile.mission === "string" ? stripHtml(profile.mission) : ""
-  const vision =
-    typeof profile.vision === "string" ? stripHtml(profile.vision) : ""
-  const need =
-    typeof profile.need === "string" ? stripHtml(profile.need) : ""
-  const values =
-    typeof profile.values === "string" ? stripHtml(profile.values) : ""
+  const mission = typeof profile.mission === "string" ? profile.mission : ""
+  const vision = typeof profile.vision === "string" ? profile.vision : ""
+  const need = typeof profile.need === "string" ? stripHtml(profile.need) : ""
+  const values = typeof profile.values === "string" ? profile.values : ""
   const originStory =
-    typeof profile.originStory === "string" ? stripHtml(profile.originStory) : ""
+    typeof profile.originStory === "string"
+      ? stripHtml(profile.originStory)
+      : ""
   const theoryOfChange =
     typeof profile.theoryOfChange === "string"
       ? stripHtml(profile.theoryOfChange)

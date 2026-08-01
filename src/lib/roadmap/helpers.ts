@@ -16,6 +16,15 @@ import type {
 const TEST_SECTION_TITLES = new Set(["test", "testing", "foundations"])
 const DEPRECATED_SECTION_IDS = new Set(["strategic_roadmap"])
 const DEPRECATED_SECTION_SLUGS = new Set(["strategic-roadmap"])
+const LEGACY_TEMPLATE_TITLES = new Map([
+  ["mission_vision_values", new Set(["Mission, Vision, Values"])],
+])
+const LEGACY_TEMPLATE_SUBTITLES = new Map([
+  [
+    "mission_vision_values",
+    new Set(["Your guiding statements and principles."]),
+  ],
+])
 const ROADMAP_SECTION_LAYOUTS = new Set<RoadmapSection["layout"]>([
   "square",
   "vertical",
@@ -25,6 +34,20 @@ const ROADMAP_SECTION_STATUSES = new Set<RoadmapSectionStatus>([
   "not_started",
   "in_progress",
   "complete",
+])
+const STORED_SECTION_KEYS = new Set([
+  "id",
+  "title",
+  "subtitle",
+  "slug",
+  "content",
+  "imageUrl",
+  "lastUpdated",
+  "isPublic",
+  "layout",
+  "status",
+  "ctaLabel",
+  "ctaUrl",
 ])
 
 export const isRecord = (
@@ -97,9 +120,12 @@ export function buildRoadmapSection(
   const templateTitle = fallback?.title ?? ""
   const templateSubtitle = fallback?.subtitle || ""
   const storedTitleIsTemplate =
-    templateTitle.length > 0 && storedTitle === templateTitle.trim()
+    (templateTitle.length > 0 && storedTitle === templateTitle.trim()) ||
+    Boolean(LEGACY_TEMPLATE_TITLES.get(id)?.has(storedTitle))
   const storedSubtitleIsTemplate =
-    templateSubtitle.length > 0 && storedSubtitle === templateSubtitle.trim()
+    (templateSubtitle.length > 0 &&
+      storedSubtitle === templateSubtitle.trim()) ||
+    Boolean(LEGACY_TEMPLATE_SUBTITLES.get(id)?.has(storedSubtitle))
   const effectiveStoredTitle = storedTitleIsTemplate ? "" : storedTitle
   const effectiveStoredSubtitle = storedSubtitleIsTemplate ? "" : storedSubtitle
   const title = effectiveStoredTitle || templateTitle
@@ -149,6 +175,11 @@ export function buildRoadmapSection(
       : storedTitle.length > 0
         ? `Write about ${storedTitle}.`
         : "Start writing...")
+  const storageExtras = stored
+    ? Object.fromEntries(
+        Object.entries(stored).filter(([key]) => !STORED_SECTION_KEYS.has(key)),
+      )
+    : {}
 
   return {
     id,
@@ -171,6 +202,7 @@ export function buildRoadmapSection(
     templateSubtitle,
     titleIsTemplate,
     subtitleIsTemplate,
+    storageExtras,
   }
 }
 
@@ -234,6 +266,7 @@ export function ensureUniqueSlugs(sections: RoadmapSection[]): RoadmapSection[] 
 
 export function serializeRoadmapSections(sections: RoadmapSection[]) {
   return sections.map((section) => ({
+    ...(section.storageExtras ?? {}),
     id: section.id,
     title: section.title,
     subtitle: section.subtitle,

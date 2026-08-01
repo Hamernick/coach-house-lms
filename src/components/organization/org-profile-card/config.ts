@@ -148,5 +148,10 @@ export function normalizeCompanyProfile(source: OrgProfile): OrgProfile {
     brandTypography: normalizeTypography(source),
     publicSlug: source.publicSlug ?? "",
     isPublic: Boolean(source.isPublic ?? false),
+    narrativeRevisions: source.narrativeRevisions ?? {
+      mission: null,
+      vision: null,
+      values: null,
+    },
   }
 }

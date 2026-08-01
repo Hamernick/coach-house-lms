@@ -2,10 +2,7 @@ import { stripHtml } from "@/lib/markdown/convert"
 
 const HTML_TEXT_FIELDS = new Set([
   "description",
-  "vision",
-  "mission",
   "need",
-  "values",
   "originStory",
   "theoryOfChange",
   "origin_story",

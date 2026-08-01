@@ -1757,7 +1757,7 @@ select
     when mv.slug = 'vision' then
       jsonb_build_object(
         'title', 'Vision Statement',
-        'roadmap_section', 'mission_vision_values',
+        'roadmap_section', 'vision',
         'completion_mode', 'all_answered',
         'fields', jsonb_build_array(
           jsonb_build_object(
@@ -1947,7 +1947,7 @@ select
     else
       jsonb_build_object(
         'title', 'Core Values',
-        'roadmap_section', 'mission_vision_values',
+        'roadmap_section', 'values',
         'completion_mode', 'all_answered',
         'fields', jsonb_build_array(
           jsonb_build_object(

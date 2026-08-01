@@ -1,6 +1,9 @@
 import { fetchSidebarTree } from "@/lib/academy"
 import { parseAssignmentFields } from "@/lib/modules"
-import { resolveRoadmapSections } from "@/lib/roadmap"
+import {
+  resolveOrganizationNarrativePlainText,
+  resolveRoadmapSections,
+} from "@/lib/roadmap"
 import type { SearchResult } from "@/lib/search/types"
 
 import {
@@ -197,7 +200,7 @@ async function addMyOrganizationResults({
   const profile = userOrg.profile ?? {}
   const name = extractProfileValue(profile, "name")
   const tagline = extractProfileValue(profile, "tagline")
-  const mission = extractProfileValue(profile, "mission")
+  const mission = resolveOrganizationNarrativePlainText(profile, "mission")
   const description = extractProfileValue(profile, "description")
   if (matchesQuery([name, tagline, mission, description], tokens)) {
     const logoUrl = extractProfileValue(profile, "logoUrl")
@@ -276,7 +279,7 @@ async function addCommunityResults({
     const profile = org.profile ?? {}
     const name = extractProfileValue(profile, "name")
     const tagline = extractProfileValue(profile, "tagline")
-    const mission = extractProfileValue(profile, "mission")
+    const mission = resolveOrganizationNarrativePlainText(profile, "mission")
     const description = extractProfileValue(profile, "description")
     const city = extractProfileValue(profile, "address_city")
     const state = extractProfileValue(profile, "address_state")

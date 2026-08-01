@@ -2,4 +2,4 @@
 set -eu
 
 echo "[pre-push] Running structural quality subset..."
-pnpm check:prepush
+PREPUSH_REMOTE="${1:-origin}" pnpm check:prepush

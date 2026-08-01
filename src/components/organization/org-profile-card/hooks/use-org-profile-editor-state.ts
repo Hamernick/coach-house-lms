@@ -139,7 +139,17 @@ export function useOrgProfileEditorState({
       throw new Error(error)
     }
 
-    setSavedCompany((prev) => ({ ...prev, ...updates }))
+    const narrativeRevisions = (
+      res as { narrativeRevisions?: OrgProfile["narrativeRevisions"] }
+    ).narrativeRevisions
+    if (narrativeRevisions) {
+      setCompany((prev) => ({ ...prev, narrativeRevisions }))
+    }
+    setSavedCompany((prev) => ({
+      ...prev,
+      ...updates,
+      ...(narrativeRevisions ? { narrativeRevisions } : {}),
+    }))
     setErrors((prev) => clearOrgProfileErrors(prev, updates))
   }, [])
 
@@ -203,15 +213,30 @@ export function useOrgProfileEditorState({
         }
       }
 
-      const res = await updateOrganizationProfileAction(company)
+      let res: Awaited<ReturnType<typeof updateOrganizationProfileAction>>
+      try {
+        res = await updateOrganizationProfileAction(company)
+      } catch {
+        toast.error(
+          "The organization could not save. Your edits are still available; retry or refresh.",
+        )
+        return
+      }
       if ((res as { error?: string })?.error) {
         toast.error((res as { error?: string }).error as string)
         return
       }
       toast.success("Organization updated")
+      const narrativeRevisions = (
+        res as { narrativeRevisions?: OrgProfile["narrativeRevisions"] }
+      ).narrativeRevisions
+      const savedCompany = narrativeRevisions
+        ? { ...company, narrativeRevisions }
+        : company
       setEditMode(false)
       setDirty(false)
-      setSavedCompany(company)
+      setCompany(savedCompany)
+      setSavedCompany(savedCompany)
     })
   }, [company, canEdit, slugStatus])
 

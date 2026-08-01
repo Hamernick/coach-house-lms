@@ -1,4 +1,5 @@
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
+import type { OrganizationNarrativeRevisions } from "@/lib/roadmap"
 
 export type FormationStatus = "pre_501c3" | "in_progress" | "approved"
 
@@ -69,6 +70,7 @@ export type OrgProfile = {
   brandTypography?: BrandTypographyConfig | null
   publicSlug?: string | null
   isPublic?: boolean | null
+  narrativeRevisions?: OrganizationNarrativeRevisions
 }
 
 export type OrgDocument = {

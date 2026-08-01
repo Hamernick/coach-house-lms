@@ -33,6 +33,7 @@ export function RichTextEditor({
   onImageUpload,
   onImageUploaded,
   insertUploadedImage = true,
+  preserveImages = false,
   onImagePickerReady,
   toolbarPortalId,
   toolbarClassName,
@@ -78,7 +79,7 @@ export function RichTextEditor({
     extensions: buildRichTextExtensions({
       placeholderRef,
       isReadOnly,
-      enableImages,
+      enableImages: enableImages || preserveImages,
       onImageUpload,
     }),
     content: value,

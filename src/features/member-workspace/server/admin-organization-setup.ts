@@ -2,7 +2,10 @@ import {
   PROFILE_COMPLETENESS_KEYS,
   VERIFIED_DOC_KEYS,
 } from "@/lib/accelerator/readiness"
-import { resolveRoadmapSections } from "@/lib/roadmap"
+import {
+  resolveOrganizationNarrativePlainText,
+  resolveRoadmapSections,
+} from "@/lib/roadmap"
 import type { Json } from "@/lib/supabase"
 import type { MemberWorkspaceAdminOrganizationSetupItem } from "@/features/member-workspace/types"
 
@@ -42,6 +45,9 @@ function isProfileSetupFieldComplete(
   }
   if (key === "address_state") {
     return hasText(profile.address_state) || hasText(profile.addressState)
+  }
+  if (key === "mission" || key === "values") {
+    return hasText(resolveOrganizationNarrativePlainText(profile, key))
   }
   return hasText(profile[key])
 }
@@ -135,7 +141,7 @@ function buildSetupChecklist({
     },
     {
       id: "roadmap-mission-vision-values",
-      label: "Complete roadmap: Mission, vision, and values",
+      label: "Complete roadmap: Mission",
       complete: isRoadmapSectionComplete("mission_vision_values", roadmapSections),
     },
     {

@@ -1,4 +1,7 @@
-import { resolveRoadmapSections } from "@/lib/roadmap"
+import {
+  resolveOrganizationNarrativePlainText,
+  resolveRoadmapSections,
+} from "@/lib/roadmap"
 import type { SearchResult } from "@/lib/search/types"
 
 import {
@@ -143,7 +146,7 @@ export async function addActiveOrganizationResults({
   const profile = userOrg.profile ?? {}
   const name = extractProfileValue(profile, "name")
   const tagline = extractProfileValue(profile, "tagline")
-  const mission = extractProfileValue(profile, "mission")
+  const mission = resolveOrganizationNarrativePlainText(profile, "mission")
   const description = extractProfileValue(profile, "description")
 
   if (matchesQuery([name, tagline, mission, description], tokens)) {

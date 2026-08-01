@@ -17,6 +17,7 @@ import {
   inferPublicMapGroups,
   type PublicMapGroupKey,
 } from "@/lib/public-map/groups"
+import { resolveOrganizationNarrativePlainText } from "@/lib/roadmap"
 
 export type PublicMapProgramPreview = {
   id: string
@@ -265,6 +266,9 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
   return orgRows
     .map((row) => {
       const profile = (row.profile ?? {}) as Record<string, unknown>
+      const mission = resolveOrganizationNarrativePlainText(profile, "mission")
+      const vision = resolveOrganizationNarrativePlainText(profile, "vision")
+      const values = resolveOrganizationNarrativePlainText(profile, "values")
       const programs = topProgramsByOrgId.get(row.user_id) ?? []
       const activityLinks = activityLinksByOrgId.get(row.user_id) ?? []
       const groups = inferPublicMapGroups({
@@ -277,9 +281,7 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
         description:
           typeof profile["description"] === "string"
             ? profile["description"].trim() || null
-            : typeof profile["mission"] === "string"
-              ? profile["mission"].trim() || null
-              : null,
+            : mission || null,
         programs: activityLinks,
       })
 
@@ -298,12 +300,11 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
         name: readProfileString(profile, "name") ?? "Organization",
         tagline: readProfileString(profile, "tagline"),
         description:
-          readProfileString(profile, "description") ??
-          readProfileString(profile, "mission"),
+          (readProfileString(profile, "description") ?? mission) || null,
         boilerplate: readProfileString(profile, "boilerplate"),
-        vision: readProfileString(profile, "vision"),
-        mission: readProfileString(profile, "mission"),
-        values: readProfileString(profile, "values"),
+        vision: vision || null,
+        mission: mission || null,
+        values: values || null,
         needStatement: readProfileString(
           profile,
           "need",

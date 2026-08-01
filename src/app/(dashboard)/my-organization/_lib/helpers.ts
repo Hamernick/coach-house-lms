@@ -1,5 +1,9 @@
 import type { ModuleCardStatus } from "@/lib/accelerator/progress"
 import { normalizeOrganizationLocationFields } from "@/lib/location/organization-location"
+import {
+  resolveOrganizationNarrativeRevisions,
+  resolveOrganizationNarratives,
+} from "@/lib/roadmap"
 import type {
   BrandTypographyConfig,
   BrandTypographyTracking,
@@ -155,6 +159,7 @@ export function buildInitialOrganizationProfile({
     postal: profile["address_postal"],
     country: profile["address_country"],
   })
+  const narratives = resolveOrganizationNarratives(profile)
 
   return {
     name: String(profile["name"] ?? ""),
@@ -188,10 +193,10 @@ export function buildInitialOrganizationProfile({
     tiktok: String(profile["tiktok"] ?? ""),
     newsletter: String(profile["newsletter"] ?? ""),
     github: String(profile["github"] ?? ""),
-    vision: String(profile["vision"] ?? ""),
-    mission: String(profile["mission"] ?? ""),
+    vision: narratives.vision,
+    mission: narratives.mission,
     need: String(profile["need"] ?? ""),
-    values: String(profile["values"] ?? ""),
+    values: narratives.values,
     originStory: String(profile["originStory"] ?? profile["origin_story"] ?? ""),
     theoryOfChange: String(profile["theoryOfChange"] ?? profile["theory_of_change"] ?? ""),
     programs: String(profile["programs"] ?? ""),
@@ -207,5 +212,6 @@ export function buildInitialOrganizationProfile({
     brandTypography: readTypographyConfig(profile["brandTypography"]),
     publicSlug: String(organization?.public_slug ?? ""),
     isPublic: Boolean(organization?.is_public ?? false),
+    narrativeRevisions: resolveOrganizationNarrativeRevisions(profile),
   }
 }

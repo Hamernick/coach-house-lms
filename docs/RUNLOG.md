@@ -4,7 +4,7 @@ Canonical index for implementation history and session continuation.
 
 ## Current log
 
-- [2026-07](runlog/2026-07.md)
+- [2026-08](runlog/2026-08.md)
 
 ## Archive
 

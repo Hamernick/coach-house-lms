@@ -1,5 +1,8 @@
 import type { ModuleCardStatus } from "@/lib/accelerator/progress"
-import type { RoadmapSection } from "@/lib/roadmap"
+import {
+  resolveOrganizationNarrativePlainText,
+  type RoadmapSection,
+} from "@/lib/roadmap"
 
 export const ACCELERATOR_FUNDABLE_THRESHOLD = 70
 export const ACCELERATOR_VERIFIED_THRESHOLD = 90
@@ -109,7 +112,12 @@ export function resolveAcceleratorReadiness({
   const hasProgram = programs.length > 0
   const hasFundingGoal = programs.some((program) => Number(program.goal_cents ?? 0) > 0)
 
-  const profileFieldsCompleted = PROFILE_COMPLETENESS_KEYS.filter((key) => hasText(profile[key])).length
+  const profileFieldsCompleted = PROFILE_COMPLETENESS_KEYS.filter((key) => {
+    if (key === "mission" || key === "values") {
+      return hasText(resolveOrganizationNarrativePlainText(profile, key))
+    }
+    return hasText(profile[key])
+  }).length
   const profileScore = Math.round((profileFieldsCompleted / PROFILE_COMPLETENESS_KEYS.length) * 20)
 
   const roadmapCoreCompleted = roadmapSections.filter(

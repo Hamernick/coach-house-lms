@@ -9,13 +9,20 @@ import {
   shouldTreatAssignmentSubmissionAsComplete,
 } from "@/lib/modules"
 import { revalidateClassViews } from "@/app/(admin)/admin/classes/actions"
+import {
+  canEditOrganization,
+  resolveActiveOrganization,
+} from "@/lib/organization/active-org"
 import { trackUserJourneyMilestone } from "@/lib/user-journey"
 import { processModuleCompletion } from "./_lib/completion"
 import { syncMappedAnswersToOrganizationProfile } from "./_lib/profile-sync"
 import { extractOrgKeyMappings, sanitizeAnswers } from "./_lib/sanitize"
 import type { AnswersPayload, ModuleMeta, SubmissionStatus } from "./_lib/types"
 
-export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   const { id: moduleId } = await context.params
   const supabase = await createSupabaseServerClient()
 
@@ -31,6 +38,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+
+  const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
 
   let payload: { answers?: AnswersPayload; status?: SubmissionStatus }
   try {
@@ -67,7 +76,10 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     .maybeSingle<{ schema: unknown; complete_on_submit: boolean | null }>()
 
   if (assignmentError) {
-    return NextResponse.json({ error: assignmentError.message }, { status: 500 })
+    return NextResponse.json(
+      { error: assignmentError.message },
+      { status: 500 }
+    )
   }
 
   if (!assignmentRow) {
@@ -75,10 +87,16 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   }
 
   const slug = moduleMeta.classes?.slug ?? null
-  const modulePath = slug && typeof moduleMeta.idx === "number" ? `/class/${slug}/module/${moduleMeta.idx}` : null
+  const modulePath =
+    slug && typeof moduleMeta.idx === "number"
+      ? `/class/${slug}/module/${moduleMeta.idx}`
+      : null
 
   const fields = parseAssignmentFields(assignmentRow.schema)
-  const { answers: sanitizedAnswers, missingRequired } = sanitizeAnswers(fields, answersRaw)
+  const { answers: sanitizedAnswers, missingRequired } = sanitizeAnswers(
+    fields,
+    answersRaw
+  )
 
   const orgKeyMapping = extractOrgKeyMappings(assignmentRow.schema)
 
@@ -88,33 +106,59 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
         error: "Missing required answers",
         missing: missingRequired,
       },
-      { status: 400 },
+      { status: 400 }
     )
   }
 
-  const upsertPayload: Database["public"]["Tables"]["assignment_submissions"]["Insert"] = {
-    module_id: moduleId,
-    user_id: user.id,
-    answers: sanitizedAnswers as Json,
-    status: desiredStatus,
-  }
+  const upsertPayload: Database["public"]["Tables"]["assignment_submissions"]["Insert"] =
+    {
+      module_id: moduleId,
+      user_id: user.id,
+      answers: sanitizedAnswers as Json,
+      status: desiredStatus,
+    }
 
   const { data: submissionRows, error: upsertError } = await supabase
     .from("assignment_submissions" satisfies keyof Database["public"]["Tables"])
     .upsert(upsertPayload, { onConflict: "module_id,user_id" })
     .select("module_id, answers, status, updated_at")
-    .maybeSingle<{ module_id: string; answers: Record<string, unknown>; status: SubmissionStatus; updated_at: string | null }>()
+    .maybeSingle<{
+      module_id: string
+      answers: Record<string, unknown>
+      status: SubmissionStatus
+      updated_at: string | null
+    }>()
 
   if (upsertError) {
     return NextResponse.json({ error: upsertError.message }, { status: 500 })
   }
 
-  await syncMappedAnswersToOrganizationProfile({
+  if (Object.keys(orgKeyMapping).length > 0 && !canEditOrganization(role)) {
+    return NextResponse.json(
+      {
+        error: "Homework saved, but you cannot update this organization.",
+        submissionSaved: true,
+      },
+      { status: 403 }
+    )
+  }
+
+  const profileSync = await syncMappedAnswersToOrganizationProfile({
     supabase,
-    userId: user.id,
+    organizationId: orgId,
     sanitizedAnswers,
     orgKeyMapping,
   })
+  if ("error" in profileSync) {
+    return NextResponse.json(
+      {
+        error: "Homework saved, but organization details did not update.",
+        details: profileSync.error,
+        submissionSaved: true,
+      },
+      { status: 500 }
+    )
+  }
 
   const completionMode = parseAssignmentCompletionMode(assignmentRow.schema)
   const completedOnSubmit = shouldTreatAssignmentSubmissionAsComplete({
@@ -143,7 +187,7 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
   await trackUserJourneyMilestone({
     userId: user.id,
-    orgId: user.id,
+    orgId,
     eventName: "homework_submitted",
     journey: "workspace_activation",
     source: "assignment_submission_route",

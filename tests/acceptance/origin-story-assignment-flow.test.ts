@@ -236,7 +236,7 @@ function visionStatementSchema() {
 
   return {
     title: "Vision Statement",
-    roadmap_section: "mission_vision_values",
+    roadmap_section: "vision",
     completion_mode: "all_answered",
     fields: [
       intro("vision_intro", "Defining your vision"),
@@ -294,7 +294,7 @@ function valuesStatementSchema() {
 
   return {
     title: "Core Values",
-    roadmap_section: "mission_vision_values",
+    roadmap_section: "values",
     completion_mode: "all_answered",
     fields: [
       intro("values_intro", "Defining your core values"),

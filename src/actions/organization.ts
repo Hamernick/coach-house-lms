@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag } from "next/cache"
 
 import { requireServerSession } from "@/lib/auth"
 import { geocodeOrganizationLocation } from "@/lib/geocoding/geocode"
@@ -434,6 +434,7 @@ function revalidateOrganizationViews({
   revalidatePath("/find")
 
   if (isPublic || wasPublic) {
+    revalidateTag("public-map-organizations", "max")
     revalidatePath("/community")
   }
 

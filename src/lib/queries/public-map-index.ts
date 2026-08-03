@@ -414,7 +414,7 @@ async function fetchPublicMapOrganizationsUncached(): Promise<
 const fetchPublicMapOrganizationsCached = unstable_cache(
   async (): Promise<PublicMapOrganization[]> =>
     fetchPublicMapOrganizationsUncached(),
-  ["public-map-organizations-v5"],
+  ["public-map-organizations-v6"],
   { revalidate: 300, tags: ["public-map-organizations"] }
 )
 

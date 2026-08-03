@@ -10,6 +10,16 @@ function readSource(relativePath: string) {
 }
 
 describe("public map organization curation", () => {
+  it("refreshes cached public organizations after profile changes", () => {
+    const organizationAction = readSource("src/actions/organization.ts")
+    const publicMapQuery = readSource("src/lib/queries/public-map-index.ts")
+
+    expect(organizationAction).toContain(
+      'revalidateTag("public-map-organizations", "max")'
+    )
+    expect(publicMapQuery).toContain('["public-map-organizations-v6"]')
+  })
+
   it("uses an admin-gated unpublish action instead of deleting org data", () => {
     const action = readSource("src/actions/public-map-organization-curation.ts")
     const migration = readSource(

@@ -162,6 +162,20 @@ describe("completeOnboardingAction", () => {
       error: null,
     })
     const organizationsUpsertMock = vi.fn().mockResolvedValue({ error: null })
+    const setupModulesReturnsMock = vi.fn().mockResolvedValue({
+      data: [
+        {
+          id: "organization_setup_module",
+          slug: "organization-setup",
+        },
+      ],
+      error: null,
+    })
+    const moduleProgressMaybeSingleMock = vi.fn().mockResolvedValue({
+      data: null,
+      error: null,
+    })
+    const moduleProgressUpsertMock = vi.fn().mockResolvedValue({ error: null })
     const updateUserMock = vi.fn().mockResolvedValue({ error: null })
 
     createSupabaseServerClientServerMock.mockResolvedValue({
@@ -210,6 +224,29 @@ describe("completeOnboardingAction", () => {
             upsert: organizationsUpsertMock,
           }
         }
+        if (table === "modules") {
+          return {
+            select: vi.fn().mockReturnValue({
+              in: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  returns: setupModulesReturnsMock,
+                }),
+              }),
+            }),
+          }
+        }
+        if (table === "module_progress") {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                eq: vi.fn().mockReturnValue({
+                  maybeSingle: moduleProgressMaybeSingleMock,
+                }),
+              }),
+            }),
+            upsert: moduleProgressUpsertMock,
+          }
+        }
         throw new Error(`Unexpected table lookup: ${table}`)
       }),
     })
@@ -246,7 +283,22 @@ describe("completeOnboardingAction", () => {
       }),
       { onConflict: "user_id" },
     )
-    expect(updateUserMock).toHaveBeenCalled()
+    expect(updateUserMock).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        workspace_onboarding_active: true,
+        workspace_onboarding_completed_at: null,
+        workspace_onboarding_stage: 2,
+      }),
+    })
+    expect(moduleProgressUpsertMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        user_id: "user_123",
+        module_id: "organization_setup_module",
+        status: "completed",
+        completed_at: expect.any(String),
+      }),
+      { onConflict: "user_id,module_id" },
+    )
     expect(destination).toBe("/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding")
   })
 

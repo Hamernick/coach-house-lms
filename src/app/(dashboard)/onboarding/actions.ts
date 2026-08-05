@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation"
 
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
+import { markOrganizationSetupModuleCompleted } from "@/lib/accelerator/organization-setup"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
 import type { Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
@@ -337,6 +338,7 @@ export async function completeOnboardingAction(form: FormData) {
             workspace_onboarding_stage: 2,
             workspace_onboarding_active: true,
             workspace_onboarding_started_at: new Date().toISOString(),
+            workspace_onboarding_completed_at: null,
           }
         : {}),
     },
@@ -348,6 +350,13 @@ export async function completeOnboardingAction(form: FormData) {
       message: updateUserError.message,
     })
     throw supabaseErrorToError(updateUserError, "Unable to finish onboarding.")
+  }
+
+  if (requiresOrganizationSetup) {
+    await markOrganizationSetupModuleCompleted({
+      supabase,
+      userId: user.id,
+    })
   }
 
   if (intentFocus === "build") {

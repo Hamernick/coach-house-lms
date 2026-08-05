@@ -1,13 +1,80 @@
 import { describe, expect, it } from "vitest"
 
 import { buildDefaultBoardState } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout"
-import { applyWorkspaceTutorialActivationToSeed } from "@/app/(dashboard)/my-organization/_lib/my-organization-page-content-helpers"
+import {
+  applyWorkspaceTutorialActivationToSeed,
+  hydrateWorkspaceSeedAcceleratorState,
+} from "@/app/(dashboard)/my-organization/_lib/my-organization-page-content-helpers"
+import type { WorkspaceAcceleratorCardStep } from "@/features/workspace-accelerator-card"
 import {
   buildWorkspaceCanvasTutorialCompletionHiddenCardIds,
   resolveWorkspaceCanvasTutorialStepCount,
 } from "@/features/workspace-canvas-tutorial"
 
 describe("my organization page content helpers", () => {
+  it("advances past recovered organization setup progress", () => {
+    const boardState = buildDefaultBoardState()
+    boardState.accelerator = {
+      activeStepId: "setup:lesson",
+      completedStepIds: [],
+    }
+    const baseStep = {
+      published: true,
+      stepKind: "lesson" as const,
+      stepDescription: null,
+      href: "/accelerator",
+      stepSequenceIndex: 0,
+      stepSequenceTotal: 2,
+      moduleSequenceIndex: 0,
+      moduleSequenceTotal: 2,
+      groupTitle: "Formation",
+      groupOrder: 0,
+      videoUrl: null,
+      durationMinutes: null,
+      resources: [],
+      hasAssignment: false,
+      hasDeck: false,
+    }
+    const steps: WorkspaceAcceleratorCardStep[] = [
+      {
+        ...baseStep,
+        id: "setup:lesson",
+        moduleId: "setup",
+        moduleSlug: "organization-setup",
+        moduleTitle: "Organization setup",
+        stepTitle: "Organization setup",
+        status: "completed",
+        moduleContext: {
+          classTitle: "Formation",
+          lessonNotesContent: null,
+          moduleResources: [],
+          assignmentFields: [],
+          assignmentSubmission: null,
+          completeOnSubmit: false,
+          workspaceOnboarding: { view: "organization-setup" },
+        },
+      },
+      {
+        ...baseStep,
+        id: "naming:lesson",
+        moduleId: "naming",
+        moduleSlug: "naming-your-nfp",
+        moduleTitle: "Naming your NFP",
+        stepTitle: "Naming your NFP",
+        status: "not_started",
+        stepSequenceIndex: 1,
+        moduleSequenceIndex: 1,
+      },
+    ]
+
+    const next = hydrateWorkspaceSeedAcceleratorState({ boardState }, steps)
+
+    expect(next.boardState.accelerator).toEqual({
+      activeStepId: "naming:lesson",
+      completedStepIds: ["setup:lesson"],
+    })
+  })
+
   it("preserves the current tutorial step on refresh activation", () => {
     const boardState = buildDefaultBoardState()
     boardState.onboardingFlow = {

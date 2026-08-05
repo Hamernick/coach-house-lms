@@ -20,7 +20,7 @@ import { loadFiscalSponsorshipProjectWorkflowSummary } from "@/features/fiscal-s
 import { completeOnboardingAction } from "../../onboarding/actions"
 import { buildOnboardingFlowDefaults } from "@/lib/onboarding/defaults"
 import { buildMyOrganizationCalendarView } from "./calendar"
-import { applyFormationStatusAcceleratorProgressOverrides } from "./my-organization-accelerator-progress"
+import { applyOrganizationAcceleratorProgressOverrides } from "./my-organization-accelerator-progress"
 import {
   buildAcceleratorTimelineModules,
   buildModuleGroupMetaById,
@@ -223,7 +223,6 @@ export default async function MyOrganizationPage({
       ]),
     { thresholdMs: 1_000 }
   )
-  const programs = programsResult
   const upcomingEvents = mapUpcomingEvents(upcomingEventsResult.data)
   const currentPlanTier = resolvePricingPlanTier(
     activeSubscriptionResult.data ?? null
@@ -232,9 +231,10 @@ export default async function MyOrganizationPage({
   const hasWorkspaceAcceleratorAccess =
     entitlements.hasAcceleratorAccess || entitlements.hasElectiveAccess
   const acceleratorProgressSummary =
-    applyFormationStatusAcceleratorProgressOverrides(
+    applyOrganizationAcceleratorProgressOverrides(
       acceleratorProgress,
-      initialProfile.formationStatus ?? null
+      initialProfile,
+      orgRow?.public_slug
     )
   const calendarView = buildMyOrganizationCalendarView({
     monthParam,
@@ -277,7 +277,7 @@ export default async function MyOrganizationPage({
   const initialTab = allowedTabs.includes(tabParam as ProfileTab)
     ? (tabParam as ProfileTab)
     : undefined
-  const programRows = (programs ?? []) as Array<{
+  const programRows = (programsResult ?? []) as Array<{
     goal_cents: number | null
     raised_cents: number | null
   }>
@@ -308,7 +308,7 @@ export default async function MyOrganizationPage({
       initialProgramId: programIdParam || null,
       initialTab,
       peopleNormalized,
-      programs,
+      programs: programsResult,
     })
   }
   const moduleGroupMetaById = buildModuleGroupMetaById(
@@ -335,7 +335,6 @@ export default async function MyOrganizationPage({
     if (!hasWorkspaceAcceleratorAccess) {
       redirect(getWorkspaceAcceleratorPaywallPath())
     }
-
     const boardResult = await supabase
       .from("organization_workspace_boards")
       .select("state")
@@ -467,7 +466,7 @@ export default async function MyOrganizationPage({
         initialProfile,
         peopleNormalized,
         profile,
-        programs,
+        programs: programsResult,
         publicSlug: orgRow?.public_slug ?? null,
         roadmapSections,
       }),

@@ -103,20 +103,43 @@ export function resolveOrganizationProfileComplete(initialProfile: {
 export function hydrateWorkspaceSeedAcceleratorState<
   TSeed extends WorkspaceSeedWithAcceleratorBoardState,
 >(workspaceSeed: TSeed, acceleratorTimeline: WorkspaceAcceleratorCardStep[]) {
-  const hasPersistedAcceleratorState =
-    Boolean(workspaceSeed.boardState.accelerator.activeStepId) ||
-    workspaceSeed.boardState.accelerator.completedStepIds.length > 0
   const hasTimeline = acceleratorTimeline.length > 0
-  if (!hasTimeline || hasPersistedAcceleratorState) return workspaceSeed
+  if (!hasTimeline) return workspaceSeed
 
-  const completedStepIds = acceleratorTimeline
-    .filter((step) => step.status === "completed")
-    .map((step) => step.id)
+  const completedStepIds = Array.from(
+    new Set([
+      ...workspaceSeed.boardState.accelerator.completedStepIds,
+      ...acceleratorTimeline
+        .filter((step) => step.status === "completed")
+        .map((step) => step.id),
+    ])
+  )
+  const persistedActiveStep = acceleratorTimeline.find(
+    (step) => step.id === workspaceSeed.boardState.accelerator.activeStepId
+  )
+  const recoveredOrganizationSetup =
+    persistedActiveStep?.status === "completed" &&
+    persistedActiveStep.moduleContext?.workspaceOnboarding?.view ===
+      "organization-setup" &&
+    !workspaceSeed.boardState.accelerator.completedStepIds.includes(
+      persistedActiveStep.id
+    )
   const activeStep =
-    acceleratorTimeline.find((step) => step.status === "in_progress") ??
-    acceleratorTimeline.find((step) => step.status !== "completed") ??
-    acceleratorTimeline[0] ??
-    null
+    persistedActiveStep && !recoveredOrganizationSetup
+      ? persistedActiveStep
+      : (acceleratorTimeline.find((step) => step.status === "in_progress") ??
+        acceleratorTimeline.find((step) => step.status !== "completed") ??
+        acceleratorTimeline.at(-1) ??
+        null)
+
+  if (
+    workspaceSeed.boardState.accelerator.activeStepId ===
+      (activeStep?.id ?? null) &&
+    completedStepIds.length ===
+      workspaceSeed.boardState.accelerator.completedStepIds.length
+  ) {
+    return workspaceSeed
+  }
 
   return {
     ...workspaceSeed,

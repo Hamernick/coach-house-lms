@@ -3,7 +3,7 @@
 Date: 2026-08-06
 Base: `origin/main` at `9843650`
 Branch: `agent/batch2-organization-workspace-foundation-20260806`
-Status: Preview PR #119 open; connected preview evidence pending
+Status: Preview PR #119 open; connected disposable preview proof passed
 
 ## Scope
 
@@ -21,10 +21,10 @@ Status: Preview PR #119 open; connected preview evidence pending
 - [x] Full `pnpm check:quality`
 - [x] Isolated desktop/mobile, light/dark, and reduced-motion visual QA
 - [x] Reachable non-squashed compatibility checkpoint (`7609daa`)
-- [ ] Connected Supabase RLS execution
-- [ ] Authenticated preview QA for fullscreen, overflow, and persistence
+- [x] Connected Supabase RLS execution
+- [x] Authenticated preview QA for fullscreen, overflow, and persistence
 - [ ] Preview verification
-- [ ] Rollback verification
+- [x] Rollback verification
 
 ## Local evidence
 
@@ -38,10 +38,24 @@ Status: Preview PR #119 open; connected preview evidence pending
   mount, prop synchronization, local-storage hydration, or step normalization.
   Explicit navigation/completion remains persistent; its focused proof passes
   `39/39`.
+- The disposable, no-data Supabase preview has the complete migration history
+  through `20260805145856`; the connected suite ends with the literal result
+  `RLS tests passed.`
+- Disposable authenticated browser QA passes desktop/mobile, dark/light,
+  fullscreen geometry, `20px` corners, zero document overflow, explicit canvas
+  persistence, and a passive reload with an unchanged board timestamp. The QA
+  user was deleted.
+- Authenticated preview QA exposed and closed one missing image-host dependency:
+  preview builds now accept both their configured Supabase host and the existing
+  production Storage host used by workspace avatars.
+- After that two-file fix, lint, formatting, `1,696/1,696` executed acceptance
+  tests, the production build, isolated `26/26` visual tests, and performance
+  budgets pass. The default visual command was also observed reusing the user's
+  unrelated dirty-tree server on port `3000`; candidate-only proof used port
+  `3020` without stopping that server.
 
-- Connected RLS must run only against an isolated local or CI test database.
-- The current developer credentials target a remote Supabase project and are
-  intentionally excluded from this candidate's full-quality run.
+- Connected RLS ran only against disposable preview project
+  `cilvvwguqkakrpseebii`; production data was not cloned.
 - Authenticated gate-on QA rendered the People drawer, then was stopped after
   the existing workspace persistence path automatically advanced the remote
   board row timestamp. Future authenticated QA requires a non-persisting test
@@ -51,6 +65,10 @@ Status: Preview PR #119 open; connected preview evidence pending
   excluded. The organization row did not change.
 - No new migration is included; the required People taxonomy migrations already
   exist on `origin/main`.
+- Supabase's integration badge still reports its original automated replay
+  failure even though the disposable branch was repaired from the immutable
+  migration source, now lists every migration, and passes the connected RLS
+  suite. The badge must not be represented as green.
 
 ## Private rollout gate
 

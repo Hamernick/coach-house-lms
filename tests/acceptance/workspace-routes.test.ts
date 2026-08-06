@@ -134,6 +134,13 @@ describe("workspace routes", () => {
     expect(source).toContain("redirect(FIND_PATH)")
   })
 
+  it("allows preview builds to render existing production-hosted workspace images", () => {
+    const source = readFileSync(join(ROOT, "next.config.ts"), "utf8")
+
+    expect(source).toContain('"vswzhuwjtgzrkxknrmxu.supabase.co"')
+    expect(source).toContain("supabaseImageHosts.map")
+  })
+
   it("preserves document focus through authentication", () => {
     const source = readFileSync(
       join(

@@ -49,9 +49,15 @@ import {
 
 export type { ProgramWizardProps } from "./program-wizard/types"
 
+function normalizeProgramWizardStep(value: number | null | undefined) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 0
+  return Math.min(Math.max(Math.trunc(value), 0), STEPS.length - 1)
+}
+
 export function ProgramWizard({
   mode = "create",
   program,
+  initialStep,
   open,
   onOpenChange,
   portalContainer,
@@ -60,7 +66,8 @@ export function ProgramWizard({
   const [internalOpen, setInternalOpen] = useState(false)
   const isControlled = typeof open === "boolean"
   const isOpen = isControlled ? (open as boolean) : internalOpen
-  const [currentStep, setCurrentStep] = useState(0)
+  const initialStepIndex = normalizeProgramWizardStep(initialStep)
+  const [currentStep, setCurrentStep] = useState(initialStepIndex)
   const [form, setForm] = useState<ProgramWizardFormState>(
     defaultProgramWizardForm
   )
@@ -87,10 +94,12 @@ export function ProgramWizard({
   useEffect(() => {
     if (!isOpen) {
       hydratedRef.current = false
-      setCurrentStep(0)
+      setCurrentStep(initialStepIndex)
       setErrors({})
       return
     }
+
+    setCurrentStep(initialStepIndex)
 
     if (mode === "edit" && program?.id) {
       setForm(hydrateFromProgram(program))
@@ -141,7 +150,7 @@ export function ProgramWizard({
       }
       hydratedRef.current = true
     }
-  }, [isOpen, mode, program])
+  }, [initialStepIndex, isOpen, mode, program])
 
   useEffect(() => {
     if (!isOpen || mode !== "create" || !hydratedRef.current) return

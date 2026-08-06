@@ -5,7 +5,6 @@ import {
   useCallback,
   useDeferredValue,
   useMemo,
-  useRef,
   useState,
   useTransition,
   type DragEvent,
@@ -13,137 +12,70 @@ import {
 
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
-import {
-  PERSON_CATEGORY_OPTIONS,
-  type PersonCategory,
-} from "@/lib/people/categories"
+import { type PersonCategory } from "@/lib/people/categories"
+import type { OrganizationPeopleSegment } from "@/lib/people/segments"
+import type { OrganizationPeopleTag } from "@/lib/people/tags"
+import { cn } from "@/lib/utils"
 
+import type { WorkspaceBoardUiPreferenceScope } from "../../workspace-board-ui-preferences"
 import {
+  readWorkspaceCanvasPersonDragPayload,
+  type WorkspacePeopleCanvasActions,
   WORKSPACE_PERSON_DRAG_TYPE,
   writeWorkspaceCanvasPersonDragPayload,
 } from "./workspace-canvas-people-dnd"
-import type {
-  WorkspaceCategoryPeopleSegment,
-  WorkspaceCustomPeopleSegment,
-  WorkspacePeopleSegment,
-} from "./workspace-canvas-people-segment-types"
+import type { WorkspacePeopleSegment } from "./workspace-canvas-people-segment-types"
+import {
+  buildPeopleSegments,
+  resolveSegmentPeople,
+  segmentShowsReportsTo,
+  useFilteredWorkspacePeople,
+} from "./workspace-canvas-overlay-people-filtering"
 import { WorkspacePeopleDrawerControls } from "./workspace-canvas-overlay-people-controls"
-import { WorkspacePeopleSegmentContentHeader } from "./workspace-canvas-people-segment-content-header"
 import { WorkspacePeopleDrawerTable } from "./workspace-canvas-overlay-people-table"
 import { WorkspacePeopleSegmentRail } from "./workspace-canvas-people-segment-rail"
+import { useWorkspacePeopleSegments } from "./use-workspace-people-segments"
+import { useWorkspacePeopleTags } from "./use-workspace-people-tags"
 
-function buildPeopleSegments({
-  people,
-  customSegments,
-}: {
+type WorkspacePeopleDrawerPanelProps = {
   people: OrgPersonWithImage[]
-  customSegments: WorkspaceCustomPeopleSegment[]
-}): WorkspacePeopleSegment[] {
-  const categoryCounts = new Map<PersonCategory, number>()
-  for (const person of people) {
-    categoryCounts.set(
-      person.category,
-      (categoryCounts.get(person.category) ?? 0) + 1
-    )
-  }
-
-  return [
-    {
-      id: "all",
-      kind: "all",
-      label: "All",
-      count: people.length,
-    },
-    ...PERSON_CATEGORY_OPTIONS.flatMap<WorkspaceCategoryPeopleSegment>(
-      (option) => {
-        const count = categoryCounts.get(option.value) ?? 0
-        if (count === 0) return []
-        return [
-          {
-            id: `category-${option.value}`,
-            kind: "category",
-            label: option.label,
-            category: option.value,
-            count,
-          },
-        ]
-      }
-    ),
-    ...customSegments.map((segment) => ({
-      ...segment,
-      count: segment.memberIds.length,
-    })),
-  ]
-}
-
-function resolveSegmentPeople({
-  people,
-  segment,
-}: {
-  people: OrgPersonWithImage[]
-  segment: WorkspacePeopleSegment
-}) {
-  if (segment.kind === "all") return people
-  if (segment.kind === "category") {
-    return people.filter((person) => person.category === segment.category)
-  }
-
-  const memberIds = new Set(segment.memberIds)
-  return people.filter((person) => memberIds.has(person.id))
-}
-
-function personMatchesSearch(person: OrgPersonWithImage, query: string) {
-  if (!query) return true
-
-  const categoryLabel =
-    PERSON_CATEGORY_OPTIONS.find((option) => option.value === person.category)
-      ?.label ?? person.category
-  const searchable = [
-    person.name,
-    person.title,
-    person.email,
-    person.category,
-    categoryLabel,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase()
-
-  return searchable.includes(query)
-}
-
-function personMatchesCategory(
-  person: OrgPersonWithImage,
-  categoryFilter: PersonCategory | "all"
-) {
-  return categoryFilter === "all" || person.category === categoryFilter
+  initialSegments: OrganizationPeopleSegment[]
+  initialTags: OrganizationPeopleTag[]
+  viewerId: string
+  uiPreferencesScope: WorkspaceBoardUiPreferenceScope
+  placedPersonIds: ReadonlySet<string>
+  canEdit: boolean
+  canvasActions: WorkspacePeopleCanvasActions
 }
 
 export const WorkspacePeopleDrawerPanel = memo(
   function WorkspacePeopleDrawerPanel({
     people,
+    initialSegments,
+    initialTags,
     viewerId,
+    uiPreferencesScope,
     placedPersonIds,
     canEdit,
-    onAddPeopleToCanvas,
-  }: {
-    people: OrgPersonWithImage[]
-    viewerId: string
-    placedPersonIds: ReadonlySet<string>
-    canEdit: boolean
-    onAddPeopleToCanvas: (personIds: string[]) => number
-  }) {
-    const nextSegmentIdRef = useRef(1)
+    canvasActions,
+  }: WorkspacePeopleDrawerPanelProps) {
     const [selectedSegmentId, setSelectedSegmentId] = useState("all")
-    const [customSegments, setCustomSegments] = useState<
-      WorkspaceCustomPeopleSegment[]
-    >([])
+    const {
+      addPeopleToSegment,
+      createSegment,
+      customSegments,
+      removePersonFromSegment,
+      removeSegment,
+      renameSegment,
+    } = useWorkspacePeopleSegments(initialSegments)
+    const tagState = useWorkspacePeopleTags(initialTags)
     const [editingSegmentId, setEditingSegmentId] = useState<string | null>(
       null
     )
-    const [draggingPersonId, setDraggingPersonId] = useState<string | null>(
-      null
-    )
+    const [draggingPersonIds, setDraggingPersonIds] = useState<string[]>([])
+    const [activeSegmentDropId, setActiveSegmentDropId] = useState<
+      string | null
+    >(null)
     const [peopleSearch, setPeopleSearch] = useState("")
     const [peopleCategoryFilter, setPeopleCategoryFilter] = useState<
       PersonCategory | "all"
@@ -151,6 +83,10 @@ export const WorkspacePeopleDrawerPanel = memo(
     const [, startSegmentTransition] = useTransition()
     const deferredPeopleSearch = useDeferredValue(peopleSearch)
     const normalizedPeopleSearch = deferredPeopleSearch.trim().toLowerCase()
+    const draggingPersonIdSet = useMemo(
+      () => new Set(draggingPersonIds),
+      [draggingPersonIds]
+    )
 
     const segments = useMemo(
       () => buildPeopleSegments({ people, customSegments }),
@@ -163,156 +99,143 @@ export const WorkspacePeopleDrawerPanel = memo(
       [segments, selectedSegmentId]
     )
     const selectedPeople = useMemo(
-      () => resolveSegmentPeople({ people, segment: selectedSegment }),
+      () =>
+        resolveSegmentPeople({
+          people,
+          segment: selectedSegment,
+        }),
       [people, selectedSegment]
     )
-    const filteredSelectedPeople = useMemo(
-      () =>
-        selectedPeople.filter(
-          (person) =>
-            personMatchesCategory(person, peopleCategoryFilter) &&
-            personMatchesSearch(person, normalizedPeopleSearch)
-        ),
-      [normalizedPeopleSearch, peopleCategoryFilter, selectedPeople]
-    )
+    const filteredSelectedPeople = useFilteredWorkspacePeople({
+      categoryFilter: peopleCategoryFilter,
+      people: selectedPeople,
+      query: normalizedPeopleSearch,
+      tags: tagState.tags,
+    })
     const selectedCustomSegment =
       selectedSegment.kind === "custom" ? selectedSegment : null
+    const showReportsTo = segmentShowsReportsTo(selectedSegment)
     const availablePeople = useMemo(() => {
       if (!selectedCustomSegment) return []
       const selectedIds = new Set(selectedCustomSegment.memberIds)
       return people.filter((person) => !selectedIds.has(person.id))
     }, [people, selectedCustomSegment])
-    const filteredAvailablePeople = useMemo(
-      () =>
-        availablePeople.filter(
-          (person) =>
-            personMatchesCategory(person, peopleCategoryFilter) &&
-            personMatchesSearch(person, normalizedPeopleSearch)
-        ),
-      [availablePeople, normalizedPeopleSearch, peopleCategoryFilter]
-    )
 
     const handleSegmentChange = useCallback(
       (segmentId: string) => {
         startSegmentTransition(() => {
           setSelectedSegmentId(segmentId)
+          setPeopleSearch("")
+          setPeopleCategoryFilter("all")
         })
       },
       [startSegmentTransition]
     )
 
-    const updateCustomSegmentMembers = useCallback(
-      (segmentId: string, nextMemberIds: (current: string[]) => string[]) => {
-        setCustomSegments((current) =>
-          current.map((segment) =>
-            segment.id === segmentId
-              ? {
-                  ...segment,
-                  memberIds: nextMemberIds(segment.memberIds),
-                }
-              : segment
-          )
-        )
-      },
-      []
-    )
-
     const handleCreateSegment = useCallback(() => {
-      const nextId = `custom-${nextSegmentIdRef.current}`
-      const nextLabel = `Segment ${nextSegmentIdRef.current}`
-      nextSegmentIdRef.current += 1
-      setCustomSegments((current) => [
-        ...current,
-        {
-          id: nextId,
-          kind: "custom",
-          label: nextLabel,
-          memberIds: [],
-          count: 0,
-        },
-      ])
-      setSelectedSegmentId(nextId)
-      setEditingSegmentId(nextId)
-    }, [])
+      const nextLabel = `Segment ${customSegments.length + 1}`
+      createSegment(nextLabel, (nextSegment) => {
+        setSelectedSegmentId(nextSegment.id)
+        setEditingSegmentId(nextSegment.id)
+        setPeopleSearch("")
+        setPeopleCategoryFilter("all")
+      })
+    }, [createSegment, customSegments.length])
 
     const handleRenameSegment = useCallback(
       (segmentId: string, label: string) => {
-        setCustomSegments((current) =>
-          current.map((segment) =>
-            segment.id === segmentId
-              ? {
-                  ...segment,
-                  label: label.trim() || segment.label,
-                }
-              : segment
-          )
-        )
+        renameSegment(segmentId, label)
         setEditingSegmentId(null)
       },
-      []
+      [renameSegment]
     )
 
-    const handleRemoveSegment = useCallback((segmentId: string) => {
-      setCustomSegments((current) =>
-        current.filter((segment) => segment.id !== segmentId)
-      )
-      setSelectedSegmentId((current) =>
-        current === segmentId ? "all" : current
-      )
-      setEditingSegmentId((current) => (current === segmentId ? null : current))
-    }, [])
-
-    const handleAddPerson = useCallback(
-      (personId: string) => {
-        if (!selectedCustomSegment) return
-        updateCustomSegmentMembers(selectedCustomSegment.id, (current) =>
-          current.includes(personId) ? current : [...current, personId]
+    const handleRemoveSegment = useCallback(
+      (segmentId: string) => {
+        removeSegment(segmentId)
+        setSelectedSegmentId((current) =>
+          current === segmentId ? "all" : current
+        )
+        setEditingSegmentId((current) =>
+          current === segmentId ? null : current
         )
       },
-      [selectedCustomSegment, updateCustomSegmentMembers]
+      [removeSegment]
+    )
+
+    const handleAddPeople = useCallback(
+      (personIds: string[]) => {
+        if (!selectedCustomSegment) return
+        setPeopleCategoryFilter("all")
+        addPeopleToSegment(selectedCustomSegment.id, personIds)
+      },
+      [addPeopleToSegment, selectedCustomSegment]
+    )
+
+    const handleAddPerson = useCallback(
+      (personId: string) => handleAddPeople([personId]),
+      [handleAddPeople]
     )
 
     const handleRemovePerson = useCallback(
       (personId: string) => {
         if (!selectedCustomSegment) return
-        updateCustomSegmentMembers(selectedCustomSegment.id, (current) =>
-          current.filter((id) => id !== personId)
-        )
+        removePersonFromSegment(selectedCustomSegment.id, personId)
       },
-      [selectedCustomSegment, updateCustomSegmentMembers]
+      [removePersonFromSegment, selectedCustomSegment]
+    )
+
+    const handleAddPersonToSegment = useCallback(
+      (segmentId: string, personId: string) =>
+        addPeopleToSegment(segmentId, [personId]),
+      [addPeopleToSegment]
+    )
+
+    const handleCreateSegmentForPerson = useCallback(
+      (label: string, personId: string) =>
+        createSegment(label, () => undefined, [personId]),
+      [createSegment]
     )
 
     const handlePersonDragStart = useCallback(
       (personIds: string[], event: DragEvent<HTMLElement>) => {
-        const primaryPersonId = personIds[0]
+        const normalizedPersonIds = Array.from(
+          new Set(personIds.map((personId) => personId.trim()).filter(Boolean))
+        )
+        const primaryPersonId = normalizedPersonIds[0]
         if (!primaryPersonId) return
 
         event.dataTransfer.effectAllowed = "copy"
         event.dataTransfer.setData(WORKSPACE_PERSON_DRAG_TYPE, primaryPersonId)
-        writeWorkspaceCanvasPersonDragPayload(event.dataTransfer, personIds)
-        setDraggingPersonId(primaryPersonId)
+        writeWorkspaceCanvasPersonDragPayload(
+          event.dataTransfer,
+          normalizedPersonIds
+        )
+        setDraggingPersonIds(normalizedPersonIds)
       },
       []
     )
     const handlePersonDragEnd = useCallback(() => {
-      setDraggingPersonId(null)
+      setDraggingPersonIds([])
+      setActiveSegmentDropId(null)
     }, [])
 
     const handlePersonDrop = useCallback(
       (segmentId: string, event: DragEvent<HTMLElement>) => {
         event.preventDefault()
         event.stopPropagation()
-        const personId =
-          event.dataTransfer.getData(WORKSPACE_PERSON_DRAG_TYPE) ||
-          draggingPersonId
-        if (!personId) return
-        updateCustomSegmentMembers(segmentId, (current) =>
-          current.includes(personId) ? current : [...current, personId]
+        const droppedPersonIds = readWorkspaceCanvasPersonDragPayload(
+          event.dataTransfer
         )
-        setSelectedSegmentId(segmentId)
-        setDraggingPersonId(null)
+        const personIds =
+          droppedPersonIds.length > 0 ? droppedPersonIds : draggingPersonIds
+        if (personIds.length === 0) return
+        addPeopleToSegment(segmentId, personIds)
+        setPeopleCategoryFilter("all")
+        setDraggingPersonIds([])
+        setActiveSegmentDropId(null)
       },
-      [draggingPersonId, updateCustomSegmentMembers]
+      [addPeopleToSegment, draggingPersonIds]
     )
 
     const handleSegmentDragOver = useCallback(
@@ -325,21 +248,57 @@ export const WorkspacePeopleDrawerPanel = memo(
       []
     )
 
+    const handleSegmentDragEnter = useCallback(
+      (segment: WorkspacePeopleSegment, event: DragEvent<HTMLElement>) => {
+        if (segment.kind !== "custom" || draggingPersonIds.length === 0) return
+        event.preventDefault()
+        event.stopPropagation()
+        setActiveSegmentDropId(segment.id)
+      },
+      [draggingPersonIds.length]
+    )
+
+    const handleSegmentDragLeave = useCallback(
+      (segmentId: string, event: DragEvent<HTMLElement>) => {
+        const nextTarget = event.relatedTarget
+        if (
+          nextTarget instanceof Node &&
+          event.currentTarget.contains(nextTarget)
+        ) {
+          return
+        }
+        setActiveSegmentDropId((current) =>
+          current === segmentId ? null : current
+        )
+      },
+      []
+    )
+
     return (
-      <div className="flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col overflow-hidden">
+      <div
+        className={cn(
+          "flex min-h-0 w-full max-w-full min-w-0 flex-1 flex-col overflow-hidden",
+          draggingPersonIds.length > 0 && "select-none"
+        )}
+      >
         <div className="border-border/60 w-full min-w-0 shrink-0 border-b px-2 py-3 sm:px-3">
           <div className="flex min-w-0 items-center gap-2">
             <WorkspacePeopleSegmentRail
               segments={segments}
               selectedSegmentId={selectedSegment.id}
               editingSegmentId={editingSegmentId}
-              draggingPersonId={draggingPersonId}
-              canManageSegments
+              draggingPersonCount={draggingPersonIds.length}
+              activeDropSegmentId={activeSegmentDropId}
+              canManageSegments={canEdit}
               onSegmentChange={handleSegmentChange}
               onCreateSegment={handleCreateSegment}
               onRenameSegment={handleRenameSegment}
+              onEditSegment={setEditingSegmentId}
+              onRemoveSegment={handleRemoveSegment}
               onCancelEditSegment={() => setEditingSegmentId(null)}
               onSegmentDragOver={handleSegmentDragOver}
+              onSegmentDragEnter={handleSegmentDragEnter}
+              onSegmentDragLeave={handleSegmentDragLeave}
               onPersonDrop={handlePersonDrop}
             />
           </div>
@@ -364,24 +323,33 @@ export const WorkspacePeopleDrawerPanel = memo(
               onSearchChange={setPeopleSearch}
               categoryFilter={peopleCategoryFilter}
               onCategoryFilterChange={setPeopleCategoryFilter}
+              customSegment={selectedCustomSegment}
+              availablePeople={availablePeople}
+              onAddPeopleToSegment={handleAddPeople}
             />
           ) : null}
 
-          {selectedCustomSegment ? (
-            <WorkspacePeopleSegmentContentHeader
-              segment={selectedCustomSegment}
-              canManageSegments
-              onEditSegment={setEditingSegmentId}
-              onRemoveSegment={handleRemoveSegment}
-            />
-          ) : null}
-
-          {people.length > 0 &&
+          {!selectedCustomSegment &&
+          people.length > 0 &&
           normalizedPeopleSearch &&
-          filteredSelectedPeople.length === 0 &&
-          (!selectedCustomSegment || filteredAvailablePeople.length === 0) ? (
+          filteredSelectedPeople.length === 0 ? (
             <div className="border-border/70 text-muted-foreground grid min-h-32 place-items-center rounded-2xl border border-dashed px-6 text-center text-sm">
               No people match your search.
+            </div>
+          ) : null}
+
+          {selectedCustomSegment && selectedPeople.length === 0 ? (
+            <div className="border-border/70 text-muted-foreground grid min-h-32 place-items-center rounded-2xl border border-dashed px-6 text-center text-sm">
+              No people in {selectedCustomSegment.label} yet. Use Add people
+              above to build this segment.
+            </div>
+          ) : null}
+
+          {selectedCustomSegment &&
+          selectedPeople.length > 0 &&
+          filteredSelectedPeople.length === 0 ? (
+            <div className="border-border/70 text-muted-foreground grid min-h-32 place-items-center rounded-2xl border border-dashed px-6 text-center text-sm">
+              No segment members match this role filter.
             </div>
           ) : null}
 
@@ -390,15 +358,29 @@ export const WorkspacePeopleDrawerPanel = memo(
               people={filteredSelectedPeople}
               allPeople={people}
               viewerId={viewerId}
+              uiPreferencesScope={uiPreferencesScope}
               placedPersonIds={placedPersonIds}
               customSegment={selectedCustomSegment}
+              segments={customSegments}
+              tags={tagState.tags}
+              draggingPersonIds={draggingPersonIdSet}
               canEdit={canEdit}
+              showReportsTo={showReportsTo}
               label={`${selectedCustomSegment.label} members`}
               onDragStart={handlePersonDragStart}
               onDragEnd={handlePersonDragEnd}
               onAdd={handleAddPerson}
               onRemove={handleRemovePerson}
-              onAddPeopleToCanvas={onAddPeopleToCanvas}
+              onAddPersonToSegment={handleAddPersonToSegment}
+              onCreateSegment={handleCreateSegmentForPerson}
+              onRemovePersonFromSegment={removePersonFromSegment}
+              onAddPersonToTag={tagState.addPersonToTag}
+              onCreateTag={tagState.createTag}
+              onDeleteTag={tagState.deleteTag}
+              onRemovePersonFromTag={tagState.removePersonFromTag}
+              onUpdateTag={tagState.updateTag}
+              onAddPeopleToCanvas={canvasActions.add}
+              onRemovePersonFromCanvas={canvasActions.remove}
             />
           ) : null}
 
@@ -407,32 +389,29 @@ export const WorkspacePeopleDrawerPanel = memo(
               people={filteredSelectedPeople}
               allPeople={people}
               viewerId={viewerId}
+              uiPreferencesScope={uiPreferencesScope}
               placedPersonIds={placedPersonIds}
               customSegment={null}
+              segments={customSegments}
+              tags={tagState.tags}
+              draggingPersonIds={draggingPersonIdSet}
               canEdit={canEdit}
+              showReportsTo={showReportsTo}
               label={`${selectedSegment.label} people`}
               onDragStart={handlePersonDragStart}
               onDragEnd={handlePersonDragEnd}
               onAdd={handleAddPerson}
               onRemove={handleRemovePerson}
-              onAddPeopleToCanvas={onAddPeopleToCanvas}
-            />
-          ) : null}
-
-          {selectedCustomSegment && filteredAvailablePeople.length > 0 ? (
-            <WorkspacePeopleDrawerTable
-              people={filteredAvailablePeople}
-              allPeople={people}
-              viewerId={viewerId}
-              placedPersonIds={placedPersonIds}
-              customSegment={selectedCustomSegment}
-              canEdit={canEdit}
-              label={`People available for ${selectedCustomSegment.label}`}
-              onDragStart={handlePersonDragStart}
-              onDragEnd={handlePersonDragEnd}
-              onAdd={handleAddPerson}
-              onRemove={handleRemovePerson}
-              onAddPeopleToCanvas={onAddPeopleToCanvas}
+              onAddPersonToSegment={handleAddPersonToSegment}
+              onCreateSegment={handleCreateSegmentForPerson}
+              onRemovePersonFromSegment={removePersonFromSegment}
+              onAddPersonToTag={tagState.addPersonToTag}
+              onCreateTag={tagState.createTag}
+              onDeleteTag={tagState.deleteTag}
+              onRemovePersonFromTag={tagState.removePersonFromTag}
+              onUpdateTag={tagState.updateTag}
+              onAddPeopleToCanvas={canvasActions.add}
+              onRemovePersonFromCanvas={canvasActions.remove}
             />
           ) : null}
         </ScrollArea>

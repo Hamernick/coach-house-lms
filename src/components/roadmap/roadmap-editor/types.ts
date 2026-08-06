@@ -1,15 +1,15 @@
-import type {
-  RoadmapSection,
-  RoadmapSectionStatus,
-} from "@/lib/roadmap"
+import type { RoadmapSection, RoadmapSectionStatus } from "@/lib/roadmap"
 
 export type RoadmapEditorLayout = "default" | "centered-right"
+export type RoadmapEditorNavigationMode = "route" | "embedded"
 
 export type RoadmapEditorProps = {
   sections: RoadmapSection[]
   publicSlug: string | null
   canEdit?: boolean
   layout?: RoadmapEditorLayout
+  navigationMode?: RoadmapEditorNavigationMode
+  showRightRail?: boolean
   initialSectionId?: string | null
   onDirtyChange?: (dirty: boolean) => void
   onRegisterDiscard?: (handler: (() => void) | null) => void

@@ -17,6 +17,7 @@ import {
   resolveActiveOrganization,
 } from "@/lib/organization/active-org"
 import { resolveProgramBannerImageUrl } from "@/lib/programs/display"
+import { mergeProgramWizardSnapshot } from "@/lib/programs/wizard-snapshot"
 
 export type CreateProgramPayload = {
   title: string
@@ -61,6 +62,16 @@ export async function createProgramAction(payload: CreateProgramPayload) {
   const canEdit = profileAudience.isAdmin || canEditOrganization(role)
   if (!canEdit) return { error: "Forbidden" }
   const allowPublicSharing = publicSharingEnabled
+  const wizardSnapshotResult = mergeProgramWizardSnapshot({
+    existing: null,
+    incoming: payload.wizardSnapshot ?? {},
+  })
+  if (!wizardSnapshotResult.success) {
+    return {
+      error: wizardSnapshotResult.error,
+      field: wizardSnapshotResult.field,
+    }
+  }
 
   const insert = {
     user_id: orgId,
@@ -91,7 +102,7 @@ export async function createProgramAction(payload: CreateProgramPayload) {
     is_public: allowPublicSharing ? Boolean(payload.isPublic ?? false) : false,
     cta_label: payload.ctaLabel ?? null,
     cta_url: payload.ctaUrl ?? null,
-    wizard_snapshot: payload.wizardSnapshot ?? {},
+    wizard_snapshot: wizardSnapshotResult.snapshot,
   }
 
   let { error } = await (supabase as any).from("programs").insert(insert)
@@ -137,10 +148,12 @@ export async function updateProgramAction(
 
   let previousImageUrl: string | null = null
   let previousBannerImageUrl: string | null = null
+  let expectedUpdatedAt: string | null = null
+  let nextWizardSnapshot: Record<string, unknown> | undefined
   if (imageTouched || hasKey("wizardSnapshot")) {
     const { data: existing, error: existingError } = await (supabase as any)
       .from("programs")
-      .select("image_url, wizard_snapshot")
+      .select("image_url, wizard_snapshot, updated_at")
       .eq("id", id)
       .eq("user_id", orgId)
       .maybeSingle()
@@ -149,11 +162,27 @@ export async function updateProgramAction(
     const existingRow = existing as {
       image_url?: string | null
       wizard_snapshot?: Record<string, unknown> | null
+      updated_at?: string | null
     } | null
     previousImageUrl = existingRow?.image_url ?? null
+    expectedUpdatedAt = existingRow?.updated_at ?? null
     previousBannerImageUrl = existingRow
       ? resolveProgramBannerImageUrl(existingRow)
       : null
+
+    if (hasKey("wizardSnapshot")) {
+      const wizardSnapshotResult = mergeProgramWizardSnapshot({
+        existing: existingRow?.wizard_snapshot,
+        incoming: payload.wizardSnapshot,
+      })
+      if (!wizardSnapshotResult.success) {
+        return {
+          error: wizardSnapshotResult.error,
+          field: wizardSnapshotResult.field,
+        }
+      }
+      nextWizardSnapshot = wizardSnapshotResult.snapshot
+    }
   }
 
   const startDate = pick("startDate")
@@ -201,29 +230,43 @@ export async function updateProgramAction(
     cta_label: pick("ctaLabel"),
     cta_url: pick("ctaUrl"),
     wizard_snapshot: hasKey("wizardSnapshot")
-      ? (payload.wizardSnapshot ?? {})
+      ? (nextWizardSnapshot ?? {})
       : undefined,
   }
 
-  let { error } = await (supabase as any)
-    .from("programs")
-    .update(update)
-    .eq("id", id)
-    .eq("user_id", orgId)
+  const executeUpdate = async (values: Record<string, unknown>) => {
+    let query = (supabase as any)
+      .from("programs")
+      .update(values)
+      .eq("id", id)
+      .eq("user_id", orgId)
+    if (expectedUpdatedAt) {
+      query = query.eq("updated_at", expectedUpdatedAt)
+    }
+    return query.select("id").maybeSingle()
+  }
+
+  let { data: updatedProgram, error } = await executeUpdate(update)
 
   if (error && /wizard_snapshot/i.test(error.message)) {
     const legacyUpdate = { ...update }
     delete (legacyUpdate as { wizard_snapshot?: unknown }).wizard_snapshot
-    const retry = await (supabase as any)
-      .from("programs")
-      .update(legacyUpdate)
-      .eq("id", id)
-      .eq("user_id", orgId)
+    const retry = await executeUpdate(legacyUpdate)
+    updatedProgram = retry.data
     error = retry.error
   }
 
   if (error) return { error: error.message }
+  if (!updatedProgram) {
+    return {
+      error: expectedUpdatedAt
+        ? "This activity was updated elsewhere. Reload before saving."
+        : "Activity not found or no longer editable.",
+      conflict: Boolean(expectedUpdatedAt),
+    }
+  }
 
+  /* Keep asset cleanup after the guarded write. */
   if (imageTouched) {
     const cleanupPath = resolveProgramMediaCleanupPath({
       previousUrl: previousImageUrl,
@@ -238,7 +281,7 @@ export async function updateProgramAction(
     const cleanupPath = resolveProgramMediaCleanupPath({
       previousUrl: previousBannerImageUrl,
       nextUrl: resolveProgramBannerImageUrl({
-        wizard_snapshot: payload.wizardSnapshot ?? null,
+        wizard_snapshot: nextWizardSnapshot ?? null,
       }),
       userId: orgId,
     })

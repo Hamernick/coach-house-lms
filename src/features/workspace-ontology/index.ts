@@ -18,7 +18,9 @@ export { useWorkspaceOntologyWayfinding } from "./hooks/use-workspace-ontology-w
 export {
   WORKSPACE_ONTOLOGY_GROUP_NODE_SIZE,
   WORKSPACE_ONTOLOGY_LEAF_NODE_SIZE,
+  WORKSPACE_ONTOLOGY_LIST_NODE_WIDTH,
   WORKSPACE_ONTOLOGY_NODE_SIZE,
+  WORKSPACE_ONTOLOGY_SUMMARY_NODE_SIZE,
   arrangeWorkspaceOntologyBranchGeometry,
   areWorkspaceOntologyStatesEqual,
   buildDefaultWorkspaceOntologyState,
@@ -37,11 +39,13 @@ export {
   applyWorkspaceOntologyStateToParams,
   readWorkspaceOntologyUrlState,
   WORKSPACE_ONTOLOGY_GROUPS_PARAM,
+  WORKSPACE_ONTOLOGY_MODE_PARAM,
   WORKSPACE_ONTOLOGY_ROOTS_PARAM,
 } from "./lib"
 export type { WorkspaceOntologyNodeActivation } from "./lib"
 export {
   WORKSPACE_ONTOLOGY_CATEGORIES,
+  WORKSPACE_ONTOLOGY_MODES,
   WORKSPACE_ONTOLOGY_ROOT_IDS,
   WORKSPACE_ONTOLOGY_STATUSES,
 } from "./types"
@@ -53,7 +57,10 @@ export type {
   WorkspaceOntologyFilter,
   WorkspaceOntologyInput,
   WorkspaceOntologyLayoutNode,
+  WorkspaceOntologyListItem,
+  WorkspaceOntologyMode,
   WorkspaceOntologyNodeInput,
+  WorkspaceOntologyNodePresentation,
   WorkspaceOntologyNodeSize,
   WorkspaceOntologyObstacle,
   WorkspaceOntologyPosition,

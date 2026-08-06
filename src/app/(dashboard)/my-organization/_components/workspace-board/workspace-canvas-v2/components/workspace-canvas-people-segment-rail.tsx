@@ -17,22 +17,31 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { cn } from "@/lib/utils"
 
+import { WorkspacePeopleSegmentActions } from "./workspace-canvas-people-segment-content-header"
 import type { WorkspacePeopleSegment } from "./workspace-canvas-people-segment-types"
 
 type WorkspacePeopleSegmentRailProps = {
   segments: WorkspacePeopleSegment[]
   selectedSegmentId: string
   editingSegmentId: string | null
-  draggingPersonId: string | null
+  draggingPersonCount: number
+  activeDropSegmentId: string | null
   canManageSegments: boolean
   onSegmentChange: (segmentId: string) => void
   onCreateSegment: () => void
   onRenameSegment: (segmentId: string, label: string) => void
+  onEditSegment: (segmentId: string) => void
+  onRemoveSegment: (segmentId: string) => void
   onCancelEditSegment: () => void
   onSegmentDragOver: (
     segment: WorkspacePeopleSegment,
     event: DragEvent<HTMLElement>
   ) => void
+  onSegmentDragEnter: (
+    segment: WorkspacePeopleSegment,
+    event: DragEvent<HTMLElement>
+  ) => void
+  onSegmentDragLeave: (segmentId: string, event: DragEvent<HTMLElement>) => void
   onPersonDrop: (segmentId: string, event: DragEvent<HTMLElement>) => void
 }
 
@@ -102,30 +111,62 @@ const WorkspacePeopleCustomSegmentEditor = memo(
 
 const WorkspacePeopleSegmentTab = memo(function WorkspacePeopleSegmentTab({
   segment,
-  draggingPersonId,
+  selectedSegmentId,
+  draggingPersonCount,
+  activeDropSegmentId,
+  canManageSegments,
+  onEditSegment,
+  onRemoveSegment,
   onSegmentDragOver,
+  onSegmentDragEnter,
+  onSegmentDragLeave,
   onPersonDrop,
 }: {
   segment: WorkspacePeopleSegment
-  draggingPersonId: string | null
+  selectedSegmentId: string
+  draggingPersonCount: number
+  activeDropSegmentId: string | null
+  canManageSegments: boolean
+  onEditSegment: (segmentId: string) => void
+  onRemoveSegment: (segmentId: string) => void
   onSegmentDragOver: (
     segment: WorkspacePeopleSegment,
     event: DragEvent<HTMLElement>
   ) => void
+  onSegmentDragEnter: (
+    segment: WorkspacePeopleSegment,
+    event: DragEvent<HTMLElement>
+  ) => void
+  onSegmentDragLeave: (segmentId: string, event: DragEvent<HTMLElement>) => void
   onPersonDrop: (segmentId: string, event: DragEvent<HTMLElement>) => void
 }) {
   const custom = segment.kind === "custom"
+  const selectedCustomSegment = custom && selectedSegmentId === segment.id
+  const acceptingDrop = custom && draggingPersonCount > 0
+  const activeDrop = acceptingDrop && activeDropSegmentId === segment.id
 
   return (
     <div
       data-workspace-people-segment-tab={segment.kind}
+      data-workspace-people-segment-drop-target={
+        activeDrop ? "true" : undefined
+      }
       className={cn(
         "inline-flex h-8 shrink-0 items-center rounded-full",
         custom &&
           "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:slide-in-from-right-1 motion-safe:duration-150",
-        draggingPersonId && custom && "ring-ring/50 ring-1"
+        acceptingDrop && "ring-border bg-background/60 ring-1 ring-inset",
+        activeDrop && "ring-ring bg-accent ring-2",
+        selectedCustomSegment && "bg-background shadow-sm"
       )}
+      title={
+        acceptingDrop
+          ? `Drop ${draggingPersonCount === 1 ? "person" : `${draggingPersonCount} people`} into ${segment.label}`
+          : undefined
+      }
       onDragOver={(event) => onSegmentDragOver(segment, event)}
+      onDragEnter={(event) => onSegmentDragEnter(segment, event)}
+      onDragLeave={(event) => onSegmentDragLeave(segment.id, event)}
       onDrop={(event) => {
         if (custom) onPersonDrop(segment.id, event)
       }}
@@ -133,13 +174,27 @@ const WorkspacePeopleSegmentTab = memo(function WorkspacePeopleSegmentTab({
       <ToggleGroupItem
         value={segment.id}
         size="sm"
-        className="data-[state=on]:bg-background h-8 rounded-full border-0 px-3 text-xs data-[state=on]:shadow-sm"
+        className={cn(
+          "data-[state=on]:bg-background h-8 rounded-full border-0 px-3 text-xs data-[state=on]:shadow-sm",
+          selectedCustomSegment &&
+            "pr-1 data-[state=on]:bg-transparent data-[state=on]:shadow-none",
+          activeDrop &&
+            "bg-accent text-accent-foreground data-[state=on]:bg-accent"
+        )}
       >
         <span className="max-w-32 truncate">{segment.label}</span>
         <span className="text-muted-foreground ml-1 text-[10px]">
           {segment.count}
         </span>
       </ToggleGroupItem>
+      {selectedCustomSegment && canManageSegments ? (
+        <WorkspacePeopleSegmentActions
+          segment={segment}
+          canManageSegments={canManageSegments}
+          onEditSegment={onEditSegment}
+          onRemoveSegment={onRemoveSegment}
+        />
+      ) : null}
     </div>
   )
 })
@@ -149,13 +204,18 @@ export const WorkspacePeopleSegmentRail = memo(
     segments,
     selectedSegmentId,
     editingSegmentId,
-    draggingPersonId,
+    draggingPersonCount,
+    activeDropSegmentId,
     canManageSegments,
     onSegmentChange,
     onCreateSegment,
     onRenameSegment,
+    onEditSegment,
+    onRemoveSegment,
     onCancelEditSegment,
     onSegmentDragOver,
+    onSegmentDragEnter,
+    onSegmentDragLeave,
     onPersonDrop,
   }: WorkspacePeopleSegmentRailProps) {
     return (
@@ -181,8 +241,15 @@ export const WorkspacePeopleSegmentRail = memo(
               <WorkspacePeopleSegmentTab
                 key={segment.id}
                 segment={segment}
-                draggingPersonId={draggingPersonId}
+                selectedSegmentId={selectedSegmentId}
+                draggingPersonCount={draggingPersonCount}
+                activeDropSegmentId={activeDropSegmentId}
+                canManageSegments={canManageSegments}
+                onEditSegment={onEditSegment}
+                onRemoveSegment={onRemoveSegment}
                 onSegmentDragOver={onSegmentDragOver}
+                onSegmentDragEnter={onSegmentDragEnter}
+                onSegmentDragLeave={onSegmentDragLeave}
                 onPersonDrop={onPersonDrop}
               />
             )

@@ -32,7 +32,10 @@ export {
   WorkspaceBrandKitCompactTypographyPicker,
   WorkspaceBrandKitDownloadButton,
   WorkspaceBrandKitPanel,
+  WorkspaceBrandKitProfileEditor,
+  WorkspaceBrandKitProfilePreview,
   WorkspaceBrandKitSheet,
+  hasWorkspaceBrandKitProfileContent,
 } from "./components"
 export { useWorkspaceBrandKitController } from "./hooks/use-workspace-brand-kit-controller"
 export type { WorkspaceBrandKitController as ReturnTypeUseWorkspaceBrandKitController } from "./hooks/use-workspace-brand-kit-controller"

@@ -12,6 +12,10 @@ import {
   validateOrgMediaFile,
 } from "@/lib/organization/org-media"
 import { ORG_BANNER_ASPECT_RATIO } from "@/lib/organization/banner-spec"
+import {
+  getOrganizationFocusTargetProps,
+  ORGANIZATION_FOCUS_TARGET_CLASSNAME,
+} from "./organization-deep-link-focus"
 
 import {
   type CropArea,
@@ -37,7 +41,6 @@ type OrgProfileHeaderProps = {
   isDirty: boolean
   canEdit: boolean
   publicLink?: string | null
-  onCloseToWorkspace?: (() => void) | null
   onLogoChange: (url: string | null) => Promise<void>
   onHeaderChange: (url: string | null) => Promise<void>
   onEnterEdit: () => void
@@ -70,7 +73,6 @@ export function OrgProfileHeader({
   isDirty,
   canEdit,
   publicLink,
-  onCloseToWorkspace,
   onLogoChange,
   onHeaderChange,
   onEnterEdit,
@@ -261,7 +263,7 @@ export function OrgProfileHeader({
   return (
     <>
       <div
-        className="bg-background relative w-full overflow-hidden rounded-t-[22px] border-b"
+        className="border-border/60 bg-background relative w-full overflow-hidden rounded-t-[22px] border"
         style={{ aspectRatio: ORG_BANNER_ASPECT_RATIO }}
       >
         {headerUrl ? (
@@ -293,7 +295,6 @@ export function OrgProfileHeader({
           headerBusy={headerBusy}
           hasHeader={hasHeader}
           isUploadingHeader={isUploadingHeader}
-          onCloseToWorkspace={onCloseToWorkspace}
           onStartBannerUpload={(file) => void handleStartBannerUpload(file)}
           onAdjustHeader={() => void handleAdjustExistingBanner()}
           onRemoveHeader={() => void handleRemove("header")}
@@ -302,7 +303,13 @@ export function OrgProfileHeader({
 
       <div className="bg-background relative p-6">
         <div className="absolute -top-12 left-6">
-          <div className="flex items-end gap-3">
+          <div
+            {...getOrganizationFocusTargetProps("logoUrl")}
+            className={cn(
+              "flex items-end gap-3",
+              ORGANIZATION_FOCUS_TARGET_CLASSNAME
+            )}
+          >
             <div className="border-border bg-background relative h-24 w-24 overflow-hidden rounded-xl border shadow-sm">
               {logoUrl ? (
                 <Image

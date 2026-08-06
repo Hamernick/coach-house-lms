@@ -40,17 +40,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ results: [] }, { status: 401 })
   }
 
-  const { orgId } = await resolveActiveOrganization(supabase, user.id)
-
-  const isAdmin = await fetchIsAdmin(supabase, user.id)
-  const entitlements = await fetchLearningEntitlements({
-    supabase,
-    userId: user.id,
-    orgUserId: orgId,
-    isAdmin,
-  })
-  const hasAcceleratorAccess =
-    entitlements.hasAcceleratorAccess || entitlements.hasElectiveAccess
+  const [{ orgId }, isAdmin] = await Promise.all([
+    resolveActiveOrganization(supabase, user.id),
+    fetchIsAdmin(supabase, user.id),
+  ])
 
   const tokens = normalizeQuery(rawQuery)
   const results: SearchResult[] = []
@@ -63,75 +56,108 @@ export async function GET(request: Request) {
     results.push(result)
   }
 
-  const { data: rankedResults, error: rankedError } = await supabase
-    .rpc("search_global", {
-      p_query: rawQuery,
-      p_user_id: user.id,
-      p_is_admin: isAdmin,
-      p_limit: MAX_RESULTS,
-    })
-    .returns<SearchRow[]>()
+  const [entitlements] = await Promise.all([
+    fetchLearningEntitlements({
+      supabase,
+      userId: user.id,
+      orgUserId: orgId,
+      isAdmin,
+    }),
+    (async () => {
+      const { data: rankedResults, error: rankedError } = await supabase
+        .rpc("search_global", {
+          p_query: rawQuery,
+          p_user_id: user.id,
+          p_is_admin: isAdmin,
+          p_limit: MAX_RESULTS,
+        })
+        .returns<SearchRow[]>()
 
-  if (!rankedError) {
-    for (const row of rankedResults ?? []) {
-      if (shouldOmitSearchRow(row)) continue
-      pushResult(formatSearchRow(row))
-    }
-    if (orgId !== user.id) {
-      await addActiveOrganizationResults({ supabase, orgId, tokens, pushResult })
-    }
-  } else {
-    await addFallbackResults({ supabase, orgId, isAdmin, tokens, pushResult })
-  }
+      if (!rankedError) {
+        for (const row of rankedResults ?? []) {
+          if (shouldOmitSearchRow(row)) continue
+          pushResult(formatSearchRow(row))
+        }
+        if (orgId !== user.id) {
+          await addActiveOrganizationResults({
+            supabase,
+            orgId,
+            tokens,
+            pushResult,
+          })
+        }
+      } else {
+        await addFallbackResults({
+          supabase,
+          orgId,
+          isAdmin,
+          tokens,
+          pushResult,
+        })
+      }
 
-  for (const item of ITEMS) {
-    const primaryCategory = item.category[0]
-    const categoryLabel = marketplaceCategoryLabel(primaryCategory)
-    const searchableCategories = item.category
-      .map((category) => marketplaceCategoryLabel(category))
-      .filter(Boolean) as string[]
-    if (
-      matchesQuery(
-        [item.name, item.description, item.byline ?? null, ...searchableCategories],
-        tokens,
-      )
-    ) {
-      pushResult({
-        id: `marketplace-${item.id}`,
-        label: item.name,
-        subtitle: item.byline ?? categoryLabel ?? undefined,
-        href: buildMarketplaceHref(primaryCategory, item.name),
-        group: "Marketplace",
-        image: item.image,
-        keywords: [item.description, item.byline ?? "", ...searchableCategories].filter(
-          Boolean,
-        ),
-      })
-    }
-  }
+      for (const item of ITEMS) {
+        const primaryCategory = item.category[0]
+        const categoryLabel = marketplaceCategoryLabel(primaryCategory)
+        const searchableCategories = item.category
+          .map((category) => marketplaceCategoryLabel(category))
+          .filter(Boolean) as string[]
+        if (
+          matchesQuery(
+            [
+              item.name,
+              item.description,
+              item.byline ?? null,
+              ...searchableCategories,
+            ],
+            tokens
+          )
+        ) {
+          pushResult({
+            id: `marketplace-${item.id}`,
+            label: item.name,
+            subtitle: item.byline ?? categoryLabel ?? undefined,
+            href: buildMarketplaceHref(primaryCategory, item.name),
+            group: "Marketplace",
+            image: item.image,
+            keywords: [
+              item.description,
+              item.byline ?? "",
+              ...searchableCategories,
+            ].filter(Boolean),
+          })
+        }
+      }
+    })(),
+  ])
+  const hasAcceleratorAccess =
+    entitlements.hasAcceleratorAccess || entitlements.hasElectiveAccess
 
   const filtered = hasAcceleratorAccess
     ? results
     : results.filter((item) => !item.href.startsWith("/accelerator"))
 
-  try {
-    const trimmed = rawQuery.slice(0, 200)
-    await supabase.from("search_events").insert({
-      user_id: user.id,
-      event_type: "query",
-      query: trimmed,
-      query_length: trimmed.length,
-      context: searchParams.get("context"),
-      result_count: filtered.length,
-    })
-  } catch {
-    // Best-effort analytics; ignore failures.
-  }
-
-  const enriched = await attachOrganizationImages({
-    supabase,
-    orgId,
-    results: filtered,
-  })
+  const [enriched] = await Promise.all([
+    attachOrganizationImages({
+      supabase,
+      orgId,
+      results: filtered,
+    }),
+    (async () => {
+      try {
+        const trimmed = rawQuery.slice(0, 200)
+        await supabase.from("search_events").insert({
+          user_id: user.id,
+          event_type: "query",
+          query: trimmed,
+          query_length: trimmed.length,
+          context: searchParams.get("context"),
+          result_count: filtered.length,
+        })
+      } catch {
+        // Best-effort analytics; ignore failures.
+      }
+    })(),
+  ])
   return NextResponse.json({ results: enriched })
 }

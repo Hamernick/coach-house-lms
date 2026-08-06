@@ -29,6 +29,7 @@ export function WorkspaceBoardNodeCardShell({
   fullHref,
   canEdit,
   editorHref = null,
+  onEditorOpen,
   menuActions = [],
   shellInsetClassName = "p-3",
   shellClassName,
@@ -51,6 +52,7 @@ export function WorkspaceBoardNodeCardShell({
   fullHref: string
   canEdit: boolean
   editorHref?: string | null
+  onEditorOpen?: () => void
   menuActions?: WorkspaceCardOverflowAction[]
   shellInsetClassName?: string
   shellClassName?: string
@@ -90,6 +92,7 @@ export function WorkspaceBoardNodeCardShell({
         fullHref={fullHref}
         canEdit={canEdit}
         editorHref={editorHref}
+        onEditorOpen={onEditorOpen}
         menuActions={menuActions}
         headerMeta={headerMeta}
         headerAction={headerAction}

@@ -1,5 +1,7 @@
 import {
+  WORKSPACE_ONTOLOGY_MODES,
   WORKSPACE_ONTOLOGY_ROOT_IDS,
+  type WorkspaceOntologyMode,
   type WorkspaceOntologyRootId,
   type WorkspaceOntologyState,
 } from "../types"
@@ -7,6 +9,15 @@ import {
 const ROOT_ID_SET = new Set<WorkspaceOntologyRootId>(
   WORKSPACE_ONTOLOGY_ROOT_IDS
 )
+const MODE_SET = new Set<WorkspaceOntologyMode>(WORKSPACE_ONTOLOGY_MODES)
+
+function normalizeMode(value: unknown): WorkspaceOntologyMode {
+  return typeof value === "string" &&
+    MODE_SET.has(value as WorkspaceOntologyMode)
+    ? (value as WorkspaceOntologyMode)
+    : "focus"
+}
+
 function normalizeTimestamp(value: unknown) {
   if (typeof value !== "string") return null
   return Number.isFinite(Date.parse(value)) ? value : null
@@ -36,6 +47,7 @@ function normalizeRootIds(value: unknown) {
 export function buildDefaultWorkspaceOntologyState(): WorkspaceOntologyState {
   return {
     updatedAt: null,
+    mode: "focus",
     expandedRootIds: [],
     expandedNodeIds: [],
     pinnedNodeIds: [],
@@ -50,9 +62,13 @@ export function normalizeWorkspaceOntologyState(
     return buildDefaultWorkspaceOntologyState()
   }
   const record = value as Partial<WorkspaceOntologyState>
+  const mode = normalizeMode(record.mode)
+  const expandedRootIds = normalizeRootIds(record.expandedRootIds)
   return {
     updatedAt: normalizeTimestamp(record.updatedAt),
-    expandedRootIds: normalizeRootIds(record.expandedRootIds),
+    mode,
+    expandedRootIds:
+      mode === "focus" ? expandedRootIds.slice(0, 1) : expandedRootIds,
     expandedNodeIds: normalizeUniqueStrings(record.expandedNodeIds),
     // Legacy fields remain serializable, but generated nodes are always
     // positioned by the managed scene layout.

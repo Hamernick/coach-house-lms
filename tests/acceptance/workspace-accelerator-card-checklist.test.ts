@@ -542,7 +542,6 @@ describe("workspace accelerator checklist helpers", () => {
     const markup = renderToStaticMarkup(
       React.createElement(WorkspaceAcceleratorCardChecklist, {
         modules,
-        selectedLessonGroupLabel: "Formation",
         currentStepId: "m-1:assignment",
         completedStepIds: ["m-1:video"],
         openModuleId: "m-1",
@@ -670,7 +669,14 @@ describe("workspace accelerator checklist helpers", () => {
     expect(markup).toContain(
       "text-muted-foreground inline-flex size-7 shrink-0 items-center justify-center rounded-full"
     )
-    expect(markup).toContain("bg-primary/10 text-primary")
+    expect(markup).toContain('data-progress-segment="build"')
+    expect(markup).toContain("text-amber-600")
+    expect(markup).toContain("bg-amber-500")
+    expect(markup).toContain("text-white")
+    expect(source).toContain(
+      "hasProgressIconBackground && progressSegmentVisual.fillClassName"
+    )
+    expect(markup).not.toContain("ring-amber-700/20")
     expect(markup).toContain('data-slot="separator"')
     expect(markup).toContain(
       "border-border/70 border-t border-dashed bg-transparent"
@@ -727,7 +733,6 @@ describe("workspace accelerator checklist helpers", () => {
     const markup = renderToStaticMarkup(
       React.createElement(WorkspaceAcceleratorCardChecklist, {
         modules,
-        selectedLessonGroupLabel: "Formation",
         currentStepId: "workspace-onboarding-organization-setup:lesson",
         completedStepIds: [],
         openModuleId: "workspace-onboarding-organization-setup",
@@ -760,7 +765,6 @@ describe("workspace accelerator checklist helpers", () => {
     const markup = renderToStaticMarkup(
       React.createElement(WorkspaceAcceleratorCardChecklist, {
         modules,
-        selectedLessonGroupLabel: "Formation",
         currentStepId: "m-2:resources",
         completedStepIds: ["m-2:resources"],
         openModuleId: "m-1",

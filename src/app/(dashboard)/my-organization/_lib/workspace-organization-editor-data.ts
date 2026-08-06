@@ -2,11 +2,15 @@ import type { OrgPerson } from "@/actions/people"
 import type {
   OrgProfile,
   OrgProgram,
+  ProfileTab,
 } from "@/components/organization/org-profile-card/types"
 import { buildDocumentsTabData } from "@/components/organization/org-profile-card/tabs/documents-tab/data"
 import type { FiscalSponsorshipProjectWorkflowSummary } from "@/features/fiscal-sponsorship"
 import { resolvePeopleDisplayImages } from "@/lib/people/display-images"
+import type { OrganizationPeopleSegment } from "@/lib/people/segments"
+import type { OrganizationPeopleTag } from "@/lib/people/tags"
 import type { RoadmapSection } from "@/lib/roadmap"
+import type { WorkspaceDrawerTab } from "@/lib/workspace/routes"
 import { buildFiscalSponsorshipApplicationPrefill } from "./workspace-fiscal-sponsorship-prefill"
 
 export async function buildWorkspaceOrganizationEditorData({
@@ -16,8 +20,19 @@ export async function buildWorkspaceOrganizationEditorData({
   canEdit,
   fiscalSponsorshipProjectId,
   fiscalSponsorshipWorkflowSummary,
+  initialAcceleratorGroup,
+  initialAcceleratorModuleId,
+  initialAcceleratorStepId,
+  initialDrawerTab,
+  initialEditMode,
+  initialFocus,
+  initialRoadmapSectionSlug,
   initialProfile,
+  initialProfileTab,
+  initialProgramId,
   peopleNormalized,
+  peopleSegments,
+  peopleTags,
   profile,
   programs,
   publicSlug,
@@ -29,8 +44,19 @@ export async function buildWorkspaceOrganizationEditorData({
   canEdit: boolean
   fiscalSponsorshipProjectId: string | null
   fiscalSponsorshipWorkflowSummary: FiscalSponsorshipProjectWorkflowSummary | null
+  initialAcceleratorGroup: string | null
+  initialAcceleratorModuleId: string | null
+  initialAcceleratorStepId: string | null
+  initialDrawerTab: WorkspaceDrawerTab | null
+  initialEditMode: boolean
+  initialFocus: string | null
+  initialRoadmapSectionSlug: string | null
   initialProfile: OrgProfile
+  initialProfileTab: ProfileTab | null
+  initialProgramId: string | null
   peopleNormalized: OrgPerson[]
+  peopleSegments: OrganizationPeopleSegment[]
+  peopleTags: OrganizationPeopleTag[]
   profile: Record<string, unknown>
   programs: OrgProgram[] | null | undefined
   publicSlug: string | null
@@ -40,9 +66,21 @@ export async function buildWorkspaceOrganizationEditorData({
   const orgPrograms = programs ?? []
 
   return {
+    initialAcceleratorGroup,
+    initialAcceleratorModuleId,
+    initialAcceleratorStepId,
+    initialDrawerTab,
+    initialEditMode,
+    initialFocus,
+    initialRoadmapSectionSlug,
     initialProfile,
+    initialProfileTab,
+    initialProgramId,
     roadmapSections,
+    roadmapPublicSlug: publicSlug,
     people,
+    peopleSegments,
+    peopleTags,
     programs: orgPrograms,
     fiscalSponsorshipProjectId,
     fiscalSponsorshipWorkflowSummary,

@@ -1,26 +1,29 @@
+import { getWorkspaceEditorPath } from "@/lib/workspace/routes"
+
 export type ReadinessChecklistItem = {
   href: string
   label: string
 }
 
-const READINESS_REASON_TO_CTA: Record<string, { href: string; label: string }> = {
-  "Set a program funding goal": {
-    href: "/organization?view=editor&tab=programs",
-    label: "Set a program funding goal",
-  },
-  "Upload legal formation document": {
-    href: "/organization/documents",
-    label: "Upload legal document",
-  },
-  "Upload verification letter": {
-    href: "/organization/documents",
-    label: "Upload verification letter",
-  },
-  "Formation status must be approved": {
-    href: "/organization?view=editor&tab=company",
-    label: "Set formation status",
-  },
-}
+const READINESS_REASON_TO_CTA: Record<string, { href: string; label: string }> =
+  {
+    "Set a program funding goal": {
+      href: getWorkspaceEditorPath({ tab: "programs" }),
+      label: "Set a program funding goal",
+    },
+    "Upload legal formation document": {
+      href: "/organization/documents",
+      label: "Upload legal document",
+    },
+    "Upload verification letter": {
+      href: "/organization/documents",
+      label: "Upload verification letter",
+    },
+    "Formation status must be approved": {
+      href: getWorkspaceEditorPath({ tab: "company" }),
+      label: "Set formation status",
+    },
+  }
 
 export function buildReadinessChecklist(options: {
   reasons: string[]
@@ -28,13 +31,19 @@ export function buildReadinessChecklist(options: {
   nextCoreRoadmapHref?: string | null
   maxItems?: number
 }): ReadinessChecklistItem[] {
-  const { reasons, nextFormationModuleHref, nextCoreRoadmapHref, maxItems = 3 } = options
+  const {
+    reasons,
+    nextFormationModuleHref,
+    nextCoreRoadmapHref,
+    maxItems = 3,
+  } = options
 
   const mapped = reasons
     .map((reason) => {
       if (reason === "Complete the Formation class") {
         return {
-          href: nextFormationModuleHref ?? "/accelerator/class/formation/module/1",
+          href:
+            nextFormationModuleHref ?? "/accelerator/class/formation/module/1",
           label: "Complete the Formation class",
         }
       }
@@ -50,7 +59,11 @@ export function buildReadinessChecklist(options: {
 
   return mapped
     .filter(
-      (entry, index, all) => all.findIndex((candidate) => candidate.href === entry.href && candidate.label === entry.label) === index,
+      (entry, index, all) =>
+        all.findIndex(
+          (candidate) =>
+            candidate.href === entry.href && candidate.label === entry.label
+        ) === index
     )
     .slice(0, maxItems)
 }

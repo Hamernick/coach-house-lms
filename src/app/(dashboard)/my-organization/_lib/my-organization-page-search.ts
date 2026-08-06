@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 
-import { WORKSPACE_ROADMAP_PATH } from "@/lib/workspace/routes"
+import { getWorkspaceDrawerPath } from "@/lib/workspace/routes"
 
 import { resolveWorkspaceOnboardingStageFromSearchParam } from "../_components/workspace-board/workspace-board-onboarding-flow"
 import type { MyOrganizationSearchParams } from "./types"
@@ -28,10 +28,18 @@ export async function resolveMyOrganizationPageSearchState(
       typeof resolvedSearchParams?.programId === "string"
         ? resolvedSearchParams.programId
         : "",
+    focusParam:
+      typeof resolvedSearchParams?.focus === "string"
+        ? resolvedSearchParams.focus
+        : "",
     initialWorkspaceFocusCardId:
       resolvedSearchParams?.focus === "fiscal-sponsorship"
         ? ("fiscal-sponsorship" as const)
         : null,
+    drawerParam:
+      typeof resolvedSearchParams?.drawer === "string"
+        ? resolvedSearchParams.drawer
+        : "",
     acceleratorGroupParam:
       typeof resolvedSearchParams?.group === "string"
         ? resolvedSearchParams.group
@@ -43,6 +51,10 @@ export async function resolveMyOrganizationPageSearchState(
     acceleratorStepParam:
       typeof resolvedSearchParams?.step === "string"
         ? resolvedSearchParams.step
+        : null,
+    roadmapSectionParam:
+      typeof resolvedSearchParams?.section === "string"
+        ? resolvedSearchParams.section
         : null,
     monthParam:
       typeof resolvedSearchParams?.month === "string"
@@ -60,6 +72,10 @@ export async function resolveMyOrganizationPageSearchState(
 }
 
 export function redirectLegacyMyOrganizationTab(tabParam: string) {
-  if (tabParam === "roadmap") redirect(WORKSPACE_ROADMAP_PATH)
-  if (tabParam === "documents") redirect("/organization/documents")
+  if (tabParam === "roadmap") {
+    redirect(getWorkspaceDrawerPath({ tab: "roadmap" }))
+  }
+  if (tabParam === "documents") {
+    redirect(getWorkspaceDrawerPath({ tab: "documents" }))
+  }
 }

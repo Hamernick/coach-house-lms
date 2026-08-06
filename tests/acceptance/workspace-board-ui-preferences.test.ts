@@ -7,6 +7,8 @@ import {
   buildWorkspaceBoardUiPreferencesStorageKey,
   normalizeWorkspaceCanvasPersonPlacementsPreference,
   normalizeWorkspaceCanvasViewportPreference,
+  normalizeWorkspaceDataDrawerSnapPointPreference,
+  normalizeWorkspaceDataDrawerTabPreference,
   patchWorkspaceBoardUiPreferences,
   readWorkspaceBoardUiPreferences,
 } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-ui-preferences"
@@ -84,7 +86,9 @@ describe("workspace board UI preferences", () => {
 
     patchWorkspaceBoardUiPreferences(scope, {
       canvasViewport: { x: 10, y: 20, zoom: 0.75 },
+      canvasViewportLayoutVersion: 2,
       dataDrawerSnapPoint: 0.48,
+      dataDrawerTab: "documents",
       teamAccessCollapsed: true,
       workspacePersonPlacements: [{ personId: "person-a", x: 120, y: 220 }],
     })
@@ -94,21 +98,54 @@ describe("workspace board UI preferences", () => {
     ).toBeTruthy()
     expect(readWorkspaceBoardUiPreferences(scope)).toEqual({
       canvasViewport: { x: 10, y: 20, zoom: 0.75 },
+      canvasViewportLayoutVersion: 2,
       dataDrawerSnapPoint: 0.48,
+      dataDrawerTab: "documents",
       teamAccessCollapsed: true,
       workspacePersonPlacements: [{ personId: "person-a", x: 120, y: 220 }],
     })
+  })
+
+  it("defaults invalid drawer tabs to Accelerator", () => {
+    expect(normalizeWorkspaceDataDrawerTabPreference("organization")).toBe(
+      "organization"
+    )
+    expect(normalizeWorkspaceDataDrawerTabPreference("accelerator")).toBe(
+      "accelerator"
+    )
+    expect(normalizeWorkspaceDataDrawerTabPreference("people")).toBe("people")
+    expect(normalizeWorkspaceDataDrawerTabPreference("roadmap")).toBe("roadmap")
+    expect(normalizeWorkspaceDataDrawerTabPreference("documents")).toBe(
+      "documents"
+    )
+    expect(normalizeWorkspaceDataDrawerTabPreference("unknown")).toBe(
+      "accelerator"
+    )
+  })
+
+  it("keeps the collapsed drawer tall enough for its tab row", () => {
+    expect(normalizeWorkspaceDataDrawerSnapPointPreference(0.06)).toBe("68px")
+    expect(normalizeWorkspaceDataDrawerSnapPointPreference("44px")).toBe("68px")
+    expect(normalizeWorkspaceDataDrawerSnapPointPreference("52px")).toBe("68px")
+    expect(normalizeWorkspaceDataDrawerSnapPointPreference("68px")).toBe("68px")
+    expect(normalizeWorkspaceDataDrawerSnapPointPreference(0.48)).toBe(0.48)
   })
 
   it("wires viewport and drawer state through the shared preference contract", () => {
     const surfaceSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2.tsx"
     )
+    const bootstrapSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/use-workspace-canvas-surface-v2-bootstrap.ts"
+    )
     const viewportPreferencesSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-viewport-preferences.ts"
     )
     const viewSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx"
+    )
+    const viewTypesSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view-types.ts"
     )
     const cameraEffectsSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/runtime/workspace-canvas-camera-controller-effects.ts"
@@ -117,11 +154,18 @@ describe("workspace board UI preferences", () => {
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer.tsx"
     )
 
-    expect(surfaceSource).toContain("useWorkspaceCanvasViewportPreferences")
-    expect(surfaceSource).toContain("suppressInitialFit")
-    expect(surfaceSource).toContain("onMoveEnd: handleWorkspaceMoveEnd")
-    expect(surfaceSource).toContain("handleCanvasMoveEnd(event, viewport)")
-    expect(surfaceSource).toContain("uiPreferencesScope,")
+    expect(bootstrapSource).toContain("useWorkspaceCanvasViewportPreferences")
+    expect(surfaceSource).toContain(
+      "suppressInitialFit: viewport.suppressInitialFit"
+    )
+    expect(surfaceSource).toContain("onMoveEnd: viewport.handleCanvasMoveEnd")
+    expect(viewportPreferencesSource).toContain(
+      "setViewportZoom(viewport.zoom)"
+    )
+    expect(viewportPreferencesSource).toContain("viewportZoom,")
+    expect(surfaceSource).toContain(
+      "uiPreferencesScope: viewport.uiPreferencesScope"
+    )
     expect(viewSource).toContain("uiPreferencesScope={uiPreferencesScope}")
     expect(viewportPreferencesSource).toContain(
       "readWorkspaceBoardUiPreferences"
@@ -131,10 +175,19 @@ describe("workspace board UI preferences", () => {
       "patchWorkspaceBoardUiPreferences"
     )
     expect(viewportPreferencesSource).toContain("canvasViewport,")
+    expect(viewportPreferencesSource).toContain(
+      "WORKSPACE_CANVAS_VIEWPORT_LAYOUT_VERSION"
+    )
+    expect(viewportPreferencesSource).toContain("canvasViewport: null")
     expect(viewportPreferencesSource).toContain("suppressInitialFit:")
-    expect(viewSource).toContain("onMoveEnd: OnMoveEnd")
+    expect(viewTypesSource).toContain("onMoveEnd: OnMoveEnd")
     expect(viewSource).toContain("onMoveEnd={onMoveEnd}")
     expect(cameraEffectsSource).toContain("if (suppressInitialFit) return")
     expect(drawerSource).toContain("dataDrawerSnapPoint: storedSnapPoint")
+    expect(drawerSource).toContain("dataDrawerTab: nextTab")
+    expect(drawerSource).toContain(
+      "readWorkspaceBoardUiPreferences(uiPreferencesScope)\n      if (request) return"
+    )
+    expect(drawerSource).toContain("}, [request, uiPreferencesScope])")
   })
 })

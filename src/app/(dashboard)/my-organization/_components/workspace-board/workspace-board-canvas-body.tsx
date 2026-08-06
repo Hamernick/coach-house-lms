@@ -43,6 +43,7 @@ export function WorkspaceBoardCanvasBody({
   tutorialCompletionExitRequest,
   journeyGuideState,
   organizationEditorData,
+  workspaceFoundationEnabled,
   onInitialOnboardingSubmit,
   onInvitesChange,
   onSizeChange,
@@ -84,6 +85,7 @@ export function WorkspaceBoardCanvasBody({
   tutorialCompletionExitRequest: WorkspaceCanvasTutorialCompletionExitRequest
   journeyGuideState: ReturnType<typeof resolveWorkspaceJourneyGuideState>
   organizationEditorData: WorkspaceOrganizationEditorData
+  workspaceFoundationEnabled: boolean
   onInitialOnboardingSubmit: (form: FormData) => Promise<void>
   onInvitesChange: (nextInvites: WorkspaceCollaborationInvite[]) => void
   onSizeChange: (cardId: WorkspaceCardId, size: WorkspaceCardSize) => void
@@ -154,10 +156,11 @@ export function WorkspaceBoardCanvasBody({
       />
       <WorkspaceBoardRightRail roadmapSections={seed.roadmapSections} />
 
-      <div className="relative flex min-h-0 flex-1">
+      <div className="relative flex min-h-0 w-full max-w-full min-w-0 flex-1 overflow-hidden">
         <WorkspaceBoardFlowSurface
           seed={seed}
           organizationEditorData={organizationEditorData}
+          workspaceFoundationEnabled={workspaceFoundationEnabled}
           boardState={boardState}
           allowEditing={allowEditing}
           workspaceDataDrawerCanEdit={workspaceDataDrawerCanEdit}

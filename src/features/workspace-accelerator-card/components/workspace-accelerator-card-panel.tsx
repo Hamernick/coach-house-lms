@@ -9,8 +9,8 @@ import {
   useState,
   type ComponentProps,
 } from "react"
+import { ScrollFadeEffect } from "@/components/scroll-fade-effect"
 import { cn } from "@/lib/utils"
-import type { RoadmapSection } from "@/lib/roadmap"
 
 import {
   buildWorkspaceAcceleratorRuntimeActionsSignature,
@@ -22,6 +22,7 @@ import type {
   WorkspaceAcceleratorCardRuntimeActions,
   WorkspaceAcceleratorCardRuntimeSnapshot,
   WorkspaceAcceleratorCardStep,
+  WorkspaceAcceleratorOpenStepRequest,
   WorkspaceAcceleratorTutorialCallout,
   WorkspaceAcceleratorTutorialInteractionPolicy,
 } from "../types"
@@ -35,9 +36,11 @@ import {
   WorkspaceAcceleratorCardFullscreenRail,
   WorkspaceAcceleratorCardInlinePicker,
   WorkspaceAcceleratorCardSidebar,
+  WorkspaceAcceleratorDrawerHeaderControls,
   useModuleViewerSizeSync,
 } from "./workspace-accelerator-card-panel-support"
 import { canWorkspaceAcceleratorTutorialActivateStep } from "./workspace-accelerator-card-tutorial-guards"
+import type { WorkspaceAcceleratorCardPanelProps } from "./workspace-accelerator-card-panel-types"
 import { useWorkspaceAcceleratorLessonGroupState } from "./workspace-accelerator-card-panel-lesson-groups"
 import { WorkspaceAcceleratorStepViewerTransition } from "./workspace-accelerator-step-viewer-transition"
 import {
@@ -48,34 +51,11 @@ import {
   buildAcceleratorRuntimeSnapshot,
   buildAcceleratorRuntimeSnapshotSignature,
   buildWorkspaceAcceleratorControllerInput,
+  isWorkspaceAcceleratorOpenStepRequestFulfilled,
   useWorkspaceAcceleratorRuntimeSync,
 } from "./workspace-accelerator-card-panel-runtime"
 import { WorkspaceAcceleratorStepNodeCard } from "./workspace-accelerator-step-node-card"
-
-type WorkspaceAcceleratorCardPanelProps = {
-  input: WorkspaceAcceleratorCardInput
-  roadmapSections?: RoadmapSection[]
-  roadmapBasePath?: string
-  presentationMode?: "embedded" | "fullscreen-route"
-  initialModuleViewerOpen?: boolean
-  initialOpenModuleId?: string | null
-  onRuntimeChange?: (snapshot: WorkspaceAcceleratorCardRuntimeSnapshot) => void
-  onRuntimeActionsChange?: (
-    actions: WorkspaceAcceleratorCardRuntimeActions
-  ) => void
-  onRequestOpenStep?: (args: {
-    step: WorkspaceAcceleratorCardStep
-    selectedLessonGroupKey: string | null
-  }) => boolean | void
-  onModuleViewerClose?: () => void
-  tutorialCallout?: WorkspaceAcceleratorTutorialCallout | null
-  tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
-  tutorialMode?: "module-preview" | null
-  showEmbeddedClassPicker?: boolean
-  onTutorialActionComplete?: (
-    mode?: "complete" | "complete-and-advance"
-  ) => void
-}
+import { useWorkspaceAcceleratorDrawerScroll } from "./use-workspace-accelerator-drawer-scroll"
 
 // eslint-disable-next-line max-lines-per-function
 export function WorkspaceAcceleratorCardPanel({
@@ -85,6 +65,8 @@ export function WorkspaceAcceleratorCardPanel({
   presentationMode = "embedded",
   initialModuleViewerOpen = false,
   initialOpenModuleId = null,
+  openStepRequest = null,
+  onOpenStepRequestHandled,
   onRuntimeChange,
   onRuntimeActionsChange,
   onRequestOpenStep,
@@ -109,7 +91,11 @@ export function WorkspaceAcceleratorCardPanel({
       : null
   const fallbackAcceleratorHref =
     stepHrefOverride ??
-    (presentationMode === "fullscreen-route" ? "/workspace" : "/accelerator")
+    (presentationMode === "fullscreen-route"
+      ? "/workspace"
+      : presentationMode === "workspace-drawer"
+        ? "/workspace/accelerator"
+        : "/accelerator")
   const runtimeStep = useMemo(
     () =>
       currentStep
@@ -138,9 +124,23 @@ export function WorkspaceAcceleratorCardPanel({
   const [isModuleViewerOpen, setIsModuleViewerOpen] = useState(
     presentationMode === "fullscreen-route" || initialModuleViewerOpen
   )
+  const workspaceDrawerEmbedded = presentationMode === "workspace-drawer"
+  const {
+    hasScrollableOverflow: workspaceDrawerHasScrollableOverflow,
+    viewportRef: workspaceDrawerScrollRef,
+  } = useWorkspaceAcceleratorDrawerScroll(
+    workspaceDrawerEmbedded && !isModuleViewerOpen
+  )
+  useEffect(() => {
+    if (!initialOpenModuleId || openStepRequest) return
+    setOpenModuleId(initialOpenModuleId)
+    setIsModuleViewerOpen(true)
+  }, [initialOpenModuleId, openStepRequest])
   const previousCurrentModuleIdRef = useRef<string | null>(null)
   const previousTutorialManagedViewerOpenRef = useRef(false)
   const pendingFirstModuleTutorialAdvanceRef = useRef(false)
+  const handledOpenStepRequestIdRef = useRef<number | null>(null)
+  const acknowledgedOpenStepRequestIdRef = useRef<number | null>(null)
   const {
     selectedLessonGroup,
     selectedLessonGroupKey,
@@ -156,6 +156,47 @@ export function WorkspaceAcceleratorCardPanel({
     tutorialInteractionPolicy,
     setOpenModuleId,
   })
+  useEffect(() => {
+    if (
+      !openStepRequest ||
+      handledOpenStepRequestIdRef.current === openStepRequest.id
+    ) {
+      return
+    }
+
+    handledOpenStepRequestIdRef.current = openStepRequest.id
+    const requestedStep = controller.steps.find(
+      (step) =>
+        step.id === openStepRequest.stepId &&
+        step.moduleId === openStepRequest.moduleId
+    )
+    if (requestedStep) {
+      controller.goToStep(requestedStep.id)
+      setOpenModuleId(requestedStep.moduleId)
+      setIsModuleViewerOpen(true)
+    }
+  }, [controller, openStepRequest, setOpenModuleId])
+  useEffect(() => {
+    if (
+      !openStepRequest ||
+      acknowledgedOpenStepRequestIdRef.current === openStepRequest.id ||
+      !isWorkspaceAcceleratorOpenStepRequestFulfilled({
+        request: openStepRequest,
+        currentStep,
+        isModuleViewerOpen,
+      })
+    ) {
+      return
+    }
+
+    acknowledgedOpenStepRequestIdRef.current = openStepRequest.id
+    onOpenStepRequestHandled?.(openStepRequest.id)
+  }, [
+    currentStep,
+    isModuleViewerOpen,
+    onOpenStepRequestHandled,
+    openStepRequest,
+  ])
   const placeholderVideoUrl = useMemo(
     () =>
       resolveWorkspaceAcceleratorPlaceholderVideoUrl({
@@ -461,7 +502,11 @@ export function WorkspaceAcceleratorCardPanel({
   } satisfies ComponentProps<typeof WorkspaceAcceleratorCardSidebar>
 
   return (
-    <div className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+    <div
+      data-workspace-accelerator-current-step={currentStep.id}
+      data-workspace-accelerator-open-module={openModuleId ?? undefined}
+      className="relative flex h-full min-h-0 flex-1 flex-col overflow-hidden"
+    >
       {fullscreenEmbedded ? (
         <WorkspaceAcceleratorCardFullscreenRail
           {...sidebarProps}
@@ -478,17 +523,53 @@ export function WorkspaceAcceleratorCardPanel({
           "grid min-h-0 flex-1",
           fullscreenEmbedded ? "gap-0" : "gap-3",
           !fullscreenEmbedded && isModuleViewerOpen
-            ? "grid-cols-[minmax(250px,290px)_minmax(0,1fr)]"
+            ? workspaceDrawerEmbedded
+              ? "grid-cols-1"
+              : "grid-cols-[minmax(250px,290px)_minmax(0,1fr)]"
             : "grid-cols-1"
         )}
       >
         {!fullscreenEmbedded ? (
-          <div className="flex min-h-0 flex-col gap-2">
+          <ScrollFadeEffect
+            ref={workspaceDrawerScrollRef}
+            enabled={workspaceDrawerHasScrollableOverflow}
+            data-scrollable={
+              workspaceDrawerHasScrollableOverflow ? "true" : undefined
+            }
+            data-workspace-accelerator-drawer-scroll={
+              workspaceDrawerEmbedded ? "true" : undefined
+            }
+            className={cn(
+              "flex min-h-0 flex-col gap-2",
+              workspaceDrawerEmbedded &&
+                "touch-pan-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch]",
+              workspaceDrawerEmbedded && isModuleViewerOpen && "hidden"
+            )}
+          >
             <WorkspaceAcceleratorCardSidebar
               {...sidebarProps}
               showProgressSummary={false}
+              fillAvailableHeight={!workspaceDrawerEmbedded}
+              headerControls={
+                workspaceDrawerEmbedded ? (
+                  <WorkspaceAcceleratorDrawerHeaderControls
+                    filteredProgressPercent={filteredProgressPercent}
+                    lessonGroupOptions={lessonGroupSummaries}
+                    onLessonGroupChange={handleLessonGroupChange}
+                    readinessSummary={readinessSummary}
+                    selectedLessonGroupKey={selectedLessonGroupKey}
+                    showMilestoneTooltips={showMilestoneTooltips}
+                    showPicker={showEmbeddedClassPicker}
+                    tutorialCallout={tutorialCallout}
+                    tutorialInteractionPolicy={
+                      tutorialInteractionPolicy ?? null
+                    }
+                    viewerOpen={isModuleViewerOpen}
+                  />
+                ) : null
+              }
               checklistHeaderControls={
-                showEmbeddedClassPicker ? (
+                !workspaceDrawerEmbedded && showEmbeddedClassPicker ? (
                   <WorkspaceAcceleratorCardInlinePicker
                     lessonGroupOptions={lessonGroupSummaries}
                     selectedLessonGroupKey={selectedLessonGroupKey}
@@ -503,7 +584,7 @@ export function WorkspaceAcceleratorCardPanel({
                 ) : null
               }
             />
-          </div>
+          </ScrollFadeEffect>
         ) : null}
 
         <WorkspaceAcceleratorStepViewerTransition open={isModuleViewerOpen}>

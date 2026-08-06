@@ -3,6 +3,7 @@ import BadgeCheckIcon from "lucide-react/dist/esm/icons/badge-check"
 import DollarSignIcon from "lucide-react/dist/esm/icons/dollar-sign"
 
 import { clampPercent } from "@/components/accelerator/accelerator-org-snapshot-strip/helpers"
+import { ACCELERATOR_PROGRESS_SEGMENT_VISUALS } from "@/components/accelerator/accelerator-progress-segments"
 import { Button } from "@/components/ui/button"
 import {
   Tooltip,
@@ -57,15 +58,11 @@ type AcceleratorProgressRailSegment = {
 const MILESTONE_VISUALS = {
   fundable: {
     icon: DollarSignIcon,
-    iconClassName: "text-emerald-700 dark:text-emerald-300",
-    iconWrapClassName:
-      "bg-emerald-50/95 ring-emerald-700/20 dark:bg-emerald-950/90 dark:ring-emerald-300/25",
+    iconClassName: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.fundable.iconClassName,
   },
   verified: {
     icon: BadgeCheckIcon,
-    iconClassName: "text-sky-700 dark:text-sky-300",
-    iconWrapClassName:
-      "bg-sky-50/95 ring-sky-700/20 dark:bg-sky-950/90 dark:ring-sky-300/25",
+    iconClassName: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.verified.iconClassName,
   },
 } as const
 
@@ -94,8 +91,11 @@ export function resolveAcceleratorProgressRailState({
   "className"
 >): AcceleratorProgressRailState {
   const progress = clampPercent(progressPercent)
-  const fundable = clampPercent(fundableCheckpoint)
-  const verified = Math.max(fundable + 1, clampPercent(verifiedCheckpoint))
+  const fundable = Math.max(1, Math.min(98, clampPercent(fundableCheckpoint)))
+  const verified = Math.max(
+    fundable + 1,
+    Math.min(99, clampPercent(verifiedCheckpoint))
+  )
 
   const firstSegmentFill = Math.min(progress, fundable)
   const secondSegmentFill = Math.max(
@@ -122,8 +122,8 @@ export function resolveAcceleratorProgressRailState({
       }),
       reached: progress >= fundable,
       active: progress > 0 && progress < fundable,
-      trackClassName: "bg-amber-500/20 dark:bg-amber-400/18",
-      fillClassName: "bg-amber-500",
+      trackClassName: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.build.trackClassName,
+      fillClassName: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.build.fillClassName,
     },
     {
       id: "fundable",
@@ -139,8 +139,10 @@ export function resolveAcceleratorProgressRailState({
       }),
       reached: progress >= verified,
       active: progress >= fundable && progress < verified,
-      trackClassName: "bg-emerald-500/25 dark:bg-emerald-400/25",
-      fillClassName: "bg-emerald-500",
+      trackClassName:
+        ACCELERATOR_PROGRESS_SEGMENT_VISUALS.fundable.trackClassName,
+      fillClassName:
+        ACCELERATOR_PROGRESS_SEGMENT_VISUALS.fundable.fillClassName,
     },
     {
       id: "verified",
@@ -156,8 +158,10 @@ export function resolveAcceleratorProgressRailState({
       }),
       reached: progress >= 100,
       active: progress >= verified && progress < 100,
-      trackClassName: "bg-sky-500/25 dark:bg-sky-400/25",
-      fillClassName: "bg-sky-500",
+      trackClassName:
+        ACCELERATOR_PROGRESS_SEGMENT_VISUALS.verified.trackClassName,
+      fillClassName:
+        ACCELERATOR_PROGRESS_SEGMENT_VISUALS.verified.fillClassName,
     },
   ] satisfies AcceleratorProgressRailSegment[]
 
@@ -169,8 +173,9 @@ export function resolveAcceleratorProgressRailState({
     secondSegmentWidth,
     fundableReached,
     verifiedReached,
-    firstSegmentClass: "bg-amber-500",
-    secondSegmentClass: "bg-emerald-500",
+    firstSegmentClass: ACCELERATOR_PROGRESS_SEGMENT_VISUALS.build.fillClassName,
+    secondSegmentClass:
+      ACCELERATOR_PROGRESS_SEGMENT_VISUALS.fundable.fillClassName,
     segments,
   }
 }
@@ -268,20 +273,13 @@ export function AcceleratorProgressRail({
                 >
                   <span className="inline-flex items-center gap-1.5">
                     {MilestoneIcon ? (
-                      <span
+                      <MilestoneIcon
                         aria-hidden
                         className={cn(
-                          "inline-flex size-4 items-center justify-center rounded-full ring-1",
-                          milestoneVisual.iconWrapClassName
+                          "size-4 shrink-0",
+                          milestoneVisual.iconClassName
                         )}
-                      >
-                        <MilestoneIcon
-                          className={cn(
-                            "size-3",
-                            milestoneVisual.iconClassName
-                          )}
-                        />
-                      </span>
+                      />
                     ) : (
                       <span
                         aria-hidden

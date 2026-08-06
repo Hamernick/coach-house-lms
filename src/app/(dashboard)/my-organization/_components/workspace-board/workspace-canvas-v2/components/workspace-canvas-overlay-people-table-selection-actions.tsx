@@ -236,6 +236,7 @@ export function WorkspacePeopleDrawerSelectionActions({
         <CreatePersonDialog
           initial={editingPerson}
           open={true}
+          extendedSocialLinksEnabled
           onOpenChange={(isOpen) => {
             if (!isOpen) setEditingPerson(null)
           }}

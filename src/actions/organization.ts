@@ -30,6 +30,7 @@ import {
   canEditOrganization,
   resolveActiveOrganization,
 } from "@/lib/organization/active-org"
+import { validateOrganizationProfilePersistencePatch } from "@/lib/organization/profile-persistence-validation"
 import {
   ORG_MEDIA_BUCKET,
   resolveOrgMediaCleanupPath,
@@ -73,6 +74,12 @@ type OrgProfilePayload = {
   programs?: string | null
   reports?: string | null
   boilerplate?: string | null
+  brandVoiceAudience?: string | null
+  brandVoiceTone?: string | null
+  brandVoiceStyle?: string | null
+  brandVoicePersonality?: string | null
+  brandVoiceGuidelines?: string | null
+  brandVoiceAvoid?: string | null
   brandPrimary?: string | null
   brandColors?: string[] | null
   brandThemePresetId?: string | null
@@ -93,6 +100,11 @@ export async function updateOrganizationProfileAction(
   const { orgId, role } = await resolveActiveOrganization(supabase, userId)
   const canEdit = canEditOrganization(role)
   if (!canEdit) return { error: "Forbidden" }
+
+  const validation = validateOrganizationProfilePersistencePatch(payload)
+  if (!validation.success) {
+    return { error: validation.error, field: validation.field }
+  }
 
   // Load existing profile to merge
   const { data: orgRow, error: orgErr } = await supabase
@@ -430,6 +442,8 @@ function revalidateOrganizationViews({
   wasPublic: boolean
   isPublic: boolean
 }) {
+  revalidatePath("/workspace")
+  revalidatePath("/my-organization")
   revalidatePath("/organization")
   revalidatePath("/find")
 

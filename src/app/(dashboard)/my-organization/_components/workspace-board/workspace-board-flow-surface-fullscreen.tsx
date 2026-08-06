@@ -4,7 +4,10 @@ import dynamic from "next/dynamic"
 import { useMemo, type ComponentProps } from "react"
 
 import { Skeleton } from "@/components/ui/skeleton"
-import { WorkspaceBoardCard, type WorkspaceBoardNodeData } from "./workspace-board-node"
+import {
+  WorkspaceBoardCard,
+  type WorkspaceBoardNodeData,
+} from "./workspace-board-node"
 import { cn } from "@/lib/utils"
 import type {
   WorkspaceBoardAcceleratorState,
@@ -18,11 +21,13 @@ import type {
 } from "./workspace-board-types"
 
 const MyOrganizationEditorView = dynamic<
-  ComponentProps<typeof import("../my-organization-editor-view").MyOrganizationEditorView>
+  ComponentProps<
+    typeof import("../my-organization-editor-view").MyOrganizationEditorView
+  >
 >(
   () =>
     import("../my-organization-editor-view").then(
-      (mod) => mod.MyOrganizationEditorView,
+      (mod) => mod.MyOrganizationEditorView
     ),
   {
     loading: () => (
@@ -31,7 +36,7 @@ const MyOrganizationEditorView = dynamic<
         <Skeleton className="h-full min-h-[24rem] w-full rounded-2xl" />
       </div>
     ),
-  },
+  }
 )
 
 type UseWorkspaceBoardFullscreenCardDataArgs = {
@@ -50,8 +55,12 @@ type UseWorkspaceBoardFullscreenCardDataArgs = {
   acceleratorStepNodeVisible: boolean
   onOpenAcceleratorStepNode: () => void
   onHideAcceleratorStepNode: () => void
-  onAcceleratorRuntimeChange: NonNullable<WorkspaceBoardNodeData["onAcceleratorRuntimeChange"]>
-  onAcceleratorRuntimeActionsChange: NonNullable<WorkspaceBoardNodeData["onAcceleratorRuntimeActionsChange"]>
+  onAcceleratorRuntimeChange: NonNullable<
+    WorkspaceBoardNodeData["onAcceleratorRuntimeChange"]
+  >
+  onAcceleratorRuntimeActionsChange: NonNullable<
+    WorkspaceBoardNodeData["onAcceleratorRuntimeActionsChange"]
+  >
   onToggleCanvasFullscreen: (cardId: WorkspaceCardId) => void
 }
 
@@ -133,17 +142,15 @@ export function WorkspaceBoardFlowSurfaceFullscreenLayer({
   fullscreenCardId,
   organizationEditorData,
   fullscreenCardData,
-  onClose,
 }: {
   fullscreenCardId: WorkspaceCardId | null
   organizationEditorData: WorkspaceOrganizationEditorData
   fullscreenCardData: WorkspaceBoardNodeData | null
-  onClose: () => void
 }) {
   if (fullscreenCardId === "organization-overview" && organizationEditorData) {
     return (
       <div
-        className="absolute inset-0 z-30 bg-background"
+        className="bg-background absolute inset-0 z-30"
         role="region"
         aria-label="Fullscreen organization editor"
       >
@@ -154,7 +161,6 @@ export function WorkspaceBoardFlowSurfaceFullscreenLayer({
           programs={organizationEditorData.programs}
           initialTab="company"
           canEdit={organizationEditorData.canEdit}
-          onClose={onClose}
         />
       </div>
     )
@@ -164,7 +170,7 @@ export function WorkspaceBoardFlowSurfaceFullscreenLayer({
 
   return (
     <div
-      className="absolute inset-0 z-30 bg-background"
+      className="bg-background absolute inset-0 z-30"
       role="region"
       aria-label="Fullscreen workspace card"
     >
@@ -172,7 +178,7 @@ export function WorkspaceBoardFlowSurfaceFullscreenLayer({
         className={cn(
           "h-full w-full",
           fullscreenCardData.cardId === "roadmap" &&
-            "mx-auto max-w-[64rem] px-3 py-3 sm:px-6 sm:py-5",
+            "mx-auto max-w-[64rem] px-3 py-3 sm:px-6 sm:py-5"
         )}
       >
         <WorkspaceBoardCard data={fullscreenCardData} />

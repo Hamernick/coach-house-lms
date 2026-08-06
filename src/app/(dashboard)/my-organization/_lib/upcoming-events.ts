@@ -17,9 +17,12 @@ export type UpcomingEventRow = {
   recurrence: unknown | null
   status: string
   assigned_roles: string[] | null
+  updated_at: string
 }
 
-export function mapUpcomingEvents(rows: UpcomingEventRow[] | null | undefined): UpcomingEvent[] {
+export function mapUpcomingEvents(
+  rows: UpcomingEventRow[] | null | undefined
+): UpcomingEvent[] {
   if (!rows || rows.length === 0) return []
   return rows.map((event) => ({
     id: event.id,
@@ -32,5 +35,6 @@ export function mapUpcomingEvents(rows: UpcomingEventRow[] | null | undefined): 
     recurrence: normalizeRecurrence(event.recurrence),
     status: event.status === "canceled" ? "canceled" : "active",
     assigned_roles: normalizeAssignedRoles(event.assigned_roles ?? []),
+    updated_at: event.updated_at,
   }))
 }

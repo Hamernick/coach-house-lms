@@ -12,6 +12,7 @@ export type WorkspaceOntologyNodeActivation =
       rootId: WorkspaceOntologyRootId
       target: WorkspaceOntologyActionTarget
     }
+  | { kind: "show-map"; rootId: WorkspaceOntologyRootId }
   | { kind: "focus-root"; rootId: WorkspaceOntologyRootId }
 
 const ROOT_LABEL: Record<WorkspaceOntologyRootId, string> = {
@@ -26,6 +27,9 @@ const ROOT_LABEL: Record<WorkspaceOntologyRootId, string> = {
 export function resolveWorkspaceOntologyNodeActivation(
   node: WorkspaceOntologyProjectedNode
 ): WorkspaceOntologyNodeActivation {
+  if (node.presentation === "rollup" || node.presentation === "more") {
+    return { kind: "show-map", rootId: node.rootId }
+  }
   if (node.hasChildren) {
     return { kind: "toggle-details", nodeId: node.id }
   }

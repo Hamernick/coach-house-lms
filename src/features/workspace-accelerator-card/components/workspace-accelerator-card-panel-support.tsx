@@ -21,7 +21,10 @@ import type {
   WorkspaceAcceleratorTutorialInteractionPolicy,
 } from "../types"
 import { WorkspaceAcceleratorCardChecklist } from "./workspace-accelerator-card-checklist"
-import { WorkspaceAcceleratorCardProgressStrip } from "./workspace-accelerator-card-progress-strip"
+import {
+  WorkspaceAcceleratorCardProgressStrip,
+  WorkspaceAcceleratorCardProgressSummary,
+} from "./workspace-accelerator-card-progress-strip"
 import { WorkspaceAcceleratorHeaderPicker } from "./workspace-accelerator-header-picker"
 
 export { WorkspaceAcceleratorHeaderPicker } from "./workspace-accelerator-header-picker"
@@ -47,6 +50,7 @@ type WorkspaceAcceleratorCardSidebarProps = {
   checklistHeaderControls?: ReactNode
   showProgressSummary?: boolean
   showChecklist?: boolean
+  fillAvailableHeight?: boolean
 }
 
 export function WorkspaceAcceleratorCardInlinePicker({
@@ -87,6 +91,60 @@ export function WorkspaceAcceleratorCardInlinePicker({
           onLessonGroupChange={onLessonGroupChange}
         />
       </div>
+    </div>
+  )
+}
+
+export function WorkspaceAcceleratorDrawerHeaderControls({
+  filteredProgressPercent,
+  lessonGroupOptions,
+  onLessonGroupChange,
+  readinessSummary,
+  selectedLessonGroupKey,
+  showMilestoneTooltips = true,
+  showPicker = true,
+  tutorialCallout,
+  tutorialInteractionPolicy,
+  viewerOpen,
+}: {
+  filteredProgressPercent: number
+  lessonGroupOptions: WorkspaceAcceleratorLessonGroupSummary[]
+  onLessonGroupChange: (nextLessonGroupKey: string) => void
+  readinessSummary: WorkspaceAcceleratorCardInput["readinessSummary"]
+  selectedLessonGroupKey: string
+  showMilestoneTooltips?: boolean
+  showPicker?: boolean
+  tutorialCallout: WorkspaceAcceleratorTutorialCallout | null
+  tutorialInteractionPolicy?: WorkspaceAcceleratorTutorialInteractionPolicy | null
+  viewerOpen: boolean
+}) {
+  return (
+    <div
+      data-workspace-accelerator-drawer-header-controls="true"
+      className="flex w-full min-w-0 flex-col gap-3 py-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6"
+    >
+      <WorkspaceAcceleratorCardProgressSummary
+        progressPercent={filteredProgressPercent}
+        readinessSummary={readinessSummary}
+        tutorialCallout={
+          tutorialCallout?.focus === "progress" ? tutorialCallout : null
+        }
+        showMilestoneTooltips={showMilestoneTooltips}
+        className="min-w-0 sm:max-w-lg sm:flex-1"
+      />
+      {showPicker ? (
+        <div className="flex shrink-0 justify-end sm:self-end">
+          <WorkspaceAcceleratorCardInlinePicker
+            lessonGroupOptions={lessonGroupOptions}
+            selectedLessonGroupKey={selectedLessonGroupKey}
+            tutorialCallout={tutorialCallout}
+            tutorialInteractionPolicy={tutorialInteractionPolicy ?? null}
+            viewerOpen={viewerOpen}
+            layout="badge"
+            onLessonGroupChange={onLessonGroupChange}
+          />
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -317,9 +375,15 @@ export function WorkspaceAcceleratorCardSidebar({
   checklistHeaderControls = null,
   showProgressSummary = true,
   showChecklist = true,
+  fillAvailableHeight = true,
 }: WorkspaceAcceleratorCardSidebarProps) {
   return (
-    <div className="flex min-h-full flex-col gap-2.5">
+    <div
+      className={cn(
+        "flex flex-col gap-2.5",
+        fillAvailableHeight ? "min-h-full" : "min-h-0"
+      )}
+    >
       {headerControls ? <div className="w-full">{headerControls}</div> : null}
 
       {showProgressSummary ? (
@@ -336,7 +400,6 @@ export function WorkspaceAcceleratorCardSidebar({
       {showChecklist ? (
         <WorkspaceAcceleratorCardChecklist
           modules={checklistModules}
-          selectedLessonGroupLabel={selectedLessonGroup?.label ?? null}
           currentStepId={currentStepId}
           completedStepIds={completedStepIds}
           openModuleId={openModuleId}

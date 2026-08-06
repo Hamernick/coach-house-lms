@@ -128,7 +128,8 @@ describe("workspace fiscal sponsorship card", () => {
     expect(tooltipSubtitleIndex).toBeLessThan(tooltipBadgeIndex)
     expect(activityAction).toContain("Request review")
     expect(activityAction).toContain("Update info")
-    expect(activityAction).toContain("onUpdateInfo()")
+    expect(activityAction).toContain("onUpdateInfo(criterion.id)")
+    expect(activityAction).toContain("onUpdateInfo(nextUnmetCriterion.id)")
     expect(activityAction).not.toContain("String(criterion.met)")
   })
 
@@ -206,6 +207,9 @@ describe("workspace fiscal sponsorship card", () => {
     )
     const myOrganizationPage = readSource(
       "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx"
+    )
+    const myOrganizationFiscal = readSource(
+      "src/app/(dashboard)/my-organization/_lib/my-organization-page-fiscal.ts"
     )
 
     expect(cardSummary).toContain("Sheet")
@@ -393,12 +397,14 @@ describe("workspace fiscal sponsorship card", () => {
     expect(myOrganizationPage).toContain(
       "resolveFiscalApplicantPrefillIdentity"
     )
-    expect(myOrganizationPage).toContain("applicantEmail: user.email ?? null")
-    expect(myOrganizationPage).toContain("applicantFullName:")
-    expect(myOrganizationPage).toContain(
+    expect(myOrganizationFiscal).toContain("applicantEmail: user.email ?? null")
+    expect(myOrganizationFiscal).toContain("applicantFullName:")
+    expect(myOrganizationFiscal).toContain(
       "loadFiscalSponsorshipProjectWorkflowSummary"
     )
-    expect(myOrganizationPage).toContain('project_kind", "organization_admin"')
+    expect(myOrganizationFiscal).toContain(
+      'project_kind", "organization_admin"'
+    )
   })
 
   it("builds fiscal application prefill from organization profile and program builder data", () => {
@@ -637,10 +643,16 @@ describe("workspace fiscal sponsorship card", () => {
     expect(programsRenderer).toContain(
       "onUpdateInfo={onUpdateFiscalSponsorshipInfo}"
     )
-    expect(programsRenderer).toContain("buildWorkspaceProgramEditorHref")
     expect(programsRenderer).toContain(
-      "router.push(updateFiscalSponsorshipInfoHref)"
+      "useWorkspaceCanvasOverlayDrawerRequest"
     )
+    expect(programsRenderer).toContain(
+      "resolveFiscalSponsorshipUpdateRequest"
+    )
+    expect(programsRenderer).toContain(
+      "openWorkspaceDataDrawer("
+    )
+    expect(programsRenderer).toContain("organizationProgramStep:")
     expect(programsRenderer).toContain(
       "eligibility: fiscalSponsorshipEligibility"
     )

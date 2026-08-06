@@ -572,6 +572,39 @@
   transition: opacity 160ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.workspace-flow .react-flow__node.workspace-ontology-arranged-root,
+.workspace-flow .react-flow__node.workspace-ontology-active-root,
+.workspace-flow .react-flow__node.workspace-ontology-dimmed-root {
+  transition:
+    opacity 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.workspace-flow .react-flow__node.workspace-ontology-active-root {
+  opacity: 1;
+  filter: saturate(1);
+}
+
+.workspace-flow .react-flow__node.workspace-ontology-dimmed-root {
+  opacity: 0.42;
+  filter: saturate(0.58);
+}
+
+.workspace-ontology-edge-presence[data-workspace-ontology-active="true"] {
+  opacity: 1;
+}
+
+.workspace-ontology-edge-presence[data-workspace-ontology-dimmed="true"],
+.workspace-ontology-edge-label[data-workspace-ontology-dimmed="true"] {
+  opacity: 0.32;
+}
+
+.workspace-ontology-edge-label[data-workspace-ontology-active="true"] {
+  border-color: color-mix(in srgb, rgb(14 165 233) 42%, transparent);
+  color: color-mix(in srgb, var(--foreground) 92%, rgb(14 165 233));
+  box-shadow: 0 6px 18px -14px rgb(14 165 233 / 0.72);
+}
+
 .workspace-ontology-edge-presence[data-transition-phase="stable"] {
   transition: opacity 160ms cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -582,19 +615,16 @@
   opacity: 0;
 }
 
-.workspace-flow .react-flow__node.selected [data-workspace-card],
+.workspace-flow .react-flow__node:focus-visible [data-workspace-card],
 .workspace-flow
-  .react-flow__node.selected
+  .react-flow__node:focus-visible
   [data-workspace-canvas-person-node="true"],
-.workspace-flow .react-flow__node.selected [data-workspace-ontology-node],
-.workspace-flow
-  .react-flow__node-workspace-ontology:focus-visible
-  [data-workspace-ontology-node] {
+.workspace-flow .react-flow__node:focus-visible [data-workspace-ontology-node] {
   outline: 2px solid color-mix(in srgb, var(--ring) 82%, transparent);
   outline-offset: 3px;
 }
 
-.workspace-flow .react-flow__node-workspace-ontology:focus-visible {
+.workspace-flow .react-flow__node:focus-visible {
   outline: none;
 }
 
@@ -820,8 +850,22 @@
   }
 
   .workspace-ontology-node-presence,
-  .workspace-ontology-edge-presence {
+  .workspace-ontology-node-presence [data-workspace-ontology-node],
+  .workspace-ontology-edge-presence,
+  .workspace-ontology-layout-edge,
+  .workspace-flow .react-flow__node.workspace-ontology-arranged-root,
+  .workspace-flow .react-flow__node.workspace-ontology-active-root,
+  .workspace-flow .react-flow__node.workspace-ontology-dimmed-root {
     animation: none !important;
+    transition: none !important;
+    transition-duration: 0ms !important;
+  }
+
+  html
+    .workspace-flow
+    .workspace-ontology-node-presence
+    [data-workspace-ontology-node] {
+    transition: none !important;
   }
 
   .react-flow__node-workspace-tutorial.workspace-tutorial-node {

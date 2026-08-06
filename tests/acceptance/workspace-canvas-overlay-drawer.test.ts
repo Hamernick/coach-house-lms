@@ -3,6 +3,17 @@ import { join } from "node:path"
 
 import { describe, expect, it } from "vitest"
 
+import {
+  resolveWorkspaceAcceleratorDrawerRequest,
+  resolveWorkspaceDataDrawerRequest,
+  resolveWorkspaceOrganizationDrawerRequest,
+  resolveWorkspaceRoadmapDrawerRequest,
+} from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer-tabs"
+import {
+  resolveWorkspaceDataDrawerSnapPoint,
+  resolveWorkspaceDataDrawerViewportHeight,
+} from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer-state"
+
 const ROOT = process.cwd()
 
 function readSource(relativePath: string) {
@@ -13,6 +24,12 @@ describe("workspace canvas overlay drawer", () => {
   it("uses the existing shadcn drawer as a container-scoped bottom sheet", () => {
     const source = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer.tsx"
+    )
+    const tabsViewSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer-tabs-view.tsx"
+    )
+    const stateSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer-state.ts"
     )
 
     expect(source).toContain('from "@/components/ui/drawer"')
@@ -40,35 +57,58 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain("patchWorkspaceBoardUiPreferences")
     expect(source).toContain("dataDrawerSnapPoint: storedSnapPoint")
     expect(source).toContain(
-      "const WORKSPACE_DATA_DRAWER_SNAP_POINTS = [0.06, 0.48, 1] as const"
-    )
-    expect(source).toContain("const WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT =")
-    expect(source).toContain(
-      "const WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_TOLERANCE = 0.01"
+      "resolveWorkspaceDataDrawerSnapPoint(resolvedSnapPoint)"
     )
     expect(source).toContain(
+      "return current ?? WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT"
+    )
+    expect(resolveWorkspaceDataDrawerSnapPoint("68px")).toBe("68px")
+    expect(resolveWorkspaceDataDrawerSnapPoint(0.479)).toBe(0.48)
+    expect(resolveWorkspaceDataDrawerSnapPoint(0.99)).toBe(1)
+    expect(resolveWorkspaceDataDrawerSnapPoint(undefined)).toBeNull()
+    expect(resolveWorkspaceDataDrawerViewportHeight("68px")).toBe(
+      "calc(68px - 2rem)"
+    )
+    expect(resolveWorkspaceDataDrawerViewportHeight(0.48)).toBe(
+      "calc(48% - 2rem)"
+    )
+    expect(resolveWorkspaceDataDrawerViewportHeight(1)).toBe(
+      "calc(100% - 2rem)"
+    )
+    expect(resolveWorkspaceDataDrawerViewportHeight(undefined)).toBe(
+      "calc(48% - 2rem)"
+    )
+    expect(stateSource).toContain(
+      'WORKSPACE_DATA_DRAWER_SNAP_POINTS = ["68px", 0.48, 1] as const'
+    )
+    expect(stateSource).toContain(
+      "const WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT ="
+    )
+    expect(stateSource).toContain(
+      "const WORKSPACE_DATA_DRAWER_LEGACY_COLLAPSED_MAX = 0.11"
+    )
+    expect(stateSource).toContain(
       "const WORKSPACE_DATA_DRAWER_FULLSCREEN_SNAP_TOLERANCE = 0.01"
     )
-    expect(source).toContain(
+    expect(stateSource).toContain(
       "function isWorkspaceDataDrawerCollapsedSnapPoint("
     )
-    expect(source).toContain(
+    expect(stateSource).toContain(
       "function isWorkspaceDataDrawerFullscreenSnapPoint("
     )
-    expect(source).toContain("Number.parseFloat(snapPoint)")
-    expect(source).toContain(
+    expect(stateSource).toContain("Number(snapPoint)")
+    expect(stateSource).toContain(
       "const WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT ="
     )
-    expect(source).toContain("const WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT =")
+    expect(stateSource).toContain(
+      "const WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT ="
+    )
     expect(source).toContain('data-workspace-canvas-overlay-drawer="true"')
     expect(source).toContain(
       'overlayClassName="pointer-events-none absolute inset-0 !z-10'
     )
     expect(source).toContain("absolute right-0 bottom-0 left-0 !z-20")
-    expect(source).toContain(
-      'const WORKSPACE_DATA_SHORTCUT_OWNER_ID = "workspace-card-shortcut:data"'
-    )
-    expect(source).toContain("ownerId: WORKSPACE_DATA_SHORTCUT_OWNER_ID")
+    expect(source).toContain('ownerId: "workspace-card-shortcut:data"')
     expect(source).toContain('component: "WorkspaceCardShortcutButton"')
     expect(source).toContain('variant: "data"')
     expect(source).toContain('primitiveImport: "@/components/ui/button"')
@@ -76,9 +116,7 @@ describe("workspace canvas overlay drawer", () => {
       "nodrag nopan text-foreground size-9 h-9 w-9 rounded-xl"
     )
     expect(source).toContain("onClick={handleDataShortcutClick}")
-    expect(source).toContain(
-      "!isWorkspaceDataDrawerCollapsedSnapPoint(current)"
-    )
+    expect(source).toContain("!isDrawerCollapsed(current)")
     expect(source).not.toContain("[open]")
     expect(source).toContain("aria-label={dataShortcutLabel}")
     expect(source).toContain('"Collapse workspace data"')
@@ -86,27 +124,36 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain(
       "absolute right-0 bottom-0 left-0 !z-20 h-full max-h-none w-full"
     )
-    expect(source).toContain("[--workspace-drawer-toolbar-safe-left:0rem]")
-    expect(source).toContain(
-      "md:[--workspace-drawer-toolbar-safe-left:4.25rem]"
-    )
+    expect(source).not.toContain("--workspace-drawer-toolbar-safe-left")
     expect(source).toContain("h-full max-h-none w-full")
     expect(source).toContain("data-[vaul-drawer-direction=bottom]:inset-x-0")
     expect(source).toContain("data-[vaul-drawer-direction=bottom]:bottom-0")
     expect(source).toContain("data-[vaul-drawer-direction=bottom]:h-full")
     expect(source).toContain("data-[vaul-drawer-direction=bottom]:max-h-none")
     expect(source).toContain(
+      'data-workspace-data-drawer-content-viewport="true"'
+    )
+    expect(source).toContain("style={{ height: drawerViewportHeight }}")
+    expect(
+      tabsViewSource.match(
+        /mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col/g
+      ) ?? []
+    ).toHaveLength(5)
+    expect(source).toContain(
       "data-[vaul-drawer-direction=bottom]:rounded-t-[20px]"
     )
     expect(source).not.toContain(
       "data-[vaul-drawer-direction=bottom]:rounded-t-[24px]"
     )
-    expect(source).toContain(
-      "!z-40 data-[vaul-drawer-direction=bottom]:rounded-none"
+    expect(source).toContain('drawerFullscreen && "!z-40"')
+    expect(source).not.toContain(
+      "data-[vaul-drawer-direction=bottom]:rounded-none"
     )
     expect(source).not.toContain("container={container")
     expect(source).not.toContain("w-[min(38rem,calc(100%-1rem))]")
-    expect(source).not.toContain("mx-auto")
+    expect(source).not.toContain(
+      "absolute right-0 bottom-0 left-0 !z-20 mx-auto"
+    )
     expect(source).not.toContain("DrawerClose")
     expect(source).not.toContain("PanelBottomOpenIcon")
     expect(source).not.toContain('direction={isMobile ? "bottom" : "right"}')
@@ -120,16 +167,23 @@ describe("workspace canvas overlay drawer", () => {
     const source = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer.tsx"
     )
+    const tabsViewSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer-tabs-view.tsx"
+    )
     const drawerPrimitiveSource = readSource("src/components/ui/drawer.tsx")
 
     expect(source).toContain("setOpen(true)")
     expect(source).not.toContain("setOpen(false)")
     expect(source).toContain("const [open, setOpen] = useState(true)")
     expect(source).toContain("const [hasOpened, setHasOpened] = useState(true)")
-    expect(source).toContain(">(WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT)")
     expect(source).toContain(
-      "const drawerContentMounted = hasOpened && Boolean(canvasContainer)"
+      "request\n        ? WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT\n        : WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT"
     )
+    expect(source).toContain("const drawerContentMounted =")
+    expect(source).toContain("hasOpened && Boolean(canvasContainer)")
+    expect(source).not.toContain("rightRailSettled")
+    expect(source).not.toContain("useRightRailPresence()")
+    expect(source).not.toContain("useAppShellRightRailControls()")
     expect(source).toContain("open={canvasContainer ? open : false}")
     expect(source).toContain(
       "handleActiveSnapPointChange(WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT)"
@@ -141,18 +195,18 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain(": WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT")
     expect(source).toContain("showHandle={false}")
     expect(source).toContain(
-      "relative grid h-10 shrink-0 grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)] items-center px-3"
+      "relative grid h-8 shrink-0 grid-cols-[minmax(0,1fr)_8rem_minmax(0,1fr)] items-center px-3"
     )
     expect(source).toContain(
-      "pointer-events-none min-w-0 justify-self-start truncate"
+      '<DrawerTitle className="sr-only">Workspace drawer</DrawerTitle>'
     )
     expect(source).not.toContain(
       "pointer-events-none ml-[var(--workspace-drawer-toolbar-safe-left)] min-w-0 justify-self-start truncate"
     )
     expect(source).toContain(
-      "relative z-10 size-8 min-w-8 justify-self-end rounded-md"
+      "relative z-10 col-start-3 size-8 min-w-8 translate-y-1 justify-self-end rounded-md"
     )
-    expect(source).toMatch(/<DrawerTitle[\s\S]*>\s*Storage\s*<\/DrawerTitle>/)
+    expect(source).not.toContain(">Storage</DrawerTitle>")
     expect(source).not.toContain('<span aria-hidden className="h-0.5 w-32" />')
     expect(source).not.toContain("px-4 pt-3 pb-1.5")
     expect(source).not.toContain("px-4 pt-3.5 pb-1.5")
@@ -162,9 +216,17 @@ describe("workspace canvas overlay drawer", () => {
       "pointer-events-none absolute top-1/2 left-[calc(1rem+var(--workspace-drawer-toolbar-safe-left))] -translate-y-1/2"
     )
     expect(source).toContain("<DrawerHandle")
-    expect(source).toContain("preventCycle={false}")
+    expect(source).toContain("preventCycle")
+    expect(source).not.toContain("preventCycle={false}")
+    expect(source).toContain("handleDataDrawerHeaderDoubleClick")
     expect(source).toContain(
-      'className="bg-foreground/18 mt-0 block !h-[3px] !w-32 justify-self-center rounded-full"'
+      "handleActiveSnapPointChange(WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT)"
+    )
+    expect(source).toContain(
+      "onDoubleClick={handleDataDrawerHeaderDoubleClick}"
+    )
+    expect(source).toContain(
+      'className="bg-foreground/18 col-start-2 mt-0 block !h-[3px] !w-32 justify-self-center rounded-full"'
     )
     expect(source).not.toContain(
       'className="bg-foreground/18 mt-0 block h-0.5 w-24 rounded-full"'
@@ -180,15 +242,9 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain("handleOnly")
     expect(source).toContain("const drawerCollapsed =")
     expect(source).toContain("const drawerFullscreen =")
-    expect(source).toContain(
-      "open && isWorkspaceDataDrawerCollapsedSnapPoint(activeSnapPoint)"
-    )
-    expect(source).toContain(
-      "open && !isWorkspaceDataDrawerCollapsedSnapPoint(activeSnapPoint)"
-    )
-    expect(source).toContain(
-      "open && isWorkspaceDataDrawerFullscreenSnapPoint(activeSnapPoint)"
-    )
+    expect(source).toContain("open && isDrawerCollapsed(activeSnapPoint)")
+    expect(source).toContain("open && !isDrawerCollapsed(activeSnapPoint)")
+    expect(source).toContain("open && isDrawerFullscreen(activeSnapPoint)")
     expect(source).toContain('"Restore data drawer height"')
     expect(source).toContain('"Expand data drawer to full canvas height"')
     expect(source).toContain(
@@ -198,7 +254,8 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain("WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT")
     expect(source).toContain("data-workspace-canvas-drawer-fullscreen={")
     expect(
-      source.match(/data-workspace-data-drawer-fullscreen-trigger/g) ?? []
+      source.match(/data-workspace-data-drawer-fullscreen-trigger="true"/g) ??
+        []
     ).toHaveLength(1)
     expect(source).toContain(
       'data-workspace-data-drawer-fullscreen-trigger="true"'
@@ -209,7 +266,7 @@ describe("workspace canvas overlay drawer", () => {
     )
     expect(source).toContain("nodrag nopan text-muted-foreground/70")
     expect(source).toContain(
-      "relative z-10 size-8 min-w-8 justify-self-end rounded-md bg-transparent"
+      "relative z-10 col-start-3 size-8 min-w-8 translate-y-1 justify-self-end rounded-md bg-transparent"
     )
     expect(source).not.toContain("absolute top-3 right-3")
     expect(source).not.toContain(
@@ -238,7 +295,7 @@ describe("workspace canvas overlay drawer", () => {
       source.indexOf("<DrawerDescription")
     )
     expect(fullscreenTriggerIndex).toBeLessThan(
-      source.indexOf("{!drawerCollapsed ? (")
+      source.indexOf("<WorkspaceDrawerTabs")
     )
     expect(source).not.toContain("handleDataDrawerFullscreenClick")
     expect(source).not.toContain("aria-pressed={drawerFullscreen}")
@@ -255,33 +312,71 @@ describe("workspace canvas overlay drawer", () => {
       "activeSnapPoint !== WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT"
     )
     expect(source).toContain("{drawerContentMounted ? (")
-    expect(source).toContain("{!drawerCollapsed ? (")
+    expect(source).not.toContain("drawerCollapsed ? null : (")
+    expect(tabsViewSource).toContain('data-workspace-data-drawer-body="true"')
+    expect(tabsViewSource).toContain(
+      "inert={drawerCollapsed ? true : undefined}"
+    )
+    expect(tabsViewSource).toContain(
+      '? "pointer-events-none opacity-0 delay-500"'
+    )
+    expect(tabsViewSource).toContain(
+      'drawerCollapsed ? "overflow-visible" : "overflow-hidden"'
+    )
+    expect(source).toContain("repositionInputs={false}")
+    expect(source).toContain("drawerCollapsed={drawerCollapsed}")
+    expect(tabsViewSource).toContain("onOpen={handleTabOpen}")
+    expect(source).toContain("handleTabOpen={handleTabOpen}")
+    expect(source).toContain(
+      "if (!drawerCollapsed) return\n      handleActiveSnapPointChange(WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT)"
+    )
   })
 
-  it("keeps People and Documents behind polished tab controls", () => {
-    const source = readSource(
+  it("shows Organization, People, Documents, and Accelerator in that order", () => {
+    const drawerSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer.tsx"
+    )
+    const source = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer-tabs-view.tsx"
     )
     const tabSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer-tabs.ts"
     )
 
     expect(tabSource).toContain(
-      'type WorkspaceCanvasDrawerTab = "people" | "documents"'
+      "export type WorkspaceCanvasDrawerTab = WorkspaceDrawerTab"
     )
+    expect(source).toContain('value="organization"')
+    expect(source).toContain('value="accelerator"')
+    expect(source).toContain('value="roadmap"')
     expect(source).toContain('value="people"')
     expect(source).toContain('value="documents"')
+    expect(source).not.toContain('<WorkspaceDrawerTabTrigger value="roadmap">')
+    const organizationTabIndex = source.indexOf('value="organization"')
+    const peopleTabIndex = source.indexOf('value="people"')
+    const documentsTabIndex = source.indexOf('value="documents"')
+    const acceleratorTabIndex = source.indexOf('value="accelerator"')
+    expect(organizationTabIndex).toBeGreaterThanOrEqual(0)
+    expect(peopleTabIndex).toBeGreaterThan(organizationTabIndex)
+    expect(documentsTabIndex).toBeGreaterThan(peopleTabIndex)
+    expect(acceleratorTabIndex).toBeGreaterThan(documentsTabIndex)
     expect(source).toContain("<TabsList")
     expect(source).toContain('variant="line"')
     expect(source).toContain("ref={tabsListRef}")
     expect(source).toContain(
-      'className="h-7 w-full min-w-0 self-end p-0 sm:w-auto"'
+      'className="h-7 w-full min-w-0 self-end p-0 group-data-[orientation=horizontal]/tabs:!h-7 sm:w-auto"'
     )
     expect(source).not.toContain(
       'className="h-auto w-full min-w-0 self-end p-0 sm:w-auto"'
     )
     expect(source).toContain(
-      "border-border/60 relative flex min-w-0 shrink-0 items-end border-b pt-2 pr-4 pb-1.5 pl-[calc(1rem+var(--workspace-drawer-toolbar-safe-left))]"
+      "border-border/60 relative flex min-w-0 shrink-0 items-end px-4 pb-0.5 md:px-8"
+    )
+    expect(source).toContain(
+      'drawerCollapsed ? "-mt-3 pt-0" : "border-b pt-0.5"'
+    )
+    expect(source).not.toContain(
+      "border-border/60 relative flex min-w-0 shrink-0 items-end border-b px-4 pt-2 pb-1.5 md:px-8"
     )
     expect(source).not.toContain(
       "border-border/60 relative flex shrink-0 items-end border-b pt-5 pr-[calc(1rem+var(--workspace-drawer-toolbar-safe-left))] pb-1.5 pl-[calc(1rem+var(--workspace-drawer-toolbar-safe-left))]"
@@ -292,7 +387,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).not.toContain(
       "border-border/60 relative flex shrink-0 items-center border-b pt-5 pr-4 pb-3"
     )
-    expect(source).toContain("pt-2")
+    expect(source).toContain("pt-0.5")
     expect(source).not.toContain("pt-5")
     expect(source).toContain(
       "h-7 min-w-0 flex-1 gap-2 px-2 py-1 text-left after:hidden sm:flex-none"
@@ -303,13 +398,15 @@ describe("workspace canvas overlay drawer", () => {
     expect(tabSource).toContain("const tabsHeaderRef = useRef<HTMLDivElement")
     expect(tabSource).toContain("const tabsListRef = useRef<HTMLDivElement")
     expect(tabSource).toContain("updateTabIndicator")
-    expect(source).toContain(
+    expect(drawerSource).toContain(
       "export const WorkspaceCanvasOverlayDrawer = memo("
     )
-    expect(source).toContain("function WorkspaceCanvasOverlayDrawer({")
-    expect(source).toContain("const [, startTabTransition] = useTransition()")
-    expect(source).toContain("const handleTabChange = useCallback(")
-    expect(source).toContain("startTabTransition(() => {")
+    expect(drawerSource).toContain("function WorkspaceCanvasOverlayDrawer({")
+    expect(drawerSource).toContain(
+      "const [, startTabTransition] = useTransition()"
+    )
+    expect(drawerSource).toContain("const handleTabChange = useCallback(")
+    expect(drawerSource).toContain("startTabTransition(() => {")
     expect(source).toContain("onValueChange={handleTabChange}")
     expect(source).not.toContain(
       "onValueChange={(value) =>\n                setTab(value as WorkspaceCanvasDrawerTab)\n              }"
@@ -326,15 +423,16 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain("width: `${tabIndicator.width}px`")
     expect(source).toContain("transform: `translateX(${tabIndicator.left}px)`")
     expect(source).toContain(
-      "pl-[calc(1rem+var(--workspace-drawer-toolbar-safe-left))]"
+      "mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-hidden data-[state=inactive]:hidden md:px-8"
     )
     expect(source).toContain(
-      "min-h-0 w-full max-w-full min-w-0 flex-1 overflow-hidden pr-0 pl-[var(--workspace-drawer-toolbar-safe-left)] data-[state=inactive]:hidden"
+      "mx-auto flex min-h-0 w-full max-w-7xl min-w-0 flex-1 flex-col overflow-y-auto overscroll-contain data-[state=inactive]:hidden md:px-8"
     )
-    expect(source).toContain(
-      "min-h-0 w-full max-w-full min-w-0 flex-1 overflow-y-auto overscroll-contain pr-0 pl-[var(--workspace-drawer-toolbar-safe-left)] data-[state=inactive]:hidden"
-    )
+    expect(source.match(/max-w-7xl/g)).toHaveLength(5)
     expect(source).toContain("WorkspacePeopleDrawerPanel")
+    expect(source).toContain("WorkspaceCanvasOverlayOrganizationPanel")
+    expect(source).toContain("WorkspaceCanvasOverlayAcceleratorPanel")
+    expect(source).toContain("WorkspaceCanvasOverlayRoadmapPanel")
     expect(source).not.toContain(
       "text-foreground truncate text-sm font-semibold"
     )
@@ -357,34 +455,393 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).not.toContain("pt-4")
   })
 
+  it("opens exact Accelerator deep links in the lazy drawer panel", () => {
+    const drawerSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer.tsx"
+    )
+    const panelSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-accelerator-panel.tsx"
+    )
+    const ontologySource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-ontology.ts"
+    )
+    const nodeCardSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx"
+    )
+    const acceleratorPanelSource = readSource(
+      "src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel.tsx"
+    )
+    const acceleratorPanelTypesSource = readSource(
+      "src/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-types.ts"
+    )
+    const lazySource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-accelerator-lazy.tsx"
+    )
+
+    expect(
+      resolveWorkspaceAcceleratorDrawerRequest(
+        "/workspace/accelerator?step=module-1%3Avideo&module=module-1&group=formation"
+      )
+    ).toEqual({
+      tab: "accelerator",
+      acceleratorStepId: "module-1:video",
+      acceleratorModuleId: "module-1",
+      acceleratorLessonGroupKey: "formation",
+    })
+    expect(
+      resolveWorkspaceAcceleratorDrawerRequest(
+        "/workspace?drawer=accelerator&step=module-1%3Avideo&module=module-1&group=formation"
+      )
+    ).toEqual({
+      tab: "accelerator",
+      acceleratorStepId: "module-1:video",
+      acceleratorModuleId: "module-1",
+      acceleratorLessonGroupKey: "formation",
+    })
+    expect(
+      resolveWorkspaceAcceleratorDrawerRequest("/workspace/roadmap")
+    ).toBeNull()
+
+    expect(drawerSource).toContain('request?.tab ?? "accelerator"')
+    expect(drawerSource).toContain("pendingAcceleratorRequest")
+    expect(drawerSource).toContain("handledAcceleratorRequestIdRef")
+    expect(drawerSource).toContain("dataDrawerTab: request.tab")
+    expect(panelSource).toContain("WorkspaceBoardLazyAcceleratorCardPanel")
+    expect(panelSource).toContain('presentationMode="workspace-drawer"')
+    expect(panelSource).toContain(
+      "initialModuleViewerOpen={Boolean(requestedModuleId)}"
+    )
+    expect(panelSource).toContain("initialOpenModuleId={requestedModuleId}")
+    expect(panelSource).toContain("openStepRequest={openStepRequest}")
+    expect(panelSource).toContain(
+      "initialCurrentStepId: openStepRequest.stepId"
+    )
+    expect(panelSource).toContain("Unlock the Accelerator")
+    expect(lazySource).toContain("WorkspaceBoardAcceleratorCardPanelFallback")
+    expect(lazySource).toContain("dynamic<WorkspaceAcceleratorCardPanelProps>")
+    expect(ontologySource).toContain("resolveWorkspaceDataDrawerRequest")
+    expect(ontologySource).toContain("activation.href")
+    expect(ontologySource).toContain("onOpenDataDrawer(dataDrawerRequest)")
+    expect(nodeCardSource).toContain("openWorkspaceDataDrawer({")
+    expect(nodeCardSource).toContain('tab: "accelerator"')
+    expect(nodeCardSource).toContain("acceleratorStepId: step.id")
+    expect(nodeCardSource).toContain("router.push(href, { scroll: false })")
+    expect(acceleratorPanelTypesSource).toContain(
+      'presentationMode?: "embedded" | "fullscreen-route" | "workspace-drawer"'
+    )
+    expect(acceleratorPanelSource).toContain("onOpenStepRequestHandled")
+    expect(acceleratorPanelSource).toContain(
+      "if (!initialOpenModuleId || openStepRequest) return"
+    )
+    expect(acceleratorPanelSource).toContain(
+      'workspaceDrawerEmbedded\n              ? "grid-cols-1"'
+    )
+    expect(acceleratorPanelSource).toContain(
+      'workspaceDrawerEmbedded && isModuleViewerOpen && "hidden"'
+    )
+    expect(acceleratorPanelSource).toContain(
+      "data-workspace-accelerator-drawer-scroll={"
+    )
+    expect(acceleratorPanelSource).toContain("<ScrollFadeEffect")
+    expect(acceleratorPanelSource).toContain(
+      "enabled={workspaceDrawerHasScrollableOverflow}"
+    )
+    expect(acceleratorPanelSource).toContain(
+      "fillAvailableHeight={!workspaceDrawerEmbedded}"
+    )
+    expect(acceleratorPanelSource).toContain(
+      "touch-pan-y overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch]"
+    )
+    expect(acceleratorPanelSource).not.toContain(
+      "touch-pan-y overflow-y-auto overscroll-contain"
+    )
+    expect(acceleratorPanelSource).not.toContain(
+      "grid-cols-1 lg:grid-cols-[minmax(250px,290px)_minmax(0,1fr)]"
+    )
+    expect(acceleratorPanelSource).not.toContain(
+      'workspaceDrawerEmbedded && isModuleViewerOpen && "hidden lg:flex"'
+    )
+  })
+
+  it("opens roadmap sections in the workspace drawer without a return button", () => {
+    const drawerSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer.tsx"
+    )
+    const panelSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-roadmap-panel.tsx"
+    )
+    const tabsViewSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer-tabs-view.tsx"
+    )
+    const navigatorSource = readSource(
+      "src/components/roadmap/roadmap-navigator-section.tsx"
+    )
+    const editorShellSource = readSource(
+      "src/components/roadmap/roadmap-editor/components/roadmap-editor-shell.tsx"
+    )
+    const editorStateSource = readSource(
+      "src/components/roadmap/roadmap-editor/hooks/use-roadmap-editor-state.ts"
+    )
+    const drawerHookSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/use-workspace-accelerator-drawer.ts"
+    )
+
+    expect(
+      resolveWorkspaceRoadmapDrawerRequest(
+        "/workspace?drawer=roadmap&section=origin-story"
+      )
+    ).toEqual({
+      tab: "roadmap",
+      roadmapSectionSlug: "origin-story",
+    })
+    expect(
+      resolveWorkspaceRoadmapDrawerRequest("/workspace/roadmap/origin-story")
+    ).toEqual({
+      tab: "roadmap",
+      roadmapSectionSlug: "origin-story",
+    })
+    expect(
+      resolveWorkspaceRoadmapDrawerRequest("/workspace/accelerator")
+    ).toBeNull()
+
+    expect(drawerSource).toContain(
+      "data-workspace-data-drawer-request-roadmap-section="
+    )
+    expect(tabsViewSource).not.toContain(
+      '<WorkspaceDrawerTabTrigger value="roadmap">'
+    )
+    expect(tabsViewSource).toMatch(/<TabsContent\s+value="roadmap"/)
+    expect(panelSource).toContain("<RoadmapEditor")
+    expect(panelSource).toContain('navigationMode="embedded"')
+    expect(panelSource).toContain("showRightRail={false}")
+    expect(panelSource).toContain("initialSectionId={initialSectionId}")
+    expect(editorShellSource).toContain("{showRightRail ? (")
+    expect(editorStateSource).toContain(
+      "initialSectionId === activeIdRef.current"
+    )
+    expect(navigatorSource).toContain("getWorkspaceRoadmapDrawerPath")
+    expect(navigatorSource).toContain(
+      "requestWorkspaceRoadmapDrawer(next.slug)"
+    )
+    expect(drawerHookSource).toContain(
+      "listenForWorkspaceRoadmapDrawerRequests"
+    )
+    expect(drawerHookSource).toContain("open(nextRequest)")
+    expect(editorShellSource).not.toContain("Return To Workspace")
+    expect(editorShellSource).not.toContain("roadmapReturnButton")
+  })
+
+  it("opens organization editor deep links in the first drawer tab", () => {
+    const drawerSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer.tsx"
+    )
+    const panelSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-organization-panel.tsx"
+    )
+    const drawerTabsSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer-tabs.ts"
+    )
+    const tabsViewSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer-tabs-view.tsx"
+    )
+    const editorViewSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/my-organization-editor-view.tsx"
+    )
+    const deepLinkFocusSource = readSource(
+      "src/components/organization/org-profile-card/organization-deep-link-focus.ts"
+    )
+    const controllerSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/use-workspace-accelerator-drawer.ts"
+    )
+    const pageSource = readSource(
+      "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx"
+    )
+    const pageRolloutSource = readSource(
+      "src/app/(dashboard)/my-organization/_lib/my-organization-page-rollout.ts"
+    )
+    const pageStateSource = readSource(
+      "src/app/(dashboard)/my-organization/_lib/my-organization-page-state.ts"
+    )
+    const nodeCardSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-node-card.tsx"
+    )
+    const cardHeaderSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-card-header.tsx"
+    )
+    const profileHeaderControlsSource = readSource(
+      "src/components/organization/org-profile-card/header-controls.tsx"
+    )
+
+    expect(
+      resolveWorkspaceOrganizationDrawerRequest(
+        "/workspace?view=editor&tab=programs&programId=program-1"
+      )
+    ).toEqual({
+      tab: "organization",
+      organizationTab: "programs",
+      organizationProgramId: "program-1",
+      organizationFocus: null,
+      organizationEditMode: true,
+    })
+    expect(
+      resolveWorkspaceOrganizationDrawerRequest(
+        "/workspace?view=editor&tab=company&focus=mission"
+      )
+    ).toEqual({
+      tab: "organization",
+      organizationTab: "company",
+      organizationProgramId: null,
+      organizationFocus: "mission",
+      organizationEditMode: true,
+    })
+    expect(
+      resolveWorkspaceOrganizationDrawerRequest(
+        "/workspace?drawer=organization"
+      )
+    ).toEqual({
+      tab: "organization",
+      organizationTab: "company",
+      organizationProgramId: null,
+      organizationFocus: null,
+      organizationEditMode: false,
+    })
+    expect(resolveWorkspaceOrganizationDrawerRequest("/workspace")).toBeNull()
+
+    expect(tabsViewSource).toContain(
+      '<WorkspaceDrawerTabTrigger\n            value="organization"'
+    )
+    expect(tabsViewSource).toContain('value="organization"')
+    expect(tabsViewSource).toContain("<WorkspaceCanvasOverlayOrganizationPanel")
+    expect(panelSource).toContain("MyOrganizationEditorView")
+    expect(panelSource).toContain("dynamic<")
+    expect(panelSource).toContain("organization-request:${request.id}")
+    expect(panelSource).toContain("initialTab={")
+    expect(panelSource).toContain("initialProgramId={")
+    expect(panelSource).toContain("initialProgramStep={")
+    expect(panelSource).toContain("initialFocus={")
+    expect(panelSource).toContain("initialEditMode={")
+    expect(drawerTabsSource).toContain(
+      "organizationProgramStep?: number | null"
+    )
+    expect(editorViewSource).toContain("initialProgramStep?: number | null")
+    expect(editorViewSource).toContain(
+      "initialProgramStep={initialProgramStep}"
+    )
+    expect(editorViewSource).toContain(
+      'data-organization-scroll-viewport="true"'
+    )
+    expect(deepLinkFocusSource).toContain(
+      "scrollOrganizationFocusTarget(target)"
+    )
+    expect(deepLinkFocusSource).toContain("viewport.scrollTo({")
+    expect(deepLinkFocusSource).toContain(
+      "target.focus({ preventScroll: true })"
+    )
+    expect(panelSource).toContain(
+      'className="mx-auto box-border flex h-full min-h-0 w-full max-w-6xl min-w-0 flex-col p-2 sm:p-3"'
+    )
+    expect(controllerSource).toContain(
+      "organizationEditorData.initialProfileTab"
+    )
+    expect(controllerSource).toContain("organizationEditorData.initialEditMode")
+    expect(controllerSource).toContain('tab: "organization"')
+    expect(nodeCardSource).toContain("handleOrganizationEditorOpen")
+    expect(nodeCardSource).toContain('tab: "organization"')
+    expect(nodeCardSource).toContain("organizationEditMode: true")
+    expect(cardHeaderSource).toContain("onEditorOpen")
+    expect(cardHeaderSource).toContain("event.preventDefault()")
+    expect(pageStateSource).toContain("const organizationEditorRequested =")
+    expect(pageStateSource).toContain("initialProfileTab:")
+    expect(pageSource).toContain("if (showLegacyEditor)")
+    expect(pageRolloutSource).toContain("!enabled &&")
+    expect(pageSource).toContain("renderMyOrganizationEditorView")
+    expect(profileHeaderControlsSource).toContain("View map profile")
+    expect(profileHeaderControlsSource).toContain(
+      'className="absolute top-6 right-6 flex gap-2"'
+    )
+    expect(profileHeaderControlsSource).not.toContain(
+      'className="absolute top-6 left-1/2 flex -translate-x-1/2 gap-2"'
+    )
+    expect(profileHeaderControlsSource).not.toContain("Return to workspace")
+    expect(profileHeaderControlsSource).not.toContain("onCloseToWorkspace")
+  })
+
+  it("round-trips every canonical workspace drawer URL", () => {
+    expect(
+      resolveWorkspaceDataDrawerRequest("/workspace?drawer=organization")
+    ).toMatchObject({ tab: "organization" })
+    expect(
+      resolveWorkspaceDataDrawerRequest("/workspace?drawer=accelerator")
+    ).toMatchObject({ tab: "accelerator" })
+    expect(
+      resolveWorkspaceDataDrawerRequest("/workspace?drawer=roadmap")
+    ).toMatchObject({ tab: "roadmap" })
+    expect(
+      resolveWorkspaceDataDrawerRequest("/workspace?drawer=people")
+    ).toEqual({ tab: "people" })
+    expect(
+      resolveWorkspaceDataDrawerRequest(
+        "/workspace?drawer=documents&focus=state+filing"
+      )
+    ).toEqual({ tab: "documents", focusKey: "state filing" })
+    expect(
+      resolveWorkspaceDataDrawerRequest("/workspace?drawer=unknown")
+    ).toBeNull()
+    expect(
+      resolveWorkspaceDataDrawerRequest(
+        "/workspace?drawer=accelerator&view=editor&tab=company"
+      )
+    ).toMatchObject({ tab: "accelerator" })
+  })
+
   it("mounts the Documents page content only after the documents tab is selected", () => {
     const source = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer.tsx"
     )
+    const tabsViewSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-drawer-tabs-view.tsx"
+    )
 
-    expect(source).toContain(
+    expect(tabsViewSource).toContain(
       'import { DocumentsTab } from "@/components/organization/org-profile-card/tabs/documents-tab"'
     )
     expect(source).toContain("DocumentsTabData")
     expect(source).toContain("viewerId: string")
     expect(source).toContain("documentsTab: DocumentsTabData")
-    expect(source).toContain('{tab === "documents" ? (')
-    expect(source).toContain("<DocumentsTab")
-    expect(source).toContain("userId={viewerId}")
-    expect(source).toContain("{...documentsTab}")
-    expect(source).toContain("editMode={canEdit}")
-    expect(source).toContain("overflow-y-auto overscroll-contain")
-    expect(source).not.toContain("<WorkspaceBoardVaultCard")
-    expect(source).not.toContain("mode={vaultViewMode}")
-    expect(source).not.toContain("onModeChange={onVaultViewModeChange}")
+    expect(tabsViewSource).toContain('{tab === "documents" ? (')
+    expect(tabsViewSource).toContain("<DocumentsTab")
+    expect(tabsViewSource).toContain("userId={viewerId}")
+    expect(tabsViewSource).toContain("{...documentsTab}")
+    expect(tabsViewSource).toContain("editMode={canEdit}")
+    expect(source).toContain("request?: WorkspaceDataDrawerRequest | null")
+    expect(source).toContain("setTab(request.tab)")
+    expect(source).toContain(
+      'request.tab === "roadmap"\n          ? WORKSPACE_DATA_DRAWER_FULL_SNAP_POINT\n          : WORKSPACE_DATA_DRAWER_DEFAULT_SNAP_POINT'
+    )
+    expect(source).toContain("useLayoutEffect(() => {")
+    expect(tabsViewSource).toContain("key={`documents:${request?.id ?? 0}`}")
+    expect(tabsViewSource).toContain("initialFocusKey={")
+    expect(tabsViewSource).toContain("overflow-y-auto overscroll-contain")
+    expect(tabsViewSource).not.toContain("<WorkspaceBoardVaultCard")
+    expect(tabsViewSource).not.toContain("mode={vaultViewMode}")
+    expect(tabsViewSource).not.toContain("onModeChange={onVaultViewModeChange}")
   })
 
-  it("exposes a local people segment foundation with tap and drag grouping affordances", () => {
+  it("persists people segments with tap, picker, and drag grouping affordances", () => {
     const source = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-panel.tsx"
     )
+    const peopleFilteringSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-filtering.ts"
+    )
     const tableSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table.tsx"
+    )
+    const tableContractSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table-contract.ts"
+    )
+    const tableBodySource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table-body.tsx"
     )
     const mobileListSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-mobile-list.tsx"
@@ -392,14 +849,42 @@ describe("workspace canvas overlay drawer", () => {
     const controlsSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-controls.tsx"
     )
+    const segmentPersonPickerSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-people-segment-person-picker.tsx"
+    )
     const tableCellsSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table-cells.tsx"
     )
     const tableColumnsSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table-columns.tsx"
     )
+    const tableMultiValueCellsSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table-multi-value-cells.tsx"
+    )
+    const tableMultiValuePreviewSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table-multi-value-preview.tsx"
+    )
+    const tagBadgeSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-people-tag-badge.tsx"
+    )
+    const tagEditorSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-people-tag-editor-dialog.tsx"
+    )
+    const tagStateSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/use-workspace-people-tags.ts"
+    )
+    const tagActionsSource = readSource("src/actions/people-tags.ts")
+    const tagMigrationSource = readSource(
+      "supabase/migrations/20260801143000_add_organization_people_tags.sql"
+    )
     const tableToolbarSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table-toolbar.tsx"
+    )
+    const tableSizingSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table-sizing.tsx"
+    )
+    const tablePreferencesSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table-preferences.ts"
     )
     const tableSelectionActionsSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-overlay-people-table-selection-actions.tsx"
@@ -419,20 +904,85 @@ describe("workspace canvas overlay drawer", () => {
     const contentHeaderSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-people-segment-content-header.tsx"
     )
+    const segmentStateSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/use-workspace-people-segments.ts"
+    )
+    const segmentActionsSource = readSource("src/actions/people-segments.ts")
+    const segmentLoaderSource = readSource(
+      "src/app/(dashboard)/my-organization/_lib/workspace-people-segments.ts"
+    )
+    const segmentMigrationSource = readSource(
+      "supabase/migrations/20260801130500_add_organization_people_segments.sql"
+    )
 
     expect(source).toContain("WorkspacePeopleSegmentRail")
-    expect(source).toContain("WorkspacePeopleSegmentContentHeader")
+    expect(source).not.toContain("WorkspacePeopleSegmentContentHeader")
+    expect(railSource).toContain("WorkspacePeopleSegmentActions")
     expect(source).toContain("editingSegmentId")
     expect(source).toContain("handleCreateSegment")
-    expect(source).toContain("setEditingSegmentId(nextId)")
+    expect(source).toContain("setEditingSegmentId(nextSegment.id)")
     expect(source).toContain("handleRenameSegment")
     expect(source).toContain("handleRemoveSegment")
     expect(source).toContain("memberIds")
     expect(source).toContain("WORKSPACE_PERSON_DRAG_TYPE")
     expect(source).toContain("writeWorkspaceCanvasPersonDragPayload")
+    expect(source).toContain("readWorkspaceCanvasPersonDragPayload")
     expect(source).toContain(
-      "writeWorkspaceCanvasPersonDragPayload(event.dataTransfer, personIds)"
+      "writeWorkspaceCanvasPersonDragPayload(\n          event.dataTransfer,\n          normalizedPersonIds\n        )"
     )
+    expect(segmentStateSource).toContain(
+      "addOrganizationPeopleSegmentMembersAction"
+    )
+    expect(segmentStateSource).toContain(
+      "removeOrganizationPeopleSegmentMembersAction"
+    )
+    expect(segmentStateSource).toContain(
+      "createOrganizationPeopleSegmentAction"
+    )
+    expect(segmentStateSource).toContain(
+      "const nextSegments = buildInitialCustomSegments(initialSegments)"
+    )
+    expect(segmentStateSource).toContain("setCustomSegments(nextSegments)")
+    expect(segmentStateSource).toContain(
+      "createWorkspacePeopleMutationCoordinator"
+    )
+    expect(segmentStateSource).toContain("mutationCoordinator.run(mutationKey")
+    expect(segmentStateSource).toContain(
+      "renameOrganizationPeopleSegmentAction"
+    )
+    expect(segmentStateSource).toContain(
+      "deleteOrganizationPeopleSegmentAction"
+    )
+    expect(segmentActionsSource).toContain("resolveSegmentManagementAccess")
+    expect(segmentActionsSource).toContain("canEditOrganization(role)")
+    expect(segmentActionsSource).not.toContain(
+      "ORGANIZATION_PEOPLE_SEGMENTS_PROFILE_KEY"
+    )
+    expect(segmentActionsSource).not.toContain("writeFallbackSegments")
+    expect(segmentLoaderSource).not.toContain(
+      "ORGANIZATION_PEOPLE_SEGMENTS_PROFILE_KEY"
+    )
+    expect(segmentLoaderSource).toContain(
+      '.from("organization_people_segments")'
+    )
+    expect(segmentLoaderSource).toContain(
+      '.from("organization_people_segment_members")'
+    )
+    expect(segmentMigrationSource).toContain(
+      "alter table organization_people_segments force row level security"
+    )
+    expect(segmentMigrationSource).toContain(
+      'create policy "organization_people_segments_update"'
+    )
+    expect(segmentMigrationSource).toContain(
+      'create policy "organization_people_segment_members_insert"'
+    )
+    expect(source).toContain("setActiveSegmentDropId(segment.id)")
+    expect(source).toContain("addPeopleToSegment(segmentId, personIds)")
+    expect(source).not.toContain(
+      "addPeopleToSegment(segmentId, personIds)\n        setSelectedSegmentId(segmentId)"
+    )
+    expect(source).toContain("canManageSegments={canEdit}")
     expect(peopleDndSource).toContain("WORKSPACE_CANVAS_PERSON_DRAG_TYPE")
     expect(peopleDndSource).toContain("WORKSPACE_CANVAS_PEOPLE_DRAG_TYPE")
     expect(peopleDndSource).toContain(
@@ -450,15 +1000,22 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain(
       "const deferredPeopleSearch = useDeferredValue(peopleSearch)"
     )
-    expect(source).toContain("function personMatchesSearch(")
-    expect(source).toContain("function personMatchesCategory(")
+    expect(peopleFilteringSource).toContain("function personMatchesSearch(")
+    expect(peopleFilteringSource).toContain("function personMatchesCategory(")
+    expect(peopleFilteringSource).toContain("function buildPersonTagLabels(")
+    expect(source).not.toContain("hydratePeopleTags")
+    expect(peopleFilteringSource).toContain(
+      "if (!query) return categoryFilteredPeople"
+    )
     expect(source).toContain("filteredSelectedPeople")
-    expect(source).toContain("filteredAvailablePeople")
+    expect(source).not.toContain("filteredAvailablePeople")
+    expect(source).not.toContain("People available for")
+    expect(source.match(/<WorkspacePeopleDrawerTable/g) ?? []).toHaveLength(2)
     expect(source).toContain(
       "const [peopleCategoryFilter, setPeopleCategoryFilter] = useState<"
     )
-    expect(source).toContain(
-      "personMatchesCategory(person, peopleCategoryFilter)"
+    expect(peopleFilteringSource).toContain(
+      "personMatchesCategory(person, categoryFilter)"
     )
     expect(source).toContain("No people match your search.")
     expect(source).toContain("WorkspacePeopleDrawerControls")
@@ -468,6 +1025,12 @@ describe("workspace canvas overlay drawer", () => {
     expect(source).toContain("onSearchChange={setPeopleSearch}")
     expect(source).toContain("categoryFilter={peopleCategoryFilter}")
     expect(source).toContain("onCategoryFilterChange={setPeopleCategoryFilter}")
+    expect(source).toContain("customSegment={selectedCustomSegment}")
+    expect(source).toContain("availablePeople={availablePeople}")
+    expect(source).toContain("onAddPeopleToSegment={handleAddPeople}")
+    expect(source).toContain(
+      "No people in {selectedCustomSegment.label} yet. Use Add people"
+    )
     expect(controlsSource).toContain('from "@/components/ui/input"')
     expect(controlsSource).toContain('from "@/components/ui/select"')
     expect(controlsSource).toContain(
@@ -484,40 +1047,182 @@ describe("workspace canvas overlay drawer", () => {
     expect(controlsSource).toContain('placeholder="Search people…"')
     expect(controlsSource).toContain('className="h-10"')
     expect(controlsSource).toContain('aria-label="Search workspace people"')
+    expect(controlsSource).toContain("WorkspacePeopleSegmentPersonPicker")
+    expect(controlsSource).toContain("customSegment && canEdit ? (")
     expect(controlsSource).toContain("SelectTrigger")
     expect(controlsSource).toContain('id="workspace-people-category"')
     expect(controlsSource).toContain(
-      'aria-label="Filter workspace people by relationship"'
+      'aria-label="Filter workspace people by role"'
     )
-    expect(controlsSource).toContain("All relationships")
+    expect(controlsSource).toContain("All roles")
     expect(controlsSource).toContain("PERSON_CATEGORY_OPTIONS.map")
     expect(controlsSource).toContain("CreatePersonDialog")
     expect(controlsSource).toContain(
       'triggerClassName="h-8 w-full justify-center rounded-xl px-2.5 md:w-auto"'
     )
     expect(controlsSource).not.toContain('from "@/components/ui/table"')
+    expect(
+      segmentPersonPickerSource.match(/<CommandInput/g) ?? []
+    ).toHaveLength(1)
+    expect(segmentPersonPickerSource).toContain("PopoverAnchor")
+    expect(segmentPersonPickerSource).not.toContain("PopoverTrigger")
+    expect(segmentPersonPickerSource).toContain("CommandItem")
+    expect(segmentPersonPickerSource.indexOf("<CommandInput")).toBeLessThan(
+      segmentPersonPickerSource.indexOf("<PopoverContent")
+    )
+    expect(segmentPersonPickerSource).toContain(
+      "`Add people to ${segmentLabel}…`"
+    )
+    expect(segmentPersonPickerSource).toContain('aria-multiselectable="true"')
+    expect(segmentPersonPickerSource).toContain("selectedPersonIds")
+    expect(segmentPersonPickerSource).toContain(
+      "onSelect={() => togglePerson(person.id)}"
+    )
+    expect(segmentPersonPickerSource).toContain(
+      'data-workspace-people-segment-add-control="true"'
+    )
+    expect(segmentPersonPickerSource).toContain(
+      "onAddPeople(selectedPersonIds)"
+    )
+    expect(segmentPersonPickerSource).toContain(
+      "Add ${selectedPersonIds.length}"
+    )
+    expect(segmentPersonPickerSource).toContain(
+      "w-[var(--radix-popover-trigger-width)]"
+    )
     expect(tableCellsSource).toContain("GripVerticalIcon")
     expect(tableCellsSource).toContain(
       'data-workspace-people-drag-handle="true"'
     )
-    expect(tableSource).toContain(
+    expect(tableBodySource).toContain(
       'data-workspace-person-placed={placed ? "true" : undefined}'
     )
+    expect(tableBodySource).toContain("data-workspace-person-dragging={")
     expect(mobileListSource).toContain(
       'data-workspace-person-placed={placed ? "true" : undefined}'
     )
+    expect(mobileListSource).toContain(
+      'data-workspace-person-dragging={dragging ? "true" : undefined}'
+    )
     expect(tableCellsSource).toContain("On canvas")
+    expect(tableCellsSource).toContain(
+      'className="ml-auto flex items-center justify-end"'
+    )
+    expect(tableCellsSource).not.toContain(
+      'className="flex items-center justify-center"'
+    )
     expect(tableCellsSource).toContain("Add to segment")
     expect(tableCellsSource).toContain("Remove from segment")
-    expect(tableCellsSource).toContain(
-      "title={`Add ${person.name} to ${customSegment.label}`}"
+    expect(tableCellsSource).toContain("Add to canvas")
+    expect(tableCellsSource).toContain("Remove from canvas")
+    expect(tableCellsSource).toContain("WorkspacePeopleDrawerActionCell")
+    expect(tableCellsSource).toContain("DropdownMenuTrigger")
+    expect(tableCellsSource).toContain("DropdownMenuGroup")
+    expect(tableCellsSource).toContain("DropdownMenuItem")
+    expect(tableCellsSource).toContain("EllipsisIcon")
+    expect(tableCellsSource).toContain("updatePersonCategoryAction")
+    expect(tableCellsSource).toContain("<SelectTrigger")
+    expect(tableCellsSource).toContain("PERSON_CATEGORY_OPTIONS.map")
+    expect(tableCellsSource).toContain("Unable to update role.")
+    expect(tableColumnsSource).toContain("canEdit={canEdit}")
+    expect(tableColumnsSource).toContain('role: "Role"')
+    expect(tableColumnsSource).toContain('segments: "Segments"')
+    expect(tableColumnsSource).toContain('tags: "Tags"')
+    expect(tableColumnsSource).toContain("WorkspacePeopleDrawerSegmentsCell")
+    expect(tableColumnsSource).toContain("WorkspacePeopleDrawerTagsCell")
+    expect(tableMultiValueCellsSource).toContain('aria-multiselectable="true"')
+    expect(tableMultiValueCellsSource).toContain("onAdd(segment.id, person.id)")
+    expect(tableMultiValueCellsSource).toContain(
+      "onRemove(segment.id, person.id)"
+    )
+    expect(tableMultiValueCellsSource).toContain("Find tags…")
+    expect(tableMultiValueCellsSource).toContain("Find or create segments…")
+    expect(tableMultiValueCellsSource).toContain(
+      "controlledOpen ?? uncontrolledOpen"
+    )
+    expect(tableSource).toContain("openSegmentMenuPersonId")
+    expect(tableSource).toContain("openTagMenuPersonId")
+    expect(tableColumnsSource).toContain(
+      "open={openSegmentMenuPersonId === row.original.id}"
+    )
+    expect(tableColumnsSource).toContain(
+      "open={openTagMenuPersonId === row.original.id}"
+    )
+    expect(tableMultiValueCellsSource).toContain("Create “{normalizedQuery}”")
+    expect(tableMultiValueCellsSource).toContain(
+      '<PopoverContent align="start" className="w-72 p-0">'
+    )
+    expect(source).toContain("handleCreateSegmentForPerson")
+    expect(source).toContain(
+      "createSegment(label, () => undefined, [personId])"
+    )
+    expect(segmentActionsSource).toContain("memberIds: normalizedPersonIds")
+    expect(tableMultiValueCellsSource).toContain("WorkspacePeopleTagBadge")
+    expect(tableMultiValuePreviewSource).toContain("const visibleCount = 1")
+    expect(tableMultiValuePreviewSource).toContain("visibleItems.map")
+    expect(tableMultiValuePreviewSource).toContain("PreviewOverflowBadge")
+    expect(tableMultiValuePreviewSource).toContain("hiddenLabels.join")
+    expect(tableMultiValuePreviewSource).toContain(
+      'className="h-5 w-fit min-w-0 shrink-0 rounded-full px-2 tabular-nums"'
+    )
+    expect(tableMultiValuePreviewSource).toContain(
+      'cn("w-fit min-w-0 shrink", pillMaxWidth)'
+    )
+    expect(tableMultiValuePreviewSource).not.toContain(
+      '"w-full max-w-none justify-start"'
+    )
+    expect(tableMultiValueCellsSource).toContain(
+      '"h-auto min-h-7 w-fit max-w-full min-w-0 justify-start rounded-lg bg-transparent p-0 shadow-none hover:bg-transparent dark:bg-transparent dark:hover:bg-transparent"'
+    )
+    expect(tableMultiValueCellsSource).toContain(
+      'labels.length === 0 && "h-8 w-full px-1"'
+    )
+    expect(tableMultiValueCellsSource).toContain(
+      'selectedTags.length === 0 && "h-8 w-full px-1"'
+    )
+    expect(tableMultiValueCellsSource).not.toContain(
+      'emptyLabel="Add to segment"'
+    )
+    expect(tableMultiValueCellsSource).not.toContain(
+      '<span className="text-muted-foreground">Add tags</span>'
+    )
+    expect(
+      tableMultiValueCellsSource.match(
+        /<PlusIcon className="text-muted-foreground\/45" aria-hidden \/>/g
+      )
+    ).toHaveLength(2)
+    expect(tableMultiValuePreviewSource).toContain(
+      "inline-flex w-fit max-w-full"
+    )
+    expect(tableMultiValueCellsSource).toContain(
+      "WorkspacePeopleTagEditorDialog"
+    )
+    expect(tagBadgeSource).toContain("<Badge")
+    expect(tagEditorSource).toContain("ORGANIZATION_PEOPLE_TAG_COLOR_OPTIONS")
+    expect(tagEditorSource).toContain("Delete tag")
+    expect(tagStateSource).toContain("createOrganizationPeopleTagAction")
+    expect(tagStateSource).toContain("updateOrganizationPeopleTagAction")
+    expect(tagStateSource).toContain("deleteOrganizationPeopleTagAction")
+    expect(tagStateSource).toContain("createWorkspacePeopleMutationCoordinator")
+    expect(tagStateSource).toContain("confirmedTags")
+    expect(tagStateSource).toContain("mutationCoordinator.run(mutationKey")
+    expect(tagStateSource).toContain(
+      "mutationCoordinator.isLatest(mutationToken)"
+    )
+    expect(tagActionsSource).toContain("resolveTagManagementAccess")
+    expect(tagActionsSource).toContain("resolveOrganizationPeopleTagId")
+    expect(tagActionsSource).toContain("isOrganizationPeopleTagUuid")
+    expect(tagActionsSource).not.toContain("getLegacyOrganizationPeopleTagKey")
+    expect(tagMigrationSource).toContain(
+      "alter table organization_people_tags force row level security"
+    )
+    expect(tagMigrationSource).toContain(
+      'create policy "organization_people_tag_members_insert"'
     )
     expect(tableCellsSource).toContain(
-      "title={`Remove ${person.name} from ${customSegment.label}`}"
+      "aria-label={`Actions for ${person.name}`}"
     )
-    expect(tableCellsSource).toContain('variant="secondary"')
-    expect(tableCellsSource).toContain('size="sm"')
-    expect(tableCellsSource).not.toContain('size="icon"')
+    expect(tableCellsSource).toContain('size="icon"')
     expect(tableCellsSource).toContain(
       "Drag ${person.name} to canvas or segment"
     )
@@ -548,8 +1253,24 @@ describe("workspace canvas overlay drawer", () => {
     expect(railSource).toContain(
       "onDragOver={(event) => onSegmentDragOver(segment, event)}"
     )
+    expect(railSource).toContain(
+      "onDragEnter={(event) => onSegmentDragEnter(segment, event)}"
+    )
+    expect(railSource).toContain(
+      "onDragLeave={(event) => onSegmentDragLeave(segment.id, event)}"
+    )
+    expect(railSource).toContain("data-workspace-people-segment-drop-target={")
+    expect(railSource).toContain("Drop ${draggingPersonCount === 1")
     expect(railSource).toContain("onDrop={(event) => {")
     expect(railSource).toContain("if (custom) onPersonDrop(segment.id, event)")
+    expect(railSource).toContain(
+      "const selectedCustomSegment = custom && selectedSegmentId === segment.id"
+    )
+    expect(railSource).toContain(
+      "{selectedCustomSegment && canManageSegments ? ("
+    )
+    expect(railSource).toContain("onEditSegment={onEditSegment}")
+    expect(railSource).toContain("onRemoveSegment={onRemoveSegment}")
     expect(railSource).not.toContain("PencilIcon")
     expect(railSource).not.toContain("Trash2Icon")
     expect(railSource).not.toContain("rounded-r-none")
@@ -588,7 +1309,7 @@ describe("workspace canvas overlay drawer", () => {
     )
     expect(contentHeaderSource).toContain("Delete segment")
     expect(contentHeaderSource).toContain("onRemoveSegment(segment.id)")
-    expect(contentHeaderSource).toContain("segment.count === 1")
+    expect(contentHeaderSource).not.toContain("segment.count === 1")
     expect(source).not.toContain('from "@/components/ui/table"')
     expect(tableSource).toContain('from "@/components/ui/table"')
     expect(tableSource).not.toContain('from "@/components/ui/dropdown-menu"')
@@ -640,15 +1361,21 @@ describe("workspace canvas overlay drawer", () => {
     expect(tableSource).toContain(
       "export const WorkspacePeopleDrawerTable = memo("
     )
-    expect(tableSource).toContain("function WorkspacePeopleDrawerTable({")
+    expect(tableSource).toContain("function WorkspacePeopleDrawerTable(props")
+    expect(tableSource).toContain(
+      "function WorkspacePeopleDrawerTableContent({"
+    )
     expect(tableSource).toContain("buildWorkspacePeopleDrawerColumns")
     expect(tableSource).toContain("WorkspacePeopleDrawerTableToolbar")
     expect(tableSource).toContain("WorkspacePeopleMobileList")
     expect(tableSource).toContain("PeopleTablePagination")
-    expect(tableSource).toContain("allPeople: OrgPersonWithImage[]")
-    expect(tableSource).toContain("viewerId: string")
-    expect(tableSource).toContain(
+    expect(tableContractSource).toContain("allPeople: OrgPersonWithImage[]")
+    expect(tableContractSource).toContain("viewerId: string")
+    expect(tableContractSource).toContain(
       "onAddPeopleToCanvas: (personIds: string[]) => number"
+    )
+    expect(tableContractSource).toContain(
+      "onRemovePersonFromCanvas: (personId: string) => void"
     )
     expect(tableSource).toContain("const peopleById = useMemo(")
     expect(tableSource).toContain("peopleById={peopleById}")
@@ -656,19 +1383,153 @@ describe("workspace canvas overlay drawer", () => {
     expect(tableSource).toContain("canEdit={canEdit}")
     expect(tableSource).toContain("onAddPeopleToCanvas={onAddPeopleToCanvas}")
     expect(tableSource).toContain(
+      "onRemovePersonFromCanvas={onRemovePersonFromCanvas}"
+    )
+    expect(tableContractSource).toContain(
       "onDragStart: (personIds: string[], event: DragEvent<HTMLElement>) => void"
     )
-    expect(tableSource).toContain("const resolveRowDragPersonIds =")
-    expect(tableSource).toContain("row?.getIsSelected()")
-    expect(tableSource).toContain("table.getSelectedRowModel()")
-    expect(tableSource).toContain(
+    expect(tableBodySource).toContain("const resolveRowDragPersonIds =")
+    expect(tableBodySource).toContain("row?.getIsSelected()")
+    expect(tableBodySource).toContain(".getSelectedRowModel()")
+    expect(tableBodySource).toContain(
       "onDragStart(resolveRowDragPersonIds(person), event)"
     )
     expect(tableSource).toContain("onAddToSegment={(personIds) => {")
     expect(tableSource).toContain("personIds.forEach(onAdd)")
     expect(tableSource).toContain("onRemoveFromSegment={(personIds) => {")
     expect(tableSource).toContain("personIds.forEach(onRemove)")
-    expect(tableSource).toContain('className="min-w-[58rem]"')
+    expect(tableSource).toContain('className="grid w-auto border-collapse"')
+    expect(tableSource).toContain("const columnSizeVars = useMemo(")
+    expect(tableSizingSource).toContain(
+      "sizeVars[`--header-${header.id}-size`]"
+    )
+    expect(tableSizingSource).toContain(
+      "sizeVars[`--col-${header.column.id}-size`]"
+    )
+    expect(tableBodySource).toContain(
+      "calc(var(--col-${cell.column.id}-size) * 1px)"
+    )
+    expect(tableBodySource).not.toContain("cell.column.getSize()")
+    expect(tableBodySource).toContain("tableBodyPropsAreEqual")
+    expect(tableBodySource).toContain(
+      "previous.columnDefinitions === next.columnDefinitions"
+    )
+    expect(tableSource).toContain("columnDefinitions={columns}")
+    expect(tableBodySource).toContain(
+      '"flex min-w-0 shrink-0 items-center overflow-hidden px-3 py-1 [&>*]:max-w-full"'
+    )
+    expect(tableBodySource).toContain('"break-words whitespace-normal"')
+    expect(tableBodySource).toContain('"break-all"')
+    expect(tableBodySource).toContain(": { minHeight: resolvedRowHeight }")
+    expect(tableSource).toContain('columnResizeMode: "onChange"')
+    expect(tableSource).toContain("enableColumnResizing: true")
+    expect(tableSource).toContain("WorkspacePeopleColumnResizeHandle")
+    expect(tablePreferencesSource).toContain(
+      "readStoredWorkspacePeopleColumnSizing"
+    )
+    expect(tablePreferencesSource).toContain("storeWorkspacePeopleColumnSizing")
+    expect(tableSizingSource).toContain('role="separator"')
+    expect(tableSizingSource).toContain('event.key === "ArrowLeft"')
+    expect(tableSizingSource).toContain('event.key === "ArrowRight"')
+    expect(tableSizingSource).toContain("onColumnAutoSize(column.id)")
+    expect(tablePreferencesSource).toContain(
+      "coachhouse:workspace-people-table:column-sizing:v1"
+    )
+    expect(tableToolbarSource).toContain("Row height")
+    expect(tableToolbarSource).toContain("Cell content")
+    expect(tableToolbarSource).toContain("Wrap previews")
+    expect(tableToolbarSource).toContain("Truncate previews")
+    expect(tableToolbarSource).toContain(
+      '<DropdownMenuRadioItem value="compact">'
+    )
+    expect(tableToolbarSource).toContain(
+      '<DropdownMenuRadioItem value="spacious">'
+    )
+    expect(tableToolbarSource).toContain("Reset column widths")
+    expect(tableSizingSource).toContain("WorkspacePeopleRowResizeHandle")
+    expect(tableSizingSource).toContain(
+      "action: { size: 80, minSize: 72, maxSize: 192, enableResizing: true }"
+    )
+    expect(tableSource).toContain(
+      'header.column.id === "action" &&\n                        "justify-start text-left"'
+    )
+    expect(tableSource).not.toContain('header.column.id !== "action"')
+    expect(tableSizingSource).toContain(
+      "person: { size: 216, minSize: 176, maxSize: 480, enableResizing: true }"
+    )
+    expect(tableSizingSource).toContain(
+      "canvas: { size: 48, minSize: 48, maxSize: 48, enableResizing: false }"
+    )
+    expect(tableBodySource).toContain(
+      "sticky left-0 z-20 grid place-items-center"
+    )
+    expect(tableSource).toContain("flex h-9 shrink-0 items-center px-3 py-1.5")
+    expect(tableSource).toContain("grid place-items-center border-r p-0")
+    expect(tableColumnsSource).toContain(
+      'className="grid w-full place-items-center"'
+    )
+    expect(tablePreferencesSource).toContain("storedCandidate === 240")
+    expect(tableSizingSource).toContain('aria-orientation="horizontal"')
+    expect(tableSizingSource).toContain('event.key === "ArrowUp"')
+    expect(tableSizingSource).toContain('event.key === "ArrowDown"')
+    expect(tableSizingSource).toContain("onPointerDown={handlePointerDown}")
+    expect(tableBodySource).toContain("WorkspacePeopleRowResizeHandle")
+    expect(tablePreferencesSource).toContain(
+      "readStoredWorkspacePeopleRowSizing"
+    )
+    expect(tablePreferencesSource).toContain(
+      "storeWorkspacePeopleRowPreferences"
+    )
+    expect(tableSource).toContain("sticky top-0")
+    expect(tableSource).toContain('header.column.id === "person"')
+    expect(tableSource).toContain('header.column.id === "action"')
+    expect(tableBodySource).toContain("sticky left-0")
+    expect(tableBodySource).toContain(
+      'actionCell && "grid place-items-center overflow-visible p-0"'
+    )
+    expect(tableBodySource).toContain("sticky right-0 z-20 px-2")
+    expect(tableBodySource).not.toContain("actionCell\n                    ? {")
+    expect(tableBodySource).not.toContain("sticky z-20 justify-end border-l")
+    expect(tableBodySource).toContain(
+      "bg-background group-hover:bg-muted group-data-[state=selected]:bg-muted group-data-[workspace-person-placed=true]:bg-muted sticky right-0"
+    )
+    expect(tableSizingSource).toContain("const resolveColumnSize =")
+    expect(tableSizingSource).toContain("const visibleTableWidth = table")
+    expect(tableSizingSource).toContain(
+      "totalWidth + resolveColumnSize(column.id)"
+    )
+    expect(tableSource).toContain(
+      'width: "calc(var(--workspace-people-table-width) * 1px)"'
+    )
+    expect(tableSizingSource).toContain('resolveColumnSize("canvas")')
+    expect(tableSizingSource).toContain(
+      "Math.min(maxSize, Math.max(minSize, requestedSize))"
+    )
+    expect(tableSource).not.toContain(
+      "columnSizing.canvas ?? canvasColumn?.getSize()"
+    )
+    expect(tableSizingSource).toContain("measureWorkspacePeopleColumnWidth")
+    expect(tableToolbarSource).toContain("Auto-fit columns")
+    expect(tableToolbarSource).toContain("Reset one column")
+    expect(tableToolbarSource).toContain("Save current layout")
+    expect(tableToolbarSource).toContain("Apply saved layout")
+    expect(tablePreferencesSource).toContain(
+      "coachhouse:workspace-people-table:saved-column-sizing:v1"
+    )
+    expect(tablePreferencesSource).toContain(
+      "coachhouse:workspace-people-table:content-mode:v1"
+    )
+    expect(tablePreferencesSource).toContain(
+      "readStoredWorkspacePeopleContentMode"
+    )
+    expect(tableBodySource).toContain(
+      'import { useVirtualizer } from "@tanstack/react-virtual"'
+    )
+    expect(tableBodySource).toContain("rows.length >= 100")
+    expect(tableBodySource).toContain(".getVirtualItems()")
+    expect(tableBodySource).toContain("rowVirtualizer.getTotalSize()")
+    expect(tableSource).toContain("pageSizeOptions={[10, 20, 50, 100]}")
+    expect(peopleTablePaginationSource).toContain("pageSizeOptions?: number[]")
     expect(mobileListSource).toContain(
       "export function WorkspacePeopleMobileList"
     )
@@ -689,9 +1550,12 @@ describe("workspace canvas overlay drawer", () => {
     expect(mobileListSource).toContain("row.toggleSelected(Boolean(value))")
     expect(mobileListSource).toContain("WorkspacePeopleDrawerPersonCell")
     expect(mobileListSource).toContain("WorkspacePeopleDrawerRelationshipCell")
+    expect(mobileListSource).toContain("WorkspacePeopleDrawerSegmentsCell")
+    expect(mobileListSource).toContain("WorkspacePeopleDrawerTagsCell")
     expect(mobileListSource).toContain("WorkspacePeopleDrawerReportsToCell")
     expect(mobileListSource).toContain("WorkspacePeopleDrawerEmailCell")
-    expect(mobileListSource).toContain("WorkspacePeopleDrawerLinkedInCell")
+    expect(mobileListSource).toContain("WorkspacePeopleDrawerSocialMediaCell")
+    expect(mobileListSource).toContain("WorkspacePeopleDrawerActionCell")
     expect(mobileListSource).toContain("WorkspacePeopleDrawerCanvasCell")
     expect(mobileListSource).toContain(
       'const canvasVisible = table.getColumn("canvas")?.getIsVisible() ?? true'
@@ -735,29 +1599,35 @@ describe("workspace canvas overlay drawer", () => {
       "[contain-intrinsic-size:0_24rem] [content-visibility:auto]"
     )
     expect(tableSource).toContain(
-      "hidden max-h-[60vh] max-w-full overflow-auto overscroll-x-contain will-change-auto md:block"
+      "hidden max-h-[60vh] max-w-full overflow-auto overscroll-contain will-change-auto"
     )
     expect(tableSource.indexOf("hidden max-h-[60vh]")).toBeLessThan(
-      tableSource.indexOf('<Table aria-label={label} className="min-w-[58rem]"')
+      tableSource.indexOf('className="grid w-auto border-collapse"')
     )
-    expect(tableSource).toContain(
-      "[contain-intrinsic-size:0_3.25rem] [content-visibility:auto]"
+    expect(tableSizingSource).toContain(
+      "export const WORKSPACE_PEOPLE_DEFAULT_ROW_HEIGHTS"
     )
     expect(tableSource).toContain("<Table")
     expect(tableSource).toContain("<TableHeader")
     expect(tableSource).toContain("<TableHead")
-    expect(tableColumnsSource).toContain("Relationship")
+    expect(tableColumnsSource).toContain('role: "Role"')
+    expect(tableColumnsSource).toContain('action: "Action"')
+    expect(tableColumnsSource).toContain("WorkspacePeopleDrawerActionCell")
     expect(tableColumnsSource).toContain("Canvas status and drag")
     expect(tableColumnsSource).not.toContain("draggable: boolean")
     expect(tableColumnsSource).not.toContain("if (draggable)")
     expect(
       tableColumnsSource.indexOf("Canvas status and drag")
-    ).toBeGreaterThan(tableColumnsSource.indexOf("if (customSegment)"))
+    ).toBeGreaterThan(
+      tableColumnsSource.indexOf("WorkspacePeopleDrawerActionCell")
+    )
     expect(source).not.toContain("draggable={canEdit}")
-    expect(tableSource).toContain("draggable")
-    expect(tableSource).toContain('"cursor-grab active:cursor-grabbing"')
+    expect(tableBodySource).toContain("draggable")
+    expect(tableBodySource).toContain(
+      '"group flex cursor-grab transition-colors active:cursor-grabbing"'
+    )
     expect(source).toContain("placedPersonIds={placedPersonIds}")
-    expect(tableSource).toContain("DragEvent<HTMLElement>")
+    expect(tableContractSource).toContain("DragEvent<HTMLElement>")
     expect(mobileListSource).toContain("DragEvent<HTMLElement>")
     expect(tableSource).toContain("useReactTable")
     expect(tableSource).toContain("getCoreRowModel")
@@ -773,7 +1643,7 @@ describe("workspace canvas overlay drawer", () => {
     )
     expect(tableSource).toContain("enableMultiRowSelection: true")
     expect(tableSource).toContain("getRowId: (row) => row.id")
-    expect(tableSource).toContain("row.getVisibleCells().map")
+    expect(tableBodySource).toContain("row.getVisibleCells().map")
     expect(tableSource).toContain("<PeopleTablePagination")
     expect(tableSource).toContain("filteredCount={people.length}")
     expect(tableSource).toContain(
@@ -885,21 +1755,38 @@ describe("workspace canvas overlay drawer", () => {
       "header: WORKSPACE_PEOPLE_DRAWER_COLUMN_LABELS.linkedin"
     )
     expect(tableColumnsSource).toContain('reportsTo: "Reports To"')
-    expect(tableColumnsSource).toContain('linkedin: "LinkedIn"')
+    expect(tableColumnsSource).toContain("if (showReportsTo)")
+    expect(mobileListSource).toContain("showReportsTo &&")
+    expect(tableSource).toContain("showReportsTo={showReportsTo}")
+    expect(peopleFilteringSource).toContain('segment.category === "staff"')
+    expect(tableColumnsSource).toContain('linkedin: "Social Media"')
+    expect(tableSizingSource).toContain(
+      "linkedin: { size: 136, minSize: 112, maxSize: 240"
+    )
     expect(tableColumnsSource).toContain("WorkspacePeopleDrawerReportsToCell")
-    expect(tableColumnsSource).toContain("WorkspacePeopleDrawerLinkedInCell")
+    expect(tableColumnsSource).toContain("WorkspacePeopleDrawerSocialMediaCell")
     expect(tableCellsSource).toContain(
       "export function WorkspacePeopleDrawerReportsToCell"
     )
     expect(tableCellsSource).toContain('person.category !== "staff"')
     expect(tableCellsSource).toContain("peopleById.get(person.reportsToId)")
     expect(tableCellsSource).toContain(
-      "export function WorkspacePeopleDrawerLinkedInCell"
+      "export function WorkspacePeopleDrawerSocialMediaCell"
     )
+    expect(tableCellsSource).toContain("<PersonSocialBrandIcon")
+    expect(tableCellsSource).toContain("visiblePlatforms.map")
+    expect(tableCellsSource).toContain("onEditPerson(person)")
+    expect(tableCellsSource).toContain("onOpenPerson(person)")
+    expect(tableColumnsSource).toContain("onOpenPerson={onEditPerson}")
+    expect(mobileListSource).toContain("onOpenPerson={onEditPerson}")
+    expect(tableSource).toContain("<CreatePersonDialog")
+    expect(tableSource).toContain("onEditPerson={setEditingPerson}")
+    expect(tableSource).toContain("readOnly={!props.canEdit}")
     expect(tableCellsSource).toContain(
-      "`https://www.linkedin.com/in/${linkedIn.replace"
+      'const title = person.title || "No title"'
     )
-    expect(tableCellsSource).toContain('{person.title || "No title"}')
+    expect(tableCellsSource).toContain("line-clamp-2")
+    expect(tableCellsSource).toContain('contentMode === "wrap"')
     expect(tableCellsSource).not.toContain('{person.email || "No email"}')
     expect(tableSource).not.toContain(">Title</TableHead>")
     expect(tableSource).not.toContain("WorkspacePeopleDrawerItem")
@@ -930,10 +1817,10 @@ describe("workspace canvas overlay drawer", () => {
       "function WorkspacePeopleCustomSegmentEditor({"
     )
     expect(contentHeaderSource).toContain(
-      "export const WorkspacePeopleSegmentContentHeader = memo("
+      "export const WorkspacePeopleSegmentActions = memo("
     )
     expect(contentHeaderSource).toContain(
-      "function WorkspacePeopleSegmentContentHeader({"
+      "function WorkspacePeopleSegmentActions({"
     )
   })
 
@@ -968,8 +1855,17 @@ describe("workspace canvas overlay drawer", () => {
     const viewSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view.tsx"
     )
+    const viewTypesSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-view-types.ts"
+    )
+    const mobileShortcutOverlaySource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-surface-v2-mobile-shortcut-overlay.tsx"
+    )
     const peoplePlacementControllerSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-people-placement-controller.ts"
+    )
+    const peoplePlacementStorageSource = readSource(
+      "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/use-stored-workspace-person-placements.ts"
     )
     const personFitRequestSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-person-fit-request.ts"
@@ -1015,6 +1911,7 @@ describe("workspace canvas overlay drawer", () => {
       "workspaceDataDrawerDocuments: organizationEditorData.documentsTab"
     )
     expect(viewSource).toContain("documentsTab={workspaceDataDrawerDocuments}")
+    expect(viewSource).toContain("request={workspaceDataDrawerRequest}")
     expect(surfaceTypesSource).toContain("workspaceDataDrawerCanEdit: boolean")
     expect(canvasBodySource).toContain(
       "const workspaceDataDrawerCanEdit =\n    !seed.presentationMode && (seed.canEdit || seed.isPlatformAdmin === true)"
@@ -1030,7 +1927,9 @@ describe("workspace canvas overlay drawer", () => {
     expect(peopleStateSource).toContain(
       "useWorkspaceCanvasPeoplePlacementController"
     )
-    expect(surfaceSource).toContain("uiPreferencesScope,")
+    expect(surfaceSource).toContain(
+      "uiPreferencesScope: viewport.uiPreferencesScope"
+    )
     expect(peopleStateSource).toContain("const allowPeopleCanvasInteraction =")
     expect(peopleStateSource).toContain(
       "allowEditing || workspaceDataDrawerCanEdit"
@@ -1038,17 +1937,17 @@ describe("workspace canvas overlay drawer", () => {
     expect(surfaceSource).toContain("allowPeopleCanvasInteraction,")
     expect(surfaceSource).toContain("tutorialActive,")
     expect(surfaceSource).toContain(
-      "peopleCanvasInteractionEnabled: allowPeopleCanvasInteraction"
+      "peopleCanvasInteractionEnabled: people.allowPeopleCanvasInteraction"
     )
     expect(surfaceSource).toContain("handleCanvasSelectionDragStop")
     expect(dragHandlersSource).toContain(
       "handleWorkspacePersonNodesDragStop(draggedNodes)"
     )
     expect(surfaceSource).toContain(
-      "onSelectionDragStop: handleCanvasSelectionDragStop"
+      "onSelectionDragStop: ontologyInteractions.onSelectionDragStop"
     )
     expect(surfaceSource).toContain(
-      "allowEditing || allowPeopleCanvasInteraction || tutorialActive"
+      "allowEditing || people.allowPeopleCanvasInteraction || tutorialActive"
     )
     expect(peoplePlacementControllerSource).toContain(
       "allowPeopleCanvasInteraction: boolean"
@@ -1056,7 +1955,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(peoplePlacementControllerSource).toContain(
       "uiPreferencesScope: WorkspaceBoardUiPreferenceScope"
     )
-    expect(peoplePlacementControllerSource).toContain(
+    expect(peoplePlacementStorageSource).toContain(
       "readWorkspaceBoardUiPreferences"
     )
     expect(peoplePlacementControllerSource).toContain(
@@ -1069,10 +1968,10 @@ describe("workspace canvas overlay drawer", () => {
       "const commitWorkspacePersonPlacements = useCallback"
     )
     expect(peoplePlacementControllerSource).toContain(
-      "if (!allowPeopleCanvasInteraction || tutorialActive) return false"
+      "if (!canMutatePeople) return false"
     )
     expect(peoplePlacementControllerSource).toContain(
-      "!allowPeopleCanvasInteraction ||"
+      "if (!canMutatePeople || personIds.length === 0)"
     )
     expect(nodeBuildersSource).toContain(
       "allowPeopleCanvasInteraction: boolean"
@@ -1094,8 +1993,8 @@ describe("workspace canvas overlay drawer", () => {
     expect(peopleNodeModelSource).toContain("selectable: canEdit")
     expect(peopleNodeSource).toContain("{canEdit ? (")
     expect(peopleNodeSource).toContain("onClick={() => onRemove(person.id)}")
-    expect(peoplePlacementControllerSource).not.toContain(
-      "if (!allowEditing || tutorialActive"
+    expect(peoplePlacementControllerSource).toContain(
+      "canMutateWorkspaceCanvasPeople"
     )
     expect(peoplePlacementControllerSource).toContain("screenToFlowPosition")
     expect(peoplePlacementControllerSource).toContain(
@@ -1147,9 +2046,9 @@ describe("workspace canvas overlay drawer", () => {
       "if (unplacedPersonIds.length === 0) return 0"
     )
     expect(personFitRequestSource).toContain("flowInstance.fitView")
-    expect(viewSource).toContain("workspaceDataDrawerViewerId: string")
-    expect(viewSource).toContain("workspaceDataDrawerCanEdit: boolean")
-    expect(viewSource).toContain("peopleCanvasInteractionEnabled: boolean")
+    expect(viewTypesSource).toContain("workspaceDataDrawerViewerId: string")
+    expect(viewTypesSource).toContain("workspaceDataDrawerCanEdit: boolean")
+    expect(viewTypesSource).toContain("peopleCanvasInteractionEnabled: boolean")
     expect(viewSource).toContain("const nodesSelectable = !tutorialActive")
     expect(viewSource).toContain("const selectNodesOnDrag =")
     expect(viewSource).toContain(
@@ -1162,7 +2061,8 @@ describe("workspace canvas overlay drawer", () => {
     expect(viewSource).toContain("selectionOnDrag={false}")
     expect(viewSource).toContain("selectNodesOnDrag={selectNodesOnDrag}")
     expect(viewSource).toContain("onSelectionDragStop={onSelectionDragStop}")
-    expect(viewSource).toContain("if (!peopleCanvasInteractionEnabled) return")
+    expect(viewSource).toContain("useWorkspaceCanvasPeopleDragOver")
+    expect(viewSource).toContain("if (!enabled) return")
     expect(viewSource).not.toContain("if (!allowEditing) return")
     expect(viewSource).toContain(
       "const personIds = readWorkspaceCanvasPersonDragPayload(event.dataTransfer)"
@@ -1171,7 +2071,7 @@ describe("workspace canvas overlay drawer", () => {
     expect(viewSource).toContain("if (personIds.length === 1)")
     expect(viewSource).toContain("const personId = personIds[0]")
     expect(viewSource).toContain("onAddWorkspacePeopleToCanvas({")
-    expect(viewSource).toContain(
+    expect(viewTypesSource).toContain(
       "workspaceDataDrawerDocuments: DocumentsTabData"
     )
     expect(viewSource).toContain("<WorkspaceCardShortcutRail")
@@ -1189,8 +2089,11 @@ describe("workspace canvas overlay drawer", () => {
     expect(viewSource).not.toContain("centeredIndex * horizontalOffset")
     expect(viewSource).not.toContain("centeredIndex * verticalOffset")
     expect(viewSource).toContain("onAddWorkspacePeopleToCanvas({")
-    expect(viewSource).toContain(
-      "onAddPeopleToCanvas={handleAddWorkspacePeopleToCanvas}"
+    expect(viewSource).toContain("peopleCanvasActions={{")
+    expect(viewSource).toContain("add: handleAddWorkspacePeopleToCanvas")
+    expect(viewSource).toContain("remove: onRemoveWorkspacePersonFromCanvas")
+    expect(surfaceSource).toContain(
+      "people.handleRemoveWorkspacePersonPlacement"
     )
     expect(viewSource).toContain("hasWorkspaceCanvasPersonDragPayload")
     expect(viewSource).toContain("readWorkspaceCanvasPersonDragPayload")
@@ -1198,7 +2101,10 @@ describe("workspace canvas overlay drawer", () => {
     expect(shortcutRailSource).toContain("dataAction?: ReactNode")
     expect(shortcutRailSource).toContain("{dataAction}")
     expect(shortcutRailSource).toContain(
-      "pointer-events-none absolute left-4 top-1/2 z-30"
+      "pointer-events-none absolute top-1/2 left-4 z-10"
+    )
+    expect(mobileShortcutOverlaySource).toContain(
+      "pointer-events-none absolute bottom-4 left-4 z-10 md:hidden"
     )
     expect(controlsSource).toContain("absolute right-4 bottom-4 z-30")
     expect(controlsSource).toContain("md:top-4 md:bottom-auto")
@@ -1221,6 +2127,15 @@ describe("workspace canvas overlay drawer", () => {
     expect(viewSource).toContain("container={flowFrameContainer}")
     expect(viewSource).toContain("setFlowFrameContainer")
     expect(viewSource).toContain('data-workspace-canvas-flow-frame="true"')
+    expect(viewSource).toContain(
+      "workspace-layout-surface group/workspace-canvas-surface relative min-h-[min(820px,calc(100svh-9.5rem))] w-full max-w-full min-w-0"
+    )
+    expect(viewSource).toContain(
+      'className="absolute inset-0 max-w-full min-w-0 overflow-hidden"'
+    )
+    expect(canvasBodySource).toContain(
+      'className="relative flex min-h-0 w-full max-w-full min-w-0 flex-1 overflow-hidden"'
+    )
     expect(controlsSource).not.toContain("<WorkspaceCanvasOverlayDrawer")
   })
 

@@ -9,6 +9,7 @@ import {
   PeopleShowcase,
   type OrgPersonWithImage,
 } from "@/components/people/supporters-showcase"
+import { getWorkspaceDrawerPath } from "@/lib/workspace/routes"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
 
 type PeopleTabProps = {
@@ -17,6 +18,7 @@ type PeopleTabProps = {
 }
 
 export function PeopleTab({ editMode, people }: PeopleTabProps) {
+  const peopleDrawerHref = getWorkspaceDrawerPath({ tab: "people" })
   const staff = people.filter((person) => person.category === "staff")
   const governingBoard = people.filter(
     (person) => person.category === "governing_board"
@@ -42,7 +44,7 @@ export function PeopleTab({ editMode, people }: PeopleTabProps) {
               description="Add staff and board members from the People page."
               actions={
                 <Button asChild size="sm" variant="outline">
-                  <Link href="/people">Manage in People</Link>
+                  <Link href={peopleDrawerHref}>Manage in People</Link>
                 </Button>
               }
             />
@@ -51,7 +53,7 @@ export function PeopleTab({ editMode, people }: PeopleTabProps) {
               <div className="flex items-center justify-between gap-2">
                 <div />
                 <Button asChild size="sm" variant="outline">
-                  <Link href="/people">Manage in People</Link>
+                  <Link href={peopleDrawerHref}>Manage in People</Link>
                 </Button>
               </div>
               <div className="space-y-4">

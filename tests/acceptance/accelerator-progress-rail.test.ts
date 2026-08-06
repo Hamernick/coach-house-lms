@@ -10,6 +10,10 @@ import {
   resolveAcceleratorProgressRailState,
 } from "@/components/accelerator/accelerator-progress-rail"
 import {
+  resolveAcceleratorModuleProgressSegment,
+  resolveAcceleratorProgressSegment,
+} from "@/components/accelerator/accelerator-progress-segments"
+import {
   ACCELERATOR_FUNDABLE_THRESHOLD,
   ACCELERATOR_VERIFIED_THRESHOLD,
 } from "@/lib/accelerator/readiness"
@@ -85,6 +89,32 @@ describe("accelerator progress rail", () => {
     ])
   })
 
+  it("keeps every segment measurable when checkpoints are invalid", () => {
+    const lowFundable = resolveAcceleratorProgressRailState({
+      progressPercent: 50,
+      fundableCheckpoint: -20,
+      verifiedCheckpoint: 200,
+    })
+    const highFundable = resolveAcceleratorProgressRailState({
+      progressPercent: 50,
+      fundableCheckpoint: 100,
+      verifiedCheckpoint: 0,
+    })
+
+    expect(lowFundable.segments.map((segment) => segment.width)).toEqual([
+      1, 98, 1,
+    ])
+    expect(highFundable.segments.map((segment) => segment.width)).toEqual([
+      98, 1, 1,
+    ])
+    expect(
+      lowFundable.segments.reduce((total, segment) => total + segment.width, 0)
+    ).toBe(100)
+    expect(
+      highFundable.segments.reduce((total, segment) => total + segment.width, 0)
+    ).toBe(100)
+  })
+
   it("keeps the colored rail segments free of embedded icons", () => {
     const markup = renderToStaticMarkup(
       React.createElement(AcceleratorProgressRail, {
@@ -139,20 +169,26 @@ describe("accelerator progress rail", () => {
     expect(source).not.toContain('aria-label="Verified checkpoint"')
     expect(source).toContain("DollarSignIcon")
     expect(source).toContain("BadgeCheckIcon")
+    expect(source).toContain('"size-4 shrink-0"')
+    expect(source).not.toContain("milestoneVisual.iconWrapClassName")
   })
 
   it("uses distinct segment colors instead of a monochrome usage bar", () => {
     const source = readSource(
       "src/components/accelerator/accelerator-progress-rail.tsx"
     )
+    const visualSource = readSource(
+      "src/components/accelerator/accelerator-progress-segments.ts"
+    )
 
     expect(source).toContain("bg-border/40")
-    expect(source).toContain("bg-amber-500/20 dark:bg-amber-400/18")
-    expect(source).toContain("bg-emerald-500/25 dark:bg-emerald-400/25")
-    expect(source).toContain("bg-sky-500/25 dark:bg-sky-400/25")
-    expect(source).toContain('fillClassName: "bg-amber-500"')
-    expect(source).toContain('fillClassName: "bg-emerald-500"')
-    expect(source).toContain('fillClassName: "bg-sky-500"')
+    expect(source).toContain("ACCELERATOR_PROGRESS_SEGMENT_VISUALS")
+    expect(visualSource).toContain("bg-amber-500/20 dark:bg-amber-400/18")
+    expect(visualSource).toContain("bg-emerald-500/25 dark:bg-emerald-400/25")
+    expect(visualSource).toContain("bg-sky-500/25 dark:bg-sky-400/25")
+    expect(visualSource).toContain('fillClassName: "bg-amber-500"')
+    expect(visualSource).toContain('fillClassName: "bg-emerald-500"')
+    expect(visualSource).toContain('fillClassName: "bg-sky-500"')
 
     expect(source).not.toContain('segment.reached ? "bg-primary"')
     expect(source).not.toContain(
@@ -160,7 +196,34 @@ describe("accelerator progress rail", () => {
     )
     expect(source).not.toContain("border-zinc-300")
     expect(source).not.toContain("dark:border-zinc-600")
-    expect(source).toContain("text-emerald-700 dark:text-emerald-300")
-    expect(source).toContain("text-sky-700 dark:text-sky-300")
+    expect(visualSource).toContain("text-emerald-600 dark:text-emerald-400")
+    expect(visualSource).toContain("text-sky-600 dark:text-sky-400")
+  })
+
+  it("resolves icon tones against the same segment thresholds", () => {
+    expect(resolveAcceleratorProgressSegment(0)).toBe("build")
+    expect(resolveAcceleratorProgressSegment(69)).toBe("build")
+    expect(resolveAcceleratorProgressSegment(70)).toBe("fundable")
+    expect(resolveAcceleratorProgressSegment(89)).toBe("fundable")
+    expect(resolveAcceleratorProgressSegment(90)).toBe("verified")
+
+    expect(
+      resolveAcceleratorModuleProgressSegment({
+        moduleSequenceIndex: 2,
+        moduleSequenceTotal: 10,
+      })
+    ).toBe("build")
+    expect(
+      resolveAcceleratorModuleProgressSegment({
+        moduleSequenceIndex: 8,
+        moduleSequenceTotal: 10,
+      })
+    ).toBe("fundable")
+    expect(
+      resolveAcceleratorModuleProgressSegment({
+        moduleSequenceIndex: 10,
+        moduleSequenceTotal: 10,
+      })
+    ).toBe("verified")
   })
 })

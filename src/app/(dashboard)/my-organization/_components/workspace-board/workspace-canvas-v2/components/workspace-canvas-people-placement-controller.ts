@@ -14,13 +14,14 @@ import type { OrgPersonWithImage } from "@/components/people/supporters-showcase
 
 import {
   patchWorkspaceBoardUiPreferences,
-  readWorkspaceBoardUiPreferences,
   type WorkspaceBoardUiPreferenceScope,
 } from "../../workspace-board-ui-preferences"
+import { useStoredWorkspacePersonPlacements } from "./use-stored-workspace-person-placements"
 import type {
   WorkspaceCanvasPeopleAddRequest,
   WorkspaceCanvasPersonDropRequest,
 } from "./workspace-canvas-people-dnd"
+import { canMutateWorkspaceCanvasPeople } from "./workspace-canvas-people-rollout"
 import {
   normalizeWorkspaceCanvasPersonIds,
   resolveWorkspacePeopleRelationshipGraphPersonIds,
@@ -48,6 +49,7 @@ const WORKSPACE_PEOPLE_BULK_RELAYOUT_THRESHOLD = 4
 
 export function useWorkspaceCanvasPeoplePlacementController({
   allowPeopleCanvasInteraction,
+  enabled,
   tutorialActive,
   people,
   presentationMode,
@@ -55,6 +57,7 @@ export function useWorkspaceCanvasPeoplePlacementController({
   uiPreferencesScope,
 }: {
   allowPeopleCanvasInteraction: boolean
+  enabled: boolean
   tutorialActive: boolean
   people: OrgPersonWithImage[]
   presentationMode: boolean
@@ -65,13 +68,8 @@ export function useWorkspaceCanvasPeoplePlacementController({
     () => new Map(people.map((person) => [person.id, person])),
     [people]
   )
-  const [workspacePersonPlacements, setWorkspacePersonPlacements] = useState<
-    WorkspaceCanvasPersonPlacement[]
-  >(
-    () =>
-      readWorkspaceBoardUiPreferences(uiPreferencesScope)
-        .workspacePersonPlacements
-  )
+  const [workspacePersonPlacements, setWorkspacePersonPlacements] =
+    useStoredWorkspacePersonPlacements({ enabled, uiPreferencesScope })
   const [fitRequest, setFitRequest] =
     useState<WorkspaceCanvasPersonFitRequest>(null)
   const fitRequestKeyRef = useRef(0)
@@ -80,13 +78,15 @@ export function useWorkspaceCanvasPeoplePlacementController({
       new Set(workspacePersonPlacements.map((placement) => placement.personId)),
     [workspacePersonPlacements]
   )
+  const canMutatePeople = canMutateWorkspaceCanvasPeople({
+    enabled,
+    interactionEnabled: allowPeopleCanvasInteraction,
+    tutorialActive,
+  })
 
   useEffect(() => {
-    setWorkspacePersonPlacements(
-      readWorkspaceBoardUiPreferences(uiPreferencesScope)
-        .workspacePersonPlacements
-    )
-  }, [uiPreferencesScope])
+    if (!enabled) setFitRequest(null)
+  }, [enabled])
 
   const commitWorkspacePersonPlacements = useCallback(
     (
@@ -94,6 +94,7 @@ export function useWorkspaceCanvasPeoplePlacementController({
         current: WorkspaceCanvasPersonPlacement[]
       ) => WorkspaceCanvasPersonPlacement[]
     ) => {
+      if (!enabled) return
       setWorkspacePersonPlacements((current) => {
         const next = updater(current)
         if (next === current) return current
@@ -104,7 +105,7 @@ export function useWorkspaceCanvasPeoplePlacementController({
         return next
       })
     },
-    [uiPreferencesScope]
+    [enabled, setWorkspacePersonPlacements, uiPreferencesScope]
   )
 
   useEffect(() => {
@@ -118,11 +119,12 @@ export function useWorkspaceCanvasPeoplePlacementController({
 
   const handleRemoveWorkspacePersonPlacement = useCallback(
     (personId: string) => {
+      if (!enabled) return
       commitWorkspacePersonPlacements((current) =>
         current.filter((placement) => placement.personId !== personId)
       )
     },
-    [commitWorkspacePersonPlacements]
+    [commitWorkspacePersonPlacements, enabled]
   )
   const clearWorkspacePersonFitRequest = useCallback(() => {
     setFitRequest(null)
@@ -142,7 +144,7 @@ export function useWorkspaceCanvasPeoplePlacementController({
 
   const handleWorkspacePersonDropToCanvas = useCallback(
     ({ personId, clientX, clientY }: WorkspaceCanvasPersonDropRequest) => {
-      if (!allowPeopleCanvasInteraction || tutorialActive) return false
+      if (!canMutatePeople) return false
       if (!workspacePersonById.has(personId)) return false
       const flowInstance = flowInstanceRef.current
       if (!flowInstance) return false
@@ -229,12 +231,11 @@ export function useWorkspaceCanvasPeoplePlacementController({
       return true
     },
     [
-      allowPeopleCanvasInteraction,
+      canMutatePeople,
       commitWorkspacePersonPlacements,
       flowInstanceRef,
       placedWorkspacePersonIds,
       requestWorkspacePersonFit,
-      tutorialActive,
       workspacePersonById,
       workspacePersonPlacements,
     ]
@@ -242,11 +243,7 @@ export function useWorkspaceCanvasPeoplePlacementController({
 
   const handleAddWorkspacePeopleToCanvas = useCallback(
     ({ personIds, clientX, clientY }: WorkspaceCanvasPeopleAddRequest) => {
-      if (
-        !allowPeopleCanvasInteraction ||
-        tutorialActive ||
-        personIds.length === 0
-      ) {
+      if (!canMutatePeople || personIds.length === 0) {
         return 0
       }
 
@@ -323,12 +320,11 @@ export function useWorkspaceCanvasPeoplePlacementController({
       return requestedPersonIds.length
     },
     [
-      allowPeopleCanvasInteraction,
+      canMutatePeople,
       commitWorkspacePersonPlacements,
       flowInstanceRef,
       placedWorkspacePersonIds,
       requestWorkspacePersonFit,
-      tutorialActive,
       workspacePersonById,
       workspacePersonPlacements,
     ]
@@ -337,6 +333,7 @@ export function useWorkspaceCanvasPeoplePlacementController({
   const handleWorkspacePersonNodeDragStop = useCallback(
     (node: Node) => {
       if (
+        !enabled ||
         node.type !== "workspace-person" ||
         !isWorkspaceCanvasPersonNodeData(node.data)
       ) {
@@ -356,10 +353,11 @@ export function useWorkspaceCanvasPeoplePlacementController({
       )
       return true
     },
-    [commitWorkspacePersonPlacements]
+    [commitWorkspacePersonPlacements, enabled]
   )
   const handleWorkspacePersonNodesDragStop = useCallback(
     (nodes: Node[]) => {
+      if (!enabled) return false
       const personNodePositions = nodes
         .filter(
           (node) =>
@@ -396,7 +394,7 @@ export function useWorkspaceCanvasPeoplePlacementController({
       })
       return true
     },
-    [commitWorkspacePersonPlacements]
+    [commitWorkspacePersonPlacements, enabled]
   )
 
   const personRelationshipEdges = useMemo(
@@ -414,7 +412,7 @@ export function useWorkspaceCanvasPeoplePlacementController({
     workspacePersonPlacements,
     placedWorkspacePersonIds,
     personRelationshipEdges,
-    workspacePersonFitRequest: fitRequest,
+    workspacePersonFitRequest: enabled ? fitRequest : null,
     clearWorkspacePersonFitRequest,
     handleRemoveWorkspacePersonPlacement,
     handleWorkspacePersonDropToCanvas,

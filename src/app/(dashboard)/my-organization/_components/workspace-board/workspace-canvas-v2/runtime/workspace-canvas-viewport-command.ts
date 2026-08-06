@@ -1,4 +1,8 @@
-import type { ReactFlowInstance } from "reactflow"
+import {
+  getRectOfNodes,
+  getViewportForBounds,
+  type ReactFlowInstance,
+} from "reactflow"
 
 import type { WorkspaceCardId } from "../../workspace-board-types"
 import { resolveWorkspaceCanvasFallbackFocusTarget } from "./workspace-canvas-focus-policy"
@@ -62,6 +66,67 @@ export type WorkspaceCanvasViewportExecutionResult = {
   executed: boolean
   kind: WorkspaceCanvasViewportCommand["kind"]
   nodeCount: number
+}
+
+type WorkspaceCanvasViewportRect = {
+  bottom: number
+  height: number
+  top: number
+  width: number
+}
+
+export type WorkspaceCanvasFocusViewportSize = {
+  height: number
+  width: number
+}
+
+const WORKSPACE_CANVAS_DRAWER_FOCUS_MIN_OCCLUSION = 96
+const WORKSPACE_CANVAS_DRAWER_FOCUS_MIN_VISIBLE_HEIGHT = 160
+
+export function resolveWorkspaceCanvasDrawerAwareFocusViewportSize({
+  drawerRect,
+  frameRect,
+}: {
+  drawerRect: WorkspaceCanvasViewportRect | null
+  frameRect: WorkspaceCanvasViewportRect
+}): WorkspaceCanvasFocusViewportSize | null {
+  if (frameRect.width <= 0 || frameRect.height <= 0 || !drawerRect) return null
+
+  const overlapHeight = Math.max(
+    0,
+    Math.min(frameRect.bottom, drawerRect.bottom) -
+      Math.max(frameRect.top, drawerRect.top)
+  )
+  if (overlapHeight <= WORKSPACE_CANVAS_DRAWER_FOCUS_MIN_OCCLUSION) {
+    return null
+  }
+
+  const visibleHeight = frameRect.height - overlapHeight
+  if (visibleHeight < WORKSPACE_CANVAS_DRAWER_FOCUS_MIN_VISIBLE_HEIGHT) {
+    return null
+  }
+
+  return {
+    width: frameRect.width,
+    height: visibleHeight,
+  }
+}
+
+function resolveWorkspaceCanvasFocusViewportSize() {
+  if (typeof document === "undefined") return null
+
+  const frame = document.querySelector<HTMLElement>(
+    '[data-workspace-canvas-flow-frame="true"]'
+  )
+  const drawer = document.querySelector<HTMLElement>(
+    '[data-workspace-canvas-overlay-drawer="true"]'
+  )
+  if (!frame || !drawer) return null
+
+  return resolveWorkspaceCanvasDrawerAwareFocusViewportSize({
+    frameRect: frame.getBoundingClientRect(),
+    drawerRect: drawer.getBoundingClientRect(),
+  })
 }
 
 function clampSceneZoom(
@@ -171,6 +236,7 @@ export function executeWorkspaceCanvasViewportCommand({
   sceneFitOptions,
   focusCardOptions,
   acceleratorFocusOptions,
+  focusViewportSize,
 }: {
   flowInstance: ReactFlowInstance
   command: WorkspaceCanvasViewportCommand
@@ -178,6 +244,7 @@ export function executeWorkspaceCanvasViewportCommand({
   sceneFitOptions: WorkspaceCanvasCameraFitOptions
   focusCardOptions: WorkspaceCanvasCameraFitOptions
   acceleratorFocusOptions?: WorkspaceCanvasCameraFitOptions
+  focusViewportSize?: WorkspaceCanvasFocusViewportSize | null
 }): WorkspaceCanvasViewportExecutionResult {
   if (command.kind === "scene-fit") {
     const { sceneFitRequest } = command
@@ -236,10 +303,36 @@ export function executeWorkspaceCanvasViewportCommand({
       }
     }
 
-    void flowInstance.fitView({
-      nodes: focusedNodes,
-      ...resolveCameraFitOptions(focusCardOptions),
-    })
+    const drawerAwareViewportSize =
+      focusViewportSize === undefined
+        ? resolveWorkspaceCanvasFocusViewportSize()
+        : focusViewportSize
+    const focusedBounds = getRectOfNodes(focusedNodes)
+
+    if (
+      drawerAwareViewportSize &&
+      focusedBounds.width > 0 &&
+      focusedBounds.height > 0
+    ) {
+      const nextViewport = getViewportForBounds(
+        focusedBounds,
+        drawerAwareViewportSize.width,
+        drawerAwareViewportSize.height,
+        focusCardOptions.minZoom,
+        focusCardOptions.maxZoom,
+        focusCardOptions.padding
+      )
+      void flowInstance.setViewport(nextViewport, {
+        duration: resolveWorkspaceCanvasCameraDuration(
+          focusCardOptions.duration
+        ),
+      })
+    } else {
+      void flowInstance.fitView({
+        nodes: focusedNodes,
+        ...resolveCameraFitOptions(focusCardOptions),
+      })
+    }
     return {
       executed: true,
       kind: command.kind,

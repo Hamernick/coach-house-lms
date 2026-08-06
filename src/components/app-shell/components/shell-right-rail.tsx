@@ -3,6 +3,7 @@ import { useEffect } from "react"
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
@@ -50,6 +51,9 @@ export function ShellRightRail({
         >
           <SheetHeader className="sr-only">
             <SheetTitle>Details</SheetTitle>
+            <SheetDescription>
+              Contextual details for the current workspace view.
+            </SheetDescription>
           </SheetHeader>
           <div className="h-full overflow-y-auto px-[var(--shell-right-rail-pad,var(--shell-rail-padding))] py-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
             {content}

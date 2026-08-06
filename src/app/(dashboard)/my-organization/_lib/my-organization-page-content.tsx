@@ -1,6 +1,4 @@
 import { redirect } from "next/navigation"
-import type { OrgPerson } from "@/actions/people"
-import type { ProfileTab } from "@/components/organization/org-profile-card/types"
 import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { canEditOrganization } from "@/lib/organization/active-org"
 import { measureServerStep } from "@/lib/performance/server-timing"
@@ -9,16 +7,9 @@ import { fetchAcceleratorProgressSummary } from "@/lib/accelerator/progress"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { resolvePricingPlanTier } from "@/lib/billing/plan-tier"
 import { getWorkspaceAcceleratorPaywallPath } from "@/lib/workspace/routes"
-import { normalizePersonCategory } from "@/lib/people/categories"
-import { resolvePeopleDisplayImages } from "@/lib/people/display-images"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
-import {
-  buildWorkspaceAcceleratorCardSteps,
-  type WorkspaceAcceleratorCardStep,
-} from "@/features/workspace-accelerator-card"
-import { loadFiscalSponsorshipProjectWorkflowSummary } from "@/features/fiscal-sponsorship"
+import { buildWorkspaceAcceleratorCardSteps } from "@/features/workspace-accelerator-card"
 import { completeOnboardingAction } from "../../onboarding/actions"
-import { buildOnboardingFlowDefaults } from "@/lib/onboarding/defaults"
 import { buildMyOrganizationCalendarView } from "./calendar"
 import { applyOrganizationAcceleratorProgressOverrides } from "./my-organization-accelerator-progress"
 import {
@@ -28,6 +19,7 @@ import {
 import {
   buildAcceleratorWorkspaceSeed,
   buildMyOrganizationDerivedMetrics,
+  buildWorkspaceOnboardingDefaults,
   buildWorkspaceViewer,
   fetchWorkspacePrograms,
 } from "./my-organization-page-content-support"
@@ -41,128 +33,74 @@ import {
 } from "./my-organization-page-content-helpers"
 import { isMissingWorkspaceBoardsTableError } from "./workspace-view-helpers"
 import { readWorkspaceBoardStateValue } from "./workspace-state"
-import type { FormationSummary, MyOrganizationSearchParams } from "./types"
+import type { MyOrganizationSearchParams } from "./types"
 import { buildWorkspaceOrganizationEditorData } from "./workspace-organization-editor-data"
 import { loadMyOrganizationProfileContext } from "./my-organization-page-profile"
-import type { buildInitialOrganizationProfile } from "./helpers"
 import {
   redirectLegacyMyOrganizationTab,
   resolveMyOrganizationPageSearchState,
 } from "./my-organization-page-search"
-
-type MyOrganizationSupabase = NonNullable<
-  Awaited<ReturnType<typeof resolveOptionalAuthenticatedAppContext>>
->["supabase"]
-
-function resolveFiscalApplicantPrefillIdentity({
-  profileAudience,
-  user,
-}: {
-  profileAudience: { fullName: string | null }
-  user: { email?: string | null }
-}) {
-  return {
-    applicantEmail: user.email ?? null,
-    applicantFullName: profileAudience.fullName,
-  }
-}
-
-async function loadMyOrganizationFiscalSponsorshipWorkflow({
-  orgId,
-  supabase,
-}: {
-  orgId: string
-  supabase: MyOrganizationSupabase
-}) {
-  const { data: fiscalSponsorshipProjectRow } = await supabase
-    .from("organization_projects")
-    .select("id")
-    .eq("org_id", orgId)
-    .eq("project_kind", "organization_admin")
-    .maybeSingle<{ id: string }>()
-  const fiscalSponsorshipProjectId = fiscalSponsorshipProjectRow?.id ?? null
-  const fiscalSponsorshipWorkflowSummaryResult = fiscalSponsorshipProjectId
-    ? await loadFiscalSponsorshipProjectWorkflowSummary(
-        fiscalSponsorshipProjectId
-      )
-    : null
-  const fiscalSponsorshipWorkflowSummary =
-    fiscalSponsorshipWorkflowSummaryResult &&
-    !("error" in fiscalSponsorshipWorkflowSummaryResult)
-      ? fiscalSponsorshipWorkflowSummaryResult
-      : null
-
-  return {
-    fiscalSponsorshipProjectId,
-    fiscalSponsorshipWorkflowSummary,
-  }
-}
-
-async function renderMyOrganizationEditorView({
-  canEdit,
-  initialProfile,
-  initialProgramId,
-  initialTab,
-  peopleNormalized,
-  programs,
-}: {
-  canEdit: boolean
-  initialProfile: ReturnType<typeof buildInitialOrganizationProfile>
-  initialProgramId: string | null
-  initialTab?: ProfileTab
-  peopleNormalized: OrgPerson[]
-  programs: Awaited<ReturnType<typeof fetchWorkspacePrograms>>
-}) {
-  const { MyOrganizationEditorView } =
-    await import("../_components/my-organization-editor-view")
-  const people = await resolvePeopleDisplayImages(peopleNormalized)
-
-  return (
-    <MyOrganizationEditorView
-      initialProfile={initialProfile}
-      people={people}
-      programs={programs ?? []}
-      initialTab={initialTab}
-      initialProgramId={initialProgramId}
-      canEdit={canEdit}
-    />
-  )
-}
+import { getOnboarding } from "./my-organization-page-state"
+import { resolveWorkspaceFoundationPageMode } from "./my-organization-page-rollout"
+import {
+  renderMyOrganizationEditorView,
+  resolveLegacyEditorTab,
+} from "./my-organization-page-legacy-editor"
+import {
+  loadMyOrganizationFiscalSponsorshipWorkflow,
+  resolveFiscalApplicantPrefillIdentity,
+} from "./my-organization-page-fiscal"
+import {
+  buildWorkspacePeopleData,
+  loadOrganizationPeopleTaxonomy,
+} from "./workspace-people-segments"
 
 export default async function MyOrganizationPage({
   searchParams,
 }: {
   searchParams?: Promise<MyOrganizationSearchParams>
 }) {
+  const searchState = await resolveMyOrganizationPageSearchState(searchParams)
   const {
     resolvedSearchParams,
     viewParam,
     modeParam,
     tabParam,
     programIdParam,
+    focusParam,
     initialWorkspaceFocusCardId,
+    drawerParam,
     acceleratorGroupParam,
     acceleratorModuleParam,
     acceleratorStepParam,
+    roadmapSectionParam,
     monthParam,
     onboardingFlowRequested,
     onboardingStageOverride,
-  } = await resolveMyOrganizationPageSearchState(searchParams)
-  redirectLegacyMyOrganizationTab(tabParam)
+  } = searchState
   const requestContext = await resolveOptionalAuthenticatedAppContext()
   if (!requestContext) redirect("/login?redirect=/organization")
   const { supabase, user, profileAudience, activeOrg } = requestContext
   const { orgId, role } = activeOrg
-  const userMeta =
-    (user.user_metadata as Record<string, unknown> | null) ?? null
   const isAdmin = profileAudience.isAdmin
-  const needsInitialOnboarding =
-    !isAdmin && !Boolean(userMeta?.onboarding_completed) && orgId === user.id
+  const { userMeta, needsInitialOnboarding } = getOnboarding(requestContext)
   const canEdit = isAdmin || canEditOrganization(role)
+  const {
+    enabled: workspaceFoundationEnabled,
+    initialDrawerData,
+    legacyDestination,
+    showLegacyEditor,
+  } = resolveWorkspaceFoundationPageMode({
+    needsInitialOnboarding,
+    orgId,
+    searchState,
+    userId: user.id,
+  })
+  if (legacyDestination) redirect(legacyDestination)
+  if (workspaceFoundationEnabled) {
+    redirectLegacyMyOrganizationTab(tabParam)
+  }
   const acceleratorViewRequested = viewParam === "accelerator"
-  const showEditor =
-    !needsInitialOnboarding &&
-    (viewParam === "editor" || Boolean(tabParam) || Boolean(programIdParam))
   const presentationMode =
     modeParam === "present" || modeParam === "presentation"
   const { orgRow, profile, initialProfile, roadmapSections } =
@@ -178,6 +116,7 @@ export default async function MyOrganizationPage({
     acceleratorProgress,
     activeSubscriptionResult,
     entitlements,
+    organizationPeopleTaxonomy,
   ] = await measureServerStep(
     "workspace.content.load_parallel_data",
     () =>
@@ -191,7 +130,7 @@ export default async function MyOrganizationPage({
           : supabase
               .from("roadmap_calendar_internal_events")
               .select(
-                "id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles"
+                "id,title,description,event_type,starts_at,ends_at,all_day,recurrence,status,assigned_roles,updated_at"
               )
               .eq("org_id", orgId)
               .gte("starts_at", nowIso)
@@ -220,6 +159,9 @@ export default async function MyOrganizationPage({
           orgUserId: orgId,
           isAdmin,
         }),
+        workspaceFoundationEnabled
+          ? loadOrganizationPeopleTaxonomy({ orgId, supabase })
+          : Promise.resolve({ segments: [], tags: [] }),
       ]),
     { thresholdMs: 1_000 }
   )
@@ -248,35 +190,15 @@ export default async function MyOrganizationPage({
   } = partitionRoadmapModules(
     acceleratorProgressSummary.groups.flatMap((group) => group.modules)
   )
-  const peopleRaw = (
-    Array.isArray(profile.org_people) ? profile.org_people : []
-  ) as OrgPerson[]
-  const peopleNormalized = peopleRaw.map((person) => ({
-    ...person,
-    category: normalizePersonCategory(person.category),
-  }))
-  const onboardingDefaults = buildOnboardingFlowDefaults({
-    userId: user.id,
-    email: user.email ?? null,
-    displayName:
-      profileAudience.fullName ??
-      (typeof user.user_metadata?.full_name === "string"
-        ? user.user_metadata.full_name
-        : null),
-    avatarUrl:
-      profileAudience.avatarUrl ??
-      (typeof user.user_metadata?.avatar_url === "string"
-        ? user.user_metadata.avatar_url
-        : null),
-    userMetadata: userMeta,
-    orgProfile: profile,
+  const { peopleNormalized, peopleSegments, peopleTags } =
+    buildWorkspacePeopleData({ profile, ...organizationPeopleTaxonomy })
+  const onboardingDefaults = buildWorkspaceOnboardingDefaults({
     orgSlug: orgRow?.public_slug ?? null,
     builderPlanTier: currentPlanTier,
+    orgProfile: profile,
+    requestContext,
+    userMeta,
   })
-  const allowedTabs: ProfileTab[] = ["company", "programs", "people"]
-  const initialTab = allowedTabs.includes(tabParam as ProfileTab)
-    ? (tabParam as ProfileTab)
-    : undefined
   const programRows = (programsResult ?? []) as Array<{
     goal_cents: number | null
     raised_cents: number | null
@@ -301,12 +223,12 @@ export default async function MyOrganizationPage({
     acceleratorRoadmapModules,
   })
   const viewer = buildWorkspaceViewer(user)
-  if (showEditor) {
+  if (showLegacyEditor) {
     return renderMyOrganizationEditorView({
       canEdit,
       initialProfile,
       initialProgramId: programIdParam || null,
-      initialTab,
+      initialTab: resolveLegacyEditorTab(tabParam),
       peopleNormalized,
       programs: programsResult,
     })
@@ -464,7 +386,10 @@ export default async function MyOrganizationPage({
         fiscalSponsorshipProjectId,
         fiscalSponsorshipWorkflowSummary,
         initialProfile,
+        ...initialDrawerData,
         peopleNormalized,
+        peopleSegments,
+        peopleTags,
         profile,
         programs: programsResult,
         publicSlug: orgRow?.public_slug ?? null,
@@ -481,6 +406,7 @@ export default async function MyOrganizationPage({
       seed={workspaceSeedWithTutorial}
       onInitialOnboardingSubmit={completeOnboardingAction}
       organizationEditorData={organizationEditorData}
+      workspaceFoundationEnabled={workspaceFoundationEnabled}
     />
   )
 }

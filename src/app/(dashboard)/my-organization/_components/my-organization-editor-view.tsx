@@ -1,6 +1,6 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useRef, useState } from "react"
 
 import { OrgProfileCard } from "@/components/organization/org-profile-card"
 import type {
@@ -9,8 +9,8 @@ import type {
   ProfileTab,
 } from "@/components/organization/org-profile-card/types"
 import type { OrgPersonWithImage } from "@/components/people/supporters-showcase"
+import { ScrollFadeEffect } from "@/components/scroll-fade-effect"
 import { cn } from "@/lib/utils"
-import { WORKSPACE_PATH } from "@/lib/workspace/routes"
 
 type MyOrganizationEditorViewProps = {
   initialProfile: OrgProfile
@@ -18,9 +18,11 @@ type MyOrganizationEditorViewProps = {
   programs: OrgProgram[]
   initialTab?: ProfileTab
   initialProgramId?: string | null
+  initialProgramStep?: number | null
+  initialFocus?: string | null
+  initialEditMode?: boolean
   canEdit: boolean
   embedded?: boolean
-  onClose?: () => void
 }
 
 export function MyOrganizationEditorView({
@@ -29,12 +31,57 @@ export function MyOrganizationEditorView({
   programs,
   initialTab,
   initialProgramId,
+  initialProgramStep,
+  initialFocus,
+  initialEditMode = false,
   canEdit,
   embedded = false,
-  onClose,
 }: MyOrganizationEditorViewProps) {
-  const router = useRouter()
-  const handleClose = onClose ?? (() => router.push(WORKSPACE_PATH))
+  const scrollViewportRef = useRef<HTMLDivElement | null>(null)
+  const [hasScrollableOverflow, setHasScrollableOverflow] = useState(false)
+  const updateScrollableOverflow = useCallback(() => {
+    const viewport = scrollViewportRef.current
+    const next = Boolean(
+      viewport && viewport.scrollHeight > viewport.clientHeight + 1
+    )
+
+    setHasScrollableOverflow((current) => (current === next ? current : next))
+  }, [])
+
+  useEffect(() => {
+    const viewport = scrollViewportRef.current
+    if (!viewport) return
+
+    updateScrollableOverflow()
+    const frameId = window.requestAnimationFrame(updateScrollableOverflow)
+    window.addEventListener("resize", updateScrollableOverflow)
+
+    const resizeObserver =
+      typeof ResizeObserver === "undefined"
+        ? null
+        : new ResizeObserver(updateScrollableOverflow)
+    resizeObserver?.observe(viewport)
+    Array.from(viewport.children).forEach((child) =>
+      resizeObserver?.observe(child)
+    )
+
+    const mutationObserver =
+      typeof MutationObserver === "undefined"
+        ? null
+        : new MutationObserver(updateScrollableOverflow)
+    mutationObserver?.observe(viewport, {
+      childList: true,
+      characterData: true,
+      subtree: true,
+    })
+
+    return () => {
+      window.cancelAnimationFrame(frameId)
+      window.removeEventListener("resize", updateScrollableOverflow)
+      resizeObserver?.disconnect()
+      mutationObserver?.disconnect()
+    }
+  }, [updateScrollableOverflow])
 
   return (
     <div
@@ -44,8 +91,12 @@ export function MyOrganizationEditorView({
       )}
     >
       <section className="flex min-h-0 flex-1 flex-col gap-3">
-        <div
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        <ScrollFadeEffect
+          ref={scrollViewportRef}
+          enabled={hasScrollableOverflow}
+          data-organization-scroll-viewport="true"
+          data-scrollable={hasScrollableOverflow ? "true" : undefined}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain [--mask-height:1.5rem] [--scroll-buffer:1rem] [-webkit-overflow-scrolling:touch]"
           style={{ scrollbarGutter: "stable" }}
         >
           <OrgProfileCard
@@ -54,10 +105,12 @@ export function MyOrganizationEditorView({
             programs={programs}
             initialTab={initialTab}
             initialProgramId={initialProgramId}
+            initialProgramStep={initialProgramStep}
+            initialFocus={initialFocus}
+            initialEditMode={initialEditMode}
             canEdit={canEdit}
-            onClose={handleClose}
           />
-        </div>
+        </ScrollFadeEffect>
       </section>
     </div>
   )

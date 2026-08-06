@@ -15,6 +15,7 @@ import {
   readWorkspaceBoardUiPreferences,
   type WorkspaceBoardUiPreferenceScope,
   type WorkspaceCanvasViewportPreference,
+  WORKSPACE_CANVAS_VIEWPORT_LAYOUT_VERSION,
 } from "../../workspace-board-ui-preferences"
 
 type WorkspaceCanvasViewportPreferenceState = {
@@ -47,12 +48,26 @@ export function useWorkspaceCanvasViewportPreferences({
       loaded: false,
       viewport: null,
     })
+  const [viewportZoom, setViewportZoom] = useState(1)
 
   useEffect(() => {
     const preferences = readWorkspaceBoardUiPreferences(uiPreferencesScope)
+    const layoutMatches =
+      preferences.canvasViewportLayoutVersion ===
+      WORKSPACE_CANVAS_VIEWPORT_LAYOUT_VERSION
+    const canvasViewport = layoutMatches ? preferences.canvasViewport : null
+    if (canvasViewport) {
+      setViewportZoom(canvasViewport.zoom)
+    }
+    if (!layoutMatches) {
+      patchWorkspaceBoardUiPreferences(uiPreferencesScope, {
+        canvasViewport: null,
+        canvasViewportLayoutVersion: WORKSPACE_CANVAS_VIEWPORT_LAYOUT_VERSION,
+      })
+    }
     setCanvasViewportPreferenceState({
       loaded: true,
-      viewport: preferences.canvasViewport,
+      viewport: canvasViewport,
     })
   }, [uiPreferencesScope])
 
@@ -77,6 +92,7 @@ export function useWorkspaceCanvasViewportPreferences({
 
   const handleCanvasMoveEnd = useCallback<OnMoveEnd>(
     (_event, viewport) => {
+      setViewportZoom(viewport.zoom)
       if (!canvasViewportPreferenceState.loaded) return
       if (tutorialActive) return
       const canvasViewport =
@@ -85,6 +101,7 @@ export function useWorkspaceCanvasViewportPreferences({
 
       patchWorkspaceBoardUiPreferences(uiPreferencesScope, {
         canvasViewport,
+        canvasViewportLayoutVersion: WORKSPACE_CANVAS_VIEWPORT_LAYOUT_VERSION,
       })
     },
     [canvasViewportPreferenceState.loaded, tutorialActive, uiPreferencesScope]
@@ -92,7 +109,7 @@ export function useWorkspaceCanvasViewportPreferences({
 
   return {
     handleCanvasMoveEnd,
-    restoredViewportZoom: canvasViewportPreferenceState.viewport?.zoom ?? null,
+    viewportZoom,
     suppressInitialFit:
       !canvasViewportPreferenceState.loaded ||
       (!tutorialActive && canvasViewportPreferenceState.viewport !== null),

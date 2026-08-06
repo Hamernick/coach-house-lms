@@ -25,20 +25,20 @@ import {
 
 import type { WorkspaceCustomPeopleSegment } from "./workspace-canvas-people-segment-types"
 
-type WorkspacePeopleSegmentContentHeaderProps = {
+type WorkspacePeopleSegmentActionsProps = {
   segment: WorkspaceCustomPeopleSegment
   canManageSegments: boolean
   onEditSegment: (segmentId: string) => void
   onRemoveSegment: (segmentId: string) => void
 }
 
-export const WorkspacePeopleSegmentContentHeader = memo(
-  function WorkspacePeopleSegmentContentHeader({
+export const WorkspacePeopleSegmentActions = memo(
+  function WorkspacePeopleSegmentActions({
     segment,
     canManageSegments,
     onEditSegment,
     onRemoveSegment,
-  }: WorkspacePeopleSegmentContentHeaderProps) {
+  }: WorkspacePeopleSegmentActionsProps) {
     const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false)
     const handleConfirmRemoveSegment = useCallback(() => {
       onRemoveSegment(segment.id)
@@ -46,15 +46,7 @@ export const WorkspacePeopleSegmentContentHeader = memo(
     }, [onRemoveSegment, segment.id])
 
     return (
-      <div className="flex min-w-0 items-center justify-between gap-3">
-        <div className="min-w-0">
-          <h3 className="text-foreground truncate text-sm font-semibold">
-            {segment.label}
-          </h3>
-          <p className="text-muted-foreground text-xs">
-            {segment.count} {segment.count === 1 ? "person" : "people"}
-          </p>
-        </div>
+      <>
         {canManageSegments ? (
           <Popover>
             <PopoverTrigger asChild>
@@ -120,7 +112,7 @@ export const WorkspacePeopleSegmentContentHeader = memo(
             </AlertDialogContent>
           </AlertDialog>
         ) : null}
-      </div>
+      </>
     )
   }
 )

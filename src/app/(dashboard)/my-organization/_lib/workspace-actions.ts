@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto"
 import { revalidatePath } from "next/cache"
 
+import { canEditOrganization } from "@/lib/organization/active-org"
 import type { Json } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
@@ -10,7 +11,6 @@ import { createSupabaseServerClient } from "@/lib/supabase/server"
 import { normalizeWorkspaceBoardState } from "../_components/workspace-board/workspace-board-layout"
 import type {
   WorkspaceBoardState,
-  WorkspaceCardId,
   WorkspaceCollaborationInvite,
   WorkspaceDurationUnit,
 } from "../_components/workspace-board/workspace-board-types"
@@ -18,6 +18,13 @@ import {
   buildWorkspaceBoardStateWithPersistedNodePosition,
   mergeNewerPersistedWorkspaceNodeState,
 } from "./workspace-board-state-persistence"
+import type {
+  WorkspaceBoardActionResult,
+  WorkspaceCollaborationActionResult,
+  WorkspaceNodePositionActionInput,
+  WorkspaceRevokeActionResult,
+  WorkspaceTutorialActionResult,
+} from "./workspace-action-types"
 import {
   buildWorkspaceInviteExpiry,
   canInviteWorkspaceCollaborators,
@@ -32,43 +39,32 @@ import {
   resolveProfileDisplayName,
   resolveWorkspaceInviteTarget,
   resolveWorkspaceOrganizationName,
-  canEditWorkspaceLayout,
 } from "./workspace-actions-support"
-
-type WorkspaceBoardActionResult =
-  | { ok: true; boardState: WorkspaceBoardState }
-  | { error: string }
-
-type WorkspaceNodePositionActionInput = {
-  boardState: WorkspaceBoardState
-  cardId: WorkspaceCardId
-  x: number
-  y: number
-}
-
-type WorkspaceCollaborationActionResult =
-  | {
-      ok: true
-      invite: WorkspaceCollaborationInvite
-      invites: WorkspaceCollaborationInvite[]
-      inviteWasAlreadyActive?: boolean
-      notificationSent?: boolean
-    }
-  | { error: string }
-
-type WorkspaceRevokeActionResult =
-  | {
-      ok: true
-      invites: WorkspaceCollaborationInvite[]
-    }
-  | { error: string }
-
-type WorkspaceTutorialActionResult = { ok: true } | { error: string }
 
 function revalidateWorkspaceBoardRoutes() {
   revalidatePath("/workspace")
   revalidatePath("/my-organization")
   revalidatePath("/organization/workspace")
+}
+
+async function canEditWorkspaceLayout({
+  activeOrgRole,
+  supabase,
+  userId,
+}: {
+  activeOrgRole: Parameters<typeof canEditOrganization>[0]
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>
+  userId: string
+}) {
+  if (canEditOrganization(activeOrgRole)) return true
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", userId)
+    .maybeSingle<{ role: string | null }>()
+
+  return profile?.role === "admin"
 }
 
 export async function saveWorkspaceBoardStateAction(

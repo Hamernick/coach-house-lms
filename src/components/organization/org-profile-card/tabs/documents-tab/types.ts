@@ -9,11 +9,22 @@ export type DocumentDefinition = {
   category: string
 }
 
-export type DocumentStatus = "missing" | "not_started" | "in_progress" | "ready" | "published"
+export type DocumentStatus =
+  | "missing"
+  | "not_started"
+  | "in_progress"
+  | "ready"
+  | "published"
 export type DocumentSource = "upload" | "policy" | "roadmap"
 export type DocumentVisibility = "private" | "public"
 
-export type SortColumn = "status" | "name" | "category" | "source" | "visibility" | "updatedAt"
+export type SortColumn =
+  | "status"
+  | "name"
+  | "category"
+  | "source"
+  | "visibility"
+  | "updatedAt"
 export type SortDirection = "asc" | "desc"
 
 export type DocumentsRoadmapSection = {
@@ -92,6 +103,7 @@ export type DocumentsTabProps = {
   publicSlug?: string | null
   editMode: boolean
   canEdit: boolean
+  initialFocusKey?: string | null
 }
 
 export type PolicyDraft = {

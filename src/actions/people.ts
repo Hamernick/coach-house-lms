@@ -9,21 +9,38 @@ import {
   type PersonCategory,
 } from "@/lib/people/categories"
 import {
+  findPersonSocialLinkError,
+  normalizePersonSocialLinks,
+  type PersonSocialPlatform,
+} from "@/lib/people/social-links"
+import { mutateOrganizationPeopleProfile } from "@/lib/people/profile-write"
+import { fetchLinkedInProfileImage } from "@/lib/people/linkedin-image-refresh"
+import { normalizePersonTags } from "@/lib/people/tags"
+import {
   canEditOrganization,
   resolveActiveOrganization,
 } from "@/lib/organization/active-org"
+import { isWorkspaceFoundationRolloutEnabled } from "@/lib/workspace/foundation-rollout"
 
 export type OrgPerson = {
   id: string
   name: string
   title?: string | null
   email?: string | null
-  linkedin?: string | null
   category: PersonCategory
   image?: string | null
   reportsToId?: string | null
   pos?: { x: number; y: number } | null
-}
+  tags?: string[]
+} & Partial<Record<PersonSocialPlatform, string | null>>
+
+const EXTENDED_PERSON_SOCIAL_PLATFORMS = [
+  "instagram",
+  "facebook",
+  "twitter",
+  "youtube",
+  "tiktok",
+] as const satisfies readonly PersonSocialPlatform[]
 
 function resolvePeopleAvatarCleanupPath(
   previous: string | null | undefined,
@@ -66,43 +83,15 @@ async function resolvePeopleManagementAccess(
   }
 }
 
-async function fetchLinkedInImage(url: string): Promise<string | null> {
-  try {
-    const u = url.startsWith("http")
-      ? url
-      : `https://www.linkedin.com/in/${url.replace(/^\//, "")}`
-    const ctrl = new AbortController()
-    const timer = setTimeout(() => ctrl.abort(), 5000)
-    const res = await fetch(u, {
-      signal: ctrl.signal,
-      headers: {
-        "user-agent":
-          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0 Safari/537.36",
-        accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-      },
-      cache: "no-store",
-    })
-    clearTimeout(timer)
-    if (!res.ok) return null
-    const html = await res.text()
-    const og = html.match(
-      /<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["'][^>]*>/i
-    )
-    if (og && og[1]) return og[1]
-    const tw = html.match(
-      /<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["'][^>]*>/i
-    )
-    if (tw && tw[1]) return tw[1]
-    return null
-  } catch {
-    return null
-  }
-}
-
 export async function upsertPersonAction(
   person: Omit<OrgPerson, "id"> & { id?: string }
 ) {
+  const extendedSocialWriteRequested = EXTENDED_PERSON_SOCIAL_PLATFORMS.some(
+    (platform) => person[platform] !== undefined
+  )
+  const socialLinkError = findPersonSocialLinkError(person)
+  if (socialLinkError) return { error: socialLinkError }
+
   const { supabase, session } = await requireServerSession("/people")
   const userId = session.user.id
   const { orgId, canManagePeople } = await resolvePeopleManagementAccess(
@@ -110,28 +99,18 @@ export async function upsertPersonAction(
     userId
   )
   if (!canManagePeople) return { error: "Forbidden" }
-
-  const { data: orgRow, error: orgErr } = await supabase
-    .from("organizations")
-    .select("profile")
-    .eq("user_id", orgId)
-    .maybeSingle<{ profile: Record<string, unknown> | null }>()
-  if (orgErr) return { error: orgErr.message }
-
-  const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
-  const arr = Array.isArray(profile.org_people)
-    ? (profile.org_people as OrgPerson[])
-    : []
+  if (
+    extendedSocialWriteRequested &&
+    !isWorkspaceFoundationRolloutEnabled({ orgId, userId })
+  ) {
+    return { error: "Not available." }
+  }
 
   const id =
     person.id && person.id.length > 0
       ? person.id
       : globalThis.crypto?.randomUUID?.() || `${Date.now()}`
   let image = person.image?.trim() || null
-  if (!image && person.linkedin) {
-    const scraped = await fetchLinkedInImage(person.linkedin)
-    if (scraped) image = scraped
-  }
 
   // If we have an external image URL, mirror it into storage for reliability
   if (image && /^https?:/i.test(image)) {
@@ -152,10 +131,6 @@ export async function upsertPersonAction(
           : contentType.includes("webp")
             ? "webp"
             : "jpg"
-        const id =
-          person.id && person.id.length > 0
-            ? person.id
-            : globalThis.crypto?.randomUUID?.() || `${Date.now()}`
         const objectPath = `users/${orgId}/${id}.${ext}`
         await admin.storage.from(bucket).upload(objectPath, arrayBuf, {
           contentType,
@@ -168,43 +143,64 @@ export async function upsertPersonAction(
   }
 
   const normalizedCategory = normalizeCategory(person.category)
-  const nextItem: OrgPerson = {
-    id,
-    name: person.name?.trim() || "Untitled",
-    title: person.title?.trim() || null,
-    email: person.email?.trim() || null,
-    linkedin: person.linkedin?.trim() || null,
-    category: normalizedCategory,
-    image,
-    reportsToId:
-      canAssignManager(normalizedCategory) &&
-      person.reportsToId &&
-      person.reportsToId !== id
-        ? person.reportsToId
-        : null,
-    pos: null,
-  }
+  const writeResult = await mutateOrganizationPeopleProfile<
+    OrgPerson,
+    { id: string; previousImage: string | null; nextImage: string | null }
+  >({
+    supabase,
+    orgId,
+    mutate: (people) => {
+      const existingIndex = people.findIndex((item) => item.id === id)
+      if (person.id && existingIndex < 0) {
+        return { error: "Person not found." }
+      }
 
-  const existingIdx = arr.findIndex((p) => p.id === id)
-  const prevImage =
-    existingIdx >= 0 && typeof arr[existingIdx]?.image === "string"
-      ? arr[existingIdx]?.image
-      : null
-  if (existingIdx >= 0) {
-    const prev = arr[existingIdx]
-    if (prev?.pos && !nextItem.pos) nextItem.pos = prev.pos
-    arr[existingIdx] = nextItem
-  } else arr.push(nextItem)
+      const existingPerson = existingIndex >= 0 ? people[existingIndex] : null
+      const socialLinks = normalizePersonSocialLinks(person, existingPerson)
+      const nextItem: OrgPerson = {
+        id,
+        name: person.name?.trim() || "Untitled",
+        title: person.title?.trim() || null,
+        email: person.email?.trim() || null,
+        ...socialLinks,
+        category: normalizedCategory,
+        image,
+        reportsToId:
+          canAssignManager(normalizedCategory) &&
+          person.reportsToId &&
+          person.reportsToId !== id
+            ? person.reportsToId
+            : null,
+        pos: existingPerson?.pos ?? null,
+        tags:
+          person.tags === undefined
+            ? normalizePersonTags(existingPerson?.tags)
+            : normalizePersonTags(person.tags),
+      }
+      const nextPeople = [...people]
+      if (existingIndex >= 0) nextPeople[existingIndex] = nextItem
+      else nextPeople.push(nextItem)
 
-  const nextProfile = { ...profile, org_people: arr }
-  const { error: upsertErr } = await supabase
-    .from("organizations")
-    .upsert({ user_id: orgId, profile: nextProfile }, { onConflict: "user_id" })
-  if (upsertErr) return { error: upsertErr.message }
+      return {
+        ok: true,
+        changed: true,
+        people: nextPeople,
+        value: {
+          id,
+          previousImage:
+            typeof existingPerson?.image === "string"
+              ? existingPerson.image
+              : null,
+          nextImage: nextItem.image ?? null,
+        },
+      }
+    },
+  })
+  if ("error" in writeResult) return writeResult
 
   const cleanupPath = resolvePeopleAvatarCleanupPath(
-    prevImage,
-    nextItem.image,
+    writeResult.value.previousImage,
+    writeResult.value.nextImage,
     orgId
   )
   if (cleanupPath) {
@@ -214,8 +210,110 @@ export async function upsertPersonAction(
     } catch {}
   }
 
+  revalidatePath("/my-organization")
+  revalidatePath("/workspace")
   revalidatePath("/people")
-  return { ok: true, id }
+  return { ok: true, id: writeResult.value.id }
+}
+
+export async function updatePersonCategoryAction(
+  id: string,
+  category: PersonCategory
+): Promise<{ ok: true } | { error: string }> {
+  const personId = id.trim()
+  if (!personId) return { error: "Person not found." }
+  if (normalizeCategory(category) !== category) {
+    return { error: "Choose a valid relationship." }
+  }
+
+  const { supabase, session } = await requireServerSession("/my-organization")
+  const { orgId, canManagePeople } = await resolvePeopleManagementAccess(
+    supabase,
+    session.user.id
+  )
+  if (!canManagePeople) return { error: "Forbidden" }
+  if (
+    !isWorkspaceFoundationRolloutEnabled({
+      orgId,
+      userId: session.user.id,
+    })
+  ) {
+    return { error: "Not available." }
+  }
+
+  const writeResult = await mutateOrganizationPeopleProfile<OrgPerson, null>({
+    supabase,
+    orgId,
+    mutate: (people) => {
+      const person = people.find((item) => item.id === personId)
+      if (!person) return { error: "Person not found." }
+      if (person.category === category) {
+        return { ok: true, changed: false, value: null }
+      }
+      return {
+        ok: true,
+        changed: true,
+        people: people.map((item) =>
+          item.id === personId ? { ...item, category } : item
+        ),
+        value: null,
+      }
+    },
+  })
+  if ("error" in writeResult) return writeResult
+
+  revalidatePath("/my-organization")
+  revalidatePath("/workspace")
+  revalidatePath("/people")
+  return { ok: true }
+}
+
+export async function updatePersonTagsAction(
+  id: string,
+  tags: string[]
+): Promise<{ ok: true; tags: string[] } | { error: string }> {
+  const personId = id.trim()
+  if (!personId) return { error: "Person not found." }
+  const normalizedTags = normalizePersonTags(tags)
+
+  const { supabase, session } = await requireServerSession("/my-organization")
+  const { orgId, canManagePeople } = await resolvePeopleManagementAccess(
+    supabase,
+    session.user.id
+  )
+  if (!canManagePeople) return { error: "Forbidden" }
+  if (
+    !isWorkspaceFoundationRolloutEnabled({
+      orgId,
+      userId: session.user.id,
+    })
+  ) {
+    return { error: "Not available." }
+  }
+
+  const writeResult = await mutateOrganizationPeopleProfile<OrgPerson, null>({
+    supabase,
+    orgId,
+    mutate: (people) => {
+      if (!people.some((item) => item.id === personId)) {
+        return { error: "Person not found." }
+      }
+      return {
+        ok: true,
+        changed: true,
+        people: people.map((item) =>
+          item.id === personId ? { ...item, tags: normalizedTags } : item
+        ),
+        value: null,
+      }
+    },
+  })
+  if ("error" in writeResult) return writeResult
+
+  revalidatePath("/my-organization")
+  revalidatePath("/workspace")
+  revalidatePath("/people")
+  return { ok: true, tags: normalizedTags }
 }
 
 export async function deletePersonAction(id: string) {
@@ -228,37 +326,43 @@ export async function deletePersonAction(id: string) {
   if (!canManagePeople) return { error: "Forbidden" }
   if (id === userId)
     return { error: "You cannot remove your own profile from People." }
-  const { data: orgRow, error: orgErr } = await supabase
-    .from("organizations")
-    .select("profile")
-    .eq("user_id", orgId)
-    .maybeSingle<{ profile: Record<string, unknown> | null }>()
-  if (orgErr) return { error: orgErr.message }
+  const writeResult = await mutateOrganizationPeopleProfile<
+    OrgPerson,
+    { cleanupPath: string | null }
+  >({
+    supabase,
+    orgId,
+    mutate: (people) => {
+      const target = people.find((person) => person.id === id)
+      if (!target) return { error: "Person not found." }
+      return {
+        ok: true,
+        changed: true,
+        people: people
+          .filter((person) => person.id !== id)
+          .map((person) =>
+            person.reportsToId === id
+              ? { ...person, reportsToId: null }
+              : person
+          ),
+        value: {
+          cleanupPath: resolvePeopleAvatarCleanupPath(
+            typeof target.image === "string" ? target.image : null,
+            null,
+            orgId
+          ),
+        },
+      }
+    },
+  })
+  if ("error" in writeResult) return writeResult
 
-  const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
-  const arr = Array.isArray(profile.org_people)
-    ? (profile.org_people as OrgPerson[])
-    : []
-  const target = arr.find((p) => p.id === id)
-  if (!target) return { error: "Person not found." }
-  const cleanupPath = resolvePeopleAvatarCleanupPath(
-    typeof target?.image === "string" ? target.image : null,
-    null,
-    orgId
-  )
-  const next = arr
-    .filter((p) => p.id !== id)
-    .map((p) => (p.reportsToId === id ? { ...p, reportsToId: null } : p))
-  const nextProfile = { ...profile, org_people: next }
-  const { error: upsertErr } = await supabase
-    .from("organizations")
-    .upsert({ user_id: orgId, profile: nextProfile }, { onConflict: "user_id" })
-  if (upsertErr) return { error: upsertErr.message }
-
-  if (cleanupPath) {
+  if (writeResult.value.cleanupPath) {
     try {
       const admin = createSupabaseAdminClient()
-      await admin.storage.from("avatars").remove([cleanupPath])
+      await admin.storage
+        .from("avatars")
+        .remove([writeResult.value.cleanupPath])
     } catch {}
   }
   revalidatePath("/people")
@@ -267,60 +371,81 @@ export async function deletePersonAction(id: string) {
 
 export async function refreshPersonLinkedInImageAction(id: string) {
   const { supabase, session } = await requireServerSession("/people")
-  const userId = session.user.id
   const { orgId, canManagePeople } = await resolvePeopleManagementAccess(
     supabase,
-    userId
+    session.user.id
   )
   if (!canManagePeople) return { error: "Forbidden" }
 
-  const { data: orgRow, error: orgErr } = await supabase
+  const { data: orgRow, error: orgError } = await supabase
     .from("organizations")
     .select("profile")
     .eq("user_id", orgId)
     .maybeSingle<{ profile: Record<string, unknown> | null }>()
-  if (orgErr) return { error: orgErr.message }
+  if (orgError) return { error: orgError.message }
 
-  const profile = (orgRow?.profile ?? {}) as Record<string, unknown>
-  const arr = Array.isArray(profile.org_people)
-    ? (profile.org_people as OrgPerson[])
+  const people = Array.isArray(orgRow?.profile?.org_people)
+    ? (orgRow.profile.org_people as OrgPerson[])
     : []
-  const person = arr.find((p) => p.id === id)
+  const person = people.find((item) => item.id === id)
   if (!person) return { error: "Not found" }
   if (!person.linkedin) return { error: "LinkedIn not set" }
 
-  const imageUrl = await fetchLinkedInImage(person.linkedin)
-  if (!imageUrl) return { error: "Could not fetch image" }
+  let linkedInImage
+  try {
+    linkedInImage = await fetchLinkedInProfileImage(person.linkedin)
+  } catch {
+    return { error: "Could not fetch image" }
+  }
 
-  // Upload to storage
   try {
     const admin = createSupabaseAdminClient()
     const bucket = "avatars"
     const { data: existing } = await admin.storage.getBucket(bucket)
     if (!existing) await admin.storage.createBucket(bucket, { public: false })
-    const res = await fetch(imageUrl, { cache: "no-store" })
-    if (!res.ok) return { error: "Fetch failed" }
-    const arrayBuf = await res.arrayBuffer()
-    const contentType = res.headers.get("content-type") || "image/jpeg"
-    const ext = contentType.includes("png")
-      ? "png"
-      : contentType.includes("webp")
-        ? "webp"
-        : "jpg"
-    const objectPath = `users/${orgId}/${id}.${ext}`
-    await admin.storage
-      .from(bucket)
-      .upload(objectPath, arrayBuf, { contentType, upsert: true })
-    person.image = objectPath
-    const next = arr.map((p) => (p.id === id ? person : p))
-    const nextProfile = { ...profile, org_people: next }
-    const { error: upsertErr } = await supabase
-      .from("organizations")
-      .upsert(
-        { user_id: orgId, profile: nextProfile },
-        { onConflict: "user_id" }
-      )
-    if (upsertErr) return { error: upsertErr.message }
+    const contentType = linkedInImage.contentType
+    const extension =
+      contentType === "image/png"
+        ? "png"
+        : contentType === "image/webp"
+          ? "webp"
+          : contentType === "image/gif"
+            ? "gif"
+            : contentType === "image/avif"
+              ? "avif"
+              : "jpg"
+    const objectPath = `users/${orgId}/${id}.${extension}`
+    await admin.storage.from(bucket).upload(objectPath, linkedInImage.bytes, {
+      contentType,
+      upsert: true,
+    })
+
+    const writeResult = await mutateOrganizationPeopleProfile<OrgPerson, null>({
+      supabase,
+      orgId,
+      mutate: (currentPeople) => {
+        const currentPerson = currentPeople.find((item) => item.id === id)
+        if (!currentPerson) return { error: "Not found" }
+        if (currentPerson.linkedin !== person.linkedin) {
+          return { error: "LinkedIn changed. Reload before refreshing." }
+        }
+        return {
+          ok: true,
+          changed: true,
+          people: currentPeople.map((item) =>
+            item.id === id ? { ...item, image: objectPath } : item
+          ),
+          value: null,
+        }
+      },
+    })
+    if ("error" in writeResult) {
+      await admin.storage.from(bucket).remove([objectPath])
+      return writeResult
+    }
+
+    revalidatePath("/my-organization")
+    revalidatePath("/workspace")
     revalidatePath("/people")
     return { ok: true }
   } catch {

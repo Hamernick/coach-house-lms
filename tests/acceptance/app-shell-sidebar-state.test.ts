@@ -37,7 +37,6 @@ describe("app shell sidebar state", () => {
     const layoutPaths = [
       "src/app/(dashboard)/layout.tsx",
       "src/app/(admin)/layout.tsx",
-      "src/app/(accelerator)/layout.tsx",
       "src/app/(internal)/layout.tsx",
     ]
 

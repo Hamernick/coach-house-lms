@@ -11,12 +11,15 @@ export function useAppShellRightRailState({
   isMobile: boolean
   autoOpenOnDesktopWhenAvailable?: boolean
 }) {
-  const [rightOpen, setRightOpen] = useState(() => {
-    if (typeof window === "undefined") return false
-    return window.innerWidth >= 768
-  })
+  const [rightOpen, setRightOpen] = useState(false)
+  const initiallyAvailableRef = useRef(hasRightRail)
   const rightRailPreferenceRef = useRef<"open" | "closed" | null>(null)
   const wasMobileRef = useRef(isMobile)
+
+  useEffect(() => {
+    if (!initiallyAvailableRef.current || window.innerWidth < 768) return
+    setRightOpen(true)
+  }, [])
 
   useEffect(() => {
     if (!hasRightRail) {
@@ -46,7 +49,10 @@ export function useAppShellRightRailState({
     wasMobileRef.current = isMobile
   }, [isMobile])
 
-  const handleRightOpenChange = (open: boolean, source: "user" | "auto" = "user") => {
+  const handleRightOpenChange = (
+    open: boolean,
+    source: "user" | "auto" = "user"
+  ) => {
     if (source === "user") {
       rightRailPreferenceRef.current = open ? "open" : "closed"
     }
@@ -55,7 +61,9 @@ export function useAppShellRightRailState({
 
   return {
     rightOpen,
-    handleRightOpenChangeUser: (open: boolean) => handleRightOpenChange(open, "user"),
-    handleRightOpenChangeAuto: (open: boolean) => handleRightOpenChange(open, "auto"),
+    handleRightOpenChangeUser: (open: boolean) =>
+      handleRightOpenChange(open, "user"),
+    handleRightOpenChangeAuto: (open: boolean) =>
+      handleRightOpenChange(open, "auto"),
   }
 }

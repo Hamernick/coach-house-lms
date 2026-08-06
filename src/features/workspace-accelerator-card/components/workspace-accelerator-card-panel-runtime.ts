@@ -3,11 +3,16 @@
 import { useEffect, useRef } from "react"
 
 import { useWorkspaceAcceleratorCardController } from "../hooks/use-workspace-accelerator-card-controller"
-import { areWorkspaceAcceleratorRuntimeSnapshotsEqual } from "../lib"
+import {
+  areWorkspaceAcceleratorRuntimeSnapshotsEqual,
+  isWorkspaceAcceleratorControllerStepVisible,
+} from "../lib"
 import type {
   WorkspaceAcceleratorCardInput,
   WorkspaceAcceleratorCardRuntimeActions,
   WorkspaceAcceleratorCardRuntimeSnapshot,
+  WorkspaceAcceleratorCardStep,
+  WorkspaceAcceleratorOpenStepRequest,
 } from "../types"
 
 export function buildAcceleratorRuntimeSnapshot(args: {
@@ -106,10 +111,7 @@ export function buildWorkspaceAcceleratorControllerInput(
   input: WorkspaceAcceleratorCardInput
 ): WorkspaceAcceleratorCardInput {
   const visibleSteps = input.steps.filter(
-    (step) =>
-      (step.stepKind !== "lesson" ||
-        Boolean(step.moduleContext?.workspaceOnboarding)) &&
-      step.stepKind !== "complete"
+    isWorkspaceAcceleratorControllerStepVisible
   )
   if (visibleSteps.length === input.steps.length) return input
   const visibleStepIds = new Set(visibleSteps.map((step) => step.id))
@@ -126,6 +128,23 @@ export function buildWorkspaceAcceleratorControllerInput(
       (stepId) => visibleStepIds.has(stepId)
     ),
   }
+}
+
+export function isWorkspaceAcceleratorOpenStepRequestFulfilled({
+  request,
+  currentStep,
+  isModuleViewerOpen,
+}: {
+  request: WorkspaceAcceleratorOpenStepRequest | null
+  currentStep: Pick<WorkspaceAcceleratorCardStep, "id" | "moduleId"> | null
+  isModuleViewerOpen: boolean
+}) {
+  return Boolean(
+    request &&
+    currentStep?.id === request.stepId &&
+    currentStep.moduleId === request.moduleId &&
+    isModuleViewerOpen
+  )
 }
 
 export function useWorkspaceAcceleratorRuntimeSync({

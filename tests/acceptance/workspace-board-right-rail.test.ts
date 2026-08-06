@@ -50,7 +50,7 @@ const COMPLETE_FUNDRAISING_STRATEGY_SECTION = {
 } satisfies RoadmapSection
 
 describe("workspace board right rail", () => {
-  it("keeps only strategic roadmap after team access moves to the header", () => {
+  it("keeps only roadmap navigation after team access moves to the header", () => {
     const markup = renderToStaticMarkup(
       React.createElement(WorkspaceBoardRightRailContent, {
         roadmapSections: [ROADMAP_SECTION],
@@ -58,7 +58,7 @@ describe("workspace board right rail", () => {
     )
 
     expect(markup).not.toContain("Team Access")
-    expect(markup).toContain("Strategic Roadmap")
+    expect(markup).toContain("Core Documents")
     expect(markup).toContain("Origin Story")
     expect(markup).toContain("pt-10")
     expect(markup).toContain("md:-mt-2")

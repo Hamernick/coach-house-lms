@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import type { NodeChange } from "reactflow"
 
+import { buildWorkspaceOntologyEmphasisResolver } from "../../src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-ontology-emphasis"
 import { applyWorkspaceOntologySelectionChanges } from "../../src/app/(dashboard)/my-organization/_components/workspace-board/workspace-canvas-v2/components/workspace-canvas-ontology-selection"
 
 describe("workspace ontology selection", () => {
@@ -40,5 +41,41 @@ describe("workspace ontology selection", () => {
     })
 
     expect(result).toBe(selectedIds)
+  })
+
+  it("keeps the active path and its immediate actions while dimming siblings", () => {
+    const resolveEmphasis = buildWorkspaceOntologyEmphasisResolver(
+      ["ontology:organization:formation"],
+      "organization-overview"
+    )
+
+    expect(
+      resolveEmphasis({
+        id: "ontology:organization:formation",
+        parentId: "organization-overview",
+        rootId: "organization-overview",
+      })
+    ).toEqual({ active: true, dimmed: false })
+    expect(
+      resolveEmphasis({
+        id: "ontology:organization:file",
+        parentId: "ontology:organization:formation",
+        rootId: "organization-overview",
+      }).dimmed
+    ).toBe(false)
+    expect(
+      resolveEmphasis({
+        id: "ontology:organization:programs",
+        parentId: "organization-overview",
+        rootId: "organization-overview",
+      }).dimmed
+    ).toBe(true)
+    expect(
+      resolveEmphasis({
+        id: "ontology:accelerator:start",
+        parentId: "accelerator",
+        rootId: "accelerator",
+      }).dimmed
+    ).toBe(true)
   })
 })

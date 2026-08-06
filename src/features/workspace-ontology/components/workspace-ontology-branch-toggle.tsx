@@ -27,7 +27,11 @@ const WORKSPACE_ONTOLOGY_BRANCH_TOGGLE_REACT_GRAB_PROPS =
 export function resolveWorkspaceOntologyBranchTogglePresentation(
   control: Pick<
     WorkspaceOntologyRootControl,
-    "attentionCount" | "completedCount" | "descendantCount" | "expanded"
+    | "attentionCount"
+    | "completedCount"
+    | "descendantCount"
+    | "expanded"
+    | "mode"
   >
 ) {
   const completedCount = Math.min(
@@ -42,6 +46,13 @@ export function resolveWorkspaceOntologyBranchTogglePresentation(
   const activeCount =
     control.attentionCount > 0 ? control.attentionCount : remainingCount
 
+  if (control.mode === "map") {
+    return {
+      actionLabel: "Focus",
+      count: activeCount,
+      accessibleLabel: `Focus this branch with ${remainingCount} remaining items${prioritySuffix}`,
+    }
+  }
   if (control.expanded) {
     return {
       actionLabel: "Hide setup",
@@ -87,7 +98,7 @@ export function WorkspaceOntologyBranchToggle({
       type="button"
       variant="outline"
       size="sm"
-      className="group/branch workspace-ontology-branch-toggle nodrag nopan bg-background/95 text-foreground hover:bg-background hover:text-foreground dark:bg-background/90 dark:hover:bg-background/95 h-12 touch-manipulation gap-1.5 rounded-full pr-3 pl-0.5 text-sm shadow-sm backdrop-blur-md transition-[background-color,border-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] motion-reduce:transform-none motion-reduce:transition-none sm:h-10 sm:pr-2.5 sm:pl-0.5"
+      className="group/branch workspace-ontology-branch-toggle nodrag nopan bg-background text-foreground hover:bg-background hover:text-foreground dark:bg-background dark:hover:bg-background h-12 touch-manipulation gap-1.5 rounded-full pr-3 pl-0.5 text-sm shadow-sm transition-[border-color,box-shadow,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97] motion-reduce:transform-none motion-reduce:transition-none sm:h-10 sm:pr-2.5 sm:pl-0.5"
       data-workspace-ontology-branch-toggle="true"
       data-state={control.expanded ? "expanded" : "collapsed"}
       aria-label={`${label}: ${presentation.accessibleLabel}`}

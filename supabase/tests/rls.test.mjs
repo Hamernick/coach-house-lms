@@ -777,6 +777,8 @@ async function run() {
 
   let orgAccessReady = false
   let workspaceTablesAvailable = false
+  let organizationPeopleSegmentsAvailable = false
+  let organizationPeopleTagsAvailable = false
   let workspaceCommunicationsTableAvailable = false
   let workspaceCommunicationChannelsTableAvailable = false
   let workspaceCommunicationDeliveriesTableAvailable = false
@@ -2171,6 +2173,36 @@ async function run() {
       passed: workspaceTablesAvailable,
     })
 
+    const { error: peopleSegmentsProbeError } = await memberClient
+      .from("organization_people_segments")
+      .select("id")
+      .limit(1)
+    const { error: peopleSegmentMembersProbeError } = await memberClient
+      .from("organization_people_segment_members")
+      .select("segment_id")
+      .limit(1)
+    organizationPeopleSegmentsAvailable =
+      !peopleSegmentsProbeError && !peopleSegmentMembersProbeError
+    results.push({
+      name: "organization people segment tables available",
+      passed: organizationPeopleSegmentsAvailable,
+    })
+
+    const { error: peopleTagsProbeError } = await memberClient
+      .from("organization_people_tags")
+      .select("id")
+      .limit(1)
+    const { error: peopleTagMembersProbeError } = await memberClient
+      .from("organization_people_tag_members")
+      .select("tag_id")
+      .limit(1)
+    organizationPeopleTagsAvailable =
+      !peopleTagsProbeError && !peopleTagMembersProbeError
+    results.push({
+      name: "organization people tag tables available",
+      passed: organizationPeopleTagsAvailable,
+    })
+
     if (workspaceTablesAvailable) {
       const { error: workspaceCommunicationsProbeError } = await memberClient
         .from("organization_workspace_communications")
@@ -2194,6 +2226,153 @@ async function run() {
         workspaceCommunicationDeliveriesTableAvailable =
           !workspaceDeliveryProbeError
       }
+    }
+  }
+
+  if (orgAccessReady && organizationPeopleSegmentsAvailable) {
+    const { data: staffSegment, error: staffSegmentError } = await staffClient
+      .from("organization_people_segments")
+      .insert({
+        org_id: member.id,
+        label: `Donors ${suffix}`,
+        created_by: staff.id,
+      })
+      .select("id")
+      .maybeSingle()
+    results.push({
+      name: "staff can create organization people segments",
+      passed: !!staffSegment && !staffSegmentError,
+    })
+
+    if (staffSegment) {
+      const { data: boardReadsSegment, error: boardReadsSegmentError } =
+        await boardClient
+          .from("organization_people_segments")
+          .select("id")
+          .eq("id", staffSegment.id)
+          .maybeSingle()
+      results.push({
+        name: "board can read organization people segments",
+        passed: !!boardReadsSegment && !boardReadsSegmentError,
+      })
+
+      const { data: boardCreatesSegment, error: boardCreatesSegmentError } =
+        await boardClient
+          .from("organization_people_segments")
+          .insert({ org_id: member.id, label: `Denied ${suffix}` })
+          .select("id")
+      results.push({
+        name: "board cannot create organization people segments",
+        passed:
+          !!boardCreatesSegmentError ||
+          (Array.isArray(boardCreatesSegment) &&
+            boardCreatesSegment.length === 0),
+      })
+
+      const { data: staffMember, error: staffMemberError } = await staffClient
+        .from("organization_people_segment_members")
+        .insert({
+          segment_id: staffSegment.id,
+          person_id: member.id,
+          added_by: staff.id,
+        })
+        .select("person_id")
+        .maybeSingle()
+      results.push({
+        name: "staff can add organization people segment members",
+        passed: !!staffMember && !staffMemberError,
+      })
+
+      const { data: boardAddsMember, error: boardAddsMemberError } =
+        await boardClient
+          .from("organization_people_segment_members")
+          .insert({
+            segment_id: staffSegment.id,
+            person_id: board.id,
+            added_by: board.id,
+          })
+          .select("person_id")
+      results.push({
+        name: "board cannot add organization people segment members",
+        passed:
+          !!boardAddsMemberError ||
+          (Array.isArray(boardAddsMember) && boardAddsMember.length === 0),
+      })
+    }
+  }
+
+  if (orgAccessReady && organizationPeopleTagsAvailable) {
+    const { data: staffTag, error: staffTagError } = await staffClient
+      .from("organization_people_tags")
+      .insert({
+        org_id: member.id,
+        label: `Priority ${suffix}`,
+        color: "violet",
+        created_by: staff.id,
+      })
+      .select("id,color")
+      .maybeSingle()
+    results.push({
+      name: "staff can create colored organization people tags",
+      passed: !!staffTag && staffTag.color === "violet" && !staffTagError,
+    })
+
+    if (staffTag) {
+      const { data: boardReadsTag, error: boardReadsTagError } =
+        await boardClient
+          .from("organization_people_tags")
+          .select("id")
+          .eq("id", staffTag.id)
+          .maybeSingle()
+      results.push({
+        name: "board can read organization people tags",
+        passed: !!boardReadsTag && !boardReadsTagError,
+      })
+
+      const { data: boardUpdatesTag, error: boardUpdatesTagError } =
+        await boardClient
+          .from("organization_people_tags")
+          .update({ color: "red" })
+          .eq("id", staffTag.id)
+          .select("id")
+      results.push({
+        name: "board cannot update organization people tags",
+        passed:
+          !!boardUpdatesTagError ||
+          (Array.isArray(boardUpdatesTag) && boardUpdatesTag.length === 0),
+      })
+
+      const { data: staffTagMember, error: staffTagMemberError } =
+        await staffClient
+          .from("organization_people_tag_members")
+          .insert({
+            tag_id: staffTag.id,
+            person_id: member.id,
+            added_by: staff.id,
+          })
+          .select("person_id")
+          .maybeSingle()
+      results.push({
+        name: "staff can add organization people tag members",
+        passed: !!staffTagMember && !staffTagMemberError,
+      })
+
+      const { data: boardAddsTagMember, error: boardAddsTagMemberError } =
+        await boardClient
+          .from("organization_people_tag_members")
+          .insert({
+            tag_id: staffTag.id,
+            person_id: board.id,
+            added_by: board.id,
+          })
+          .select("person_id")
+      results.push({
+        name: "board cannot add organization people tag members",
+        passed:
+          !!boardAddsTagMemberError ||
+          (Array.isArray(boardAddsTagMember) &&
+            boardAddsTagMember.length === 0),
+      })
     }
   }
 

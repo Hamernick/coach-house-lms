@@ -32,7 +32,9 @@ export function useWorkspaceOntologyRootControls({
       const descendantCount = descendantCounts.get(root.id) ?? 0
       if (descendantCount === 0) continue
       controls[root.id] = {
-        expanded: state.expandedRootIds.includes(root.id),
+        mode: state.mode,
+        expanded:
+          state.mode === "map" || state.expandedRootIds.includes(root.id),
         attentionCount: attentionCounts.get(root.id) ?? 0,
         completedCount: completedCounts.get(root.id) ?? 0,
         descendantCount,
@@ -46,6 +48,7 @@ export function useWorkspaceOntologyRootControls({
     descendantCounts,
     input.roots,
     state.expandedRootIds,
+    state.mode,
     toggleRoot,
   ])
 }

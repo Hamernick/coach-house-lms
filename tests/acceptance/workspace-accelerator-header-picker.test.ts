@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs"
+
 import React from "react"
 import { renderToStaticMarkup } from "react-dom/server"
 import { describe, expect, it, vi } from "vitest"
@@ -7,6 +9,7 @@ import {
   resolveWorkspaceAcceleratorHeaderPickerScrollDistance,
   WorkspaceAcceleratorCardInlinePicker,
   WorkspaceAcceleratorCardSidebar,
+  WorkspaceAcceleratorDrawerHeaderControls,
   WorkspaceAcceleratorHeaderPicker,
 } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-panel-support"
 import { WorkspaceAcceleratorCardProgressStrip } from "@/features/workspace-accelerator-card/components/workspace-accelerator-card-progress-strip"
@@ -38,6 +41,35 @@ function extractProgressPercentMarkup(markup: string) {
 }
 
 describe("workspace accelerator header picker", () => {
+  it("places drawer progress on the left and the class picker on the right", () => {
+    const markup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorDrawerHeaderControls, {
+        filteredProgressPercent: 14,
+        lessonGroupOptions: [{ key: "formation", label: "Formation" }],
+        onLessonGroupChange: () => {},
+        readinessSummary: null,
+        selectedLessonGroupKey: "formation",
+        tutorialCallout: null,
+        viewerOpen: false,
+      })
+    )
+
+    expect(markup).toContain(
+      'data-workspace-accelerator-drawer-header-controls="true"'
+    )
+    expect(markup).not.toContain("ml-auto")
+    expect(markup).toContain("py-3")
+    expect(markup).toContain("sm:justify-between")
+    expect(markup).toContain("sm:max-w-lg")
+    expect(markup).toContain("14% complete")
+    expect(markup).toContain('data-react-grab-surface-slot="progress-rail"')
+    expect(markup.indexOf("14% complete")).toBeLessThan(
+      markup.indexOf(
+        'aria-label="Choose a class track. Current selection: Formation"'
+      )
+    )
+  })
+
   it("only returns a hover pan distance when the label actually overflows", () => {
     expect(
       resolveWorkspaceAcceleratorHeaderPickerScrollDistance({
@@ -118,11 +150,64 @@ describe("workspace accelerator header picker", () => {
     const triggerMarkup = extractTriggerMarkup(markup)
 
     expect(triggerMarkup).toContain('data-slot="badge"')
-    expect(triggerMarkup).toContain("h-7")
+    expect(triggerMarkup).toContain("h-8")
     expect(triggerMarkup).toContain("rounded-full")
-    expect(triggerMarkup).toContain("bg-primary/10")
-    expect(triggerMarkup).toContain("text-primary")
+    expect(triggerMarkup).toContain("bg-muted/55")
+    expect(triggerMarkup).toContain("text-foreground")
+    expect(triggerMarkup).toContain("hover:bg-muted/65")
     expect(markup).not.toContain("flex w-full items-start")
+  })
+
+  it("colors class icons by their progress-rail segment", () => {
+    const source = readFileSync(
+      "src/features/workspace-accelerator-card/components/workspace-accelerator-header-picker.tsx",
+      "utf8"
+    )
+    const lessonGroupOptions = Array.from({ length: 10 }, (_, index) => ({
+      key: `class-${index + 1}`,
+      label: `Class ${index + 1}`,
+    }))
+    const buildMarkup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorHeaderPicker, {
+        lessonGroupOptions,
+        selectedLessonGroupKey: "class-1",
+        tutorialCallout: null,
+        onLessonGroupChange: () => {},
+      })
+    )
+    const fundableMarkup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorHeaderPicker, {
+        lessonGroupOptions,
+        selectedLessonGroupKey: "class-8",
+        tutorialCallout: null,
+        onLessonGroupChange: () => {},
+      })
+    )
+    const verifiedMarkup = renderToStaticMarkup(
+      React.createElement(WorkspaceAcceleratorHeaderPicker, {
+        lessonGroupOptions,
+        selectedLessonGroupKey: "class-10",
+        tutorialCallout: null,
+        onLessonGroupChange: () => {},
+      })
+    )
+
+    expect(buildMarkup).toContain('data-progress-segment="build"')
+    expect(buildMarkup).toContain("text-amber-600")
+    expect(fundableMarkup).toContain('data-progress-segment="fundable"')
+    expect(fundableMarkup).toContain("text-emerald-600")
+    expect(fundableMarkup).not.toContain("ring-emerald-700/20")
+    expect(verifiedMarkup).toContain('data-progress-segment="verified"')
+    expect(verifiedMarkup).toContain("text-sky-600")
+    expect(verifiedMarkup).not.toContain("ring-sky-700/20")
+    expect(source).toContain(
+      "lessonGroupOptions.map((option, optionIndex) => {"
+    )
+    expect(source).toContain("data-progress-segment={optionProgressSegment}")
+    expect(source).toContain("optionProgressSegmentVisual.iconClassName")
+    expect(source).toContain(
+      'className="border-border/70 bg-muted/95 text-foreground"'
+    )
   })
 
   it("anchors the picker tutorial indicator on the right edge of the trigger", () => {
@@ -391,6 +476,9 @@ describe("workspace accelerator header picker", () => {
 
     expect(markup).toContain("Header picker")
     expect(markup).not.toContain("Progress")
+    expect(markup).not.toContain(
+      "flex items-center justify-between gap-2 px-0 pb-1"
+    )
     expect(markup.indexOf("Header picker")).toBeLessThan(markup.indexOf("14%"))
   })
 
@@ -461,10 +549,12 @@ describe("workspace accelerator header picker", () => {
       'aria-label="Choose a class track. Current selection: Formation"'
     )
     expect(extractTriggerMarkup(markup)).toContain('data-slot="badge"')
-    expect(extractTriggerMarkup(markup)).toContain("h-7")
+    expect(extractTriggerMarkup(markup)).toContain("h-8")
+    expect(extractTriggerMarkup(markup)).toContain("max-w-72")
+    expect(extractTriggerMarkup(markup)).toContain("px-3")
     expect(extractTriggerMarkup(markup)).toContain("rounded-full")
-    expect(extractTriggerMarkup(markup)).toContain("bg-primary/10")
-    expect(extractTriggerMarkup(markup)).toContain("text-primary")
+    expect(extractTriggerMarkup(markup)).toContain("bg-muted/55")
+    expect(extractTriggerMarkup(markup)).toContain("text-foreground")
     expect(extractTriggerMarkup(markup)).not.toContain("w-full max-w-none")
     expect(extractTriggerMarkup(markup)).not.toContain("max-w-none")
     expect(extractTriggerMarkup(markup)).not.toContain("w-[196px]")
@@ -578,7 +668,7 @@ describe("workspace accelerator header picker", () => {
     )
 
     expect(markup).toContain('aria-label="Strategic roadmap"')
-    expect(markup).toContain("Strategic Roadmap")
+    expect(markup).toContain("Core Documents")
     expect(markup).toContain("Mission, Vision, Values")
     expect(markup).toContain(
       "hover:bg-muted/30 h-8 w-full justify-between rounded-lg px-2.5 py-0 text-left"

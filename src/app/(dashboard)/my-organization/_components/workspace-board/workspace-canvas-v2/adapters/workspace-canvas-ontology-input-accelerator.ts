@@ -3,14 +3,27 @@ import type {
   WorkspaceOntologyNodeInput,
   WorkspaceOntologyStatus,
 } from "@/features/workspace-ontology"
-import { buildWorkspaceAcceleratorFullscreenHref } from "@/features/workspace-accelerator-card"
-import { getWorkspaceAcceleratorPaywallPath } from "@/lib/workspace/routes"
+import {
+  buildWorkspaceAcceleratorFullscreenHref,
+  buildWorkspaceAcceleratorLessonGroupOptions,
+  isWorkspaceAcceleratorControllerStepVisible,
+} from "@/features/workspace-accelerator-card"
+import {
+  getWorkspaceAcceleratorPaywallPath,
+  WORKSPACE_ACCELERATOR_PATH,
+} from "@/lib/workspace/routes"
 
 import type { WorkspaceSeedData } from "../../workspace-board-types"
 
 type WorkspaceAcceleratorSteps = NonNullable<
   WorkspaceSeedData["acceleratorTimeline"]
 >
+
+export function isWorkspaceAcceleratorOntologyStepVisible(
+  step: WorkspaceAcceleratorSteps[number]
+) {
+  return step.published !== false && !step.moduleContext?.workspaceOnboarding
+}
 
 function statusFromProgress(
   status: "not_started" | "in_progress" | "complete" | "completed"
@@ -55,8 +68,11 @@ function buildLessonKeywords(steps: WorkspaceAcceleratorSteps) {
 export function buildWorkspaceAcceleratorOntologyRoot(
   seed: WorkspaceSeedData
 ): WorkspaceOntologyInput["roots"][number] {
+  const ontologyTimeline = (seed.acceleratorTimeline ?? []).filter(
+    isWorkspaceAcceleratorOntologyStepVisible
+  )
   const modules = new Map<string, WorkspaceAcceleratorSteps>()
-  for (const step of seed.acceleratorTimeline ?? []) {
+  for (const step of ontologyTimeline) {
     const existing = modules.get(step.moduleId) ?? []
     modules.set(step.moduleId, [...existing, step])
   }
@@ -69,6 +85,9 @@ export function buildWorkspaceAcceleratorOntologyRoot(
     )
     .map<WorkspaceOntologyNodeInput>(([moduleId, steps]) => {
       const firstStep = steps[0]
+      const destinationSteps = steps.filter(
+        isWorkspaceAcceleratorControllerStepVisible
+      )
       const statuses = steps.map((step) => statusFromProgress(step.status))
       const status: WorkspaceOntologyStatus = !seed.hasAcceleratorAccess
         ? "blocked"
@@ -80,14 +99,11 @@ export function buildWorkspaceAcceleratorOntologyRoot(
             ? "in-progress"
             : "missing"
       const destinationStep =
-        steps.find((step) => step.status === "in_progress") ??
-        steps.find(
-          (step) =>
-            statusFromProgress(step.status) !== "complete" &&
-            step.stepKind !== "complete"
+        destinationSteps.find((step) => step.status === "in_progress") ??
+        destinationSteps.find(
+          (step) => statusFromProgress(step.status) !== "complete"
         ) ??
-        steps.find((step) => step.stepKind === "lesson") ??
-        firstStep
+        destinationSteps[0]
       const lessonDescription = steps
         .find((step) => step.stepKind === "lesson")
         ?.stepDescription?.trim()
@@ -114,20 +130,69 @@ export function buildWorkspaceAcceleratorOntologyRoot(
           ? statusLabel(status)
           : "Access required",
         relationshipLabel: "teaches",
-        href: seed.hasAcceleratorAccess
-          ? buildWorkspaceAcceleratorFullscreenHref({
-              stepId: destinationStep.id,
-              moduleId: destinationStep.moduleId,
-            })
-          : getWorkspaceAcceleratorPaywallPath("workspace-ontology"),
+        href:
+          seed.hasAcceleratorAccess && destinationStep
+            ? buildWorkspaceAcceleratorFullscreenHref({
+                stepId: destinationStep.id,
+                moduleId: destinationStep.moduleId,
+              })
+            : seed.hasAcceleratorAccess
+              ? WORKSPACE_ACCELERATOR_PATH
+              : getWorkspaceAcceleratorPaywallPath("workspace-ontology"),
         actionLabel: status === "complete" ? "Review lesson" : "Open lesson",
         keywords: [...includedKinds, ...buildLessonKeywords(steps)],
       }
     })
+  const lessonByModuleId = new Map(
+    lessons.map((lesson) => [
+      lesson.id.replace("ontology:accelerator:module:", ""),
+      lesson,
+    ])
+  )
+  const phases = buildWorkspaceAcceleratorLessonGroupOptions(
+    ontologyTimeline
+  ).flatMap<WorkspaceOntologyNodeInput>((group) => {
+    const phaseLessons = group.moduleIds.flatMap((moduleId) => {
+      const lesson = lessonByModuleId.get(moduleId)
+      return lesson ? [lesson] : []
+    })
+    if (phaseLessons.length === 0) return []
+    const completeCount = phaseLessons.filter(
+      (lesson) => lesson.status === "complete"
+    ).length
+    const status: WorkspaceOntologyStatus = phaseLessons.some(
+      (lesson) => lesson.status === "blocked"
+    )
+      ? "blocked"
+      : completeCount === phaseLessons.length
+        ? "complete"
+        : phaseLessons.some(
+              (lesson) =>
+                lesson.status === "in-progress" || lesson.status === "complete"
+            )
+          ? "in-progress"
+          : "missing"
+    return [
+      {
+        id: `ontology:accelerator:phase:${group.key}`,
+        label: group.label,
+        description: `${phaseLessons.length} ${phaseLessons.length === 1 ? "lesson" : "lessons"} in this Accelerator phase.`,
+        category: "accelerator",
+        kind: "Accelerator phase",
+        status,
+        statusLabel: `${completeCount}/${phaseLessons.length} complete`,
+        relationshipLabel: "includes",
+        href: null,
+        actionLabel: null,
+        visibility: "source-card-only",
+        children: phaseLessons,
+      },
+    ]
+  })
 
   return {
     id: "accelerator",
     label: "Accelerator",
-    children: lessons,
+    children: phases,
   }
 }

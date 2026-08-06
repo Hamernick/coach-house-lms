@@ -19,7 +19,9 @@ export { arrangeWorkspaceOntologyBranchGeometry } from "./root-layout"
 export {
   WORKSPACE_ONTOLOGY_GROUP_NODE_SIZE,
   WORKSPACE_ONTOLOGY_LEAF_NODE_SIZE,
+  WORKSPACE_ONTOLOGY_LIST_NODE_WIDTH,
   WORKSPACE_ONTOLOGY_NODE_SIZE,
+  WORKSPACE_ONTOLOGY_SUMMARY_NODE_SIZE,
   resolveWorkspaceOntologyNodeSize,
 } from "./node-size"
 export {
@@ -32,5 +34,6 @@ export {
   applyWorkspaceOntologyStateToParams,
   readWorkspaceOntologyUrlState,
   WORKSPACE_ONTOLOGY_GROUPS_PARAM,
+  WORKSPACE_ONTOLOGY_MODE_PARAM,
   WORKSPACE_ONTOLOGY_ROOTS_PARAM,
 } from "./url-state"

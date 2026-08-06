@@ -1,6 +1,8 @@
 "use client"
 
+import { useRef } from "react"
 import { Card, CardContent } from "@/components/ui/card"
+import { useOrganizationDeepLinkFocus } from "../organization-deep-link-focus"
 
 import {
   DocumentsBanner,
@@ -32,7 +34,9 @@ export function DocumentsTab({
   publicSlug,
   editMode,
   canEdit,
+  initialFocusKey,
 }: DocumentsTabProps) {
+  const documentsRootRef = useRef<HTMLElement>(null)
   const {
     activeFilters,
     categoryOptions,
@@ -89,9 +93,17 @@ export function DocumentsTab({
     policyPeopleOptions,
     roadmapSections,
   })
+  useOrganizationDeepLinkFocus({
+    focusKey: initialFocusKey,
+    rootRef: documentsRootRef,
+  })
 
   return (
-    <section className="space-y-4 pb-6" aria-labelledby="documents-title">
+    <section
+      ref={documentsRootRef}
+      className="space-y-4 pb-6"
+      aria-labelledby="documents-title"
+    >
       {isBannerVisible ? (
         <DocumentsBanner
           hasRoadmapDocuments={hasRoadmapDocuments}

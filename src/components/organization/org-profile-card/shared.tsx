@@ -13,13 +13,19 @@ import { normalizeExternalUrl } from "@/lib/organization/urls"
 import { cn } from "@/lib/utils"
 
 import { inferSocialSlug, normalizeToList, shortUrl } from "./utils"
+import {
+  getOrganizationFocusTargetProps,
+  ORGANIZATION_FOCUS_TARGET_CLASSNAME,
+} from "./organization-deep-link-focus"
 
 export function ProfileField({
   label,
   children,
+  focusKey,
 }: {
   label: ReactNode
   children: ReactNode
+  focusKey?: string
 }) {
   const childArray = Children.toArray(children).filter((child) => {
     if (child == null) return false
@@ -30,8 +36,16 @@ export function ProfileField({
   if (childArray.length === 0) return null
 
   return (
-    <div className="grid content-start gap-1 self-start">
-      <Label className="text-muted-foreground text-xs">{label}</Label>
+    <div
+      {...(focusKey ? getOrganizationFocusTargetProps(focusKey) : {})}
+      className={cn(
+        "grid min-w-0 content-start gap-1 self-start",
+        focusKey && ORGANIZATION_FOCUS_TARGET_CLASSNAME
+      )}
+    >
+      <Label htmlFor={focusKey} className="text-muted-foreground text-xs">
+        {label}
+      </Label>
       {children}
     </div>
   )
@@ -100,12 +114,14 @@ export function FormRow({
   children,
   inset = true,
   layout = "split",
+  focusKey,
 }: {
   title: string
   description?: string
   children: ReactNode
   inset?: boolean
   layout?: "split" | "stacked"
+  focusKey?: string
 }) {
   const insetClass = inset ? "px-6 md:px-0" : "px-0"
   const rowClass =
@@ -114,7 +130,10 @@ export function FormRow({
       : "grid gap-4 md:grid-cols-[minmax(180px,240px)_minmax(0,1fr)] md:items-start md:gap-6"
 
   return (
-    <div className={rowClass}>
+    <div
+      {...(focusKey ? getOrganizationFocusTargetProps(focusKey) : {})}
+      className={cn(rowClass, focusKey && ORGANIZATION_FOCUS_TARGET_CLASSNAME)}
+    >
       <div className={insetClass}>
         <h3 className="text-base leading-none font-medium">{title}</h3>
         {description ? (
@@ -190,7 +209,7 @@ export function BrandLink({ href }: { href: string }) {
       href={normalizedHref}
       target="_blank"
       rel="noopener"
-      className="group border-border/70 bg-muted/20 text-foreground hover:bg-muted/35 inline-flex w-full items-center gap-3 rounded-lg border px-3 py-2 transition-colors"
+      className="group border-border/70 bg-muted/20 text-foreground hover:bg-muted/35 inline-flex w-full min-w-0 items-center gap-3 rounded-lg border px-3 py-2 transition-colors"
     >
       <span className="border-border/60 bg-background/80 text-muted-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-md border">
         <Icon className="h-4 w-4" />

@@ -13,6 +13,7 @@ describe("workspace-accelerator-card feature contract", () => {
     const steps = buildWorkspaceAcceleratorCardSteps([
       {
         id: "m-1",
+        published: false,
         title: "Intro",
         description: "First lesson",
         href: "/accelerator/class/foundation/module/1",
@@ -42,6 +43,7 @@ describe("workspace-accelerator-card feature contract", () => {
     expect(steps).toHaveLength(7)
     expect(steps[0]).toMatchObject({
       moduleId: "m-1",
+      published: false,
       moduleSequenceIndex: 1,
       moduleSequenceTotal: 2,
       stepSequenceIndex: 1,
@@ -228,7 +230,7 @@ describe("workspace-accelerator-card feature contract", () => {
         resources: [],
         hasAssignment: false,
         hasDeck: false,
-      }),
+      })
     ).toBe("sm")
 
     expect(
@@ -251,7 +253,7 @@ describe("workspace-accelerator-card feature contract", () => {
         resources: [],
         hasAssignment: true,
         hasDeck: false,
-      }),
+      })
     ).toBe("sm")
   })
 
@@ -366,6 +368,8 @@ describe("workspace-accelerator-card feature contract", () => {
       initialCompletedStepIds: [],
     })
 
-    expect(normalized.initialCurrentStepId).toBe("origin-module:assignment:assignment-overview")
+    expect(normalized.initialCurrentStepId).toBe(
+      "origin-module:assignment:assignment-overview"
+    )
   })
 })

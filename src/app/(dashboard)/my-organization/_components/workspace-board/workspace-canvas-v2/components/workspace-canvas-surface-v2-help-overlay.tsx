@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react"
 
+import FocusIcon from "lucide-react/dist/esm/icons/focus"
 import GripIcon from "lucide-react/dist/esm/icons/grip"
 import InfoIcon from "lucide-react/dist/esm/icons/info"
 import MousePointer2Icon from "lucide-react/dist/esm/icons/mouse-pointer-2"
@@ -28,7 +29,14 @@ const WORKSPACE_CANVAS_HELP_ITEMS: WorkspaceCanvasHelpItem[] = [
   {
     icon: MoveIcon,
     label: "Pan canvas",
-    description: "Drag empty space to move around the workspace.",
+    description:
+      "Drag empty space, or swipe with two fingers on a trackpad, to move around.",
+  },
+  {
+    icon: FocusIcon,
+    label: "Focus a card",
+    description:
+      "Double-click a card to center it and fit it in the workspace.",
   },
   {
     icon: GripIcon,
@@ -44,8 +52,7 @@ const WORKSPACE_CANVAS_HELP_ITEMS: WorkspaceCanvasHelpItem[] = [
   {
     icon: ZoomInIcon,
     label: "Zoom",
-    description:
-      "Scroll or pinch to zoom in and out without leaving the workspace.",
+    description: "Pinch to zoom, or hold Meta or Control while scrolling.",
   },
   {
     icon: PanelLeftOpenIcon,

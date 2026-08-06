@@ -1,5 +1,7 @@
 "use server"
 
+import { randomUUID } from "node:crypto"
+
 import { revalidatePath } from "next/cache"
 
 import { requireServerSession } from "@/lib/auth"
@@ -414,13 +416,19 @@ export async function refreshPersonLinkedInImageAction(id: string) {
             : contentType === "image/avif"
               ? "avif"
               : "jpg"
-    const objectPath = `users/${orgId}/${id}.${extension}`
-    await admin.storage.from(bucket).upload(objectPath, linkedInImage.bytes, {
-      contentType,
-      upsert: true,
-    })
+    const objectPath = `users/${orgId}/${id}-${randomUUID()}.${extension}`
+    const { error: uploadError } = await admin.storage
+      .from(bucket)
+      .upload(objectPath, linkedInImage.bytes, {
+        contentType,
+        upsert: false,
+      })
+    if (uploadError) return { error: "Upload failed" }
 
-    const writeResult = await mutateOrganizationPeopleProfile<OrgPerson, null>({
+    const writeResult = await mutateOrganizationPeopleProfile<
+      OrgPerson,
+      { previousImage: string | null }
+    >({
       supabase,
       orgId,
       mutate: (currentPeople) => {
@@ -435,13 +443,29 @@ export async function refreshPersonLinkedInImageAction(id: string) {
           people: currentPeople.map((item) =>
             item.id === id ? { ...item, image: objectPath } : item
           ),
-          value: null,
+          value: {
+            previousImage:
+              typeof currentPerson.image === "string"
+                ? currentPerson.image
+                : null,
+          },
         }
       },
     })
     if ("error" in writeResult) {
       await admin.storage.from(bucket).remove([objectPath])
       return writeResult
+    }
+
+    const cleanupPath = resolvePeopleAvatarCleanupPath(
+      writeResult.value.previousImage,
+      objectPath,
+      orgId
+    )
+    if (cleanupPath) {
+      try {
+        await admin.storage.from(bucket).remove([cleanupPath])
+      } catch {}
     }
 
     revalidatePath("/my-organization")

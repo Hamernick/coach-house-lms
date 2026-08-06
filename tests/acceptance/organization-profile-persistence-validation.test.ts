@@ -136,6 +136,14 @@ describe("organization profile persistence validation", () => {
     }
   })
 
+  it("accepts partial profile patches without a primary brand color", () => {
+    expect(
+      organizationProfilePersistencePatchSchema.safeParse({
+        logoUrl: "users/org-1/logo.png",
+      }).success
+    ).toBe(true)
+  })
+
   it.each([
     {
       payload: {

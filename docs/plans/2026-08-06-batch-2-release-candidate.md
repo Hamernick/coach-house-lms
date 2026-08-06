@@ -3,7 +3,7 @@
 Date: 2026-08-06
 Base: `origin/main` at `9843650`
 Branch: `agent/batch2-organization-workspace-foundation-20260806`
-Status: Local quality verified; connected preview approval pending
+Status: Preview PR #119 open; connected preview evidence pending
 
 ## Scope
 

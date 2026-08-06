@@ -3,6 +3,7 @@ import type {
   WorkspaceCardId,
 } from "../_components/workspace-board/workspace-board-types"
 import { buildAutoLayoutNodesForMode } from "../_components/workspace-board/workspace-board-auto-layout-modes"
+import { mergeWorkspaceBoardForwardCompatibilityState } from "../_components/workspace-board/workspace-board-forward-compatibility"
 
 function parseWorkspaceBoardTimestamp(value: string) {
   const timestamp = Date.parse(value)
@@ -135,13 +136,39 @@ export function mergeNewerPersistedWorkspaceNodeState({
     : incoming.ontology
   if (ontology !== incoming.ontology) changed = true
 
+  const forwardCompatibility = mergeWorkspaceBoardForwardCompatibilityState(
+    persistedIsNewer
+      ? persisted.forwardCompatibility
+      : incoming.forwardCompatibility,
+    persistedIsNewer
+      ? incoming.forwardCompatibility
+      : persisted.forwardCompatibility
+  )
+  if (forwardCompatibility) changed = true
+
   return changed
     ? {
         ...incoming,
         nodes,
         ontology,
+        ...(forwardCompatibility ? { forwardCompatibility } : {}),
       }
     : incoming
+}
+
+export function reconcileWorkspaceBoardSaveResult({
+  current,
+  persisted,
+}: {
+  current: WorkspaceBoardState
+  persisted: WorkspaceBoardState
+}) {
+  return {
+    ...current,
+    nodes: persisted.nodes,
+    forwardCompatibility: persisted.forwardCompatibility,
+    updatedAt: persisted.updatedAt,
+  }
 }
 
 export function buildWorkspaceBoardStateWithPersistedNodePosition({

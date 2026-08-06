@@ -21,6 +21,7 @@ import {
   resetWorkspaceCanvasTutorialAction,
   saveWorkspaceBoardStateAction,
 } from "../../_lib/workspace-actions"
+import { reconcileWorkspaceBoardSaveResult } from "../../_lib/workspace-board-state-persistence"
 import {
   isBoardStateContentEqual,
   type WorkspaceCardFocusRequest,
@@ -270,15 +271,15 @@ export function usePersistWorkspaceBoardState({
           responseUpdatedAt: response.boardState.updatedAt,
           ...summarizeWorkspaceBoardVisibility(response.boardState),
         })
-        lastPersistedBoardContentRef.current = boardState
-        setBoardState((previous) =>
-          previous.updatedAt === response.boardState.updatedAt
-            ? previous
-            : {
-                ...previous,
-                updatedAt: response.boardState.updatedAt,
-              }
-        )
+        setBoardState((previous) => {
+          if (!isBoardStateContentEqual(previous, boardState)) return previous
+          const reconciled = reconcileWorkspaceBoardSaveResult({
+            current: previous,
+            persisted: response.boardState,
+          })
+          lastPersistedBoardContentRef.current = reconciled
+          return reconciled
+        })
       })()
     }, 550)
 

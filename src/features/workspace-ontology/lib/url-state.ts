@@ -3,10 +3,14 @@ import {
   type WorkspaceOntologyRootId,
   type WorkspaceOntologyState,
 } from "../types"
-import { buildDefaultWorkspaceOntologyState } from "./state"
+import {
+  buildDefaultWorkspaceOntologyState,
+  normalizeWorkspaceOntologyState,
+} from "./state"
 
 export const WORKSPACE_ONTOLOGY_ROOTS_PARAM = "workspace-details"
 export const WORKSPACE_ONTOLOGY_GROUPS_PARAM = "workspace-groups"
+export const WORKSPACE_ONTOLOGY_MODE_PARAM = "workspace-view"
 
 const ROOT_ID_SET = new Set<string>(WORKSPACE_ONTOLOGY_ROOT_IDS)
 const MAX_EXPANDED_GROUPS = 48
@@ -34,8 +38,9 @@ export function readWorkspaceOntologyUrlState(
   params: Pick<URLSearchParams, "get">
 ): WorkspaceOntologyState {
   const state = buildDefaultWorkspaceOntologyState()
-  return {
+  return normalizeWorkspaceOntologyState({
     ...state,
+    mode: params.get(WORKSPACE_ONTOLOGY_MODE_PARAM) === "map" ? "map" : "focus",
     expandedRootIds: readUniqueParamValues(
       params.get(WORKSPACE_ONTOLOGY_ROOTS_PARAM),
       (entry) => ROOT_ID_SET.has(entry),
@@ -46,7 +51,7 @@ export function readWorkspaceOntologyUrlState(
       (entry) => SAFE_GROUP_ID.test(entry),
       MAX_EXPANDED_GROUPS
     ),
-  }
+  })
 }
 
 export function applyWorkspaceOntologyStateToParams(
@@ -55,10 +60,17 @@ export function applyWorkspaceOntologyStateToParams(
 ) {
   const normalized = readWorkspaceOntologyUrlState(
     new URLSearchParams([
+      [WORKSPACE_ONTOLOGY_MODE_PARAM, state.mode],
       [WORKSPACE_ONTOLOGY_ROOTS_PARAM, state.expandedRootIds.join(",")],
       [WORKSPACE_ONTOLOGY_GROUPS_PARAM, state.expandedNodeIds.join(",")],
     ])
   )
+
+  if (normalized.mode === "map") {
+    params.set(WORKSPACE_ONTOLOGY_MODE_PARAM, "map")
+  } else {
+    params.delete(WORKSPACE_ONTOLOGY_MODE_PARAM)
+  }
 
   if (normalized.expandedRootIds.length > 0) {
     params.set(

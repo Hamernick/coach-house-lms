@@ -16,8 +16,6 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
     drafts,
     handleSectionSelect,
     roadmapBasePath,
-    roadmapReturnHref,
-    roadmapReturnLabel,
     headerTitle,
     headerSubtitle,
     showSectionHeader,
@@ -50,8 +48,7 @@ export function RoadmapEditor(props: RoadmapEditorProps) {
       drafts={drafts}
       roadmapBasePath={roadmapBasePath}
       onSectionSelect={handleSectionSelect}
-      roadmapReturnHref={roadmapReturnHref}
-      roadmapReturnLabel={roadmapReturnLabel}
+      showRightRail={props.showRightRail ?? true}
       headerTitle={headerTitle}
       headerSubtitle={headerSubtitle}
       showSectionHeader={showSectionHeader}

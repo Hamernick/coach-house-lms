@@ -39,6 +39,10 @@ import type { PublicMapOrganizationCurationEventsTable } from "./public_map_orga
 import type { AcceleratorPurchasesTable } from "./accelerator_purchases"
 import type { ElectivePurchasesTable } from "./elective_purchases"
 import type { OrganizationMembershipsTable } from "./organization_memberships"
+import type { OrganizationPeopleSegmentMembersTable } from "./organization_people_segment_members"
+import type { OrganizationPeopleSegmentsTable } from "./organization_people_segments"
+import type { OrganizationPeopleTagMembersTable } from "./organization_people_tag_members"
+import type { OrganizationPeopleTagsTable } from "./organization_people_tags"
 import type { OrganizationInvitesTable } from "./organization_invites"
 import type { OrganizationAccessRequestsTable } from "./organization_access_requests"
 import type { OrganizationAccessSettingsTable } from "./organization_access_settings"
@@ -134,6 +138,10 @@ export type { PublicMapOrganizationCurationEventsTable } from "./public_map_orga
 export type { AcceleratorPurchasesTable } from "./accelerator_purchases"
 export type { ElectivePurchasesTable } from "./elective_purchases"
 export type { OrganizationMembershipsTable } from "./organization_memberships"
+export type { OrganizationPeopleSegmentMembersTable } from "./organization_people_segment_members"
+export type { OrganizationPeopleSegmentsTable } from "./organization_people_segments"
+export type { OrganizationPeopleTagMembersTable } from "./organization_people_tag_members"
+export type { OrganizationPeopleTagsTable } from "./organization_people_tags"
 export type { OrganizationInvitesTable } from "./organization_invites"
 export type { OrganizationAccessRequestsTable } from "./organization_access_requests"
 export type { OrganizationAccessSettingsTable } from "./organization_access_settings"
@@ -230,6 +238,10 @@ export type PublicTables = {
   accelerator_purchases: AcceleratorPurchasesTable
   elective_purchases: ElectivePurchasesTable
   organization_memberships: OrganizationMembershipsTable
+  organization_people_segment_members: OrganizationPeopleSegmentMembersTable
+  organization_people_segments: OrganizationPeopleSegmentsTable
+  organization_people_tag_members: OrganizationPeopleTagMembersTable
+  organization_people_tags: OrganizationPeopleTagsTable
   organization_invites: OrganizationInvitesTable
   organization_access_requests: OrganizationAccessRequestsTable
   organization_access_settings: OrganizationAccessSettingsTable

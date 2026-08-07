@@ -1,13 +1,12 @@
 "use client"
 
-import {
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react"
+import { useLayoutEffect, useMemo, useRef, useState } from "react"
 import Layers from "lucide-react/dist/esm/icons/layers"
 
+import {
+  ACCELERATOR_PROGRESS_SEGMENT_VISUALS,
+  resolveAcceleratorModuleProgressSegment,
+} from "@/components/accelerator/accelerator-progress-segments"
 import {
   getReactGrabLinkedSurfaceProps,
   getReactGrabOwnerProps,
@@ -46,11 +45,10 @@ const WORKSPACE_ACCELERATOR_HEADER_PICKER_SOURCE =
 const WORKSPACE_TUTORIAL_THEME_SOURCE =
   "src/components/workspace/workspace-tutorial-theme.ts"
 
-const WORKSPACE_ACCELERATOR_TUTORIAL_PICKER_TRIGGER_CLASSNAME =
-  cn(
-    "h-9 min-h-9 rounded-xl px-3",
-    WORKSPACE_TUTORIAL_NEUTRAL_SURFACE_CLASSNAME,
-  )
+const WORKSPACE_ACCELERATOR_TUTORIAL_PICKER_TRIGGER_CLASSNAME = cn(
+  "h-9 min-h-9 rounded-xl px-3",
+  WORKSPACE_TUTORIAL_NEUTRAL_SURFACE_CLASSNAME
+)
 const WORKSPACE_ACCELERATOR_COMPACT_PICKER_TRIGGER_CLASSNAME =
   "w-[196px] max-w-[48vw]"
 const WORKSPACE_ACCELERATOR_EXPANDED_PICKER_TRIGGER_CLASSNAME =
@@ -58,13 +56,9 @@ const WORKSPACE_ACCELERATOR_EXPANDED_PICKER_TRIGGER_CLASSNAME =
 const WORKSPACE_ACCELERATOR_RAIL_PICKER_TRIGGER_CLASSNAME =
   "w-full max-w-none px-1.5"
 const WORKSPACE_ACCELERATOR_BADGE_PICKER_TRIGGER_CLASSNAME =
-  "h-7 min-h-7 w-fit max-w-[15rem] rounded-full border-transparent bg-primary/10 px-2.5 py-1 text-primary shadow-none hover:bg-primary/15 data-[size=sm]:h-7 [&>svg]:size-3"
+  "h-8 min-h-8 w-fit max-w-72 rounded-full border-transparent bg-muted/55 px-3 py-1.5 text-foreground shadow-none hover:bg-muted/65 dark:bg-muted/45 dark:hover:bg-muted/60 data-[size=sm]:h-8 [&>svg]:size-3.5"
 
-function WorkspaceAcceleratorHeaderPickerLabel({
-  label,
-}: {
-  label: string
-}) {
+function WorkspaceAcceleratorHeaderPickerLabel({ label }: { label: string }) {
   const viewportRef = useRef<HTMLSpanElement | null>(null)
   const contentRef = useRef<HTMLSpanElement | null>(null)
   const [isHovered, setIsHovered] = useState(false)
@@ -104,7 +98,7 @@ function WorkspaceAcceleratorHeaderPickerLabel({
     >
       <span
         ref={contentRef}
-        className="inline-block min-w-full whitespace-nowrap text-left transition-transform duration-1000 ease-out will-change-transform"
+        className="inline-block min-w-full text-left whitespace-nowrap transition-transform duration-1000 ease-out will-change-transform"
         style={
           scrollDistance > 0 && isHovered
             ? { transform: `translateX(-${scrollDistance}px)` }
@@ -134,13 +128,24 @@ export function WorkspaceAcceleratorHeaderPicker({
   layout?: "inline" | "rail" | "badge"
   onLessonGroupChange: (nextLessonGroupKey: string) => void
 }) {
+  const selectedLessonGroupIndex = lessonGroupOptions.findIndex(
+    (option) => option.key === selectedLessonGroupKey
+  )
   const selectedLessonGroup =
-    lessonGroupOptions.find((option) => option.key === selectedLessonGroupKey) ?? null
+    selectedLessonGroupIndex >= 0
+      ? lessonGroupOptions[selectedLessonGroupIndex]
+      : null
   const ActiveLessonGroupIcon = useMemo(() => {
     if (!selectedLessonGroup) return Layers
     return getTrackIcon(selectedLessonGroup.label)
   }, [selectedLessonGroup])
   const selectedLessonGroupLabel = selectedLessonGroup?.label ?? "Classes"
+  const progressSegment = resolveAcceleratorModuleProgressSegment({
+    moduleSequenceIndex: selectedLessonGroupIndex + 1,
+    moduleSequenceTotal: lessonGroupOptions.length,
+  })
+  const progressSegmentVisual =
+    ACCELERATOR_PROGRESS_SEGMENT_VISUALS[progressSegment]
   const pickerHighlighted = tutorialCallout?.focus === "picker"
   const tutorialManagedPicker = Boolean(tutorialInteractionPolicy)
   const classDropdownLocked =
@@ -154,8 +159,7 @@ export function WorkspaceAcceleratorHeaderPicker({
       "We'll go over this soon, I promise! :)",
     durationMs: tutorialInteractionPolicy?.blockedMessageDurationMs ?? 3000,
   })
-  const reactGrabOwnerId =
-    "workspace-accelerator-header-picker:class-selection"
+  const reactGrabOwnerId = "workspace-accelerator-header-picker:class-selection"
   const reactGrabOwnerProps = getReactGrabOwnerProps({
     ownerId: reactGrabOwnerId,
     component: "WorkspaceAcceleratorHeaderPicker",
@@ -193,16 +197,16 @@ export function WorkspaceAcceleratorHeaderPicker({
       <SelectTrigger
         {...reactGrabOwnerProps}
         className={cn(
-          "relative h-8 min-h-8 gap-1.5 overflow-visible border-border/65 bg-background/80 px-2 text-left text-sm",
+          "border-border/65 bg-background/80 relative h-8 min-h-8 gap-1.5 overflow-visible px-2 text-left text-sm",
           layout === "badge"
             ? WORKSPACE_ACCELERATOR_BADGE_PICKER_TRIGGER_CLASSNAME
             : layout === "rail"
-            ? WORKSPACE_ACCELERATOR_RAIL_PICKER_TRIGGER_CLASSNAME
-            : viewerOpen
-              ? WORKSPACE_ACCELERATOR_EXPANDED_PICKER_TRIGGER_CLASSNAME
-              : WORKSPACE_ACCELERATOR_COMPACT_PICKER_TRIGGER_CLASSNAME,
+              ? WORKSPACE_ACCELERATOR_RAIL_PICKER_TRIGGER_CLASSNAME
+              : viewerOpen
+                ? WORKSPACE_ACCELERATOR_EXPANDED_PICKER_TRIGGER_CLASSNAME
+                : WORKSPACE_ACCELERATOR_COMPACT_PICKER_TRIGGER_CLASSNAME,
           tutorialManagedPicker &&
-            WORKSPACE_ACCELERATOR_TUTORIAL_PICKER_TRIGGER_CLASSNAME,
+            WORKSPACE_ACCELERATOR_TUTORIAL_PICKER_TRIGGER_CLASSNAME
         )}
         aria-label={`Choose a class track. Current selection: ${selectedLessonGroupLabel}`}
         aria-disabled={classDropdownLocked ? "true" : undefined}
@@ -216,24 +220,27 @@ export function WorkspaceAcceleratorHeaderPicker({
           <WorkspaceTutorialCallout
             reactGrabOwnerId={`${reactGrabOwnerId}:callout`}
             mode="indicator"
-            tooltipContentClassName={WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME}
+            tooltipContentClassName={
+              WORKSPACE_TUTORIAL_INVERSE_TOOLTIP_CLASSNAME
+            }
             indicatorAnchorAlign="end"
             indicatorAnchorVerticalAlign="center"
             indicatorSide="right"
             indicatorSideOffset={12}
           />
         ) : null}
-        <span className="inline-flex size-4 shrink-0 items-center justify-center">
+        <span
+          className="inline-flex size-4 shrink-0 items-center justify-center"
+          data-progress-segment={progressSegment}
+        >
           <ActiveLessonGroupIcon
-            className={cn(
-              "h-3.5 w-3.5",
-              "text-muted-foreground",
-              pickerHighlighted && "text-foreground/70",
-            )}
+            className={cn("h-3.5 w-3.5", progressSegmentVisual.iconClassName)}
             aria-hidden
           />
         </span>
-        <WorkspaceAcceleratorHeaderPickerLabel label={selectedLessonGroupLabel} />
+        <WorkspaceAcceleratorHeaderPickerLabel
+          label={selectedLessonGroupLabel}
+        />
       </SelectTrigger>
     </WorkspaceAcceleratorTutorialGuardTooltip>
   )
@@ -257,8 +264,8 @@ export function WorkspaceAcceleratorHeaderPicker({
         layout === "badge"
           ? "inline-flex items-center"
           : layout === "rail"
-          ? "flex w-full items-start"
-          : "inline-flex items-start pb-1",
+            ? "flex w-full items-start"
+            : "inline-flex items-start pb-1"
       )}
     >
       <Select
@@ -286,6 +293,7 @@ export function WorkspaceAcceleratorHeaderPicker({
         {trigger}
         <SelectContent
           align="end"
+          className="border-border/70 bg-muted/95 text-foreground"
           {...getReactGrabLinkedSurfaceProps({
             ownerId: reactGrabOwnerId,
             component: "WorkspaceAcceleratorHeaderPicker",
@@ -296,28 +304,43 @@ export function WorkspaceAcceleratorHeaderPicker({
             primitiveImport: "@/components/ui/select",
           })}
         >
-          {lessonGroupOptions.map((option) => (
-            <SelectItem
-              key={option.key}
-              value={option.key}
-              className={cn(
-                tutorialInteractionPolicy &&
-                  !isWorkspaceAcceleratorTutorialPinnedClassGroup({
-                    tutorialInteractionPolicy,
-                    lessonGroupKey: option.key,
-                  }) &&
-                  "opacity-80",
-              )}
-              icon={
-                (() => {
-                  const OptionIcon = getTrackIcon(option.label)
-                  return <OptionIcon className="h-4 w-4" aria-hidden />
-                })()
-              }
-            >
-              {option.label}
-            </SelectItem>
-          ))}
+          {lessonGroupOptions.map((option, optionIndex) => {
+            const OptionIcon = getTrackIcon(option.label)
+            const optionProgressSegment =
+              resolveAcceleratorModuleProgressSegment({
+                moduleSequenceIndex: optionIndex + 1,
+                moduleSequenceTotal: lessonGroupOptions.length,
+              })
+            const optionProgressSegmentVisual =
+              ACCELERATOR_PROGRESS_SEGMENT_VISUALS[optionProgressSegment]
+
+            return (
+              <SelectItem
+                key={option.key}
+                value={option.key}
+                className={cn(
+                  tutorialInteractionPolicy &&
+                    !isWorkspaceAcceleratorTutorialPinnedClassGroup({
+                      tutorialInteractionPolicy,
+                      lessonGroupKey: option.key,
+                    }) &&
+                    "opacity-80"
+                )}
+                icon={
+                  <OptionIcon
+                    className={cn(
+                      "h-4 w-4",
+                      optionProgressSegmentVisual.iconClassName
+                    )}
+                    data-progress-segment={optionProgressSegment}
+                    aria-hidden
+                  />
+                }
+              >
+                {option.label}
+              </SelectItem>
+            )
+          })}
         </SelectContent>
       </Select>
     </div>

@@ -115,6 +115,7 @@ async function solve({
     input,
     state: {
       ...buildDefaultWorkspaceOntologyState(),
+      mode: "map",
       expandedRootIds,
     },
     filter: { query: "", categories: [] },
@@ -233,7 +234,8 @@ describe("workspace ontology anchored branch layout", () => {
             nodeRectangle(nodes[leftIndex]),
             nodeRectangle(nodes[rightIndex]),
             32
-          )
+          ),
+          `${nodes[leftIndex].id} overlaps ${nodes[rightIndex].id}`
         ).toBe(false)
       }
     }

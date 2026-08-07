@@ -15,6 +15,9 @@ import { cn } from "@/lib/utils"
 import type { FiscalSponsorshipActivityEligibility } from "../lib/activity-eligibility"
 import { FiscalSponsorshipMark } from "./fiscal-sponsorship-mark"
 
+type FiscalSponsorshipCriterionId =
+  FiscalSponsorshipActivityEligibility["criteria"][number]["id"]
+
 export function FiscalSponsorshipActivityAction({
   active,
   ariaLabel,
@@ -28,10 +31,13 @@ export function FiscalSponsorshipActivityAction({
   disabled?: boolean
   eligibility: FiscalSponsorshipActivityEligibility
   onOpen: () => void
-  onUpdateInfo: () => void
+  onUpdateInfo: (criterionId: FiscalSponsorshipCriterionId) => void
 }) {
   const markState = active ? "active" : eligibility.state
   const actionLabel = eligibility.eligible ? "Request review" : "Update info"
+  const nextUnmetCriterion = eligibility.criteria.find(
+    (criterion) => !criterion.met
+  )
   const statusLabel = active
     ? "Open"
     : eligibility.eligible
@@ -129,7 +135,7 @@ export function FiscalSponsorshipActivityAction({
                       onClick={(event) => {
                         event.preventDefault()
                         event.stopPropagation()
-                        onUpdateInfo()
+                        onUpdateInfo(criterion.id)
                       }}
                     >
                       Add
@@ -152,7 +158,9 @@ export function FiscalSponsorshipActivityAction({
                 return
               }
 
-              onUpdateInfo()
+              if (nextUnmetCriterion) {
+                onUpdateInfo(nextUnmetCriterion.id)
+              }
             }}
           >
             {actionLabel}

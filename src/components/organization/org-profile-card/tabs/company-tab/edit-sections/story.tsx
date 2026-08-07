@@ -67,8 +67,9 @@ function StoryTextField({
   const overLimit = count > ORG_PROFILE_ROADMAP_TEXT_MAX_LENGTH
 
   return (
-    <ProfileField label={field.label}>
+    <ProfileField label={field.label} focusKey={field.name}>
       <Textarea
+        id={field.name}
         name={field.name}
         value={value}
         onChange={onInputChange}
@@ -114,7 +115,7 @@ function StoryNarrativeField({
   const error = errors[field.name] ?? ""
 
   return (
-    <ProfileField label={field.label}>
+    <ProfileField label={field.label} focusKey={field.name}>
       <RichTextEditor
         value={value}
         onChange={(nextValue) => {

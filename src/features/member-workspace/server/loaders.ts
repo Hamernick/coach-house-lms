@@ -1,12 +1,14 @@
 import type { OrgPerson } from "@/actions/people"
-import { attachCanonicalProjectIdsToOrganizations, ensureCanonicalAdminProjects } from "@/features/member-workspace/server/admin-projects"
+import {
+  attachCanonicalProjectIdsToOrganizations,
+  ensureCanonicalAdminProjects,
+} from "@/features/member-workspace/server/admin-projects"
 import { loadAdminOrganizationSummaries } from "@/features/member-workspace/server/admin-organization-overview"
 import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 import { normalizePersonCategory } from "@/lib/people/categories"
 import { resolvePeopleDisplayImages } from "@/lib/people/display-images"
-import {
-  canEditOrganization,
-} from "@/lib/organization/active-org"
+import { mutateOrganizationPeopleProfile } from "@/lib/people/profile-write"
+import { canEditOrganization } from "@/lib/organization/active-org"
 import type { MemberWorkspacePeoplePageData } from "../types"
 export { loadMemberWorkspaceProjectsPage } from "./project-loaders"
 export { loadMemberWorkspaceTasksPage } from "./task-loaders"
@@ -44,7 +46,7 @@ export async function loadMemberWorkspacePeoplePage(): Promise<MemberWorkspacePe
         organizationCount: organizations.length,
         memberCount: organizations.reduce(
           (total, organization) => total + organization.memberCount,
-          0,
+          0
         ),
       },
     }
@@ -60,7 +62,9 @@ export async function loadMemberWorkspacePeoplePage(): Promise<MemberWorkspacePe
     .maybeSingle<{ profile: Record<string, unknown> | null }>()
 
   const profile = (org?.profile ?? {}) as Record<string, unknown>
-  const peopleRaw = (Array.isArray(profile.org_people) ? profile.org_people : []) as OrgPerson[]
+  const peopleRaw = (
+    Array.isArray(profile.org_people) ? profile.org_people : []
+  ) as OrgPerson[]
 
   if (org) {
     const { data: profileRow } = await supabase
@@ -74,7 +78,8 @@ export async function loadMemberWorkspacePeoplePage(): Promise<MemberWorkspacePe
       }>()
 
     const derivedName =
-      typeof profileRow?.full_name === "string" && profileRow.full_name.trim().length > 0
+      typeof profileRow?.full_name === "string" &&
+      profileRow.full_name.trim().length > 0
         ? profileRow.full_name.trim()
         : typeof user.user_metadata?.full_name === "string" &&
             user.user_metadata.full_name.trim().length > 0
@@ -82,55 +87,74 @@ export async function loadMemberWorkspacePeoplePage(): Promise<MemberWorkspacePe
           : null
 
     const membershipCategory = role === "board" ? "governing_board" : "staff"
-    const selfIndex = peopleRaw.findIndex((person) => person?.id === user.id)
-    const selfExisting = selfIndex > -1 ? peopleRaw[selfIndex] : null
-
-    const nextSelf: OrgPerson = {
-      id: user.id,
-      name: derivedName ?? selfExisting?.name ?? "You",
-      title:
-        (typeof profileRow?.headline === "string" && profileRow.headline.trim().length > 0
-          ? profileRow.headline.trim()
-          : null) ??
-        selfExisting?.title ??
-        null,
-      email: user.email ?? selfExisting?.email ?? null,
-      category: membershipCategory,
-      image: profileRow?.avatar_url ?? selfExisting?.image ?? null,
-      reportsToId: selfExisting?.reportsToId ?? null,
-      pos: selfExisting?.pos ?? null,
-    }
-
-    const nextPeople = [...peopleRaw]
-    if (selfIndex > -1) {
-      nextPeople[selfIndex] = nextSelf
-    } else {
-      nextPeople.push(nextSelf)
-    }
-
-    const ownerIndex = nextPeople.findIndex((person) => person?.id === orgId)
-    if (ownerIndex > 0) {
-      const [owner] = nextPeople.splice(ownerIndex, 1)
-      nextPeople.unshift(owner)
-    }
-
-    const needsSync =
-      selfIndex === -1 ||
-      (selfExisting?.name ?? null) !== (nextSelf.name ?? null) ||
-      (selfExisting?.title ?? null) !== (nextSelf.title ?? null) ||
-      (selfExisting?.email ?? null) !== (nextSelf.email ?? null) ||
-      (selfExisting?.image ?? null) !== (nextSelf.image ?? null) ||
-      (selfExisting?.category ?? null) !== (nextSelf.category ?? null) ||
-      ownerIndex > 0
-
-    if (needsSync) {
-      const nextProfile = { ...profile, org_people: nextPeople }
-      if (canEdit) {
-        await supabase
-          .from("organizations")
-          .upsert({ user_id: orgId, profile: nextProfile }, { onConflict: "user_id" })
+    const synchronizeSelf = (people: OrgPerson[]) => {
+      const selfIndex = people.findIndex((person) => person?.id === user.id)
+      const selfExisting = selfIndex > -1 ? people[selfIndex] : null
+      const nextSelf: OrgPerson = {
+        ...selfExisting,
+        id: user.id,
+        name: derivedName ?? selfExisting?.name ?? "You",
+        title:
+          (typeof profileRow?.headline === "string" &&
+          profileRow.headline.trim().length > 0
+            ? profileRow.headline.trim()
+            : null) ??
+          selfExisting?.title ??
+          null,
+        email: user.email ?? selfExisting?.email ?? null,
+        category: membershipCategory,
+        image: profileRow?.avatar_url ?? selfExisting?.image ?? null,
+        reportsToId: selfExisting?.reportsToId ?? null,
+        pos: selfExisting?.pos ?? null,
       }
-      peopleRaw.splice(0, peopleRaw.length, ...nextPeople)
+      const nextPeople = [...people]
+      if (selfIndex > -1) nextPeople[selfIndex] = nextSelf
+      else nextPeople.push(nextSelf)
+
+      const ownerIndex = nextPeople.findIndex((person) => person?.id === orgId)
+      if (ownerIndex > 0) {
+        const [owner] = nextPeople.splice(ownerIndex, 1)
+        nextPeople.unshift(owner)
+      }
+
+      return {
+        changed:
+          selfIndex === -1 ||
+          (selfExisting?.name ?? null) !== (nextSelf.name ?? null) ||
+          (selfExisting?.title ?? null) !== (nextSelf.title ?? null) ||
+          (selfExisting?.email ?? null) !== (nextSelf.email ?? null) ||
+          (selfExisting?.image ?? null) !== (nextSelf.image ?? null) ||
+          (selfExisting?.category ?? null) !== (nextSelf.category ?? null) ||
+          ownerIndex > 0,
+        people: nextPeople,
+      }
+    }
+
+    if (canEdit) {
+      const syncResult = await mutateOrganizationPeopleProfile<
+        OrgPerson,
+        OrgPerson[]
+      >({
+        supabase,
+        orgId,
+        mutate: (people) => {
+          const sync = synchronizeSelf(people)
+          return sync.changed
+            ? {
+                ok: true,
+                changed: true,
+                people: sync.people,
+                value: sync.people,
+              }
+            : { ok: true, changed: false, value: people }
+        },
+      })
+      if (!("error" in syncResult)) {
+        peopleRaw.splice(0, peopleRaw.length, ...syncResult.value)
+      }
+    } else {
+      const sync = synchronizeSelf(peopleRaw)
+      if (sync.changed) peopleRaw.splice(0, peopleRaw.length, ...sync.people)
     }
   }
 

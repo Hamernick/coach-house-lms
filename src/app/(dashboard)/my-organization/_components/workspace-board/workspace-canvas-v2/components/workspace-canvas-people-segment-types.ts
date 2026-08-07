@@ -1,4 +1,5 @@
 import type { PersonCategory } from "@/lib/people/categories"
+import type { OrganizationPeopleSegment } from "@/lib/people/segments"
 
 export type WorkspaceAllPeopleSegment = {
   id: "all"
@@ -15,11 +16,8 @@ export type WorkspaceCategoryPeopleSegment = {
   count: number
 }
 
-export type WorkspaceCustomPeopleSegment = {
-  id: string
+export type WorkspaceCustomPeopleSegment = OrganizationPeopleSegment & {
   kind: "custom"
-  label: string
-  memberIds: string[]
   count: number
 }
 

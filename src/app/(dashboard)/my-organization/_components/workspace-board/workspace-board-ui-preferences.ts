@@ -1,3 +1,8 @@
+import {
+  normalizeWorkspaceDrawerTab,
+  type WorkspaceDrawerTab,
+} from "@/lib/workspace/routes"
+
 export type WorkspaceBoardUiPreferenceScope = {
   orgId: string
   viewerId: string
@@ -15,9 +20,13 @@ export type WorkspaceCanvasPersonPlacementPreference = {
   y: number
 }
 
+export type WorkspaceDataDrawerTabPreference = WorkspaceDrawerTab
+
 export type WorkspaceBoardUiPreferences = {
   canvasViewport: WorkspaceCanvasViewportPreference | null
-  dataDrawerSnapPoint: number | null
+  canvasViewportLayoutVersion: number
+  dataDrawerSnapPoint: number | string | null
+  dataDrawerTab: WorkspaceDataDrawerTabPreference
   teamAccessCollapsed: boolean
   workspacePersonPlacements: WorkspaceCanvasPersonPlacementPreference[]
 }
@@ -25,16 +34,25 @@ export type WorkspaceBoardUiPreferences = {
 const WORKSPACE_BOARD_UI_PREFERENCES_VERSION = 1
 const WORKSPACE_BOARD_UI_PREFERENCES_KEY_PREFIX =
   "coachhouse:workspace-board-ui"
+export const WORKSPACE_CANVAS_VIEWPORT_LAYOUT_VERSION = 2
 const WORKSPACE_CANVAS_MIN_ZOOM = 0.2
 const WORKSPACE_CANVAS_MAX_ZOOM = 1.25
 const WORKSPACE_CANVAS_MIN_POSITION = -50000
 const WORKSPACE_CANVAS_MAX_POSITION = 50000
-const WORKSPACE_DATA_DRAWER_MIN_SNAP_POINT = 0.06
+const WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT = "68px"
+const WORKSPACE_DATA_DRAWER_LEGACY_COLLAPSED_SNAP_POINTS = new Set([
+  "44px",
+  "52px",
+])
+const WORKSPACE_DATA_DRAWER_LEGACY_COLLAPSED_MAX = 0.11
+const WORKSPACE_DATA_DRAWER_MIN_NUMERIC_SNAP_POINT = 0.48
 const WORKSPACE_DATA_DRAWER_MAX_SNAP_POINT = 1
 
 const DEFAULT_WORKSPACE_BOARD_UI_PREFERENCES: WorkspaceBoardUiPreferences = {
   canvasViewport: null,
+  canvasViewportLayoutVersion: 0,
   dataDrawerSnapPoint: null,
+  dataDrawerTab: "accelerator",
   teamAccessCollapsed: false,
   workspacePersonPlacements: [],
 }
@@ -137,18 +155,34 @@ export function normalizeWorkspaceCanvasPersonPlacementsPreference(
 export function normalizeWorkspaceDataDrawerSnapPointPreference(
   value: unknown
 ) {
+  if (
+    value === WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT ||
+    WORKSPACE_DATA_DRAWER_LEGACY_COLLAPSED_SNAP_POINTS.has(String(value))
+  ) {
+    return WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT
+  }
+
   const snapPoint = normalizeFiniteNumber(value)
   if (snapPoint === null) return null
+  if (snapPoint <= WORKSPACE_DATA_DRAWER_LEGACY_COLLAPSED_MAX) {
+    return WORKSPACE_DATA_DRAWER_COLLAPSED_SNAP_POINT
+  }
 
   return (
     Math.round(
       clampNumber(
         snapPoint,
-        WORKSPACE_DATA_DRAWER_MIN_SNAP_POINT,
+        WORKSPACE_DATA_DRAWER_MIN_NUMERIC_SNAP_POINT,
         WORKSPACE_DATA_DRAWER_MAX_SNAP_POINT
       ) * 1000
     ) / 1000
   )
+}
+
+export function normalizeWorkspaceDataDrawerTabPreference(
+  value: unknown
+): WorkspaceDataDrawerTabPreference {
+  return normalizeWorkspaceDrawerTab(value) ?? "accelerator"
 }
 
 export function normalizeWorkspaceBoardUiPreferences(
@@ -162,8 +196,15 @@ export function normalizeWorkspaceBoardUiPreferences(
     canvasViewport: normalizeWorkspaceCanvasViewportPreference(
       value.canvasViewport
     ),
+    canvasViewportLayoutVersion: Math.max(
+      0,
+      Math.round(normalizeFiniteNumber(value.canvasViewportLayoutVersion) ?? 0)
+    ),
     dataDrawerSnapPoint: normalizeWorkspaceDataDrawerSnapPointPreference(
       value.dataDrawerSnapPoint
+    ),
+    dataDrawerTab: normalizeWorkspaceDataDrawerTabPreference(
+      value.dataDrawerTab
     ),
     teamAccessCollapsed: value.teamAccessCollapsed === true,
     workspacePersonPlacements:

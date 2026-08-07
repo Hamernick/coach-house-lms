@@ -1,24 +1,26 @@
 import type { ReactNode } from "react"
 import { redirect } from "next/navigation"
 
-import { createSupabaseServerClient } from "@/lib/supabase"
-import { readAppSidebarDefaultOpen } from "@/components/app-shell/sidebar-state-server"
-import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
-import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { fetchSidebarTree } from "@/lib/academy"
-import { AppShell } from "@/components/app-shell"
-import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
-import {
-  resolveProfileAudience,
-  resolveTesterMetadata,
-} from "@/lib/devtools/audience"
-import { resolveAccountBillingCancellationRisk } from "@/lib/billing/subscription-access"
 import {
   resolvePricingPlanTier,
   type PricingPlanTier,
 } from "@/lib/billing/plan-tier"
+import { resolveAccountBillingCancellationRisk } from "@/lib/billing/subscription-access"
+import { AppShell } from "@/components/app-shell"
+import { readAppSidebarDefaultOpen } from "@/components/app-shell/sidebar-state-server"
+import {
+  resolveProfileAudience,
+  resolveTesterMetadata,
+} from "@/lib/devtools/audience"
+import { resolveActiveOrganization } from "@/lib/organization/active-org"
 import type { Json } from "@/lib/supabase"
+import { createSupabaseServerClient } from "@/lib/supabase"
+import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
+import { supabaseErrorToError } from "@/lib/supabase/errors"
+import { isWorkspaceFoundationRolloutEnabled } from "@/lib/workspace/foundation-rollout"
+import { WORKSPACE_ACCELERATOR_PATH } from "@/lib/workspace/routes"
 
 export default async function AcceleratorLayout({
   children,
@@ -48,7 +50,6 @@ export default async function AcceleratorLayout({
   let avatar: string | null = null
   let isAdmin = false
   let isTester = false
-  let tutorialWelcome = false
   let showOrgAdmin = false
   let canAccessOrgAdmin = false
   let organizationName: string | null = null
@@ -75,6 +76,16 @@ export default async function AcceleratorLayout({
     resolveActiveOrganization(supabase, user.id),
   ])
 
+  const { orgId, role } = activeOrg
+  if (
+    isWorkspaceFoundationRolloutEnabled({
+      orgId,
+      userId: user.id,
+    })
+  ) {
+    redirect(WORKSPACE_ACCELERATOR_PATH)
+  }
+
   displayName =
     profileAudience.fullName ??
     (typeof user.user_metadata?.full_name === "string"
@@ -95,7 +106,6 @@ export default async function AcceleratorLayout({
       ? (user.user_metadata.avatar_url as string)
       : null)
 
-  const { orgId, role } = activeOrg
   showOrgAdmin = role === "owner" || role === "admin" || isAdmin
 
   const [entitlements, orgRowResult, accountBillingResult] = await Promise.all([
@@ -144,23 +154,6 @@ export default async function AcceleratorLayout({
       currentPlanTier = "organization"
     }
   }
-
-  const onboardingCompleted = Boolean(userMeta?.onboarding_completed)
-  const tutorialsCompleted = Array.isArray(userMeta?.tutorials_completed)
-    ? (userMeta?.tutorials_completed as unknown[]).filter(
-        (t): t is string => typeof t === "string"
-      )
-    : []
-  const tutorialsDismissed = Array.isArray(userMeta?.tutorials_dismissed)
-    ? (userMeta?.tutorials_dismissed as unknown[]).filter(
-        (t): t is string => typeof t === "string"
-      )
-    : []
-  tutorialWelcome =
-    !isAdmin &&
-    onboardingCompleted &&
-    !tutorialsCompleted.includes("accelerator") &&
-    !tutorialsDismissed.includes("accelerator")
 
   if (!entitlements.hasAcceleratorAccess && !entitlements.hasElectiveAccess) {
     redirect(

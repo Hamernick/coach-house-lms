@@ -26,6 +26,10 @@ describe("app shell header layout", () => {
       "pr-[calc(var(--shell-content-pad)+var(--shell-right-rail))]"
     )
     expect(rightRailSource).toContain('"w-[var(--shell-right-rail-width)]"')
+    expect(rightRailSource).toContain("<SheetDescription>")
+    expect(rightRailSource).toContain(
+      "Contextual details for the current workspace view."
+    )
     expect(rightRailSource).toContain('"pointer-events-none w-0"')
   })
 
@@ -34,6 +38,9 @@ describe("app shell header layout", () => {
       "src/components/app-shell/app-shell-inner.tsx"
     )
     const appShellTypesSource = readSource("src/components/app-shell/types.ts")
+    const rightRailStateSource = readSource(
+      "src/components/app-shell/use-app-shell-right-rail-state.ts"
+    )
     const authenticatedFindShellSource = readSource(
       "src/features/find-map/components/authenticated-find-shell.tsx"
     )
@@ -53,14 +60,15 @@ describe("app shell header layout", () => {
 
     expect(appShellSource).toContain("@/components/ui/resizable")
     expect(appShellSource).toContain("useDesktopResizableRightRail")
+    expect(rightRailStateSource).toContain(
+      "const [rightOpen, setRightOpen] = useState(false)"
+    )
+    expect(rightRailStateSource).not.toContain('typeof window === "undefined"')
     expect(appShellSource).toContain("resizableRightRail = false")
     expect(appShellSource).toContain(
-      "!isMobile && hasRightRail && resizableRightRail"
-    )
-    expect(appShellSource).not.toContain(
       "!isMobile && hasRightRail && rightOpen && resizableRightRail"
     )
-    expect(appShellSource).toContain("{rightOpen ? (")
+    expect(appShellSource).not.toContain("{rightOpen ? (")
     expect(appShellSource).not.toContain('derivedContext !== "public"')
     expect(appShellTypesSource).toContain("resizableRightRail?: boolean")
     expect(authenticatedFindShellSource).toContain("resizableRightRail")

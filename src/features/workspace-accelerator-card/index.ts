@@ -15,14 +15,18 @@ export { resolveWorkspaceAcceleratorModuleStepNavigation } from "./components/wo
 export { useWorkspaceAcceleratorCardController } from "./hooks/use-workspace-accelerator-card-controller"
 export {
   areWorkspaceAcceleratorRuntimeSnapshotsEqual,
+  buildWorkspaceAcceleratorLessonGroupKey,
+  buildWorkspaceAcceleratorLessonGroupOptions,
   buildWorkspaceAcceleratorRuntimeActionsSignature,
   buildWorkspaceAcceleratorFullscreenHref,
   buildWorkspaceAcceleratorCardSteps,
   buildWorkspaceAcceleratorRuntimeStepSignature,
   formatWorkspaceAcceleratorModuleCompletionLabel,
+  isWorkspaceAcceleratorControllerStepVisible,
   normalizeWorkspaceAcceleratorCardInput,
   normalizeWorkspaceAcceleratorResources,
   resolveWorkspaceAcceleratorCardTargetSize,
+  resolveWorkspaceAcceleratorLessonGroupTitle,
 } from "./lib"
 export type {
   WorkspaceAcceleratorCardInput,
@@ -31,6 +35,7 @@ export type {
   WorkspaceAcceleratorCardStepResource,
   WorkspaceAcceleratorCardRuntimeActions,
   WorkspaceAcceleratorCardRuntimeSnapshot,
+  WorkspaceAcceleratorOpenStepRequest,
   WorkspaceAcceleratorTutorialBlockedAction,
   WorkspaceAcceleratorTutorialCallout,
   WorkspaceAcceleratorTutorialFocus,

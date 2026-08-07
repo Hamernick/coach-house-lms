@@ -59,6 +59,12 @@ export type OrgProfile = {
   programs?: string | null
   reports?: string | null
   boilerplate?: string | null
+  brandVoiceAudience?: string | null
+  brandVoiceTone?: string | null
+  brandVoiceStyle?: string | null
+  brandVoicePersonality?: string | null
+  brandVoiceGuidelines?: string | null
+  brandVoiceAvoid?: string | null
   brandPrimary?: string | null
   brandColors?: string[] | null
   brandThemePresetId?: string | null

@@ -45,7 +45,10 @@ export function WorkspaceCanvasSurfaceV2ViewportControls({
   })
 
   return (
-    <div className="pointer-events-none absolute right-4 bottom-4 z-30 flex items-start justify-end md:top-4 md:bottom-auto">
+    <div
+      data-workspace-canvas-viewport-controls="true"
+      className="pointer-events-none absolute right-4 bottom-4 z-30 flex items-start justify-end group-has-[[data-workspace-canvas-drawer-fullscreen=true]]/workspace-canvas-surface:hidden md:top-4 md:bottom-auto"
+    >
       <div className="border-border/70 bg-card/92 pointer-events-auto flex items-center gap-1 rounded-2xl border p-1 shadow-sm backdrop-blur transition-[box-shadow,background-color] duration-180 ease-out">
         <Button
           type="button"

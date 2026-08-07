@@ -3,8 +3,12 @@ import { describe, expect, it } from "vitest"
 import {
   buildWorkspaceBoardStateWithPersistedNodePosition,
   mergeNewerPersistedWorkspaceNodeState,
+  reconcileWorkspaceBoardSaveResult,
 } from "@/app/(dashboard)/my-organization/_lib/workspace-board-state-persistence"
-import { buildDefaultBoardState } from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout"
+import {
+  buildDefaultBoardState,
+  normalizeWorkspaceBoardState,
+} from "@/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-layout"
 
 describe("workspace board state persistence", () => {
   it("preserves newer persisted node positions when an older whole-board save arrives", () => {
@@ -266,6 +270,127 @@ describe("workspace board state persistence", () => {
     })
 
     expect(merged.ontology).toEqual(persisted.ontology)
+  })
+
+  it("preserves opaque future layout records across concurrent whole-board saves", () => {
+    const defaults = buildDefaultBoardState()
+    const incoming = normalizeWorkspaceBoardState({
+      ...defaults,
+      updatedAt: "2026-08-05T18:20:00.000Z",
+      nodes: [
+        ...defaults.nodes,
+        { id: "future-card", x: 640, y: 720, size: "md" },
+      ],
+      connections: [
+        ...defaults.connections,
+        {
+          id: "edge-organization-to-future-card",
+          source: "organization-overview",
+          target: "future-card",
+        },
+      ],
+      hiddenCardIds: [...defaults.hiddenCardIds, "future-card"],
+    })
+    const persisted = normalizeWorkspaceBoardState({
+      ...defaults,
+      updatedAt: "2026-08-05T18:21:00.000Z",
+      nodes: [
+        ...defaults.nodes,
+        { id: "future-card", x: 920, y: 760, size: "lg" },
+        { id: "future-reporting", x: 1120, y: 760, size: "md" },
+      ],
+      connections: [
+        ...defaults.connections,
+        {
+          id: "edge-organization-to-future-card",
+          source: "organization-overview",
+          target: "future-card",
+        },
+        {
+          id: "edge-future-card-to-reporting",
+          source: "future-card",
+          target: "future-reporting",
+        },
+      ],
+      hiddenCardIds: [
+        ...defaults.hiddenCardIds,
+        "future-card",
+        "future-reporting",
+      ],
+    })
+
+    const merged = mergeNewerPersistedWorkspaceNodeState({
+      incoming,
+      persisted,
+    })
+
+    expect(merged.forwardCompatibility).toEqual({
+      nodes: [
+        { id: "future-card", x: 920, y: 760, size: "lg" },
+        { id: "future-reporting", x: 1120, y: 760, size: "md" },
+      ],
+      connections: [
+        {
+          id: "edge-organization-to-future-card",
+          source: "organization-overview",
+          target: "future-card",
+        },
+        {
+          id: "edge-future-card-to-reporting",
+          source: "future-card",
+          target: "future-reporting",
+        },
+      ],
+      hiddenCardIds: ["future-card", "future-reporting"],
+    })
+  })
+
+  it("reconciles server-preserved positions and opaque future layout state into the client after save", () => {
+    const defaults = buildDefaultBoardState()
+    const current = {
+      ...defaults,
+      ontology: {
+        ...defaults.ontology!,
+        expandedRootIds: ["organization-overview" as const],
+      },
+    }
+    const persisted = {
+      ...defaults,
+      updatedAt: "2026-08-05T19:45:00.000Z",
+      nodes: defaults.nodes.map((node) =>
+        node.id === "programs"
+          ? {
+              ...node,
+              x: 780,
+              y: 640,
+              positionMode: "manual" as const,
+            }
+          : node
+      ),
+      forwardCompatibility: {
+        nodes: [{ id: "future-card", x: 960, y: 720, size: "md" }],
+        connections: [],
+        hiddenCardIds: ["future-card"],
+      },
+    }
+
+    const reconciled = reconcileWorkspaceBoardSaveResult({
+      current,
+      persisted,
+    })
+
+    expect(
+      reconciled.nodes.find((node) => node.id === "programs")
+    ).toMatchObject({
+      x: 780,
+      y: 640,
+      positionMode: "manual",
+    })
+    expect(reconciled.forwardCompatibility).toEqual(
+      persisted.forwardCompatibility
+    )
+    expect(reconciled.updatedAt).toBe(persisted.updatedAt)
+    expect(reconciled.ontology).toBe(current.ontology)
   })
 
   it("updates only the targeted node position for dedicated node saves", () => {

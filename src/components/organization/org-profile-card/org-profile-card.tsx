@@ -1,5 +1,6 @@
 "use client"
 
+import { useRef } from "react"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 
 import { ProgramWizardLazy } from "@/components/programs/program-wizard-lazy"
@@ -8,6 +9,7 @@ import { ORG_PROFILE_TABS } from "./config"
 import { OrgProfileDiscardDialog } from "./org-profile-discard-dialog"
 import { OrgProfileHeader } from "./header"
 import { useOrgProfileEditorState } from "./hooks/use-org-profile-editor-state"
+import { useOrgProfileEditorDeepLinkFocus } from "./hooks/use-org-profile-editor-deep-link-focus"
 import { OrgProfileTabNavigation } from "./org-profile-tab-navigation"
 import { CompanyTab } from "./tabs/company-tab"
 import { PeopleTab } from "./tabs/people-tab"
@@ -22,8 +24,11 @@ export function OrgProfileEditor({
   canEdit = true,
   initialTab,
   initialProgramId,
-  onClose,
+  initialProgramStep,
+  initialFocus,
+  initialEditMode,
 }: OrgProfileCardProps) {
+  const editorRootRef = useRef<HTMLDivElement>(null)
   const {
     tab,
     handleTabChange,
@@ -57,12 +62,21 @@ export function OrgProfileEditor({
     canEdit,
     initialTab,
     initialProgramId,
+    initialEditMode,
+  })
+  useOrgProfileEditorDeepLinkFocus({
+    canEdit,
+    editMode,
+    focusKey: initialFocus,
+    rootRef: editorRootRef,
+    setEditMode,
+    tab,
   })
 
   const tabsIdBase = "org-profile-tabs"
 
   return (
-    <div className="overflow-hidden pb-6">
+    <div ref={editorRootRef} className="overflow-hidden pb-6">
       <OrgProfileHeader
         name={company.name || "Organization"}
         tagline={company.tagline || "—"}
@@ -73,7 +87,6 @@ export function OrgProfileEditor({
         isDirty={dirty}
         canEdit={canEdit}
         publicLink={publicLink}
-        onCloseToWorkspace={onClose}
         onLogoChange={(url) => persistProfileUpdates({ logoUrl: url })}
         onHeaderChange={(url) => persistProfileUpdates({ headerUrl: url })}
         onEnterEdit={() => canEdit && setEditMode(true)}
@@ -162,6 +175,7 @@ export function OrgProfileEditor({
         <ProgramWizardLazy
           mode="edit"
           program={editProgram}
+          initialStep={initialProgramStep}
           open={editOpen}
           onOpenChange={setEditOpen}
         />

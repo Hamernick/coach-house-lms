@@ -25,6 +25,7 @@ import type {
 export type WorkspaceBoardFlowSurfaceProps = {
   seed: WorkspaceSeedData
   organizationEditorData: WorkspaceOrganizationEditorData
+  workspaceFoundationEnabled: boolean
   boardState: WorkspaceBoardState
   allowEditing: boolean
   workspaceDataDrawerCanEdit: boolean
@@ -75,6 +76,7 @@ export const WorkspaceBoardFlowSurface = memo(
           presentationMode={props.presentationMode}
           seed={props.seed}
           organizationEditorData={props.organizationEditorData}
+          workspaceFoundationEnabled={props.workspaceFoundationEnabled}
           layoutFitRequestKey={props.layoutFitRequestKey}
           acceleratorFocusRequestKey={props.acceleratorFocusRequestKey}
           tutorialRestartRequestKey={props.tutorialRestartRequestKey}

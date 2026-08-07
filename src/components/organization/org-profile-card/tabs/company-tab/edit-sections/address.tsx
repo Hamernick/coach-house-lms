@@ -26,7 +26,12 @@ import {
 } from "@/lib/location/organization-location"
 import type { CompanyEditProps } from "../types"
 
-export function AddressSection({ company, onInputChange, onUpdate, onDirty }: CompanyEditProps) {
+export function AddressSection({
+  company,
+  onInputChange,
+  onUpdate,
+  onDirty,
+}: CompanyEditProps) {
   const normalizedCountry = normalizeCountryName(company.addressCountry)
   const usesUnitedStatesStateSelector =
     normalizedCountry.length === 0 || isUnitedStatesCountry(normalizedCountry)
@@ -36,22 +41,40 @@ export function AddressSection({ company, onInputChange, onUpdate, onDirty }: Co
   })
 
   return (
-    <FormRow title="Address" description="Mailing address for invoices and communications.">
+    <FormRow
+      title="Address"
+      description="Mailing address for invoices and communications."
+      focusKey="address"
+    >
       <div className="grid gap-4">
         <FieldSet className="gap-4 rounded-lg border border-dashed p-4">
           <FieldLegend>Organization address</FieldLegend>
           <FieldHelperText>
-            Provide the public address you want Coach House to geocode for map placement. We save U.S. state abbreviations in a standardized format and geocode this address automatically on save.
+            Provide the public address you want Coach House to geocode for map
+            placement. We save U.S. state abbreviations in a standardized format
+            and geocode this address automatically on save.
           </FieldHelperText>
           <FieldGroup className="gap-4">
             <FieldRow>
               <FieldLabel htmlFor="addressStreet">Street address</FieldLabel>
-              <Input id="addressStreet" name="addressStreet" value={company.addressStreet ?? ""} onChange={onInputChange} placeholder="123 Main St" />
+              <Input
+                id="addressStreet"
+                name="addressStreet"
+                value={company.addressStreet ?? ""}
+                onChange={onInputChange}
+                placeholder="123 Main St"
+              />
             </FieldRow>
             <div className="grid gap-4 sm:grid-cols-2">
               <FieldRow>
                 <FieldLabel htmlFor="addressCity">City</FieldLabel>
-                <Input id="addressCity" name="addressCity" value={company.addressCity ?? ""} onChange={onInputChange} placeholder="New York" />
+                <Input
+                  id="addressCity"
+                  name="addressCity"
+                  value={company.addressCity ?? ""}
+                  onChange={onInputChange}
+                  placeholder="New York"
+                />
               </FieldRow>
               <FieldRow>
                 <FieldLabel htmlFor="addressState">State / Region</FieldLabel>
@@ -67,7 +90,10 @@ export function AddressSection({ company, onInputChange, onUpdate, onDirty }: Co
                         onDirty()
                       }}
                     >
-                      <SelectTrigger id="addressState" className="bg-background">
+                      <SelectTrigger
+                        id="addressState"
+                        className="bg-background"
+                      >
                         <SelectValue placeholder="Select state" />
                       </SelectTrigger>
                       <SelectContent>
@@ -79,7 +105,8 @@ export function AddressSection({ company, onInputChange, onUpdate, onDirty }: Co
                       </SelectContent>
                     </Select>
                     <FieldHelperText>
-                      U.S. addresses save the state as a short code like IL so public map labels and geocoding stay consistent.
+                      U.S. addresses save the state as a short code like IL so
+                      public map labels and geocoding stay consistent.
                     </FieldHelperText>
                   </>
                 ) : (
@@ -96,7 +123,13 @@ export function AddressSection({ company, onInputChange, onUpdate, onDirty }: Co
             <div className="grid gap-4 sm:grid-cols-2">
               <FieldRow>
                 <FieldLabel htmlFor="addressPostal">Postal code</FieldLabel>
-                <Input id="addressPostal" name="addressPostal" value={company.addressPostal ?? ""} onChange={onInputChange} placeholder="10001" />
+                <Input
+                  id="addressPostal"
+                  name="addressPostal"
+                  value={company.addressPostal ?? ""}
+                  onChange={onInputChange}
+                  placeholder="10001"
+                />
               </FieldRow>
               <FieldRow>
                 <FieldLabel htmlFor="addressCountry">Country</FieldLabel>

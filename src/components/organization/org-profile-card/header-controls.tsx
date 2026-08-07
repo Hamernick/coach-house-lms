@@ -3,7 +3,6 @@
 import Link from "next/link"
 import Loader2 from "lucide-react/dist/esm/icons/loader-2"
 import PencilLine from "lucide-react/dist/esm/icons/pencil-line"
-import XIcon from "lucide-react/dist/esm/icons/x"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -26,7 +25,6 @@ type OrgProfileHeaderBannerControlsProps = {
   headerBusy: boolean
   hasHeader: boolean
   isUploadingHeader: boolean
-  onCloseToWorkspace?: (() => void) | null
   onStartBannerUpload: (file: File) => void
   onAdjustHeader: () => void
   onRemoveHeader: () => void
@@ -39,44 +37,15 @@ export function OrgProfileHeaderBannerControls({
   headerBusy,
   hasHeader,
   isUploadingHeader,
-  onCloseToWorkspace,
   onStartBannerUpload,
   onAdjustHeader,
   onRemoveHeader,
 }: OrgProfileHeaderBannerControlsProps) {
-  if (!canEdit || !editMode) {
-    if (!onCloseToWorkspace) return null
-    return (
-      <div className="absolute right-4 top-4 flex items-center gap-2">
-        <Button
-          type="button"
-          size="icon"
-          variant="secondary"
-          className="h-10 w-10 rounded-full border border-border/70 bg-background/85 backdrop-blur-sm"
-          onClick={onCloseToWorkspace}
-          aria-label="Return to workspace"
-        >
-          <XIcon className="h-4 w-4" aria-hidden />
-        </Button>
-      </div>
-    )
-  }
+  if (!canEdit || !editMode) return null
 
   return (
     <>
-      <div className="absolute right-4 top-4 flex items-center gap-2">
-        {onCloseToWorkspace ? (
-          <Button
-            type="button"
-            size="icon"
-            variant="secondary"
-            className="h-10 w-10 rounded-full border border-border/70 bg-background/85 backdrop-blur-sm"
-            onClick={onCloseToWorkspace}
-            aria-label="Return to workspace"
-          >
-            <XIcon className="h-4 w-4" aria-hidden />
-          </Button>
-        ) : null}
+      <div className="absolute top-4 right-4 flex items-center gap-2">
         <input
           id={headerInputId}
           type="file"
@@ -109,11 +78,19 @@ export function OrgProfileHeaderBannerControls({
                 Adjust banner
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild disabled={headerBusy} className="cursor-pointer">
-                <label htmlFor={headerInputId} className="flex w-full cursor-pointer items-center gap-2">
+              <DropdownMenuItem
+                asChild
+                disabled={headerBusy}
+                className="cursor-pointer"
+              >
+                <label
+                  htmlFor={headerInputId}
+                  className="flex w-full cursor-pointer items-center gap-2"
+                >
                   {isUploadingHeader ? (
                     <>
-                      <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
+                      <Loader2 className="size-4 animate-spin" aria-hidden />{" "}
+                      Uploading…
                     </>
                   ) : (
                     "Replace banner"
@@ -122,8 +99,9 @@ export function OrgProfileHeaderBannerControls({
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem disabled className="opacity-100">
-                <span className="text-xs text-muted-foreground">
-                  Banner: {ORG_BANNER_RECOMMENDED_DIMENSIONS_LABEL}px ({ORG_BANNER_ASPECT_LABEL})
+                <span className="text-muted-foreground text-xs">
+                  Banner: {ORG_BANNER_RECOMMENDED_DIMENSIONS_LABEL}px (
+                  {ORG_BANNER_ASPECT_LABEL})
                 </span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -141,7 +119,8 @@ export function OrgProfileHeaderBannerControls({
             <label htmlFor={headerInputId} className="cursor-pointer">
               {isUploadingHeader ? (
                 <span className="inline-flex items-center gap-2">
-                  <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
+                  <Loader2 className="size-4 animate-spin" aria-hidden />{" "}
+                  Uploading…
                 </span>
               ) : (
                 "Upload banner"
@@ -150,8 +129,9 @@ export function OrgProfileHeaderBannerControls({
           </Button>
         )}
       </div>
-      <div className="absolute right-4 top-14 rounded-md border border-border/60 bg-background/85 px-2 py-1 text-[10px] text-muted-foreground backdrop-blur-sm">
-        Banner {ORG_BANNER_RECOMMENDED_DIMENSIONS_LABEL}px ({ORG_BANNER_ASPECT_LABEL}) recommended · min{" "}
+      <div className="border-border/60 bg-background/85 text-muted-foreground absolute top-14 right-4 rounded-md border px-2 py-1 text-[10px] backdrop-blur-sm">
+        Banner {ORG_BANNER_RECOMMENDED_DIMENSIONS_LABEL}px (
+        {ORG_BANNER_ASPECT_LABEL}) recommended · min{" "}
         {ORG_BANNER_MIN_DIMENSIONS_LABEL}px
       </div>
     </>
@@ -208,11 +188,19 @@ export function OrgProfileHeaderLogoControls({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem asChild disabled={logoBusy} className="cursor-pointer">
-              <label htmlFor={logoInputId} className="flex w-full cursor-pointer items-center gap-2">
+            <DropdownMenuItem
+              asChild
+              disabled={logoBusy}
+              className="cursor-pointer"
+            >
+              <label
+                htmlFor={logoInputId}
+                className="flex w-full cursor-pointer items-center gap-2"
+              >
                 {isUploadingLogo ? (
                   <>
-                    <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
+                    <Loader2 className="size-4 animate-spin" aria-hidden />{" "}
+                    Uploading…
                   </>
                 ) : (
                   "Replace logo"
@@ -234,7 +222,8 @@ export function OrgProfileHeaderLogoControls({
           <label htmlFor={logoInputId} className="cursor-pointer">
             {isUploadingLogo ? (
               <span className="inline-flex items-center gap-2">
-                <Loader2 className="size-4 animate-spin" aria-hidden /> Uploading…
+                <Loader2 className="size-4 animate-spin" aria-hidden />{" "}
+                Uploading…
               </span>
             ) : (
               "Upload"
@@ -268,7 +257,7 @@ export function OrgProfileHeaderActions({
   onSave,
 }: OrgProfileHeaderActionsProps) {
   return (
-    <div className="absolute right-6 top-6 flex gap-2">
+    <div className="absolute top-6 right-6 flex gap-2">
       {publicLink && !editMode ? (
         <Button asChild size="sm" variant="secondary">
           <Link href={publicLink}>View map profile</Link>
@@ -277,7 +266,12 @@ export function OrgProfileHeaderActions({
       {canEdit ? (
         editMode ? (
           <>
-            <Button size="sm" variant="ghost" onClick={onCancelEdit} disabled={isSaving}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onCancelEdit}
+              disabled={isSaving}
+            >
               Cancel
             </Button>
             <Button size="sm" onClick={onSave} disabled={isSaving || !isDirty}>

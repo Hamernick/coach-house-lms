@@ -26,6 +26,7 @@ export type ProgramRecord = {
 export type ProgramWizardProps = {
   mode?: "create" | "edit"
   program?: (Partial<ProgramRecord> & { id: string }) | null
+  initialStep?: number | null
   open?: boolean
   onOpenChange?: (open: boolean) => void
   portalContainer?: HTMLElement | null

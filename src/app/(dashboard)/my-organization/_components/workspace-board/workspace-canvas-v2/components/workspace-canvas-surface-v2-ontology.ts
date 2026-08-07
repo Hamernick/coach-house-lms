@@ -32,6 +32,11 @@ import {
   type WorkspaceCanvasPersonPlacement,
   WORKSPACE_CANVAS_PERSON_NODE_SIZE,
 } from "./workspace-canvas-person-node-model"
+import { buildWorkspaceOntologyEmphasisResolver } from "./workspace-canvas-ontology-emphasis"
+import {
+  resolveWorkspaceDataDrawerRequest,
+  type WorkspaceDataDrawerRequest,
+} from "./workspace-canvas-overlay-drawer-tabs"
 import type { WorkspaceCanvasV2CardId } from "./workspace-canvas-surface-v2-helpers"
 
 export const WORKSPACE_ONTOLOGY_NODE_TYPE = "workspace-ontology"
@@ -150,6 +155,7 @@ export function useWorkspaceCanvasOntology({
   zoom,
   onFocusRoot,
   onOpenAction,
+  onOpenDataDrawer,
 }: {
   boardState: WorkspaceBoardState
   seed: WorkspaceSeedData
@@ -164,6 +170,7 @@ export function useWorkspaceCanvasOntology({
     rootId: WorkspaceOntologyRootId,
     target: WorkspaceOntologyActionTarget
   ) => void
+  onOpenDataDrawer: (request: Omit<WorkspaceDataDrawerRequest, "id">) => void
 }) {
   const router = useRouter()
   const { state: ontologyState, setState: setOntologyState } =
@@ -176,21 +183,16 @@ export function useWorkspaceCanvasOntology({
     const completeInput = buildWorkspaceCanvasOntologyInput({
       seed,
       editor: organizationEditorData,
-      tracker: boardState.tracker,
       placedPersonIds: personPlacements.map((placement) => placement.personId),
     })
     return {
       roots: completeInput.roots.filter((root) => visibleRootIds.has(root.id)),
       relationships: completeInput.relationships,
     }
-  }, [
-    boardState.tracker,
-    organizationEditorData,
-    personPlacements,
-    seed,
-    visibleRootIds,
-  ])
-  const structureOpen = enabled && ontologyState.expandedRootIds.length > 0
+  }, [organizationEditorData, personPlacements, seed, visibleRootIds])
+  const structureOpen =
+    enabled &&
+    (ontologyState.mode === "map" || ontologyState.expandedRootIds.length > 0)
   const rootGeometry = useMemo(
     () =>
       buildRootGeometry({
@@ -220,17 +222,33 @@ export function useWorkspaceCanvasOntology({
     onStateChange: setOntologyState,
   })
   const nodeById = useMemo(
+    () => new Map(controller.allNodes.map((node) => [node.id, node])),
+    [controller.allNodes]
+  )
+  const layoutNodeById = useMemo(
     () => new Map(controller.layoutNodes.map((node) => [node.id, node])),
     [controller.layoutNodes]
   )
   const toggleNode = controller.toggleNode
+  const setMode = controller.setMode
   const activateNode = useCallback(
     (nodeId: string, options?: { openInNewTab?: boolean }) => {
+      if (
+        nodeId.startsWith("ontology:more:") ||
+        nodeId.startsWith("ontology:rollup:")
+      ) {
+        setMode("map")
+        return
+      }
       const node = nodeById.get(nodeId)
       if (!node) return
       const activation = resolveWorkspaceOntologyNodeActivation(node)
       if (activation.kind === "toggle-details") {
         toggleNode(activation.nodeId)
+        return
+      }
+      if (activation.kind === "show-map") {
+        setMode("map")
         return
       }
       if (activation.kind === "open-action") {
@@ -241,8 +259,25 @@ export function useWorkspaceCanvasOntology({
         onFocusRoot(activation.rootId)
         return
       }
+      if (
+        node.category === "documents" &&
+        node.id.startsWith("ontology:document:")
+      ) {
+        onOpenDataDrawer({
+          tab: "documents",
+          focusKey: node.id.slice("ontology:document:".length),
+        })
+        return
+      }
       if (options?.openInNewTab) {
         window.open(activation.href, "_blank", "noopener,noreferrer")
+        return
+      }
+      const dataDrawerRequest = resolveWorkspaceDataDrawerRequest(
+        activation.href
+      )
+      if (dataDrawerRequest) {
+        onOpenDataDrawer(dataDrawerRequest)
         return
       }
       if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(activation.href)) {
@@ -251,7 +286,15 @@ export function useWorkspaceCanvasOntology({
       }
       router.push(activation.href)
     },
-    [nodeById, onFocusRoot, onOpenAction, router, toggleNode]
+    [
+      nodeById,
+      onFocusRoot,
+      onOpenAction,
+      onOpenDataDrawer,
+      router,
+      setMode,
+      toggleNode,
+    ]
   )
   const rootControlsByCardId = useMemo(() => {
     const controls: Partial<
@@ -263,50 +306,62 @@ export function useWorkspaceCanvasOntology({
     }
     return controls
   }, [controller.rootControls])
-  const nodes = useMemo<Node<WorkspaceOntologyNodeData>[]>(
-    () =>
-      controller.layoutNodes.map((node) => {
-        const transitionPhase =
-          controller.nodeTransitionPhases.get(node.id) ?? "stable"
-        const exiting = transitionPhase === "exiting"
-        return {
-          id: node.id,
-          type: WORKSPACE_ONTOLOGY_NODE_TYPE,
-          className: "workspace-ontology-layout-node",
-          position: node.position,
-          width: node.size.width,
-          height: node.size.height,
-          style: {
-            width: node.size.width,
-            height: node.size.height,
-          },
-          draggable: false,
-          selectable: !exiting,
-          focusable: false,
-          data: {
-            kind: "workspace-ontology" as const,
-            node,
-            detailLevel: controller.detailLevel,
-            expanded: controller.state.expandedNodeIds.includes(node.id),
-            transitionPhase,
-            transitionDelayMs:
-              controller.nodeTransitionDelays.get(node.id) ?? 0,
-            onActivate: () => activateNode(node.id),
-          },
-        }
-      }),
-    [
-      activateNode,
-      controller.detailLevel,
-      controller.layoutNodes,
-      controller.nodeTransitionDelays,
-      controller.state.expandedNodeIds,
-      controller.nodeTransitionPhases,
-    ]
-  )
-  const edges = useMemo<Edge[]>(
-    () =>
-      controller.edges.map((edge) => ({
+  const nodes = useMemo<Node<WorkspaceOntologyNodeData>[]>(() => {
+    const resolveEmphasis = buildWorkspaceOntologyEmphasisResolver(
+      controller.activeNodeIds,
+      controller.activeRootId
+    )
+    return controller.layoutNodes.map((node) => {
+      const transitionPhase =
+        controller.nodeTransitionPhases.get(node.id) ?? "stable"
+      const exiting = transitionPhase === "exiting"
+      const { active, dimmed } = resolveEmphasis(node)
+      return {
+        id: node.id,
+        type: WORKSPACE_ONTOLOGY_NODE_TYPE,
+        className: "workspace-ontology-layout-node",
+        position: node.position,
+        width: node.size.width,
+        height: node.size.height,
+        style: node.size,
+        draggable: false,
+        selectable: !exiting,
+        focusable: node.presentation !== "list",
+        data: {
+          kind: "workspace-ontology" as const,
+          node,
+          detailLevel: controller.detailLevel,
+          expanded: active,
+          active,
+          activeItemId: node.items?.find((item) =>
+            controller.activeNodeIds.includes(item.id)
+          )?.id,
+          dimmed,
+          transitionPhase,
+          transitionDelayMs: controller.nodeTransitionDelays.get(node.id) ?? 0,
+          onActivate: (options) => activateNode(node.id, options),
+          onActivateItem: activateNode,
+        },
+      }
+    })
+  }, [
+    activateNode,
+    controller.detailLevel,
+    controller.activeNodeIds,
+    controller.activeRootId,
+    controller.layoutNodes,
+    controller.nodeTransitionDelays,
+    controller.nodeTransitionPhases,
+  ])
+  const edges = useMemo<Edge[]>(() => {
+    const resolveEmphasis = buildWorkspaceOntologyEmphasisResolver(
+      controller.activeNodeIds,
+      controller.activeRootId
+    )
+    return controller.edges.map((edge) => {
+      const targetNode = layoutNodeById.get(edge.target)
+      const dimmed = targetNode ? resolveEmphasis(targetNode).dimmed : false
+      return {
         id: edge.id,
         source: edge.source,
         target: edge.target,
@@ -335,10 +390,16 @@ export function useWorkspaceCanvasOntology({
               }
             : undefined,
         style: {
-          stroke:
-            "color-mix(in srgb, var(--muted-foreground) 74%, transparent)",
-          strokeWidth: edge.kind === "relationship" ? 1.25 : 1,
+          stroke: edge.active
+            ? "color-mix(in srgb, rgb(14 165 233) 82%, transparent)"
+            : "color-mix(in srgb, var(--muted-foreground) 74%, transparent)",
+          strokeWidth: edge.active
+            ? 1.8
+            : edge.kind === "relationship"
+              ? 1.25
+              : 1,
           strokeDasharray: edge.kind === "relationship" ? "5 5" : undefined,
+          opacity: dimmed ? 0.28 : 1,
         },
         data: {
           role: "workspace-ontology",
@@ -347,19 +408,24 @@ export function useWorkspaceCanvasOntology({
           status: edge.status,
           kind: edge.kind,
           showLabel: edge.showLabel,
+          active: edge.active,
+          dimmed,
           detailLevel: controller.detailLevel,
           transitionPhase:
             controller.edgeTransitionPhases.get(edge.id) ?? "stable",
           transitionDelayMs: controller.edgeTransitionDelays.get(edge.id) ?? 0,
         },
-      })),
-    [
-      controller.detailLevel,
-      controller.edges,
-      controller.edgeTransitionDelays,
-      controller.edgeTransitionPhases,
-    ]
-  )
+      }
+    })
+  }, [
+    controller.activeNodeIds,
+    controller.activeRootId,
+    controller.detailLevel,
+    controller.edges,
+    controller.edgeTransitionDelays,
+    controller.edgeTransitionPhases,
+    layoutNodeById,
+  ])
 
   return {
     ...controller,

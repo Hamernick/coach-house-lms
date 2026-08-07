@@ -24,6 +24,8 @@ export type WorkspaceOntologyEdgeData = {
   role?: string
   kind?: "hierarchy" | "relationship"
   showLabel?: boolean
+  active?: boolean
+  dimmed?: boolean
   detailLevel?: WorkspaceOntologyDetailLevel
   transitionPhase?: "entering" | "stable" | "exiting"
   transitionDelayMs?: number
@@ -88,6 +90,8 @@ export function WorkspaceOntologyEdge({
           className="workspace-ontology-edge-presence"
           data-transition-phase={transitionPhase}
           data-transition-delay-ms={transitionDelayMs}
+          data-workspace-ontology-active={data?.active ? "true" : undefined}
+          data-workspace-ontology-dimmed={data?.dimmed ? "true" : undefined}
           style={transitionStyle}
         >
           <BaseEdge
@@ -114,6 +118,8 @@ export function WorkspaceOntologyEdge({
               className={WORKSPACE_ONTOLOGY_EDGE_LABEL_CLASSNAME}
               data-workspace-ontology-edge-kind={data?.kind}
               data-workspace-ontology-edge-label="true"
+              data-workspace-ontology-active={data?.active ? "true" : undefined}
+              data-workspace-ontology-dimmed={data?.dimmed ? "true" : undefined}
               data-transition-phase={transitionPhase}
               data-transition-delay-ms={transitionDelayMs}
               style={transitionStyle}

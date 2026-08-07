@@ -85,6 +85,7 @@ describe("workspace ontology identity", () => {
       input,
       state: {
         ...buildDefaultWorkspaceOntologyState(),
+        mode: "map",
         expandedRootIds: ["organization-overview", "programs"],
       },
       filter: { query: "", categories: [] },

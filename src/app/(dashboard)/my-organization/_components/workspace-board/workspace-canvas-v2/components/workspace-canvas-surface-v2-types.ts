@@ -22,6 +22,7 @@ export type WorkspaceCanvasSurfaceV2Props = {
   presentationMode: boolean
   seed: WorkspaceSeedData
   organizationEditorData: WorkspaceOrganizationEditorData
+  workspaceFoundationEnabled: boolean
   layoutFitRequestKey: number
   acceleratorFocusRequestKey: number
   tutorialRestartRequestKey: number

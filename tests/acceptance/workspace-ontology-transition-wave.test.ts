@@ -23,6 +23,7 @@ function buildNode(id: string, depth: number): WorkspaceOntologyLayoutNode {
     depth,
     childCount: 0,
     hasChildren: false,
+    presentation: "action",
     position: { x: depth * 100, y: 0 },
     size: { width: 280, height: 112 },
   }
@@ -42,6 +43,7 @@ function buildEdge(
     status: "in-progress",
     kind: "hierarchy",
     showLabel: false,
+    active: false,
   }
 }
 

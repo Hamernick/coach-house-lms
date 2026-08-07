@@ -123,6 +123,7 @@ export function buildWorkspaceFiscalOntologyRoot(
         actionTarget: hasFiscalProject
           ? { kind: "fiscal-phase", phaseId: "application-intake" }
           : null,
+        visibility: "source-card-only",
       },
       {
         id: "ontology:fiscal:documents",

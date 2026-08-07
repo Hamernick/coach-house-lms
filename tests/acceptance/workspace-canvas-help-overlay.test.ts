@@ -58,6 +58,9 @@ describe("workspace canvas help overlay", () => {
     expect(source).not.toContain('variant="outline"')
     expect(source).not.toContain("rounded-full shadow-sm backdrop-blur-sm")
     expect(globalsSource).toContain(
+      ".workspace-flow .react-flow__node:focus-visible [data-workspace-card]"
+    )
+    expect(globalsSource).not.toContain(
       ".workspace-flow .react-flow__node.selected [data-workspace-card]"
     )
     expect(globalsSource).toContain("outline-offset: 3px;")

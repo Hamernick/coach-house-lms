@@ -2,7 +2,10 @@ import type {
   WorkspaceOntologyInput,
   WorkspaceOntologyNodeInput,
 } from "@/features/workspace-ontology"
-import { buildWorkspaceAcceleratorFullscreenHref } from "@/features/workspace-accelerator-card"
+import {
+  buildWorkspaceAcceleratorFullscreenHref,
+  isWorkspaceAcceleratorControllerStepVisible,
+} from "@/features/workspace-accelerator-card"
 import {
   WORKSPACE_ACCELERATOR_PATH,
   getWorkspaceAcceleratorPaywallPath,
@@ -12,12 +15,29 @@ import {
 import type {
   WorkspaceOrganizationEditorData,
   WorkspaceSeedData,
-  WorkspaceTrackerState,
 } from "../../workspace-board-types"
-import { buildWorkspaceTasksOntologyNode } from "./workspace-canvas-ontology-input-tasks"
+import { isWorkspaceAcceleratorOntologyStepVisible } from "./workspace-canvas-ontology-input-accelerator"
+
+export const WORKSPACE_ONTOLOGY_RECENT_ACTIVITY_LIMIT = 3
 
 function hasText(value: string | null | undefined) {
   return Boolean(value?.trim())
+}
+
+function sortRecentActivity(activities: WorkspaceSeedData["activityFeed"]) {
+  return activities
+    .map((activity, index) => ({
+      activity,
+      index,
+      timestamp: Date.parse(activity.timestamp),
+    }))
+    .sort(
+      (left, right) =>
+        (Number.isFinite(right.timestamp) ? right.timestamp : 0) -
+          (Number.isFinite(left.timestamp) ? left.timestamp : 0) ||
+        left.index - right.index
+    )
+    .map(({ activity }) => activity)
 }
 
 function resolveActivityHref({
@@ -37,7 +57,9 @@ function resolveActivityHref({
       ? activity.metadata.moduleId
       : null
   const moduleSteps =
-    seed.acceleratorTimeline?.filter((step) => step.moduleId === moduleId) ?? []
+    seed.acceleratorTimeline
+      ?.filter((step) => step.moduleId === moduleId)
+      .filter(isWorkspaceAcceleratorControllerStepVisible) ?? []
   const destinationStep =
     moduleSteps.find((step) => step.status === "in_progress") ??
     moduleSteps.find((step) => {
@@ -61,14 +83,18 @@ function resolveActivityHref({
 export function buildWorkspaceProgramsOntologyRoot({
   seed,
   editor,
-  tracker,
 }: {
   seed: WorkspaceSeedData
   editor: WorkspaceOrganizationEditorData
-  tracker: WorkspaceTrackerState
 }): WorkspaceOntologyInput["roots"][number] {
-  const programNodes = editor.programs.map<WorkspaceOntologyNodeInput>(
-    (program) => {
+  const hiddenAcceleratorModuleIds = new Set(
+    (seed.acceleratorTimeline ?? [])
+      .filter((step) => !isWorkspaceAcceleratorOntologyStepVisible(step))
+      .map((step) => step.moduleId)
+  )
+  const programNodes = editor.programs
+    .filter((program) => program.status_label?.trim().toLowerCase() !== "draft")
+    .map<WorkspaceOntologyNodeInput>((program) => {
       const complete = hasText(program.title) && hasText(program.description)
       return {
         id: `ontology:program:${program.id}`,
@@ -94,10 +120,20 @@ export function buildWorkspaceProgramsOntologyRoot({
           ...(program.features ?? []),
         ],
       }
-    }
+    })
+  const allActivity = sortRecentActivity(
+    seed.activityFeed.filter((activity) => {
+      if (activity.source === "calendar") return false
+      if (activity.source !== "accelerator") return true
+      const moduleId =
+        typeof activity.metadata?.moduleId === "string"
+          ? activity.metadata.moduleId
+          : null
+      return !moduleId || !hiddenAcceleratorModuleIds.has(moduleId)
+    })
   )
-  const activityNodes = seed.activityFeed
-    .filter((activity) => activity.source !== "calendar")
+  const activityNodes = allActivity
+    .slice(0, WORKSPACE_ONTOLOGY_RECENT_ACTIVITY_LIMIT)
     .map<WorkspaceOntologyNodeInput>((activity) => ({
       id: `ontology:activity:${activity.id}`,
       label: activity.title,
@@ -111,7 +147,7 @@ export function buildWorkspaceProgramsOntologyRoot({
       href: resolveActivityHref({ activity, seed }),
       actionLabel:
         activity.href || activity.source === "accelerator" ? "Open" : null,
-      keywords: [activity.source, activity.type],
+      keywords: [activity.source, activity.type, activity.timestamp],
     }))
 
   return {
@@ -150,14 +186,13 @@ export function buildWorkspaceProgramsOntologyRoot({
         status: activityNodes.length > 0 ? "in-progress" : "missing",
         statusLabel:
           activityNodes.length > 0
-            ? `${activityNodes.length} recent items`
+            ? `${activityNodes.length} recent${allActivity.length > activityNodes.length ? ` · ${allActivity.length - activityNodes.length} archived` : ""}`
             : "No activity yet",
         relationshipLabel: "generates",
         href: null,
         actionLabel: null,
         children: activityNodes,
       },
-      buildWorkspaceTasksOntologyNode(seed, tracker),
     ],
   }
 }

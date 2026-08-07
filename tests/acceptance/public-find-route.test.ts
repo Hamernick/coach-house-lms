@@ -274,10 +274,10 @@ describe("public find routes", () => {
     )
     expect(shellSource).toContain("resizableRightRail")
     expect(appShellSource).toContain(
-      "!isMobile && hasRightRail && resizableRightRail"
+      "!isMobile && hasRightRail && rightOpen && resizableRightRail"
     )
     expect(appShellSource).not.toContain(
-      "!isMobile && hasRightRail && rightOpen && resizableRightRail"
+      "!isMobile && hasRightRail && resizableRightRail"
     )
     expect(appShellSource).not.toContain('derivedContext !== "public"')
     expect(publicMapSource).toContain(

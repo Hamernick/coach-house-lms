@@ -53,6 +53,7 @@ function buildFixtureNode({
     depth: 1,
     childCount: hasChildren ? 417 : 0,
     hasChildren,
+    presentation: hasChildren ? "group" : "action",
   }
   const size = resolveWorkspaceOntologyNodeSize(node)
   return {
@@ -131,7 +132,7 @@ export function WorkspaceOntologyVisualFixture() {
         </header>
         <div
           data-workspace-ontology-visual-fixture="true"
-          className="workspace-flow border-border bg-muted/30 relative h-[24rem] overflow-hidden rounded-2xl border"
+          className="workspace-flow border-border relative h-[24rem] overflow-hidden rounded-2xl border bg-[#fcfcfc] dark:bg-zinc-800"
         >
           <ReactFlow
             nodes={nodes}

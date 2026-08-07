@@ -17,7 +17,10 @@ import type {
   SelectionDragHandler,
 } from "reactflow"
 
-import { useWorkspaceOntologyWayfinding } from "@/features/workspace-ontology"
+import {
+  useWorkspaceOntologyWayfinding,
+  WORKSPACE_ONTOLOGY_ROOT_IDS,
+} from "@/features/workspace-ontology"
 
 import type { WorkspaceCanvasNode } from "./workspace-canvas-surface-v2-helpers"
 import { mergeUniqueWorkspaceCanvasNodes } from "./workspace-canvas-edge-deduplication"
@@ -63,7 +66,15 @@ export function useWorkspaceCanvasOntologyInteractions({
   flowInstanceRef: MutableRefObject<ReactFlowInstance | null>
   isFlowReady: boolean
 }) {
-  const { activateNode, layoutAnimating, nodes: ontologyNodes } = ontology
+  const {
+    activateNode,
+    activeNodeIds,
+    activeRootId,
+    layoutAnimating,
+    nodes: ontologyNodes,
+    state: ontologyState,
+    stepBack,
+  } = ontology
   const [selectedOntologyNodeIds, setSelectedOntologyNodeIds] = useState<
     ReadonlySet<string>
   >(() => new Set())
@@ -72,6 +83,9 @@ export function useWorkspaceCanvasOntologyInteractions({
     isFlowReady,
     layoutAnimating,
     nodes: ontologyNodes,
+    mode: ontologyState.mode,
+    activeRootId,
+    activeNodeIds,
   })
   const handleNodeClick = useCallback<NodeMouseHandler>(
     (event, node) => {
@@ -91,6 +105,41 @@ export function useWorkspaceCanvasOntologyInteractions({
     KeyboardEventHandler<HTMLDivElement>
   >(
     (event) => {
+      if (event.key === "Escape" && !event.repeat) {
+        const target = event.target
+        if (
+          target instanceof HTMLElement &&
+          target.closest("input, textarea, select, [role=dialog]")
+        ) {
+          return
+        }
+        if (
+          ontologyState.mode === "map" ||
+          activeNodeIds.length > 0 ||
+          activeRootId
+        ) {
+          const activeNodeId = activeNodeIds[activeNodeIds.length - 1]
+          const activeNode = ontologyNodes.find(
+            (node) => node.id === activeNodeId
+          )
+          const returnNodeId =
+            activeNode?.data.node.parentId ?? activeRootId ?? null
+          event.preventDefault()
+          event.stopPropagation()
+          stepBack()
+          if (returnNodeId) {
+            window.requestAnimationFrame(() => {
+              const returnNode = Array.from(
+                document.querySelectorAll<HTMLElement>(
+                  ".react-flow__node[data-id]"
+                )
+              ).find((element) => element.dataset.id === returnNodeId)
+              returnNode?.focus()
+            })
+          }
+        }
+        return
+      }
       if ((event.key !== "Enter" && event.key !== " ") || event.repeat) return
       const target = event.target
       if (!(target instanceof HTMLElement)) return
@@ -107,18 +156,47 @@ export function useWorkspaceCanvasOntologyInteractions({
       event.preventDefault()
       activateNode(nodeId)
     },
-    [activateNode]
+    [
+      activateNode,
+      activeNodeIds,
+      activeRootId,
+      ontologyNodes,
+      ontologyState.mode,
+      stepBack,
+    ]
   )
   const nodes = useMemo(() => {
     if (tutorialActive) return renderNodes
+    const rootIdSet = new Set<string>(WORKSPACE_ONTOLOGY_ROOT_IDS)
+    const contextualRenderNodes = renderNodes.map((node) => {
+      if (!activeRootId || !rootIdSet.has(node.id)) return node
+      return {
+        ...node,
+        className: [
+          node.className,
+          "workspace-ontology-arranged-root",
+          node.id === activeRootId
+            ? "workspace-ontology-active-root"
+            : "workspace-ontology-dimmed-root",
+        ]
+          .filter(Boolean)
+          .join(" "),
+      }
+    })
     return mergeUniqueWorkspaceCanvasNodes(
-      renderNodes,
+      contextualRenderNodes,
       ontologyNodes.map((node) => ({
         ...node,
         selected: selectedOntologyNodeIds.has(node.id),
       }))
     )
-  }, [ontologyNodes, renderNodes, selectedOntologyNodeIds, tutorialActive])
+  }, [
+    activeRootId,
+    ontologyNodes,
+    renderNodes,
+    selectedOntologyNodeIds,
+    tutorialActive,
+  ])
   const visibleNodeIds = useStableVisibleNodeIds(nodes)
   const handleNodesChange = useCallback<OnNodesChange>(
     (changes) => {
@@ -172,5 +250,6 @@ export function useWorkspaceCanvasOntologyInteractions({
     onKeyDownCapture: handleKeyDownCapture,
     onNodeDragStop: handleNodeDragStop,
     onSelectionDragStop: handleSelectionDragStop,
+    onMoveStart: cancelPendingFit,
   }
 }

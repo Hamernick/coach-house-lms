@@ -29,6 +29,7 @@ import {
   resolveOrganizationPrimaryObjectKind,
 } from "@/lib/organization/primary-objects"
 import { cn } from "@/lib/utils"
+import { getWorkspaceEditorPath } from "@/lib/workspace/routes"
 
 type ProgramBuilderDashboardCardProps = {
   programs: OrgProgram[]
@@ -384,7 +385,10 @@ export function ProgramBuilderDashboardCard({
                     </Button>
                     <Button asChild size="sm" variant="outline" className="h-8">
                       <Link
-                        href={`/organization?view=editor&tab=programs&programId=${encodeURIComponent(activeProgram.id)}`}
+                        href={getWorkspaceEditorPath({
+                          tab: "programs",
+                          programId: activeProgram.id,
+                        })}
                       >
                         Open full view
                       </Link>

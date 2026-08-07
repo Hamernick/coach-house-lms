@@ -85,6 +85,7 @@ function buildNode({
     depth: 1,
     childCount: hasChildren ? 999 : 0,
     hasChildren,
+    presentation: hasChildren ? "group" : "action",
   }
 }
 

@@ -12,8 +12,10 @@ import {
   SEARCH_MIN_WIDTH,
   formatClassTitle,
   groupSearchResults,
+  resolveGlobalSearchResultHref,
 } from "@/components/global-search/global-search-helpers"
 import { platformLabEnabled } from "@/lib/feature-flags"
+import { getWorkspaceDrawerPath } from "@/lib/workspace/routes"
 import { GlobalSearchTriggers } from "@/components/global-search/global-search-triggers"
 
 type GlobalSearchProps = {
@@ -95,7 +97,7 @@ export function GlobalSearch({
         body: JSON.stringify(body),
       })
     },
-    [context],
+    [context]
   )
 
   const baseItems = useMemo<SearchResult[]>(() => {
@@ -111,10 +113,16 @@ export function GlobalSearch({
     () =>
       context === "accelerator" && enableAccelerator
         ? [
-            { id: "accelerator-overview", label: "Accelerator overview", href: "/accelerator#overview", group: "Accelerator", keywords: ["overview"] },
+            {
+              id: "accelerator-overview",
+              label: "Accelerator overview",
+              href: getWorkspaceDrawerPath({ tab: "accelerator" }),
+              group: "Accelerator",
+              keywords: ["overview"],
+            },
           ]
         : [],
-    [context, enableAccelerator],
+    [context, enableAccelerator]
   )
 
   const acceleratorClasses = useMemo<SearchResult[]>(() => {
@@ -123,37 +131,61 @@ export function GlobalSearch({
       .filter((klass) => (isAdmin ? true : klass.published))
       .flatMap((klass) => {
         const classTitle = formatClassTitle(klass.title)
-        const firstModuleIndex = klass.modules[0]?.index ?? 1
+        const visibleModules = klass.modules.filter((module) =>
+          isAdmin ? true : module.published
+        )
+        const firstModuleId = visibleModules[0]?.id ?? null
         const classItem: SearchResult = {
           id: `class-${klass.id}`,
           label: classTitle,
           subtitle: "Class",
-          href: `/accelerator/class/${klass.slug}/module/${firstModuleIndex}`,
+          href: getWorkspaceDrawerPath({
+            tab: "accelerator",
+            moduleId: firstModuleId,
+          }),
           group: "Classes",
           keywords: [klass.slug, klass.title],
         }
-        const moduleItems = klass.modules
-          .filter((module) => (isAdmin ? true : module.published))
-          .map((module) => ({
-            id: `module-${module.id}`,
-            label: module.title,
-            subtitle: classTitle,
-            href: `/accelerator/class/${klass.slug}/module/${module.index}`,
-            group: "Modules",
-            keywords: [classTitle, module.title, `${module.index}`],
-          }))
+        const moduleItems = visibleModules.map((module) => ({
+          id: `module-${module.id}`,
+          label: module.title,
+          subtitle: classTitle,
+          href: getWorkspaceDrawerPath({
+            tab: "accelerator",
+            moduleId: module.id,
+          }),
+          group: "Modules",
+          keywords: [classTitle, module.title, `${module.index}`],
+        }))
         return [classItem, ...moduleItems]
       })
   }, [classes, enableAccelerator, isAdmin])
 
   const items = useMemo(() => {
     const merged = new Map<string, SearchResult>()
-    for (const item of [...acceleratorItems, ...acceleratorClasses, ...baseItems, ...remoteItems]) {
+    for (const item of [
+      ...acceleratorItems,
+      ...acceleratorClasses,
+      ...baseItems,
+      ...remoteItems,
+    ]) {
       merged.set(item.id, item)
     }
     const values = Array.from(merged.values())
-    return enableAccelerator ? values : values.filter((item) => !item.href.startsWith("/accelerator"))
-  }, [acceleratorClasses, acceleratorItems, baseItems, enableAccelerator, remoteItems])
+    const entitledValues = enableAccelerator
+      ? values
+      : values.filter((item) => !item.href.startsWith("/accelerator"))
+    return entitledValues.map((item) => ({
+      ...item,
+      href: resolveGlobalSearchResultHref(item),
+    }))
+  }, [
+    acceleratorClasses,
+    acceleratorItems,
+    baseItems,
+    enableAccelerator,
+    remoteItems,
+  ])
 
   const grouped = useMemo(() => groupSearchResults(items), [items])
 
@@ -183,13 +215,18 @@ export function GlobalSearch({
     setError(null)
     const timeout = window.setTimeout(async () => {
       try {
-        const response = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}&context=${context}`, {
-          signal: controller.signal,
-        })
+        const response = await fetch(
+          `/api/search?q=${encodeURIComponent(trimmed)}&context=${context}`,
+          {
+            signal: controller.signal,
+          }
+        )
         if (!response.ok) {
           throw new Error("Search unavailable.")
         }
-        const payload = (await response.json().catch(() => ({}))) as { results?: SearchResult[] }
+        const payload = (await response.json().catch(() => ({}))) as {
+          results?: SearchResult[]
+        }
         setRemoteItems(Array.isArray(payload.results) ? payload.results : [])
       } catch (err) {
         if ((err as Error).name === "AbortError") return

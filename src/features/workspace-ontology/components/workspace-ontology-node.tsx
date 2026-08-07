@@ -1,7 +1,6 @@
 "use client"
 
 import { memo, useEffect, useRef, type CSSProperties } from "react"
-import Link from "next/link"
 import ArrowUpRightIcon from "lucide-react/dist/esm/icons/arrow-up-right"
 import CalendarDaysIcon from "lucide-react/dist/esm/icons/calendar-days"
 import CheckCircle2Icon from "lucide-react/dist/esm/icons/check-circle-2"
@@ -32,15 +31,20 @@ import type {
   WorkspaceOntologyDetailLevel,
   WorkspaceOntologyProjectedNode,
 } from "../types"
+import { WorkspaceOntologyList } from "./workspace-ontology-list"
 
 export type WorkspaceOntologyNodeData = {
   kind: "workspace-ontology"
   node: WorkspaceOntologyProjectedNode
   detailLevel: WorkspaceOntologyDetailLevel
   expanded: boolean
+  active?: boolean
+  activeItemId?: string
+  dimmed?: boolean
   transitionPhase?: "entering" | "stable" | "exiting"
   transitionDelayMs?: number
-  onActivate?: () => void
+  onActivate?: (options?: { openInNewTab?: boolean }) => void
+  onActivateItem?: (nodeId: string) => void
 }
 
 export const WORKSPACE_ONTOLOGY_RELATIONSHIP_TARGET_HANDLE_ID =
@@ -102,6 +106,8 @@ export const WorkspaceOntologyNode = memo(function WorkspaceOntologyNode({
     node,
     detailLevel,
     expanded,
+    active = false,
+    dimmed = false,
     transitionPhase = "stable",
     transitionDelayMs = 0,
   } = data
@@ -109,9 +115,10 @@ export const WorkspaceOntologyNode = memo(function WorkspaceOntologyNode({
   const statusMeta = STATUS_META[node.status]
   const StatusIcon = statusMeta.icon
   const hasExactDestination = Boolean(node.href || node.actionTarget)
-  const hasNavigationDestination = !node.hasChildren && Boolean(node.href)
   const externalDestination =
-    hasNavigationDestination && /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(node.href!)
+    !node.hasChildren &&
+    Boolean(node.href) &&
+    /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(node.href!)
   const actionLabel = describeWorkspaceOntologyNodeActivation({
     node,
     expanded,
@@ -168,28 +175,16 @@ export const WorkspaceOntologyNode = memo(function WorkspaceOntologyNode({
       </span>
     </>
   )
-  const actionSurface = hasNavigationDestination ? (
-    externalDestination ? (
-      <Button asChild variant="outline" size="sm" className={actionClassName}>
-        <a
-          href={node.href!}
-          aria-label={actionAriaLabel}
-          onClick={(event) => event.stopPropagation()}
-        >
-          {actionContent}
-        </a>
-      </Button>
-    ) : (
-      <Button asChild variant="outline" size="sm" className={actionClassName}>
-        <Link
-          href={node.href!}
-          aria-label={actionAriaLabel}
-          onClick={(event) => event.stopPropagation()}
-        >
-          {actionContent}
-        </Link>
-      </Button>
-    )
+  const actionSurface = externalDestination ? (
+    <Button asChild variant="outline" size="sm" className={actionClassName}>
+      <a
+        href={node.href!}
+        aria-label={actionAriaLabel}
+        onClick={(event) => event.stopPropagation()}
+      >
+        {actionContent}
+      </a>
+    </Button>
   ) : (
     <Button
       type="button"
@@ -200,31 +195,65 @@ export const WorkspaceOntologyNode = memo(function WorkspaceOntologyNode({
       aria-expanded={node.hasChildren ? expanded : undefined}
       onClick={(event) => {
         event.stopPropagation()
-        data.onActivate?.()
+        data.onActivate?.({
+          openInNewTab: event.metaKey || event.ctrlKey,
+        })
       }}
     >
       {actionContent}
     </Button>
   )
 
-  const content = (
-    <WorkspaceNodeFrameSurface className="flex h-full flex-col gap-2 overflow-visible">
-      <WorkspaceNodeFrameHeader className="min-h-8 items-center gap-2 px-2">
-        <span className="border-border/60 bg-background text-muted-foreground relative grid size-8 shrink-0 place-items-center rounded-xl border shadow-xs">
-          <CategoryIcon className="size-4" aria-hidden="true" />
-        </span>
-        <p
-          className="text-foreground line-clamp-2 min-w-0 flex-1 text-sm leading-4 font-semibold"
-          title={node.label}
-        >
-          {node.label}
-        </p>
-      </WorkspaceNodeFrameHeader>
-      <WorkspaceNodeFrameBody className="min-h-0 flex-1 overflow-visible">
-        {actionSurface}
-      </WorkspaceNodeFrameBody>
-    </WorkspaceNodeFrameSurface>
-  )
+  const content =
+    node.presentation === "list" ? (
+      <WorkspaceNodeFrameSurface className="flex h-full flex-col gap-2 overflow-visible">
+        <WorkspaceNodeFrameHeader className="min-h-8 items-center gap-2 px-2">
+          <span className="border-border/60 bg-background text-muted-foreground relative grid size-8 shrink-0 place-items-center rounded-xl border shadow-xs">
+            <CategoryIcon className="size-4" aria-hidden="true" />
+          </span>
+          <p
+            className="text-foreground min-w-0 flex-1 truncate text-sm font-semibold"
+            title={node.label}
+          >
+            {node.label}
+          </p>
+          <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+            {
+              node.items?.filter(
+                (item) =>
+                  item.presentation === "action" ||
+                  item.presentation === "group"
+              ).length
+            }
+          </span>
+        </WorkspaceNodeFrameHeader>
+        <WorkspaceNodeFrameBody className="min-h-0 flex-1 overflow-visible">
+          <WorkspaceOntologyList
+            activeItemId={data.activeItemId}
+            detailLevel={detailLevel}
+            items={node.items ?? []}
+            onActivateItem={data.onActivateItem}
+          />
+        </WorkspaceNodeFrameBody>
+      </WorkspaceNodeFrameSurface>
+    ) : (
+      <WorkspaceNodeFrameSurface className="flex h-full flex-col gap-2 overflow-visible">
+        <WorkspaceNodeFrameHeader className="min-h-8 items-center gap-2 px-2">
+          <span className="border-border/60 bg-background text-muted-foreground relative grid size-8 shrink-0 place-items-center rounded-xl border shadow-xs">
+            <CategoryIcon className="size-4" aria-hidden="true" />
+          </span>
+          <p
+            className="text-foreground line-clamp-2 min-w-0 flex-1 text-sm leading-4 font-semibold"
+            title={node.label}
+          >
+            {node.label}
+          </p>
+        </WorkspaceNodeFrameHeader>
+        <WorkspaceNodeFrameBody className="min-h-0 flex-1 overflow-visible">
+          {actionSurface}
+        </WorkspaceNodeFrameBody>
+      </WorkspaceNodeFrameSurface>
+    )
 
   useEffect(() => {
     const nodeElement =
@@ -256,21 +285,41 @@ export const WorkspaceOntologyNode = memo(function WorkspaceOntologyNode({
       <WorkspaceNodeFrameRoot
         {...WORKSPACE_ONTOLOGY_NODE_REACT_GRAB_PROPS}
         data-workspace-ontology-node={node.id}
+        data-workspace-ontology-root={node.rootId}
+        data-workspace-ontology-href={node.href ?? undefined}
+        data-workspace-ontology-depth={node.depth}
+        data-workspace-ontology-presentation={node.presentation}
+        data-workspace-ontology-active={active ? "true" : undefined}
+        data-workspace-ontology-dimmed={dimmed ? "true" : undefined}
         data-workspace-ontology-primary-action={
-          node.hasChildren
-            ? expanded
-              ? "hide-details"
-              : "show-details"
-            : hasExactDestination
-              ? "open"
-              : "focus-root"
+          node.presentation === "list"
+            ? "open-list"
+            : node.presentation === "rollup" || node.presentation === "more"
+              ? "show-map"
+              : node.hasChildren
+                ? expanded
+                  ? "hide-details"
+                  : "show-details"
+                : hasExactDestination
+                  ? "open"
+                  : "focus-root"
         }
         aria-hidden={transitionPhase === "exiting" ? true : undefined}
         aria-expanded={node.hasChildren ? expanded : undefined}
         className={cn(
-          "border-border/60 bg-muted h-full w-full overflow-visible rounded-[2rem] px-2 py-2.5 shadow-sm focus-within:ring-2",
-          "transition-[border-color,background-color,box-shadow] duration-150",
-          "hover:border-foreground/25 hover:bg-muted",
+          "bg-background h-full w-full overflow-visible rounded-[2rem] border px-2 py-2.5 focus-within:ring-2",
+          "transition-[border-color,box-shadow,opacity,filter] duration-180 motion-reduce:transition-none",
+          node.presentation === "group" &&
+            "border-zinc-300/80 shadow-[0_10px_26px_-22px_rgba(24,24,27,0.7)] dark:border-zinc-600",
+          node.presentation === "action" && "border-border/60 shadow-sm",
+          node.presentation === "list" && "border-border/70 shadow-sm",
+          node.presentation === "rollup" &&
+            "border-emerald-200/80 shadow-xs dark:border-emerald-800/70",
+          node.presentation === "more" &&
+            "border-sky-200/80 shadow-xs dark:border-sky-800/70",
+          "hover:border-foreground/25",
+          active && "border-sky-500/70 ring-2 ring-sky-500/15",
+          dimmed && "opacity-45 saturate-50",
           selected && "border-foreground/25 shadow-sm"
         )}
       >

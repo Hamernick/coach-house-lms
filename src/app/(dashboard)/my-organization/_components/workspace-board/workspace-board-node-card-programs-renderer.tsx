@@ -2,8 +2,8 @@
 
 import ChevronLeftIcon from "lucide-react/dist/esm/icons/chevron-left"
 import ChevronRightIcon from "lucide-react/dist/esm/icons/chevron-right"
+import PlusIcon from "lucide-react/dist/esm/icons/plus"
 import { useEffect, useMemo, useState } from "react"
-import { useRouter } from "next/navigation"
 
 import type { OrgProgram } from "@/components/organization/org-profile-card/types"
 import { Button } from "@/components/ui/button"
@@ -26,15 +26,53 @@ import { WORKSPACE_CARD_META } from "./workspace-board-copy"
 import { WorkspaceBoardFormationTrackerCard } from "./workspace-board-formation-tracker-card"
 import type { WorkspaceBoardNodeData } from "./workspace-board-node-types"
 import {
-  buildWorkspaceProgramEditorHref,
   isWorkspaceProgramsPreviewOnlyStep,
   resolveWorkspaceProgramsDisplayPrograms,
   WorkspaceBoardProgramsCard,
 } from "./workspace-board-programs-card"
+import { useWorkspaceCanvasOverlayDrawerRequest } from "./workspace-canvas-v2/components/workspace-canvas-overlay-drawer-container"
+import type { WorkspaceDataDrawerRequest } from "./workspace-canvas-v2/components/workspace-canvas-overlay-drawer-tabs"
 import { WorkspaceBoardNodeCardShell } from "./workspace-board-node-card-shell"
 import type { WorkspaceCardSize } from "./workspace-board-types"
 
 type WorkspaceProgramsDisplayProgram = OrgProgram
+type FiscalSponsorshipCriterionId =
+  FiscalSponsorshipActivityEligibility["criteria"][number]["id"]
+
+const FISCAL_SPONSORSHIP_PROGRAM_STEP_BY_CRITERION: Partial<
+  Record<FiscalSponsorshipCriterionId, number>
+> = {
+  "impact-narrative": 3,
+  "us-operations": 5,
+  "funding-use": 6,
+  "mission-fit": 2,
+}
+
+function resolveFiscalSponsorshipUpdateRequest({
+  criterionId,
+  organizationEin,
+  programId,
+}: {
+  criterionId: FiscalSponsorshipCriterionId
+  organizationEin: string | null | undefined
+  programId: string
+}): Omit<WorkspaceDataDrawerRequest, "id"> {
+  if (criterionId === "tax-mailing") {
+    return {
+      tab: "organization",
+      organizationTab: "company",
+      organizationFocus: organizationEin?.trim() ? "address" : "ein",
+    }
+  }
+
+  return {
+    tab: "organization",
+    organizationTab: "programs",
+    organizationProgramId: programId,
+    organizationProgramStep:
+      FISCAL_SPONSORSHIP_PROGRAM_STEP_BY_CRITERION[criterionId] ?? 0,
+  }
+}
 
 function getProgramField<K extends keyof WorkspaceProgramsDisplayProgram>(
   program: WorkspaceProgramsDisplayProgram | null,
@@ -106,7 +144,9 @@ function renderProgramsHeaderAction({
   isCanvasFullscreen: boolean
   onOpenFiscalSponsorship: () => void
   onProgramsCreateOpenChange: (open: boolean) => void
-  onUpdateFiscalSponsorshipInfo: () => void
+  onUpdateFiscalSponsorshipInfo: (
+    criterionId: FiscalSponsorshipCriterionId
+  ) => void
   presentationMode: boolean
   programsPreviewOnly: boolean
 }) {
@@ -134,12 +174,15 @@ function renderProgramsHeaderAction({
       {canEdit ? (
         <Button
           type="button"
-          size="sm"
-          className="h-8 rounded-md px-3"
+          variant="ghost"
+          size="icon"
+          className="nodrag nopan hover:bg-background hover:text-foreground dark:hover:bg-background relative"
+          aria-label="Add program"
+          title="Add program"
           disabled={programsPreviewOnly}
           onClick={() => onProgramsCreateOpenChange(true)}
         >
-          Add
+          <PlusIcon aria-hidden />
         </Button>
       ) : null}
     </div>
@@ -214,7 +257,7 @@ export function WorkspaceBoardProgramsNodeCard({
   presentationMode: boolean
   programsCreateOpen: boolean
 }) {
-  const router = useRouter()
+  const openWorkspaceDataDrawer = useWorkspaceCanvasOverlayDrawerRequest()
   const workspacePrograms = data.organizationEditorData?.programs
   const programs = useMemo(() => workspacePrograms ?? [], [workspacePrograms])
   const legacyProgramsValue =
@@ -261,11 +304,10 @@ export function WorkspaceBoardProgramsNodeCard({
       selectedProgram,
     ]
   )
-  const updateFiscalSponsorshipInfoHref = buildWorkspaceProgramEditorHref(
-    selectedProgram?.id?.startsWith("legacy-program-")
-      ? undefined
-      : selectedProgram?.id
-  )
+  const selectedProgramId =
+    selectedProgram?.id && !selectedProgram.id.startsWith("legacy-program-")
+      ? selectedProgram.id
+      : null
 
   useEffect(() => {
     if (displayPrograms.length <= 1) {
@@ -324,8 +366,22 @@ export function WorkspaceBoardProgramsNodeCard({
           onOpenFiscalSponsorship: () =>
             data.onOpenCard?.("fiscal-sponsorship"),
           onProgramsCreateOpenChange,
-          onUpdateFiscalSponsorshipInfo: () =>
-            router.push(updateFiscalSponsorshipInfoHref),
+          onUpdateFiscalSponsorshipInfo: (criterionId) => {
+            if (criterionId !== "tax-mailing" && !selectedProgramId) {
+              onProgramsCreateOpenChange(true)
+              return
+            }
+
+            if (!openWorkspaceDataDrawer) return
+            openWorkspaceDataDrawer(
+              resolveFiscalSponsorshipUpdateRequest({
+                criterionId,
+                organizationEin:
+                  data.organizationEditorData?.initialProfile.ein,
+                programId: selectedProgramId ?? "",
+              })
+            )
+          },
           presentationMode,
           programsPreviewOnly,
         })}

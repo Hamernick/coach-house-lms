@@ -1,6 +1,10 @@
 "use client"
 
 import { SOURCE_LABEL } from "../constants"
+import {
+  getOrganizationFocusTargetProps,
+  ORGANIZATION_FOCUS_TARGET_CLASSNAME,
+} from "../../../organization-deep-link-focus"
 import { formatUpdatedAt } from "../helpers"
 import type {
   DocumentDefinition,
@@ -13,6 +17,7 @@ import {
   StatusBadge,
 } from "./document-row-meta"
 import { DocumentRowActions } from "./document-row-actions"
+import { getDocumentRowFocusKey } from "./document-row-focus"
 
 type DocumentsResultsMobileProps = {
   filteredRows: DocumentIndexRow[]
@@ -72,8 +77,9 @@ export function DocumentsResultsMobile({
         return (
           <div
             key={row.id}
+            {...getOrganizationFocusTargetProps(getDocumentRowFocusKey(row))}
             data-tour={tourId}
-            className="border-border/60 bg-background/60 space-y-3 rounded-xl border p-3"
+            className={`border-border/60 bg-background/60 space-y-3 rounded-xl border p-3 ${ORGANIZATION_FOCUS_TARGET_CLASSNAME}`}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0 space-y-1">

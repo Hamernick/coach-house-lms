@@ -17,6 +17,13 @@ import ShoppingBagIcon from "lucide-react/dist/esm/icons/shopping-bag"
 import UsersIcon from "lucide-react/dist/esm/icons/users"
 
 import type { SearchResult } from "@/lib/search/types"
+import {
+  WORKSPACE_PATH,
+  WORKSPACE_ROADMAP_PATH,
+  getWorkspaceDrawerPath,
+  getWorkspaceEditorPath,
+  getWorkspaceRoadmapDrawerPath,
+} from "@/lib/workspace/routes"
 
 export const SEARCH_MIN_WIDTH = 240
 
@@ -52,6 +59,10 @@ export function getResultIcon(item: SearchResult) {
   const href = item.href
   const group = item.group.toLowerCase()
 
+  if (item.id === "page-accelerator") return RocketIcon
+  if (item.id === "page-roadmap") return RouteIcon
+  if (item.id === "page-people") return UsersIcon
+  if (item.id === "page-documents") return FileTextIcon
   if (group === "admin") return ShieldIcon
   if (group === "accelerator") return RocketIcon
   if (group === "classes") return BookOpenIcon
@@ -62,7 +73,8 @@ export function getResultIcon(item: SearchResult) {
   if (group === "programs") return LayersIcon
   if (group === "community") return MapPinIcon
   if (group === "marketplace") return ShoppingBagIcon
-  if (group === "my organization" || group === "organization") return Building2Icon
+  if (group === "my organization" || group === "organization")
+    return Building2Icon
 
   if (href.startsWith("/billing")) return CreditCardIcon
   if (href.startsWith("/internal")) return ShieldIcon
@@ -79,6 +91,106 @@ export function getResultIcon(item: SearchResult) {
   if (href.startsWith("/organization")) return Building2Icon
 
   return ArrowUpRight
+}
+
+const UUID_PATTERN =
+  /[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}/i
+
+function getPrefixedSearchId(id: string, prefix: string) {
+  if (!id.startsWith(prefix)) return null
+  const value = id.slice(prefix.length).trim()
+  return value || null
+}
+
+function getSearchModuleId(item: SearchResult) {
+  if (item.group === "Modules") {
+    return (
+      getPrefixedSearchId(item.id, "module:") ??
+      getPrefixedSearchId(item.id, "module-")
+    )
+  }
+
+  if (item.group !== "Questions") return null
+  const indexedId = getPrefixedSearchId(item.id, "question:")
+  if (indexedId) {
+    return indexedId.split(":")[0] || null
+  }
+
+  return item.id.match(UUID_PATTERN)?.[0] ?? null
+}
+
+function getTrailingSearchId(id: string, prefix: string) {
+  const value = getPrefixedSearchId(id, prefix)
+  if (!value) return null
+  const segments = value.split(":")
+  return segments[segments.length - 1] || null
+}
+
+export function resolveGlobalSearchResultHref(item: SearchResult) {
+  if (
+    item.href.startsWith(`${WORKSPACE_PATH}?drawer=`) ||
+    item.href.startsWith(`${WORKSPACE_PATH}?view=editor`) ||
+    item.href.startsWith(WORKSPACE_ROADMAP_PATH)
+  ) {
+    return item.href
+  }
+
+  if (item.id === "page-accelerator") {
+    return getWorkspaceDrawerPath({ tab: "accelerator" })
+  }
+  if (item.id === "page-roadmap") {
+    return getWorkspaceDrawerPath({ tab: "roadmap" })
+  }
+  if (item.id === "page-programs") {
+    return getWorkspaceEditorPath({ tab: "programs" })
+  }
+  if (item.id === "page-people") {
+    return getWorkspaceDrawerPath({ tab: "people" })
+  }
+  if (item.id === "page-supporters") {
+    return getWorkspaceEditorPath({ tab: "supporters" })
+  }
+  if (item.id === "page-documents") {
+    return getWorkspaceDrawerPath({ tab: "documents" })
+  }
+
+  if (item.group === "Accelerator" || item.group === "Classes") {
+    return getWorkspaceDrawerPath({ tab: "accelerator" })
+  }
+
+  const moduleId = getSearchModuleId(item)
+  if (moduleId) {
+    return getWorkspaceDrawerPath({ tab: "accelerator", moduleId })
+  }
+
+  if (item.group === "Programs") {
+    const programId =
+      getPrefixedSearchId(item.id, "program:") ??
+      getPrefixedSearchId(item.id, "program-")
+    return programId
+      ? getWorkspaceEditorPath({ tab: "programs", programId })
+      : getWorkspaceEditorPath({ tab: "programs" })
+  }
+
+  if (item.group === "My organization" || item.group === "Organization") {
+    return getWorkspaceEditorPath({ tab: "company" })
+  }
+
+  if (item.group === "Roadmap") {
+    const sectionSlug = getTrailingSearchId(item.id, "roadmap:")
+    return sectionSlug
+      ? getWorkspaceRoadmapDrawerPath(sectionSlug)
+      : getWorkspaceDrawerPath({ tab: "roadmap" })
+  }
+
+  if (item.group === "Documents") {
+    return getWorkspaceDrawerPath({
+      tab: "documents",
+      focus: getTrailingSearchId(item.id, "doc:"),
+    })
+  }
+
+  return item.href
 }
 
 export function buildBaseSearchItems({
@@ -98,7 +210,7 @@ export function buildBaseSearchItems({
           {
             id: "page-accelerator",
             label: "Accelerator",
-            href: "/accelerator",
+            href: getWorkspaceDrawerPath({ tab: "accelerator" }),
             group: "Pages",
             keywords: ["classes", "modules"],
           } satisfies SearchResult,
@@ -127,17 +239,68 @@ export function buildBaseSearchItems({
             group: "Pages",
             keywords: ["assigned", "tasks", "work"],
           } satisfies SearchResult,
-          { id: "page-roadmap", label: "Roadmap", href: "/roadmap", group: "Pages", keywords: ["strategic"] },
-          { id: "page-programs", label: "Programs", href: "/workspace?view=editor&tab=programs", group: "Pages" },
-          { id: "page-people", label: "People", href: "/people", group: "Pages", keywords: ["team", "org chart"] },
-          { id: "page-supporters", label: "Supporters", href: "/workspace?view=editor&tab=supporters", group: "Pages" },
-          { id: "page-documents", label: "Documents", href: "/organization/documents", group: "Pages" },
+          {
+            id: "page-roadmap",
+            label: "Roadmap",
+            href: getWorkspaceDrawerPath({ tab: "roadmap" }),
+            group: "Pages",
+            keywords: ["strategic"],
+          },
+          {
+            id: "page-programs",
+            label: "Programs",
+            href: getWorkspaceEditorPath({ tab: "programs" }),
+            group: "Pages",
+          },
+          {
+            id: "page-people",
+            label: "People",
+            href: getWorkspaceDrawerPath({ tab: "people" }),
+            group: "Pages",
+            keywords: ["team", "org chart"],
+          },
+          {
+            id: "page-supporters",
+            label: "Supporters",
+            href: getWorkspaceEditorPath({ tab: "supporters" }),
+            group: "Pages",
+          },
+          {
+            id: "page-documents",
+            label: "Documents",
+            href: getWorkspaceDrawerPath({ tab: "documents" }),
+            group: "Pages",
+          },
         ]
       : []),
-    { id: "page-find", label: "Find", href: "/find", group: "Pages", keywords: ["map", "organizations"] },
-    { id: "page-billing", label: "Billing", href: "/billing", group: "Pages", keywords: ["subscription", "plan"] },
-    { id: "page-community", label: "Community", href: "/community", group: "Pages", keywords: ["map", "network"] },
-    { id: "page-marketplace", label: "Marketplace", href: "/marketplace", group: "Pages", keywords: ["tools", "resources"] },
+    {
+      id: "page-find",
+      label: "Find",
+      href: "/find",
+      group: "Pages",
+      keywords: ["map", "organizations"],
+    },
+    {
+      id: "page-billing",
+      label: "Billing",
+      href: "/billing",
+      group: "Pages",
+      keywords: ["subscription", "plan"],
+    },
+    {
+      id: "page-community",
+      label: "Community",
+      href: "/community",
+      group: "Pages",
+      keywords: ["map", "network"],
+    },
+    {
+      id: "page-marketplace",
+      label: "Marketplace",
+      href: "/marketplace",
+      group: "Pages",
+      keywords: ["tools", "resources"],
+    },
     ...(showOrgAdmin
       ? [
           {

@@ -55,6 +55,12 @@ export type WorkspaceBoardAcceleratorUiState = {
   lastStepId: string | null
 }
 
+export type WorkspaceBoardForwardCompatibilityState = {
+  nodes: Record<string, unknown>[]
+  connections: Record<string, unknown>[]
+  hiddenCardIds: string[]
+}
+
 export type WorkspaceBoardState = {
   version: 1
   preset: WorkspaceLayoutPreset
@@ -69,5 +75,6 @@ export type WorkspaceBoardState = {
   hiddenCardIds: WorkspaceCardId[]
   visibility?: WorkspaceBoardVisibilityState
   ontology?: WorkspaceOntologyState
+  forwardCompatibility?: WorkspaceBoardForwardCompatibilityState
   updatedAt: string
 }

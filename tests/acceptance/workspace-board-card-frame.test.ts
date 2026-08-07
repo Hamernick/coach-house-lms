@@ -182,7 +182,9 @@ describe("workspace board card frame", () => {
     expect(markup).toContain('data-slot="card-content"')
     expect(markup).not.toContain('data-slot="card-footer"')
     expect(markup).toContain("px-3 pb-3")
-    expect(markup).toContain("relative flex flex-col gap-2 px-3 pt-0 pb-3")
+    expect(markup).toContain(
+      "relative -mt-1 flex flex-col gap-2 px-3 pt-0 pb-2"
+    )
     expect(markup).toContain("flex w-full justify-between gap-2")
     expect(markup).toContain(
       "nodrag nopan ml-auto flex shrink-0 items-center gap-1"
@@ -249,7 +251,9 @@ describe("workspace board card frame", () => {
     expect(markup).toContain('data-slot="card-title"')
     expect(markup).toContain('data-slot="card-content"')
     expect(markup).toContain("px-0 pb-3")
-    expect(markup).toContain("relative flex flex-col gap-2 px-3 pt-0 pb-3")
+    expect(markup).toContain(
+      "relative -mt-1 flex flex-col gap-2 px-3 pt-0 pb-2"
+    )
     expect(markup).toContain("flex w-full justify-between gap-2")
     expect(markup).toContain(
       "nodrag nopan ml-auto flex shrink-0 items-center gap-1"

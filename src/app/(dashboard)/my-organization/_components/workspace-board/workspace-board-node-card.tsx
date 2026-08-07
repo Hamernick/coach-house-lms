@@ -51,6 +51,7 @@ import {
   buildWorkspaceBoardAcceleratorCardInput,
   shouldWorkspaceBoardCardTrackEmbeddedAcceleratorRuntime,
 } from "./workspace-board-node-card-accelerator-runtime"
+import { useWorkspaceCanvasOverlayDrawerRequest } from "./workspace-canvas-v2/components/workspace-canvas-overlay-drawer-container"
 
 // eslint-disable-next-line max-lines-per-function
 export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
@@ -59,6 +60,7 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
   data: WorkspaceBoardNodeData
 }) {
   const router = useRouter()
+  const openWorkspaceDataDrawer = useWorkspaceCanvasOverlayDrawerRequest()
   const {
     cardId,
     size,
@@ -101,6 +103,13 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
     ? () => onToggleCanvasFullscreen(cardId)
     : undefined
   const organizationEditorHref = getWorkspaceEditorPath({ tab: "company" })
+  const handleOrganizationEditorOpen = useCallback(() => {
+    openWorkspaceDataDrawer?.({
+      tab: "organization",
+      organizationTab: "company",
+      organizationEditMode: true,
+    })
+  }, [openWorkspaceDataDrawer])
   const acceleratorPaywallHref = getWorkspaceAcceleratorPaywallPath()
   const acceleratorCardHref = seed.hasAcceleratorAccess
     ? cardMeta.fullHref
@@ -217,7 +226,16 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
       selectedLessonGroupKey: string | null
     }) => {
       if (!seed.hasAcceleratorAccess) {
-        window.location.assign(acceleratorPaywallHref)
+        router.push(acceleratorPaywallHref)
+        return true
+      }
+      if (openWorkspaceDataDrawer) {
+        openWorkspaceDataDrawer({
+          tab: "accelerator",
+          acceleratorStepId: step.id,
+          acceleratorModuleId: step.moduleId,
+          acceleratorLessonGroupKey: selectedLessonGroupKey,
+        })
         return true
       }
       const href = buildWorkspaceAcceleratorFullscreenHref({
@@ -225,10 +243,15 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
         moduleId: step.moduleId,
         lessonGroupKey: selectedLessonGroupKey,
       })
-      window.location.assign(href)
+      router.push(href, { scroll: false })
       return true
     },
-    [acceleratorPaywallHref, seed.hasAcceleratorAccess]
+    [
+      acceleratorPaywallHref,
+      openWorkspaceDataDrawer,
+      router,
+      seed.hasAcceleratorAccess,
+    ]
   )
   const acceleratorFullscreenBaseHref = useMemo(
     () => buildWorkspaceAcceleratorFullscreenHref({}),
@@ -332,6 +355,9 @@ export const WorkspaceBoardCard = memo(function WorkspaceBoardCard({
               canEdit,
               contentClassName: frameContentClassName,
               organizationEditorHref,
+              onOrganizationEditorOpen: openWorkspaceDataDrawer
+                ? handleOrganizationEditorOpen
+                : undefined,
               headerAction: resolveOrganizationHeaderAction({
                 orgId: seed.orgId,
                 profile:

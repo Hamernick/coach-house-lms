@@ -15,6 +15,7 @@ function buildEvent(overrides: Partial<UpcomingEvent>): UpcomingEvent {
     recurrence: null,
     status: "active",
     assigned_roles: ["admin", "board"],
+    updated_at: "2026-02-01T12:00:00.000Z",
     ...overrides,
   }
 }

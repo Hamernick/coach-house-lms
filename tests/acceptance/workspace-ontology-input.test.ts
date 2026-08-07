@@ -146,6 +146,7 @@ function buildFixture({ canEdit = true }: { canEdit?: boolean } = {}) {
           status: "scheduled",
           event_type: "meeting",
           assigned_roles: ["Board chair"],
+          updated_at: "2026-08-01T12:00:00.000Z",
         },
       ],
     },
@@ -201,16 +202,6 @@ describe("workspace ontology input", () => {
     })
 
     expect(
-      allNodes.find((node) => node.id === "ontology:task:task-1")
-    ).toMatchObject({
-      category: "tasks",
-      status: "in-progress",
-      ownerLabel: "Avery Rivera",
-      href: null,
-      actionLabel: "Open task",
-      actionTarget: { kind: "task", ticketId: "task-1" },
-    })
-    expect(
       allNodes.find((node) => node.id === "ontology:organization:documents")
     ).toMatchObject({
       status: "missing",
@@ -234,6 +225,9 @@ describe("workspace ontology input", () => {
       href: "/workspace/accelerator?step=step-2&module=module-1",
     })
     expect(
+      allNodes.find((node) => node.id === "ontology:accelerator:phase:start")
+    ).toMatchObject({ visibility: "source-card-only" })
+    expect(
       allNodes.find(
         (node) => node.id === "ontology:activity:accelerator-activity-1"
       )
@@ -253,6 +247,9 @@ describe("workspace ontology input", () => {
       },
     })
     expect(
+      allNodes.find((node) => node.id === "ontology:fiscal:application")
+    ).toMatchObject({ visibility: "source-card-only" })
+    expect(
       allNodes.find((node) => node.id === "ontology:calendar:event-1")
     ).toMatchObject({
       actionLabel: "Open event",
@@ -265,13 +262,42 @@ describe("workspace ontology input", () => {
           target: "workspace-person:person-1",
           label: "staffed by",
         }),
+      ])
+    )
+    expect(allNodes.some((node) => node.id.startsWith("ontology:tasks:"))).toBe(
+      false
+    )
+    expect(allNodes.some((node) => node.id.startsWith("ontology:task:"))).toBe(
+      false
+    )
+    expect(allNodes.map((node) => node.label)).not.toContain(
+      "Objectives and tasks"
+    )
+    expect(input.relationships).not.toEqual(
+      expect.arrayContaining([
         expect.objectContaining({
-          source: "ontology:programs:portfolio",
           target: "ontology:tasks:portfolio",
-          label: "executed through",
         }),
       ])
     )
+
+    const mapProjection = buildWorkspaceOntologyProjection({
+      input,
+      state: { ...buildDefaultWorkspaceOntologyState(), mode: "map" },
+      filter: { query: "", categories: [] },
+    })
+    expect(
+      mapProjection.nodes.some(
+        (node) =>
+          node.id.startsWith("ontology:accelerator:") ||
+          node.id === "ontology:fiscal:application"
+      )
+    ).toBe(false)
+    expect(
+      mapProjection.edges.some(
+        (edge) => edge.target === "ontology:fiscal:application"
+      )
+    ).toBe(false)
   })
 
   it("routes document steps to the exact document-manager row", () => {
@@ -295,7 +321,7 @@ describe("workspace ontology input", () => {
     })
   })
 
-  it("keeps accelerator ontology at module or lesson granularity", () => {
+  it("keeps Accelerator source data without duplicating it on the canvas", () => {
     const { seed, editor } = buildFixture()
     const assignmentStep = seed.acceleratorTimeline?.find(
       (step) => step.stepKind === "assignment"
@@ -339,9 +365,17 @@ describe("workspace ontology input", () => {
       }
     )
 
-    expect(acceleratorNodes).toHaveLength(moduleCount)
     expect(acceleratorNodes).toHaveLength(1)
     expect(acceleratorNodes[0]).toMatchObject({
+      id: "ontology:accelerator:phase:start",
+      label: "Start",
+      kind: "Accelerator phase",
+      status: "in-progress",
+      statusLabel: "0/1 complete",
+      href: null,
+      visibility: "source-card-only",
+    })
+    expect(acceleratorNodes[0]?.children?.[0]).toMatchObject({
       id: "ontology:accelerator:module:module-1",
       label: "Foundation",
       status: "in-progress",
@@ -354,9 +388,9 @@ describe("workspace ontology input", () => {
         node.href?.match(/^\/accelerator(?:\/|$)/)
       )
     ).toBe(false)
-    expect(acceleratorNodes[0]?.kind).toMatch(/module|lesson/i)
-    expect(acceleratorNodes[0]?.children ?? []).toEqual([])
-    expect(acceleratorNodes[0]?.keywords).toEqual(
+    expect(acceleratorNodes[0]?.children?.[0]?.kind).toMatch(/module|lesson/i)
+    expect(acceleratorNodes[0]?.children?.[0]?.children ?? []).toEqual([])
+    expect(acceleratorNodes[0]?.children?.[0]?.keywords).toEqual(
       expect.arrayContaining([
         "What problem are you solving?",
         "Video",
@@ -376,8 +410,13 @@ describe("workspace ontology input", () => {
         nodes: projection.allNodes,
         query: "who experiences this problem",
       }).map((node) => node.id)
-    ).toContain("ontology:accelerator:module:module-1")
-    expect(allAcceleratorNodes).toHaveLength(moduleCount)
+    ).not.toContain("ontology:accelerator:module:module-1")
+    expect(
+      projection.allNodes.some((node) =>
+        node.id.startsWith("ontology:accelerator:")
+      )
+    ).toBe(false)
+    expect(allAcceleratorNodes).toHaveLength(moduleCount + 1)
     expect(
       allAcceleratorNodes.some((node) =>
         /video|resource|assignment|question|section|complete/i.test(node.kind)
@@ -395,6 +434,230 @@ describe("workspace ontology input", () => {
     ).toBe(false)
   })
 
+  it("routes completed Accelerator nodes to visible steps", () => {
+    const { seed, editor } = buildFixture()
+    for (const step of seed.acceleratorTimeline ?? []) {
+      step.status = "completed"
+    }
+
+    const input = buildWorkspaceCanvasOntologyInput({ seed, editor })
+    const allNodes = input.roots.flatMap(function flatten(root) {
+      const visit = (
+        node: (typeof root.children)[number]
+      ): typeof root.children => [node, ...(node.children ?? []).flatMap(visit)]
+      return root.children.flatMap(visit)
+    })
+    const moduleNode = allNodes.find(
+      (node) => node.id === "ontology:accelerator:module:module-1"
+    )
+    const activityNode = allNodes.find(
+      (node) => node.id === "ontology:activity:accelerator-activity-1"
+    )
+
+    expect(moduleNode?.href).toBe(
+      "/workspace/accelerator?step=step-1&module=module-1"
+    )
+    expect(activityNode?.href).toBe(
+      "/workspace/accelerator?step=step-1&module=module-1"
+    )
+    expect(moduleNode?.href).not.toContain("%3Alesson")
+    expect(activityNode?.href).not.toContain("%3Alesson")
+  })
+
+  it("uses the canonical Accelerator route when a module has no openable step", () => {
+    const { seed, editor } = buildFixture()
+    seed.acceleratorTimeline = seed.acceleratorTimeline?.filter(
+      (step) => step.stepKind === "complete"
+    )
+
+    const input = buildWorkspaceCanvasOntologyInput({ seed, editor })
+    const acceleratorModule = input.roots
+      .flatMap((root) => root.children)
+      .flatMap(function flatten(node): (typeof node)[] {
+        return [node, ...(node.children ?? []).flatMap(flatten)]
+      })
+      .find((node) => node.id === "ontology:accelerator:module:module-1")
+
+    expect(acceleratorModule?.href).toBe("/workspace/accelerator")
+  })
+
+  it("excludes unpublished and onboarding-only Accelerator modules", () => {
+    const { seed, editor } = buildFixture()
+    const baseStep = seed.acceleratorTimeline?.[0]
+    if (!baseStep) throw new Error("Accelerator step fixture is required")
+
+    seed.acceleratorTimeline = [
+      ...seed.acceleratorTimeline!,
+      {
+        ...baseStep,
+        id: "draft-module:lesson",
+        moduleId: "draft-module",
+        moduleTitle: "Draft",
+        groupTitle: "Draft Class",
+        published: false,
+      },
+      {
+        ...baseStep,
+        id: "kick-off:lesson",
+        moduleId: "kick-off",
+        moduleTitle: "Kick-off",
+        groupTitle: "Introduction",
+        published: true,
+        moduleContext: {
+          classTitle: "Introduction",
+          lessonNotesContent: null,
+          moduleResources: [],
+          assignmentFields: [],
+          assignmentSubmission: null,
+          completeOnSubmit: false,
+          workspaceOnboarding: {
+            view: "organization-setup",
+          },
+        },
+      },
+    ]
+    seed.activityFeed = [
+      ...seed.activityFeed,
+      {
+        id: "draft-activity",
+        title: "Draft opened",
+        description: null,
+        status: "scheduled",
+        href: "/workspace/accelerator",
+        source: "accelerator",
+        type: "accelerator",
+        timestamp: "2026-07-23T13:00:00.000Z",
+        metadata: { moduleId: "draft-module" },
+      },
+      {
+        id: "kick-off-activity",
+        title: "Kick-off opened",
+        description: null,
+        status: "scheduled",
+        href: "/workspace/accelerator",
+        source: "accelerator",
+        type: "accelerator",
+        timestamp: "2026-07-23T14:00:00.000Z",
+        metadata: { moduleId: "kick-off" },
+      },
+    ]
+
+    const input = buildWorkspaceCanvasOntologyInput({ seed, editor })
+    const allNodes = input.roots.flatMap(function flatten(root) {
+      const visit = (
+        node: (typeof root.children)[number]
+      ): typeof root.children => [node, ...(node.children ?? []).flatMap(visit)]
+      return root.children.flatMap(visit)
+    })
+
+    expect(
+      allNodes.find(
+        (node) => node.id === "ontology:accelerator:module:module-1"
+      )
+    ).toBeDefined()
+    expect(allNodes.map((node) => node.label)).not.toEqual(
+      expect.arrayContaining(["Draft", "Draft Class", "Kick-off"])
+    )
+    expect(
+      allNodes.some(
+        (node) =>
+          node.id.includes("draft-module") ||
+          node.id.includes("kick-off-activity")
+      )
+    ).toBe(false)
+  })
+
+  it("excludes draft program objects from the ontology", () => {
+    const { seed, editor } = buildFixture()
+    editor.programs.push({
+      id: "draft-program",
+      title: "Unpublished program",
+      description: "Not ready for the operating map.",
+      status_label: "Draft",
+    })
+
+    const input = buildWorkspaceCanvasOntologyInput({ seed, editor })
+    const programNodes =
+      input.roots
+        .find((root) => root.id === "programs")
+        ?.children.find((node) => node.id === "ontology:programs:portfolio")
+        ?.children ?? []
+
+    expect(
+      programNodes.some((node) => node.id === "ontology:program:draft-program")
+    ).toBe(false)
+  })
+
+  it("caps operational activity at the three most recent records", () => {
+    const { seed, editor } = buildFixture()
+    const activityFeed: WorkspaceSeedData["activityFeed"] = [
+      {
+        id: "older",
+        title: "Older",
+        description: null,
+        status: "scheduled",
+        href: null,
+        source: "communications",
+        type: "social_posted",
+        timestamp: "2026-07-19T12:00:00.000Z",
+      },
+      {
+        id: "newest",
+        title: "Newest",
+        description: null,
+        status: "completed",
+        href: null,
+        source: "communications",
+        type: "social_posted",
+        timestamp: "2026-07-23T12:00:00.000Z",
+      },
+      {
+        id: "middle",
+        title: "Middle",
+        description: null,
+        status: "scheduled",
+        href: null,
+        source: "communications",
+        type: "social_posted",
+        timestamp: "2026-07-21T12:00:00.000Z",
+      },
+      {
+        id: "second",
+        title: "Second",
+        description: null,
+        status: "scheduled",
+        href: null,
+        source: "communications",
+        type: "social_posted",
+        timestamp: "2026-07-22T12:00:00.000Z",
+      },
+      {
+        id: "archived",
+        title: "Archived",
+        description: null,
+        status: "scheduled",
+        href: null,
+        source: "communications",
+        type: "social_posted",
+        timestamp: "2026-07-18T12:00:00.000Z",
+      },
+    ]
+    const input = buildWorkspaceCanvasOntologyInput({
+      seed: { ...seed, activityFeed } as WorkspaceSeedData,
+      editor,
+    })
+    const activityGroup = input.roots
+      .find((root) => root.id === "programs")
+      ?.children.find((node) => node.id === "ontology:programs:activity")
+
+    expect(activityGroup?.statusLabel).toBe("3 recent · 2 archived")
+    expect(activityGroup?.children?.map((node) => node.id)).toEqual([
+      "ontology:activity:newest",
+      "ontology:activity:second",
+      "ontology:activity:middle",
+    ])
+  })
+
   it("keeps every upcoming calendar event behind compact month groups", () => {
     const { seed, editor } = buildFixture()
     seed.calendar.upcomingEvents = Array.from({ length: 25 }, (_, index) => ({
@@ -408,6 +671,7 @@ describe("workspace ontology input", () => {
       status: "active",
       event_type: "meeting",
       assigned_roles: [],
+      updated_at: "2026-08-01T12:00:00.000Z",
     }))
 
     const input = buildWorkspaceCanvasOntologyInput({ seed, editor })
@@ -442,24 +706,19 @@ describe("workspace ontology input", () => {
     expect(fiscalApplication?.actionLabel).toBe("Review application")
   })
 
-  it("uses the live tracker instead of the stale seed snapshot", () => {
+  it("does not add objectives and tasks to the ontology board", () => {
     const { seed, editor } = buildFixture()
-    const tracker = {
-      ...seed.boardState.tracker,
-      tickets: seed.boardState.tracker.tickets.map((ticket) => ({
-        ...ticket,
-        title: "Live operating objective",
-      })),
-    }
-
-    const input = buildWorkspaceCanvasOntologyInput({ seed, editor, tracker })
-    const task = input.roots
+    const input = buildWorkspaceCanvasOntologyInput({ seed, editor })
+    const programChildren = input.roots
       .find((root) => root.id === "programs")
-      ?.children.flatMap((node) => node.children ?? [])
-      .flatMap((node) => node.children ?? [])
-      .find((node) => node.id === "ontology:task:task-1")
+      ?.children.flatMap((node) => [node, ...(node.children ?? [])])
 
-    expect(task?.label).toBe("Live operating objective")
+    expect(programChildren?.map((node) => node.label)).not.toContain(
+      "Objectives and tasks"
+    )
+    expect(
+      programChildren?.some((node) => node.id.startsWith("ontology:tasks:"))
+    ).toBe(false)
   })
 
   it("does not expose dead fiscal actions before a workflow exists", () => {
@@ -491,6 +750,7 @@ describe("workspace ontology input", () => {
         recurrence: null,
         status: "active",
         assigned_roles: ["board"],
+        updated_at: "2026-08-01T12:00:00.000Z",
       },
     ]
     seed.activityFeed = [

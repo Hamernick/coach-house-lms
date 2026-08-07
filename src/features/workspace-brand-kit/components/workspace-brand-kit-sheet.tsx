@@ -1,9 +1,6 @@
 "use client"
 
-import InfoIcon from "lucide-react/dist/esm/icons/info"
-
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -15,7 +12,6 @@ import {
 } from "@/components/ui/sheet"
 import { Separator } from "@/components/ui/separator"
 import { Textarea } from "@/components/ui/textarea"
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import {
   ORG_BANNER_ASPECT_LABEL,
   ORG_BANNER_MIN_DIMENSIONS_LABEL,
@@ -44,12 +40,19 @@ export function WorkspaceBrandKitSheet({
   canEdit,
 }: WorkspaceBrandKitSheetProps) {
   return (
-    <Sheet open={controller.isSheetOpen} onOpenChange={controller.setIsSheetOpen}>
-      <SheetContent side="right" className="flex w-full flex-col gap-0 px-0 sm:max-w-xl">
-        <SheetHeader className="border-b border-border/60 px-6 pb-4 pt-6 text-left">
+    <Sheet
+      open={controller.isSheetOpen}
+      onOpenChange={controller.setIsSheetOpen}
+    >
+      <SheetContent
+        side="right"
+        className="flex w-full flex-col gap-0 px-0 sm:max-w-xl"
+      >
+        <SheetHeader className="border-border/60 border-b px-6 pt-6 pb-4 text-left">
           <SheetTitle>Brand kit</SheetTitle>
           <SheetDescription>
-            Set the essentials once so your team can reuse them across flyers, profiles, decks, and outreach.
+            Set the essentials once so your team can reuse them across flyers,
+            profiles, decks, and outreach.
           </SheetDescription>
         </SheetHeader>
 
@@ -66,7 +69,11 @@ export function WorkspaceBrandKitSheet({
                     id="brand-kit-name"
                     value={controller.draftProfile.name ?? ""}
                     disabled={!canEdit}
-                    onChange={(event) => controller.updateDraft({ name: event.currentTarget.value })}
+                    onChange={(event) =>
+                      controller.updateDraft({
+                        name: event.currentTarget.value,
+                      })
+                    }
                     onBlur={() => void controller.persistField("name")}
                   />
                 </div>
@@ -76,39 +83,118 @@ export function WorkspaceBrandKitSheet({
                     id="brand-kit-tagline"
                     value={controller.draftProfile.tagline ?? ""}
                     disabled={!canEdit}
-                    onChange={(event) => controller.updateDraft({ tagline: event.currentTarget.value })}
+                    onChange={(event) =>
+                      controller.updateDraft({
+                        tagline: event.currentTarget.value,
+                      })
+                    }
                     onBlur={() => void controller.persistField("tagline")}
                     placeholder="A short line that explains what the organization does."
                   />
                 </div>
+              </div>
+            </Section>
+
+            <Separator />
+
+            <Section
+              title="Brand voice"
+              description="Define how the organization should sound across channels."
+            >
+              <div className="grid gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[
+                    [
+                      "brandVoiceAudience",
+                      "Audience",
+                      "Community leaders, funders, and partners",
+                    ],
+                    [
+                      "brandVoiceTone",
+                      "Tone",
+                      "Warm, practical, and encouraging",
+                    ],
+                    [
+                      "brandVoiceStyle",
+                      "Style",
+                      "Clear, direct, and community-first",
+                    ],
+                    [
+                      "brandVoicePersonality",
+                      "Personality",
+                      "A trusted guide in your corner",
+                    ],
+                  ].map(([field, label, placeholder]) => (
+                    <div key={field} className="grid gap-2">
+                      <Label htmlFor={`brand-kit-${field}`}>{label}</Label>
+                      <Input
+                        id={`brand-kit-${field}`}
+                        value={String(
+                          controller.draftProfile[
+                            field as
+                              | "brandVoiceAudience"
+                              | "brandVoiceTone"
+                              | "brandVoiceStyle"
+                              | "brandVoicePersonality"
+                          ] ?? ""
+                        )}
+                        disabled={!canEdit}
+                        maxLength={240}
+                        placeholder={placeholder}
+                        onChange={(event) =>
+                          controller.updateDraft({
+                            [field]: event.currentTarget.value,
+                          })
+                        }
+                        onBlur={() =>
+                          void controller.persistField(
+                            field as
+                              | "brandVoiceAudience"
+                              | "brandVoiceTone"
+                              | "brandVoiceStyle"
+                              | "brandVoicePersonality"
+                          )
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
                 <div className="grid gap-2">
-                  <div className="flex items-center gap-1.5">
-                    <Label htmlFor="brand-kit-boilerplate">Boilerplate</Label>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-5 w-5 rounded-full text-muted-foreground"
-                          aria-label="Explain boilerplate"
-                        >
-                          <InfoIcon className="h-3 w-3" aria-hidden />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" align="start" className="max-w-64 text-xs leading-relaxed">
-                        In marketing, boilerplate is the short standard description of your organization that people can reuse in flyers, press mentions, partnership decks, and grant materials.
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
+                  <Label htmlFor="brand-kit-voice-guidelines">Guidelines</Label>
                   <Textarea
-                    id="brand-kit-boilerplate"
-                    rows={5}
-                    value={controller.draftProfile.boilerplate ?? ""}
+                    id="brand-kit-voice-guidelines"
+                    rows={6}
+                    maxLength={5000}
+                    value={controller.draftProfile.brandVoiceGuidelines ?? ""}
                     disabled={!canEdit}
-                    onChange={(event) => controller.updateDraft({ boilerplate: event.currentTarget.value })}
-                    onBlur={() => void controller.persistField("boilerplate")}
-                    placeholder="A reusable description for marketing handoffs, funder packets, and press mentions."
+                    onChange={(event) =>
+                      controller.updateDraft({
+                        brandVoiceGuidelines: event.currentTarget.value,
+                      })
+                    }
+                    onBlur={() =>
+                      void controller.persistField("brandVoiceGuidelines")
+                    }
+                    placeholder="Explain the language, framing, and vocabulary your team should use."
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="brand-kit-voice-avoid">Avoid</Label>
+                  <Textarea
+                    id="brand-kit-voice-avoid"
+                    rows={4}
+                    maxLength={5000}
+                    value={controller.draftProfile.brandVoiceAvoid ?? ""}
+                    disabled={!canEdit}
+                    onChange={(event) =>
+                      controller.updateDraft({
+                        brandVoiceAvoid: event.currentTarget.value,
+                      })
+                    }
+                    onBlur={() =>
+                      void controller.persistField("brandVoiceAvoid")
+                    }
+                    placeholder="Add one phrase or pattern per line that the team should avoid."
                   />
                 </div>
               </div>
@@ -123,25 +209,37 @@ export function WorkspaceBrandKitSheet({
               <div className="grid gap-4">
                 <div className="grid gap-4 md:grid-cols-2">
                   <div className="space-y-3">
-                    <BrandAssetPreview src={controller.draftProfile.logoUrl} label="Primary logo" fallback="Primary logo" />
+                    <BrandAssetPreview
+                      src={controller.draftProfile.logoUrl}
+                      label="Primary logo"
+                      fallback="Primary logo"
+                    />
                     <UploadControl
                       id="brand-kit-primary-logo"
                       title="Primary logo"
                       helper="SVG preferred. PNG, WebP, and JPEG accepted. Transparent background recommended. For raster files, aim for at least 1600px wide. Max 10 MB."
                       pending={controller.pendingKey === "logoUrl"}
                       hasAsset={Boolean(controller.draftProfile.logoUrl)}
-                      onFileSelect={(file) => void controller.handleAssetUpload("logoUrl", file)}
+                      onFileSelect={(file) =>
+                        void controller.handleAssetUpload("logoUrl", file)
+                      }
                     />
                   </div>
                   <div className="space-y-3">
-                    <BrandAssetPreview src={controller.draftProfile.brandMarkUrl} label="Logo mark" fallback="Logo mark" />
+                    <BrandAssetPreview
+                      src={controller.draftProfile.brandMarkUrl}
+                      label="Logo mark"
+                      fallback="Logo mark"
+                    />
                     <UploadControl
                       id="brand-kit-logo-mark"
                       title="Logo mark"
                       helper="SVG preferred. PNG, WebP, and JPEG accepted. Transparent background recommended. For raster files, aim for at least 512 by 512. Max 10 MB."
                       pending={controller.pendingKey === "brandMarkUrl"}
                       hasAsset={Boolean(controller.draftProfile.brandMarkUrl)}
-                      onFileSelect={(file) => void controller.handleAssetUpload("brandMarkUrl", file)}
+                      onFileSelect={(file) =>
+                        void controller.handleAssetUpload("brandMarkUrl", file)
+                      }
                     />
                   </div>
                 </div>
@@ -158,7 +256,9 @@ export function WorkspaceBrandKitSheet({
                     helper={`Use a wide banner for your public org profile and shared headers. ${ORG_BANNER_RECOMMENDED_DIMENSIONS_LABEL}px recommended at ${ORG_BANNER_ASPECT_LABEL}. Minimum ${ORG_BANNER_MIN_DIMENSIONS_LABEL}px. PNG, WebP, JPEG, and SVG accepted. Max 10 MB.`}
                     pending={controller.pendingKey === "headerUrl"}
                     hasAsset={Boolean(controller.draftProfile.headerUrl)}
-                    onFileSelect={(file) => void controller.handleAssetUpload("headerUrl", file)}
+                    onFileSelect={(file) =>
+                      void controller.handleAssetUpload("headerUrl", file)
+                    }
                   />
                 </div>
               </div>
@@ -207,14 +307,26 @@ export function WorkspaceBrandKitSheet({
               description="Social account sync will land here once connection flows are ready."
             >
               <div className="grid gap-2 sm:grid-cols-2">
-                {["Instagram", "LinkedIn", "Twitter / X", "Facebook", "Newsletter"].map((label) => (
-                  <div key={label} className="rounded-2xl border border-dashed border-border/60 bg-background/25 px-4 py-3">
+                {[
+                  "Instagram",
+                  "LinkedIn",
+                  "Twitter / X",
+                  "Facebook",
+                  "Newsletter",
+                ].map((label) => (
+                  <div
+                    key={label}
+                    className="border-border/60 bg-background/25 rounded-2xl border border-dashed px-4 py-3"
+                  >
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium text-foreground">{label}</span>
+                      <span className="text-foreground text-sm font-medium">
+                        {label}
+                      </span>
                       <Badge variant="outline">Coming soon</Badge>
                     </div>
-                    <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                      This slot will hold account connection state and synced brand usage helpers.
+                    <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+                      This slot will hold account connection state and synced
+                      brand usage helpers.
                     </p>
                   </div>
                 ))}
@@ -227,12 +339,15 @@ export function WorkspaceBrandKitSheet({
               title="Export"
               description="Download a zipped handoff with logos, banner, color metadata, and typography settings."
             >
-              <div className="rounded-2xl border border-border/60 bg-background/35 p-4">
+              <div className="border-border/60 bg-background/35 rounded-2xl border p-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-1">
-                    <p className="text-sm font-medium text-foreground">One-click brand handoff</p>
-                    <p className="text-xs leading-relaxed text-muted-foreground">
-                      Includes available logos, banner image, brand manifest, and a plain-text summary.
+                    <p className="text-foreground text-sm font-medium">
+                      One-click brand handoff
+                    </p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                      Includes available logos, banner image, brand manifest,
+                      and a plain-text summary.
                     </p>
                   </div>
                   <WorkspaceBrandKitDownloadButton

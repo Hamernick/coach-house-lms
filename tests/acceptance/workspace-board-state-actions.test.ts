@@ -35,9 +35,6 @@ describe("workspace board state actions", () => {
     const actionSource = readSource(
       "src/app/(dashboard)/my-organization/_lib/workspace-actions.ts"
     )
-    const actionSupportSource = readSource(
-      "src/app/(dashboard)/my-organization/_lib/workspace-actions-support.ts"
-    )
     const canvasSource = readSource(
       "src/app/(dashboard)/my-organization/_components/workspace-board/workspace-board-canvas.tsx"
     )
@@ -67,9 +64,6 @@ describe("workspace board state actions", () => {
     const actionSource = readSource(
       "src/app/(dashboard)/my-organization/_lib/workspace-actions.ts"
     )
-    const actionSupportSource = readSource(
-      "src/app/(dashboard)/my-organization/_lib/workspace-actions-support.ts"
-    )
     const pageSource = readSource(
       "src/app/(dashboard)/my-organization/_lib/my-organization-page-content.tsx"
     )
@@ -77,10 +71,8 @@ describe("workspace board state actions", () => {
     expect(pageSource).toContain(
       "const canEdit = isAdmin || canEditOrganization(role)"
     )
-    expect(actionSupportSource).toContain(
-      "export async function canEditWorkspaceLayout"
-    )
-    expect(actionSupportSource).toContain('profile?.role === "admin"')
+    expect(actionSource).toContain("async function canEditWorkspaceLayout")
+    expect(actionSource).toContain('profile?.role === "admin"')
     expect(actionSource).toContain(
       "const canEditLayout = await canEditWorkspaceLayout"
     )

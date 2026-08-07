@@ -108,6 +108,7 @@ describe("workspace ontology primary activation", () => {
     depth: 1,
     childCount: 0,
     hasChildren: false,
+    presentation: "action" as const,
   }
 
   it("expands groups before following their redundant destination", () => {
@@ -117,6 +118,7 @@ describe("workspace ontology primary activation", () => {
         href: "/workspace?view=editor&tab=programs",
         childCount: 3,
         hasChildren: true,
+        presentation: "group",
       })
     ).toEqual({ kind: "toggle-details", nodeId: "ontology:test" })
   })
@@ -173,11 +175,14 @@ describe("workspace ontology projection", () => {
       filter: { query: "", categories: [] },
     })
     expect(rootExpanded.nodes.map((node) => node.id)).toEqual([
+      "ontology:list:organization-overview",
+    ])
+    expect(rootExpanded.nodes[0].items?.map((item) => item.id)).toEqual([
       "ontology:profile",
     ])
     expect(rootExpanded.edges[0]).toMatchObject({
       source: "organization-overview",
-      target: "ontology:profile",
+      target: "ontology:list:organization-overview",
       label: "defines",
     })
 
@@ -191,7 +196,10 @@ describe("workspace ontology projection", () => {
       filter: { query: "", categories: [] },
     })
     expect(nodeExpanded.nodes.map((node) => node.id)).toEqual([
-      "ontology:profile",
+      "ontology:list:organization-overview",
+      "ontology:list:ontology:profile",
+    ])
+    expect(nodeExpanded.nodes[1].items?.map((item) => item.id)).toEqual([
       "ontology:mission",
     ])
 
@@ -270,8 +278,14 @@ describe("workspace ontology projection", () => {
       filter: { query: "", categories: ["documents"] },
     })
 
-    expect(projection.nodes.map((node) => node.id)).toEqual([
+    expect(projection.nodes.map((node) => node.listParentId)).toEqual([
+      "organization-overview",
       "ontology:profile",
+    ])
+    expect(projection.nodes[0].items?.map((item) => item.id)).toEqual([
+      "ontology:profile",
+    ])
+    expect(projection.nodes[1].items?.map((item) => item.id)).toEqual([
       "ontology:mission",
     ])
     expect(projection.edges).toHaveLength(2)
@@ -295,6 +309,7 @@ describe("workspace ontology projection", () => {
       input: relationshipInput,
       state: {
         ...buildDefaultWorkspaceOntologyState(),
+        mode: "map",
         expandedRootIds: ["organization-overview"],
       },
       filter: { query: "", categories: [] },
@@ -345,6 +360,7 @@ describe("workspace ontology projection", () => {
       input,
       state: {
         ...buildDefaultWorkspaceOntologyState(),
+        mode: "map",
         expandedRootIds: ["organization-overview"],
       },
       filter: { query: "", categories: [] },
@@ -352,6 +368,7 @@ describe("workspace ontology projection", () => {
 
     expect(projection.edges.map((edge) => [edge.kind, edge.showLabel])).toEqual(
       [
+        ["hierarchy", true],
         ["hierarchy", true],
         ["hierarchy", false],
         ["relationship", true],
@@ -386,6 +403,7 @@ describe("workspace ontology state and layout", () => {
       })
     ).toEqual({
       updatedAt: null,
+      mode: "focus",
       expandedRootIds: ["organization-overview"],
       expandedNodeIds: [],
       pinnedNodeIds: [],
@@ -398,12 +416,14 @@ describe("workspace ontology state and layout", () => {
       new URLSearchParams("view=workspace"),
       {
         ...buildDefaultWorkspaceOntologyState(),
+        mode: "map",
         expandedRootIds: ["organization-overview", "accelerator"],
         expandedNodeIds: ["ontology:profile", "invalid value"],
       }
     )
 
     expect(params.get("view")).toBe("workspace")
+    expect(params.get("workspace-view")).toBe("map")
     expect(params.get("workspace-details")).toBe(
       "organization-overview,accelerator"
     )
@@ -443,7 +463,7 @@ describe("workspace ontology state and layout", () => {
       filter: { query: "", categories: [] },
     })
 
-    expect(projection.nodes.map((node) => node.status)).toEqual([
+    expect(projection.nodes[0].items?.map((node) => node.status)).toEqual([
       "blocked",
       "missing",
       "in-progress",
@@ -467,6 +487,7 @@ describe("workspace ontology state and layout", () => {
       completedCount: 0,
       descendantCount: 5,
       expanded: false,
+      mode: "focus" as const,
     }
 
     expect(resolveWorkspaceOntologyBranchTogglePresentation(control)).toEqual({
@@ -594,6 +615,7 @@ describe("workspace ontology state and layout", () => {
     }
     const state = {
       ...buildDefaultWorkspaceOntologyState(),
+      mode: "map" as const,
       expandedRootIds: ["organization-overview" as const],
     }
     const projection = buildWorkspaceOntologyProjection({
@@ -629,25 +651,18 @@ describe("workspace ontology state and layout", () => {
     }
 
     const nodesByColumn = groupBy(layout, (node) => node.position.x)
-    expect(
-      Math.max(...Array.from(nodesByColumn.values(), (column) => column.length))
-    ).toBe(24)
-    expect(nodesByColumn.size).toBe(5)
-    expect(
-      Array.from(nodesByColumn.values()).every(
-        (column) => new Set(column.map((node) => node.position.y)).size === 24
-      )
-    ).toBe(true)
+    expect(nodesByColumn.size).toBe(1)
+    expect(Array.from(nodesByColumn.values())[0]).toHaveLength(120)
     const left = Math.min(...layout.map((node) => node.position.x))
     const right = Math.max(
       ...layout.map((node) => node.position.x + node.size.width)
     )
-    expect(right - left).toBeLessThanOrEqual(1_800)
+    expect(right - left).toBeLessThanOrEqual(320)
     const top = Math.min(...layout.map((node) => node.position.y))
     const bottom = Math.max(
       ...layout.map((node) => node.position.y + node.size.height)
     )
-    expect(bottom - top).toBeLessThanOrEqual(5_200)
+    expect(bottom - top).toBeLessThanOrEqual(26_000)
 
     const repeated = await layoutWorkspaceOntology({
       projection,
@@ -691,6 +706,7 @@ describe("workspace ontology state and layout", () => {
     }
     const state = {
       ...buildDefaultWorkspaceOntologyState(),
+      mode: "map" as const,
       expandedRootIds: ["organization-overview", "accelerator"] as const,
     }
     const projection = buildWorkspaceOntologyProjection({
@@ -786,6 +802,7 @@ describe("workspace ontology state and layout", () => {
     }
     const state = {
       ...buildDefaultWorkspaceOntologyState(),
+      mode: "map" as const,
       expandedRootIds: [...rootIds],
     }
     const projection = buildWorkspaceOntologyProjection({
@@ -861,6 +878,10 @@ describe("workspace ontology integration contract", () => {
     )
     const nodeSource = readFileSync(
       "src/features/workspace-ontology/components/workspace-ontology-node.tsx",
+      "utf8"
+    )
+    const listSource = readFileSync(
+      "src/features/workspace-ontology/components/workspace-ontology-list.tsx",
       "utf8"
     )
     const edgeSource = readFileSync(
@@ -953,6 +974,14 @@ describe("workspace ontology integration contract", () => {
     expect(viewSource).not.toContain("WorkspaceOntologyPanel")
     expect(viewSource).not.toContain("ontologyPanel")
     expect(viewSource).not.toContain("data-workspace-ontology-panel-anchor")
+    expect(surfaceSource).toContain(
+      "const WORKSPACE_LIVE_CANVAS_ONTOLOGY_ENABLED = false"
+    )
+    expect(surfaceSource).toContain("!bootstrap.tutorialActiveFromBoard")
+    expect(surfaceSource).toContain("ontologyRootControls: undefined")
+    expect(surfaceSource).toContain(
+      "WORKSPACE_LIVE_CANVAS_ONTOLOGY_ENABLED ? ontology.edges : []"
+    )
     expect(projectionHookSource).toContain(
       'filter: { query: "", categories: [] }'
     )
@@ -962,10 +991,28 @@ describe("workspace ontology integration contract", () => {
     expect(nodeSource).toContain("aria-expanded")
     expect(ontologySurfaceSource).toContain("focusable: false")
     expect(nodeSource).toContain("<WorkspaceNodeFrameRoot")
+    expect(nodeSource).toContain("<WorkspaceOntologyList")
+    expect(listSource).toContain('data-workspace-ontology-list="true"')
+    expect(listSource).toContain("data-workspace-ontology-list-item")
+    expect(listSource).not.toContain('from "next/link"')
+    expect(listSource).not.toContain("item.href && !item.hasChildren")
+    expect(listSource).toContain("onActivate?.(item.id)")
+    expect(ontologySurfaceSource).toContain(
+      'node.id.startsWith("ontology:document:")'
+    )
+    expect(ontologySurfaceSource).toContain(
+      'focusKey: node.id.slice("ontology:document:".length)'
+    )
+    expect(ontologySurfaceSource).toContain("onOpenDataDrawer({")
     expect(nodeSource).toContain("const actionAriaLabel")
     expect(nodeSource).toContain("aria-label={actionAriaLabel}")
-    expect(nodeSource).toContain("<Link")
+    expect(nodeSource).not.toContain('from "next/link"')
+    expect(nodeSource).not.toContain("<Link")
     expect(nodeSource).toContain("<Button")
+    expect(nodeSource).toContain("openInNewTab: event.metaKey || event.ctrlKey")
+    expect(ontologySurfaceSource).toContain(
+      "onActivate: (options) => activateNode(node.id, options)"
+    )
     expect(nodeSource).toContain("describeWorkspaceOntologyNodeActivation")
     expect(nodeSource).toContain("touch-manipulation")
     expect(nodeSource).toContain("WorkspaceNodeFrameRoot")
@@ -974,11 +1021,13 @@ describe("workspace ontology integration contract", () => {
     expect(nodeSource).not.toContain("WorkspaceNodeFrameFooter")
     expect(nodeSource).toContain("rounded-[2rem]")
     expect(nodeSource).toContain("rounded-[1.45rem]")
-    expect(nodeSource).toContain("bg-muted")
+    expect(nodeSource).toContain(
+      "bg-background h-full w-full overflow-visible rounded-[2rem] border px-2 py-2.5"
+    )
     expect(nodeSource).toContain(
       "transition-[background-color,border-color,box-shadow,transform]"
     )
-    expect(nodeSource).toContain("hover:bg-muted")
+    expect(nodeSource).not.toContain("hover:bg-muted")
     expect(nodeSource).not.toContain("hover:bg-accent/20")
     expect(nodeSource).toContain("dark:bg-background")
     expect(nodeSource).toContain("dark:hover:bg-accent")
@@ -1001,14 +1050,20 @@ describe("workspace ontology integration contract", () => {
     expect(viewSource).toContain("onNodeClick={onNodeClick}")
     expect(viewSource).toContain("onKeyDownCapture={onKeyDownCapture}")
     expect(nodeSource).not.toContain("workspace-ontology-node-drag-handle")
-    expect(branchToggleSource).toContain("backdrop-blur-md")
+    expect(branchToggleSource).not.toContain("backdrop-blur-md")
     expect(branchToggleSource).toContain(
-      "transition-[background-color,border-color,box-shadow,transform]"
+      "transition-[border-color,box-shadow,transform]"
     )
-    expect(branchToggleSource).toContain("dark:bg-background/90")
+    expect(branchToggleSource).not.toContain("bg-background/95")
+    expect(branchToggleSource).not.toContain("dark:bg-background/90")
     expect(branchToggleSource).toContain("ListTreeIcon")
     expect(branchToggleSource).toContain("bg-orange-500/15")
     expect(branchToggleSource).toContain("bg-emerald-500/15")
+    expect(nodeSource).not.toContain("bg-zinc-100")
+    expect(nodeSource).not.toContain("bg-emerald-50/90")
+    expect(nodeSource).not.toContain("dark:bg-emerald-950/35")
+    expect(nodeSource).not.toContain("bg-sky-50/90")
+    expect(nodeSource).not.toContain("dark:bg-sky-950/35")
     expect(branchToggleSource).not.toContain("bg-sky-500/15")
     expect(branchToggleSource).toContain(
       'ownerId: "workspace-ontology:branch-toggle"'
@@ -1077,7 +1132,7 @@ describe("workspace ontology integration contract", () => {
       "animation-delay: var(--workspace-ontology-wave-delay, 0ms)"
     )
     expect(globalStylesSource).toContain(
-      ".react-flow__node-workspace-ontology:focus-visible"
+      ".react-flow__node:focus-visible [data-workspace-ontology-node]"
     )
     expect(viewSource).toContain("const nodesSelectable = !tutorialActive")
     expect(layoutSource).toContain("buildWrappedBranchPositions")
@@ -1113,11 +1168,14 @@ describe("workspace ontology integration contract", () => {
     )
     expect(sheetSource).toContain("motion-reduce:animate-none")
     expect(sheetSource).toContain("motion-reduce:transition-none")
+    expect(fiscalSummarySource).toContain(
+      'actionRequest.phaseId === "application-intake"'
+    )
     expect(layoutSceneSource).toContain("mergeDepartingItems")
     expect(layoutSceneSource).toContain("buildTransitionPhases")
     expect(nodeSource).toContain('transitionPhase === "exiting"')
     expect(edgeSource).toContain("data-transition-phase={transitionPhase}")
-    expect(ontologySurfaceSource).toContain("width: node.size.width")
+    expect(ontologySurfaceSource).toContain("style: node.size")
     expect(ontologySurfaceSource).toContain(
       "resolveWorkspaceCardMeasuredHeight"
     )
@@ -1139,7 +1197,7 @@ describe("workspace ontology integration contract", () => {
     expect(ontologySurfaceSource).not.toContain("boardState.ontology")
     expect(urlStateHookSource).toContain("window.history.pushState")
     expect(ontologyInteractionsSource).not.toContain("rootPositions[")
-    expect(ontologyInteractionsSource).not.toContain(
+    expect(ontologyInteractionsSource).toContain(
       "workspace-ontology-arranged-root"
     )
     expect(ontologyInteractionsSource).toContain("useStableVisibleNodeIds")
@@ -1153,7 +1211,12 @@ describe("workspace ontology integration contract", () => {
     )
     expect(wayfindingHookSource).toContain("fitPendingRef")
     expect(wayfindingHookSource).toContain("addedNode?.id")
-    expect(wayfindingHookSource).toContain("minZoom: narrowViewport ? 0.9")
+    expect(wayfindingHookSource).toContain(
+      'minZoom: mode === "map" ? 0.2 : narrowViewport ? 0.9 : 0.64'
+    )
+    expect(ontologyInteractionsSource).toContain(
+      "onMoveStart: cancelPendingFit"
+    )
     expect(renderStateSource).toContain(
       "shouldReconcileWorkspaceCanvasNodes(changes)"
     )

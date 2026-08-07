@@ -12,6 +12,10 @@ import { OrganizationNarrativeContent } from "@/components/organization/org-prof
 import type { CompanyViewProps } from "./types"
 import { stripHtml } from "@/lib/markdown/convert"
 import { cn } from "@/lib/utils"
+import {
+  hasWorkspaceBrandKitProfileContent,
+  WorkspaceBrandKitProfilePreview,
+} from "@/features/workspace-brand-kit"
 
 const FORMATION_STATUS_LABELS: Record<string, string> = {
   pre_501c3: "Pre-501(c)(3)",
@@ -151,7 +155,7 @@ export function StoryPreview({ company }: CompanyViewProps) {
           </ProfileField>
         ) : null}
         {need.trim().length > 0 ? (
-          <ProfileField label="Need statement">
+          <ProfileField label="Need">
             <FieldText text={need} multiline />
           </ProfileField>
         ) : null}
@@ -227,34 +231,13 @@ export function SocialPreview({ company, hasAnyBrandLink }: CompanyViewProps) {
 }
 
 export function BrandKitPreview({ company }: CompanyViewProps) {
-  const boilerplate =
-    typeof company.boilerplate === "string"
-      ? stripHtml(company.boilerplate)
-      : ""
-  const showBrandKit =
-    (typeof company.logoUrl === "string" && company.logoUrl.trim()) ||
-    boilerplate.trim().length > 0
-
-  if (!showBrandKit) {
+  if (!hasWorkspaceBrandKitProfileContent(company)) {
     return null
   }
 
   return (
     <FormRow title="Brand Kit">
-      <div className="grid gap-4 md:grid-cols-2 md:items-start">
-        {typeof company.logoUrl === "string" && company.logoUrl.trim() ? (
-          <ProfileField label="Logo">
-            <div className="pt-1.5">
-              <BrandLink href={company.logoUrl} />
-            </div>
-          </ProfileField>
-        ) : null}
-        {boilerplate.trim().length > 0 ? (
-          <ProfileField label="Boilerplate">
-            <FieldText text={boilerplate} multiline />
-          </ProfileField>
-        ) : null}
-      </div>
+      <WorkspaceBrandKitProfilePreview profile={company} />
     </FormRow>
   )
 }

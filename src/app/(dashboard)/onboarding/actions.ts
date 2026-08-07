@@ -4,8 +4,8 @@ import { redirect } from "next/navigation"
 
 import { fetchLearningEntitlements } from "@/lib/accelerator/entitlements"
 import { markOrganizationSetupModuleCompleted } from "@/lib/accelerator/organization-setup"
+import { writeOnboardingOrganizationProfile } from "@/lib/onboarding/organization-profile-write"
 import { createSupabaseServerClient } from "@/lib/supabase/server"
-import type { Json } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
 import { FIND_PATH } from "@/lib/find/routes"
@@ -90,7 +90,10 @@ export async function completeOnboardingAction(form: FormData) {
   const intentFocusRaw = String(form.get("intentFocus") || "").trim()
   const roleInterestRaw = String(form.get("roleInterest") || "").trim()
   const intentFocus =
-    intentFocusRaw === "build" || intentFocusRaw === "find" || intentFocusRaw === "fund" || intentFocusRaw === "support"
+    intentFocusRaw === "build" ||
+    intentFocusRaw === "find" ||
+    intentFocusRaw === "fund" ||
+    intentFocusRaw === "support"
       ? intentFocusRaw
       : null
   const roleInterest =
@@ -108,13 +111,16 @@ export async function completeOnboardingAction(form: FormData) {
       : "full"
   const builderPlanTierRaw = String(form.get("builderPlanTier") || "").trim()
   const builderPlanTier =
-    builderPlanTierRaw === "organization" || builderPlanTierRaw === "operations_support"
+    builderPlanTierRaw === "organization" ||
+    builderPlanTierRaw === "operations_support"
       ? builderPlanTierRaw
       : "free"
 
   const formationStatusRaw = String(form.get("formationStatus") || "").trim()
   const formationStatus =
-    formationStatusRaw === "pre_501c3" || formationStatusRaw === "in_progress" || formationStatusRaw === "approved"
+    formationStatusRaw === "pre_501c3" ||
+    formationStatusRaw === "in_progress" ||
+    formationStatusRaw === "approved"
       ? formationStatusRaw
       : null
 
@@ -127,7 +133,7 @@ export async function completeOnboardingAction(form: FormData) {
       buildOnboardingErrorRedirect({
         intentFocus,
         error: "missing_intent_focus",
-      }),
+      })
     )
   }
 
@@ -141,7 +147,7 @@ export async function completeOnboardingAction(form: FormData) {
         buildOnboardingErrorRedirect({
           intentFocus,
           error: "organization_access_required",
-        }),
+        })
       )
     }
   }
@@ -159,7 +165,7 @@ export async function completeOnboardingAction(form: FormData) {
           buildOnboardingErrorRedirect({
             intentFocus,
             error: "builder_plan_required",
-          }),
+          })
         )
       }
     }
@@ -170,7 +176,7 @@ export async function completeOnboardingAction(form: FormData) {
           buildOnboardingErrorRedirect({
             intentFocus,
             error: "missing_org_name",
-          }),
+          })
         )
       }
       if (!normalizedSlug) {
@@ -178,7 +184,7 @@ export async function completeOnboardingAction(form: FormData) {
           buildOnboardingErrorRedirect({
             intentFocus,
             error: "missing_org_slug",
-          }),
+          })
         )
       }
       if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalizedSlug)) {
@@ -187,7 +193,7 @@ export async function completeOnboardingAction(form: FormData) {
             intentFocus,
             error: "invalid_org_slug",
             slug: normalizedSlug,
-          }),
+          })
         )
       }
       if (RESERVED_SLUGS.has(normalizedSlug)) {
@@ -196,7 +202,7 @@ export async function completeOnboardingAction(form: FormData) {
             intentFocus,
             error: "reserved_org_slug",
             slug: normalizedSlug,
-          }),
+          })
         )
       }
 
@@ -206,14 +212,18 @@ export async function completeOnboardingAction(form: FormData) {
         .ilike("public_slug", normalizedSlug)
         .neq("user_id", targetOrgId)
 
-      if (slugError) throw supabaseErrorToError(slugError, "Unable to validate organization URL.")
+      if (slugError)
+        throw supabaseErrorToError(
+          slugError,
+          "Unable to validate organization URL."
+        )
       if ((slugCount ?? 0) > 0) {
         redirect(
           buildOnboardingErrorRedirect({
             intentFocus,
             error: "slug_taken",
             slug: normalizedSlug,
-          }),
+          })
         )
       }
     }
@@ -222,7 +232,11 @@ export async function completeOnboardingAction(form: FormData) {
   let avatarUrl: string | null = null
   const avatar = form.get("avatar")
   if (avatar instanceof File && avatar.size > 0) {
-    avatarUrl = await uploadAvatarWithUser({ client: supabase, userId: user.id, file: avatar })
+    avatarUrl = await uploadAvatarWithUser({
+      client: supabase,
+      userId: user.id,
+      file: avatar,
+    })
   }
 
   const fullName = [first, last].filter(Boolean).join(" ").trim()
@@ -242,79 +256,37 @@ export async function completeOnboardingAction(form: FormData) {
       userId: user.id,
       message: profileUpsertError.message,
     })
-    throw supabaseErrorToError(profileUpsertError, "Unable to save your profile.")
+    throw supabaseErrorToError(
+      profileUpsertError,
+      "Unable to save your profile."
+    )
   }
 
   if (requiresOrganizationSetup) {
-    const { data: existingOrg, error: existingOrgError } = await supabase
-      .from("organizations")
-      .select("profile")
-      .eq("user_id", targetOrgId)
-      .maybeSingle<{ profile: Record<string, unknown> | null }>()
+    const organizationWrite = await writeOnboardingOrganizationProfile({
+      avatarUrl,
+      formationStatus,
+      fullName,
+      intentFocus,
+      linkedin,
+      normalizedSlug,
+      orgName,
+      publicEmail,
+      roleInterest,
+      supabase,
+      targetOrgId,
+      title,
+      user,
+    })
 
-    if (existingOrgError) throw supabaseErrorToError(existingOrgError, "Unable to load organization profile.")
-
-    const nextProfile = {
-      ...(existingOrg?.profile ?? {}),
-      name: orgName,
-      ...(formationStatus ? { formationStatus } : {}),
-      ...(linkedin.length > 0 ? { linkedin } : {}),
-      ...(
-        avatarUrl &&
-        (!existingOrg?.profile || typeof existingOrg.profile["logoUrl"] !== "string" || existingOrg.profile["logoUrl"].trim().length === 0)
-          ? { logoUrl: avatarUrl }
-          : {}
-      ),
-      onboarding_intent_focus: intentFocus,
-      ...(roleInterest ? { onboarding_role_interest: roleInterest } : {}),
-    }
-
-    const existingPeopleRaw = Array.isArray((existingOrg?.profile ?? {})?.org_people)
-      ? ((existingOrg?.profile ?? {})?.org_people as Array<Record<string, unknown>>)
-      : []
-    const nextOwnerPerson = {
-      id: user.id,
-      name: fullName || user.email || "You",
-      title: title.length > 0 ? title : null,
-      email: publicEmail.length > 0 ? publicEmail : null,
-      linkedin: linkedin.length > 0 ? linkedin : null,
-      category: "staff",
-      image: avatarUrl,
-      reportsToId: null,
-      pos: null,
-    }
-    const nextPeople = [
-      nextOwnerPerson,
-      ...existingPeopleRaw.filter((person) => {
-        if (!person || typeof person !== "object") return false
-        const id = typeof person.id === "string" ? person.id : null
-        if (id && id === user.id) return false
-        const personEmail = typeof person.email === "string" ? person.email.toLowerCase() : null
-        const ownerEmail = (nextOwnerPerson.email ?? "").toLowerCase()
-        if (personEmail && ownerEmail && personEmail === ownerEmail) return false
-        return true
-      }),
-    ]
-
-    const orgProfilePayload = { ...nextProfile, org_people: nextPeople } as Json
-
-    const { error: organizationUpsertError } = await supabase.from("organizations").upsert(
-      {
-        user_id: targetOrgId,
-        public_slug: normalizedSlug,
-        profile: orgProfilePayload,
-      },
-      { onConflict: "user_id" },
-    )
-
-    if (organizationUpsertError) {
+    if ("error" in organizationWrite) {
       console.error("completeOnboardingAction: organization upsert failed", {
         userId: user.id,
-        message: organizationUpsertError.message,
+        message: organizationWrite.error,
       })
       throw supabaseErrorToError(
-        organizationUpsertError,
-        "Unable to save your organization.",
+        { message: organizationWrite.error },
+        "Unable to save your organization."
       )
     }
   }
@@ -378,7 +350,9 @@ export async function completeOnboardingAction(form: FormData) {
         roleInterest,
       },
     })
-    redirect("/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding")
+    redirect(
+      "/workspace?onboarding_flow=1&onboarding_stage=2&source=onboarding"
+    )
   }
 
   await trackUserJourneyMilestone({
@@ -408,7 +382,10 @@ export async function completeMemberMapOnboardingAction(form: FormData) {
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw supabaseErrorToError(userError, "Unable to load user.")
   }
-  if (!user) redirect(`/login?redirect=${encodeURIComponent(`${FIND_PATH}?member_onboarding=1`)}`)
+  if (!user)
+    redirect(
+      `/login?redirect=${encodeURIComponent(`${FIND_PATH}?member_onboarding=1`)}`
+    )
 
   const intentFocusRaw = String(form.get("intentFocus") || "").trim()
   const intentFocus =
@@ -427,10 +404,13 @@ export async function completeMemberMapOnboardingAction(form: FormData) {
   })
 
   if (updateUserError) {
-    console.error("completeMemberMapOnboardingAction: auth metadata update failed", {
-      userId: user.id,
-      message: updateUserError.message,
-    })
+    console.error(
+      "completeMemberMapOnboardingAction: auth metadata update failed",
+      {
+        userId: user.id,
+        message: updateUserError.message,
+      }
+    )
     throw supabaseErrorToError(updateUserError, "Unable to finish onboarding.")
   }
 

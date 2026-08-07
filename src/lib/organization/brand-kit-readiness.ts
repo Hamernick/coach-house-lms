@@ -8,26 +8,33 @@ export type BrandKitReadiness = {
   totalCount: number
   hasPrimaryLogo: boolean
   hasLogoMark: boolean
-  hasBoilerplate: boolean
+  hasBrandVoice: boolean
   hasPrimaryColor: boolean
   hasTypography: boolean
   hasTypographyPreset: boolean
 }
 
-export function resolveBrandKitReadiness(profile: OrgProfile): BrandKitReadiness {
+export function resolveBrandKitReadiness(
+  profile: OrgProfile
+): BrandKitReadiness {
   const hasPrimaryLogo = Boolean(profile.logoUrl?.trim())
   const hasLogoMark = Boolean(profile.brandMarkUrl?.trim())
-  const hasBoilerplate = Boolean(profile.boilerplate?.trim())
+  const hasBrandVoice = Boolean(
+    profile.brandVoiceGuidelines?.trim() ||
+    profile.brandVoiceTone?.trim() ||
+    profile.brandVoiceAudience?.trim() ||
+    profile.boilerplate?.trim()
+  )
   const hasPrimaryColor = Boolean(profile.brandPrimary?.trim())
   const hasTypography = Boolean(
     profile.brandTypographyPresetId?.trim() ||
-      profile.brandTypography?.headings?.family?.trim(),
+    profile.brandTypography?.headings?.family?.trim()
   )
 
   const completedCount = [
     hasPrimaryLogo,
     hasLogoMark,
-    hasBoilerplate,
+    hasBrandVoice,
     hasPrimaryColor,
     hasTypography,
   ].filter(Boolean).length
@@ -35,7 +42,7 @@ export function resolveBrandKitReadiness(profile: OrgProfile): BrandKitReadiness
   const status: BrandKitReadinessStatus =
     completedCount === 0
       ? "needs-setup"
-      : hasPrimaryLogo && hasBoilerplate && hasPrimaryColor && hasTypography
+      : hasPrimaryLogo && hasBrandVoice && hasPrimaryColor && hasTypography
         ? "ready"
         : "in-progress"
 
@@ -45,7 +52,7 @@ export function resolveBrandKitReadiness(profile: OrgProfile): BrandKitReadiness
     totalCount: 5,
     hasPrimaryLogo,
     hasLogoMark,
-    hasBoilerplate,
+    hasBrandVoice,
     hasPrimaryColor,
     hasTypography,
     hasTypographyPreset: hasTypography,

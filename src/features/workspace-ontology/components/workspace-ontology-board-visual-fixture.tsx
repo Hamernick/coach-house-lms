@@ -2,7 +2,7 @@
 
 import "reactflow/dist/style.css"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState, type KeyboardEvent } from "react"
 import {
   Background,
   BackgroundVariant,
@@ -21,6 +21,7 @@ import {
   WorkspaceNodeFrameRoot,
   WorkspaceNodeFrameSurface,
 } from "@/components/workspace/workspace-node-frame"
+import { Button } from "@/components/ui/button"
 
 import { useWorkspaceOntologyController } from "../hooks/use-workspace-ontology-controller"
 import { useWorkspaceOntologyUrlState } from "../hooks/use-workspace-ontology-url-state"
@@ -62,8 +63,8 @@ const INPUT: WorkspaceOntologyInput = {
           description: "The organization's public purpose.",
           category: "organization",
           kind: "Organization requirement",
-          status: "complete",
-          statusLabel: "Complete",
+          status: "in-progress",
+          statusLabel: "In progress",
           relationshipLabel: "defines",
           href: "/workspace?view=editor&tab=company",
           actionLabel: "Open organization",
@@ -167,6 +168,19 @@ const INPUT: WorkspaceOntologyInput = {
           href: "/workspace/accelerator",
           actionLabel: "Complete launch plan",
           ownerLabel: "Program director",
+        },
+        {
+          id: "ontology:visual:finance",
+          label: "Funding plan",
+          description: "Confirm the first funding plan.",
+          category: "fiscal",
+          kind: "Accelerator step",
+          status: "in-progress",
+          statusLabel: "In progress",
+          relationshipLabel: "funds",
+          href: "/workspace/accelerator",
+          actionLabel: "Continue funding plan",
+          ownerLabel: "Development lead",
         },
       ],
     },
@@ -279,6 +293,9 @@ export function WorkspaceOntologyBoardVisualFixture() {
   })
   const toggleNode = controller.toggleNode
   const nodes = useMemo<Node[]>(() => {
+    const activeNodeIdSet = new Set(controller.activeNodeIds)
+    const activeParentId =
+      controller.activeNodeIds.at(-1) ?? controller.activeRootId
     const roots: Node<VisualRootData>[] = Object.entries(rootGeometry).map(
       ([id, geometry]) => ({
         id,
@@ -286,6 +303,12 @@ export function WorkspaceOntologyBoardVisualFixture() {
         position: { x: geometry.x, y: geometry.y },
         width: geometry.width,
         height: geometry.height,
+        className:
+          controller.activeRootId && controller.activeRootId !== id
+            ? "workspace-ontology-dimmed-root"
+            : controller.activeRootId === id
+              ? "workspace-ontology-active-root"
+              : undefined,
         style: { width: geometry.width, height: geometry.height },
         data: {
           label:
@@ -295,39 +318,80 @@ export function WorkspaceOntologyBoardVisualFixture() {
       })
     )
     const details: Node<WorkspaceOntologyNodeData>[] =
-      controller.layoutNodes.map((node) => ({
-        id: node.id,
-        type: "workspace-ontology",
-        position: node.position,
-        width: node.size.width,
-        height: node.size.height,
-        style: resolveWorkspaceOntologyNodeSize(node),
-        focusable: false,
-        data: {
-          kind: "workspace-ontology",
-          node,
-          detailLevel: controller.detailLevel,
-          expanded: controller.state.expandedNodeIds.includes(node.id),
-          transitionPhase:
-            controller.nodeTransitionPhases.get(node.id) ?? "stable",
-          transitionDelayMs: controller.nodeTransitionDelays.get(node.id) ?? 0,
-          onActivate: node.hasChildren ? () => toggleNode(node.id) : undefined,
-        },
-      }))
+      controller.layoutNodes.map((node) => {
+        const containsActiveItem = node.items?.some((item) =>
+          activeNodeIdSet.has(item.id)
+        )
+        const active =
+          activeNodeIdSet.has(node.id) ||
+          Boolean(containsActiveItem) ||
+          node.listParentId === activeParentId
+        return {
+          id: node.id,
+          type: "workspace-ontology",
+          position: node.position,
+          width: node.size.width,
+          height: node.size.height,
+          style: resolveWorkspaceOntologyNodeSize(node),
+          focusable: node.presentation !== "list",
+          data: {
+            kind: "workspace-ontology",
+            node,
+            detailLevel: controller.detailLevel,
+            expanded: active,
+            active,
+            activeItemId: node.items?.find((item) =>
+              activeNodeIdSet.has(item.id)
+            )?.id,
+            dimmed: Boolean(
+              controller.activeRootId &&
+              (node.rootId !== controller.activeRootId ||
+                (controller.activeNodeIds.length > 0 &&
+                  !active &&
+                  node.listParentId !== activeParentId &&
+                  node.parentId !== activeParentId))
+            ),
+            transitionPhase:
+              controller.nodeTransitionPhases.get(node.id) ?? "stable",
+            transitionDelayMs:
+              controller.nodeTransitionDelays.get(node.id) ?? 0,
+            onActivate: node.hasChildren
+              ? () => toggleNode(node.id)
+              : undefined,
+            onActivateItem: toggleNode,
+          },
+        }
+      })
     return [...roots, ...details]
   }, [
+    controller.activeNodeIds,
+    controller.activeRootId,
     controller.detailLevel,
     controller.layoutNodes,
     controller.nodeTransitionDelays,
     controller.nodeTransitionPhases,
     controller.rootControls,
-    controller.state.expandedNodeIds,
     rootGeometry,
     toggleNode,
   ])
-  const edges = useMemo<Edge[]>(
-    () =>
-      controller.edges.map((edge) => ({
+  const edges = useMemo<Edge[]>(() => {
+    const activeNodeIdSet = new Set(controller.activeNodeIds)
+    const activeParentId =
+      controller.activeNodeIds.at(-1) ?? controller.activeRootId
+    const nodeById = new Map(
+      controller.layoutNodes.map((node) => [node.id, node] as const)
+    )
+    return controller.edges.map((edge) => {
+      const targetNode = nodeById.get(edge.target)
+      const dimmed = Boolean(
+        controller.activeRootId &&
+        targetNode &&
+        (targetNode.rootId !== controller.activeRootId ||
+          (controller.activeNodeIds.length > 0 &&
+            !activeNodeIdSet.has(targetNode.id) &&
+            targetNode.parentId !== activeParentId))
+      )
+      return {
         id: edge.id,
         source: edge.source,
         target: edge.target,
@@ -348,9 +412,16 @@ export function WorkspaceOntologyBoardVisualFixture() {
             ? { type: MarkerType.ArrowClosed, width: 12, height: 12 }
             : undefined,
         style: {
-          stroke: "rgba(113, 113, 122, 0.62)",
-          strokeWidth: edge.kind === "relationship" ? 1.25 : 1,
+          stroke: edge.active
+            ? "rgba(14, 165, 233, 0.82)"
+            : "rgba(113, 113, 122, 0.62)",
+          strokeWidth: edge.active
+            ? 1.8
+            : edge.kind === "relationship"
+              ? 1.25
+              : 1,
           strokeDasharray: edge.kind === "relationship" ? "5 5" : undefined,
+          opacity: dimmed ? 0.28 : 1,
         },
         data: {
           label: edge.label,
@@ -358,29 +429,66 @@ export function WorkspaceOntologyBoardVisualFixture() {
           status: edge.status,
           kind: edge.kind,
           showLabel: edge.showLabel,
+          active: edge.active,
+          dimmed,
           detailLevel: controller.detailLevel,
           transitionPhase:
             controller.edgeTransitionPhases.get(edge.id) ?? "stable",
           transitionDelayMs: controller.edgeTransitionDelays.get(edge.id) ?? 0,
         },
-      })),
-    [
-      controller.detailLevel,
-      controller.edges,
-      controller.edgeTransitionDelays,
-      controller.edgeTransitionPhases,
-    ]
-  )
+      }
+    })
+  }, [
+    controller.activeNodeIds,
+    controller.activeRootId,
+    controller.detailLevel,
+    controller.edges,
+    controller.edgeTransitionDelays,
+    controller.edgeTransitionPhases,
+    controller.layoutNodes,
+  ])
 
-  useWorkspaceOntologyWayfinding({
+  const { cancelPendingFit } = useWorkspaceOntologyWayfinding({
     flowInstance,
     isFlowReady: Boolean(flowInstance),
     layoutAnimating: controller.layoutAnimating,
+    mode: controller.state.mode,
+    activeRootId: controller.activeRootId,
+    activeNodeIds: controller.activeNodeIds,
     nodes: nodes.filter(
       (node): node is Node<WorkspaceOntologyNodeData> =>
         node.type === "workspace-ontology"
     ),
   })
+  const handleKeyDownCapture = useCallback(
+    (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.repeat) return
+      if (
+        controller.state.mode !== "map" &&
+        controller.activeNodeIds.length === 0 &&
+        !controller.activeRootId
+      ) {
+        return
+      }
+      const activeNodeId = controller.activeNodeIds.at(-1)
+      const activeNode = controller.layoutNodes.find(
+        (node) => node.id === activeNodeId
+      )
+      const returnNodeId =
+        activeNode?.parentId ?? controller.activeRootId ?? null
+      event.preventDefault()
+      controller.stepBack()
+      if (!returnNodeId) return
+      window.requestAnimationFrame(() => {
+        document
+          .querySelector<HTMLElement>(
+            `.react-flow__node[data-id="${CSS.escape(returnNodeId)}"]`
+          )
+          ?.focus()
+      })
+    },
+    [controller]
+  )
 
   return (
     <section className="mx-auto mt-10 max-w-[74rem]">
@@ -394,8 +502,24 @@ export function WorkspaceOntologyBoardVisualFixture() {
         data-workspace-ontology-board-visual-fixture="true"
         data-layout-animating={controller.layoutAnimating ? "true" : "false"}
         data-viewport-zoom={viewportZoom.toFixed(2)}
-        className="workspace-flow border-border bg-muted/30 h-[42rem] overflow-hidden rounded-2xl border"
+        className="workspace-flow border-border relative h-[42rem] overflow-hidden rounded-2xl border bg-[#fcfcfc] dark:bg-zinc-800"
       >
+        <div className="border-border/70 bg-background/92 absolute top-4 right-4 z-20 flex gap-1 rounded-xl border p-1 shadow-sm backdrop-blur">
+          {(["focus", "map"] as const).map((mode) => (
+            <Button
+              key={mode}
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-8 rounded-lg px-3 text-xs capitalize"
+              aria-pressed={controller.state.mode === mode}
+              data-workspace-ontology-mode={mode}
+              onClick={() => controller.setMode(mode)}
+            >
+              {mode}
+            </Button>
+          ))}
+        </div>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -403,6 +527,8 @@ export function WorkspaceOntologyBoardVisualFixture() {
           edgeTypes={EDGE_TYPES}
           fitView
           onInit={setFlowInstance}
+          onKeyDownCapture={handleKeyDownCapture}
+          onMoveStart={cancelPendingFit}
           fitViewOptions={{ padding: 0.16, minZoom: 0.35, maxZoom: 1 }}
           minZoom={0.2}
           maxZoom={1}

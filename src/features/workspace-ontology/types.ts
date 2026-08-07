@@ -24,6 +24,17 @@ export const WORKSPACE_ONTOLOGY_STATUSES = [
 export type WorkspaceOntologyStatus =
   (typeof WORKSPACE_ONTOLOGY_STATUSES)[number]
 
+export const WORKSPACE_ONTOLOGY_MODES = ["focus", "map"] as const
+
+export type WorkspaceOntologyMode = (typeof WORKSPACE_ONTOLOGY_MODES)[number]
+
+export type WorkspaceOntologyNodePresentation =
+  | "group"
+  | "action"
+  | "list"
+  | "rollup"
+  | "more"
+
 export const WORKSPACE_ONTOLOGY_ROOT_IDS = [
   "organization-overview",
   "programs",
@@ -69,6 +80,8 @@ export type WorkspaceOntologyNodeInput = {
   actionLabel: string | null
   actionTarget?: WorkspaceOntologyActionTarget | null
   focusRoot?: boolean
+  presentation?: WorkspaceOntologyNodePresentation
+  visibility?: "ontology" | "source-card-only"
   ownerLabel?: string | null
   keywords?: string[]
   children?: WorkspaceOntologyNodeInput[]
@@ -106,6 +119,7 @@ export type WorkspaceOntologyNodeSize = {
 
 export type WorkspaceOntologyState = {
   updatedAt: string | null
+  mode: WorkspaceOntologyMode
   expandedRootIds: WorkspaceOntologyRootId[]
   expandedNodeIds: string[]
   /** @deprecated Generated ontology nodes are positioned by the scene layout. */
@@ -119,7 +133,7 @@ export type WorkspaceOntologyFilter = {
   categories: WorkspaceOntologyCategory[]
 }
 
-export type WorkspaceOntologyProjectedNode = Omit<
+type WorkspaceOntologyProjectedNodeCore = Omit<
   WorkspaceOntologyNodeInput,
   "children"
 > & {
@@ -128,7 +142,16 @@ export type WorkspaceOntologyProjectedNode = Omit<
   depth: number
   childCount: number
   hasChildren: boolean
+  presentation: WorkspaceOntologyNodePresentation
 }
+
+export type WorkspaceOntologyListItem = WorkspaceOntologyProjectedNodeCore
+
+export type WorkspaceOntologyProjectedNode =
+  WorkspaceOntologyProjectedNodeCore & {
+    items?: WorkspaceOntologyListItem[]
+    listParentId?: string
+  }
 
 export type WorkspaceOntologyProjectedEdge = {
   id: string
@@ -139,6 +162,7 @@ export type WorkspaceOntologyProjectedEdge = {
   status: WorkspaceOntologyStatus
   kind: "hierarchy" | "relationship"
   showLabel: boolean
+  active: boolean
 }
 
 export type WorkspaceOntologyProjection = {
@@ -146,6 +170,7 @@ export type WorkspaceOntologyProjection = {
   edges: WorkspaceOntologyProjectedEdge[]
   allNodes: WorkspaceOntologyProjectedNode[]
   resultNodeIds: string[]
+  activeNodeIds: string[]
 }
 
 export type WorkspaceOntologyRootGeometry = WorkspaceOntologyPosition & {
@@ -169,6 +194,7 @@ export type WorkspaceOntologyLayoutNode = WorkspaceOntologyProjectedNode & {
 export type WorkspaceOntologyDetailLevel = "overview" | "standard" | "full"
 
 export type WorkspaceOntologyRootControl = {
+  mode: WorkspaceOntologyMode
   expanded: boolean
   attentionCount: number
   completedCount: number

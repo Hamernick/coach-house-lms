@@ -15,6 +15,7 @@ export function useWorkspaceCanvasSurfacePeopleState({
   tutorialActive,
   uiPreferencesScope,
   workspaceDataDrawerCanEdit,
+  workspaceFoundationEnabled,
 }: {
   allowEditing: boolean
   flowInstanceRef: MutableRefObject<ReactFlowInstance | null>
@@ -23,15 +24,17 @@ export function useWorkspaceCanvasSurfacePeopleState({
   tutorialActive: boolean
   uiPreferencesScope: WorkspaceBoardUiPreferenceScope
   workspaceDataDrawerCanEdit: boolean
+  workspaceFoundationEnabled: boolean
 }) {
   const workspaceDataDrawerPeople = useMemo(
     () => organizationEditorData.people ?? [],
     [organizationEditorData.people]
   )
   const allowPeopleCanvasInteraction =
-    allowEditing || workspaceDataDrawerCanEdit
+    workspaceFoundationEnabled && (allowEditing || workspaceDataDrawerCanEdit)
   const peoplePlacementState = useWorkspaceCanvasPeoplePlacementController({
     allowPeopleCanvasInteraction,
+    enabled: workspaceFoundationEnabled,
     tutorialActive,
     people: workspaceDataDrawerPeople,
     presentationMode,

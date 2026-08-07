@@ -7,7 +7,6 @@ import { getWorkspaceRoadmapSectionPath } from "@/lib/workspace/routes"
 import type {
   WorkspaceOrganizationEditorData,
   WorkspaceSeedData,
-  WorkspaceTrackerState,
 } from "../../workspace-board-types"
 import { buildWorkspaceAcceleratorOntologyRoot } from "./workspace-canvas-ontology-input-accelerator"
 import {
@@ -107,12 +106,10 @@ function resolvePlacedStaffRootIds({
 export function buildWorkspaceCanvasOntologyInput({
   seed,
   editor,
-  tracker = seed.boardState.tracker,
   placedPersonIds = [],
 }: {
   seed: WorkspaceSeedData
   editor: WorkspaceOrganizationEditorData
-  tracker?: WorkspaceTrackerState
   placedPersonIds?: readonly string[]
 }): WorkspaceOntologyInput {
   const uniquePlacedPersonIds = Array.from(
@@ -125,7 +122,7 @@ export function buildWorkspaceCanvasOntologyInput({
   return {
     roots: [
       buildWorkspaceOrganizationOntologyRoot({ editor }),
-      buildWorkspaceProgramsOntologyRoot({ seed, editor, tracker }),
+      buildWorkspaceProgramsOntologyRoot({ seed, editor }),
       buildWorkspaceAcceleratorOntologyRoot(seed),
       buildRoadmapRoot(seed),
       buildWorkspaceCalendarOntologyRoot(seed),
@@ -148,14 +145,6 @@ export function buildWorkspaceCanvasOntologyInput({
         category: "calendar" as const,
         status: "in-progress" as const,
       })),
-      {
-        id: "ontology-relationship:programs-tasks",
-        source: "ontology:programs:portfolio",
-        target: "ontology:tasks:portfolio",
-        label: "executed through",
-        category: "tasks",
-        status: "in-progress",
-      },
       {
         id: "ontology-relationship:programs-fiscal",
         source: "ontology:programs:portfolio",

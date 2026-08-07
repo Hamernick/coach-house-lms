@@ -2,7 +2,189 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 
-export type WorkspaceCanvasDrawerTab = "people" | "documents"
+import type { ProfileTab } from "@/components/organization/org-profile-card/types"
+import {
+  normalizeWorkspaceDrawerTab,
+  WORKSPACE_ACCELERATOR_PATH,
+  WORKSPACE_PATH,
+  WORKSPACE_ROADMAP_PATH,
+  type WorkspaceDrawerTab,
+} from "@/lib/workspace/routes"
+
+export type WorkspaceCanvasDrawerTab = WorkspaceDrawerTab
+
+export type WorkspaceDataDrawerRequest = {
+  id: number
+  tab: WorkspaceCanvasDrawerTab
+  focusKey?: string | null
+  organizationTab?: ProfileTab | null
+  organizationProgramId?: string | null
+  organizationProgramStep?: number | null
+  organizationFocus?: string | null
+  organizationEditMode?: boolean
+  acceleratorStepId?: string | null
+  acceleratorModuleId?: string | null
+  acceleratorLessonGroupKey?: string | null
+  roadmapSectionSlug?: string | null
+}
+
+const WORKSPACE_ORGANIZATION_DRAWER_PATHS = new Set([
+  WORKSPACE_PATH,
+  "/organization",
+])
+
+function decodeWorkspacePathSegment(value: string) {
+  try {
+    return decodeURIComponent(value).trim()
+  } catch {
+    return value.trim()
+  }
+}
+
+function isWorkspaceOrganizationProfileTab(
+  value: string | null
+): value is ProfileTab {
+  return (
+    value === "company" ||
+    value === "programs" ||
+    value === "people" ||
+    value === "supporters"
+  )
+}
+
+export function resolveWorkspaceOrganizationDrawerRequest(
+  href: string
+): Omit<WorkspaceDataDrawerRequest, "id"> | null {
+  let destination: URL
+  try {
+    destination = new URL(href, "https://workspace.local")
+  } catch {
+    return null
+  }
+
+  if (!WORKSPACE_ORGANIZATION_DRAWER_PATHS.has(destination.pathname)) {
+    return null
+  }
+
+  const requestedTab = destination.searchParams.get("tab")
+  const organizationTab = isWorkspaceOrganizationProfileTab(requestedTab)
+    ? requestedTab
+    : null
+  const organizationProgramId = destination.searchParams.get("programId")
+  const organizationFocus = destination.searchParams.get("focus")
+  const requestedDrawerTab = normalizeWorkspaceDrawerTab(
+    destination.searchParams.get("drawer")
+  )
+  if (requestedDrawerTab && requestedDrawerTab !== "organization") return null
+  const editorRequested =
+    requestedDrawerTab === "organization" ||
+    destination.searchParams.get("view") === "editor" ||
+    organizationTab !== null ||
+    organizationProgramId !== null
+
+  if (!editorRequested) return null
+
+  return {
+    tab: "organization",
+    organizationTab:
+      organizationTab ?? (organizationProgramId ? "programs" : "company"),
+    organizationProgramId,
+    organizationFocus,
+    organizationEditMode: destination.searchParams.get("view") === "editor",
+  }
+}
+
+export function resolveWorkspaceAcceleratorDrawerRequest(
+  href: string
+): Omit<WorkspaceDataDrawerRequest, "id"> | null {
+  let destination: URL
+  try {
+    destination = new URL(href, "https://workspace.local")
+  } catch {
+    return null
+  }
+
+  const acceleratorRequested =
+    destination.pathname === WORKSPACE_ACCELERATOR_PATH ||
+    (destination.pathname === WORKSPACE_PATH &&
+      normalizeWorkspaceDrawerTab(destination.searchParams.get("drawer")) ===
+        "accelerator")
+  if (!acceleratorRequested) return null
+
+  return {
+    tab: "accelerator",
+    acceleratorStepId: destination.searchParams.get("step"),
+    acceleratorModuleId: destination.searchParams.get("module"),
+    acceleratorLessonGroupKey: destination.searchParams.get("group"),
+  }
+}
+
+export function resolveWorkspaceRoadmapDrawerRequest(
+  href: string
+): Omit<WorkspaceDataDrawerRequest, "id"> | null {
+  let destination: URL
+  try {
+    destination = new URL(href, "https://workspace.local")
+  } catch {
+    return null
+  }
+
+  const directSectionSlug = destination.pathname.startsWith(
+    "/workspace/roadmap/"
+  )
+    ? decodeWorkspacePathSegment(
+        destination.pathname.slice("/workspace/roadmap/".length)
+      )
+    : null
+  const roadmapDrawerRequested =
+    destination.pathname === WORKSPACE_PATH &&
+    normalizeWorkspaceDrawerTab(destination.searchParams.get("drawer")) ===
+      "roadmap"
+  const drawerSectionSlug = roadmapDrawerRequested
+    ? destination.searchParams.get("section")?.trim() || null
+    : null
+  const roadmapRequested =
+    destination.pathname === WORKSPACE_ROADMAP_PATH ||
+    directSectionSlug !== null ||
+    roadmapDrawerRequested
+
+  if (!roadmapRequested) return null
+
+  return {
+    tab: "roadmap",
+    roadmapSectionSlug: directSectionSlug || drawerSectionSlug,
+  }
+}
+
+export function resolveWorkspaceDataDrawerRequest(
+  href: string
+): Omit<WorkspaceDataDrawerRequest, "id"> | null {
+  const detailedRequest =
+    resolveWorkspaceOrganizationDrawerRequest(href) ??
+    resolveWorkspaceAcceleratorDrawerRequest(href) ??
+    resolveWorkspaceRoadmapDrawerRequest(href)
+  if (detailedRequest) return detailedRequest
+
+  let destination: URL
+  try {
+    destination = new URL(href, "https://workspace.local")
+  } catch {
+    return null
+  }
+  if (destination.pathname !== WORKSPACE_PATH) return null
+
+  const tab = normalizeWorkspaceDrawerTab(
+    destination.searchParams.get("drawer")
+  )
+  if (tab === "people") return { tab }
+  if (tab === "documents") {
+    return {
+      tab,
+      focusKey: destination.searchParams.get("focus"),
+    }
+  }
+  return null
+}
 
 export type WorkspaceDataDrawerTabIndicator = {
   left: number
@@ -18,10 +200,8 @@ const WORKSPACE_DATA_DRAWER_EMPTY_TAB_INDICATOR: WorkspaceDataDrawerTabIndicator
   }
 
 export function useWorkspaceDataDrawerTabIndicator({
-  drawerCollapsed,
   tab,
 }: {
-  drawerCollapsed: boolean
   tab: WorkspaceCanvasDrawerTab
 }) {
   const tabsHeaderRef = useRef<HTMLDivElement | null>(null)
@@ -68,11 +248,6 @@ export function useWorkspaceDataDrawerTabIndicator({
   }, [])
 
   useEffect(() => {
-    if (drawerCollapsed) {
-      setTabIndicator(WORKSPACE_DATA_DRAWER_EMPTY_TAB_INDICATOR)
-      return
-    }
-
     updateTabIndicator()
 
     const animationFrame = window.requestAnimationFrame(updateTabIndicator)
@@ -91,7 +266,7 @@ export function useWorkspaceDataDrawerTabIndicator({
       resizeObserver?.disconnect()
       window.removeEventListener("resize", updateTabIndicator)
     }
-  }, [drawerCollapsed, tab, updateTabIndicator])
+  }, [tab, updateTabIndicator])
 
   return {
     tabIndicator,

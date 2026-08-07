@@ -6,7 +6,13 @@ import type { RoadmapDraft, RoadmapEditorProps } from "../types"
 
 export type UseRoadmapEditorStateArgs = Pick<
   RoadmapEditorProps,
-  "sections" | "publicSlug" | "canEdit" | "initialSectionId" | "onDirtyChange" | "onRegisterDiscard"
+  | "sections"
+  | "publicSlug"
+  | "canEdit"
+  | "navigationMode"
+  | "initialSectionId"
+  | "onDirtyChange"
+  | "onRegisterDiscard"
 >
 
 export type UseRoadmapEditorStateResult = {

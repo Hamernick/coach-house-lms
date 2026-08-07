@@ -5,6 +5,7 @@ import {
   resolveRoadmapSections,
 } from "@/lib/roadmap"
 import type { SearchResult } from "@/lib/search/types"
+import { getWorkspaceEditorPath } from "@/lib/workspace/routes"
 
 import {
   DOCUMENT_LABELS,
@@ -41,7 +42,9 @@ async function addClassAndModuleResults({
 
   for (const klass of classes) {
     const classTitle = formatClassTitle(klass.title)
-    if (matchesQuery([classTitle, klass.description ?? null, klass.slug], tokens)) {
+    if (
+      matchesQuery([classTitle, klass.description ?? null, klass.slug], tokens)
+    ) {
       const firstModuleIndex = klass.modules[0]?.index ?? 1
       pushResult({
         id: `class-${klass.id}`,
@@ -63,7 +66,7 @@ async function addClassAndModuleResults({
             classTitle,
             klass.slug,
           ],
-          tokens,
+          tokens
         )
       ) {
         pushResult({
@@ -91,7 +94,7 @@ async function addQuestionResults({
   const { data: assignmentRows } = await supabase
     .from("module_assignments")
     .select(
-      "module_id, schema, modules ( id, title, idx, index_in_class, classes ( id, slug, title ) )",
+      "module_id, schema, modules ( id, title, idx, index_in_class, classes ( id, slug, title ) )"
     )
     .returns<
       Array<{
@@ -115,7 +118,12 @@ async function addQuestionResults({
     const moduleIndex = moduleRow.index_in_class ?? moduleRow.idx ?? 1
     const fields = parseAssignmentFields(row.schema)
     for (const field of fields) {
-      if (matchesQuery([field.label, field.description ?? null, field.name], tokens)) {
+      if (
+        matchesQuery(
+          [field.label, field.description ?? null, field.name],
+          tokens
+        )
+      ) {
         pushResult({
           id: `question-${row.module_id}-${field.name}`,
           label: field.label,
@@ -156,15 +164,22 @@ async function addProgramResults({
   for (const program of programs ?? []) {
     if (
       matchesQuery(
-        [program.title ?? null, program.subtitle ?? null, program.status_label ?? null],
-        tokens,
+        [
+          program.title ?? null,
+          program.subtitle ?? null,
+          program.status_label ?? null,
+        ],
+        tokens
       )
     ) {
       pushResult({
         id: `program:${program.id}`,
         label: program.title ?? "Untitled program",
         subtitle: program.subtitle ?? program.status_label ?? undefined,
-        href: `/organization?tab=programs&programId=${program.id}`,
+        href: getWorkspaceEditorPath({
+          tab: "programs",
+          programId: program.id,
+        }),
         group: "Programs",
       })
     }
@@ -208,7 +223,7 @@ async function addMyOrganizationResults({
       id: `org:${userOrg.user_id}`,
       label: name || "My organization",
       subtitle: "Your organization",
-      href: "/organization",
+      href: getWorkspaceEditorPath({ tab: "company" }),
       group: "My organization",
       image: logoUrl || undefined,
       keywords: [tagline, mission, description].filter(Boolean),
@@ -294,7 +309,7 @@ async function addCommunityResults({
           city,
           state,
         ],
-        tokens,
+        tokens
       )
     ) {
       const location = [city, state].filter(Boolean).join(", ")
@@ -319,9 +334,57 @@ export async function addFallbackResults({
   tokens,
   pushResult,
 }: AddFallbackResultsParams): Promise<void> {
-  await addClassAndModuleResults({ tokens, isAdmin, pushResult })
-  await addQuestionResults({ supabase, tokens, pushResult })
-  await addProgramResults({ supabase, orgId, tokens, pushResult })
-  await addMyOrganizationResults({ supabase, orgId, tokens, pushResult })
-  await addCommunityResults({ supabase, tokens, pushResult })
+  const collect = async (
+    load: (collectResult: (result: SearchResult) => void) => Promise<void>
+  ) => {
+    const collected: SearchResult[] = []
+    await load((result) => collected.push(result))
+    return collected
+  }
+
+  const resultGroups = await Promise.all([
+    collect((collectResult) =>
+      addClassAndModuleResults({
+        tokens,
+        isAdmin,
+        pushResult: collectResult,
+      })
+    ),
+    collect((collectResult) =>
+      addQuestionResults({
+        supabase,
+        tokens,
+        pushResult: collectResult,
+      })
+    ),
+    collect((collectResult) =>
+      addProgramResults({
+        supabase,
+        orgId,
+        tokens,
+        pushResult: collectResult,
+      })
+    ),
+    collect((collectResult) =>
+      addMyOrganizationResults({
+        supabase,
+        orgId,
+        tokens,
+        pushResult: collectResult,
+      })
+    ),
+    collect((collectResult) =>
+      addCommunityResults({
+        supabase,
+        tokens,
+        pushResult: collectResult,
+      })
+    ),
+  ])
+
+  for (const resultGroup of resultGroups) {
+    for (const result of resultGroup) {
+      pushResult(result)
+    }
+  }
 }

@@ -13,8 +13,19 @@ import { resolveRoadmapSections } from "@/lib/roadmap"
 import { createSupabaseServerClient } from "@/lib/supabase"
 import { isSupabaseAuthSessionMissingError } from "@/lib/supabase/auth-errors"
 import { supabaseErrorToError } from "@/lib/supabase/errors"
+import { getOrganizationDocumentsPath } from "@/lib/workspace/routes"
+import type { MyOrganizationSearchParams } from "../../my-organization/_lib/types"
 
-export default async function MyOrganizationDocumentsPage() {
+export default async function MyOrganizationDocumentsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<MyOrganizationSearchParams>
+}) {
+  const resolvedSearchParams = searchParams ? await searchParams : undefined
+  const initialFocusKey =
+    typeof resolvedSearchParams?.focus === "string"
+      ? resolvedSearchParams.focus
+      : null
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -24,7 +35,12 @@ export default async function MyOrganizationDocumentsPage() {
   if (userError && !isSupabaseAuthSessionMissingError(userError)) {
     throw supabaseErrorToError(userError, "Unable to load user.")
   }
-  if (!user) redirect("/login?redirect=/organization/documents")
+  if (!user) {
+    const returnPath = getOrganizationDocumentsPath({
+      focus: initialFocusKey,
+    })
+    redirect(`/login?redirect=${encodeURIComponent(returnPath)}`)
+  }
 
   const { orgId, role } = await resolveActiveOrganization(supabase, user.id)
   const canEdit = canEditOrganization(role)
@@ -93,6 +109,7 @@ export default async function MyOrganizationDocumentsPage() {
         {...documentsTabData}
         editMode={canEdit}
         canEdit={canEdit}
+        initialFocusKey={initialFocusKey}
       />
     </div>
   )

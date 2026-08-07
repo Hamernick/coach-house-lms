@@ -8,6 +8,10 @@ import ClipboardListIcon from "lucide-react/dist/esm/icons/clipboard-list"
 import FileTextIcon from "lucide-react/dist/esm/icons/file-text"
 import VideoIcon from "lucide-react/dist/esm/icons/video"
 
+import {
+  ACCELERATOR_PROGRESS_SEGMENT_VISUALS,
+  resolveAcceleratorModuleProgressSegment,
+} from "@/components/accelerator/accelerator-progress-segments"
 import { getReactGrabOwnerProps } from "@/components/dev/react-grab-surface"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -55,7 +59,6 @@ function resolveWorkspaceAcceleratorChecklistStepIcon(
 
 type WorkspaceAcceleratorCardChecklistProps = {
   modules: WorkspaceAcceleratorChecklistModule[]
-  selectedLessonGroupLabel: string | null
   currentStepId: string
   completedStepIds: string[]
   openModuleId: string | null
@@ -228,6 +231,14 @@ function ChecklistStepRow({
   const StepIcon = resolveWorkspaceAcceleratorChecklistStepIcon(
     primaryStep.stepKind
   )
+  const progressSegment = resolveAcceleratorModuleProgressSegment({
+    moduleSequenceIndex: primaryStep.moduleSequenceIndex,
+    moduleSequenceTotal: primaryStep.moduleSequenceTotal,
+  })
+  const progressSegmentVisual =
+    ACCELERATOR_PROGRESS_SEGMENT_VISUALS[progressSegment]
+  const hasProgressIconBackground =
+    isCurrentChecklistStep || isCompletedChecklistStep || expanded
   const detailsId = `workspace-accelerator-checklist-details-${module.id}`
   const rowClassName = cn(
     WORKSPACE_ACCELERATOR_CHECKLIST_STEP_ROW_CLASSNAME,
@@ -259,12 +270,19 @@ function ChecklistStepRow({
         <span
           className={cn(
             "text-muted-foreground inline-flex size-7 shrink-0 items-center justify-center rounded-full",
-            (isCurrentChecklistStep || isCompletedChecklistStep || expanded) &&
-              "bg-primary/10 text-primary"
+            hasProgressIconBackground && progressSegmentVisual.fillClassName
           )}
+          data-progress-segment={progressSegment}
           aria-hidden
         >
-          <StepIcon className="size-4" />
+          <StepIcon
+            className={cn(
+              "size-4",
+              hasProgressIconBackground
+                ? "text-white"
+                : progressSegmentVisual.iconClassName
+            )}
+          />
         </span>
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="flex min-w-0 items-center justify-between gap-3">
@@ -344,7 +362,6 @@ function ChecklistStepRow({
 
 export function WorkspaceAcceleratorCardChecklist({
   modules,
-  selectedLessonGroupLabel,
   currentStepId,
   completedStepIds,
   openModuleId,
@@ -357,15 +374,9 @@ export function WorkspaceAcceleratorCardChecklist({
 }: WorkspaceAcceleratorCardChecklistProps) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2 px-0 pb-1">
-        {headerControls ? (
-          <div className="max-w-full min-w-0">{headerControls}</div>
-        ) : (
-          <p className="text-foreground min-w-0 truncate text-xs font-medium">
-            {selectedLessonGroupLabel ?? "Lesson checklist"}
-          </p>
-        )}
-      </div>
+      {headerControls ? (
+        <div className="max-w-full min-w-0 pb-1">{headerControls}</div>
+      ) : null}
 
       <div className="flex flex-col gap-1 px-1">
         {modules.flatMap((module, index) => {

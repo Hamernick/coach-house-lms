@@ -88,6 +88,7 @@ export type FiscalSponsorshipInput = {
 
 export type FiscalSponsorshipApplicationInput = {
   projectId: string
+  expectedUpdatedAt?: string | null
   status?: FiscalSponsorshipApplicationStatus | string | null
   applicantFullName?: string | null
   applicantFirstName?: string | null
@@ -205,7 +206,7 @@ export type NormalizeFiscalSponsorshipApplicationResult =
   | { ok: false; error: string }
 
 export type SaveFiscalSponsorshipApplicationResult =
-  | { ok: true; applicationId: string }
+  | { ok: true; applicationId: string; updatedAt: string }
   | { error: string }
 
 export type FiscalSponsorshipApplicationRecord =

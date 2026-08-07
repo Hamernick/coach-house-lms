@@ -1,8 +1,11 @@
+import { redirect } from "next/navigation"
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   FiscalSponsorshipW9Page,
   loadFiscalSponsorshipW9Session,
 } from "@/features/fiscal-sponsorship"
+import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 
 export const dynamic = "force-dynamic"
 
@@ -12,6 +15,12 @@ export default async function FiscalSponsorshipW9Route({
   params: Promise<{ projectId: string }>
 }) {
   const { projectId } = await params
+  const requestContext = await resolveOptionalAuthenticatedAppContext()
+  if (!requestContext) {
+    const returnPath = `/fiscal-sponsorship/w9/${encodeURIComponent(projectId)}`
+    redirect(`/login?redirect=${encodeURIComponent(returnPath)}`)
+  }
+
   const result = await loadFiscalSponsorshipW9Session(projectId)
   if ("error" in result) {
     return (

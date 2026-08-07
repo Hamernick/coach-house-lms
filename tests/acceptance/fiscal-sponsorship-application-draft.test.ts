@@ -265,6 +265,8 @@ describe("fiscal sponsorship application drafts", () => {
         prefill: workbenchData.applicationPrefill,
       })
     )
+    expect(input.estimatedBudgetCents).toBe(1200000)
+    expect(input.expenseSummary).toBe("Food - ingredients - $12000.00")
   })
 })
 

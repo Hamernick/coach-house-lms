@@ -12,15 +12,16 @@ import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
 import {
   assetResponse,
   canAccessProjectOrg,
+  cleanupProjectAssetCreation,
   getProjectAssetFileError,
   getProjectAssetLinkError,
   loadAsset,
   loadProject,
   toTrimmedString,
   type AssetRow,
+  PROJECT_ASSET_BUCKET as BUCKET,
 } from "./route-support"
 
-const BUCKET = "project-assets"
 const SIGNED_URL_TTL_SECONDS = 60 * 15
 const MAX_BYTES = 50 * 1024 * 1024
 
@@ -154,6 +155,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: linkError }, { status: 400 })
   }
 
+  for (const file of files) {
+    if (file.size > MAX_BYTES) {
+      return NextResponse.json(
+        { error: `${file.name} is too large. Max size is 50 MB.` },
+        { status: 400 }
+      )
+    }
+    const fileTypeError = getProjectAssetFileError(file)
+    if (fileTypeError) {
+      return NextResponse.json({ error: fileTypeError }, { status: 400 })
+    }
+  }
+
+  const insertedAssets: AssetRow[] = []
+  const uploadedPaths: string[] = []
+
   try {
     const project = await loadProject({
       projectId,
@@ -173,9 +190,6 @@ export async function POST(request: NextRequest) {
     if (!canEdit) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
-
-    const insertedAssets: AssetRow[] = []
-    const uploadedPaths: string[] = []
 
     if (link) {
       const assetName = title || link
@@ -207,18 +221,6 @@ export async function POST(request: NextRequest) {
     }
 
     for (const file of files) {
-      if (file.size > MAX_BYTES) {
-        return NextResponse.json(
-          { error: `${file.name} is too large. Max size is 50 MB.` },
-          { status: 400 }
-        )
-      }
-
-      const fileTypeError = getProjectAssetFileError(file)
-      if (fileTypeError) {
-        return NextResponse.json({ error: fileTypeError }, { status: 400 })
-      }
-
       const objectName = `${project.org_id}/${project.id}/${Date.now()}-${sanitizeProjectAssetFilename(file.name)}`
       const buffer = Buffer.from(await file.arrayBuffer())
       const { error: uploadError } = await admin.storage
@@ -228,6 +230,11 @@ export async function POST(request: NextRequest) {
         })
 
       if (uploadError) {
+        await cleanupProjectAssetCreation({
+          assetIds: insertedAssets.map((asset) => asset.id),
+          storagePaths: uploadedPaths,
+          supabase,
+        })
         return NextResponse.json(
           { error: uploadError.message },
           { status: 500 }
@@ -257,10 +264,11 @@ export async function POST(request: NextRequest) {
         .returns<AssetRow[]>()
 
       if (insertError) {
-        await admin.storage
-          .from(BUCKET)
-          .remove([objectName])
-          .catch(() => undefined)
+        await cleanupProjectAssetCreation({
+          assetIds: insertedAssets.map((asset) => asset.id),
+          storagePaths: uploadedPaths,
+          supabase,
+        })
         return NextResponse.json(
           { error: insertError.message },
           { status: 500 }
@@ -277,6 +285,11 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     )
   } catch (routeError: unknown) {
+    await cleanupProjectAssetCreation({
+      assetIds: insertedAssets.map((asset) => asset.id),
+      storagePaths: uploadedPaths,
+      supabase,
+    })
     return NextResponse.json(
       {
         error:

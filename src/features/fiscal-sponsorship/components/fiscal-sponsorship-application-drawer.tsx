@@ -104,6 +104,7 @@ export function FiscalSponsorshipApplicationEditor({
   const [discardDialogOpen, setDiscardDialogOpen] = React.useState(false)
   const [loadError, setLoadError] = React.useState<string | null>(null)
   const [saveError, setSaveError] = React.useState<string | null>(null)
+  const [revision, setRevision] = React.useState<string | null>(null)
   const [loadingDraft, setLoadingDraft] = React.useState(false)
   const [isSaving, startSaveTransition] = React.useTransition()
   const [isSubmitting, startSubmitTransition] = React.useTransition()
@@ -133,6 +134,7 @@ export function FiscalSponsorshipApplicationEditor({
     setLoadingDraft(true)
     setLoadError(null)
     setSaveError(null)
+    setRevision(null)
     const nextDraft = buildFiscalSponsorshipApplicationDraft({ data })
     setDraft(nextDraft)
     setBaselineDraft(nextDraft)
@@ -152,6 +154,7 @@ export function FiscalSponsorshipApplicationEditor({
           data,
         })
         loadedApplicationKeyRef.current = applicationKey
+        setRevision(result.application?.updatedAt ?? null)
         setDraft(loadedDraft)
         setBaselineDraft(loadedDraft)
         setLoadingDraft(false)
@@ -217,9 +220,10 @@ export function FiscalSponsorshipApplicationEditor({
     setSaveError(null)
     startSaveTransition(async () => {
       const toastId = toast.loading("Saving fiscal application…")
-      const result = await saveFiscalSponsorshipApplicationDraft(
-        buildFiscalSponsorshipApplicationInput({ data, draft })
-      )
+      const result = await saveFiscalSponsorshipApplicationDraft({
+        ...buildFiscalSponsorshipApplicationInput({ data, draft }),
+        expectedUpdatedAt: revision,
+      })
 
       if ("error" in result) {
         setSaveError(result.error)
@@ -228,6 +232,7 @@ export function FiscalSponsorshipApplicationEditor({
       }
 
       toast.success("Fiscal application saved", { id: toastId })
+      setRevision(result.updatedAt)
       setBaselineDraft(draft)
       onOpenChange(false)
       onSaved?.()
@@ -243,6 +248,7 @@ export function FiscalSponsorshipApplicationEditor({
       const input = buildFiscalSponsorshipApplicationInput({ data, draft })
       const saved = await saveFiscalSponsorshipApplicationDraft({
         ...input,
+        expectedUpdatedAt: revision,
         status: "draft",
       })
 
@@ -262,6 +268,7 @@ export function FiscalSponsorshipApplicationEditor({
       toast.success("Fiscal application submitted for Coach House review", {
         id: toastId,
       })
+      setRevision(saved.updatedAt)
       setBaselineDraft(draft)
       onOpenChange(false)
       onSaved?.()

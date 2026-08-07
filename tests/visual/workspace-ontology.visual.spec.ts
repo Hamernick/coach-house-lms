@@ -4,6 +4,8 @@ const FIXTURE_ROUTE = "/visual-regression/workspace-ontology"
 const FOCUS_ORGANIZATION_PATH = `${FIXTURE_ROUTE}?workspace-details=organization-overview`
 const FOCUS_ACCELERATOR_PATH = `${FIXTURE_ROUTE}?workspace-details=accelerator`
 const MAP_PATH = `${FIXTURE_ROUTE}?workspace-view=map&workspace-details=organization-overview`
+const NODE_SNAPSHOT_PLATFORM_SUFFIX =
+  process.platform === "linux" ? "-linux" : ""
 
 async function setThemeBeforeNavigation(page: Page, theme: "light" | "dark") {
   await page.emulateMedia({ colorScheme: theme })
@@ -164,11 +166,14 @@ test("node variants remain contained on the exact light canvas", async ({
     })
   )
   expect(violations).toEqual([])
-  await expect(fixture).toHaveScreenshot("workspace-ontology-nodes.png", {
-    animations: "disabled",
-    scale: "css",
-    maxDiffPixelRatio: 0.01,
-  })
+  await expect(fixture).toHaveScreenshot(
+    `workspace-ontology-nodes${NODE_SNAPSHOT_PLATFORM_SUFFIX}.png`,
+    {
+      animations: "disabled",
+      scale: "css",
+      maxDiffPixelRatio: 0.01,
+    }
+  )
 })
 
 test("node variants remain opaque on the exact dark canvas", async ({
@@ -190,11 +195,14 @@ test("node variants remain opaque on the exact dark canvas", async ({
       (element) => getComputedStyle(element).backgroundColor
     )
   ).not.toContain("/")
-  await expect(fixture).toHaveScreenshot("workspace-ontology-nodes-dark.png", {
-    animations: "disabled",
-    scale: "css",
-    maxDiffPixelRatio: 0.01,
-  })
+  await expect(fixture).toHaveScreenshot(
+    `workspace-ontology-nodes-dark${NODE_SNAPSHOT_PLATFORM_SUFFIX}.png`,
+    {
+      animations: "disabled",
+      scale: "css",
+      maxDiffPixelRatio: 0.01,
+    }
+  )
 })
 
 test("Focus collapses prioritized work into one compact list", async ({

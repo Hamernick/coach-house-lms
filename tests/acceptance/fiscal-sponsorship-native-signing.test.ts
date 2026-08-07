@@ -97,6 +97,10 @@ describe("native fiscal sponsorship signing", () => {
       "supabase/migrations/20260727130000_complete_fiscal_sponsorship_signing.sql",
       "utf8"
     )
+    const sendTransition = readFileSync(
+      "supabase/migrations/20260806002000_atomic_form_b_signature_packet_sends.sql",
+      "utf8"
+    )
     const downloadRoute = readFileSync(
       "src/app/api/fiscal-sponsorship/documents/[documentId]/route.ts",
       "utf8"
@@ -104,8 +108,10 @@ describe("native fiscal sponsorship signing", () => {
 
     expect(agreementActions).toContain("resolveFiscalApplicantSigner")
     expect(agreementActions).toContain(
-      "applicant_signer_id: signerResult.signer.id"
+      "applicantSignerId: signerResult.signer.id"
     )
+    expect(sendTransition).toContain("p_applicant_signer_id")
+    expect(sendTransition).toContain("'native'")
     expect(notifications).toContain("sendResendEmail")
     expect(notifications).toContain("`/fiscal-sponsorship/sign/${packetId}`")
     expect(notifications).toContain("recipientIds: [applicantSignerId]")
@@ -113,9 +119,7 @@ describe("native fiscal sponsorship signing", () => {
     expect(migration).toContain("staff.access_level in ('developer', 'coach')")
     expect(downloadRoute).toContain("profileAudience.isPlatformStaff")
     expect(downloadRoute).toContain("createSupabaseAdminClient()")
-    expect(downloadRoute).toContain("organization_coach_assignments")
-    expect(downloadRoute).toContain("canPlatformStaffAccessFiscalDocument")
-    expect(downloadRoute).toContain("profileAudience.platformAccessLevel")
+    expect(downloadRoute).toContain("canManageFiscalSponsorshipForOrganization")
   })
 
   it("keeps the versioned Form B manifest within all four pages", () => {

@@ -14,6 +14,7 @@ export {
   sendFiscalSponsorshipAgreementForSignature,
   submitFiscalSponsorshipApplication,
 } from "./actions"
+export { canManageFiscalSponsorshipForOrganization } from "./lib/authorization"
 export {
   FiscalSponsorshipApplicationDrawer,
   FiscalSponsorshipApplicationEditor,

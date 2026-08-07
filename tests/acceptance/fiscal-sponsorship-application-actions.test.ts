@@ -24,9 +24,17 @@ import {
 } from "@/features/fiscal-sponsorship/server/actions"
 import { revalidatePathMock, resetTestMocks } from "./test-utils"
 
-const { resolveAuthenticatedAppContextMock } = vi.hoisted(() => ({
-  resolveAuthenticatedAppContextMock: vi.fn(),
+const { createSupabaseAdminClientMock, resolveAuthenticatedAppContextMock } =
+  vi.hoisted(() => ({
+    createSupabaseAdminClientMock: vi.fn(),
+    resolveAuthenticatedAppContextMock: vi.fn(),
+  }))
+
+vi.mock("@/lib/supabase/admin", () => ({
+  createSupabaseAdminClient: createSupabaseAdminClientMock,
 }))
+
+const SAVED_AT = "2026-08-05T23:30:00.000Z"
 
 vi.mock("@/lib/auth/request-context", () => ({
   resolveAuthenticatedAppContext: resolveAuthenticatedAppContextMock,
@@ -46,6 +54,7 @@ function createProjectQuery(project: { id: string; org_id: string }) {
 describe("fiscal sponsorship application persistence", () => {
   beforeEach(() => {
     resetTestMocks()
+    createSupabaseAdminClientMock.mockReset()
     resolveAuthenticatedAppContextMock.mockReset()
   })
 
@@ -252,6 +261,15 @@ describe("fiscal sponsorship application persistence", () => {
       activeOrg: { orgId: "org-1", role: "owner" },
       profileAudience: { isAdmin: false },
     })
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        applicationId: "application-1",
+        ok: true,
+        updatedAt: SAVED_AT,
+      },
+      error: null,
+    })
+    createSupabaseAdminClientMock.mockReturnValue({ rpc })
 
     await expect(
       saveFiscalSponsorshipApplicationDraft({
@@ -267,21 +285,29 @@ describe("fiscal sponsorship application persistence", () => {
     ).resolves.toEqual({
       ok: true,
       applicationId: "application-1",
+      updatedAt: SAVED_AT,
     })
 
-    expect(applicationTable.insert).toHaveBeenCalledWith(
+    expect(rpc).toHaveBeenCalledWith(
+      "save_fiscal_sponsorship_application_draft_transition",
       expect.objectContaining({
-        org_id: "org-1",
-        project_id: "project-1",
-        applicant_full_name: "Ana Torres",
-        primary_email: "ana@example.com",
-        legal_entity_type: "informal_group_with_ein",
-        estimated_budget_cents: 500000,
-        operates_outside_united_states: false,
-        source_snapshot: { project: "source" },
-        created_by: "user-1",
-        updated_by: "user-1",
-        status: "draft",
+        p_actor_id: "user-1",
+        p_allow_locked: false,
+        p_expected_updated_at: null,
+        p_has_budget_rows: false,
+        p_payload: expect.objectContaining({
+          org_id: "org-1",
+          project_id: "project-1",
+          applicant_full_name: "Ana Torres",
+          primary_email: "ana@example.com",
+          legal_entity_type: "informal_group_with_ein",
+          estimated_budget_cents: 500000,
+          operates_outside_united_states: false,
+          source_snapshot: { project: "source" },
+          created_by: "user-1",
+          updated_by: "user-1",
+        }),
+        p_project_id: "project-1",
       })
     )
     expect(revalidatePathMock).toHaveBeenCalledWith("/organizations")
@@ -351,6 +377,15 @@ describe("fiscal sponsorship application persistence", () => {
       activeOrg: { orgId: "org-1", role: "member" },
       profileAudience: { isAdmin: true },
     })
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        applicationId: "application-2",
+        ok: true,
+        updatedAt: SAVED_AT,
+      },
+      error: null,
+    })
+    createSupabaseAdminClientMock.mockReturnValue({ rpc })
 
     await expect(
       saveFiscalSponsorshipApplicationDraft({
@@ -360,14 +395,18 @@ describe("fiscal sponsorship application persistence", () => {
     ).resolves.toEqual({
       ok: true,
       applicationId: "application-2",
+      updatedAt: SAVED_AT,
     })
 
-    expect(applicationTable.insert).toHaveBeenCalledWith(
+    expect(rpc).toHaveBeenCalledWith(
+      "save_fiscal_sponsorship_application_draft_transition",
       expect.objectContaining({
-        org_id: "org-2",
-        project_id: "project-2",
-        project_name: "Community kitchen",
-        status: "draft",
+        p_allow_locked: true,
+        p_payload: expect.objectContaining({
+          org_id: "org-2",
+          project_id: "project-2",
+          project_name: "Community kitchen",
+        }),
       })
     )
   })

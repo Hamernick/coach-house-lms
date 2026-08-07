@@ -1,8 +1,11 @@
+import { redirect } from "next/navigation"
+
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import {
   FiscalSponsorshipSigningPage,
   loadFiscalSponsorshipSigningSession,
 } from "@/features/fiscal-sponsorship"
+import { resolveOptionalAuthenticatedAppContext } from "@/lib/auth/request-context"
 
 export const dynamic = "force-dynamic"
 
@@ -12,6 +15,12 @@ export default async function FiscalSponsorshipSignPage({
   params: Promise<{ packetId: string }>
 }) {
   const { packetId } = await params
+  const requestContext = await resolveOptionalAuthenticatedAppContext()
+  if (!requestContext) {
+    const returnPath = `/fiscal-sponsorship/sign/${encodeURIComponent(packetId)}`
+    redirect(`/login?redirect=${encodeURIComponent(returnPath)}`)
+  }
+
   const result = await loadFiscalSponsorshipSigningSession(packetId)
   if ("error" in result) {
     return (

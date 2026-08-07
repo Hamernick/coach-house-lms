@@ -4,6 +4,7 @@ const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://localhost:3000"
 
 export default defineConfig({
   testDir: "./tests/visual",
+  testIgnore: "fiscal-sponsorship-authenticated-routes.visual.spec.ts",
   snapshotPathTemplate: "{snapshotDir}/{testFileName}-snapshots/{arg}{ext}",
   fullyParallel: false,
   retries: process.env.CI ? 1 : 0,

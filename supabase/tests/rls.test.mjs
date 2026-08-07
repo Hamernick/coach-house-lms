@@ -912,6 +912,7 @@ async function run() {
   let memberWorkspaceProjectAssetsTableAvailable = false
   let fiscalSponsorshipApplicationsTableAvailable = false
   let fiscalSponsorshipRequiredDocumentsTableAvailable = false
+  let fiscalSponsorshipNativeSigningTablesAvailable = false
   let memberWorkspaceStarterStateTableAvailable = false
   let memberWorkspaceTasksTableAvailable = false
   let memberWorkspaceTaskAssigneesTableAvailable = false
@@ -1226,6 +1227,17 @@ async function run() {
       name: "fiscal sponsorship required document metadata available",
       passed: fiscalSponsorshipRequiredDocumentsTableAvailable,
     })
+
+    const { error: fiscalNativeSigningProbeError } = await memberClient
+      .from("fiscal_sponsorship_signing_drafts")
+      .select("id, revision")
+      .limit(1)
+    fiscalSponsorshipNativeSigningTablesAvailable =
+      !fiscalNativeSigningProbeError
+    results.push({
+      name: "native fiscal sponsorship signing tables available",
+      passed: fiscalSponsorshipNativeSigningTablesAvailable,
+    })
   }
 
   if (orgAccessReady && memberWorkspaceProjectsTableAvailable) {
@@ -1258,44 +1270,69 @@ async function run() {
     memberWorkspaceTaskAssigneesTableAvailable &&
     memberWorkspaceProjectId
   ) {
-    const taskId = randomUUID()
-
-    const { data: staffTask, error: staffTaskError } = await staffClient
-      .from("organization_tasks")
-      .insert({
-        id: taskId,
-        org_id: member.id,
-        project_id: memberWorkspaceProjectId,
-        title: "Staff task",
-        task_type: "task",
-        status: "todo",
-        start_date: "2026-01-10",
-        end_date: "2026-01-12",
-        created_source: "user",
-        created_by: staff.id,
-        updated_by: staff.id,
-      })
-      .select("id")
-      .maybeSingle()
+    const { data: deniedStaffTask, error: deniedStaffTaskError } =
+      await staffClient
+        .from("organization_tasks")
+        .insert({
+          org_id: member.id,
+          project_id: memberWorkspaceProjectId,
+          title: "Direct staff task",
+          task_type: "task",
+          status: "todo",
+          start_date: "2026-01-10",
+          end_date: "2026-01-12",
+          created_source: "user",
+          created_by: staff.id,
+          updated_by: staff.id,
+        })
+        .select("id")
     results.push({
-      name: "staff can insert organization tasks",
-      passed: !!staffTask && !staffTaskError,
+      name: "staff cannot bypass atomic organization task creation",
+      passed:
+        !!deniedStaffTaskError ||
+        (Array.isArray(deniedStaffTask) && deniedStaffTask.length === 0),
     })
 
-    const { data: staffAssignment, error: staffAssignmentError } =
+    const { data: staffTaskTransition, error: staffTaskTransitionError } =
+      await adminClient.rpc("create_organization_task_transition", {
+        p_actor_id: staff.id,
+        p_assignee_id: board.id,
+        p_description: null,
+        p_end_date: "2026-01-12",
+        p_priority: "high",
+        p_project_id: memberWorkspaceProjectId,
+        p_start_date: "2026-01-10",
+        p_status: "todo",
+        p_tag_label: null,
+        p_task_type: "task",
+        p_title: "Staff task",
+        p_workstream_name: null,
+      })
+    const taskId = staffTaskTransition?.taskId ?? randomUUID()
+    results.push({
+      name: "service role creates organization tasks atomically",
+      passed:
+        !staffTaskTransitionError &&
+        staffTaskTransition?.ok === true &&
+        typeof staffTaskTransition.taskId === "string",
+    })
+
+    const { data: deniedStaffAssignment, error: deniedStaffAssignmentError } =
       await staffClient
         .from("organization_task_assignees")
         .insert({
           org_id: member.id,
           task_id: taskId,
-          user_id: board.id,
+          user_id: owner.id,
           created_by: staff.id,
         })
         .select("id")
-        .maybeSingle()
     results.push({
-      name: "staff can insert organization task assignees",
-      passed: !!staffAssignment && !staffAssignmentError,
+      name: "staff cannot bypass atomic task assignment creation",
+      passed:
+        !!deniedStaffAssignmentError ||
+        (Array.isArray(deniedStaffAssignment) &&
+          deniedStaffAssignment.length === 0),
     })
 
     const { data: boardReadsTask, error: boardReadsTaskError } =
@@ -1370,41 +1407,88 @@ async function run() {
       passed: !!adminReadsTask && !adminReadsTaskError,
     })
 
-    const adminTaskId = randomUUID()
-    const { data: adminTask, error: adminTaskError } = await adminSessionClient
-      .from("organization_tasks")
-      .insert({
-        id: adminTaskId,
-        org_id: member.id,
-        project_id: memberWorkspaceProjectId,
-        title: "Coach follow-up",
-        task_type: "task",
-        status: "todo",
-        start_date: "2026-01-14",
-        end_date: "2026-01-16",
-        created_source: "user",
-        created_by: admin.id,
-        updated_by: admin.id,
-      })
-      .select("id")
-      .maybeSingle()
+    const { data: deniedAdminTask, error: deniedAdminTaskError } =
+      await adminSessionClient
+        .from("organization_tasks")
+        .insert({
+          org_id: member.id,
+          project_id: memberWorkspaceProjectId,
+          title: "Direct admin task",
+          task_type: "task",
+          status: "todo",
+          start_date: "2026-01-14",
+          end_date: "2026-01-16",
+          created_source: "user",
+          created_by: admin.id,
+          updated_by: admin.id,
+        })
+        .select("id")
     results.push({
-      name: "platform admin can create organization tasks",
-      passed: !!adminTask && !adminTaskError,
+      name: "platform admin cannot bypass atomic organization task creation",
+      passed:
+        !!deniedAdminTaskError ||
+        (Array.isArray(deniedAdminTask) && deniedAdminTask.length === 0),
     })
 
-    const { data: adminUpdatedTask, error: adminUpdatedTaskError } =
+    const { data: adminTaskTransition, error: adminTaskTransitionError } =
+      await adminClient.rpc("create_organization_task_transition", {
+        p_actor_id: admin.id,
+        p_assignee_id: null,
+        p_description: null,
+        p_end_date: "2026-01-16",
+        p_priority: "high",
+        p_project_id: memberWorkspaceProjectId,
+        p_start_date: "2026-01-14",
+        p_status: "todo",
+        p_tag_label: null,
+        p_task_type: "task",
+        p_title: "Coach follow-up",
+        p_workstream_name: null,
+      })
+    const adminTaskId = adminTaskTransition?.taskId ?? randomUUID()
+    results.push({
+      name: "service role creates platform-admin tasks atomically",
+      passed:
+        !adminTaskTransitionError &&
+        adminTaskTransition?.ok === true &&
+        typeof adminTaskTransition.taskId === "string",
+    })
+
+    const { data: deniedAdminTaskUpdate, error: deniedAdminTaskUpdateError } =
       await adminSessionClient
         .from("organization_tasks")
         .update({ status: "done", updated_by: admin.id })
         .eq("id", adminTaskId)
         .select("id")
     results.push({
-      name: "platform admin can complete organization tasks",
+      name: "platform admin cannot bypass atomic organization task updates",
       passed:
-        !adminUpdatedTaskError &&
-        Array.isArray(adminUpdatedTask) &&
-        adminUpdatedTask.length === 1,
+        !!deniedAdminTaskUpdateError ||
+        (Array.isArray(deniedAdminTaskUpdate) &&
+          deniedAdminTaskUpdate.length === 0),
+    })
+
+    const { data: adminTaskUpdate, error: adminTaskUpdateError } =
+      await adminClient.rpc("update_organization_task_transition", {
+        p_actor_id: admin.id,
+        p_assignee_id: null,
+        p_description: null,
+        p_end_date: "2026-01-16",
+        p_expected_org_id: member.id,
+        p_expected_project_id: memberWorkspaceProjectId,
+        p_priority: "high",
+        p_project_id: memberWorkspaceProjectId,
+        p_start_date: "2026-01-14",
+        p_status: "done",
+        p_tag_label: null,
+        p_task_id: adminTaskId,
+        p_task_type: "task",
+        p_title: "Coach follow-up",
+        p_workstream_name: null,
+      })
+    results.push({
+      name: "service role completes organization tasks atomically",
+      passed: !adminTaskUpdateError && adminTaskUpdate?.ok === true,
     })
 
     if (organizationProjectActivityTableAvailable) {
@@ -1869,38 +1953,70 @@ async function run() {
         version,
       })
 
-      const { data: ownerFiscalDocument, error: ownerFiscalDocumentError } =
+      const { data: fiscalDocuments, error: fiscalDocumentsError } =
+        await adminClient
+          .from("fiscal_sponsorship_documents")
+          .insert([
+            buildRequiredFiscalDocument({
+              actorId: owner.id,
+              documentKey: "tax_id_confirmation",
+              version: 1,
+            }),
+            buildRequiredFiscalDocument({
+              actorId: staff.id,
+              documentKey: "governing_documents",
+              version: 2,
+            }),
+          ])
+          .select("id, document_key")
+      const taxDocument = fiscalDocuments?.find(
+        (document) => document.document_key === "tax_id_confirmation"
+      )
+      results.push({
+        name: "service role creates authoritative fiscal documents",
+        passed:
+          !fiscalDocumentsError &&
+          Array.isArray(fiscalDocuments) &&
+          fiscalDocuments.length === 2 &&
+          !!taxDocument,
+      })
+
+      const { data: deniedOwnerFiscalDocument, error: deniedOwnerFiscalError } =
         await ownerClient
           .from("fiscal_sponsorship_documents")
           .insert(
             buildRequiredFiscalDocument({
               actorId: owner.id,
-              documentKey: "tax_id_confirmation",
-              version: 1,
+              documentKey: "budget_support",
+              version: 91,
             })
           )
           .select("id")
-          .maybeSingle()
       results.push({
-        name: "owner can insert fiscal sponsorship required documents",
-        passed: !!ownerFiscalDocument && !ownerFiscalDocumentError,
+        name: "owner cannot bypass authoritative fiscal document transition",
+        passed:
+          deniedOwnerFiscalError?.code === "42501" &&
+          (!Array.isArray(deniedOwnerFiscalDocument) ||
+            deniedOwnerFiscalDocument.length === 0),
       })
 
-      const { data: staffFiscalDocument, error: staffFiscalDocumentError } =
+      const { data: deniedStaffFiscalDocument, error: deniedStaffFiscalError } =
         await staffClient
           .from("fiscal_sponsorship_documents")
           .insert(
             buildRequiredFiscalDocument({
               actorId: staff.id,
-              documentKey: "governing_documents",
-              version: 2,
+              documentKey: "fundraising_materials",
+              version: 92,
             })
           )
           .select("id")
-          .maybeSingle()
       results.push({
-        name: "staff can insert fiscal sponsorship required documents",
-        passed: !!staffFiscalDocument && !staffFiscalDocumentError,
+        name: "staff cannot bypass authoritative fiscal document transition",
+        passed:
+          deniedStaffFiscalError?.code === "42501" &&
+          (!Array.isArray(deniedStaffFiscalDocument) ||
+            deniedStaffFiscalDocument.length === 0),
       })
 
       const {
@@ -1917,14 +2033,14 @@ async function run() {
         )
         .select("id")
       results.push({
-        name: "board cannot insert fiscal sponsorship required documents",
+        name: "board cannot bypass authoritative fiscal document transition",
         passed:
-          !!deniedBoardFiscalDocumentError ||
-          (Array.isArray(deniedBoardFiscalDocument) &&
+          deniedBoardFiscalDocumentError?.code === "42501" &&
+          (!Array.isArray(deniedBoardFiscalDocument) ||
             deniedBoardFiscalDocument.length === 0),
       })
 
-      const { data: adminFiscalDocument, error: adminFiscalDocumentError } =
+      const { data: deniedAdminFiscalDocument, error: deniedAdminFiscalError } =
         await adminSessionClient
           .from("fiscal_sponsorship_documents")
           .insert(
@@ -1937,9 +2053,199 @@ async function run() {
           .select("id")
           .maybeSingle()
       results.push({
-        name: "platform admin can insert fiscal sponsorship required documents",
-        passed: !!adminFiscalDocument && !adminFiscalDocumentError,
+        name: "platform admin cannot bypass authoritative fiscal document transition",
+        passed:
+          deniedAdminFiscalError?.code === "42501" &&
+          (!Array.isArray(deniedAdminFiscalDocument) ||
+            deniedAdminFiscalDocument.length === 0),
       })
+
+      const { error: fiscalCoachResetError } = await adminSessionClient.rpc(
+        "set_organization_coach_assignments",
+        {
+          p_organization_id: member.id,
+          p_coach_user_ids: [secondCoach.id],
+        }
+      )
+      results.push({
+        name: "fiscal coach visibility starts from an unassigned fixture",
+        passed: !fiscalCoachResetError,
+      })
+
+      const fiscalReadMatrix = [
+        ["owner", ownerClient, 2],
+        ["staff", staffClient, 2],
+        ["board", boardClient, 1],
+        ["platform admin", adminSessionClient, 2],
+        ["unassigned coach", coachClient, 0],
+      ]
+
+      for (const [label, client, expectedCount] of fiscalReadMatrix) {
+        const { data, error } = await client
+          .from("fiscal_sponsorship_documents")
+          .select("id, document_key")
+          .eq("application_id", fiscalApplicationId)
+        results.push({
+          name: `${label} has scoped fiscal document visibility`,
+          passed:
+            !error && Array.isArray(data) && data.length === expectedCount,
+        })
+      }
+
+      if (await tableExists("organization_coach_assignments")) {
+        const { error: coachAssignmentError } = await adminClient
+          .from("organization_coach_assignments")
+          .insert({
+            assigned_by: admin.id,
+            coach_user_id: coach.id,
+            organization_id: member.id,
+          })
+        const { data: assignedCoachDocuments, error: assignedCoachError } =
+          await coachClient
+            .from("fiscal_sponsorship_documents")
+            .select("id")
+            .eq("application_id", fiscalApplicationId)
+        results.push({
+          name: "assigned coach has scoped fiscal document visibility",
+          passed:
+            !coachAssignmentError &&
+            !assignedCoachError &&
+            assignedCoachDocuments?.length === 2,
+        })
+        await adminClient
+          .from("organization_coach_assignments")
+          .delete()
+          .eq("organization_id", member.id)
+          .eq("coach_user_id", coach.id)
+      }
+
+      if (fiscalSponsorshipNativeSigningTablesAvailable && taxDocument?.id) {
+        const packetId = randomUUID()
+        const { error: packetSeedError } = await adminClient
+          .from("fiscal_sponsorship_signature_packets")
+          .insert({
+            id: packetId,
+            applicant_signer_email: memberEmail,
+            applicant_signer_id: member.id,
+            applicant_signer_name: "Test Member",
+            application_id: fiscalApplicationId,
+            document_id: taxDocument.id,
+            org_id: member.id,
+            project_id: memberWorkspaceProjectId,
+            provider: "native",
+            status: "sent",
+          })
+        results.push({
+          name: "native fiscal signature packet fixture created",
+          passed: !packetSeedError,
+        })
+
+        const { error: draftSeedError } = await adminClient
+          .from("fiscal_sponsorship_signing_drafts")
+          .insert({
+            application_id: fiscalApplicationId,
+            field_values: { projectId: `CH-${suffix}` },
+            org_id: member.id,
+            packet_id: packetId,
+            project_id: memberWorkspaceProjectId,
+            signer_id: member.id,
+            signer_role: "applicant",
+          })
+        results.push({
+          name: "native fiscal signing draft fixture created",
+          passed: !draftSeedError,
+        })
+
+        const { data: applicantDraft, error: applicantDraftError } =
+          await memberClient
+            .from("fiscal_sponsorship_signing_drafts")
+            .select("id")
+            .eq("packet_id", packetId)
+            .maybeSingle()
+        results.push({
+          name: "assigned applicant can read native fiscal signing draft",
+          passed: !!applicantDraft && !applicantDraftError,
+        })
+
+        const { data: deniedStaffDraft, error: deniedStaffDraftError } =
+          await staffClient
+            .from("fiscal_sponsorship_signing_drafts")
+            .select("id")
+            .eq("packet_id", packetId)
+            .maybeSingle()
+        results.push({
+          name: "unassigned staff cannot read native fiscal signing draft",
+          passed: !deniedStaffDraft && !deniedStaffDraftError,
+        })
+
+        const { data: deniedCoachDraft, error: deniedCoachDraftError } =
+          await staffClient
+            .from("fiscal_sponsorship_signing_drafts")
+            .insert({
+              application_id: fiscalApplicationId,
+              org_id: member.id,
+              packet_id: packetId,
+              project_id: memberWorkspaceProjectId,
+              signer_id: staff.id,
+              signer_role: "coach_house",
+            })
+            .select("id")
+        results.push({
+          name: "non-admin cannot create a native countersign draft",
+          passed:
+            !!deniedCoachDraftError ||
+            (Array.isArray(deniedCoachDraft) && deniedCoachDraft.length === 0),
+        })
+
+        const { data: deniedSignature, error: deniedSignatureError } =
+          await memberClient
+            .from("fiscal_sponsorship_signatures")
+            .insert({
+              application_id: fiscalApplicationId,
+              consent_sha256: "a".repeat(64),
+              consent_text: "RLS test",
+              consent_version: "test",
+              org_id: member.id,
+              packet_id: packetId,
+              project_id: memberWorkspaceProjectId,
+              signature_method: "typed",
+              signature_sha256: "b".repeat(64),
+              signature_value: "Test Member",
+              signed_at: new Date().toISOString(),
+              signed_document_sha256: "c".repeat(64),
+              signer_id: member.id,
+              signer_name: "Test Member",
+              signer_role: "applicant",
+              signer_title: "Authorized Representative",
+            })
+            .select("id")
+        results.push({
+          name: "applicant cannot directly insert native signature evidence",
+          passed:
+            !!deniedSignatureError ||
+            (Array.isArray(deniedSignature) && deniedSignature.length === 0),
+        })
+
+        const { data: adminDraft, error: adminDraftError } =
+          await adminSessionClient
+            .from("fiscal_sponsorship_signing_drafts")
+            .select("id")
+            .eq("packet_id", packetId)
+            .maybeSingle()
+        results.push({
+          name: "platform admin can read native fiscal signing draft",
+          passed: !!adminDraft && !adminDraftError,
+        })
+
+        await adminClient
+          .from("fiscal_sponsorship_signing_drafts")
+          .delete()
+          .eq("packet_id", packetId)
+        await adminClient
+          .from("fiscal_sponsorship_signature_packets")
+          .delete()
+          .eq("id", packetId)
+      }
     }
   }
 

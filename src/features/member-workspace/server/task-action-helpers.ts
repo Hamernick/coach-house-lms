@@ -1,5 +1,3 @@
-import { createSupabaseAdminClient } from "@/lib/supabase/admin"
-
 import type {
   MemberWorkspaceCreateTaskInput,
   MemberWorkspaceTaskStatus,
@@ -122,77 +120,4 @@ export async function resolveAssignableUserId({
   }
 
   return { userId: candidateUserId } as const
-}
-
-export async function replaceTaskAssignee({
-  admin,
-  actorUserId,
-  orgId,
-  taskId,
-  userId,
-}: {
-  admin: ReturnType<typeof createSupabaseAdminClient>
-  actorUserId: string
-  orgId: string
-  taskId: string
-  userId: string | null
-}): Promise<{ ok: true } | { error: string }> {
-  const { error: deleteError } = await admin
-    .from("organization_task_assignees")
-    .delete()
-    .eq("task_id", taskId)
-
-  if (deleteError) {
-    return { error: "Unable to update task assignees." } as const
-  }
-
-  if (!userId) {
-    return { ok: true } as const
-  }
-
-  const { error: insertError } = await admin
-    .from("organization_task_assignees")
-    .insert({
-      org_id: orgId,
-      task_id: taskId,
-      user_id: userId,
-      created_by: actorUserId,
-    })
-
-  if (insertError) {
-    return { error: "Unable to update task assignees." } as const
-  }
-
-  return { ok: true } as const
-}
-
-export async function adjustProjectTaskCount({
-  admin,
-  projectId,
-  delta,
-  updatedBy,
-}: {
-  admin: ReturnType<typeof createSupabaseAdminClient>
-  projectId: string
-  delta: number
-  updatedBy: string
-}) {
-  const { data: project, error: projectError } = await admin
-    .from("organization_projects")
-    .select("id, org_id, task_count")
-    .eq("id", projectId)
-    .maybeSingle<{ id: string; org_id: string; task_count: number }>()
-
-  if (projectError || !project) {
-    return
-  }
-
-  await admin
-    .from("organization_projects")
-    .update({
-      task_count: Math.max((project.task_count ?? 0) + delta, 0),
-      updated_by: updatedBy,
-    })
-    .eq("id", project.id)
-    .eq("org_id", project.org_id)
 }

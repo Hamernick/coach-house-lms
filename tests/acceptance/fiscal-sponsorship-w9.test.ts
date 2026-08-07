@@ -12,6 +12,9 @@ import {
   type FiscalSponsorshipW9Fields,
 } from "@/features/fiscal-sponsorship/lib/w9-field-manifest"
 import { buildFiscalSponsorshipW9Pdf } from "@/features/fiscal-sponsorship/lib/w9-pdf"
+import { buildFiscalSponsorshipProjectWorkbenchData } from "@/features/fiscal-sponsorship/lib/project-workbench-data"
+import { resolveDocumentKindForKey } from "@/features/fiscal-sponsorship/server/workflow-document-actions-support"
+import type { FiscalSponsorshipProjectWorkflowSummaryDocument } from "@/features/fiscal-sponsorship/types"
 
 const fields: FiscalSponsorshipW9Fields = {
   accountNumber: "CH-AB12CD34",
@@ -30,6 +33,32 @@ const fields: FiscalSponsorshipW9Fields = {
   taxClassification: "individual",
   tin: "123-45-6789",
   tinType: "ssn",
+}
+
+function buildW9Document({
+  kind,
+  status,
+}: {
+  kind: FiscalSponsorshipProjectWorkflowSummaryDocument["kind"]
+  status: FiscalSponsorshipProjectWorkflowSummaryDocument["status"]
+}): FiscalSponsorshipProjectWorkflowSummaryDocument {
+  return {
+    assetId: "asset-w9",
+    documentKey: "tax_id_confirmation",
+    downloadHref: "/api/fiscal-sponsorship/documents/doc-w9?download=1",
+    generatedAt: "2026-07-28T22:00:00.000Z",
+    id: "doc-w9",
+    kind,
+    reviewNotes: null,
+    reviewedAt: "2026-07-28T22:05:00.000Z",
+    reviewStatus: "accepted",
+    status,
+    storagePath: "org/project/w9.pdf",
+    title: "Signed IRS Form W-9",
+    uploadedAt: "2026-07-28T22:00:00.000Z",
+    version: 1,
+    viewHref: "/api/fiscal-sponsorship/documents/doc-w9",
+  }
 }
 
 describe("fiscal sponsorship W-9 completion", () => {
@@ -108,6 +137,65 @@ describe("fiscal sponsorship W-9 completion", () => {
     expect(migration).toContain("om.role in ('owner', 'admin', 'staff')")
   })
 
+  it("uses coach acceptance to classify an uploaded PDF as a completed W-9", () => {
+    const workflowActions = readFileSync(
+      "src/features/fiscal-sponsorship/server/workflow-actions.ts",
+      "utf8"
+    )
+    const documentTransitions = readFileSync(
+      "supabase/migrations/20260805231500_atomic_fiscal_document_transitions.sql",
+      "utf8"
+    )
+    const source = {
+      organization: { name: "Coach House test", ownerName: "Alex Rivera" },
+      project: { id: "project-1", name: "Community program" },
+      workflowSummary: {
+        applicationId: "app-1",
+        applicationStatus: "approved" as const,
+        events: [],
+        latestAgreementDocument: null,
+        latestAuditCertificateDocument: null,
+        latestExecutedAgreementDocument: null,
+        latestSignaturePacket: null,
+        legalEntityType: "individual" as const,
+        requiredDocuments: [
+          buildW9Document({ kind: "application", status: "draft" }),
+        ],
+        reviewedAt: "2026-07-28T22:05:00.000Z",
+        submittedAt: "2026-07-28T21:00:00.000Z",
+      },
+    }
+
+    expect(resolveDocumentKindForKey("tax_id_confirmation")).toBe("application")
+    const pendingWorkbench = buildFiscalSponsorshipProjectWorkbenchData(source)
+
+    expect(pendingWorkbench).toMatchObject({
+      canGenerateAgreement: false,
+      nextStep: "Complete and accept the signed W-9",
+    })
+    expect(
+      buildFiscalSponsorshipProjectWorkbenchData({
+        ...source,
+        workflowSummary: {
+          ...source.workflowSummary,
+          requiredDocuments: [
+            buildW9Document({ kind: "tax_form", status: "executed" }),
+          ],
+        },
+      })
+    ).toMatchObject({
+      canGenerateAgreement: true,
+      nextStep: "Prepare the sponsorship agreement",
+    })
+    expect(documentTransitions).toContain("then 'tax_form'")
+    expect(documentTransitions).toContain("then 'executed'")
+    expect(documentTransitions).toContain(
+      "version = coalesce(v_tax_form_version, v_document.version)"
+    )
+    expect(workflowActions).not.toContain(
+      "isFiscalSponsorshipAgreementFileName"
+    )
+  })
   it("offers the assigned applicant direct W-9 completion in the workbench", () => {
     const summary = readFileSync(
       "src/features/fiscal-sponsorship/server/workflow-summary.ts",

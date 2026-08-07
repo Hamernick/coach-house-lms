@@ -8,6 +8,8 @@ export type ProjectAssetsRouteClient = ReturnType<
 >
 export type ProjectAssetsDataClient = SupabaseClient<Database>
 
+export const PROJECT_ASSET_BUCKET = "project-assets"
+
 export type ProjectRow = Pick<
   Database["public"]["Tables"]["organization_projects"]["Row"],
   "id" | "org_id"
@@ -26,6 +28,34 @@ export type AssetRow = Pick<
   | "mime"
   | "size_bytes"
 >
+
+export async function cleanupProjectAssetCreation({
+  assetIds,
+  storagePaths,
+  supabase,
+}: {
+  assetIds: string[]
+  storagePaths: string[]
+  supabase: ProjectAssetsRouteClient
+}) {
+  if (storagePaths.length) {
+    try {
+      await supabase.storage.from(PROJECT_ASSET_BUCKET).remove(storagePaths)
+    } catch {
+      // Continue the best-effort rollback.
+    }
+  }
+  if (assetIds.length) {
+    try {
+      await supabase
+        .from("organization_project_assets")
+        .delete()
+        .in("id", assetIds)
+    } catch {
+      // Rollback errors must not mask the original request failure.
+    }
+  }
+}
 
 export function toTrimmedString(value: unknown) {
   return typeof value === "string" ? value.trim() : ""

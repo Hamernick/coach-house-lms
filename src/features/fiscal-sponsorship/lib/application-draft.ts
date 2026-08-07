@@ -183,20 +183,21 @@ export function buildFiscalSponsorshipApplicationDraft({
   const prefillBudgetRows = normalizeFiscalSponsorshipBudgetRows(
     prefill?.budgetRows
   )
-  const applicationSummaryBudgetRows = parseBudgetRows(
+  const savedSummaryBudgetRows = parseBudgetRows(
     text(application?.expenseSummary)
   )
   const prefillSummaryBudgetRows = parseBudgetRows(
     text(prefill?.expenseSummary)
   )
-  const budgetRows =
-    savedBudgetRows.length > 0 && !sourceActivityChanged
+  const nextPrefillBudgetRows =
+    prefillBudgetRows.length > 0 ? prefillBudgetRows : prefillSummaryBudgetRows
+  const budgetRows = sourceActivityChanged
+    ? nextPrefillBudgetRows
+    : savedBudgetRows.length > 0
       ? savedBudgetRows
-      : application && !sourceActivityChanged
-        ? applicationSummaryBudgetRows
-        : prefillBudgetRows.length > 0
-          ? prefillBudgetRows
-          : prefillSummaryBudgetRows
+      : application
+        ? savedSummaryBudgetRows
+        : nextPrefillBudgetRows
   const budgetTotal = getBudgetTotal(budgetRows)
   const storedEstimatedBudgetDollars = formatBudgetCentsForDraft(
     application?.estimatedBudgetCents ?? prefill?.estimatedBudgetCents

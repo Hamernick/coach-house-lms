@@ -6,6 +6,7 @@ import {
   resolveProfileAudience,
   resolveTesterMetadata,
 } from "@/lib/devtools/audience"
+import { canManageFiscalSponsorshipForOrganization } from "@/features/fiscal-sponsorship"
 import type { Database } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import { createSupabaseRouteHandlerClient } from "@/lib/supabase/route"
@@ -22,30 +23,6 @@ type FiscalDocumentRow = Pick<
 
 function sanitizeFilename(value: string) {
   return `${value.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-|-$/g, "") || "fiscal-sponsorship-document"}.pdf`
-}
-
-async function canPlatformStaffAccessFiscalDocument({
-  accessLevel,
-  admin,
-  organizationId,
-  userId,
-}: {
-  accessLevel: "coach" | "developer" | null
-  admin: ReturnType<typeof createSupabaseAdminClient>
-  organizationId: string
-  userId: string
-}) {
-  if (accessLevel === "developer") return true
-  if (accessLevel !== "coach") return false
-
-  const { data, error } = await admin
-    .from("organization_coach_assignments")
-    .select("coach_user_id")
-    .eq("organization_id", organizationId)
-    .eq("coach_user_id", userId)
-    .maybeSingle<{ coach_user_id: string }>()
-
-  return !error && Boolean(data)
 }
 
 export async function GET(
@@ -79,12 +56,11 @@ export async function GET(
     return NextResponse.json({ error: "Document not found." }, { status: 404 })
   }
   if (
-    profileAudience.isPlatformStaff &&
-    !profileAudience.isAdmin &&
-    !(await canPlatformStaffAccessFiscalDocument({
+    (profileAudience.isPlatformStaff || profileAudience.isAdmin) &&
+    !(await canManageFiscalSponsorshipForOrganization({
       accessLevel: profileAudience.platformAccessLevel,
-      admin,
       organizationId: document.org_id,
+      supabase: documentClient,
       userId: user.id,
     }))
   ) {

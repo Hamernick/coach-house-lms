@@ -55,10 +55,7 @@ describe("MemberWorkspaceProjectFiscalDocuments", () => {
       "actualSha256 !== document.file_sha256"
     )
     expect(fiscalDocumentRouteSource).toContain(
-      "organization_coach_assignments"
-    )
-    expect(fiscalDocumentRouteSource).toContain(
-      "canPlatformStaffAccessFiscalDocument"
+      "canManageFiscalSponsorshipForOrganization"
     )
     expect(fiscalDocumentRouteSource).toContain(
       '"Cache-Control": "private, no-store, max-age=0"'

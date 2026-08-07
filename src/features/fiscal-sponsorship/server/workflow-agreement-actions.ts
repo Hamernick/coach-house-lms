@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto"
 
+import type { Json } from "@/lib/supabase"
 import { createSupabaseAdminClient } from "@/lib/supabase/admin"
 import {
   FISCAL_SPONSORSHIP_FORM_B_TEMPLATE,
@@ -11,7 +12,6 @@ import {
 } from "../lib/form-b-field-manifest"
 import { buildFiscalSponsorshipFormBPdf, sha256Hex } from "../lib/form-b-pdf"
 import type {
-  FiscalSponsorshipDocumentStatus,
   GenerateFiscalSponsorshipAgreementInput,
   GenerateFiscalSponsorshipAgreementResult,
   SendFiscalSponsorshipAgreementInput,
@@ -21,11 +21,12 @@ import {
   notifyFiscalAgreementGenerated,
   notifyFiscalAgreementSent,
 } from "./workflow-notifications"
+import { transitionFiscalFormBSend } from "./agreement-send-transition-support"
+import { transitionFiscalFormBGeneration } from "./agreement-transition-support"
 import {
   buildWorkflowTableError,
   canManageFiscalSponsorshipForOrganization,
   getApplicationOrganizationName,
-  insertFiscalEvent,
   isMissingFiscalWorkflowTableError,
   loadFiscalApplicationForProject,
   loadLatestAgreementDocument,
@@ -34,7 +35,6 @@ import {
   resolveFiscalApplicantSigner,
   resolveProjectAndContext,
   sanitizeAgreementFilename,
-  updateFiscalApplicationStatus,
 } from "./workflow-support"
 
 export async function generateFiscalSponsorshipAgreement(
@@ -131,19 +131,10 @@ export async function generateFiscalSponsorshipAgreement(
     }
   }
 
-  const { data: previousDocument } = await context.supabase
-    .from("fiscal_sponsorship_documents")
-    .select("version")
-    .eq("application_id", loaded.application.id)
-    .eq("kind", "agreement")
-    .order("version", { ascending: false })
-    .limit(1)
-    .maybeSingle<{ version: number }>()
-  const nextVersion = (previousDocument?.version ?? 0) + 1
-
-  const { data: document, error: documentError } = await context.supabase
-    .from("fiscal_sponsorship_documents")
-    .insert({
+  const transition = await transitionFiscalFormBGeneration({
+    actorId: context.user.id,
+    applicationId: loaded.application.id,
+    document: {
       application_id: loaded.application.id,
       asset_id: null,
       field_values: fields,
@@ -158,51 +149,29 @@ export async function generateFiscalSponsorshipAgreement(
       project_id: loaded.application.project_id,
       size_bytes: agreement.bytes.length,
       source_snapshot: {
-        application: mapFiscalApplicationRow(loaded.application),
+        application: JSON.parse(
+          JSON.stringify(mapFiscalApplicationRow(loaded.application))
+        ) as Json,
         generatedAt,
       },
-      status: "generated" satisfies FiscalSponsorshipDocumentStatus,
+      status: "generated",
       storage_bucket: "fiscal-signing",
       storage_path: storagePath,
       template_key: FISCAL_SPONSORSHIP_FORM_B_TEMPLATE.key,
       template_sha256: FISCAL_SPONSORSHIP_FORM_B_TEMPLATE.sha256,
       template_version: FISCAL_SPONSORSHIP_FORM_B_TEMPLATE.version,
       title,
-      version: nextVersion,
-    })
-    .select("id")
-    .single<{ id: string }>()
-  if (documentError) {
-    await admin.storage.from("fiscal-signing").remove([storagePath])
-    return isMissingFiscalWorkflowTableError(documentError)
-      ? buildWorkflowTableError()
-      : { error: "Unable to save the prepared agreement document." }
-  }
-
-  const updated = await updateFiscalApplicationStatus({
-    applicationId: loaded.application.id,
-    patch: {
-      status: "agreement_ready",
-      updated_by: context.user.id,
     },
-    supabase: context.supabase,
+    expectedUpdatedAt: loaded.application.updated_at,
   })
-  if ("error" in updated) return updated
-
-  await insertFiscalEvent({
-    applicationId: loaded.application.id,
-    eventType: "agreement_generated",
-    metadata: { documentId: document.id, fileSha256: agreement.sha256 },
-    orgId: loaded.application.org_id,
-    projectId: loaded.application.project_id,
-    summary: "Fiscal sponsorship agreement prepared.",
-    supabase: context.supabase,
-    userId: context.user.id,
-  })
+  if ("error" in transition) {
+    await admin.storage.from("fiscal-signing").remove([storagePath])
+    return transition
+  }
   await notifyFiscalAgreementGenerated({
     actorId: context.user.id,
     application: loaded.application,
-    documentId: document.id,
+    documentId: transition.documentId,
   })
 
   revalidateFiscalApplicationRoutes(loaded.application.project_id)
@@ -210,7 +179,7 @@ export async function generateFiscalSponsorshipAgreement(
     ok: true,
     applicationId: loaded.application.id,
     assetId: null,
-    documentId: document.id,
+    documentId: transition.documentId,
   }
 }
 
@@ -273,97 +242,38 @@ export async function sendFiscalSponsorshipAgreementForSignature(
     (documentResult.document.field_values ?? {}) as Record<string, string>
   )
 
-  const sentAt = new Date().toISOString()
-  const { data: packet, error: packetError } = await context.supabase
-    .from("fiscal_sponsorship_signature_packets")
-    .insert({
-      applicant_signer_email: applicantEmail,
-      applicant_signer_id: signerResult.signer.id,
-      applicant_signer_name: applicantName,
-      application_id: loaded.application.id,
-      coach_signer_email: null,
-      coach_signer_name: null,
-      document_id: documentResult.document.id,
-      org_id: loaded.application.org_id,
-      project_id: loaded.application.project_id,
-      current_document_sha256: documentResult.document.file_sha256,
-      provider: "native",
-      provider_payload: {},
-      provider_submission_id: null,
-      provider_template_id: FISCAL_SPONSORSHIP_FORM_B_TEMPLATE.key,
-      sent_at: sentAt,
-      sent_by: context.user.id,
-      status: "sent",
-      source_document_sha256: documentResult.document.file_sha256,
-      template_version: String(FISCAL_SPONSORSHIP_FORM_B_TEMPLATE.version),
-    })
-    .select("id")
-    .single<{ id: string }>()
-  if (packetError) {
-    return isMissingFiscalWorkflowTableError(packetError)
-      ? buildWorkflowTableError()
-      : { error: "Unable to save fiscal sponsorship signature packet." }
-  }
-
-  const { error: draftError } = await context.supabase
-    .from("fiscal_sponsorship_signing_drafts")
-    .insert({
-      application_id: loaded.application.id,
-      confirmed_fields: [],
-      field_values: fields,
-      org_id: loaded.application.org_id,
-      packet_id: packet.id,
-      project_id: loaded.application.project_id,
-      signature_method: "typed",
-      signature_value: applicantName,
-      signer_id: signerResult.signer.id,
-      signer_role: "applicant",
-    })
-  if (draftError) {
-    await createSupabaseAdminClient()
-      .from("fiscal_sponsorship_signature_packets")
-      .delete()
-      .eq("id", packet.id)
-    return { error: "Unable to initialize the native signing draft." }
-  }
-
-  await context.supabase
-    .from("fiscal_sponsorship_documents")
-    .update({
-      status: "sent_for_signature" satisfies FiscalSponsorshipDocumentStatus,
-      updated_at: sentAt,
-    })
-    .eq("id", documentResult.document.id)
-
-  await insertFiscalEvent({
-    applicationId: loaded.application.id,
-    eventType: "agreement_sent_for_signature",
-    metadata: {
-      documentId: documentResult.document.id,
-      packetId: packet.id,
-      provider: "native",
-      providerSubmissionId: null,
-    },
-    orgId: loaded.application.org_id,
-    projectId: loaded.application.project_id,
-    summary: "Fiscal sponsorship agreement sent for signature.",
-    supabase: context.supabase,
-    userId: context.user.id,
-  })
-  await notifyFiscalAgreementSent({
+  const transition = await transitionFiscalFormBSend({
     actorId: context.user.id,
-    application: loaded.application,
-    applicantSignerEmail: signerResult.signer.email,
+    applicantSignerEmail: applicantEmail,
     applicantSignerId: signerResult.signer.id,
-    packetId: packet.id,
-    providerSubmissionId: null,
+    applicantSignerName: applicantName,
+    applicationId: loaded.application.id,
+    documentId: documentResult.document.id,
+    expectedApplicationUpdatedAt: loaded.application.updated_at,
+    expectedDocumentUpdatedAt: documentResult.document.updated_at,
+    fields,
+    templateKey: FISCAL_SPONSORSHIP_FORM_B_TEMPLATE.key,
+    templateSha256: FISCAL_SPONSORSHIP_FORM_B_TEMPLATE.sha256,
+    templateVersion: FISCAL_SPONSORSHIP_FORM_B_TEMPLATE.version,
   })
+  if ("error" in transition) return transition
+
+  if (transition.transitioned) {
+    await notifyFiscalAgreementSent({
+      actorId: context.user.id,
+      application: loaded.application,
+      applicantSignerEmail: signerResult.signer.email,
+      applicantSignerId: signerResult.signer.id,
+      packetId: transition.packetId,
+      providerSubmissionId: null,
+    })
+  }
 
   revalidateFiscalApplicationRoutes(loaded.application.project_id)
   return {
     ok: true,
     applicationId: loaded.application.id,
-    packetId: packet.id,
+    packetId: transition.packetId,
     providerSubmissionId: null,
   }
 }

@@ -59,6 +59,9 @@ describe("fiscal sponsorship coach milestones", () => {
     const workflowSupport = readSource(
       "src/features/fiscal-sponsorship/server/workflow-support.ts"
     )
+    const authorization = readSource(
+      "src/features/fiscal-sponsorship/lib/authorization.ts"
+    )
     const workflowActions = readSource(
       "src/features/fiscal-sponsorship/server/workflow-actions.ts"
     )
@@ -75,9 +78,9 @@ describe("fiscal sponsorship coach milestones", () => {
     expect(workflowSupport).toContain(
       "canManageFiscalSponsorshipForOrganization"
     )
-    expect(workflowSupport).toContain("organization_coach_assignments")
-    expect(workflowSupport).toContain('accessLevel === "developer"')
-    expect(workflowSupport).toContain('accessLevel !== "coach"')
+    expect(authorization).toContain("organization_coach_assignments")
+    expect(authorization).toContain('accessLevel === "developer"')
+    expect(authorization).toContain('accessLevel !== "coach"')
     expect(workflowActions).toContain(
       "canManageFiscalSponsorshipForOrganization"
     )

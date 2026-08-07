@@ -1,6 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type ReactNode,
+} from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { AnimatePresence, motion } from "motion/react"
@@ -49,6 +56,7 @@ import {
 } from "@/features/organization-coach-assignments"
 
 type MemberWorkspaceProjectDetailPageProps = {
+  adminBilling?: ReactNode
   project: ProjectDetails
   assigneeOptions: MemberWorkspacePersonOption[]
   currentUser: User
@@ -176,6 +184,7 @@ function useMemberWorkspaceProjectDelete({
 }
 
 export function MemberWorkspaceProjectDetailPage({
+  adminBilling,
   project,
   assigneeOptions,
   currentUser,
@@ -230,11 +239,7 @@ export function MemberWorkspaceProjectDetailPage({
   )
   const [projectDraft, setProjectDraft] =
     useState<MemberWorkspaceProjectDetailDraft>(initialProjectDraft)
-
-  const breadcrumbs = useMemo(
-    () => buildProjectBreadcrumbs(project.name),
-    [project.name]
-  )
+  const breadcrumbs = buildProjectBreadcrumbs(project.name)
 
   useEffect(() => {
     setProjectDraft(initialProjectDraft)
@@ -513,6 +518,7 @@ export function MemberWorkspaceProjectDetailPage({
                       className="lg:border-border pb-8 lg:border-l lg:pl-6"
                     >
                       <MemberWorkspaceProjectRightMetaPanel
+                        adminBilling={adminBilling}
                         project={project}
                         organizationSummary={organizationSummary}
                         createQuickLinkAction={

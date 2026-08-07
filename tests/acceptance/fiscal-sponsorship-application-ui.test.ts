@@ -186,6 +186,9 @@ describe("fiscal sponsorship application UI", () => {
     const applicationActions = readSource(
       "src/features/fiscal-sponsorship/server/actions.ts"
     )
+    const draftSaveMigration = readSource(
+      "supabase/migrations/20260805232500_atomic_fiscal_application_draft_saves.sql"
+    )
 
     expect(budgetPlanEditor).toContain("Budget plan")
     expect(budgetPlanEditor).toContain("BudgetTable")
@@ -217,10 +220,11 @@ describe("fiscal sponsorship application UI", () => {
     expect(applicationDraft).toContain('draft.legalEntityType === "individual"')
     expect(applicationDraft).toContain("budgetRows: draft.budgetRows")
 
-    expect(applicationActions).toContain("syncFiscalBudgetToSourceProgram")
+    expect(applicationActions).toContain("saveFiscalApplicationDraftTransition")
     expect(applicationActions).toContain("budgetRows")
-    expect(applicationActions).toContain("budgetUsd: totalBudget")
-    expect(applicationActions).toContain("goalUsd: fundraisingTarget")
+    expect(draftSaveMigration).toContain("'budgetUsd'")
+    expect(draftSaveMigration).toContain("'goalUsd'")
+    expect(draftSaveMigration).toContain("for update;")
   })
 
   it("preserves complete program budget rows and ignores zero-only legacy summaries", () => {

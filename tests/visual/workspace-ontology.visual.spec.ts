@@ -39,6 +39,48 @@ async function waitForStableScene(fixture: Locator, nodeCount: number) {
   await expect(fixture.locator(".react-flow__node")).toHaveCount(nodeCount)
 }
 
+async function waitForStableFixtureGeometry(
+  fixture: Locator,
+  nodeCount: number
+) {
+  await expect(fixture).toBeVisible()
+  await expect(fixture.locator(".react-flow__node")).toHaveCount(nodeCount)
+  await fixture.evaluate(async (element) => {
+    const readGeometry = () => {
+      const viewport = element.querySelector<HTMLElement>(
+        ".react-flow__viewport"
+      )
+      const nodes = Array.from(
+        element.querySelectorAll<HTMLElement>(".react-flow__node")
+      ).map((node) => {
+        const bounds = node.getBoundingClientRect()
+        return [
+          node.dataset.id,
+          bounds.x,
+          bounds.y,
+          bounds.width,
+          bounds.height,
+        ]
+      })
+      return JSON.stringify([viewport?.style.transform ?? "", nodes])
+    }
+
+    let previousGeometry = ""
+    let stableFrames = 0
+    const deadline = performance.now() + 4_000
+    while (performance.now() < deadline) {
+      await new Promise<void>((resolve) => {
+        requestAnimationFrame(() => resolve())
+      })
+      const geometry = readGeometry()
+      stableFrames = geometry === previousGeometry ? stableFrames + 1 : 0
+      if (stableFrames >= 3) return
+      previousGeometry = geometry
+    }
+    throw new Error("React Flow fixture geometry did not stabilize")
+  })
+}
+
 async function readRootTransforms(fixture: Locator) {
   return fixture
     .locator(
@@ -103,6 +145,7 @@ test("node variants remain contained on the exact light canvas", async ({
   const fixture = page.locator(
     '[data-workspace-ontology-visual-fixture="true"]'
   )
+  await waitForStableFixtureGeometry(fixture, 4)
   await expectCanvasColor(fixture, [252, 252, 252])
   const surfaces = fixture.locator('[data-workspace-node-part="surface"]')
   await expect(surfaces).toHaveCount(4)
@@ -137,6 +180,7 @@ test("node variants remain opaque on the exact dark canvas", async ({
   const fixture = page.locator(
     '[data-workspace-ontology-visual-fixture="true"]'
   )
+  await waitForStableFixtureGeometry(fixture, 4)
   await expectCanvasColor(fixture, [39, 39, 42])
   const action = fixture
     .locator('[data-workspace-ontology-node] [data-slot="button"]')
